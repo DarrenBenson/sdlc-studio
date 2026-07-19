@@ -194,7 +194,23 @@ The suite operates on small temporary fixture trees, which is what keeps a
 fixture capture and assert on its diagnostics rather than letting them escape to the
 console. This is not cosmetic: a green run that prints `ERROR` lines trains every
 reader, human and agent, to skim past `ERROR`, which is the exact reflex that lets a
-real one through. A `test-noise` gate leg keeps it that way.
+real one through.
+
+The `test-noise` leg **runs in CI** as its own named step in
+`.github/workflows/lint.yml`, via `tools/skill-tests.sh` - which is also how the skill
+suite is invoked by `npm run test:skill` and by the pre-commit hook, so no path around it
+skips the check. It was previously described here as
+holding the line while being wired into nothing, and its detector matched a single shape
+(`ERROR` or `WARN` followed by an absolute path) that this suite never produces - it
+caught none of the 68 lines actually leaking. Detection now lives in `tools/test_noise.py`
+so it is unit-tested against the shapes the suite really emits: lowercase `error:`,
+`warning:`, `usage:`, and tool-prefixed messages, judged after unittest's progress dots
+are stripped, since an escaped print usually shares a line with them.
+
+Those 68 lines are a recorded baseline, not a clean bill: the gate fails on an increase
+and the number is held in `TEST_NOISE_BASELINE`. Demanding zero before the leg could run
+at all is precisely why it ran nowhere. Lower it as leaks are captured; never raise it to
+turn a red gate green.
 
 #### Unit coverage map
 
@@ -360,6 +376,7 @@ Additional gates that back the NFRs but sit outside the four PRD headings:
 | Link integrity | `check_links.py`: every anchor resolves | Yes |
 | Skill frontmatter | `validate_skill.py`: valid against Agent Skills standard | Yes |
 | Version consistency | `check_versions.py`: all homes agree (CHANGELOG advisory between releases, required at release) | Yes (release) |
+| Release version lane | `gate.py --release` binds a blocking `versions` lane that runs `check_versions --strict`, so the pre-tag obligation is ONE command with ONE exit code rather than a gate plus a separate check whose exit code can be dropped. Invoked as a subprocess: `check_versions.py` is a repo-only development tool, so a consuming project reports the lane N/A rather than failing on a tool it never had. | Yes (release) |
 | Neutrality | `check_neutrality.py`: no private consuming-project name in a tracked file | Yes |
 | Coverage floor | `coverage report --omit='*/tests/*' --fail-under=80`: statement coverage of the script tier at or above the 80% floor (the ~90% figure is an aspiration, not this gate) | Yes |
 | Security scan | `bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q`: no medium-or-high severity finding in the shipped script tier | Yes |

@@ -16,7 +16,7 @@
     "lint:action-pins": "bash tools/check_action_pins.sh",
     "lint:fix": "markdownlint '**/*.md' --ignore node_modules --fix; markdownlint --config .claude/skills/sdlc-studio/.markdownlint.json '.claude/**/*.md' --fix",
     "test": "npm run test:skill && npm run test:tools",
-    "test:skill": "python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests",
+    "test:skill": "bash tools/skill-tests.sh",
     "test:tools": "python3 -m unittest discover -s tools/tests"
   },
   "devDependencies": {

@@ -21,6 +21,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The green-run noise gate actually runs, and its detector matches what leaks (US0253).**
+  `tools/skill-tests.sh` held the noise leg but was wired into nothing - neither CI nor `npm test`
+  invoked it - while the TSD described it as holding the line. Its detector matched one shape,
+  `ERROR` or `WARN` followed by an absolute path, and caught 0 of the 68 lines this suite actually
+  leaks: lowercase `error:`, `warning:`, `usage:`, and tool-prefixed messages. Detection moves to
+  `tools/test_noise.py` so it is unit-tested against the real shapes, judged after unittest's
+  progress dots are stripped because an escaped print usually shares a line with them. The skill
+  suite is now invoked THROUGH the gate (`npm run test:skill`, the pre-commit hook, and a named CI
+  step), so no path around it skips the check. The 68 lines are a recorded baseline that fails on
+  an increase, not an amnesty: demanding zero before the leg could run is why it ran nowhere.
+
+- **`gate --release` binds the strict version check as one exit code (US0254).** Version
+  consistency and the release gate were two commands, so a tag could be cut from a green gate while
+  `check_versions --strict` had never run, or had run and had its exit code dropped. A blocking
+  `versions` lane now joins the pre-tag gate; `--strict` is the flag that adds the CHANGELOG
+  comparison, so a mismatch there fails the cut. It is invoked as a subprocess rather than imported
+  because `check_versions.py` is a repo-only development tool while the gate ships to consuming
+  projects - one without it reports the lane N/A rather than failing on a tool it never had, and
+  never silently passes.
+
 - **The request index's Linked Epics column is censused from the files (US0256).** The column
   shipped as a placeholder and stayed one: every CR in this workspace that had been decomposed -
   63 of 63 - still showed `--` while its file named real epics. A column nothing derives is a

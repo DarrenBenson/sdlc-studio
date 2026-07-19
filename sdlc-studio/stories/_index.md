@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 22 |
+| Draft | 20 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 6 |
+| Review | 8 |
 | Done | 231 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -163,8 +163,8 @@
 | [US0250](US0250-rewrite-the-help-files-around-the-process-spine.md) | rewrite the help files around the process spine (raise -> break down -> sprint+review; PRD/TRD/TSD/personas as levers; reconcile/review/audit as support) | Draft | EP0081 | 2026-07-17 | 2026-07-17 |
 | [US0251](US0251-command-audit-drift-back-to-0-and-check.md) | command_audit drift back to 0 and check_links + validate_skill green | Draft | EP0081 | 2026-07-17 | 2026-07-17 |
 | [US0252](US0252-sweep-the-remaining-bare-artefact-body-read-text.md) | sweep the remaining bare artefact-body read_text calls through read_text_safe, with a regression test | Review | EP0082 | 2026-07-17 | 2026-07-17 |
-| [US0253](US0253-run-the-test-noise-gate-leg-in-ci.md) | run the test-noise gate leg in CI and broaden the leak detector beyond one shape | Draft | EP0082 | 2026-07-17 | 2026-07-17 |
-| [US0254](US0254-gate-release-runs-check-versions-strict-under-one.md) | gate --release runs check_versions --strict under one exit code; a CHANGELOG mismatch fails | Draft | EP0082 | 2026-07-17 | 2026-07-17 |
+| [US0253](US0253-run-the-test-noise-gate-leg-in-ci.md) | run the test-noise gate leg in CI and broaden the leak detector beyond one shape | Review | EP0082 | 2026-07-17 | 2026-07-17 |
+| [US0254](US0254-gate-release-runs-check-versions-strict-under-one.md) | gate --release runs check_versions --strict under one exit code; a CHANGELOG mismatch fails | Review | EP0082 | 2026-07-17 | 2026-07-17 |
 | [US0255](US0255-extend-the-write-confinement-snapshot-suite-across-the.md) | extend the write-confinement snapshot suite across the shipped writers with a roster sweep | Review | EP0082 | 2026-07-17 | 2026-07-17 |
 | [US0256](US0256-census-the-cr-index-linked-epics-column-from.md) | census the CR-index Linked Epics column from Decomposed-into (or drop the dead column) | Review | EP0082 | 2026-07-17 | 2026-07-17 |
 | [US0257](US0257-build-refine-into-with-multi-parent-link-support.md) | build refine --into with multi-parent link support (children_of, asymmetry gate, back-links) and docs | Done | EP0083 | 2026-07-17 | 2026-07-17 |

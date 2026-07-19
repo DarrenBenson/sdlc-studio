@@ -1,6 +1,6 @@
 # US0254: gate --release runs check_versions --strict under one exit code; a CHANGELOG mismatch fails
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** `gate.py --release` runs
 - **Then** the strict version check is a bound blocking lane, listed in the gate's reported checks and folded into its one exit code; the plain gate leaves it advisory
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_gate.py -k ReleaseVersionStrictLaneTests
+- **Verified:** yes (2026-07-19)
 
 ### AC2: A CHANGELOG disagreement fails the release gate
 
@@ -29,6 +30,7 @@
 - **When** `gate.py --release` runs over it
 - **Then** the gate exits non-zero and names the disagreeing homes, and passes once they agree
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_gate.py -k ReleaseChangelogMismatchTests
+- **Verified:** yes (2026-07-19)
 
 ### AC3: Docs match the mechanical reality
 
@@ -36,6 +38,7 @@
 - **When** the lane is wired
 - **Then** tsd.md names the strict check as run by the release gate, and the release-gate.md bullet reads as confirmation rather than the only enforcement
 - **Verify:** grep "check_versions --strict" sdlc-studio/tsd.md
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

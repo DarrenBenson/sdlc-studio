@@ -28,13 +28,16 @@ fi
 
 # Diagnostics a tool wrote to the console during a GREEN run: the expected complaint from a
 # bad-fixture test that was never captured. Capture it in the test and assert on it instead.
-if leaked="$(printf '%s\n' "$out" | grep -E '^(ERROR|WARN)[[:space:]]+/')"; then
-  printf '\n'
-  printf 'test-noise: a PASSING run printed %s diagnostic line(s):\n' "$(printf '%s\n' "$leaked" | wc -l | tr -d ' ')"
-  printf '%s\n' "$leaked" | head -5
-  printf '\nfix: wrap the call in contextlib.redirect_stdout/redirect_stderr and assert on the\n'
-  printf '     captured text. A green suite must say nothing, or a real error hides in the noise.\n'
-  exit 1
-fi
+#
+# Detection lives in tools/test_noise.py so it is unit-testable. The inline grep this
+# replaced matched ONE shape - `ERROR`/`WARN` then an absolute path - and caught 0 of the
+# leaks this suite actually produces, which are lowercase `error:`, `warning:`, `usage:`
+# and tool-prefixed messages.
+#
+# TEST_NOISE_BASELINE is a RATCHET over declared debt, not an amnesty. The suite leaks 68
+# lines today; demanding zero before the gate may run is why it ran nowhere. Frozen here,
+# the gate fails the moment a change adds one. Lower it as leaks are captured - never
+# raise it to make a red gate green.
+TEST_NOISE_BASELINE="${TEST_NOISE_BASELINE:-68}"
 
-exit 0
+printf '%s\n' "$out" | python3 "$(dirname "$0")/test_noise.py" --baseline "$TEST_NOISE_BASELINE"

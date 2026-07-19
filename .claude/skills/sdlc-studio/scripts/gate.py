@@ -328,6 +328,44 @@ def _changelog_fragments(root: str) -> dict:
     return {"count": len(strays), "blocking": True, "detail": detail}
 
 
+def _versions_strict(root: str) -> dict:
+    """Release-bound lane: the skill's version strings agree, CHANGELOG included.
+
+    Version consistency and the release gate used to be two commands, so a tag could be
+    cut from a green gate while the version check had never run - or had run and had its
+    exit code dropped on the floor. The pre-tag gate is one obligation with one exit code.
+
+    `--strict` is the flag that adds the CHANGELOG comparison, so it is the whole point of
+    running it here rather than the plain form.
+
+    Invoked as a SUBPROCESS, not imported: `check_versions.py` is a repo-only development
+    tool under `tools/`, while this gate ships to consuming projects. A project without it
+    is reported as not-applicable and never silently passed - a lane that cannot run must
+    say so, because an invented pass is the false-assurance class this gate refuses.
+    """
+    import subprocess  # noqa: PLC0415 - local: keep subprocess off the cold import path
+    checker = Path(root) / "tools" / "check_versions.py"
+    if not checker.is_file():
+        # `run_gate` derives status from `count`, so a not-applicable lane reports 0 and
+        # says N/A in its detail - the same idiom the doc-coverage lane uses off-repo.
+        # Never a silent pass: the detail states plainly that nothing was checked.
+        return {"count": 0, "blocking": False,
+                "detail": ("N/A - tools/check_versions.py is not present; the strict version "
+                           "check is a skill-development tool and does not apply here")}
+    try:
+        proc = subprocess.run([sys.executable, str(checker), "--strict", "--root", str(root)],
+                              capture_output=True, text=True, timeout=120, cwd=str(root))
+    except (OSError, subprocess.SubprocessError) as exc:
+        return {"count": 1, "blocking": True,
+                "detail": f"could not run check_versions.py: {exc}"}
+    out = (proc.stdout + proc.stderr).strip()
+    if proc.returncode == 0:
+        return {"count": 0, "blocking": True, "detail": "version strings agree (CHANGELOG included)"}
+    first = out.splitlines()[0] if out else "see check_versions.py output"
+    return {"count": 1, "blocking": True,
+            "detail": f"version drift before a tag: {first}"}
+
+
 def _batch_size(root: str) -> dict:
     """Advisory small-batch lane: flags a delivered unit whose CHANGE is an outlier for
     its size - the AI batch-size failure mode (agents produce larger diffs faster; DORA
@@ -808,6 +846,10 @@ def run_gate(root: str = ".", only: list[str] | None = None,
         # silently-missing required artefact is the BG0110 hole this refuses to leave open.
         registry["review-legs"] = _review_legs
         bound.append("review-legs")
+        # ...and the version strings must agree across their authoritative homes, CHANGELOG
+        # included: a tag cut over a drifted version is a release nobody can identify later.
+        registry["versions"] = _versions_strict
+        bound.append("versions")
         # ...and no changelog fragment may be left uncomposed at a cut
         if _dod_enforced(release_dod, "release.changelog"):
             registry["changelog-fragments"] = _changelog_fragments

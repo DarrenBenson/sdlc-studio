@@ -459,7 +459,7 @@ class ReleaseGateTests(unittest.TestCase):
             self._story(root, "shell exit 1")
             with contextlib.redirect_stdout(io.StringIO()):
                 rc = gate.main(["--root", str(root), "--release", "--format", "json",
-                                "--only", "verify,review-legs,changelog-fragments"])
+                                "--only", "verify,review-legs,changelog-fragments,versions"])
             self.assertEqual(rc, 1)
 
     def test_verify_lane_blocks_on_error(self) -> None:
@@ -509,7 +509,7 @@ class ReleaseSelectionGuardTests(ReleaseGateTests):
             root = Path(t)
             self._story(root, "shell true")
             r = gate.run_gate(str(root), checks={}, release=True,
-                              only=["verify", "review-legs", "changelog-fragments"])
+                              only=["verify", "review-legs", "changelog-fragments", "versions"])
             self.assertTrue(r["ok"], r["checks"])
 
 
@@ -574,7 +574,7 @@ class ReleaseBlockedVerifierTests(ReleaseGateTests):
             self._external_story(root, "shell true")
             with contextlib.redirect_stdout(io.StringIO()):
                 rc = gate.main(["--root", str(root), "--release", "--allow-external",
-                                "--only", "verify,review-legs,changelog-fragments"])
+                                "--only", "verify,review-legs,changelog-fragments,versions"])
             self.assertEqual(rc, 0)
 
 
@@ -1759,6 +1759,132 @@ class ReviewCurrentDirtyTests(unittest.TestCase):
             lane = gate._review_current(str(root))
             self.assertEqual(lane["count"], 0)
             self.assertIn("current with all artefacts", lane["detail"])
+
+
+class ReleaseVersionStrictLaneTests(ReleaseGateTests):
+    """US0254 AC1: the pre-tag gate binds the strict version check as one exit code.
+
+    The version consistency check and the release gate were two commands, so a tag could
+    be cut from a green gate while `check_versions --strict` had never run - or had run
+    and had its exit code dropped. The pre-tag gate is one obligation with one exit code.
+    """
+
+    def _tools(self, root: Path, rc: int) -> None:
+        """A stand-in `tools/check_versions.py` with a chosen exit code.
+
+        The real checker is a repo-only development tool; the gate ships to consuming
+        projects that do not have it. The lane therefore invokes it as a subprocess when
+        present rather than importing it, and this fixture exercises that contract.
+        """
+        td = root / "tools"
+        td.mkdir(parents=True, exist_ok=True)
+        (td / "check_versions.py").write_text(
+            "import sys\n"
+            "print('version mismatch' if len(sys.argv) > 1 else 'ok')\n"
+            f"sys.exit({rc})\n", encoding="utf-8")
+
+    def test_the_lane_is_bound_under_release(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell true")
+            self._tools(root, 0)
+            res = gate.run_gate(str(root), release=True)
+            names = [c["check"] for c in res["checks"]]
+            self.assertIn("versions", names)
+
+    def test_the_lane_is_absent_from_the_standard_gate(self) -> None:
+        """Between releases the version strings legitimately move; only a cut binds this.
+
+        Asserts the lane's ABSENCE only - a minimal fixture fails other standard lanes for
+        reasons that have nothing to do with this one.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell true")
+            self._tools(root, 1)
+            res = gate.run_gate(str(root))
+            self.assertNotIn("versions", [c["check"] for c in res["checks"]])
+
+    def test_the_bound_lane_cannot_be_deselected(self) -> None:
+        """A release verdict printed over the lane that defines it is false assurance.
+
+        Asserts the SELECTION guard fired and named this lane - not merely that the gate
+        came back red. A bare `assertFalse(ok)` passes on a fixture that fails other lanes
+        for unrelated reasons, and did: it survived a mutant that unbound the lane entirely.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell true")
+            self._tools(root, 1)
+            res = gate.run_gate(str(root), checks={}, release=True, skip=["versions"])
+            sel = [c for c in res["checks"] if c["check"] == "selection"]
+            self.assertTrue(sel, res["checks"])
+            self.assertIn("versions", sel[0]["detail"])
+            self.assertFalse(res["ok"], res)
+
+    def test_a_project_without_the_checker_reports_rather_than_fails(self) -> None:
+        """A consuming project has no tools/check_versions.py. The lane must say so, not
+        invent a pass and not fail a release for a development tool it never had."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell true")
+            res = gate.run_gate(str(root), release=True)
+            lane = [c for c in res["checks"] if c["check"] == "versions"][0]
+            # run_gate derives status from count, so a not-applicable lane reads pass -
+            # the honesty lives in the detail, which must say plainly that nothing ran.
+            self.assertFalse(lane["blocking"], lane)
+            self.assertIn("n/a", lane["detail"].lower())
+            self.assertIn("not present", lane["detail"].lower())
+
+
+class ReleaseChangelogMismatchTests(ReleaseGateTests):
+    """US0254 AC2: a CHANGELOG that disagrees with the shipped version fails the cut.
+
+    `--strict` is exactly the flag that adds the CHANGELOG comparison, so a release gate
+    that ran the checker without it would pass a mismatched changelog.
+    """
+
+    def _tools(self, root: Path, *, strict_fails: bool) -> None:
+        """A checker that fails ONLY when --strict is passed - the CHANGELOG-mismatch shape.
+        A lane that forgot the flag therefore goes green here, and the test catches it."""
+        td = root / "tools"
+        td.mkdir(parents=True, exist_ok=True)
+        body = ("import sys\n"
+                "strict = '--strict' in sys.argv\n"
+                "print('CHANGELOG topmost release does not match' if strict else 'ok')\n"
+                f"sys.exit(1 if (strict and {strict_fails}) else 0)\n")
+        (td / "check_versions.py").write_text(body, encoding="utf-8")
+
+    def test_a_changelog_mismatch_fails_the_release_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell true")
+            self._tools(root, strict_fails=True)
+            res = gate.run_gate(str(root), release=True)
+            self.assertFalse(res["ok"], res)
+            lane = [c for c in res["checks"] if c["check"] == "versions"][0]
+            self.assertEqual(lane["status"], "fail", lane)
+            self.assertTrue(lane["blocking"])
+
+    def test_the_lane_passes_strict_so_the_changelog_is_compared(self) -> None:
+        """The load-bearing assertion: without --strict this fixture exits 0 and the
+        mismatch above would go unnoticed."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell true")
+            self._tools(root, strict_fails=True)
+            lane = [c for c in gate.run_gate(str(root), release=True)["checks"]
+                    if c["check"] == "versions"][0]
+            self.assertIn("CHANGELOG", lane["detail"])
+
+    def test_agreeing_versions_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell true")
+            self._tools(root, strict_fails=False)
+            lane = [c for c in gate.run_gate(str(root), release=True)["checks"]
+                    if c["check"] == "versions"][0]
+            self.assertEqual(lane["status"], "pass", lane)
 
 
 if __name__ == "__main__":

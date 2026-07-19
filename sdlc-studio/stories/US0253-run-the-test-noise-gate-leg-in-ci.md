@@ -1,6 +1,6 @@
 # US0253: run the test-noise gate leg in CI and broaden the leak detector beyond one shape
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** the Lint workflow runs on a push or pull request
 - **Then** it invokes `tools/skill-tests.sh` as its own step, so a leaked diagnostic on a green suite fails the build
 - **Verify:** grep "skill-tests.sh" .github/workflows/lint.yml
+- **Verified:** yes (2026-07-19)
 
 ### AC2: The detector catches the common leak shapes
 
@@ -29,6 +30,7 @@
 - **When** a passing run prints `ERROR: msg`, `WARNING: msg`, `script: ERROR` or a traceback line
 - **Then** the noise leg exits non-zero and prints the offending lines, while an allowlisted intentional emission still passes
 - **Verify:** shell python3 -m unittest discover -s tools/tests -k NoiseShapeDetectorTests
+- **Verified:** yes (2026-07-19)
 
 ### AC3: tsd.md says where the gate actually runs
 
@@ -36,6 +38,7 @@
 - **When** the CI step is in place
 - **Then** tsd.md names CI as the enforcement point and the hook as the local echo of it
 - **Verify:** grep "test-noise.*runs in CI" sdlc-studio/tsd.md
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

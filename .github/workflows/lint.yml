@@ -43,8 +43,10 @@ jobs:
       - name: Lint (markdown, style, links)
         run: npm run lint
 
-      - name: Run script unit tests
-        run: npm test
+      - name: Run script unit tests (tools/skill-tests.sh adds the green-run noise gate)
+        run: |
+          bash tools/skill-tests.sh
+          python3 -m unittest discover -s tools/tests
 
       - name: Portable artefact gate (same gate the pre-commit hook runs)
         run: |
