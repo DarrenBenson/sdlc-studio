@@ -10,25 +10,32 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader of the CR index
+**I want** the Linked Epics column derived from the CR files' Decomposed-into headers
+**So that** the index stops asserting that no CR ever spawned an epic
 
 ## Acceptance Criteria
 
-### AC1: reconcile syncs the Linked Epics column from Decomposed-into headers (the seven existing links
+### AC1: reconcile detects an unpopulated Linked Epics cell as drift
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** reconcile syncs the Linked Epics column from Decomposed-into headers (the seven existing links appear, future drift detected), or the column is removed from the template and live index
-- **Verify:** {{executable check}}
+- **Given** a CR file carrying `> **Decomposed-into:** EPxxxx` whose index row reads `--`
+- **When** `reconcile.py detect` runs
+- **Then** it reports the cell as drift, naming the CR and the epic the file claims
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_reconcile.py -k LinkedEpicsCensusTests
 
-### AC2: refine/decompose keeps the chosen home consistent on future decompositions
+### AC2: reconcile apply syncs the column from the files
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** refine/decompose keeps the chosen home consistent on future decompositions
-- **Verify:** {{executable check}}
+- **Given** the same workspace with the drift detected
+- **When** `reconcile.py apply` runs
+- **Then** each row's Linked Epics cell carries the epic ids from its file, a CR with no Decomposed-into keeps `--`, and a second pass reports clean
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_reconcile.py -k LinkedEpicsApplyTests
+
+### AC3: A new decomposition writes the column at source
+
+- **Given** a CR with no epic yet
+- **When** `refine` decomposes it into an epic
+- **Then** the index row's Linked Epics cell is written with the new epic id in the same operation, so reconcile finds no drift immediately after
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_two_backlogs.py -k RefineLinkedEpicsColumnTests
 
 ## Revision History
 

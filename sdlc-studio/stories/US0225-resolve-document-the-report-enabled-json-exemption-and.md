@@ -10,25 +10,32 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer of a project that turned report rendering off
+**I want** the `--format json` exemption stated and tested
+**So that** I know whether data is still reachable, instead of discovering it by reading the source
 
 ## Acceptance Criteria
 
-### AC1: The json exemption is either removed (gate covers both formats) or documented as page-vs-data in
+### AC1: State the page-versus-data gate where the code claims otherwise
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** The json exemption is either removed (gate covers both formats) or documented as page-vs-data in the code comment, `rendering_enabled` docstring, the disabled notice text, and reference-scripts-domain.md
-- **Verify:** {{executable check}}
+- **Given** `report.enabled: false` suppresses only the text page while `--format json` still returns the whole composed report, and the printed notice says rendering is disabled outright
+- **When** a maintainer reads `rendering_enabled`, the gate in `cmd_show` and the notice it prints
+- **Then** all three say the same thing: the text page is not drawn, json data remains available, and measurement is never gated
+- **Verify:** grep "json data remains available" .claude/skills/sdlc-studio/scripts/sprint_report.py
 
-### AC2: A ConfigGateTest covers the json path against a disabled config, asserting whichever behaviour was
+### AC2: Test the json path against a disabled config
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** A ConfigGateTest covers the json path against a disabled config, asserting whichever behaviour was chosen
-- **Verify:** {{executable check}}
+- **Given** a project root whose config sets `report.enabled: false`
+- **When** `cmd_show` runs with `--format json`
+- **Then** a named test asserts the composed report is printed as json with no disabled notice, and the exit code is 0
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_sprint_report.ConfigGateJsonTests
+
+### AC3: Correct the scripts catalogue entry
+
+- **Given** `reference-scripts-domain.md` describes `report.enabled` as an unconditional gate and names no command surface
+- **When** a reader uses that entry to decide what the switch does and how to run the report
+- **Then** it scopes the gate to the text page, records that json data stays available, and cross-references the sprint command route
+- **Verify:** grep "/sdlc-studio sprint report" .claude/skills/sdlc-studio/reference-scripts-domain.md
 
 ## Revision History
 

@@ -10,32 +10,32 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator cutting a release
+**I want** the strict version check bound into the release gate's single exit code
+**So that** a CHANGELOG mismatch cannot reach a tag because nobody remembered a flag
 
 ## Acceptance Criteria
 
-### AC1: gate.py --release runs `check_versions` --strict (or an equivalent mechanical release step does)
+### AC1: The release gate binds the strict version lane
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** gate.py --release runs `check_versions` --strict (or an equivalent mechanical release step does), so a CHANGELOG version mismatch fails the release gate with one exit code
-- **Verify:** {{executable check}}
+- **Given** the strict version check is invoked by nothing executable, only by a prose checklist bullet
+- **When** `gate.py --release` runs
+- **Then** the strict version check is a bound blocking lane, listed in the gate's reported checks and folded into its one exit code; the plain gate leaves it advisory
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_gate.py -k ReleaseVersionStrictLaneTests
 
-### AC2: A test asserts gate --release fails on a CHANGELOG/version-home disagreement
+### AC2: A CHANGELOG disagreement fails the release gate
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** A test asserts gate --release fails on a CHANGELOG/version-home disagreement
-- **Verify:** {{executable check}}
+- **Given** a fixture whose topmost released CHANGELOG heading disagrees with the other version homes
+- **When** `gate.py --release` runs over it
+- **Then** the gate exits non-zero and names the disagreeing homes, and passes once they agree
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_gate.py -k ReleaseChangelogMismatchTests
 
-### AC3: tsd.md stage-4 and gate-table wording match the mechanical reality; the release-gate.md checklist
+### AC3: Docs match the mechanical reality
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** tsd.md stage-4 and gate-table wording match the mechanical reality; the release-gate.md checklist bullet becomes redundant confirmation rather than the only enforcement
-- **Verify:** {{executable check}}
+- **Given** tsd.md stage 4 and its gate table describe version consistency as a blocking release gate held by nothing
+- **When** the lane is wired
+- **Then** tsd.md names the strict check as run by the release gate, and the release-gate.md bullet reads as confirmation rather than the only enforcement
+- **Verify:** grep "check_versions --strict" sdlc-studio/tsd.md
 
 ## Revision History
 

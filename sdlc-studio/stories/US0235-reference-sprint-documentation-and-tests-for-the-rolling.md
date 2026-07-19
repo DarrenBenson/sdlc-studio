@@ -10,18 +10,25 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** agent onboarding to the sprint loop
+**I want** the rolling policy documented in the sprint reference and covered end to end
+**So that** the boundary sequence is discoverable from the docs and proven by a test rather than inferred from the code
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: Document the rolling policy in the sprint reference
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** `reference-sprint.md`
+- **When** a reader looks for how to run several cycles unattended
+- **Then** a "Rolling multi-sprint policy" section documents the standing-policy flags, the boundary sequence (close-down, fetch, regenerate, preview), the three stop causes, and that the whole thing is opt-in
+- **Verify:** grep "Rolling multi-sprint policy" .claude/skills/sdlc-studio/reference-sprint.md
+
+### AC2: Cover the boundary sequence end to end
+
+- **Given** a fixture repo with a backlog big enough for two cycles
+- **When** a two-cycle rolling run executes against it
+- **Then** the test asserts the boundary order - close-down, then fetch, then regenerate, then preview - and that both cycles left their own records
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint_rolling.py -k RollingEndToEndTests
 
 ## Revision History
 

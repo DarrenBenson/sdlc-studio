@@ -10,32 +10,32 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer reading a green test run
+**I want** the silence standard held by CI, not only by an opt-in hook
+**So that** a noisy-but-passing suite cannot merge and train readers to skim past ERROR
 
 ## Acceptance Criteria
 
-### AC1: CI runs the noise leg (skill-tests.sh or an equivalent step in lint.yml/npm test) so a leaked
+### AC1: CI runs the noise leg unconditionally
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** CI runs the noise leg (skill-tests.sh or an equivalent step in lint.yml/npm test) so a leaked diagnostic fails the build, not just the opt-in hook
-- **Verify:** {{executable check}}
+- **Given** the noise check runs only from the pre-commit hook's path-conditional leg, on clones that enabled hooks
+- **When** the Lint workflow runs on a push or pull request
+- **Then** it invokes `tools/skill-tests.sh` as its own step, so a leaked diagnostic on a green suite fails the build
+- **Verify:** grep "skill-tests.sh" .github/workflows/lint.yml
 
-### AC2: The detector catches the common leak shapes ('ERROR:', 'WARNING:', 'script: ERROR', traceback
+### AC2: The detector catches the common leak shapes
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** The detector catches the common leak shapes ('ERROR:', 'WARNING:', 'script: ERROR', traceback lines), with an allowlist for intentional output
-- **Verify:** {{executable check}}
+- **Given** the detector matches only a line beginning `ERROR` or `WARN` followed by a path
+- **When** a passing run prints `ERROR: msg`, `WARNING: msg`, `script: ERROR` or a traceback line
+- **Then** the noise leg exits non-zero and prints the offending lines, while an allowlisted intentional emission still passes
+- **Verify:** shell python3 -m unittest discover -s tools/tests -k NoiseShapeDetectorTests
 
-### AC3: tsd.md's wording matches where the gate actually runs
+### AC3: tsd.md says where the gate actually runs
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** tsd.md's wording matches where the gate actually runs
-- **Verify:** {{executable check}}
+- **Given** tsd.md asserts a test-noise gate leg holds the silence standard without saying where it runs
+- **When** the CI step is in place
+- **Then** tsd.md names CI as the enforcement point and the hook as the local echo of it
+- **Verify:** grep "test-noise.*runs in CI" sdlc-studio/tsd.md
 
 ## Revision History
 

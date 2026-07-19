@@ -10,34 +10,32 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator closing a sprint
+**I want** the sprint report reachable from the sprint command surface
+**So that** I can draw it without already knowing `sprint_report.py` exists
 
 ## Acceptance Criteria
 
-> Seeded from the request's full criteria list - redistribute across this epic's stories as you groom them.
+### AC1: Route `sprint report` to the report composer
 
-### AC1: The report has a command route (e.g. /sdlc-studio sprint report) with a help/ entry and a SKILL.md
+- **Given** `sprint_report.py show` composes the end-of-sprint report and `sprint.py` owns the sprint command surface
+- **When** an operator runs `sprint.py report --id RETROxxxx`, optionally with `--tokens`, `--elapsed-hours` or `--format json`
+- **Then** the same output `sprint_report.py show` would print is produced, every flag is passed through, and the composer's exit code is returned unchanged
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_sprint.SprintReportRouteTests
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** The report has a command route (e.g. /sdlc-studio sprint report) with a help/ entry and a SKILL.md table row
-- **Verify:** {{executable check}}
+### AC2: Document the route in the sprint help page
 
-### AC2: reference-retro.md's close ceremony includes the report step (drawn when report.enabled)
+- **Given** `help/sprint.md` is what a reader loads for the sprint command and today names no report command
+- **When** they read its Quick Reference and See Also
+- **Then** `/sdlc-studio sprint report --id RETROxxxx` is listed with a line saying when to run it and what it composes from
+- **Verify:** grep "/sdlc-studio sprint report" .claude/skills/sdlc-studio/help/sprint.md
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** reference-retro.md's close ceremony includes the report step (drawn when report.enabled)
-- **Verify:** {{executable check}}
+### AC3: List the route in SKILL.md
 
-### AC3: The scripts catalogue entry cross-references the command surface
-
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** The scripts catalogue entry cross-references the command surface
-- **Verify:** {{executable check}}
+- **Given** SKILL.md's command table is the router an agent reads before choosing a command
+- **When** an agent scans it for a way to report on a finished sprint
+- **Then** a row names the report route and points at `help/sprint.md`
+- **Verify:** grep "sprint report" .claude/skills/sdlc-studio/SKILL.md
 
 ## Revision History
 

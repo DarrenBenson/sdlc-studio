@@ -10,18 +10,25 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer auditing a codebase rather than its specification set
+**I want** a code profile alongside project, skill and repo, with the refute panel wired to every one of them
+**So that** the profile I pick changes the lenses, never whether plausible-but-wrong findings get filed
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: Ship the code lens pack
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** CR0255 promised repo, project and code profiles and only project and skill shipped
+- **When** an agent loads `templates/audit-profiles/code.md` as the profile for an audit run
+- **Then** the pack declares its code-level lenses (correctness, security smells, pattern violations, AC-vs-implementation drift), each with an adversarial question and what it hunts
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_audit_profiles.py -k CodeProfileLensTests
+
+### AC2: Every shipped profile is catalogued and panel-wired
+
+- **Given** four profiles on disk or in the reference: project, skill, repo and code
+- **When** the profile catalogue in `reference-audit.md#audit-profiles` and `help/audit.md` is checked against the packs that exist
+- **Then** each profile appears in both, no pack is documented that is absent (or absent that is documented), and none opts out of the shared refute panel
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_audit_profiles.py -k ProfileCatalogueTests
 
 ## Revision History
 

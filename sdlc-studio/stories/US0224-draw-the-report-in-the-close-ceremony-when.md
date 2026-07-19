@@ -10,18 +10,32 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator running the close ceremony
+**I want** the sprint report drawn as part of the close
+**So that** what the sprint delivered and cost is on the page I sign off, not a command I must remember
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: The close chain draws the report
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** a run with a filled retro whose close chain completes, in a project that has not turned rendering off
+- **When** `sprint.py close --retro RETROxxxx` finishes its chain
+- **Then** the composed sprint report is printed before the sign-off decision brief, and a report that cannot be composed is noted without failing the close
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_sprint.CloseDrawsReportTests
+
+### AC2: `report.enabled: false` skips the page, never the close
+
+- **Given** a project whose `.config.yaml` sets `report.enabled: false`
+- **When** the same close runs
+- **Then** the report page is omitted, the chain still completes, the brief still prints, and the exit code is the same as with rendering on
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_sprint.CloseReportDisabledTests
+
+### AC3: Document the report step in the close ceremony
+
+- **Given** `reference-sprint.md` describes the close chain step by step and mentions no report step
+- **When** a reader follows that description
+- **Then** it says the close draws the sprint report, where in the chain, and that `report.enabled` gates only the drawing
+- **Verify:** grep "draws the sprint report" .claude/skills/sdlc-studio/reference-sprint.md
 
 ## Revision History
 

@@ -10,25 +10,32 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** agent scanning a workspace
+**I want** every artefact-body read to survive a non-UTF-8 file
+**So that** one corrupt artefact from a crashed session cannot abort a whole pass
 
 ## Acceptance Criteria
 
-### AC1: route each artefact-body `read_text(encoding`=utf-8) through `read_text_safe` (index-file reads
+### AC1: Artefact-body reads route through read_text_safe
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** route each artefact-body `read_text(encoding`=utf-8) through `read_text_safe` (index-file reads stay loud)
-- **Verify:** {{executable check}}
+- **Given** shipped scripts still read an artefact body with a bare `read_text(encoding="utf-8")`
+- **When** the scripts tree is swept for artefact-body read sites
+- **Then** every one goes through `sdlc_md.read_text_safe`, and the sweep fails when a new bare read arrives
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_repo_hygiene.py -k BareArtefactReadSweepTests
 
-### AC2: a regression test drives a representative scanner with a non-UTF-8 artefact and asserts no crash
+### AC2: A non-UTF-8 artefact does not crash a scanner
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** a regression test drives a representative scanner with a non-UTF-8 artefact and asserts no crash
-- **Verify:** {{executable check}}
+- **Given** a fixture workspace holding an artefact whose body is not valid UTF-8
+- **When** each swept scanner runs over that workspace
+- **Then** it completes and names the file rather than raising UnicodeDecodeError
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_reconcile.py -k NonUtf8ScannerRegressionTests
+
+### AC3: Index-file reads stay loud
+
+- **Given** an `_index.md` that is unreadable or not valid UTF-8
+- **When** a scanner reads it
+- **Then** the failure surfaces rather than being silently defaulted to an empty body, so derived-index drift is never masked
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_reconcile.py -k LoudIndexReadTests
 
 ## Revision History
 

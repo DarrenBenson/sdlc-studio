@@ -21,8 +21,20 @@ The apply-signoff tail reads the retro id from run-state `scaffolded_retro` and 
 
 Fall back to the --retro argument the close was invoked with (it is already resolved and validated by `_resolve_retro)` rather than reading only `scaffolded_retro`, and when no id can be resolved say so on the tail instead of returning silently. The existing failure branch already prints 'velocity not recorded (...)' - the absent-id path should reach it rather than skipping the block.
 
+## Regression Test
+
+`test_ApplySignoffTail_records_velocity_from_the_close_retro_argument` reproduces the reported
+close: a retro scaffolded the documented way leaves run-state `scaffolded_retro` unset, and the
+tail must still record the row. A sibling test asserts the tail says so out loud when no id
+resolves from either source, so the silent-skip path cannot return uncovered.
+
+Run it with:
+`python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint.py -k ApplySignoffTailTests`
+(a citation, not a machine-executed `Verify:` line - only a story's Verify line is run).
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-19 | sdlc-studio | Filed |
+| 2026-07-19 | sdlc-studio | Fixed; regression test cited |

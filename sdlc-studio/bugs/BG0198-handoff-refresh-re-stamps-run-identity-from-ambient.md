@@ -21,8 +21,21 @@ handoff.refresh scopes the UNIT LIST via build(root, batch=batch) but `_meta_lin
 
 Pass the closing run's identity into refresh (or have it read the handoff's own recorded Run line) so `_meta_lines` describes the run the document belongs to. Guard `handoff_remaining` and the worklist write the same way. Consider also appending a Revision History row for the rewrite, and keeping 'Batch source' as recorded rather than flipping it to 'argument' on every refresh.
 
+## Regression Test
+
+`RefreshRunIdentityTests` in `.claude/skills/sdlc-studio/scripts/tests/test_handoff.py` drives the
+reported sequence end to end: open run A, generate its handoff, open run B, then refresh A's
+handoff. It asserts the refusal names both runs and that the document is left byte-identical, so a
+recurrence cannot pass as a successful refresh. A sibling test covers the same-run path the close
+actually takes, so the guard cannot be satisfied by refusing everything.
+
+Run it with:
+`python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_handoff.py -k RefreshRunIdentityTests`
+(a citation, not a machine-executed `Verify:` line - only a story's Verify line is run).
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-18 | sdlc-studio | Filed |
+| 2026-07-19 | sdlc-studio | Fixed; regression test cited |

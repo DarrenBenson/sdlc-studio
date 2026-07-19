@@ -10,34 +10,32 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** design owner accepting an RFC
+**I want** the accept step to refuse mechanically while a decision is still Open
+**So that** an RFC cannot be accepted, decomposed and delivered on an undecided design
 
 ## Acceptance Criteria
 
-> Seeded from the request's full criteria list - redistribute across this epic's stories as you groom them.
+### AC1: Refuse RFC to Accepted while any decision row is Open
 
-### AC1: transition.py refuses RFC -> Accepted while any Open Decision row is Open, with a recorded-override
+- **Given** an RFC in Draft or In Review whose Open Decisions table carries at least one row with status Open
+- **When** a transition to Accepted is attempted
+- **Then** transition.py refuses, naming each still-Open decision by its number, and the RFC keeps its current status
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_transition.py -k RfcOpenDecisionGateTests
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** transition.py refuses RFC -> Accepted while any Open Decision row is Open, with a recorded-override escape consistent with the gate doctrine
-- **Verify:** {{executable check}}
+### AC2: Escape only through a recorded override
 
-### AC2: `file_finding.py`'s RFC template derives decision rows from the finding's real options instead of
+- **Given** an RFC with an Open decision row and a recorded `> **Decision-Override:**` field giving the reason
+- **When** the same transition to Accepted is attempted
+- **Then** it succeeds, reporting the override reason, and a bare `--force` without the recorded field does not bypass the gate
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_transition.py -k RfcDecisionOverrideTests
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** `file_finding.py`'s RFC template derives decision rows from the finding's real options instead of emitting the content-free boilerplate row
-- **Verify:** {{executable check}}
+### AC3: Report an already-Accepted RFC that still carries an Open decision
 
-### AC3: RFC0035/0037/0038/0039's D1 rows and RFC0042's D2 are closed with what actually shipped, with
-
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** RFC0035/0037/0038/0039's D1 rows and RFC0042's D2 are closed with what actually shipped, with revision rows
-- **Verify:** {{executable check}}
+- **Given** an RFC already in Accepted whose decision table still has an Open row
+- **When** validate.py runs over it
+- **Then** it reports the RFC as a failure, naming the Open rows, so the gate covers files that predate it as well as new transitions
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_validate.py -k AcceptedRfcOpenDecisionTests
 
 ## Revision History
 

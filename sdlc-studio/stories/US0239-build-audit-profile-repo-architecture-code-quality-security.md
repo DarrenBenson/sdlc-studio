@@ -10,20 +10,32 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** developer evaluating sdlc-studio on a repo that has never run it
+**I want** the three-leg weakness hunt to run as `audit --profile repo`, refute panel included
+**So that** there is one weakness-hunt under one name, and my findings survive an independent panel before they are filed
 
 ## Acceptance Criteria
 
-> Seeded from the request's full criteria list - redistribute across this epic's stories as you groom them.
+### AC1: Declare the three repo legs as a loadable lens pack
 
-### AC1: `review generate` is gone from the script surface and the help, `audit --profile repo` carries
+- **Given** the architecture, code-quality and defensive-security legs the retired `review generate` ran
+- **When** an agent loads `templates/audit-profiles/repo.md` as the profile for an audit run
+- **Then** the pack declares one lens row per leg, each with its adversarial question and what it hunts, in the same declarative shape as `audit-profiles/skill.md`
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_audit_profiles.py -k RepoProfileLensTests
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** `review generate` is gone from the script surface and the help, `audit --profile repo` carries
-- **Verify:** {{executable check}}
+### AC2: Resolve `--profile repo` to the pack, refuse an unknown name
+
+- **Given** `audit.py`, which today carries only the tranche-readiness check and no profile surface
+- **When** the profile `repo` is resolved, and again when a name no pack declares is resolved
+- **Then** `repo` resolves to `templates/audit-profiles/repo.md` and reports its three lenses plus the refute threshold; the unknown name exits non-zero naming the packs that do exist, rather than running an empty lens set
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_audit_profiles.py -k ProfileResolveTests
+
+### AC3: Carry the remediation-only security posture into the pack
+
+- **Given** the security wording that lived in `review_generate.py` as `SECURITY_POLICY`, on a script US0241 deletes
+- **When** the repo pack's security lens is read by a finder agent
+- **Then** the pack states the posture verbatim: location, weakness class, realistic impact and a concrete fix, no proof-of-concept payload, and a committed secret reported by location plus rotation with the value left where it is
+- **Verify:** grep "Never copy a secret value into any artefact" .claude/skills/sdlc-studio/templates/audit-profiles/repo.md
 
 ## Revision History
 

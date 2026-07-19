@@ -10,18 +10,38 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator opening `/sdlc-studio help`
+**I want** the catalogue grouped by the process spine rather than by the order features
+were added
+**So that** the path from raising work to shipping it is readable off the page
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: Group the catalogue by the spine stages
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** `help/help.md` groups commands under accreted headings such as "Sprint,
+  Product Layer & Maintenance" and "Utilities"
+- **When** the "All Commands" catalogue is rewritten around the spine
+- **Then** it carries one section per stage: Raise, Break Down, Sprint and Review,
+  Levers, Support and Utility
+- **Verify:** shell for h in "Raise" "Break Down" "Sprint and Review" "Levers" "Support" "Utility"; do grep -q "^### $h" .claude/skills/sdlc-studio/help/help.md || exit 1; done
+
+### AC2: Every command sits in the group the audit maps it to
+
+- **Given** `command_audit.SPINE` is the curated map from command to spine stage
+- **When** the rewritten sections are populated
+- **Then** each `/sdlc-studio <cmd>` entry appears under the section matching its SPINE
+  category, and no command is listed under two sections, so the catalogue and the audit
+  cannot disagree
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_help_structure.HelpSpineGroupingTests
+
+### AC3: The document levers stay paramount
+
+- **Given** the PRD, TRD, TSD and personas are the operator's top-level levers
+- **When** the rewritten catalogue is read top to bottom
+- **Then** the Levers section precedes Support and Utility and names `prd`, `trd`,
+  `tsd` and `persona`, so the levers are reached before the incidental tooling
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_help_structure.HelpLeverPrecedenceTests
 
 ## Revision History
 

@@ -10,18 +10,28 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer closing the cleanup slice
+**I want** the checked-in command audit regenerated to zero drift with the link and
+skill-spec guards green
+**So that** the evidence that the surface is clean is current, not a stale snapshot
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: The regenerated audit reports zero drift
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** the promotions and retirements have landed in SKILL.md and `help/help.md`
+- **When** `command_audit.py --write --check-tools` regenerates
+  `sdlc-studio/reviews/command-audit.md`
+- **Then** its summary line reads zero unmapped, zero drift and zero broken tools
+- **Verify:** grep "0 unmapped, 0 drift, 0 broken tool" sdlc-studio/reviews/command-audit.md
+
+### AC2: The checked-in report matches a fresh run
+
+- **Given** a generated report can drift from the tree it describes
+- **When** the audit is regenerated over the current working tree
+- **Then** the file is byte-identical to the committed copy, so the report cannot claim
+  a surface state the tree no longer has
+- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/command_audit.py --write --check-tools && git diff --exit-code -- sdlc-studio/reviews/command-audit.md
 
 ## Revision History
 

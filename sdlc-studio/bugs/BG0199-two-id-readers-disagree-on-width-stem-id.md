@@ -21,8 +21,20 @@
 
 Settle one width rule for meta ids and share it: either widen `_STEM_ID_RE` to \\d{3,} or narrow `_meta_nums` to 4, and put the chosen regex in lib/`sdlc_md.py` so the allocator and the resolver cannot drift again.
 
+## Regression Test
+
+`test_a_legacy_three_digit_id_resolves` drives the reported inconsistency directly: a legacy
+three-digit retro file is written, then resolved in both the dashed and undashed form. A sibling
+test (`test_a_three_digit_id_still_does_not_match_a_longer_one`) pins the boundary, so widening
+the width floor cannot regress into matching a longer id.
+
+Run it with:
+`python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_retro.py -k RetroIdIsResolvedInEitherForm`
+(a citation, not a machine-executed `Verify:` line - only a story's Verify line is run).
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-18 | sdlc-studio | Filed |
+| 2026-07-19 | sdlc-studio | Fixed; regression test cited |

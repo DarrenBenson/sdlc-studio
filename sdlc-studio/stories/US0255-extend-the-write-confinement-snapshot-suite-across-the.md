@@ -10,25 +10,25 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer trusting the TSD's integration target
+**I want** every shipped writer held to a before/after write-confinement snapshot
+**So that** a script that writes outside its named target is caught by the suite, not by a corrupted workspace
 
 ## Acceptance Criteria
 
-### AC1: Confinement snapshots added for the major writers (artifact.py, transition.py, reconcile apply
+### AC1: The major writers carry confinement snapshots
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** Confinement snapshots added for the major writers (artifact.py, transition.py, reconcile apply, telemetry.py, retro.py, critic record, decisions.py, handoff.py, `sprint_report.py)` in SideEffectConfinementTests
-- **Verify:** {{executable check}}
+- **Given** the confinement suite snapshots exactly one writer (ledger.py), leaving the rest unasserted
+- **When** each of artifact.py, transition.py, reconcile apply, telemetry.py, retro.py, critic record, decisions.py, handoff.py and sprint_report.py runs against a fixture workspace
+- **Then** a before/after snapshot asserts it touched only its named target and left every other path byte-identical
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_confinement.py -k MajorWriterConfinementTests
 
-### AC2: A roster sweep fails when a side-effecting script has no confinement test (with an explicit
+### AC2: A roster sweep forces new writers in
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** A roster sweep fails when a side-effecting script has no confinement test (with an explicit allowlist), or tsd.md:170 is downgraded with a Known-gap caveat matching the unit row's honesty
-- **Verify:** {{executable check}}
+- **Given** a side-effecting script arrives with no confinement test
+- **When** the roster sweep enumerates the writers on disk against the tests that cover them
+- **Then** it fails and names the uncovered script, and an entry in the explicit allowlist is the only way past
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_confinement.py -k ConfinementRosterSweepTests
 
 ## Revision History
 
