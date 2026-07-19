@@ -150,3 +150,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 - Tokens: not-yet-captured for the interactive build; the two review rounds cost ~115,000 and
   ~117,000 subagent tokens. Supply the harness total with `retro.py accuracy --tokens N`.
 - Duration: one session. Critic rejects: 1 (round 1 REJECT on one MAJOR, round 2 APPROVE).
+
+## Handoff
+
+- [HO-0010](../handoffs/HO0010-the-review-loop-is-bounded-and-the-close.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

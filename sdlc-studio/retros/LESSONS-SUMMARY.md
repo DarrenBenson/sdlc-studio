@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0129: **A fix's own argument constrains its implementation.** BG0208's case is that the archive is the permanent record - so re-stamping...**
+- **L-0128: **When two code paths answer the same question, extract before the second answer drifts.** The H1-strip rule had three private copies and...**
+- **L-0127: **A test that passes for an incidental reason is not coverage.** Twice this sprint a guard looked covered because the path around it...**
 - **L-0126: A fail-closed fallback is not the main path with one rule removed**
 - **L-0125: Round 2 findings are usually created by the round 1 repair**
 - **L-0124: File the friction, not just the blockers**
