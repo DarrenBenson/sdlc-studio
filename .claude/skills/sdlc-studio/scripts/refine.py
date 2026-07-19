@@ -66,17 +66,44 @@ def _request_criteria(text: str) -> list[str]:
     return _CRITERION_RE.findall(_section(text, "Acceptance Criteria"))
 
 
-def _seed_acs(story_path: Path, criteria: list[str], redistribute_note: bool) -> None:
+def _seed_epic_criteria(epic_path: Path, criteria: list[str]) -> None:
+    """Carry a multi-story request's criteria onto the EPIC, as unticked criteria.
+
+    They describe the request whole, and the epic is what the request became. Putting them
+    on one of the stories claimed a distribution nothing had worked out - see `_seed_acs`.
+    Written as `- [ ]` rather than AC blocks because an epic-level criterion is not
+    executable on its own; each story's ACs are authored against its own slice at grooming.
+    """
+    text = epic_path.read_text(encoding="utf-8")
+    section = ("## Acceptance Criteria (Epic Level)\n\n"
+               + "".join(f"- [ ] {c}\n" for c in criteria)
+               + "\n> Carried from the request. Author each story's own ACs against its\n"
+                 "> slice while grooming - these are the epic's completion bar, not any\n"
+                 "> single story's.\n\n")
+    # Callable replacement: criterion text is DATA, never a regex template (a criterion
+    # holding \1 or C:\temp must land verbatim rather than expand or crash the mint).
+    if "## Revision History" in text:
+        new = re.sub(r"(?=## Revision History)", lambda m: section, text, count=1)
+    else:
+        new = text.rstrip("\n") + "\n\n" + section
+    sdlc_md.atomic_write(epic_path, new)
+
+
+def _seed_acs(story_path: Path, criteria: list[str]) -> None:
     """Replace the story's placeholder AC scaffold with one AC block per request
     criterion: the criterion is the title and the Then; Given/When and the Verify
     stay explicit placeholders - seeding TRANSCRIBES what the request already
     states, it never fabricates executability (validate keeps flagging the
-    placeholders until the author fills them)."""
+    placeholders until the author fills them).
+
+    Called for a SINGLE-story breakdown only, where the story is the whole request. The
+    multi-story case goes to `_seed_epic_criteria`; it used to come here too, with a
+    `redistribute_note` flag adding a "redistribute these while grooming" banner. The flag
+    is gone with the behaviour: a note excusing wrong criteria is not a substitute for not
+    writing them.
+    """
     text = story_path.read_text(encoding="utf-8")
     blocks = []
-    if redistribute_note:
-        blocks.append("> Seeded from the request's full criteria list - redistribute "
-                      "across this epic's stories as you groom them.\n")
     for i, criterion in enumerate(criteria, 1):
         title = _ac_heading(criterion)
         blocks.append(f"### AC{i}: {title}\n\n"
@@ -122,12 +149,14 @@ def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
             # must be machine-resolvable, not only in the title. A secondary traceability link -
             # the story's Parent stays the epic, so derivation and the link gates are untouched.
             _insert_after_status(Path(s["path"]), f"> **Delivers:** {rid}")
-            # seed the FIRST story with the request's criteria (all of them - a
-            # multi-story breakdown redistributes during grooming); later stories
-            # keep the bare scaffold
-            if idx == 0 and seed_criteria:
-                _seed_acs(Path(s["path"]), seed_criteria,
-                          redistribute_note=len(stories) > 1)
+            # A SINGLE story is the request, so it takes the criteria. A multi-story
+            # breakdown cannot know which criterion belongs to which story, so it seeds
+            # none of them and the epic carries the list instead (below). Seeding them all
+            # onto story one read as authored while being wrong.
+            if idx == 0 and seed_criteria and len(stories) == 1:
+                _seed_acs(Path(s["path"]), seed_criteria)
+        if seed_criteria and len(stories) > 1:
+            _seed_epic_criteria(epic_path, seed_criteria)
         _insert_after_status(epic_path, f"> **Parent:** {rid}")
         _insert_after_status(epic_path, f"> **Derived Point Total:** {total}")
         _write_decomposed(rpath, [*existing_children, epic_id])
@@ -202,8 +231,12 @@ def _decompose_into(repo_root, rid: str, rpath: Path, epic_id: str,
             minted.append(Path(s["path"]))
             story_ids.append(s["id"])
             _insert_after_status(Path(s["path"]), f"> **Delivers:** {rid}")  # originating request
-            if idx == 0 and seed_criteria:
-                _seed_acs(Path(s["path"]), seed_criteria, redistribute_note=len(stories) > 1)
+            # Same rule as `_decompose`: one story is the request and takes the criteria;
+            # several cannot be told apart, so the shared epic carries them.
+            if idx == 0 and seed_criteria and len(stories) == 1:
+                _seed_acs(Path(s["path"]), seed_criteria)
+        if seed_criteria and len(stories) > 1:
+            _seed_epic_criteria(epic_path, seed_criteria)
         # Back-link: the shared epic names THIS request as a parent too (it already names the one
         # it was minted for). A batch epic carries one `Parent:` line per request it delivers, so
         # the child->parent link resolves both ways for each - the symmetry the link gates check.

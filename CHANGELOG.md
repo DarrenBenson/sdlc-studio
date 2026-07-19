@@ -21,6 +21,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`refine` no longer gives one story its siblings' acceptance criteria (BG0205).** Decomposing a
+  request seeded the FIRST minted story with the request's entire criteria list and left every
+  sibling a bare `{{define}}` scaffold, under a note saying to redistribute them while grooming. The
+  note documented the behaviour without its cost: the wrong criteria read as authored, so a groomer
+  who trusts them writes tests for the wrong story, while the sibling that lost its criteria looks
+  merely empty rather than mis-seeded. Two grooming agents hit it in one batch and both
+  redistributed by hand. A multi-story breakdown cannot know which criterion belongs to which story,
+  so it no longer guesses: every story keeps its scaffold, and the request's criteria are carried to
+  the **epic** as an `Acceptance Criteria (Epic Level)` section, which is where a whole request's
+  completion bar belongs. A single-story breakdown is unchanged - that story IS the request, so it
+  still takes the criteria. The `redistribute_note` flag is gone with the behaviour, because a note
+  excusing wrong criteria is not a substitute for not writing them. Reproduced and re-verified in a
+  clean workspace outside this repo: four criteria decomposed into three stories previously put all
+  four on story one, and now put none on any story and all four on the epic.
+
 - **Repairs from the closing adversarial review of RUN-01KXVYGR.** Two MAJOR and four MINOR
   findings, every one a false negative in something this sprint shipped, and each contradicted by
   prose written to justify it. `reconcile.apply_linked_epics` split table rows on every pipe, so an

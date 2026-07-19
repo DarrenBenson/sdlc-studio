@@ -1,6 +1,7 @@
 # BG0205: refine --into mis-distributes a request's criteria onto one sibling story
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (two RED-first tests; reproduced and re-verified end to end in a clean workspace outside this repo)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/refine.py

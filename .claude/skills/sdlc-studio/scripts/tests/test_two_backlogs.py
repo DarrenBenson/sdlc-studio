@@ -973,18 +973,49 @@ class SeedAcsTests(unittest.TestCase):
             self.assertIn("{{executable check}}", text)    # Verify stays the author's job
             self.assertNotIn("### AC1: {{define}}", text)  # scaffold replaced
 
-    def test_seed_acs_multi_story_seeds_first_with_note(self) -> None:
+    def test_multi_story_puts_no_criteria_on_any_story(self) -> None:
+        """BG0205: seeding story one with the WHOLE list gave it its siblings' work.
+
+        The previous behaviour put every criterion on the first minted story and left the
+        rest bare, with a note saying to redistribute while grooming. The note documented
+        the behaviour but not its cost: the wrong criteria read as authored, so a groomer
+        who trusts them writes tests for the wrong story, and the sibling that lost its
+        criteria looks merely empty rather than mis-seeded. Two grooming agents hit this in
+        one batch and both redistributed by hand.
+
+        A multi-story breakdown cannot know which criterion belongs to which story, so it
+        no longer guesses. Every story keeps its scaffold and the criteria go to the epic.
+        """
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._cr_with_acs(root)
             res = refine.refine(root, "CR0001", "The epic",
                                 [("First", 2, None), ("Second", 2, None)])
-            first = self._story_text(root, res)
-            self.assertIn("### AC1: the first checkable criterion", first)
-            self.assertIn("redistribute", first.lower())
-            second_id = sdlc_md.children_of(root, res["epic"])[1][0]
-            second = sdlc_md.find_by_id(root, second_id)[0].read_text(encoding="utf-8")
-            self.assertIn("### AC1: {{define}}", second)   # untouched scaffold
+            for idx, (sid, _) in enumerate(sdlc_md.children_of(root, res["epic"])):
+                text = sdlc_md.find_by_id(root, sid)[0].read_text(encoding="utf-8")
+                with self.subTest(story=idx):
+                    self.assertIn("### AC1: {{define}}", text)
+                    self.assertNotIn("the first checkable criterion", text)
+                    self.assertNotIn("the second criterion with detail", text)
+                    # the redistribute note existed only to excuse the mis-seeding
+                    self.assertNotIn("redistribute", text.lower())
+
+    def test_multi_story_seeds_the_epic_with_the_requests_criteria(self) -> None:
+        """The criteria must not be LOST while not being mis-assigned.
+
+        They describe the request as a whole, which is exactly what the epic is, so the
+        epic carries them and each story's ACs are authored against its own slice at
+        grooming. Without this the fix would trade a wrong answer for a missing one.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr_with_acs(root)
+            res = refine.refine(root, "CR0001", "The epic",
+                                [("First", 2, None), ("Second", 2, None)])
+            epic = sdlc_md.find_by_id(root, res["epic"])[0].read_text(encoding="utf-8")
+            self.assertIn("## Acceptance Criteria (Epic Level)", epic)
+            self.assertIn("- [ ] the first checkable criterion", epic)
+            self.assertIn("- [ ] the second criterion with detail", epic)
 
     def test_seeded_ac_heading_from_a_long_criterion_has_no_trailing_punctuation(self) -> None:
         # BG0178: a long criterion truncated into the AC heading must not end in '...' (MD026),
