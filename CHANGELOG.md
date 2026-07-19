@@ -941,6 +941,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A test module that imports a sibling helper runs under both forms (BG0206).**
+  `test_reconcile` imported `loader` without first putting the tests directory on `sys.path`, the
+  one line every other such module carries. Under `unittest discover -s tests` that resolves; under
+  `unittest tests.test_reconcile` it raises `ModuleNotFoundError: loader`, which says nothing about
+  the module being run - it cost a diagnosis cycle at a sprint close, where the mutation gate
+  refused on the resulting red baseline and its remedy text pointed at a stranded mutant from a
+  killed run, a plausible and entirely wrong lead. 154 tests now run under the module form that
+  previously produced one error. A new hygiene sweep imports every sibling-importing module in its
+  own interpreter, so the next module cannot drift the same way - one process per module
+  deliberately, because importing them together lets the first module's `sys.path` insert mask
+  every module after it.
 - **The confinement roster sweep sees `path.open(mode)` (BG0202).** `_write_surface` read a call's
   mode from `args[1]`, which is where the builtin `open(path, mode)` puts it. The `Path` method is
   already bound to its path, so `path.open('a')` puts the mode at `args[0]` and was not matched at

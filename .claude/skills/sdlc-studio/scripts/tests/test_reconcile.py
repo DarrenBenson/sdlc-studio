@@ -2420,6 +2420,7 @@ class LinkedEpicsApplyTests(unittest.TestCase):
             self.assertEqual(idx.read_text(encoding="utf-8"), before)
 
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the sibling helper
 import loader  # noqa: E402  - the shared script importer, used by the sweep tests below
 
 NOT_UTF8 = b"# US0003: corrupt\n\n> **Status:** Draft\n\xff\xfe not utf8\n"

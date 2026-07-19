@@ -62,6 +62,68 @@ class DirectRunParityTests(unittest.TestCase):
 
 SCRIPTS_DIR = TESTS_DIR.parent
 
+#: Helper modules that live beside the tests rather than under `scripts/`. Importing one by
+#: its bare name only resolves when the tests directory is on `sys.path`, which
+#: `unittest discover -s tests` arranges and `unittest tests.test_x` does not.
+SIBLING_HELPERS = ("loader", "gitutil")
+
+
+def _modules_importing_a_sibling() -> list[str]:
+    """Test modules with a top-level `import loader` / `import gitutil`.
+
+    AST-based, so a helper named inside a string or a comment does not count. These are
+    exactly the modules that need the tests directory on `sys.path` before the import.
+    """
+    out = []
+    for path in sorted(TESTS_DIR.glob("test_*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import) and any(
+                    a.name in SIBLING_HELPERS for a in node.names):
+                out.append(path.stem)
+                break
+    return out
+
+
+class SiblingImportRunnabilityTests(unittest.TestCase):
+    """A test module must import under BOTH run forms, not just under discover.
+
+    `unittest discover -s tests` puts the tests directory on `sys.path`, so a bare
+    `import loader` resolves; `unittest tests.test_x` does not, so the same line raises
+    ModuleNotFoundError naming the helper. The failure says nothing about the module the
+    operator was actually running, and it cost a diagnosis cycle during a sprint close when
+    the mutation gate was handed the module form, refused on a red baseline, and pointed at
+    a stranded mutant from a killed run - a plausible and completely wrong lead (BG0206).
+    """
+
+    def test_the_census_finds_the_modules_it_is_meant_to_guard(self) -> None:
+        # A census that silently returned nothing would make the sweep below vacuous.
+        found = _modules_importing_a_sibling()
+        self.assertGreater(len(found), 5, "the sibling-import census has stopped detecting")
+        self.assertIn("test_reconcile", found)
+
+    def test_every_sibling_importing_module_imports_by_module_name(self) -> None:
+        # ONE PROCESS PER MODULE, deliberately. Importing them all in a single process
+        # passes vacuously: the first module to run its own `sys.path.insert` puts the
+        # tests directory on the path and registers `loader` in sys.modules, so every
+        # module imported after it succeeds regardless of its own setup. That is the
+        # incidental-pass trap this sweep exists to catch, so each import gets a fresh
+        # interpreter. cwd is scripts/ - the run form that omits tests/ from sys.path.
+        bad = []
+        for mod in _modules_importing_a_sibling():
+            r = subprocess.run(
+                [sys.executable, "-B", "-c", f"import importlib; importlib.import_module('tests.{mod}')"],
+                capture_output=True, text=True, timeout=120, cwd=str(SCRIPTS_DIR))
+            if r.returncode != 0:
+                last = (r.stderr.strip().splitlines() or ["(no output)"])[-1]
+                bad.append(f"{mod}: {last}")
+        self.assertEqual(
+            bad, [],
+            "these test modules import a sibling helper but cannot be run as "
+            f"`python3 -m unittest tests.<name>`:\n" + "\n".join(bad) + "\n"
+            "Fix: insert the tests directory on sys.path immediately before the import, as "
+            "the other modules do.")
+
 # A bare read: `<expr>.read_text(...)`. `read_text_safe(` never matches - the character after
 # `read_text` is `_`, not `(`.
 BARE_READ_RE = re.compile(r"\.read_text\s*\(")

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 5 |
+| Open | 4 |
 | In Progress | 0 |
-| Fixed | 124 |
+| Fixed | 125 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -172,7 +172,7 @@
 | [BG0203](BG0203-mutation-survivors-in-the-new-audit-profile-parser.md) | mutation survivors in the new audit profile parser: profile_names and the lens-table break are unpinned | Open | Low | 2026-07-19 | 2026-07-19 |
 | [BG0204](BG0204-retro-scaffolding-builds-an-h1-from-the-sprint.md) | retro scaffolding builds an H1 from the Sprint Goal without stripping its trailing full stop | Fixed | Low | 2026-07-19 | 2026-07-19 |
 | [BG0205](BG0205-refine-into-mis-distributes-a-request-s-criteria.md) | refine --into mis-distributes a request's criteria onto one sibling story | Fixed | High | 2026-07-19 | 2026-07-19 |
-| [BG0206](BG0206-test-reconcile-cannot-be-run-by-module-name.md) | test_reconcile cannot be run by module name, only via discover, and the failure is an unrelated ImportError | Open | Low | 2026-07-19 | 2026-07-19 |
+| [BG0206](BG0206-test-reconcile-cannot-be-run-by-module-name.md) | test_reconcile cannot be run by module name, only via discover, and the failure is an unrelated ImportError | Fixed | Low | 2026-07-19 | 2026-07-19 |
 | [BG0207](BG0207-the-rfc-accept-gate-can-tell-the-operator.md) | the RFC accept gate can tell the operator one decision is open when two are | Open | Low | 2026-07-19 | 2026-07-19 |
 | [BG0208](BG0208-a-successfully-closed-run-keeps-outcome-stopped-so.md) | a successfully closed run keeps outcome=stopped, so a goal-reached sprint reads as abandoned in the archive | Fixed | Medium | 2026-07-19 | 2026-07-19 |
 | [BG0209](BG0209-seven-shipped-tests-read-this-repo-s-own.md) | seven shipped tests read this repo's own story files, so the payload cannot pass its own suite anywhere else | Open | Low | 2026-07-19 | 2026-07-19 |

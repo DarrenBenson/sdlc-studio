@@ -1,6 +1,7 @@
 # BG0206: test_reconcile cannot be run by module name, only via discover, and the failure is an unrelated ImportError
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (reproduced by module name, fixed, and 154 tests now run under the form that raised ImportError)
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py
