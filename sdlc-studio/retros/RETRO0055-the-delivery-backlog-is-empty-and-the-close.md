@@ -38,7 +38,8 @@ forecast was recorded and the harness totals are not retrievable days later.
 - **BG0211** (2 pts) - a dead breakdown id no longer owes a close no close can give, and the cause
   is reported rather than silently forgiven.
 
-Suite **3,203 green**, drift 0, every commit through the full gate. Delivery backlog: 1 (BG0212,
+Suite **3,208 green** after the review repairs (3,203 at first close, plus five tests added in the
+two review rounds), drift 0, every commit through the full gate. Delivery backlog: 1 (BG0212,
 filed by this run).
 
 ## Blocked / deferred
@@ -204,3 +205,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
   rounds cost ~113k and ~141k subagent tokens, which the point-based forecast does not model at
   all · Duration: one interactive session · Critic rejects: 1 (REJECT at round 1 on a MAJOR, APPROVE
   at round 2 with three new MINORs, all repaired)
+
+## Handoff
+
+- [HO-0011](../handoffs/HO0011-the-delivery-backlog-is-empty-and-every-writer.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
