@@ -954,6 +954,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`audit.py`'s command and predicate branches are pinned (BG0212).** A full 190-mutant
+  enumeration went from 15 survivors to 6. Nine were real: `cmd_profile`'s output branches had
+  no test asserting what the command PRINTS, three predicate fall-through branches were tested
+  for their true case only, and `cmd_check`'s status-query path was exercised nowhere - so
+  neutralising its id selection left the batch empty, which audits clean and exits 0, a false
+  green over work never examined. Two of those needed `assertIs(..., False)` rather than
+  `assertFalse`, since a stub returning `None` is falsy and passed on a mutant that had broken
+  the declared `-> bool` contract. The remaining 6 are equivalent mutants - unobservable
+  initialisers, and `return 0` where `SystemExit(None)` exits 0 identically - and are recorded
+  as such rather than chased with tests asserting what no caller can observe.
 - **`transition --dry-run` gives the same answer as the real run (BG0213).** The dry-run did not
   evaluate the bug-depth, depth-parity or AC-verify gates, so a bug with no `Verification depth`
   field was reported as `would set BG0001 Open -> Fixed` while the real run blocked it. A dry-run

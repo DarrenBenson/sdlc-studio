@@ -663,5 +663,89 @@ class FindingKindVocabularyTests(unittest.TestCase):
             "FINDING_KINDS drifted from the issue literals audit_unit appends")
 
 
+class PredicateFallThroughTests(unittest.TestCase):
+    """The `return False` branches the mutation gate found unpinned (BG0212).
+
+    Each of these predicates was tested for its TRUE case only, so the fall-through - the
+    common case in practice, since most units are fine - could be inverted without a test
+    noticing. A predicate whose negative answer is unpinned is half a predicate.
+    """
+
+    def test_weak_verify_is_false_when_every_verifier_is_sound(self) -> None:
+        audit = _load()
+        text = ("## Acceptance Criteria\n\n### AC1: x\n"
+                "- **Verify:** pytest tests/test_thing.py -k specific_case\n")
+        # assertIs, not assertFalse: these are annotated `-> bool`, and a stub returning
+        # None is falsy, so assertFalse passes on a mutant that broke the contract.
+        self.assertIs(audit._weak_verify(text), False)
+
+    def test_missing_regression_test_is_false_when_nothing_mentions_a_test(self) -> None:
+        # The early return: a unit that never mentions testing is not accused of MISSING a
+        # regression test. Inverting this would flag every doc-only unit.
+        audit = _load()
+        self.assertIs(audit._missing_regression_test("# BG0001: x\n\nJust prose.\n"), False)
+
+    def test_already_satisfied_is_false_when_the_report_has_no_such_story(self) -> None:
+        # The loop's fall-through, reached whenever the verify-report does not mention the
+        # unit - which is most of the time.
+        audit = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "sdlc-studio" / ".local" / "verify-report.json").write_text(
+                '{"stories": {"US9999-other": {"verified": 3, "failed": 0, "stale": 0}}}',
+                encoding="utf-8")
+            self.assertIs(audit._already_satisfied(root, "US0001"), False)
+
+    def test_already_satisfied_is_true_only_on_a_clean_matching_entry(self) -> None:
+        # The positive branch beside it, so the test above cannot pass by the predicate
+        # simply always returning False.
+        audit = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "sdlc-studio" / ".local" / "verify-report.json").write_text(
+                '{"stories": {"US0001-x": {"verified": 3, "failed": 0, "stale": 0}}}',
+                encoding="utf-8")
+            self.assertIs(audit._already_satisfied(root, "US0001"), True)
+
+
+class CheckSelectionModeTests(unittest.TestCase):
+    """`audit check` takes ids OR a status query, never both and never neither (BG0212)."""
+
+    def _run(self, *argv):
+        import subprocess
+        skill = Path(__file__).resolve().parent.parent
+        return subprocess.run([sys.executable, "-B", str(skill / "audit.py"), *argv],
+                              capture_output=True, text=True)
+
+    def test_neither_ids_nor_a_query_is_refused(self) -> None:
+        proc = self._run("check")
+        self.assertEqual(proc.returncode, 2)
+        self.assertIn("exactly one selection mode", proc.stderr)
+
+    def test_both_ids_and_a_query_is_refused(self) -> None:
+        proc = self._run("check", "--id", "US0001", "--stories", "Ready")
+        self.assertEqual(proc.returncode, 2)
+        self.assertIn("exactly one selection mode", proc.stderr)
+
+    def test_a_status_query_actually_selects_the_batch(self) -> None:
+        """The query path resolves ids, rather than auditing an empty set.
+
+        Every other test here passes ids explicitly, so the `ids = [...select_batch...]`
+        line was unpinned: neutralising it left the batch EMPTY, and an empty batch audits
+        clean and exits 0 - a false green over work never examined.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, status="Proposed", ac=TAUTOLOGY)   # weak AC -> not ready
+            proc = self._run("check", "--crs", "Proposed", "--root", str(root))
+            self.assertEqual(proc.returncode, 1, f"out={proc.stdout} err={proc.stderr}")
+            self.assertIn("CR0001", proc.stdout)
+            # The count is the anti-vacuity half: an emptied batch prints "0/0 ready, 0 not"
+            # and would satisfy an assertion that only looked for the id.
+            self.assertIn("tranche audit: 0/1 ready, 1 not", proc.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

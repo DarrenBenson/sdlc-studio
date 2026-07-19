@@ -10,6 +10,7 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import sys
@@ -165,6 +166,56 @@ def _catalogued(path: Path, heading: str) -> set[str]:
         if m:
             names.add(m.group(1))
     return names
+
+
+class ProfileCommandOutputTests(unittest.TestCase):
+    """`audit profile`'s own output branches (BG0212).
+
+    A full mutation enumeration over `audit.py` left six survivors inside `cmd_profile`:
+    the list-versus-resolve split, the text-versus-JSON split, and the threshold line. The
+    resolution logic beneath was well covered; nothing asserted what the COMMAND prints, so
+    every print branch could be rewritten without a test noticing.
+    """
+
+    def test_list_text_names_every_profile(self) -> None:
+        proc = _run_cli("profile", "--list")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("audit profiles:", proc.stdout)
+        for name in audit.profile_names():
+            self.assertIn(name, proc.stdout)
+
+    def test_list_json_is_parseable_and_complete(self) -> None:
+        # The JSON branch is a separate `print`; a mutant swapping it for the text form
+        # survived because nothing parsed the output.
+        proc = _run_cli("profile", "--list", "--format", "json")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(sorted(payload["profiles"]), sorted(audit.profile_names()))
+
+    def test_resolve_json_carries_the_lenses_and_threshold(self) -> None:
+        proc = _run_cli("profile", "--name", "repo", "--format", "json")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(payload["name"], "repo")
+        self.assertTrue(payload["lenses"])
+        self.assertEqual(payload["threshold"], {"survive": 2, "votes": 3})
+
+    def test_resolve_text_reports_the_source_and_lens_count(self) -> None:
+        proc = _run_cli("profile", "--name", "repo")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("profile repo -> ", proc.stdout)
+        self.assertIn(f"lenses: {len(audit.resolve_profile('repo')['lenses'])}", proc.stdout)
+
+    def test_a_pack_without_a_threshold_says_so_rather_than_printing_a_count(self) -> None:
+        # The threshold line has two branches and only the declared one was exercised.
+        self.assertIsNone(audit._parse_threshold("# Pack\n\nno panel here\n"))
+
+    def test_no_name_and_no_list_still_lists(self) -> None:
+        # `args.list or not args.name` - the second half was unpinned, so a bare
+        # `audit profile` could have started erroring without a test noticing.
+        proc = _run_cli("profile")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("audit profiles:", proc.stdout)
 
 
 class ProfileParserEdgeTests(unittest.TestCase):
