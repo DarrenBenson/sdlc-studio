@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 19 |
 | Approved | 0 |
-| In Progress | 36 |
-| Complete | 290 |
+| In Progress | 35 |
+| Complete | 291 |
 | Rejected | 0 |
 | Deferred | 5 |
 | Superseded | 13 |
@@ -182,7 +182,7 @@
 | [CR-0358](CR0358-the-close-review-is-an-unbounded-repair-loop.md) | the close review is an unbounded repair loop: no convergence check, no cost ceiling, and the author writes the reviewer's prompt | In Progress | High | Improvement | 2026-07-19 | EP0085 |
 | [CR-0359](CR0359-sprint-close-discovers-its-blockers-one-at-a.md) | sprint close discovers its blockers one at a time, so a close takes as many runs as it has unmet prerequisites | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0360](CR0360-the-doc-freshness-line-budget-refusal-names-the.md) | the doc-freshness line-budget refusal names the count but not the gap, so trimming is guesswork | Proposed | Low | Improvement | 2026-07-19 | -- |
-| [CR-0361](CR0361-an-agent-meets-the-gates-as-refusals-not.md) | an agent meets the gates as refusals, not as a briefing: generate a per-unit pre-flight from the gates themselves | In Progress | Medium | Improvement | 2026-07-19 | EP0086 |
+| [CR-0361](CR0361-an-agent-meets-the-gates-as-refusals-not.md) | an agent meets the gates as refusals, not as a briefing: generate a per-unit pre-flight from the gates themselves | Complete | Medium | Improvement | 2026-07-19 | EP0086 |
 | [CR-0362](CR0362-a-retro-finding-fixed-during-the-sprint-has.md) | a retro finding fixed during the sprint has no honest disposition: the vocabulary is filed or declined | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0363](CR0363-the-mutation-gate-should-report-the-coverage-its.md) | the mutation gate should report the coverage its test command actually reaches | Proposed | High | Improvement | 2026-07-19 | -- |
 

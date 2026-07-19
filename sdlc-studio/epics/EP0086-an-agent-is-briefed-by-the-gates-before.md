@@ -1,6 +1,6 @@
 # EP0086: An agent is briefed by the gates before the work, not stopped by them one refusal at a time
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 11
 > **Parent:** CR0361
 > **Created:** 2026-07-19
@@ -14,9 +14,9 @@ Decomposed from CR0361. Delivers the work CR0361 requested.
 
 ## Story Breakdown
 
-- [ ] [US0266: sprint plan prints the unit lifecycle and the gates each unit will meet, generated from the gate definitions rather than hand-written prose](../stories/US0266-sprint-plan-prints-the-unit-lifecycle-and-the.md)
-- [ ] [US0267: A unit close names the fields that unit type requires before its terminal transition, ahead of the work rather than on refusal](../stories/US0267-a-unit-close-names-the-fields-that-unit.md)
-- [ ] [US0268: Order the pre-commit lanes cheapest-first so a reworded comment does not cost a full unit-suite run](../stories/US0268-order-the-pre-commit-lanes-cheapest-first-so.md)
+- [x] [US0266: sprint plan prints the unit lifecycle and the gates each unit will meet, generated from the gate definitions rather than hand-written prose](../stories/US0266-sprint-plan-prints-the-unit-lifecycle-and-the.md)
+- [x] [US0267: A unit close names the fields that unit type requires before its terminal transition, ahead of the work rather than on refusal](../stories/US0267-a-unit-close-names-the-fields-that-unit.md)
+- [x] [US0268: Order the pre-commit lanes cheapest-first so a reworded comment does not cost a full unit-suite run](../stories/US0268-order-the-pre-commit-lanes-cheapest-first-so.md)
 
 ## Acceptance Criteria (Epic Level)
 

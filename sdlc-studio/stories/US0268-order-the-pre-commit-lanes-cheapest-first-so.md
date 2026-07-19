@@ -1,6 +1,6 @@
 # US0268: Order the pre-commit lanes cheapest-first so a reworded comment does not cost a full unit-suite run
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0361
 > **Created:** 2026-07-19
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0267: A unit close names the fields that unit type requires before its terminal transition, ahead of the work rather than on refusal
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0361
 > **Created:** 2026-07-19
 > **Created-by:** sdlc-studio new

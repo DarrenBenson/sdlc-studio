@@ -1,6 +1,6 @@
 # US0266: sprint plan prints the unit lifecycle and the gates each unit will meet, generated from the gate definitions rather than hand-written prose
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0361
 > **Created:** 2026-07-19
 > **Created-by:** sdlc-studio new
