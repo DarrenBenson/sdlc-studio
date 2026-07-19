@@ -1,6 +1,7 @@
 # BG0201: tranche audit certifies unfilled template stories as ready: _weak_ac only detects one hardcoded phrase
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; proven against the live 32-unit batch)
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/audit.py
