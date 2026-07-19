@@ -48,8 +48,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   reached Accepted. The two structural signals fail together - an unterminated fence means the
   document's shape cannot be trusted, and a `#` line inside it is as likely a shell comment as a
   heading - so the fallback now drops the section rule as well, reporting every unsettled row
-  anywhere in the file. Over-reporting on a broken document sends a human to markdown that needs
-  fixing; under-reporting ships an unaccepted decision. Separately, the CommonMark `(char, length)`
+  anywhere in the file. That trades a rare false positive for the impossibility of a false
+  negative, and the cost is paid on VALID documents rather than only broken ones: CommonMark
+  closes an open fence at end of document, so a file whose last block is an unclosed appendix
+  fence is well-formed markdown that every parser accepts. An operator meeting the false positive
+  records a `Decision-Override`. Separately, the CommonMark `(char, length)`
   matcher that was round 3's headline fix had **no discriminating test**: every fence test asserted
   the gate blocks, and the fallback blocks by itself, so reverting the matcher to a naive toggle
   left all 107 tests green. It is now pinned by the one case the fallback cannot satisfy - a

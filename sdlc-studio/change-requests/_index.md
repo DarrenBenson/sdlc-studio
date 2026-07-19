@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 13 |
+| Proposed | 15 |
 | Approved | 0 |
 | In Progress | 34 |
 | Complete | 290 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **355** |
+| **Total** | **357** |
 
 ## All Changes
 
@@ -172,11 +172,13 @@
 | [CR-0348](CR0348-the-gate-lints-only-changed-markdown-so-a.md) | the gate lints only changed markdown, so a broken file stays green until something touches it | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0349](CR0349-sprint-plan-cannot-record-a-deliberate-over-appetite.md) | sprint plan cannot record a deliberate over-appetite batch, only silently raise the ceiling | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0350](CR0350-record-the-sprint-s-token-actuals-automatically-for.md) | record the sprint's token actuals automatically for an interactive run | Proposed | Medium | Improvement | 2026-07-19 | -- |
-| [CR-0351](CR0351-file-finding-silently-accepts-shell-mangled-text-so.md) | file_finding silently accepts shell-mangled text, so a filed artefact can record the wrong thing | Proposed | Medium | Improvement | 2026-07-19 | -- |
+| [CR-0351](CR0351-file-finding-silently-accepts-shell-mangled-text-so.md) | prose reaches the scripts through a shell argument, so a backtick silently empties the field it was documenting | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0352](CR0352-migrate-apply-should-seed-a-missing-agents-md.md) | migrate --apply should seed a missing AGENTS.md rather than report it as a human task | Proposed | High | Improvement | 2026-07-19 | -- |
 | [CR-0353](CR0353-the-agent-instructions-hygiene-check-verifies-pointers-not.md) | the agent-instructions hygiene check verifies pointers, not that the working model is established | Proposed | High | Improvement | 2026-07-19 | -- |
 | [CR-0354](CR0354-the-review-seats-never-see-the-sprint-goal.md) | the review seats never see the Sprint Goal - they score WSJF and nothing reviews what the run is for | Proposed | High | Improvement | 2026-07-19 | -- |
 | [CR-0355](CR0355-hold-until-v5-launch-acknowledge-the-claude-for.md) | HOLD UNTIL v5 LAUNCH - acknowledge the Claude for Open Source programme in the README | Proposed | Low | Improvement | 2026-07-19 | -- |
+| [CR-0356](CR0356-reconcile-never-checks-the-index-row-s-title.md) | reconcile never checks the index row's title, so a retitled artefact drifts silently and no script can fix it | Proposed | Medium | Improvement | 2026-07-19 | -- |
+| [CR-0357](CR0357-the-rfc-accept-gate-s-fail-closed-fallback.md) | the RFC accept gate's fail-closed fallback can refuse a valid RFC, and says nothing about why | Proposed | Low | Improvement | 2026-07-19 | -- |
 
 ## Archived Releases
 

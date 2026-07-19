@@ -208,8 +208,16 @@ _ATX_HEADING_RE = re.compile(r"^\s{0,3}#{1,6}\s")
 def _rfc_open_decisions(text: str) -> list[str]:
     """The decision numbers still Open in an RFC's decision table.
 
-    Rows are read only inside the decisions section: a `| D1 | ... | Open |` line in a
-    Summary or an appendix is prose, not the register the accept step is about.
+    Rows are normally read only inside the decisions section: a `| D1 | ... | Open |` line in
+    a Summary or an appendix is prose, not the register the accept step is about.
+
+    ONE EXCEPTION, and it is not a corner case. If the scan ends inside an unterminated fence
+    the section boundaries could not be established, and this falls back to
+    `_rfc_open_decisions_unstructured`, which reads every unsettled row ANYWHERE in the file -
+    Summary and appendix included. So the guarantee above holds for the ordinary path only,
+    and the return value can name a row outside the register. Stated here because the previous
+    wording promised the narrow reading unconditionally while the fallback had already broken
+    it, and a caller trusting the docstring would mis-read the result.
     """
     open_rows: list[str] = []
     in_section = False
@@ -272,9 +280,14 @@ def _rfc_open_decisions_unstructured(text: str) -> list[str]:
     hide every row after it - the fallback then returned "no open decisions" for the very
     document it existed to catch, so the gate advertised fail-closed and failed OPEN.
 
-    Reading a row outside the decisions section is the intended cost. On a well-formed
-    document this function never runs; on a broken one, over-reporting sends a human to
-    look at markdown that needs fixing anyway.
+    Reading a row outside the decisions section is the intended cost, and it is paid on VALID
+    documents, not only broken ones. CommonMark closes an open fence at end of document, so a
+    file ending inside a fence - an appendix whose last block is never closed - is well-formed
+    markdown that every parser accepts. An earlier version of this docstring claimed the
+    opposite ("on a well-formed document this function never runs") and justified the cost as
+    prompting someone to fix markdown that needed fixing; there may be nothing to fix, and the
+    honest description is that this trades a rare false POSITIVE for the impossibility of a
+    false negative. An operator facing that can record a `Decision-Override`.
     """
     open_rows: list[str] = []
     for line in text.splitlines():
