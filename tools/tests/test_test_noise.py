@@ -96,6 +96,41 @@ class NoiseShapeDetectorTests(unittest.TestCase):
         self.assertEqual(tn.leaked_lines("the parser reports an error: this is prose"), [])
 
 
+class RunnerExclusionCannotSwallowLeaksTests(unittest.TestCase):
+    """The exclusion list is the dangerous half: anything it swallows is invisible for ever.
+
+    The first version excluded `\\s.*` (ANY indented line) and `\\w*(?:Error|...)` where the
+    `\\w*` matches empty. So indenting a leak, or capitalising it, disarmed the gate - the
+    same shape as a vacuity gate any tool printing "N passed" could switch off. Two real
+    leaks in this repo's own suite were invisible purely because they were indented.
+    """
+
+    DISARMED = [
+        "  error: leaked at /tmp/x",                       # indented
+        "\terror: leaked at /tmp/x",                       # tab-indented
+        "Error: leaked at /tmp/x",                         # capitalised
+        "ERROR: gh issue create failed",                   # upper-case
+        "  warning: /tmp/x/LESSONS-SUMMARY.md does not exist",
+        "capacity: this batch does not fit. Cut it, or raise the appetite deliberately",
+    ]
+
+    def test_indenting_or_capitalising_a_leak_does_not_hide_it(self) -> None:
+        missed = [l for l in self.DISARMED if not tn.leaked_lines(l)]
+        self.assertEqual(missed, [], f"{len(missed)} leak(s) disarmed by the exclusion list")
+
+    def test_the_runner_s_own_failure_header_is_still_excluded(self) -> None:
+        """`ERROR: test_x (a.b.C.test_x)` is unittest naming a test, not a tool leaking.
+        Distinguished by SHAPE - name then a dotted path in brackets - not by the word."""
+        self.assertEqual(tn.leaked_lines("ERROR: test_thing (tests.test_x.T.test_thing)"), [])
+        self.assertEqual(tn.leaked_lines("FAIL: test_thing (tests.test_x.T.test_thing)"), [])
+
+    def test_an_exception_repr_is_excluded_but_a_bare_Error_is_not(self) -> None:
+        """`AssertionError:` is a Python repr. A bare `Error:` is nobody's exception."""
+        self.assertEqual(tn.leaked_lines("AssertionError: 1 != 2"), [])
+        self.assertEqual(tn.leaked_lines("ValueError: bad input"), [])
+        self.assertTrue(tn.leaked_lines("Error: something a tool printed"))
+
+
 class NoiseBaselineTests(unittest.TestCase):
     """The ratchet. This repo leaks 283 lines today; requiring zero before the gate can
     run at all would mean the gate never runs, which is the state it is in now. The

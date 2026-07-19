@@ -976,6 +976,19 @@ def epic_points_drift(repo_root: Path | str) -> list[dict]:
 
 _LINKED_EPICS_HEADER = "Linked Epics"
 _CR_ROW_RE = re.compile(r"^\|\s*\[(CR-?\d+)\]")
+#: A cell separator is an UNESCAPED pipe. Markdown escapes a literal pipe inside a cell as
+#: `\|`, and splitting on every pipe counts that escape as a separator - which shifts every
+#: cell after it, so a header-located column index then addresses the wrong one. Locating
+#: the column by header does not save you once the cell count is wrong.
+_UNESCAPED_PIPE_RE = re.compile(r"(?<!\\)\|")
+
+
+def _split_row_cells(line: str) -> list[str]:
+    """The cells of a markdown table row, respecting `\\|` escapes."""
+    body = line.strip()
+    body = body[1:] if body.startswith("|") else body
+    body = body[:-1] if body.endswith("|") and not body.endswith(r"\|") else body
+    return [c.strip() for c in _UNESCAPED_PIPE_RE.split(body)]
 
 
 def _linked_epics_column(index_text: str) -> int | None:
@@ -987,7 +1000,7 @@ def _linked_epics_column(index_text: str) -> int | None:
     """
     for line in index_text.splitlines():
         if _LINKED_EPICS_HEADER.lower() in line.lower() and line.lstrip().startswith("|"):
-            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            cells = _split_row_cells(line)
             for i, c in enumerate(cells):
                 if c.lower() == _LINKED_EPICS_HEADER.lower():
                     return i
@@ -1031,7 +1044,7 @@ def detect_linked_epics(repo_root: Path | str) -> dict:
         expected = declared.get(cid)
         if not expected:
             continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        cells = _split_row_cells(line)
         if col < len(cells) and cells[col] != expected:
             drift.append({"id": cid, "kind": "linked-epics",
                           "found": cells[col], "expected": expected,
@@ -1043,7 +1056,13 @@ def detect_linked_epics(repo_root: Path | str) -> dict:
 def apply_linked_epics(repo_root: Path | str, dry_run: bool = False) -> dict:
     """Write each CR row's Linked Epics cell from the file's `Decomposed-into`.
 
-    Rewrites ONLY that cell, located by header, so the surrounding row survives intact.
+    Rewrites ONLY that cell, located by header and split on UNESCAPED pipes, so the
+    surrounding row survives intact. Both halves are load-bearing: locating by header
+    guards against a differing column count between schema versions, and honouring `\\|`
+    guards against a literal pipe inside a cell shifting every cell after it. The first
+    version had only the header half and wrote the epic id over the Date column while
+    leaving the real cell untouched, so the row lost data AND re-drifted on the next run.
+
     Idempotent. Returns {synced: [ids]}.
     """
     root = Path(repo_root)
@@ -1066,7 +1085,7 @@ def apply_linked_epics(repo_root: Path | str, dry_run: bool = False) -> dict:
         if cid not in wanted:
             continue
         newline = "\n" if line.endswith("\n") else ""
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        cells = _split_row_cells(line)
         if col >= len(cells):
             continue
         cells[col] = wanted[cid]

@@ -164,9 +164,19 @@ def archived(repo_root: Path | str) -> list[dict]:
     # fast run start inside the same second, and `short_ulid` is not monotonic within one - so
     # ordering on the id alone reads a rolling run's cycles back out of order, which is exactly
     # the sequence the archive exists to preserve.
-    out.sort(key=lambda r: (r.get("started_at") or "",
-                            int((r.get("cycle") or {}).get("index") or 0),
-                            r.get("run_id") or ""))
+    def _index(rec: dict) -> int:
+        """The cycle index, or 0 when it is absent or not a number.
+
+        Coerced defensively rather than with a bare `int()`: this runs inside the SORT KEY,
+        which sits outside the try/except above, so one malformed record raised and lost
+        every intact one - precisely what this function's contract says it will not do.
+        """
+        try:
+            return int((rec.get("cycle") or {}).get("index") or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    out.sort(key=lambda r: (r.get("started_at") or "", _index(r), r.get("run_id") or ""))
     return out
 
 

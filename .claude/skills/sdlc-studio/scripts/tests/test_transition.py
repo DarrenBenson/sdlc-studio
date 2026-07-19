@@ -1341,6 +1341,53 @@ class RfcOpenDecisionGateTests(unittest.TestCase):
             self.assertIn("D2", msg)
             self.assertNotIn("D1", msg)  # 'Resolved: ...' is settled, not open
 
+    def test_the_reader_is_not_locked_to_one_table_shape(self) -> None:
+        """Four false negatives found by the closing review, all the same root cause.
+
+        The reader hardcoded three columns, split on every pipe, matched only `## `
+        headings, and accepted only the bare leading word `Open`. Each is a way for a real
+        Open decision to pass the gate silently - the outcome the docstring calls worse
+        than the prose rule it replaced, because it also looks like proof.
+        """
+        shapes = {
+            "four columns": ("| # | Decision | Options | Status |\n| --- | --- | --- | --- |\n"
+                             "| D1 | which store | sqlite/postgres | Open |\n"),
+            "pipe in a cell": ("| # | Decision | Status |\n| --- | --- | --- |\n"
+                               r"| D1 | keep a \| b | Open |" + "\n"),
+            "unresolved": ("| # | Decision | Status |\n| --- | --- | --- |\n"
+                           "| D1 | which store | Unresolved |\n"),
+            "pending": ("| # | Decision | Status |\n| --- | --- | --- |\n"
+                        "| D1 | which store | Pending operator |\n"),
+        }
+        for name, rows in shapes.items():
+            with self.subTest(shape=name), tempfile.TemporaryDirectory() as d:
+                root = _rfc_repo(Path(d), rows=rows)
+                with self.assertRaises(ValueError, msg=f"{name}: Open decision passed"):
+                    tr.transition(root, "RFC0001", "Accepted")
+
+    def test_a_decisions_section_at_any_heading_level_is_read(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rd = root / "sdlc-studio" / "rfcs"
+            rd.mkdir(parents=True)
+            (rd / "RFC0001-r.md").write_text(
+                "# RFC0001: r\n\n> **Status:** In Review\n\n### Open Decisions\n\n"
+                "| # | Decision | Status |\n| --- | --- | --- |\n| D1 | q | Open |\n",
+                encoding="utf-8")
+            (rd / "_index.md").write_text(
+                "# RFCs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [RFC0001](RFC0001-r.md) | r | In Review |\n", encoding="utf-8")
+            with self.assertRaises(ValueError):
+                tr.transition(root, "RFC0001", "Accepted")
+
+    def test_a_settled_row_still_passes_in_every_shape(self) -> None:
+        """Widening what counts as open must not start blocking settled work."""
+        for cell in ("Closed", "Resolved: option D", "Superseded by RFC0050", "Done"):
+            with self.subTest(cell=cell), tempfile.TemporaryDirectory() as d:
+                root = _rfc_repo(Path(d), rows=f"| D1 | q | {cell} |\n")
+                tr.transition(root, "RFC0001", "Accepted")
+                self.assertIn("Status:** Accepted", _read(root, "rfcs", "RFC0001-r.md"))
+
     def test_an_rfc_with_no_decision_table_is_unaffected(self) -> None:
         """The gate must not invent a blocker for an RFC that never had a table."""
         with tempfile.TemporaryDirectory() as d:

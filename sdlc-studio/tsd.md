@@ -202,12 +202,12 @@ suite is invoked by `npm run test:skill` and by the pre-commit hook, so no path 
 skips the check. It was previously described here as
 holding the line while being wired into nothing, and its detector matched a single shape
 (`ERROR` or `WARN` followed by an absolute path) that this suite never produces - it
-caught none of the 68 lines actually leaking. Detection now lives in `tools/test_noise.py`
+caught almost none of the 233 lines actually leaking. Detection now lives in `tools/test_noise.py`
 so it is unit-tested against the shapes the suite really emits: lowercase `error:`,
 `warning:`, `usage:`, and tool-prefixed messages, judged after unittest's progress dots
 are stripped, since an escaped print usually shares a line with them.
 
-Those 68 lines are a recorded baseline, not a clean bill: the gate fails on an increase
+Those 233 lines are a recorded baseline, not a clean bill: the gate fails on an increase
 and the number is held in `TEST_NOISE_BASELINE`. Demanding zero before the leg could run
 at all is precisely why it ran nowhere. Lower it as leaks are captured; never raise it to
 turn a red gate green.

@@ -1,6 +1,7 @@
 # RFC-0017: Cooper goal-directed persona model (the canonical persona model)
 
 > **Status:** Accepted
+> **Decision-Override:** D1 (Primary selection when candidates compete) was never decided and cannot be reconstructed from this repo - the Decision section is silent on it and no shipped code implements a selection method. Recorded rather than invented; CR0346 tracks settling it, and this override is removed when D1 closes.
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-21
@@ -129,9 +130,9 @@ persona file as the bar, no research/evidence machinery, no identity compiler.
 | # | Decision | Options | Owner | Status |
 | --- | --- | --- | --- | --- |
 | D1 | Primary selection when candidates compete | Cooper's goal-coverage method / operator picks | Operator | Open |
-| D2 | Migration of existing personas | re-cast to the new schema / deprecate categories / keep both during transition | Operator | Open |
-| D3 | Goal depth for Customer / Served | same End + Experience / lighter End-only | Design | Open |
-| D4 | Well-formedness check strength | advisory `persona review` note / a `validate.py` rule that errors | Design | Open |
+| D2 | Migration of existing personas | re-cast to the new schema / deprecate categories / keep both during transition | Operator | Closed: keep both during transition - no forced re-cast; the flat `personas.md` stays a documented legacy layout with its own light structural check, and WS4 is raised only as needed |
+| D3 | Goal depth for Customer / Served | same End + Experience / lighter End-only | Design | Closed: lighter End-only - Customer carries buyer goals, Served welfare goals; Experience Goals and Scenario are optional for both |
+| D4 | Well-formedness check strength | advisory `persona review` note / a `validate.py` rule that errors | Design | Closed: a `validate.py personas` rule, advisory by default (warns, exits 0, outside the hard gate); only two Primaries declaring one Interface errors |
 
 > **Decided in the deep-dive:** full Cooper cast (all six types) · End + Experience goals (Life
 > goals out) · the deliverable is a **well-formed persona file**, *not* research-gated · no
@@ -183,3 +184,4 @@ well-formedness check, D4), WS4 (migration of existing personas, D2) - raise as 
 | --- | --- | --- |
 | 2026-06-21 | Darren Benson | Raised - Cooper goal-directed model: full cast, End + Experience goals; the deliverable is a well-formed persona file (no research/evidence apparatus, no identity compiler - personas are good input to an external authored-identity system, nothing more); resolves RFC0016 D1/D6 |
 | 2026-06-21 | Autosprint (RFC0017) | Accepted (Option A); WS1 delivered as CR0058 (Complete) |
+| 2026-07-19 | sdlc-studio | Decision rows closed with what shipped |

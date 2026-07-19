@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 4 |
 | Approved | 0 |
 | In Progress | 34 |
 | Complete | 290 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **345** |
+| **Total** | **346** |
 
 ## All Changes
 
@@ -167,6 +167,7 @@
 | [CR-0343](CR0343-refine-apply-add-should-read-a-breakdown-from.md) | refine apply/add should read a breakdown from a file, not only repeated --story CLI args | Proposed | Low | Improvement | 2026-07-17 | -- |
 | [CR-0344](CR0344-pre-commit-gate-lanes-are-whole-workspace-so.md) | Pre-commit gate lanes are whole-workspace, so pre-existing backlog debt blocks every unrelated commit | Proposed | Low | Improvement | 2026-07-17 | -- |
 | [CR-0345](CR0345-sprint-close-scaffolds-the-retro-via-the-deterministic.md) | sprint close scaffolds the retro via the deterministic path instead of requiring a pre-made one | Complete | Medium | Improvement | 2026-07-17 | -- |
+| [CR-0346](CR0346-settle-rfc0017-d1-how-a-primary-persona-is.md) | settle RFC0017 D1: how a Primary persona is selected when candidates compete | Proposed | Low | Improvement | 2026-07-19 | -- |
 
 ## Archived Releases
 

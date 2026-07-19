@@ -188,7 +188,18 @@ def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
 # option D (...)` - so a reader demanding the bare word misses a genuinely Open row and
 # reports the file clean. A false negative in the gate is worse than the prose rule it
 # replaces, because it also looks like proof.
-_DECISION_ROW_RE = re.compile(r"^\s*\|\s*(D\d+)\s*\|[^|]*\|\s*([^|]*?)\s*\|\s*$")
+#
+# Every structural assumption here has been a false negative at least once, so each is now
+# as loose as it can be while still discriminating: the row may have ANY column count (the
+# status is the LAST cell), a cell may contain an escaped pipe, and the section heading may
+# be at any level. The first version fixed all three and let four real shapes through.
+_DECISION_ROW_RE = re.compile(r"^\s*\|\s*(D\d+)\s*\|(.+)\|\s*$")
+#: A cell separator is an UNESCAPED pipe; `\|` is a literal pipe inside a cell.
+_DECISION_PIPE_RE = re.compile(r"(?<!\\)\|")
+#: Leading tokens that mean "not settled". Anything else - Closed, Resolved, Superseded, a
+#: prose verdict - is a decision that was taken, because the register records what was
+#: decided rather than a fixed vocabulary.
+_UNSETTLED = ("open", "unresolved", "undecided", "tbd", "pending")
 
 
 def _rfc_open_decisions(text: str) -> list[str]:
@@ -200,17 +211,20 @@ def _rfc_open_decisions(text: str) -> list[str]:
     open_rows: list[str] = []
     in_section = False
     for line in text.splitlines():
-        if line.startswith("## "):
+        if line.lstrip().startswith("#"):
             in_section = "decision" in line.lower()
             continue
         if not in_section:
             continue
         m = _DECISION_ROW_RE.match(line)
-        # Open is judged on the LEADING token so an annotated cell still counts, while a
-        # cell that merely mentions the word ('Closed - was open until the 07-19 review')
-        # does not. Anything else - Closed, Resolved, Superseded, a prose verdict - is
-        # settled: the register records what was decided, not a fixed vocabulary.
-        if m and m.group(2).strip().lower().startswith("open"):
+        if not m:
+            continue
+        # The status is the LAST cell, whatever the column count, split on unescaped pipes.
+        cells = [c.strip() for c in _DECISION_PIPE_RE.split(m.group(2))]
+        status = cells[-1].lower() if cells else ""
+        # Judged on the LEADING token, so an annotated cell still counts while one that
+        # merely mentions the word ('Closed - was open until the 07-19 review') does not.
+        if any(status.startswith(word) for word in _UNSETTLED):
             open_rows.append(m.group(1))
     return open_rows
 

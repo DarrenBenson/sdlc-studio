@@ -2361,6 +2361,55 @@ class LinkedEpicsApplyTests(unittest.TestCase):
             reconcile.apply_linked_epics(root)
             self.assertEqual(reconcile.apply_linked_epics(root)["synced"], [])
 
+    def test_a_pipe_inside_a_cell_does_not_shift_the_columns(self) -> None:
+        """An escaped pipe in a cell must not move every cell after it.
+
+        Splitting on every `|` counts an escaped one as a separator, so the header-located
+        column index then addresses the WRONG cell: the epic id was written over the Date,
+        destroying it, while the Linked Epics cell stayed `--` so the next run re-drifted.
+        Locating the column by header does not help once the cell count is wrong.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cr = root / "sdlc-studio" / "change-requests"
+            cr.mkdir(parents=True)
+            (cr / "CR0001-x.md").write_text(
+                "# CR-0001: x\n\n> **Status:** Complete\n> **Decomposed-into:** EP0078\n",
+                encoding="utf-8")
+            row = (r"| [CR-0001](CR0001-x.md) | Support the a \| b operator | Complete "
+                   r"| P2 | Improvement | 2026-07-14 | -- |")
+            idx = cr / "_index.md"
+            idx.write_text(CR_INDEX_HEADER + row + "\n", encoding="utf-8")
+
+            drift = reconcile.detect_linked_epics(root)["drift"]
+            self.assertEqual(drift[0]["found"], "--",
+                             "detect read the wrong cell: it is reporting the Date column")
+
+            reconcile.apply_linked_epics(root)
+            after = [l for l in idx.read_text(encoding="utf-8").splitlines()
+                     if l.startswith("| [CR-0001]")][0]
+            self.assertIn("2026-07-14", after, "the Date cell was destroyed")
+            self.assertIn(r"\|", after, "the escaped pipe was broken apart")
+            self.assertTrue(after.rstrip().endswith("| EP0078 |"), after)
+
+    def test_apply_is_idempotent_with_an_escaped_pipe(self) -> None:
+        """The re-drift half: a corrupted write leaves the real cell untouched, so the
+        next run finds the same drift and corrupts the row again."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cr = root / "sdlc-studio" / "change-requests"
+            cr.mkdir(parents=True)
+            (cr / "CR0001-x.md").write_text(
+                "# CR-0001: x\n\n> **Status:** Complete\n> **Decomposed-into:** EP0078\n",
+                encoding="utf-8")
+            idx = cr / "_index.md"
+            idx.write_text(CR_INDEX_HEADER + (
+                r"| [CR-0001](CR0001-x.md) | a \| b | Complete | P2 | Improvement "
+                r"| 2026-07-14 | -- |") + "\n", encoding="utf-8")
+            reconcile.apply_linked_epics(root)
+            self.assertEqual(reconcile.apply_linked_epics(root)["synced"], [],
+                             "still drifting after apply - the wrong cell was written")
+
     def test_dry_run_reports_without_writing(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

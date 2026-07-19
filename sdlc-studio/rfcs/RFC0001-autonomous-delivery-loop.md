@@ -142,12 +142,12 @@ this RFC through the very loop it describes.
 
 | # | Decision | Options | Owner | How it resolves | Status |
 | --- | --- | --- | --- | --- | --- |
-| D1 | Default autonomy ceiling | (a) stop-after-triage then autonomous w/ re-pause **[leaning]** · (b) pause every gate · (c) full overnight, stop only on terminal failure | Operator | Operator call; A leaning matches current practice | Open |
-| D2 | Stall-cap aggressiveness + quarantine | N failed green attempts per unit before quarantine (e.g. 3); on stall: re-decompose the story vs. mark Blocked + continue vs. stop the run | Operator + design | Spike on a real tranche; measure thrash vs. abandonment | Open |
-| D3 | Independent oracle strength | (a) separate review sub-agent that did not write the diff, judging vs. AC intent **[min]** · (b) + adversarial/mutation checks · (c) + diverse independent verifiers | Design | Threat-model against spec-gaming equilibrium; cost/benefit | Open |
-| D4 | Decisions ledger form | (a) new artifact type under `sdlc-studio/` (e.g. `decisions/DLNNNN`) · (b) extend `project-state.json` · (c) plain append-only `sdlc-studio/.local/decisions.log` | Design | Pick by need for traceability vs. simplicity; reconcile impact | Open |
-| D5 | Where guardrails live | model-instructed (Option A) vs. deterministic script/Stop-Hook (Option C) per guardrail | Design | Decide per guardrail; cap + completion-gate lean deterministic | Open |
-| D6 | Commit strategy coupling | autonomous mode assumes trunk-based green-gate vs. honours existing `--commit-strategy` (per-wave/epic/project) | Operator | Operator call; keep trunk-based as one mode, not the only one | Open |
+| D1 | Default autonomy ceiling | (a) stop-after-triage then autonomous w/ re-pause **[leaning]** · (b) pause every gate · (c) full overnight, stop only on terminal failure | Operator | Operator call; A leaning matches current practice | Closed: (a) stop once after triage for approval, then run autonomously, re-pausing only on a material issue |
+| D2 | Stall-cap aggressiveness + quarantine | N failed green attempts per unit before quarantine (e.g. 3); on stall: re-decompose the story vs. mark Blocked + continue vs. stop the run | Operator + design | Spike on a real tranche; measure thrash vs. abandonment | Closed: quarantine-and-continue at 3 failed green attempts - the unit is marked Blocked and the run carries on (`loop_guard.py`, exit 3) |
+| D3 | Independent oracle strength | (a) separate review sub-agent that did not write the diff, judging vs. AC intent **[min]** · (b) + adversarial/mutation checks · (c) + diverse independent verifiers | Design | Threat-model against spec-gaming equilibrium; cost/benefit | Closed: (b) an independent non-author critic judging each diff against AC intent, plus adversarial/mutation checks (`critic.py`) |
+| D4 | Decisions ledger form | (a) new artifact type under `sdlc-studio/` (e.g. `decisions/DLNNNN`) · (b) extend `project-state.json` · (c) plain append-only `sdlc-studio/.local/decisions.log` | Design | Pick by need for traceability vs. simplicity; reconcile impact | Closed: (a) a committed, append-only per-tranche ledger at `sdlc-studio/decisions/<tranche>.md` (`ledger.py`) |
+| D5 | Where guardrails live | model-instructed (Option A) vs. deterministic script/Stop-Hook (Option C) per guardrail | Design | Decide per guardrail; cap + completion-gate lean deterministic | Closed: per guardrail - iteration cap, repetition-breaker and completion gate are deterministic scripts; autonomy ceiling and escalation stay model-instructed |
+| D6 | Commit strategy coupling | autonomous mode assumes trunk-based green-gate vs. honours existing `--commit-strategy` (per-wave/epic/project) | Operator | Operator call; keep trunk-based as one mode, not the only one | Closed: trunk-based green-gate as the operator's default, honouring the existing `--commit-strategy` (per-wave/per-epic/per-project) for other workflows |
 | D7 | Are implementation-plan (PL) files required per story? | drop (opt-in `--with-plans` for sequential/audit-sensitive work) | Operator | **Resolved by real-world evidence**: consuming repo B + consuming repo A shipped ~900 Done stories with 3 PL files total (~0.27%) | Resolved |
 
 ---
@@ -334,3 +334,4 @@ unconditional closing reconcile + review. The conformance check gated the delive
 | 2026-06-20 | Darren Benson | RFC drafted |
 | 2026-06-20 | Darren Benson | Persona consultation added (RV0001 action U1) |
 | 2026-06-20 | Autosprint (CR0020) | Phase 2 delivered: ledger, loop guardrails, --autonomous wiring |
+| 2026-07-19 | sdlc-studio | Decision rows closed with what shipped |

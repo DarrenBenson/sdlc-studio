@@ -21,6 +21,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Repairs from the closing adversarial review of RUN-01KXVYGR.** Two MAJOR and four MINOR
+  findings, every one a false negative in something this sprint shipped, and each contradicted by
+  prose written to justify it. `reconcile.apply_linked_epics` split table rows on every pipe, so an
+  escaped `\|` in a cell shifted the columns and it wrote the epic id over the **Date** cell,
+  destroying it, while leaving the real cell untouched so the row re-drifted next run; rows are now
+  split on unescaped pipes only. The green-run noise detector excluded any indented line and any
+  capitalised one, so `print("  " + msg)` disarmed it - two real leaks in this repo's own suite were
+  invisible for that reason alone, and the recorded baseline of 68 was a measurement of the blind
+  detector rather than of the suite. The true count is **233**, and the exclusion list now matches on
+  shape rather than on a word. The RFC accept gate hardcoded a three-column row, one heading level
+  and the single leading word `Open`, passing four real shapes; widening it immediately surfaced two
+  further Accepted RFCs whose decision tables are six and seven columns wide - nine of their ten open
+  rows are now closed against the file's own Decision section, and the tenth is recorded as an
+  override naming CR0346 rather than invented. `run_state.archived` raised from its sort key on a
+  malformed cycle index, losing every intact record, which is exactly what its docstring promised not
+  to do. Two branches that survived removal against the whole suite - the boundary's
+  outcome-preservation guard and `close_run`'s archive call - now have discriminating tests.
+
 - **A rolling multi-sprint policy: fix the policy once, regenerate the plan at every boundary
   (EP0076).** An operator wanting an unattended evening of delivery had to return at every sprint
   boundary to re-plan, and queueing several plans up front does not work - the backlog is generated

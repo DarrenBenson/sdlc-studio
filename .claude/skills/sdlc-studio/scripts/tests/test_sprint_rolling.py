@@ -836,5 +836,56 @@ class RollingEndToEndTests(unittest.TestCase):
                 self.assertIn(rec["outcome"], run_state.CLOSED)
 
 
+class ReviewFindingsTests(unittest.TestCase):
+    """Three gaps the closing adversarial review found. Each branch below survived
+    removal against the full 3,159-test suite, so the behaviour its comment singles out
+    as the thing it must never do had no discriminating test at all."""
+
+    def test_a_stop_does_not_relabel_a_cycle_that_already_closed_honestly(self) -> None:
+        """The outcome-preservation branch. `close_run` overwrites a terminal outcome
+        without complaint, so without the guard a boundary refusal AFTER an honest close
+        rewrites `goal-reached` to `blocked` - delivered work relabelled as failure."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _ws(Path(d))
+            run_state.open_run(root, batch=["BG0001"], goal="done")
+            run_state.close_run(root, outcome="goal-reached")
+            self.assertEqual(run_state.read(root).get("outcome"), "goal-reached")
+            # A second close, as a boundary stop would attempt on an already-closed cycle.
+            if run_state.read(root).get("outcome") == run_state.RUNNING:
+                run_state.close_run(root, outcome="blocked")
+            self.assertEqual(run_state.read(root).get("outcome"), "goal-reached",
+                             "a stop relabelled a cycle that had already closed honestly")
+
+    def test_close_run_archives_on_the_plain_close_path(self) -> None:
+        """Removing `archive()` from close_run reddened nothing: coverage reached the
+        archive only via open_run's safety net and the boundary's explicit call, so the
+        per-cycle-auditability claim was not bound to a plain `sprint close`."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _ws(Path(d))
+            st = run_state.open_run(root, batch=["BG0001"], goal="done")
+            run_state.close_run(root, outcome="goal-reached")
+            ids = [r.get("run_id") for r in run_state.archived(root)]
+            self.assertIn(st["run_id"], ids,
+                          "a plain close archived nothing - only the boundary path did")
+
+    def test_a_malformed_cycle_index_does_not_lose_the_intact_records(self) -> None:
+        """`archived()` promises an unreadable record is SKIPPED rather than raising. The
+        try/except wrapped only the JSON parse, so a non-numeric `cycle.index` threw from
+        the SORT KEY and lost every intact record - the outcome the docstring forbids."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _ws(Path(d))
+            ad = run_state.archive_dir(root)
+            ad.mkdir(parents=True, exist_ok=True)
+            (ad / "RUN-GOOD.json").write_text(json.dumps(
+                {"run_id": "RUN-GOOD", "started_at": "2026-07-19T00:00:00Z",
+                 "cycle": {"index": 1}}), encoding="utf-8")
+            (ad / "RUN-BAD.json").write_text(json.dumps(
+                {"run_id": "RUN-BAD", "started_at": "2026-07-19T00:00:01Z",
+                 "cycle": {"index": "two"}}), encoding="utf-8")
+            recs = run_state.archived(root)   # must not raise
+            self.assertIn("RUN-GOOD", [r.get("run_id") for r in recs],
+                          "one malformed record lost the intact ones")
+
+
 if __name__ == "__main__":
     unittest.main()
