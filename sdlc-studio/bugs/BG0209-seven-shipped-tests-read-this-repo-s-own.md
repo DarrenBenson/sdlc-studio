@@ -1,6 +1,7 @@
 # BG0209: seven shipped tests read this repo's own story files, so the payload cannot pass its own suite anywhere else
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (run from a simulated installed copy: 7 errors before, 7 clean skips after; dev repo still runs all 144)
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py

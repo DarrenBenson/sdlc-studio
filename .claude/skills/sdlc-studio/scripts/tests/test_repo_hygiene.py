@@ -65,7 +65,7 @@ SCRIPTS_DIR = TESTS_DIR.parent
 #: Helper modules that live beside the tests rather than under `scripts/`. Importing one by
 #: its bare name only resolves when the tests directory is on `sys.path`, which
 #: `unittest discover -s tests` arranges and `unittest tests.test_x` does not.
-SIBLING_HELPERS = ("loader", "gitutil")
+SIBLING_HELPERS = ("loader", "gitutil", "workspace")
 
 
 def _modules_importing_a_sibling() -> list[str]:

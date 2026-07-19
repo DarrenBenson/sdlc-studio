@@ -9,18 +9,17 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the sibling helper
+import workspace  # noqa: E402 - the shared "am I in the dev repo?" check
+
 SCRIPT = Path(__file__).resolve().parent.parent / "gate.py"
 REPO = Path(__file__).resolve().parents[5]  # repo root (holds sdlc-studio/ artifacts)
 
-
-def _in_dev_repo(repo: Path = REPO) -> bool:
-    """True only when `repo` is the artefact-bearing dev repo - it holds a `sdlc-studio/`
-    workspace AND this skill sits under `repo/.claude/skills/`. Run from an installed copy
-    (`~/.claude/skills/sdlc-studio/`), `parents[5]` is the home dir with no workspace, so the
-    two real-wrapper tests below must SKIP (visibly), not fail on environment (BG0069)."""
-    skills = repo / ".claude" / "skills"
-    return (repo / "sdlc-studio").is_dir() and skills.is_dir() \
-        and str(Path(__file__).resolve()).startswith(str(skills.resolve()))
+#: The dev-repo check now has ONE definition, in `tests/workspace.py`. This alias keeps the
+#: local call sites reading as they did; the rule itself is no longer duplicated here (BG0209).
+#: Run from an installed copy, `parents[5]` is the home dir with no workspace, so the real-
+#: wrapper tests below SKIP visibly rather than failing on environment (BG0069).
+_in_dev_repo = workspace.in_dev_repo
 
 
 def _load():
@@ -124,6 +123,19 @@ class GateRealWrapperTests(unittest.TestCase):
         # Always-run: exercises the NEGATIVE branch (an install-like root has no sdlc-studio/
         # workspace), so it passes from an install too - never a false FAILED.
         self.assertFalse(_in_dev_repo(Path(tempfile.gettempdir())))
+
+    def test_dev_repo_detector_false_when_the_skill_is_not_under_that_root(self) -> None:
+        # The SECOND half of the check, which the workspace-less case above cannot reach:
+        # a root that has BOTH a sdlc-studio/ workspace and a .claude/skills/ is still not
+        # the dev repo unless this skill actually lives under it. Without this, an installed
+        # copy sitting beside any consuming project's workspace reads as the dev repo, and
+        # the tests that skip there would run and fail on missing fixtures instead (BG0209).
+        # Dropping `and skills.is_dir() and startswith(...)` survives every other test here.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "sdlc-studio").mkdir()
+            (root / ".claude" / "skills").mkdir(parents=True)
+            self.assertFalse(_in_dev_repo(root))
 
     def test_default_checks_present(self) -> None:
         self.assertEqual(set(gate.DEFAULT_CHECKS),

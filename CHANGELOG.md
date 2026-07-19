@@ -941,6 +941,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The shipped suite passes from an installed copy (BG0209).** Seven tests in `test_verify_ac`
+  read the dogfooded workspace by path - real stories, US0163/US0166/US0172/US0173 - so from
+  `~/.claude/skills/sdlc-studio` the root walk landed on the home directory and all seven raised
+  `FileNotFoundError`. A consuming project running the shipped suite saw seven errors that said
+  nothing about its own install. They now skip visibly, the pattern already established elsewhere.
+  Measured both ways from a simulated install: 7 errors before, 7 clean skips after, with the dev
+  repo still running all 144. The dev-repo check itself now has one definition,
+  `tests/workspace.py`, instead of a copy per module.
 - **A test module that imports a sibling helper runs under both forms (BG0206).**
   `test_reconcile` imported `loader` without first putting the tests directory on `sys.path`, the
   one line every other such module carries. Under `unittest discover -s tests` that resolves; under

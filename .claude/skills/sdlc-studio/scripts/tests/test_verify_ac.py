@@ -15,6 +15,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the sibling helper
+import workspace  # noqa: E402 - the shared "am I in the dev repo?" check
+
 SCRIPT_PATH = Path(__file__).resolve().parent.parent / "verify_ac.py"
 _spec = importlib.util.spec_from_file_location("verify_ac", SCRIPT_PATH)
 assert _spec and _spec.loader
@@ -1501,10 +1504,19 @@ class GrepDashPatternTests(unittest.TestCase):
 
 
 class US0166Ac3Tests(unittest.TestCase):
-    """US0166 AC3's own verifier must check its claim, not misparse into a green (US0226)."""
+    """US0166 AC3's own verifier must check its claim, not misparse into a green (US0226).
+
+    Reads the dogfooded workspace by path, so it is dev-repo-only: from an installed copy
+    the story is not there and these would raise FileNotFoundError, which says nothing
+    about the consuming project's own install (BG0209).
+    """
 
     STORY = (Path(__file__).resolve().parents[5]
              / "sdlc-studio/stories/US0166-ship-a-stop-hook-installer-and-redefine-sprint.md")
+
+    def setUp(self):
+        if not workspace.in_dev_repo():
+            self.skipTest(workspace.SKIP_REASON)
 
     def _ac3(self):
         blocks = verify_ac.parse_story(self.STORY.read_text(encoding="utf-8"))
@@ -1539,11 +1551,19 @@ class US0166Ac3Tests(unittest.TestCase):
 
 
 class DuplicateVerifierTests(unittest.TestCase):
-    """US0227: two ACs sharing a selector cannot both discriminate."""
+    """US0227: two ACs sharing a selector cannot both discriminate.
+
+    The two workspace-reading tests below are dev-repo-only and skip from an installed
+    copy (BG0209); `test_duplicates_are_reported_with_every_claiming_ac` builds its own
+    fixture in a temporary directory and runs everywhere, which is what keeps the
+    detector itself covered off the dev repo.
+    """
 
     STORIES = Path(__file__).resolve().parents[5] / "sdlc-studio" / "stories"
 
     def _verifiers(self, prefix: str) -> list[str]:
+        if not workspace.in_dev_repo():
+            self.skipTest(workspace.SKIP_REASON)
         path = next(p for p in self.STORIES.glob(f"{prefix}-*.md"))
         return [" ".join(b.verifier.split())
                 for b in verify_ac.parse_story(path.read_text(encoding="utf-8"))
