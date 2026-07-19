@@ -1074,5 +1074,64 @@ class SeedAcsTests(unittest.TestCase):
             self.assertIn("### AC1: {{define}}", self._story_text(root, res))
 
 
+class RefineLinkedEpicsColumnTests(unittest.TestCase):
+    """US0256 AC3: a decomposition writes the Linked Epics cell at source.
+
+    The column drifted to a placeholder on every decomposed CR in this workspace because
+    nothing wrote it at the moment the link was made - it was left to a reconcile nobody
+    was obliged to run. Writing it where the link is created is what stops the drift
+    recurring; the standing census then only has to catch hand edits.
+    """
+
+    CR_INDEX = ("# Change Requests\n\n"
+                "| Status | Count |\n|---|---|\n| Approved | 1 |\n\n"
+                "| ID | Title | Status | Priority | Type | Date | Linked Epics |\n"
+                "|---|---|---|---|---|---|---|\n"
+                "| [CR-0001](CR0001-x.md) | X | Approved | P1 | Improvement | 2026-07-19 | -- |\n")
+
+    def _cr(self, root: Path) -> Path:
+        d = root / "sdlc-studio" / "change-requests"
+        _write(d / "CR0001-x.md",
+               "# CR-0001: X\n\n> **Status:** Approved\n> **Priority:** P1\n"
+               "> **Type:** Improvement\n> **Size:** L\n\n## Summary\n\ns\n\n## Impact\n\ni\n")
+        _write(d / "_index.md", self.CR_INDEX)
+        return d / "_index.md"
+
+    def _cell(self, idx: Path) -> str:
+        row = [l for l in idx.read_text(encoding="utf-8").splitlines()
+               if l.startswith("| [CR-0001]")][0]
+        return row.rstrip().rstrip("|").rsplit("|", 1)[-1].strip()
+
+    def test_refine_writes_the_linked_epics_cell(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            idx = self._cr(root)
+            self.assertEqual(self._cell(idx), "--")   # the placeholder it starts from
+            res = refine.refine(root, "CR0001", "The epic", [("A", 2, None)])
+            self.assertEqual(self._cell(idx), res["epic"])
+
+    def test_the_decomposition_leaves_no_linked_epics_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root)
+            refine.refine(root, "CR0001", "The epic", [("A", 2, None)])
+            self.assertEqual(reconcile.detect_linked_epics(root)["drift"], [])
+
+    def test_a_further_epic_appends_rather_than_replaces(self) -> None:
+        """`refine` refuses a second decomposition; `refine_add` is the append path.
+
+        The cell must carry BOTH epics - a writer that replaced would quietly drop the
+        first, and the real workspace has requests linking two (CR0272 -> EP0041, EP0081).
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            idx = self._cr(root)
+            first = refine.refine(root, "CR0001", "First epic", [("A", 2, None)])
+            second = refine.refine_add(root, "CR0001", "Second epic", [("B", 3, None)])
+            cell = self._cell(idx)
+            self.assertIn(first["epic"], cell)
+            self.assertIn(second["epic"], cell)
+
+
 if __name__ == "__main__":
     unittest.main()

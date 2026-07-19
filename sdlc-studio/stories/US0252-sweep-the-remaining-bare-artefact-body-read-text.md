@@ -1,10 +1,10 @@
 # US0252: sweep the remaining bare artefact-body read_text calls through read_text_safe, with a regression test
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/deploy.py, .claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py
 > **Epic:** EP0082
 > **Points:** 2
 
@@ -22,6 +22,7 @@
 - **When** the scripts tree is swept for artefact-body read sites
 - **Then** every one goes through `sdlc_md.read_text_safe`, and the sweep fails when a new bare read arrives
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_repo_hygiene.py -k BareArtefactReadSweepTests
+- **Verified:** yes (2026-07-19)
 
 ### AC2: A non-UTF-8 artefact does not crash a scanner
 
@@ -29,6 +30,7 @@
 - **When** each swept scanner runs over that workspace
 - **Then** it completes and names the file rather than raising UnicodeDecodeError
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_reconcile.py -k NonUtf8ScannerRegressionTests
+- **Verified:** yes (2026-07-19)
 
 ### AC3: Index-file reads stay loud
 
@@ -36,6 +38,7 @@
 - **When** a scanner reads it
 - **Then** the failure surfaces rather than being silently defaulted to an empty body, so derived-index drift is never masked
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_reconcile.py -k LoudIndexReadTests
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

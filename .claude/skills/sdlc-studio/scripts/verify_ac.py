@@ -395,7 +395,7 @@ def duplicate_verifiers(paths) -> list[dict]:
     for p in paths:
         if not p.exists():
             continue
-        text = p.read_text(encoding="utf-8")
+        text = sdlc_md.read_text_safe(p)  # a corrupt story must not abort the duplicate scan
         rec = sdlc_md.extract_record_id(p.stem) or p.stem
         for block in parse_story(text):
             if not block.verifier:
@@ -679,6 +679,19 @@ def resolve_jest_from_cache(verifier: str, asserts: list[dict]) -> VerifierResul
                           "" if ok else f"cached jest failure for {pat!r}", 0)
 
 
+def _read_body(path: Path | str) -> str:
+    """An artefact body, defaulted to empty when the file is unreadable or not valid UTF-8, so
+    one wreck cannot abort a whole pass - and NAMED on stderr when that happens. A body that
+    silently reads empty is indistinguishable from an artefact with no ACs in it, which is the
+    difference between "nothing to prove" and "nothing was proved"."""
+    p = Path(path)
+    text = sdlc_md.read_text_safe(p)
+    if not text and p.is_file() and p.stat().st_size:
+        print(f"warning: {p} is unreadable or not valid UTF-8 - read as an empty body",
+              file=sys.stderr)
+    return text
+
+
 def verify_story(
     story_path: Path,
     dry_run: bool,
@@ -697,7 +710,7 @@ def verify_story(
     stamped `Provenance: external` (unless `allow_external` overrides) - the technical control
     matching the documented trust boundary, so externally ingested content cannot reach a
     shell just because a workflow copied it into a story."""
-    text = story_path.read_text(encoding="utf-8")
+    text = _read_body(story_path)
     lines = text.splitlines()
     blocks = parse_story(text)
     report = StoryReport(path=str(story_path), ac_count=len(blocks),
@@ -834,7 +847,9 @@ def write_report(path: Path, stories: list[StoryReport], dry_run: bool = False,
     merged = new_stories
     if merge and path.exists():
         try:
-            prior = json.loads(path.read_text(encoding="utf-8")).get("stories", {})
+            prior = json.loads(path.read_text(  # bare-read-ok: not an artefact body; the
+                    # enclosing except already catches UnicodeDecodeError via ValueError
+                    encoding="utf-8")).get("stories", {})
             if isinstance(prior, dict):
                 merged = {**prior, **new_stories}  # this run's entries take precedence
         except (ValueError, OSError):
@@ -994,7 +1009,9 @@ def _report_failed_acs(report_path: Path | str) -> set[str]:
     if not p.exists():
         return set()
     try:
-        data = json.loads(p.read_text(encoding="utf-8"))
+        data = json.loads(p.read_text(  # bare-read-ok: not an artefact body; the enclosing
+                # except already catches UnicodeDecodeError via ValueError
+                encoding="utf-8"))
     except (ValueError, OSError):
         return set()
     failed = set()
@@ -1018,7 +1035,7 @@ def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> 
     When `verify_report` is given, also cross-check: an AC the matrix calls passing but the
     verify-report marks failing is flagged (the matrix cannot claim green over a red runner).
     Returns a list of {ac, issue} findings (empty = the matrix is complete and honest)."""
-    text = Path(spec_path).read_text(encoding="utf-8")
+    text = _read_body(spec_path)
     failed_in_report = _report_failed_acs(verify_report) if verify_report else set()
     issues: list[dict] = []
     def _matrix_header(cells: list) -> bool:
@@ -1061,7 +1078,7 @@ def epic_stories(repo_root: Path | str, epic_id: str) -> list[Path]:
     eid = sdlc_md.norm_id(epic_id)
     out: list[Path] = []
     for p in sdlc_md.artifact_files("story", root):
-        ef = sdlc_md.extract_field(p.read_text(encoding="utf-8"), "Epic") or ""
+        ef = sdlc_md.extract_field(sdlc_md.read_text_safe(p), "Epic") or ""
         m = sdlc_md.ID_SEARCH_RE.search(ef)
         if m and sdlc_md.norm_id(m.group(0)) == eid:
             out.append(p)
@@ -1083,7 +1100,7 @@ def scaffold_ac_matrix(repo_root: Path | str, epic_id: str) -> str:
             sdlc_md.join_row(["---"] * len(header))]
     for story in epic_stories(repo_root, epic_id):
         story_id = sdlc_md.extract_record_id(story.stem) or story.stem
-        for block in parse_story(story.read_text(encoding="utf-8")):
+        for block in parse_story(sdlc_md.read_text_safe(story)):
             rows.append(sdlc_md.join_row([story_id, block.ac_id, block.title, "", ""]))
     return "### AC Coverage Matrix\n\n" + "\n".join(rows) + "\n"
 
@@ -1108,7 +1125,7 @@ def epic_test_spec_check(repo_root: Path | str, epic_id: str) -> dict:
     eid = sdlc_md.norm_id(epic_id)
     specs = []
     for p in sdlc_md.artifact_files("test-spec", root):
-        ef = sdlc_md.extract_field(p.read_text(encoding="utf-8"), "Epic") or ""
+        ef = sdlc_md.extract_field(sdlc_md.read_text_safe(p), "Epic") or ""
         m = sdlc_md.ID_SEARCH_RE.search(ef)
         if m and sdlc_md.norm_id(m.group(0)) == eid:
             specs.append(p)
@@ -1150,7 +1167,7 @@ def cmd_lint(args: argparse.Namespace) -> int:
     for p in paths:
         if not p.exists():
             continue
-        for line in p.read_text(encoding="utf-8").splitlines():
+        for line in sdlc_md.read_text_safe(p).splitlines():
             m = VERIFY_RE.match(line)
             if not m:
                 continue

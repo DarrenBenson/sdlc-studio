@@ -67,6 +67,7 @@ DRIFT_KINDS = (
     "epic-points-stale",
     "link-asymmetry",
     "undecomposed",
+    "linked-epics",
 )
 
 # Statuses that do NOT imply a backing file yet. An UNLINKED index row in one of
@@ -973,6 +974,111 @@ def epic_points_drift(repo_root: Path | str) -> list[dict]:
     return drift
 
 
+_LINKED_EPICS_HEADER = "Linked Epics"
+_CR_ROW_RE = re.compile(r"^\|\s*\[(CR-?\d+)\]")
+
+
+def _linked_epics_column(index_text: str) -> int | None:
+    """The zero-based cell index of the Linked Epics column, or None when absent.
+
+    Located by HEADER rather than by position: the CR index has carried a different column
+    count across schema versions, and a hardcoded offset would silently rewrite Type or Date
+    on an older index.
+    """
+    for line in index_text.splitlines():
+        if _LINKED_EPICS_HEADER.lower() in line.lower() and line.lstrip().startswith("|"):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            for i, c in enumerate(cells):
+                if c.lower() == _LINKED_EPICS_HEADER.lower():
+                    return i
+    return None
+
+
+def _cr_decomposed_into(root: Path) -> dict:
+    """id -> the `Decomposed-into` value each CR file declares. Files are truth."""
+    out = {}
+    for p in sdlc_md.artifact_files("cr", root):
+        value = sdlc_md.extract_field(sdlc_md.read_text_safe(p), "Decomposed-into")
+        if value and value.strip():
+            cid = sdlc_md.extract_record_id(p.stem) or p.stem
+            out[_norm_id(cid)] = value.strip()
+    return out
+
+
+def detect_linked_epics(repo_root: Path | str) -> dict:
+    """Rows whose Linked Epics cell disagrees with the CR file's `Decomposed-into`.
+
+    The column shipped as a placeholder and stayed one - every CR in this workspace that had
+    been decomposed still showed `--`. A column nothing derives is a column nobody can
+    trust, so it is censused from the files like every other derived cell. A CR that was
+    never decomposed has no epic to name, so a placeholder there is honest, not drift.
+    """
+    root = Path(repo_root)
+    index_path = root / "sdlc-studio" / "change-requests" / "_index.md"
+    if not index_path.is_file():
+        return {"drift": []}
+    text = index_path.read_text(encoding="utf-8")
+    col = _linked_epics_column(text)
+    if col is None:
+        return {"drift": []}
+    declared = _cr_decomposed_into(root)
+    drift = []
+    for line in text.splitlines():
+        m = _CR_ROW_RE.match(line)
+        if not m:
+            continue
+        cid = _norm_id(m.group(1))
+        expected = declared.get(cid)
+        if not expected:
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if col < len(cells) and cells[col] != expected:
+            drift.append({"id": cid, "kind": "linked-epics",
+                          "found": cells[col], "expected": expected,
+                          "fix": (f"set the Linked Epics cell of {cid} to '{expected}' "
+                                  f"(currently '{cells[col]}') - `reconcile.py apply` does it")})
+    return {"drift": drift}
+
+
+def apply_linked_epics(repo_root: Path | str, dry_run: bool = False) -> dict:
+    """Write each CR row's Linked Epics cell from the file's `Decomposed-into`.
+
+    Rewrites ONLY that cell, located by header, so the surrounding row survives intact.
+    Idempotent. Returns {synced: [ids]}.
+    """
+    root = Path(repo_root)
+    index_path = root / "sdlc-studio" / "change-requests" / "_index.md"
+    drift = detect_linked_epics(root)["drift"]
+    if not drift:
+        return {"synced": []}
+    if dry_run:
+        return {"synced": [d["id"] for d in drift]}
+    text = index_path.read_text(encoding="utf-8")
+    col = _linked_epics_column(text)
+    wanted = {d["id"]: d["expected"] for d in drift}
+    lines = text.splitlines(True)
+    synced = []
+    for i, line in enumerate(lines):
+        m = _CR_ROW_RE.match(line)
+        if not m:
+            continue
+        cid = _norm_id(m.group(1))
+        if cid not in wanted:
+            continue
+        newline = "\n" if line.endswith("\n") else ""
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if col >= len(cells):
+            continue
+        cells[col] = wanted[cid]
+        lines[i] = "| " + " | ".join(cells) + " |" + newline
+        synced.append(cid)
+    if synced:
+        # atomic_write, not write_text: an index is read by every other lane, and a torn
+        # write from an interrupted apply leaves a half-table nothing can parse.
+        sdlc_md.atomic_write(index_path, "".join(lines))
+    return {"synced": synced}
+
+
 def apply_epic_points(repo_root: Path | str, dry_run: bool = False) -> dict:
     """Write each declaring epic's `Derived Point Total` to the sum of its stories' points - the
     same recompute discipline as the summary counts, one level up. Rewrites only the value on the
@@ -1172,6 +1278,7 @@ def cmd_detect(args: argparse.Namespace) -> int:
     # two-backlog workflow - an unenforced project is not told its childless CRs are drift.
     if args.scope is None:
         all_drift.extend(link_asymmetry_drift(repo_root))
+        all_drift.extend(detect_linked_epics(repo_root)["drift"])
         if sdlc_md.two_backlog_enforced(repo_root):
             all_drift.extend(undecomposed_drift(repo_root))
 
@@ -1899,6 +2006,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
         if do_breakdown:
             by_type["breakdown"] = apply_breakdown(repo_root, dry_run=args.dry_run)
             by_type["epic_points"] = apply_epic_points(repo_root, dry_run=args.dry_run)
+            by_type["linked_epics"] = apply_linked_epics(repo_root, dry_run=args.dry_run)
         applied = sum(len(r.get("changes", [])) + len(r.get("appended", []))
                       + len(r.get("pruned", [])) + len(r.get("synced", []))
                       for r in by_type.values())
@@ -1974,6 +2082,10 @@ def cmd_apply(args: argparse.Namespace) -> int:
         for eid in ep["synced"]:
             print(f"{'WOULD recompute' if args.dry_run else 'recomputed'} "
                   f"derived point total for {eid}")
+            n += 1
+        le = apply_linked_epics(repo_root, dry_run=args.dry_run)
+        for cid in le["synced"]:
+            print(f"{'WOULD sync' if args.dry_run else 'synced'} Linked Epics for {cid}")
             n += 1
     if do_meta:
         m = apply_meta(repo_root, dry_run=args.dry_run)

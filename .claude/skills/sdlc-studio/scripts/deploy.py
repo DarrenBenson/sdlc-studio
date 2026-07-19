@@ -96,7 +96,9 @@ def _ledger_rows(root: Path) -> list[tuple[datetime, str, str]] | None:
         return None
     rows = []
     pat = re.compile(r"^\|\s*(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\s*\|\s*(\S+)\s*\|\s*(.*?)\s*\|\s*$")
-    for line in log.read_text(encoding="utf-8").splitlines():
+    # A corrupt ledger yields no parseable rows, which `metrics` reports as "exists but
+    # unparseable" - distinct from the None that means no ledger at all.
+    for line in sdlc_md.read_text_safe(log).splitlines():
         m = pat.match(line)
         if m and m.group(2) in _STATUSES:
             rows.append((datetime.strptime(m.group(1), "%Y-%m-%d %H:%M"),

@@ -60,5 +60,87 @@ class DirectRunParityTests(unittest.TestCase):
         self.assertEqual(direct, discover)
 
 
+SCRIPTS_DIR = TESTS_DIR.parent
+
+# A bare read: `<expr>.read_text(...)`. `read_text_safe(` never matches - the character after
+# `read_text` is `_`, not `(`.
+BARE_READ_RE = re.compile(r"\.read_text\s*\(")
+
+# The one visible exemption channel. A bare read stays bare only when the line carries
+# `# bare-read-ok: <reason>`, so every exemption is readable at the read site itself rather
+# than hidden in a list somewhere else.
+EXEMPT_RE = re.compile(r"#\s*bare-read-ok:\s*(\S.*)$")
+
+# Modules known to stream the artefact tree today. The census is mechanical, but an
+# enumeration that silently returned nothing would pass every assertion below while checking
+# nothing. This floor is the anti-vacuity guard: the census must CONTAIN it, never be reduced
+# to it.
+KNOWN_SCANNERS = {"deploy.py", "flow.py", "status.py", "verify_ac.py"}
+
+# The marker for "this module walks the whole artefact tree". `artifact_files` is a thin
+# wrapper over `iter_artifact_files`, so a direct caller of the enumerator is the module that
+# streams the tree, and therefore the module one corrupt file can abort mid-pass.
+SCANNER_MARKER = "iter_artifact_files"
+
+
+def _scanner_modules() -> dict[str, str]:
+    """{filename: source} for every top-level script that walks the artefact tree.
+
+    Scoped to `scripts/*.py` (non-recursive): `lib/sdlc_md.py` defines both the enumerator and
+    `read_text_safe` itself, so its own bare read is the primitive, not a scanner site.
+    """
+    out = {}
+    for path in sorted(SCRIPTS_DIR.glob("*.py")):
+        src = path.read_text(encoding="utf-8")
+        if SCANNER_MARKER in src:
+            out[path.name] = src
+    return out
+
+
+class BareArtefactReadSweepTests(unittest.TestCase):
+    """Every artefact-body read in a tree-walking scanner goes through `read_text_safe`.
+
+    One corrupt or non-UTF-8 artefact from a crashed session must not abort a pass over the
+    whole workspace. Index reads are the deliberate exception and stay loud - see
+    `LoudIndexReadTests` in test_reconcile.py for the other direction.
+    """
+
+    def test_the_census_actually_enumerates_scanners(self) -> None:
+        """A census that found nothing would pass the sweep below vacuously."""
+        found = set(_scanner_modules())
+        self.assertTrue(found, "the scanner census found no modules - the enumeration is broken")
+        missing = KNOWN_SCANNERS - found
+        self.assertFalse(
+            missing,
+            f"the census no longer sees known scanners {sorted(missing)} - "
+            "the enumeration is broken, not the tree",
+        )
+
+    def test_no_bare_artefact_body_reads_in_scanners(self) -> None:
+        offenders = []
+        for name, src in _scanner_modules().items():
+            for lineno, line in enumerate(src.splitlines(), 1):
+                if BARE_READ_RE.search(line) and not EXEMPT_RE.search(line):
+                    offenders.append(f"{name}:{lineno}: {line.strip()}")
+        self.assertEqual(
+            offenders,
+            [],
+            "bare artefact-body read(s) in a tree-walking scanner - route through "
+            "`sdlc_md.read_text_safe`, or mark the line `# bare-read-ok: <reason>` when the "
+            "read must stay loud (an index, or an already-guarded config read):\n"
+            + "\n".join(offenders),
+        )
+
+    def test_every_exemption_states_a_reason(self) -> None:
+        """An exemption with no reason is an invisible exemption."""
+        bad = []
+        for name, src in _scanner_modules().items():
+            for lineno, line in enumerate(src.splitlines(), 1):
+                m = EXEMPT_RE.search(line)
+                if m and len(m.group(1).strip()) < 10:
+                    bad.append(f"{name}:{lineno}: {line.strip()}")
+        self.assertEqual(bad, [], "`# bare-read-ok:` with no usable reason:\n" + "\n".join(bad))
+
+
 if __name__ == "__main__":
     unittest.main()

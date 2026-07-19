@@ -131,6 +131,7 @@ def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
         _insert_after_status(epic_path, f"> **Parent:** {rid}")
         _insert_after_status(epic_path, f"> **Derived Point Total:** {total}")
         _write_decomposed(rpath, [*existing_children, epic_id])
+        _sync_linked_epics(root)
     except BaseException:
         for p in minted:
             try:
@@ -139,6 +140,22 @@ def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
                 pass
         raise
     return epic_id, story_ids
+
+
+def _sync_linked_epics(root: Path) -> None:
+    """Write the request's Linked Epics index cell at the moment the link is made.
+
+    Orchestrates reconcile's tested census rather than duplicating the row-rewrite here: one
+    writer, one notion of what the cell should say. Leaving it to a later reconcile is how the
+    column drifted to a placeholder on every decomposed request in the first place. Best
+    effort - a decomposition already committed to disk must not be rolled back because a
+    derived index cell could not be refreshed; the standing census still reports it.
+    """
+    try:
+        import reconcile  # noqa: PLC0415 - local: reconcile imports broadly, keep it off cold paths
+        reconcile.apply_linked_epics(root)
+    except Exception:  # noqa: BLE001 - a derived cell never fails the mint it describes
+        pass
 
 
 #: The `Derived Point Total` field's leading integer, WHEREVER the field sits - blockquote or not,
@@ -195,6 +212,7 @@ def _decompose_into(repo_root, rid: str, rpath: Path, epic_id: str,
             _insert_after_status(epic_path, f"> **Parent:** {rid}")
         _roll_point_total(epic_path, total)
         _write_decomposed(rpath, [*existing_children, epic_id])
+        _sync_linked_epics(root)
     except BaseException:
         for p in minted:
             try:

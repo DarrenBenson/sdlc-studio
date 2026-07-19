@@ -5,7 +5,9 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import re
 import sys
 import tempfile
@@ -2272,6 +2274,218 @@ class DriftKindVocabularyTests(unittest.TestCase):
         self.assertEqual(
             emitted, set(reconcile.DRIFT_KINDS),
             "DRIFT_KINDS drifted from the `\"kind\":` literals the detectors emit")
+
+
+CR_INDEX_HEADER = (
+    "# Change Requests\n\n"
+    "| Status | Count |\n|---|---|\n| Complete | 1 |\n\n"
+    "| ID | Title | Status | Priority | Type | Date | Linked Epics |\n"
+    "|---|---|---|---|---|---|---|\n")
+
+
+def _cr_fixture(root: Path, decomposed: str | None = "EP0007",
+                cell: str = "--") -> Path:
+    """A CR whose file names its epic while the index row shows a placeholder."""
+    d = root / "sdlc-studio" / "change-requests"
+    d.mkdir(parents=True, exist_ok=True)
+    body = "# CR-0001: c\n\n> **Status:** Complete\n"
+    if decomposed:
+        body += f"> **Decomposed-into:** {decomposed}\n"
+    body += "\n## Summary\n\nx\n"
+    (d / "CR0001-c.md").write_text(body, encoding="utf-8")
+    (d / "_index.md").write_text(
+        CR_INDEX_HEADER
+        + f"| [CR-0001](CR0001-c.md) | c | Complete | Medium | Improvement | 2026-07-19 | {cell} |\n",
+        encoding="utf-8")
+    return d / "_index.md"
+
+
+class LinkedEpicsCensusTests(unittest.TestCase):
+    """US0256 AC1: a Linked Epics cell that contradicts the file is drift.
+
+    The column shipped as a placeholder and stayed one: across this workspace all 63 CRs
+    carrying a real `Decomposed-into` showed `--`. A column nothing derives is a column
+    nobody can trust, so the census reads the files and reports the disagreement.
+    """
+
+    def test_a_placeholder_cell_over_a_decomposed_cr_is_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr_fixture(root)
+            drift = reconcile.detect_linked_epics(root)["drift"]
+            self.assertEqual(len(drift), 1, drift)
+            self.assertEqual(drift[0]["id"], "CR0001")
+            self.assertEqual(drift[0]["expected"], "EP0007")
+
+    def test_a_cell_that_already_matches_is_not_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr_fixture(root, cell="EP0007")
+            self.assertEqual(reconcile.detect_linked_epics(root)["drift"], [])
+
+    def test_a_cr_that_was_never_decomposed_is_not_drift(self) -> None:
+        """An undecomposed CR has no epic to name; a placeholder is the honest cell."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr_fixture(root, decomposed=None)
+            self.assertEqual(reconcile.detect_linked_epics(root)["drift"], [])
+
+    def test_multiple_epics_are_compared_whole(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr_fixture(root, decomposed="EP0041, EP0081", cell="EP0041")
+            drift = reconcile.detect_linked_epics(root)["drift"]
+            self.assertEqual(len(drift), 1)
+            self.assertEqual(drift[0]["expected"], "EP0041, EP0081")
+
+
+class LinkedEpicsApplyTests(unittest.TestCase):
+    """US0256 AC2: apply writes the column from the files, and only that column."""
+
+    def test_apply_syncs_the_cell_from_the_file(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            idx = _cr_fixture(root)
+            res = reconcile.apply_linked_epics(root)
+            self.assertEqual(res["synced"], ["CR0001"])
+            row = [l for l in idx.read_text(encoding="utf-8").splitlines()
+                   if l.startswith("| [CR-0001]")][0]
+            self.assertTrue(row.rstrip().endswith("| EP0007 |"), row)
+            self.assertIn("| Complete |", row)   # the other cells survive
+            self.assertIn("| 2026-07-19 |", row)
+
+    def test_apply_is_idempotent(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr_fixture(root)
+            reconcile.apply_linked_epics(root)
+            self.assertEqual(reconcile.apply_linked_epics(root)["synced"], [])
+
+    def test_dry_run_reports_without_writing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            idx = _cr_fixture(root)
+            before = idx.read_text(encoding="utf-8")
+            res = reconcile.apply_linked_epics(root, dry_run=True)
+            self.assertEqual(res["synced"], ["CR0001"])
+            self.assertEqual(idx.read_text(encoding="utf-8"), before)
+
+
+import loader  # noqa: E402  - the shared script importer, used by the sweep tests below
+
+NOT_UTF8 = b"# US0003: corrupt\n\n> **Status:** Draft\n\xff\xfe not utf8\n"
+
+
+def _corrupt_workspace(root: Path) -> None:
+    """A workspace holding one healthy artefact and one non-UTF-8 artefact per scanned type,
+    plus a non-UTF-8 deploy ledger - the half-written wreckage a crashed session leaves."""
+    ws = root / "sdlc-studio"
+    for sub, healthy, corrupt in (
+        ("stories", "US0001-login.md", "US0003-corrupt.md"),
+        ("bugs", "BG0001-x.md", "BG0003-corrupt.md"),
+        ("epics", "EP0001-e.md", "EP0003-corrupt.md"),
+        ("test-specs", "TS0001-s.md", "TS0003-corrupt.md"),
+        ("change-requests", "CR0001-c.md", "CR0003-corrupt.md"),
+        ("rfcs", "RFC0001-r.md", "RFC0003-corrupt.md"),
+        ("issues", "IS0001-i.md", "IS0003-corrupt.md"),
+    ):
+        d = ws / sub
+        d.mkdir(parents=True, exist_ok=True)
+        (d / healthy).write_text(
+            f"# {healthy.split('-')[0]}: ok\n\n> **Status:** Draft\n> **Epic:** EP0001\n"
+            "\n## Acceptance Criteria\n\n### AC1: ok\n\n- **Verify:** manual eyeball\n",
+            encoding="utf-8",
+        )
+        (d / corrupt).write_bytes(NOT_UTF8)
+    (ws / "deploy-log.md").write_bytes(NOT_UTF8)
+
+
+class NonUtf8ScannerRegressionTests(unittest.TestCase):
+    """Every swept scanner completes over a workspace holding a non-UTF-8 artefact.
+
+    Before the sweep each of these raised UnicodeDecodeError and aborted the whole pass - one
+    corrupt file from a crashed session took the entire workspace scan down with it.
+    """
+
+    def test_status_scanners_survive(self) -> None:
+        status = loader.load_script("status")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _corrupt_workspace(root)
+            census = status.backlog(root)
+            self.assertTrue(census, "backlog censused nothing - the scan did not reach the tree")
+            self.assertIsInstance(status.discovery_awaiting(root), dict)
+            self.assertIsInstance(status.tranche_members(root, "T1"), list)
+
+    def test_verify_ac_scanners_survive(self) -> None:
+        verify_ac = loader.load_script("verify_ac")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _corrupt_workspace(root)
+            stories = sorted((root / "sdlc-studio" / "stories").glob("*.md"))
+            self.assertEqual(len(stories), 2)
+            self.assertIsInstance(verify_ac.duplicate_verifiers(stories), list)
+            self.assertIsInstance(verify_ac.epic_stories(root, "EP0001"), list)
+            self.assertIn("AC Coverage Matrix", verify_ac.scaffold_ac_matrix(root, "EP0001"))
+            self.assertIsInstance(verify_ac.epic_test_spec_check(root, "EP0001"), dict)
+            corrupt = root / "sdlc-studio" / "stories" / "US0003-corrupt.md"
+            self.assertIsInstance(verify_ac.ts_check(corrupt), list)
+
+    def test_verify_story_survives_and_names_the_file(self) -> None:
+        """A body that reads back empty must be NAMED, not counted as a clean zero-AC pass -
+        the whole point of the default is that something downstream says so."""
+        verify_ac = loader.load_script("verify_ac")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _corrupt_workspace(root)
+            corrupt = root / "sdlc-studio" / "stories" / "US0003-corrupt.md"
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                report = verify_ac.verify_story(corrupt, True, 5, root, allow_shell=False)
+            self.assertEqual(report.ac_count, 0)
+            self.assertIn("US0003-corrupt.md", buf.getvalue())
+            self.assertIn("unreadable", buf.getvalue().lower())
+
+    def test_deploy_metrics_survives(self) -> None:
+        deploy = loader.load_script("deploy")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _corrupt_workspace(root)
+            out = deploy.metrics(root)
+            self.assertTrue(out["applicable"], "an unreadable ledger must not read as absent")
+
+
+class LoudIndexReadTests(unittest.TestCase):
+    """The opposite direction: an index read stays bare and loud.
+
+    A missing or corrupt `_index.md` is a real error. Defaulting it to an empty body would
+    report "no rows" and mask exactly the derived-index drift reconcile exists to catch, so
+    these reads must keep raising. If a future sweep makes everything safe, this goes red.
+    """
+
+    def test_corrupt_index_raises_rather_than_reading_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            (root / "sdlc-studio" / "stories" / "_index.md").write_bytes(NOT_UTF8)
+            with self.assertRaises(UnicodeDecodeError):
+                reconcile.parse_index("story", root)
+
+    def test_a_healthy_index_still_parses(self) -> None:
+        """Guards the test above: it must fail on the corruption, not on a broken call."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            parsed = reconcile.parse_index("story", root)
+            self.assertTrue(parsed["exists"])
+            self.assertIn("US0001", parsed["rows"])
+
+    def test_a_missing_index_is_reported_not_defaulted(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            (root / "sdlc-studio" / "stories" / "_index.md").unlink()
+            self.assertFalse(reconcile.parse_index("story", root)["exists"])
 
 
 if __name__ == "__main__":

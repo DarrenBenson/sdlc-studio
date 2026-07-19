@@ -131,7 +131,7 @@ def backlog(repo_root: Path, types: tuple[str, ...] | None = None) -> dict:
         by_status: dict[str, list[str]] = {}
         count = 0
         for path in sdlc_md.artifact_files(t, root):
-            raw = sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status") or "Unknown"
+            raw = sdlc_md.extract_field(sdlc_md.read_text_safe(path), "Status") or "Unknown"
             st = sdlc_md.canonical_status(raw, vocab) or raw
             if sdlc_md.is_terminal_status(t, st):
                 continue
@@ -178,7 +178,7 @@ def discovery_awaiting(repo_root: Path | str) -> dict:
     for type_ in sdlc_md.DISCOVERY_TYPES:
         vocab = sdlc_md.status_vocab(type_, root)
         for p in sdlc_md.artifact_files(type_, root):
-            text = p.read_text(encoding="utf-8")
+            text = sdlc_md.read_text_safe(p)  # a corrupt artefact must not abort the sweep
             status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
             if (not status or sdlc_md.is_terminal_status(type_, status)
                     or status in _PARKED_STATUSES):
@@ -542,7 +542,7 @@ def tranche_members(repo_root: Path | str, tranche: str) -> list[dict]:
     out: list[dict] = []
     for type_ in sdlc_md.ARTIFACT_TYPES:
         for p in sdlc_md.artifact_files(type_, root):
-            text = p.read_text(encoding="utf-8")
+            text = sdlc_md.read_text_safe(p)  # a corrupt artefact must not abort the sweep
             value = sdlc_md.tranche_ref(text)  # newline-safe: an empty field is not a member
             if value and value == want:
                 out.append({"id": sdlc_md.extract_record_id(p.stem) or p.stem, "type": type_,

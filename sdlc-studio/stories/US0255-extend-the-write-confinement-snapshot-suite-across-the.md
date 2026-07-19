@@ -1,6 +1,6 @@
 # US0255: extend the write-confinement snapshot suite across the shipped writers with a roster sweep
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** each of artifact.py, transition.py, reconcile apply, telemetry.py, retro.py, critic record, decisions.py, handoff.py and sprint_report.py runs against a fixture workspace
 - **Then** a before/after snapshot asserts it touched only its named target and left every other path byte-identical
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_confinement.py -k MajorWriterConfinementTests
+- **Verified:** yes (2026-07-19)
 
 ### AC2: A roster sweep forces new writers in
 
@@ -29,6 +30,7 @@
 - **When** the roster sweep enumerates the writers on disk against the tests that cover them
 - **Then** it fails and names the uncovered script, and an entry in the explicit allowlist is the only way past
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_confinement.py -k ConfinementRosterSweepTests
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

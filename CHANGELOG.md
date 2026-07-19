@@ -21,6 +21,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The request index's Linked Epics column is censused from the files (US0256).** The column
+  shipped as a placeholder and stayed one: every CR in this workspace that had been decomposed -
+  63 of 63 - still showed `--` while its file named real epics. A column nothing derives is a
+  column nobody can trust. `reconcile detect` now reports the disagreement and `apply` writes the
+  cell from each request's `Decomposed-into`, locating the column by header rather than position
+  so an older index cannot have its Type or Date rewritten. `refine` writes the cell where the
+  link is made, so the drift does not simply reaccumulate between reconciles. A request that was
+  never decomposed has no epic to name, so its placeholder is honest and is not flagged.
+
+- **Artefact-body reads in the tree-walking scanners route through `read_text_safe` (US0252).**
+  Eleven bare reads across `verify_ac.py`, `status.py` and `deploy.py` would abort a whole scan on
+  one non-UTF-8 artefact from a crashed session. Index reads stay bare and loud, because a corrupt
+  index is a real error rather than one bad row. Two JSON reads stay bare behind an inline
+  `bare-read-ok` marker stating the reason, and the census refuses an exemption that gives none.
+  Reading a story body safely would have turned a corrupt story into a clean `ac=0 pass=0` exit 0,
+  so the body reader also names the unreadable file on stderr: a vacuous pass is worse than the
+  crash it replaces.
+
+- **The write-confinement suite covers a roster of shipped writers, not a hand-picked few
+  (US0255).** Eleven writers now carry a snapshot asserting both that nothing outside their
+  declared targets changed AND that the declared target was actually written, so inaction cannot
+  read as confinement. An AST detector reads the write surface of every script - most writers go
+  through the shared `atomic_write` helper rather than `write_text`, which a grep-based sweep would
+  miss - and every detected writer must be cased or allowlisted with a stated reason. Thirty-two
+  are currently allowlisted: that list is the remaining debt, not a claim of coverage.
+
 - **The finding filer writes a decision row that says something (US0245).** Every RFC filed by
   `file_finding.py` carried one fixed sentence - `Act on this finding or keep status quo` - while
   the finding's real options sat two lines above it under Design Options. A row that poses no
