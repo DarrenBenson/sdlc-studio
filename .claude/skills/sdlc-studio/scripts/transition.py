@@ -575,11 +575,16 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
     # Every unmet gate is COLLECTED and reported in one refusal - refusing one requirement
     # per attempt cost an agent a round-trip per gate (three attempts to close a v3 finding).
     blocks: list[str] = []
-    if type_ == "bug" and not force and not dry_run:
+    # These gates fire on a DRY-RUN too, for the reason the tier gate below already states: an
+    # honest preflight surfaces the refusal a real run would hit. Suppressing them made the
+    # dry-run report `would set BG0001 Open -> Fixed` for a transition the real run BLOCKS, so
+    # the one pre-flight an agent has gave the opposite answer to the real thing. `force` is
+    # still honoured, because a forced dry-run must predict what a forced real run does.
+    if type_ == "bug" and not force:
         block = _bug_depth_gate(text, target_canon)
         if block:
             blocks.append(f"{block}. Override with --force")
-    if type_ == "story" and not dry_run and target_canon == "Done":
+    if type_ == "story" and target_canon == "Done":
         parity = _story_target_parity(text)
         if parity:
             # advisory by default (existing projects unaffected); a project opts
@@ -590,7 +595,7 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
                 blocks.append(f"{parity}. Override with --force")
             else:
                 gate_warn = f"depth-parity advisory: {parity}"
-    if type_ == "story" and not force and not dry_run and target_canon == "Done":
+    if type_ == "story" and not force and target_canon == "Done":
         block = _done_verify_gate(root, path, text)
         if block:
             # the gate is hard by default; `quality.done_requires_verified: false`

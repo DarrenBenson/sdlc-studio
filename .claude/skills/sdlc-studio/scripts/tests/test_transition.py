@@ -104,13 +104,18 @@ class TransitionTests(unittest.TestCase):
                 tr.transition(root, "US9099", "Done")
 
     def test_dry_run_writes_nothing(self) -> None:
+        # `In Progress`, not `Done`. This story declares an executable AC that has never been
+        # verified, so a Done dry-run now correctly REFUSES (BG0213) - it used to pass, which
+        # is precisely the dishonesty that bug was about. The write-nothing property being
+        # asserted here needs a transition that is actually allowed; the refused case is
+        # covered by DryRunHonestyTests.
         with tempfile.TemporaryDirectory() as d:
             root = _repo(Path(d))
             before_story = _read(root, "stories", "US0001-x.md")
             before_idx = _read(root, "stories", "_index.md")
             before_epic = _read(root, "epics", "EP0001-e.md")
-            res = tr.transition(root, "US0001", "Done", dry_run=True)
-            self.assertEqual(res["to"], "Done")
+            res = tr.transition(root, "US0001", "In Progress", dry_run=True)
+            self.assertEqual(res["to"], "In Progress")
             self.assertEqual(_read(root, "stories", "US0001-x.md"), before_story)
             self.assertEqual(_read(root, "stories", "_index.md"), before_idx)
             self.assertEqual(_read(root, "epics", "EP0001-e.md"), before_epic)
@@ -958,6 +963,102 @@ class AllGatesInOneRefusalTests(unittest.TestCase):
             self.assertIn("triage", msg.lower())
 
 
+
+
+class DryRunHonestyTests(unittest.TestCase):
+    """BG0213: a dry-run must give the same answer as the real run, and write nothing.
+
+    A dry-run exists so an agent learns a transition's requirements BEFORE doing the work.
+    One that reports success where the real run blocks is worse than none: the requirement
+    is still met as a refusal afterwards, and the agent has been told the opposite in the
+    meantime. The tier gate already fires on dry-run for exactly this reason, in a comment
+    stating that an honest preflight surfaces the refusal a real run would hit; the bug-depth,
+    depth-parity and AC-verify gates simply did not follow it.
+    """
+
+    def _bug_without_depth(self, root: Path) -> None:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True)
+        (d / "BG0001-x.md").write_text(
+            "# BG0001: x\n\n> **Status:** Open\n> **Severity:** Low\n> **Points:** 2\n\n"
+            "## Summary\n\ns\n", encoding="utf-8")
+        (d / "_index.md").write_text(
+            "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [BG0001](BG0001-x.md) | x | Open |\n", encoding="utf-8")
+
+    def test_a_dry_run_reports_the_refusal_the_real_run_gives(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug_without_depth(root)
+            with self.assertRaises(ValueError) as ctx:
+                tr.transition(root, "BG0001", "Fixed", dry_run=True)
+            self.assertIn("Verification depth", str(ctx.exception))
+
+    def test_the_dry_run_and_the_real_run_agree(self) -> None:
+        # The two paths must differ only in whether the write happens.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug_without_depth(root)
+            dry = real = None
+            try:
+                tr.transition(root, "BG0001", "Fixed", dry_run=True)
+            except ValueError as exc:
+                dry = str(exc)
+            try:
+                tr.transition(root, "BG0001", "Fixed")
+            except ValueError as exc:
+                real = str(exc)
+            self.assertEqual(dry, real, "dry-run and real run disagree about the same transition")
+            self.assertIsNotNone(dry, "both must refuse; a passing pair proves nothing here")
+
+    def test_a_refused_dry_run_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug_without_depth(root)
+            before = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
+            with self.assertRaises(ValueError):
+                tr.transition(root, "BG0001", "Fixed", dry_run=True)
+            after = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
+            self.assertEqual(before, after)
+
+    def test_a_satisfiable_transition_still_dry_runs_clean(self) -> None:
+        # The negative branch: making the gates fire on dry-run must not make every dry-run
+        # refuse, or the honesty fix would just be a different lie.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug_without_depth(root)
+            p = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
+            p.write_text(p.read_text(encoding="utf-8").replace(
+                "> **Severity:** Low",
+                "> **Verification depth:** functional (reproduced)\n> **Severity:** Low"),
+                encoding="utf-8")
+            res = tr.transition(root, "BG0001", "Fixed", dry_run=True)
+            self.assertEqual(res["to"], "Fixed")
+            self.assertIn("> **Status:** Open", p.read_text(encoding="utf-8"))
+
+    def test_a_story_done_dry_run_reports_the_ac_verify_refusal(self) -> None:
+        """The STORY half of the same fix, which the bug cases cannot reach.
+
+        Restoring `not dry_run` on the AC-verify gate alone left the whole suite green -
+        every other test here exercises a BUG, so the story branch was unpinned while the
+        commit claimed the fix applied to all of them.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))       # US0001 declares an executable AC, never verified
+            with self.assertRaises(ValueError) as ctx:
+                tr.transition(root, "US0001", "Done", dry_run=True)
+            self.assertIn("never verified", str(ctx.exception))
+            self.assertIn("> **Status:** Ready", _read(root, "stories", "US0001-x.md"))
+
+    def test_force_still_waives_the_gate_on_a_dry_run(self) -> None:
+        # `--force` is a legitimate override, so a forced dry-run must report what a forced
+        # real run would do - not refuse. Dropping `not dry_run` without keeping `not force`
+        # would break this.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug_without_depth(root)
+            res = tr.transition(root, "BG0001", "Fixed", dry_run=True, force=True)
+            self.assertEqual(res["to"], "Fixed")
 
 
 class AnnotateCannotBypassGatesTests(unittest.TestCase):

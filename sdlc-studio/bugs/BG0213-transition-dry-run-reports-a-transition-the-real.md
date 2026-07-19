@@ -1,6 +1,7 @@
 # BG0213: transition --dry-run reports a transition the real run refuses, so the one pre-flight an agent has lies
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (dry-run and real run now agree on the same input; both branches mutation-killed; verified live on BG0212)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py

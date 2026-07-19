@@ -941,6 +941,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`transition --dry-run` gives the same answer as the real run (BG0213).** The dry-run did not
+  evaluate the bug-depth, depth-parity or AC-verify gates, so a bug with no `Verification depth`
+  field was reported as `would set BG0001 Open -> Fixed` while the real run blocked it. A dry-run
+  exists so the requirements can be learnt before the work; one that disagrees with the real run is
+  worse than none, because the requirement is still met as a refusal afterwards and the agent has
+  been told the opposite meanwhile. The gates now fire on the dry-run path, which is the rule the
+  tier gate already stated and the others did not follow. `--force` still waives what it waived, so
+  a forced dry-run predicts a forced real run.
 - **An epic whose breakdown declares a dead id is no longer owed a close no close can give
   (BG0211).** The union of `children_of` and the declared Story Breakdown is deliberately strict,
   but an id with no backing file (split, renamed, deleted) or naming a non-delivery artefact - a CR
