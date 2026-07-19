@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 2 |
 | In Progress | 0 |
 | Fixed | 129 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **212** |
+| **Total** | **213** |
 
 ## All Bugs
 
@@ -179,6 +179,7 @@
 | [BG0210](BG0210-every-successful-close-immediately-owes-another-one-derived.md) | every successful close immediately owes another one: derived epics never enter a retro Batch, so close-owed can never reach zero | Fixed | Medium | 2026-07-19 | 2026-07-19 |
 | [BG0211](BG0211-an-epic-whose-breakdown-declares-a-dead-id.md) | an epic whose breakdown declares a dead id is owed a close no close can give | Fixed | Low | 2026-07-19 | 2026-07-19 |
 | [BG0212](BG0212-audit-py-carries-14-mutation-survivors-outside-the.md) | audit.py carries 14 mutation survivors outside the profile parser, now enumerated in full | Open | Low | 2026-07-19 | 2026-07-19 |
+| [BG0213](BG0213-transition-dry-run-reports-a-transition-the-real.md) | transition --dry-run reports a transition the real run refuses, so the one pre-flight an agent has lies | Open | Medium | 2026-07-19 | 2026-07-19 |
 
 ## Archived Releases
 
