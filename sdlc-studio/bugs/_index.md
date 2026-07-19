@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 8 |
+| Open | 9 |
 | In Progress | 0 |
 | Fixed | 119 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **209** |
+| **Total** | **210** |
 
 ## All Bugs
 
@@ -176,6 +176,7 @@
 | [BG0207](BG0207-the-rfc-accept-gate-can-tell-the-operator.md) | the RFC accept gate can tell the operator one decision is open when two are | Open | Low | 2026-07-19 | 2026-07-19 |
 | [BG0208](BG0208-a-successfully-closed-run-keeps-outcome-stopped-so.md) | a successfully closed run keeps outcome=stopped, so a goal-reached sprint reads as abandoned in the archive | Open | Medium | 2026-07-19 | 2026-07-19 |
 | [BG0209](BG0209-seven-shipped-tests-read-this-repo-s-own.md) | seven shipped tests read this repo's own story files, so the payload cannot pass its own suite anywhere else | Open | Low | 2026-07-19 | 2026-07-19 |
+| [BG0210](BG0210-every-successful-close-immediately-owes-another-one-derived.md) | every successful close immediately owes another one: derived epics never enter a retro Batch, so close-owed can never reach zero | Open | Medium | 2026-07-19 | 2026-07-19 |
 
 ## Archived Releases
 
