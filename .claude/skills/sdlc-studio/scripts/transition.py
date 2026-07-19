@@ -906,9 +906,13 @@ def requirements(root, artifact_id: str, target: str) -> list[str]:
         transition(root, artifact_id, target, dry_run=True)
     except ValueError as exc:
         msg = str(exc)
-        # The ladder reports every unmet gate in one refusal, joined after the "all listed):"
-        # preamble. Split it back into the individual requirements it collected.
-        body = msg.split("all listed):", 1)[1] if "all listed):" in msg else msg
+        # ONLY the gate ladder's own refusal counts. It reports every unmet gate in one
+        # message behind this marker; any other ValueError - an unknown id, a status outside
+        # the vocabulary - is an ERROR, and reporting it as "a requirement you must meet"
+        # would be a confidently wrong answer of exactly the kind this command exists to end.
+        if "all listed):" not in msg:
+            raise
+        body = msg.split("all listed):", 1)[1]
         return [part.strip() for part in body.split(". Override with --force")
                 if part.strip().strip(".")]
     return []

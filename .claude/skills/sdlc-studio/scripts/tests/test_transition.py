@@ -8,6 +8,8 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
+import contextlib
+import io
 import tempfile
 import unittest
 from pathlib import Path
@@ -287,21 +289,21 @@ class DepthTierGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = _bug_repo(Path(d), "smoke")
             with self.assertRaises(ValueError) as cm:
-                tr.transition(root, "BG0001", "Fixed")
+                _quiet(tr.transition, root, "BG0001", "Fixed")
             self.assertIn("smoke", str(cm.exception))
             self.assertIn("functional", str(cm.exception))  # names required tier
 
     def test_functional_to_fixed_allowed(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = _bug_repo(Path(d), "functional (unit + regression)")
-            res = tr.transition(root, "BG0001", "Fixed")
+            res = _quiet(tr.transition, root, "BG0001", "Fixed")
             self.assertEqual(res["to"], "Fixed")
 
     def test_missing_depth_refused_not_passed(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = _bug_repo(Path(d), None)
             with self.assertRaises(ValueError) as cm:
-                tr.transition(root, "BG0001", "Fixed")
+                _quiet(tr.transition, root, "BG0001", "Fixed")
             self.assertIn("Verification depth", str(cm.exception))
 
     def test_functional_to_verified_refused(self) -> None:
@@ -545,7 +547,7 @@ class TelemetryOnCloseTests(unittest.TestCase):
         # an idempotent re-close records nothing.
         with tempfile.TemporaryDirectory() as d:
             root = self._bug(Path(d))
-            tr.transition(root, "BG0001", "Fixed")
+            _quiet(tr.transition, root, "BG0001", "Fixed")
             tr.transition(root, "BG0001", "Verified")
             tr.transition(root, "BG0001", "Closed")
             tr.transition(root, "BG0001", "Closed")
@@ -957,12 +959,19 @@ class AllGatesInOneRefusalTests(unittest.TestCase):
                 "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n",
                 encoding="utf-8")
             with self.assertRaises(ValueError) as ctx:
-                tr.transition(root, "BG0001", "Fixed")
+                _quiet(tr.transition, root, "BG0001", "Fixed")
             msg = str(ctx.exception)
             self.assertIn("Verification depth", msg)
             self.assertIn("triage", msg.lower())
 
 
+
+
+def _quiet(fn, *args, **kwargs):
+    """Run `fn` with its diagnostics captured. A green suite must print nothing, or a real
+    error hides in the noise - the repo's test-noise gate enforces that as a line budget."""
+    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+        return fn(*args, **kwargs)
 
 
 class DryRunHonestyTests(unittest.TestCase):
@@ -991,7 +1000,7 @@ class DryRunHonestyTests(unittest.TestCase):
             root = Path(d)
             self._bug_without_depth(root)
             with self.assertRaises(ValueError) as ctx:
-                tr.transition(root, "BG0001", "Fixed", dry_run=True)
+                _quiet(tr.transition, root, "BG0001", "Fixed", dry_run=True)
             self.assertIn("Verification depth", str(ctx.exception))
 
     def test_the_dry_run_and_the_real_run_agree(self) -> None:
@@ -1001,11 +1010,11 @@ class DryRunHonestyTests(unittest.TestCase):
             self._bug_without_depth(root)
             dry = real = None
             try:
-                tr.transition(root, "BG0001", "Fixed", dry_run=True)
+                _quiet(tr.transition, root, "BG0001", "Fixed", dry_run=True)
             except ValueError as exc:
                 dry = str(exc)
             try:
-                tr.transition(root, "BG0001", "Fixed")
+                _quiet(tr.transition, root, "BG0001", "Fixed")
             except ValueError as exc:
                 real = str(exc)
             self.assertEqual(dry, real, "dry-run and real run disagree about the same transition")
@@ -1017,7 +1026,7 @@ class DryRunHonestyTests(unittest.TestCase):
             self._bug_without_depth(root)
             before = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
             with self.assertRaises(ValueError):
-                tr.transition(root, "BG0001", "Fixed", dry_run=True)
+                _quiet(tr.transition, root, "BG0001", "Fixed", dry_run=True)
             after = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
             self.assertEqual(before, after)
 
@@ -1032,7 +1041,7 @@ class DryRunHonestyTests(unittest.TestCase):
                 "> **Severity:** Low",
                 "> **Verification depth:** functional (reproduced)\n> **Severity:** Low"),
                 encoding="utf-8")
-            res = tr.transition(root, "BG0001", "Fixed", dry_run=True)
+            res = _quiet(tr.transition, root, "BG0001", "Fixed", dry_run=True)
             self.assertEqual(res["to"], "Fixed")
             self.assertIn("> **Status:** Open", p.read_text(encoding="utf-8"))
 
@@ -1046,7 +1055,7 @@ class DryRunHonestyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = _repo(Path(d))       # US0001 declares an executable AC, never verified
             with self.assertRaises(ValueError) as ctx:
-                tr.transition(root, "US0001", "Done", dry_run=True)
+                _quiet(tr.transition, root, "US0001", "Done", dry_run=True)
             self.assertIn("never verified", str(ctx.exception))
             self.assertIn("> **Status:** Ready", _read(root, "stories", "US0001-x.md"))
 
@@ -1057,7 +1066,7 @@ class DryRunHonestyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._bug_without_depth(root)
-            res = tr.transition(root, "BG0001", "Fixed", dry_run=True, force=True)
+            res = _quiet(tr.transition, root, "BG0001", "Fixed", dry_run=True, force=True)
             self.assertEqual(res["to"], "Fixed")
 
 
@@ -1081,7 +1090,7 @@ class RequirementsPreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._bug(root)
-            unmet = tr.requirements(root, "BG0001", "Fixed")
+            unmet = _quiet(tr.requirements, root, "BG0001", "Fixed")
             self.assertEqual(len(unmet), 1)
             self.assertIn("Verification depth", unmet[0])
 
@@ -1091,14 +1100,14 @@ class RequirementsPreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._bug(root, depth="functional (reproduced)")
-            self.assertEqual(tr.requirements(root, "BG0001", "Fixed"), [])
+            self.assertEqual(_quiet(tr.requirements, root, "BG0001", "Fixed"), [])
 
     def test_asking_writes_nothing(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             p = self._bug(root)
             before = p.read_text(encoding="utf-8")
-            tr.requirements(root, "BG0001", "Fixed")
+            _quiet(tr.requirements, root, "BG0001", "Fixed")
             self.assertEqual(p.read_text(encoding="utf-8"), before)
 
     def test_requirements_are_not_duplicated(self) -> None:
@@ -1115,11 +1124,25 @@ class RequirementsPreflightTests(unittest.TestCase):
             with tempfile.TemporaryDirectory() as d:
                 root = Path(d)
                 self._bug(root)
-                unmet = tr.requirements(root, "BG0001", "Fixed")
+                unmet = _quiet(tr.requirements, root, "BG0001", "Fixed")
             self.assertTrue(any(sentinel in u for u in unmet),
                             "the reporter restates requirements instead of deriving them")
         finally:
             tr._bug_depth_gate = original
+
+    def test_an_unknown_id_raises_rather_than_reporting_a_bogus_requirement(self) -> None:
+        """A lookup failure must never masquerade as a requirement.
+
+        The first version parsed ANY ValueError into the unmet list, so asking about a
+        nonexistent id answered "you must satisfy: <not-found message>" - a confidently wrong
+        answer, which is the class of defect this command exists to end. Caught by the
+        briefing's own unresolvable-unit test rather than by reading.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            with self.assertRaises((ValueError, FileNotFoundError)):
+                _quiet(tr.requirements, root, "BG9999", "Fixed")
 
     def test_every_unmet_gate_is_listed_not_just_the_first(self) -> None:
         # The ladder collects all refusals into one message; the reporter must split them
@@ -1134,7 +1157,7 @@ class RequirementsPreflightTests(unittest.TestCase):
             (bd / "BG0001-x.md").write_text(
                 "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n",
                 encoding="utf-8")
-            unmet = tr.requirements(root, "BG0001", "Fixed")
+            unmet = _quiet(tr.requirements, root, "BG0001", "Fixed")
             self.assertGreaterEqual(len(unmet), 2, f"expected several requirements, got {unmet}")
             joined = " ".join(unmet)
             self.assertIn("Verification depth", joined)

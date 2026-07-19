@@ -452,7 +452,10 @@ class AuthoringPlanTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _bug(root, 1, status="Open")
-            rc = _load().main(["plan", "--bugs", "Open", "--write", "--root", str(root)])
+            # stdout captured: a green suite must print nothing, or a real error
+            # hides in the noise (the repo's test-noise budget enforces it).
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = _load().main(["plan", "--bugs", "Open", "--write", "--root", str(root)])
             self.assertEqual(rc, 0)
             self.assertTrue((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
 
@@ -574,14 +577,20 @@ class ReconcileBeforePlanTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _bug(root, 1, status="Open")   # a bug file but no _index.md -> missing-index drift
-            rc = _load().main(["plan", "--bugs", "Open", "--strict", "--root", str(root)])
+            # stdout captured: a green suite must print nothing, or a real error
+            # hides in the noise (the repo's test-noise budget enforces it).
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = _load().main(["plan", "--bugs", "Open", "--strict", "--root", str(root)])
             self.assertEqual(rc, 2)            # refused
 
     def test_warns_but_proceeds_without_strict(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _bug(root, 1, status="Open")
-            rc = _load().main(["plan", "--bugs", "Open", "--root", str(root)])
+            # stdout captured: a green suite must print nothing, or a real error
+            # hides in the noise (the repo's test-noise budget enforces it).
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = _load().main(["plan", "--bugs", "Open", "--root", str(root)])
             self.assertEqual(rc, 0)            # warns, still plans
 
 
@@ -685,8 +694,11 @@ class MixedBatchTests(unittest.TestCase):
             (sd / "US0002-x.md").write_text(
                 "# US0002: s\n\n> **Status:** Draft\n"
                 "> **Affects:** src/us0002.py\n> **Points:** 2\n", encoding="utf-8")
-            rc = _load().main(["plan", "--bugs", "Open", "--stories", "Draft",
-                               "--root", str(root)])
+            # stdout captured: a green suite must print nothing, or a real error
+            # hides in the noise (the repo's test-noise budget enforces it).
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = _load().main(["plan", "--bugs", "Open", "--stories", "Draft",
+                                   "--root", str(root)])
             self.assertEqual(rc, 0)
 
 
@@ -736,7 +748,10 @@ class WorklistTests(unittest.TestCase):
             _bug(root, 1)
             wl = root / "wl.md"
             wl.write_text("BG0001\n", encoding="utf-8")
-            rc = _load().main(["plan", "--worklist", str(wl), "--root", str(root)])
+            # stdout captured: a green suite must print nothing, or a real error
+            # hides in the noise (the repo's test-noise budget enforces it).
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = _load().main(["plan", "--worklist", str(wl), "--root", str(root)])
             self.assertEqual(rc, 0)
 
 
@@ -1199,8 +1214,11 @@ class CapacityBudgetTests(unittest.TestCase):
             sp = _load()
             data = sp.build_plan(root, "bug", "Open")
             self.assertEqual(sorted(data["capacity"]["over"]), ["tokens", "units"])
-            rc = sp.main(["plan", "--bugs", "Open", "--root", str(root),
-                          "--no-fetch", "--strict"])
+            # stdout captured: a green suite must print nothing, or a real error
+            # hides in the noise (the repo's test-noise budget enforces it).
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = sp.main(["plan", "--bugs", "Open", "--root", str(root),
+                              "--no-fetch", "--strict"])
             self.assertEqual(rc, 0)
 
     @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
@@ -1349,8 +1367,11 @@ class CapacityFeedsTheAppetiteTests(unittest.TestCase):
             sp = _load()
             data = sp.build_plan(root, "bug", "Open")
             self.assertIn("units", data["capacity"]["over"])          # flagged at PLAN time
-            rc = sp.main(["plan", "--bugs", "Open", "--root", str(root),
-                          "--no-fetch", "--write"])
+            # stdout captured: a green suite must print nothing, or a real error
+            # hides in the noise (the repo's test-noise budget enforces it).
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = sp.main(["plan", "--bugs", "Open", "--root", str(root),
+                              "--no-fetch", "--write"])
             self.assertEqual(rc, 0)
 
             guard = _load_loop_guard()
@@ -3498,6 +3519,83 @@ class ApplySignoffRefreshesHandoffTests(unittest.TestCase):
             rc, out, err = _run_apply_signoff(root, mod)
             self.assertEqual(rc, 0, err)
             self.assertNotIn("refreshed", out)
+
+
+def _quiet_brief(root, units):
+    """build_gate_briefing with its diagnostics captured (the test-noise gate is a budget)."""
+    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+        return sprint.build_gate_briefing(root, units)
+
+
+class GateBriefingTests(unittest.TestCase):
+    """US0266: the plan briefs the gates instead of leaving them to be met as refusals."""
+
+    def _bug(self, root: Path, depth: str = "") -> None:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        line = f"> **Verification depth:** {depth}\n" if depth else ""
+        (d / "BG0001-x.md").write_text(
+            f"# BG0001: x\n\n> **Status:** Open\n{line}> **Severity:** Low\n"
+            "> **Points:** 2\n\n## Summary\n\ns\n", encoding="utf-8")
+        (d / "_index.md").write_text(
+            "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [BG0001](BG0001-x.md) | x | Open |\n", encoding="utf-8")
+
+    def test_briefing_names_unmet_requirements(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root)
+            brief = _quiet_brief(root, [{"id": "BG0001", "type": "bug"}])
+            self.assertEqual(len(brief["units"]), 1)
+            self.assertIn("Verification depth", brief["units"][0]["unmet"][0])
+            self.assertEqual(brief["units"][0]["target"], "Fixed")
+
+    def test_a_satisfied_unit_carries_no_requirement(self) -> None:
+        # The negative branch: a briefing that always reported something would be noise,
+        # and would still satisfy the assertion above.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, depth="functional (reproduced)")
+            brief = _quiet_brief(root, [{"id": "BG0001", "type": "bug"}])
+            self.assertEqual(brief["units"], [])
+
+    def test_briefing_is_generated_from_definitions(self) -> None:
+        """AC2: the commit-check list comes from the gate, so it cannot drift from it.
+
+        Proven by adding a check to the gate's own definition and asserting it appears. A
+        hand-maintained list in the briefing would pass every other test here while going
+        stale the moment a check is added or removed.
+        """
+        import gate
+        original = dict(gate.DEFAULT_CHECKS)
+        try:
+            gate.DEFAULT_CHECKS["sentinel-check"] = lambda *a, **k: None
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._bug(root)
+                brief = _quiet_brief(root, [{"id": "BG0001", "type": "bug"}])
+            self.assertIn("sentinel-check", brief["commit_checks"],
+                          "the briefing restates the check list instead of reading it")
+        finally:
+            gate.DEFAULT_CHECKS.clear()
+            gate.DEFAULT_CHECKS.update(original)
+
+    def test_briefing_is_scoped_to_the_batch(self) -> None:
+        # AC4: only the types actually in the batch. A briefing that described every type
+        # would bury the relevant lines, which is how a checklist stops being read.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root)
+            brief = _quiet_brief(root, [{"id": "BG0001", "type": "bug"}])
+            self.assertEqual(brief["types"], ["bug"])
+
+    def test_an_unresolvable_unit_does_not_break_the_plan(self) -> None:
+        # A briefing is an aid, never a gate: a unit it cannot resolve is skipped, not raised.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            brief = _quiet_brief(root, [{"id": "BG9999", "type": "bug"}])
+            self.assertEqual(brief["units"], [])
 
 
 if __name__ == "__main__":

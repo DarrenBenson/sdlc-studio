@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`sprint plan` briefs the gates each unit will meet (US0266).** The plan now names, per unit,
+  the close requirements still unmet, and lists the checks every commit meets. Both halves are
+  generated - the first by running the real transition gates, the second from `gate.DEFAULT_CHECKS`
+  - so neither can drift from what it describes. Scoped to the batch: only the types present and
+  only requirements actually unmet, because an irrelevant checklist is how a relevant one stops
+  being read. Repo-local guards (house style, commit-message trailers) are deliberately not
+  enumerated, since the skill cannot know a consuming project's own hook.
 - **`transition requirements` - ask what a transition needs before doing the work (US0267).**
   Reports the unmet requirements standing between a unit and a target status, and writes nothing.
   Derived, never restated: it runs the real gate ladder and reports what that refuses, so there is

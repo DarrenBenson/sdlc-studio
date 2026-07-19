@@ -37,6 +37,8 @@ pure stdlib (lessons, telemetry and route are sibling helpers).
 from __future__ import annotations
 
 import argparse
+import contextlib
+import io
 import json
 import re
 import subprocess
@@ -1318,6 +1320,9 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         # The cross-project tier, ranked. It had NO automatic reader: recall was a prose
         # instruction, and prose instructions are the ones that get skipped.
         "cross_lessons": lessons.cross_digest(root),
+        # What each unit must satisfy to close, and the checks every commit meets - so the
+        # requirements arrive as a briefing rather than as refusals one gate run at a time.
+        "gate_briefing": build_gate_briefing(root, batch),
     }
 
 
@@ -1815,6 +1820,78 @@ def _render_token_forecast(data: dict) -> None:
               f"points recorded here are what the NEXT rate is measured from")
 
 
+#: The status a unit of each type is heading for. A briefing about "the gates you will meet"
+#: has to know which transition it is briefing.
+_TERMINAL_TARGET = {"story": "Done", "bug": "Fixed", "epic": "Done"}
+
+
+def build_gate_briefing(root, units: list) -> dict:
+    """What this batch's units must satisfy to close, and the checks every commit meets.
+
+    GENERATED, never restated. The per-unit half runs the real transition gates through
+    `transition.requirements`, so a requirement that changes in the gate changes here; the
+    commit half reads `gate.DEFAULT_CHECKS`, so a check added or removed there appears or
+    disappears here. A hand-written list would be a second copy that goes stale silently,
+    which is the failure this briefing exists to remove rather than relocate.
+
+    SCOPED to the batch: only the types actually present, and only requirements actually
+    unmet. The plan is already long, and an irrelevant checklist is how a relevant one stops
+    being read.
+
+    Repo-local guards - a house style rule, a commit-message trailer - are deliberately NOT
+    enumerated. The skill cannot know a consuming project's own hook, and inventing a list
+    would be the restatement this avoids.
+    """
+    import transition  # noqa: PLC0415 - lazy sibling import, as elsewhere in this module
+    import gate        # noqa: PLC0415
+
+    per_unit, types = [], set()
+    for unit in units:
+        uid = unit.get("id") if isinstance(unit, dict) else unit
+        utype = unit.get("type") if isinstance(unit, dict) else None
+        if not utype:
+            hit = sdlc_md.find_by_id(root, uid)
+            utype = hit[1] if hit else None
+        target = _TERMINAL_TARGET.get(utype)
+        if not target:
+            continue
+        types.add(utype)
+        try:
+            # The gates chatter - config advisories, DoD stand-down notes - and this is a
+            # REPORTER, not the gate itself. Leaking their diagnostics into the plan would
+            # print them once per unit for a briefing, which is noise in the output the agent
+            # is meant to read, and it tripped the suite's own printed-line budget.
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                unmet = transition.requirements(root, uid, target)
+        except (FileNotFoundError, ValueError):
+            continue     # a unit the briefing cannot resolve is not a reason to fail the plan
+        if unmet:
+            per_unit.append({"id": uid, "type": utype, "target": target, "unmet": unmet})
+    return {"units": per_unit, "types": sorted(types),
+            "commit_checks": sorted(gate.DEFAULT_CHECKS)}
+
+
+def _render_gate_briefing(data: dict) -> None:
+    brief = data.get("gate_briefing")
+    if not brief or not brief["types"]:
+        return
+    # ONLY what is actionable. The first cut also printed all 15 commit-check names and a
+    # caveat about repo-local guards on EVERY plan - two constant lines that say nothing about
+    # this batch. That is the bloat AC4 forbids, and the suite's printed-line budget caught it:
+    # a briefing nobody reads is worth less than no briefing, because it displaces the lines
+    # that do matter. The check count stays as one short line; the names are a `gate` run away.
+    n_checks = len(brief["commit_checks"])
+    if not brief["units"]:
+        return      # nothing owed: say nothing. A line that appears on every clean plan to
+                    # report the default state is the noise this briefing must not become.
+    print(f"  gates: {n_checks} commit check(s). {len(brief['units'])} unit(s) carry an unmet "
+          f"close requirement - meet it as part of the work, not as a refusal after it:")
+    for item in brief["units"]:
+        for req in item["unmet"]:
+            print(f"    {item['id']} -> {item['target']}: {req}")
+
+
 def _render_capacity(data: dict) -> None:
     """Does the batch fit? The plan-time capacity check - and the appetite the run will break
     on, which is the same number. Loud when over budget, and honest about its own error bar."""
@@ -1877,6 +1954,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_downgrades(data)
     _render_token_forecast(data)
     _render_capacity(data)
+    _render_gate_briefing(data)
     _render_lessons(data)
     _render_cross_lessons(data)
 

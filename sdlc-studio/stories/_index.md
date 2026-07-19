@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 5 |
-| Ready | 1 |
+| Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 2 |
+| Review | 3 |
 | Done | 259 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -176,7 +176,7 @@
 | [US0263](US0263-on-a-repair-regression-escalate-to-a-revert.md) | On a repair regression, escalate to a revert / redesign / accept-and-file decision instead of another patch round | Draft | EP0085 | 2026-07-19 | 2026-07-19 |
 | [US0264](US0264-record-cumulative-review-token-cost-per-round-and.md) | Record cumulative review token cost per round and show it when the next round is offered | Draft | EP0085 | 2026-07-19 | 2026-07-19 |
 | [US0265](US0265-generate-the-reviewer-brief-from-a-neutral-template.md) | Generate the reviewer brief from a neutral template carrying the diff and risk surface but no prior verdicts, round number or expected conclusion | Draft | EP0085 | 2026-07-19 | 2026-07-19 |
-| [US0266](US0266-sprint-plan-prints-the-unit-lifecycle-and-the.md) | sprint plan prints the unit lifecycle and the gates each unit will meet, generated from the gate definitions rather than hand-written prose | Ready | EP0086 | 2026-07-19 | 2026-07-19 |
+| [US0266](US0266-sprint-plan-prints-the-unit-lifecycle-and-the.md) | sprint plan prints the unit lifecycle and the gates each unit will meet, generated from the gate definitions rather than hand-written prose | Review | EP0086 | 2026-07-19 | 2026-07-19 |
 | [US0267](US0267-a-unit-close-names-the-fields-that-unit.md) | A unit close names the fields that unit type requires before its terminal transition, ahead of the work rather than on refusal | Review | EP0086 | 2026-07-19 | 2026-07-19 |
 | [US0268](US0268-order-the-pre-commit-lanes-cheapest-first-so.md) | Order the pre-commit lanes cheapest-first so a reworded comment does not cost a full unit-suite run | Review | EP0086 | 2026-07-19 | 2026-07-19 |
 
