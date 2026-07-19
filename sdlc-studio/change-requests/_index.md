@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 16 |
+| Proposed | 18 |
 | Approved | 0 |
 | In Progress | 34 |
 | Complete | 290 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **358** |
+| **Total** | **360** |
 
 ## All Changes
 
@@ -180,6 +180,8 @@
 | [CR-0356](CR0356-reconcile-never-checks-the-index-row-s-title.md) | reconcile never checks the index row's title, so a retitled artefact drifts silently and no script can fix it | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0357](CR0357-the-rfc-accept-gate-s-fail-closed-fallback.md) | the RFC accept gate's fail-closed fallback can refuse a valid RFC, and says nothing about why | Proposed | Low | Improvement | 2026-07-19 | -- |
 | [CR-0358](CR0358-the-close-review-is-an-unbounded-repair-loop.md) | the close review is an unbounded repair loop: no convergence check, no cost ceiling, and the author writes the reviewer's prompt | Proposed | High | Improvement | 2026-07-19 | -- |
+| [CR-0359](CR0359-sprint-close-discovers-its-blockers-one-at-a.md) | sprint close discovers its blockers one at a time, so a close takes as many runs as it has unmet prerequisites | Proposed | Medium | Improvement | 2026-07-19 | -- |
+| [CR-0360](CR0360-the-doc-freshness-line-budget-refusal-names-the.md) | the doc-freshness line-budget refusal names the count but not the gap, so trimming is guesswork | Proposed | Low | Improvement | 2026-07-19 | -- |
 
 ## Archived Releases
 
