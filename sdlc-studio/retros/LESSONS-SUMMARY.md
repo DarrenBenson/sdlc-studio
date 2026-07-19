@@ -2,6 +2,16 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0123: **L-0113** An AC asserting the committed state cannot be green in the working tree.**
+- **L-0122: **L-0112** The author cannot close the loop: build-to-Done needs the reviewer of record.**
+- **L-0121: **L-0111** Story points size the diff, not the discovery.**
+- **L-0120: **L-0110** A new writer must join the atomicity and confinement rosters, not just work.**
+- **L-0119: **L-0109** Delegating by `Affects` reproduces whatever is wrong with the `Affects`.**
+- **L-0118: **L-0108** Build the gate first, then let it tell you the size of the backlog it guards.**
+- **L-0117: **L-0107** An AC that runs the repo's standing guards is green before the work starts.**
+- **L-0116: **L-0106** A same-length mutant is the mutation check's own blind spot.**
+- **L-0115: **L-0105** Suppressing a cache write does not stop a cache read.**
+- **L-0114: **L-0104** A readiness gate that recognises one hardcoded placeholder recognises none.**
 - **L-0113: An AC asserting the committed state cannot be green in the working tree**
 - **L-0112: The author cannot close the loop: build-to-Done needs the reviewer of record**
 - **L-0111: Story points size the diff, not the discovery**
