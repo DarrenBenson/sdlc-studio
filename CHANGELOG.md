@@ -654,6 +654,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Refreshing a handoff no longer re-stamps it with another run's identity (BG0198).**
+  `handoff.refresh` scoped the unit list to the batch it was given but drew everything else from
+  ambient run state, so refreshing a closed run's handoff while a different run was open rewrote
+  its Run / Outcome / Goal / Batch-source lines with the other run's identity and overwrote the
+  shared worklist. The docstring promised "same id, same index row, same retro link"; a handoff
+  belongs to a run, so the run is part of that identity. A mismatch between the document's
+  recorded run and the open one is now refused by name, leaving the document untouched, rather
+  than done quietly - this is not reachable through the shipped close, but it overwrote a live
+  handoff twice during hand-running.
+
+- **The allocator and the retro resolver now read one id space (BG0199).** `next_id._meta_nums`
+  matches a meta id of 3 or 4 digits, so a legacy `RETRO001-x.md` holds its number and is never
+  re-issued - but `retro._STEM_ID_RE` required 4+, so the very file the allocator was protecting
+  could not be resolved. The resolver's floor is now 3 digits to match. The width is a floor, not
+  the match: digits are still consumed greedily, so a 3-digit id does not resolve a longer file.
+
 - **The apply-signoff tail no longer skips the velocity row in silence (BG0200).** The tail read
   the retro id from run-state `scaffolded_retro` and did nothing at all when it was absent - no
   row, no warning, and the close still printed success. A retro created with `artifact.py new`,

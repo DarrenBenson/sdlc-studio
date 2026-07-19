@@ -1446,6 +1446,24 @@ class RetroIdIsResolvedInEitherForm(RetroBase):
         self.write(FULL, rid="RETRO00491")
         self.assertIsNone(retro.find_retro(str(self.root), "RETRO0049"))
 
+    def test_a_legacy_three_digit_id_resolves(self):
+        """BG0199: the allocator and the resolver must read one id space.
+
+        `next_id._meta_nums` matches a meta id of 3 OR 4 digits, so a legacy
+        `RETRO001-x.md` HOLDS its number and will never be re-issued - but the
+        resolver required 4+, so the file the allocator was protecting could not be
+        found. Two readers of the same id space disagreeing is the defect, whichever
+        of them is 'right' about the width.
+        """
+        self.write(FULL, rid="RETRO001")
+        self.assertIsNotNone(retro.find_retro(str(self.root), "RETRO001"))
+        self.assertIsNotNone(retro.find_retro(str(self.root), "RETRO-001"))
+
+    def test_a_three_digit_id_still_does_not_match_a_longer_one(self):
+        """Widening the floor must not widen the match: the boundary still holds."""
+        self.write(FULL, rid="RETRO0012")
+        self.assertIsNone(retro.find_retro(str(self.root), "RETRO001"))
+
 
 class AnUnmeasuredSprintIsNotReportedAsUnforecast(AccuracyBase):
     """BG0196: constants were read only from RATED units, so a sprint with forecasts but no

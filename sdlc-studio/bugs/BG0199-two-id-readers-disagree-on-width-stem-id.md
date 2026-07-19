@@ -1,6 +1,7 @@
 # BG0199: two id readers disagree on width: _STEM_ID_RE needs 4+ digits, next_id._meta_nums accepts 3
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first)
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/next_id.py

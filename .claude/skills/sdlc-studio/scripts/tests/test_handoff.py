@@ -596,6 +596,58 @@ class GenerateTests(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- AC2: read back
+class RefreshRunIdentityTests(unittest.TestCase):
+    """BG0198: a handoff belongs to a run, so refreshing it must not adopt another run's identity.
+
+    `refresh` scopes the UNIT LIST via `build(root, batch=batch)`, but `build` reads
+    `run_state.read(root)` unconditionally. Refreshing a closed run's handoff while a
+    DIFFERENT run is open therefore rewrote its Run / Outcome / Goal / Batch-source lines
+    with the other run's identity - the docstring promises "same id, same index row, same
+    retro link", and the run is part of that identity.
+    """
+
+    def test_refresh_refuses_when_the_open_run_is_not_the_handoff_s_run(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            _handoff_index(root)
+            _story(root, 1, status="Done")
+            _story(root, 2, status="In Progress")
+            first = run_state.open_run(root, batch=["US0001", "US0002"], goal="done")
+            rec = handoff.generate(root, title="the first run", batch=["US0001", "US0002"],
+                                   outcome=run_state.BLOCKED)
+            before = Path(rec["path"]).read_text(encoding="utf-8")
+            self.assertIn(first["run_id"], before)
+
+            # A different run is opened; the earlier handoff is refreshed out of band.
+            second = run_state.open_run(root, batch=["US0002"], goal="design")
+            self.assertNotEqual(first["run_id"], second["run_id"])
+
+            with self.assertRaises(ValueError) as cm:
+                handoff.refresh(root, rec["id"], batch=["US0001", "US0002"])
+            msg = str(cm.exception)
+            self.assertIn(first["run_id"], msg)
+            self.assertIn(second["run_id"], msg)
+
+            after = Path(rec["path"]).read_text(encoding="utf-8")
+            self.assertEqual(before, after, "the document must be left untouched on refusal")
+            self.assertNotIn(second["run_id"], after)
+
+    def test_refresh_proceeds_when_the_open_run_is_the_handoff_s_own(self) -> None:
+        """The path the close actually takes must keep working."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            _handoff_index(root)
+            _story(root, 1, status="Done")
+            _story(root, 2, status="In Progress")
+            state = run_state.open_run(root, batch=["US0001", "US0002"], goal="done")
+            rec = handoff.generate(root, title="the only run", batch=["US0001", "US0002"],
+                                   outcome=run_state.BLOCKED)
+            rep = handoff.refresh(root, rec["id"], batch=["US0001", "US0002"])
+            self.assertIsNotNone(rep)
+            self.assertIn(state["run_id"],
+                          Path(rec["path"]).read_text(encoding="utf-8"))
+
+
 class WorklistTests(unittest.TestCase):
     def test_generate_emits_a_worklist_the_next_sprint_plan_reads(self) -> None:
         with tempfile.TemporaryDirectory() as t:

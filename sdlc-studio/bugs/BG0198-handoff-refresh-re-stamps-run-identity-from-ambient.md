@@ -1,6 +1,7 @@
 # BG0198: handoff.refresh re-stamps run identity from ambient run state, not the run being refreshed
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first)
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/handoff.py

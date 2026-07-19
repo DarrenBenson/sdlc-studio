@@ -120,7 +120,12 @@ ROW_RE = re.compile(r"^\s*\|(?!\s*[-:]+\s*\|)([^|]+)\|([^|]+)\|\s*$")
 
 
 # The leading id of a retro filename stem: `RETRO0049-slug` / `RETRO-0049-slug`.
-_STEM_ID_RE = re.compile(r"^([A-Za-z]+-?\d{4,})")
+# Three digits are accepted as well as four: `next_id` treats a 3-digit meta id as
+# taken, so a legacy `RETRO001-x.md` holds its number and must also be findable -
+# two readers of one id space that disagree on width lose the file between them.
+# The width is a floor, not the match: the digits are still consumed greedily, so
+# `RETRO001` does not resolve a `RETRO0012` file.
+_STEM_ID_RE = re.compile(r"^([A-Za-z]+-?\d{3,})")
 
 
 def find_retro(root, retro_id: str) -> Path | None:

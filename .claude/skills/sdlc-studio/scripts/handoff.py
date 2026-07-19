@@ -673,6 +673,20 @@ def generate(repo_root: Path | str, title: str, batch: list[str] | None = None,
             "worklist": str(worklist), "report": report}
 
 
+def _recorded_run_id(text: str) -> str:
+    """The run id a handoff document already claims, or "" when it records none.
+
+    The head renders `> **Run:** RUN-XXXX (started ...)`, and an unopened run renders a
+    sentence instead - so only a leading token that looks like a run id counts.
+    """
+    for line in text.splitlines():
+        if line.startswith("> **Run:**"):
+            token = line.split("**Run:**", 1)[1].strip().split()[0] if line.split(
+                "**Run:**", 1)[1].strip() else ""
+            return token if token.upper().startswith("RUN-") else ""
+    return ""
+
+
 def refresh(repo_root: Path | str, handoff_id: str, batch: list[str] | None = None) -> dict | None:
     """Re-render an EXISTING handoff after the close cascade moved units terminal.
 
@@ -682,9 +696,15 @@ def refresh(repo_root: Path | str, handoff_id: str, batch: list[str] | None = No
     listed as remaining, and the worklist the next `sprint plan --worklist` reads carried
     them forward as outstanding work.
 
-    Rewrites the same artefact in place - same id, same index row, same retro link - so the
-    handoff describes the state the close actually left behind. Returns None when the id has
-    no file, so a caller can report the gap instead of assuming a refresh happened.
+    Rewrites the same artefact in place - same id, same index row, same retro link, same RUN -
+    so the handoff describes the state the close actually left behind. Returns None when the id
+    has no file, so a caller can report the gap instead of assuming a refresh happened.
+
+    A handoff belongs to a run. The re-render draws the unit list from `batch` but everything
+    else from ambient run state, so refreshing one run's handoff while a DIFFERENT run is open
+    would re-stamp it with the other run's identity and overwrite the shared worklist. That is
+    refused rather than done quietly: the caller is refreshing the wrong document, and a
+    handoff wearing another run's id misdirects whoever picks the work up.
     """
     root = Path(repo_root)
     norm = sdlc_md.norm_id(handoff_id)
@@ -692,6 +712,13 @@ def refresh(repo_root: Path | str, handoff_id: str, batch: list[str] | None = No
                  if p.is_file() and sdlc_md.norm_id(p.stem.split("-")[0]) == norm), None)
     if path is None:
         return None
+    existing = path.read_text(encoding="utf-8")
+    doc_run = _recorded_run_id(existing)
+    open_run_id = ((run_state.read(root) or {}).get("run_id") or "").strip()
+    if doc_run and open_run_id and doc_run != open_run_id:
+        raise ValueError(
+            f"{handoff_id} belongs to {doc_run} but the open run is {open_run_id} - refusing to "
+            f"re-stamp it with another run's identity; close or clear the open run first")
     report = build(root, batch=batch)
     lines = path.read_text(encoding="utf-8").splitlines()
     # Keep the H1 and the Revision History; regenerate everything the join owns.
