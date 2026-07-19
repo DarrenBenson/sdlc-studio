@@ -1,6 +1,7 @@
 # CR-0361: an agent meets the gates as refusals, not as a briefing: generate a per-unit pre-flight from the gates themselves
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0086
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

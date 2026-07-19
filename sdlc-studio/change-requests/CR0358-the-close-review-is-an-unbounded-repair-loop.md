@@ -1,6 +1,7 @@
 # CR-0358: the close review is an unbounded repair loop: no convergence check, no cost ceiling, and the author writes the reviewer's prompt
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0085
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
