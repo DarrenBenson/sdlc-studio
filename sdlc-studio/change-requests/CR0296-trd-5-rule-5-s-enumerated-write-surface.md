@@ -1,6 +1,6 @@
 # CR-0296: TRD §5 rule 5's enumerated write surface omits at least five shipped committed-workspace writers, one of which (persona_gen.py) the TRD's own ADR-009 describes writing files
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0071
 > **Priority:** Medium
 > **Type:** docs

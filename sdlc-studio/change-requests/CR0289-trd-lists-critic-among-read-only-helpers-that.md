@@ -1,6 +1,6 @@
 # CR-0289: TRD lists critic among read-only helpers that 'never mutate the workspace'; critic record writes two committed verdict logs via a bare non-atomic append that silently drops torn rows
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0071
 > **Priority:** Medium
 > **Type:** docs

@@ -1,6 +1,6 @@
 # CR-0302: TRD's pinned census counts have rotted again; the changelog's 'freshness guard' claim overstates what the guard checks (fixed 2026-07-06 strings plus a lenient script-count floor)
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0071
 > **Priority:** Low
 > **Type:** docs

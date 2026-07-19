@@ -1,6 +1,6 @@
 # CR-0280: PRD and TRD document the retired Effort/complexity estimator as current, keep its answered questions open, and gate recalibration on two already-fixed defects
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0071
 > **Priority:** High
 > **Type:** docs

@@ -1,6 +1,6 @@
 # CR-0306: Candidates dropped by the verification cap vanish into the workflow journal - persist the overflow as a carry-over worklist a scoped follow-up can verify
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0073
 > **Priority:** Medium
 > **Type:** Improvement

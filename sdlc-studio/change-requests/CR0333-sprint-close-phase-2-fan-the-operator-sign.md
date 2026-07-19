@@ -1,6 +1,6 @@
 # CR-0333: sprint close phase 2: fan the operator sign-off into the terminal cascade
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0077
 > **Priority:** High
 > **Type:** Improvement

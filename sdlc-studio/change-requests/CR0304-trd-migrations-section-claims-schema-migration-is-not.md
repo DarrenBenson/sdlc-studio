@@ -1,6 +1,6 @@
 # CR-0304: TRD Migrations section claims schema migration is 'not by the script layer' while committed main ships a three-script migration surface the TRD itself lists elsewhere
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0071
 > **Priority:** Low
 > **Type:** docs

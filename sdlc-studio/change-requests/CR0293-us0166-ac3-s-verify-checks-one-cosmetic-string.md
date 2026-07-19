@@ -1,6 +1,6 @@
 # CR-0293: US0166 AC3's Verify checks one cosmetic string in one of the two required files, and is a mis-written DSL line that passes only by flag-reinterpretation accident
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0075
 > **Priority:** Medium
 > **Type:** process

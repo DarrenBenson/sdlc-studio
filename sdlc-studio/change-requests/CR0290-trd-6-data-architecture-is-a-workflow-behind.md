@@ -1,6 +1,6 @@
 # CR-0290: TRD §6 data architecture is a workflow behind committed main: no issue type, no story Blocked status, no inbox triage lane, no two-backlog model - inside its own declared coverage
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0071
 > **Priority:** Medium
 > **Type:** docs

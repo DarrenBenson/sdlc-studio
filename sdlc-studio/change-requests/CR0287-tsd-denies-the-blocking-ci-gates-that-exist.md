@@ -1,6 +1,6 @@
 # CR-0287: TSD denies the blocking CI gates that exist: coverage ('not wired into CI' vs a blocking 80% gate) and security ('no dedicated scanner' vs a blocking bandit step)
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0071
 > **Priority:** Medium
 > **Type:** docs

@@ -1,6 +1,6 @@
 # CR-0291: The 'test-noise' gate leg does not run in CI (hook-only, path-conditional) and its leak detector matches only one diagnostic shape
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0082
 > **Priority:** Medium
 > **Type:** process

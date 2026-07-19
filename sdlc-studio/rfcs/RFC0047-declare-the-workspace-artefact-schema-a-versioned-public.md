@@ -1,6 +1,6 @@
 # RFC-0047: Declare the workspace artefact schema a versioned public contract
 
-> **Status:** In Review
+> **Status:** Accepted
 > **Decomposed-into:** EP0084
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new

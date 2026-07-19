@@ -1,6 +1,6 @@
 # CR-0256: RFC0033 D3: retire review generate - fold into audit --profile repo and remove it
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0078
 > **Size:** M
 > **Priority:** P2

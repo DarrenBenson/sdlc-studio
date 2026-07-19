@@ -1,6 +1,6 @@
 # CR-0286: TRD ADR-008 sells the ULID id scheme as absolutely collision-proof; the implementation is 2 random chars (~1/1024) in a ~17-minute timestamp bucket with the cross-machine case unguarded
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0071
 > **Priority:** Medium
 > **Type:** docs

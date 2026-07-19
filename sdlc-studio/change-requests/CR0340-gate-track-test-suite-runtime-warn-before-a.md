@@ -1,6 +1,6 @@
 # CR-0340: Gate: track test-suite runtime, warn before a long run, and skip the unit suite for test-irrelevant changes
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0072
 > **Priority:** Medium
 > **Type:** Improvement

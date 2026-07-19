@@ -1,6 +1,6 @@
 # CR-0295: Enforce the RFC accept gate mechanically and stop file_finding.py manufacturing the content-free 'Act on this finding or keep status quo' Open row - the whole 2026-07-14 tranche is Accepted with boilerplate Open decisions
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0079
 > **Priority:** Medium
 > **Type:** Improvement

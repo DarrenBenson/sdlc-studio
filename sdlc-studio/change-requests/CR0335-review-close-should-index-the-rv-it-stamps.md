@@ -1,6 +1,6 @@
 # CR-0335: review close should index the RV it stamps and name the commit remedy when the anchor is uncommitted
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0072
 > **Priority:** Medium
 > **Type:** Improvement

@@ -1,6 +1,6 @@
 # CR-0294: Per-AC 'Verified: yes' stamps ride on non-discriminating Verify selectors: US0172/US0173 share a byte-identical command, US0163/US0166 run one whole-file command for two ACs
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0075
 > **Priority:** Medium
 > **Type:** process

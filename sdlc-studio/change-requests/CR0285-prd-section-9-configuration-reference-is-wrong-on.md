@@ -1,6 +1,6 @@
 # CR-0285: PRD Section 9 configuration reference is wrong on four counts: gate defaults inverted, a retired env var documented as live, four live env vars omitted, and two_backlog.enforce undocumented everywhere
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0071
 > **Priority:** High
 > **Type:** docs
