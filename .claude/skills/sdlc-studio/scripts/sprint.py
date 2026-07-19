@@ -2487,13 +2487,19 @@ def _finalise_outcome(root, state) -> None:
     ended_at = live.get("ended_at")
     try:
         run_state.close_run(root, run_state.GOAL_REACHED, handoff=live.get("handoff"))
-        if ended_at:
-            run_state.update(root, ended_at=ended_at)
-            run_state.archive(root, run_state.read(root))   # keep the archive in step
     except (OSError, ValueError) as exc:   # never lose a completed ceremony to its own bookkeeping
         print(f"outcome not stamped goal-reached ({exc}) - the close itself completed; "
               f"re-stamp with `run_state.close_run`", file=sys.stderr)
         return
+    if ended_at:
+        # Reported separately from the stamp above: a failure HERE leaves the outcome
+        # correctly promoted, so saying "not stamped" would be a wider claim than the fact.
+        try:
+            run_state.update(root, ended_at=ended_at)
+            run_state.archive(root, run_state.read(root))   # keep the archive in step
+        except (OSError, ValueError) as exc:
+            print(f"outcome stamped goal-reached, but `ended_at` was left at the re-stamped "
+                  f"time ({exc}) - the archived elapsed span reads long", file=sys.stderr)
     print("close: run outcome recorded goal-reached")
 
 

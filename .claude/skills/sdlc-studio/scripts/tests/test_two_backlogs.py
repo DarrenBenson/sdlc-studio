@@ -1039,6 +1039,19 @@ class SeedAcsTests(unittest.TestCase):
             self.assertIn("- [ ] the first checkable criterion", epic)
             self.assertIn("- [ ] the second criterion with detail", epic)
 
+    def test_the_ac_heading_strip_is_pinned_for_a_SHORT_criterion_too(self) -> None:
+        """The strip was unpinned by the whole suite while the function existed to do it.
+
+        Every existing heading test used a LONG criterion, where truncation happens to
+        remove the punctuation as a side effect. So reverting the strip left all 3,185 tests
+        green while producing headings ending in `.`/`!`/`,` - the exact MD026 defect this
+        guards. A short criterion is the only case where the strip is the sole cause.
+        """
+        for punct in (".", "!", "?", ",", ";", ":", "…"):
+            with self.subTest(punct=punct):
+                self.assertEqual(refine._ac_heading(f"a short criterion{punct}"),
+                                 "a short criterion")
+
     def test_seeded_ac_heading_from_a_long_criterion_has_no_trailing_punctuation(self) -> None:
         # BG0178: a long criterion truncated into the AC heading must not end in '...' (MD026),
         # so a project that markdownlints its workspace is not blocked by the generator's output.

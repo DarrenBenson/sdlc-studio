@@ -93,9 +93,9 @@ def _derived_from_covered_children(root: Path, cid: str, type_: str, covered: se
     if type_ != "epic":
         return False
     import reconcile  # noqa: PLC0415 - lazy, like the chain's other sibling imports
-    path = sdlc_md.find_by_id(root, cid)[0] if sdlc_md.find_by_id(root, cid) else None
-    declared = (reconcile.declared_breakdown_ids(sdlc_md.read_text_safe(path))
-                if path is not None else [])
+    found = sdlc_md.find_by_id(root, cid)     # one full-tree scan, not one per branch
+    declared = (reconcile.declared_breakdown_ids(sdlc_md.read_text_safe(found[0]))
+                if found else [])
     # BOTH id sets, because the two answers to "what is a child" can differ: the derivation
     # that closed this epic reads its DECLARED Story Breakdown, while `children_of` reads
     # whatever names the epic as a parent. An id in one but not the other would otherwise be

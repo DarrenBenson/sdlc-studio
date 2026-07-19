@@ -55,6 +55,10 @@ def _ac_heading(criterion: str, limit: int = 100) -> str:
     when long, and never ending in punctuation. A generated heading must pass markdownlint
     MD026 (no trailing punctuation) in any project that lints its workspace, so no trailing
     ellipsis or full stop is appended."""
+    # Not a pure refactor, and worth saying so: stripping BEFORE the length test means a
+    # criterion whose stripped form fits but whose raw form does not now keeps its last word
+    # instead of losing it to truncation. Longer, still inside the limit, still free of
+    # trailing punctuation - a better heading, not merely a different one.
     text = sdlc_md.heading_title(criterion)
     if len(text) > limit:
         # Truncating can expose punctuation the first pass never saw, so strip again.

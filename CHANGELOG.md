@@ -21,6 +21,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Second-round review polish (RUN-01KXWWM3).** The repair round was APPROVEd with five MINOR
+  findings; four are fixed here and one is filed. `refine._ac_heading`'s punctuation strip was
+  unpinned by the whole suite - every existing test used a LONG criterion, where truncation removes
+  the punctuation as a side effect, so reverting the strip stayed green while producing exactly the
+  MD026 headings it exists to prevent; a short-criterion test now pins it. `close_owed` made two
+  full-tree `find_by_id` scans per epic where one does. A failure while restoring `ended_at` printed
+  "outcome not stamped goal-reached" when the outcome HAD been stamped, so the two steps now report
+  separately. And `_ac_heading` is a behaviour change rather than the pure refactor it was presented
+  as - stripping before the length test keeps a last word that truncation used to drop - now stated
+  at the call site. **BG0211** files the remaining one: the strict union means an epic whose
+  breakdown declares a dead or non-delivery id is owed a close no close can give, latent today (zero
+  such epics) and in the over-reporting direction.
+
 - **Repairs from the closing review of RUN-01KXWWM3.** One MAJOR and six MINOR, none a
   misbehaviour of the shipped code and every one a claim wider than its evidence. The MAJOR: the
   `type_ != "epic"` guard - the single check keeping the close-owed relaxation from becoming a
