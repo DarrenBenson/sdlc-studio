@@ -72,6 +72,32 @@ def terminal_delivery_units(root: Path) -> list[tuple[str, str]]:
     return out
 
 
+def _derived_from_covered_children(root: Path, cid: str, type_: str, covered: set[str]) -> bool:
+    """True when `cid` is an epic that a retro accounted for THROUGH its children.
+
+    An epic does not reach terminal by being worked; it is DERIVED terminal once every child
+    is terminal, and that derivation runs in the close tail after the retro is written. So an
+    epic is never named in a `Batch`, and requiring it to be named made every clean close
+    manufacture close-owed debt for the epics it had just derived - debt no further close
+    could clear, because each close derives its own. The retro that accounted for the children
+    is the close that accounted for the epic.
+
+    Recording the epics in the `Batch` instead was the obvious alternative and is wrong:
+    `retro accuracy` sums points across the batch, and an epic's Derived Point Total is the
+    sum of its stories, so it would double-count every sprint's velocity.
+
+    Deliberately NOT a blanket exemption for epics. A childless epic inherits nothing (there
+    is no derivation to inherit from) and an epic with one unaccounted child stays owed, so
+    the relaxation cannot become a vacuous pass.
+    """
+    if type_ != "epic":
+        return False
+    children = sdlc_md.children_of(root, cid)
+    if not children:
+        return False
+    return all(sdlc_md.norm_id(child_id) in covered for child_id, *_ in children)
+
+
 class BaselineCorrupt(Exception):
     """The baseline file is present but unreadable or mis-shaped - a loud BLOCKING state, never
     'allow' and never a re-stamp. A corrupt-vs-absent conflation would let one merge-conflict
@@ -118,7 +144,9 @@ def owed(root: Path) -> dict:
     """
     covered = covered_ids(root)
     terminal = terminal_delivery_units(root)
-    uncovered = [(cid, t) for (cid, t) in terminal if sdlc_md.norm_id(cid) not in covered]
+    uncovered = [(cid, t) for (cid, t) in terminal
+                 if sdlc_md.norm_id(cid) not in covered
+                 and not _derived_from_covered_children(root, cid, t, covered)]
     try:
         baseline = load_baseline(root)
     except BaselineCorrupt as exc:

@@ -21,6 +21,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Close-owed can reach zero again: a derived epic inherits its children's coverage (BG0210).** An
+  epic does not reach terminal by being worked - `apply-signoff` derives it once every child is
+  terminal, in the close tail, after the retro is written - so no epic is ever named in a retro's
+  `Batch`. The detector required a unit to be named there, so every clean close manufactured
+  close-owed debt for the epics it had just derived, and no further close could clear it because
+  each close derives its own. About 38 epics were in that state, most of the reported total, so the
+  headline number was largely false; a detector reporting a permanent, growing, unclearable debt is
+  one people learn to skim past, which is the failure it exists to prevent. An epic is now accounted
+  for when the retro accounted for the children whose closure derived it. Recording the epics in the
+  `Batch` instead was the obvious alternative and is wrong: `retro accuracy` sums points across the
+  batch and an epic's Derived Point Total is the sum of its stories, so it would double-count every
+  sprint's velocity. Not a blanket exemption - a childless epic inherits nothing and an epic with one
+  unaccounted child stays owed, both mutation-pinned. On this repo the count falls from **44 to 12**,
+  and every survivor is genuinely uncovered.
+
 - **A completed close records the outcome its verdict earned (BG0208).** The run-state `outcome`
   field was written on every failure path - blocked, budget spent, an operator stop - and forgotten
   on the success path, so a run that stopped earlier and then completed its entire close chain with

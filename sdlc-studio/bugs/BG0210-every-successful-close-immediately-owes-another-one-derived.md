@@ -1,6 +1,7 @@
 # BG0210: every successful close immediately owes another one: derived epics never enter a retro Batch, so close-owed can never reach zero
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (RED-first; all four branches mutation-pinned; real-repo count 44 to 12 with every survivor hand-checked)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/close_owed.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/retro.py

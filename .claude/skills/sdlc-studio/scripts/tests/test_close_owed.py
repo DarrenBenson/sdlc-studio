@@ -67,12 +67,69 @@ class UnbaselinedTests(CloseOwedBase):
         self.assertEqual(rc, 0)  # unbaselined is a soft state, not a gate failure
 
 
+def _epic(root: Path, eid: str, status: str) -> None:
+    _write(root / "sdlc-studio" / "epics" / f"{eid}-e.md",
+           f"# {eid}: An epic\n\n> **Status:** {status}\n> **Derived Point Total:** 4\n")
+
+
+def _story_in(root: Path, sid: str, status: str, epic: str) -> None:
+    _write(root / "sdlc-studio" / "stories" / f"{sid}-s.md",
+           f"# {sid}: A story\n\n> **Status:** {status}\n> **Epic:** {epic}\n> **Points:** 2\n")
+
+
 class CoverageTests(CloseOwedBase):
     def test_a_retro_that_names_the_unit_makes_it_covered(self) -> None:
         _story(self.root, "US0001", "Done")
         _retro(self.root, "RETRO0001", "US0001")
         self.assertEqual(close_owed.owed(self.root)["owed"], [])
         self.assertEqual(close_owed.owed(self.root)["covered"], 1)
+
+
+class DerivedEpicCoverageTests(CloseOwedBase):
+    """BG0210: a clean close manufactured its own close-owed debt, unclearably.
+
+    An epic reaches terminal by DERIVATION - `apply-signoff` closes it once every child is
+    terminal, after the retro is written - and nothing adds it to any `Batch`. So the moment a
+    sprint closed cleanly, the epics that close had just derived were reported as terminal with
+    no retro accounting for them. Closing again could not clear it, because the next close
+    derives its own epics in turn. About 38 epics in this repo were in that state, most of the
+    reported total, so the headline number was largely false - and a detector reporting a
+    permanent, growing, unclearable debt is one people learn to skim past, which is the failure
+    it exists to prevent.
+
+    An epic is not accounted for by being NAMED in a batch; it is accounted for when the retro
+    accounted for the children whose closure derived it. Adding epics to the `Batch` instead
+    would have been the obvious fix and is wrong: `retro accuracy` sums points over the batch,
+    and an epic's Derived Point Total is the sum of its stories, so it would double-count every
+    sprint's velocity.
+    """
+
+    def test_an_epic_whose_children_a_retro_covered_is_covered(self) -> None:
+        _epic(self.root, "EP0100", "Done")
+        _story_in(self.root, "US0001", "Done", "EP0100")
+        _story_in(self.root, "US0002", "Done", "EP0100")
+        _retro(self.root, "RETRO0001", "US0001, US0002")
+        self.assertEqual(close_owed.owed(self.root)["owed"], [])
+
+    def test_an_epic_with_an_uncovered_child_is_still_owed(self) -> None:
+        """The relaxation must not become a blanket exemption for epics."""
+        _epic(self.root, "EP0100", "Done")
+        _story_in(self.root, "US0001", "Done", "EP0100")
+        _story_in(self.root, "US0002", "Done", "EP0100")
+        _retro(self.root, "RETRO0001", "US0001")          # US0002 never accounted for
+        ids = {cid for cid, _ in close_owed.owed(self.root)["owed"]}
+        self.assertIn("EP0100", ids)
+        self.assertIn("US0002", ids)
+
+    def test_a_childless_terminal_epic_is_still_owed(self) -> None:
+        """No children means nothing derived it, so there is nothing to inherit coverage from.
+
+        Without this an epic with no stories would be silently forgiven by a rule about its
+        children - a vacuous pass, the shape this repo keeps filing.
+        """
+        _epic(self.root, "EP0100", "Done")
+        ids = {cid for cid, _ in close_owed.owed(self.root)["owed"]}
+        self.assertIn("EP0100", ids)
 
 
 class BaselineTests(CloseOwedBase):
