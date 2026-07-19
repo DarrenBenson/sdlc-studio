@@ -1,6 +1,6 @@
 # US0268: Order the pre-commit lanes cheapest-first so a reworded comment does not cost a full unit-suite run
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0361
 > **Created:** 2026-07-19
 > **Created-by:** sdlc-studio new
@@ -37,6 +37,7 @@ Note `CR0361` names `tools/pre-commit.sh`, which does not exist; the hook is
 - **When** its lane order is read
 - **Then** both markdown lanes are invoked before `skill-tests`
 - **Verify:** shell test "$(grep -n 'run \"markdown\"' .githooks/pre-commit | head -1 | cut -d: -f1)" -lt "$(grep -n 'run \"skill-tests\"' .githooks/pre-commit | head -1 | cut -d: -f1)"
+- **Verified:** yes (2026-07-19)
 
 ### AC2: a markdown-only failure never reaches the unit suites
 
@@ -44,7 +45,8 @@ Note `CR0361` names `tools/pre-commit.sh`, which does not exist; the hook is
 - **When** the hook runs
 - **Then** it fails on the markdown lane and the unit suites never execute, so the failure
   reports in seconds rather than after ~132s
-- **Verify:** shell bash tools/tests/test_hook_lane_order.sh
+- **Verify:** pytest tools/tests/test_precommit_lane_order.py
+- **Verified:** yes (2026-07-19)
 
 ### AC3: the skip path still announces what did not run
 
@@ -53,13 +55,15 @@ Note `CR0361` names `tools/pre-commit.sh`, which does not exist; the hook is
 - **Then** it still names the lanes that ran, so a reordering does not silently drop a lane
   from a docs-only commit's coverage
 - **Verify:** grep "Docs-only commit: style, links, budgets, markdown and the artefact gate still ran" .githooks/pre-commit
+- **Verified:** yes (2026-07-19)
 
 ### AC4: no lane is lost in the reorder
 
 - **Given** the hook before and after the change
 - **When** the set of lane names is compared
 - **Then** it is identical - this story changes ORDER only, never coverage
-- **Verify:** shell bash tools/tests/test_hook_lane_order.sh
+- **Verify:** pytest tools/tests/test_precommit_lane_order.py
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

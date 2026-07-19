@@ -102,43 +102,6 @@ for t, info in d.get("types", {}).items():
   printf '       %s→ fix:%s address each failing check; run the named script for per-item detail (e.g. `%s/validate.py check`, `%s/conformance.py`); mechanical drift clears with `%s/reconcile.py apply`\n\n' "$B" "$N" "$skill" "$skill" "$skill"
 fi
 
-# Unit tests: only when the commit touches a file that can change a test outcome -
-# scripts/, tools/, or templates/ (several skill tests assert over the shipped templates,
-# so a template edit can break the suite). A pure README/CHANGELOG/reference/help commit
-# cannot, and paying ~2.5 minutes for it is how a guard gets bypassed.
-#
-# The skip is NAMED, never silent: a guard that quietly does not run is indistinguishable
-# from one that ran and passed, and that is precisely the state in which a real regression
-# ships. Two suites: shipped skill scripts, and the repo-only tools/ checkers.
-test_relevant='^\.claude/skills/sdlc-studio/scripts/|^\.claude/skills/sdlc-studio/templates/|^tools/'
-if git diff --cached --name-only | grep -qE "$test_relevant"; then
-  # Announce the cost before paying it: an unannounced long run exceeds common tool
-  # timeouts, so the commit looks hung and gets killed or bypassed.
-  for suite in skill-tests tool-tests; do
-    est="$(python3 tools/gate_timing.py estimate --suite "$suite" --warn-seconds 30 2>/dev/null)"
-    [ -n "$est" ] && printf '  %snote%s %s\n' "$Y" "$N" "$est"
-  done
-  # One run of the suite, held to two standards: every test passes, AND a passing run is
-  # silent (an expected diagnostic from a bad-fixture test must be captured and asserted on,
-  # not leaked to the console, or a real error hides in the noise). Both read the same run -
-  # a guard paid for on every commit has to be cheap, or it gets disabled and guards nothing.
-  t0=$SECONDS
-  run "skill-tests" \
-    "every shipped skill script unit test passes, and a green run prints no stray diagnostics" \
-    "fix the code or the test named above; re-run: bash tools/skill-tests.sh" \
-    -- bash tools/skill-tests.sh "$skill"
-  python3 tools/gate_timing.py record --suite skill-tests --seconds "$((SECONDS - t0))" 2>/dev/null
-  t0=$SECONDS
-  run "tool-tests" \
-    "every repo-only tools/ checker unit test passes" \
-    "fix the code or the test named in the failure above; re-run: python3 -m unittest discover -s tools/tests" \
-    -- python3 -m unittest discover -s tools/tests
-  python3 tools/gate_timing.py record --suite tool-tests --seconds "$((SECONDS - t0))" 2>/dev/null
-else
-  printf '  %sSKIP%s unit suites - no test-relevant file staged (scripts/, templates/, tools/).\n' "$Y" "$N"
-  printf '       Docs-only commit: style, links, budgets, markdown and the artefact gate still ran.\n'
-fi
-
 # Markdown mechanics (markdownlint-cli, a devDependency). Prefer the npm-local
 # binary so `npm install` is enough - no global install needed. If Node is absent
 # entirely, say so loudly: it is the one guard CI enforces that cannot run here.
@@ -162,6 +125,46 @@ if [ -n "$md_cmd" ]; then
 else
   printf '  %sSKIP%s markdown - markdownlint not found. Run %snpm install%s to enable it locally.\n' "$Y" "$N" "$B" "$N"
   printf '       CI still enforces it, so a markdown-mechanics error can pass here and fail on push.\n'
+fi
+
+# Unit tests: only when the commit touches a file that can change a test outcome -
+# scripts/, tools/, or templates/ (several skill tests assert over the shipped templates,
+# so a template edit can break the suite). A pure README/CHANGELOG/reference/help commit
+# cannot, and paying ~2.5 minutes for it is how a guard gets bypassed.
+#
+# The skip is NAMED, never silent: a guard that quietly does not run is indistinguishable
+# from one that ran and passed, and that is precisely the state in which a real regression
+# ships. Two suites: shipped skill scripts, and the repo-only tools/ checkers.
+test_relevant='^\.claude/skills/sdlc-studio/scripts/|^\.claude/skills/sdlc-studio/templates/|^tools/'
+if [ "$fail" -eq 0 ] && git diff --cached --name-only | grep -qE "$test_relevant"; then
+  # Announce the cost before paying it: an unannounced long run exceeds common tool
+  # timeouts, so the commit looks hung and gets killed or bypassed.
+  for suite in skill-tests tool-tests; do
+    est="$(python3 tools/gate_timing.py estimate --suite "$suite" --warn-seconds 30 2>/dev/null)"
+    [ -n "$est" ] && printf '  %snote%s %s\n' "$Y" "$N" "$est"
+  done
+  # One run of the suite, held to two standards: every test passes, AND a passing run is
+  # silent (an expected diagnostic from a bad-fixture test must be captured and asserted on,
+  # not leaked to the console, or a real error hides in the noise). Both read the same run -
+  # a guard paid for on every commit has to be cheap, or it gets disabled and guards nothing.
+  t0=$SECONDS
+  run "skill-tests" \
+    "every shipped skill script unit test passes, and a green run prints no stray diagnostics" \
+    "fix the code or the test named above; re-run: bash tools/skill-tests.sh" \
+    -- bash tools/skill-tests.sh "$skill"
+  python3 tools/gate_timing.py record --suite skill-tests --seconds "$((SECONDS - t0))" 2>/dev/null
+  t0=$SECONDS
+  run "tool-tests" \
+    "every repo-only tools/ checker unit test passes" \
+    "fix the code or the test named in the failure above; re-run: python3 -m unittest discover -s tools/tests" \
+    -- python3 -m unittest discover -s tools/tests
+  python3 tools/gate_timing.py record --suite tool-tests --seconds "$((SECONDS - t0))" 2>/dev/null
+elif [ "$fail" -ne 0 ]; then
+  printf '  %sSKIP%s unit suites - a cheaper lane already failed, so the commit is blocked either way.\n' "$Y" "$N"
+  printf '       Fix the failure above and commit again; the suites run once the cheap guards are green.\n'
+else
+  printf '  %sSKIP%s unit suites - no test-relevant file staged (scripts/, templates/, tools/).\n' "$Y" "$N"
+  printf '       Docs-only commit: style, links, budgets, markdown and the artefact gate still ran.\n'
 fi
 
 if [ "$fail" -ne 0 ]; then
