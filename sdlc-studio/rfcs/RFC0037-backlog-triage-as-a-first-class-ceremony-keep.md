@@ -39,13 +39,14 @@ Triage inside `plan`, with filing-time duplicate detection (CR0264) as its cheap
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Open |
+| D1 | Act on this finding or keep status quo | Closed: acted on as the recommended in-`plan` option - EP0047 shipped `backlog_triage.py` running DUPLICATE/SUBSUMED, OVERSIZED, STALE and ORPHANED-DEPENDENCY lenses inside `sprint plan`, with the mechanical oversized lens BLOCKING above the 8-point ceiling and the judgement lenses reporting into the plan and the `status`/`hint` advisory; `file_finding` runs the cheapest overlap lens at filing time (warns and names the candidate before the id is minted, never refuses), absorbing CR0264; triage state is recorded as a date, never a `Groomed` flag (LL0034) |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Filed |
+| 2026-07-19 | sdlc-studio | Decision rows closed with what shipped |
 
 ## How triage state is recorded (operator proposal, 2026-07-14)
 

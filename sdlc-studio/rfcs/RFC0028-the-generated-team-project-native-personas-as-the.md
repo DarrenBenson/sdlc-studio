@@ -22,7 +22,7 @@ Option A. Operator directive: fully fleshed out before v4 goes live; design deci
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Open |
+| D1 | Act on this finding or keep status quo | Closed: acted on as Option A - EP0030 shipped Done (CR0218-CR0222 all Complete): `persona generate --team` grows fresh named seats into `personas/seats/` from PRD/TRD/config/repo-map signals (3 core plus up to 2 earned extras, cast capped at 5), `--stakeholders` generates the other side of the table, `persona_gen.py` provenance stamp plus content hash makes never-clobber deterministic, and `validate.py seats` is the error-level floor |
 
 ## Consult Outcome (Three Amigos, plan-review phase, 2026-07-10)
 
@@ -64,3 +64,4 @@ Operator authority: design pre-approved via plan mode 2026-07-10; conditions acc
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-10 | audit | Filed |
+| 2026-07-19 | sdlc-studio | Decision rows closed with what shipped |

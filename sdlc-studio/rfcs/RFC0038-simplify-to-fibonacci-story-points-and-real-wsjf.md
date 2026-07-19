@@ -59,7 +59,7 @@ Run the blind re-estimation first, then decide. Set the bar BEFORE measuring (LL
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Open |
+| D1 | Act on this finding or keep status quo | Closed: acted on - modified-Fibonacci points became the one size vocabulary and cleared the blind re-estimation bar (r = +0.68 against measured cost), delivered by CR0265-CR0268 and CR0271 (all Complete): points on story/bug, T-shirt on epic/CR/RFC, the forecast is sum(Points) x the measured tokens-per-point rate recorded at plan time, `max_cognitive` dropped from batch ordering (BG0147), and RFC-0034's D1 and D5 are superseded |
 
 ## Revision History
 
@@ -67,6 +67,7 @@ Run the blind re-estimation first, then decide. Set the bar BEFORE measuring (LL
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Filed |
 | 2026-07-17 | sdlc-studio | Recorded that this RFC partially supersedes RFC-0034 (its D1 and D5); cross-link added. No decision or status change |
+| 2026-07-19 | sdlc-studio | Decision rows closed with what shipped |
 
 ## RESULT of the blind re-estimation (2026-07-14)
 

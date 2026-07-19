@@ -21,6 +21,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The accepted-RFC tranche now records what actually shipped (US0246).** Eight RFCs sat in
+  Accepted carrying an unanswered decision row, most of them the generated boilerplate `Act on this
+  finding or keep status quo`. Each row is closed against the code that came out of it, naming the
+  concrete mechanism and the delivering epic or CR, with a revision-history row recording the
+  closure. The count is the one the new check measures, not the one the parent request listed: that
+  enumerated five and the workspace holds eight. The story's own criterion is a census over every
+  Accepted RFC rather than a list of the eight, because a listed check silently exempts whatever is
+  added next - which is exactly how the request came to be three short.
+
+- **An RFC cannot reach Accepted while a decision row is still Open (US0244).** `reference-rfc.md`'s
+  accept step has always forbidden it, but only in prose, and a rule with no mechanism fires when
+  somebody remembers: eight RFCs are Accepted, decomposed and delivered while carrying an Open
+  decision. `transition.py` now refuses the transition, naming each Open row. The sanctioned escape
+  is a recorded `> **Decision-Override:** <reason>` rather than `--force`, matching the plan-review
+  convention - a skip that leaves its reason in the file is auditable afterwards, a flag is not.
+  `validate.py` carries the same check as a standing rule, because a gate on the transition alone
+  leaves every file that predates it untouched while still reporting the workspace clean; an
+  Accepted RFC with an Open row is an error, or a warning when an override is recorded. The status
+  cell is read as free text and judged on its leading token, so `Open - the mechanism detail for
+  the blocking lane` still counts as Open: a reader demanding the bare word missed a real row and
+  called the file clean, which is worse than the prose rule it replaces because it also looks like
+  proof.
+
 - **A sprint-level adversarial review satisfies the per-unit `critiqued` gate for the units in its
   range (EP0080, US0247, RFC0046 option B).** The closing full-diff pass judges the whole sprint
   diff at once, so `critic sprint-review --units ... --reviewer <seat> --author <id> --verdict

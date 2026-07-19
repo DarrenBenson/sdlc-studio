@@ -369,5 +369,44 @@ class ResolveTests(unittest.TestCase):
             self.assertFalse(after.rstrip().endswith("|") and "resolve: D1" in after.splitlines()[-1])
 
 
+class AcceptedTrancheDecisionsClosedTests(unittest.TestCase):
+    """US0246 AC2: no Accepted RFC in THIS workspace carries an Open decision row.
+
+    A census over the real files, not a fixture. The transition gate (US0244) only sees a
+    change; this asserts the standing state, which is what the eight-RFC tranche made false.
+    Deliberately not an enumeration of those eight: a listed check silently exempts whatever
+    is added next, and the enumeration in the parent CR was already three files short.
+    """
+
+    def test_no_accepted_rfc_has_an_open_decision_row(self) -> None:
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+        import transition  # the same reader the gate uses, so the two cannot disagree
+        # Walk up for the workspace rather than counting parents: this file sits at
+        # <root>/.claude/skills/sdlc-studio/scripts/tests/, and a hardcoded index that is
+        # one off resolves nowhere, skips, and reports OK - a vacuous green in the very
+        # census meant to prove the state.
+        here = Path(__file__).resolve()
+        rfc_dir = next((p / "sdlc-studio" / "rfcs" for p in here.parents
+                        if (p / "sdlc-studio" / "rfcs").is_dir()
+                        and (p / ".git").exists()), None)
+        if rfc_dir is None:
+            self.skipTest("no sdlc-studio/rfcs workspace above this file - nothing to census")
+        offenders = {}
+        scanned = 0
+        for p in sorted(rfc_dir.glob("RFC*.md")):
+            text = p.read_text(encoding="utf-8")
+            status = (sdlc_md.extract_field(text, "Status") or "").strip().lower()
+            if not status.startswith("accepted"):
+                continue
+            scanned += 1
+            still_open = transition._rfc_open_decisions(text)
+            if still_open and not transition._rfc_override_reason(text):
+                offenders[p.name] = still_open
+        self.assertGreater(scanned, 0, "no Accepted RFC found - the census scanned nothing, "
+                                       "so a green here would prove nothing")
+        self.assertEqual(offenders, {},
+                         "Accepted RFC(s) still carry an Open decision row")
+
+
 if __name__ == "__main__":
     unittest.main()

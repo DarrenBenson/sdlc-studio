@@ -1,10 +1,10 @@
 # US0246: close the accepted-tranche decision rows with what actually shipped
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** sdlc-studio/rfcs/RFC0035-the-sprint-report-what-a-sprint-delivered-what.md, sdlc-studio/rfcs/RFC0037-backlog-triage-as-a-first-class-ceremony-keep.md, sdlc-studio/rfcs/RFC0038-close-the-estimator-loop.md, sdlc-studio/rfcs/RFC0039-the-discovery-track-issue-refine-and-triage-a.md, sdlc-studio/rfcs/RFC0042-make-the-sprint-close-down-un-skippable-enforce.md
+> **Affects:** sdlc-studio/rfcs/RFC0027-roadmap-to-world-class-reliability-tier-gate-integrity.md, sdlc-studio/rfcs/RFC0028-the-generated-team-project-native-personas-as-the.md, sdlc-studio/rfcs/RFC0029-extract-the-benchmark-into-a-standalone-cross-harness.md, sdlc-studio/rfcs/RFC0035-the-sprint-report-what-a-sprint-delivered-what.md, sdlc-studio/rfcs/RFC0037-backlog-triage-as-a-first-class-ceremony-keep.md, sdlc-studio/rfcs/RFC0038-simplify-to-fibonacci-story-points-and-real-wsjf.md, sdlc-studio/rfcs/RFC0039-the-discovery-track-issue-refine-and-triage-a.md, sdlc-studio/rfcs/RFC0042-make-the-sprint-close-down-un-skippable-enforce.md
 > **Epic:** EP0079
 > **Points:** 2
 
@@ -22,6 +22,7 @@
 - **When** each row is closed against the code that shipped from it
 - **Then** the row reads Closed and states the option taken, naming the delivering CR or epic, and a revision-history row records the closure and its date
 - **Verify:** grep "D1 .* Closed" sdlc-studio/rfcs/RFC0035-the-sprint-report-what-a-sprint-delivered-what.md
+- **Verified:** yes (2026-07-19)
 
 ### AC2: No Accepted RFC is left with an Open decision
 
@@ -29,6 +30,7 @@
 - **When** every RFC in Accepted state is scanned
 - **Then** none carries a decision row still marked Open, so the newly enforced gate holds over existing files and not only over future transitions
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_rfc.py -k AcceptedTrancheDecisionsClosedTests
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

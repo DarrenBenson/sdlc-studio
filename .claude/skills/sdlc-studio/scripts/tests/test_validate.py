@@ -1172,5 +1172,70 @@ class SeatCheckTests(unittest.TestCase):
                 self.assertEqual(validate.main(["seats", "--root", d]), 0)
 
 
+def _rfc(status: str, rows: str, override: str = "") -> str:
+    head = f"# RFC0001: r\n\n> **Status:** {status}\n"
+    if override:
+        head += f"> **Decision-Override:** {override}\n"
+    return (head + "\n## Summary\n\nx\n\n## Open Decisions\n\n"
+            "| # | Decision | Status |\n| --- | --- | --- |\n" + rows)
+
+
+class AcceptedRfcOpenDecisionTests(unittest.TestCase):
+    """US0244 AC3: the transition gate cannot reach files that predate it.
+
+    Six RFCs were already Accepted carrying nothing but the boilerplate Open row. A gate
+    on the transition alone would leave every one of them untouched and still call the
+    workspace clean, so the standing check has to cover the state as well as the change.
+    """
+
+    def test_accepted_rfc_with_an_open_decision_is_a_violation(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "sdlc-studio/rfcs/RFC0001-r.md",
+                       _rfc("Accepted", "| D1 | act or not | Open |\n"))
+            out = validate.validate_file(p, "rfc")
+            hits = [v for v in out if v["rule"] == "accepted-open-decision"]
+            self.assertTrue(hits, out)
+            self.assertIn("D1", hits[0]["message"])
+            self.assertEqual(hits[0]["severity"], "error")
+
+    def test_every_open_row_is_named(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "sdlc-studio/rfcs/RFC0001-r.md",
+                       _rfc("Accepted",
+                            "| D1 | a | Open |\n| D2 | b | Closed |\n| D3 | c | Open |\n"))
+            msg = [v for v in validate.validate_file(p, "rfc")
+                   if v["rule"] == "accepted-open-decision"][0]["message"]
+            self.assertIn("D1", msg)
+            self.assertIn("D3", msg)
+            self.assertNotIn("D2", msg)
+
+    def test_accepted_rfc_with_all_rows_closed_is_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "sdlc-studio/rfcs/RFC0001-r.md",
+                       _rfc("Accepted", "| D1 | settled | Closed |\n"))
+            self.assertEqual(
+                [v for v in validate.validate_file(p, "rfc")
+                 if v["rule"] == "accepted-open-decision"], [])
+
+    def test_a_non_terminal_rfc_with_an_open_row_is_not_flagged(self) -> None:
+        """An Open decision on an In Review RFC is the normal state, not a defect."""
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "sdlc-studio/rfcs/RFC0001-r.md",
+                       _rfc("In Review", "| D1 | still deciding | Open |\n"))
+            self.assertEqual(
+                [v for v in validate.validate_file(p, "rfc")
+                 if v["rule"] == "accepted-open-decision"], [])
+
+    def test_a_recorded_override_downgrades_it_to_a_warning(self) -> None:
+        """The transition's sanctioned skip must not read as a permanent error here."""
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "sdlc-studio/rfcs/RFC0001-r.md",
+                       _rfc("Accepted", "| D1 | a | Open |\n", override="settled at review"))
+            hits = [v for v in validate.validate_file(p, "rfc")
+                    if v["rule"] == "accepted-open-decision"]
+            self.assertTrue(hits)
+            self.assertEqual(hits[0]["severity"], "warning")
+
+
 if __name__ == "__main__":
     unittest.main()

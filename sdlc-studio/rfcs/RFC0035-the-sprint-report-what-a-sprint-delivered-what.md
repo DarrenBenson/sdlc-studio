@@ -43,10 +43,11 @@ Per-attempt telemetry, and report ACTUAL SPEND as a measurement with rework pric
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Open |
+| D1 | Act on this finding or keep status quo | Closed: acted on as recommended - EP0048 shipped `sprint_report.py show --id RETROxxxx` composing delivered points, actual spend, estimate-vs-actual, velocity, lessons and tickets deterministically; telemetry gained a per-attempt `attempts` list so rework is priced (`telemetry.unit_cost`, offline `pricing.<model>` table, unpriced models counted in tokens and never guessed in dollars), no avoided-cost headline, CR0273's velocity folded in as descriptive-only, and `report.enabled` gates rendering while recording is never gated |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Filed |
+| 2026-07-19 | sdlc-studio | Decision rows closed with what shipped |

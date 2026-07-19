@@ -24,10 +24,11 @@ Option A (Issue as discovery item; bug stays delivery). Decompose this RFC into 
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Open |
+| D1 | Act on this finding or keep status quo | Closed: acted on as Option A - EP0035, EP0038 and EP0040 are all Done: `refine show/apply/add` turns a request into an epic plus stories with `Parent:`/`Decomposed-into:` wired, the `issue` type plus `triage apply` decomposes a raw report straight into bugs, `is_discovery` (RFC/CR/Issue) is the predicate every backlog-side gate consults while `is_request` stays refine's narrow set, and the Three Amigos consult resolves to named seats (engineering-led for refine, QA-led for triage) recorded on the artefact as an audit trail |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-15 | sdlc-studio | Filed |
+| 2026-07-19 | sdlc-studio | Decision rows closed with what shipped |

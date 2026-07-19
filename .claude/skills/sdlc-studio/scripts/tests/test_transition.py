@@ -1273,5 +1273,118 @@ class AcFingerprintTests(unittest.TestCase):
             self._fp(self.BASE + "\n### AC2: more\n- **Verify:** shell true\n"))
 
 
+def _rfc_repo(root: Path, status: str = "In Review", rows: str | None = None,
+              override: str | None = None) -> Path:
+    """An RFC with an Open Decisions table, the shape reference-rfc.md's accept step reads."""
+    d = root / "sdlc-studio" / "rfcs"
+    d.mkdir(parents=True, exist_ok=True)
+    body = f"# RFC0001: r\n\n> **Status:** {status}\n"
+    if override:
+        body += f"> **Decision-Override:** {override}\n"
+    table = rows if rows is not None else "| D1 | Act on this finding or keep status quo | Open |\n"
+    body += ("\n## Summary\n\nx\n\n## Open Decisions\n\n"
+             "| # | Decision | Status |\n| --- | --- | --- |\n" + table)
+    (d / "RFC0001-r.md").write_text(body, encoding="utf-8")
+    (d / "_index.md").write_text(
+        "# RFCs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+        f"| [RFC0001](RFC0001-r.md) | r | {status} |\n", encoding="utf-8")
+    return root
+
+
+class RfcOpenDecisionGateTests(unittest.TestCase):
+    """US0244 AC1: an RFC cannot reach Accepted while a decision row is still Open.
+
+    reference-rfc.md's accept step already forbade this in prose, and six RFCs were
+    Accepted, decomposed and delivered carrying nothing but the boilerplate Open row.
+    A gate that lives only in prose fires when somebody remembers.
+    """
+
+    def test_open_decision_refuses_the_transition(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _rfc_repo(Path(d))
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "RFC0001", "Accepted")
+            self.assertIn("D1", str(cm.exception))
+            self.assertIn("Status:** In Review", _read(root, "rfcs", "RFC0001-r.md"))
+
+    def test_every_open_row_is_named_not_just_the_first(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _rfc_repo(Path(d), rows=(
+                "| D1 | first | Open |\n| D2 | second | Closed |\n| D3 | third | Open |\n"))
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "RFC0001", "Accepted")
+            msg = str(cm.exception)
+            self.assertIn("D1", msg)
+            self.assertIn("D3", msg)
+            self.assertNotIn("D2", msg)  # a Closed row is not a blocker
+
+    def test_all_decisions_closed_lets_the_transition_through(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _rfc_repo(Path(d), rows="| D1 | settled | Closed |\n")
+            tr.transition(root, "RFC0001", "Accepted")
+            self.assertIn("Status:** Accepted", _read(root, "rfcs", "RFC0001-r.md"))
+
+    def test_an_annotated_open_cell_still_counts_as_open(self) -> None:
+        """A status cell carrying its reasoning is the shape real RFCs use.
+
+        RFC0042 D2 reads `Open - the mechanism detail for the blocking lane`. A reader that
+        demands the bare word misses it and reports the file clean - a false negative in the
+        gate, which is worse than the prose rule it replaced.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _rfc_repo(Path(d), rows=(
+                "| D1 | Enforcement mechanism | Resolved: option D (soft nudge + blocking lane) |\n"
+                "| D2 | How to detect the trigger | Open - the mechanism detail for the lane |\n"))
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "RFC0001", "Accepted")
+            msg = str(cm.exception)
+            self.assertIn("D2", msg)
+            self.assertNotIn("D1", msg)  # 'Resolved: ...' is settled, not open
+
+    def test_an_rfc_with_no_decision_table_is_unaffected(self) -> None:
+        """The gate must not invent a blocker for an RFC that never had a table."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            dd = root / "sdlc-studio" / "rfcs"
+            dd.mkdir(parents=True)
+            (dd / "RFC0001-r.md").write_text(
+                "# RFC0001: r\n\n> **Status:** In Review\n\n## Summary\n\nx\n", encoding="utf-8")
+            (dd / "_index.md").write_text(
+                "# RFCs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [RFC0001](RFC0001-r.md) | r | In Review |\n", encoding="utf-8")
+            tr.transition(root, "RFC0001", "Accepted")
+            self.assertIn("Status:** Accepted", _read(root, "rfcs", "RFC0001-r.md"))
+
+
+class RfcDecisionOverrideTests(unittest.TestCase):
+    """US0244 AC2: the only escape is a RECORDED override, never a bare --force.
+
+    Mirrors the Plan-Review-Override convention: a skip that leaves a reason in the
+    file is auditable, a --force is not.
+    """
+
+    def test_recorded_override_permits_the_transition(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _rfc_repo(Path(d), override="D1 settled verbally at the 07-19 review")
+            res = tr.transition(root, "RFC0001", "Accepted")
+            self.assertIn("Status:** Accepted", _read(root, "rfcs", "RFC0001-r.md"))
+            self.assertIn("settled verbally", (res.get("warning") or ""))
+
+    def test_bare_force_does_not_bypass_the_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _rfc_repo(Path(d))
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "RFC0001", "Accepted", force=True)
+            self.assertIn("Decision-Override", str(cm.exception))
+            self.assertIn("Status:** In Review", _read(root, "rfcs", "RFC0001-r.md"))
+
+    def test_an_empty_override_is_not_an_override(self) -> None:
+        """A field present but blank records no reason, so it cannot buy a skip."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _rfc_repo(Path(d), override="   ")
+            with self.assertRaises(ValueError):
+                tr.transition(root, "RFC0001", "Accepted")
+
+
 if __name__ == "__main__":
     unittest.main()

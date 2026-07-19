@@ -1,6 +1,6 @@
 # US0244: gate RFC -> Accepted on open decisions (refuse while any Open decision stands; recorded-override escape)
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** a transition to Accepted is attempted
 - **Then** transition.py refuses, naming each still-Open decision by its number, and the RFC keeps its current status
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_transition.py -k RfcOpenDecisionGateTests
+- **Verified:** yes (2026-07-19)
 
 ### AC2: Escape only through a recorded override
 
@@ -29,6 +30,7 @@
 - **When** the same transition to Accepted is attempted
 - **Then** it succeeds, reporting the override reason, and a bare `--force` without the recorded field does not bypass the gate
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_transition.py -k RfcDecisionOverrideTests
+- **Verified:** yes (2026-07-19)
 
 ### AC3: Report an already-Accepted RFC that still carries an Open decision
 
@@ -36,6 +38,7 @@
 - **When** validate.py runs over it
 - **Then** it reports the RFC as a failure, naming the Open rows, so the gate covers files that predate it as well as new transitions
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_validate.py -k AcceptedRfcOpenDecisionTests
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

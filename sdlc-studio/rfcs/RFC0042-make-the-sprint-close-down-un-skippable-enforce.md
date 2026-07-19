@@ -48,7 +48,7 @@ it.
 | # | Decision | Status |
 | --- | --- | --- |
 | D1 | Enforcement mechanism | Resolved: option D (soft nudge + blocking lane) plus a harness Stop hook the skill installs; interactive sprints need the same close obligation, not only runner runs |
-| D2 | How to detect the "close owed" trigger (Done-transition since last retro vs run-state obligation) | Open - the mechanism detail for the blocking lane |
+| D2 | How to detect the "close owed" trigger (Done-transition since last retro vs run-state obligation) | Closed: the terminal-state option, derived from files rather than a run-state obligation, so it works for interactive sprints too - `close_owed.py` treats a delivery unit (epic/story/bug) as COVERED when some retro's `> **Batch:**` names it, and an uncovered terminal unit owes a close; a one-time `.close-owed-baseline.json` grandfathers the exact SET of ids terminal at adoption (a set, not a highest-id cutoff, which would forgive anything in flight at adoption and break on ULID ids), and a present-but-corrupt baseline is a distinct loud blocking state, never a silent "none owed" |
 
 ## Revision History
 
@@ -56,3 +56,4 @@ it.
 | --- | --- | --- |
 | 2026-07-15 | sdlc-studio | Filed |
 | 2026-07-15 | sdlc-studio | Added the homelab agent's root-cause post-mortem; resolved D1 = option D + a harness Stop hook; noted this is the DoD's close clause |
+| 2026-07-19 | sdlc-studio | Decision rows closed with what shipped |

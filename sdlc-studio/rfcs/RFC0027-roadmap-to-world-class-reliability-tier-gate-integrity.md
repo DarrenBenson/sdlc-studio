@@ -32,10 +32,11 @@ Option C. The nine blockers are surgical (S/M effort) and make the tag honest; h
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Open |
+| D1 | Act on this finding or keep status quo | Closed: acted on as Option C - the nine rc-blockers shipped pre-tag as the RV0007 fix pack (RETRO0017), then the three themed epics ran in the recommended order and are all Done: EP0026 (gate integrity), EP0027 (reliability tier), EP0028 (era completion and DX) |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-09 | audit | Filed |
+| 2026-07-19 | sdlc-studio | Decision rows closed with what shipped |

@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 28 |
+| Draft | 26 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 0 |
+| Review | 2 |
 | Done | 231 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -154,9 +154,9 @@
 | [US0241](US0241-remove-review-generate-py-and-the-review-generate.md) | remove review_generate.py and the review generate route; review keeps only the consistency job | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
 | [US0242](US0242-switch-readme-docs-and-the-skill-description-off.md) | switch README, docs and the SKILL description off review generate to audit --profile repo | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
 | [US0243](US0243-update-help-review-help-audit-and-the-catalogue.md) | update help/review, help/audit and the catalogue; check_links and validate_skill green | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
-| [US0244](US0244-gate-rfc-accepted-on-open-decisions-refuse-while.md) | gate RFC -> Accepted on open decisions (refuse while any Open decision stands; recorded-override escape) | Draft | EP0079 | 2026-07-17 | 2026-07-17 |
+| [US0244](US0244-gate-rfc-accepted-on-open-decisions-refuse-while.md) | gate RFC -> Accepted on open decisions (refuse while any Open decision stands; recorded-override escape) | Review | EP0079 | 2026-07-17 | 2026-07-17 |
 | [US0245](US0245-derive-rfc-decision-rows-from-the-finding-s.md) | derive RFC decision rows from the finding's real options, not the content-free boilerplate row | Draft | EP0079 | 2026-07-17 | 2026-07-17 |
-| [US0246](US0246-close-the-accepted-tranche-decision-rows-with-what.md) | close the accepted-tranche decision rows with what actually shipped | Draft | EP0079 | 2026-07-17 | 2026-07-17 |
+| [US0246](US0246-close-the-accepted-tranche-decision-rows-with-what.md) | close the accepted-tranche decision rows with what actually shipped | Review | EP0079 | 2026-07-17 | 2026-07-17 |
 | [US0247](US0247-a-recorded-sprint-level-adversarial-full-diff-verdict.md) | a recorded sprint-level adversarial full-diff verdict satisfies the per-unit critiqued gate for the units in its diff range; per-unit REJECT-repairs still recorded | Done | EP0080 | 2026-07-17 | 2026-07-17 |
 | [US0248](US0248-the-close-sign-off-brief-reads-a-sprint.md) | the close sign-off brief reads a sprint-level verdict as coverage rather than reporting every unit unreviewed; document the model | Done | EP0080 | 2026-07-17 | 2026-07-17 |
 | [US0249](US0249-decide-and-act-on-the-5-help-only.md) | decide and act on the 5 help-only commands (lessons/repo/retro/review/upgrade): promote spine-serving ones, retire/redirect the rest | Draft | EP0081 | 2026-07-17 | 2026-07-17 |

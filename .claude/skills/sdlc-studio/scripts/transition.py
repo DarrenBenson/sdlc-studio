@@ -183,6 +183,74 @@ def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
     return None
 
 
+# The status cell is read as free text, not a closed vocabulary. Real decision rows carry
+# their reasoning inline - `Open - the mechanism detail for the blocking lane`, `Resolved:
+# option D (...)` - so a reader demanding the bare word misses a genuinely Open row and
+# reports the file clean. A false negative in the gate is worse than the prose rule it
+# replaces, because it also looks like proof.
+_DECISION_ROW_RE = re.compile(r"^\s*\|\s*(D\d+)\s*\|[^|]*\|\s*([^|]*?)\s*\|\s*$")
+
+
+def _rfc_open_decisions(text: str) -> list[str]:
+    """The decision numbers still Open in an RFC's decision table.
+
+    Rows are read only inside the decisions section: a `| D1 | ... | Open |` line in a
+    Summary or an appendix is prose, not the register the accept step is about.
+    """
+    open_rows: list[str] = []
+    in_section = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in_section = "decision" in line.lower()
+            continue
+        if not in_section:
+            continue
+        m = _DECISION_ROW_RE.match(line)
+        # Open is judged on the LEADING token so an annotated cell still counts, while a
+        # cell that merely mentions the word ('Closed - was open until the 07-19 review')
+        # does not. Anything else - Closed, Resolved, Superseded, a prose verdict - is
+        # settled: the register records what was decided, not a fixed vocabulary.
+        if m and m.group(2).strip().lower().startswith("open"):
+            open_rows.append(m.group(1))
+    return open_rows
+
+
+def _rfc_accept_gate(text: str, target_canon: str | None) -> str | None:
+    """Block an RFC reaching Accepted while any decision row is Open.
+
+    `reference-rfc.md`'s accept step has always forbidden this, but only in prose, and a
+    rule with no mechanism fires when somebody remembers: six RFCs reached Accepted, were
+    decomposed and were delivered carrying nothing but the boilerplate Open row.
+
+    The sanctioned escape is a RECORDED `> **Decision-Override:**` reason, not `--force`,
+    matching the plan-review convention - a skip that leaves its reason in the file is
+    auditable afterwards, a force flag is not.
+    """
+    if target_canon != "Accepted":
+        return None
+    still_open = _rfc_open_decisions(text)
+    if not still_open:
+        return None
+    override = ""
+    for line in text.splitlines():
+        if line.startswith("> **Decision-Override:**"):
+            override = line.split("**Decision-Override:**", 1)[1].strip()
+            break
+    if override:
+        return None
+    return (f"RFC carries {len(still_open)} Open decision(s): {', '.join(still_open)} - close "
+            f"each row with what was decided, or record `> **Decision-Override:** <reason>` "
+            f"(--force does not bypass this: the skip must leave a reason in the file)")
+
+
+def _rfc_override_reason(text: str) -> str:
+    """The recorded override reason, for reporting a sanctioned skip back to the caller."""
+    for line in text.splitlines():
+        if line.startswith("> **Decision-Override:**"):
+            return line.split("**Decision-Override:**", 1)[1].strip()
+    return ""
+
+
 def _request_terminal_gate(root: Path, type_: str, artifact_id: str,
                            target_canon: str | None) -> str | None:
     """A DISCOVERY item (CR/RFC/Issue) may not reach its SUCCESSFUL terminal by assertion (G2). A
@@ -458,6 +526,18 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
         block = _request_terminal_gate(root, type_, artifact_id, target_canon)
         if block:
             blocks.append(f"{block}. Override with --force")
+    # The RFC accept gate. Deliberately NOT guarded by `not force`: the sanctioned skip is
+    # the recorded override field, so every skip leaves its reason in the artefact. Dry-run
+    # included, so a preflight surfaces the refusal a real run would hit.
+    if type_ == "rfc":
+        block = _rfc_accept_gate(text, target_canon)
+        if block:
+            blocks.append(f"{artifact_id} -> {new_status}: {block}")
+        elif target_canon == "Accepted":
+            reason = _rfc_override_reason(text)
+            if reason and _rfc_open_decisions(text):
+                skip = f"decision-override recorded: {reason}"
+                gate_warn = f"{gate_warn}; {skip}" if gate_warn else skip
     # The triage gate fires on any exit from `inbox` for a v3 finding, dry-run included: an
     # honest preflight must surface the same refusal a real run would (never a false green).
     block = _triage_gate(root, type_, text, from_canon, target_canon, triaged_by)

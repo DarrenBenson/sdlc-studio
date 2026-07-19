@@ -168,7 +168,7 @@ pointer swap once the extraction ships.
 | D5 | Launch adapter set | Resolved: claude-code, cursor-agent, copilot-cli, omp (LiteLLM gateway, 11 models); codex/opencode/agy follow |
 | D6 | Community-row policy (transcript-attached, re-scored, separate table) | Resolved: as specified |
 | D7 | Protocol v3 lives in the new repo (carries the mandated arm as first-class, per the rerun's caveat) | Resolved: yes |
-| D8 | Task-family expansion order for gen-2026b (brownfield-long-history, multi-ticket sequences, conflicting requirements, non-Python) | Open - decided during the new repo's fixtures epic |
+| D8 | Task-family expansion order for gen-2026b (brownfield-long-history, multi-ticket sequences, conflicting requirements, non-Python) | Closed: decided in the `sdlc-bench` fixtures epic (US-01KX890J, Done) and recorded in `generations/gen-2026b/task-families.md` - refactor-under-frozen-behaviour and conflicting-requirements chosen and pre-registered as n=5 cells across all four arms in `protocol/cells.json`; multi-ticket-sequences deferred to gen-2026c on fixture-authoring cost, non-Python deferred as a scoring-harness capability rather than a task family |
 
 ## Spike results (2026-07-11, digest fixture, n=1 per arm)
 
@@ -257,3 +257,4 @@ Findings:
 | 2026-07-11 | audit | Filed |
 | 2026-07-11 | Claude (Fable 5) | Full design: schema, generations, adapters, pricing, site, community policy |
 | 2026-07-11 | Claude (Fable 5) | Spike results: cursor-agent/Composer clean both arms; copilot/qwen3-coder escaped both arms incl. wrong-plan-propagates + spec tampering; adapter findings; task-family breadth (operator); D8 added |
+| 2026-07-19 | sdlc-studio | Decision rows closed with what shipped |
