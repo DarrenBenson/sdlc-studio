@@ -2537,6 +2537,164 @@ class LoudIndexReadTests(unittest.TestCase):
             (root / "sdlc-studio" / "stories" / "_index.md").unlink()
             self.assertFalse(reconcile.parse_index("story", root)["exists"])
 
+class DerivableRequestDriftTests(unittest.TestCase):
+    """CR0364: G2 was a gate with no counterpart.
+
+    `transition._request_terminal_gate` REFUSES a request reaching its successful terminal until
+    every child resolves. Nothing ever performed the closure once it was earned, so on this repo
+    34 of 59 open CRs sat In Progress with every delivering epic already Done, and the discovery
+    backlog over-reported remaining work by roughly 44 per cent while reconcile reported zero
+    drift.
+
+    The detector must ask the GATE rather than reimplement "are the children resolved". Two
+    answers to one question is how BG0207 and BG0211 both happened.
+    """
+
+    def _repo(self, enforce=True):
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        root = Path(d.name)
+        (root / "sdlc-studio").mkdir(parents=True)
+        if enforce:
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "two_backlog:\n  enforce: true\n", encoding="utf-8")
+        return root
+
+    def _cr(self, root, cid="CR0001", status="In Progress", children=("US0001",)):
+        d = root / "sdlc-studio" / "change-requests"
+        d.mkdir(parents=True, exist_ok=True)
+        into = f"> **Decomposed-into:** {', '.join(children)}\n" if children else ""
+        (d / f"{cid}-x.md").write_text(
+            f"# CR-{cid[2:]}: c\n\n> **Status:** {status}\n> **Size:** M\n{into}\n"
+            "## Summary\n\nx\n", encoding="utf-8")
+        (d / "_index.md").write_text(
+            "# CRs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            f"| [{cid}]({cid}-x.md) | c | {status} |\n", encoding="utf-8")
+
+    def _story(self, root, sid, status, parent="CR0001"):
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{sid}-s.md").write_text(
+            f"# {sid}: s\n\n> **Status:** {status}\n> **Parent:** {parent}\n> **Points:** 2\n",
+            encoding="utf-8")
+        rows = "".join(
+            f"| [{p.stem.split('-')[0]}]({p.name}) | s | x |\n"
+            for p in sorted(d.glob("US*.md")))
+        (d / "_index.md").write_text(
+            "# Stories\n\n| ID | Title | Status |\n| --- | --- | --- |\n" + rows, encoding="utf-8")
+
+    def _kinds(self, root):
+        return [d for d in reconcile.derivable_request_drift(root)]
+
+    def test_a_request_with_all_children_resolved_is_reported(self):
+        root = self._repo()
+        self._cr(root)
+        self._story(root, "US0001", "Done")
+        got = self._kinds(root)
+        self.assertEqual(len(got), 1, got)
+        self.assertEqual(got[0]["id"], "CR0001")
+        self.assertIn(got[0]["kind"], reconcile.DRIFT_KINDS)
+
+    def test_the_derivable_kind_is_registered(self):
+        root = self._repo()
+        self._cr(root)
+        self._story(root, "US0001", "Done")
+        self.assertIn(self._kinds(root)[0]["kind"], reconcile.DRIFT_KINDS)
+
+    def test_detector_delegates_to_the_g2_gate(self):
+        """AC2: swap the gate's verdict and the detector must follow.
+
+        A detector carrying its own child-resolution logic would keep reporting the request as
+        derivable and pass every other test in this class.
+        """
+        import transition
+        root = self._repo()
+        self._cr(root)
+        self._story(root, "US0001", "Done")
+        self.assertEqual(len(self._kinds(root)), 1)      # derivable via the real gate
+        original = transition._request_terminal_gate
+        try:
+            transition._request_terminal_gate = lambda *a, **k: "SENTINEL refusal"
+            self.assertEqual(self._kinds(root), [],
+                             "the detector reimplements the gate instead of calling it")
+        finally:
+            transition._request_terminal_gate = original
+
+    def test_a_childless_request_is_never_derivable(self):
+        root = self._repo()
+        self._cr(root, children=())
+        self.assertEqual(self._kinds(root), [])
+
+    def test_one_unresolved_child_blocks_derivation(self):
+        root = self._repo()
+        self._cr(root, children=("US0001", "US0002"))
+        self._story(root, "US0001", "Done")
+        self._story(root, "US0002", "In Progress")
+        self.assertEqual(self._kinds(root), [])
+
+    def test_a_dropped_child_counts_as_resolved(self):
+        root = self._repo()
+        self._cr(root, children=("US0001", "US0002"))
+        self._story(root, "US0001", "Done")
+        self._story(root, "US0002", "Won't Implement")
+        self.assertEqual(len(self._kinds(root)), 1)
+
+    def test_unenforced_project_reports_no_derivable_requests(self):
+        root = self._repo(enforce=False)
+        self._cr(root)
+        self._story(root, "US0001", "Done")
+        # Through the CLI sweep, which is where the two_backlog gating lives - calling the
+        # detector directly would bypass the very condition under test.
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+            reconcile.main(["--root", str(root), "detect"])
+        self.assertNotIn("request-derivable", buf.getvalue())
+        # ...and the same workspace WITH enforcement does report it, so this is not vacuous.
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "two_backlog:\n  enforce: true\n", encoding="utf-8")
+        buf2 = io.StringIO()
+        with contextlib.redirect_stdout(buf2), contextlib.redirect_stderr(io.StringIO()):
+            reconcile.main(["--root", str(root), "detect"])
+        self.assertIn("request-derivable", buf2.getvalue())
+
+    def test_apply_derives_the_request_terminal(self):
+        root = self._repo()
+        self._cr(root)
+        self._story(root, "US0001", "Done")
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            reconcile.apply_derivable_requests(root)
+        body = (root / "sdlc-studio" / "change-requests" / "CR0001-x.md").read_text(encoding="utf-8")
+        self.assertIn("> **Status:** Complete", body)
+
+    def test_apply_goes_through_transition(self):
+        # AC2: not a direct file write - the index cascade and telemetry must still run.
+        import transition
+        root = self._repo()
+        self._cr(root)
+        self._story(root, "US0001", "Done")
+        seen = []
+        original = transition.transition
+        try:
+            def spy(r, aid, status, **kw):
+                seen.append((aid, status))
+                return original(r, aid, status, **kw)
+            transition.transition = spy
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                reconcile.apply_derivable_requests(root)
+        finally:
+            transition.transition = original
+        self.assertEqual(seen, [("CR0001", "Complete")])
+        idx = (root / "sdlc-studio" / "change-requests" / "_index.md").read_text(encoding="utf-8")
+        self.assertIn("Complete", idx)
+
+    def test_apply_is_idempotent(self):
+        root = self._repo()
+        self._cr(root)
+        self._story(root, "US0001", "Done")
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            reconcile.apply_derivable_requests(root)
+            again = reconcile.derivable_request_drift(root)
+        self.assertEqual(again, [])
 
 if __name__ == "__main__":
     unittest.main()

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 20 |
+| Proposed | 19 |
 | Approved | 0 |
-| In Progress | 35 |
+| In Progress | 36 |
 | Complete | 291 |
 | Rejected | 0 |
 | Deferred | 5 |
@@ -185,7 +185,7 @@
 | [CR-0361](CR0361-an-agent-meets-the-gates-as-refusals-not.md) | an agent meets the gates as refusals, not as a briefing: generate a per-unit pre-flight from the gates themselves | Complete | Medium | Improvement | 2026-07-19 | EP0086 |
 | [CR-0362](CR0362-a-retro-finding-fixed-during-the-sprint-has.md) | a retro finding fixed during the sprint has no honest disposition: the vocabulary is filed or declined | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0363](CR0363-the-mutation-gate-should-report-the-coverage-its.md) | the mutation gate should report the coverage its test command actually reaches | Proposed | High | Improvement | 2026-07-19 | -- |
-| [CR-0364](CR0364-reconcile-should-derive-a-request-terminal-when-its.md) | reconcile should derive a request terminal when its children are all resolved - G2 is a gate with no counterpart | Proposed | High | Improvement | 2026-07-19 | -- |
+| [CR-0364](CR0364-reconcile-should-derive-a-request-terminal-when-its.md) | reconcile should derive a request terminal when its children are all resolved - G2 is a gate with no counterpart | In Progress | High | Improvement | 2026-07-19 | EP0087 |
 
 ## Archived Releases
 

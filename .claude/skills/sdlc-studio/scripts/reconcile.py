@@ -67,6 +67,7 @@ DRIFT_KINDS = (
     "epic-points-stale",
     "link-asymmetry",
     "undecomposed",
+    "request-derivable",
     "linked-epics",
 )
 
@@ -1275,6 +1276,67 @@ def undecomposed_drift(repo_root: Path | str) -> list[dict]:
     return drift
 
 
+def derivable_request_drift(repo_root: Path | str) -> list[dict]:
+    """A discovery item whose children have ALL resolved but which is not itself terminal.
+
+    The two-backlog workflow says a request reaches its successful terminal by DERIVATION, never
+    by assertion. `transition._request_terminal_gate` implemented the guard half - it refuses a
+    premature close - but nothing ever performed the closure once it was earned, so a disciplined
+    project accumulates delivered requests that still read as open work. Measured on this repo:
+    34 of 59 open CRs, with every delivering epic already Done.
+
+    THE GATE IS THE PREDICATE. This asks `_request_terminal_gate` and treats "no block reason" as
+    "derivable", rather than deciding for itself whether the children are resolved. Two answers to
+    one question is exactly how a detector and the gate it describes drift apart, and it is safe by
+    construction: what apply then asserts is precisely what the gate would already have allowed.
+
+    Import is lazy because `transition` imports this module at load time.
+    """
+    import transition  # noqa: PLC0415 - lazy: transition imports reconcile at module level
+    root = Path(repo_root)
+    drift: list[dict] = []
+    for type_ in sdlc_md.DISCOVERY_TYPES:
+        target = sdlc_md.default_terminal_status(type_)
+        if not target:
+            continue
+        for p in sdlc_md.artifact_files(type_, root):
+            text = sdlc_md.read_text_safe(p)
+            vocab = sdlc_md.status_vocab(type_, root)
+            status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
+            if not status or sdlc_md.is_terminal_status(type_, status):
+                continue
+            rid = sdlc_md.extract_record_id(p.stem) or p.stem
+            if transition._request_terminal_gate(root, type_, rid, target) is not None:
+                continue          # the gate would refuse: not derivable
+            drift.append({"type": type_, "id": rid, "kind": "request-derivable",
+                          "file_status": status, "index_status": None,
+                          "fix": f"{rid} is {status} but every child it produced is resolved - "
+                                 f"its terminal is DERIVED, so `reconcile apply` sets it "
+                                 f"{target}"})
+    return drift
+
+
+def apply_derivable_requests(repo_root: Path | str) -> list[str]:
+    """Derive every request whose children have all resolved. Returns the ids transitioned.
+
+    Goes through `transition.transition`, never a direct write, so the index row, any parent
+    cascade and the telemetry event all happen exactly as a hand transition would.
+    """
+    import transition  # noqa: PLC0415 - lazy, as above
+    root = Path(repo_root)
+    done: list[str] = []
+    for d in derivable_request_drift(root):
+        target = sdlc_md.default_terminal_status(d["type"])
+        try:
+            transition.transition(root, d["id"], target)
+            done.append(d["id"])
+        except (ValueError, FileNotFoundError) as exc:
+            # A refusal here is information, not a crash: report and carry on, so one stuck
+            # request cannot block the rest of the sweep.
+            print(f"  request-derivable: {d['id']} -> {target} refused: {exc}", file=sys.stderr)
+    return done
+
+
 def era_divergence_advisory(repo_root: Path | str) -> str | None:
     """Warn when this clone's config and the workspace's ids tell different era stories: config
     says schema v2 (sequential ids) but v3 ULID-form ids exist - another user or machine is
@@ -1327,6 +1389,7 @@ def cmd_detect(args: argparse.Namespace) -> int:
         all_drift.extend(detect_linked_epics(repo_root)["drift"])
         if sdlc_md.two_backlog_enforced(repo_root):
             all_drift.extend(undecomposed_drift(repo_root))
+            all_drift.extend(derivable_request_drift(repo_root))
 
     by_kind: dict[str, int] = {}
     for d in all_drift:

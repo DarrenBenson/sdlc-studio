@@ -21,6 +21,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`reconcile` derives a request terminal when its children are all resolved (CR0364).** The
+  two-backlog workflow says a request reaches its successful terminal by DERIVATION, and
+  `transition` enforced the guard half - it refuses a premature close - but nothing ever performed
+  the closure once it was earned. A project that ENFORCES the workflow therefore accumulated
+  delivered requests still reading as open work: on this repo, 34 of 59 open CRs, with every
+  delivering epic already Done, while `reconcile` reported zero drift. `detect` now reports the new
+  `request-derivable` kind and `apply` closes it through `transition`, so the index row and every
+  cascade still run. The detector calls the same `_request_terminal_gate` the close is checked
+  against, so the two cannot drift apart - and what `apply` asserts is precisely what the gate
+  would already have allowed. A childless request stays the separate `undecomposed` case, one
+  unresolved child blocks it, a dropped child (Won't Implement / Won't Fix / Rejected) counts as
+  resolved, and the whole thing is a no-op where the workflow is unenforced.
 - **The pre-commit gate runs cheapest-first and short-circuits (US0268).** The markdown lanes now
   run before the unit suites, and the suites are skipped entirely once a cheaper lane has failed -
   the commit is blocked either way, so paying ~132s of tests to be told about a blank line was
