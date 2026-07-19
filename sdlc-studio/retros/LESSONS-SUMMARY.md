@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0113: An AC asserting the committed state cannot be green in the working tree**
+- **L-0112: The author cannot close the loop: build-to-Done needs the reviewer of record**
+- **L-0111: Story points size the diff, not the discovery**
 - **L-0110: A new writer must join the atomicity and confinement rosters, not just work**
 - **L-0109: Delegating by Affects reproduces whatever is wrong with the Affects**
 - **L-0108: Build the gate first, then let it tell you the size of the backlog it guards**

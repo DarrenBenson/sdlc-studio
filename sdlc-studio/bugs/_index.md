@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 3 |
 | In Progress | 0 |
 | Fixed | 119 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **202** |
+| **Total** | **204** |
 
 ## All Bugs
 
@@ -169,6 +169,8 @@
 | [BG0200](BG0200-apply-signoff-tail-skips-the-velocity-row-in.md) | apply-signoff tail skips the velocity row in silence when the retro was not scaffolded by the close | Fixed | Medium | 2026-07-19 | 2026-07-19 |
 | [BG0201](BG0201-tranche-audit-certifies-unfilled-template-stories-as-ready.md) | tranche audit certifies unfilled template stories as ready: _weak_ac only detects one hardcoded phrase | Fixed | High | 2026-07-19 | 2026-07-19 |
 | [BG0202](BG0202-confinement-roster-sweep-misses-path-open-mode-so.md) | confinement roster sweep misses path.open(mode) so a writer can report no write surface | Open | Medium | 2026-07-19 | 2026-07-19 |
+| [BG0203](BG0203-mutation-survivors-in-the-new-audit-profile-parser.md) | mutation survivors in the new audit profile parser: profile_names and the lens-table break are unpinned | Open | Low | 2026-07-19 | 2026-07-19 |
+| [BG0204](BG0204-retro-scaffolding-builds-an-h1-from-the-sprint.md) | retro scaffolding builds an H1 from the Sprint Goal without stripping its trailing full stop | Open | Low | 2026-07-19 | 2026-07-19 |
 
 ## Archived Releases
 

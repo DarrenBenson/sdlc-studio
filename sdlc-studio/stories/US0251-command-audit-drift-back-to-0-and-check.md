@@ -33,6 +33,7 @@ skill-spec guards green
 - **Then** the file is byte-identical to the committed copy, so the report cannot claim
   a surface state the tree no longer has
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/command_audit.py --write --check-tools && git diff --exit-code -- sdlc-studio/reviews/command-audit.md
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

@@ -624,7 +624,14 @@ class StaleBytecodeTests(unittest.TestCase):
                 "import sys, mod\nsys.exit(0 if mod.f(1) == 1 else 1)\n", encoding="utf-8")
 
             # Populate the cache the way a normal test run would, BEFORE the gate.
-            subprocess.run([sys.executable, "check.py"], cwd=root, check=True)
+            # Force bytecode ON for the fixture, whatever the ambient environment says.
+            # This test's whole premise is a cache that already exists, and it runs under a
+            # mutation harness that sets PYTHONDONTWRITEBYTECODE=1 - inheriting that wrote no
+            # cache, so the precondition silently vanished and the suite failed only when
+            # invoked through the gate. A fixture must establish its own preconditions rather
+            # than borrow them from whoever happens to be the parent process.
+            env = {k: v for k, v in os.environ.items() if k != "PYTHONDONTWRITEBYTECODE"}
+            subprocess.run([sys.executable, "check.py"], cwd=root, check=True, env=env)
             cached = list(root.glob("__pycache__/mod.*.pyc"))
             self.assertTrue(cached, "fixture invalid: no pre-existing bytecode to go stale")
             before = src.stat()
