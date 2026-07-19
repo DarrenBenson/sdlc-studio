@@ -2219,7 +2219,10 @@ def _resolve_retro(root, args, state) -> int | None:
     if prior and _retro_path(root, prior) is not None:
         disp, verb = prior, "already scaffolded"
     else:
-        title = state.get("sprint_goal") or state.get("run_id") or "sprint retro"
+        # Through the shared helper: a Sprint Goal is a sentence, and an H1 keeping its
+        # full stop fails markdownlint MD026 and blocks the commit carrying this retro.
+        title = sdlc_md.heading_title(
+            state.get("sprint_goal") or state.get("run_id") or "sprint retro")
         res = artifact.meta_new(root, "retro", title)
         _prefill_retro(res["path"], state.get("batch") or [], state)
         disp, verb = res["id"], f"scaffolded (indexed={res['indexed']})"

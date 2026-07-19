@@ -2452,6 +2452,37 @@ class CloseRetroScaffoldTests(unittest.TestCase):
             self.assertNotIn("{{batch}}", body)
             self.assertNotIn("{{goal}}", body)
 
+    def test_a_goal_derived_h1_carries_no_trailing_punctuation(self) -> None:
+        """BG0179's defect in a second generator, and the reason to share one helper.
+
+        A Sprint Goal is a sentence and ends in a full stop, so an H1 built from it does
+        too, and markdownlint MD026 blocks the very commit carrying the retro. `handoff`
+        was fixed for exactly this and the retro scaffold was not, so the close-paperwork
+        commit was blocked at a real close and the heading corrected by hand. Both paths
+        now strip through one helper rather than each keeping its own idea of a heading.
+        """
+        goals = {
+            "full stop": "The review loop is bounded and the close tells the truth.",
+            "question mark": "Can the close tell the truth?",
+            "ellipsis": "Bound the loop...",
+            "trailing spaces": "Bound the loop.   ",
+        }
+        for name, goal in goals.items():
+            with self.subTest(goal=name), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _close_state(root, sprint_goal=goal, batch=["US0101"])
+                _close_story(root)
+                mod = _load()
+                out, err = io.StringIO(), io.StringIO()
+                with _patch_close_steps(mod), \
+                        contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                    mod.main(["close", "--root", str(root)])
+                retros = list((root / "sdlc-studio" / "retros").glob("RETRO*-*.md"))
+                h1 = retros[0].read_text(encoding="utf-8").splitlines()[0]
+                self.assertTrue(h1.startswith("# "), f"not an H1: {h1!r}")
+                self.assertFalse(h1.rstrip().endswith((".", ",", ";", ":", "!", "?", "…")),
+                                 f"H1 ends in punctuation (MD026): {h1!r}")
+
     def test_bare_close_rerun_reuses_scaffold_not_a_second_retro(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 18 |
+| Proposed | 19 |
 | Approved | 0 |
 | In Progress | 34 |
 | Complete | 290 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **360** |
+| **Total** | **361** |
 
 ## All Changes
 
@@ -182,6 +182,7 @@
 | [CR-0358](CR0358-the-close-review-is-an-unbounded-repair-loop.md) | the close review is an unbounded repair loop: no convergence check, no cost ceiling, and the author writes the reviewer's prompt | Proposed | High | Improvement | 2026-07-19 | -- |
 | [CR-0359](CR0359-sprint-close-discovers-its-blockers-one-at-a.md) | sprint close discovers its blockers one at a time, so a close takes as many runs as it has unmet prerequisites | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0360](CR0360-the-doc-freshness-line-budget-refusal-names-the.md) | the doc-freshness line-budget refusal names the count but not the gap, so trimming is guesswork | Proposed | Low | Improvement | 2026-07-19 | -- |
+| [CR-0361](CR0361-an-agent-meets-the-gates-as-refusals-not.md) | an agent meets the gates as refusals, not as a briefing: generate a per-unit pre-flight from the gates themselves | Proposed | Medium | Improvement | 2026-07-19 | -- |
 
 ## Archived Releases
 

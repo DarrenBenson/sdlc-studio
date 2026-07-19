@@ -56,12 +56,10 @@ TYPE = "handoff"
 WORKLIST_REL = Path("sdlc-studio") / ".local" / "handoff-worklist.txt"
 
 
-def _heading_title(title: str) -> str:
-    """A single-line title for the handoff H1, composed from prose (often the Sprint Goal
-    sentence, which ends in a full stop). Trailing punctuation is stripped so the generated
-    heading passes markdownlint MD026 in any project that lints its workspace - the same class
-    of fix the seeded AC headings carry."""
-    return " ".join(str(title).split()).rstrip(" .,;:!?…")
+# The H1 title rule lives in lib.sdlc_md beside the other shared writers: the retro
+# scaffold builds a heading from the same Sprint Goal, and keeping a private copy here is
+# how that path stayed broken after this one was fixed.
+_heading_title = sdlc_md.heading_title
 
 COPILOT_TAIL = "copilot-tail"
 JUDGEMENT = "judgement"

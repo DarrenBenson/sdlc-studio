@@ -21,6 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **One definition of a generated H1, so the MD026 fix stops being re-made per generator
+  (BG0204).** `sprint close` with no `--retro` scaffolds the batch retro and titles it from the
+  run's Sprint Goal. A goal is a sentence and ends in a full stop, so the H1 did too, and
+  markdownlint MD026 then blocked the very commit carrying the retro - hit at a real close, where
+  the heading had to be corrected by hand before the paperwork could land. This is the same defect
+  fixed once in the handoff H1 and once in the seeded AC headings, each generator fixing its own
+  copy while the others stayed broken. The rule now lives once, as `sdlc_md.heading_title`, beside
+  the other shared writers; `handoff` delegates to it and the retro scaffold calls it. Proven shared
+  rather than merely moved: removing the strip from the helper reddens tests in **both** callers.
+
 - **`refine` no longer gives one story its siblings' acceptance criteria (BG0205).** Decomposing a
   request seeded the FIRST minted story with the request's entire criteria list and left every
   sibling a bare `{{define}}` scaffold, under a note saying to redistribute them while grooming. The

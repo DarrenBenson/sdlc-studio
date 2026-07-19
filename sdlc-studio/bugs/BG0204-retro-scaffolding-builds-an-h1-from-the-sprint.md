@@ -1,6 +1,7 @@
 # BG0204: retro scaffolding builds an H1 from the Sprint Goal without stripping its trailing full stop
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (RED-first across four punctuation shapes; the shared helper mutation-proven to be load-bearing in both callers)
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/artifact.py
