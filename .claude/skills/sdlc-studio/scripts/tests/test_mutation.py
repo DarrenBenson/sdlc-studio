@@ -7,10 +7,12 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
@@ -565,6 +567,116 @@ class ChangedLinesTests(unittest.TestCase):
         mut = _load()
         with tempfile.TemporaryDirectory() as d:
             self.assertEqual(mut.changed_lines(Path(d), "HEAD"), {})
+
+
+class StaleBytecodeTests(unittest.TestCase):
+    """BG0197: a mutant the interpreter never actually ran must not report SURVIVED.
+
+    CPython invalidates a cached `.pyc` on (source mtime, source size). A mutant of
+    IDENTICAL byte length written inside the same mtime second as the previous run
+    therefore reuses the stale bytecode: the ORIGINAL code executes, the tests pass,
+    and the engine records the mutant as survived. Operator-swap fault classes
+    produce same-length mutants as the common case, so this is not a corner.
+    """
+
+    def test_same_length_mutant_is_not_masked_by_cached_bytecode(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            src = root / "mod.py"
+            src.write_text('VALUE = "AAA"\n', encoding="utf-8")
+            # The checker exits 0 only while the ORIGINAL value is in effect, so a
+            # 'pass' after mutation means the mutant did not run.
+            (root / "check.py").write_text(
+                "import sys, mod\nsys.exit(0 if mod.VALUE == 'AAA' else 1)\n",
+                encoding="utf-8")
+            cmd = f"{sys.executable} check.py"
+
+            self.assertEqual(mut._run_tests(cmd, root), "pass")  # baseline
+            before = src.stat()
+            src.write_text('VALUE = "BBB"\n', encoding="utf-8")  # same byte length
+            self.assertEqual(before.st_size, src.stat().st_size,
+                             "fixture invalid: the mutant must be the same length")
+            # Pin mtime to the original: the exact collision CPython cannot see.
+            os.utime(src, (before.st_atime, before.st_mtime))
+
+            self.assertEqual(
+                mut._run_tests(cmd, root), "fail",
+                "the mutant ran against stale bytecode: the gate would record it"
+                " SURVIVED without ever executing the mutated source")
+
+    def test_pre_existing_cache_is_purged_when_the_mutant_is_applied(self) -> None:
+        """The field case: a `__pycache__` that predates the gate.
+
+        `PYTHONDONTWRITEBYTECODE` stops the runner WRITING bytecode; it does not
+        stop it READING bytecode already on disk. Anyone who ran their suite before
+        invoking the mutation gate - the normal order - has a populated cache, and a
+        same-length mutant would execute the stale original from it. So `applied`
+        must drop the cache, not merely decline to add to it.
+        """
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            src = root / "mod.py"
+            body = "def f(x):\n    if x > 0:\n        return 1\n    return 0\n"
+            src.write_text(body, encoding="utf-8")
+            (root / "check.py").write_text(
+                "import sys, mod\nsys.exit(0 if mod.f(1) == 1 else 1)\n", encoding="utf-8")
+
+            # Populate the cache the way a normal test run would, BEFORE the gate.
+            subprocess.run([sys.executable, "check.py"], cwd=root, check=True)
+            cached = list(root.glob("__pycache__/mod.*.pyc"))
+            self.assertTrue(cached, "fixture invalid: no pre-existing bytecode to go stale")
+            before = src.stat()
+
+            # A SAME-LENGTH mutant is the whole point: CPython invalidates on
+            # (mtime, size), so a length change would invalidate the cache by itself
+            # and prove nothing about purging. The profiles do not guarantee equal
+            # length, so the replacement text is pinned here directly.
+            same_length = body.replace("return 1", "return 9")
+            self.assertEqual(len(same_length), len(body), "fixture invalid: lengths differ")
+            mutation = {"file": str(src), "class": "invert-guard", "occurrence": 0, "line": 3}
+            with unittest.mock.patch.object(mut, "mutated_text", return_value=same_length):
+                with mut.applied(mutation):
+                    # Pin mtime so (mtime, size) both still match the cached entry.
+                    os.utime(src, (before.st_atime, before.st_mtime))
+                    self.assertEqual(
+                        mut._run_tests(f"{sys.executable} check.py", root), "fail",
+                        "a pre-existing .pyc masked the mutant: the guard exists"
+                        " because declining to WRITE bytecode does not stop it being READ")
+
+    def test_run_tests_disables_bytecode_writing(self) -> None:
+        """The mechanism, asserted directly - the repro above proves the effect."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "check.py").write_text(
+                "import os, sys\n"
+                "sys.exit(0 if os.environ.get('PYTHONDONTWRITEBYTECODE') else 1)\n",
+                encoding="utf-8")
+            self.assertEqual(mut._run_tests(f"{sys.executable} check.py", root), "pass")
+
+    def test_applied_refuses_a_mutant_identical_to_the_source(self) -> None:
+        """A patch that changed nothing is not a mutation; surviving it proves nothing.
+
+        Reached by an `occurrence` index that resolves to no line - the shape a
+        stale enumeration against an edited file produces. `mutated_text` then
+        returns the file unchanged and the mutant 'survives' every suite trivially.
+        """
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            src = root / "m.py"
+            body = "def f(x):\n    if x > 0:\n        return 1\n    return 0\n"
+            src.write_text(body, encoding="utf-8")
+            noop = {"file": str(src), "class": "invert-guard", "occurrence": 99, "line": 2}
+            self.assertEqual(mut.mutated_text(noop), body,
+                             "fixture invalid: this occurrence must resolve to no line")
+            with self.assertRaises(ValueError):
+                with mut.applied(noop):
+                    pass
+            self.assertEqual(src.read_text(encoding="utf-8"), body,
+                             "the source must be left exactly as found")
 
 
 if __name__ == "__main__":

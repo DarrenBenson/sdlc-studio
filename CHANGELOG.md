@@ -654,6 +654,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The mutation gate no longer reports a mutant SURVIVED that never ran (BG0197).** CPython
+  invalidates a cached `.pyc` on (source mtime, source size), so a mutant of identical byte length
+  written inside one mtime second reused the stale bytecode: the ORIGINAL code executed, the tests
+  passed, and the engine recorded a survivor. Same-length mutants are what operator-swap fault
+  classes mostly produce, so the headline kill rate was partly evidence about the bytecode cache -
+  the same unearned result the gate exists to expose. Two guards, each independently proven by
+  killing a mutant of the fix: the runner now forces `PYTHONDONTWRITEBYTECODE`, and `applied`
+  purges the target's cached bytecode on both apply and restore, because declining to WRITE a
+  `.pyc` does not stop an existing one being READ - and a cache populated by an ordinary test run
+  before the gate started is the normal case. `applied` additionally refuses a patch that leaves
+  the file unchanged (reachable through a stale `occurrence` index): surviving a no-op is evidence
+  about nothing.
+
 - **The tranche audit no longer certifies an unfilled template as ready for implementation
   (BG0201).** `audit._weak_ac` documented itself as flagging "no checkable AC, or the tautology
   placeholder", but the placeholder it recognised was one hardcoded phrase - "lint and tests

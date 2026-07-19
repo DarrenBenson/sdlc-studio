@@ -289,18 +289,48 @@ def _install_restore_handlers() -> None:
     _RESTORE_INSTALLED = True
 
 
+def _purge_bytecode(path: Path) -> None:
+    """Drop cached bytecode for `path` so the next run compiles the bytes on disk.
+
+    CPython invalidates a `.pyc` on (source mtime, source size), so a mutant of the
+    same byte length written inside one mtime second is invisible to that check and
+    the ORIGINAL bytecode is executed. Same-length mutants are what operator-swap
+    fault classes mostly produce, so the cache must be dropped rather than trusted.
+    Best-effort: a cache we cannot remove is not a reason to abort the run, because
+    `_run_tests` also refuses to write bytecode in the first place.
+    """
+    cache = path.parent / "__pycache__"
+    if not cache.is_dir():
+        return
+    for pyc in cache.glob(f"{path.stem}.*.pyc"):
+        try:
+            pyc.unlink()
+        except OSError:
+            pass
+
+
 @contextlib.contextmanager
 def applied(mutation: dict):
     """Apply one mutation; ALWAYS restore the original bytes, even when the
     runner raises - the engine must never leave a mutant on disk."""
     path = Path(mutation["file"])
     original = path.read_bytes()
+    replacement = mutated_text(mutation).encode("utf-8")
+    if replacement == original:
+        # Surviving a patch that changed nothing is evidence about nothing. Refuse
+        # rather than run it: a no-op counted as SURVIVED understates the tests, and
+        # counted as KILLED overstates them.
+        raise ValueError(
+            f"mutation at {path}:{mutation.get('line')} does not change the file - "
+            "refusing to run a no-op mutant")
     _APPLIED[str(path)] = original
     try:
-        path.write_text(mutated_text(mutation), encoding="utf-8")
+        path.write_bytes(replacement)
+        _purge_bytecode(path)
         yield
     finally:
         path.write_bytes(original)
+        _purge_bytecode(path)
         _APPLIED.pop(str(path), None)
 
 
@@ -321,10 +351,16 @@ def _run_tests(test_cmd: str, cwd: Path) -> str:
     """One test run -> 'pass' | 'fail' | 'error' (the runner itself broke).
 
     The command runs in its own session and the whole process GROUP is killed on
-    timeout - a compound command's grandchildren must not outlive the gate."""
+    timeout - a compound command's grandchildren must not outlive the gate.
+
+    `PYTHONDONTWRITEBYTECODE` is forced on: a cached `.pyc` is keyed on (source
+    mtime, source size), so a same-length mutant written inside one mtime second
+    would otherwise run the ORIGINAL bytecode and be recorded as survived. Writing
+    no cache leaves nothing for the next mutant to inherit."""
     import os
     import signal
-    proc = subprocess.Popen(test_cmd, shell=True, cwd=cwd, start_new_session=True,  # nosec B602 - operator-authored test command, same trust boundary as verify_ac's Verify lines
+    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+    proc = subprocess.Popen(test_cmd, shell=True, cwd=cwd, start_new_session=True, env=env,  # nosec B602 - operator-authored test command, same trust boundary as verify_ac's Verify lines
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         rc = proc.wait(timeout=_RUN_TIMEOUT)

@@ -1,6 +1,7 @@
 # BG0197: mutation gate can report a mutant SURVIVED that never ran, via stale .pyc
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; both guards mutation-proven)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py
