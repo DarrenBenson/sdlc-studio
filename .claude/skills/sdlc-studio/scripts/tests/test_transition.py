@@ -1061,6 +1061,86 @@ class DryRunHonestyTests(unittest.TestCase):
             self.assertEqual(res["to"], "Fixed")
 
 
+class RequirementsPreflightTests(unittest.TestCase):
+    """US0267: ask what a transition needs BEFORE doing the work."""
+
+    def _bug(self, root: Path, depth: str = "") -> Path:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True)
+        line = f"> **Verification depth:** {depth}\n" if depth else ""
+        p = d / "BG0001-x.md"
+        p.write_text(f"# BG0001: x\n\n> **Status:** Open\n{line}"
+                     "> **Severity:** Low\n> **Points:** 2\n\n## Summary\n\ns\n",
+                     encoding="utf-8")
+        (d / "_index.md").write_text(
+            "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [BG0001](BG0001-x.md) | x | Open |\n", encoding="utf-8")
+        return p
+
+    def test_requirements_listed_before_work(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root)
+            unmet = tr.requirements(root, "BG0001", "Fixed")
+            self.assertEqual(len(unmet), 1)
+            self.assertIn("Verification depth", unmet[0])
+
+    def test_a_satisfied_transition_reports_nothing_unmet(self) -> None:
+        # The negative branch: a command that always found a requirement would be useless
+        # and would still pass the assertion above.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, depth="functional (reproduced)")
+            self.assertEqual(tr.requirements(root, "BG0001", "Fixed"), [])
+
+    def test_asking_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._bug(root)
+            before = p.read_text(encoding="utf-8")
+            tr.requirements(root, "BG0001", "Fixed")
+            self.assertEqual(p.read_text(encoding="utf-8"), before)
+
+    def test_requirements_are_not_duplicated(self) -> None:
+        """AC3: the text comes from the gate, so it cannot drift from the gate.
+
+        Proven by changing the GATE's wording and watching the reported requirement change
+        with it. A hand-maintained copy in the reporter would keep the old words and pass
+        every other test in this class.
+        """
+        sentinel = "SENTINEL-GATE-WORDING"
+        original = tr._bug_depth_gate
+        try:
+            tr._bug_depth_gate = lambda text, target: sentinel
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._bug(root)
+                unmet = tr.requirements(root, "BG0001", "Fixed")
+            self.assertTrue(any(sentinel in u for u in unmet),
+                            "the reporter restates requirements instead of deriving them")
+        finally:
+            tr._bug_depth_gate = original
+
+    def test_every_unmet_gate_is_listed_not_just_the_first(self) -> None:
+        # The ladder collects all refusals into one message; the reporter must split them
+        # back out rather than returning the joined blob as a single item.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n",
+                                                               encoding="utf-8")
+            bd = root / "sdlc-studio" / "bugs"
+            bd.mkdir()
+            (bd / "BG0001-x.md").write_text(
+                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n",
+                encoding="utf-8")
+            unmet = tr.requirements(root, "BG0001", "Fixed")
+            self.assertGreaterEqual(len(unmet), 2, f"expected several requirements, got {unmet}")
+            joined = " ".join(unmet)
+            self.assertIn("Verification depth", joined)
+            self.assertIn("triage", joined.lower())
+
+
 class AnnotateCannotBypassGatesTests(unittest.TestCase):
     """Critic F1/F2/F5: annotate must never touch gated/index-backed fields, must fail loud
     without a Status anchor, and must reject metadata-injection values."""

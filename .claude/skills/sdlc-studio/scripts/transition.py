@@ -890,6 +890,44 @@ def cmd_annotate(args: argparse.Namespace) -> int:
     return 0
 
 
+def requirements(root, artifact_id: str, target: str) -> list[str]:
+    """The unmet requirements standing between `artifact_id` and `target`. Writes nothing.
+
+    Asked BEFORE the work, so the requirement is met as part of it rather than discovered as
+    a refusal afterwards. Five `Verification depth` refusals in one session, each after the
+    unit was otherwise finished, is what this exists to stop.
+
+    Derived, never restated. This RUNS the real gate ladder via the dry-run path and reports
+    what it refuses, so there is no second copy of a requirement to drift from the guard that
+    enforces it. A hand-maintained list here would be a duplicate that goes stale silently -
+    the failure mode this command is supposed to remove, reintroduced one layer up.
+    """
+    try:
+        transition(root, artifact_id, target, dry_run=True)
+    except ValueError as exc:
+        msg = str(exc)
+        # The ladder reports every unmet gate in one refusal, joined after the "all listed):"
+        # preamble. Split it back into the individual requirements it collected.
+        body = msg.split("all listed):", 1)[1] if "all listed):" in msg else msg
+        return [part.strip() for part in body.split(". Override with --force")
+                if part.strip().strip(".")]
+    return []
+
+
+def cmd_requirements(args) -> int:
+    unmet = requirements(args.root, args.id, args.status)
+    if args.format == "json":
+        print(json.dumps({"id": args.id, "target": args.status, "unmet": unmet}, indent=2))
+        return 0
+    if not unmet:
+        print(f"{args.id} -> {args.status}: no unmet requirements")
+        return 0
+    print(f"{args.id} -> {args.status}: {len(unmet)} unmet requirement(s)")
+    for item in unmet:
+        print(f"  - {item}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Transition an artifact's status + cascade.")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -931,6 +969,14 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--dry-run", action="store_true")
     s.add_argument("--format", choices=("text", "json"), default="text")
     s.set_defaults(func=cmd_set)
+    r = sub.add_parser("requirements",
+                       help="What a transition will require, asked BEFORE the work. Writes "
+                            "nothing; derived by running the real gates, never a restatement.")
+    r.add_argument("--id", required=True, help="Artifact id, e.g. BG0042 / US0023")
+    r.add_argument("--status", required=True, help="The target status you intend to reach")
+    r.add_argument("--root", default=".")
+    r.add_argument("--format", choices=("text", "json"), default="text")
+    r.set_defaults(func=cmd_requirements)
     a = sub.add_parser("annotate", help="Set/update one metadata field on an artifact "
                                         "(deterministic stamp; index untouched).")
     a.add_argument("--id", required=True, help="Artifact id, e.g. BG0042 / US0023")

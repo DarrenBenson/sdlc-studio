@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`transition requirements` - ask what a transition needs before doing the work (US0267).**
+  Reports the unmet requirements standing between a unit and a target status, and writes nothing.
+  Derived, never restated: it runs the real gate ladder and reports what that refuses, so there is
+  no second copy of a requirement to drift from the guard enforcing it. A hand-maintained list
+  would be the very failure this removes, reintroduced one layer up - a test proves the derivation
+  by changing the gate's wording and watching the reported text change with it.
 - **Second-round review polish (RUN-01KXWWM3).** The repair round was APPROVEd with five MINOR
   findings; four are fixed here and one is filed. `refine._ac_heading`'s punctuation strip was
   unpinned by the whole suite - every existing test used a LONG criterion, where truncation removes

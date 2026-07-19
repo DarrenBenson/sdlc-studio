@@ -1,6 +1,6 @@
 # US0267: A unit close names the fields that unit type requires before its terminal transition, ahead of the work rather than on refusal
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0361
 > **Created:** 2026-07-19
 > **Created-by:** sdlc-studio new
@@ -37,7 +37,8 @@ acceptance criterion.
 - **Given** a unit that fails a terminal-transition requirement
 - **When** `transition set --dry-run` is invoked for that transition
 - **Then** it reports the same refusal the real run gives, and changes nothing (BG0213)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k dry_run_reports_refusals
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k DryRunHonestyTests
+- **Verified:** yes (2026-07-19)
 
 ### AC2: the dry-run and the real run never disagree
 
@@ -45,7 +46,8 @@ acceptance criterion.
 - **When** both paths are evaluated
 - **Then** they agree on whether the transition is allowed; the only difference is whether the
   write happens
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k dry_run_matches_real_run
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k test_the_dry_run_and_the_real_run_agree
+- **Verified:** yes (2026-07-19)
 
 ### AC3: the requirements are derived from the gate functions, not restated
 
@@ -53,14 +55,16 @@ acceptance criterion.
 - **When** a transition requirement changes in the gate
 - **Then** the reported text changes with it, because the reporter calls the same function - a
   test fails if the reporter carries its own copy of a requirement string
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k requirements_are_not_duplicated
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k test_requirements_are_not_duplicated
+- **Verified:** yes (2026-07-19)
 
 ### AC4: a unit's requirements can be asked for before the work
 
 - **Given** a unit id and its intended terminal status
 - **When** the agent asks what that transition will require
 - **Then** the unmet requirements are listed by name, with nothing written
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k requirements_listed_before_work
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k test_requirements_listed_before_work
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 
