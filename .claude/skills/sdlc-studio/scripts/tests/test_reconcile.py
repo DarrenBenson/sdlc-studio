@@ -2658,13 +2658,32 @@ class DerivableRequestDriftTests(unittest.TestCase):
         self.assertIn("request-derivable", buf2.getvalue())
 
     def test_apply_derives_the_request_terminal(self):
+        """Through `reconcile apply`, the COMMAND - not the function it calls.
+
+        The first version of this test called `apply_derivable_requests` directly and passed
+        while the CLI did nothing at all, because the function was never wired into `cmd_apply`.
+        The AC says "when reconcile apply runs"; testing the helper tests a different claim.
+        """
         root = self._repo()
         self._cr(root)
         self._story(root, "US0001", "Done")
-        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-            reconcile.apply_derivable_requests(root)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+            reconcile.main(["--root", str(root), "apply"])
         body = (root / "sdlc-studio" / "change-requests" / "CR0001-x.md").read_text(encoding="utf-8")
         self.assertIn("> **Status:** Complete", body)
+        self.assertIn("derived CR0001", buf.getvalue())
+
+    def test_apply_dry_run_changes_nothing(self):
+        root = self._repo()
+        self._cr(root)
+        self._story(root, "US0001", "Done")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+            reconcile.main(["--root", str(root), "apply", "--dry-run"])
+        body = (root / "sdlc-studio" / "change-requests" / "CR0001-x.md").read_text(encoding="utf-8")
+        self.assertIn("> **Status:** In Progress", body)
+        self.assertIn("WOULD derive CR0001", buf.getvalue())
 
     def test_apply_goes_through_transition(self):
         # AC2: not a direct file write - the index cascade and telemetry must still run.

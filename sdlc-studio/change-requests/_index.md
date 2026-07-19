@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 19 |
+| Proposed | 20 |
 | Approved | 0 |
 | In Progress | 36 |
 | Complete | 291 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **364** |
+| **Total** | **365** |
 
 ## All Changes
 
@@ -186,6 +186,7 @@
 | [CR-0362](CR0362-a-retro-finding-fixed-during-the-sprint-has.md) | a retro finding fixed during the sprint has no honest disposition: the vocabulary is filed or declined | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0363](CR0363-the-mutation-gate-should-report-the-coverage-its.md) | the mutation gate should report the coverage its test command actually reaches | Proposed | High | Improvement | 2026-07-19 | -- |
 | [CR-0364](CR0364-reconcile-should-derive-a-request-terminal-when-its.md) | reconcile should derive a request terminal when its children are all resolved - G2 is a gate with no counterpart | In Progress | High | Improvement | 2026-07-19 | EP0087 |
+| [CR-0365](CR0365-residuals-from-the-twelve-partially-delivered-requests-derived.md) | Residuals from the twelve partially-delivered requests derived Complete by CR0364 | Proposed | Medium | Improvement | 2026-07-19 | -- |
 
 ## Archived Releases
 

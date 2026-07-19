@@ -1316,7 +1316,7 @@ def derivable_request_drift(repo_root: Path | str) -> list[dict]:
     return drift
 
 
-def apply_derivable_requests(repo_root: Path | str) -> list[str]:
+def apply_derivable_requests(repo_root: Path | str, dry_run: bool = False) -> list[str]:
     """Derive every request whose children have all resolved. Returns the ids transitioned.
 
     Goes through `transition.transition`, never a direct write, so the index row, any parent
@@ -1327,6 +1327,9 @@ def apply_derivable_requests(repo_root: Path | str) -> list[str]:
     done: list[str] = []
     for d in derivable_request_drift(root):
         target = sdlc_md.default_terminal_status(d["type"])
+        if dry_run:
+            done.append(d["id"])
+            continue
         try:
             transition.transition(root, d["id"], target)
             done.append(d["id"])
@@ -2116,6 +2119,9 @@ def cmd_apply(args: argparse.Namespace) -> int:
             by_type["breakdown"] = apply_breakdown(repo_root, dry_run=args.dry_run)
             by_type["epic_points"] = apply_epic_points(repo_root, dry_run=args.dry_run)
             by_type["linked_epics"] = apply_linked_epics(repo_root, dry_run=args.dry_run)
+        if args.scope is None and sdlc_md.two_backlog_enforced(repo_root):
+            by_type["derivable_requests"] = {
+                "synced": apply_derivable_requests(repo_root, dry_run=args.dry_run)}
         applied = sum(len(r.get("changes", [])) + len(r.get("appended", []))
                       + len(r.get("pruned", [])) + len(r.get("synced", []))
                       for r in by_type.values())
@@ -2195,6 +2201,13 @@ def cmd_apply(args: argparse.Namespace) -> int:
         le = apply_linked_epics(repo_root, dry_run=args.dry_run)
         for cid in le["synced"]:
             print(f"{'WOULD sync' if args.dry_run else 'synced'} Linked Epics for {cid}")
+            n += 1
+    # Full-sweep only, and gated exactly as the detector is: an unenforced project closes its
+    # requests by assertion, so nothing here may move them.
+    if args.scope is None and sdlc_md.two_backlog_enforced(repo_root):
+        for rid in apply_derivable_requests(repo_root, dry_run=args.dry_run):
+            print(f"{'WOULD derive' if args.dry_run else 'derived'} {rid} "
+                  f"(every child resolved)")
             n += 1
     if do_meta:
         m = apply_meta(repo_root, dry_run=args.dry_run)
