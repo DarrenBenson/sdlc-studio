@@ -941,6 +941,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The audit profile parser's not-found paths are pinned (BG0203).** The two sites the bug named
+  turned out to be covered already - hand-mutating both kills them. The real defect was the
+  mutation run's test command being scoped below its target's coverage: pointed at one test file
+  the gate reports 10 survivors for `audit.py`, and widened to that module's actual tests, the same
+  mutants report 4. A narrow test command does not under-report coverage, it over-reports absence,
+  and the phantom survivors get filed as bugs. The four genuine gaps are now pinned -
+  `_refute_declaration`'s no-declaration return, `_reference_section`'s missing-anchor return and
+  its sibling-heading rule - and `PROFILE_DIR`, which was defined but never used while
+  `profile_names` recomputed the same path inline, is now the single answer it was meant to be. A
+  full 190-mutant enumeration (0 truncated, 0 un-checked) leaves the profile surface clean; the
+  residue elsewhere in the file is BG0212.
 - **The RFC accept gate names every open decision, not just the ones before a broken fence
   (BG0207).** The fail-closed re-scan was guarded by `fence is not None and not open_rows`, so it
   fired only when the main scan found nothing at all. With one open row before an unterminated

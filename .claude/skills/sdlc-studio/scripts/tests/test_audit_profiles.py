@@ -13,6 +13,7 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -164,6 +165,66 @@ def _catalogued(path: Path, heading: str) -> set[str]:
         if m:
             names.add(m.group(1))
     return names
+
+
+class ProfileParserEdgeTests(unittest.TestCase):
+    """The not-found paths of the profile parsers.
+
+    Every shipped pack declares a refute panel and every reference profile resolves, so
+    the happy path is covered many times over and the absent paths are covered nowhere -
+    a mutation run over this surface finds them by stubbing each `return ""` and watching
+    nothing fail. These are the tests that make the empty answers mean something.
+    """
+
+    def test_a_pack_with_no_refute_declaration_reads_as_empty(self) -> None:
+        # The empty string is the signal `resolve_profile` checks to report a pack as not
+        # panel-wired. Stubbed to return None, nothing here failed.
+        self.assertEqual(audit._refute_declaration("# Pack\n\nNo panel here.\n"), "")
+
+    def test_a_refute_declaration_wrapped_across_lines_is_read_whole(self) -> None:
+        # The block join is the reason this is not a one-line regex; without a case that
+        # actually wraps, the continuation loop is decoration.
+        text = ("# Pack\n\n> **Refute panel:** three votes, two must survive, and this\n"
+                "> pack does not opt out of it.\n")
+        got = audit._refute_declaration(text)
+        self.assertIn("does not opt out", got)
+        self.assertNotIn("\n", got)
+
+    def test_a_missing_anchor_yields_an_empty_section(self) -> None:
+        self.assertEqual(
+            audit._reference_section(SKILL, "reference-audit.md", "no-such-anchor-here"), "")
+
+    def test_a_section_keeps_deeper_headings_and_stops_at_a_sibling(self) -> None:
+        """The `<= level` rule, which every real caller happens not to exercise.
+
+        A profile's lens table sits under `###` subheadings inside its `##` section, so
+        stopping at ANY heading would truncate the table, and stopping at none would run
+        the next profile's lenses into this one. Both mutants survived against the shipped
+        references because their sections happen to have no deeper headings before the end.
+        """
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "ref.md").write_text(
+                "# Title\n\n"
+                "## Wanted {#wanted}\n"
+                "alpha\n"
+                "### Deeper\n"
+                "beta\n"
+                "## Sibling {#sibling}\n"
+                "gamma\n", encoding="utf-8")
+            body = audit._reference_section(root, "ref.md", "wanted")
+        self.assertIn("alpha", body)
+        self.assertIn("### Deeper", body, "a DEEPER heading is part of the section")
+        self.assertIn("beta", body)
+        self.assertNotIn("gamma", body, "a SIBLING heading ends the section")
+
+    def test_the_anchor_guard_selects_the_named_section_not_the_first(self) -> None:
+        # `line.startswith("#") AND the anchor is present` - inverting or dropping either
+        # half survived, because every other caller passes an anchor that happens to sit
+        # in the first matching heading anyway.
+        body = audit._reference_section(SKILL, "reference-audit.md", "audit-profiles")
+        self.assertTrue(body.strip(), "the known-good anchor must still resolve")
+        self.assertNotIn("{#audit-profiles}", body, "the heading itself is not part of the body")
 
 
 class ProfileCatalogueTests(unittest.TestCase):

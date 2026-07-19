@@ -95,7 +95,10 @@ class UnknownProfile(ValueError):
 def profile_names(skill_dir: Path | None = None) -> list[str]:
     """Every profile that can be resolved, sorted. Packs on disk plus the
     reference-declared defaults."""
-    d = (skill_dir or SKILL_DIR) / "templates" / "audit-profiles"
+    # PROFILE_DIR is the one answer to "where do the packs live". This used to recompute
+    # the same path inline, leaving the constant defined and unused - dead, and therefore
+    # unpinnable by any test.
+    d = (skill_dir / "templates" / "audit-profiles") if skill_dir else PROFILE_DIR
     packs = {p.stem for p in d.glob("*.md")} if d.is_dir() else set()
     return sorted(packs | set(REFERENCE_PROFILES))
 
@@ -173,8 +176,7 @@ def _reference_section(skill_dir: Path, filename: str, anchor: str) -> str:
     the same or a higher level."""
     text = (skill_dir / filename).read_text(encoding="utf-8")
     lines = text.splitlines()
-    start = None
-    level = 0
+    start = level = None
     for i, line in enumerate(lines):
         if line.startswith("#") and f"{{#{anchor}}}" in line:
             start = i + 1
