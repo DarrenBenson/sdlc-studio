@@ -926,7 +926,10 @@ def requirements(root, artifact_id: str, target: str) -> list[str]:
         # so two adjacent gates without it merged into one item, and an alternating pair leaked
         # the `"; AND "` delimiter into the next. The count then disagreed with the count the
         # gate itself had just reported.
-        return [b.strip().rstrip(".") for b in exc.blocks if b.strip()]
+        # removesuffix, not rstrip: rstrip strips EVERY trailing dot, so a future reason
+        # ending "e.g." or "..." would be silently trimmed. A no-op on today's gates (none
+        # ends in a period) - latent, and cheap to close now rather than to debug later.
+        return [b.strip().removesuffix(".") for b in exc.blocks if b.strip()]
     # Any OTHER error - an unknown id, a status outside the vocabulary - is an error, not a
     # requirement. Reporting it as "something you must satisfy" would be the confidently wrong
     # answer this command exists to end, so it propagates.

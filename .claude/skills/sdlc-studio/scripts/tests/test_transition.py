@@ -1168,28 +1168,69 @@ class RequirementsPreflightTests(unittest.TestCase):
             with self.assertRaises((ValueError, FileNotFoundError)):
                 _quiet(tr.requirements, root, "BG9999", "Fixed")
 
-    def test_blocks_come_from_the_ladder_as_data_not_reparsed_prose(self) -> None:
-        """Two gates that do NOT suffix their reason must still be two items.
+    def _two_suffix_free_gates(self, root: Path) -> None:
+        """A story that trips the TIER gate and the PLAN-REVIEW gate.
 
-        The ladder joins with `"; AND "`, but only SOME gates append
-        `". Override with --force"`. Splitting the message on that suffix therefore merged
-        any two adjacent gates lacking it, and leaked the delimiter into the next item when
-        they alternated - while the printed count disagreed with the count the gate had just
-        reported.
-
-        The earlier pinning test asserted `len >= 2` on a fixture where exactly ONE of the
-        two blocks carried the suffix, so the wrong delimiter still produced two items. It
-        passed for an incidental reason. This uses two suffix-free reasons, which the old
-        code collapses into one.
+        Both state their reason WITHOUT the `". Override with --force"` suffix, which is the
+        case the old prose-splitting collapsed into one item. Every earlier attempt at this
+        test used a fixture where one of the two blocks carried the suffix, so the wrong
+        delimiter still yielded two and the test passed on the defect.
         """
-        exc = tr.GateRefusal(
-            "US0001 -> Done blocked (2 requirement(s), all listed): first reason; "
-            "AND second reason.",
-            ["first reason", "second reason"])
-        self.assertEqual(exc.blocks, ["first reason", "second reason"])
-        # and the message is unchanged, so every existing caller and test still reads the same
-        self.assertIn("all listed):", str(exc))
-        self.assertIsInstance(exc, ValueError)
+        (root / "sdlc-studio").mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n",
+                                                           encoding="utf-8")
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir()
+        # `Template: full` with none of the sections the full tier promises -> tier gate.
+        # Ready -> In Progress on a schema-v3 story -> plan-review gate.
+        (sd / "US0001-x.md").write_text(
+            "# US0001: s\n\n> **Status:** Ready\n> **Template:** full\n"
+            "> **Epic:** [EP0001: e](../epics/EP0001-e.md)\n\n"
+            "## Acceptance Criteria\n\n### AC1\n- **Verify:** shell echo ok\n",
+            encoding="utf-8")
+        (sd / "_index.md").write_text(
+            "# Stories\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0001](US0001-x.md) | s | Ready |\n", encoding="utf-8")
+        ed = root / "sdlc-studio" / "epics"
+        ed.mkdir()
+        (ed / "EP0001-e.md").write_text(
+            "# EP0001: e\n\n> **Status:** In Progress\n\n## Story Breakdown\n\n"
+            "- [ ] [US0001: s](../stories/US0001-x.md)\n", encoding="utf-8")
+
+    def test_two_suffix_free_gates_are_two_requirements_not_one(self) -> None:
+        """THE case the re-parsing collapsed - driven through the real ladder.
+
+        The previous version of this test constructed a `GateRefusal` by hand and asserted
+        `__init__` stored its argument. No gate ran, `requirements()` was never called, and
+        the defective code it claimed to catch was never executed - so re-introducing the
+        merge left the whole suite green. A test that names a defect it cannot reach is worse
+        than no test: it reads as coverage.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._two_suffix_free_gates(root)
+            unmet = _quiet(tr.requirements, root, "US0001", "In Progress")
+        self.assertEqual(len(unmet), 2, f"two gates collapsed into {len(unmet)}: {unmet}")
+        joined = " ".join(unmet)
+        self.assertIn("full", joined)          # the tier gate's reason
+        self.assertIn("plan-review", joined)   # the plan-review gate's reason
+        for item in unmet:
+            self.assertNotIn("; AND ", item)
+
+    def test_the_refusal_carries_its_blocks_as_data(self) -> None:
+        # The mechanism, exercised through the real ladder rather than a hand-built object:
+        # `blocks` must match what the message claims, so the two can never disagree.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._two_suffix_free_gates(root)
+            try:
+                _quiet(tr.transition, root, "US0001", "In Progress", dry_run=True)
+                self.fail("expected the ladder to refuse")
+            except tr.GateRefusal as exc:
+                self.assertEqual(len(exc.blocks), 2)
+                self.assertIsInstance(exc, ValueError)   # every existing caller still catches
+                stated = int(re.search(r"blocked \((\d+) requirement", str(exc)).group(1))
+                self.assertEqual(stated, len(exc.blocks))
 
     def test_no_requirement_carries_the_ladders_join_token(self) -> None:
         # The observable symptom of re-parsing: a leaked `; AND ` inside an item.

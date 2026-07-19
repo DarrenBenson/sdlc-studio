@@ -54,7 +54,7 @@ drifts, which is what CR0361's third acceptance criterion forbids.
 - **Given** a batch whose units have unmet terminal-transition requirements
 - **When** the briefing is produced
 - **Then** every such requirement is named per unit, and the commit-path checks the skill
-  defines are carried on the briefing (as a count in the rendered plan, in full in the JSON)
+  defines are carried on the briefing in full
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_briefing_is_generated_from_definitions
 - **Verified:** yes (2026-07-19)
 
