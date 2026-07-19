@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -61,12 +62,30 @@ SPINE: dict[str, str] = {
 SPINE_ORDER = ("raise", "break-down", "sprint+review", "lever", "support", "utility", "unmapped")
 
 
+# A folded command's signpost: it is NOT a catalogue entry. Folding takes a command out of the
+# surface while keeping the route alive - an operator following an old habit lands on the command
+# that replaced it instead of a dead end. Counting the signpost as a catalogue entry would make a
+# fold indistinguishable from leaving the command in place, so these lines are stripped before the
+# catalogue is enumerated, and parsed separately as redirects.
+_REDIRECT_RE = re.compile(
+    r"^- Folded: `/sdlc-studio ([a-z][a-z-]*)` -> `/sdlc-studio ([a-z][a-z-]*)`")
+
+
+def _redirects(skill_dir: Path) -> dict[str, str]:
+    """Folded command -> the command that replaced it, read from the help catalogue's redirect
+    lines. One entry per folded command."""
+    text = (skill_dir / "help" / "help.md").read_text(encoding="utf-8")
+    return {m.group(1): m.group(2)
+            for ln in text.splitlines() if (m := _REDIRECT_RE.match(ln))}
+
+
 def _help_commands(skill_dir: Path) -> list[str]:
     """Distinct `/sdlc-studio <cmd>` tokens in the help catalogue - the commands an operator is
     actually told they can run. The complement of the Type Reference: a command in one but not the
-    other is drift."""
-    import re
+    other is drift. Redirect lines are excluded: a signpost to a folded command's replacement is
+    not an offer to run it."""
     text = (skill_dir / "help" / "help.md").read_text(encoding="utf-8")
+    text = "\n".join(ln for ln in text.splitlines() if not _REDIRECT_RE.match(ln))
     # rstrip a trailing hyphen so `/sdlc-studio foo-` (a wrapped/placeholder token) does not mint a
     # phantom `foo-` command; empty captures are dropped.
     return sorted({t for m in re.finditer(r"/sdlc-studio ([a-z][a-z-]*)", text)
@@ -96,9 +115,10 @@ def audit(repo_root: Path | str = ".", *, check_tools: bool = False) -> dict:
     `--help` (slower; a subprocess per script)."""
     skill_dir = doc_coverage._skill_dir(Path(repo_root))
     if skill_dir is None:
-        return {"applicable": False, "commands": [], "scripts": {}, "summary": {}}
+        return {"applicable": False, "commands": [], "scripts": {}, "redirects": {}, "summary": {}}
     type_ref = set(doc_coverage._type_ref_commands(skill_dir))
     help_cmds = set(_help_commands(skill_dir))
+    redirects = _redirects(skill_dir)
     scripts = set(doc_coverage._scripts(skill_dir))
     documented_scripts = _documented_scripts(skill_dir)
 
@@ -139,9 +159,10 @@ def audit(repo_root: Path | str = ".", *, check_tools: bool = False) -> dict:
                         + sum(1 for r in script_rows if r["alive"] is False),
         "scripts": len(script_rows),
         "undocumented_scripts": sum(1 for r in script_rows if not r["documented"]),
+        "redirects": len(redirects),
     }
     return {"applicable": True, "checked": check_tools, "commands": rows, "scripts": script_rows,
-            "summary": summary}
+            "redirects": redirects, "summary": summary}
 
 
 def _documented_scripts(skill_dir: Path) -> set[str]:
@@ -186,6 +207,12 @@ def render_markdown(result: dict) -> str:
             out.append(f"| `{r['command']}` | {'yes' if r['in_type_ref'] else 'no'} | "
                        f"{'yes' if r['in_help'] else 'no'} | {r['drift'] or '-'} | "
                        f"{r['disposition']} |")
+        out.append("")
+    # Folded commands - out of the catalogue, still routed. Recorded so a reader can tell a fold
+    # (a live route under a new front door) from a deletion (no route at all).
+    if result.get("redirects"):
+        out += ["## folded", "", "| Command | Redirects to |", "| --- | --- |"]
+        out += [f"| `{c}` | `{t}` |" for c, t in sorted(result["redirects"].items())]
         out.append("")
     # Recommended actions - derived from the structural findings, for the cleanup slice to act on.
     help_only = [r["command"] for r in result["commands"]

@@ -1,6 +1,6 @@
 # US0250: rewrite the help files around the process spine (raise -> break down -> sprint+review; PRD/TRD/TSD/personas as levers; reconcile/review/audit as support)
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -25,6 +25,7 @@ were added
 - **Then** it carries one section per stage: Raise, Break Down, Sprint and Review,
   Levers, Support and Utility
 - **Verify:** shell for h in "Raise" "Break Down" "Sprint and Review" "Levers" "Support" "Utility"; do grep -q "^### $h" .claude/skills/sdlc-studio/help/help.md || exit 1; done
+- **Verified:** yes (2026-07-19)
 
 ### AC2: Every command sits in the group the audit maps it to
 
@@ -34,6 +35,7 @@ were added
   category, and no command is listed under two sections, so the catalogue and the audit
   cannot disagree
 - **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_help_structure.HelpSpineGroupingTests
+- **Verified:** yes (2026-07-19)
 
 ### AC3: The document levers stay paramount
 
@@ -42,6 +44,7 @@ were added
 - **Then** the Levers section precedes Support and Utility and names `prd`, `trd`,
   `tsd` and `persona`, so the levers are reached before the incidental tooling
 - **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_help_structure.HelpLeverPrecedenceTests
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

@@ -6,6 +6,12 @@ Related: reference-upgrade.md
 
 # /sdlc-studio upgrade - Schema Upgrade
 
+> **Use `/sdlc-studio migrate` instead.** `migrate` is the front door: it orchestrates this
+> doc-shape upgrade alongside `project upgrade` (conventions + version), `migrate_v3` sizing and
+> the artefact-review sweep, into one report. `upgrade` is folded behind it and stays documented
+> here as the component it drives - reach for it directly only when you want that one step on its
+> own.
+
 Upgrade a project's **artifact document shape** from legacy (v1) to modular (v2) schema. This is one
 of three "upgrade" surfaces - see `reference-upgrade.md#three-upgrades` for `skill-update` (the
 installed skill) and `project upgrade` (a project's conventions).

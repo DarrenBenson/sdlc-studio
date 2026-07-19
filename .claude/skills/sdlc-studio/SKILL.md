@@ -235,6 +235,10 @@ approach decisions. The full index is in `help/references.md`.
 | `handoff` | The run-close handoff guide: what remains, per item, with its pointer and a copilot-tail / judgement tag |
 | `plan` | Claude Code plan-file lifecycle (list, archive) |
 | `decisions` | Project decisions log (the project spine + delegated-agent handoff): `add` / `list` / `promote` |
+| `retro` | Sprint retro: what the batch taught and what changes because of it - the close gate reads its content |
+| `lessons` | Project and cross-project lessons: recall before a decision, record after one |
+| `review` | Unified PRD/TRD/TSD/Persona review against the codebase |
+| `repo` | Repository map: index symbols and imports, then rank files by relevance to a story |
 | `migrate` | Review every artefact and upgrade where safe: orchestrates conventions + version + sizing, reports what needs a human |
 | `audit` | Adversarial pressure-test over the whole artifact graph: refute-panel-verified weakness-hunt, triage-then-approve, cost-gated pre-flight |
 | `reconcile` | Detect and fix status drift across all artifacts |

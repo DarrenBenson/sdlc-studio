@@ -1,6 +1,6 @@
 # US0249: decide and act on the 5 help-only commands (lessons/repo/retro/review/upgrade): promote spine-serving ones, retire/redirect the rest
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -25,6 +25,7 @@ Reference or retired out of the catalogue
 - **Then** every promoted command has a Type Reference row with a one-line
   description, and the audit reports it present in both surfaces
 - **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_command_audit.HelpOnlyPromotionTests
+- **Verified:** yes (2026-07-19)
 
 ### AC2: Retire the rest out of both surfaces, leaving a redirect
 
@@ -34,6 +35,7 @@ Reference or retired out of the catalogue
   redirect line naming what replaces it, so an operator following an old habit is not
   left with a dead route
 - **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_command_audit.RetiredCommandAbsenceTests
+- **Verified:** yes (2026-07-19)
 
 ### AC3: No command is left half-in
 
@@ -42,6 +44,7 @@ Reference or retired out of the catalogue
 - **Then** doc coverage passes and the audit counts zero drift: no command sits in the
   Type Reference without a help entry, or in help without a Type Reference row
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/doc_coverage.py && python3 .claude/skills/sdlc-studio/scripts/command_audit.py --format json | python3 -c "import json,sys; assert json.load(sys.stdin).get('summary', {}).get('drift') == 0"
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # US0251: command_audit drift back to 0 and check_links + validate_skill green
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -24,6 +24,7 @@ skill-spec guards green
   `sdlc-studio/reviews/command-audit.md`
 - **Then** its summary line reads zero unmapped, zero drift and zero broken tools
 - **Verify:** grep "0 unmapped, 0 drift, 0 broken tool" sdlc-studio/reviews/command-audit.md
+- **Verified:** yes (2026-07-19)
 
 ### AC2: The checked-in report matches a fresh run
 

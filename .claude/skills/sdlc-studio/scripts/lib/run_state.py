@@ -45,6 +45,14 @@ from . import sdlc_md
 REL = Path("sdlc-studio") / ".local" / "run-state.json"
 SCHEMA = 1
 
+# Where a CLOSED run's record is kept once the next one opens. The live file holds exactly
+# one run and every new run overwrites it, so before this a closed cycle's forecast, goal,
+# batch and verdict were gone the moment the next cycle started - which makes an N-cycle
+# rolling run unauditable: N sprints happened and one record survived. The archive is a copy
+# taken at close, keyed by `run_id`, and the live file's shape is deliberately UNCHANGED so
+# every existing reader sees exactly what it saw before.
+ARCHIVE_REL = Path("sdlc-studio") / ".local" / "run-archive"
+
 # The outcome vocabulary. A run is RUNNING until something says otherwise; the three ways
 # it stops are the three the handoff exists for (goal reached, budget spent, blocked), plus
 # the honest catch-all for an operator stop. An unknown value is REFUSED, never written: a
@@ -109,6 +117,67 @@ def write(repo_root: Path | str, state: dict) -> dict:
     p.parent.mkdir(parents=True, exist_ok=True)
     sdlc_md.atomic_write(p, json.dumps(state, indent=2))
     return state
+
+
+def archive_dir(repo_root: Path | str) -> Path:
+    return Path(repo_root) / ARCHIVE_REL
+
+
+def archive_path(repo_root: Path | str, run_id: str) -> Path:
+    return archive_dir(repo_root) / f"{run_id}.json"
+
+
+def archive(repo_root: Path | str, state: dict | None = None) -> Path | None:
+    """Copy a run's record to its own file, so a closed run stays readable after the next
+    one opens. Returns the path written, or None when there is no run to archive.
+
+    Keyed by `run_id` and rewritten in place, so archiving the same run twice leaves one
+    record, not two - the boundary archives at close and the next open archives again as a
+    safety net, and neither may double-count. A run with no `run_id` (nobody opened it) is
+    NOT archived: a record with no identity cannot be joined to anything later."""
+    state = read(repo_root) if state is None else state
+    run_id = state.get("run_id")
+    if not run_id:
+        return None
+    p = archive_path(repo_root, run_id)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    sdlc_md.atomic_write(p, json.dumps(state, indent=2))
+    return p
+
+
+def archived(repo_root: Path | str) -> list[dict]:
+    """Every archived run, oldest first. An unreadable record is SKIPPED rather than raising:
+    unlike the live file, a damaged archive entry cannot cause a close to overwrite a real
+    run's identity, so failing the whole read would lose the intact records for nothing."""
+    d = archive_dir(repo_root)
+    if not d.is_dir():
+        return []
+    out = []
+    for p in sorted(d.glob("*.json")):
+        try:
+            rec = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if isinstance(rec, dict) and rec.get("run_id"):
+            out.append(rec)
+    # Chronological, and the CYCLE INDEX breaks a tie before the run id does. Two cycles of a
+    # fast run start inside the same second, and `short_ulid` is not monotonic within one - so
+    # ordering on the id alone reads a rolling run's cycles back out of order, which is exactly
+    # the sequence the archive exists to preserve.
+    out.sort(key=lambda r: (r.get("started_at") or "",
+                            int((r.get("cycle") or {}).get("index") or 0),
+                            r.get("run_id") or ""))
+    return out
+
+
+def read_archived(repo_root: Path | str, run_id: str) -> dict:
+    """One archived run by id, or `{}` when it was never archived."""
+    p = archive_path(repo_root, run_id)
+    try:
+        rec = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return rec if isinstance(rec, dict) else {}
 
 
 def is_open(repo_root: Path | str) -> bool:
@@ -178,6 +247,11 @@ def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | 
     """
     def apply(state: dict) -> dict:
         if _is_spent(state):
+            # ARCHIVE BEFORE BLANKING. This is the last moment the finished run exists: the
+            # next statement replaces it. `close_run` normally archived it already and this
+            # rewrites the same key, but a run judged and left `running` never reached a
+            # close, and without this its record would be destroyed here unrecorded.
+            archive(repo_root, state)
             state = {**_blank(), "run_id": f"RUN-{sdlc_md.short_ulid()}",
                      "started_at": sdlc_md.now_iso8601()}
         if batch is not None:
@@ -230,4 +304,8 @@ def close_run(repo_root: Path | str, outcome: str, handoff: str | None = None) -
             state["handoff"] = handoff
         return state
 
-    return _mutate(repo_root, apply)
+    state = _mutate(repo_root, apply)
+    # The record is final here, so keep it: the next `open_run` overwrites the live file, and
+    # a closed run that only ever existed there is a sprint whose evidence expires.
+    archive(repo_root, state)
+    return state

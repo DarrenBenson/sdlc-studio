@@ -1,6 +1,6 @@
 # US0232: regenerate the plan from the live backlog after the fetch; dry-run preview before continuing
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** the next cycle plans under the standing policy
 - **Then** its batch is selected afresh under the policy's status filters and order rule, containing the newly raised unit and excluding the completed one - no batch is carried over from the previous cycle
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint_rolling.py -k RegeneratedBatchFromLiveBacklogTests
+- **Verified:** yes (2026-07-19)
 
 ### AC2: Absorb the previous cycle's lessons
 
@@ -29,6 +30,7 @@
 - **When** the next cycle's plan is regenerated
 - **Then** that plan's lessons digest includes those entries, so each cycle plans having read the one before it
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint_rolling.py -k RegeneratedPlanLessonsTests
+- **Verified:** yes (2026-07-19)
 
 ### AC3: Preview the regenerated plan before continuing
 
@@ -36,6 +38,7 @@
 - **When** the next cycle's plan is regenerated
 - **Then** a dry-run preview of that plan - batch, order, forecast and capacity - is printed before the cycle executes
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint_rolling.py -k NextCyclePreviewTests
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # US0229: record a standing sprint policy (N cycles, goal/capacity/order/stop conditions) on run-state
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** the operator runs `sprint.py plan --write` with `--cycles N` plus the policy elements (sprint goal, appetite, order, stop conditions)
 - **Then** run-state carries a `policy` object holding the cycle count, goal, capacity, order rule and stop conditions, and the plan output echoes the policy it recorded
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint_rolling.py -k RollingPolicyRecordTests
+- **Verified:** yes (2026-07-19)
 
 ### AC2: Refuse an incomplete policy rather than default it
 
@@ -29,6 +30,7 @@
 - **When** `plan --write` runs
 - **Then** it refuses with exit 2 naming the missing or invalid element, and no policy is written to run-state
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint_rolling.py -k RollingPolicyRefusalTests
+- **Verified:** yes (2026-07-19)
 
 ### AC3: The policy carries across a boundary unchanged
 
@@ -36,6 +38,7 @@
 - **When** the next cycle opens
 - **Then** it reads the recorded policy (goal, capacity, order, stop conditions) rather than re-deriving it from CLI defaults, and the remaining-cycle count decrements by one
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint_rolling.py -k RollingPolicyCarryOverTests
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

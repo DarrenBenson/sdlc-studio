@@ -47,43 +47,36 @@ independent critic plus the gate - the check's output states this scoping.
 
 ## The loop
 
-0. **Reconcile before plan.** `scripts/sprint.py plan` runs `reconcile detect` first
-   and surfaces index drift (warns; refuses under `--strict`) - the plan reads each unit's file
-   `Status`, so a stale index misleads selection. Mechanical drift only; **semantic** staleness
-   (a unit whose feature shipped under a different artifact) still needs the audit + grooming.
-1. **Define the batch.** `scripts/sprint.py plan <query> --order <order>`
-   returns the dependency-ordered, priority-sorted worklist (the triage plan).
-2. **Tranche audit (pre-flight).** `scripts/audit.py check <query|--ids>` grooms the
-   batch for readiness *before* the triage STOP, so work never starts on a unit that
-   would pass the downstream gates vacuously. Per unit it flags, deterministically,
-   **weak-AC** (no checkable AC or the tautology placeholder), **unmet-deps** (a
-   `Depends on` referent not yet delivered - a referent that sits in the SAME batch
-   is the planner's waves doing their job and reports as informational
-   `sequenced-in-batch` instead), **already-terminal** (close it, do not
-   re-work), and **link-integrity** (reuses `scripts/integrity.py`). Not-ready units
-   are sharpened, closed, or flagged-and-deferred; findings go to the decisions
-   ledger. The adversarial "is the problem still real, the change still sound" lens
-   is model-instructed (delegates to the adversarial audit when built).
-3. **Clarify + Triage STOP (D1).** First, batch **every clarifying question** (scope
-   boundaries, priority conflicts, ambiguous AC) into one numbered list, answered once.
-   Then present the groomed plan + the audit verdict and **stop for operator approval**.
-   After approval the loop runs autonomously, re-pausing only on a **material issue**
-   (scope change, broken interface/contract, contradicts a triage answer, no safe
-   reversible default).
+0. **Reconcile before plan.** `scripts/sprint.py plan` runs `reconcile detect` first and surfaces index drift (warns;
+   refuses under `--strict`) - the plan reads each unit's file `Status`, so a stale index misleads selection.
+   Mechanical drift only; **semantic** staleness (a unit whose feature shipped under a different artifact) still needs
+   the audit + grooming.
+1. **Define the batch.** `scripts/sprint.py plan <query> --order <order>` returns the dependency-ordered,
+   priority-sorted worklist (the triage plan).
+2. **Tranche audit (pre-flight).** `scripts/audit.py check <query|--ids>` grooms the batch for readiness *before* the
+   triage STOP, so work never starts on a unit that would pass the downstream gates vacuously. Per unit it flags,
+   deterministically, **weak-AC** (no checkable AC or the tautology placeholder), **unmet-deps** (a `Depends on`
+   referent not yet delivered - a referent that sits in the SAME batch is the planner's waves doing their job and
+   reports as informational `sequenced-in-batch` instead), **already-terminal** (close it, do not re-work), and
+   **link-integrity** (reuses `scripts/integrity.py`). Not-ready units are sharpened, closed, or flagged-and-deferred;
+   findings go to the decisions ledger. The adversarial "is the problem still real, the change still sound" lens is
+   model-instructed (delegates to the adversarial audit when built).
+3. **Clarify + Triage STOP (D1).** First, batch **every clarifying question** (scope boundaries, priority conflicts,
+   ambiguous AC) into one numbered list, answered once. Then present the groomed plan + the audit verdict and **stop
+   for operator approval**. After approval the loop runs autonomously, re-pausing only on a **material issue** (scope
+   change, broken interface/contract, contradicts a triage answer, no safe reversible default).
 4. **Per unit, in order:**
-   - `cr action` - decompose a CR into stories under an existing epic (a new one
-     only if none fits, D-decomposition). Stories carry implementation-ready AC and
-     a `Verify:` line. Plans (PL) are not created in agentic mode (D7).
-   - **Plan-review gate (schema v3, before implementation).** A story with spec-derived
-     ACs cannot enter implementation until an independent reviewer has challenged its ACs
-     against the source spec. The trigger is **deterministic** (`plan_review.py`; fires on a
-     spec-citation, `affects_files` threshold, or difficulty band - no model judgement in
-     fire/skip, TRD ADR-006), so it is not skipped under effort pressure. The reviewer is the
-     **QA seat's review render**, a separate instance from the plan's author, working to the
-     Plan-Review Charter (`reference-agent-prompt-template.md#plan-review-charter`); it records
-     with `plan_review record` (the verdict is pinned to the reviewed ACs by fingerprint, so a
-     later AC edit invalidates it). The gate is wired into `transition.py` at entry to In
-     Progress/Review/Done; the only sanctioned skip is a recorded `> **Plan-Review-Override:**`.
+   - `cr action` - decompose a CR into stories under an existing epic (a new one only if none fits, D-decomposition).
+     Stories carry implementation-ready AC and a `Verify:` line. Plans (PL) are not created in agentic mode (D7).
+   - **Plan-review gate (schema v3, before implementation).** A story with spec-derived ACs cannot enter implementation
+     until an independent reviewer has challenged its ACs against the source spec. The trigger is **deterministic**
+     (`plan_review.py`; fires on a spec-citation, `affects_files` threshold, or difficulty band - no model judgement in
+     fire/skip, TRD ADR-006), so it is not skipped under effort pressure. The reviewer is the **QA seat's review
+     render**, a separate instance from the plan's author, working to the Plan-Review Charter
+     (`reference-agent-prompt-template.md#plan-review-charter`); it records with `plan_review record` (the verdict is
+     pinned to the reviewed ACs by fingerprint, so a later AC edit invalidates it). The gate is wired into
+     `transition.py` at entry to In Progress/Review/Done; the only sanctioned skip is a recorded
+     `> **Plan-Review-Override:**`.
      This closes the N=5 **R5-inversion** failure - a planner inverted a spec rule in the ACs
      and the delivery critic (whose oracle IS the ACs) approved the wrong plan; a future fixture
      rerun can measure whether the gate catches the seeded inversion.
@@ -95,51 +88,41 @@ independent critic plus the gate - the check's output states this scoping.
      `reference-agent-prompt-template.md#seat-framing` - the stance never overrides the
      contract, and the reviewer is always a separate seat instance.
    - `verify_ac` - run the AC oracle; back-annotate `Verified:`.
-   - **Independent critic (D3), scaled to stakes** - the review depth matches the unit's
-     risk, so tokens are spent in proportion. **Independence is the floor, not the variable:**
-     the reviewer is always a *separate instance* from the author (the gate proves `reviewer !=
-     author`, CR0117); only the *depth* scales:
-     - **Code / logic / parser / security / data-loss-risk** -> a full **independent adversarial
-       sub-agent** that did not write the diff judges it against AC intent, plus adversarial/mutation
-       checks. Reject -> repair.
-     - **Pure-doc / template / mechanical / config** -> a **lighter independent review** (a quick
-       pass by a different instance), not a full adversarial sub-agent - cheaper, but still not the
-       author grading their own work.
-     Either way the verdict is recorded with `critic.py record` (committed) with both the **reviewer
-     and author ids** and the **tier noted in the issues field**, so the `critiqued` gate requires a
-     recorded APPROVE whose reviewer differs from the author - the depth scales, independence and
-     honesty never do. When unsure of the risk band, use the full critic.
-     **The reviewer is a living persona, not a hand-typed name:** resolve the reviewing seat with
-     `persona_resolve.py resolve --seat qa --render review` (product/engineering for their
-     domains) and give the critic that framing - the seat's goals and refusal instincts are the
-     review lens, and the recorded reviewer id is the seat's name. A hand-typed identity is the
-     fallback when no seat card fits, never the norm.
-     **Cross-model review is the stronger form of independence:** a separate instance of the
-     same model is the floor, but it still shares one model's blind spots - where the
-     operator's setup allows it, run the critic seat on a different model or agent runtime
-     for high-stakes units. Prompt-level independence catches self-favouritism; cross-model
-     independence also catches shared misreadings.
-     **Two-role gate (opt-in via `review.two_role_after`):** the seat's pass is additionally
-     recorded as **evidence** (`critic.py evidence --from-verdict`), and Done further requires a
-     **reviewer-of-record sign-off** (`critic.py signoff`) from a principal the author does not
-     control - the operator, or a named delegate in a separate trust boundary with the chain
-     recorded; authoring-session subagents are refused as delegates. The sign-off request embeds
-     the decision brief (`critic.py signoff-brief`). Units hold at **Review** until the sign-off
-     lands (normally at the close ceremony), then transition Done - see
-     `reference-workflow-personas.md`.
-   - `conformance check` - the deterministic gate (`scripts/conformance.py`):
-     decomposed -> AC -> tested -> verified -> **reconciled** (no index drift) ->
-     **critiqued** (a committed critic APPROVE) -> **documented** (the doc-coverage floor:
-     every Type-Reference command catalogued in help, every script in reference-scripts).
-     **Hard-fail**: a unit cannot reach Done with a stage skipped - including the
-     critic and the docs (D-conformance).
-   - **Update the docs in the same unit.** A unit that adds a command/script/flag updates
-     its user docs (help catalogue + reference) before it is Done - the `documented` stage
-     enforces the floor deterministically; content accuracy is judged by the closing review.
+   - **Independent critic (D3), scaled to stakes** - the review depth matches the unit's risk, so tokens are spent in
+     proportion. **Independence is the floor, not the variable:** the reviewer is always a *separate instance* from the
+     author (the gate proves `reviewer != author`, CR0117); only the *depth* scales:
+     - **Code / logic / parser / security / data-loss-risk** -> a full **independent adversarial sub-agent** that did
+       not write the diff judges it against AC intent, plus adversarial/mutation checks. Reject -> repair.
+     - **Pure-doc / template / mechanical / config** -> a **lighter independent review** (a quick pass by a different
+       instance), not a full adversarial sub-agent - cheaper, but still not the author grading their own work.
+     Either way the verdict is recorded with `critic.py record` (committed) with both the **reviewer and author ids**
+     and the **tier noted in the issues field**, so the `critiqued` gate requires a recorded APPROVE whose reviewer
+     differs from the author - the depth scales, independence and honesty never do. When unsure of the risk band, use
+     the full critic.
+     **The reviewer is a living persona, not a hand-typed name:** resolve the reviewing seat with `persona_resolve.py
+     resolve --seat qa --render review` (product/engineering for their domains) and give the critic that framing - the
+     seat's goals and refusal instincts are the review lens, and the recorded reviewer id is the seat's name. A
+     hand-typed identity is the fallback when no seat card fits, never the norm.
+     **Cross-model review is the stronger form of independence:** a separate instance of the same model is the floor,
+     but it still shares one model's blind spots - where the operator's setup allows it, run the critic seat on a
+     different model or agent runtime for high-stakes units. Prompt-level independence catches self-favouritism;
+     cross-model independence also catches shared misreadings.
+     **Two-role gate (opt-in via `review.two_role_after`):** the seat's pass is additionally recorded as **evidence**
+     (`critic.py evidence --from-verdict`), and Done further requires a **reviewer-of-record sign-off** (`critic.py
+     signoff`) from a principal the author does not control - the operator, or a named delegate in a separate trust
+     boundary with the chain recorded; authoring-session subagents are refused as delegates. The sign-off request
+     embeds the decision brief (`critic.py signoff-brief`). Units hold at **Review** until the sign-off lands (normally
+     at the close ceremony), then transition Done - see `reference-workflow-personas.md`.
+   - `conformance check` - the deterministic gate (`scripts/conformance.py`): decomposed -> AC -> tested -> verified ->
+     **reconciled** (no index drift) -> **critiqued** (a committed critic APPROVE) -> **documented** (the doc-coverage
+     floor: every Type-Reference command catalogued in help, every script in reference-scripts). **Hard-fail**: a unit
+     cannot reach Done with a stage skipped - including the critic and the docs (D-conformance).
+   - **Update the docs in the same unit.** A unit that adds a command/script/flag updates its user docs (help
+     catalogue and reference) before it is Done - the `documented` stage enforces the floor deterministically;
+     content accuracy is judged by the closing review.
    - Commit the unit green (trunk-based by default, D6).
-5. **Stall handling (D2).** After 3 failed green attempts a unit is marked
-   **Blocked**, logged, and skipped; the run continues. Blocked units surface in
-   `status`. Never thrash; never silently drop.
+5. **Stall handling (D2).** After 3 failed green attempts a unit is marked **Blocked**, logged, and skipped; the run
+   continues. Blocked units surface in `status`. Never thrash; never silently drop.
    **With routing enabled, escalation happens INSIDE that cap**: the first
    `routing.escalation.max_same_tier` (default 2) failed attempts run at the assigned
    tier; the next attempt escalates one declared tier up (`route.py escalate`). A
@@ -435,14 +418,11 @@ core (`epic`-from-PRD + `story`-from-epic + `cr action`), not a parallel path (D
 
 ## Guardrails
 
-- **Never deploys.** `deploy` is a stop-condition (hard-to-reverse) action: the loop may prepare up
-  to "gate green, artefact ready" and **hand back**, but it never runs `/sdlc-studio deploy` and the
-  triage approval never authorises a production rollout. Deploy is operator-triggered and
-  interactive, always.
-- **Deterministic** (the model cannot skip them): the iteration cap, the
-  repetition-breaker, the completion oracle, the **appetite breaker**
-  (`scripts/loop_guard.py`), and the **conformance check**
-  (`scripts/conformance.py`).
+- **Never deploys.** `deploy` is a stop-condition (hard-to-reverse) action: the loop may prepare up to "gate green,
+  artefact ready" and **hand back**, but it never runs `/sdlc-studio deploy` and the triage approval never authorises a
+  production rollout. Deploy is operator-triggered and interactive, always.
+- **Deterministic** (the model cannot skip them): the iteration cap, the repetition-breaker, the completion oracle, the
+  **appetite breaker** (`scripts/loop_guard.py`), and the **conformance check** (`scripts/conformance.py`).
 - **Model-instructed:** the autonomy ceiling and escalation policy.
 - **Decisions ledger (D4):** a committed, append-only per-tranche log
   (`scripts/ledger.py` -> `sdlc-studio/decisions/<tranche>.md`); survives context
@@ -486,43 +466,36 @@ stops measuring):
   history, all-zero window, non-positive batch, simulation horizon); a refusal names
   the reason, never guesses a date.
 
-  **Granularity is calibrated to the measured process, not the literature's default.**
-  The ISO-week bucket came from human-team Kanban practice; measured reality on an
-  agent-speed project is a median cycle time of 0 days and sprints that are sessions
-  measured in hours, so a weekly bucket quantises "this afternoon" into "next week".
-  The **day** bucket is therefore the default calendar floor, and the primary read is
-  the **sprint-session denominator** (`--bucket sprint`): sampled from the velocity
-  history's measured per-sprint throughput, reported as sprints-to-complete plus hours
-  at the measured elapsed-hours-per-sprint median (refusing under three sprints of
-  history; unmeasured hours are named, never zeroed). The week bucket stays available
-  via `--bucket week` or `flow.forecast_bucket: week` for slow-moving projects. The
-  operator's man-month-per-hour working heuristic is descriptive context for why day
-  granularity matters - never a target (Goodhart applies).
+  **Granularity is calibrated to the measured process, not the literature's default.** The ISO-week bucket came from
+  human-team Kanban practice; measured reality on an agent-speed project is a median cycle time of 0 days and sprints
+  that are sessions measured in hours, so a weekly bucket quantises "this afternoon" into "next week". The **day**
+  bucket is therefore the default calendar floor, and the primary read is the **sprint-session denominator**
+  (`--bucket sprint`): sampled from the velocity history's measured per-sprint throughput, reported as
+  sprints-to-complete plus hours at the measured elapsed-hours-per-sprint median (refusing under three sprints of
+  history; unmeasured hours are named, never zeroed). The week bucket stays available via `--bucket week` or
+  `flow.forecast_bucket: week` for slow-moving projects. The operator's man-month-per-hour working heuristic is
+  descriptive context for why day granularity matters - never a target (Goodhart applies).
 
-The sprint report shows both axes side by side; `deploy.py metrics` (the DORA four
-keys) is the delivery-performance read once a project ships. Points stay the COST
-vocabulary; flow stays the SCHEDULE vocabulary; velocity remains descriptive and is
-never a target.
+The sprint report shows both axes side by side; `deploy.py metrics` (the DORA four keys) is the delivery-performance
+read once a project ships. Points stay the COST vocabulary; flow stays the SCHEDULE vocabulary; velocity remains
+descriptive and is never a target.
 
 ## Appetite (the run-level circuit breaker) {#appetite}
 
-A per-unit quarantine bounds one unit; it does not bound the RUN. An unattended run
-otherwise has two outcomes only - it finishes, or it fails - with no way to say "spend
-this much and no more", which is the precondition for trusting it to go unattended. The
-appetite is that ceiling (Shape Up's fixed timebox: appetite is fixed, scope flexes).
+A per-unit quarantine bounds one unit; it does not bound the RUN. An unattended run otherwise has two outcomes only -
+it finishes, or it fails - with no way to say "spend this much and no more", which is the precondition for trusting it
+to go unattended. The appetite is that ceiling (Shape Up's fixed timebox: appetite is fixed, scope flexes).
 
-- **Declared at plan time:** `sprint plan --write --appetite-minutes N --appetite-units N`
-  records the appetite on the run state (either axis, or both; omit for an unbounded run).
-  The project default lives in `appetite.*` (`.config.yaml`); the flags override it.
-- **Evaluated at unit BOUNDARIES:** between units the loop runs
-  `loop_guard.py budget --root .`. It reads elapsed wall-clock from the run's `started_at`
-  and the units spent from those now terminal - both deterministic and harness-independent,
-  neither self-reported. When the appetite is spent it exits **4** (a distinct code); the
-  loop stops cleanly, the current unit is never abandoned mid-implementation.
-- **Not quarantine:** budget-exhausted has its OWN exit code (4, vs quarantine's 3) and
-  marks nothing - the units keep their true status rather than being flipped Blocked. The
-  loop then generates the handoff with `--outcome budget-spent`, which reports the appetite
-  declared vs spent vs delivered and names what remains.
+- **Declared at plan time:** `sprint plan --write --appetite-minutes N --appetite-units N` records the appetite on the
+  run state (either axis, or both; omit for an unbounded run). The project default lives in `appetite.*`
+  (`.config.yaml`); the flags override it.
+- **Evaluated at unit BOUNDARIES:** between units the loop runs `loop_guard.py budget --root .`. It reads elapsed
+  wall-clock from the run's `started_at` and the units spent from those now terminal - both deterministic and
+  harness-independent, neither self-reported. When the appetite is spent it exits **4** (a distinct code); the loop
+  stops cleanly, the current unit is never abandoned mid-implementation.
+- **Not quarantine:** budget-exhausted has its OWN exit code (4, vs quarantine's 3) and marks nothing - the units keep
+  their true status rather than being flipped Blocked. The loop then generates the handoff with `--outcome
+  budget-spent`, which reports the appetite declared vs spent vs delivered and names what remains.
 - **Never auto-extended:** a spent appetite is not topped up mid-run. Extending it is an
   explicit operator action - a fresh `sprint plan --write` opens a new run with a new
   appetite and a new clock.
@@ -540,6 +513,32 @@ appetite is that ceiling (Shape Up's fixed timebox: appetite is fixed, scope fle
   has measured enough of its own units the rate falls back to a seed, and the plan says which it
   used. **Read the velocity history the plan prints** - `retro.py velocity` - to see the rate the
   next forecast will use and how past sprints actually landed against it.
+
+## Rolling multi-sprint policy {#rolling}
+
+**Opt-in.** Without `--cycles` none of this applies and a sprint behaves exactly as before. Fix the POLICY once and
+regenerate the PLAN at every boundary: queueing several plans up front does not work, because the backlog is generated
+by the work, and the cycle that raises a bug must be able to hand it to the next one.
+
+`sprint.py plan --write --cycles N --sprint-goal "..."` records the **standing policy** - cycle count, sprint goal,
+capacity (`--appetite-minutes`/`--appetite-units`), order rule (`--order`), and stop conditions (`--stop-on`) - on the
+run state, and REFUSES an incomplete one rather than defaulting it: below one cycle, no sprint goal, or combined with
+`--worklist`/`--prd` (a rolling policy regenerates from the live backlog; a worklist is the frozen queue it abolishes).
+Every later cycle plans under that record, never under whatever the CLI defaults to at 3am.
+
+`sprint.py boundary --retro RETROxxxx [--strict] [--no-fetch]` then crosses one boundary as four ordered gates:
+**close-down** (this cycle's full close chain - retro validate and extract, lessons summary, gate, handoff, reconcile -
+reported against the cycle it closed), **fetch** (fetch and compare against origin's default branch at EVERY boundary,
+not only the first plan), **regenerate** (reselect the batch from the live backlog under the policy, absorbing the
+lessons the close has just written), and **preview** (a dry run of the batch, order, forecast and capacity, printed
+before anything executes).
+
+**Three causes stop the run:** a close-down that does not complete (`close-gate`), divergence from origin under
+`--strict` (`origin-drift`), and a regenerated batch the breakdown gate refuses (`refused-plan`). Each writes a handoff
+naming the cause and the number of cycles left unrun, records the stop on the run state, and executes no unit of the
+next cycle's batch - a stale or ungated plan never runs. Each cycle mints its own `run_id`, forecast, sprint goal,
+verdict and retro, and its record is archived to `sdlc-studio/.local/run-archive/<run_id>.json` before the next cycle
+overwrites the live file, so an N-cycle run reads back as N auditable sprints rather than one blurred session.
 
 ## Model-tier routing {#model-tier-routing}
 
@@ -580,6 +579,7 @@ in loop step 5; per-tier escape/escalation rates accumulate in telemetry
 | --- | --- |
 | `scripts/sprint.py plan` | select + order the batch (the triage plan); emits the still-valid lessons digest; REFUSES an ungroomed batch |
 | `scripts/sprint.py breakdown` | the read-only grooming census: ungroomed units, shared-file clusters, decomposition candidates |
+| `scripts/sprint.py boundary` | cross one boundary of a rolling run: close down, fetch, regenerate, preview, open the next cycle |
 | `scripts/lessons.py` | `revalidate` (close/extend/stamp by validity) + `summary` (regenerate the digest) |
 | `scripts/gate.py --require-retro` | the sprint-close gate: retro present, lessons re-validated, summary current |
 | `scripts/gate.py --require-handoff` | the stopped-short gate: the handoff exists and a retro links it |

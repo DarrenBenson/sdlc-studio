@@ -43,6 +43,8 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 /sdlc-studio sprint close                            # scaffolds the retro, then stops for you to fill it
 /sdlc-studio sprint close --retro RETRO0001          # the close ceremony as one command (retro already filled)
 /sdlc-studio sprint close --retro RETRO0001 --apply-signoff --principal "You"  # fan your approval into per-unit sign-offs + Done
+/sdlc-studio sprint plan --cycles 3 --goal done      # a standing policy: roll 3 cycles, regenerating the plan each time
+/sdlc-studio sprint boundary --retro RETRO0001       # close this cycle down and open the next from the live backlog
 /sdlc-studio sprint report --id RETRO0001             # the end-of-sprint report (the close draws it too)
 ```
 

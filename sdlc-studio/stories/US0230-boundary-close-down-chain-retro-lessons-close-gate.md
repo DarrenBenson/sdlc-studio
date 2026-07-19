@@ -1,6 +1,6 @@
 # US0230: boundary close-down chain (retro + lessons + close gate); halt on a failed gate
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,6 +23,7 @@
 - **When** the boundary is reached
 - **Then** the close ceremony runs for that cycle (retro validate and extract, lessons summary, close gate) before any re-plan, and each step is reported against the cycle it closed
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint_rolling.py -k BoundaryCloseDownTests
+- **Verified:** yes (2026-07-19)
 
 ### AC2: A failed close gate halts the run
 
@@ -30,6 +31,7 @@
 - **When** the rolling loop evaluates that boundary
 - **Then** no further cycle is planned or executed, the loop exits non-zero, and the message names the failing step and its remedy
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint_rolling.py -k BoundaryGateHaltTests
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

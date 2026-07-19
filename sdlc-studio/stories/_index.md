@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 10 |
+| Draft | 0 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 18 |
+| Review | 28 |
 | Done | 231 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -139,13 +139,13 @@
 | [US0226](US0226-rewrite-us0166-ac3-as-a-two-file-shell.md) | rewrite US0166 AC3 as a two-file shell Verify with the missing shell prefix | Done | EP0075 | 2026-07-17 | 2026-07-17 |
 | [US0227](US0227-split-non-discriminating-per-ac-selectors-so-each.md) | split non-discriminating per-AC selectors so each AC fails on its own regression | Done | EP0075 | 2026-07-17 | 2026-07-17 |
 | [US0228](US0228-harden-the-verify-ac-grep-verb-against-a.md) | harden the verify_ac grep verb against a dash-leading pattern | Done | EP0075 | 2026-07-17 | 2026-07-17 |
-| [US0229](US0229-record-a-standing-sprint-policy-n-cycles-goal.md) | record a standing sprint policy (N cycles, goal/capacity/order/stop conditions) on run-state | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
-| [US0230](US0230-boundary-close-down-chain-retro-lessons-close-gate.md) | boundary close-down chain (retro + lessons + close gate); halt on a failed gate | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
-| [US0231](US0231-fetch-and-origin-drift-check-at-each-boundary.md) | fetch and origin-drift check at each boundary, refuse under --strict | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
-| [US0232](US0232-regenerate-the-plan-from-the-live-backlog-after.md) | regenerate the plan from the live backlog after the fetch; dry-run preview before continuing | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
-| [US0233](US0233-stop-with-handoff-on-a-refused-or-stale.md) | stop-with-handoff on a refused or stale plan; never execute an ungated plan | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
-| [US0234](US0234-per-cycle-auditability-own-forecast-goal-retro-and.md) | per-cycle auditability: own forecast, goal, retro and run-state per cycle | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
-| [US0235](US0235-reference-sprint-documentation-and-tests-for-the-rolling.md) | reference-sprint documentation and tests for the rolling policy | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0229](US0229-record-a-standing-sprint-policy-n-cycles-goal.md) | record a standing sprint policy (N cycles, goal/capacity/order/stop conditions) on run-state | Review | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0230](US0230-boundary-close-down-chain-retro-lessons-close-gate.md) | boundary close-down chain (retro + lessons + close gate); halt on a failed gate | Review | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0231](US0231-fetch-and-origin-drift-check-at-each-boundary.md) | fetch and origin-drift check at each boundary, refuse under --strict | Review | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0232](US0232-regenerate-the-plan-from-the-live-backlog-after.md) | regenerate the plan from the live backlog after the fetch; dry-run preview before continuing | Review | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0233](US0233-stop-with-handoff-on-a-refused-or-stale.md) | stop-with-handoff on a refused or stale plan; never execute an ungated plan | Review | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0234](US0234-per-cycle-auditability-own-forecast-goal-retro-and.md) | per-cycle auditability: own forecast, goal, retro and run-state per cycle | Review | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0235](US0235-reference-sprint-documentation-and-tests-for-the-rolling.md) | reference-sprint documentation and tests for the rolling policy | Review | EP0076 | 2026-07-17 | 2026-07-17 |
 | [US0236](US0236-sprint-close-apply-signoff-records-per-unit-sign.md) | sprint close --apply-signoff records per-unit sign-off and Done transitions, refusing without an explicit principal | Done | EP0077 | 2026-07-17 | 2026-07-17 |
 | [US0237](US0237-cascade-parent-epics-crs-rfcs-terminal-write-the.md) | cascade parent epics/CRs/RFCs terminal, write the velocity row, final reconcile | Done | EP0077 | 2026-07-17 | 2026-07-17 |
 | [US0238](US0238-idempotent-re-run-after-a-mid-cascade-stop.md) | idempotent re-run after a mid-cascade stop | Done | EP0077 | 2026-07-17 | 2026-07-17 |
@@ -159,9 +159,9 @@
 | [US0246](US0246-close-the-accepted-tranche-decision-rows-with-what.md) | close the accepted-tranche decision rows with what actually shipped | Review | EP0079 | 2026-07-17 | 2026-07-17 |
 | [US0247](US0247-a-recorded-sprint-level-adversarial-full-diff-verdict.md) | a recorded sprint-level adversarial full-diff verdict satisfies the per-unit critiqued gate for the units in its diff range; per-unit REJECT-repairs still recorded | Done | EP0080 | 2026-07-17 | 2026-07-17 |
 | [US0248](US0248-the-close-sign-off-brief-reads-a-sprint.md) | the close sign-off brief reads a sprint-level verdict as coverage rather than reporting every unit unreviewed; document the model | Done | EP0080 | 2026-07-17 | 2026-07-17 |
-| [US0249](US0249-decide-and-act-on-the-5-help-only.md) | decide and act on the 5 help-only commands (lessons/repo/retro/review/upgrade): promote spine-serving ones, retire/redirect the rest | Draft | EP0081 | 2026-07-17 | 2026-07-17 |
-| [US0250](US0250-rewrite-the-help-files-around-the-process-spine.md) | rewrite the help files around the process spine (raise -> break down -> sprint+review; PRD/TRD/TSD/personas as levers; reconcile/review/audit as support) | Draft | EP0081 | 2026-07-17 | 2026-07-17 |
-| [US0251](US0251-command-audit-drift-back-to-0-and-check.md) | command_audit drift back to 0 and check_links + validate_skill green | Draft | EP0081 | 2026-07-17 | 2026-07-17 |
+| [US0249](US0249-decide-and-act-on-the-5-help-only.md) | decide and act on the 5 help-only commands (lessons/repo/retro/review/upgrade): promote spine-serving ones, retire/redirect the rest | Review | EP0081 | 2026-07-17 | 2026-07-17 |
+| [US0250](US0250-rewrite-the-help-files-around-the-process-spine.md) | rewrite the help files around the process spine (raise -> break down -> sprint+review; PRD/TRD/TSD/personas as levers; reconcile/review/audit as support) | Review | EP0081 | 2026-07-17 | 2026-07-17 |
+| [US0251](US0251-command-audit-drift-back-to-0-and-check.md) | command_audit drift back to 0 and check_links + validate_skill green | Review | EP0081 | 2026-07-17 | 2026-07-17 |
 | [US0252](US0252-sweep-the-remaining-bare-artefact-body-read-text.md) | sweep the remaining bare artefact-body read_text calls through read_text_safe, with a regression test | Review | EP0082 | 2026-07-17 | 2026-07-17 |
 | [US0253](US0253-run-the-test-noise-gate-leg-in-ci.md) | run the test-noise gate leg in CI and broaden the leak detector beyond one shape | Review | EP0082 | 2026-07-17 | 2026-07-17 |
 | [US0254](US0254-gate-release-runs-check-versions-strict-under-one.md) | gate --release runs check_versions --strict under one exit code; a CHANGELOG mismatch fails | Review | EP0082 | 2026-07-17 | 2026-07-17 |

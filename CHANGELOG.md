@@ -21,7 +21,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **The sprint report has a command surface and the close ceremony draws it (EP0074).**
+- **A rolling multi-sprint policy: fix the policy once, regenerate the plan at every boundary
+  (EP0076).** An operator wanting an unattended evening of delivery had to return at every sprint
+  boundary to re-plan, and queueing several plans up front does not work - the backlog is generated
+  by the work, so a frozen queue rots while it waits. `sprint plan --write --cycles N --sprint-goal
+  "..."` now records a **standing policy** (cycle count, goal, capacity, order rule, stop
+  conditions) on the run state and refuses an incomplete one rather than defaulting it: fewer than
+  one cycle, no sprint goal, or combined with `--worklist`/`--prd` is an exit-2 refusal that writes
+  no policy at all. `sprint boundary --retro RETROxxxx` then crosses one boundary as four ordered
+  gates - the cycle's full close chain (reported against the cycle it closed), a fetch and
+  origin-drift comparison at **every** boundary rather than only the first plan, a regeneration of
+  the batch from the live backlog under the policy (so a bug the last cycle raised is eligible and
+  a story it finished has dropped out, and the lessons its close just wrote are in the next plan's
+  digest), and a dry-run preview of batch, order, forecast and capacity before anything executes.
+  Three causes stop the run through **one shared stop path** - a close-down that does not complete,
+  divergence from origin under `--strict`, and a regenerated batch the breakdown gate refuses - each
+  writing a handoff that names the cause and the cycles left unrun, recording the stop on the run
+  state, and executing no unit of the next cycle's batch. Each cycle mints its own `run_id`,
+  forecast, sprint goal, verdict and retro, and **run state is now archived per run** to
+  `sdlc-studio/.local/run-archive/<run_id>.json` before the next cycle overwrites the live file, so
+  an N-cycle run reads back as N auditable sprints instead of one blurred session. The live
+  run-state file keeps its existing shape, so every module that reads it is unaffected. The whole
+  feature is opt-in: without `--cycles` a sprint behaves exactly as before.
+
+- **The command surface is grouped by the process spine, and the two catalogues agree (EP0081).**
+  `help/help.md` no longer lists commands in the order features were added; the "All Commands"
+  catalogue now carries one section per stage - Raise, Break Down, Sprint and Review, Levers,
+  Support, Utility - with the document levers reached before the support and utility tooling. Which
+  section a command sits in is no longer editorial: `test_help_structure.py` binds every catalogued
+  entry to `command_audit.SPINE`, so a command placed under the wrong heading, listed twice, or
+  dropped from the page fails a test rather than being found by a reader. Four working commands
+  that lived in the help catalogue but not the SKILL Type Reference - `lessons`, `retro`, `review`
+  and `repo` - are promoted into it; that absence was the drift, and it fails `doc_coverage`
+  repo-wide for every unit while it lasts. `upgrade` is folded behind `migrate` instead, since
+  `reference-upgrade.md` names `migrate` the front door that orchestrates it: it leaves both
+  catalogues but keeps its help page and gains a redirect, so an operator following an old habit
+  lands on the replacement rather than a dead route. `command_audit.py` learns to read those
+  redirects - a signpost is not a catalogue entry, so folding is distinguishable from leaving a
+  command in place - and reports the folded set. The checked-in `command-audit.md` is regenerated:
+  39 commands, 0 unmapped, 0 drift, 0 broken tools.
+
   `sprint report --id RETROxxxx [--tokens N] [--elapsed-hours H] [--format json]` routes to the
   report composer, threading every flag and returning its exit code unchanged, so the end-of-sprint
   page no longer needs an operator who already knows `sprint_report.py` exists. `sprint close` now
