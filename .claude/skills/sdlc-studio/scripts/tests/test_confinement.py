@@ -167,6 +167,12 @@ WRITER_CASES: dict[str, WriterCase] = {
         argv=("record", "--id", "US0001", "--type", "story", "--tokens", "10"),
         targets=frozenset({"sdlc-studio/retros/evidence/actuals-*.jsonl"}),
     ),
+    "audit_cost.py": WriterCase(
+        argv=("record", "--lenses", "7", "--rounds", "3", "--votes", "3",
+              "--est-agents", "217", "--est-tokens", "7800000",
+              "--actual-agents", "265", "--actual-tokens", "12400000"),
+        targets=frozenset({"sdlc-studio/retros/evidence/audit-cost-*.jsonl"}),
+    ),
     "critic.py": WriterCase(
         argv=("record", "--unit", "US0001", "--verdict", "approve",
               "--reviewer", "r", "--author", "a"),

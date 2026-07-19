@@ -2158,6 +2158,89 @@ class GoalVerdictTests(unittest.TestCase):
                 mod.main(["goal-verdict", "--verdict", "smashed-it", "--root", str(root)])
 
 
+_REPORT_RETRO = """# RETRO-9100: a sprint
+
+> **Batch:** US0001, US0002
+> **Date:** 2026-07-17
+
+## Delivered
+
+- US0001 - shipped
+
+## Lessons
+
+- a real lesson worth keeping for next time
+"""
+
+
+def _report_fixture(root: Path) -> None:
+    """A retro the report composer can actually compose from: batch, date, and the
+    Done+pointed stories the delivered-points figure is read off."""
+    (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-studio" / "retros" / "RETRO9100-a-sprint.md").write_text(
+        _REPORT_RETRO, encoding="utf-8")
+    d = root / "sdlc-studio" / "stories"
+    d.mkdir(parents=True, exist_ok=True)
+    for sid, pts in (("US0001", 3), ("US0002", 5)):
+        (d / f"{sid}-s.md").write_text(
+            f"# {sid}: s\n\n> **Status:** Done\n> **Points:** {pts}\n", encoding="utf-8")
+
+
+class SprintReportRouteTests(unittest.TestCase):
+    """US0223: `sprint report` is the command surface over sprint_report.py show - same
+    output, every flag threaded, the composer's exit code returned unchanged."""
+
+    def _run(self, mod, argv) -> tuple[int, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(argv)
+        return rc, out.getvalue()
+
+    def test_route_output_matches_the_composer(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _report_fixture(root)
+            mod = _load()
+            import sprint_report
+            rc_route, via_route = self._run(mod, ["report", "--id", "RETRO9100",
+                                                  "--root", str(root)])
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                rc_direct = sprint_report.main(["--root", str(root), "show", "--id", "RETRO9100"])
+            self.assertEqual(rc_route, 0)
+            self.assertEqual(rc_route, rc_direct)
+            self.assertIn("Sprint report - RETRO9100", via_route)   # it really composed a page
+            self.assertEqual(via_route, out.getvalue())
+
+    def test_every_flag_is_threaded_to_the_composer(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _report_fixture(root)
+            mod = _load()
+            rc, out = self._run(mod, ["report", "--id", "RETRO9100", "--tokens", "200000",
+                                      "--elapsed-hours", "2", "--format", "json",
+                                      "--root", str(root)])
+            self.assertEqual(rc, 0)
+            rep = json.loads(out)                                    # --format json honoured
+            self.assertEqual(rep["velocity"]["points_per_elapsed_hour"], 4.0)  # 8pts / 2h
+            self.assertEqual(rep["sprint_actual_tokens"], 200000)             # --tokens
+            self.assertEqual(rep["velocity"]["sprint_tokens_per_point"], 25000)
+
+    def test_composer_exit_code_is_returned_unchanged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _report_fixture(root)
+            mod = _load()
+            import sprint_report
+            rc_route, out = self._run(mod, ["report", "--id", "RETRO9999", "--root", str(root)])
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                rc_direct = sprint_report.main(["--root", str(root), "show", "--id", "RETRO9999"])
+            self.assertEqual(rc_direct, 1, "fixture guard: the composer must fail on a missing retro")
+            self.assertEqual(rc_route, rc_direct)   # not swallowed, not remapped to 0
+            self.assertIn("unavailable", out)
+
+
 def _close_state(root: Path, **over) -> dict:
     """A legal run-state for close tests, written directly (the plan path is covered
     elsewhere; close reads the object, not the ceremony that made it)."""
@@ -2186,14 +2269,17 @@ def _close_story(root: Path) -> None:
         "- **Verify:** shell echo ok\n", encoding="utf-8")
 
 
-def _close_retro(root: Path, rid: str = "RETRO0001", with_index: bool = True) -> None:
+def _close_retro(root: Path, rid: str = "RETRO0001", with_index: bool = True,
+                 batch: str = "") -> None:
     """A retro file (and, by default, its index row) so a `close --retro <rid>` resolves it.
-    With `with_index=False` the row is omitted, exercising the close's index-row self-heal."""
+    With `with_index=False` the row is omitted, exercising the close's index-row self-heal.
+    `batch` adds the Batch front-matter the report composer reads its units off."""
     d = root / "sdlc-studio" / "retros"
     d.mkdir(parents=True, exist_ok=True)
     stem = f"{rid}-widget-sprint"
+    batch_line = f"> **Batch:** {batch}\n" if batch else ""
     (d / f"{stem}.md").write_text(
-        f"# {rid[:5]}-{rid[5:]}: widget sprint\n\n> **Date:** 2026-07-16\n\n"
+        f"# {rid[:5]}-{rid[5:]}: widget sprint\n\n> **Date:** 2026-07-16\n{batch_line}\n"
         "## Delivered\n\n- US0101 - shipped\n\n## Lessons\n\n- learned a thing\n",
         encoding="utf-8")
     if with_index:
@@ -2429,6 +2515,119 @@ class CloseRetroScaffoldTests(unittest.TestCase):
             idx = root / "sdlc-studio" / "retros" / "_index.md"
             self.assertTrue(idx.is_file(), "index bootstrapped by the self-heal")
             self.assertIn("RETRO", idx.read_text(encoding="utf-8"))   # the row was added
+
+
+class _CloseReportBase(unittest.TestCase):
+    """Shared fixture for the close's report step: a run whose retro names the batch, so the
+    report composes a real page rather than an empty one."""
+
+    def _fixture(self, root: Path) -> None:
+        _close_state(root, handoff="HO0001", outcome="goal-reached")
+        _close_story(root)
+        _close_retro(root, batch="US0101")
+
+    def _close(self, mod, root: Path) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with _patch_close_steps(mod), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+        return rc, out.getvalue(), err.getvalue()
+
+
+class CloseDrawsReportTests(_CloseReportBase):
+    """US0224: the close draws the sprint report, before the sign-off brief, and a report
+    that cannot be composed is noted rather than allowed to fail the close."""
+
+    def test_report_drawn_before_the_signoff_brief(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            mod = _load()
+            rc, out, err = self._close(mod, root)
+            self.assertEqual(rc, 0, err)
+            self.assertIn("Sprint report - RETRO0001", out)
+            # Composed from THIS run, not a stub: the unit count comes off the retro's Batch
+            # and the goal line off the run state.
+            self.assertIn("Delivered: 1 unit(s)", out)
+            self.assertIn("Sprint Goal: make the close honest", out)
+            brief = out.lower().index("sign-off request")
+            self.assertLess(out.index("Sprint report - RETRO0001"), brief)
+
+    def test_uncomposable_report_is_noted_and_the_close_still_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            mod = _load()
+            import sprint_report
+            with unittest.mock.patch.object(sprint_report, "report",
+                                            side_effect=RuntimeError("composer exploded")):
+                rc, out, err = self._close(mod, root)
+            self.assertEqual(rc, 0, err)                    # noted, never fatal
+            self.assertIn("sprint report not drawn", (out + err).lower())
+            self.assertIn("composer exploded", out + err)   # named, not swallowed silently
+            self.assertIn("sign-off request", out.lower())  # the brief still prints
+
+    def test_unavailable_report_is_noted_and_the_close_still_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            mod = _load()
+            import sprint_report
+            bad = {"ok": False, "id": "RETRO0001", "errors": ["retro not found"]}
+            with unittest.mock.patch.object(sprint_report, "report", return_value=bad):
+                rc, out, err = self._close(mod, root)
+            self.assertEqual(rc, 0, err)
+            self.assertIn("unavailable", out + err)
+            self.assertIn("sign-off request", out.lower())
+
+    def test_rerun_redraws_the_report_and_writes_nothing(self) -> None:
+        # The close is resumable: a second run must draw the page again and add no file -
+        # the report step is a read, and a read must not become a write on the re-run.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            mod = _load()
+            rc1, out1, err1 = self._close(mod, root)
+            before = {p.relative_to(root) for p in root.rglob("*") if p.is_file()}
+            rc2, out2, err2 = self._close(mod, root)
+            after = {p.relative_to(root) for p in root.rglob("*") if p.is_file()}
+            self.assertEqual((rc1, rc2), (0, 0), err1 + err2)
+            self.assertIn("Sprint report - RETRO0001", out1)
+            self.assertIn("Sprint report - RETRO0001", out2)
+            self.assertEqual(before, after, "the report step wrote a file on the re-run")
+
+
+class CloseReportDisabledTests(_CloseReportBase):
+    """US0224 AC2: `report.enabled: false` skips the PAGE, never the close."""
+
+    def _disable(self, root: Path) -> None:
+        (root / "sdlc-studio" / ".config.yaml").write_text("report:\n  enabled: false\n",
+                                                           encoding="utf-8")
+
+    def test_page_omitted_but_chain_and_brief_complete(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            self._disable(root)
+            mod = _load()
+            rc, out, err = self._close(mod, root)
+            self.assertEqual(rc, 0, err)
+            self.assertNotIn("Sprint report - RETRO0001", out)   # no page
+            self.assertIn("[6/6] reconcile", out)                # the chain still completed
+            self.assertIn("sign-off request", out.lower())       # the brief still printed
+
+    def test_exit_code_is_the_same_as_with_rendering_on(self) -> None:
+        with tempfile.TemporaryDirectory() as on, tempfile.TemporaryDirectory() as off:
+            root_on, root_off = Path(on), Path(off)
+            self._fixture(root_on)
+            self._fixture(root_off)
+            self._disable(root_off)
+            mod = _load()
+            rc_on, out_on, _ = self._close(mod, root_on)
+            rc_off, out_off, _ = self._close(mod, root_off)
+            self.assertEqual(rc_on, rc_off)
+            self.assertIn("Sprint report - RETRO0001", out_on)    # guard: the on-run drew a page
+            self.assertNotIn("Sprint report - RETRO0001", out_off)
 
 
 class CloseBriefTests(unittest.TestCase):

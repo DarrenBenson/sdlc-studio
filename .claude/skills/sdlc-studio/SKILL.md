@@ -144,6 +144,7 @@ lines, honour its Reading Guide instead of a whole-file read:
 | Project orchestration | reference-project.md | reference-epic.md | reference-config.md |
 | Agentic execution | reference-agentic-lessons.md | reference-epic.md | - |
 | Sprint (Goal-Driven Development loop) | reference-sprint.md | help/sprint.md | reference-project.md |
+| End-of-sprint report (`sprint report`: delivered, cost, velocity) | help/sprint.md | reference-sprint.md | scripts/sprint_report.py |
 | Deploy last-mile (gate, verify, record - orchestrate-only) | reference-deploy.md | help/deploy.md | reference-config.md#deploy |
 | Building agentic wave prompts | reference-agent-prompt-template.md | reference-repo-map.md | reference-agentic-lessons.md#lessons-accumulation |
 | Change request workflow | help/cr.md | reference-cr.md | reference-outputs.md |

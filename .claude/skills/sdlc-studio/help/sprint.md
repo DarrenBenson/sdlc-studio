@@ -43,7 +43,16 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 /sdlc-studio sprint close                            # scaffolds the retro, then stops for you to fill it
 /sdlc-studio sprint close --retro RETRO0001          # the close ceremony as one command (retro already filled)
 /sdlc-studio sprint close --retro RETRO0001 --apply-signoff --principal "You"  # fan your approval into per-unit sign-offs + Done
+/sdlc-studio sprint report --id RETRO0001             # the end-of-sprint report (the close draws it too)
 ```
+
+**`/sdlc-studio sprint report --id RETROxxxx`** composes the end-of-sprint report - delivered units
+and points, measured cost with rework counted, velocity, estimate-versus-actual, lessons and tickets
+raised - from the retro, `retro accuracy` and the telemetry evidence log. Run it once the retro is
+filled: after a close, or any time later to re-read what a past sprint delivered and cost. The close
+ceremony draws the same page for you, so this is for a sprint you are revisiting or a run whose page
+you want in another shape (`--format json`). `--tokens N` and `--elapsed-hours H` supply the
+harness-tracked totals an interactive sprint has no per-unit telemetry for. Read-only.
 
 **`--apply-signoff --principal "<you>"`** turns the close's decision brief into an action: instead
 of hand-running `critic signoff` and `transition` for every unit, one command records your
@@ -62,7 +71,7 @@ next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
 | --- | --- | --- |
 | `<batch>` | status queries (`--bugs`/`--crs`/`--stories <status>` - **combinable** into one mixed tranche), `--worklist <file>` (ids one per line), `--epic EPxxxx`, or a **PRD path** (greenfield authoring) | required |
 | `--goal` | `triage` (plan) / `plan` (sprint plan) / `design` (Ready, estimated backlog) / `done` (delivered) | `done` |
-| `--sprint-goal TEXT` | the Sprint Goal - one product-outcome sentence unifying the batch, judged at the closing review (`sprint goal-verdict --verdict achieved|partial|missed --note "..."`) and shown on the sprint report. Prompted interactively when absent; never invented | none |
+| `--sprint-goal TEXT` | the Sprint Goal - one product-outcome sentence unifying the batch, judged at the closing review (`sprint goal-verdict --verdict achieved\|partial\|missed --note "..."`) and shown on the sprint report. Prompted interactively when absent; never invented | none |
 | `--order` | `priority` / `wsjf` (priority over complexity) / `manual` | `priority` |
 | `--epic EPxxxx` | (with `--stories`, repeatable) scope a story plan to one or more epics, not the whole status class | all epics |
 | `--write` | (with `plan`) persist the sprint plan to `.local/sprint-plan.json` | off |
@@ -127,4 +136,6 @@ smaller model and hard ones on your bigger one. Map tiers to your own models in
 ## See Also
 
 - `reference-sprint.md` - full workflow and guardrails
+- `/sdlc-studio sprint report --id RETROxxxx` - the end-of-sprint report, composed from the
+  retro, the accuracy pass and telemetry (`report.enabled: false` turns the page off)
 - `/sdlc-studio status` - shows Blocked units after a run

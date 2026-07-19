@@ -1,6 +1,6 @@
 # US0224: draw the report in the close ceremony when report.enabled
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** `sprint.py close --retro RETROxxxx` finishes its chain
 - **Then** the composed sprint report is printed before the sign-off decision brief, and a report that cannot be composed is noted without failing the close
 - **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_sprint.CloseDrawsReportTests
+- **Verified:** yes (2026-07-19)
 
 ### AC2: `report.enabled: false` skips the page, never the close
 
@@ -29,6 +30,7 @@
 - **When** the same close runs
 - **Then** the report page is omitted, the chain still completes, the brief still prints, and the exit code is the same as with rendering on
 - **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_sprint.CloseReportDisabledTests
+- **Verified:** yes (2026-07-19)
 
 ### AC3: Document the report step in the close ceremony
 
@@ -36,6 +38,7 @@
 - **When** a reader follows that description
 - **Then** it says the close draws the sprint report, where in the chain, and that `report.enabled` gates only the drawing
 - **Verify:** grep "draws the sprint report" .claude/skills/sdlc-studio/reference-sprint.md
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

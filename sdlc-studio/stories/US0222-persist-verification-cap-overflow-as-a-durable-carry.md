@@ -1,6 +1,6 @@
 # US0222: persist verification-cap overflow as a durable carry-over worklist a scoped follow-up re-ingests
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** the cap drops the overflow
 - **Then** the budget section of `reference-audit.md` requires each dropped candidate to be written in full (title, file, claim, evidence, lens, severity) to a durable carry-over file such as `.local/audit-carryover-<date>.json`, in place of logging only how many were dropped
 - **Verify:** grep "audit-carryover-" .claude/skills/sdlc-studio/reference-audit.md
+- **Verified:** yes (2026-07-19)
 
 ### AC2: The close-out report routes the overflow back in
 
@@ -29,6 +30,7 @@
 - **When** it writes its close-out report
 - **Then** the report names the carry-over file's path and gives the single scoped command that verifies just those candidates, skipping the find phase
 - **Verify:** grep "audit --carryover" .claude/skills/sdlc-studio/reference-audit.md
+- **Verified:** yes (2026-07-19)
 
 ### AC3: A follow-up run ingests the carry-over as its candidate pool
 
@@ -36,6 +38,7 @@
 - **When** a follow-up audit is pointed at it
 - **Then** the finder harness takes those records as the candidate pool and goes straight to the refute panels, running no finder lenses
 - **Verify:** grep "carry-over candidate pool" .claude/skills/sdlc-studio/templates/automation/audit-finder.md
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

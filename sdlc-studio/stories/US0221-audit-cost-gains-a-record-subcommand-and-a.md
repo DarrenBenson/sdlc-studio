@@ -1,6 +1,6 @@
 # US0221: audit_cost gains a record subcommand and a committed evidence ledger; estimate from measured medians with a named fallback
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** the operator runs `audit_cost.py record` with the run's scope (lenses, rounds, votes), the estimate it was given, the measured actuals and optional notes
 - **Then** a row carrying date, lenses, rounds, votes, estimated agents/tokens, actual agents/tokens/minutes and notes is appended to a committed evidence ledger, leaving earlier rows intact
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_audit_cost.py -k RecordSubcommandTests
+- **Verified:** yes (2026-07-19)
 
 ### AC2: Estimate from measured medians, naming the basis
 
@@ -29,6 +30,7 @@
 - **When** an estimate is requested
 - **Then** candidates-per-lens and tokens-per-agent come from the median of the recorded runs rather than the shipped constants, the shipped constants are still used when the ledger is empty or unreadable, and the output states which of the two bases it used
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_audit_cost.py -k LedgerBasisTests
+- **Verified:** yes (2026-07-19)
 
 ### AC3: Pre-flight step 4 instructs recording, not just reporting
 
@@ -36,6 +38,7 @@
 - **When** it reaches step 4 after a run finishes
 - **Then** the step tells it to record the actuals with the `record` subcommand, so the measurement lands in the ledger rather than only in chat
 - **Verify:** grep "audit_cost.py record" .claude/skills/sdlc-studio/reference-audit.md
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 15 |
+| Draft | 10 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 13 |
+| Review | 18 |
 | Done | 231 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -131,11 +131,11 @@
 | [US0218](US0218-bounded-mutation-biases-its-sample-toward-changed-lines.md) | bounded mutation biases its sample toward changed lines | Done | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0219](US0219-gate-tracks-the-test-suite-runtime-and-warns.md) | gate tracks the test-suite runtime and warns before a long run | Done | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0220](US0220-gate-skips-the-unit-suite-for-test-irrelevant.md) | gate skips the unit suite for test-irrelevant changes, named not silent | Done | EP0072 | 2026-07-17 | 2026-07-17 |
-| [US0221](US0221-audit-cost-gains-a-record-subcommand-and-a.md) | audit_cost gains a record subcommand and a committed evidence ledger; estimate from measured medians with a named fallback | Draft | EP0073 | 2026-07-17 | 2026-07-17 |
-| [US0222](US0222-persist-verification-cap-overflow-as-a-durable-carry.md) | persist verification-cap overflow as a durable carry-over worklist a scoped follow-up re-ingests | Draft | EP0073 | 2026-07-17 | 2026-07-17 |
-| [US0223](US0223-add-the-sprint-report-command-route-delegating-to.md) | add the sprint report command route delegating to sprint_report | Draft | EP0074 | 2026-07-17 | 2026-07-17 |
-| [US0224](US0224-draw-the-report-in-the-close-ceremony-when.md) | draw the report in the close ceremony when report.enabled | Draft | EP0074 | 2026-07-17 | 2026-07-17 |
-| [US0225](US0225-resolve-document-the-report-enabled-json-exemption-and.md) | resolve/document the report.enabled json exemption and test the json path | Draft | EP0074 | 2026-07-17 | 2026-07-17 |
+| [US0221](US0221-audit-cost-gains-a-record-subcommand-and-a.md) | audit_cost gains a record subcommand and a committed evidence ledger; estimate from measured medians with a named fallback | Review | EP0073 | 2026-07-17 | 2026-07-17 |
+| [US0222](US0222-persist-verification-cap-overflow-as-a-durable-carry.md) | persist verification-cap overflow as a durable carry-over worklist a scoped follow-up re-ingests | Review | EP0073 | 2026-07-17 | 2026-07-17 |
+| [US0223](US0223-add-the-sprint-report-command-route-delegating-to.md) | add the sprint report command route delegating to sprint_report | Review | EP0074 | 2026-07-17 | 2026-07-17 |
+| [US0224](US0224-draw-the-report-in-the-close-ceremony-when.md) | draw the report in the close ceremony when report.enabled | Review | EP0074 | 2026-07-17 | 2026-07-17 |
+| [US0225](US0225-resolve-document-the-report-enabled-json-exemption-and.md) | resolve/document the report.enabled json exemption and test the json path | Review | EP0074 | 2026-07-17 | 2026-07-17 |
 | [US0226](US0226-rewrite-us0166-ac3-as-a-two-file-shell.md) | rewrite US0166 AC3 as a two-file shell Verify with the missing shell prefix | Done | EP0075 | 2026-07-17 | 2026-07-17 |
 | [US0227](US0227-split-non-discriminating-per-ac-selectors-so-each.md) | split non-discriminating per-AC selectors so each AC fails on its own regression | Done | EP0075 | 2026-07-17 | 2026-07-17 |
 | [US0228](US0228-harden-the-verify-ac-grep-verb-against-a.md) | harden the verify_ac grep verb against a dash-leading pattern | Done | EP0075 | 2026-07-17 | 2026-07-17 |

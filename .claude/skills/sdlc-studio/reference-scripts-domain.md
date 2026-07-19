@@ -109,11 +109,14 @@ The end-of-sprint report: what a sprint delivered, what it cost, and whether the
 Mostly COMPOSITION - the retro holds Delivered, lessons and tickets; `retro.accuracy` holds the
 estimate-vs-actual and the velocity; `telemetry` holds cost. `show --id RETROxxxx [--tokens N]
 [--elapsed-hours H]` lays them out as one deterministic page (a script, so it costs no model tokens).
+Run it from the sprint command surface - `/sdlc-studio sprint report --id RETROxxxx` takes the same
+flags and returns the same exit code - and the close ceremony draws the page for you.
 Actual spend is a MEASUREMENT priced from `pricing.*` with rework summed over attempts; there is no
 avoided-cost / savings headline (a counterfactual is a model, not a measurement - the confusion this
-project has been burned by). RENDERING is gated by `report.enabled` (a token-conscious project turns
-the page off), but RECORDING is never gated - telemetry keeps recording, because a report not drawn
-can be drawn later while a measurement not taken is gone.
+project has been burned by). `report.enabled: false` gates the TEXT PAGE only (a token-conscious project turns the page off):
+json data remains available under it - `show --format json` returns the whole composed report
+either way - and RECORDING is never gated, because a report not drawn can be drawn later while a
+measurement not taken is gone.
 
 ### `pvd.py`
 

@@ -2460,6 +2460,26 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
     return 0
 
 
+def _draw_report(root, retro_id) -> None:
+    """Draw the sprint report on the page the operator signs off, immediately before the
+    decision brief - what the sprint delivered and cost belongs in the decision, not in a
+    command someone has to remember afterwards.
+
+    Read-only and advisory, so it is idempotent across a resumed close and CANNOT fail one:
+    `report.enabled: false` skips the page (the switch gates drawing only), an uncomposable
+    report is rendered as `unavailable`, and any error is noted on stderr and stepped over.
+    Never the reverse - a missing garnish must not lose a completed ceremony."""
+    import sprint_report  # noqa: PLC0415 - deferred, like the chain's sibling imports
+    try:
+        if not sprint_report.rendering_enabled(Path(root)):
+            return
+        print(sprint_report.render(sprint_report.report(root, retro_id)))
+        print()
+    except Exception as exc:  # noqa: BLE001 - advisory: the close outranks its own report
+        print(f"close: sprint report not drawn ({type(exc).__name__}: {exc}) - the close is "
+              f"unaffected; draw it with `sprint.py report --id {retro_id}`", file=sys.stderr)
+
+
 def cmd_close(args: argparse.Namespace) -> int:
     """The sprint close ceremony as one deterministic, resumable chain."""
     root = args.root
@@ -2523,6 +2543,7 @@ def cmd_close(args: argparse.Namespace) -> int:
         return _apply_signoff(root, state, getattr(args, "principal", None),
                               getattr(args, "author", None),
                               retro_arg=getattr(args, "retro", None))
+    _draw_report(root, args.retro)
     import critic  # noqa: PLC0415 - the brief composer
     gate_note = f"gate --require-retro {args.retro} --require-review: PASS; {_mutation_note(root)}"
     batch = state.get("batch") or []
@@ -2530,6 +2551,21 @@ def cmd_close(args: argparse.Namespace) -> int:
     print(critic.signoff_brief(root, batch, gate_note=gate_note,
                                cost_note=_cost_note(root, state)))
     return 0
+
+
+def cmd_report(args: argparse.Namespace) -> int:
+    """`sprint report`: the command surface over the report composer.
+
+    A pure delegation - the composer owns the composing, this owns being findable. Every flag
+    is threaded through and its exit code returned unchanged, so the route and the module can
+    never report different things about the same sprint."""
+    import sprint_report  # noqa: PLC0415 - deferred, like the chain's sibling imports
+    argv = ["--root", str(args.root), "show", "--id", args.id, "--format", args.format]
+    if args.tokens is not None:
+        argv += ["--tokens", str(args.tokens)]
+    if args.elapsed_hours is not None:
+        argv += ["--elapsed-hours", str(args.elapsed_hours)]
+    return sprint_report.main(argv)
 
 
 def cmd_plan(args: argparse.Namespace) -> int:
@@ -2761,6 +2797,18 @@ def build_parser() -> argparse.ArgumentParser:
                          "a unit has no recorded critic author; normally read from the unit's verdict")
     cl.add_argument("--root", default=".")
     cl.set_defaults(func=cmd_close)
+    r = sub.add_parser("report", help="Compose and print the end-of-sprint report for a retro "
+                                      "(delivered, cost, velocity, estimate-vs-actual). Read-only.")
+    r.add_argument("--id", required=True, metavar="RETROxxxx",
+                   help="the retro this report is composed from")
+    r.add_argument("--tokens", type=int, default=None,
+                   help="sprint actual token total (interactive sprints, harness-tracked)")
+    r.add_argument("--elapsed-hours", dest="elapsed_hours", type=float, default=None,
+                   help="sprint elapsed hours for the primary velocity (interactive sprints)")
+    r.add_argument("--format", choices=("text", "json"), default="text")
+    r.add_argument("--root", default=".", help="Repo root (default: .)")
+    r.set_defaults(func=cmd_report)
+
     g = sub.add_parser("goal-verdict",
                        help="Record the closing review's judgement of the Sprint Goal "
                             "(achieved / partial / missed) on the run state.")

@@ -6,6 +6,7 @@ config switch gates RENDERING only - never recording.
 """
 import contextlib
 import io
+import json
 import sys
 import tempfile
 import unittest
@@ -127,6 +128,47 @@ class ConfigGateTests(ReportBase):
 
     def test_rendering_enabled_by_default(self) -> None:
         self.assertTrue(sr.rendering_enabled(self.root))
+
+
+class ConfigGateJsonTests(ReportBase):
+    """The page-versus-data gate: `report.enabled: false` withholds the text PAGE, and
+    `--format json` still returns the whole composed report. Intended behaviour, so it is
+    asserted here rather than left for a reader to discover in the source."""
+
+    def _disabled(self) -> None:
+        (self.root / "sdlc-studio" / ".config.yaml").write_text("report:\n  enabled: false\n")
+
+    def _show(self, fmt: str) -> tuple[int, str]:
+        import argparse
+        args = argparse.Namespace(root=str(self.root), id="RETRO9100", tokens=None,
+                                  elapsed_hours=None, format=fmt)
+        with contextlib.redirect_stdout(io.StringIO()) as buf:
+            rc = sr.cmd_show(args)
+        return rc, buf.getvalue()
+
+    def test_json_returns_the_composed_report_under_a_disabled_config(self) -> None:
+        self._disabled()
+        rc, out = self._show("json")
+        self.assertEqual(rc, 0)
+        self.assertNotIn("rendering disabled", out)      # no page notice on the data path
+        rep = json.loads(out)                            # it really is the composed report
+        self.assertTrue(rep["ok"])
+        self.assertEqual(rep["id"], "RETRO9100")
+        self.assertEqual(rep["delivered_points"], 8)     # the whole payload, not a stub
+
+    def test_text_page_is_withheld_under_the_same_config(self) -> None:
+        # The other half of the same gate: same config, same retro, no page.
+        self._disabled()
+        rc, out = self._show("text")
+        self.assertEqual(rc, 0)
+        self.assertIn("rendering disabled", out)
+        self.assertNotIn("Delivered:", out)
+
+    def test_notice_states_json_data_remains_available(self) -> None:
+        # The notice must not claim rendering is disabled outright when data is still reachable.
+        self._disabled()
+        _rc, out = self._show("text")
+        self.assertIn("json data remains available", out)
 
 
 class GoalTests(ReportBase):

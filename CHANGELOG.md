@@ -21,6 +21,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The sprint report has a command surface and the close ceremony draws it (EP0074).**
+  `sprint report --id RETROxxxx [--tokens N] [--elapsed-hours H] [--format json]` routes to the
+  report composer, threading every flag and returning its exit code unchanged, so the end-of-sprint
+  page no longer needs an operator who already knows `sprint_report.py` exists. `sprint close` now
+  draws the same page immediately before the sign-off decision brief, so what the sprint delivered
+  and cost sits on the page the reviewer of record judges. The report step is read-only and
+  advisory: it cannot fail a close, an uncomposable report is noted rather than fatal, and a
+  resumed close redraws it without writing anything. `report.enabled: false` gates only the
+  drawing - the chain, the brief and the exit code are unchanged. That switch is now stated
+  consistently as a page-versus-data gate in `rendering_enabled`, the `cmd_show` gate, the notice
+  it prints and the scripts catalogue: the text page is withheld, json data remains available via
+  `--format json`, and measurement is never gated. The json path is covered by tests against a
+  disabled config rather than left to a reader of the source.
+
+- **The audit estimate learns from what audits actually cost, and the capped tail is carried
+  rather than counted (EP0073).** `audit_cost.py` gains a `record` subcommand that appends a
+  finished run - its scope, the estimate it was given, and its measured agents, tokens and wall
+  minutes - to a committed evidence ledger under `sdlc-studio/retros/evidence/`, sharded by UTC
+  day so two people recording on different days merge cleanly. Once the ledger holds a usable
+  run, `run` derives candidates-per-lens and tokens-per-agent from the MEDIAN of those runs
+  instead of the constants frozen at one 2026-07-15 reference run, and the output names which of
+  the two bases it used, so an assumption is never read as a measurement. Candidates per lens is
+  not recorded directly - it is recovered by inverting the estimator's own agent model, and a row
+  that does not invert is dropped whole rather than half-used, so both medians rest on the same
+  runs. The pre-existing `audit_cost.py --lenses <n>` invocation keeps working unchanged.
+  Alongside it, `reference-audit.md` now requires the verification cap to write every dropped
+  candidate out in full to `.local/audit-carryover-<date>.json` rather than log a count, the
+  close-out report to name that file and the one scoped `audit --carryover` command that verifies
+  just those candidates, and the finder harness to take a carry-over file as its candidate pool
+  and run no finder lenses at all. A measured run dropped 42 of 122 grounded candidates into a
+  session-local journal that died with the session; the tail is now carried work with a route
+  back in.
+
 - **One weakness-hunt, one name: `review generate` folds into `audit --profile repo` (EP0078).**
   Two commands hunted for the same weaknesses under different names, and only one of them put its
   findings through the refute panel. The three legs of the repository on-ramp - architecture,

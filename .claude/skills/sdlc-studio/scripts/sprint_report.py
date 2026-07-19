@@ -18,9 +18,11 @@ Two honesty rules it will not bend:
   baseline, never summed into a total beside a measured figure.
 
   RENDERING is switchable (`report.enabled: false` for a token-conscious project); RECORDING is NOT.
-  The switch controls only whether this page is drawn - telemetry keeps recording regardless, because
-  a report not generated can be generated later, but a measurement not taken is gone forever (and
-  turning telemetry off is how the estimator became unfalsifiable the last time).
+  The switch controls only whether the TEXT PAGE is drawn - json data remains available under it
+  (`show --format json` returns the composed report either way), and telemetry keeps recording
+  regardless, because a report not generated can be generated later, but a measurement not taken
+  is gone forever (and turning telemetry off is how the estimator became unfalsifiable the last
+  time).
 """
 from __future__ import annotations
 
@@ -185,7 +187,9 @@ def render(rep: dict) -> str:
 
 
 def rendering_enabled(root: Path) -> bool:
-    """Whether the report PAGE is drawn. Rendering only - measurement is never gated by this."""
+    """Whether the report PAGE is drawn. The page only: with it off, json data remains available
+    (`show --format json` still returns the whole composed report) and measurement is never gated -
+    telemetry keeps recording. A page is a rendering choice; the data and the measurement are not."""
     import config
     val = config.get(root, "report.enabled", True)
     return not (val is False or str(val).strip().lower() in ("false", "0", "no", "off"))
@@ -193,9 +197,13 @@ def rendering_enabled(root: Path) -> bool:
 
 def cmd_show(args: argparse.Namespace) -> int:
     root = Path(args.root)
+    # Page versus data: the switch withholds the TEXT PAGE only. `--format json` is exempt by
+    # design - json data remains available so a tool or a later read still gets the composed
+    # report - and measurement is never gated either way.
     if not rendering_enabled(root) and args.format != "json":
-        print("sprint report: rendering disabled (report.enabled=false). Telemetry is unaffected - "
-              "measurement keeps recording; re-enable to draw the report.")
+        print("sprint report: text page rendering disabled (report.enabled=false); json data "
+              "remains available via `--format json`. Telemetry is unaffected - measurement "
+              "keeps recording; re-enable to draw the page.")
         return 0
     rep = report(root, args.id, sprint_tokens=args.tokens, elapsed_hours=args.elapsed_hours)
     print(json.dumps(rep, indent=2) if args.format == "json" else render(rep))
