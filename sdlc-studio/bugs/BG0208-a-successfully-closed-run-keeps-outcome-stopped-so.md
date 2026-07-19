@@ -1,6 +1,7 @@
 # BG0208: a successfully closed run keeps outcome=stopped, so a goal-reached sprint reads as abandoned in the archive
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (RED-first; both directions of the promotion rule mutation-pinned)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py

@@ -2460,7 +2460,37 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
         print("apply-signoff: final reconcile reports drift - run `reconcile.py apply`",
               file=sys.stderr)
         return 1
+    _finalise_outcome(root, state)
     return 0
+
+
+def _finalise_outcome(root, state) -> None:
+    """Record the outcome the completed close earned, at the end of the SUCCESS path.
+
+    The outcome field was written on every failure path - blocked, budget spent, an
+    operator stop - and forgotten here, so a run that stopped earlier and then completed
+    its whole close chain kept `stopped`. Run state is archived per cycle, so that is the
+    permanent record, and every consumer of the archive (sprint report, velocity, boundary
+    regeneration, the close-owed detector) then reads a goal-reached sprint as an abandoned
+    one.
+
+    Only an `achieved` verdict promotes: following the fact that a close RAN rather than
+    what it judged would make every close report goal-reached, which is this same defect
+    inverted. A `partial` or `missed` verdict leaves the recorded outcome alone, because
+    the vocabulary has no term for "closed cleanly, goal not met" and inventing a fifth is
+    a schema change, not a bug fix. `close_run` is documented idempotent and re-stamps the
+    outcome, so this is its intended use rather than a blind overwrite.
+    """
+    verdict = (state.get("sprint_goal_verdict") or {}).get("verdict")
+    if verdict != "achieved":
+        return
+    try:
+        run_state.close_run(root, run_state.GOAL_REACHED, handoff=state.get("handoff"))
+    except (OSError, ValueError) as exc:   # never lose a completed ceremony to its own bookkeeping
+        print(f"apply-signoff: outcome not stamped goal-reached ({exc}) - the close itself "
+              f"completed; re-stamp with `run_state.close_run`", file=sys.stderr)
+        return
+    print("apply-signoff: run outcome recorded goal-reached")
 
 
 def _draw_report(root, retro_id) -> None:

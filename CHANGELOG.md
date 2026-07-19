@@ -21,6 +21,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A completed close records the outcome its verdict earned (BG0208).** The run-state `outcome`
+  field was written on every failure path - blocked, budget spent, an operator stop - and forgotten
+  on the success path, so a run that stopped earlier and then completed its entire close chain with
+  a verdict of `achieved` kept `outcome: stopped`. Run state is archived per cycle, so that is the
+  permanent record, and every consumer of the archive (`sprint report`, velocity, boundary
+  regeneration, the close-owed detector) then read a goal-reached sprint as an abandoned one. A
+  close that completes with an `achieved` verdict now stamps `goal-reached`. Only that verdict
+  promotes: following the fact that a close RAN rather than what it judged would make every close
+  report success, which is the same defect inverted. `partial` and `missed` leave the recorded
+  outcome alone, because the vocabulary has no term for "closed cleanly, goal not met" and inventing
+  a fifth is a schema change rather than a bug fix. Both directions are mutation-pinned.
+
 - **One definition of a generated H1, so the MD026 fix stops being re-made per generator
   (BG0204).** `sprint close` with no `--retro` scaffolds the batch retro and titles it from the
   run's Sprint Goal. A goal is a sentence and ends in a full stop, so the H1 did too, and

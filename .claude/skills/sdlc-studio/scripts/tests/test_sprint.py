@@ -2981,6 +2981,63 @@ class ApplySignoffTailTests(unittest.TestCase):
                 mod._apply_signoff_tail(root, state, units=[], retro_arg=None)
             self.assertIn("velocity not recorded", err.getvalue().lower())
 
+    def test_a_completed_close_records_the_outcome_its_verdict_earned(self) -> None:
+        """BG0208: the outcome field was written on the failure paths and forgotten here.
+
+        A run that stopped earlier, then completed its whole close chain with a verdict of
+        `achieved`, kept `outcome: stopped`. Run state is archived per cycle, so that is the
+        PERMANENT record: sprint report, velocity, boundary regeneration and the close-owed
+        detector all read the field, and a goal-reached sprint was indistinguishable from an
+        abandoned one. `close_run` is documented idempotent and re-stamps, so promoting the
+        outcome once the close has actually completed is the intended use, not an override.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            state = _close_state(root, scaffolded_retro="RETRO0001", outcome="stopped",
+                                 sprint_goal_verdict={"verdict": "achieved", "note": "n"})
+            _signoffable_story(root)
+            _close_retro(root)
+            (root / "sdlc-studio" / "stories" / "_index.md").write_text(
+                "# Stories\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [US0101](US0101-widget.md) | widget frobnicates | Review |\n",
+                encoding="utf-8")
+            mod = _load()
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                mod._apply_signoff_tail(root, state, units=["US0101"], retro_arg="RETRO0001")
+            after = json.loads(
+                (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))
+            self.assertEqual(after["outcome"], "goal-reached")
+
+    def test_a_close_whose_goal_was_not_achieved_is_not_promoted(self) -> None:
+        """The promotion must follow the VERDICT, not the fact that a close ran.
+
+        Otherwise every close reports goal-reached and the field stops carrying
+        information - the failure mode this bug is, inverted. There is deliberately no
+        outcome value meaning "closed cleanly, goal not met": the vocabulary has four
+        terms and inventing a fifth is a schema change, so a non-achieved verdict simply
+        leaves the recorded outcome alone.
+        """
+        for verdict in ("partial", "missed"):
+            with self.subTest(verdict=verdict), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                state = _close_state(root, scaffolded_retro="RETRO0001", outcome="stopped",
+                                     sprint_goal_verdict={"verdict": verdict, "note": "n"})
+                _signoffable_story(root)
+                _close_retro(root)
+                (root / "sdlc-studio" / "stories" / "_index.md").write_text(
+                    "# Stories\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                    "| [US0101](US0101-widget.md) | widget frobnicates | Review |\n",
+                    encoding="utf-8")
+                mod = _load()
+                with contextlib.redirect_stdout(io.StringIO()), \
+                        contextlib.redirect_stderr(io.StringIO()):
+                    mod._apply_signoff_tail(root, state, units=["US0101"],
+                                            retro_arg="RETRO0001")
+                after = json.loads((root / "sdlc-studio" / ".local" / "run-state.json")
+                                   .read_text(encoding="utf-8"))
+                self.assertEqual(after["outcome"], "stopped")
+
     def test_ApplySignoffTail_final_reconcile_drift_fails(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
