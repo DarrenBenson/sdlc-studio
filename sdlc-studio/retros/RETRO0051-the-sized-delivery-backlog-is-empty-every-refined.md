@@ -1,9 +1,9 @@
 # RETRO-0051: The sized delivery backlog is empty: every refined epic and every open bug ships, leaving only unrefined discovery options
 
 > **Date:** 2026-07-19
-> **Batch:** BG0199, BG0197, BG0200, US0224, US0225, US0231, US0235, US0240, US0241, US0242, US0243, US0246, US0251, US0252, US0222, US0223, US0229, US0230, US0233, US0234, US0239, US0244, US0245, US0249, US0253, US0254, US0256, BG0198, US0221, US0232, US0250, US0255
+> **Batch:** BG0199, BG0197, BG0200, US0224, US0225, US0231, US0235, US0240, US0241, US0242, US0243, US0246, US0251, US0252, US0222, US0223, US0229, US0230, US0233, US0234, US0239, US0244, US0245, US0249, US0253, US0254, US0256, BG0198, US0221, US0232, US0250, US0255, BG0201
 > **Goal:** The sized delivery backlog is empty: every refined epic and every open bug ships, leaving only unrefined discovery options.
-> **Delivered:** 32 / 32 built (4 terminal, 28 at Review awaiting sign-off)   **Blocked:** 0
+> **Delivered:** 32 / 32 planned units built (4 terminal, 28 at Review awaiting sign-off), plus BG0201 filed and Fixed in-run   **Blocked:** 0
 
 ## Delivered
 
@@ -30,7 +30,10 @@ recorded - which explicitly includes this session's own subagents. That is the g
 - **EP0081** (US0249-US0251) - four help-only commands promoted, `upgrade` folded behind
   `migrate`, the catalogue regrouped around the process spine, drift back to 0.
 
-Filed in-run and outside the batch: **BG0201** (Fixed) and **BG0202** (Open).
+Filed in-run and outside the PLANNED batch: **BG0201** (Fixed) and **BG0202** (Open). BG0201 is
+carried on the `Batch:` line above so the record is machine-readable as well as narrative - it was
+delivered by this run, and a unit discussed only in prose is a unit `close_owed` cannot see. Added
+2026-07-19; BG0202 stays off the line because it was filed, not fixed, here.
 
 ## Blocked / deferred
 

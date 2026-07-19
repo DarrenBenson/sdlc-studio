@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0133: **When two checks answer the same question, the stricter one silently wins.** A presence check looser than the mutation regex meant a field...**
+- **L-0132: **A close that performs every step except the record still leaves no record.** CR0322's close ran a two-role review, a repair round, a...**
+- **L-0131: **A checker that passes on input it cannot parse reports coverage it does not have** (US0179's `personas.md`-only vacuous pass).**
+- **L-0130: **A detector firing on a real gap is only worth what the response to it is worth.** The close-owed detector correctly reported this sprint...**
 - **L-0129: **A fix's own argument constrains its implementation.** BG0208's case is that the archive is the permanent record - so re-stamping...**
 - **L-0128: **When two code paths answer the same question, extract before the second answer drifts.** The H1-strip rule had three private copies and...**
 - **L-0127: **A test that passes for an incidental reason is not coverage.** Twice this sprint a guard looked covered because the path around it...**
