@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 9 |
+| Proposed | 11 |
 | Approved | 0 |
 | In Progress | 34 |
 | Complete | 290 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **351** |
+| **Total** | **353** |
 
 ## All Changes
 
@@ -173,6 +173,8 @@
 | [CR-0349](CR0349-sprint-plan-cannot-record-a-deliberate-over-appetite.md) | sprint plan cannot record a deliberate over-appetite batch, only silently raise the ceiling | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0350](CR0350-record-the-sprint-s-token-actuals-automatically-for.md) | record the sprint's token actuals automatically for an interactive run | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0351](CR0351-file-finding-silently-accepts-shell-mangled-text-so.md) | file_finding silently accepts shell-mangled text, so a filed artefact can record the wrong thing | Proposed | Medium | Improvement | 2026-07-19 | -- |
+| [CR-0352](CR0352-migrate-apply-should-seed-a-missing-agents-md.md) | migrate --apply should seed a missing AGENTS.md rather than report it as a human task | Proposed | High | Improvement | 2026-07-19 | -- |
+| [CR-0353](CR0353-the-agent-instructions-hygiene-check-verifies-pointers-not.md) | the agent-instructions hygiene check verifies pointers, not that the working model is established | Proposed | High | Improvement | 2026-07-19 | -- |
 
 ## Archived Releases
 
