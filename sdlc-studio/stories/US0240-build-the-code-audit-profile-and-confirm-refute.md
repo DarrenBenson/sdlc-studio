@@ -4,7 +4,7 @@
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/templates/audit-profiles/code.md
+> **Affects:** .claude/skills/sdlc-studio/templates/audit-profiles/code.md, .claude/skills/sdlc-studio/reference-audit.md, .claude/skills/sdlc-studio/help/audit.md
 > **Epic:** EP0078
 > **Points:** 2
 

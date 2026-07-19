@@ -37,6 +37,10 @@ import verify_ac  # noqa: E402  (reuse the Verify-line lint)
 import ac_scope  # noqa: E402  (reuse the cross-epic AC check)
 
 TAUTOLOGY = "lint and tests green"
+# An unexpanded `{{...}}` span from the scaffolding template. A unit carrying one
+# has AC-shaped markup but no authored criterion, so an item count alone reads it
+# as groomed - and `verify_ac` would then run `{{executable check}}` as its oracle.
+_PLACEHOLDER = re.compile(r"\{\{[^}]*\}\}")
 # A dependency counts as met once it has been delivered (or replaced).
 MET = {"Done", "Complete", "Verified", "Fixed", "Accepted", "Superseded", "Closed"}
 # Terminal-but-not-delivered: the dependency is dead, surfaced distinctly.
@@ -74,8 +78,18 @@ def find_artifact(root: Path, rec_id: str):
 
 
 def _weak_ac(text: str) -> bool:
-    """True when the unit has no checkable AC, or only the tautology placeholder."""
+    """True when the unit has no checkable AC, or the AC are not authored.
+
+    Three ways an AC section fails to be a criterion anyone can check: it holds no
+    AC-shaped item at all; an item is the tautology phrase; or the section still
+    carries an unexpanded `{{...}}` span from the scaffolding template. The last is
+    judged over the whole section rather than the collected items, because a
+    criterion's `Verify:` line is part of it whether or not that line is itself
+    counted as an item - and the Verify line is precisely what a downstream oracle
+    would go on to execute.
+    """
     items: list[str] = []
+    section: list[str] = []
     in_ac = False
     for line in text.splitlines():
         if line.startswith("## "):
@@ -83,10 +97,13 @@ def _weak_ac(text: str) -> bool:
             continue
         if not in_ac:  # only AC inside the Acceptance Criteria section count
             continue
+        section.append(line)
         if (_AC_CHECKBOX.match(line) or sdlc_md.AC_HEADING_RE.match(line)
                 or sdlc_md.AC_BULLET_RE.match(line)):
             items.append(line)
     if not items:
+        return True
+    if any(_PLACEHOLDER.search(line) for line in section):
         return True
     return any(TAUTOLOGY in i.lower() for i in items)
 

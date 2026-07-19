@@ -84,6 +84,38 @@ class WeakAcTests(unittest.TestCase):
             u = _load().audit_unit(root, "CR0003")
             self.assertIn("weak-AC", u["issues"])
 
+    def test_unexpanded_template_placeholder_is_weak(self) -> None:
+        # BG0201: a story scaffolded by `artifact.py new` and never groomed carries
+        # `{{...}}` spans in every AC field. It has AC-shaped markup, so the item
+        # count is non-zero, and it does not contain the TAUTOLOGY phrase - it was
+        # certified ready and entered implementation with `{{executable check}}` as
+        # its own oracle.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 10, ac=(
+                "### AC1: {{define}}\n\n"
+                "- **Given** {{context}}\n"
+                "- **When** {{action}}\n"
+                "- **Then** {{outcome}}\n"
+                "- **Verify:** {{executable check}}\n"))
+            u = _load().audit_unit(root, "CR0010")
+            self.assertFalse(u["ready"], u["issues"])
+            self.assertIn("weak-AC", u["issues"])
+
+    def test_placeholder_in_one_of_several_acs_is_weak(self) -> None:
+        # A partly-groomed unit is not ready either: one ungroomed AC is an
+        # ungroomed unit, and reporting ready would hide it behind its filled siblings.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 11, ac=(
+                "### AC1: rejects a negative count\n\n"
+                "- **Verify:** shell python3 -m unittest tests.test_x.NegativeTests\n\n"
+                "### AC2: {{define}}\n\n"
+                "- **Verify:** {{executable check}}\n"))
+            u = _load().audit_unit(root, "CR0011")
+            self.assertFalse(u["ready"], u["issues"])
+            self.assertIn("weak-AC", u["issues"])
+
     def test_prose_only_ac_with_markup_elsewhere_is_weak(self) -> None:
         # AC-style markup OUTSIDE the AC section must not count; a prose-only AC
         # section is weak even if `- **AC1:**` appears in the Summary.

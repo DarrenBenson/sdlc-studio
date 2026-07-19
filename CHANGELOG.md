@@ -654,6 +654,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The tranche audit no longer certifies an unfilled template as ready for implementation
+  (BG0201).** `audit._weak_ac` documented itself as flagging "no checkable AC, or the tautology
+  placeholder", but the placeholder it recognised was one hardcoded phrase - "lint and tests
+  green". The `{{...}}` spans that `artifact.py new` actually emits matched nothing, so a story
+  that was pure unexpanded template counted its AC-shaped markup as authored criteria and passed.
+  Caught on a 32-unit batch the check reported as 32/32 ready while 28 of those units carried
+  `{{executable check}}` as their only Verify line - the oracle `verify_ac` would then have
+  executed to declare them Done. The check now flags an unexpanded placeholder anywhere in the
+  Acceptance Criteria section, judged over the whole section rather than the counted items,
+  because a criterion's `Verify:` line is part of it whether or not that line counts as an item.
+  This is the step-2 gate whose stated purpose is that work never starts on a unit which would
+  pass the downstream gates vacuously.
+
 - **A single shared word no longer blocks a tranche on a keyword coincidence (BG0192).**
   `ac_scope` is a one-word keyword heuristic that documents itself as advisory, yet `audit` wired
   it as a hard readiness blocker. Every finding it produced against this repo was ordinary English

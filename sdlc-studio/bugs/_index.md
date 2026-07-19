@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 4 |
+| Open | 5 |
 | In Progress | 0 |
 | Fixed | 114 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **200** |
+| **Total** | **201** |
 
 ## All Bugs
 
@@ -167,6 +167,7 @@
 | [BG0198](BG0198-handoff-refresh-re-stamps-run-identity-from-ambient.md) | handoff.refresh re-stamps run identity from ambient run state, not the run being refreshed | Open | Low | 2026-07-18 | 2026-07-18 |
 | [BG0199](BG0199-two-id-readers-disagree-on-width-stem-id.md) | two id readers disagree on width: _STEM_ID_RE needs 4+ digits, next_id._meta_nums accepts 3 | Open | Low | 2026-07-18 | 2026-07-18 |
 | [BG0200](BG0200-apply-signoff-tail-skips-the-velocity-row-in.md) | apply-signoff tail skips the velocity row in silence when the retro was not scaffolded by the close | Open | Medium | 2026-07-19 | 2026-07-19 |
+| [BG0201](BG0201-tranche-audit-certifies-unfilled-template-stories-as-ready.md) | tranche audit certifies unfilled template stories as ready: _weak_ac only detects one hardcoded phrase | Open | High | 2026-07-19 | 2026-07-19 |
 
 ## Archived Releases
 
