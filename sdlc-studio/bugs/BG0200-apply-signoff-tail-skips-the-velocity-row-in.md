@@ -1,6 +1,7 @@
 # BG0200: apply-signoff tail skips the velocity row in silence when the retro was not scaffolded by the close
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; both guards mutation-proven)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py

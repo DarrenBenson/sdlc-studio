@@ -2683,12 +2683,15 @@ class ApplySignoffStopsTests(unittest.TestCase):
             self.assertIn("Status:** Review", text)   # Done gate refused; left at Review
 
 
-def _run_apply_signoff(root, mod, principal="Darren"):
+def _run_apply_signoff(root, mod, principal="Darren", retro="RETRO0001"):
     out, err = io.StringIO(), io.StringIO()
+    argv = ["close"]
+    if retro:
+        argv += ["--retro", retro]
+    argv += ["--apply-signoff", "--principal", principal, "--root", str(root)]
     with _patch_close_steps(mod), \
             contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-        rc = mod.main(["close", "--retro", "RETRO0001", "--apply-signoff",
-                       "--principal", principal, "--root", str(root)])
+        rc = mod.main(argv)
     return rc, out.getvalue(), err.getvalue()
 
 
@@ -2708,6 +2711,45 @@ class ApplySignoffTailTests(unittest.TestCase):
             vel = root / "sdlc-studio" / "retros" / "VELOCITY.md"
             self.assertTrue(vel.exists(), "velocity file not written")
             self.assertIn("RETRO0001", vel.read_text())
+
+    def test_ApplySignoffTail_records_velocity_from_the_close_retro_argument(self) -> None:
+        """BG0200: a retro scaffolded with `artifact.py new` never sets `scaffolded_retro`.
+
+        That is the documented way to make one, so the tail must fall back to the id the
+        close was actually given rather than skip the measurement it owes. Previously the
+        whole velocity block was guarded on the run-state field alone, so this close
+        printed success having recorded no row and said nothing about it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)  # no scaffolded_retro - the artifact.py new path
+            _signoffable_story(root)
+            _close_retro(root)
+            mod = _load()
+            rc, out, err = _run_apply_signoff(root, mod)
+            self.assertEqual(rc, 0, err)
+            vel = root / "sdlc-studio" / "retros" / "VELOCITY.md"
+            self.assertTrue(vel.exists(), "velocity row skipped: the close owes this measurement")
+            self.assertIn("RETRO0001", vel.read_text())
+
+    def test_ApplySignoffTail_warns_loudly_when_no_retro_id_resolves(self) -> None:
+        """With no id from either source the tail must SAY so - silence reads as done.
+
+        Driven against the tail directly: the shipped close cannot reach this state
+        (given no `--retro` it scaffolds one and stops before the fan), but the branch
+        guards every out-of-band and future caller, and an uncovered silent-skip is the
+        defect this bug was.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            state = _close_state(root)
+            _signoffable_story(root)
+            _close_retro(root)
+            mod = _load()
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                mod._apply_signoff_tail(root, state, units=[], retro_arg=None)
+            self.assertIn("velocity not recorded", err.getvalue().lower())
 
     def test_ApplySignoffTail_final_reconcile_drift_fails(self) -> None:
         with tempfile.TemporaryDirectory() as d:

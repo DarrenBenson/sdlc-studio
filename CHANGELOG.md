@@ -654,6 +654,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The apply-signoff tail no longer skips the velocity row in silence (BG0200).** The tail read
+  the retro id from run-state `scaffolded_retro` and did nothing at all when it was absent - no
+  row, no warning, and the close still printed success. A retro created with `artifact.py new`,
+  the documented way to scaffold one, never sets that field, so the measurement the close owes went
+  unrecorded and nothing said so. The id now falls back to the one the close was given, and with
+  neither source the tail says on stderr that no row was written and names the command that writes
+  it. This is the second half of the dashed-id fix: that repaired the case where the id was present
+  but unmatchable, this the case where no id reached the tail at all - both closes reported success
+  while the velocity record silently stalled.
+
 - **The mutation gate no longer reports a mutant SURVIVED that never ran (BG0197).** CPython
   invalidates a cached `.pyc` on (source mtime, source size), so a mutant of identical byte length
   written inside one mtime second reused the stale bytecode: the ORIGINAL code executed, the tests

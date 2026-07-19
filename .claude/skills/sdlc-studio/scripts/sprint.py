@@ -2262,7 +2262,8 @@ def _signoff_author(root, unit) -> str:
     return ""
 
 
-def _apply_signoff(root, state, principal: str | None, author_default: str | None = None) -> int:
+def _apply_signoff(root, state, principal: str | None, author_default: str | None = None,
+                   retro_arg: str | None = None) -> int:
     """Fan the operator's recorded approval across the batch: per story unit, record the
     reviewer-of-record sign-off then transition it Done (`artifact.close` - AC-verify gated,
     cascades the parent, records telemetry), then the close tail (velocity row + final reconcile).
@@ -2312,7 +2313,7 @@ def _apply_signoff(root, state, principal: str | None, author_default: str | Non
         done.append(unit)
         print(f"apply-signoff: {unit} signed off by {principal} -> Done")
     # the run's own units - the derivation must not reach epics this close never touched
-    rc = _apply_signoff_tail(root, state, units=done + skipped)
+    rc = _apply_signoff_tail(root, state, units=done + skipped, retro_arg=retro_arg)
     print(f"apply-signoff: {len(done)} transitioned Done, {len(signed)} newly signed, "
           f"{len(skipped)} already complete")
     return rc
@@ -2400,7 +2401,7 @@ def _derive_parent_epics(root, units=None) -> list[str]:
     return moved
 
 
-def _apply_signoff_tail(root, state, units=None) -> int:
+def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -> int:
     """The close tail (US0237): derive parent epics terminal, write the run's velocity row,
     and run a final reconcile. The per-unit cascade ticks each epic's breakdown checkbox but
     does not set the epic's own Status, so the derivation happens here - scoped to the
@@ -2432,7 +2433,11 @@ def _apply_signoff_tail(root, state, units=None) -> int:
                 s = rep["summary"]
                 print(f"apply-signoff: {hid} refreshed - {s['delivered']} delivered, "
                       f"{s['remaining']} remaining")
-    retro_id = (state.get("scaffolded_retro") or "").strip()
+    # The run-state field is set only when THIS close scaffolded the retro. A retro made
+    # the documented way (`artifact.py new --type retro`) never sets it, so fall back to
+    # the id the close was given. With neither, say so - a close that skips the
+    # measurement it owes must not print unqualified success.
+    retro_id = (state.get("scaffolded_retro") or "").strip() or (retro_arg or "").strip()
     if retro_id:
         # `retro accuracy --write` records the velocity row (record_velocity), keyed by retro id so
         # a re-run upserts rather than duplicating. Advisory: a mixed-model or unmeasured sprint
@@ -2443,6 +2448,10 @@ def _apply_signoff_tail(root, state, units=None) -> int:
             print(f"apply-signoff: velocity row recorded for {retro_id}")
         else:
             print(f"apply-signoff: velocity not recorded ({out.splitlines()[-1] if out else 'see retro'})")
+    else:
+        print("apply-signoff: velocity NOT recorded - no retro id on the run state or the "
+              "command line; record it with `retro.py accuracy --id RETROxxxx --write`",
+              file=sys.stderr)
     rc, _ = _run_cli(reconcile.main, ["detect", "--root", str(root)])
     if rc != 0:
         print("apply-signoff: final reconcile reports drift - run `reconcile.py apply`",
@@ -2512,7 +2521,8 @@ def cmd_close(args: argparse.Namespace) -> int:
     if getattr(args, "apply_signoff", False):
         print()
         return _apply_signoff(root, state, getattr(args, "principal", None),
-                              getattr(args, "author", None))
+                              getattr(args, "author", None),
+                              retro_arg=getattr(args, "retro", None))
     import critic  # noqa: PLC0415 - the brief composer
     gate_note = f"gate --require-retro {args.retro} --require-review: PASS; {_mutation_note(root)}"
     batch = state.get("batch") or []
