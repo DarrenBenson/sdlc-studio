@@ -65,7 +65,7 @@ curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/insta
 <details>
 <summary><strong>For agents evaluating this skill</strong></summary>
 
-Open Agent Skills format ([agentskills.io](https://agentskills.io)): the entry point is [SKILL.md](.claude/skills/sdlc-studio/SKILL.md) (name, description with use-when/not-for triggers, `allowed-tools`, tool-specific extras under `metadata:`). Invoke as `/sdlc-studio [type] [action]`, or model-invoke from the description. Requires Python 3.10+ for the bundled deterministic scripts; `gh` CLI only for GitHub sync. A machine-readable index of this repo lives at [llms.txt](llms.txt). If you maintain a project for a human, the zero-setup evaluation path is `review generate` (read-only three-leg review of the host repo, findings filed as artifacts). Repo-level agent guidance: [AGENTS.md](AGENTS.md).
+Open Agent Skills format ([agentskills.io](https://agentskills.io)): the entry point is [SKILL.md](.claude/skills/sdlc-studio/SKILL.md) (name, description with use-when/not-for triggers, `allowed-tools`, tool-specific extras under `metadata:`). Invoke as `/sdlc-studio [type] [action]`, or model-invoke from the description. Requires Python 3.10+ for the bundled deterministic scripts; `gh` CLI only for GitHub sync. A machine-readable index of this repo lives at [llms.txt](llms.txt). If you maintain a project for a human, the zero-setup evaluation path is `audit --profile repo` (read-only three-leg audit of the host repo, refute-panel verified, findings filed as artifacts). Repo-level agent guidance: [AGENTS.md](AGENTS.md).
 
 </details>
 
@@ -209,7 +209,7 @@ Two more ideas worth knowing:
 | --- | --- | --- |
 | Plan from scratch | Interview to a PRD, then epics and stories | `prd create` -> `epic` -> `story` |
 | Adopt existing code | Extract a testable spec (migration blueprint) | `prd generate` |
-| Try it on an existing repo | Zero-setup review - three legs, findings filed as Bug/CR, remediation-only on secrets | `review generate` |
+| Try it on an existing repo | Zero-setup audit - three legs, refute-panel verified, findings filed as Bug/CR, remediation-only on secrets | `audit --profile repo` |
 | Run lean on a small repo | Collapse the pipeline to PRD -> story -> implement; promote to full later | `.config.yaml` `profile: lite` |
 | Decompose work | Epics and stories with Given/When/Then acceptance criteria | `epic`, `story` |
 | Build and prove | Plan, implement, then verify against the criteria | `code plan` -> `code implement` -> `code verify` |

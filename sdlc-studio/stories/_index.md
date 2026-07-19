@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 20 |
+| Draft | 15 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 8 |
+| Review | 13 |
 | Done | 231 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -149,11 +149,11 @@
 | [US0236](US0236-sprint-close-apply-signoff-records-per-unit-sign.md) | sprint close --apply-signoff records per-unit sign-off and Done transitions, refusing without an explicit principal | Done | EP0077 | 2026-07-17 | 2026-07-17 |
 | [US0237](US0237-cascade-parent-epics-crs-rfcs-terminal-write-the.md) | cascade parent epics/CRs/RFCs terminal, write the velocity row, final reconcile | Done | EP0077 | 2026-07-17 | 2026-07-17 |
 | [US0238](US0238-idempotent-re-run-after-a-mid-cascade-stop.md) | idempotent re-run after a mid-cascade stop | Done | EP0077 | 2026-07-17 | 2026-07-17 |
-| [US0239](US0239-build-audit-profile-repo-architecture-code-quality-security.md) | build audit --profile repo (architecture/code-quality/security legs) wired to the refute panel | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
-| [US0240](US0240-build-the-code-audit-profile-and-confirm-refute.md) | build the code audit profile and confirm refute wiring across profiles (CR0255 residual) | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
-| [US0241](US0241-remove-review-generate-py-and-the-review-generate.md) | remove review_generate.py and the review generate route; review keeps only the consistency job | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
-| [US0242](US0242-switch-readme-docs-and-the-skill-description-off.md) | switch README, docs and the SKILL description off review generate to audit --profile repo | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
-| [US0243](US0243-update-help-review-help-audit-and-the-catalogue.md) | update help/review, help/audit and the catalogue; check_links and validate_skill green | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
+| [US0239](US0239-build-audit-profile-repo-architecture-code-quality-security.md) | build audit --profile repo (architecture/code-quality/security legs) wired to the refute panel | Review | EP0078 | 2026-07-17 | 2026-07-17 |
+| [US0240](US0240-build-the-code-audit-profile-and-confirm-refute.md) | build the code audit profile and confirm refute wiring across profiles (CR0255 residual) | Review | EP0078 | 2026-07-17 | 2026-07-17 |
+| [US0241](US0241-remove-review-generate-py-and-the-review-generate.md) | remove review_generate.py and the review generate route; review keeps only the consistency job | Review | EP0078 | 2026-07-17 | 2026-07-17 |
+| [US0242](US0242-switch-readme-docs-and-the-skill-description-off.md) | switch README, docs and the SKILL description off review generate to audit --profile repo | Review | EP0078 | 2026-07-17 | 2026-07-17 |
+| [US0243](US0243-update-help-review-help-audit-and-the-catalogue.md) | update help/review, help/audit and the catalogue; check_links and validate_skill green | Review | EP0078 | 2026-07-17 | 2026-07-17 |
 | [US0244](US0244-gate-rfc-accepted-on-open-decisions-refuse-while.md) | gate RFC -> Accepted on open decisions (refuse while any Open decision stands; recorded-override escape) | Review | EP0079 | 2026-07-17 | 2026-07-17 |
 | [US0245](US0245-derive-rfc-decision-rows-from-the-finding-s.md) | derive RFC decision rows from the finding's real options, not the content-free boilerplate row | Review | EP0079 | 2026-07-17 | 2026-07-17 |
 | [US0246](US0246-close-the-accepted-tranche-decision-rows-with-what.md) | close the accepted-tranche decision rows with what actually shipped | Review | EP0079 | 2026-07-17 | 2026-07-17 |

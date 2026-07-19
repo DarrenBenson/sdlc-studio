@@ -1,6 +1,6 @@
 # US0242: switch README, docs and the SKILL description off review generate to audit --profile repo
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** those surfaces are searched for the retired name
 - **Then** nothing matches, in prose or in a command example
 - **Verify:** shell ! grep -rn "review generate" README.md docs .claude/skills/sdlc-studio/SKILL.md
+- **Verified:** yes (2026-07-19)
 
 ### AC2: All four surfaces name the replacement
 
@@ -29,6 +30,7 @@
 - **When** each is searched for the new name
 - **Then** all four carry `audit --profile repo`, so the on-ramp is redirected rather than merely deleted
 - **Verify:** shell test $(grep -l "audit --profile repo" README.md docs/why-sdlc-studio.md docs/existing-users.md .claude/skills/sdlc-studio/SKILL.md | wc -l) -eq 4
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # US0241: remove review_generate.py and the review generate route; review keeps only the consistency job
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** the shipped skill tree is inspected after the removal
 - **Then** neither file is present, and the suite discovery run in the gate finds nothing to collect for them
 - **Verify:** shell test ! -f .claude/skills/sdlc-studio/scripts/review_generate.py && test ! -f .claude/skills/sdlc-studio/scripts/tests/test_review_generate.py
+- **Verified:** yes (2026-07-19)
 
 ### AC2: No route, import or catalogue row survives
 
@@ -29,6 +30,7 @@
 - **When** the whole shipped skill tree is searched for the stem
 - **Then** nothing matches: no route, no sibling import, no catalogue row and no alias pointing the reader back at the retired command
 - **Verify:** shell ! grep -rl "review_generate" .claude/skills/sdlc-studio
+- **Verified:** yes (2026-07-19)
 
 ### AC3: The on-ramp prompt template goes with it
 
@@ -36,6 +38,7 @@
 - **When** the template tree and the shipped files that reference it are checked
 - **Then** the template is gone and no shipped file still points at it, leaving `review` with the unified PRD/TRD/TSD consistency job alone
 - **Verify:** shell test ! -f .claude/skills/sdlc-studio/templates/workflows/repo-review.md && ! grep -rl "repo-review.md" .claude/skills/sdlc-studio
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

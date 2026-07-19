@@ -71,6 +71,182 @@ FINDING_KINDS = (
 )
 
 
+# --------------------------------------------------------------------------
+# Lens profiles
+# --------------------------------------------------------------------------
+# A profile is a declarative lens pack: a name, an adversarial question and what the
+# lens hunts, one row per lens. Packs ship under templates/audit-profiles/; the default
+# project profile is declared in the reference instead, so both are resolved here and a
+# name no profile declares is refused rather than silently running zero lenses.
+SKILL_DIR = Path(__file__).resolve().parent.parent
+PROFILE_DIR = SKILL_DIR / "templates" / "audit-profiles"
+#: Profiles declared in a reference section rather than as a pack file, mapped to the
+#: file and the heading anchor whose section holds the lens table.
+REFERENCE_PROFILES = {"project": ("reference-audit.md", "audit-project-profile")}
+_REFUTE_RE = re.compile(r"\*\*Refute panel:\*\*(.*)", re.I)
+_THRESHOLD_RE = re.compile(r">=\s*(\d+)\s*of\s*(\d+)")
+_TABLE_DIVIDER_RE = re.compile(r"^\|[\s:|-]+\|$")
+
+
+class UnknownProfile(ValueError):
+    """A profile name no pack and no reference section declares."""
+
+
+def profile_names(skill_dir: Path | None = None) -> list[str]:
+    """Every profile that can be resolved, sorted. Packs on disk plus the
+    reference-declared defaults."""
+    d = (skill_dir or SKILL_DIR) / "templates" / "audit-profiles"
+    packs = {p.stem for p in d.glob("*.md")} if d.is_dir() else set()
+    return sorted(packs | set(REFERENCE_PROFILES))
+
+
+def _split_row(line: str) -> list[str]:
+    return [c.strip() for c in line.strip().strip("|").split("|")]
+
+
+def _parse_lens_table(lines: list[str]) -> tuple[list[str], list[dict]]:
+    """(column headers, lens rows) for the first markdown table in `lines`.
+
+    A lens row is `{name, question, hunts}`. A two-column table (the project
+    profile's artifact/lens shape) leaves `hunts` empty rather than dropping the row.
+    """
+    columns: list[str] = []
+    lenses: list[dict] = []
+    header: list[str] | None = None
+    for line in lines:
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            if header is not None and columns:
+                break  # the table ended; ignore any later table in the file
+            continue
+        cells = _split_row(stripped)
+        if header is None:
+            header = cells
+            continue
+        if _TABLE_DIVIDER_RE.match(stripped):
+            columns = header
+            continue
+        if not columns:  # a table without a divider row is not a lens table
+            continue
+        lenses.append({"name": cells[0],
+                       "question": cells[1] if len(cells) > 1 else "",
+                       "hunts": cells[2] if len(cells) > 2 else ""})
+    return columns, lenses
+
+
+def _refute_declaration(text: str) -> str:
+    """The whole `**Refute panel:**` blockquote, joined. Taken as a block rather than a
+    single line so a declaration wrapped across lines is read in full."""
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        if _REFUTE_RE.search(line):
+            block = [line]
+            for nxt in lines[i + 1:]:
+                if not nxt.lstrip().startswith(">"):
+                    break
+                block.append(nxt)
+            joined = " ".join(part.lstrip().lstrip(">").strip() for part in block)
+            return _REFUTE_RE.search(joined).group(1).strip()
+    return ""
+
+
+def _parse_threshold(text: str) -> dict | None:
+    """The refute threshold a `**Refute panel:**` declaration states, as
+    `{survive, votes}`. None when the declaration is absent or states no threshold."""
+    m = _THRESHOLD_RE.search(_refute_declaration(text))
+    if not m:
+        return None
+    return {"survive": int(m.group(1)), "votes": int(m.group(2))}
+
+
+def parse_pack(path: Path | str) -> dict:
+    """Parse a lens pack file into `{columns, lenses, refute, threshold}`."""
+    text = Path(path).read_text(encoding="utf-8")
+    columns, lenses = _parse_lens_table(text.splitlines())
+    return {"columns": columns, "lenses": lenses,
+            "refute": _refute_declaration(text),
+            "threshold": _parse_threshold(text)}
+
+
+def _reference_section(skill_dir: Path, filename: str, anchor: str) -> str:
+    """The body of the heading whose anchor is `{#anchor}`, up to the next heading of
+    the same or a higher level."""
+    text = (skill_dir / filename).read_text(encoding="utf-8")
+    lines = text.splitlines()
+    start = None
+    level = 0
+    for i, line in enumerate(lines):
+        if line.startswith("#") and f"{{#{anchor}}}" in line:
+            start = i + 1
+            level = len(line) - len(line.lstrip("#"))
+            break
+    if start is None:
+        return ""
+    out: list[str] = []
+    for line in lines[start:]:
+        if line.startswith("#"):
+            if len(line) - len(line.lstrip("#")) <= level:
+                break
+        out.append(line)
+    return "\n".join(out)
+
+
+def resolve_profile(name: str, skill_dir: Path | None = None) -> dict:
+    """Resolve a profile name to its lens pack.
+
+    Returns `{name, source, lenses, refute, threshold, columns}`. Raises
+    `UnknownProfile` for a name nothing declares, and for a declaration that
+    carries no lens at all - an empty lens set is a broken profile, never a run.
+    """
+    d = skill_dir or SKILL_DIR
+    known = profile_names(d)
+    pack = d / "templates" / "audit-profiles" / f"{name}.md"
+    if pack.is_file():
+        parsed = parse_pack(pack)
+        source = f"templates/audit-profiles/{name}.md"
+    elif name in REFERENCE_PROFILES:
+        filename, anchor = REFERENCE_PROFILES[name]
+        body = _reference_section(d, filename, anchor)
+        columns, lenses = _parse_lens_table(body.splitlines())
+        parsed = {"columns": columns, "lenses": lenses,
+                  "refute": _refute_declaration(body),
+                  "threshold": _parse_threshold(body)}
+        source = f"{filename}#{anchor}"
+    else:
+        raise UnknownProfile(
+            f"unknown audit profile {name!r}; profiles that exist: {', '.join(known)}")
+    if not parsed["lenses"]:
+        raise UnknownProfile(f"audit profile {name!r} declares no lens ({source})")
+    return {"name": name, "source": source, **parsed}
+
+
+def cmd_profile(args: argparse.Namespace) -> int:
+    """Resolve a profile and report its lenses plus the refute threshold."""
+    if args.list or not args.name:
+        names = profile_names()
+        if args.format == "json":
+            print(json.dumps({"profiles": names}, indent=2))
+        else:
+            print("audit profiles: " + ", ".join(names))
+        return 0
+    try:
+        p = resolve_profile(args.name)
+    except UnknownProfile as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if args.format == "json":
+        print(json.dumps(p, indent=2))
+        return 0
+    print(f"profile {p['name']} -> {p['source']}")
+    print(f"lenses: {len(p['lenses'])}")
+    for lens in p["lenses"]:
+        print(f"  {lens['name']}: {lens['question']}")
+    t = p["threshold"]
+    print(f"refute panel: {t['survive']} of {t['votes']} votes" if t
+          else "refute panel: NOT DECLARED (the pack must state its threshold)")
+    return 0
+
+
 def find_artifact(root: Path, rec_id: str):
     """Locate an artifact file by id across all types; return (path, type) or None.
     Delegates to the shared `sdlc_md.find_by_id` (one source of truth, alias-aware)."""
@@ -335,6 +511,12 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--root", default=".", help="Repo root (default: .)")
     c.add_argument("--format", choices=("text", "json"), default="text")
     c.set_defaults(func=cmd_check)
+    p = sub.add_parser("profile", help="Resolve an audit lens profile (--name repo) or "
+                                       "list the profiles that exist.")
+    p.add_argument("--name", help="profile to resolve (e.g. repo, code, skill, project)")
+    p.add_argument("--list", action="store_true", help="list the profiles that exist")
+    p.add_argument("--format", choices=("text", "json"), default="text")
+    p.set_defaults(func=cmd_profile)
     sdlc_md.add_global_root(parser)
     return parser
 

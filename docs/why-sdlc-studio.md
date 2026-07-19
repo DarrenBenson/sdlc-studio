@@ -258,9 +258,9 @@ artifacts mint ULIDs) is fully supported.
 
 ## Try it in ten minutes
 
-- **On an existing repo, zero setup:** `/sdlc-studio review generate` - a three-leg review
-  of your actual codebase, findings filed as bugs and change requests, remediation-only on
-  anything sensitive.
+- **On an existing repo, zero setup:** `/sdlc-studio audit --profile repo` - a three-leg
+  audit of your actual codebase, every candidate put through the refute panel, findings
+  filed as bugs and change requests, remediation-only on anything sensitive.
 - **On a small project without the ceremony:** set `profile: lite` and the pipeline
   collapses to PRD, story, implement - promotable to the full discipline later.
 - **From an idea:** "start a new project", answer the interview, and watch the spec, plan,

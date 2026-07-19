@@ -2,6 +2,13 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0110: A new writer must join the atomicity and confinement rosters, not just work**
+- **L-0109: Delegating by Affects reproduces whatever is wrong with the Affects**
+- **L-0108: Build the gate first, then let it tell you the size of the backlog it guards**
+- **L-0107: An AC that runs the repo's standing guards is green before the work starts**
+- **L-0106: A same-length mutant is the mutation check's own blind spot**
+- **L-0105: Suppressing a cache write does not stop a cache read**
+- **L-0104: A readiness gate that recognises one hardcoded placeholder recognises none**
 - **L-0103: A no-result signal from a per-unit runner (`go` per package, `jest` per project) means "the whole run was empty" only when every unit says...**
 - **L-0102: A frequency threshold over "how widely is this shared" must exclude the owner, or the owner's own correct usage suppresses detection of...**
 - **L-0101: A comment justifying a mechanism is a claim, and it needs the same evidence as the code: two false claims about frequency suppression...**

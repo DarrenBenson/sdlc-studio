@@ -77,14 +77,6 @@ Rules (all era-gated to schema v3, so a v2 project reports nothing): `authorship
   machine-visible and a downgrade-without-a-waiver is detectable). Gathers inputs only; the
   verdict stays with Claude. Full workflow: `reference-review.md`.
 
-### `review_generate.py`
-
-Deterministic spine of the model-driven `review generate` on-ramp. `bootstrap`
-idempotently creates the `reviews/`/`bugs/`/`change-requests/` folders and indexes;
-`policy`/`prompt` print the verbatim remediation-only posture and the review prompt
-template (`templates/workflows/repo-review.md`); `scan --secret <value>` fails if a
-secret value leaked into an artefact. Help: `help/review.md`.
-
 ### `disclosure.py`
 
 Progressive-disclosure + Claude Code best-practice check, **advisory**. Flags reference-/
@@ -97,6 +89,14 @@ The token lever: a doc with no load-trigger and no index entry gets pulled in wi
 ### `audit.py`
 
 Adversarial audit / tranche pre-flight. `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity, **already-satisfied** (a Ready unit whose executable ACs all pass in the verify-report - a close-candidate, not work to build), **weak-verify** (a non-executable Verify line, reusing `verify_ac lint`) and **cross-epic-ac** (an AC owned by another epic, reusing `ac_scope`) - before the triage STOP, so work never starts on a unit that would pass the gates vacuously or be reverse-engineered at implement time.
+
+`profile --name <name>` resolves an adversarial lens profile: the packs under
+`templates/audit-profiles/` (`skill`, `repo`, `code`) plus the reference-declared
+`project` default, reporting the pack's lenses and its refute threshold. A name no
+profile declares is refused non-zero, naming the ones that exist, so a mistyped
+profile can never run an empty lens set; `profile --list` names them all. The repo
+pack carries the binding remediation-only security posture for its
+defensive-security leg.
 
 A `Depends on:` referent resolves through the shared cross-repo resolver (`lib/xrepo`, the same one `blocker_sweep` uses): in-repo first, then across the sibling repos a `product-manifest.yaml` names. So in a multi-repo product, a dependency **delivered in another repo meets the dependency** rather than reporting `unmet-deps`. A repo the operator has not cloned never stops the search - the remaining repos are still searched, so the verdict follows the disk state and not the manifest's ordering. The three outcomes stay distinct claims: `unmet-deps` (the referent exists and is not delivered, or is dead), **`unresolved-deps`** (no repo resolved the id AND at least one named repo was not on disk, so the dependency could not be checked either way - the repo and path are named, and the unit is never silently passed), and no finding. Single-repo projects have no manifest and are unaffected.
 

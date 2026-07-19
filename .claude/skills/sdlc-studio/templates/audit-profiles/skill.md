@@ -5,6 +5,9 @@ lenses proven on the 2026-06-20 self-audit run. Load this pack as the profile wh
 project under audit *is* a skill (vs the default project profile in
 `reference-audit.md#audit-project-profile`).
 
+> **Refute panel:** shared - 3 skeptics per candidate, survive on >= 2 of 3
+> (`reference-audit.md#audit-refute`). This pack does not opt out.
+
 Use each row as the `{{lens}}` / `{{lens_question}}` of `audit-finder.md`, one finder
 per lens, looped until-dry; then the shared refute panel and filer.
 

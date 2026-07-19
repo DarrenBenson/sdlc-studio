@@ -24,41 +24,11 @@ SDLC Studio supports these reviews:
 - **Document review:** Unified PRD, TRD, TSD review with cross-document consistency
 - **Epic review:** Cascading review of epic and changed stories (default behaviour)
 - **Code review:** Design pattern and quality review of implementation
-- **Repository review (`review generate`):** Zero-setup audit of an existing repo
-  that files findings as artefacts - the on-ramp for trying sdlc-studio on real code
 
----
-
-# /sdlc-studio review generate - Repository Review (on-ramp)
-
-Point sdlc-studio at an existing repository, get a dated review report plus triaged
-findings, and decide whether to adopt the full pipeline - **with no prior workspace**.
-This is the try-before-you-adopt entry point for a brownfield repo.
-
-## What Happens
-
-1. **Bootstrap** - `scripts/review_generate.py bootstrap` creates the `reviews/`,
-   `bugs/`, and `change-requests/` folders and their indexes if the repo has never
-   run sdlc-studio. Idempotent; touches nothing else.
-2. **Three legs** - the agent reviews architecture, code quality, and defensive
-   security (prompt template: `templates/workflows/repo-review.md`), read-only on
-   source, evidence-cited per finding.
-3. **File findings** - each finding lands as a Bug or CR via `file_finding.py`; ids
-   and index rows are tool-allocated, never hand-authored.
-4. **Report** - a dated `reviews/RV{nnnn}` report with per-leg assessment, the full
-   findings table, limitations, and the top five priorities.
-5. **Team offer (hint)** - close by offering `persona generate --team`: the same
-   analysis just performed can grow a project-native working team from the repo map
-   alone (see `reference-persona-generate.md#team-standalone`). Offer, never auto-run.
-
-## Security posture (binding)
-
-Security findings are remediation-only: location, weakness class, realistic impact,
-and fix - no proof-of-concept exploits or payloads. A committed secret is reported
-by location plus rotation instructions; the value is never copied into an artefact.
-Prove it held with `scripts/review_generate.py scan --secret "<value>"`, which fails
-if any produced artefact contains the value. The exact wording is embedded verbatim
-in the prompt template (`review_generate.py policy` prints it).
+Hunting for weaknesses in an existing repository is not a review - it is an audit.
+The zero-setup pass over a repo that has never run sdlc-studio is
+`/sdlc-studio audit --profile repo` (architecture, code-quality, defensive-security,
+verified by the refute panel and filed as Bugs or CRs). See `help/audit.md`.
 
 ---
 

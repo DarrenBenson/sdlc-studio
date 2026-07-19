@@ -150,7 +150,6 @@ lists every script with a one-line summary; open the linked page for the full en
 - `constitution.py` - Project-constitution principle gate. Asserts the machine-checkable
 - `audit_check.py` - One CI-runnable command over the schema-v3 team-schema rules, emitting STABLE rule ids so the
 - `review_prep.py` - `prep`: deterministic inputs for the five-leg review (artifact staleness,
-- `review_generate.py` - Deterministic spine of the model-driven `review generate` on-ramp. `bootstrap`
 - `disclosure.py` - Progressive-disclosure + Claude Code best-practice check, **advisory**. Flags reference-/
 - `audit.py` - Adversarial audit / tranche pre-flight. `check` grooms a batch for readiness - weak-AC, unmet-deps, already-...
 - `critic.py` - The independent-critic verdict ledger. `record` writes a committed verdict to `sdlc-studio/reviews/critic-ve...

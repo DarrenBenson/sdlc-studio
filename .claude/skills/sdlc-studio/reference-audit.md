@@ -56,9 +56,25 @@ find  ──►  verify  ──►  merge  ──►  file
 
 ## Lens Profiles {#audit-profiles}
 
-A profile is a set of lenses. Two ship; projects can extend.
+A profile is a set of lenses. Four ship; projects can extend. Every one of them is
+wired to the same refute panel - the profile chooses the lenses, never whether a
+plausible-but-wrong finding gets filed.
+
+| Profile | Lens pack | Hunts | Refute panel |
+| --- | --- | --- | --- |
+| `project` | this file, `#audit-project-profile` | the artefact graph: per-type lenses plus cross-artefact coherence (default) | shared |
+| `skill` | `templates/audit-profiles/skill.md` | an agent skill itself: over-engineering, token-economy, determinism, external-benchmark | shared |
+| `repo` | `templates/audit-profiles/repo.md` | an existing repository, zero setup: architecture, code-quality, defensive-security | shared |
+| `code` | `templates/audit-profiles/code.md` | an implementation: correctness, security-smells, pattern-violations, ac-drift | shared |
+
+Resolve one with `scripts/audit.py profile --name repo`, which reports the pack's lenses
+and its refute threshold; a name no profile declares is refused, naming the ones that
+exist, rather than running an empty lens set.
 
 ### Project profile (default) {#audit-project-profile}
+
+> **Refute panel:** shared - 3 skeptics per candidate, survive on >= 2 of 3
+> (`#audit-refute`). This profile does not opt out.
 
 Per-artifact-type lenses + cross-artifact coherence:
 
@@ -78,6 +94,22 @@ Per-artifact-type lenses + cross-artifact coherence:
 For auditing an agent skill itself - the four lenses proven on 2026-06-20:
 over-engineering, token-economy, determinism, external-benchmark. Packaged as a
 loadable pack at `templates/audit-profiles/skill.md` (each row is a finder lens).
+
+### Repo profile {#audit-repo-profile}
+
+The zero-setup pass over an existing repository - the try-before-you-adopt path on code
+with no artefact graph yet. Three legs: architecture, code-quality, defensive-security.
+Packaged at `templates/audit-profiles/repo.md`, which also carries the binding
+remediation-only security posture (location, weakness class, impact and fix; no
+proof-of-concept payload; a committed secret reported by location plus rotation, with the
+value left where it is). Findings file as Bugs or CRs through `file_finding.py`.
+
+### Code profile {#audit-code-profile}
+
+For auditing an implementation rather than the specs around it: correctness,
+security-smells, pattern-violations, ac-drift. Packaged at
+`templates/audit-profiles/code.md`. The `ac-drift` lens needs the unit's acceptance
+criteria in the finder's context, not the diff alone.
 
 ### Extending {#audit-extend}
 

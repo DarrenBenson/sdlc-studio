@@ -400,7 +400,7 @@ stakeholders. `consult stakeholders` names any provisional card in its output he
 `persona generate --team` needs no PRD: with only a repository it analyses the repo map
 and asks the risk-class question. Offered after `prd create`/`generate`, at
 `project upgrade` (before the default-amigo option), and worth running after a
-`review generate` taster.
+`audit --profile repo` taster.
 
 # Validation Rules {#validation}
 

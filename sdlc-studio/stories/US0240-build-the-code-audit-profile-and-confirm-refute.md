@@ -1,6 +1,6 @@
 # US0240: build the code audit profile and confirm refute wiring across profiles (CR0255 residual)
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** an agent loads `templates/audit-profiles/code.md` as the profile for an audit run
 - **Then** the pack declares its code-level lenses (correctness, security smells, pattern violations, AC-vs-implementation drift), each with an adversarial question and what it hunts
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_audit_profiles.py -k CodeProfileLensTests
+- **Verified:** yes (2026-07-19)
 
 ### AC2: Every shipped profile is catalogued and panel-wired
 
@@ -29,6 +30,7 @@
 - **When** the profile catalogue in `reference-audit.md#audit-profiles` and `help/audit.md` is checked against the packs that exist
 - **Then** each profile appears in both, no pack is documented that is absent (or absent that is documented), and none opts out of the shared refute panel
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_audit_profiles.py -k ProfileCatalogueTests
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 

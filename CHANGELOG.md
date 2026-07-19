@@ -21,6 +21,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **One weakness-hunt, one name: `review generate` folds into `audit --profile repo` (EP0078).**
+  Two commands hunted for the same weaknesses under different names, and only one of them put its
+  findings through the refute panel. The three legs of the repository on-ramp - architecture,
+  code-quality, defensive-security - now ship as a declarative lens pack at
+  `templates/audit-profiles/repo.md`, panel-wired like every other profile, and the binding
+  remediation-only security posture moved into the pack verbatim rather than living as a constant
+  in a script. A `code` pack ships alongside it (correctness, security-smells, pattern-violations,
+  ac-drift), completing the four profiles the audit was promised. `audit.py profile --name <name>`
+  resolves a pack and reports its lenses and refute threshold; a name no profile declares is
+  refused non-zero naming the ones that exist, so a mistyped profile cannot run an empty lens set.
+  `scripts/review_generate.py`, its suite and its prompt template are deleted with no alias left
+  behind, and the README, docs, SKILL description and help pages all point at the replacement -
+  `review` now means the PRD/TRD/TSD consistency pass and nothing else.
+
 - **The green-run noise gate actually runs, and its detector matches what leaks (US0253).**
   `tools/skill-tests.sh` held the noise leg but was wired into nothing - neither CI nor `npm test`
   invoked it - while the TSD described it as holding the line. Its detector matched one shape,

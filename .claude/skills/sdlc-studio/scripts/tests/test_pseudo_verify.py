@@ -77,7 +77,7 @@ class DetectorTests(unittest.TestCase):
             "x  - **Verify:** rg -q retro scripts/gate.py",      # a faked canonical line
             "x. verify: test -f a.md && rg -q b c.md",
             "x. Verify: python3 scripts/lessons.py recall | jq -e '.matches'",
-            "x. Verify: ! rg -q 'review generate' README.md",    # a negated command still runs
+            "x. Verify: ! rg -q 'vibe coding' README.md",        # a negated command still runs
         ):
             with self.subTest(text=text):
                 self.assertIsNotNone(ff.pseudo_verify(text), "should be refused")

@@ -65,10 +65,34 @@ find  ──►  verify  ──►  merge  ──►  file
 
 ## Profiles
 
-- **Project profile (default)** - per-artifact-type lenses (PRD, TRD, TSD, personas,
-  epics/stories, code, design/RFC) plus cross-artifact traceability.
-- **Skill profile** - for auditing an agent skill itself: over-engineering, token-economy,
-  determinism, external-benchmark (`templates/audit-profiles/skill.md`).
+Four ship. The profile chooses the lenses; every one of them runs through the same refute
+panel, so the choice never changes whether a plausible-but-wrong finding gets filed.
+
+| Profile | Invocation | Lenses | Pack |
+| --- | --- | --- | --- |
+| `project` | `audit` (default) | per-artifact-type (PRD, TRD, TSD, personas, epics/stories, code, design/RFC) plus cross-artifact traceability | `reference-audit.md#audit-project-profile` |
+| `skill` | `audit --profile skill` | over-engineering, token-economy, determinism, external-benchmark | `templates/audit-profiles/skill.md` |
+| `repo` | `audit --profile repo` | architecture, code-quality, defensive-security | `templates/audit-profiles/repo.md` |
+| `code` | `audit --profile code` | correctness, security-smells, pattern-violations, ac-drift | `templates/audit-profiles/code.md` |
+
+Resolve a pack before launching, and see its lenses and refute threshold:
+
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/audit.py" profile --name repo
+```
+
+A name no profile declares is refused, naming the ones that exist - an audit never runs an
+empty lens set.
+
+### The zero-setup path on an existing repo
+
+`audit --profile repo` is the try-before-you-adopt entry point: point it at a repository
+that has never run sdlc-studio, and it hunts the three legs, verifies each candidate
+through the refute panel, and files the survivors as Bugs or CRs with tool-allocated ids.
+Security findings are remediation-only - location, weakness class, realistic impact and a
+concrete fix, no proof-of-concept payload, and a committed secret reported by location
+plus rotation with the value left where it is. The wording is binding and lives in the
+pack (`templates/audit-profiles/repo.md`).
 
 Narrow a run with `--scope prd,trd,...`. Run on demand, never in CI, and always log what a
 cap dropped so partial coverage is not read as complete.

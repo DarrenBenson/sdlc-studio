@@ -17,7 +17,7 @@ as an explicit question, never a silent switch.
 | The team | `persona generate --team` grows fresh named working seats from your project; the shipped Dani/Sam/Lena become the zero-setup fallback | Offered at `project upgrade` and after a PRD; never auto-run |
 | Default amigos | The upgrade no longer auto-installs the default amigo cards; they are opt-in (`--with-default-amigos`), and legacy `personas/amigos/` cards migrate to `personas/seats/` | On your next `project upgrade` |
 | Quality floor | Independence gate (author can never be reviewer), verification-depth tiers, portable CI gate (`gate.py`), provenance-stamped generated personas | Immediately, but only on new work - nothing retro-fails |
-| Reviews | Repository review (`review generate`), stakeholder panels with declared types, consult objection quota | As you use them |
+| Reviews | Repository audit (`audit --profile repo`), stakeholder panels with declared types, consult objection quota | As you use them |
 | Renames | `autosprint` is now `sprint` (old name kept as an alias) | Muscle memory only |
 
 ## The numbering question - three answers, all supported

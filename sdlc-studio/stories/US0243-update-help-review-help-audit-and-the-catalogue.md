@@ -1,6 +1,6 @@
 # US0243: update help/review, help/audit and the catalogue; check_links and validate_skill green
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** both pages are searched for the retired command
 - **Then** neither mentions it: the on-ramp section and its catalogue row are gone, and what remains is the consistency review
 - **Verify:** shell ! grep -n "review generate" .claude/skills/sdlc-studio/help/review.md .claude/skills/sdlc-studio/help/help.md
+- **Verified:** yes (2026-07-19)
 
 ### AC2: help/audit.md and the catalogue carry the repo profile
 
@@ -29,6 +30,7 @@
 - **When** a reader looks for the zero-setup path on an existing repo
 - **Then** `help/audit.md` documents the repo profile and its three legs, and the `help/help.md` catalogue row names the same invocation
 - **Verify:** shell grep "audit --profile repo" .claude/skills/sdlc-studio/help/audit.md && grep "audit --profile repo" .claude/skills/sdlc-studio/help/help.md
+- **Verified:** yes (2026-07-19)
 
 ### AC3: Link graph and skill spec stay green
 
@@ -36,6 +38,7 @@
 - **When** the link guard runs over the tree and `help/audit.md` is checked for that cross-reference
 - **Then** no anchor points at a deleted section or file, and the audit help links the repo pack rather than describing it in prose alone
 - **Verify:** shell python3 tools/check_links.py && grep "audit-profiles/repo.md" .claude/skills/sdlc-studio/help/audit.md
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 
