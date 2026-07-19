@@ -253,23 +253,31 @@ def _rfc_open_decisions(text: str) -> list[str]:
     if fence is not None and not open_rows:
         # The scan ended inside an unterminated fence, so anything after it was skipped and
         # this "no open decisions" is an artefact of unparseable markdown, not a reading of
-        # the file. Fail CLOSED: re-scan ignoring fences entirely. A false positive here
-        # asks a human to look; a false negative silently accepts an RFC with open decisions,
-        # and that is the failure this gate exists to prevent.
-        return _rfc_open_decisions_no_fences(text)
+        # the file. Fail CLOSED by re-reading the document with every structural rule
+        # dropped. A false positive here asks a human to look; a false negative silently
+        # accepts an RFC with open decisions, and that is the failure this gate exists for.
+        return _rfc_open_decisions_unstructured(text)
     return open_rows
 
 
-def _rfc_open_decisions_no_fences(text: str) -> list[str]:
-    """The same scan with fence skipping disabled - the fail-closed fallback."""
+def _rfc_open_decisions_unstructured(text: str) -> list[str]:
+    """Every unsettled decision row in the document, ignoring fences AND sections.
+
+    The fail-closed path, reached only when the main scan ended inside an unterminated
+    fence. It deliberately drops the section rule as well as the fence rule, because the
+    two structural signals fail together: an unterminated fence means the document's
+    structure cannot be trusted, and a `#` line inside that fence is exactly as likely to
+    be a shell comment as a heading. An earlier version dropped only the fence rule and
+    kept `in_section`, which let a `# comment` inside the broken fence end the section and
+    hide every row after it - the fallback then returned "no open decisions" for the very
+    document it existed to catch, so the gate advertised fail-closed and failed OPEN.
+
+    Reading a row outside the decisions section is the intended cost. On a well-formed
+    document this function never runs; on a broken one, over-reporting sends a human to
+    look at markdown that needs fixing anyway.
+    """
     open_rows: list[str] = []
-    in_section = False
     for line in text.splitlines():
-        if _ATX_HEADING_RE.match(line):
-            in_section = "decision" in line.lower()
-            continue
-        if not in_section:
-            continue
         m = _DECISION_ROW_RE.match(line)
         if not m:
             continue

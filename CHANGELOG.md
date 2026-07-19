@@ -39,6 +39,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to do. Two branches that survived removal against the whole suite - the boundary's
   outcome-preservation guard and `close_run`'s archive call - now have discriminating tests.
 
+- **The RFC accept gate's fail-closed path actually fails closed now (round 4 of the closing
+  review).** The fallback added in round 3 re-scanned the document with fence skipping disabled but
+  kept the section rule, so a `#` comment inside the unterminated fence ended the decisions section
+  and hid every row after it. That is round 1's bypass copied verbatim into the path written to
+  prevent it: the code carried a comment promising a false negative was impossible while returning
+  "no open decisions" for the exact document it exists to catch, and an RFC with an Open decision
+  reached Accepted. The two structural signals fail together - an unterminated fence means the
+  document's shape cannot be trusted, and a `#` line inside it is as likely a shell comment as a
+  heading - so the fallback now drops the section rule as well, reporting every unsettled row
+  anywhere in the file. Over-reporting on a broken document sends a human to markdown that needs
+  fixing; under-reporting ships an unaccepted decision. Separately, the CommonMark `(char, length)`
+  matcher that was round 3's headline fix had **no discriminating test**: every fence test asserted
+  the gate blocks, and the fallback blocks by itself, so reverting the matcher to a naive toggle
+  left all 107 tests green. It is now pinned by the one case the fallback cannot satisfy - a
+  well-formed nested fence holding an example row, where the correct answer is to pass. Verified on
+  all 47 shipped RFCs: no verdict changes.
+
 - **A rolling multi-sprint policy: fix the policy once, regenerate the plan at every boundary
   (EP0076).** An operator wanting an unattended evening of delivery had to return at every sprint
   boundary to re-plan, and queueing several plans up front does not work - the backlog is generated

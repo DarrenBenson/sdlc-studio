@@ -1401,6 +1401,15 @@ class RfcOpenDecisionGateTests(unittest.TestCase):
             "tilde fence never closed": "~~~\nstuff\n\n## Open Decisions\n" + table,
             "fence opened inside the section": (
                 "## Open Decisions\n\n```bash\n# regenerate\n```\n" + table),
+            # The fail-closed re-scan dropped the FENCE rule but kept the SECTION rule, so a
+            # `#` comment inside the unterminated fence ended the section and hid every row
+            # after it. The fallback then returned "no open decisions" for the exact document
+            # it exists to catch: the gate advertised fail-closed and failed OPEN. The two
+            # structural signals fail together, so the fallback now drops both.
+            "unclosed fence whose body holds a # comment": (
+                "## Open Decisions\n\n```bash\n# regenerate the table\n" + table),
+            "unclosed tilde fence whose body holds a # comment": (
+                "## Open Decisions\n\n~~~bash\n# regenerate the table\n" + table),
         }
         for name, body in shapes.items():
             with self.subTest(shape=name), tempfile.TemporaryDirectory() as d:
@@ -1414,6 +1423,37 @@ class RfcOpenDecisionGateTests(unittest.TestCase):
                     "| [RFC0001](RFC0001-r.md) | r | In Review |\n", encoding="utf-8")
                 with self.assertRaises(ValueError, msg=f"{name}: gate bypassed"):
                     tr.transition(root, "RFC0001", "Accepted")
+
+    def test_commonmark_fence_matching_is_pinned_independently_of_the_fallback(self) -> None:
+        """The CommonMark `(char, length)` rule needs a test the FALLBACK cannot satisfy.
+
+        Every other fence test asserts the gate BLOCKS, and the fail-closed re-scan blocks on
+        its own - so reverting the matcher to a naive `in_fence = not in_fence` toggle left
+        them all green and the headline guard untested. Only a case where the correct answer
+        is "no open decisions" separates the two: a well-formed nested fence, closed properly,
+        holding an EXAMPLE row.
+
+        Correct CommonMark: ```` opens, the inner ``` is content, the trailing ```` closes.
+        The tracker ends outside any fence, the example row was skipped, the gate passes.
+        Under the naive toggle the inner ``` counts as a delimiter, the file ends inside a
+        fence, the fail-closed re-scan fires and reads the example row as real - so accepting
+        this RFC raises. The mutant FAILS this test where it passes all the others.
+        """
+        body = ("## Open Decisions\n\n"
+                "| # | Decision | Status |\n| --- | --- | --- |\n"
+                "| D1 | which store | Accepted |\n\n"
+                "````markdown\n```text\n| D9 | an example row, not a decision | Open |\n"
+                "```\n````\n")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rd = root / "sdlc-studio" / "rfcs"
+            rd.mkdir(parents=True)
+            (rd / "RFC0001-r.md").write_text(
+                "# RFC0001: r\n\n> **Status:** In Review\n\n" + body, encoding="utf-8")
+            (rd / "_index.md").write_text(
+                "# RFCs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [RFC0001](RFC0001-r.md) | r | In Review |\n", encoding="utf-8")
+            tr.transition(root, "RFC0001", "Accepted")   # must NOT raise
 
     def test_a_hash_that_is_not_a_heading_does_not_end_the_section(self) -> None:
         """`#42` and `#!/bin/sh` start with `#` but are not headings."""

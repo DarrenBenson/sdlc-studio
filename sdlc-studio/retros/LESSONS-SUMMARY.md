@@ -2,6 +2,7 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0126: A fail-closed fallback is not the main path with one rule removed**
 - **L-0125: Round 2 findings are usually created by the round 1 repair**
 - **L-0124: File the friction, not just the blockers**
 - **L-0123: **L-0113** An AC asserting the committed state cannot be green in the working tree.**
