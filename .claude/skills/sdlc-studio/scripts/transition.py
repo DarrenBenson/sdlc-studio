@@ -213,16 +213,25 @@ def _rfc_open_decisions(text: str) -> list[str]:
     """
     open_rows: list[str] = []
     in_section = False
-    in_fence = False
+    fence = None          # (char, length) of the OPEN fence, or None
     for line in text.splitlines():
-        # A fenced block holds no headings and no decision rows. Skipping it is not
-        # tidiness: widening the heading test to "starts with #" made a shell comment
-        # inside a fence read as a section boundary, switching the section OFF and hiding
-        # every row after it - a fifth bypass created while closing four.
-        if line.lstrip().startswith(("```", "~~~")):
-            in_fence = not in_fence
-            continue
-        if in_fence:
+        # A fenced block holds no headings and no decision rows, so it is skipped. The rule
+        # is CommonMark's, not a toggle: a fence opens on 3+ of ` or ~ and closes only on the
+        # SAME character at that length or longer. A naive `not in_fence` toggle counted the
+        # inner ```bash of a ````markdown block as a delimiter and ended the file inside a
+        # fence, hiding the whole section - a wider bypass than the one it was fixing.
+        stripped = line.lstrip()
+        marker = "`" if stripped.startswith("```") else ("~" if stripped.startswith("~~~") else None)
+        if marker:
+            run = len(stripped) - len(stripped.lstrip(marker))
+            if fence is None:
+                fence = (marker, run)
+                continue
+            if marker == fence[0] and run >= fence[1]:
+                fence = None
+                continue
+            # a shorter or different fence inside an open one is CONTENT
+        if fence is not None:
             continue
         # An ATX heading is one to six hashes THEN whitespace. `#42` and `#!/bin/sh` are
         # not headings, and neither ends a section.
@@ -239,6 +248,33 @@ def _rfc_open_decisions(text: str) -> list[str]:
         status = cells[-1].lower() if cells else ""
         # Judged on the LEADING token, so an annotated cell still counts while one that
         # merely mentions the word ('Closed - was open until the 07-19 review') does not.
+        if any(status.startswith(word) for word in _UNSETTLED):
+            open_rows.append(m.group(1))
+    if fence is not None and not open_rows:
+        # The scan ended inside an unterminated fence, so anything after it was skipped and
+        # this "no open decisions" is an artefact of unparseable markdown, not a reading of
+        # the file. Fail CLOSED: re-scan ignoring fences entirely. A false positive here
+        # asks a human to look; a false negative silently accepts an RFC with open decisions,
+        # and that is the failure this gate exists to prevent.
+        return _rfc_open_decisions_no_fences(text)
+    return open_rows
+
+
+def _rfc_open_decisions_no_fences(text: str) -> list[str]:
+    """The same scan with fence skipping disabled - the fail-closed fallback."""
+    open_rows: list[str] = []
+    in_section = False
+    for line in text.splitlines():
+        if _ATX_HEADING_RE.match(line):
+            in_section = "decision" in line.lower()
+            continue
+        if not in_section:
+            continue
+        m = _DECISION_ROW_RE.match(line)
+        if not m:
+            continue
+        cells = [c.strip() for c in _DECISION_PIPE_RE.split(m.group(2))]
+        status = cells[-1].lower() if cells else ""
         if any(status.startswith(word) for word in _UNSETTLED):
             open_rows.append(m.group(1))
     return open_rows

@@ -916,6 +916,13 @@ class ReviewFindingsTests(unittest.TestCase):
             "cycle is a list": {"cycle": [1]},
             "cycle.index is prose": {"cycle": {"index": "two"}},
             "started_at is a number": {"started_at": 17, "cycle": {"index": 1}},
+            # Found by round 3: the first two repairs each caught only the shapes their own
+            # test exercised. run_id is the final tie-break, so a non-string reaches the tuple
+            # comparison when started_at and index both tie; Infinity round-trips through
+            # json by default, so this module can WRITE a value int() then refuses.
+            "run_id is a number": {"run_id": 7, "started_at": "2026-07-19T00:00:00Z",
+                                   "cycle": {"index": 1}},
+            "index is Infinity": {"cycle": {"index": float("inf")}},
         }
         for name, extra in shapes.items():
             with self.subTest(shape=name), tempfile.TemporaryDirectory() as d:
@@ -926,7 +933,7 @@ class ReviewFindingsTests(unittest.TestCase):
                     {"run_id": "RUN-GOOD", "started_at": "2026-07-19T00:00:00Z",
                      "cycle": {"index": 1}}), encoding="utf-8")
                 rec = {"run_id": "RUN-BAD", "started_at": "2026-07-19T00:00:01Z"}
-                rec.update(extra)
+                rec.update(extra)   # extra may deliberately override run_id/started_at
                 (ad / "RUN-BAD.json").write_text(json.dumps(rec), encoding="utf-8")
                 got = [r.get("run_id") for r in run_state.archived(root)]
                 self.assertIn("RUN-GOOD", got, f"{name}: intact record lost")

@@ -175,7 +175,11 @@ def archived(repo_root: Path | str) -> list[dict]:
         """
         try:
             return int((rec.get("cycle") or {}).get("index") or 0)
-        except (AttributeError, TypeError, ValueError):
+        except (ArithmeticError, AttributeError, TypeError, ValueError):
+            # ArithmeticError covers OverflowError: json round-trips Infinity by default, so
+            # this module can WRITE a value int() then refuses. Each repair here has caught
+            # only the shapes its own test exercised; the exception set is now the whole
+            # family rather than a list of the ones seen so far.
             return 0
 
     def _started(rec: dict) -> str:
@@ -185,7 +189,13 @@ def archived(repo_root: Path | str) -> list[dict]:
         value = rec.get("started_at")
         return value if isinstance(value, str) else ""
 
-    out.sort(key=lambda r: (_started(r), _index(r), r.get("run_id") or ""))
+    def _rid(rec: dict) -> str:
+        """The run id as a STRING. It is the final tie-break, so a non-string reaches the
+        tuple comparison only when started_at and the index both tie - rare, and it raised."""
+        value = rec.get("run_id")
+        return value if isinstance(value, str) else ""
+
+    out.sort(key=lambda r: (_started(r), _index(r), _rid(r)))
     return out
 
 

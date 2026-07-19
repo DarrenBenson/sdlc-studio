@@ -1381,6 +1381,40 @@ class RfcOpenDecisionGateTests(unittest.TestCase):
                 tr.transition(root, "RFC0001", "Accepted")
             self.assertIn("D1", str(cm.exception))
 
+    def test_fence_handling_cannot_hide_the_decisions_section(self) -> None:
+        """Fence tracking must never DISABLE the gate - the round 2 repair did exactly that.
+
+        A naive `in_fence = not in_fence` toggle treats any fence-like line as a delimiter, so
+        an unclosed fence, or a nested longer fence containing a shorter one, left the tracker
+        inside a fence at EOF and made the whole decisions section invisible. That is a wider
+        bypass than the `#`-in-a-fence case it was fixing, and the code it replaced caught all
+        of these. Two guards now: proper CommonMark matching (a fence closes only on the same
+        character at the same length or longer), and a fail-closed re-scan if the tracker still
+        ends inside a fence, because unparseable markdown must not read as no open decisions.
+        """
+        table = ("\n| # | Decision | Status |\n| --- | --- | --- |\n"
+                 "| D1 | which store | Open |\n")
+        shapes = {
+            "unclosed fence before the section": "```bash\necho hi\n\n## Open Decisions\n" + table,
+            "nested four-backtick fence": (
+                "````markdown\n```bash\n````\n\n## Open Decisions\n" + table),
+            "tilde fence never closed": "~~~\nstuff\n\n## Open Decisions\n" + table,
+            "fence opened inside the section": (
+                "## Open Decisions\n\n```bash\n# regenerate\n```\n" + table),
+        }
+        for name, body in shapes.items():
+            with self.subTest(shape=name), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                rd = root / "sdlc-studio" / "rfcs"
+                rd.mkdir(parents=True)
+                (rd / "RFC0001-r.md").write_text(
+                    "# RFC0001: r\n\n> **Status:** In Review\n\n" + body, encoding="utf-8")
+                (rd / "_index.md").write_text(
+                    "# RFCs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                    "| [RFC0001](RFC0001-r.md) | r | In Review |\n", encoding="utf-8")
+                with self.assertRaises(ValueError, msg=f"{name}: gate bypassed"):
+                    tr.transition(root, "RFC0001", "Accepted")
+
     def test_a_hash_that_is_not_a_heading_does_not_end_the_section(self) -> None:
         """`#42` and `#!/bin/sh` start with `#` but are not headings."""
         for line in ("#42 is the issue this row came from", "#!/usr/bin/env bash"):
