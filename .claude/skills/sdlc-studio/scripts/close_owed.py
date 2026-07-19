@@ -56,57 +56,78 @@ def covered_ids(root: Path) -> set[str]:
     return covered
 
 
-def terminal_delivery_units(root: Path) -> list[tuple[str, str]]:
-    """Every terminal delivery unit as `(id, type)` - the population a close accounts for."""
+def scan_delivery(root: Path) -> tuple[list[tuple[str, str]], set[str]]:
+    """One pass over the delivery tree: `(terminal units as (id, type), every delivery id)`.
+
+    Both answers come from the same walk because reading the tree is the whole cost. Taking
+    them separately doubled the detector's runtime on a repo this size for an identical
+    result.
+    """
     out: list[tuple[str, str]] = []
+    ids: set[str] = set()
     for type_ in DELIVERY_TYPES:
         vocab = sdlc_md.status_vocab(type_, root)
         for p in sdlc_md.artifact_files(type_, root):
             cid = sdlc_md.extract_record_id(p.stem)
             if not cid:
                 continue
+            ids.add(sdlc_md.norm_id(cid))
             status = sdlc_md.canonical_status(
                 sdlc_md.extract_field(sdlc_md.read_text_safe(p), "Status"), vocab)
             if status and sdlc_md.is_terminal_status(type_, status):
                 out.append((cid, type_))
-    return out
+    return out, ids
 
 
-def _derived_from_covered_children(root: Path, cid: str, type_: str, covered: set[str]) -> bool:
-    """True when `cid` is an epic that a retro accounted for THROUGH its children.
+def terminal_delivery_units(root: Path) -> list[tuple[str, str]]:
+    """Every terminal delivery unit as `(id, type)` - the population a close accounts for."""
+    return scan_delivery(root)[0]
 
-    An epic does not reach terminal by being worked; it is DERIVED terminal once every child
-    is terminal, and that derivation runs in the close tail after the retro is written. So an
-    epic is never named in a `Batch`, and requiring it to be named made every clean close
-    manufacture close-owed debt for the epics it had just derived - debt no further close
-    could clear, because each close derives its own. The retro that accounted for the children
-    is the close that accounted for the epic.
 
-    Recording the epics in the `Batch` instead was the obvious alternative and is wrong:
-    `retro accuracy` sums points across the batch, and an epic's Derived Point Total is the
-    sum of its stories, so it would double-count every sprint's velocity.
+def delivery_ids(root: Path) -> set[str]:
+    """Every id that resolves to a delivery artefact.
 
-    Deliberately NOT a blanket exemption for epics. A childless epic inherits nothing (there
-    is no derivation to inherit from) and an epic with one unaccounted child stays owed, so
-    the relaxation cannot become a vacuous pass.
+    Built once and threaded through the epic loop. Asking `find_by_id` per declared id costs
+    a full-tree scan EACH, which took the detector from 6s to 16s on a repo this size - the
+    answer is the same, so the scan is the whole cost.
     """
-    if type_ != "epic":
-        return False
+    return scan_delivery(root)[1]
+
+
+def _breakdown_child_ids(root: Path, cid: str,
+                         known: set[str] | None = None) -> tuple[set[str], set[str]]:
+    """`(coverable, dead)` child ids for an epic.
+
+    BOTH id sets are read, because the two answers to "what is a child" can differ: the
+    derivation that closed this epic reads its DECLARED Story Breakdown, while `children_of`
+    reads whatever names the epic as a parent. An id in one but not the other would otherwise
+    be invisible, forgiving the epic off a strict subset of the children its own closure was
+    derived from.
+
+    A DEAD id is one a retro can never account for: no backing file (split, renamed, deleted),
+    or a non-delivery artefact - a CR or an RFC is a discovery item, and a `Batch` names
+    delivery units. Demanding coverage of one asks for something no close can supply, so the
+    epic is owed a close forever and every close leaves it owed. Dead ids are therefore
+    excluded from the demand and returned separately to be REPORTED: the id is still a real
+    defect in the breakdown, and forgiving it silently would trade a false debt for a hidden
+    fault.
+    """
     import reconcile  # noqa: PLC0415 - lazy, like the chain's other sibling imports
     found = sdlc_md.find_by_id(root, cid)     # one full-tree scan, not one per branch
     declared = (reconcile.declared_breakdown_ids(sdlc_md.read_text_safe(found[0]))
                 if found else [])
-    # BOTH id sets, because the two answers to "what is a child" can differ: the derivation
-    # that closed this epic reads its DECLARED Story Breakdown, while `children_of` reads
-    # whatever names the epic as a parent. An id in one but not the other would otherwise be
-    # invisible to this rule, forgiving the epic off a strict subset of the children its own
-    # closure was derived from. Taking the union can only make this stricter, never forgive
-    # more.
-    child_ids = {sdlc_md.norm_id(c) for c, *_ in sdlc_md.children_of(root, cid)}
-    child_ids |= {sdlc_md.norm_id(c) for c in declared}
-    if not child_ids:
-        return False
-    return all(c in covered for c in child_ids)
+    live = delivery_ids(root) if known is None else known
+    coverable = {sdlc_md.norm_id(c) for c, *_ in sdlc_md.children_of(root, cid)}
+    dead: set[str] = set()
+    for raw in declared:
+        norm = sdlc_md.norm_id(raw)
+        if norm in coverable:
+            continue                          # already a resolved child; nothing to check
+        if norm in live:
+            coverable.add(norm)
+        else:
+            dead.add(norm)                    # no file at all, or a CR/RFC/Issue
+    return coverable, dead
 
 
 class BaselineCorrupt(Exception):
@@ -154,25 +175,64 @@ def owed(root: Path) -> dict:
     breaks entirely on non-numeric (ULID / schema-v3) ids. Membership in a set has neither hole.
     """
     covered = covered_ids(root)
-    terminal = terminal_delivery_units(root)
-    uncovered = [(cid, t) for (cid, t) in terminal
-                 if sdlc_md.norm_id(cid) not in covered
-                 and not _derived_from_covered_children(root, cid, t, covered)]
+    terminal, known = scan_delivery(root)     # one tree scan, reused by every epic below
+    uncovered: list[tuple[str, str]] = []
+    dead_ids: list[list[str]] = []
+    for cid, t in terminal:
+        if sdlc_md.norm_id(cid) in covered:
+            continue
+        # ONLY an epic inherits coverage from its children. An epic does not reach terminal by
+        # being worked; it is DERIVED terminal once every child is terminal, and that derivation
+        # runs in the close tail AFTER the retro is written - so an epic is never named in a
+        # `Batch`, and requiring it to be named made every clean close manufacture close-owed
+        # debt for the epics it had just derived, debt no further close could clear. The retro
+        # that accounted for the children is the close that accounted for the epic.
+        #
+        # Recording the epics in the `Batch` instead was the obvious alternative and is wrong:
+        # `retro accuracy` sums points across the batch and an epic's Derived Point Total is the
+        # sum of its stories, so it would double-count every sprint's velocity.
+        #
+        # A story or bug can carry children too (a story naming a parent epic is the same shape
+        # inverted), so this guard is load-bearing and stays owed on its own account.
+        if t != "epic":
+            uncovered.append((cid, t))
+            continue
+        # ONE call per epic: both answers come out of the same walk, and asking twice was
+        # measurably slower for an identical result.
+        child_ids, dead = _breakdown_child_ids(root, cid, known)
+        # A CHILDLESS epic inherits nothing - there is no derivation to inherit from - and an
+        # epic with one unaccounted child stays owed. Without both, the relaxation would be a
+        # blanket exemption for epics, a vacuous pass.
+        if not child_ids or not all(c in covered for c in child_ids):
+            uncovered.append((cid, t))
+            continue
+        # Forgiven through its children. Report the dead ids ONLY here - an epic whose
+        # coverage did not depend on the relaxation is unaffected by them, and this repo
+        # carries 33 historical CR-in-breakdown declarations on epics the baseline already
+        # forgives. Reporting those would put a permanent 33-line advisory on every run to
+        # describe records that change no answer, which is the skim-past failure BG0210 was
+        # filed for, in advisory form.
+        for bad in sorted(dead):
+            dead_ids.append([cid, bad])
+    dead_ids.sort()
     try:
         baseline = load_baseline(root)
     except BaselineCorrupt as exc:
         # A present-but-corrupt baseline is a loud blocking state: never 'allow', never a
         # re-stamp nudge. The enforcement halves must fail closed and direct a repair.
         return {"baselined": False, "corrupt": True, "error": str(exc), "owed": [],
-                "grandfathered": 0, "covered": len(covered), "terminal": len(terminal)}
+                "grandfathered": 0, "covered": len(covered), "terminal": len(terminal),
+                "dead_breakdown_ids": dead_ids}
     if baseline is None:
         return {"baselined": False, "corrupt": False, "owed": sorted(uncovered),
-                "grandfathered": 0, "covered": len(covered), "terminal": len(terminal)}
+                "grandfathered": 0, "covered": len(covered), "terminal": len(terminal),
+                "dead_breakdown_ids": dead_ids}
     forgiven = {sdlc_md.norm_id(x) for x in baseline["grandfathered"]}
     owed_units = [(cid, t) for (cid, t) in uncovered if sdlc_md.norm_id(cid) not in forgiven]
     return {"baselined": True, "corrupt": False, "owed": sorted(owed_units),
             "grandfathered": len(uncovered) - len(owed_units),
-            "covered": len(covered), "terminal": len(terminal)}
+            "covered": len(covered), "terminal": len(terminal),
+            "dead_breakdown_ids": dead_ids}
 
 
 def stamp_baseline(root: Path, date: str | None = None, note: str | None = None,
@@ -220,6 +280,17 @@ def render(report: dict) -> str:
     elif n:
         shown = report["owed"][:40]
         lines.append("  " + ", ".join(f"{cid} ({t})" for cid, t in shown) + f", +{n - 40} more")
+    dead = report.get("dead_breakdown_ids") or []
+    if dead:
+        # Advisory, never blocking: the epic is forgiven above precisely because no close can
+        # satisfy this demand, so failing on it would restore the unclearable debt by another
+        # name. It is surfaced because a breakdown naming an id that does not resolve to a
+        # delivery unit is a real defect - fix the breakdown, or retire the id.
+        lines.append(f"  advisory: {len(dead)} declared breakdown id(s) resolve to no delivery "
+                     f"unit, so no retro can ever account for them - they are excluded from the "
+                     f"coverage demand rather than owed forever. Fix the epic's Story Breakdown:")
+        lines.append("  " + ", ".join(f"{epic} declares {bad}" for epic, bad in dead[:20])
+                     + (f", +{len(dead) - 20} more" if len(dead) > 20 else ""))
     return "\n".join(lines)
 
 

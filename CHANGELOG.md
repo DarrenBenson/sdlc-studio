@@ -941,6 +941,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **An epic whose breakdown declares a dead id is no longer owed a close no close can give
+  (BG0211).** The union of `children_of` and the declared Story Breakdown is deliberately strict,
+  but an id with no backing file (split, renamed, deleted) or naming a non-delivery artefact - a CR
+  or an RFC - can never appear in a retro `Batch`, because a `Batch` names delivery units. The
+  epic was therefore reported as owing a close forever, and every close left it owed: the exact
+  unclearable debt that made the detector skimmable. Such ids are now excluded from the coverage
+  demand and reported instead, so the cause is visible rather than silently forgiven. The advisory
+  is scoped to epics whose forgiveness actually depended on the relaxation - this repo carries 33
+  historical CR-in-breakdown declarations that change no answer, and a permanent 33-line advisory
+  would be the same skim-past failure in another form. One unaccounted LIVE child still owes,
+  so a ghost id cannot buy an exemption.
 - **The audit profile parser's not-found paths are pinned (BG0203).** The two sites the bug named
   turned out to be covered already - hand-mutating both kills them. The real defect was the
   mutation run's test command being scoped below its target's coverage: pointed at one test file

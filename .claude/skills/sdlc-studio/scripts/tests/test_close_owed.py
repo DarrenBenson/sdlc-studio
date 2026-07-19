@@ -162,6 +162,77 @@ class DerivedEpicCoverageTests(CloseOwedBase):
         ids = {cid for cid, _ in close_owed.owed(self.root)["owed"]}
         self.assertIn("EP0100", ids)
 
+class DeadBreakdownIdTests(CloseOwedBase):
+    """BG0211: an epic owed a close that no close can give.
+
+    The union of `children_of` and the declared Story Breakdown is deliberately strict - it
+    cannot forgive more than the narrower rule. But an id in the breakdown with no backing
+    file (split, renamed, deleted) or naming a non-delivery artefact (a CR, an RFC) can never
+    appear in a retro `Batch`, because a `Batch` names delivery units. So the epic is reported
+    as owing a close forever, and every close leaves it owed.
+
+    A permanent unclearable debt is the exact failure BG0210 was filed for. Forgiving it is
+    not enough on its own: the dead id is a real defect in the breakdown, so it is REPORTED
+    rather than silently dropped. Forgive the unsatisfiable demand, surface the cause.
+    """
+
+    def _epic_with_breakdown(self, *ids: str) -> None:
+        boxes = "".join(f"- [x] {i} thing\n" for i in ids)
+        _write(self.root / "sdlc-studio" / "epics" / "EP0100-e.md",
+               "# EP0100: An epic\n\n> **Status:** Done\n> **Derived Point Total:** 4\n\n"
+               f"## Story Breakdown\n\n{boxes}")
+
+    def test_a_ghost_id_in_the_breakdown_does_not_owe_forever(self) -> None:
+        self._epic_with_breakdown("US0001", "US9999")     # US9999 has no backing file
+        _story_in(self.root, "US0001", "Done", "EP0100")
+        _retro(self.root, "RETRO0001", "US0001")
+        ids = {cid for cid, _ in close_owed.owed(self.root)["owed"]}
+        self.assertNotIn("EP0100", ids,
+                         "no retro can ever name US9999, so the demand is unsatisfiable")
+
+    def test_a_cr_id_in_the_breakdown_does_not_owe_forever(self) -> None:
+        self._epic_with_breakdown("US0001", "CR0001")
+        _write(self.root / "sdlc-studio" / "change-requests" / "CR0001-c.md",
+               "# CR0001: a request\n\n> **Status:** Complete\n> **Size:** S\n")
+        _story_in(self.root, "US0001", "Done", "EP0100")
+        _retro(self.root, "RETRO0001", "US0001")
+        ids = {cid for cid, _ in close_owed.owed(self.root)["owed"]}
+        self.assertNotIn("EP0100", ids, "a CR is a discovery item and never appears in a Batch")
+
+    def test_an_rfc_id_in_the_breakdown_does_not_owe_forever(self) -> None:
+        self._epic_with_breakdown("US0001", "RFC0001")
+        _write(self.root / "sdlc-studio" / "rfcs" / "RFC0001-r.md",
+               "# RFC0001: a design\n\n> **Status:** Accepted\n")
+        _story_in(self.root, "US0001", "Done", "EP0100")
+        _retro(self.root, "RETRO0001", "US0001")
+        ids = {cid for cid, _ in close_owed.owed(self.root)["owed"]}
+        self.assertNotIn("EP0100", ids, "an RFC is a discovery item and never appears in a Batch")
+
+    def test_the_dead_id_is_reported_not_silently_forgiven(self) -> None:
+        """Forgiving without surfacing would trade a false debt for a hidden defect."""
+        self._epic_with_breakdown("US0001", "US9999")
+        _story_in(self.root, "US0001", "Done", "EP0100")
+        _retro(self.root, "RETRO0001", "US0001")
+        report = close_owed.owed(self.root)
+        self.assertEqual(report["dead_breakdown_ids"], [["EP0100", "US9999"]])
+        self.assertIn("US9999", close_owed.render(report))
+
+    def test_a_LIVE_uncovered_child_still_owes_even_beside_a_dead_id(self) -> None:
+        """The relaxation must not become a blanket exemption for any epic with one bad id.
+
+        Without this, adding a single ghost id to a breakdown would forgive an epic whose
+        real children are genuinely unaccounted for - a self-service exemption.
+        """
+        self._epic_with_breakdown("US0001", "US0002", "US9999")
+        _story_in(self.root, "US0001", "Done", "EP0100")
+        _story_in(self.root, "US0002", "Done", "EP0100")
+        _retro(self.root, "RETRO0001", "US0001")          # US0002 is live and uncovered
+        ids = {cid for cid, _ in close_owed.owed(self.root)["owed"]}
+        self.assertIn("EP0100", ids)
+        self.assertIn("US0002", ids)
+
+
+class DerivedEpicCoverageTailTests(CloseOwedBase):
     def test_a_childless_terminal_epic_is_still_owed(self) -> None:
         """No children means nothing derived it, so there is nothing to inherit coverage from.
 

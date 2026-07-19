@@ -1,6 +1,7 @@
 # BG0211: an epic whose breakdown declares a dead id is owed a close no close can give
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (all three shapes - ghost id, CR id, RFC id - reproduced red then green; guards mutation-killed; live repo answer unchanged and runtime held at 6.2s)
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/close_owed.py
