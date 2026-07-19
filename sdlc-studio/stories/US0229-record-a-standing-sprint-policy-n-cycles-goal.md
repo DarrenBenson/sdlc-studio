@@ -1,6 +1,6 @@
 # US0229: record a standing sprint policy (N cycles, goal/capacity/order/stop conditions) on run-state
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

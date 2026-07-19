@@ -1,6 +1,6 @@
 # US0241: remove review_generate.py and the review generate route; review keeps only the consistency job
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

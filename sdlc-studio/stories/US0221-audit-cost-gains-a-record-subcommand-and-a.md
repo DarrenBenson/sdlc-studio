@@ -1,6 +1,6 @@
 # US0221: audit_cost gains a record subcommand and a committed evidence ledger; estimate from measured medians with a named fallback
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

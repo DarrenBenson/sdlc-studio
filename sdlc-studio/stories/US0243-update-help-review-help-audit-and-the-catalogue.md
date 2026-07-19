@@ -1,6 +1,6 @@
 # US0243: update help/review, help/audit and the catalogue; check_links and validate_skill green
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

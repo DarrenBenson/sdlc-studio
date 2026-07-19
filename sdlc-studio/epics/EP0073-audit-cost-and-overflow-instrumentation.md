@@ -1,6 +1,6 @@
 # EP0073: Audit cost and overflow instrumentation
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0306
 > **Derived Point Total:** 8
 > **Parent:** CR0305
@@ -15,8 +15,8 @@ Decomposed from CR0305. Delivers the work CR0305 requested.
 
 ## Story Breakdown
 
-- [ ] [US0221: audit_cost gains a record subcommand and a committed evidence ledger; estimate from measured medians with a named fallback](../stories/US0221-audit-cost-gains-a-record-subcommand-and-a.md)
-- [ ] [US0222: persist verification-cap overflow as a durable carry-over worklist a scoped follow-up re-ingests](../stories/US0222-persist-verification-cap-overflow-as-a-durable-carry.md)
+- [x] [US0221: audit_cost gains a record subcommand and a committed evidence ledger; estimate from measured medians with a named fallback](../stories/US0221-audit-cost-gains-a-record-subcommand-and-a.md)
+- [x] [US0222: persist verification-cap overflow as a durable carry-over worklist a scoped follow-up re-ingests](../stories/US0222-persist-verification-cap-overflow-as-a-durable-carry.md)
 
 ## Revision History
 

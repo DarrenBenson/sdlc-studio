@@ -46,3 +46,31 @@
 | US0226 | Darren Benson | - | sdlc-studio | 2026-07-18 | - |
 | US0227 | Darren Benson | - | sdlc-studio | 2026-07-18 | - |
 | US0228 | Darren Benson | - | sdlc-studio | 2026-07-18 | - |
+| US0224 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0225 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0231 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0235 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0240 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0241 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0242 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0243 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0246 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0251 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0252 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0222 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0223 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0229 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0230 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0233 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0234 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0239 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0244 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0245 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0249 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0253 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0254 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0256 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0221 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0232 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0250 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |
+| US0255 | Darren | - | claude-opus-4-8 | 2026-07-19 | - |

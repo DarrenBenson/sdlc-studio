@@ -1,6 +1,6 @@
 # US0225: resolve/document the report.enabled json exemption and test the json path
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

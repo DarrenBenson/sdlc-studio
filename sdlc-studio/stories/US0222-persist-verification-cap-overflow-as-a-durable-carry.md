@@ -1,6 +1,6 @@
 # US0222: persist verification-cap overflow as a durable carry-over worklist a scoped follow-up re-ingests
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

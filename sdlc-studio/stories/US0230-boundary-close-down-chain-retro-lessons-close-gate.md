@@ -1,6 +1,6 @@
 # US0230: boundary close-down chain (retro + lessons + close gate); halt on a failed gate
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

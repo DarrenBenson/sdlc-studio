@@ -1,6 +1,6 @@
 # US0233: stop-with-handoff on a refused or stale plan; never execute an ungated plan
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

@@ -1,6 +1,6 @@
 # US0252: sweep the remaining bare artefact-body read_text calls through read_text_safe, with a regression test
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

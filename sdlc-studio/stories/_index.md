@@ -11,8 +11,8 @@
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 28 |
-| Done | 231 |
+| Review | 0 |
+| Done | 259 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -131,42 +131,42 @@
 | [US0218](US0218-bounded-mutation-biases-its-sample-toward-changed-lines.md) | bounded mutation biases its sample toward changed lines | Done | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0219](US0219-gate-tracks-the-test-suite-runtime-and-warns.md) | gate tracks the test-suite runtime and warns before a long run | Done | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0220](US0220-gate-skips-the-unit-suite-for-test-irrelevant.md) | gate skips the unit suite for test-irrelevant changes, named not silent | Done | EP0072 | 2026-07-17 | 2026-07-17 |
-| [US0221](US0221-audit-cost-gains-a-record-subcommand-and-a.md) | audit_cost gains a record subcommand and a committed evidence ledger; estimate from measured medians with a named fallback | Review | EP0073 | 2026-07-17 | 2026-07-17 |
-| [US0222](US0222-persist-verification-cap-overflow-as-a-durable-carry.md) | persist verification-cap overflow as a durable carry-over worklist a scoped follow-up re-ingests | Review | EP0073 | 2026-07-17 | 2026-07-17 |
-| [US0223](US0223-add-the-sprint-report-command-route-delegating-to.md) | add the sprint report command route delegating to sprint_report | Review | EP0074 | 2026-07-17 | 2026-07-17 |
-| [US0224](US0224-draw-the-report-in-the-close-ceremony-when.md) | draw the report in the close ceremony when report.enabled | Review | EP0074 | 2026-07-17 | 2026-07-17 |
-| [US0225](US0225-resolve-document-the-report-enabled-json-exemption-and.md) | resolve/document the report.enabled json exemption and test the json path | Review | EP0074 | 2026-07-17 | 2026-07-17 |
+| [US0221](US0221-audit-cost-gains-a-record-subcommand-and-a.md) | audit_cost gains a record subcommand and a committed evidence ledger; estimate from measured medians with a named fallback | Done | EP0073 | 2026-07-17 | 2026-07-17 |
+| [US0222](US0222-persist-verification-cap-overflow-as-a-durable-carry.md) | persist verification-cap overflow as a durable carry-over worklist a scoped follow-up re-ingests | Done | EP0073 | 2026-07-17 | 2026-07-17 |
+| [US0223](US0223-add-the-sprint-report-command-route-delegating-to.md) | add the sprint report command route delegating to sprint_report | Done | EP0074 | 2026-07-17 | 2026-07-17 |
+| [US0224](US0224-draw-the-report-in-the-close-ceremony-when.md) | draw the report in the close ceremony when report.enabled | Done | EP0074 | 2026-07-17 | 2026-07-17 |
+| [US0225](US0225-resolve-document-the-report-enabled-json-exemption-and.md) | resolve/document the report.enabled json exemption and test the json path | Done | EP0074 | 2026-07-17 | 2026-07-17 |
 | [US0226](US0226-rewrite-us0166-ac3-as-a-two-file-shell.md) | rewrite US0166 AC3 as a two-file shell Verify with the missing shell prefix | Done | EP0075 | 2026-07-17 | 2026-07-17 |
 | [US0227](US0227-split-non-discriminating-per-ac-selectors-so-each.md) | split non-discriminating per-AC selectors so each AC fails on its own regression | Done | EP0075 | 2026-07-17 | 2026-07-17 |
 | [US0228](US0228-harden-the-verify-ac-grep-verb-against-a.md) | harden the verify_ac grep verb against a dash-leading pattern | Done | EP0075 | 2026-07-17 | 2026-07-17 |
-| [US0229](US0229-record-a-standing-sprint-policy-n-cycles-goal.md) | record a standing sprint policy (N cycles, goal/capacity/order/stop conditions) on run-state | Review | EP0076 | 2026-07-17 | 2026-07-17 |
-| [US0230](US0230-boundary-close-down-chain-retro-lessons-close-gate.md) | boundary close-down chain (retro + lessons + close gate); halt on a failed gate | Review | EP0076 | 2026-07-17 | 2026-07-17 |
-| [US0231](US0231-fetch-and-origin-drift-check-at-each-boundary.md) | fetch and origin-drift check at each boundary, refuse under --strict | Review | EP0076 | 2026-07-17 | 2026-07-17 |
-| [US0232](US0232-regenerate-the-plan-from-the-live-backlog-after.md) | regenerate the plan from the live backlog after the fetch; dry-run preview before continuing | Review | EP0076 | 2026-07-17 | 2026-07-17 |
-| [US0233](US0233-stop-with-handoff-on-a-refused-or-stale.md) | stop-with-handoff on a refused or stale plan; never execute an ungated plan | Review | EP0076 | 2026-07-17 | 2026-07-17 |
-| [US0234](US0234-per-cycle-auditability-own-forecast-goal-retro-and.md) | per-cycle auditability: own forecast, goal, retro and run-state per cycle | Review | EP0076 | 2026-07-17 | 2026-07-17 |
-| [US0235](US0235-reference-sprint-documentation-and-tests-for-the-rolling.md) | reference-sprint documentation and tests for the rolling policy | Review | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0229](US0229-record-a-standing-sprint-policy-n-cycles-goal.md) | record a standing sprint policy (N cycles, goal/capacity/order/stop conditions) on run-state | Done | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0230](US0230-boundary-close-down-chain-retro-lessons-close-gate.md) | boundary close-down chain (retro + lessons + close gate); halt on a failed gate | Done | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0231](US0231-fetch-and-origin-drift-check-at-each-boundary.md) | fetch and origin-drift check at each boundary, refuse under --strict | Done | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0232](US0232-regenerate-the-plan-from-the-live-backlog-after.md) | regenerate the plan from the live backlog after the fetch; dry-run preview before continuing | Done | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0233](US0233-stop-with-handoff-on-a-refused-or-stale.md) | stop-with-handoff on a refused or stale plan; never execute an ungated plan | Done | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0234](US0234-per-cycle-auditability-own-forecast-goal-retro-and.md) | per-cycle auditability: own forecast, goal, retro and run-state per cycle | Done | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0235](US0235-reference-sprint-documentation-and-tests-for-the-rolling.md) | reference-sprint documentation and tests for the rolling policy | Done | EP0076 | 2026-07-17 | 2026-07-17 |
 | [US0236](US0236-sprint-close-apply-signoff-records-per-unit-sign.md) | sprint close --apply-signoff records per-unit sign-off and Done transitions, refusing without an explicit principal | Done | EP0077 | 2026-07-17 | 2026-07-17 |
 | [US0237](US0237-cascade-parent-epics-crs-rfcs-terminal-write-the.md) | cascade parent epics/CRs/RFCs terminal, write the velocity row, final reconcile | Done | EP0077 | 2026-07-17 | 2026-07-17 |
 | [US0238](US0238-idempotent-re-run-after-a-mid-cascade-stop.md) | idempotent re-run after a mid-cascade stop | Done | EP0077 | 2026-07-17 | 2026-07-17 |
-| [US0239](US0239-build-audit-profile-repo-architecture-code-quality-security.md) | build audit --profile repo (architecture/code-quality/security legs) wired to the refute panel | Review | EP0078 | 2026-07-17 | 2026-07-17 |
-| [US0240](US0240-build-the-code-audit-profile-and-confirm-refute.md) | build the code audit profile and confirm refute wiring across profiles (CR0255 residual) | Review | EP0078 | 2026-07-17 | 2026-07-17 |
-| [US0241](US0241-remove-review-generate-py-and-the-review-generate.md) | remove review_generate.py and the review generate route; review keeps only the consistency job | Review | EP0078 | 2026-07-17 | 2026-07-17 |
-| [US0242](US0242-switch-readme-docs-and-the-skill-description-off.md) | switch README, docs and the SKILL description off review generate to audit --profile repo | Review | EP0078 | 2026-07-17 | 2026-07-17 |
-| [US0243](US0243-update-help-review-help-audit-and-the-catalogue.md) | update help/review, help/audit and the catalogue; check_links and validate_skill green | Review | EP0078 | 2026-07-17 | 2026-07-17 |
-| [US0244](US0244-gate-rfc-accepted-on-open-decisions-refuse-while.md) | gate RFC -> Accepted on open decisions (refuse while any Open decision stands; recorded-override escape) | Review | EP0079 | 2026-07-17 | 2026-07-17 |
-| [US0245](US0245-derive-rfc-decision-rows-from-the-finding-s.md) | derive RFC decision rows from the finding's real options, not the content-free boilerplate row | Review | EP0079 | 2026-07-17 | 2026-07-17 |
-| [US0246](US0246-close-the-accepted-tranche-decision-rows-with-what.md) | close the accepted-tranche decision rows with what actually shipped | Review | EP0079 | 2026-07-17 | 2026-07-17 |
+| [US0239](US0239-build-audit-profile-repo-architecture-code-quality-security.md) | build audit --profile repo (architecture/code-quality/security legs) wired to the refute panel | Done | EP0078 | 2026-07-17 | 2026-07-17 |
+| [US0240](US0240-build-the-code-audit-profile-and-confirm-refute.md) | build the code audit profile and confirm refute wiring across profiles (CR0255 residual) | Done | EP0078 | 2026-07-17 | 2026-07-17 |
+| [US0241](US0241-remove-review-generate-py-and-the-review-generate.md) | remove review_generate.py and the review generate route; review keeps only the consistency job | Done | EP0078 | 2026-07-17 | 2026-07-17 |
+| [US0242](US0242-switch-readme-docs-and-the-skill-description-off.md) | switch README, docs and the SKILL description off review generate to audit --profile repo | Done | EP0078 | 2026-07-17 | 2026-07-17 |
+| [US0243](US0243-update-help-review-help-audit-and-the-catalogue.md) | update help/review, help/audit and the catalogue; check_links and validate_skill green | Done | EP0078 | 2026-07-17 | 2026-07-17 |
+| [US0244](US0244-gate-rfc-accepted-on-open-decisions-refuse-while.md) | gate RFC -> Accepted on open decisions (refuse while any Open decision stands; recorded-override escape) | Done | EP0079 | 2026-07-17 | 2026-07-17 |
+| [US0245](US0245-derive-rfc-decision-rows-from-the-finding-s.md) | derive RFC decision rows from the finding's real options, not the content-free boilerplate row | Done | EP0079 | 2026-07-17 | 2026-07-17 |
+| [US0246](US0246-close-the-accepted-tranche-decision-rows-with-what.md) | close the accepted-tranche decision rows with what actually shipped | Done | EP0079 | 2026-07-17 | 2026-07-17 |
 | [US0247](US0247-a-recorded-sprint-level-adversarial-full-diff-verdict.md) | a recorded sprint-level adversarial full-diff verdict satisfies the per-unit critiqued gate for the units in its diff range; per-unit REJECT-repairs still recorded | Done | EP0080 | 2026-07-17 | 2026-07-17 |
 | [US0248](US0248-the-close-sign-off-brief-reads-a-sprint.md) | the close sign-off brief reads a sprint-level verdict as coverage rather than reporting every unit unreviewed; document the model | Done | EP0080 | 2026-07-17 | 2026-07-17 |
-| [US0249](US0249-decide-and-act-on-the-5-help-only.md) | decide and act on the 5 help-only commands (lessons/repo/retro/review/upgrade): promote spine-serving ones, retire/redirect the rest | Review | EP0081 | 2026-07-17 | 2026-07-17 |
-| [US0250](US0250-rewrite-the-help-files-around-the-process-spine.md) | rewrite the help files around the process spine (raise -> break down -> sprint+review; PRD/TRD/TSD/personas as levers; reconcile/review/audit as support) | Review | EP0081 | 2026-07-17 | 2026-07-17 |
-| [US0251](US0251-command-audit-drift-back-to-0-and-check.md) | command_audit drift back to 0 and check_links + validate_skill green | Review | EP0081 | 2026-07-17 | 2026-07-17 |
-| [US0252](US0252-sweep-the-remaining-bare-artefact-body-read-text.md) | sweep the remaining bare artefact-body read_text calls through read_text_safe, with a regression test | Review | EP0082 | 2026-07-17 | 2026-07-17 |
-| [US0253](US0253-run-the-test-noise-gate-leg-in-ci.md) | run the test-noise gate leg in CI and broaden the leak detector beyond one shape | Review | EP0082 | 2026-07-17 | 2026-07-17 |
-| [US0254](US0254-gate-release-runs-check-versions-strict-under-one.md) | gate --release runs check_versions --strict under one exit code; a CHANGELOG mismatch fails | Review | EP0082 | 2026-07-17 | 2026-07-17 |
-| [US0255](US0255-extend-the-write-confinement-snapshot-suite-across-the.md) | extend the write-confinement snapshot suite across the shipped writers with a roster sweep | Review | EP0082 | 2026-07-17 | 2026-07-17 |
-| [US0256](US0256-census-the-cr-index-linked-epics-column-from.md) | census the CR-index Linked Epics column from Decomposed-into (or drop the dead column) | Review | EP0082 | 2026-07-17 | 2026-07-17 |
+| [US0249](US0249-decide-and-act-on-the-5-help-only.md) | decide and act on the 5 help-only commands (lessons/repo/retro/review/upgrade): promote spine-serving ones, retire/redirect the rest | Done | EP0081 | 2026-07-17 | 2026-07-17 |
+| [US0250](US0250-rewrite-the-help-files-around-the-process-spine.md) | rewrite the help files around the process spine (raise -> break down -> sprint+review; PRD/TRD/TSD/personas as levers; reconcile/review/audit as support) | Done | EP0081 | 2026-07-17 | 2026-07-17 |
+| [US0251](US0251-command-audit-drift-back-to-0-and-check.md) | command_audit drift back to 0 and check_links + validate_skill green | Done | EP0081 | 2026-07-17 | 2026-07-17 |
+| [US0252](US0252-sweep-the-remaining-bare-artefact-body-read-text.md) | sweep the remaining bare artefact-body read_text calls through read_text_safe, with a regression test | Done | EP0082 | 2026-07-17 | 2026-07-17 |
+| [US0253](US0253-run-the-test-noise-gate-leg-in-ci.md) | run the test-noise gate leg in CI and broaden the leak detector beyond one shape | Done | EP0082 | 2026-07-17 | 2026-07-17 |
+| [US0254](US0254-gate-release-runs-check-versions-strict-under-one.md) | gate --release runs check_versions --strict under one exit code; a CHANGELOG mismatch fails | Done | EP0082 | 2026-07-17 | 2026-07-17 |
+| [US0255](US0255-extend-the-write-confinement-snapshot-suite-across-the.md) | extend the write-confinement snapshot suite across the shipped writers with a roster sweep | Done | EP0082 | 2026-07-17 | 2026-07-17 |
+| [US0256](US0256-census-the-cr-index-linked-epics-column-from.md) | census the CR-index Linked Epics column from Decomposed-into (or drop the dead column) | Done | EP0082 | 2026-07-17 | 2026-07-17 |
 | [US0257](US0257-build-refine-into-with-multi-parent-link-support.md) | build refine --into with multi-parent link support (children_of, asymmetry gate, back-links) and docs | Done | EP0083 | 2026-07-17 | 2026-07-17 |
 | [US0258](US0258-author-reference-schema-md-the-self-describing-artefact.md) | Author reference-schema.md: the self-describing artefact schema contract | Done | EP0084 | 2026-07-17 | 2026-07-17 |
 | [US0259](US0259-schema-version-stamp-as-a-config-key-plus.md) | Schema version stamp as a config key plus the compatibility policy | Done | EP0084 | 2026-07-17 | 2026-07-17 |

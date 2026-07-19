@@ -1,6 +1,6 @@
 # US0232: regenerate the plan from the live backlog after the fetch; dry-run preview before continuing
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

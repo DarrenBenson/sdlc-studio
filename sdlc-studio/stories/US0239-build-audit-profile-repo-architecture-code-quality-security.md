@@ -1,6 +1,6 @@
 # US0239: build audit --profile repo (architecture/code-quality/security legs) wired to the refute panel
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

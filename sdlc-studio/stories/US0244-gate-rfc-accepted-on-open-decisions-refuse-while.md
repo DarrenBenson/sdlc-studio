@@ -1,6 +1,6 @@
 # US0244: gate RFC -> Accepted on open decisions (refuse while any Open decision stands; recorded-override escape)
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

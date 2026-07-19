@@ -1,6 +1,6 @@
 # US0250: rewrite the help files around the process spine (raise -> break down -> sprint+review; PRD/TRD/TSD/personas as levers; reconcile/review/audit as support)
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

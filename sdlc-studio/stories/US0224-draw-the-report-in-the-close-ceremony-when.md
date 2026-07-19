@@ -1,6 +1,6 @@
 # US0224: draw the report in the close ceremony when report.enabled
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

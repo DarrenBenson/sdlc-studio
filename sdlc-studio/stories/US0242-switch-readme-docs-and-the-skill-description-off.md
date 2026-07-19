@@ -1,6 +1,6 @@
 # US0242: switch README, docs and the SKILL description off review generate to audit --profile repo
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

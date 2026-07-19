@@ -1,6 +1,6 @@
 # US0240: build the code audit profile and confirm refute wiring across profiles (CR0255 residual)
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

@@ -1,6 +1,6 @@
 # US0251: command_audit drift back to 0 and check_links + validate_skill green
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

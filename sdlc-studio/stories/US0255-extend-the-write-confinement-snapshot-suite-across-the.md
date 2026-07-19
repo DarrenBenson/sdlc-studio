@@ -1,6 +1,6 @@
 # US0255: extend the write-confinement snapshot suite across the shipped writers with a roster sweep
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

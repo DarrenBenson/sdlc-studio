@@ -1,6 +1,6 @@
 # US0246: close the accepted-tranche decision rows with what actually shipped
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

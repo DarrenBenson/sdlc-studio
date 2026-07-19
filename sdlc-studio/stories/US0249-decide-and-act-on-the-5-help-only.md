@@ -1,6 +1,6 @@
 # US0249: decide and act on the 5 help-only commands (lessons/repo/retro/review/upgrade): promote spine-serving ones, retire/redirect the rest
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

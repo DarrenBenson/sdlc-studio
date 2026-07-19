@@ -1,6 +1,6 @@
 # US0253: run the test-noise gate leg in CI and broaden the leak detector beyond one shape
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

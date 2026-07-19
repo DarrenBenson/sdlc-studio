@@ -1,6 +1,6 @@
 # US0234: per-cycle auditability: own forecast, goal, retro and run-state per cycle
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

@@ -1,6 +1,6 @@
 # US0245: derive RFC decision rows from the finding's real options, not the content-free boilerplate row
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
