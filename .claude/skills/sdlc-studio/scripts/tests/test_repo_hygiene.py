@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import ast
 import re
+import shutil
 import subprocess
 import sys
 import unittest
@@ -95,6 +96,72 @@ def _modules_importing_a_sibling() -> dict[str, set[str]]:
     return out
 
 
+def _probe(mod: str, helpers: set[str]) -> str | None:
+    """Run `tests.<mod>` through the module-name form; return the failure line, or None.
+
+    A FRESH INTERPRETER per module, and cwd is `scripts/` - the run form that omits the tests
+    directory from `sys.path`. Importing every module in one process passes vacuously: the
+    first module to run its own `sys.path.insert` puts the directory on the path and registers
+    the helper in `sys.modules`, so everything imported after it succeeds regardless.
+
+    The module is imported AND THEN its helpers are resolved. Importing alone is not enough: a
+    helper imported inside a method does not run at import time, so the module imports cleanly
+    while the test that needs it dies at run time - which is how this sweep missed a module in
+    its own directory. Resolving the helpers reproduces what the deferred import will hit,
+    without paying to run the module's whole suite.
+    """
+    probe = (f"import importlib\nimportlib.import_module('tests.{mod}')\n"
+             + "".join(f"importlib.import_module({h!r})\n" for h in sorted(helpers)))
+    r = subprocess.run([sys.executable, "-B", "-c", probe], capture_output=True,
+                       text=True, timeout=120, cwd=str(SCRIPTS_DIR))
+    if r.returncode == 0:
+        return None
+    return (r.stderr.strip().splitlines() or ["(no output)"])[-1]
+
+
+class ProbeMechanismTests(unittest.TestCase):
+    """The probe itself, against fixtures built to fail and to pass.
+
+    Without this, the helper-RESOLUTION half of the probe - the half added to catch a module
+    whose sibling import sits inside a method - could be deleted and the whole suite would stay
+    green, silently reopening the hole. A guard whose mechanism nothing exercises is a guard
+    that can rot without anyone noticing, which is the defect class this file exists for.
+
+    Real fixture modules rather than an assertion about the probe's source text: the question
+    is whether the probe DETECTS the condition, not whether it is written a particular way.
+    """
+
+    def _fixture(self, name: str, body: str) -> str:
+        path = TESTS_DIR / f"{name}.py"
+        path.write_text(body, encoding="utf-8")
+        self.addCleanup(path.unlink)
+        # A stale .pyc from a previous fixture of the same name would be imported instead.
+        self.addCleanup(shutil.rmtree, TESTS_DIR / "__pycache__", True)
+        return name
+
+    def test_the_probe_catches_a_DEFERRED_sibling_import_with_no_path_setup(self) -> None:
+        # Imports cleanly - the offending import is inside a function, so it does not run at
+        # import time. Only resolving the helper afterwards catches it. This is exactly the
+        # shape the sweep was blind to.
+        mod = self._fixture("_probe_fixture_deferred",
+                            "def uses_it():\n    from gitutil import git\n    return git\n")
+        self.assertIsNone(_probe(mod, set()),
+                          "importing alone must succeed - that is what made this shape invisible")
+        err = _probe(mod, {"gitutil"})
+        self.assertIsNotNone(err, "resolving the helper must catch what importing could not")
+        self.assertIn("gitutil", err)
+
+    def test_the_probe_passes_a_module_that_sets_the_path_up_properly(self) -> None:
+        # The negative branch: a correct module must NOT be reported, or the sweep would
+        # fail everything and prove nothing.
+        mod = self._fixture(
+            "_probe_fixture_correct",
+            "import sys\nfrom pathlib import Path\n"
+            "sys.path.insert(0, str(Path(__file__).resolve().parent))\n"
+            "import gitutil\n")
+        self.assertIsNone(_probe(mod, {"gitutil"}))
+
+
 class SiblingImportRunnabilityTests(unittest.TestCase):
     """A test module must import under BOTH run forms, not just under discover.
 
@@ -134,14 +201,9 @@ class SiblingImportRunnabilityTests(unittest.TestCase):
         """
         bad = []
         for mod, helpers in sorted(_modules_importing_a_sibling().items()):
-            probe = (f"import importlib\n"
-                     f"importlib.import_module('tests.{mod}')\n"
-                     + "".join(f"importlib.import_module({h!r})\n" for h in sorted(helpers)))
-            r = subprocess.run([sys.executable, "-B", "-c", probe], capture_output=True,
-                               text=True, timeout=120, cwd=str(SCRIPTS_DIR))
-            if r.returncode != 0:
-                last = (r.stderr.strip().splitlines() or ["(no output)"])[-1]
-                bad.append(f"{mod} (needs {', '.join(sorted(helpers))}): {last}")
+            err = _probe(mod, helpers)
+            if err:
+                bad.append(f"{mod} (needs {', '.join(sorted(helpers))}): {err}")
         self.assertEqual(
             bad, [],
             "these test modules use a sibling helper but cannot be run as "

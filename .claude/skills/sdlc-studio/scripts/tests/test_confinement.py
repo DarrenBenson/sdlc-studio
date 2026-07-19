@@ -315,16 +315,22 @@ def _write_surface(source: str) -> set[str]:
             #   path.open('a')      - the Path method is bound to its path, so mode is args[0]
             #   io.open(p, 'a')     - an attribute call that is NOT a bound path: args[1] again
             # Keying on the call form alone gets the third case wrong, so BOTH positions are
-            # read and the first string that looks like a mode wins. Being over-inclusive is
-            # the stated principle here: a false positive costs one allowlist line, a false
-            # negative is a writer that slips the sweep unnoticed.
-            # Taking the first string argument would break `open('notes.md', 'w')`, whose
-            # args[0] is a literal PATH. Only a value shaped like a mode counts.
+            # read. Taking the first STRING argument would break `open('notes.md', 'w')`,
+            # whose args[0] is a literal path, so only a mode-shaped value counts.
+            #
+            # A WRITE mode wins outright; anything else keeps looking. Breaking on the first
+            # mode-shaped value instead lost `open('rt', 'w')` - args[0] is mode-shaped but
+            # carries no write character, so the real mode at args[1] was never examined and a
+            # demonstrable write reported an EMPTY surface. That is the same failure as the
+            # bug this detector was fixed for. Over-inclusion is safe here and under-inclusion
+            # is not: `open('txt', 'w')` yielding `open:txt` still reports a write surface and
+            # still catches the module, which is all the sweep needs.
             for idx in (0, 1):
                 if len(node.args) > idx and isinstance(node.args[idx], ast.Constant) \
                         and _looks_like_mode(node.args[idx].value):
                     mode = node.args[idx].value
-                    break
+                    if any(c in mode for c in "wax+"):
+                        break
             for kw in node.keywords:
                 if kw.arg == "mode" and isinstance(kw.value, ast.Constant):
                     mode = kw.value.value
@@ -410,6 +416,14 @@ class ConfinementRosterSweepTests(unittest.TestCase):
         # missed these - a new blind spot introduced by the fix for the Path form.
         self.assertEqual(_write_surface("io.open(p, 'w')"), {"open:w"})
         self.assertEqual(_write_surface("codecs.open(p, 'a')"), {"open:a"})
+
+    def test_detector_keeps_looking_past_a_mode_shaped_path_with_no_write_char(self) -> None:
+        # A path of 1-4 characters drawn only from the non-write mode chars (r, b, t, U) is
+        # mode-SHAPED. Breaking on it left the real mode at args[1] unread, so a write
+        # reported an empty surface - under-inclusion, the one direction that actually bites.
+        self.assertEqual(_write_surface("open('rt', 'w')"), {"open:w"})
+        self.assertEqual(_write_surface("open('bt', 'a')"), {"open:a"})
+        self.assertEqual(_write_surface("open('rb', 'w')"), {"open:w"})
 
     def test_detector_does_not_read_a_literal_path_as_a_mode(self) -> None:
         # Reading both argument positions must not turn `open('notes.md', 'w')` into a

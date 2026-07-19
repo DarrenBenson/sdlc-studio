@@ -962,8 +962,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its sibling-heading rule - and `PROFILE_DIR`, which was defined but never used while
   `profile_names` recomputed the same path inline, is now the single answer it was meant to be. A
   full 190-mutant enumeration (0 truncated, 0 un-checked) leaves the profile PARSER clean - not the
-  whole profile surface, since five of the residual survivors are in `cmd_profile` itself; that
-  residue is BG0212.
+  whole profile surface, since six of the fifteen residual survivors are in `cmd_profile` itself;
+  that residue is BG0212.
 - **The RFC accept gate names every open decision, not just the ones before a broken fence
   (BG0207).** The fail-closed re-scan was guarded by `fence is not None and not open_rows`, so it
   fired only when the main scan found nothing at all. With one open row before an unterminated
@@ -992,15 +992,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   own interpreter, so the next module cannot drift the same way - one process per module
   deliberately, because importing them together lets the first module's `sys.path` insert mask
   every module after it.
-- **The confinement roster sweep sees `path.open(mode)` (BG0202).** `_write_surface` read a call's
-  mode from `args[1]`, which is where the builtin `open(path, mode)` puts it. The `Path` method is
+- **The confinement roster sweep reads a write mode wherever the call form puts it (BG0202).**
+  `_write_surface` read a call's mode from `args[1]`, which is where the builtin
+  `open(path, mode)` puts it. The `Path` method is
   already bound to its path, so `path.open('a')` puts the mode at `args[0]` and was not matched at
   all - the detector reported an empty write surface for a module that demonstrably appends, and an
   uncovered writer would then pass the sweep in silence, which is the one failure the sweep exists
   to prevent. The mode index now follows the call form. Five modules gain a previously invisible
   append surface (`critic`, `deploy`, `ledger`, `telemetry`, `verify_ac`); all five were already
   covered or allowlisted by another route, so no writer was escaping today - the detector was blind,
-  not the roster wrong.
+  not the roster wrong. Both argument positions are now read, gated on the value being mode-shaped
+  so a literal path is never mistaken for a mode, and a write mode wins over a read one - keying on
+  the call form alone lost `io.open(p, 'w')`, and stopping at the first mode-shaped value lost
+  `open('rt', 'w')`. Under-inclusion is the only direction that costs anything here: a spurious
+  `open:txt` still reports a write surface, a missed write does not.
 - **Refreshing a handoff no longer re-stamps it with another run's identity (BG0198).**
   `handoff.refresh` scoped the unit list to the batch it was given but drew everything else from
   ambient run state, so refreshing a closed run's handoff while a different run was open rewrote
