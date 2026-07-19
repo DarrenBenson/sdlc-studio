@@ -162,6 +162,17 @@ class DerivedEpicCoverageTests(CloseOwedBase):
         ids = {cid for cid, _ in close_owed.owed(self.root)["owed"]}
         self.assertIn("EP0100", ids)
 
+    def test_a_childless_terminal_epic_is_still_owed(self) -> None:
+        """No children means nothing derived it, so there is nothing to inherit coverage from.
+
+        Without this an epic with no stories would be silently forgiven by a rule about its
+        children - a vacuous pass, the shape this repo keeps filing.
+        """
+        _epic(self.root, "EP0100", "Done")
+        ids = {cid for cid, _ in close_owed.owed(self.root)["owed"]}
+        self.assertIn("EP0100", ids)
+
+
 class DeadBreakdownIdTests(CloseOwedBase):
     """BG0211: an epic owed a close that no close can give.
 
@@ -230,18 +241,6 @@ class DeadBreakdownIdTests(CloseOwedBase):
         ids = {cid for cid, _ in close_owed.owed(self.root)["owed"]}
         self.assertIn("EP0100", ids)
         self.assertIn("US0002", ids)
-
-
-class DerivedEpicCoverageTailTests(CloseOwedBase):
-    def test_a_childless_terminal_epic_is_still_owed(self) -> None:
-        """No children means nothing derived it, so there is nothing to inherit coverage from.
-
-        Without this an epic with no stories would be silently forgiven by a rule about its
-        children - a vacuous pass, the shape this repo keeps filing.
-        """
-        _epic(self.root, "EP0100", "Done")
-        ids = {cid for cid, _ in close_owed.owed(self.root)["owed"]}
-        self.assertIn("EP0100", ids)
 
 
 class BaselineTests(CloseOwedBase):

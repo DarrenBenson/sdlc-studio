@@ -84,18 +84,7 @@ def terminal_delivery_units(root: Path) -> list[tuple[str, str]]:
     return scan_delivery(root)[0]
 
 
-def delivery_ids(root: Path) -> set[str]:
-    """Every id that resolves to a delivery artefact.
-
-    Built once and threaded through the epic loop. Asking `find_by_id` per declared id costs
-    a full-tree scan EACH, which took the detector from 6s to 16s on a repo this size - the
-    answer is the same, so the scan is the whole cost.
-    """
-    return scan_delivery(root)[1]
-
-
-def _breakdown_child_ids(root: Path, cid: str,
-                         known: set[str] | None = None) -> tuple[set[str], set[str]]:
+def _breakdown_child_ids(root: Path, cid: str, known: set[str]) -> tuple[set[str], set[str]]:
     """`(coverable, dead)` child ids for an epic.
 
     BOTH id sets are read, because the two answers to "what is a child" can differ: the
@@ -116,14 +105,13 @@ def _breakdown_child_ids(root: Path, cid: str,
     found = sdlc_md.find_by_id(root, cid)     # one full-tree scan, not one per branch
     declared = (reconcile.declared_breakdown_ids(sdlc_md.read_text_safe(found[0]))
                 if found else [])
-    live = delivery_ids(root) if known is None else known
     coverable = {sdlc_md.norm_id(c) for c, *_ in sdlc_md.children_of(root, cid)}
     dead: set[str] = set()
     for raw in declared:
         norm = sdlc_md.norm_id(raw)
         if norm in coverable:
             continue                          # already a resolved child; nothing to check
-        if norm in live:
+        if norm in known:
             coverable.add(norm)
         else:
             dead.add(norm)                    # no file at all, or a CR/RFC/Issue

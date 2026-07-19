@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0137: **Forgiving an unsatisfiable demand must surface its cause.** Dropping a dead id silently would trade a false debt for a hidden defect...**
+- **L-0136: **A finding is a hypothesis, not a fact.** Two of six bugs in this batch were wrong in their specifics and both were worth more once...**
+- **L-0135: **A sweep that checks many things in one process can be satisfied by the first one.** Shared interpreter state - `sys.path`, `sys.modules`...**
+- **L-0134: **A narrow test command over-reports absence.** A mutation run scoped below its target's real coverage manufactures survivors, which then...**
 - **L-0133: **When two checks answer the same question, the stricter one silently wins.** A presence check looser than the mutation regex meant a field...**
 - **L-0132: **A close that performs every step except the record still leaves no record.** CR0322's close ran a two-role review, a repair round, a...**
 - **L-0131: **A checker that passes on input it cannot parse reports coverage it does not have** (US0179's `personas.md`-only vacuous pass).**

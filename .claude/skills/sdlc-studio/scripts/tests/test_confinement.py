@@ -270,6 +270,21 @@ _UNARY_MUTATORS = frozenset({"replace", "rename", "unlink", "remove"})
 _SHUTIL_MUTATORS = frozenset({"copy", "copy2", "copyfile", "copytree", "move", "rmtree"})
 
 
+#: The characters a Python file mode is built from. A mode is short and drawn only from these,
+#: which is what separates it from a literal path in the same argument position.
+_MODE_CHARS = set("rwaxbt+U")
+
+
+def _looks_like_mode(value: object) -> bool:
+    """True for a string shaped like a file mode (`'w'`, `'rb'`, `'a+'`), false for a path.
+
+    Needed because the mode's argument position depends on the call form, so both positions
+    are examined and `open('notes.md', 'w')` must not read its literal path as a mode.
+    """
+    return (isinstance(value, str) and 0 < len(value) <= 4
+            and set(value) <= _MODE_CHARS)
+
+
 def _write_surface(source: str) -> set[str]:
     """The write calls a module makes, by name. Empty means no write surface.
 
@@ -295,13 +310,21 @@ def _write_surface(source: str) -> set[str]:
             found.add(name)
         if name == "open":
             mode = None
-            # The builtin takes the path first, so its mode is args[1]; the Path
-            # method is already bound to its path, so its mode is args[0]. Reading
-            # only args[1] misses path.open('a') entirely - a module whose only
-            # write is that form reports an empty surface and slips the sweep.
-            mode_index = 0 if isinstance(func, ast.Attribute) else 1
-            if len(node.args) > mode_index and isinstance(node.args[mode_index], ast.Constant):
-                mode = node.args[mode_index].value
+            # The mode sits at a different argument depending on the call:
+            #   open(p, 'a')        - the builtin takes the path first, so mode is args[1]
+            #   path.open('a')      - the Path method is bound to its path, so mode is args[0]
+            #   io.open(p, 'a')     - an attribute call that is NOT a bound path: args[1] again
+            # Keying on the call form alone gets the third case wrong, so BOTH positions are
+            # read and the first string that looks like a mode wins. Being over-inclusive is
+            # the stated principle here: a false positive costs one allowlist line, a false
+            # negative is a writer that slips the sweep unnoticed.
+            # Taking the first string argument would break `open('notes.md', 'w')`, whose
+            # args[0] is a literal PATH. Only a value shaped like a mode counts.
+            for idx in (0, 1):
+                if len(node.args) > idx and isinstance(node.args[idx], ast.Constant) \
+                        and _looks_like_mode(node.args[idx].value):
+                    mode = node.args[idx].value
+                    break
             for kw in node.keywords:
                 if kw.arg == "mode" and isinstance(kw.value, ast.Constant):
                     mode = kw.value.value
@@ -380,6 +403,19 @@ class ConfinementRosterSweepTests(unittest.TestCase):
 
     def test_detector_finds_a_path_open_with_a_keyword_mode(self) -> None:
         self.assertEqual(_write_surface("p.open(mode='w')"), {"open:w"})
+
+    def test_detector_finds_a_module_qualified_open_for_writing(self) -> None:
+        # io.open / codecs.open are ATTRIBUTE calls that are not bound to a path, so their
+        # mode is at args[1] like the builtin's. Keying the index on the call form alone
+        # missed these - a new blind spot introduced by the fix for the Path form.
+        self.assertEqual(_write_surface("io.open(p, 'w')"), {"open:w"})
+        self.assertEqual(_write_surface("codecs.open(p, 'a')"), {"open:a"})
+
+    def test_detector_does_not_read_a_literal_path_as_a_mode(self) -> None:
+        # Reading both argument positions must not turn `open('notes.md', 'w')` into a
+        # missed write by taking args[0] as the mode.
+        self.assertEqual(_write_surface("open('notes.md', 'w')"), {"open:w"})
+        self.assertEqual(_write_surface("open('notes.md')"), set())
 
     def test_detector_ignores_a_path_open_for_reading(self) -> None:
         # The over-inclusive principle stops at modes that cannot write: a read is a read

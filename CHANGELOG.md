@@ -961,8 +961,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `_refute_declaration`'s no-declaration return, `_reference_section`'s missing-anchor return and
   its sibling-heading rule - and `PROFILE_DIR`, which was defined but never used while
   `profile_names` recomputed the same path inline, is now the single answer it was meant to be. A
-  full 190-mutant enumeration (0 truncated, 0 un-checked) leaves the profile surface clean; the
-  residue elsewhere in the file is BG0212.
+  full 190-mutant enumeration (0 truncated, 0 un-checked) leaves the profile PARSER clean - not the
+  whole profile surface, since five of the residual survivors are in `cmd_profile` itself; that
+  residue is BG0212.
 - **The RFC accept gate names every open decision, not just the ones before a broken fence
   (BG0207).** The fail-closed re-scan was guarded by `fence is not None and not open_rows`, so it
   fired only when the main scan found nothing at all. With one open row before an unterminated

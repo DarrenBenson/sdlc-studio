@@ -68,20 +68,30 @@ SCRIPTS_DIR = TESTS_DIR.parent
 SIBLING_HELPERS = ("loader", "gitutil", "workspace")
 
 
-def _modules_importing_a_sibling() -> list[str]:
-    """Test modules with a top-level `import loader` / `import gitutil`.
+def _modules_importing_a_sibling() -> dict[str, set[str]]:
+    """`{module stem: the sibling helpers it imports}` for every test module that imports one.
 
-    AST-based, so a helper named inside a string or a comment does not count. These are
-    exactly the modules that need the tests directory on `sys.path` before the import.
+    BOTH import statement forms count, and at ANY nesting depth:
+
+    - `import gitutil` is an `ast.Import`;
+    - `from gitutil import git` is an `ast.ImportFrom`, and matching only the first form left
+      `test_telemetry` - which uses it, in the same directory - outside the census entirely;
+    - a helper imported inside a function or method still needs the path set up, and fails at
+      RUN time rather than import time, so `ast.walk` is used rather than reading `tree.body`.
+
+    AST-based, so a helper named in a string or a comment does not count.
     """
-    out = []
+    out: dict[str, set[str]] = {}
     for path in sorted(TESTS_DIR.glob("test_*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"))
+        used: set[str] = set()
         for node in ast.walk(tree):
-            if isinstance(node, ast.Import) and any(
-                    a.name in SIBLING_HELPERS for a in node.names):
-                out.append(path.stem)
-                break
+            if isinstance(node, ast.Import):
+                used |= {a.name for a in node.names if a.name in SIBLING_HELPERS}
+            elif isinstance(node, ast.ImportFrom) and node.module in SIBLING_HELPERS:
+                used.add(node.module)
+        if used:
+            out[path.stem] = used
     return out
 
 
@@ -100,29 +110,43 @@ class SiblingImportRunnabilityTests(unittest.TestCase):
         # A census that silently returned nothing would make the sweep below vacuous.
         found = _modules_importing_a_sibling()
         self.assertGreater(len(found), 5, "the sibling-import census has stopped detecting")
-        self.assertIn("test_reconcile", found)
+        self.assertIn("test_reconcile", found)          # plain `import loader`
+        self.assertIn("test_telemetry", found)          # `from gitutil import git`, nested
+        self.assertIn("gitutil", found["test_telemetry"])
 
-    def test_every_sibling_importing_module_imports_by_module_name(self) -> None:
-        # ONE PROCESS PER MODULE, deliberately. Importing them all in a single process
-        # passes vacuously: the first module to run its own `sys.path.insert` puts the
-        # tests directory on the path and registers `loader` in sys.modules, so every
-        # module imported after it succeeds regardless of its own setup. That is the
-        # incidental-pass trap this sweep exists to catch, so each import gets a fresh
-        # interpreter. cwd is scripts/ - the run form that omits tests/ from sys.path.
+    def test_every_sibling_importing_module_resolves_its_helpers_by_module_name(self) -> None:
+        """Importing the module is not enough: the helper must RESOLVE.
+
+        Two traps, both hit for real.
+
+        ONE PROCESS PER MODULE, deliberately. Importing them all in a single process passes
+        vacuously - the first module to run its own `sys.path.insert` puts the tests directory
+        on the path and registers the helper in `sys.modules`, so every module after it
+        succeeds regardless of its own setup.
+
+        AND THE HELPER IS RESOLVED, not just the module imported. A helper imported inside a
+        method (`test_telemetry` does this) does not run at import time, so importing the
+        module succeeds while the test that needs it still dies with ModuleNotFoundError.
+        Importing the module and THEN resolving its helpers reproduces exactly what the
+        deferred import will hit, without paying to run the module's whole suite.
+
+        cwd is scripts/ - the run form that omits tests/ from `sys.path`.
+        """
         bad = []
-        for mod in _modules_importing_a_sibling():
-            r = subprocess.run(
-                [sys.executable, "-B", "-c", f"import importlib; importlib.import_module('tests.{mod}')"],
-                capture_output=True, text=True, timeout=120, cwd=str(SCRIPTS_DIR))
+        for mod, helpers in sorted(_modules_importing_a_sibling().items()):
+            probe = (f"import importlib\n"
+                     f"importlib.import_module('tests.{mod}')\n"
+                     + "".join(f"importlib.import_module({h!r})\n" for h in sorted(helpers)))
+            r = subprocess.run([sys.executable, "-B", "-c", probe], capture_output=True,
+                               text=True, timeout=120, cwd=str(SCRIPTS_DIR))
             if r.returncode != 0:
                 last = (r.stderr.strip().splitlines() or ["(no output)"])[-1]
-                bad.append(f"{mod}: {last}")
+                bad.append(f"{mod} (needs {', '.join(sorted(helpers))}): {last}")
         self.assertEqual(
             bad, [],
-            "these test modules import a sibling helper but cannot be run as "
+            "these test modules use a sibling helper but cannot be run as "
             f"`python3 -m unittest tests.<name>`:\n" + "\n".join(bad) + "\n"
-            "Fix: insert the tests directory on sys.path immediately before the import, as "
-            "the other modules do.")
+            "Fix: insert the tests directory on sys.path at module level, as the others do.")
 
 # A bare read: `<expr>.read_text(...)`. `read_text_safe(` never matches - the character after
 # `read_text` is `_`, not `(`.
