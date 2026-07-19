@@ -1365,6 +1365,32 @@ class RfcOpenDecisionGateTests(unittest.TestCase):
                 with self.assertRaises(ValueError, msg=f"{name}: Open decision passed"):
                     tr.transition(root, "RFC0001", "Accepted")
 
+    def test_a_comment_in_a_fenced_block_does_not_end_the_section(self) -> None:
+        """Widening the heading match to any line starting with `#` created a NEW bypass.
+
+        A shell comment inside a fenced code block begins with `#`, contains no "decision",
+        and so switched the section OFF - every Open row after it invisible. The pre-repair
+        code was correct here. Only a real ATX heading is a boundary, and nothing inside a
+        fence is a heading at all.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _rfc_repo(Path(d), rows=(
+                "```bash\n# regenerate the table\n```\n\n"
+                "| # | Decision | Status |\n| --- | --- | --- |\n| D1 | which store | Open |\n"))
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "RFC0001", "Accepted")
+            self.assertIn("D1", str(cm.exception))
+
+    def test_a_hash_that_is_not_a_heading_does_not_end_the_section(self) -> None:
+        """`#42` and `#!/bin/sh` start with `#` but are not headings."""
+        for line in ("#42 is the issue this row came from", "#!/usr/bin/env bash"):
+            with self.subTest(line=line), tempfile.TemporaryDirectory() as d:
+                root = _rfc_repo(Path(d), rows=(
+                    f"{line}\n\n| # | Decision | Status |\n| --- | --- | --- |\n"
+                    "| D1 | q | Open |\n"))
+                with self.assertRaises(ValueError):
+                    tr.transition(root, "RFC0001", "Accepted")
+
     def test_a_decisions_section_at_any_heading_level_is_read(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

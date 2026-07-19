@@ -200,6 +200,9 @@ _DECISION_PIPE_RE = re.compile(r"(?<!\\)\|")
 #: prose verdict - is a decision that was taken, because the register records what was
 #: decided rather than a fixed vocabulary.
 _UNSETTLED = ("open", "unresolved", "undecided", "tbd", "pending")
+#: An ATX heading: one to six hashes followed by whitespace. Anything else that
+#: merely begins with `#` - a shell comment, an issue reference - is not a heading.
+_ATX_HEADING_RE = re.compile(r"^\s{0,3}#{1,6}\s")
 
 
 def _rfc_open_decisions(text: str) -> list[str]:
@@ -210,8 +213,20 @@ def _rfc_open_decisions(text: str) -> list[str]:
     """
     open_rows: list[str] = []
     in_section = False
+    in_fence = False
     for line in text.splitlines():
-        if line.lstrip().startswith("#"):
+        # A fenced block holds no headings and no decision rows. Skipping it is not
+        # tidiness: widening the heading test to "starts with #" made a shell comment
+        # inside a fence read as a section boundary, switching the section OFF and hiding
+        # every row after it - a fifth bypass created while closing four.
+        if line.lstrip().startswith(("```", "~~~")):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        # An ATX heading is one to six hashes THEN whitespace. `#42` and `#!/bin/sh` are
+        # not headings, and neither ends a section.
+        if _ATX_HEADING_RE.match(line):
             in_section = "decision" in line.lower()
             continue
         if not in_section:

@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 4 |
+| Proposed | 9 |
 | Approved | 0 |
 | In Progress | 34 |
 | Complete | 290 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **346** |
+| **Total** | **351** |
 
 ## All Changes
 
@@ -168,6 +168,11 @@
 | [CR-0344](CR0344-pre-commit-gate-lanes-are-whole-workspace-so.md) | Pre-commit gate lanes are whole-workspace, so pre-existing backlog debt blocks every unrelated commit | Proposed | Low | Improvement | 2026-07-17 | -- |
 | [CR-0345](CR0345-sprint-close-scaffolds-the-retro-via-the-deterministic.md) | sprint close scaffolds the retro via the deterministic path instead of requiring a pre-made one | Complete | Medium | Improvement | 2026-07-17 | -- |
 | [CR-0346](CR0346-settle-rfc0017-d1-how-a-primary-persona-is.md) | settle RFC0017 D1: how a Primary persona is selected when candidates compete | Proposed | Low | Improvement | 2026-07-19 | -- |
+| [CR-0347](CR0347-the-collision-analysis-trusts-affects-and-affects-is.md) | the collision analysis trusts Affects, and Affects is unreliable | Proposed | High | Improvement | 2026-07-19 | -- |
+| [CR-0348](CR0348-the-gate-lints-only-changed-markdown-so-a.md) | the gate lints only changed markdown, so a broken file stays green until something touches it | Proposed | Medium | Improvement | 2026-07-19 | -- |
+| [CR-0349](CR0349-sprint-plan-cannot-record-a-deliberate-over-appetite.md) | sprint plan cannot record a deliberate over-appetite batch, only silently raise the ceiling | Proposed | Medium | Improvement | 2026-07-19 | -- |
+| [CR-0350](CR0350-record-the-sprint-s-token-actuals-automatically-for.md) | record the sprint's token actuals automatically for an interactive run | Proposed | Medium | Improvement | 2026-07-19 | -- |
+| [CR-0351](CR0351-file-finding-silently-accepts-shell-mangled-text-so.md) | file_finding silently accepts shell-mangled text, so a filed artefact can record the wrong thing | Proposed | Medium | Improvement | 2026-07-19 | -- |
 
 ## Archived Releases
 

@@ -2,6 +2,8 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0125: Round 2 findings are usually created by the round 1 repair**
+- **L-0124: File the friction, not just the blockers**
 - **L-0123: **L-0113** An AC asserting the committed state cannot be green in the working tree.**
 - **L-0122: **L-0112** The author cannot close the loop: build-to-Done needs the reviewer of record.**
 - **L-0121: **L-0111** Story points size the diff, not the discovery.**

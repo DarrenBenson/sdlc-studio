@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   detector rather than of the suite. The true count is **233**, and the exclusion list now matches on
   shape rather than on a word. The RFC accept gate hardcoded a three-column row, one heading level
   and the single leading word `Open`, passing four real shapes; widening it immediately surfaced two
-  further Accepted RFCs whose decision tables are six and seven columns wide - nine of their ten open
+  further Accepted RFCs whose decision tables are six and five columns wide - nine of their ten open
   rows are now closed against the file's own Decision section, and the tenth is recorded as an
   override naming CR0346 rather than invented. `run_state.archived` raised from its sort key on a
   malformed cycle index, losing every intact record, which is exactly what its docstring promised not

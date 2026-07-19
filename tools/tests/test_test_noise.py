@@ -3,7 +3,7 @@
 The class these lock: a PASSING suite must say nothing. A diagnostic that escapes an
 expected-failure fixture trains everyone to skim past `error`, which is the reflex that
 lets a real one through. The shipped detector matched exactly one shape - `ERROR` or
-`WARN` followed by an absolute path - and caught 0 of the 283 lines this repo's own suite
+`WARN` followed by an absolute path - and caught almost none of the 233 lines this repo's own suite
 was leaking, because the real leaks are lowercase `error:`, `warning:`, `usage:` and
 tool-prefixed messages.
 """
@@ -132,19 +132,19 @@ class RunnerExclusionCannotSwallowLeaksTests(unittest.TestCase):
 
 
 class NoiseBaselineTests(unittest.TestCase):
-    """The ratchet. This repo leaks 283 lines today; requiring zero before the gate can
+    """The ratchet. This repo leaks 233 lines today; requiring zero before the gate can
     run at all would mean the gate never runs, which is the state it is in now. The
     baseline grandfathers the current count and fails on an INCREASE, so the debt is
     visible and cannot grow."""
 
     def test_a_count_at_the_baseline_passes(self) -> None:
-        self.assertTrue(tn.within_baseline(283, 283))
+        self.assertTrue(tn.within_baseline(233, 233))
 
     def test_a_count_below_the_baseline_passes(self) -> None:
-        self.assertTrue(tn.within_baseline(200, 283))
+        self.assertTrue(tn.within_baseline(200, 233))
 
     def test_a_count_above_the_baseline_fails(self) -> None:
-        self.assertFalse(tn.within_baseline(284, 283))
+        self.assertFalse(tn.within_baseline(284, 233))
 
     def test_no_baseline_means_zero_tolerated(self) -> None:
         """A project adopting the gate clean must not inherit a silent allowance."""

@@ -165,18 +165,27 @@ def archived(repo_root: Path | str) -> list[dict]:
     # ordering on the id alone reads a rolling run's cycles back out of order, which is exactly
     # the sequence the archive exists to preserve.
     def _index(rec: dict) -> int:
-        """The cycle index, or 0 when it is absent or not a number.
+        """The cycle index, or 0 when it is absent, not a dict, or not a number.
 
         Coerced defensively rather than with a bare `int()`: this runs inside the SORT KEY,
         which sits outside the try/except above, so one malformed record raised and lost
         every intact one - precisely what this function's contract says it will not do.
+        AttributeError is caught too: `cycle` is JSON, so it can be a string or a list, and
+        the first repair caught only the one variant its test happened to exercise.
         """
         try:
             return int((rec.get("cycle") or {}).get("index") or 0)
-        except (TypeError, ValueError):
+        except (AttributeError, TypeError, ValueError):
             return 0
 
-    out.sort(key=lambda r: (r.get("started_at") or "", _index(r), r.get("run_id") or ""))
+    def _started(rec: dict) -> str:
+        """The start time as a STRING. A non-string `started_at` would otherwise raise from
+        the tuple comparison itself, outside `_index` entirely - the same contract breach
+        one level out."""
+        value = rec.get("started_at")
+        return value if isinstance(value, str) else ""
+
+    out.sort(key=lambda r: (_started(r), _index(r), r.get("run_id") or ""))
     return out
 
 

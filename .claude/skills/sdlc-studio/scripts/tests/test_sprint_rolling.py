@@ -842,19 +842,40 @@ class ReviewFindingsTests(unittest.TestCase):
     as the thing it must never do had no discriminating test at all."""
 
     def test_a_stop_does_not_relabel_a_cycle_that_already_closed_honestly(self) -> None:
-        """The outcome-preservation branch. `close_run` overwrites a terminal outcome
-        without complaint, so without the guard a boundary refusal AFTER an honest close
-        rewrites `goal-reached` to `blocked` - delivered work relabelled as failure."""
+        """The outcome-preservation branch, driven through `_boundary_stop` ITSELF.
+
+        The first version of this test re-implemented the guard in its own body - it ran
+        `if outcome == RUNNING: close_run(...)` and asserted on that - so it passed with the
+        production guard deleted outright. A test that contains a copy of the code it checks
+        asserts nothing about the code. It must call the real path.
+        """
         with tempfile.TemporaryDirectory() as d:
             root = _ws(Path(d))
             run_state.open_run(root, batch=["BG0001"], goal="done")
             run_state.close_run(root, outcome="goal-reached")
             self.assertEqual(run_state.read(root).get("outcome"), "goal-reached")
-            # A second close, as a boundary stop would attempt on an already-closed cycle.
-            if run_state.read(root).get("outcome") == run_state.RUNNING:
-                run_state.close_run(root, outcome="blocked")
-            self.assertEqual(run_state.read(root).get("outcome"), "goal-reached",
-                             "a stop relabelled a cycle that had already closed honestly")
+
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                rc = sprint._boundary_stop(root, "close-gate", "the cycle would not close", "fix it")
+            self.assertEqual(rc, 1)
+            self.assertEqual(
+                run_state.read(root).get("outcome"), "goal-reached",
+                "the stop relabelled a cycle that had already closed honestly")
+            self.assertEqual(run_state.read(root).get("stop", {}).get("cause"), "close-gate",
+                             "the stop itself was not recorded")
+
+    def test_a_stop_on_a_still_running_cycle_does_close_it_blocked(self) -> None:
+        """The other side of the same branch: `blocked` IS the honest word for a cycle that
+        never closed. Without this, the guard could be satisfied by never closing anything."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _ws(Path(d))
+            run_state.open_run(root, batch=["BG0001"], goal="done")
+            self.assertEqual(run_state.read(root).get("outcome"), run_state.RUNNING)
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                sprint._boundary_stop(root, "refused-plan", "the next batch is not plannable", "re-plan")
+            self.assertEqual(run_state.read(root).get("outcome"), run_state.BLOCKED)
 
     def test_close_run_archives_on_the_plain_close_path(self) -> None:
         """Removing `archive()` from close_run reddened nothing: coverage reached the
@@ -885,6 +906,30 @@ class ReviewFindingsTests(unittest.TestCase):
             recs = run_state.archived(root)   # must not raise
             self.assertIn("RUN-GOOD", [r.get("run_id") for r in recs],
                           "one malformed record lost the intact ones")
+
+    def test_every_malformed_shape_is_survived_not_just_the_tested_one(self) -> None:
+        """The first repair caught only the variant its own test exercised. `cycle` is JSON,
+        so it can be a string or a list (AttributeError), and a non-string `started_at`
+        raises from the tuple comparison outside the coercion entirely."""
+        shapes = {
+            "cycle is a string": {"cycle": "two"},
+            "cycle is a list": {"cycle": [1]},
+            "cycle.index is prose": {"cycle": {"index": "two"}},
+            "started_at is a number": {"started_at": 17, "cycle": {"index": 1}},
+        }
+        for name, extra in shapes.items():
+            with self.subTest(shape=name), tempfile.TemporaryDirectory() as d:
+                root = _ws(Path(d))
+                ad = run_state.archive_dir(root)
+                ad.mkdir(parents=True, exist_ok=True)
+                (ad / "RUN-GOOD.json").write_text(json.dumps(
+                    {"run_id": "RUN-GOOD", "started_at": "2026-07-19T00:00:00Z",
+                     "cycle": {"index": 1}}), encoding="utf-8")
+                rec = {"run_id": "RUN-BAD", "started_at": "2026-07-19T00:00:01Z"}
+                rec.update(extra)
+                (ad / "RUN-BAD.json").write_text(json.dumps(rec), encoding="utf-8")
+                got = [r.get("run_id") for r in run_state.archived(root)]
+                self.assertIn("RUN-GOOD", got, f"{name}: intact record lost")
 
 
 if __name__ == "__main__":
