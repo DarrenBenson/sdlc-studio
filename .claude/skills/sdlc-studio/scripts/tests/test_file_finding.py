@@ -8,6 +8,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import re
 import sys
 import tempfile
 import unittest
@@ -828,6 +829,99 @@ class FilingTimeDuplicateTests(unittest.TestCase):
             _seed_index(root, "bug")
             # a finding with no declared Affects has nothing structural to compare
             self.assertEqual(ff.duplicate_candidates(root, "some title", {"summary": "x"}), [])
+
+
+def _rfc_body(root: Path, title: str, f: dict) -> str:
+    _seed_index(root, "rfc")
+    return Path(ff.file_finding(root, "rfc", title, f)["path"]).read_text(encoding="utf-8")
+
+
+def _decision_rows(body: str) -> list[str]:
+    """The `| D1 | ... | ... |` rows of the Open Decisions table."""
+    rows, in_section = [], False
+    for line in body.splitlines():
+        if line.startswith("## "):
+            in_section = "decision" in line.lower()
+            continue
+        if in_section and re.match(r"^\s*\|\s*D\d+\s*\|", line):
+            rows.append(line)
+    return rows
+
+
+class RfcDecisionRowsFromOptionsTests(unittest.TestCase):
+    """US0245 AC1: the decision row states the choice the finding actually poses.
+
+    `_render` already receives the finding's real options and renders them into Design
+    Options, then hard-codes a decision row that ignores them. The data was always there.
+    """
+
+    def test_the_row_names_the_options_it_decides_between(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            body = _rfc_body(Path(d), "Which cache?", {
+                "summary": "weigh it", "options": ["keep the in-process cache", "move to redis"]})
+            rows = _decision_rows(body)
+            self.assertEqual(len(rows), 1, rows)
+            self.assertIn("keep the in-process cache", rows[0])
+            self.assertIn("move to redis", rows[0])
+
+    def test_three_options_all_appear_in_the_row(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            body = _rfc_body(Path(d), "Which store?", {
+                "summary": "weigh it", "options": ["sqlite", "postgres", "flat files"]})
+            row = _decision_rows(body)[0]
+            for opt in ("sqlite", "postgres", "flat files"):
+                self.assertIn(opt, row)
+
+    def test_the_row_is_still_Open(self) -> None:
+        """Deriving the wording must not accidentally pre-decide it."""
+        with tempfile.TemporaryDirectory() as d:
+            body = _rfc_body(Path(d), "Which cache?", {
+                "summary": "weigh it", "options": ["a", "b"]})
+            self.assertTrue(_decision_rows(body)[0].rstrip().endswith("| Open |"))
+
+
+class RfcBoilerplateDecisionRowRetiredTests(unittest.TestCase):
+    """US0245 AC2: the content-free row is never emitted, with or without options.
+
+    RFC0010 condemned this row in June; the CRs cited as fixing it never touched the
+    generator, so it kept manufacturing the rot that the accept gate then had to catch.
+    """
+
+    BOILERPLATE = "Act on this finding or keep status quo"
+
+    def test_boilerplate_is_absent_when_options_are_supplied(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            body = _rfc_body(Path(d), "Which cache?", {
+                "summary": "weigh it", "options": ["a", "b"]})
+            self.assertNotIn(self.BOILERPLATE, body)
+
+    def test_a_finding_with_no_options_names_its_own_subject(self) -> None:
+        """Driven against the helper: `file_finding` refuses an RFC with no options at all
+        (the hollow-artefact guard), so this branch is unreachable end to end. It still
+        guards the fallback, and the fallback must pose the finding's own subject - the
+        boilerplate existed precisely because a generic sentence was the easy default."""
+        self.assertNotIn(self.BOILERPLATE, ff._decision_question("Retire the legacy importer", []))
+        self.assertIn("retire the legacy importer",
+                      ff._decision_question("Retire the legacy importer", []).lower())
+        self.assertNotIn(self.BOILERPLATE, ff._decision_question("Retire it", None))
+
+    def test_the_filer_still_refuses_an_rfc_with_no_options(self) -> None:
+        """The guard the test above relies on. If this ever stops refusing, the fallback
+        becomes reachable and the case above must go back to an end-to-end assertion."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "rfc")
+            with self.assertRaises(ValueError) as cm:
+                ff.file_finding(root, "rfc", "Retire the legacy importer", {"summary": "x"})
+            self.assertIn("options", str(cm.exception))
+
+    def test_a_single_option_is_not_a_choice_between_two(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            body = _rfc_body(Path(d), "Adopt the new parser", {
+                "summary": "weigh it", "options": ["adopt the new parser"]})
+            row = _decision_rows(body)[0]
+            self.assertNotIn(self.BOILERPLATE, row)
+            self.assertIn("adopt the new parser", row)
 
 
 if __name__ == "__main__":

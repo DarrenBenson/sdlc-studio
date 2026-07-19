@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The finding filer writes a decision row that says something (US0245).** Every RFC filed by
+  `file_finding.py` carried one fixed sentence - `Act on this finding or keep status quo` - while
+  the finding's real options sat two lines above it under Design Options. A row that poses no
+  question gets closed by nobody, which is how accepted RFCs accumulated an unanswered decision
+  each; RFC0010 condemned the row in June and the changes cited as fixing it never touched the
+  generator. D1 is now written from the options: two or more become the choice between them, one
+  becomes whether to take it, and a finding with none poses its own subject. The boilerplate string
+  is gone, so the accept gate no longer has to catch rot the filer manufactures.
+
 - **The accepted-RFC tranche now records what actually shipped (US0246).** Eight RFCs sat in
   Accepted carrying an unanswered decision row, most of them the generated boilerplate `Act on this
   finding or keep status quo`. Each row is closed against the code that came out of it, naming the

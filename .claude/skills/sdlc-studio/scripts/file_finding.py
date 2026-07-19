@@ -397,6 +397,28 @@ def _size_line(f: dict) -> str:
     return f"> **Size:** {sdlc_md.check_size(val)}\n" if val else ""
 
 
+def _decision_question(title: str, options) -> str:
+    """The D1 decision row, written from the finding's own options.
+
+    The generator used to emit one fixed sentence - `Act on this finding or keep status quo`
+    - into every RFC it filed, while the real options sat two lines above it in Design
+    Options. A row that says nothing gets closed by nobody, so accepted RFCs accumulated an
+    unanswered decision each; the accept gate now refuses that, which makes the generator
+    that manufactures it the thing to fix.
+
+    With two or more options the row states the choice between them. With one, or none, it
+    poses the finding's own subject rather than a generic question - a finding always has a
+    subject, so there is never a reason to fall back to boilerplate.
+    """
+    named = [str(o).strip() for o in (options or []) if str(o).strip()]
+    subject = (title or "").strip().rstrip(".?") or "this finding"
+    if len(named) >= 2:
+        return f"Choose between: {', '.join(named[:-1])} or {named[-1]}"
+    if len(named) == 1:
+        return f"Whether to {named[0]}"
+    return f"Whether to {subject[0].lower() + subject[1:] if subject else subject}"
+
+
 def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
             status: str | None = None) -> str:
     """A structured artifact body (required sections populated). `status` overrides the
@@ -437,6 +459,7 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
                 f"## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
                 f"{rev_row(today, f, 'Raised')}\n")
     options = "\n".join(f"- **{o}**" for o in f["options"])
+    decision = _decision_question(title, f["options"])
     return (f"# {disp_id}: {title}\n\n"
             f"> **Status:** {status or 'Draft'}\n{_size_line(f)}{_affects_line(f)}"
             f"> **Date:** {today}\n{_stamp(f)}\n"
@@ -444,7 +467,7 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
             f"## Design Options\n\n{options}\n\n"
             f"## Recommendation\n\n{f.get('recommendation', 'TBD - pending decision.')}\n\n"
             f"## Open Decisions\n\n| # | Decision | Status |\n| --- | --- | --- |\n"
-            f"| D1 | Act on this finding or keep status quo | Open |\n\n"
+            f"| D1 | {decision} | Open |\n\n"
             f"## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
             f"{rev_row(today, f, 'Filed')}\n")
 

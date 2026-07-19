@@ -1,6 +1,6 @@
 # US0245: derive RFC decision rows from the finding's real options, not the content-free boilerplate row
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** file_finding.py renders the RFC body
 - **Then** the Open Decisions table states the choice between those named options, taking its wording from the options rather than from a fixed string
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_file_finding.py -k RfcDecisionRowsFromOptionsTests
+- **Verified:** yes (2026-07-19)
 
 ### AC2: Retire the content-free boilerplate row
 
@@ -29,6 +30,7 @@
 - **When** file_finding.py renders the RFC body
 - **Then** the literal row "Act on this finding or keep status quo" is never emitted; a finding with no usable options gets a row that names the finding's own subject instead
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_file_finding.py -k RfcBoilerplateDecisionRowRetiredTests
+- **Verified:** yes (2026-07-19)
 
 ## Revision History
 
