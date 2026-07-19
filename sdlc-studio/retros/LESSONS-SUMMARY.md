@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0143: **The gate cost is concentrated, not diffuse.** Three test files are 62 per cent of the suite runtime and 14 per cent of the tests.**
+- **L-0142: **Rebuild structure from data, never from prose.** `requirements` re-parsed a sentence the ladder had just built from a list.**
+- **L-0141: **A fixture can satisfy an assertion for a reason unrelated to the property under test.** The round-1 test asserted "two items" against a...**
+- **L-0140: **A test that cannot fail is worse than no test, because it reads as coverage.** The round-2 test named the exact defect in its docstring...**
 - **L-0139: **Round 2's findings are made by round 1's repair, and this is now three runs in a row.** Every new finding this round was created by the...**
 - **L-0138: **A new guard needs a test of its MECHANISM, not just of the case that prompted it.** The line that closed this review's MAJOR could be...**
 - **L-0137: **Forgiving an unsatisfiable demand must surface its cause.** Dropping a dead id silently would trade a false debt for a hidden defect...**
