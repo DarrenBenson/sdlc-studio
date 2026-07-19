@@ -1,0 +1,148 @@
+# RFC-0048: Make the test suite cost-effective without lowering the floor: tier it by measured value, and review tests adversarially
+
+> **Status:** Draft
+> **Created:** 2026-07-19
+> **Created-by:** sdlc-studio new
+> **Raised-by:** sdlc-studio; agent; v1
+
+## Summary
+
+This project is now deep brownfield: 3,243 shipped tests, 243 tool tests, 15 gate checks, 11
+pre-commit lanes, ~136 seconds of unit suite on every code commit. The gate is the reason no
+false claim has shipped, and it has caught real defects in every sprint. It is also the largest
+single cost in a sprint after the review loop, and it grows every time the project succeeds,
+because each fix adds tests and nothing ever removes any.
+
+Two questions are unsettled, and the naive answer to each is actively dangerous.
+
+**Where is the cost actually?** Measured, not assumed:
+
+| File | Wall time | Tests | Share of suite |
+| --- | --- | --- | --- |
+| `test_gate.py` | 56.4s | 198 | **41%** |
+| `test_sprint.py` | 17.4s | 201 | 13% |
+| `test_telemetry.py` | 11.0s | 69 | 8% |
+| everything else (~60 files) | ~51s | ~2,775 | 38% |
+
+**Three files are 62% of the runtime and 14% of the tests.** This is not a 3,243-test problem;
+it is a three-file problem, and the cost is concentrated in tests that shell out to real
+subprocesses rather than in test count. Any plan that starts by "consolidating tests" in general
+is optimising the 38% while leaving the 62% alone.
+
+**Is a test worth its runtime?** The honest answer needs evidence, because human judgement about
+which tests are redundant is demonstrably wrong in BOTH directions on this codebase:
+
+- **Tests that look redundant are sometimes the only pin.** BG0210's `type_ != "epic"` guard was
+  covered by nothing across 3,180 tests. `in_dev_repo`'s second clause survived the whole 197-test
+  gate suite. The depth-parity branch survived all 3,238.
+- **Tests that look like coverage are sometimes vacuous.** Four times in one session a test of
+  mine passed for an incidental reason. The worst was written specifically to pin a defect and
+  could not reach it: re-introducing the defect left 326 tests green.
+
+So the selection criterion cannot be "does this look redundant". It has to be **measured kill
+yield** - which mutants a test kills, and at what runtime cost. The mutation gate already produces
+exactly that data and is currently used only per-diff.
+
+## The second problem: tests are the one artefact we do not review adversarially
+
+We adversarially review specs. We adversarially review code. **We do not review tests** - they are
+reviewed only incidentally, when a code reviewer happens to mutate a guard and notice the test
+does not fail.
+
+The evidence from RUN-01KXX52Z and RUN-01KXXERR is stark. Across both runs the **code** fixes
+survived review essentially intact. Every MAJOR finding in both closing reviews was about a
+**test**:
+
+| Run | MAJOR finding | Class |
+| --- | --- | --- |
+| RUN-01KXX52Z r1 | the sibling-import sweep was blind to a module in its own directory | guard did not guard |
+| RUN-01KXXERR r1 | `requirements` re-parsed prose; its pinning test passed on a coincidence | test passed incidentally |
+| RUN-01KXXERR r2 | the replacement test was tautological - could not reach the defect it named | test could not fail |
+
+Plus MINORs of the same class: an anti-vacuity sweep that was itself vacuous; a docstring claiming
+both halves of a check were load-bearing when one was unpinned; two ACs whose `Verify` pointed at
+tests that asserted something else.
+
+**The pattern is not that the code is wrong. It is that the evidence for the code is wrong**, and
+nothing in the process is pointed at the evidence. A test is the artefact that decides whether
+everything else is trusted, and it is the only one nothing adversarially attacks.
+
+## Design Options
+
+### For cost (D1, D2)
+
+- **Option A - Tier the suite.** A fast lane on every commit (the ~51s of pure-logic tests) and
+  the full suite on push/CI and at close. Cheapest to build, and US0268 already established the
+  cheap-first principle in the hook. Risk: a commit can be green against a lane that did not run
+  the 62%, so the tier boundary has to be drawn by what a change TOUCHES, not by what is fast.
+- **Option B - Attack the three files directly.** `test_gate.py`'s 56s is subprocess-dominated:
+  it runs the real gate end to end, repeatedly. Convert the repeated end-to-end runs into one
+  run whose result is asserted many times, keeping one true end-to-end case. Highest value per
+  hour of work, no coverage change, and it does not need a policy decision.
+- **Option C - Parallelise.** The suite is serial. Nothing about it is inherently so.
+- **Option D - Retire by measured kill yield.** Run a full mutation enumeration per module, find
+  tests whose kill set is a strict subset of another's, and retire the subset. Genuinely reduces
+  coverage debt rather than moving it - and is the only option that can safely DELETE anything.
+  Most expensive to establish, and needs the mutation gate to be cheap enough to run broadly
+  (see CR0363, which is about the same gate lying when scoped too narrowly).
+
+### For test quality (D3, D4)
+
+- **Option E - A `test` audit lens profile.** The audit surface already has pluggable lens
+  profiles (`project`, `skill`, `repo`, `code`). Add one whose lenses are the failure modes this
+  session produced: *can this test fail?* (mutate the guard it names), *does it reach the code it
+  claims to?*, *does its docstring describe what it asserts?*, *is it green for an incidental
+  reason?* Fits existing machinery, runs on demand, no new ceremony.
+- **Option F - A per-unit adversarial test review at close**, alongside the code review. Strongest
+  coverage, but adds a round to a loop CR0358 already exists to bound - and the review loop is
+  the single biggest cost in a sprint. Buying test quality with review rounds may be the worst
+  possible currency.
+- **Option G - Mechanise the specific check instead.** Every finding above would have been caught
+  by one rule: **a new or changed test must be shown to fail against a mutant of the code it
+  claims to pin.** That is `mutation.py` pointed at the diff's tests rather than its source, and
+  it is deterministic - no reviewer, no round, no judgement.
+
+## Recommendation
+
+**B + G first, then E. Defer D. Reject F.**
+
+- **B** because it is 41% of the cost, needs no policy decision, and changes no coverage.
+- **G** because it converts the recurring failure into a deterministic gate. Four times this
+  session a human-or-model reader failed to notice a test could not fail; a mutant would have
+  noticed every time, and did, on each occasion anyone bothered to run one.
+- **E** as the qualitative backstop for what G cannot mechanise (a docstring that misdescribes
+  what it asserts is not a mutation-detectable property).
+- **Defer D** until the mutation gate is cheap and honest enough to trust at scale - CR0363 is
+  the prerequisite, because a mutation run scoped below its target's coverage over-reports
+  absence, and retiring tests on that signal would delete real coverage.
+- **Reject F** because it pays for test quality in review rounds, which is the currency we are
+  shortest of.
+
+## Open Decisions
+
+| # | Decision | Status |
+| --- | --- | --- |
+| D1 | Cost: attack the three heavy files (B), tier the suite (A), parallelise (C), or some combination - and in what order | Open |
+| D2 | Do we ever RETIRE a test, and if so is measured mutation kill-yield the only sanctioned criterion (D)? | Open |
+| D3 | Is a changed test required to fail against a mutant of the code it pins (G) - advisory, or a blocking gate? | Open |
+| D4 | Does a `test` audit lens profile earn its place (E), or is G sufficient? | Open |
+| D5 | Does archival apply here? Index archival exists for artefacts (`archive.py`, `indexes.archive_after`) and four indexes are over the threshold. Is there an equivalent for tests, or is that a category error? | Open |
+| D6 | What is the acceptable per-commit gate budget? Without a target number, every future guard is individually justifiable and the ratchet never stops | Open |
+
+## Evidence and prerequisites
+
+- Timings measured 2026-07-19 on this repo, serial, bytecode purged.
+- **CR0363** (a mutation run scoped below its target's coverage over-reports absence) is a hard
+  prerequisite for D2 and for G at scale.
+- **CR0358** (the close review is an unbounded repair loop) is why F is rejected: the review loop
+  is already the largest cost in a sprint and is itself unbounded.
+- **BG0212** established that a mutation survivor is not automatically a coverage gap - 6 of its
+  15 were equivalent mutants. Any retirement criterion built on survivor counts must exclude
+  equivalents or it will delete tests that are pulling their weight.
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-07-19 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-19 | sdlc-studio | Drafted: measured cost distribution, the test-review gap, options and recommendation |
