@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 6 |
+| Open | 5 |
 | In Progress | 0 |
-| Fixed | 123 |
+| Fixed | 124 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -168,7 +168,7 @@
 | [BG0199](BG0199-two-id-readers-disagree-on-width-stem-id.md) | two id readers disagree on width: _STEM_ID_RE needs 4+ digits, next_id._meta_nums accepts 3 | Fixed | Low | 2026-07-18 | 2026-07-18 |
 | [BG0200](BG0200-apply-signoff-tail-skips-the-velocity-row-in.md) | apply-signoff tail skips the velocity row in silence when the retro was not scaffolded by the close | Fixed | Medium | 2026-07-19 | 2026-07-19 |
 | [BG0201](BG0201-tranche-audit-certifies-unfilled-template-stories-as-ready.md) | tranche audit certifies unfilled template stories as ready: _weak_ac only detects one hardcoded phrase | Fixed | High | 2026-07-19 | 2026-07-19 |
-| [BG0202](BG0202-confinement-roster-sweep-misses-path-open-mode-so.md) | confinement roster sweep misses path.open(mode) so a writer can report no write surface | Open | Medium | 2026-07-19 | 2026-07-19 |
+| [BG0202](BG0202-confinement-roster-sweep-misses-path-open-mode-so.md) | confinement roster sweep misses path.open(mode) so a writer can report no write surface | Fixed | Medium | 2026-07-19 | 2026-07-19 |
 | [BG0203](BG0203-mutation-survivors-in-the-new-audit-profile-parser.md) | mutation survivors in the new audit profile parser: profile_names and the lens-table break are unpinned | Open | Low | 2026-07-19 | 2026-07-19 |
 | [BG0204](BG0204-retro-scaffolding-builds-an-h1-from-the-sprint.md) | retro scaffolding builds an H1 from the Sprint Goal without stripping its trailing full stop | Fixed | Low | 2026-07-19 | 2026-07-19 |
 | [BG0205](BG0205-refine-into-mis-distributes-a-request-s-criteria.md) | refine --into mis-distributes a request's criteria onto one sibling story | Fixed | High | 2026-07-19 | 2026-07-19 |

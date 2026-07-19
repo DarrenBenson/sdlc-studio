@@ -1,6 +1,6 @@
 # BG0202: confinement roster sweep misses path.open(mode) so a writer can report no write surface
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional (reproduced directly against _write_surface)
 > **Severity:** Medium
 > **Points:** 2

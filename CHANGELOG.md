@@ -941,6 +941,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The confinement roster sweep sees `path.open(mode)` (BG0202).** `_write_surface` read a call's
+  mode from `args[1]`, which is where the builtin `open(path, mode)` puts it. The `Path` method is
+  already bound to its path, so `path.open('a')` puts the mode at `args[0]` and was not matched at
+  all - the detector reported an empty write surface for a module that demonstrably appends, and an
+  uncovered writer would then pass the sweep in silence, which is the one failure the sweep exists
+  to prevent. The mode index now follows the call form. Five modules gain a previously invisible
+  append surface (`critic`, `deploy`, `ledger`, `telemetry`, `verify_ac`); all five were already
+  covered or allowlisted by another route, so no writer was escaping today - the detector was blind,
+  not the roster wrong.
 - **Refreshing a handoff no longer re-stamps it with another run's identity (BG0198).**
   `handoff.refresh` scoped the unit list to the batch it was given but drew everything else from
   ambient run state, so refreshing a closed run's handoff while a different run was open rewrote

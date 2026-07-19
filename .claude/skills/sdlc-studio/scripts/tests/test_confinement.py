@@ -295,8 +295,13 @@ def _write_surface(source: str) -> set[str]:
             found.add(name)
         if name == "open":
             mode = None
-            if len(node.args) > 1 and isinstance(node.args[1], ast.Constant):
-                mode = node.args[1].value
+            # The builtin takes the path first, so its mode is args[1]; the Path
+            # method is already bound to its path, so its mode is args[0]. Reading
+            # only args[1] misses path.open('a') entirely - a module whose only
+            # write is that form reports an empty surface and slips the sweep.
+            mode_index = 0 if isinstance(func, ast.Attribute) else 1
+            if len(node.args) > mode_index and isinstance(node.args[mode_index], ast.Constant):
+                mode = node.args[mode_index].value
             for kw in node.keywords:
                 if kw.arg == "mode" and isinstance(kw.value, ast.Constant):
                     mode = kw.value.value
@@ -366,6 +371,20 @@ class ConfinementRosterSweepTests(unittest.TestCase):
 
     def test_detector_finds_an_open_for_writing(self) -> None:
         self.assertEqual(_write_surface("open(p, 'w')"), {"open:w"})
+
+    def test_detector_finds_a_path_open_for_writing(self) -> None:
+        # The Path method form puts the mode at args[0], not args[1] as the builtin
+        # does. Reading only args[1] reports NO write surface for a module that
+        # demonstrably appends, and an uncovered writer then passes the sweep silently.
+        self.assertEqual(_write_surface("with p.open('a') as fh:\n    fh.write(1)"), {"open:a"})
+
+    def test_detector_finds_a_path_open_with_a_keyword_mode(self) -> None:
+        self.assertEqual(_write_surface("p.open(mode='w')"), {"open:w"})
+
+    def test_detector_ignores_a_path_open_for_reading(self) -> None:
+        # The over-inclusive principle stops at modes that cannot write: a read is a read
+        # in either form, and flagging it would cost an allowlist line for nothing.
+        self.assertEqual(_write_surface("p.open('r')"), set())
 
     def test_detector_ignores_reads_and_string_replace(self) -> None:
         self.assertEqual(_write_surface("t = p.read_text().replace('a', 'b')\nopen(p)"), set())
