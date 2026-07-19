@@ -172,3 +172,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
   adversarial full-diff pass has been run on this batch yet, which is the gap the sign-off must
   close. Seven non-discriminating tests and three false-negative detectors were caught by
   self-mutation during the build, not by a review pass.
+
+## Handoff
+
+- [HO-0009](../handoffs/HO0009-the-sized-delivery-backlog-is-empty-every-refined.md) - 28 remaining item(s): 0 copilot-tail, 28 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
