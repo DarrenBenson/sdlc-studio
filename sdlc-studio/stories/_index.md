@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 5 |
-| Ready | 0 |
+| Draft | 0 |
+| Ready | 5 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -171,11 +171,11 @@
 | [US0258](US0258-author-reference-schema-md-the-self-describing-artefact.md) | Author reference-schema.md: the self-describing artefact schema contract | Done | EP0084 | 2026-07-17 | 2026-07-17 |
 | [US0259](US0259-schema-version-stamp-as-a-config-key-plus.md) | Schema version stamp as a config key plus the compatibility policy | Done | EP0084 | 2026-07-17 | 2026-07-17 |
 | [US0260](US0260-drift-guard-schema-doc-vocabularies-must-match-the.md) | Drift guard: schema doc vocabularies must match the enforcing code | Done | EP0084 | 2026-07-17 | 2026-07-17 |
-| [US0261](US0261-count-review-rounds-on-the-run-state-and.md) | Count review rounds on the run state and refuse another past a configured ceiling without explicit operator confirmation | Draft | EP0085 | 2026-07-19 | 2026-07-19 |
-| [US0262](US0262-detect-a-repair-regression-a-finding-in-code.md) | Detect a repair regression: a finding in code the previous round's repair touched is reported distinctly from a fresh finding | Draft | EP0085 | 2026-07-19 | 2026-07-19 |
-| [US0263](US0263-on-a-repair-regression-escalate-to-a-revert.md) | On a repair regression, escalate to a revert / redesign / accept-and-file decision instead of another patch round | Draft | EP0085 | 2026-07-19 | 2026-07-19 |
-| [US0264](US0264-record-cumulative-review-token-cost-per-round-and.md) | Record cumulative review token cost per round and show it when the next round is offered | Draft | EP0085 | 2026-07-19 | 2026-07-19 |
-| [US0265](US0265-generate-the-reviewer-brief-from-a-neutral-template.md) | Generate the reviewer brief from a neutral template carrying the diff and risk surface but no prior verdicts, round number or expected conclusion | Draft | EP0085 | 2026-07-19 | 2026-07-19 |
+| [US0261](US0261-count-review-rounds-on-the-run-state-and.md) | Count review rounds on the run state and refuse another past a configured ceiling without explicit operator confirmation | Ready | EP0085 | 2026-07-19 | 2026-07-19 |
+| [US0262](US0262-detect-a-repair-regression-a-finding-in-code.md) | Detect a repair regression: a finding in code the previous round's repair touched is reported distinctly from a fresh finding | Ready | EP0085 | 2026-07-19 | 2026-07-19 |
+| [US0263](US0263-on-a-repair-regression-escalate-to-a-revert.md) | On a repair regression, escalate to a revert / redesign / accept-and-file decision instead of another patch round | Ready | EP0085 | 2026-07-19 | 2026-07-19 |
+| [US0264](US0264-record-cumulative-review-token-cost-per-round-and.md) | Record cumulative review token cost per round and show it when the next round is offered | Ready | EP0085 | 2026-07-19 | 2026-07-19 |
+| [US0265](US0265-generate-the-reviewer-brief-from-a-neutral-template.md) | Generate the reviewer brief from a neutral template carrying the diff and risk surface but no prior verdicts, round number or expected conclusion | Ready | EP0085 | 2026-07-19 | 2026-07-19 |
 | [US0266](US0266-sprint-plan-prints-the-unit-lifecycle-and-the.md) | sprint plan prints the unit lifecycle and the gates each unit will meet, generated from the gate definitions rather than hand-written prose | Done | EP0086 | 2026-07-19 | 2026-07-19 |
 | [US0267](US0267-a-unit-close-names-the-fields-that-unit.md) | A unit close names the fields that unit type requires before its terminal transition, ahead of the work rather than on refusal | Done | EP0086 | 2026-07-19 | 2026-07-19 |
 | [US0268](US0268-order-the-pre-commit-lanes-cheapest-first-so.md) | Order the pre-commit lanes cheapest-first so a reworded comment does not cost a full unit-suite run | Done | EP0086 | 2026-07-19 | 2026-07-19 |
