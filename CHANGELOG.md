@@ -74,7 +74,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for exactly this purpose and writes nothing. Three existing tests had to be corrected: they
   passed only because the preview consulted no gate, so the fixtures were closing artefacts the
   real run would have refused. The regression test uses a story the AC-verify gate REFUSES, since
-  a fixture with a clean ladder cannot tell an honest preview from a blind one.
+  a fixture with a clean ladder cannot tell an honest preview from a blind one. The ORCHESTRATED
+  close needed the same treatment in the other direction: it annotates `Verification depth` and
+  only then transitions, so a preview that skipped the annotation judged a state the real run
+  never gates on, and refused what it accepts. `transition` gains a dry-run-only `pending_fields`,
+  applied to the in-memory text so the gates see what the real run will see; it is ignored unless
+  `dry_run`, so it can never introduce a write of its own.
 - **`sprint preflight` reports every unmet close prerequisite in one read-only pass (CR0359).**
   The close is a chain that stops at its first failure, and the sign-off prerequisites are not
   part of the gate block at all - they surface only once the whole chain has passed. So a close
@@ -87,8 +92,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of the chain's steps exist to DO something, and a preview that performed half a close would be
   a worse answer than none. `close` runs it and prints the same list up front, as a REPORT: the
   chain still decides what stops the close, so nothing that succeeded before now fails. The
-  sign-off rules are asked of `critic` itself rather than restated, so the pre-flight and the gate
-  cannot drift apart and disagree about the same unit.
+  sign-off rules are asked of `critic` itself rather than restated, and the Done transition is
+  previewed through `artifact.close(..., dry_run=True)` rather than described, so the pre-flight
+  and the close cannot disagree about the same unit. Batch ids are resolved through the same
+  `_batch_story_units` the sign-off uses, so an id with no artefact behind it is not reported as
+  owed work. The report sits ABOVE the close's own early refusals: placed after them, an unjudged
+  goal returned before it ran and hid everything else, which is the serial discovery it exists to
+  end, reintroduced by its own placement.
 - **The pre-commit gate runs cheapest-first and short-circuits (US0268).** The markdown lanes now
   run before the unit suites, and the suites are skipped entirely once a cheaper lane has failed -
   the commit is blocked either way, so paying ~132s of tests to be told about a blank line was

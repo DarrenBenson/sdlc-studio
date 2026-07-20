@@ -876,7 +876,7 @@ def infer_type_from_id(artifact_id: str) -> str | None:
 
 def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
           metrics: dict | None = None, dry_run: bool = False, force: bool = False,
-          triaged_by: str | None = None) -> dict:
+          triaged_by: str | None = None, pending_fields: dict | None = None) -> dict:
     """Terminal-transition an artifact and cascade (reuse transition), then record a
     telemetry event. Telemetry is advisory - it never affects the
     close result (the recorder swallows its own failures). `force` bypasses the story->Done
@@ -894,8 +894,12 @@ def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
         # previews is worse than none, because it is consulted precisely to avoid the surprise.
         # `transition` fires its gates on a dry run for exactly this reason and writes nothing;
         # a refusal raises here and `main` reports it, as on the real path.
+        # `pending_fields`: the annotations the ORCHESTRATED close writes before it transitions
+        # (a `Verification depth`, say). The real run does them first, so a preview that ignored
+        # them judged a state the real run never gates on, and refused what it accepts.
         r = transition.transition(repo_root, artifact_id, st, force=force,
-                                  metrics=metrics, triaged_by=triaged_by, dry_run=True)
+                                  metrics=metrics, triaged_by=triaged_by, dry_run=True,
+                                  pending_fields=pending_fields)
         return {**r, "dry_run": True}
     # transition records one telemetry event on entering the terminal set (and none on an
     # idempotent re-close); pass the metrics through so close does not double-record.
@@ -1092,9 +1096,14 @@ def cmd_close(args: argparse.Namespace) -> int:
         metrics["wall_time_s"] = int(args.wall_time_s)
     if args.stages:
         metrics["stages"] = args.stages
+    # The dry run must judge the state the REAL command produces, and the real command annotates
+    # before it transitions. Passing the pending annotation keeps the two answers identical;
+    # without it `close --depth functional --dry-run` refused what `close --depth functional`
+    # accepted, which is the preview/run divergence this command was just fixed for.
     r = close(args.root, args.id, args.status, metrics or None, dry_run=args.dry_run,
               force=getattr(args, "force", False),
-              triaged_by=getattr(args, "triaged_by", None))
+              triaged_by=getattr(args, "triaged_by", None),
+              pending_fields={"Verification depth": depth} if depth else None)
     verb = "would close" if r.get("dry_run") else "closed"
     print(json.dumps(r, indent=2) if args.format == "json" else f"{verb} {args.id}")
     return 0

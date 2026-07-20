@@ -3797,6 +3797,61 @@ class ClosePreflightTests(unittest.TestCase):
             self.assertIn("sign-off", self._stages(res),
                           "the pre-flight reimplements the sign-off rule instead of asking")
 
+    def test_preflight_reports_the_done_gate_apply_signoff_will_hit(self) -> None:
+        """The pre-flight said READY and `--apply-signoff` then refused.
+
+        The critic checks are only half of what apply-signoff demands: it calls `artifact.close`,
+        which is AC-verify gated. A unit with every critic prerequisite satisfied but executable
+        ACs never run passed the pre-flight and was refused by the close - the exact
+        preview-disagrees-with-run defect this whole change exists to remove.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"],
+                            verdicts={"US0101": {"verdict": "APPROVE"}},
+                            evidence=("US0101",), signoffs=("US0101",))
+            # An executable AC that was never verified: `transition -> Done` blocks on it.
+            p = root / "sdlc-studio" / "stories" / "US0101-x.md"
+            p.write_text(p.read_text(encoding="utf-8")
+                         + "\n## Acceptance Criteria\n\n### AC1: it works\n\n"
+                           "- **Verify:** shell true\n", encoding="utf-8")
+            rid = self._retro(root)
+            res = mod.close_preflight(root, rid)
+            self.assertFalse(res["ready"], "the pre-flight reported ready on a refused close")
+            self.assertIn("done-gate", self._stages(res))
+
+    def test_preflight_ignores_a_batch_id_with_no_artefact(self) -> None:
+        """US0274 AC2, the over-reporting half: apply-signoff resolves batch ids through
+        `_batch_story_units` and skips one with no artefact behind it, so reporting it as owed
+        work is a blocker the close will never ask for."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"])
+            (root / "sdlc-studio" / "stories" / "US0101-x.md").unlink()
+            rid = self._retro(root)
+            res = mod.close_preflight(root, rid)
+            self.assertEqual([b for b in res["blockers"]
+                              if b["stage"] in ("sign-off", "done-gate")], [],
+                             "reported work for a batch id with no artefact")
+
+    def test_close_reports_blockers_that_its_own_refusals_would_short_circuit(self) -> None:
+        """The report must sit ABOVE the early refusals, or it never runs when one fires.
+
+        Placed after them, an unjudged goal returned before the pre-flight was reached, so the
+        gate and sign-off blockers stayed hidden - serial discovery, reintroduced by placement.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, lanes=("conformance",), units=["US0101"])
+            _close_state(root, batch=["US0101"], sprint_goal_verdict=None)   # an early refusal
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                mod.main(["close", "--root", str(root)])
+            out = err.getvalue()
+            self.assertIn("close pre-flight", out)
+            self.assertIn("conformance", out, "the gate blockers were hidden by the refusal")
+            self.assertIn("sign-off", out, "the sign-off blockers were hidden by the refusal")
+
     def test_close_reports_all_blockers_before_executing(self) -> None:
         """US0275 AC1: printed before the first chain step runs."""
         with tempfile.TemporaryDirectory() as d:
@@ -3827,10 +3882,32 @@ class ClosePreflightTests(unittest.TestCase):
                             evidence=("US0101",), signoffs=("US0101",))
             rid = self._retro(root)
             self.assertTrue(mod.close_preflight(root, rid)["ready"])
-            out = io.StringIO()
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
-                mod.main(["close", "--retro", rid, "--root", str(root)])
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", rid, "--root", str(root)])
+            # STDERR, which is where the report is written. Asserting on stdout alone made this
+            # test vacuous: a mutant that always printed the report still passed it.
+            self.assertNotIn("close pre-flight", err.getvalue())
             self.assertNotIn("close pre-flight", out.getvalue())
+            self._assert_outcome_matches_a_close_without_the_preflight(rc)
+
+    def _assert_outcome_matches_a_close_without_the_preflight(self, rc: int) -> None:
+        """"Never a new refusal" tested as the claim is worded: the SAME close, on an identical
+        workspace, with the pre-flight stubbed out, ends the same way.
+
+        Asserting `rc == 0` instead would demand a pristine fixture and would pass for reasons
+        unrelated to the pre-flight - this compares the two paths directly.
+        """
+        with tempfile.TemporaryDirectory() as d2:
+            root2 = Path(d2)
+            mod2 = self._mod(root2, units=["US0101"],
+                             verdicts={"US0101": {"verdict": "APPROVE"}},
+                             evidence=("US0101",), signoffs=("US0101",))
+            rid2 = self._retro(root2)
+            mod2._report_preflight = lambda *a, **k: {"ready": True, "blockers": []}
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                rc2 = mod2.main(["close", "--retro", rid2, "--root", str(root2)])
+        self.assertEqual(rc, rc2, "the pre-flight changed the close's outcome")
 
 
 if __name__ == "__main__":

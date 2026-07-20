@@ -2708,16 +2708,18 @@ def _signoff_preflight(root: Path, state: dict) -> list[dict]:
     Every rule is asked of `critic` itself rather than restated here: a pre-flight carrying its
     own copy of the independence rule is two answers to one question, and the pair drift.
     """
-    import critic  # noqa: PLC0415 - lazy, as elsewhere in the close path
+    import artifact  # noqa: PLC0415 - lazy, as elsewhere in the close path
+    import critic    # noqa: PLC0415
     out: list[dict] = []
     # Read the SAME way conformance reads it, so the pre-flight and the gate agree on which
     # units the two-role rule reaches. A `hasattr` guard here would silently skip the whole
     # check if the accessor were ever renamed, which is the failure mode this pre-flight exists
     # to remove.
     cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "review.two_role_after"))
-    for unit in state.get("batch") or []:
-        if not unit.startswith("US"):
-            continue          # story-scoped, as the conformance gate is
+    # The SAME resolver apply-signoff uses, not a prefix test of our own. `startswith("US")`
+    # reported a sign-off blocker for a batch id with no artefact behind it - which apply-signoff
+    # skips entirely - so the pre-flight over-reported work that was never owed.
+    for unit in _batch_story_units(root, state.get("batch") or []):
         verdict = critic.verdict_for(root, unit)
         covered = critic.sprint_covers_independently(
             root, unit, critic.sprint_review_for(root, unit))
@@ -2738,6 +2740,31 @@ def _signoff_preflight(root: Path, state: dict) -> list[dict]:
             out.append({"stage": "sign-off",
                         "detail": f"{unit}: no independent reviewer-of-record sign-off",
                         "remedy": "`critic.py signoff --unit <id> --principal \"<name>\" ...`"})
+    out.extend(_done_gate_preflight(root, state))
+    return out
+
+
+def _done_gate_preflight(root: Path, state: dict) -> list[dict]:
+    """The Done transition apply-signoff performs on each unit, previewed.
+
+    The critic checks above are only half of what `--apply-signoff` demands: after recording the
+    sign-off it calls `artifact.close`, which is AC-verify gated. A pre-flight that asked only
+    about verdicts reported READY for a unit whose executable ACs were never run, and the close
+    then refused it - a pre-flight that disagrees with the run it previews is worse than none,
+    which is this change's own stated reason for existing.
+
+    Asked by previewing the real close, not by restating its gates.
+    """
+    import artifact  # noqa: PLC0415
+    out: list[dict] = []
+    for unit in _batch_story_units(root, state.get("batch") or []):
+        try:
+            artifact.close(root, unit, dry_run=True)
+        except (ValueError, FileNotFoundError) as exc:
+            out.append({"stage": "done-gate",
+                        "detail": f"{unit}: {str(exc).strip().splitlines()[0]}",
+                        "remedy": "clear the gate this names (commonly `verify_ac.py run "
+                                  "--story <id>`), then re-run"})
     return out
 
 
@@ -2751,6 +2778,21 @@ def _render_preflight(data: dict) -> None:
     for b in data["blockers"]:
         print(f"  [{b['stage']}] {b['detail']}")
         print(f"      -> {b['remedy']}")
+
+
+def _report_preflight(root, retro_id: str | None) -> dict:
+    """Print every unmet prerequisite to stderr. Returns the pre-flight result.
+
+    Never changes the caller's control flow or exit code: `close`'s own refusals and its chain
+    decide what stops a close, so nothing that succeeded before this existed now fails.
+    """
+    pre = close_preflight(root, retro_id)
+    if not pre["ready"]:
+        print(f"close pre-flight: {len(pre['blockers'])} unmet prerequisite(s) - this is ALL "
+              f"of them, not the first:", file=sys.stderr)
+        for b in pre["blockers"]:
+            print(f"  [{b['stage']}] {b['detail']}\n      -> {b['remedy']}", file=sys.stderr)
+    return pre
 
 
 def cmd_preflight(args: argparse.Namespace) -> int:
@@ -2774,6 +2816,12 @@ def cmd_close(args: argparse.Namespace) -> int:
         print("close refused: no run state - `sprint plan --write` opens the run this "
               "close would end", file=sys.stderr)
         return 2
+    # EVERYTHING OWED, BEFORE ANY REFUSAL CAN SHORT-CIRCUIT IT. This sits above the sprint-goal,
+    # retro and goal-verdict refusals deliberately: each of those returns early, so a pre-flight
+    # placed after them reported nothing whenever one of them fired - which is exactly the serial
+    # discovery this exists to end, reintroduced by its own placement. Reported, never a refusal:
+    # the refusals below and the chain after them still decide what stops the close.
+    _report_preflight(root, args.retro)
     if not state.get("sprint_goal"):
         print("close refused: no sprint goal recorded on this run - set one at plan time "
               "with --sprint-goal; a close cannot invent what the run aimed at",
@@ -2804,16 +2852,6 @@ def cmd_close(args: argparse.Namespace) -> int:
               "`sprint.py goal-verdict --verdict achieved|partial|missed --note \"...\"` "
               "(or pass --goal-verdict/--note here), then re-run close", file=sys.stderr)
         return 1
-    # Everything owed, up front. REPORTED, never a new refusal: the chain below still decides
-    # what stops the close, so no close that succeeded before now fails. This exists because the
-    # prerequisites were discovered one per invocation, each costing a full gate run, and the
-    # information was available before the first attempt.
-    pre = close_preflight(root, args.retro)
-    if not pre["ready"]:
-        print(f"close pre-flight: {len(pre['blockers'])} unmet prerequisite(s) - this is ALL "
-              f"of them, not the first:", file=sys.stderr)
-        for b in pre["blockers"]:
-            print(f"  [{b['stage']}] {b['detail']}\n      -> {b['remedy']}", file=sys.stderr)
     module = sys.modules[__name__]
     for i, name in enumerate(_CLOSE_CHAIN, start=1):
         step = getattr(module, "_close_" + name.replace("-", "_"))

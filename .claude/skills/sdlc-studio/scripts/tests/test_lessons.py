@@ -1017,6 +1017,20 @@ class SummaryStalenessTests(unittest.TestCase):
         self.assertEqual([e for e in expected if e not in parsed], [], "reported as added")
         self.assertEqual([p for p in parsed if p not in expected], [], "reported as removed")
 
+    def test_underscores_and_backticks_are_not_stripped(self) -> None:
+        """The normalisation must be no wider than the instability it corrects.
+
+        Stripping `_` and `` ` `` as well as `*` made `two_role_after` compare EQUAL to
+        `tworoleafter`, so the digest would have stopped noticing a real edit to the identifiers
+        these lessons are mostly about. The renderer emits neither character, so neither can move
+        in the round trip and neither earns its removal.
+        """
+        a = lessons.parse_project_lessons(
+            "## L-9002: call `two_role_after` before the gate\n\n- **Added:** 2026-07-20\n")
+        b = lessons.parse_project_lessons(
+            "## L-9002: call tworoleafter before the gate\n\n- **Added:** 2026-07-20\n")
+        self.assertNotEqual(lessons.expected_digest(a), lessons.expected_digest(b))
+
     def test_emphasis_is_the_only_thing_the_comparison_ignores(self) -> None:
         """The normalisation must not make the check blind to a real edit.
 

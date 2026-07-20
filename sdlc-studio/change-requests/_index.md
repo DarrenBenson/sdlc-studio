@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 21 |
+| Proposed | 22 |
 | Approved | 0 |
 | In Progress | 2 |
 | Complete | 327 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **368** |
+| **Total** | **369** |
 
 ## All Changes
 
@@ -190,6 +190,7 @@
 | [CR-0366](CR0366-sprint-plan-should-see-work-that-is-already.md) | sprint plan should see work that is already built and committed | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0367](CR0367-the-commit-message-check-runs-after-the-full.md) | the commit-message check runs after the full test gate, so a subject-line defect costs a whole suite run | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0368](CR0368-conformance-reports-a-unit-missing-critiqued-without-naming.md) | conformance reports a unit missing critiqued without naming which half is unmet | Proposed | Medium | Improvement | 2026-07-20 | -- |
+| [CR-0369](CR0369-a-sprint-that-needs-an-operator-decision-should.md) | a sprint that needs an operator decision should ask a structured question, not stop in dense prose | Proposed | High | Improvement | 2026-07-20 | -- |
 
 ## Archived Releases
 

@@ -737,13 +737,22 @@ def _post_write_sync_and_record(root, type_, path, new_text, result, current, ne
 def transition(repo_root: Path | str, artifact_id: str, new_status: str,
                dry_run: bool = False, force: bool = False,
                metrics: dict | None = None, triaged_by: str | None = None,
-               triage_severity: str | None = None) -> dict:
+               triage_severity: str | None = None,
+               pending_fields: dict | None = None) -> dict:
     """Set `artifact_id`'s status to `new_status`, sync its index, and cascade the epic
     breakdown for a story. Returns {id, type, from, to, index_synced, epic}.
 
     A story moving to Done is gated on its AC-verify result: red or never-run
     executable ACs block the transition unless `force=True`. Scoped to stories - CR/epic/bug
-    closures are unaffected. Manual-only / AC-less stories are never blocked."""
+    closures are unaffected. Manual-only / AC-less stories are never blocked.
+
+    `pending_fields` is a DRY-RUN-ONLY preview of writes the caller performs BEFORE the real
+    transition, applied to the in-memory text so the gates judge the state the real run will
+    actually see. An orchestrated close annotates `Verification depth` and only then transitions;
+    without this the preview evaluated the un-annotated file and refused what the real run
+    accepts - the same preview/run divergence in the opposite direction. IGNORED unless
+    `dry_run`, so it can never introduce a write of its own.
+    """
     root = Path(repo_root)
     if re.match(r"^(RETRO|RV|HO)-?\d+", artifact_id.strip(), re.IGNORECASE):
         raise ValueError(
@@ -756,6 +765,9 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
     if sdlc_md.canonical_status(new_status, vocab) is None:
         raise ValueError(f"{new_status!r} is not a valid {type_} status ({', '.join(vocab)})")
     text = path.read_text(encoding="utf-8")
+    if dry_run and pending_fields:
+        for _fname, _fval in pending_fields.items():
+            text = _upsert_field(text, _fname, _fval)
     target_canon = sdlc_md.canonical_status(new_status, vocab)
     current = sdlc_md.extract_field(text, "Status")
     from_canon = sdlc_md.canonical_status(current, vocab)

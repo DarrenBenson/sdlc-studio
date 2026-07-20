@@ -406,6 +406,32 @@ class NewTests(unittest.TestCase):
             self.assertIn("never verified", str(dry.exception))
             self.assertEqual(p.read_text(), before)   # and the preview still wrote nothing
 
+    def test_orchestrated_close_dry_run_accounts_for_the_annotation_it_would_write(self) -> None:
+        """The other direction of the same divergence, introduced by the BG0214 fix.
+
+        `cmd_close` annotates `Verification depth` and only THEN transitions, but guards the
+        annotation with `if not args.dry_run`. So the preview judged the un-annotated file and
+        REFUSED what the real command accepts - preview and run disagreeing again, opposite way
+        round. The first version of this suite hid it: a test called `transition.annotate` by
+        hand before the dry run, so the workaround shipped and the defect went unnoticed.
+
+        Driven through `main`, because the defect is in the CLI's ordering, not in `close`.
+        """
+        import io as _io                                   # noqa: PLC0415 - imported below in
+        import contextlib as _ctx                          # noqa: PLC0415 - this module
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            _v3(repo)
+            r = artifact.new(repo, "bug", "depth probe", dict(GROOM))
+            argv = ["close", "--id", r["id"], "--depth", "functional",
+                    "--triaged-by", "T; agent; v1", "--root", str(repo)]
+            with _ctx.redirect_stdout(_io.StringIO()), _ctx.redirect_stderr(_io.StringIO()):
+                dry = artifact.main([*argv, "--dry-run"])
+                real = artifact.main(argv)
+            self.assertEqual((dry, real), (0, 0),
+                             "the preview and the real orchestrated close disagree")
+
     def test_close_dry_run_still_previews_what_the_gates_allow(self) -> None:
         """The counterpart: the fix must not turn every preview into a refusal."""
         with tempfile.TemporaryDirectory() as d:

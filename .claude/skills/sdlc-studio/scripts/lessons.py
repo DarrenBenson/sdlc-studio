@@ -675,18 +675,24 @@ def _canon(item: dict) -> str:
     laid out (blank lines, indentation, trailing spaces, boilerplate prose) and sensitive to
     every part of a lesson the digest actually carries (id, title, gist).
 
-    Emphasis is dropped because the round trip through the file is not stable across it. The
+    Asterisks are dropped because the round trip through the file is not stable across them. The
     renderer writes `- **{id}: {title}**`, and `SUMMARY_LINE_RE` finds the title by scanning to
     the first `**` - so a lesson whose OWN text starts with bold splits at the wrong marker, and
     the same lesson reads back with the emphasis in a different place. The parts are all still
     there and still compared; only the markers move. Comparing on markup made the blocking
     `lessons-summary` lane report one lesson as BOTH added and removed, with no edit that could
     satisfy it - `lessons summary` regenerated the identical file every time.
+
+    ONLY asterisks. Underscores and backticks are NOT stripped: the renderer emits neither, so
+    neither can move in the round trip, and both are load-bearing in the identifiers these
+    lessons carry - stripping them made `two_role_after` compare equal to `tworoleafter`, so the
+    digest would have stopped noticing a real edit. A normalisation wider than the instability it
+    corrects buys nothing and blinds the check.
     """
     text = f"{item['id']}: {item['title']}"
     if item["gist"]:
         text += f" - {item['gist']}"
-    text = re.sub(r"[*_`]+", "", text)
+    text = re.sub(r"\*+", "", text)
     return re.sub(r"\s+", " ", text).strip()
 
 
