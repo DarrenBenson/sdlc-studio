@@ -33,6 +33,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   would already have allowed. A childless request stays the separate `undecomposed` case, one
   unresolved child blocks it, a dropped child (Won't Implement / Won't Fix / Rejected) counts as
   resolved, and the whole thing is a no-op where the workflow is unenforced.
+  - **The preflight tells the truth about refusals.** G2 is not the only gate on the road to a
+    terminal, so `--dry-run` now takes the same road as the real sweep - it calls `transition` with
+    `dry_run=True` rather than assuming G2's verdict is final. Short-circuiting made the preflight
+    promise 36 derivations where the real run delivered 35, which is the one number an operator
+    reads precisely to avoid that surprise.
+  - **A refused derivation is data, not a printed aside.** `apply_derivable_requests` returns
+    `{synced, unapplied}`; the refusal is counted like every other unapplied action, so the command
+    exits non-zero, and it appears in the `--format json` payload. Previously a blocked run exited
+    0 and was entirely absent from JSON, so a programmatic caller read it as clean.
+  - **A drift item never advertises a remedy that cannot work.** Where a later gate still refuses
+    (an RFC carrying an open decision, which `--force` deliberately cannot bypass), the item names
+    that gate and says `reconcile apply` CANNOT clear it, instead of pointing at a command
+    guaranteed to refuse.
+  - **The gate sees the new kind.** It counted only `detect_type` output, so `gate` reported PASS
+    on a tree where `reconcile detect` exited 1. Only items `apply` can actually clear are counted:
+    one blocked behind another gate is reported without blocking, because a gate that cannot be
+    satisfied gets bypassed rather than fixed.
 - **The pre-commit gate runs cheapest-first and short-circuits (US0268).** The markdown lanes now
   run before the unit suites, and the suites are skipped entirely once a cheaper lane has failed -
   the commit is blocked either way, so paying ~132s of tests to be told about a blank line was

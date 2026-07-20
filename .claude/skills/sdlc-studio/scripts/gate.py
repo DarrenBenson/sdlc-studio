@@ -41,7 +41,20 @@ def _reconcile(root: str) -> dict:
     rr = Path(root).resolve()
     # detect_type returns a dict; the drift items live under "drift" (not len(dict)).
     total = sum(len(reconcile.detect_type(t, rr)["drift"]) for t in reconcile.DEFAULT_TYPES)
-    return {"count": total, "blocking": True, "detail": f"{total} drift item(s)"}
+    # `request-derivable` is assembled in the sweep, not in `detect_type`, so it was invisible
+    # here - the gate passed on a tree where `reconcile detect` exited 1. Only the items apply
+    # can ACTUALLY clear are counted: one blocked behind another gate (an RFC with an open
+    # decision) is real drift, but no commit can clear it, and a gate that cannot be satisfied
+    # gets bypassed rather than fixed. Those are reported without blocking.
+    blocked = 0
+    if sdlc_md.two_backlog_enforced(rr):
+        derivable = reconcile.derivable_request_drift(rr)
+        blocked = sum(1 for d in derivable if d.get("blocked_by"))
+        total += len(derivable) - blocked
+    detail = f"{total} drift item(s)"
+    if blocked:
+        detail += f" (+{blocked} awaiting another gate, not blocking)"
+    return {"count": total, "blocking": True, "detail": detail}
 
 
 def _index_derived(root: str) -> dict:

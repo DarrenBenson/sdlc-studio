@@ -160,14 +160,53 @@ class GateRealWrapperTests(unittest.TestCase):
         # ["drift"] items, not len(dict). Monkeypatch so it's state-independent.
         import reconcile
         orig = reconcile.detect_type
+        orig_d = reconcile.derivable_request_drift
         reconcile.detect_type = lambda t, root: {
             "census_total": 0, "census_counts": {}, "row_counts": {},
             "index_exists": True, "index_summary": {}, "drift": [{"a": 1}, {"b": 2}]}
+        # Stubbed too, or "hermetic" stops being true: the wrapper now also consults the
+        # derivable-request sweep, which reads the live workspace.
+        reconcile.derivable_request_drift = lambda root, explain=True: []
         try:
             count = gate._reconcile(str(REPO))["count"]
         finally:
             reconcile.detect_type = orig
+            reconcile.derivable_request_drift = orig_d
         self.assertEqual(count, 2 * len(reconcile.DEFAULT_TYPES))  # 2 drift/type, not 6 keys
+
+    def test_gate_counts_a_derivable_request_that_apply_can_clear(self) -> None:
+        """The kind is assembled in the sweep, not in `detect_type`, so the gate could not see
+        it: `gate` reported PASS on a tree where `reconcile detect` exited 1, which is how the
+        regression this kind exists to catch could return unnoticed."""
+        import reconcile
+        orig, orig_d = reconcile.detect_type, reconcile.derivable_request_drift
+        reconcile.detect_type = lambda t, root: {
+            "census_total": 0, "census_counts": {}, "row_counts": {},
+            "index_exists": True, "index_summary": {}, "drift": []}
+        reconcile.derivable_request_drift = lambda root, explain=True: [
+            {"id": "CR0001", "kind": "request-derivable", "blocked_by": None}]
+        try:
+            res = gate._reconcile(str(REPO))
+        finally:
+            reconcile.detect_type, reconcile.derivable_request_drift = orig, orig_d
+        self.assertEqual(res["count"], 1, res)
+
+    def test_gate_does_not_block_on_a_request_another_gate_refuses(self) -> None:
+        """Reported, not counted. No commit can clear an RFC blocked on an open decision, and a
+        gate that cannot be satisfied gets bypassed rather than fixed."""
+        import reconcile
+        orig, orig_d = reconcile.detect_type, reconcile.derivable_request_drift
+        reconcile.detect_type = lambda t, root: {
+            "census_total": 0, "census_counts": {}, "row_counts": {},
+            "index_exists": True, "index_summary": {}, "drift": []}
+        reconcile.derivable_request_drift = lambda root, explain=True: [
+            {"id": "RFC0001", "kind": "request-derivable", "blocked_by": "1 Open decision"}]
+        try:
+            res = gate._reconcile(str(REPO))
+        finally:
+            reconcile.detect_type, reconcile.derivable_request_drift = orig, orig_d
+        self.assertEqual(res["count"], 0, res)
+        self.assertIn("awaiting another gate", res["detail"])
 
 
     def test_duplicate_index_row_fails_gate(self) -> None:

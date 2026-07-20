@@ -1,0 +1,9 @@
+{"id": "BG0214", "tokens": 50000, "points": 2, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-20T06:29:11Z", "project": "sdlc-studio"}
+{"id": "US0271", "tokens": 50000, "points": 2, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-20T06:29:11Z", "project": "sdlc-studio"}
+{"id": "US0261", "tokens": 75000, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-20T06:29:11Z", "project": "sdlc-studio"}
+{"id": "US0263", "tokens": 75000, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-20T06:29:11Z", "project": "sdlc-studio"}
+{"id": "US0264", "tokens": 75000, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-20T06:29:11Z", "project": "sdlc-studio"}
+{"id": "US0265", "tokens": 75000, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-20T06:29:11Z", "project": "sdlc-studio"}
+{"id": "US0269", "tokens": 75000, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-20T06:29:11Z", "project": "sdlc-studio"}
+{"id": "US0270", "tokens": 75000, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-20T06:29:11Z", "project": "sdlc-studio"}
+{"id": "US0262", "tokens": 125000, "points": 5, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-20T06:29:11Z", "project": "sdlc-studio"}

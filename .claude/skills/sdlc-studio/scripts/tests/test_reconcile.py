@@ -8,6 +8,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import json
 import re
 import sys
 import tempfile
@@ -2560,12 +2561,13 @@ class DerivableRequestDriftTests(unittest.TestCase):
                 "two_backlog:\n  enforce: true\n", encoding="utf-8")
         return root
 
-    def _cr(self, root, cid="CR0001", status="In Progress", children=("US0001",)):
+    def _cr(self, root, cid="CR0001", status="In Progress", children=("US0001",), parent=None):
         d = root / "sdlc-studio" / "change-requests"
         d.mkdir(parents=True, exist_ok=True)
         into = f"> **Decomposed-into:** {', '.join(children)}\n" if children else ""
+        par = f"> **Parent:** {parent}\n" if parent else ""
         (d / f"{cid}-x.md").write_text(
-            f"# CR-{cid[2:]}: c\n\n> **Status:** {status}\n> **Size:** M\n{into}\n"
+            f"# CR-{cid[2:]}: c\n\n> **Status:** {status}\n> **Size:** M\n{par}{into}\n"
             "## Summary\n\nx\n", encoding="utf-8")
         (d / "_index.md").write_text(
             "# CRs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
@@ -2577,14 +2579,18 @@ class DerivableRequestDriftTests(unittest.TestCase):
         (d / f"{sid}-s.md").write_text(
             f"# {sid}: s\n\n> **Status:** {status}\n> **Parent:** {parent}\n> **Points:** 2\n",
             encoding="utf-8")
+        # The row carries the story's REAL status. A placeholder here is not inert: the sweep
+        # cannot rewrite it, so every apply in this class reported a spurious unapplied row and
+        # any count assertion had to be loosened around noise the fixture invented.
         rows = "".join(
-            f"| [{p.stem.split('-')[0]}]({p.name}) | s | x |\n"
+            f"| [{p.stem.split('-')[0]}]({p.name}) | s | "
+            f"{reconcile.sdlc_md.extract_field(p.read_text(encoding='utf-8'), 'Status')} |\n"
             for p in sorted(d.glob("US*.md")))
         (d / "_index.md").write_text(
             "# Stories\n\n| ID | Title | Status |\n| --- | --- | --- |\n" + rows, encoding="utf-8")
 
     def _kinds(self, root):
-        return [d for d in reconcile.derivable_request_drift(root)]
+        return reconcile.derivable_request_drift(root)
 
     def test_a_request_with_all_children_resolved_is_reported(self):
         root = self._repo()
@@ -2596,10 +2602,14 @@ class DerivableRequestDriftTests(unittest.TestCase):
         self.assertIn(got[0]["kind"], reconcile.DRIFT_KINDS)
 
     def test_the_derivable_kind_is_registered(self):
-        root = self._repo()
-        self._cr(root)
-        self._story(root, "US0001", "Done")
-        self.assertIn(self._kinds(root)[0]["kind"], reconcile.DRIFT_KINDS)
+        """Registered in BOTH places a kind has to appear, which is what makes this test carry
+        weight the reporting tests do not: as a known kind, and with a fix hint. A kind missing
+        from the remediation registry reports drift an operator has no documented route to
+        clear."""
+        self.assertIn("request-derivable", reconcile.DRIFT_KINDS)
+        hint = reconcile.sdlc_md.REMEDIATION["reconcile"].get("request-derivable", "")
+        self.assertIn("reconcile apply", hint)
+        self.assertIn("CANNOT clear", hint)   # the blocked case is documented, not just the happy one
 
     def test_detector_delegates_to_the_g2_gate(self):
         """AC2: swap the gate's verdict and the detector must follow.
@@ -2714,6 +2724,141 @@ class DerivableRequestDriftTests(unittest.TestCase):
             reconcile.apply_derivable_requests(root)
             again = reconcile.derivable_request_drift(root)
         self.assertEqual(again, [])
+
+    # --- A request whose G2 gate passes but which a LATER gate still refuses. ---------------
+    # G2 is not the only gate on the road to a terminal, and every fixture above uses a CR with
+    # a clean ladder, so none of them can tell an honest preflight from a dishonest one. This is
+    # the production shape: RFC0046's children were all resolved and its accept gate still
+    # refused on an open decision.
+
+    def _rfc_with_open_decision(self, root, rid="RFC0001", status="In Review"):
+        d = root / "sdlc-studio" / "rfcs"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{rid}-r.md").write_text(
+            f"# {rid}: r\n\n> **Status:** {status}\n> **Decomposed-into:** CR0001\n\n"
+            "## Decisions\n\n| ID | Question | Status |\n| --- | --- | --- |\n"
+            "| D1 | should we | Open |\n", encoding="utf-8")
+        (d / "_index.md").write_text(
+            "# RFCs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            f"| [{rid}]({rid}-r.md) | r | {status} |\n", encoding="utf-8")
+
+    def _resolved_rfc_child(self, root, rid="RFC0001"):
+        """The RFC's only child CR, already Complete - so G2 itself is satisfied and the only
+        thing left standing between the RFC and Accepted is the accept gate."""
+        self._cr(root, status="Complete", children=("US0001",), parent=rid)
+        self._story(root, "US0001", "Done")
+
+    def test_dry_run_reports_the_refusal_a_real_run_would_hit(self):
+        """The preflight must not promise a derivation the real sweep refuses.
+
+        The first cut appended the id and skipped `transition` entirely on a dry run, so only
+        the G2 gate was ever consulted: `apply --dry-run` said 36 where `apply` delivered 35.
+        """
+        root = self._repo()
+        self._rfc_with_open_decision(root)
+        self._resolved_rfc_child(root)
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            dry = reconcile.apply_derivable_requests(root, dry_run=True)
+            real = reconcile.apply_derivable_requests(root, dry_run=False)
+        self.assertEqual(dry["synced"], [], "dry run promised a derivation the gate refuses")
+        self.assertEqual([u["id"] for u in dry["unapplied"]], ["RFC0001"])
+        # The whole point: preflight and real run agree.
+        self.assertEqual(dry["synced"], real["synced"])
+        self.assertEqual([u["id"] for u in dry["unapplied"]],
+                         [u["id"] for u in real["unapplied"]])
+        # ...and the dry run wrote nothing.
+        body = (root / "sdlc-studio" / "rfcs" / "RFC0001-r.md").read_text(encoding="utf-8")
+        self.assertIn("> **Status:** In Review", body)
+
+    def test_a_refused_derivation_is_returned_as_data_not_only_printed(self):
+        root = self._repo()
+        self._rfc_with_open_decision(root)
+        self._resolved_rfc_child(root)
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            res = reconcile.apply_derivable_requests(root)
+        self.assertEqual(len(res["unapplied"]), 1, res)
+        u = res["unapplied"][0]
+        self.assertEqual((u["id"], u["target"]), ("RFC0001", "Accepted"))
+        self.assertIn("Open decision", u["reason"])
+
+    def test_a_refused_derivation_drives_a_non_zero_exit(self):
+        """Every other unapplied path in `cmd_apply` fails the command; this one exited 0, so a
+        CI running `reconcile apply` could not see that a derivation had been refused."""
+        root = self._repo()
+        self._rfc_with_open_decision(root)
+        self._resolved_rfc_child(root)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+            rc = reconcile.main(["--root", str(root), "apply"])
+        self.assertEqual(rc, 1, buf.getvalue())
+        self.assertIn("could NOT derive RFC0001", buf.getvalue())
+        self.assertIn("1 could not be applied", buf.getvalue())
+
+    def test_the_json_path_surfaces_a_refusal(self):
+        """A programmatic caller saw `{"synced": [...]}` only, so a blocked run read as clean."""
+        root = self._repo()
+        self._rfc_with_open_decision(root)
+        self._resolved_rfc_child(root)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+            rc = reconcile.main(["--root", str(root), "apply", "--format", "json"])
+        payload = json.loads(buf.getvalue())
+        self.assertEqual(rc, 1)
+        self.assertEqual(payload["unapplied"], 1)
+        self.assertEqual(
+            [u["id"] for u in payload["by_type"]["derivable_requests"]["unapplied"]], ["RFC0001"])
+
+    def test_the_fix_hint_does_not_advertise_a_command_that_cannot_work(self):
+        """A drift item whose remedy is guaranteed to refuse is a loop with no exit."""
+        root = self._repo()
+        self._rfc_with_open_decision(root)
+        self._resolved_rfc_child(root)
+        got = [d for d in reconcile.derivable_request_drift(root) if d["id"] == "RFC0001"]
+        self.assertEqual(len(got), 1, got)
+        self.assertTrue(got[0]["blocked_by"], "the blocking gate was not recorded")
+        self.assertIn("CANNOT clear", got[0]["fix"])
+
+    def test_an_unblocked_request_still_advertises_apply(self):
+        """The counterpart to the test above - otherwise 'never advertise apply' would pass it."""
+        root = self._repo()
+        self._cr(root)
+        self._story(root, "US0001", "Done")
+        d = self._kinds(root)[0]
+        self.assertIsNone(d["blocked_by"])
+        self.assertIn("`reconcile apply` sets it Complete", d["fix"])
+
+    def test_apply_is_gated_by_two_backlog_not_only_detect(self):
+        """The apply-side guard had no test: mutating BOTH `cmd_apply` guards to drop the
+        `two_backlog_enforced` clause left this class entirely green. An unenforced project
+        closes its requests by assertion, so nothing here may move them."""
+        root = self._repo(enforce=False)
+        self._cr(root)
+        self._story(root, "US0001", "Done")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+            reconcile.main(["--root", str(root), "apply"])
+        body = (root / "sdlc-studio" / "change-requests" / "CR0001-x.md").read_text(encoding="utf-8")
+        self.assertIn("> **Status:** In Progress", body)
+        self.assertNotIn("derived CR0001", buf.getvalue())
+        # ...and the same workspace WITH enforcement does derive it, so this is not vacuous.
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "two_backlog:\n  enforce: true\n", encoding="utf-8")
+        buf2 = io.StringIO()
+        with contextlib.redirect_stdout(buf2), contextlib.redirect_stderr(io.StringIO()):
+            reconcile.main(["--root", str(root), "apply"])
+        body2 = (root / "sdlc-studio" / "change-requests" / "CR0001-x.md").read_text(encoding="utf-8")
+        self.assertIn("> **Status:** Complete", body2)
+
+    def test_apply_is_gated_by_two_backlog_in_the_json_path_too(self):
+        """Both `cmd_apply` guards are real: the JSON path has its own."""
+        root = self._repo(enforce=False)
+        self._cr(root)
+        self._story(root, "US0001", "Done")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+            reconcile.main(["--root", str(root), "apply", "--format", "json"])
+        payload = json.loads(buf.getvalue())
+        self.assertNotIn("derivable_requests", payload["by_type"])
 
 if __name__ == "__main__":
     unittest.main()

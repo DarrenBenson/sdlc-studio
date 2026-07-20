@@ -1276,7 +1276,7 @@ def undecomposed_drift(repo_root: Path | str) -> list[dict]:
     return drift
 
 
-def derivable_request_drift(repo_root: Path | str) -> list[dict]:
+def derivable_request_drift(repo_root: Path | str, explain: bool = True) -> list[dict]:
     """A discovery item whose children have ALL resolved but which is not itself terminal.
 
     The two-backlog workflow says a request reaches its successful terminal by DERIVATION, never
@@ -1299,45 +1299,81 @@ def derivable_request_drift(repo_root: Path | str) -> list[dict]:
         target = sdlc_md.default_terminal_status(type_)
         if not target:
             continue
+        vocab = sdlc_md.status_vocab(type_, root)   # loop-invariant: one lookup per type
         for p in sdlc_md.artifact_files(type_, root):
             text = sdlc_md.read_text_safe(p)
-            vocab = sdlc_md.status_vocab(type_, root)
             status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
             if not status or sdlc_md.is_terminal_status(type_, status):
                 continue
             rid = sdlc_md.extract_record_id(p.stem) or p.stem
             if transition._request_terminal_gate(root, type_, rid, target) is not None:
-                continue          # the gate would refuse: not derivable
+                continue          # the G2 gate would refuse: not derivable
+            # G2 is satisfied, but it is not the only gate on the way to `target`. Ask the WHOLE
+            # ladder, via a dry run, so the hint names the command that will actually clear this.
+            # A drift item whose advertised fix is guaranteed to refuse is worse than no hint: it
+            # sends the operator round a loop that cannot terminate.
+            #
+            # Skipped for `explain=False`, which is how apply calls this: apply is about to
+            # attempt the real transition and will surface the same refusal from it. Probing
+            # first would run every gate twice for one decision.
+            blocked_by = _terminal_refusal(transition, root, rid, target) if explain else None
+            if blocked_by:
+                fix = (f"{rid} is {status} and every child it produced is resolved, but a gate "
+                       f"still refuses {target}: {blocked_by}. `reconcile apply` CANNOT clear "
+                       f"this - resolve that first.")
+            else:
+                fix = (f"{rid} is {status} but every child it produced is resolved - "
+                       f"its terminal is DERIVED, so `reconcile apply` sets it {target}")
             drift.append({"type": type_, "id": rid, "kind": "request-derivable",
                           "file_status": status, "index_status": None,
-                          "fix": f"{rid} is {status} but every child it produced is resolved - "
-                                 f"its terminal is DERIVED, so `reconcile apply` sets it "
-                                 f"{target}"})
+                          "blocked_by": blocked_by, "fix": fix})
     return drift
 
 
-def apply_derivable_requests(repo_root: Path | str, dry_run: bool = False) -> list[str]:
-    """Derive every request whose children have all resolved. Returns the ids transitioned.
+def _terminal_refusal(transition, root: Path, rid: str, target: str) -> str | None:
+    """The reason the full transition ladder refuses `rid -> target`, or None if it would pass.
+
+    A dry run, so it decides nothing it does not also write: the alternative is restating each
+    downstream gate's precondition here, which is the two-answers-to-one-question failure the
+    module docstring warns about.
+    """
+    try:
+        transition.transition(root, rid, target, dry_run=True)
+    except (ValueError, FileNotFoundError) as exc:
+        return str(exc).strip().splitlines()[0]
+    return None
+
+
+def apply_derivable_requests(repo_root: Path | str, dry_run: bool = False) -> dict:
+    """Derive every request whose children have all resolved.
+
+    Returns {"synced": [id, ...], "unapplied": [{"id", "target", "reason"}, ...]}.
 
     Goes through `transition.transition`, never a direct write, so the index row, any parent
     cascade and the telemetry event all happen exactly as a hand transition would.
+
+    DRY RUN TAKES THE SAME ROAD. It calls `transition` with `dry_run=True` rather than assuming
+    the G2 gate was the only one: the downstream gates deliberately fire on a dry run so that a
+    preflight surfaces the refusal a real run would hit. Short-circuiting here made the preflight
+    promise 36 derivations where the real sweep delivered 35 - the one number an operator reads
+    precisely to avoid that surprise.
     """
     import transition  # noqa: PLC0415 - lazy, as above
     root = Path(repo_root)
     done: list[str] = []
-    for d in derivable_request_drift(root):
+    unapplied: list[dict] = []
+    for d in derivable_request_drift(root, explain=False):
         target = sdlc_md.default_terminal_status(d["type"])
-        if dry_run:
-            done.append(d["id"])
-            continue
         try:
-            transition.transition(root, d["id"], target)
+            transition.transition(root, d["id"], target, dry_run=dry_run)
             done.append(d["id"])
         except (ValueError, FileNotFoundError) as exc:
-            # A refusal here is information, not a crash: report and carry on, so one stuck
-            # request cannot block the rest of the sweep.
-            print(f"  request-derivable: {d['id']} -> {target} refused: {exc}", file=sys.stderr)
-    return done
+            # A refusal is information, not a crash: record and carry on, so one stuck request
+            # cannot block the rest of the sweep. Returned as DATA, not printed and dropped - a
+            # caller that cannot see the refusal reports a clean run over a blocked one.
+            unapplied.append({"id": d["id"], "target": target,
+                              "reason": str(exc).strip().splitlines()[0]})
+    return {"synced": done, "unapplied": unapplied}
 
 
 def era_divergence_advisory(repo_root: Path | str) -> str | None:
@@ -2120,8 +2156,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
             by_type["epic_points"] = apply_epic_points(repo_root, dry_run=args.dry_run)
             by_type["linked_epics"] = apply_linked_epics(repo_root, dry_run=args.dry_run)
         if args.scope is None and sdlc_md.two_backlog_enforced(repo_root):
-            by_type["derivable_requests"] = {
-                "synced": apply_derivable_requests(repo_root, dry_run=args.dry_run)}
+            by_type["derivable_requests"] = apply_derivable_requests(
+                repo_root, dry_run=args.dry_run)
         applied = sum(len(r.get("changes", [])) + len(r.get("appended", []))
                       + len(r.get("pruned", [])) + len(r.get("synced", []))
                       for r in by_type.values())
@@ -2205,10 +2241,16 @@ def cmd_apply(args: argparse.Namespace) -> int:
     # Full-sweep only, and gated exactly as the detector is: an unenforced project closes its
     # requests by assertion, so nothing here may move them.
     if args.scope is None and sdlc_md.two_backlog_enforced(repo_root):
-        for rid in apply_derivable_requests(repo_root, dry_run=args.dry_run):
+        dr = apply_derivable_requests(repo_root, dry_run=args.dry_run)
+        for rid in dr["synced"]:
             print(f"{'WOULD derive' if args.dry_run else 'derived'} {rid} "
                   f"(every child resolved)")
             n += 1
+        for u in dr["unapplied"]:
+            # Counted, not just printed: every other unapplied path drives the exit code, and a
+            # refused derivation that exits 0 is invisible to the CI that runs this.
+            print(f"could NOT derive {u['id']} -> {u['target']}: {u['reason']}")
+            unapplied += 1
     if do_meta:
         m = apply_meta(repo_root, dry_run=args.dry_run)
         for c in m.get("created", []):
