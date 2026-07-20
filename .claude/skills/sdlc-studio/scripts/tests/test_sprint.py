@@ -3652,5 +3652,186 @@ class CloseReconcileBlockedDerivableTests(unittest.TestCase):
         self.assertEqual(detail, "no index drift")
 
 
+class ClosePreflightTests(unittest.TestCase):
+    """CR0359: the close discovered its blockers one at a time.
+
+    Each refusal was correct and well explained, but each was found only after the preceding
+    ones were cleared, and every cycle cost a full gate run. The information was all available
+    before the first attempt. These tests pin that it is now reported in one pass, that the pass
+    is read-only, and - the part that made the old behaviour so expensive - that it covers the
+    apply-signoff prerequisites, which surfaced last of all.
+    """
+
+    def _mod(self, root, *, lanes=(), units=None, verdicts=None, evidence=(), signoffs=(),
+             covered=()):
+        """sprint module with the gate and critic stubbed, so these run in milliseconds and
+        assert the PRE-FLIGHT's composition rather than re-testing the gate."""
+        mod = _load()
+        import gate as gate_mod
+        import critic as critic_mod
+        self.addCleanup(setattr, gate_mod, "run_gate", gate_mod.run_gate)
+        for name in ("verdict_for", "evidence_for", "signoff_for",
+                     "is_independent_signoff", "sprint_review_for",
+                     "sprint_covers_independently"):
+            self.addCleanup(setattr, critic_mod, name, getattr(critic_mod, name))
+        gate_mod.run_gate = lambda *a, **k: {"ok": not lanes, "checks": [
+            {"check": c, "status": "fail", "blocking": True, "detail": f"{c} detail"}
+            for c in lanes]}
+        # The two-role half only applies past `review.two_role_after`. Without this the whole
+        # evidence/sign-off branch is skipped and the sign-off tests pass for the wrong reason.
+        cfg = root / "sdlc-studio" / ".config.yaml"
+        cfg.parent.mkdir(parents=True, exist_ok=True)
+        cfg.write_text("review:\n  two_role_after: 100\n", encoding="utf-8")
+        verdicts = verdicts or {}
+        critic_mod.verdict_for = lambda r, u, phase="delivery": verdicts.get(u)
+        critic_mod.evidence_for = lambda r, u: [{"x": 1}] if u in evidence else []
+        critic_mod.signoff_for = lambda r, u: {"principal": "p"} if u in signoffs else None
+        critic_mod.is_independent_signoff = lambda r, u, s: u in signoffs
+        critic_mod.sprint_review_for = lambda r, u: None
+        critic_mod.sprint_covers_independently = lambda r, u, rev: u in covered
+        batch = list(units or ["US0101"])
+        # Real artefacts behind the batch ids: the sign-off brief refuses an id with no unit,
+        # and a fixture naming units that do not exist would fail for that reason rather than
+        # for anything the pre-flight decides.
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True, exist_ok=True)
+        for u in batch:
+            (sd / f"{u}-x.md").write_text(
+                f"# {u}: x\n\n> **Status:** Done\n> **Points:** 2\n", encoding="utf-8")
+        _close_state(root, batch=batch)
+        return mod
+
+    def _retro(self, root, rid="RETRO0001"):
+        d = root / "sdlc-studio" / "retros"
+        d.mkdir(parents=True, exist_ok=True)
+        # Every REQUIRED_SECTION: a partial retro is a legitimate blocker, and a fixture missing
+        # one would make these tests fail for a reason unrelated to the pre-flight.
+        (d / f"{rid}-x.md").write_text(
+            f"# {rid}: r\n\n## Delivered\n\n- a thing\n\n"
+            "## What went well\n\n- it went\n\n"
+            "## What was hard / what stalled\n\n- it stalled\n\n"
+            "## Lessons\n\n- a real lesson worth carrying forward\n\n"
+            "## Actions raised\n\n| Finding | Disposition |\n| --- | --- |\n"
+            "| a finding | declined: not worth it |\n",
+            encoding="utf-8")
+        return rid
+
+    def _stages(self, res):
+        return [b["stage"] for b in res["blockers"]]
+
+    def test_preflight_reports_every_blocker_in_one_pass(self) -> None:
+        """AC1: several unmet prerequisites, ONE invocation, all of them named."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, lanes=("conformance", "reconcile"), units=["US0101"])
+            _close_state(root, batch=["US0101"], sprint_goal_verdict=None)
+            res = mod.close_preflight(root, None)
+            self.assertFalse(res["ready"])
+            stages = self._stages(res)
+            # goal-verdict AND retro AND both gate lanes AND the sign-off gap - together.
+            self.assertIn("goal-verdict", stages)
+            self.assertIn("retro", stages)
+            self.assertEqual(stages.count("gate"), 2, res["blockers"])
+            self.assertIn("sign-off", stages)
+            self.assertGreaterEqual(len(res["blockers"]), 5)
+
+    def test_preflight_writes_nothing(self) -> None:
+        """AC2: it answers the question without committing to a close."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, lanes=("conformance",))
+            before = {p: p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            mod.close_preflight(root, None)
+            after = {p: p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            self.assertEqual(before, after, "the pre-flight wrote to the tree")
+
+    def test_preflight_reports_ready_when_nothing_is_unmet(self) -> None:
+        """AC3: ready is a positive answer, not merely the absence of output."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
+                            evidence=("US0101",), signoffs=("US0101",))
+            rid = self._retro(root)
+            res = mod.close_preflight(root, rid)
+            self.assertTrue(res["ready"], res["blockers"])
+            self.assertEqual(res["blockers"], [])
+
+    def test_preflight_names_missing_signoff_prerequisites(self) -> None:
+        """US0274 AC1: the prerequisites that surface LAST today are surfaced first."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"])
+            rid = self._retro(root)
+            res = mod.close_preflight(root, rid)
+            signoff = [b for b in res["blockers"] if b["stage"] == "sign-off"]
+            self.assertTrue(signoff, res["blockers"])
+            self.assertIn("US0101", signoff[0]["detail"])
+            self.assertIn("critic.py", signoff[0]["remedy"])
+
+    def test_preflight_accepts_sprint_level_coverage(self) -> None:
+        """US0274 AC2: a pre-flight that OVER-reports is as untrustworthy as one that under-
+        reports. Sprint coverage satisfies the critique gate, so it must not be flagged."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"], covered=("US0101",), signoffs=("US0101",))
+            rid = self._retro(root)
+            res = mod.close_preflight(root, rid)
+            self.assertEqual([b for b in res["blockers"] if b["stage"] == "sign-off"], [],
+                             "sprint-level coverage was reported as a missing critique")
+
+    def test_preflight_delegates_to_critic(self) -> None:
+        """US0274 AC3: swap critic's verdict and the pre-flight must follow.
+
+        A pre-flight carrying its own copy of the independence rule is two answers to one
+        question, and it would pass every other test in this class.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
+                            evidence=("US0101",), signoffs=("US0101",))
+            rid = self._retro(root)
+            self.assertTrue(mod.close_preflight(root, rid)["ready"])
+            import critic as critic_mod
+            critic_mod.is_independent_signoff = lambda r, u, s: False   # the gate now refuses
+            res = mod.close_preflight(root, rid)
+            self.assertIn("sign-off", self._stages(res),
+                          "the pre-flight reimplements the sign-off rule instead of asking")
+
+    def test_close_reports_all_blockers_before_executing(self) -> None:
+        """US0275 AC1: printed before the first chain step runs."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, lanes=("conformance",), units=["US0101"])
+            rid = self._retro(root)
+            order = []
+            original = mod._close_retro_validate
+            mod._close_retro_validate = lambda *a, **k: (order.append("step") or
+                                                         (False, "stop", "fix it"))
+            try:
+                err = io.StringIO()
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                    mod.main(["close", "--retro", rid, "--root", str(root)])
+                out = err.getvalue()
+            finally:
+                mod._close_retro_validate = original
+            self.assertIn("close pre-flight", out)
+            self.assertIn("this is ALL of them", out)
+            self.assertLess(out.index("close pre-flight"), out.index("close STOPPED"),
+                            "the pre-flight report came after a chain step had already run")
+
+    def test_close_with_nothing_outstanding_is_unchanged(self) -> None:
+        """US0275 AC2: the pre-flight adds a report, never a new refusal."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
+                            evidence=("US0101",), signoffs=("US0101",))
+            rid = self._retro(root)
+            self.assertTrue(mod.close_preflight(root, rid)["ready"])
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                mod.main(["close", "--retro", rid, "--root", str(root)])
+            self.assertNotIn("close pre-flight", out.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()

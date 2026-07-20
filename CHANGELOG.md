@@ -75,6 +75,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   passed only because the preview consulted no gate, so the fixtures were closing artefacts the
   real run would have refused. The regression test uses a story the AC-verify gate REFUSES, since
   a fixture with a clean ladder cannot tell an honest preview from a blind one.
+- **`sprint preflight` reports every unmet close prerequisite in one read-only pass (CR0359).**
+  The close is a chain that stops at its first failure, and the sign-off prerequisites are not
+  part of the gate block at all - they surface only once the whole chain has passed. So a close
+  took as many invocations as it had unmet prerequisites, each paying a full gate run, and it read
+  as the tool moving the goalposts. Every fact was available before the first attempt. The new
+  command reports the gate lanes, the retro's missing sections, an unjudged goal and the per-unit
+  sign-off prerequisites (critic verdict, adversarial evidence, independent reviewer-of-record)
+  together. It is read-only by construction - it scaffolds no retro, regenerates no summary and
+  records no verdict - which is also why it cannot just run the chain with a dry-run flag: three
+  of the chain's steps exist to DO something, and a preview that performed half a close would be
+  a worse answer than none. `close` runs it and prints the same list up front, as a REPORT: the
+  chain still decides what stops the close, so nothing that succeeded before now fails. The
+  sign-off rules are asked of `critic` itself rather than restated, so the pre-flight and the gate
+  cannot drift apart and disagree about the same unit.
 - **The pre-commit gate runs cheapest-first and short-circuits (US0268).** The markdown lanes now
   run before the unit suites, and the suites are skipped entirely once a cheaper lane has failed -
   the commit is blocked either way, so paying ~132s of tests to be told about a blank line was

@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 20 |
+| Proposed | 21 |
 | Approved | 0 |
-| In Progress | 1 |
+| In Progress | 2 |
 | Complete | 327 |
 | Rejected | 0 |
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **366** |
+| **Total** | **368** |
 
 ## All Changes
 
@@ -180,7 +180,7 @@
 | [CR-0356](CR0356-reconcile-never-checks-the-index-row-s-title.md) | reconcile never checks the index row's title, so a retitled artefact drifts silently and no script can fix it | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0357](CR0357-the-rfc-accept-gate-s-fail-closed-fallback.md) | the RFC accept gate's fail-closed fallback can refuse a valid RFC, and says nothing about why | Proposed | Low | Improvement | 2026-07-19 | -- |
 | [CR-0358](CR0358-the-close-review-is-an-unbounded-repair-loop.md) | the close review is an unbounded repair loop: no convergence check, no cost ceiling, and the author writes the reviewer's prompt | In Progress | High | Improvement | 2026-07-19 | EP0085 |
-| [CR-0359](CR0359-sprint-close-discovers-its-blockers-one-at-a.md) | sprint close discovers its blockers one at a time, so a close takes as many runs as it has unmet prerequisites | Proposed | Medium | Improvement | 2026-07-19 | -- |
+| [CR-0359](CR0359-sprint-close-discovers-its-blockers-one-at-a.md) | sprint close discovers its blockers one at a time, so a close takes as many runs as it has unmet prerequisites | In Progress | Medium | Improvement | 2026-07-19 | EP0089 |
 | [CR-0360](CR0360-the-doc-freshness-line-budget-refusal-names-the.md) | the doc-freshness line-budget refusal names the count but not the gap, so trimming is guesswork | Proposed | Low | Improvement | 2026-07-19 | -- |
 | [CR-0361](CR0361-an-agent-meets-the-gates-as-refusals-not.md) | an agent meets the gates as refusals, not as a briefing: generate a per-unit pre-flight from the gates themselves | Complete | Medium | Improvement | 2026-07-19 | EP0086 |
 | [CR-0362](CR0362-a-retro-finding-fixed-during-the-sprint-has.md) | a retro finding fixed during the sprint has no honest disposition: the vocabulary is filed or declined | Proposed | Medium | Improvement | 2026-07-19 | -- |
@@ -188,6 +188,8 @@
 | [CR-0364](CR0364-reconcile-should-derive-a-request-terminal-when-its.md) | reconcile should derive a request terminal when its children are all resolved - G2 is a gate with no counterpart | Complete | High | Improvement | 2026-07-19 | EP0087 |
 | [CR-0365](CR0365-residuals-from-the-twelve-partially-delivered-requests-derived.md) | Residuals from the twelve partially-delivered requests derived Complete by CR0364 | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0366](CR0366-sprint-plan-should-see-work-that-is-already.md) | sprint plan should see work that is already built and committed | Proposed | Medium | Improvement | 2026-07-20 | -- |
+| [CR-0367](CR0367-the-commit-message-check-runs-after-the-full.md) | the commit-message check runs after the full test gate, so a subject-line defect costs a whole suite run | Proposed | Medium | Improvement | 2026-07-20 | -- |
+| [CR-0368](CR0368-conformance-reports-a-unit-missing-critiqued-without-naming.md) | conformance reports a unit missing critiqued without naming which half is unmet | Proposed | Medium | Improvement | 2026-07-20 | -- |
 
 ## Archived Releases
 

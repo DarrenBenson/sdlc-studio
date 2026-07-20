@@ -2630,6 +2630,138 @@ def _draw_report(root, retro_id) -> None:
               f"unaffected; draw it with `sprint.py report --id {retro_id}`", file=sys.stderr)
 
 
+def close_preflight(root, retro_id: str | None = None) -> dict:
+    """Every unmet close prerequisite, in ONE read-only pass.
+
+    The close is a chain that stops at its first failure, and the sign-off prerequisites are not
+    part of the gate block at all - they surface only after the whole chain has passed. So a
+    close took as many invocations as it had unmet prerequisites, each costing a full gate run,
+    and it read as the tool moving the goalposts. Every fact below was available before the
+    first attempt.
+
+    READ-ONLY BY CONSTRUCTION. It scaffolds no retro, regenerates no summary and records no
+    verdict, so it can be asked the question without committing to a close. That is also why it
+    cannot simply run the chain with a dry-run flag: three of the chain's steps exist to DO
+    something, and a preview that performed half a close would be a worse answer than none.
+
+    Returns {"ready": bool, "blockers": [{"stage", "detail", "remedy"}]}.
+    """
+    import gate   # noqa: PLC0415 - deferred, so `plan` never pays for the gate import graph
+    import retro  # noqa: PLC0415 - deferred, like the planner's retro import
+    root = Path(root)
+    blockers: list[dict] = []
+
+    def block(stage: str, detail: str, remedy: str) -> None:
+        blockers.append({"stage": stage, "detail": detail, "remedy": remedy})
+
+    try:
+        state = run_state.read(root)
+    except run_state.RunStateError as exc:
+        return {"ready": False, "blockers": [{"stage": "run-state", "detail": str(exc),
+                                              "remedy": "repair or remove the run state"}]}
+    if not state:
+        return {"ready": False, "blockers": [{
+            "stage": "run-state", "detail": "no run state",
+            "remedy": "`sprint plan --write` opens the run this close would end"}]}
+    if not state.get("sprint_goal"):
+        block("sprint-goal", "no sprint goal recorded on this run",
+              "set one at plan time with --sprint-goal; a close cannot invent what the run "
+              "aimed at")
+    if not state.get("sprint_goal_verdict"):
+        block("goal-verdict", "the Sprint Goal is unjudged",
+              '`sprint.py goal-verdict --verdict achieved|partial|missed --note "..."`')
+
+    # The retro: reported, never scaffolded. `close` mints one when omitted; that is an action.
+    if retro_id:
+        try:
+            res = retro.validate(root, retro_id)
+        except (OSError, ValueError) as exc:
+            block("retro", f"{retro_id}: {exc}", "fix the retro, or name the right id")
+        else:
+            for err in res.get("errors", []):
+                block("retro", f"{retro_id}: {err}", "fill the retro's missing sections")
+    else:
+        block("retro", "no retro named",
+              "`sprint.py close` scaffolds one and stops, or pass --retro RETROxxxx")
+
+    # The gate block, which already reports all of its lanes at once.
+    try:
+        report = gate.run_gate(str(root), require_retro=retro_id, require_review=True)
+    except Exception as exc:  # noqa: BLE001 - a broken lane must not hide the other blockers
+        block("gate", f"gate could not run: {exc}", "run `gate.py` directly for detail")
+    else:
+        for c in report.get("checks", []):
+            if c.get("status") == "fail" and c.get("blocking"):
+                block("gate", f"{c['check']}: {c.get('detail', '')}",
+                      sdlc_md.remediation_lines("gate", [c["check"]])[0]
+                      if sdlc_md.remediation_lines("gate", [c["check"]])
+                      else f"address the {c['check']} lane")
+
+    blockers.extend(_signoff_preflight(root, state))
+    return {"ready": not blockers, "blockers": blockers}
+
+
+def _signoff_preflight(root: Path, state: dict) -> list[dict]:
+    """What `--apply-signoff` will demand of each batch unit, asked BEFORE the close runs.
+
+    These are the prerequisites that surface last today, after a full chain has already passed.
+    Every rule is asked of `critic` itself rather than restated here: a pre-flight carrying its
+    own copy of the independence rule is two answers to one question, and the pair drift.
+    """
+    import critic  # noqa: PLC0415 - lazy, as elsewhere in the close path
+    out: list[dict] = []
+    # Read the SAME way conformance reads it, so the pre-flight and the gate agree on which
+    # units the two-role rule reaches. A `hasattr` guard here would silently skip the whole
+    # check if the accessor were ever renamed, which is the failure mode this pre-flight exists
+    # to remove.
+    cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "review.two_role_after"))
+    for unit in state.get("batch") or []:
+        if not unit.startswith("US"):
+            continue          # story-scoped, as the conformance gate is
+        verdict = critic.verdict_for(root, unit)
+        covered = critic.sprint_covers_independently(
+            root, unit, critic.sprint_review_for(root, unit))
+        if not verdict and not covered:
+            out.append({"stage": "sign-off", "detail": f"{unit}: no critic verdict and no "
+                                                       "sprint-level review covering it",
+                        "remedy": "`critic.py record --unit <id> ...` or "
+                                  "`critic.py sprint-review --units <ids> ...`"})
+            continue
+        num = sdlc_md.id_number(unit)
+        if cutoff is None or num is None or num <= cutoff:
+            continue          # pre-cutoff units keep today's behaviour
+        if not (critic.evidence_for(root, unit) or covered):
+            out.append({"stage": "sign-off", "detail": f"{unit}: no adversarial pass recorded "
+                                                       "as evidence",
+                        "remedy": "`critic.py evidence --unit <id> ...`"})
+        if not critic.is_independent_signoff(root, unit, critic.signoff_for(root, unit)):
+            out.append({"stage": "sign-off",
+                        "detail": f"{unit}: no independent reviewer-of-record sign-off",
+                        "remedy": "`critic.py signoff --unit <id> --principal \"<name>\" ...`"})
+    return out
+
+
+def _render_preflight(data: dict) -> None:
+    if data["ready"]:
+        print("preflight: ready - every close prerequisite is met")
+        return
+    n = len(data["blockers"])
+    print(f"preflight: {n} unmet prerequisite(s) - ALL of them, so the close is one more run "
+          f"once these are cleared:")
+    for b in data["blockers"]:
+        print(f"  [{b['stage']}] {b['detail']}")
+        print(f"      -> {b['remedy']}")
+
+
+def cmd_preflight(args: argparse.Namespace) -> int:
+    data = close_preflight(args.root, args.retro)
+    if args.format == "json":
+        print(json.dumps(data, indent=2))
+    else:
+        _render_preflight(data)
+    return 0 if data["ready"] else 1
+
+
 def cmd_close(args: argparse.Namespace) -> int:
     """The sprint close ceremony as one deterministic, resumable chain."""
     root = args.root
@@ -2672,6 +2804,16 @@ def cmd_close(args: argparse.Namespace) -> int:
               "`sprint.py goal-verdict --verdict achieved|partial|missed --note \"...\"` "
               "(or pass --goal-verdict/--note here), then re-run close", file=sys.stderr)
         return 1
+    # Everything owed, up front. REPORTED, never a new refusal: the chain below still decides
+    # what stops the close, so no close that succeeded before now fails. This exists because the
+    # prerequisites were discovered one per invocation, each costing a full gate run, and the
+    # information was available before the first attempt.
+    pre = close_preflight(root, args.retro)
+    if not pre["ready"]:
+        print(f"close pre-flight: {len(pre['blockers'])} unmet prerequisite(s) - this is ALL "
+              f"of them, not the first:", file=sys.stderr)
+        for b in pre["blockers"]:
+            print(f"  [{b['stage']}] {b['detail']}\n      -> {b['remedy']}", file=sys.stderr)
     module = sys.modules[__name__]
     for i, name in enumerate(_CLOSE_CHAIN, start=1):
         step = getattr(module, "_close_" + name.replace("-", "_"))
@@ -3314,6 +3456,16 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--format", choices=("text", "json"), default="text")
     r.add_argument("--root", default=".", help="Repo root (default: .)")
     r.set_defaults(func=cmd_report)
+
+    pf = sub.add_parser("preflight",
+                        help="Report EVERY unmet close prerequisite in one read-only pass "
+                             "(gate lanes, retro, goal-verdict and the per-unit sign-off "
+                             "prerequisites), before starting a close.")
+    pf.add_argument("--retro", metavar="RETROxxxx", default=None,
+                    help="the batch retro the close will validate against")
+    pf.add_argument("--format", choices=("text", "json"), default="text")
+    pf.add_argument("--root", default=".", help="Repo root (default: .)")
+    pf.set_defaults(func=cmd_preflight)
 
     g = sub.add_parser("goal-verdict",
                        help="Record the closing review's judgement of the Sprint Goal "

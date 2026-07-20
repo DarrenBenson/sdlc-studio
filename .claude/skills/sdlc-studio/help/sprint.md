@@ -107,7 +107,15 @@ same census read-only. Opt out only as a recorded decision: `sprint.breakdown: j
    is terminal (Done or Blocked). With `routing.enabled` (see below), a failed
    attempt escalates one model tier before the cap quarantines
    (`reference-sprint.md#model-tier-routing`).
-6. **Close** - `sprint close` runs the close ceremony as one deterministic chain
+6. **Pre-flight** (optional, read-only) - `sprint preflight --retro RETROxxxx` reports
+   **every** unmet close prerequisite in one pass: the gate lanes, the retro's missing
+   sections, an unjudged goal, and the per-unit sign-off prerequisites (critic verdict,
+   adversarial evidence, independent reviewer-of-record). Those last ones otherwise
+   surface only after the whole chain has passed, so a close took as many runs as it
+   had unmet prerequisites, each costing a full gate run. Writes nothing, so it can be
+   asked before committing to a close. `close` runs it automatically and prints the
+   same list up front; it reports, it never adds a refusal.
+7. **Close** - `sprint close` runs the close ceremony as one deterministic chain
    (goal-verdict, retro validate + extract, lessons summary, the close gate, handoff,
    reconcile), stopping loudly at the first failing step with the remedy named, and
    prints the sign-off decision brief. Run it with **no `--retro`** the first time and it
@@ -115,7 +123,7 @@ same census read-only. Opt out only as a recorded decision: `sprint.breakdown: j
    pre-filled from the run), then stops so you fill it; re-run with the id it prints
    (`sprint close --retro RETROxxxx`) to finish. Never hand-author the retro - the
    scaffold is the one path that also wires its index row.
-7. **Sprint review** - every run ends with a mandatory `reconcile` + `review`; the
+8. **Sprint review** - every run ends with a mandatory `reconcile` + `review`; the
    CODE leg is the adversarial full-diff critic pass (independent instance, refute
    framing, findings with repros, fixes seen red first, the SAME critic re-runs its
    own repros before approve - see `reference-sprint.md`).

@@ -1,6 +1,7 @@
 # CR-0359: sprint close discovers its blockers one at a time, so a close takes as many runs as it has unmet prerequisites
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0089
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 5 |
+| Draft | 8 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **272** |
+| **Total** | **275** |
 
 ## All Stories
 
@@ -183,6 +183,9 @@
 | [US0270](US0270-reconcile-apply-derives-the-request-terminal-through-transition.md) | reconcile apply derives the request terminal through transition, so every gate and cascade still runs | Done | EP0087 | 2026-07-19 | 2026-07-19 |
 | [US0271](US0271-the-derivation-refuses-what-g2-refuses-no-childless.md) | The derivation refuses what G2 refuses: no childless request, no unresolved child, and a no-op where the two-backlog workflow is unenforced | Done | EP0087 | 2026-07-19 | 2026-07-19 |
 | [US0272](US0272-validate-treats-a-draft-story-s-seeded-placeholder.md) | validate treats a Draft story's seeded placeholder ACs as a warning, so the refine commit lands while conformance still keeps it out of delivery | Done | EP0088 | 2026-07-20 | 2026-07-20 |
+| [US0273](US0273-a-standalone-preflight-reports-every-unmet-close-prerequisite.md) | a standalone preflight reports every unmet close prerequisite in one read-only pass | Draft | EP0089 | 2026-07-20 | 2026-07-20 |
+| [US0274](US0274-the-preflight-covers-the-apply-signoff-prerequisites-per.md) | the preflight covers the apply-signoff prerequisites per unit, not just the gate lanes | Draft | EP0089 | 2026-07-20 | 2026-07-20 |
+| [US0275](US0275-sprint-close-runs-the-preflight-before-executing-any.md) | sprint close runs the preflight before executing any step, so nothing is discovered serially | Draft | EP0089 | 2026-07-20 | 2026-07-20 |
 
 ## Archived Releases
 
