@@ -686,5 +686,69 @@ class StaleBytecodeTests(unittest.TestCase):
                              "the source must be left exactly as found")
 
 
+class StrandedMutantRecoveryTests(unittest.TestCase):
+    """BG0215: a killed run must leave enough on disk for the NEXT run to restore the
+    original bytes - a stranded mutant must never be captured as the harness's original."""
+
+    def test_applied_persists_original_sidecar_while_mutant_is_on_disk(self) -> None:
+        import base64
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            target = root / "target.py"
+            original = target.read_bytes()
+            sidecar = root / "sdlc-studio" / ".local" / "mutation-inflight.json"
+            muts, _ = mut.enumerate_mutations([target])
+            with mut.applied(muts[0], sidecar=sidecar):
+                # while the mutant is on disk, the sidecar holds the TRUE original -
+                # the one source a SIGKILL cannot corrupt
+                data = json.loads(sidecar.read_text(encoding="utf-8"))
+                self.assertEqual(base64.b64decode(data[str(target)]), original)
+            self.assertFalse(sidecar.exists())  # cleared once restored
+
+    def test_run_gate_recovers_stranded_mutant_before_baseline(self) -> None:
+        # simulate a SIGKILLed previous run: mutant stranded on disk, sidecar intact
+        import base64
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            target = root / "target.py"
+            original = target.read_bytes()
+            muts, _ = mut.enumerate_mutations([target])
+            target.write_bytes(mut.mutated_text(muts[0]).encode("utf-8"))
+            sidecar = root / "sdlc-studio" / ".local" / "mutation-inflight.json"
+            sidecar.parent.mkdir(parents=True, exist_ok=True)
+            sidecar.write_text(json.dumps(
+                {str(target): base64.b64encode(original).decode("ascii")}), encoding="utf-8")
+            r = mut.run_gate(root, [target], f"{sys.executable} -m unittest test_good")
+            self.assertEqual(r.get("recovered"), [str(target)])  # recovery is reported
+            self.assertFalse(r["refused"], r)   # baseline runs green AFTER recovery
+            self.assertEqual(target.read_bytes(), original)  # true original back on disk
+            self.assertFalse(sidecar.exists())
+
+    def test_clean_run_reports_no_recovery(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            r = mut.run_gate(root, [root / "target.py"],
+                             f"{sys.executable} -m unittest test_good")
+            self.assertEqual(r.get("recovered"), [])
+
+    def test_unreadable_sidecar_refuses_with_remedy(self) -> None:
+        # a sidecar that exists but cannot be parsed means a run died mid-mutant AND the
+        # recovery source is gone: the gate must refuse loudly, never run over the wreck
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            sidecar = root / "sdlc-studio" / ".local" / "mutation-inflight.json"
+            sidecar.parent.mkdir(parents=True, exist_ok=True)
+            sidecar.write_text("{not json", encoding="utf-8")
+            r = mut.run_gate(root, [root / "target.py"],
+                             f"{sys.executable} -m unittest test_good")
+            self.assertTrue(r["refused"], r)
+            self.assertEqual(r["mutations"], [])       # nothing applied over the wreck
+            self.assertIn("git", r["remedy"])          # remedy names the restore source
+
+
 if __name__ == "__main__":
     unittest.main()

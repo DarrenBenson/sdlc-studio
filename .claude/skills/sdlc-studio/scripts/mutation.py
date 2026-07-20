@@ -309,10 +309,51 @@ def _purge_bytecode(path: Path) -> None:
             pass
 
 
+def _inflight_path(root: Path) -> Path:
+    """The on-disk sidecar holding the original bytes of the mutant currently applied.
+    In-memory state (`_APPLIED`) dies with a SIGKILL; this file does not, so it is the
+    one restore source a killed run cannot corrupt."""
+    return Path(root) / "sdlc-studio" / ".local" / "mutation-inflight.json"
+
+
+def _recover_stranded(root: Path) -> list[str]:
+    """Restore any mutant a killed previous run stranded on disk, from its sidecar.
+
+    Returns the recovered paths. Raises ValueError when the sidecar exists but cannot
+    be parsed - a run died mid-mutant AND its recovery record is gone, so the only
+    honest move is to refuse and name the manual restore source.
+    """
+    import base64
+    sidecar = _inflight_path(root)
+    if not sidecar.exists():
+        return []
+    try:
+        data = json.loads(sidecar.read_text(encoding="utf-8"))
+        entries = [(p, base64.b64decode(b64)) for p, b64 in data.items()]
+    except (ValueError, KeyError, TypeError) as exc:
+        raise ValueError(
+            f"in-flight sidecar {sidecar} is unreadable ({exc}): a previous run died "
+            "mid-mutant and its recovery record is corrupt - restore the target files "
+            f"from git, delete {sidecar}, then re-run") from exc
+    recovered = []
+    for p, original in entries:
+        Path(p).write_bytes(original)
+        _purge_bytecode(Path(p))
+        recovered.append(p)
+    sidecar.unlink()
+    return recovered
+
+
 @contextlib.contextmanager
-def applied(mutation: dict):
+def applied(mutation: dict, sidecar: Path | None = None):
     """Apply one mutation; ALWAYS restore the original bytes, even when the
-    runner raises - the engine must never leave a mutant on disk."""
+    runner raises - the engine must never leave a mutant on disk.
+
+    With `sidecar`, the original bytes are persisted BEFORE the mutant lands and the
+    record is cleared only after the restore, so a SIGKILL mid-test (which skips this
+    `finally` and every handler) still leaves the next run a true restore source
+    rather than letting it read the stranded mutant back as the original."""
+    import base64
     path = Path(mutation["file"])
     original = path.read_bytes()
     replacement = mutated_text(mutation).encode("utf-8")
@@ -324,6 +365,10 @@ def applied(mutation: dict):
             f"mutation at {path}:{mutation.get('line')} does not change the file - "
             "refusing to run a no-op mutant")
     _APPLIED[str(path)] = original
+    if sidecar is not None:
+        sidecar.parent.mkdir(parents=True, exist_ok=True)
+        sidecar.write_text(json.dumps(
+            {str(path): base64.b64encode(original).decode("ascii")}), encoding="utf-8")
     try:
         path.write_bytes(replacement)
         _purge_bytecode(path)
@@ -332,6 +377,11 @@ def applied(mutation: dict):
         path.write_bytes(original)
         _purge_bytecode(path)
         _APPLIED.pop(str(path), None)
+        if sidecar is not None:
+            try:
+                sidecar.unlink()
+            except FileNotFoundError:
+                pass
 
 
 def _viability(path: Path, mutated: str) -> str | None:
@@ -393,17 +443,28 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     all_mutations, unchecked = enumerate_mutations(files, classes)
     to_apply, truncated = apply_budget(all_mutations, ceiling, changed)
     _install_restore_handlers()   # a kill mid-mutant must restore, never strand
-    baseline = _run_tests(test_cmd, root)
-    refused = baseline != "pass"
-    records: list[dict] = []
+    # A SIGKILLed previous run strands its mutant; reading THAT back as the original
+    # would poison every restore in this run, so recover from the sidecar first.
+    recovered: list[str] = []
+    baseline = "error"
+    refused = True
     remedy = None
-    if refused:
-        remedy = ("a red baseline proves nothing: clean the working tree (a stranded mutant "
-                  "from a killed run?) or fix the failing suite, then re-run"
-                  if baseline == "fail"
-                  else "the test command errored on unmutated code: fix the command or the "
-                       "environment, then re-run")
+    try:
+        recovered = _recover_stranded(root)
+    except ValueError as exc:
+        remedy = str(exc)
     else:
+        baseline = _run_tests(test_cmd, root)
+        refused = baseline != "pass"
+        if refused:
+            remedy = ("a red baseline proves nothing: clean the working tree (a stranded mutant "
+                      "from a killed run?) or fix the failing suite, then re-run"
+                      if baseline == "fail"
+                      else "the test command errored on unmutated code: fix the command or the "
+                           "environment, then re-run")
+    records: list[dict] = []
+    if not refused:
+        sidecar = _inflight_path(root)
         for m in to_apply:
             mutated = mutated_text(m)
             unviable_reason = _viability(Path(m["file"]), mutated)
@@ -412,7 +473,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
                 # so it must never count as killed (nor as survived)
                 records.append({**m, "verdict": "unviable", "reason": unviable_reason})
                 continue
-            with applied(m):
+            with applied(m, sidecar=sidecar):
                 outcome = _run_tests(test_cmd, root)
             verdict = {"pass": "survived", "fail": "killed", "error": "error"}[outcome]
             records.append({**m, "verdict": verdict})
@@ -451,6 +512,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
         "baseline": baseline,
         "refused": refused,
         "remedy": remedy,
+        "recovered": recovered,
         "mutations": records,
         "unchecked": unchecked,
         "summary": summary,
@@ -589,6 +651,9 @@ def cmd_run(args: argparse.Namespace) -> int:
     if args.format == "json":
         print(json.dumps(report, indent=2))
     else:
+        for p in report.get("recovered", []):
+            print(f"  note: recovered a stranded mutant on {p} from the in-flight "
+                  f"sidecar (a previous run was killed mid-mutant) before the baseline")
         print(f"mutation: {s['applied']} applied, {s['killed']} killed, "
               f"{s['survived']} survived, {s['errors']} error(s), "
               f"{s['unviable']} unviable, "

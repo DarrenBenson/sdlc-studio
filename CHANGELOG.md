@@ -1042,6 +1042,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A SIGKILLed mutation run can no longer poison the next run's restore source (BG0215).**
+  `mutation.py` persists each mutant's original bytes to an on-disk sidecar
+  (`sdlc-studio/.local/mutation-inflight.json`) before the mutant lands and clears it on
+  restore. A later run recovers stranded targets from the sidecar before its baseline (and
+  reports doing so), instead of reading the stranded mutant back as the original - which
+  made every subsequent restore reinstate broken code while reporting on the real code. An
+  unreadable sidecar refuses the run loudly and names the git restore path.
 - **`audit.py`'s command and predicate branches are pinned (BG0212).** A full 190-mutant
   enumeration went from 15 survivors to 6. Nine were real: `cmd_profile`'s output branches had
   no test asserting what the command PRINTS, three predicate fall-through branches were tested

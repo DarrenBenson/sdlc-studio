@@ -41,6 +41,11 @@ python3 <skill>/scripts/mutation.py prefilter --tests tests/test_*.py
 3. Applies one mutation at a time, re-runs `--test`, restores the original bytes, and
    verdicts it killed / survived / error. A kill (`TaskStop`/SIGTERM) or crash mid-mutant
    still restores via an atexit and SIGTERM handler, so a run never strands a mutant on disk.
+   Against a SIGKILL those handlers never run, so the original bytes are also persisted to
+   `sdlc-studio/.local/mutation-inflight.json` BEFORE each mutant lands: the next run
+   restores from that sidecar first (reported as `recovered`), so a stranded mutant is
+   never read back as the original. An unreadable sidecar refuses the run and names the
+   git restore path.
 4. Writes `sdlc-studio/.local/mutation-report.json`; the release gate's `mutation` lane
    surfaces it (advisory in v1; absent report reads not-run, never PASS).
 

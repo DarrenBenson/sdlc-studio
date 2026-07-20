@@ -1,8 +1,9 @@
 # BG0215: A timed-out mutation run leaves the mutant on disk and the restore captures it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
+> **Verification depth:** functional (the SIGKILL scenario is reproduced end to end: a stranded mutant plus sidecar is recovered before the baseline and the true original ends the run on disk; the sidecar is proven to hold the original while the mutant is applied and to clear on restore; a clean run reports no recovery; an unreadable sidecar refuses with the git remedy named)
 > **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio file
