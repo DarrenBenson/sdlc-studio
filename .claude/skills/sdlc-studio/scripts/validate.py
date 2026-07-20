@@ -32,6 +32,13 @@ _AC_SECTION_RE = re.compile(r"^#{2,}\s+.*acceptance criteria", re.I | re.M)
 # from a different vocabulary than the others.
 TEMPLATE_TIERS = tiers.TEMPLATE_TIERS
 
+# The closed severity vocabulary. Every check emits one of these two spellings and the summary
+# counters count these same two, so a per-line finding can never be reported and then omitted
+# from the tail. A near-miss spelling (`warn`) once printed WARN lines under `warnings=0`.
+SEVERITY_ERROR = "error"
+SEVERITY_WARNING = "warning"
+SEVERITIES = (SEVERITY_ERROR, SEVERITY_WARNING)
+
 
 def _has_ac_section(text: str) -> bool:
     """True if an 'Acceptance Criteria' heading is followed by at least one line
@@ -219,7 +226,8 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
     # the story out of Ready/Done", and that half is false. Every other type/status: error.
     _canon = sdlc_md.canonical_status(status, sdlc_md.status_vocab(type_, repo_root)) if status else None
     _pre_ready_story = type_ == "story" and _canon in ("Proposed", "Draft")
-    _check_placeholders(text, add, ac_severity="warn" if _pre_ready_story else "error")
+    _check_placeholders(text, add,
+                        ac_severity=SEVERITY_WARNING if _pre_ready_story else SEVERITY_ERROR)
     return out
 
 
@@ -293,16 +301,17 @@ def _cr_has_evidence(text: str) -> bool:
     return has_impact and has_size
 
 
-def _check_placeholders(text: str, add, ac_severity: str = "error") -> None:
+def _check_placeholders(text: str, add, ac_severity: str = SEVERITY_ERROR) -> None:
     """Flag an unresolved `{{...}}` slot left in a metadata line or an acceptance-criteria
     structural line (AC heading, ACn / Given / When / Then / checkbox bullet, Verify) - an
     unfilled scaffold. Flags only a line whose *value* is placeholder-ONLY, so prose
     that legitimately discusses `{{placeholder}}` syntax, and a real AC that merely references
     a token, are never flagged (consistent with conformance._real).
 
-    Metadata placeholders are always an error. An AC placeholder uses `ac_severity`: the caller
-    passes `warn` for an ungroomed (pre-Ready) story - a fresh refine output whose ACs are still
-    scaffolds - so the refine commit that creates it lands. The story is still kept out of
+    Metadata placeholders are always an error. An AC placeholder uses `ac_severity`, which must be
+    one of `SEVERITIES` or the summary counters will not see it: the caller passes
+    `SEVERITY_WARNING` for an ungroomed (pre-Ready) story - a fresh refine output whose ACs are
+    still scaffolds - so the refine commit that creates it lands. The story is still kept out of
     DELIVERY by conformance's specified/verifiable bar (unchanged) and by the AC-verify gate on
     Done; the transition to Ready is not itself blocked, so do not read this as gating it."""
     in_ac = False
@@ -420,8 +429,8 @@ def cmd_check(args: argparse.Namespace) -> int:
             repo_root, [args.type] if args.type else None))
         violations.extend(check_dor_dod(repo_root))
 
-    errors = sum(1 for v in violations if v["severity"] == "error")
-    warnings = sum(1 for v in violations if v["severity"] == "warning")
+    errors = sum(1 for v in violations if v["severity"] == SEVERITY_ERROR)
+    warnings = sum(1 for v in violations if v["severity"] == SEVERITY_WARNING)
 
     if args.format == "json":
         print(json.dumps({
@@ -503,8 +512,8 @@ def check_instructions(root: Path) -> list[dict]:
 def cmd_instructions(args: argparse.Namespace) -> int:
     """Validate the project's agent-instructions files and report."""
     violations = check_instructions(Path(args.root).resolve())
-    errors = sum(1 for v in violations if v["severity"] == "error")
-    warnings = sum(1 for v in violations if v["severity"] == "warning")
+    errors = sum(1 for v in violations if v["severity"] == SEVERITY_ERROR)
+    warnings = sum(1 for v in violations if v["severity"] == SEVERITY_WARNING)
     if args.format == "json":
         print(json.dumps({
             "generated_at": sdlc_md.now_iso8601(),

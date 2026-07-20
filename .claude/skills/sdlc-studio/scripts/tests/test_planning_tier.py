@@ -223,7 +223,8 @@ class PlanningValidationTests(unittest.TestCase):
             findings = validate.validate_file(Path(res["path"]), "story", root)
             placeholders = [v for v in findings if v["rule"] == "placeholder"]
             self.assertTrue(placeholders, "an unfilled planning scaffold must still report its slots")
-            self.assertTrue(all(v["severity"] == "warn" for v in placeholders),
+            self.assertTrue(all(v["severity"] == validate.SEVERITY_WARNING
+                                for v in placeholders),
                             "a Draft scaffold's AC placeholders are warnings, not errors")
             owned = [v for v in findings if v["severity"] == "error" and v["rule"] in
                      {"id-format", "no-title", "no-status", "status-vocab", "template-tier"}]

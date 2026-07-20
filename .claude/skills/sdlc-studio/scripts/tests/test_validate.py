@@ -297,7 +297,7 @@ class PlaceholderTests(unittest.TestCase):
                         "### AC1: {{define}}\n\n- **Given** {{context}}\n- **Verify:** {{check}}\n")
         findings = [v for v in validate.validate_file(f, "story") if v["rule"] == "placeholder"]
         self.assertTrue(findings, "the placeholder is still reported")
-        self.assertTrue(all(v["severity"] == "warn" for v in findings),
+        self.assertTrue(all(v["severity"] == validate.SEVERITY_WARNING for v in findings),
                         "an ungroomed Draft story's placeholder is a warning, not an error")
 
     def test_placeholder_metadata_flagged(self):
@@ -330,6 +330,45 @@ class PlaceholderTests(unittest.TestCase):
                         "- [ ] validate flags unresolved {{...}} placeholders as an error\n"
                         "- [x] All three use `{{placeholder}}` syntax and pass lint\n")
         self.assertNotIn("placeholder", [v["rule"] for v in validate.validate_file(f, "story")])
+
+
+class SeverityVocabularyTests(unittest.TestCase):
+    """BG0217: the summary counters must count every severity the checks emit.
+
+    A per-line WARN that the tail then reports as `warnings=0` is a summary contradicting the
+    output above it - the same false-completeness class as a dry run disagreeing with its real
+    run. These tests pin both halves: the vocabulary is closed, and the count equals the lines.
+    """
+
+    def _draft_story_with_placeholder_acs(self, root: Path) -> Path:
+        return _write(root, "sdlc-studio/stories/US0001-x.md",
+                      "# US0001: x\n\n> **Status:** Draft\n\n## Acceptance Criteria\n\n"
+                      "### AC1: {{define}}\n\n- **Given** {{context}}\n- **Verify:** {{check}}\n")
+
+    def test_every_emitted_severity_is_a_known_spelling(self) -> None:
+        # A severity outside the closed vocabulary is invisible to the counters. Pinning the
+        # set is what stops a third spelling being introduced later.
+        with tempfile.TemporaryDirectory() as d:
+            f = self._draft_story_with_placeholder_acs(Path(d))
+            findings = validate.validate_file(f, "story")
+            self.assertTrue(findings, "the fixture must produce findings for this to mean anything")
+            unknown = sorted({v["severity"] for v in findings} - set(validate.SEVERITIES))
+            self.assertEqual(unknown, [], f"severities the counters cannot count: {unknown}")
+
+    def test_summary_warning_count_equals_the_warning_lines_printed(self) -> None:
+        # The reported count and the printed output must agree. Three WARNING lines and a
+        # `warnings=0` tail is the defect.
+        with tempfile.TemporaryDirectory() as d:
+            self._draft_story_with_placeholder_acs(Path(d))
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                validate.main(["check", "--type", "story", "--root", d])
+            out = buf.getvalue()
+            lines = [ln for ln in out.splitlines()
+                     if ln.startswith(validate.SEVERITY_WARNING.upper())]
+            self.assertGreaterEqual(len(lines), 3, f"expected the placeholder warnings:\n{out}")
+            self.assertIn(f"warnings={len(lines)}", out,
+                          f"summary count disagrees with the {len(lines)} lines printed:\n{out}")
 
 
 class PersonaWellFormedTests(unittest.TestCase):
