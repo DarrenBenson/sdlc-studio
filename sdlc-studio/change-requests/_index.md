@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 20 |
+| Proposed | 21 |
 | Approved | 0 |
 | In Progress | 5 |
 | Complete | 329 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **372** |
+| **Total** | **373** |
 
 ## All Changes
 
@@ -194,6 +194,7 @@
 | [CR-0370](CR0370-forward-port-ships-untracked-test-cache-directories-into.md) | forward-port ships untracked test-cache directories into the installed skill | Complete | Low | Improvement | 2026-07-20 | EP0090 |
 | [CR-0371](CR0371-sprint-close-should-offer-to-file-its-blockers.md) | sprint close should offer to file its blockers and close, rather than driving to a conclusion | In Progress | High | Improvement | 2026-07-20 | EP0092 |
 | [CR-0372](CR0372-an-append-only-review-log-has-no-correction.md) | an append-only review log has no correction path, so one mis-entry can strand a unit permanently | Proposed | Medium | Improvement | 2026-07-20 | -- |
+| [CR-0373](CR0373-the-interactive-token-capture-should-record-the-delivering.md) | the interactive token capture should record the delivering model so the velocity row lands in the right (project, model) cell | Proposed | Medium | Improvement | 2026-07-20 | -- |
 
 ## Archived Releases
 

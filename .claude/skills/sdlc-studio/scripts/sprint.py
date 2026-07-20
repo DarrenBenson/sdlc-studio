@@ -2827,9 +2827,11 @@ def cmd_preflight(args: argparse.Namespace) -> int:
 
 #: Blocker stages `--file-and-close` may file and defer: ceremony debt, whose absence is
 #: honestly recordable as outstanding work. Everything else - a red gate lane, a unit whose
-#: Done gate refuses (failing/unrun executable ACs), a broken run state - is a CORRECTNESS
-#: signal, and filing it away would be the bypass this exit exists to prevent.
-_DEFERRABLE_CLOSE_STAGES = ("sprint-goal", "goal-verdict", "retro", "sign-off")
+#: Done gate refuses (failing/unrun executable ACs), a broken run state, a run with NO
+#: sprint goal (the plain close refuses that unconditionally, and a post-close CR to "set
+#: one at plan time" is unsatisfiable) - is a CORRECTNESS signal, and filing it away would
+#: be the bypass this exit exists to prevent.
+_DEFERRABLE_CLOSE_STAGES = ("goal-verdict", "retro", "sign-off")
 
 
 def _record_close_attempt(root, pre: dict) -> str | None:
@@ -2864,6 +2866,21 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
     a failing test."""
     import file_finding  # noqa: PLC0415
     import retro as retro_mod  # noqa: PLC0415
+    # A completed filing is FINAL: the filed CRs do not clear the pre-flight blockers, so a
+    # re-run would see the same set and file a duplicate pair, append second sections to the
+    # retro and the anchor, and overwrite the first filing's linkage. Refused, with the next
+    # step named - re-running a close is the habit the resumable chain trains.
+    outcome = (state.get("outcome") or run_state.RUNNING)
+    if outcome != run_state.RUNNING:
+        print(f"file-and-close REFUSED: this run is already closed (outcome `{outcome}`) - "
+              f"re-running would duplicate the filing. Open the next run with "
+              f"`sprint plan --write`", file=sys.stderr)
+        return 2
+    if state.get("deferred_blockers"):
+        already = ", ".join(d.get("id", "?") for d in state["deferred_blockers"])
+        print(f"file-and-close REFUSED: this run already filed its blockers ({already}) - "
+              f"a re-run would duplicate them", file=sys.stderr)
+        return 2
     blockers = pre["blockers"]
     hard = [b for b in blockers if b["stage"] not in _DEFERRABLE_CLOSE_STAGES]
     if hard:
@@ -2948,6 +2965,13 @@ def cmd_close(args: argparse.Namespace) -> int:
     trend = _record_close_attempt(root, pre)
     if trend:
         print(f"close: {trend}")
+    # The close IS a stop: the decisions deferred while the batch ran are asked HERE,
+    # together and structured - mechanically, not by a reference file hoping someone reads it.
+    pending_dec = state.get("pending_decisions") or []
+    if pending_dec:
+        print()
+        _render_pending_decisions(pending_dec)
+        print()
     if getattr(args, "file_and_close", False):
         return _file_and_close(root, args, state, pre)
     if pre["blockers"]:
@@ -3512,10 +3536,30 @@ def _parse_labelled(spec: str, what: str) -> tuple[str, str]:
     return label.strip(), text.strip()
 
 
+def _render_pending_decisions(pending: list[dict]) -> None:
+    """The structured surface, one stop for everything: question, named options with their
+    consequences, the recommendation marked with its reason."""
+    print(f"pending operator decisions: {len(pending)} - asked together, one stop, "
+          f"not one stop per decision:")
+    for i, p in enumerate(pending, 1):
+        print(f"\n[{i}] {p['unit']}: {p['question']}")
+        rec = p.get("recommend") or {}
+        for o in p["options"]:
+            mark = (f"   <- RECOMMENDED: {rec['reason']}"
+                    if rec.get("label") == o["label"] else "")
+            print(f"    - {o['label']}: {o['consequence']}{mark}")
+    print("\nrecord each answer: `sprint decision resolve --index N --choice <label>`")
+
+
 def cmd_decision(args) -> int:
     """Deferred operator decisions: set the undecidable unit aside, keep the batch moving,
     and ask everything together at the stop - structured, never prose."""
     root = Path(args.root)
+    try:
+        run_state.read(root)   # a corrupt state must refuse with the repair guidance,
+    except run_state.RunStateError as exc:  # never escape as a traceback mid-triage
+        print(f"decision {args.action} refused: {exc}", file=sys.stderr)
+        return 2
     if args.action == "defer":
         if not run_state.is_open(root):
             print("decision defer refused: no open run - a deferred decision belongs to a "
@@ -3570,16 +3614,7 @@ def cmd_decision(args) -> int:
         if not pending:
             print("no pending operator decisions")
             return 0
-        print(f"pending operator decisions: {len(pending)} - asked together, one stop, "
-              f"not one stop per decision:")
-        for i, p in enumerate(pending, 1):
-            print(f"\n[{i}] {p['unit']}: {p['question']}")
-            rec = p.get("recommend") or {}
-            for o in p["options"]:
-                mark = (f"   <- RECOMMENDED: {rec['reason']}"
-                        if rec.get("label") == o["label"] else "")
-                print(f"    - {o['label']}: {o['consequence']}{mark}")
-        print("\nrecord each answer: `sprint decision resolve --index N --choice <label>`")
+        _render_pending_decisions(pending)
         return 0
 
     # resolve: the ONLY path that writes an answer - autonomous runs never reach it

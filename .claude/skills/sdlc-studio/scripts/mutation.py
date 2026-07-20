@@ -329,6 +329,9 @@ def _recover_stranded(root: Path) -> list[str]:
         return []
     try:
         data = json.loads(sidecar.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            # valid JSON is not enough: a list/string/number parses and then has no .items()
+            raise ValueError(f"sidecar holds {type(data).__name__}, not an object")
         entries = [(p, base64.b64decode(b64)) for p, b64 in data.items()]
     except (ValueError, KeyError, TypeError) as exc:
         raise ValueError(
@@ -622,21 +625,42 @@ def _selected_test_files(root: Path, test_cmd: str) -> list[Path] | None:
         return None
     selected: set[Path] = set()
     resolved = False
-    for tok in tokens[1:]:  # tokens[0] is the runner/interpreter, never a selection
-        t = tok.strip().split("::", 1)[0]
-        if not t or t.startswith("-"):
+    # `--ignore`/`--deselect` values are paths the runner will NEVER run: counting one as
+    # selected silences the manufactured-survivor warning for exactly the file the command
+    # excluded. Both the space form and the `=` form are honoured.
+    exclude_opts = ("--ignore", "--deselect")
+    ignored_raw: list[str] = []
+    args_only: list[str] = []
+    it = iter(tokens[1:])   # tokens[0] is the runner/interpreter, never a selection
+    for tok in it:
+        if tok in exclude_opts:
+            ignored_raw.append(next(it, ""))
             continue
+        if tok.startswith(tuple(o + "=" for o in exclude_opts)):
+            ignored_raw.append(tok.split("=", 1)[1])
+            continue
+        args_only.append(tok)
+
+    def _paths_of(t: str) -> set[Path]:
+        t = t.strip().split("::", 1)[0]
+        if not t or t.startswith("-"):
+            return set()
         direct = Path(t) if Path(t).is_absolute() else root / t
         module_form = root / (t.replace(".", "/") + ".py")
         for cand in (direct, module_form):
             if cand.is_file() and cand.suffix == ".py":
-                selected.add(cand)
-                resolved = True
-                break
+                return {cand}
             if cand.is_dir():
-                selected.update(_candidate_test_files(cand))
-                resolved = True
-                break
+                return set(_candidate_test_files(cand))
+        return set()
+
+    for tok in args_only:
+        found = _paths_of(tok)
+        if found:
+            selected.update(found)
+            resolved = True
+    for raw in ignored_raw:
+        selected -= _paths_of(raw)
     return sorted(selected) if resolved else None
 
 

@@ -3034,6 +3034,55 @@ class FileAndCloseTests(unittest.TestCase):
                                .read_text(encoding="utf-8"))
             self.assertNotEqual(state["outcome"], "closed-outstanding")
 
+    def test_file_and_close_refuses_a_rerun_and_duplicates_nothing(self) -> None:
+        # round-1 MAJOR: a second invocation filed a duplicate CR set, appended second
+        # sections to the retro and anchor, and overwrote deferred_blockers
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            mod = _load()
+            rc, out, err = self._close(mod, root, self.ADMIN, extra=("--file-and-close",))
+            self.assertEqual(rc, 0, err)
+            rc2, out2, err2 = self._close(mod, root, self.ADMIN, extra=("--file-and-close",))
+            self.assertNotEqual(rc2, 0, "a closed run's filing must not be repeatable")
+            self.assertIn("already", (out2 + err2).lower())
+            crs = list((root / "sdlc-studio" / "change-requests").glob("CR*.md"))
+            self.assertEqual(len(crs), 2, "no duplicate CR set")
+            retro_text = (root / "sdlc-studio" / "retros" / "RETRO0001-widget-sprint.md")\
+                .read_text(encoding="utf-8")
+            self.assertEqual(retro_text.count("Deferred at close"), 1)
+            anchor = (root / "sdlc-studio" / "reviews" / "LATEST.md").read_text(
+                encoding="utf-8")
+            self.assertEqual(anchor.count("Deferred at close"), 1)
+
+    def test_file_and_close_refuses_a_goal_less_run(self) -> None:
+        # round-1 MINOR: the plain close refuses a goal-less run unconditionally, and a CR
+        # saying "set one at plan time" is unsatisfiable after the run is closed
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            mod = _load()
+            pre = {"ready": False, "blockers": [
+                {"stage": "sprint-goal", "detail": "no sprint goal recorded on this run",
+                 "remedy": "set one at plan time with --sprint-goal"}]}
+            rc, out, err = self._close(mod, root, pre, extra=("--file-and-close",))
+            self.assertNotEqual(rc, 0)
+            self.assertEqual(list((root / "sdlc-studio" / "change-requests").glob("CR*.md")),
+                             [])
+
+    def test_close_presents_pending_decisions_at_the_stop(self) -> None:
+        # round-1 MINOR: nothing mechanically asked the accumulated decisions at a stop
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            _close_state(root, pending_decisions=[{
+                "unit": "US0101", "question": "Which auth method should the sync use?",
+                "options": [{"label": "oauth", "consequence": "rotates"},
+                            {"label": "api-key", "consequence": "standing secret"}],
+                "recommend": {"label": "oauth", "reason": "rotation"},
+                "deferred_at": "2026-07-20T00:00:00Z", "resolution": None}])
+            mod = _load()
+            rc, out, err = self._close(mod, root, self.ADMIN)
+            self.assertIn("Which auth method should the sync use?", out + err)
+            self.assertIn("oauth", out + err)
+
     def test_reclose_reports_outstanding_set_trend(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = self._fixture(d)
@@ -3157,6 +3206,24 @@ class DeferredOperatorDecisions(unittest.TestCase):
                                .read_text(encoding="utf-8"))
             self.assertEqual(state["pending_decisions"], [])
             self.assertEqual(state["resolved_decisions"][0]["resolution"]["choice"], "oauth")
+
+    def test_decision_refuses_cleanly_on_a_corrupt_run_state(self) -> None:
+        # round-1 MINOR: RunStateError escaped as a traceback where close refuses cleanly
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = root / "sdlc-studio" / ".local" / "run-state.json"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("{corrupt", encoding="utf-8")
+            mod = _load()
+            for argv in (["decision", "list", "--root", str(root)],
+                         ["decision", "defer", "--unit", "US0101", "--question", "q",
+                          "--option", "a|x", "--option", "b|y", "--root", str(root)]):
+                err = io.StringIO()
+                with contextlib.redirect_stdout(io.StringIO()), \
+                        contextlib.redirect_stderr(err):
+                    rc = mod.main(argv)
+                self.assertEqual(rc, 2, argv)
+                self.assertIn("run state", err.getvalue().lower())
 
     def test_defer_refuses_a_freeform_prose_question(self) -> None:
         # fewer than two named options IS the prose failure mode - refused, with the fix named

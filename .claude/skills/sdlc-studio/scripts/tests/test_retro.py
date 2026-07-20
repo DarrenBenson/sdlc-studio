@@ -959,6 +959,16 @@ class HarnessTokenCapture(unittest.TestCase):
         rate = retro.measured_rate(str(self.root))
         self.assertEqual(rate["tokens_per_point"], 100_000)   # est-vs-actual can now close
 
+    def test_recorded_actual_survives_a_plain_rerun_without_flags(self) -> None:
+        # round-1 MAJOR: the guard lived only inside --tokens-from-harness, so the plain
+        # `accuracy --write` re-read - the exact workflow the flag's help directs users to -
+        # re-upserted the row with the per-unit sum (0 interactive) over the recorded actual
+        self._session("s1.jsonl", {"input_tokens": 800_000})
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens-from-harness")
+        self._capture("accuracy", "--id", "RETRO9002", "--write")   # no flags at all
+        self.assertEqual(retro.velocity_history(str(self.root))[0]["actual_tokens"], 800_000,
+                         "a rewrite must never replace a recorded number with its absence")
+
     def test_recorded_actual_survives_a_later_session(self) -> None:
         # a re-run in ANOTHER session must not re-stamp the sprint with that session's total
         self._session("s1.jsonl", {"input_tokens": 800_000})

@@ -1436,7 +1436,16 @@ def record_velocity(root, res: dict) -> Path:
            "ratio": b["ratio"], "wall_time_s": b["wall_time_s"],
            "constants": res.get("constants"), "sample": res.get("sample"),
            "model": model_cell(res)}
-    rows = [r for r in velocity_history(root) if r["id"] != row["id"]] + [row]
+    history = velocity_history(root)
+    # A rewrite must never replace a recorded number with the absence of one: an interactive
+    # sprint's harness-captured actual would otherwise be erased by ANY later plain re-run,
+    # whose per-unit sum is 0. Preserved here, in the writer itself, so every caller is
+    # covered; a truthy new actual (per-unit sums, an explicit --tokens) still overrides.
+    if not row["actual_tokens"]:
+        existing = next((r for r in history if r["id"] == row["id"]), None)
+        if existing and existing.get("actual_tokens"):
+            row["actual_tokens"] = existing["actual_tokens"]
+    rows = [r for r in history if r["id"] != row["id"]] + [row]
     rows.sort(key=lambda r: r["id"])
 
     lines = [VELOCITY_HEADER.rstrip("\n")]
@@ -2129,7 +2138,10 @@ def main() -> int:
                                 "not, because the current session is not that sprint. An "
                                 "already-recorded actual is never overwritten (an explicit "
                                 "--tokens still is the override), and a failed capture states "
-                                "plainly why")
+                                "plainly why. Best-effort ATTRIBUTION: the most recently "
+                                "modified transcript is taken as this session, so a close run "
+                                "beside a concurrent session can capture the wrong one - the "
+                                "recorded basis says exactly what was read")
             p.add_argument("--elapsed-hours", dest="elapsed_hours", type=float, default=None,
                            metavar="H",
                            help="the sprint's real elapsed hours (start to close), for the PRIMARY "

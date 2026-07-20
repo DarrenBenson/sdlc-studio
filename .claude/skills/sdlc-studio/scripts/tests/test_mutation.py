@@ -744,6 +744,21 @@ class StrandedMutantRecoveryTests(unittest.TestCase):
                              f"{sys.executable} -m unittest test_good")
             self.assertEqual(r.get("recovered"), [])
 
+    def test_valid_json_non_object_sidecar_refuses_not_crashes(self) -> None:
+        # round-1 MINOR: `[1, 2]` parses, then .items() raised AttributeError - a traceback
+        # instead of the refusal, and the stranded mutant stayed on disk
+        mut = _load()
+        for payload in ("[1, 2]", '"a string"', "123", "null"):
+            with tempfile.TemporaryDirectory() as d:
+                root = _fixture(Path(d))
+                sidecar = root / "sdlc-studio" / ".local" / "mutation-inflight.json"
+                sidecar.parent.mkdir(parents=True, exist_ok=True)
+                sidecar.write_text(payload, encoding="utf-8")
+                r = mut.run_gate(root, [root / "target.py"],
+                                 f"{sys.executable} -m unittest test_good")
+                self.assertTrue(r["refused"], payload)
+                self.assertIn("git", r["remedy"] or "", payload)
+
     def test_unreadable_sidecar_refuses_with_remedy(self) -> None:
         # a sidecar that exists but cannot be parsed means a run died mid-mutant AND the
         # recovery source is gone: the gate must refuse loudly, never run over the wreck
@@ -827,6 +842,26 @@ class SelectionReportingTests(unittest.TestCase):
             r = mut.run_gate(root, [root / "target.py"],
                              f"{sys.executable} -m unittest test_good test_vacuous")
             self.assertEqual(r["selection_warnings"], [])
+
+    def test_ignored_file_is_not_counted_as_selected(self) -> None:
+        # round-1 MINOR: `pytest tests --ignore tests/test_x.py` counted the ignored (never
+        # run) referencing file as selected, so the manufactured-survivor warning stayed
+        # silent - BG0203's silence reproduced through an option. Both --ignore forms.
+        mut = _load()
+        for form in (["--ignore", "tests/test_kills.py"], ["--ignore=tests/test_kills.py"]):
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                tests = root / "tests"
+                tests.mkdir()
+                (root / "target.py").write_text(TARGET, encoding="utf-8")
+                (tests / "test_a.py").write_text(VACUOUS_TEST, encoding="utf-8")
+                (tests / "test_kills.py").write_text(GOOD_TEST, encoding="utf-8")
+                cmd = "pytest tests " + " ".join(form)
+                selected = mut._selected_test_files(root, cmd)
+                self.assertNotIn(tests / "test_kills.py", selected or [], form)
+                warned = [w["test_file"] for w in
+                          mut._selection_warnings(root, [root / "target.py"], selected)]
+                self.assertIn(str(tests / "test_kills.py"), warned, form)
 
     def test_unresolvable_command_reports_selection_unresolved(self) -> None:
         # a command no static parse can map to files must say UNRESOLVED (None),

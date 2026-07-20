@@ -56,7 +56,11 @@ python3 <skill>/scripts/mutation.py prefilter --tests tests/test_*.py
    coverage over-reports absence, so a survivor from a narrow run must be read against
    the recorded command (`test_cmd` in the JSON), not as proof of a missing test. The
    warning is advisory and never changes the exit code: a deliberately narrow run stays
-   legal, and stays honest about what it covered.
+   legal, and stays honest about what it covered. Two reading notes: selection is FILE
+   granularity (`--ignore`/`--deselect` paths are honoured as unselected; a `-k` filter
+   inside a selected file is invisible to it), and the reference check matches the target's
+   module name as a bare word, so a file merely mentioning it can warn - a false warning
+   costs reading time, never a verdict.
 
 ## Reading the verdicts
 
