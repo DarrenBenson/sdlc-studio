@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 27 |
+| Proposed | 28 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 334 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **379** |
+| **Total** | **380** |
 
 ## All Changes
 
@@ -201,6 +201,7 @@
 | [CR-0377](CR0377-mutation-run-should-derive-the-minimal-covering-test.md) | mutation run should derive the minimal covering test command from its own reference scan | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0378](CR0378-a-sprint-must-not-stop-while-any-unblocked.md) | a sprint must not stop while any unblocked unit remains: deferring one unit's decision may never park the batch | Proposed | High | Improvement | 2026-07-20 | -- |
 | [CR-0379](CR0379-log-mutation-yield-and-cost-as-a-series.md) | log mutation yield and cost as a series, so the gate can be judged on evidence rather than belief | Proposed | High | Improvement | 2026-07-20 | -- |
+| [CR-0380](CR0380-re-verify-an-already-done-story-s-verifiers.md) | re-verify an already-Done story's verifiers, so a stale green is caught between closes not only at a manual sweep | Proposed | Medium | Improvement | 2026-07-21 | -- |
 
 ## Archived Releases
 

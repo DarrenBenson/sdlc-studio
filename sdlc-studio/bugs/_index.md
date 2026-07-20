@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 8 |
+| Open | 7 |
 | In Progress | 0 |
-| Fixed | 145 |
+| Fixed | 146 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -197,7 +197,7 @@
 | [BG0228](BG0228-repo-map-build-writes-its-map-relative-to.md) | repo_map build writes its map relative to the current directory and ignores --root, then prints a relative path that hides where it went | Open | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0229](BG0229-verify-ac-ts-check-reads-a-missing-spec.md) | verify_ac ts-check reads a missing spec as an empty one and reports a clean matrix, so a typo'd --spec passes as green | Open | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0230](BG0230-a-skill-test-s-git-call-can-reach.md) | a skill test's git call can reach the parent repository, so a polluted GIT_ environment lets the suite rewrite the real repo's index | Open | High | 2026-07-20 | 2026-07-20 |
-| [BG0231](BG0231-a-done-story-stays-green-after-the-test.md) | a Done story stays green after the test its AC names is deleted: freshness tracks the AC text, not the existence of its verifier | Open | High | 2026-07-20 | 2026-07-20 |
+| [BG0231](BG0231-a-done-story-stays-green-after-the-test.md) | a Done story stays green after the test its AC names is deleted: freshness tracks the AC text, not the existence of its verifier | Fixed | High | 2026-07-20 | 2026-07-20 |
 | [BG0232](BG0232-ac-fingerprint-has-no-test-of-its-own.md) | ac_fingerprint has no test of its own: a no-op mutant of the freshness spine survives | Fixed | High | 2026-07-20 | 2026-07-20 |
 | [BG0233](BG0233-refine-s-heading-truncation-and-epic-t-shirt.md) | refine's heading truncation and epic T-shirt derivation are both unpinned: two mutants survive | Open | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0234](BG0234-a-story-ac-asserting-a-repo-wide-invariant.md) | a story AC asserting a repo-wide invariant retroactively un-Dones itself as the repo grows | Open | Medium | 2026-07-20 | 2026-07-20 |

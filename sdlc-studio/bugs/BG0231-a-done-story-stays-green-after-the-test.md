@@ -1,7 +1,8 @@
 # BG0231: a Done story stays green after the test its AC names is deleted: freshness tracks the AC text, not the existence of its verifier
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
+> **Verification depth:** functional (5 real-pytest tests: a deleted ::node exits 4 and a stale -k pattern exits 5, both now attributed vacuous with the re-point remedy, not a plain code failure; a real failure stays a plain failure; a real pass is untouched. 4 mutants killed - detection removed (3), exit-5-only misses the deleted node (2), exit-4-only misses the stale pattern (1), and any-kind over-reach caught by the pre-existing shell-verb boundary test (1))
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py,.claude/skills/sdlc-studio/scripts/conformance.py
 > **Created:** 2026-07-20
@@ -25,3 +26,20 @@ Treat a verifier that resolves to nothing as a distinct outcome from pass and fr
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-20 | sdlc-studio | Filed |
+
+## Resolution 2026-07-21 - scope split, no overclaim
+
+Two separable defects lived under this title. Only the first is fixed here.
+
+**Fixed (detection):** an unresolved pytest verifier - a deleted `::node` (exit 4) or a stale
+`-k` pattern (exit 5) - was reported as a plain code failure, indistinguishable from a real
+regression. It is now attributed **vacuous** with the "re-point the Verify line" remedy, scoped
+to pytest's own no-collection exit codes so a shell verb's nonzero exit stays a failure it owns.
+This is what makes any sweep meaningful: when verification runs, a deleted test now reads as a
+verifier problem, not broken code. Mutation-verified.
+
+**Split to CR0380 (trigger):** nothing re-runs an already-Done story's verifiers, so a green
+persists between closes until a full sweep forces a re-run - the reason US0097 read
+`Verified: yes` for weeks. That is a WHEN-to-re-verify decision across the whole repo, cost-
+sensitive and interacting with RFC0048, so it is tracked forward rather than crammed in under
+close-time pressure. The detection fix here is its prerequisite.

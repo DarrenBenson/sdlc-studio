@@ -336,7 +336,15 @@ def run_verifier(expression: str, timeout: int, cwd: Path,
         )
         duration = int((time.time() - start) * 1000)
         stdout, stderr = result.stdout[-4000:], result.stderr[-4000:]
-        vacuous = result.returncode == 0 and _ran_no_tests(kind, stdout, stderr)
+        # A clean exit that ran nothing is vacuous. So is a pytest run whose named
+        # target no longer resolves: a deleted node exits 4, a -k pattern matching nothing
+        # exits 5, and both mean the runner ran no tests, so the green they were meant to
+        # renew proves nothing. Attributed as vacuous rather than a plain failure
+        # because the remedy differs - re-point the Verify line at a test that exists, not
+        # debug code that did not break. Scoped to pytest's documented no-collection codes so
+        # a shell verb's own nonzero exit stays a plain failure it owns.
+        unresolved = kind == "pytest" and result.returncode in (4, 5)
+        vacuous = unresolved or (result.returncode == 0 and _ran_no_tests(kind, stdout, stderr))
         return VerifierResult(
             ok=(result.returncode == 0 and not vacuous),
             kind=kind,

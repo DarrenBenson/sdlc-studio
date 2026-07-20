@@ -1349,7 +1349,8 @@ class VacuousVerifierTests(unittest.TestCase):
         r = verify_ac.run_verifier("shell printf 'Ran 0 tests in 0.000s\\n'; exit 5",
                                    30, Path.cwd())
         self.assertFalse(r.ok)
-        self.assertFalse(r.vacuous)  # it failed on its own account; nothing to attribute
+        self.assertFalse(r.vacuous)  # a shell verb owns its exit; nothing to attribute
+
 
     def test_only_test_running_verbs_are_judged_for_vacuity(self):
         # The kind guard's own contract. No verb currently SHIPPING emits a runner summary
@@ -1451,6 +1452,54 @@ class VacuousVerifierTests(unittest.TestCase):
             self.assertEqual(rep.verified, 0)
             self.assertEqual(rep.vacuous, 1)
             self.assertTrue(rep.failures[0]["vacuous"])
+
+
+class UnresolvedPytestVerifierTests(unittest.TestCase):
+    """BG0231 - a pytest verifier whose named test no longer exists must be attributed as an
+    unresolved verifier, not read as a code failure. A deleted node exits 4 and a stale -k
+    pattern exits 5; both mean the runner ran nothing, so the green they replace proves
+    nothing, and the remedy (re-point the Verify line) is different from fixing code."""
+
+    def _pytest_project(self, d):
+        (Path(d) / "test_present.py").write_text(
+            "def test_here():\n    assert True\n\ndef test_fails():\n    assert False\n",
+            encoding="utf-8")
+
+    def test_a_deleted_node_is_vacuous_not_a_plain_failure(self):
+        with tempfile.TemporaryDirectory() as d:
+            self._pytest_project(d)
+            r = verify_ac.run_verifier("pytest test_present.py::test_GONE", 60, Path(d))
+            self.assertFalse(r.ok)
+            self.assertTrue(r.vacuous, "a deleted node ran nothing - it proves nothing")
+            self.assertIn(r.exit_code, (4, 5))
+
+    def test_a_stale_k_pattern_is_vacuous(self):
+        with tempfile.TemporaryDirectory() as d:
+            self._pytest_project(d)
+            r = verify_ac.run_verifier("pytest test_present.py -k test_GONE", 60, Path(d))
+            self.assertFalse(r.ok)
+            self.assertTrue(r.vacuous, "a -k pattern matching nothing ran nothing")
+
+    def test_the_vacuous_pytest_result_names_the_remedy(self):
+        with tempfile.TemporaryDirectory() as d:
+            self._pytest_project(d)
+            r = verify_ac.run_verifier("pytest test_present.py::test_GONE", 60, Path(d))
+            self.assertIn("Re-point the Verify line", r.stderr)
+
+    def test_a_real_failure_is_a_plain_failure_not_vacuous(self):
+        with tempfile.TemporaryDirectory() as d:
+            self._pytest_project(d)
+            r = verify_ac.run_verifier("pytest test_present.py::test_fails", 60, Path(d))
+            self.assertFalse(r.ok)
+            self.assertFalse(r.vacuous, "the test ran and failed - that is a code failure")
+            self.assertEqual(r.exit_code, 1)
+
+    def test_a_real_pass_is_untouched(self):
+        with tempfile.TemporaryDirectory() as d:
+            self._pytest_project(d)
+            r = verify_ac.run_verifier("pytest test_present.py::test_here", 60, Path(d))
+            self.assertTrue(r.ok)
+            self.assertFalse(r.vacuous)
 
 
 def shlex_quote(s: str) -> str:
