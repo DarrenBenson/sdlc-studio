@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 20 |
+| Proposed | 21 |
 | Approved | 0 |
 | In Progress | 2 |
 | Complete | 325 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **365** |
+| **Total** | **366** |
 
 ## All Changes
 
@@ -187,6 +187,7 @@
 | [CR-0363](CR0363-the-mutation-gate-should-report-the-coverage-its.md) | the mutation gate should report the coverage its test command actually reaches | Proposed | High | Improvement | 2026-07-19 | -- |
 | [CR-0364](CR0364-reconcile-should-derive-a-request-terminal-when-its.md) | reconcile should derive a request terminal when its children are all resolved - G2 is a gate with no counterpart | In Progress | High | Improvement | 2026-07-19 | EP0087 |
 | [CR-0365](CR0365-residuals-from-the-twelve-partially-delivered-requests-derived.md) | Residuals from the twelve partially-delivered requests derived Complete by CR0364 | Proposed | Medium | Improvement | 2026-07-19 | -- |
+| [CR-0366](CR0366-sprint-plan-should-see-work-that-is-already.md) | sprint plan should see work that is already built and committed | Proposed | Medium | Improvement | 2026-07-20 | -- |
 
 ## Archived Releases
 

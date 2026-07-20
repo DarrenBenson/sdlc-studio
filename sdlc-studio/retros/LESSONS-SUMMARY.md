@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0148: A drift kind whose advertised remedy cannot clear it is worse than no hint: it sends the operator round a loop with no exit.**
+- **L-0147: **Fixture noise hides vacuous assertions.** The shared story fixture wrote an unrewritable placeholder status, so every apply in the class...**
+- **L-0146: **Prose written to justify code is code that has not been reviewed.** Three sessions running, the surviving defect has been in a comment or...**
+- **L-0145: **A test-runner error is not a test failure.** `FAILED (errors=1)` from a mis-named test class looks exactly like a kill.**
+- **L-0144: **Establish the baseline before the mutant, and restore from a source the mutant cannot have touched.** A timed-out mutation harness leaves...**
 - **L-0143: **The gate cost is concentrated, not diffuse.** Three test files are 62 per cent of the suite runtime and 14 per cent of the tests.**
 - **L-0142: **Rebuild structure from data, never from prose.** `requirements` re-parsed a sentence the ladder had just built from a list.**
 - **L-0141: **A fixture can satisfy an assertion for a reason unrelated to the property under test.** The round-1 test asserted "two items" against a...**
