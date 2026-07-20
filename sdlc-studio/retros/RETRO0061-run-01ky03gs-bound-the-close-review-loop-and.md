@@ -157,20 +157,18 @@ Ratio is estimate / actual: above 1 the plan over-forecast, below 1 it under-for
 **Are there any CRs or Bugs you want to raise in this project to address any of the
 issues found?**
 
-- **CR-0378** - a sprint must not stop while any unblocked unit remains. Deferring one unit's
-  decision may never park the batch. Direct from this run's biggest single loss.
-- **CR-0379** - log mutation yield and cost as a series. Asked by the operator at this close
-  and answerable only by hand-reconstruction from retro prose, which is the defect.
-- **BG0227** - `critic._read_rows` returned the markdown header as data (fixed here).
-- **BG0228** - `repo_map` carries BG0220's root-relative defect, unfixed.
-- **BG0229** - `ts-check` reads a missing spec as clean and exits 0.
-- **BG0230** (High) - a skill test's git call can reach the parent repository. The wider case
-  behind this run's near-miss: the fixtures have no containment of their own, so BG0222's
-  caller-side scrub is defence in depth, not a fix.
-- **BG0231** (High) - a Done story stays green after the test its AC names is deleted.
-- **BG0232** (High) - `ac_fingerprint`, the freshness spine, has no test of its own; a no-op
-  mutant survives.
-- **BG0233** - `refine`'s heading truncation and epic T-shirt derivation are both unpinned.
+| Finding | Disposition |
+| --- | --- |
+| A sprint parks the whole batch on one unit's decision | filed CR0378 |
+| Mutation yield and cost are not logged as a series | filed CR0379 |
+| `critic._read_rows` returned the markdown header as data | filed BG0227 (fixed here) |
+| `repo_map` carries BG0220's root-relative defect | filed BG0228 |
+| `ts-check` reads a missing spec as clean and exits 0 | filed BG0229 |
+| A skill test's git call can reach the parent repository | filed BG0230 |
+| A Done story stays green after its named test is deleted | filed BG0231 |
+| `ac_fingerprint`, the freshness spine, has no test of its own | filed BG0232 |
+| `refine`'s heading truncation and epic T-shirt derivation are unpinned | filed BG0233 |
+| A repo-wide-invariant AC retroactively un-Dones itself as the repo grows | filed BG0234 |
 
 ## Mutation evidence
 
