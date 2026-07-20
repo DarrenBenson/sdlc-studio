@@ -889,10 +889,9 @@ class TheVelocityRowRecordsDeliveredPoints(unittest.TestCase):
         self.assertEqual(rate["by_model"], {})
 
 
-class HarnessTokenCapture(unittest.TestCase):
-    """US0279 (CR0350): the close captures the harness-tracked token total itself, or states
-    plainly why it could not. Five consecutive retros carried 'not-yet-captured' because the
-    number was measurable and nothing supplied it."""
+class InteractiveSprintFixture(unittest.TestCase):
+    """One interactive-sprint workspace (RETRO9002, 8 delivered points, no per-unit telemetry)
+    and a CLI runner over it. Carries no tests of its own; the classes below share it."""
 
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
@@ -917,6 +916,25 @@ class HarnessTokenCapture(unittest.TestCase):
         p.write_text("".join(ln + "\n" for ln in lines), encoding="utf-8")
         return p
 
+    def _capture(self, *argv: str) -> str:
+        import contextlib
+        import io
+        buf = io.StringIO()
+        with mock.patch.dict(os.environ,
+                             {"SDLC_STUDIO_TRANSCRIPTS": str(self.transcripts)}), \
+                mock.patch.object(sys, "argv",
+                                  ["retro.py", "--root", str(self.root), *argv]), \
+                contextlib.redirect_stdout(buf):
+            rc = retro.main()
+        self.assertEqual(rc, 0, buf.getvalue())
+        return buf.getvalue()
+
+
+class HarnessTokenCapture(InteractiveSprintFixture):
+    """US0279 (CR0350): the close captures the harness-tracked token total itself, or states
+    plainly why it could not. Five consecutive retros carried 'not-yet-captured' because the
+    number was measurable and nothing supplied it."""
+
     def test_harness_tokens_sums_usage_excluding_cache_reads(self) -> None:
         self._session("s1.jsonl",
                       {"input_tokens": 1_000, "output_tokens": 2_000,
@@ -938,19 +956,6 @@ class HarnessTokenCapture(unittest.TestCase):
         cap = retro.harness_tokens(str(self.root), transcripts_dir=self.transcripts)
         self.assertIsNone(cap["tokens"])          # dir exists, holds no *.jsonl
         self.assertIn("jsonl", cap["reason"])
-
-    def _capture(self, *argv: str) -> str:
-        import contextlib
-        import io
-        buf = io.StringIO()
-        with mock.patch.dict(os.environ,
-                             {"SDLC_STUDIO_TRANSCRIPTS": str(self.transcripts)}), \
-                mock.patch.object(sys, "argv",
-                                  ["retro.py", "--root", str(self.root), *argv]), \
-                contextlib.redirect_stdout(buf):
-            rc = retro.main()
-        self.assertEqual(rc, 0, buf.getvalue())
-        return buf.getvalue()
 
     def test_velocity_row_records_interactive_token_actual(self) -> None:
         self._session("s1.jsonl", {"input_tokens": 300_000, "output_tokens": 100_000,
@@ -988,6 +993,78 @@ class HarnessTokenCapture(unittest.TestCase):
         # an EXPLICIT --tokens stays the operator override and wins outright
         self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens", "900000")
         self.assertEqual(retro.velocity_history(str(self.root))[0]["actual_tokens"], 900_000)
+
+    def test_explicit_tokens_zero_clears_a_recorded_actual(self) -> None:
+        # BG0224: zero is falsy, so the preservation guard read the operator's documented
+        # override as absence and kept the wrong number. Supplied-ness is the sentinel, not
+        # truthiness: an explicit 0 says "there is no actual for this sprint", and the cell
+        # must end up empty rather than still quoting the figure being retracted.
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens", "800000")
+        self.assertEqual(retro.velocity_history(str(self.root))[0]["actual_tokens"], 800_000)
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens", "0")
+        self.assertIsNone(retro.velocity_history(str(self.root))[0]["actual_tokens"],
+                          "an explicit --tokens 0 must clear the recorded actual")
+
+    def test_absent_tokens_preserves_the_recorded_actual(self) -> None:
+        # BG0224's other half, and the property the guard exists for (L-0156): with no
+        # --tokens at all, the upsert REUSES the recorded value. Both halves are pinned, so
+        # a fix that clears on every re-run fails here rather than shipping.
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens", "800000")
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        self.assertEqual(retro.velocity_history(str(self.root))[0]["actual_tokens"], 800_000,
+                         "an absent --tokens is not an instruction to forget the actual")
+
+
+class TheVelocityRowIdIsNormalised(InteractiveSprintFixture):
+    """BG0226: an id reaches the writer in whichever form the caller held (`sprint close`
+    scaffolds it dashed), and a dashed row is one the history's strict id pattern never
+    parses. The row is on disk, every consumer is blind to it, and the reuse guard therefore
+    re-captures the token actual on every close re-run."""
+
+    def test_a_dashed_id_writes_a_row_the_history_can_read(self) -> None:
+        self._capture("accuracy", "--id", "RETRO-9002", "--write", "--tokens", "800000")
+        hist = retro.velocity_history(str(self.root))
+        self.assertEqual([r["id"] for r in hist], ["RETRO9002"],
+                         "a dashed id must write the same row an undashed one does")
+        self.assertEqual(hist[0]["actual_tokens"], 800_000)
+        # and the id ON DISK is the canonical form. VELOCITY.md is a committed artefact read
+        # by people as well as by this parser; one sprint must not appear under two spellings.
+        written = retro.velocity_path(str(self.root)).read_text(encoding="utf-8")
+        self.assertIn("| RETRO9002 |", written)
+        self.assertNotIn("RETRO-9002", written)
+
+    def test_a_dashed_and_an_undashed_write_are_the_same_row(self) -> None:
+        # the upsert is keyed on the id it writes, so a verbatim dashed id does not merely
+        # hide the row - it stops matching the one already there, and the sprint lands in the
+        # history TWICE, counted twice by every rate derived from it
+        self._capture("accuracy", "--id", "RETRO-9002", "--write", "--tokens", "800000")
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens", "900000")
+        hist = retro.velocity_history(str(self.root))
+        self.assertEqual([r["id"] for r in hist], ["RETRO9002"],
+                         "one sprint, one row, whichever form the id arrived in")
+        self.assertEqual(hist[0]["actual_tokens"], 900_000)
+
+    def test_a_dashed_close_leaves_an_actual_the_reuse_guard_finds(self) -> None:
+        # the live symptom at the RUN-01KXZQF0 close: the second tail re-read the transcript
+        # because the row it had just written was invisible to the lookup
+        self._session("s1.jsonl", {"input_tokens": 800_000})
+        self._capture("accuracy", "--id", "RETRO-9002", "--write", "--tokens-from-harness")
+        out = self._capture("accuracy", "--id", "RETRO-9002", "--write",
+                            "--tokens-from-harness")
+        self.assertIn("already recorded", out)
+        self.assertEqual(retro.velocity_history(str(self.root))[0]["actual_tokens"], 800_000)
+
+    def test_the_reader_parses_a_dashed_row_already_on_disk(self) -> None:
+        # rows written before the normalisation must not stay invisible: the reader accepts
+        # either form and reports the canonical one, so the next upsert rewrites them clean
+        path = retro.velocity_path(str(self.root))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(retro.VELOCITY_HEADER +
+                        "| RETRO-9002 | 2026-07-20 | 2 | 0 | 0 | 8 | 0 | 800,000 | - | "
+                        "100,000 | 0 | - | - | - | - |\n", encoding="utf-8")
+        hist = retro.velocity_history(str(self.root))
+        self.assertEqual([r["id"] for r in hist], ["RETRO9002"])
+        self.assertEqual(hist[0]["actual_tokens"], 800_000)
 
 
 class PartialMeasurementIsExcludedFromTheRate(AccuracyBase):

@@ -689,7 +689,14 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
     # DESCRIPTIVE velocity number about what shipped, distinct from the forecast-vs-actual ratio
     # above (which must stay on the plan-time recorded points, never the artefact's revisable size).
     delivered_points = _delivered_points(root, [u["id"] for u in units])
-    sprint_tokens = int(sprint_tokens) if isinstance(sprint_tokens, (int, float)) and sprint_tokens > 0 else None
+    # WHETHER a sprint total was supplied is a separate fact from what it was worth, and no
+    # truthiness test can carry it: an explicit 0 is the operator retracting a wrongly recorded
+    # actual, an absent value is a plain re-run that must preserve one. Both read as falsy, so
+    # the intent travels to the writer as its own flag.
+    sprint_tokens_supplied = (isinstance(sprint_tokens, (int, float))
+                              and not isinstance(sprint_tokens, bool))
+    sprint_tokens = (int(sprint_tokens)
+                     if sprint_tokens_supplied and sprint_tokens > 0 else None)
     est_sum = sum(u["estimate"] for u in rated)
     act_sum = sum(u["actual_tokens"] for u in rated)
     walls = [u["wall_time_s"] for u in rated if isinstance(u["wall_time_s"], (int, float))]
@@ -785,6 +792,9 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
             # per-unit actuals. None until the sprint total is supplied (not unmeasurable, just
             # not-yet-captured).
             "sprint_actual_tokens": sprint_tokens,
+            # Was a sprint total supplied at all? The writer needs the distinction between
+            # "no --tokens" (preserve what is recorded) and "--tokens 0" (clear it).
+            "sprint_tokens_supplied": sprint_tokens_supplied,
             "delivered_points": delivered_points,
             "sprint_tokens_per_point": _rate(sprint_tokens, delivered_points) if sprint_tokens else None,
             # Velocity: PRIMARY = points/elapsed-hour (ceremony included, the planning
@@ -1214,8 +1224,12 @@ def velocity_history(root) -> list[dict]:
         if not cells or len(cells) < 2:
             continue
         rid = cells[0].strip()
-        if not re.fullmatch(r"RETRO\d{4}", rid, re.IGNORECASE):
+        # EITHER FORM reads, and both report the canonical one. The writer normalises now, but a
+        # row minted dashed before it did must not stay invisible - it holds a real measurement,
+        # and the next upsert rewrites it clean only if this read can see it first.
+        if not re.fullmatch(r"RETRO-?\d{4}", rid, re.IGNORECASE):
             continue
+        rid = sdlc_md.norm_id(rid)
 
         def cell(key: str, pos_map=idx, row=cells):
             pos = pos_map.get(key)
@@ -1416,7 +1430,12 @@ def record_velocity(root, res: dict) -> Path:
     b = res["batch"]
     # `ratio` is already None for a mixed-model sprint (accuracy refuses to pool it), so the
     # history inherits the refusal rather than re-deciding it in a second place.
-    row = {"id": res["id"].upper(), "date": res.get("date") or "", "units": res["n_units"],
+    # NORMALISED, never verbatim: the id arrives in whichever form the caller held it - the
+    # close scaffolds `RETRO-0060`, the files are named `RETRO0060` - and a dashed row is one
+    # this file's own reader never parses. The row lands on disk and every consumer is blind to
+    # it, which is the same failure `find_retro` was fixed for.
+    row = {"id": sdlc_md.norm_id(res["id"]) or res["id"].upper(),
+           "date": res.get("date") or "", "units": res["n_units"],
            "measured": res["n_measured"], "forecast": res.get("n_forecast"),
            # THE VELOCITY, and the count of units that were too big to be worth sizing. Both
            # recorded, so the rate can be derived from this file and its contamination seen.
@@ -1441,10 +1460,18 @@ def record_velocity(root, res: dict) -> Path:
     # sprint's harness-captured actual would otherwise be erased by ANY later plain re-run,
     # whose per-unit sum is 0. Preserved here, in the writer itself, so every caller is
     # covered; a truthy new actual (per-unit sums, an explicit --tokens) still overrides.
+    #
+    # An explicit `--tokens 0` is the one falsy value that is an INSTRUCTION, not an absence:
+    # the operator retracting a wrongly recorded actual. It reaches here as
+    # `sprint_tokens_supplied` because zero cannot be told from absent by truthiness, and it
+    # clears the cell rather than re-quoting the figure being retracted.
     if not row["actual_tokens"]:
-        existing = next((r for r in history if r["id"] == row["id"]), None)
-        if existing and existing.get("actual_tokens"):
-            row["actual_tokens"] = existing["actual_tokens"]
+        if b.get("sprint_tokens_supplied"):
+            row["actual_tokens"] = None
+        else:
+            existing = next((r for r in history if r["id"] == row["id"]), None)
+            if existing and existing.get("actual_tokens"):
+                row["actual_tokens"] = existing["actual_tokens"]
     rows = [r for r in history if r["id"] != row["id"]] + [row]
     rows.sort(key=lambda r: r["id"])
 
