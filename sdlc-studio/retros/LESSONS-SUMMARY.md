@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0157: A mutant that lands in a test file and survives is expected, not a finding: stubbing a test's body makes the suite pass vacuously by...**
+- **L-0156: An upsert that rewrites the whole record can erase the very field it was told not to overwrite: "do not overwrite" must be implemented as...**
+- **L-0155: The hook environment is part of the test environment: a suite green in a shell can fail under `git commit -a` because the hook inherits...**
 - **L-0154: A root-relative defect found in one writer must be swept across every sibling writer before the run closes: BG0219 (`lessons.py`) had an...**
 - **L-0153: A pre-flight is worth building where a gate is a chain: the information is nearly always available before the first attempt, and serial...**
 - **L-0152: A fixture missing a config key can silently disable the whole branch under test.**

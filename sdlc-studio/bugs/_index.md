@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 4 |
+| Open | 6 |
 | In Progress | 0 |
 | Fixed | 136 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **222** |
+| **Total** | **224** |
 
 ## All Bugs
 
@@ -189,6 +189,8 @@
 | [BG0220](BG0220-verify-ac-writes-its-report-and-history-relative.md) | verify_ac writes its report and history relative to the current directory | Open | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0221](BG0221-refine-into-appends-a-duplicate-epic-level-ac.md) | refine --into appends a duplicate epic-level AC heading that fails the repo's own markdown gate | Open | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0222](BG0222-the-pre-commit-suite-lanes-break-under-git.md) | the pre-commit suite lanes break under git commit -a because hook GIT_* env leaks into test git calls | Open | Medium | 2026-07-20 | 2026-07-20 |
+| [BG0223](BG0223-file-and-close-refuses-a-budget-spent-or.md) | file-and-close refuses a budget-spent or stopped run with a false already-closed message | Open | Medium | 2026-07-20 | 2026-07-20 |
+| [BG0224](BG0224-an-explicit-tokens-0-cannot-clear-a-recorded.md) | an explicit --tokens 0 cannot clear a recorded velocity actual because zero is falsy in the preservation guard | Open | Low | 2026-07-20 | 2026-07-20 |
 
 ## Archived Releases
 

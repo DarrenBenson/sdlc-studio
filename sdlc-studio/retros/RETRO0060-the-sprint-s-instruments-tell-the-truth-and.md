@@ -112,6 +112,8 @@ not an answer.
 | suite lanes break under `git commit -a`: hook GIT_* env leaks into the tests' own git calls | BG0222 (filed mid-sprint) |
 | interactive token capture records the total but not the delivering model, so the velocity row books under the unrecorded-model cell | CR0373 (filed at close; operator's cross-model calibration needs it) |
 | test-noise baseline moved 134 to 132 by capturing, not raising | declined: the ratchet worked exactly as designed - nothing to file |
+| round-2 MINOR: the file-and-close re-run refusal over-reaches for budget-spent/stopped runs, with a false already-closed message | BG0223 (filed at close) |
+| round-2 NOTE: an explicit `--tokens 0` cannot clear a recorded velocity actual | BG0224 (filed at close) |
 
 <!-- file one with: scripts/file_finding.py · check with: scripts/retro.py dispose --id RETROxxxx -->
 
@@ -144,5 +146,10 @@ outcome or an existing filing). MINORs: a valid-JSON-non-object sidecar crashed 
 refusing; a goal-less run could file-and-close (sprint-goal is now a hard stage); `--ignore`d
 pytest paths counted as selected, silencing the manufactured-survivor warning; `decision`
 tracebacked on a corrupt run state; and nothing mechanically asked the pending decisions at a
-stop (the close now renders the queue). Every repair was seen red first; the reviewer's own
-reproductions are the round-2 check.
+stop (the close now renders the queue). Every repair was seen red first. Round 2: the same
+reviewer instance re-ran all seven round-1 reproductions verbatim against the repaired tree
+and probed the repairs for what they created - APPROVE, with one non-blocking MINOR (the
+re-run refusal over-reaches for budget-spent/stopped runs, BG0223) and one NOTE (an explicit
+`--tokens 0` cannot clear a recorded actual, BG0224) filed rather than repaired in-round.
+The recurring pattern held a fifth consecutive round: the sharpest defects sat between the
+code and its own prose claims.
