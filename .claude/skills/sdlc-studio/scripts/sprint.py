@@ -2825,6 +2825,108 @@ def cmd_preflight(args: argparse.Namespace) -> int:
     return 0 if data["ready"] else 1
 
 
+#: Blocker stages `--file-and-close` may file and defer: ceremony debt, whose absence is
+#: honestly recordable as outstanding work. Everything else - a red gate lane, a unit whose
+#: Done gate refuses (failing/unrun executable ACs), a broken run state - is a CORRECTNESS
+#: signal, and filing it away would be the bypass this exit exists to prevent.
+_DEFERRABLE_CLOSE_STAGES = ("sprint-goal", "goal-verdict", "retro", "sign-off")
+
+
+def _record_close_attempt(root, pre: dict) -> str | None:
+    """Append this close attempt's outstanding count to the run state; return the trend line.
+
+    A close that will not terminate is indistinguishable from one that is converging unless
+    the record says which - so every attempt writes its count, and a re-run states plainly
+    whether the outstanding set shrank or grew since the previous one."""
+    state = run_state.read(root) or {}
+    attempts = list(state.get("close_attempts") or [])
+    n = len(pre["blockers"])
+    prev = attempts[-1]["outstanding"] if attempts else None
+    attempts.append({"at": sdlc_md.now_iso8601(), "outstanding": n,
+                     "stages": sorted({b["stage"] for b in pre["blockers"]})})
+    run_state.update(root, close_attempts=attempts)
+    if prev is None:
+        return None
+    if n < prev:
+        word = "shrinking"
+    elif n > prev:
+        word = "growing - the close is chasing a moving target, not converging"
+    else:
+        word = "unchanged"
+    return f"outstanding set {prev} -> {n} ({word})"
+
+
+def _file_and_close(root, args, state: dict, pre: dict) -> int:
+    """The bounded exit: file every deferrable blocker as a real artefact linked to the run,
+    name the deferrals in the retro and the review anchor, and close the run with an outcome
+    that states plainly that work is outstanding. Refused outright while any HARD blocker
+    (a red gate, a refusing Done gate) is present - filing is for ceremony debt, never for
+    a failing test."""
+    import file_finding  # noqa: PLC0415
+    import retro as retro_mod  # noqa: PLC0415
+    blockers = pre["blockers"]
+    hard = [b for b in blockers if b["stage"] not in _DEFERRABLE_CLOSE_STAGES]
+    if hard:
+        print(f"file-and-close REFUSED: {len(hard)} hard blocker(s) - a correctness gate is "
+              f"never filed away:", file=sys.stderr)
+        for b in hard:
+            print(f"  [{b['stage']}] {b['detail']}\n      -> {b['remedy']}", file=sys.stderr)
+        return 2
+    if not blockers:
+        print("file-and-close: nothing outstanding - run the close without --file-and-close",
+              file=sys.stderr)
+        return 2
+    retro_id = (args.retro or "").strip()
+    retro_path = retro_mod.find_retro(root, retro_id) if retro_id else None
+    if retro_path is None:
+        print("file-and-close refused: --retro RETROxxxx is required - the deferrals are "
+              "named IN the retro, so there must be one", file=sys.stderr)
+        return 2
+    run_id = (state.get("run_id") or "unopened run")
+    filed: list[tuple[str, dict]] = []
+    for b in blockers:
+        res = file_finding.file_finding(
+            Path(root), "cr",
+            f"Deferred close blocker ({b['stage']}): {b['detail'][:80]}",
+            {"priority": "High", "ctype": "Process", "size": "S",
+             "affects": str(retro_path.relative_to(Path(root))),
+             "summary": (f"Deferred at the close of {run_id} by an explicit file-and-close "
+                         f"decision. The close prerequisite was not met and was recorded as "
+                         f"outstanding rather than fixed inline or waived. Blocker: "
+                         f"{b['detail']}. Remedy when picked up: {b['remedy']}"),
+             "acs": [f"the deferred prerequisite is met: {b['remedy']}",
+                     "the close-owed record for this blocker is cleared"],
+             "impact": (f"{run_id} closed with this work outstanding; until it is done, the "
+                        f"sprint's record is complete but its ceremony debt is real")})
+        filed.append((res["id"], b))
+    note_lines = [f"- {fid}: [{b['stage']}] {b['detail']} (deferred, not waived)"
+                  for fid, b in filed]
+    text = retro_path.read_text(encoding="utf-8")
+    text = (text.rstrip("\n")
+            + "\n\n## Deferred at close\n\n"
+            + f"Closed with known outstanding work ({run_id}): the operator chose "
+              f"file-and-close over another fix cycle. Nothing here was waived - each "
+              f"blocker is a filed artefact:\n\n" + "\n".join(note_lines) + "\n")
+    sdlc_md.atomic_write(retro_path, text)
+    anchor = Path(root) / "sdlc-studio" / "reviews" / "LATEST.md"
+    if anchor.is_file():
+        atext = anchor.read_text(encoding="utf-8").rstrip("\n")
+        atext += ("\n\n## Deferred at close (" + run_id + ")\n\n"
+                  + "\n".join(note_lines) + "\n")
+        sdlc_md.atomic_write(anchor, atext)
+        anchor_note = "retro and review anchor"
+    else:
+        anchor_note = "retro (NO review anchor found to annotate)"
+    run_state.update(root, deferred_blockers=[
+        {"id": fid, "stage": b["stage"], "detail": b["detail"]} for fid, b in filed])
+    run_state.close_run(root, run_state.CLOSED_OUTSTANDING, handoff=state.get("handoff"))
+    print(f"file-and-close: {len(filed)} blocker(s) filed ({', '.join(f for f, _ in filed)}) "
+          f"and named in the {anchor_note}.")
+    print(f"{run_id} closed with known outstanding work - outcome "
+          f"`{run_state.CLOSED_OUTSTANDING}`, nothing waived.")
+    return 0
+
+
 def cmd_close(args: argparse.Namespace) -> int:
     """The sprint close ceremony as one deterministic, resumable chain."""
     root = args.root
@@ -2842,7 +2944,20 @@ def cmd_close(args: argparse.Namespace) -> int:
     # placed after them reported nothing whenever one of them fired - which is exactly the serial
     # discovery this exists to end, reintroduced by its own placement. Reported, never a refusal:
     # the refusals below and the chain after them still decide what stops the close.
-    _report_preflight(root, args.retro)
+    pre = _report_preflight(root, args.retro)
+    trend = _record_close_attempt(root, pre)
+    if trend:
+        print(f"close: {trend}")
+    if getattr(args, "file_and_close", False):
+        return _file_and_close(root, args, state, pre)
+    if pre["blockers"]:
+        # The bounded choice, offered where the operator is deciding what to do next: fix
+        # the blockers, or file them and close honestly. Never only the fix path.
+        deferrable = [b for b in pre["blockers"] if b["stage"] in _DEFERRABLE_CLOSE_STAGES]
+        if deferrable and len(deferrable) == len(pre["blockers"]):
+            print(f"close: a bounded choice - [fix] clear the {len(deferrable)} blocker(s) "
+                  f"above and re-run, or [file-and-close] re-run with --file-and-close to "
+                  f"file them as artefacts and close with the work recorded as outstanding")
     if not state.get("sprint_goal"):
         print("close refused: no sprint goal recorded on this run - set one at plan time "
               "with --sprint-goal; a close cannot invent what the run aimed at",
@@ -3578,6 +3693,13 @@ def build_parser() -> argparse.ArgumentParser:
                     help="record the Sprint Goal judgement as part of the close")
     cl.add_argument("--note", default=None,
                     help="the judgement's one-line rationale (required with --goal-verdict)")
+    cl.add_argument("--file-and-close", dest="file_and_close", action="store_true",
+                    help="the bounded exit for a blocked close: file every remaining "
+                         "ADMINISTRATIVE blocker (ceremony debt) as a real artefact linked "
+                         "to the run, name the deferrals in the retro and the review anchor, "
+                         "and close with outcome `closed-outstanding` - stated plainly, "
+                         "nothing waived. REFUSED while any hard correctness blocker (a red "
+                         "gate lane, a refusing Done gate) is present")
     cl.add_argument("--apply-signoff", dest="apply_signoff", action="store_true",
                     help="fan a recorded operator approval into per-unit reviewer-of-record "
                          "sign-offs + Done transitions + the velocity/reconcile tail (needs "

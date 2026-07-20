@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 7 |
+| Draft | 5 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 5 |
+| Review | 7 |
 | Done | 270 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -192,8 +192,8 @@
 | [US0279](US0279-an-interactive-close-captures-the-harness-tracked-token.md) | An interactive close captures the harness-tracked token total into the velocity row without hand entry | Review | EP0091 | 2026-07-20 | 2026-07-20 |
 | [US0280](US0280-a-unit-needing-an-operator-decision-is-set.md) | A unit needing an operator decision is set aside and the batch continues; accumulated decisions are asked together at the stop | Review | EP0092 | 2026-07-20 | 2026-07-20 |
 | [US0281](US0281-operator-questions-are-presented-as-structured-decisions-with.md) | Operator questions are presented as structured decisions with named options and a marked recommendation | Review | EP0092 | 2026-07-20 | 2026-07-20 |
-| [US0282](US0282-close-offers-a-bounded-file-and-close-path.md) | Close offers a bounded file-and-close path: blockers filed as linked artefacts, outcome records outstanding work | Draft | EP0092 | 2026-07-20 | 2026-07-20 |
-| [US0283](US0283-close-reports-whether-the-outstanding-set-shrinks-or.md) | Close reports whether the outstanding set shrinks or grows across re-runs; hard correctness gates stay unwaivable | Draft | EP0092 | 2026-07-20 | 2026-07-20 |
+| [US0282](US0282-close-offers-a-bounded-file-and-close-path.md) | Close offers a bounded file-and-close path: blockers filed as linked artefacts, outcome records outstanding work | Review | EP0092 | 2026-07-20 | 2026-07-20 |
+| [US0283](US0283-close-reports-whether-the-outstanding-set-shrinks-or.md) | Close reports whether the outstanding set shrinks or grows across re-runs; hard correctness gates stay unwaivable | Review | EP0092 | 2026-07-20 | 2026-07-20 |
 
 ## Archived Releases
 

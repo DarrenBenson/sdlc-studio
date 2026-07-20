@@ -141,6 +141,15 @@ independent critic plus the gate - the check's output states this scoping.
    structured-question tool, never narrative). `decision resolve --index N --choice <label>`
    is the only path that writes an answer - an autonomous run defers with `--block`
    (unit Blocked): recorded, never silently defaulted.
+5c. **The bounded close exit.** A blocked close is offered a choice, not a treadmill: fix
+   the blockers, or `close --retro RETROxxxx --file-and-close` - every remaining
+   ADMINISTRATIVE blocker (ceremony debt: an unmet sign-off prerequisite, an unjudged goal,
+   a retro gap) is filed as a real artefact linked to the run, the deferrals are named in
+   the retro and the review anchor, and the run closes with outcome `closed-outstanding` -
+   stated plainly, nothing waived. A HARD blocker (a red gate lane, a refusing Done gate)
+   refuses the whole exit: filing is for ceremony debt, never for a failing test. Every
+   close attempt also records its outstanding count, and a re-run reports the trend
+   (shrinking / growing), so a spiral is visible rather than inferred.
 6. **Closing gate - the sprint review.** Every run ends with a mandatory
    `reconcile` (fix any drift) + `review` (the unified PRD/TRD/TSD/persona plus CODE
    review), **regardless of `--goal`**. The review is the sprint review; it produces the

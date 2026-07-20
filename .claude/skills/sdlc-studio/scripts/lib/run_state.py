@@ -62,7 +62,11 @@ GOAL_REACHED = "goal-reached"
 BUDGET_SPENT = "budget-spent"
 BLOCKED = "blocked"
 STOPPED = "stopped"
-OUTCOMES = (RUNNING, GOAL_REACHED, BUDGET_SPENT, BLOCKED, STOPPED)
+# A close that FILED its remaining blockers as artefacts and ended honestly with them
+# recorded - the bounded exit between "fix everything" and "bypass the gate". States
+# plainly that work is outstanding; never used while a hard correctness gate is red.
+CLOSED_OUTSTANDING = "closed-outstanding"
+OUTCOMES = (RUNNING, GOAL_REACHED, BUDGET_SPENT, BLOCKED, STOPPED, CLOSED_OUTSTANDING)
 CLOSED = tuple(o for o in OUTCOMES if o != RUNNING)
 
 # The fields this module owns. Anything else a caller writes is preserved verbatim - see

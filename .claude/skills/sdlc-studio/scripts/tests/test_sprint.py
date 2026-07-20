@@ -2946,6 +2946,107 @@ def _run_apply_signoff(root, mod, principal="Darren", retro="RETRO0001"):
     return rc, out.getvalue(), err.getvalue()
 
 
+class FileAndCloseTests(unittest.TestCase):
+    """US0282/US0283 (CR0371): a blocked close gets a bounded exit - file the blockers as
+    real artefacts and close honestly with them recorded - never only the fix path, never
+    a waiver of a hard correctness gate, and the outstanding set's trend made visible."""
+
+    ADMIN = {"ready": False, "blockers": [
+        {"stage": "sign-off", "detail": "US0101: no independent reviewer-of-record sign-off",
+         "remedy": "`critic.py signoff ...`"},
+        {"stage": "goal-verdict", "detail": "the Sprint Goal is unjudged",
+         "remedy": "`sprint.py goal-verdict ...`"},
+    ]}
+    HARD = {"ready": False, "blockers": [
+        {"stage": "gate", "detail": "skill-tests: 3 failing", "remedy": "fix the suite"},
+    ]}
+
+    def _fixture(self, d) -> Path:
+        root = Path(d)
+        _close_state(root)
+        _close_retro(root, batch="US0101")
+        (root / "sdlc-studio" / "reviews").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "reviews" / "LATEST.md").write_text(
+            "# Reviews - LATEST (anchor)\n\n## Where the pipeline is\n\nfine.\n",
+            encoding="utf-8")
+        (root / "sdlc-studio" / "change-requests").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "change-requests" / "_index.md").write_text(
+            "# Change Requests\n\n| ID | Title | Status |\n| --- | --- | --- |\n",
+            encoding="utf-8")
+        return root
+
+    def _close(self, mod, root: Path, pre: dict, extra: tuple = ()) -> tuple:
+        out, err = io.StringIO(), io.StringIO()
+        with unittest.mock.patch.object(mod, "close_preflight", return_value=pre), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root), *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_blocked_close_offers_file_and_close(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            mod = _load()
+            rc, out, err = self._close(mod, root, self.ADMIN)
+            offer = out + err
+            self.assertIn("fix", offer.lower())
+            self.assertIn("--file-and-close", offer)   # the bounded second path is NAMED
+
+    def test_file_and_close_records_linked_artefacts_and_outcome(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            mod = _load()
+            rc, out, err = self._close(mod, root, self.ADMIN, extra=("--file-and-close",))
+            self.assertEqual(rc, 0, err)
+            crs = list((root / "sdlc-studio" / "change-requests").glob("CR*.md"))
+            self.assertEqual(len(crs), 2, "one artefact per blocker")
+            body = crs[0].read_text(encoding="utf-8")
+            self.assertIn("RUN-TEST0001", body)        # linked to the run
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json")
+                               .read_text(encoding="utf-8"))
+            self.assertEqual(state["outcome"], "closed-outstanding")
+            self.assertIn("known outstanding work", out)
+
+    def test_file_and_close_names_deferrals_in_retro_and_anchor(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            mod = _load()
+            rc, out, err = self._close(mod, root, self.ADMIN, extra=("--file-and-close",))
+            self.assertEqual(rc, 0, err)
+            retro_text = (root / "sdlc-studio" / "retros" / "RETRO0001-widget-sprint.md")\
+                .read_text(encoding="utf-8")
+            self.assertIn("Deferred at close", retro_text)
+            self.assertIn("sign-off", retro_text)
+            anchor = (root / "sdlc-studio" / "reviews" / "LATEST.md").read_text(
+                encoding="utf-8")
+            self.assertIn("Deferred at close", anchor)
+            self.assertIn("CR", anchor)                # the filed ids are named, not implied
+
+    def test_hard_correctness_gate_refuses_file_and_close(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            mod = _load()
+            rc, out, err = self._close(mod, root, self.HARD, extra=("--file-and-close",))
+            self.assertNotEqual(rc, 0)
+            self.assertIn("skill-tests", err)          # the hard gate is named
+            self.assertEqual(list((root / "sdlc-studio" / "change-requests").glob("CR*.md")),
+                             [], "a red gate is never filed away")
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json")
+                               .read_text(encoding="utf-8"))
+            self.assertNotEqual(state["outcome"], "closed-outstanding")
+
+    def test_reclose_reports_outstanding_set_trend(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            mod = _load()
+            five = {"ready": False, "blockers": self.ADMIN["blockers"] * 2 + self.HARD["blockers"]}
+            self._close(mod, root, five)
+            rc, out, err = self._close(mod, root, self.ADMIN)
+            self.assertIn("5 -> 2", out + err)
+            self.assertIn("shrinking", out + err)
+            rc, out, err = self._close(mod, root, five)
+            self.assertIn("growing", out + err)
+
+
 class DeferredOperatorDecisions(unittest.TestCase):
     """US0280/US0281 (CR0369): a unit needing an operator decision is set aside while the
     batch continues; accumulated decisions are asked together at the stop, as structured

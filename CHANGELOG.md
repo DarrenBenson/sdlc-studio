@@ -29,6 +29,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resolve` is the only path that writes an answer, recording the ruling to the run state and
   the decisions ledger. The autonomous path (`defer --block`) records the question and marks
   the unit Blocked, never silently defaulting it.
+- **A blocked close has a bounded exit (CR0371: US0282, US0283).** `sprint close
+  --file-and-close` files every remaining ADMINISTRATIVE blocker (ceremony debt) as a real
+  CR linked to the run, names the deferrals in both the retro and the review anchor, and
+  closes with the new outcome `closed-outstanding` - stated plainly, nothing waived. A hard
+  correctness blocker (a red gate lane, a refusing Done gate) refuses the whole exit. Every
+  close attempt now records its outstanding count on the run state, and a re-run reports
+  whether the set is shrinking or growing, so a close chasing a moving target is visible
+  rather than inferred.
 - **`reconcile` derives a request terminal when its children are all resolved (CR0364).** The
   two-backlog workflow says a request reaches its successful terminal by DERIVATION, and
   `transition` enforced the guard half - it refuses a premature close - but nothing ever performed
