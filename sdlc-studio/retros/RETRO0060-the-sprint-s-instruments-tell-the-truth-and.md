@@ -114,6 +114,9 @@ not an answer.
 | test-noise baseline moved 134 to 132 by capturing, not raising | declined: the ratchet worked exactly as designed - nothing to file |
 | round-2 MINOR: the file-and-close re-run refusal over-reaches for budget-spent/stopped runs, with a false already-closed message | BG0223 (filed at close) |
 | round-2 NOTE: an explicit `--tokens 0` cannot clear a recorded velocity actual | BG0224 (filed at close) |
+| a live mutation run mutates the shared working tree with nothing surfacing the window - the whole session froze by hand and the review was delayed to keep its evidence clean | CR0374 (filed at close) |
+| the close-owed detector token-matches the Batch line, so 'EP0090 (US0276)' left US0276 reading owed until reworded | BG0225 (filed at close) |
+| bare `status.py` errors instead of defaulting to the pillars dashboard - one retry at every session start | CR0375 (filed at close) |
 
 <!-- file one with: scripts/file_finding.py · check with: scripts/retro.py dispose --id RETROxxxx -->
 
