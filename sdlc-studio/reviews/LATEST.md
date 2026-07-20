@@ -1,79 +1,59 @@
 # Reviews - LATEST (anchor)
 
-> Derived from the sprint-close review of **RUN-01KY03GS** (bound the close review loop and
-> clear the instruments close-debt, 2026-07-20, RETRO-0061). Supersedes the RETRO-0060 picture.
+> Derived from the close of **RUN-01KY0VNV** (the freshness spine certifies a Done story
+> truthfully, 2026-07-21, RETRO-0062). Supersedes the RETRO-0061 picture.
 
-## Where the pipeline is (2026-07-20)
+## Where the pipeline is (2026-07-21)
 
-**RUN-01KY03GS is built, verified, reviewed and closing**: 13/13 units, 31 points - Phase 2
-of the v5.0 plan (EP0085 / CR0358, bound the close review loop) plus the eight close-debt bugs
-from the instruments sprint. The five stories were reviewed by an independent adversarial pass
-(APPROVE, round 1, reviewer != author) - the first exercise of the round-counting machinery on
-its own delivery - then countersigned by the operator as reviewer of record.
+**RUN-01KY0VNV is built, verified and closing**: 3/3 bugs, 8 points - the freshness-spine
+cluster the operator prioritised. Bugs are terminal at Fixed, so no two-role sign-off applies;
+each fix was mutation-checked per-unit during the build (8 mutants killed across the two code
+changes), so the close carries its evidence without a separate diff-scoped pass.
 
 ## What shipped
 
-- **EP0085 / CR0358 (US0261-US0265)** - the close review is a bounded, priced, un-primed loop:
-  rounds counted on the run state with a configurable ceiling (default 3) and a recorded
-  override; a finding in the previous round's repair surface classified a repair regression by
-  file AND line; escalation to revert / redesign / accept-and-file instead of another patch
-  round; per-round token cost with an unmeasured round named not zeroed; and a reviewer brief
-  that carries the probes to re-execute but not the verdict prose, round number or conclusion.
-  US0265 narrowed CR0358's AC5 deliberately so the probe re-execution demand survives.
-- **BG0217** - validate's placeholder warning uses the severity the counters count.
-- **BG0220** - verify_ac resolves paths against the project root, on six surfaces.
-- **BG0221** - refine --into merges epic criteria instead of duplicating the AC heading.
-- **BG0222** - the suite lanes run in a git environment of their own.
-- **BG0223** - a run stopped mid-flight can still take the bounded exit.
-- **BG0224** - an explicit --tokens 0 clears a recorded actual.
-- **BG0225** - the close-owed detector reads a Batch line's parenthesised units.
-- **BG0226** - a dashed retro id no longer mints an invisible velocity row.
+- **BG0232** - `ac_fingerprint`, the mechanism that decides whether a green verify entry is
+  still trusted, is pinned by its own test from both sides: stable across a Status change, a
+  Revision History row and the machine-maintained Verified stamp; changes on a re-pointed
+  verifier, a retitled AC, or an added/removed AC. Characterisation - the function was correct,
+  nothing had tested it. A no-op mutant of it had survived the whole suite; now four mutants die.
+- **BG0231** - an unresolved pytest verifier (a deleted `::node` exits 4, a stale `-k` pattern
+  exits 5) is attributed **vacuous** with the "re-point the Verify line" remedy instead of
+  misreported as a code failure. Scoped to pytest's no-collection codes so a shell verb's own
+  nonzero exit stays a plain failure. The **trigger** half - re-verifying an already-Done story
+  so a green cannot persist between closes - is split to **CR0380**, cost-sensitive and
+  interacting with RFC0048.
+- **BG0234** - two point-in-time-cleanup ACs (US0112 AC2, US0115 AC1) that asserted repo-wide
+  invariants as executable checks are reclassified `manual` (verified at delivery). Their Given
+  clauses name a snapshot, so the executable form was a category error that un-Doned the story
+  on unrelated later growth. `conformance.adopt_after` went back to 82, no standing exemption.
 
-3396 tests green at every commit; 25/25 story ACs verified. Mutation over the sprint diff
-(scoped to product files): 16 applied, 13 killed, 3 survived, all three verified real gaps and
-filed. 16 of 3153 enumerated sampled - the rest recorded as un-checked, not clean.
+3409 tests green.
 
-## The CODE leg - one round
+## A measurement caught, not published
 
-| Round | Findings | Outcome |
-| --- | --- | --- |
-| 1 | 2 test-completeness (both non-blocking, filed BG0235) | APPROVE |
-
-The independent reviewer mutation-pinned every central claim, confirmed the one known
-equivalent mutant is genuinely equivalent, and left the tree byte-identical. Its two findings
-were that the ceiling literal is asserted symbolically and the priming classes only in
-aggregate - real coverage gaps, no live defect.
-
-## The incident this run survived
-
-The BG0222 agent - fixing a bug about GIT_* environment leakage - pointed GIT_INDEX_FILE at
-the live repo's index lock, and the suites emptied the index (1845 files staged deleted, a
-fixture commit running against main). Recovered with git reset, no data lost. The filed
-reproduction itself is the hazard. BG0230 (High) filed for the wider cause: the fixtures have
-no containment of their own.
+The harness token capture recorded 2,731,602 tokens for this 3-bug sprint - the whole
+session's transcript, because it is the second sprint closed in one session, so it re-counts
+RETRO-0061 and the incident recovery. That is ~13x the measured rate. It was **blanked from the
+VELOCITY row as not-attributable** rather than published, and filed as **BG0236** (the
+token-axis twin of BG0218): the capture must record a baseline at plan time and report a delta,
+not an absolute.
 
 ## Next steps
 
-- **Freshness spine, top priority next sprint (operator-set):** BG0231 (a Done story stays
-  green after its named test is deleted), BG0232 (ac_fingerprint has no test of its own),
-  BG0234 (repo-wide-invariant ACs un-Done themselves as the repo grows). The mechanism that
-  certifies a Done story is still true is currently unpinned in both directions.
-- **RFC0048 option B next (operator-set):** attack the three heavy test files (test_gate.py is
-  56s, 41% of the suite) - no coverage change, no policy decision. Then D6 sets the per-commit
-  budget against the improved baseline, as this sprint resolved. The sprint ran ~2.4x baseline;
-  ~23 min of it was the pre-commit suite across nine commits.
-- **CR-0378** (never park the batch on one unit's decision) and **CR-0379** (log mutation yield
-  and cost as a series) - both filed from this run's own process failures.
-- **conformance.adopt_after is at 115** for US0112/US0115 only, expected to come back down when
-  BG0234 lands. **CR0374** (surface the single-writer window a live mutation run holds) was hit
-  twice this run and held by hand both times.
+- **CR0380** - re-verify an already-Done story's verifiers (BG0231's trigger half); the cheap
+  static-resolution shape is likely, gated against adding test-execution cost.
+- **BG0236** (High) - session-baseline the token capture so a second sprint in one session does
+  not double-count.
+- **RFC0048 option B** still the standing speed lever (test_gate.py is 56s of the suite), with
+  D6's per-commit budget to be set against the improved baseline.
 - Standing: **RFC0046** needs D1 closed or an override; **CR0319** is the release cut. Release
   freeze holds.
 
 ## Lessons this run paid for
 
-L-0158 to L-0162 (RETRO-0061): a bug about environment pollution must never be reproduced next
-to a live repo (assert the parent index hash unchanged); a guard unreachable through the public
-path cannot be tested through it; scope a mutation run to product code with a scoped test
-command; a -k filter is part of the harness and can silently exclude the tests you rely on; an
-AC's freshness must cover whether its verifier still exists.
+L-0163 to L-0165 (RETRO-0062): a characterisation test still needs mutation to earn its keep (a
+test that passes on first write because the code was already right may only decorate it); a
+point-in-time acceptance criterion is manual by nature - an executable check re-asserting a
+snapshot state un-Dones the story on unrelated drift; vacuity is not gated on exit 0, since a
+runner that ran nothing proves nothing whatever its exit code.

@@ -71,3 +71,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0059](RETRO0059-interstitial-fix-run-after-phase-0-root-honouring.md) | Interstitial fix-run after Phase 0: root-honouring and ported junk | 2026-07-20 | -- | -- |
 | [RETRO-0060](RETRO0060-the-sprint-s-instruments-tell-the-truth-and.md) | The sprint's instruments tell the truth and its stops respect the operator: mutation and velocity records are trustworthy, and a run asks bounded, structured questions instead of stalling in prose | 2026-07-20 | -- | -- |
 | [RETRO-0061](RETRO0061-run-01ky03gs-bound-the-close-review-loop-and.md) | RUN-01KY03GS: bound the close review loop and clear the instruments close-debt | 2026-07-20 | -- | -- |
+| [RETRO-0062](RETRO0062-run-01ky0vnv-the-freshness-spine-certifies-a-done.md) | RUN-01KY0VNV: the freshness spine certifies a Done story truthfully | 2026-07-21 | -- | -- |

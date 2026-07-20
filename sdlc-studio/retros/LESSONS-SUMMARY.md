@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0165: **Vacuity is not gated on exit 0.** A runner that ran nothing proves nothing whatever its exit code; pytest signals it with codes 4 and 5...**
+- **L-0164: **A point-in-time acceptance criterion is manual by nature.** An executable check that re-asserts a snapshot state ('zero advisories at...**
+- **L-0163: **A characterisation test still needs mutation to earn its keep.** BG0232's 15 tests all passed on first write because the code was already...**
 - **L-0162: **An AC's freshness must cover whether its verifier still exists.** US0097 read `Verified: yes` for weeks after the test it named was...**
 - **L-0161: **A test-selection filter is part of the test harness and can silently exclude the tests you are relying on.** A `-k` pattern that matches...**
 - **L-0160: **Scope a mutation run to product code with a scoped test command.** Mutating test files produces expected-vacuous survivors, and a...**

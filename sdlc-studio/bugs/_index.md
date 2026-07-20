@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 6 |
+| Open | 7 |
 | In Progress | 0 |
 | Fixed | 147 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **235** |
+| **Total** | **236** |
 
 ## All Bugs
 
@@ -202,6 +202,7 @@
 | [BG0233](BG0233-refine-s-heading-truncation-and-epic-t-shirt.md) | refine's heading truncation and epic T-shirt derivation are both unpinned: two mutants survive | Open | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0234](BG0234-a-story-ac-asserting-a-repo-wide-invariant.md) | a story AC asserting a repo-wide invariant retroactively un-Dones itself as the repo grows | Fixed | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0235](BG0235-two-review-loop-properties-are-pinned-only-symbolically.md) | two review-loop properties are pinned only symbolically or in aggregate, so a single-class break ships green | Open | Low | 2026-07-20 | 2026-07-20 |
+| [BG0236](BG0236-the-interactive-token-capture-sums-the-whole-session.md) | the interactive token capture sums the whole session, so a second sprint in one session double-counts the first sprint's tokens | Open | High | 2026-07-21 | 2026-07-21 |
 
 ## Archived Releases
 
