@@ -72,6 +72,12 @@ defects sat in the gap between the code and its own prose claims.
   recorded actual. **BG0221** (refine --into duplicate AC heading), **BG0222** (suite lanes
   break under `git commit -a` - hook GIT_* env leak). **CR0351** (backtick-mangled fields)
   still unbuilt.
+- Dogfooding frictions filed at this close: **CR0374** (nothing surfaces the window a live
+  mutation run has a mutant on the shared tree - the session serialised by hand), **BG0225**
+  (the close-owed detector misses a parenthesised unit on a retro Batch line), **CR0375**
+  (bare `status.py` errors instead of showing the pillars dashboard). Filing them made this
+  very anchor stale mid-close - CR0371's treadmill observed live, with the new trend line
+  reading "outstanding set 10 -> 8 (shrinking)".
 - Standing: **RFC0046** needs D1 closed or an override; **CR0355** is a launch-day action;
   **CR0319** is the release cut itself. Release freeze holds.
 
