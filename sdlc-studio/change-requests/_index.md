@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 22 |
+| Proposed | 23 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 328 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **369** |
+| **Total** | **370** |
 
 ## All Changes
 
@@ -191,6 +191,7 @@
 | [CR-0367](CR0367-the-commit-message-check-runs-after-the-full.md) | the commit-message check runs after the full test gate, so a subject-line defect costs a whole suite run | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0368](CR0368-conformance-reports-a-unit-missing-critiqued-without-naming.md) | conformance reports a unit missing critiqued without naming which half is unmet | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0369](CR0369-a-sprint-that-needs-an-operator-decision-should.md) | a sprint that needs an operator decision should ask a structured question, not stop in dense prose | Proposed | High | Improvement | 2026-07-20 | -- |
+| [CR-0370](CR0370-forward-port-ships-untracked-test-cache-directories-into.md) | forward-port ships untracked test-cache directories into the installed skill | Proposed | Low | Improvement | 2026-07-20 | -- |
 
 ## Archived Releases
 
