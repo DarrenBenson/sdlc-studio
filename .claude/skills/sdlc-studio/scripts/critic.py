@@ -431,16 +431,16 @@ def classify_finding(repo_root: Path | str, file: str | None = None,
     make the signal useless in exactly the case it exists for."""
     rounds = run_state.review_rounds(repo_root)
     if not rounds:
-        return {"class": FRESH, "round": None,
+        return {"class": FRESH, "round": None, "file": file, "line": line,
                 "reason": "no prior round: there is no repair surface to regress against"}
     if not file or line is None:
-        return {"class": UNCLASSIFIED, "round": None,
+        return {"class": UNCLASSIFIED, "round": None, "file": file, "line": line,
                 "reason": "the finding has no parseable file and line, so it cannot be placed "
                           "inside or outside the previous round's repair surface"}
     try:
         line = int(line)
     except (TypeError, ValueError):
-        return {"class": UNCLASSIFIED, "round": None,
+        return {"class": UNCLASSIFIED, "round": None, "file": file, "line": line,
                 "reason": f"the finding's line {line!r} is not a number"}
     last = rounds[-1]
     target = Path(str(file)).name
@@ -450,10 +450,219 @@ def classify_finding(repo_root: Path | str, file: str | None = None,
         for start, end in _spans(entry):
             if start <= line <= end:
                 return {"class": REPAIR_REGRESSION, "round": last.get("round"),
+                        "file": file, "line": line,
                         "reason": f"{target}:{line} lies in the surface round "
                                   f"{last.get('round')}'s repair touched ({start}-{end})"}
-    return {"class": FRESH, "round": last.get("round"),
+    return {"class": FRESH, "round": last.get("round"), "file": file, "line": line,
             "reason": f"{target}:{line} lies outside round {last.get('round')}'s repair surface"}
+
+
+# What must never reach a reviewer's brief, because it predicts a conclusion rather than
+# describing the work: the prior verdict words, severity labels that pre-grade what will be
+# found, a round number (which says "others already rejected this"), and any sentence asserting
+# what the reviewer is about to conclude. Checked mechanically, so a future edit that
+# reintroduces priming fails the suite rather than relying on a reader noticing.
+_PRIMING = (
+    (re.compile(r"\b(REJECT|APPROVE)\b"), "a prior verdict word"),
+    (re.compile(r"\b(MAJOR|MINOR|BLOCKING)\b"), "a severity label that pre-grades the finding"),
+    (re.compile(r"(?i)\bround\s*\d+\b"), "a round number"),
+    (re.compile(r"(?i)the pattern will continue|you will find|expect to find|"
+                r"as in the previous round"), "an asserted conclusion"),
+)
+
+# A probe is a thing the reviewer must RE-EXECUTE: a test path or node, or a file:line the
+# prior round mutated. These are facts, and they must survive into a re-review - the round-2
+# APPROVE this project trusts was earned by a reviewer re-running exactly these. What must not
+# survive is the prose around them.
+_PROBE = re.compile(r"(?:[\w./-]+\.(?:py|sh|ts|js|go|md)(?::\d+)?"
+                    r"(?:::[\w:]+)?|\b(?:pytest|jest|vitest|go test)\s+[\w./:-]+)")
+
+
+def neutrality_violations(text: str) -> list[str]:
+    """Every priming class present in `text`. Empty means the brief is neutral.
+
+    The RETURN CONTRACT is excluded before checking. It necessarily contains both verdict words
+    and the BLOCKING label, because it is the reply format the reviewer must follow - offering
+    the vocabulary as a required choice is not priming, and stripping it to satisfy this check
+    would break the contract. Priming is a prior verdict ASSERTED, which is what remains once
+    the contract is removed.
+
+    Mechanical by design: a reviewer's impression of neutrality is exactly the judgement this
+    exists to remove from the loop."""
+    body = (text or "").replace(_RETURN_CONTRACT, "")
+    return [why for rx, why in _PRIMING if rx.search(body)]
+
+
+def extract_probes(prior_verdict_text: str) -> list[str]:
+    """The probes a prior verdict named, as a bare list of things to re-execute.
+
+    Refuses loudly when none can be extracted. A re-review that silently dropped the
+    re-execution demand would approve against a brief WEAKER than the one it replaced, which
+    is worse than the priming this strips - so absence is an error, never an empty list."""
+    found, seen = [], set()
+    for m in _PROBE.finditer(prior_verdict_text or ""):
+        probe = m.group(0)
+        if probe not in seen:
+            seen.add(probe)
+            found.append(probe)
+    if not found:
+        raise ValueError(
+            "no probe could be extracted from the prior verdict - a re-review must carry the "
+            "checks to re-execute, and one that drops them silently is weaker than the review "
+            "it replaces. Name the tests and file:line mutants in the verdict, or run a fresh "
+            "review rather than a re-review.")
+    return found
+
+
+def neutral_brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full",
+                  prior: str | None = None, round_number: int | None = None) -> str:
+    """The reviewer's brief, carrying the diff and risk surface but none of the framing that
+    predicts a conclusion.
+
+    `round_number` is accepted and deliberately NOT rendered: callers hold it, and silently
+    ignoring an argument would be worse than refusing one - this way the caller cannot leak it
+    by passing it. When `prior` is given, the probes it named travel as a neutral checklist;
+    the verdict prose, severity labels and conclusions around them do not."""
+    base = brief(repo_root, unit, seat, tier)
+    if prior is None:
+        return base
+    probes = extract_probes(prior)          # raises rather than dropping the demand
+    listed = "\n".join(f"  - {p}" for p in probes)
+    return (f"{base}\n\n--- CHECKS TO RE-EXECUTE ---\n\n"
+            f"Before concluding, re-execute each of the following and record what you observed. "
+            f"Re-apply each named mutant and confirm its killing test fails; re-run each named "
+            f"test. Confirm the tree is byte-identical afterwards.\n\n{listed}\n")
+
+
+def round_cost_report(repo_root: Path | str) -> str:
+    """What the close review has cost so far, per round and cumulatively.
+
+    An unmeasured round is NAMED and the total is marked PARTIAL rather than the round being
+    summed as zero: a total that quietly absorbs an unmeasured round reads cheaper than the
+    run actually was, and this number exists to be weighed against buying another round. A
+    measured zero is a different fact from an unmeasured round and reads differently."""
+    rounds = run_state.review_rounds(repo_root)
+    if not rounds:
+        return "no review rounds recorded for this run - no cost to report"
+    lines, total, unmeasured = [], 0, 0
+    for r in rounds:
+        tokens = r.get("tokens", run_state.UNMEASURED)
+        if tokens is run_state.UNMEASURED or tokens is None:
+            unmeasured += 1
+            lines.append(f"  round {r.get('round')}: unmeasured ({r.get('verdict', '?')})")
+        else:
+            total += int(tokens)
+            lines.append(f"  round {r.get('round')}: {int(tokens):,} tokens "
+                         f"({r.get('verdict', '?')})")
+    if unmeasured:
+        tail = (f"  total: {total:,} tokens across {len(rounds) - unmeasured} of "
+                f"{len(rounds)} round(s) - PARTIAL, {unmeasured} unmeasured and never "
+                f"counted as zero")
+    else:
+        tail = f"  total: {total:,} tokens across {len(rounds)} round(s)"
+    return "\n".join([*lines, tail])
+
+
+def next_round_offer(repo_root: Path | str, ceiling: int | None = None) -> str:
+    """The text put in front of the operator when another round is on the table: what the
+    rounds so far cost, how many there have been, and the ceiling they are counting towards.
+    'Is the next round worth buying' is then a question asked against a number."""
+    limit = review_ceiling(repo_root) if ceiling is None else ceiling
+    count = run_state.review_round_count(repo_root)
+    return (f"review rounds so far: {count} of a ceiling of {limit}\n"
+            f"{round_cost_report(repo_root)}")
+
+
+# The three ways out of a self-feeding repair loop. Another patch round is deliberately NOT
+# among them: on a repair regression the patching is the cause, so offering more of it is the
+# one response the evidence rules out. Escalating is a decision someone makes, which is the
+# whole point - a round nobody chose is how a loop runs to five.
+ESCALATIONS = ("revert", "redesign", "accept-and-file")
+
+
+def escalation_for(repo_root: Path | str, finding: dict) -> dict:
+    """The escalation brief for a repair-regression finding: three named options, each with
+    the consequence of taking it, and the round and files that triggered it named so the
+    choice is not blind.
+
+    Refuses a finding that is not a repair regression - escalating a fresh finding would spend
+    the circuit breaker on the case the review is supposed to handle normally."""
+    if (finding or {}).get("class") != REPAIR_REGRESSION:
+        raise ValueError(
+            f"escalation is for a {REPAIR_REGRESSION} finding; this one is "
+            f"{(finding or {}).get('class', 'missing')!r}. A fresh finding is repaired, not "
+            f"escalated - the loop is still earning its cost.")
+    rounds = run_state.review_rounds(repo_root)
+    last = rounds[-1] if rounds else {}
+    files = ", ".join(sorted({str(e.get("file")) for e in (last.get("repaired") or [])
+                              if isinstance(e, dict) and e.get("file")})) or "(none recorded)"
+    rnd = finding.get("round")
+    return {
+        "finding": finding,
+        "round": rnd,
+        "options": [
+            {"label": "revert",
+             "consequence": f"undo round {rnd}'s repair, returning {files} to its state before "
+                            f"that round, and re-review from there. The defect the repair "
+                            f"targeted comes back and is re-decided with the regression known."},
+            {"label": "redesign",
+             "consequence": "stop patching this surface and rework the approach. Costs the most "
+                            "now and is the only option that addresses a repair loop whose "
+                            "successive fixes keep colliding in the same place."},
+            {"label": "accept-and-file",
+             "consequence": "accept the current state, file the finding as its own tracked "
+                            "artefact linked to this run, and close. The defect is recorded "
+                            "rather than fixed, and the run closes honestly with it outstanding."},
+        ],
+    }
+
+
+def record_escalation(repo_root: Path | str, choice: str, finding: dict, **fields) -> dict:
+    """Record the operator's escalation choice against the run, with the regression that
+    triggered it. For `accept-and-file`, mints a real linked artefact through the shared filer
+    and reports its id - never a prose note claiming something was filed."""
+    if choice not in ESCALATIONS:
+        raise ValueError(f"unknown escalation {choice!r} - expected one of "
+                         f"{', '.join(ESCALATIONS)}")
+    filed = None
+    if choice == "accept-and-file":
+        import file_finding  # noqa: PLC0415 - optional at import time, required only here
+        res = file_finding.file_finding(repo_root, "bug", fields.pop("title"), fields)
+        filed = res["id"]
+    entry = {"choice": choice, "round": finding.get("round"), "finding": finding,
+             "filed": filed, "recorded_at": sdlc_md.now_iso8601()}
+
+    def _append(state: dict) -> dict:
+        existing = state.get("escalations")
+        state["escalations"] = ([e for e in existing if isinstance(e, dict)]
+                                if isinstance(existing, list) else []) + [entry]
+        return state
+
+    run_state._mutate(repo_root, _append)  # noqa: SLF001 - the module's own mutation path
+    return entry
+
+
+def defer_escalation(repo_root: Path | str, unit: str, finding: dict) -> dict:
+    """The autonomous path: record the escalation as a pending operator decision and leave it
+    unresolved. It never selects an option - a circuit breaker that picks its own answer is
+    not a circuit breaker. Reuses the deferred-decision queue rather than adding a second
+    pending-decision mechanism, so the close asks this alongside everything else, once."""
+    brief = escalation_for(repo_root, finding)
+    entry = {"unit": sdlc_md.norm_id(unit) or unit,
+             "question": f"round {brief['round']}'s repair created this finding "
+                         f"({finding.get('reason', '')}). Patching again is what produced it - "
+                         f"how should the loop exit?",
+             "options": brief["options"], "recommend": None,
+             "deferred_at": sdlc_md.now_iso8601(), "resolution": None}
+
+    def _append(state: dict) -> dict:
+        pending = state.get("pending_decisions")
+        state["pending_decisions"] = ([p for p in pending if isinstance(p, dict)]
+                                      if isinstance(pending, list) else []) + [entry]
+        return state
+
+    run_state._mutate(repo_root, _append)  # noqa: SLF001
+    return entry
 
 
 def review_round_guard(repo_root: Path | str, ceiling: int | None = None,

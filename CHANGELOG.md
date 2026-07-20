@@ -41,6 +41,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   earlier round's surface has already been re-reviewed. A finding that cannot be located is
   reported unclassified with its reason, never folded into the fresh count.
 
+- **A repair regression escalates instead of buying another patch round (CR0358: US0263).**
+  Revert, redesign and accept-and-file are offered by name with the consequence of each, and
+  another patch round is deliberately not among them: when the patching is the cause, more of
+  it is the one response the evidence rules out. Revert names the round and files it would
+  undo, so the choice is not blind. `accept-and-file` mints a real artefact through the shared
+  filer and reports its id, never a prose note claiming something was filed. The autonomous
+  path records the question on the existing deferred-decision queue and blocks - a circuit
+  breaker that picks its own answer is not a circuit breaker.
+
+- **What the review rounds have cost, shown when the next one is offered (CR0358: US0264).**
+  Each round records its token cost; the report gives the per-round figures and the cumulative
+  total, so "is the next round worth buying" is asked against a number. An unmeasured round is
+  named and the total marked PARTIAL rather than the round being summed as zero, which would
+  read cheaper than the run was. A measured zero is a different fact from an unmeasured round
+  and reads differently.
+
+- **The reviewer's brief carries the work, not the framing (CR0358: US0265).** The brief holds
+  the diff and risk surface but not the prior verdict prose, severity labels, round number, or
+  any asserted conclusion. It deliberately narrows the request it came from: the probes a prior
+  verdict named still travel, as a neutral checklist with the demand to re-execute them, because
+  that re-execution is what makes a re-review trustworthy - removing prior verdicts wholesale
+  would have deleted it. A prior verdict whose probes cannot be extracted is refused loudly
+  rather than silently dropping the demand, which would leave a re-review weaker than the review
+  it replaced. Neutrality is checked mechanically, excluding the return contract - that
+  necessarily names both verdict words because it is the reply format, and offering the
+  vocabulary as a required choice is not priming.
+
 - **Deferred operator decisions - a run stops once, with structured questions (CR0369:
   US0280, US0281).** `sprint decision defer` sets a unit needing an operator decision aside
   on the run state while the batch continues; `decision list` asks everything accumulated
@@ -1077,6 +1104,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   added, removed or renamed.
 
 ### Fixed
+
+- **A run stopped mid-flight can still take the bounded exit (BG0223).** The re-run guard on
+  `--file-and-close` gated on the bare outcome string, so a run stamped `budget-spent` or
+  `stopped` - `loop_guard`'s own recommended flow, and states the close path documents as
+  routinely completing their ceremony afterwards - was refused with "already closed,
+  re-running would duplicate the filing". That run has filed nothing, so the message was false
+  on both counts and the bounded exit was unavailable to one of its natural customers. The
+  refusal now gates on a COMPLETED close (`goal-reached` / `closed-outstanding`); duplication
+  itself is caught by the filed-blockers record, which is the fact that proves a filing
+  happened rather than a string that implies it.
 
 - **The suite lanes run in a git environment of their own, not the caller's (BG0222).**
   `git commit -a` hands the pre-commit hook `GIT_INDEX_FILE` and friends; the suite lanes

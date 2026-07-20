@@ -1,7 +1,8 @@
 # BG0223: file-and-close refuses a budget-spent or stopped run with a false already-closed message
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
+> **Verification depth:** functional (both mid-flight outcomes and both completed outcomes covered; 4 mutants killed over the FileAndCloseTests class - restoring the over-broad guard, removing the completed-close refusal, removing the duplication guard, and narrowing it to goal-reached only. The first mutation pass reported 3 survivors and was WRONG: the -k filter did not match two of the three new test names, so they never ran. The tests were sound; the harness was not)
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py
 > **Created:** 2026-07-20

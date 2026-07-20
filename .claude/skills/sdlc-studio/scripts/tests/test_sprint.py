@@ -3021,6 +3021,51 @@ class FileAndCloseTests(unittest.TestCase):
             self.assertIn("Deferred at close", anchor)
             self.assertIn("CR", anchor)                # the filed ids are named, not implied
 
+    def _set_outcome(self, root, outcome):
+        f = root / "sdlc-studio" / ".local" / "run-state.json"
+        st = json.loads(f.read_text(encoding="utf-8"))
+        st["outcome"] = outcome
+        f.write_text(json.dumps(st, indent=2), encoding="utf-8")
+
+    def test_a_run_stopped_mid_flight_can_still_file_and_close(self) -> None:
+        """BG0223 - budget-spent and stopped are mid-flight states, not completed closes.
+
+        loop_guard's own recommended flow stamps them, and such a run has filed NOTHING, so
+        refusing it as "already closed ... would duplicate the filing" is false on both counts
+        and denies the bounded exit to one of its natural customers.
+        """
+        for outcome in ("budget-spent", "stopped"):
+            with tempfile.TemporaryDirectory() as d:
+                root = self._fixture(d)
+                mod = _load()
+                self._set_outcome(root, outcome)
+                rc, out, err = self._close(mod, root, self.ADMIN, extra=("--file-and-close",))
+                self.assertEqual(rc, 0, f"{outcome}: {err}")
+                crs = list((root / "sdlc-studio" / "change-requests").glob("CR*.md"))
+                self.assertEqual(len(crs), 2, f"{outcome}: the blockers were not filed")
+
+    def test_a_completed_close_still_refuses_a_second_filing(self) -> None:
+        for outcome in ("goal-reached", "closed-outstanding"):
+            with tempfile.TemporaryDirectory() as d:
+                root = self._fixture(d)
+                mod = _load()
+                self._set_outcome(root, outcome)
+                rc, out, err = self._close(mod, root, self.ADMIN, extra=("--file-and-close",))
+                self.assertEqual(rc, 2, f"{outcome} must refuse a second filing")
+                self.assertRegex(err, r"(?i)already")
+
+    def test_a_run_that_already_filed_refuses_whatever_its_outcome(self) -> None:
+        """The duplication guard is the filed-blockers record, not the outcome string."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(d)
+            mod = _load()
+            rc, _out, err = self._close(mod, root, self.ADMIN, extra=("--file-and-close",))
+            self.assertEqual(rc, 0, err)
+            self._set_outcome(root, "stopped")      # mid-flight string, but a filing exists
+            rc2, _o2, err2 = self._close(mod, root, self.ADMIN, extra=("--file-and-close",))
+            self.assertEqual(rc2, 2)
+            self.assertRegex(err2, r"(?i)already filed")
+
     def test_hard_correctness_gate_refuses_file_and_close(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = self._fixture(d)

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 11 |
+| Open | 10 |
 | In Progress | 0 |
-| Fixed | 137 |
+| Fixed | 138 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -189,7 +189,7 @@
 | [BG0220](BG0220-verify-ac-writes-its-report-and-history-relative.md) | verify_ac writes its report and history relative to the current directory | Open | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0221](BG0221-refine-into-appends-a-duplicate-epic-level-ac.md) | refine --into appends a duplicate epic-level AC heading that fails the repo's own markdown gate | Open | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0222](BG0222-the-pre-commit-suite-lanes-break-under-git.md) | the pre-commit suite lanes break under git commit -a because hook GIT_* env leaks into test git calls | Fixed | Medium | 2026-07-20 | 2026-07-20 |
-| [BG0223](BG0223-file-and-close-refuses-a-budget-spent-or.md) | file-and-close refuses a budget-spent or stopped run with a false already-closed message | Open | Medium | 2026-07-20 | 2026-07-20 |
+| [BG0223](BG0223-file-and-close-refuses-a-budget-spent-or.md) | file-and-close refuses a budget-spent or stopped run with a false already-closed message | Fixed | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0224](BG0224-an-explicit-tokens-0-cannot-clear-a-recorded.md) | an explicit --tokens 0 cannot clear a recorded velocity actual because zero is falsy in the preservation guard | Open | Low | 2026-07-20 | 2026-07-20 |
 | [BG0225](BG0225-the-close-owed-detector-misses-a-unit-written.md) | the close-owed detector misses a unit written in parentheses on the retro Batch line | Open | Low | 2026-07-20 | 2026-07-20 |
 | [BG0226](BG0226-record-velocity-writes-the-retro-id-verbatim-so.md) | record_velocity writes the retro id verbatim, so a dashed id mints a row the history reader cannot see | Open | Medium | 2026-07-20 | 2026-07-20 |

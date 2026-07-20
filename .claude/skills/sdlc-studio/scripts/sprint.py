@@ -2870,10 +2870,16 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
     # re-run would see the same set and file a duplicate pair, append second sections to the
     # retro and the anchor, and overwrite the first filing's linkage. Refused, with the next
     # step named - re-running a close is the habit the resumable chain trains.
+    # Gate on what the refusal actually protects: a COMPLETED close. `budget-spent` and
+    # `stopped` are mid-flight states - loop_guard's own recommended flow stamps them, and such
+    # a run has filed nothing - so refusing them as "already closed, would duplicate the
+    # filing" is false on both counts and denies the bounded exit to one of its natural
+    # customers. Duplication itself is caught by the `deferred_blockers` record just below,
+    # which is the fact that proves a filing happened rather than a string that implies it.
     outcome = (state.get("outcome") or run_state.RUNNING)
-    if outcome != run_state.RUNNING:
-        print(f"file-and-close REFUSED: this run is already closed (outcome `{outcome}`) - "
-              f"re-running would duplicate the filing. Open the next run with "
+    if outcome in (run_state.GOAL_REACHED, run_state.CLOSED_OUTSTANDING):
+        print(f"file-and-close REFUSED: this run's close already completed (outcome "
+              f"`{outcome}`) - re-running would duplicate the filing. Open the next run with "
               f"`sprint plan --write`", file=sys.stderr)
         return 2
     if state.get("deferred_blockers"):
