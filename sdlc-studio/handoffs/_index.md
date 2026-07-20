@@ -26,3 +26,4 @@ next `sprint plan --worklist` reads back.
 | [HO-0011](HO0011-the-delivery-backlog-is-empty-and-every-writer.md) | The delivery backlog is empty and every writer, gate and test the skill ships is honest about what it covers | 2026-07-19 |
 | [HO-0012](HO0012-a-request-closes-itself-when-its-children-are.md) | A request closes itself when its children are all resolved, and the sweep that does it reports exactly what it did | 2026-07-20 |
 | [HO-0013](HO0013-the-close-and-its-pre-flights-tell-the.md) | The close and its pre-flights tell the truth: nothing previews a result the real run refuses, no gate lane is unsatisfiable, and every blocker is known before the first attempt | 2026-07-20 |
+| [HO-0014](HO0014-the-sprint-s-instruments-tell-the-truth-and.md) | The sprint's instruments tell the truth and its stops respect the operator: mutation and velocity records are trustworthy, and a run asks bounded, structured questions instead of stalling in prose | 2026-07-20 |

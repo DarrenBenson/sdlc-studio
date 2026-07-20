@@ -85,3 +85,10 @@
 | US0274 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-20 | - |
 | US0275 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-20 | - |
 | US0276 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-20 | operator standing sign-off for this session; the round-1 REJECT was repaired and each of the three ACs re-verified to fail when its subject is removed |
+| US0277 | Darren Benson | - | claude-fable-authoring-session | 2026-07-20 | - |
+| US0278 | Darren Benson | - | claude-fable-authoring-session | 2026-07-20 | - |
+| US0279 | Darren Benson | - | claude-fable-authoring-session | 2026-07-20 | - |
+| US0280 | Darren Benson | - | claude-fable-authoring-session | 2026-07-20 | - |
+| US0281 | Darren Benson | - | claude-fable-authoring-session | 2026-07-20 | - |
+| US0282 | Darren Benson | - | claude-fable-authoring-session | 2026-07-20 | - |
+| US0283 | Darren Benson | - | claude-fable-authoring-session | 2026-07-20 | - |

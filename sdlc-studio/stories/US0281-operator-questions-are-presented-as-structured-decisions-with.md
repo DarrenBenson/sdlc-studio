@@ -1,6 +1,6 @@
 # US0281: Operator questions are presented as structured decisions with named options and a marked recommendation
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0369
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio new

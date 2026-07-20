@@ -1,6 +1,6 @@
 # EP0091: Trustworthy sprint measurements
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0350
 > **Derived Point Total:** 8
 > **Parent:** CR0363
@@ -17,9 +17,9 @@ interactive close records its token actuals (CR0350).
 
 ## Story Breakdown
 
-- [ ] [US0277: Mutation run reports its selected test files and records the test command in the JSON result](../stories/US0277-mutation-run-reports-its-selected-test-files-and.md)
-- [ ] [US0278: Warn when a test file that references the target module falls outside the test command's selection](../stories/US0278-warn-when-a-test-file-that-references-the.md)
-- [ ] [US0279: An interactive close captures the harness-tracked token total into the velocity row without hand entry](../stories/US0279-an-interactive-close-captures-the-harness-tracked-token.md)
+- [x] [US0277: Mutation run reports its selected test files and records the test command in the JSON result](../stories/US0277-mutation-run-reports-its-selected-test-files-and.md)
+- [x] [US0278: Warn when a test file that references the target module falls outside the test command's selection](../stories/US0278-warn-when-a-test-file-that-references-the.md)
+- [x] [US0279: An interactive close captures the harness-tracked token total into the velocity row without hand entry](../stories/US0279-an-interactive-close-captures-the-harness-tracked-token.md)
 
 ## Acceptance Criteria (Epic Level)
 

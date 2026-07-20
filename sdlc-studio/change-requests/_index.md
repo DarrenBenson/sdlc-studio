@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 23 |
 | Approved | 0 |
-| In Progress | 5 |
-| Complete | 329 |
+| In Progress | 1 |
+| Complete | 333 |
 | Rejected | 0 |
 | Deferred | 5 |
 | Superseded | 13 |
@@ -171,7 +171,7 @@
 | [CR-0347](CR0347-the-collision-analysis-trusts-affects-and-affects-is.md) | the collision analysis trusts Affects, and Affects is unreliable | Proposed | High | Improvement | 2026-07-19 | -- |
 | [CR-0348](CR0348-the-gate-lints-only-changed-markdown-so-a.md) | the gate lints only changed markdown, so a broken file stays green until something touches it | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0349](CR0349-sprint-plan-cannot-record-a-deliberate-over-appetite.md) | sprint plan cannot record a deliberate over-appetite batch, only silently raise the ceiling | Proposed | Medium | Improvement | 2026-07-19 | -- |
-| [CR-0350](CR0350-record-the-sprint-s-token-actuals-automatically-for.md) | record the sprint's token actuals automatically for an interactive run | In Progress | Medium | Improvement | 2026-07-19 | EP0091 |
+| [CR-0350](CR0350-record-the-sprint-s-token-actuals-automatically-for.md) | record the sprint's token actuals automatically for an interactive run | Complete | Medium | Improvement | 2026-07-19 | EP0091 |
 | [CR-0351](CR0351-file-finding-silently-accepts-shell-mangled-text-so.md) | prose reaches the scripts through a shell argument, so a backtick silently empties the field it was documenting | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0352](CR0352-migrate-apply-should-seed-a-missing-agents-md.md) | migrate --apply should seed a missing AGENTS.md rather than report it as a human task | Proposed | High | Improvement | 2026-07-19 | -- |
 | [CR-0353](CR0353-the-agent-instructions-hygiene-check-verifies-pointers-not.md) | the agent-instructions hygiene check verifies pointers, not that the working model is established | Proposed | High | Improvement | 2026-07-19 | -- |
@@ -184,15 +184,15 @@
 | [CR-0360](CR0360-the-doc-freshness-line-budget-refusal-names-the.md) | the doc-freshness line-budget refusal names the count but not the gap, so trimming is guesswork | Proposed | Low | Improvement | 2026-07-19 | -- |
 | [CR-0361](CR0361-an-agent-meets-the-gates-as-refusals-not.md) | an agent meets the gates as refusals, not as a briefing: generate a per-unit pre-flight from the gates themselves | Complete | Medium | Improvement | 2026-07-19 | EP0086 |
 | [CR-0362](CR0362-a-retro-finding-fixed-during-the-sprint-has.md) | a retro finding fixed during the sprint has no honest disposition: the vocabulary is filed or declined | Proposed | Medium | Improvement | 2026-07-19 | -- |
-| [CR-0363](CR0363-the-mutation-gate-should-report-the-coverage-its.md) | the mutation gate should report the coverage its test command actually reaches | In Progress | High | Improvement | 2026-07-19 | EP0091 |
+| [CR-0363](CR0363-the-mutation-gate-should-report-the-coverage-its.md) | the mutation gate should report the coverage its test command actually reaches | Complete | High | Improvement | 2026-07-19 | EP0091 |
 | [CR-0364](CR0364-reconcile-should-derive-a-request-terminal-when-its.md) | reconcile should derive a request terminal when its children are all resolved - G2 is a gate with no counterpart | Complete | High | Improvement | 2026-07-19 | EP0087 |
 | [CR-0365](CR0365-residuals-from-the-twelve-partially-delivered-requests-derived.md) | Residuals from the twelve partially-delivered requests derived Complete by CR0364 | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0366](CR0366-sprint-plan-should-see-work-that-is-already.md) | sprint plan should see work that is already built and committed | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0367](CR0367-the-commit-message-check-runs-after-the-full.md) | the commit-message check runs after the full test gate, so a subject-line defect costs a whole suite run | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0368](CR0368-conformance-reports-a-unit-missing-critiqued-without-naming.md) | conformance reports a unit missing critiqued without naming which half is unmet | Proposed | Medium | Improvement | 2026-07-20 | -- |
-| [CR-0369](CR0369-a-sprint-that-needs-an-operator-decision-should.md) | a sprint that needs an operator decision should ask a structured question, not stop in dense prose | In Progress | High | Improvement | 2026-07-20 | EP0092 |
+| [CR-0369](CR0369-a-sprint-that-needs-an-operator-decision-should.md) | a sprint that needs an operator decision should ask a structured question, not stop in dense prose | Complete | High | Improvement | 2026-07-20 | EP0092 |
 | [CR-0370](CR0370-forward-port-ships-untracked-test-cache-directories-into.md) | forward-port ships untracked test-cache directories into the installed skill | Complete | Low | Improvement | 2026-07-20 | EP0090 |
-| [CR-0371](CR0371-sprint-close-should-offer-to-file-its-blockers.md) | sprint close should offer to file its blockers and close, rather than driving to a conclusion | In Progress | High | Improvement | 2026-07-20 | EP0092 |
+| [CR-0371](CR0371-sprint-close-should-offer-to-file-its-blockers.md) | sprint close should offer to file its blockers and close, rather than driving to a conclusion | Complete | High | Improvement | 2026-07-20 | EP0092 |
 | [CR-0372](CR0372-an-append-only-review-log-has-no-correction.md) | an append-only review log has no correction path, so one mis-entry can strand a unit permanently | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0373](CR0373-the-interactive-token-capture-should-record-the-delivering.md) | the interactive token capture should record the delivering model so the velocity row lands in the right (project, model) cell | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0374](CR0374-skill-scripts-should-warn-or-refuse-while-a.md) | skill scripts should warn or refuse while a mutation run's mutant may be on disk | Proposed | Medium | Improvement | 2026-07-20 | -- |

@@ -1,6 +1,6 @@
 # US0282: Close offers a bounded file-and-close path: blockers filed as linked artefacts, outcome records outstanding work
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0371
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio new

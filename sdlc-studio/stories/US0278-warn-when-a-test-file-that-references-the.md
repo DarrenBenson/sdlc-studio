@@ -1,6 +1,6 @@
 # US0278: Warn when a test file that references the target module falls outside the test command's selection
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0363
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio new

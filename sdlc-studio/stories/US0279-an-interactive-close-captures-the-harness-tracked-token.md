@@ -1,6 +1,6 @@
 # US0279: An interactive close captures the harness-tracked token total into the velocity row without hand entry
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0350
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio new

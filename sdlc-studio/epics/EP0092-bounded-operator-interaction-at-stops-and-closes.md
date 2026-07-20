@@ -1,6 +1,6 @@
 # EP0092: Bounded operator interaction at stops and closes
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0371
 > **Derived Point Total:** 16
 > **Parent:** CR0369
@@ -17,10 +17,10 @@ can file its blockers and terminate honestly (CR0371).
 
 ## Story Breakdown
 
-- [ ] [US0280: A unit needing an operator decision is set aside and the batch continues; accumulated decisions are asked together at the stop](../stories/US0280-a-unit-needing-an-operator-decision-is-set.md)
-- [ ] [US0281: Operator questions are presented as structured decisions with named options and a marked recommendation](../stories/US0281-operator-questions-are-presented-as-structured-decisions-with.md)
-- [ ] [US0282: Close offers a bounded file-and-close path: blockers filed as linked artefacts, outcome records outstanding work](../stories/US0282-close-offers-a-bounded-file-and-close-path.md)
-- [ ] [US0283: Close reports whether the outstanding set shrinks or grows across re-runs; hard correctness gates stay unwaivable](../stories/US0283-close-reports-whether-the-outstanding-set-shrinks-or.md)
+- [x] [US0280: A unit needing an operator decision is set aside and the batch continues; accumulated decisions are asked together at the stop](../stories/US0280-a-unit-needing-an-operator-decision-is-set.md)
+- [x] [US0281: Operator questions are presented as structured decisions with named options and a marked recommendation](../stories/US0281-operator-questions-are-presented-as-structured-decisions-with.md)
+- [x] [US0282: Close offers a bounded file-and-close path: blockers filed as linked artefacts, outcome records outstanding work](../stories/US0282-close-offers-a-bounded-file-and-close-path.md)
+- [x] [US0283: Close reports whether the outstanding set shrinks or grows across re-runs; hard correctness gates stay unwaivable](../stories/US0283-close-reports-whether-the-outstanding-set-shrinks-or.md)
 
 ## Acceptance Criteria (Epic Level)
 

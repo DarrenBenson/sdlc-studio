@@ -58,3 +58,4 @@ about no run that ever happened.
 | RETRO0050 | 2026-07-19 | 10 | 0 | 10 | - | 0 | 0 | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - |
 | RETRO0057 | 2026-07-20 | 3 | 0 | 3 | - | 0 | 0 | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - |
 | RETRO0058 | 2026-07-20 | 6 | 0 | 1 | 14 | 0 | 0 | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - |
+| RETRO0060 | 2026-07-20 | 9 | 0 | 9 | 30 | 0 | 2,390,624 | - | 79,687 | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - |

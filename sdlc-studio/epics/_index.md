@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 3 |
+| Draft | 1 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 89 |
+| Done | 91 |
 | **Total** | **92** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -113,5 +113,5 @@
 | [EP0088](EP0088-the-gate-tolerates-a-refined-draft-backlog.md) | The gate tolerates a refined Draft backlog | Done | -- | -- | 2026-07-20 | 2026-07-20 |
 | [EP0089](EP0089-the-close-reports-every-blocker-in-one-pass.md) | The close reports every blocker in one pass | Done | -- | -- | 2026-07-20 | 2026-07-20 |
 | [EP0090](EP0090-forward-port-ships-only-the-skill.md) | Forward-port ships only the skill | Done | -- | -- | 2026-07-20 | 2026-07-20 |
-| [EP0091](EP0091-trustworthy-sprint-measurements.md) | Trustworthy sprint measurements | Draft | -- | -- | 2026-07-20 | 2026-07-20 |
-| [EP0092](EP0092-bounded-operator-interaction-at-stops-and-closes.md) | Bounded operator interaction at stops and closes | Draft | -- | -- | 2026-07-20 | 2026-07-20 |
+| [EP0091](EP0091-trustworthy-sprint-measurements.md) | Trustworthy sprint measurements | Done | -- | -- | 2026-07-20 | 2026-07-20 |
+| [EP0092](EP0092-bounded-operator-interaction-at-stops-and-closes.md) | Bounded operator interaction at stops and closes | Done | -- | -- | 2026-07-20 | 2026-07-20 |

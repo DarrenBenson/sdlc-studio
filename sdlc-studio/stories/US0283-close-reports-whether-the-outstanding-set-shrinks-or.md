@@ -1,6 +1,6 @@
 # US0283: Close reports whether the outstanding set shrinks or grows across re-runs; hard correctness gates stay unwaivable
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0371
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio new

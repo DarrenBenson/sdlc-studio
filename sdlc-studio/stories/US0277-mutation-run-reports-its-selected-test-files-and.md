@@ -1,6 +1,6 @@
 # US0277: Mutation run reports its selected test files and records the test command in the JSON result
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0363
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio new

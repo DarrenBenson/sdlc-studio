@@ -1,6 +1,6 @@
 # US0280: A unit needing an operator decision is set aside and the batch continues; accumulated decisions are asked together at the stop
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0369
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio new
