@@ -42,10 +42,20 @@ def _reconcile(root: str) -> dict:
     # detect_type returns a dict; the drift items live under "drift" (not len(dict)).
     total = sum(len(reconcile.detect_type(t, rr)["drift"]) for t in reconcile.DEFAULT_TYPES)
     # `request-derivable` is assembled in the sweep, not in `detect_type`, so it was invisible
-    # here - the gate passed on a tree where `reconcile detect` exited 1. Only the items apply
-    # can ACTUALLY clear are counted: one blocked behind another gate (an RFC with an open
-    # decision) is real drift, but no commit can clear it, and a gate that cannot be satisfied
-    # gets bypassed rather than fixed. Those are reported without blocking.
+    # here - the gate passed on a tree where `reconcile detect` exited 1.
+    #
+    # Only the items apply can clear are COUNTED. One blocked behind another gate is real drift
+    # and is reported in the detail, but it does not block, because the committer who trips it is
+    # generally not the person who can clear it: an RFC waiting on an open decision needs that
+    # decision made (or an override recorded), which is somebody else's call on somebody else's
+    # timetable. Blocking every commit in the repo on a pending operator decision is friction that
+    # gets the gate bypassed, and a bypassed gate enforces nothing.
+    #
+    # NOT because such an item is unclearable - it plainly is clearable, and by a commit: the
+    # refusal message names both remedies. This is a friction trade, and the cost is real - a
+    # delivered request blocked behind a resolvable gate reports PASS, which is a narrowed form of
+    # the very bug this kind exists to kill. `reconcile detect` still exits 1 on it. Anyone
+    # widening this should weigh that cost, not assume there is nothing to weigh.
     blocked = 0
     if sdlc_md.two_backlog_enforced(rr):
         derivable = reconcile.derivable_request_drift(rr)

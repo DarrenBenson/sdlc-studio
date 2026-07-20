@@ -1317,6 +1317,14 @@ def derivable_request_drift(repo_root: Path | str, explain: bool = True) -> list
             # attempt the real transition and will surface the same refusal from it. Probing
             # first would run every gate twice for one decision.
             blocked_by = _terminal_refusal(transition, root, rid, target) if explain else None
+            if not explain:
+                # The key is ABSENT rather than None on this path: it was never computed, and an
+                # item that merely looks unblocked is indistinguishable from one that is. A future
+                # reader gets a KeyError instead of a silent wrong answer.
+                drift.append({"type": type_, "id": rid, "kind": "request-derivable",
+                              "file_status": status, "index_status": None,
+                              "fix": f"{rid} is {status} but every child it produced is resolved"})
+                continue
             if blocked_by:
                 fix = (f"{rid} is {status} and every child it produced is resolved, but a gate "
                        f"still refuses {target}: {blocked_by}. `reconcile apply` CANNOT clear "
@@ -2249,7 +2257,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
         for u in dr["unapplied"]:
             # Counted, not just printed: every other unapplied path drives the exit code, and a
             # refused derivation that exits 0 is invisible to the CI that runs this.
-            print(f"could NOT derive {u['id']} -> {u['target']}: {u['reason']}")
+            print(f"could NOT derive {u['id']} -> {u['target']}: {u['reason']}",
+                  file=sys.stderr)   # as every sibling unapplied message in this command does
             unapplied += 1
     if do_meta:
         m = apply_meta(repo_root, dry_run=args.dry_run)

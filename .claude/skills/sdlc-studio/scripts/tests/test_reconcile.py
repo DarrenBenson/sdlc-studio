@@ -2787,12 +2787,34 @@ class DerivableRequestDriftTests(unittest.TestCase):
         root = self._repo()
         self._rfc_with_open_decision(root)
         self._resolved_rfc_child(root)
-        buf = io.StringIO()
-        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             rc = reconcile.main(["--root", str(root), "apply"])
-        self.assertEqual(rc, 1, buf.getvalue())
-        self.assertIn("could NOT derive RFC0001", buf.getvalue())
-        self.assertIn("1 could not be applied", buf.getvalue())
+        self.assertEqual(rc, 1, out.getvalue() + err.getvalue())
+        # The refusal goes to stderr, as every sibling unapplied message does; the summary line
+        # (stdout) is what a human reads as the verdict.
+        self.assertIn("could NOT derive RFC0001", err.getvalue())
+        self.assertIn("1 could not be applied", out.getvalue())
+
+    def test_a_clean_apply_exits_zero(self):
+        """Positive control for the exit-code test above: nothing blocked, so nothing to report.
+        Without it, 'always exit 1' would satisfy the refusal test."""
+        root = self._repo()
+        self._cr(root)
+        self._story(root, "US0001", "Done")
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            rc = reconcile.main(["--root", str(root), "apply"])
+        self.assertEqual(rc, 0)
+
+    def test_the_apply_path_omits_the_field_it_did_not_compute(self):
+        """`explain=False` skips the ladder probe, so `blocked_by` is ABSENT, not None: an item
+        that merely looks unblocked must not be mistakable for one that was checked."""
+        root = self._repo()
+        self._cr(root)
+        self._story(root, "US0001", "Done")
+        quiet = reconcile.derivable_request_drift(root, explain=False)
+        self.assertNotIn("blocked_by", quiet[0])
+        self.assertIn("blocked_by", reconcile.derivable_request_drift(root)[0])
 
     def test_the_json_path_surfaces_a_refusal(self):
         """A programmatic caller saw `{"synced": [...]}` only, so a blocked run read as clean."""

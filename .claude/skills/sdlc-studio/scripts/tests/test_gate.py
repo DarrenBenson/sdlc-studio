@@ -192,8 +192,14 @@ class GateRealWrapperTests(unittest.TestCase):
         self.assertEqual(res["count"], 1, res)
 
     def test_gate_does_not_block_on_a_request_another_gate_refuses(self) -> None:
-        """Reported, not counted. No commit can clear an RFC blocked on an open decision, and a
-        gate that cannot be satisfied gets bypassed rather than fixed."""
+        """Reported in the detail, not counted.
+
+        The reason is FRICTION, not impossibility: an RFC waiting on an open decision is clearable
+        by a commit (close the row, or record an override), but not usually by the committer who
+        trips the gate, and blocking the whole repo on a pending decision gets the gate bypassed.
+        The cost is real - a delivered request behind a resolvable gate reports PASS - and
+        `reconcile detect` still exits 1 on it.
+        """
         import reconcile
         orig, orig_d = reconcile.detect_type, reconcile.derivable_request_drift
         reconcile.detect_type = lambda t, root: {
@@ -207,6 +213,27 @@ class GateRealWrapperTests(unittest.TestCase):
             reconcile.detect_type, reconcile.derivable_request_drift = orig, orig_d
         self.assertEqual(res["count"], 0, res)
         self.assertIn("awaiting another gate", res["detail"])
+
+    def test_gate_ignores_derivable_requests_where_the_workflow_is_unenforced(self) -> None:
+        """The wrapper's own `two_backlog_enforced` guard: both tests above run against the
+        enforced repo, so neither could tell whether it was consulted."""
+        import reconcile
+        orig, orig_d = reconcile.detect_type, reconcile.derivable_request_drift
+        orig_e = gate.sdlc_md.two_backlog_enforced
+        reconcile.detect_type = lambda t, root: {
+            "census_total": 0, "census_counts": {}, "row_counts": {},
+            "index_exists": True, "index_summary": {}, "drift": []}
+        reconcile.derivable_request_drift = lambda root, explain=True: [
+            {"id": "CR0001", "kind": "request-derivable", "blocked_by": None}]
+        try:
+            gate.sdlc_md.two_backlog_enforced = lambda root: False
+            off = gate._reconcile(str(REPO))["count"]
+            gate.sdlc_md.two_backlog_enforced = lambda root: True
+            on = gate._reconcile(str(REPO))["count"]
+        finally:
+            reconcile.detect_type, reconcile.derivable_request_drift = orig, orig_d
+            gate.sdlc_md.two_backlog_enforced = orig_e
+        self.assertEqual((off, on), (0, 1))   # paired, so neither half can pass vacuously
 
 
     def test_duplicate_index_row_fails_gate(self) -> None:
