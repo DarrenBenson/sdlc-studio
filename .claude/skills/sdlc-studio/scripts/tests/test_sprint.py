@@ -2963,6 +2963,34 @@ class ApplySignoffTailTests(unittest.TestCase):
             self.assertTrue(vel.exists(), "velocity file not written")
             self.assertIn("RETRO0001", vel.read_text())
 
+    def test_interactive_close_captures_token_actuals(self) -> None:
+        """US0279 (CR0350): the close captures the harness-tracked token total itself -
+        no operator hand-supply - and the velocity row records the actual, so
+        estimate-versus-actual closes for interactive runs as it does for runner ones."""
+        import os
+        import unittest.mock as _mock
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001")
+            _signoffable_story(root)
+            _close_retro(root, batch="US0101")
+            tdir = root / "transcripts"
+            tdir.mkdir()
+            (tdir / "session.jsonl").write_text(json.dumps(
+                {"message": {"usage": {"input_tokens": 10_000, "output_tokens": 40_000,
+                                       "cache_creation_input_tokens": 70_000,
+                                       "cache_read_input_tokens": 5_000_000}}}) + "\n",
+                encoding="utf-8")
+            mod = _load()
+            with _mock.patch.dict(os.environ, {"SDLC_STUDIO_TRANSCRIPTS": str(tdir)}):
+                rc, out, err = _run_apply_signoff(root, mod)
+            self.assertEqual(rc, 0, err)
+            self.assertIn("token actual captured", out)
+            vel = (root / "sdlc-studio" / "retros" / "VELOCITY.md").read_text(encoding="utf-8")
+            self.assertIn("120,000", vel, "the harness total is ON the row")
+            row = [ln for ln in vel.splitlines() if "RETRO0001" in ln][0]
+            self.assertIn("| 5 |", row, "the delivered points are on the row beside it")
+
     def test_ApplySignoffTail_records_velocity_from_the_close_retro_argument(self) -> None:
         """BG0200: a retro scaffolded with `artifact.py new` never sets `scaffolded_retro`.
 

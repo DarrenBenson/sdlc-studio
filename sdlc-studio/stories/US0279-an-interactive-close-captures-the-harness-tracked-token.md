@@ -1,6 +1,6 @@
 # US0279: An interactive close captures the harness-tracked token total into the velocity row without hand entry
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0350
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio new
@@ -25,6 +25,7 @@
 - **Then** the harness-tracked token total is captured without the operator supplying it by
   hand, or the close states plainly that it could not and why
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_interactive_close_captures_token_actuals
+- **Verified:** yes (2026-07-20)
 
 ### AC2: the velocity row records the actual
 
@@ -33,6 +34,7 @@
 - **Then** it records the actual beside the forecast, so the tokens-per-point rate can
   calibrate instead of staying the shipped seed for ever
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py -k test_velocity_row_records_interactive_token_actual
+- **Verified:** yes (2026-07-20)
 
 ## Revision History
 

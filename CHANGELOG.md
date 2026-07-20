@@ -1042,6 +1042,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **An interactive close captures its own token actuals (CR0350: US0279).** The close runs
+  `retro accuracy --tokens-from-harness`, which sums the current session's harness transcript
+  usage (input + output + cache creation; cache reads excluded) and records the total on the
+  velocity row beside the delivered points - closing estimate-versus-actual for interactive
+  sprints after five consecutive retros of "not-yet-captured". A failed capture states plainly
+  why; an already-recorded actual is reused, never re-stamped from a later session; an explicit
+  `--tokens N` stays the operator override. Only the close passes the flag: a plain re-read of
+  an old retro never attributes today's session to a past sprint.
 - **The velocity record states delivered points even when nothing was forecast (BG0218).**
   VELOCITY.md's Points column is now the delivered-points series, read from the units' own
   artefacts (plan-recorded sum as fallback), so an interactive build-first sprint records its

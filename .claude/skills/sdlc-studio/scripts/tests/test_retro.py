@@ -13,6 +13,7 @@ left a finding undecided, or declined without giving a reason.
 import contextlib
 import io
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -886,6 +887,91 @@ class TheVelocityRowRecordsDeliveredPoints(unittest.TestCase):
         rate = retro.measured_rate(str(self.root))
         self.assertIsNone(rate["tokens_per_point"], "no measured tokens, no rate")
         self.assertEqual(rate["by_model"], {})
+
+
+class HarnessTokenCapture(unittest.TestCase):
+    """US0279 (CR0350): the close captures the harness-tracked token total itself, or states
+    plainly why it could not. Five consecutive retros carried 'not-yet-captured' because the
+    number was measurable and nothing supplied it."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        for d in ("retros", "bugs", ".local"):
+            (self.root / "sdlc-studio" / d).mkdir(parents=True, exist_ok=True)
+        (self.root / "sdlc-studio" / "retros" / "RETRO9002-t.md").write_text(
+            BATCH_RETRO.replace("BG0001, CR0001, CR0002", "BG0001, BG0002")
+                       .replace("RETRO-9000", "RETRO-9002"), encoding="utf-8")
+        for num, pts in (("0001", 3), ("0002", 5)):   # 8 delivered points, interactive sprint
+            (self.root / "sdlc-studio" / "bugs" / f"BG{num}-a.md").write_text(
+                f"# BG{num}: a bug\n\n> **Status:** Fixed\n> **Severity:** Low\n"
+                f"> **Points:** {pts}\n", encoding="utf-8")
+        self.transcripts = self.root / "transcripts"
+        self.transcripts.mkdir()
+        self.addCleanup(self.tmp.cleanup)
+
+    def _session(self, name: str, *usages: dict) -> Path:
+        p = self.transcripts / name
+        lines = ['{"type": "meta", "no_usage": true}']
+        lines += [json.dumps({"message": {"usage": u}}) for u in usages]
+        p.write_text("".join(ln + "\n" for ln in lines), encoding="utf-8")
+        return p
+
+    def test_harness_tokens_sums_usage_excluding_cache_reads(self) -> None:
+        self._session("s1.jsonl",
+                      {"input_tokens": 1_000, "output_tokens": 2_000,
+                       "cache_creation_input_tokens": 3_000,
+                       "cache_read_input_tokens": 900_000},
+                      {"input_tokens": 500, "output_tokens": 1_500})
+        cap = retro.harness_tokens(str(self.root), transcripts_dir=self.transcripts)
+        self.assertEqual(cap["tokens"], 8_000)   # cache reads never counted
+        self.assertIn("cache reads excluded", cap["basis"])
+        self.assertTrue(cap["source"].endswith("s1.jsonl"))
+
+    def test_harness_tokens_states_why_when_no_transcript(self) -> None:
+        cap = retro.harness_tokens(str(self.root), transcripts_dir=self.root / "nope")
+        self.assertIsNone(cap["tokens"])
+        self.assertTrue(cap["reason"])
+
+    def _capture(self, *argv: str) -> str:
+        import contextlib
+        import io
+        buf = io.StringIO()
+        with mock.patch.dict(os.environ,
+                             {"SDLC_STUDIO_TRANSCRIPTS": str(self.transcripts)}), \
+                mock.patch.object(sys, "argv",
+                                  ["retro.py", "--root", str(self.root), *argv]), \
+                contextlib.redirect_stdout(buf):
+            rc = retro.main()
+        self.assertEqual(rc, 0, buf.getvalue())
+        return buf.getvalue()
+
+    def test_velocity_row_records_interactive_token_actual(self) -> None:
+        self._session("s1.jsonl", {"input_tokens": 300_000, "output_tokens": 100_000,
+                                   "cache_creation_input_tokens": 400_000,
+                                   "cache_read_input_tokens": 9_000_000})
+        out = self._capture("accuracy", "--id", "RETRO9002", "--write",
+                            "--tokens-from-harness")
+        self.assertIn("token actual captured", out)
+        row = retro.velocity_history(str(self.root))[0]
+        self.assertEqual(row["actual_tokens"], 800_000)   # the sprint-level actual, recorded
+        self.assertEqual(row["points"], 8)
+        rate = retro.measured_rate(str(self.root))
+        self.assertEqual(rate["tokens_per_point"], 100_000)   # est-vs-actual can now close
+
+    def test_recorded_actual_survives_a_later_session(self) -> None:
+        # a re-run in ANOTHER session must not re-stamp the sprint with that session's total
+        self._session("s1.jsonl", {"input_tokens": 800_000})
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens-from-harness")
+        later = self._session("s2.jsonl", {"input_tokens": 50_000})
+        os.utime(later, (later.stat().st_mtime + 60, later.stat().st_mtime + 60))
+        out = self._capture("accuracy", "--id", "RETRO9002", "--write",
+                            "--tokens-from-harness")
+        self.assertIn("already recorded", out)
+        self.assertEqual(retro.velocity_history(str(self.root))[0]["actual_tokens"], 800_000)
+        # an EXPLICIT --tokens stays the operator override and wins outright
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens", "900000")
+        self.assertEqual(retro.velocity_history(str(self.root))[0]["actual_tokens"], 900_000)
 
 
 class PartialMeasurementIsExcludedFromTheRate(AccuracyBase):

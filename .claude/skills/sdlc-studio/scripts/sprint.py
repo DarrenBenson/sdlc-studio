@@ -2537,9 +2537,16 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
         # `retro accuracy --write` records the velocity row (record_velocity), keyed by retro id so
         # a re-run upserts rather than duplicating. Advisory: a mixed-model or unmeasured sprint
         # refuses the accuracy row, and that refusal never fails the close.
+        # `--tokens-from-harness`: the close captures the sprint's harness-tracked token
+        # actual itself (or states why it could not) - the close is the one moment the
+        # current session IS the sprint's session, so the capture is attributed correctly.
         rc, out = _run_cli(retro.main,
-                           ["--root", str(root), "accuracy", "--id", retro_id, "--write"])
+                           ["--root", str(root), "accuracy", "--id", retro_id, "--write",
+                            "--tokens-from-harness"])
         if rc == 0:
+            for line in out.splitlines():
+                if line.startswith("token actual"):
+                    print(f"apply-signoff: {line}")
             print(f"apply-signoff: velocity row recorded for {retro_id}")
         else:
             print(f"apply-signoff: velocity not recorded ({out.splitlines()[-1] if out else 'see retro'})")

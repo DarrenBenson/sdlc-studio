@@ -72,6 +72,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -1099,6 +1100,73 @@ def write_accuracy(root, res: dict) -> Path:
 # The velocity history: what the estimator has actually done, sprint by sprint.
 # ---------------------------------------------------------------------------
 
+#: Where the harness keeps its per-session transcripts, overridable for tests and
+#: non-standard installs. The default is Claude Code's layout: one directory per
+#: project (the absolute path with `/` replaced by `-`), one JSONL file per session.
+TRANSCRIPTS_ENV = "SDLC_STUDIO_TRANSCRIPTS"
+
+
+def harness_tokens(root, transcripts_dir=None) -> dict:
+    """The CURRENT session's harness-tracked token total, read from the transcript.
+
+    The harness records usage per message; the most recently modified session file is
+    the one running this close. Summed: input, output and cache-creation tokens of every
+    record carrying usage. Cache READS are excluded - they re-bill the same context every
+    turn, so counting them would price the conversation quadratically rather than the work.
+
+    Returns {"tokens", "source", "basis"} on success, {"tokens": None, "reason"} when the
+    total cannot be read - and the caller must SAY which it got: the whole defect this
+    closes is five retros of silence where a measurable number should have been.
+    """
+    d = transcripts_dir or os.environ.get(TRANSCRIPTS_ENV)
+    if not d:
+        d = Path.home() / ".claude" / "projects" / str(Path(root).resolve()).replace("/", "-")
+    d = Path(d)
+    if not d.is_dir():
+        return {"tokens": None, "reason": f"no harness transcript directory at {d}"}
+    files = sorted(d.glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
+    if not files:
+        return {"tokens": None, "reason": f"no session transcript (*.jsonl) in {d}"}
+    src = files[-1]
+    total, seen = 0, False
+    try:
+        with src.open(encoding="utf-8") as fh:
+            for line in fh:
+                try:
+                    rec = json.loads(line)
+                except ValueError:
+                    continue
+                msg = rec.get("message")
+                usage = (msg.get("usage") if isinstance(msg, dict) else None) or rec.get("usage")
+                if not isinstance(usage, dict):
+                    continue
+                seen = True
+                total += sum(int(usage.get(k) or 0) for k in
+                             ("input_tokens", "output_tokens", "cache_creation_input_tokens"))
+    except OSError as exc:
+        return {"tokens": None, "reason": f"transcript {src} unreadable ({exc})"}
+    if not seen or total <= 0:
+        return {"tokens": None, "reason": f"transcript {src.name} carries no usage records"}
+    return {"tokens": total, "source": str(src),
+            "basis": "current-session transcript usage sum "
+                     "(input + output + cache creation; cache reads excluded)"}
+
+
+def _tokens_cover_points(row: dict) -> bool:
+    """True when a history row's Actual tokens describe the same units as its Points.
+
+    Two honest shapes: every unit measured (the Actual is the full per-unit sum), or none
+    measured with an Actual present (the Actual is the sprint-level harness total, which by
+    definition covers the whole batch). A partly measured row pairs a partial numerator
+    with a full denominator, so it carries no rate."""
+    measured, units = row.get("measured"), row.get("units")
+    if measured is None or units is None:
+        return False
+    if measured == units:
+        return True
+    return measured == 0 and bool(row.get("actual_tokens"))
+
+
 def velocity_path(root) -> Path:
     return Path(root) / VELOCITY_FILE
 
@@ -1196,12 +1264,12 @@ def measured_rate(root) -> dict:
     is to say it has none, not to hand back a number borrowed from somebody else's project.
     """
     project = telemetry.project_name(root)
-    # Fully-measured sprints only: the Points column is the DELIVERED series, so a
-    # sprint whose token sum covers a subset of its units would divide a partial numerator by
-    # the full denominator and quietly understate the rate. Excluded, not averaged in.
+    # Only sprints whose tokens and points describe the SAME units: the Points column is the
+    # DELIVERED series, so a partial per-unit token sum divided by the full points would
+    # quietly understate the rate. Excluded, not averaged in.
     rows = [r for r in velocity_history(root)
             if r.get("points") and isinstance(r.get("actual_tokens"), (int, float))
-            and r.get("measured") is not None and r.get("measured") == r.get("units")]
+            and _tokens_cover_points(r)]
     by_model: dict[str, dict] = {}
     mixed: list[str] = []
     for r in rows:
@@ -1359,7 +1427,12 @@ def record_velocity(root, res: dict) -> Path:
            # says nothing about the estimator, but its points were still delivered.
            "points": b.get("delivered_points") or b.get("points") or None,
            "oversized": len(b.get("oversized") or []),
-           "estimate": b["estimate"], "actual_tokens": b["actual_tokens"],
+           # The Actual cell: the per-unit sum for a measured (runner) sprint; the sprint-level
+           # harness total for an interactive one that has no per-unit actuals. Never both
+           # blended - which one a row carries is decidable from its own Measured cell.
+           "estimate": b["estimate"],
+           "actual_tokens": (b["actual_tokens"] if res["n_measured"]
+                             else (b.get("sprint_actual_tokens") or b["actual_tokens"])),
            "ratio": b["ratio"], "wall_time_s": b["wall_time_s"],
            "constants": res.get("constants"), "sample": res.get("sample"),
            "model": model_cell(res)}
@@ -1372,11 +1445,12 @@ def record_velocity(root, res: dict) -> Path:
         sample = r.get("sample") or _sample_of(r["id"], r.get("constants"))
         # Derived at write time from the two columns beside it, and never read back as though it
         # were a measurement. It is here for a human reading the file, not for a tool.
-        # Only a FULLY measured sprint gets one: with Points now the delivered series, a
-        # partial token sum over the full points would understate the real rate.
-        fully_measured = (r.get("measured") is not None and r.get("measured") == r.get("units"))
+        # Only when tokens and points describe the SAME set of units: a fully measured sprint
+        # (per-unit sums cover everything) or a wholly unmeasured one whose Actual is the
+        # sprint-level harness total. A partial per-unit sum over the full delivered points
+        # would understate the real rate, so it gets no cell.
         rate = (_rate(r["actual_tokens"] or 0, r.get("points") or 0)
-                if fully_measured else None)
+                if _tokens_cover_points(r) else None)
         lines.append(f"| {r['id']} | {r['date']} | {_fmt(r['units'])} | {_fmt(r['measured'])} | "
                      f"{_fmt(r.get('forecast'))} | {_fmt(r.get('points'))} | "
                      f"{_fmt(r['estimate'])} | "
@@ -1706,8 +1780,37 @@ def cmd_estimator(args) -> int:
 
 
 def cmd_accuracy(args) -> int:
-    res = accuracy(args.root, args.id, sprint_tokens=getattr(args, "tokens", None),
+    tokens = getattr(args, "tokens", None)
+    capture_note = None
+    if tokens is None and getattr(args, "tokens_from_harness", False):
+        # The close's path: capture the harness-tracked total itself. An actual already on
+        # the sprint's row is NEVER re-stamped from a (possibly different) session - the
+        # explicit --tokens above remains the operator's override for corrections.
+        existing = next((r for r in velocity_history(args.root)
+                         if r["id"] == args.id.upper().replace("-", "")
+                         or r["id"] == args.id.upper()), None)
+        if existing and existing.get("actual_tokens"):
+            # Reused, not merely skipped: the upsert rewrites the whole row, so dropping the
+            # figure here would erase the recorded actual while claiming to protect it.
+            tokens = existing["actual_tokens"]
+            capture_note = (f"token actual already recorded for {args.id} "
+                            f"({existing['actual_tokens']:,}) - reused, not re-captured; "
+                            f"correct it with an explicit `--tokens N`")
+        else:
+            cap = harness_tokens(args.root)
+            if cap["tokens"]:
+                tokens = cap["tokens"]
+                capture_note = (f"token actual captured from the harness transcript: "
+                                f"{tokens:,} ({cap['basis']}; {cap['source']})")
+            else:
+                capture_note = (f"token actual NOT captured: {cap['reason']} - supply it "
+                                f"with `accuracy --tokens N`")
+    res = accuracy(args.root, args.id, sprint_tokens=tokens,
                    elapsed_hours=getattr(args, "elapsed_hours", None))
+    if capture_note:
+        res["token_capture"] = capture_note
+        if args.format != "json":
+            print(capture_note)
     if not res["ok"]:
         print(f"retro {args.id}: {res['errors'][0]}", file=sys.stderr)
         return 1
@@ -2018,6 +2121,15 @@ def main() -> int:
                            help="the sprint's ACTUAL token spend (harness-tracked). Supply it for "
                                 "an interactive sprint - which records no per-unit actual - to get "
                                 "a real tokens-per-point over the delivered points")
+            p.add_argument("--tokens-from-harness", dest="tokens_from_harness",
+                           action="store_true",
+                           help="capture the sprint's actual token spend from the harness's "
+                                "current-session transcript instead of supplying --tokens by "
+                                "hand. The close passes this; a re-read of an old retro must "
+                                "not, because the current session is not that sprint. An "
+                                "already-recorded actual is never overwritten (an explicit "
+                                "--tokens still is the override), and a failed capture states "
+                                "plainly why")
             p.add_argument("--elapsed-hours", dest="elapsed_hours", type=float, default=None,
                            metavar="H",
                            help="the sprint's real elapsed hours (start to close), for the PRIMARY "

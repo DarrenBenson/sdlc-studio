@@ -47,9 +47,11 @@ the batch's telemetry and appends this sprint's row to `retros/VELOCITY.md`.
 A unit with no per-unit telemetry record has its PER-UNIT ratio reported as **UNMEASURED** and
 excluded from that ratio - it is never counted as accurate. But the token count itself is NOT
 unmeasurable: the harness tracks it deterministically. An INTERACTIVE sprint (no runner) records no
-per-unit actual, so supply the harness-tracked sprint total with `accuracy --tokens N` to get a
-real sprint tokens-per-point over the delivered points - report it as **not-yet-captured** until you
-do, never as if the number were unknowable. That figure is DESCRIPTIVE, never a target (see CR0273).
+per-unit actual, so the close captures the harness-tracked sprint total itself (`accuracy
+--tokens-from-harness`, run by `sprint close --apply-signoff`) and the velocity row records it; when
+the capture fails, the close states why and `accuracy --tokens N` remains the manual override.
+Report it as **not-yet-captured** only while neither has happened, never as if the number were
+unknowable. That figure is DESCRIPTIVE, never a target (see CR0273).
 
 The forecast is a hypothesis, not a settled calibration. Read the ratio, write down what it
 implies, and change the constants only on evidence a human has looked at - a fit to a couple of
