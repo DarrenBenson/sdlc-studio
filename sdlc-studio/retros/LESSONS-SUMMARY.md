@@ -2,6 +2,7 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0154: A root-relative defect found in one writer must be swept across every sibling writer before the run closes: BG0219 (`lessons.py`) had an...**
 - **L-0153: A pre-flight is worth building where a gate is a chain: the information is nearly always available before the first attempt, and serial...**
 - **L-0152: A fixture missing a config key can silently disable the whole branch under test.**
 - **L-0151: When a defect is fixed, the tests that were passing because of it will fail.**

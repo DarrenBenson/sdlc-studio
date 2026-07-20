@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 4 |
+| Open | 5 |
 | In Progress | 0 |
 | Fixed | 134 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **220** |
+| **Total** | **221** |
 
 ## All Bugs
 
@@ -187,6 +187,7 @@
 | [BG0218](BG0218-the-velocity-record-omits-delivered-points-when-the.md) | the velocity record omits delivered points when the units carry no plan-time forecast | Open | High | 2026-07-20 | 2026-07-20 |
 | [BG0219](BG0219-lessons-summary-ignores-root-and-writes-relative-to.md) | lessons summary ignores --root and writes relative to the current directory | Fixed | High | 2026-07-20 | 2026-07-20 |
 | [BG0220](BG0220-verify-ac-writes-its-report-and-history-relative.md) | verify_ac writes its report and history relative to the current directory | Open | Medium | 2026-07-20 | 2026-07-20 |
+| [BG0221](BG0221-refine-into-appends-a-duplicate-epic-level-ac.md) | refine --into appends a duplicate epic-level AC heading that fails the repo's own markdown gate | Open | Medium | 2026-07-20 | 2026-07-20 |
 
 ## Archived Releases
 

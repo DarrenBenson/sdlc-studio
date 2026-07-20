@@ -68,3 +68,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0056](RETRO0056-an-agent-is-briefed-by-the-gates-before.md) | An agent is briefed by the gates before the work, and the pre-flight it is given tells the truth | 2026-07-19 | -- | -- |
 | [RETRO-0057](RETRO0057-a-request-closes-itself-when-its-children-are.md) | A request closes itself when its children are all resolved, and the sweep that does it reports exactly what it did | 2026-07-20 | -- | -- |
 | [RETRO-0058](RETRO0058-the-close-and-its-pre-flights-tell-the.md) | The close and its pre-flights tell the truth: nothing previews a result the real run refuses, no gate lane is unsatisfiable, and every blocker is known before the first attempt | 2026-07-20 | -- | -- |
+| [RETRO-0059](RETRO0059-interstitial-fix-run-after-phase-0-root-honouring.md) | Interstitial fix-run after Phase 0: root-honouring and ported junk | 2026-07-20 | -- | -- |

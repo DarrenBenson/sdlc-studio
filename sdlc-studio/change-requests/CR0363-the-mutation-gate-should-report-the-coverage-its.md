@@ -1,6 +1,7 @@
 # CR-0363: the mutation gate should report the coverage its test command actually reaches
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0091
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

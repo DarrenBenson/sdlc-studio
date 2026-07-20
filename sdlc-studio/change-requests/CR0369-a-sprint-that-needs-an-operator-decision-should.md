@@ -1,6 +1,7 @@
 # CR-0369: a sprint that needs an operator decision should ask a structured question, not stop in dense prose
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0092
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

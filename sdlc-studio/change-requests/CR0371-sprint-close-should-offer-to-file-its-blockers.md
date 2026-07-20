@@ -1,6 +1,7 @@
 # CR-0371: sprint close should offer to file its blockers and close, rather than driving to a conclusion
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0092
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

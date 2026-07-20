@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 5 |
+| Draft | 12 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **276** |
+| **Total** | **283** |
 
 ## All Stories
 
@@ -187,6 +187,13 @@
 | [US0274](US0274-the-preflight-covers-the-apply-signoff-prerequisites-per.md) | the preflight covers the apply-signoff prerequisites per unit, not just the gate lanes | Done | EP0089 | 2026-07-20 | 2026-07-20 |
 | [US0275](US0275-sprint-close-runs-the-preflight-before-executing-any.md) | sprint close runs the preflight before executing any step, so nothing is discovered serially | Done | EP0089 | 2026-07-20 | 2026-07-20 |
 | [US0276](US0276-forward-port-excludes-the-test-cache-so-a.md) | forward-port excludes the test cache, so a dev machine that has run the suite does not ship it to the installed copy | Done | EP0090 | 2026-07-20 | 2026-07-20 |
+| [US0277](US0277-mutation-run-reports-its-selected-test-files-and.md) | Mutation run reports its selected test files and records the test command in the JSON result | Draft | EP0091 | 2026-07-20 | 2026-07-20 |
+| [US0278](US0278-warn-when-a-test-file-that-references-the.md) | Warn when a test file that references the target module falls outside the test command's selection | Draft | EP0091 | 2026-07-20 | 2026-07-20 |
+| [US0279](US0279-an-interactive-close-captures-the-harness-tracked-token.md) | An interactive close captures the harness-tracked token total into the velocity row without hand entry | Draft | EP0091 | 2026-07-20 | 2026-07-20 |
+| [US0280](US0280-a-unit-needing-an-operator-decision-is-set.md) | A unit needing an operator decision is set aside and the batch continues; accumulated decisions are asked together at the stop | Draft | EP0092 | 2026-07-20 | 2026-07-20 |
+| [US0281](US0281-operator-questions-are-presented-as-structured-decisions-with.md) | Operator questions are presented as structured decisions with named options and a marked recommendation | Draft | EP0092 | 2026-07-20 | 2026-07-20 |
+| [US0282](US0282-close-offers-a-bounded-file-and-close-path.md) | Close offers a bounded file-and-close path: blockers filed as linked artefacts, outcome records outstanding work | Draft | EP0092 | 2026-07-20 | 2026-07-20 |
+| [US0283](US0283-close-reports-whether-the-outstanding-set-shrinks-or.md) | Close reports whether the outstanding set shrinks or grows across re-runs; hard correctness gates stay unwaivable | Draft | EP0092 | 2026-07-20 | 2026-07-20 |
 
 ## Archived Releases
 

@@ -1,6 +1,7 @@
 # CR-0350: record the sprint's token actuals automatically for an interactive run
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0091
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S
