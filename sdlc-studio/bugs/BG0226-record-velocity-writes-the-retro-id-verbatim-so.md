@@ -2,6 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Medium
+> **Verification depth:** functional (reader and writer fixed and independently covered; reverting the writer alone initially still passed because the tolerant reader masked it - the incidental-pass trap - so an on-disk line assertion was added and the writer mutant then failed)
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py
 > **Created:** 2026-07-20

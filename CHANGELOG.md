@@ -21,6 +21,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The close review counts its rounds and stops at a ceiling (CR0358: US0261).** Each
+  sprint-level review is recorded as a round on the run state. Past `review.max_rounds`
+  (default 3) a further round is refused, naming the count, the ceiling and the override
+  rather than leaving the reader to find the exit; buying another round is explicit and is
+  recorded, so the retro can read that the ceiling was passed and where. The default is three
+  because that is where this project's own history stops paying: one run reached five rounds
+  and rounds 2, 3 and 4 each carried a defect the previous round's repair had created. A
+  review recorded with no run open is still recorded - the evidence is never dropped - but
+  nothing is counted against a run that has no identity to count against.
+
+- **A finding is classified against the previous round's repair surface (CR0358: US0262).**
+  A round-N finding landing in code round N-1's repair touched is reported as a repair
+  regression, distinctly from a fresh finding, because the two call for opposite responses:
+  one says the review is still earning its cost, the other says the repair loop is
+  manufacturing the defects the review is being paid to catch. Matching is file AND line, not
+  file alone - single files here run to thousands of lines, and a file-level match would call
+  nearly everything a regression. Comparison is against the latest round only, since an
+  earlier round's surface has already been re-reviewed. A finding that cannot be located is
+  reported unclassified with its reason, never folded into the fresh count.
+
 - **Deferred operator decisions - a run stops once, with structured questions (CR0369:
   US0280, US0281).** `sprint decision defer` sets a unit needing an operator decision aside
   on the run state while the batch continues; `decision list` asks everything accumulated
@@ -1057,6 +1077,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   added, removed or renamed.
 
 ### Fixed
+
+- **A path option is resolved against the project root, not the current directory (BG0220).**
+  `verify_ac`'s `--root` defaulted to `"."`, so "the root" meant "wherever you happen to be":
+  a run from a subdirectory wrote its report and history into a stray `sdlc-studio/.local`
+  beside the cwd, printed that path, and exited 0. The sweep found the same hole on five more
+  surfaces, including a second write (`scaffold --out`) and a read that contradicted the write
+  (`run --root X` wrote to X, `--root X report` said "no report"). Every site now routes
+  through one resolver: a named root is honoured verbatim, and only the family default `"."`
+  triggers an upward search for a marker-bearing workspace - a bare "directory called
+  sdlc-studio" check would stop at `.claude/skills` and call the skill's own source a project.
+  `repo_map.py` carries the identical defect and is filed as BG0228 rather than fixed here.
+
+- **The close-owed detector reads a Batch line's parenthesised units (BG0225).** Coverage was
+  read through `retro.batch_ids`, whose deliberate `(...)` strip is correct for its own
+  question (which units carry a plan-time forecast) and wrong for this one: a Batch line of
+  `BG0219, EP0090 (US0276)` left US0276 reported as owed by the very retro naming it. Coverage
+  now reads the Batch line through the canonical `sdlc_md.ID_SEARCH_RE` instead of a private
+  third regex, which also fixes a latent miss - the private pattern pinned the digit run at
+  exactly four, so a five-digit id matched nothing at all. Only a leaf unit earns coverage from
+  inside a parenthetical; an epic there is provenance, and crediting it would forgive a
+  childless epic no close had derived.
+
+- **A velocity row's retro id is normalised at both the write and the read (BG0226).**
+  `record_velocity` wrote the id verbatim while `velocity_history` matched an undashed form
+  only, so a `RETRO-0060` close minted a row no consumer could see. The reader is the more
+  important half: every consumer goes through it, so tolerating both forms makes rows already
+  on disk visible and lets a legacy row self-heal on the next upsert.
+
+- **An explicit `--tokens 0` clears a recorded actual (BG0224).** Supplied-ness was inferred
+  from the value, so an absent flag and an explicit zero were indistinguishable and the
+  documented override silently kept the wrong number. It now travels as its own sentinel:
+  absent still preserves the recorded value, zero clears it.
+
+- **`validate`'s placeholder warning uses the severity spelling the counters count (BG0217).**
+  The placeholder check emitted `warn` where every other check emitted `warning` and both
+  summary counters counted only `warning`, so a scaffold's slots printed as warnings and then
+  reported `warnings=0`. The vocabulary is now closed, so a third spelling cannot be
+  introduced. No gating change: every consumer filters on `error`.
+
+- **`refine --into` no longer appends a duplicate epic-level AC heading (BG0221).** A second
+  refine against the same batch epic inserted a fresh `## Acceptance Criteria (Epic Level)`
+  under the one already there - a duplicate sibling heading that fails the repo's own
+  markdownlint MD024, so `refine`'s output blocked the commit shipping it. Criteria now merge
+  under the existing heading, attributed to their originating request, with the carried-from
+  note lifted so it stays last and appears once.
+
+- **`critic`'s table reader no longer returns the markdown header as data (BG0227).** The
+  header skip was hardcoded to one table's first-column literal, so any table led by a
+  different column returned its own header row as a record. Latent rather than live - both
+  callers filter by unit id - but it is the list the per-round cost accumulation iterates. The
+  header is now identified by matching the whole cell tuple against the declared columns.
 
 - **An interactive close captures its own token actuals (CR0350: US0279).** The close runs
   `retro accuracy --tokens-from-harness`, which sums the current session's harness transcript

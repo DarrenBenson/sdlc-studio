@@ -2,6 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Medium
+> **Verification depth:** functional (RED-first; closed severity vocabulary so a third spelling cannot be added; summary count asserted equal to the lines printed end-to-end through main(); defect re-introduced under python3 -B with bytecode purged and all three tests failed)
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/validate.py
 > **Created:** 2026-07-20

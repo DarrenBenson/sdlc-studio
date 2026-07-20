@@ -2,6 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Medium
+> **Verification depth:** functional (pinned against the real markdownlint MD024 rule with the repo's own config, plus a local implementation of the rule so the pin holds without Node; both shown non-vacuous; merge dispatch deleted to re-introduce the defect and 5 tests failed)
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/refine.py
 > **Created:** 2026-07-20

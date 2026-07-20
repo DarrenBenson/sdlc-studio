@@ -2,6 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Low
+> **Verification depth:** functional (supplied-ness carried as its own sentinel rather than inferred from falsiness; both halves pinned - an absent --tokens preserves and an explicit --tokens 0 clears; neutering the writer branch and forcing the sentinel each killed their own test)
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py
 > **Created:** 2026-07-20

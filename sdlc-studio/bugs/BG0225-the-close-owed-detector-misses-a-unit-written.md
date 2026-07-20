@@ -2,6 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Low
+> **Verification depth:** functional (6 tests covering parenthesised, bare, punctuation-adjacent, five-digit and lookalike ids; 4 separate defects re-introduced and each killed a named test; asserted on the rendered report rather than the helper, since the correct effect here is a unit ceasing to be falsely reported)
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/close_owed.py
 > **Created:** 2026-07-20
