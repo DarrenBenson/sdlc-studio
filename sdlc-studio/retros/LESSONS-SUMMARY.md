@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0162: **An AC's freshness must cover whether its verifier still exists.** US0097 read `Verified: yes` for weeks after the test it named was...**
+- **L-0161: **A test-selection filter is part of the test harness and can silently exclude the tests you are relying on.** A `-k` pattern that matches...**
+- **L-0160: **Scope a mutation run to product code with a scoped test command.** Mutating test files produces expected-vacuous survivors, and a...**
+- **L-0159: **A guard unreachable through the public path cannot be tested through it.** It still reads as coverage.**
+- **L-0158: **A bug about environment pollution must never be reproduced next to a live repo.** The filed reproduction was followed literally and...**
 - **L-0157: A mutant that lands in a test file and survives is expected, not a finding: stubbing a test's body makes the suite pass vacuously by...**
 - **L-0156: An upsert that rewrites the whole record can erase the very field it was told not to overwrite: "do not overwrite" must be implemented as...**
 - **L-0155: The hook environment is part of the test environment: a suite green in a shell can fail under `git commit -a` because the hook inherits...**

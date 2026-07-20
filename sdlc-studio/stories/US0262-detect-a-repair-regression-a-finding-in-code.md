@@ -1,6 +1,6 @@
 # US0262: Detect a repair regression: a finding in code the previous round's repair touched is reported distinctly from a fresh finding
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0358
 > **Created:** 2026-07-19
 > **Created-by:** sdlc-studio new

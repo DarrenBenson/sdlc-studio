@@ -1,6 +1,6 @@
 # US0263: On a repair regression, escalate to a revert / redesign / accept-and-file decision instead of another patch round
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0358
 > **Created:** 2026-07-19
 > **Created-by:** sdlc-studio new

@@ -92,3 +92,8 @@
 | US0281 | Darren Benson | - | claude-fable-authoring-session | 2026-07-20 | - |
 | US0282 | Darren Benson | - | claude-fable-authoring-session | 2026-07-20 | - |
 | US0283 | Darren Benson | - | claude-fable-authoring-session | 2026-07-20 | - |
+| US0261 | Darren Benson | - | sdlc-studio-build-session | 2026-07-20 | - |
+| US0263 | Darren Benson | - | sdlc-studio-build-session | 2026-07-20 | - |
+| US0264 | Darren Benson | - | sdlc-studio-build-session | 2026-07-20 | - |
+| US0265 | Darren Benson | - | sdlc-studio-build-session | 2026-07-20 | - |
+| US0262 | Darren Benson | - | sdlc-studio-build-session | 2026-07-20 | - |

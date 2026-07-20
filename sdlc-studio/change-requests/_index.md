@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 27 |
 | Approved | 0 |
-| In Progress | 1 |
-| Complete | 333 |
+| In Progress | 0 |
+| Complete | 334 |
 | Rejected | 0 |
 | Deferred | 5 |
 | Superseded | 13 |
@@ -179,7 +179,7 @@
 | [CR-0355](CR0355-hold-until-v5-launch-acknowledge-the-claude-for.md) | HOLD UNTIL v5 LAUNCH - acknowledge the Claude for Open Source programme in the README | Proposed | Low | Improvement | 2026-07-19 | -- |
 | [CR-0356](CR0356-reconcile-never-checks-the-index-row-s-title.md) | reconcile never checks the index row's title, so a retitled artefact drifts silently and no script can fix it | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0357](CR0357-the-rfc-accept-gate-s-fail-closed-fallback.md) | the RFC accept gate's fail-closed fallback can refuse a valid RFC, and says nothing about why | Proposed | Low | Improvement | 2026-07-19 | -- |
-| [CR-0358](CR0358-the-close-review-is-an-unbounded-repair-loop.md) | the close review is an unbounded repair loop: no convergence check, no cost ceiling, and the author writes the reviewer's prompt | In Progress | High | Improvement | 2026-07-19 | EP0085 |
+| [CR-0358](CR0358-the-close-review-is-an-unbounded-repair-loop.md) | the close review is an unbounded repair loop: no convergence check, no cost ceiling, and the author writes the reviewer's prompt | Complete | High | Improvement | 2026-07-19 | EP0085 |
 | [CR-0359](CR0359-sprint-close-discovers-its-blockers-one-at-a.md) | sprint close discovers its blockers one at a time, so a close takes as many runs as it has unmet prerequisites | Complete | Medium | Improvement | 2026-07-19 | EP0089 |
 | [CR-0360](CR0360-the-doc-freshness-line-budget-refusal-names-the.md) | the doc-freshness line-budget refusal names the count but not the gap, so trimming is guesswork | Proposed | Low | Improvement | 2026-07-19 | -- |
 | [CR-0361](CR0361-an-agent-meets-the-gates-as-refusals-not.md) | an agent meets the gates as refusals, not as a briefing: generate a per-unit pre-flight from the gates themselves | Complete | Medium | Improvement | 2026-07-19 | EP0086 |

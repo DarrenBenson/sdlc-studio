@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 0 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 91 |
+| Done | 92 |
 | **Total** | **92** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -107,7 +107,7 @@
 | [EP0082](EP0082-residual-audit-fixes-independent-small-corrections-from-the.md) | Residual audit fixes: independent small corrections from the 2026-07-16 audit | Done | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0083](EP0083-refine-into-share-a-batch-epic-for-small.md) | refine --into: share a batch epic for small requests | Done | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0084](EP0084-publish-the-artefact-schema-as-a-versioned-contract.md) | Publish the artefact schema as a versioned contract | Done | -- | -- | 2026-07-17 | 2026-07-17 |
-| [EP0085](EP0085-the-close-review-is-a-bounded-loop-rounds.md) | The close review is a bounded loop: rounds are counted, repair regressions are named, cost is surfaced, and the reviewer's brief is neutral by construction | Draft | -- | -- | 2026-07-19 | 2026-07-19 |
+| [EP0085](EP0085-the-close-review-is-a-bounded-loop-rounds.md) | The close review is a bounded loop: rounds are counted, repair regressions are named, cost is surfaced, and the reviewer's brief is neutral by construction | Done | -- | -- | 2026-07-19 | 2026-07-19 |
 | [EP0086](EP0086-an-agent-is-briefed-by-the-gates-before.md) | An agent is briefed by the gates before the work, not stopped by them one refusal at a time | Done | -- | -- | 2026-07-19 | 2026-07-19 |
 | [EP0087](EP0087-a-request-closes-itself-when-its-children-are.md) | A request closes itself when its children are done: reconcile derives the terminal that G2 only ever guarded | Done | -- | -- | 2026-07-19 | 2026-07-19 |
 | [EP0088](EP0088-the-gate-tolerates-a-refined-draft-backlog.md) | The gate tolerates a refined Draft backlog | Done | -- | -- | 2026-07-20 | 2026-07-20 |

@@ -1,6 +1,6 @@
 # US0264: Record cumulative review token cost per round and show it when the next round is offered
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0358
 > **Created:** 2026-07-19
 > **Created-by:** sdlc-studio new

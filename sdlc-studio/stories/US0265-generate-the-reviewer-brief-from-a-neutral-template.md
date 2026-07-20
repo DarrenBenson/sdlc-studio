@@ -1,6 +1,6 @@
 # US0265: Generate the reviewer brief from a neutral template carrying the diff and risk surface but no prior verdicts, round number or expected conclusion
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0358
 > **Created:** 2026-07-19
 > **Created-by:** sdlc-studio new

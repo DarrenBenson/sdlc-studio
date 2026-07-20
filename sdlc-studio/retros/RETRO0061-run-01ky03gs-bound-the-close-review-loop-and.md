@@ -116,9 +116,9 @@ sprint instead of only when someone remembers to ask it.
 
 **0 of 13 unit(s) measured; 13 of 13 forecast at plan time.**
 
-**Sprint tokens/point: 90,385** (1,265,392 tokens over 14 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+**Sprint tokens/point: 40,819** (1,265,392 tokens over 31 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 
-**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
+**Velocity: 4.59 points/elapsed-hour** (31 points over 6.748h, run-state, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 Unmeasured: US0261, US0262, US0263, US0264, US0265, BG0217, BG0220, BG0221, BG0222, BG0223, BG0224, BG0225, BG0226. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
@@ -181,3 +181,7 @@ that warned set, so they are not manufactured by the narrow command.
 **16 of 3153 enumerated mutants were sampled (0.5%). The 3137 beyond the ceiling are
 un-checked, not clean.** An earlier full-scope attempt was killed at 40 minutes and produced no
 evidence; it is recorded here as producing none.
+
+## Handoff
+
+- [HO-0015](../handoffs/HO0015-the-close-review-is-a-bounded-honestly-priced.md) - 5 remaining item(s): 0 copilot-tail, 5 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
