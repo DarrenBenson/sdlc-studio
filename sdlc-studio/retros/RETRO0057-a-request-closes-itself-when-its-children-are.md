@@ -73,7 +73,7 @@ discovery backlog went 63 to 30. Suite 3,267 skill + 243 tools green.
   placeholder status, so every apply in the class emitted a spurious unapplied row - which meant
   the exit-code test would have passed on fixture noise rather than on the refusal it names. It
   was changed for tidiness and bought correctness by accident.
-- A drift kind whose advertised remedy cannot clear it is worse than no hint: it sends the
+- **A drift kind whose advertised remedy cannot clear it is worse than no hint** - it sends the
   operator round a loop with no exit. Where a later gate refuses, name that gate.
 
 ## Estimate vs actual

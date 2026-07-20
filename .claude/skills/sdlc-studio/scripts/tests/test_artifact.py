@@ -351,18 +351,72 @@ class NewTests(unittest.TestCase):
             self.assertFalse(Path(r["path"]).exists())
             self.assertEqual(idx.read_text(), before)
 
+    @staticmethod
+    def _drop_executable_acs(path: Path) -> None:
+        """Remove the template's seeded `Verify:` line so the AC-verify gate has nothing to hold.
+
+        Needed since BG0214: `close(dry_run=True)` now runs the real gate ladder, and the story
+        scaffold declares an (unverified) executable AC. These fixtures previously passed only
+        because the preview consulted no gate at all.
+        """
+        p = Path(path)
+        p.write_text("\n".join(ln for ln in p.read_text(encoding="utf-8").splitlines()
+                               if "**Verify:**" not in ln) + "\n", encoding="utf-8")
+
     def test_close_dry_run_does_not_transition(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
             _epic(repo)
             r = artifact.new(repo, "story", "to keep open", {"epic": "EP0001"})
+            self._drop_executable_acs(r["path"])
             before = Path(r["path"]).read_text()
             import telemetry
             res = artifact.close(repo, r["id"], dry_run=True)
             self.assertTrue(res["dry_run"])
             self.assertEqual(Path(r["path"]).read_text(), before)  # status unchanged
             self.assertEqual(telemetry.read_all(repo), [])         # no telemetry recorded
+
+    def test_close_dry_run_refuses_exactly_what_the_real_close_refuses(self) -> None:
+        """BG0214: the preview must consult the same gates the run does.
+
+        `close(dry_run=True)` used to synthesise its answer and return before `transition` was
+        ever called, so it reported `would close` for a story the real close refused, and exited
+        0 where the real path exits 1. The test above cannot catch that: its story has a clean
+        gate ladder, so it passes whether the preview is honest or not. This one uses a story
+        the AC-verify gate REFUSES - the discriminating fixture.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo)
+            r = artifact.new(repo, "story", "has an executable AC", {"epic": "EP0001"})
+            p = Path(r["path"])
+            # An executable AC with no verify-report entry: `transition -> Done` blocks on it.
+            p.write_text(p.read_text() + "\n### AC1: it works\n\n- **Verify:** shell true\n",
+                         encoding="utf-8")
+            before = p.read_text()
+
+            with self.assertRaises(ValueError) as dry:
+                artifact.close(repo, r["id"], dry_run=True)
+            with self.assertRaises(ValueError) as real:
+                artifact.close(repo, r["id"])
+            # Same refusal, not merely both raising.
+            self.assertEqual(str(dry.exception), str(real.exception))
+            self.assertIn("never verified", str(dry.exception))
+            self.assertEqual(p.read_text(), before)   # and the preview still wrote nothing
+
+    def test_close_dry_run_still_previews_what_the_gates_allow(self) -> None:
+        """The counterpart: the fix must not turn every preview into a refusal."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo)
+            r = artifact.new(repo, "story", "no executable acs", {"epic": "EP0001"})
+            self._drop_executable_acs(r["path"])
+            res = artifact.close(repo, r["id"], dry_run=True)
+            self.assertTrue(res["dry_run"])
+            self.assertEqual(res["to"], "Done")
 
 
 class CloseTests(unittest.TestCase):
@@ -783,7 +837,12 @@ class CloseUlidTests(unittest.TestCase):
             _v3(repo)
             r = artifact.new(repo, "bug", "ulid close probe", dict(GROOM))
             self.assertTrue(sdlc_md.is_v3_id(r["id"]), r["id"])
-            res = artifact.close(repo, r["id"], dry_run=True)
+            # Since BG0214 the preview runs the real gate ladder, so the bug close needs what a
+            # real one needs: a recorded verification depth and a structured triaging seat.
+            import transition  # noqa: PLC0415 - local, as the sibling scripts are imported here
+            transition.annotate(repo, r["id"], "Verification depth", "functional")
+            res = artifact.close(repo, r["id"], dry_run=True,
+                                 triaged_by="Tester; agent; v1")
             self.assertEqual(res["type"], "bug")
 
     def test_close_still_infers_v2_and_dashed_v2_ids(self) -> None:

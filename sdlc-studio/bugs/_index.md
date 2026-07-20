@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 3 |
+| Open | 2 |
 | In Progress | 0 |
-| Fixed | 131 |
+| Fixed | 133 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **216** |
+| **Total** | **217** |
 
 ## All Bugs
 
@@ -180,9 +180,10 @@
 | [BG0211](BG0211-an-epic-whose-breakdown-declares-a-dead-id.md) | an epic whose breakdown declares a dead id is owed a close no close can give | Fixed | Low | 2026-07-19 | 2026-07-19 |
 | [BG0212](BG0212-audit-py-carries-14-mutation-survivors-outside-the.md) | audit.py carries 14 mutation survivors outside the profile parser, now enumerated in full | Fixed | Low | 2026-07-19 | 2026-07-19 |
 | [BG0213](BG0213-transition-dry-run-reports-a-transition-the-real.md) | transition --dry-run reports a transition the real run refuses, so the one pre-flight an agent has lies | Fixed | Medium | 2026-07-19 | 2026-07-19 |
-| [BG0214](BG0214-artifact-py-close-dry-run-still-promises-a.md) | artifact.py close --dry-run still promises a close the real run refuses | Open | Medium | 2026-07-19 | 2026-07-19 |
+| [BG0214](BG0214-artifact-py-close-dry-run-still-promises-a.md) | artifact.py close --dry-run still promises a close the real run refuses | Fixed | Medium | 2026-07-19 | 2026-07-19 |
 | [BG0215](BG0215-a-timed-out-mutation-run-leaves-the-mutant.md) | A timed-out mutation run leaves the mutant on disk and the restore captures it | Open | High | 2026-07-20 | 2026-07-20 |
-| [BG0216](BG0216-a-lesson-gist-containing-bold-markup-makes-the.md) | A lesson gist containing bold markup makes the lessons-summary gate unsatisfiable | Open | High | 2026-07-20 | 2026-07-20 |
+| [BG0216](BG0216-a-lesson-gist-containing-bold-markup-makes-the.md) | A lesson gist containing bold markup makes the lessons-summary gate unsatisfiable | Fixed | High | 2026-07-20 | 2026-07-20 |
+| [BG0217](BG0217-validate-s-placeholder-warning-uses-a-severity-spelling.md) | validate's placeholder warning uses a severity spelling the counters do not count | Open | Medium | 2026-07-20 | 2026-07-20 |
 
 ## Archived Releases
 

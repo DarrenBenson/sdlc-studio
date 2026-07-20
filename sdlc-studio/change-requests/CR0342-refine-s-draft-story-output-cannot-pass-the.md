@@ -1,10 +1,11 @@
 # CR-0342: refine's Draft-story output cannot pass the pre-commit gate: validate flags seeded placeholder ACs as errors regardless of status
 
-> **Status:** Proposed
+> **Status:** Complete
+> **Decomposed-into:** EP0088
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
-> **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/gate.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/conformance.py
 > **Date:** 2026-07-17
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

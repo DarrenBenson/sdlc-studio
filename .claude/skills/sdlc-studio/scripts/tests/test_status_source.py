@@ -96,13 +96,35 @@ class StatusVocabSingleSource(unittest.TestCase):
             self.assertIn(artifact.SPEC[t]["terminal"], sdlc_md.terminal_statuses(t), t)
 
     def test_close_defaults_its_target_from_the_shared_source(self) -> None:
-        # `close` with no --status must land on the vocab's close state, not a private table.
-        with tempfile.TemporaryDirectory() as d:
-            for t, (_create, terminal) in EXPECTED.items():
-                prefix = sdlc_md.ARTIFACT_TYPES[t][1]
-                r = artifact.close(Path(d), f"{prefix}0001", dry_run=True)
-                self.assertEqual(r["type"], t)
-                self.assertEqual(r["to"], terminal, f"close default for {t}")
+        """`close` with no --status must land on the vocab's close state, not a private table.
+
+        Asserted on the status `close` HANDS TO `transition`, rather than on a dry-run return
+        value. Since BG0214 the preview runs the real gate ladder, so a dry run against ids that
+        exist on no disk raises rather than reporting a synthesised target - the old form passed
+        only because the preview consulted nothing at all.
+        """
+        # Patched on the module object `artifact` ITSELF resolves. Under test discovery the
+        # sibling scripts get loaded more than once under different names, so patching a
+        # separately-imported `transition` leaves the real one in place and the spy never runs.
+        transition = artifact.transition
+        seen: dict[str, str] = {}
+
+        def spy(_root, artifact_id, new_status, **_kw):
+            seen[artifact_id] = new_status
+            raise FileNotFoundError("stopped after the target was resolved")
+
+        original = transition.transition
+        try:
+            transition.transition = spy
+            with tempfile.TemporaryDirectory() as d:
+                for t, (_create, terminal) in EXPECTED.items():
+                    prefix = sdlc_md.ARTIFACT_TYPES[t][1]
+                    rid = f"{prefix}0001"
+                    with self.assertRaises(FileNotFoundError):
+                        artifact.close(Path(d), rid, dry_run=True)
+                    self.assertEqual(seen[rid], terminal, f"close default for {t}")
+        finally:
+            transition.transition = original
 
     def test_unknown_type_yields_no_status(self) -> None:
         self.assertEqual(sdlc_md.create_status("persona"), "")

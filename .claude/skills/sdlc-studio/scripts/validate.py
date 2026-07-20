@@ -212,8 +212,11 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
                 "sized before it is decomposed; story points belong on the delivery unit)")
 
     # An ungroomed (pre-Ready) story's AC placeholders are a WARNING, not an error: refine seeds
-    # them and validate must not block the refine commit that creates the Draft backlog, while the
-    # placeholder still keeps the story out of Ready/Done. Every other type/status: error.
+    # them and validate must not block the refine commit that creates the Draft backlog. What
+    # still keeps the work out of DELIVERY is conformance, which reports such a story as missing
+    # `specified, verifiable` once it is Ready+, and the AC-verify gate on Done. NOT the Ready
+    # transition itself, which succeeds: the earlier wording here claimed the placeholder "keeps
+    # the story out of Ready/Done", and that half is false. Every other type/status: error.
     _canon = sdlc_md.canonical_status(status, sdlc_md.status_vocab(type_, repo_root)) if status else None
     _pre_ready_story = type_ == "story" and _canon in ("Proposed", "Draft")
     _check_placeholders(text, add, ac_severity="warn" if _pre_ready_story else "error")
@@ -299,8 +302,9 @@ def _check_placeholders(text: str, add, ac_severity: str = "error") -> None:
 
     Metadata placeholders are always an error. An AC placeholder uses `ac_severity`: the caller
     passes `warn` for an ungroomed (pre-Ready) story - a fresh refine output whose ACs are still
-    scaffolds - so the refine commit that creates it lands, while the placeholder still
-    blocks the story from reaching Ready/Done (conformance's specified/verifiable bar, unchanged)."""
+    scaffolds - so the refine commit that creates it lands. The story is still kept out of
+    DELIVERY by conformance's specified/verifiable bar (unchanged) and by the AC-verify gate on
+    Done; the transition to Ready is not itself blocked, so do not read this as gating it."""
     in_ac = False
     for line in text.splitlines():
         if line.startswith("## "):

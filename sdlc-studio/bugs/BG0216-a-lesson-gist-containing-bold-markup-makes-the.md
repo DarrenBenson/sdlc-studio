@@ -1,6 +1,7 @@
 # BG0216: A lesson gist containing bold markup makes the lessons-summary gate unsatisfiable
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (the digest comparison normalises emphasis, so the render/parse round trip is stable for a lesson whose own text carries bold; proven end to end by restoring the exact wording that deadlocked the RETRO0057 close - the lane is green with no reword, and a mutant dropping the normalisation is killed by two tests, one of which checks the comparison still notices a real one-word edit)
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py

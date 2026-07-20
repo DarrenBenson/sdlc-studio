@@ -1,6 +1,7 @@
 # BG0214: artifact.py close --dry-run still promises a close the real run refuses
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (dry-run now routes through the real gate ladder; preview and run give the same refusal and the same exit code; the blind-preview mutant is killed, and the three fixtures that previously passed only because no gate was consulted are corrected)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py

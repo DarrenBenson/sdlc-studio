@@ -57,6 +57,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     on a tree where `reconcile detect` exited 1. Only items `apply` can actually clear are counted:
     one blocked behind another gate is reported without blocking, because a gate that cannot be
     satisfied gets bypassed rather than fixed.
+- **The `lessons-summary` gate lane can always be satisfied (BG0216).** The digest renders each
+  lesson as `- **{id}: {title}**` and the parser found the title by scanning to the first `**`, so
+  a lesson whose own text began with emphasis split at the wrong marker and read back with the
+  bold in a different place. `summary_status` then reported the SAME lesson as both added and
+  removed, and `lessons summary` regenerated a byte-identical file every time: a BLOCKING lane
+  with no satisfying state, which deadlocked a real sprint close. The comparison now normalises
+  emphasis away, so it is insensitive to where the markers land and still sensitive to every part
+  of a lesson the digest carries - a test pins that a one-word edit is still detected, because a
+  digest that stopped noticing real edits would be the worse defect.
+- **`artifact.py close --dry-run` runs the same gate ladder as the real close (BG0214).** It
+  returned a synthesised target before `transition` was ever called, so it answered `would close`
+  for a story the real close refused, and exited 0 where the real path exits 1. Two pre-flights
+  over the same transition gave opposite answers, and the one an agent reaches for first was the
+  wrong one. The preview now goes through `transition(..., dry_run=True)`, which fires its gates
+  for exactly this purpose and writes nothing. Three existing tests had to be corrected: they
+  passed only because the preview consulted no gate, so the fixtures were closing artefacts the
+  real run would have refused. The regression test uses a story the AC-verify gate REFUSES, since
+  a fixture with a clean ladder cannot tell an honest preview from a blind one.
 - **The pre-commit gate runs cheapest-first and short-circuits (US0268).** The markdown lanes now
   run before the unit suites, and the suites are skipped entirely once a cheaper lane has failed -
   the commit is blocked either way, so paying ~132s of tests to be told about a blank line was

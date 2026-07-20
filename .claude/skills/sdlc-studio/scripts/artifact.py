@@ -887,8 +887,16 @@ def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
     # The default close target comes from the shared vocab authority, not from a table this
     # module keeps - so `close` and the vocab can never disagree about what closed means.
     st = status or sdlc_md.default_terminal_status(type_)
-    if dry_run:  # preview the transition target, write nothing, record nothing
-        return {"id": artifact_id, "type": type_, "to": st, "dry_run": True}
+    if dry_run:
+        # PREVIEW THROUGH THE REAL LADDER. Synthesising the target here consulted no gate, so
+        # `close --dry-run` answered "would close" for a story the real run then refused, and
+        # exited 0 while the real close exits 1 - a preflight that disagrees with the run it
+        # previews is worse than none, because it is consulted precisely to avoid the surprise.
+        # `transition` fires its gates on a dry run for exactly this reason and writes nothing;
+        # a refusal raises here and `main` reports it, as on the real path.
+        r = transition.transition(repo_root, artifact_id, st, force=force,
+                                  metrics=metrics, triaged_by=triaged_by, dry_run=True)
+        return {**r, "dry_run": True}
     # transition records one telemetry event on entering the terminal set (and none on an
     # idempotent re-close); pass the metrics through so close does not double-record.
     return transition.transition(repo_root, artifact_id, st, force=force,

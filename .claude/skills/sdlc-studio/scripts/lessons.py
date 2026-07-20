@@ -670,13 +670,23 @@ def digest_items(entries: list[dict]) -> list[dict]:
 
 
 def _canon(item: dict) -> str:
-    """One digest item as a comparable string, with runs of whitespace collapsed. The
-    comparison unit for staleness: it is insensitive to how the summary is laid out (blank
-    lines, indentation, trailing spaces, boilerplate prose) and sensitive to every part of a
-    lesson the digest actually carries (id, title, gist)."""
+    """One digest item as a comparable string, with runs of whitespace collapsed and EMPHASIS
+    MARKERS REMOVED. The comparison unit for staleness: it is insensitive to how the summary is
+    laid out (blank lines, indentation, trailing spaces, boilerplate prose) and sensitive to
+    every part of a lesson the digest actually carries (id, title, gist).
+
+    Emphasis is dropped because the round trip through the file is not stable across it. The
+    renderer writes `- **{id}: {title}**`, and `SUMMARY_LINE_RE` finds the title by scanning to
+    the first `**` - so a lesson whose OWN text starts with bold splits at the wrong marker, and
+    the same lesson reads back with the emphasis in a different place. The parts are all still
+    there and still compared; only the markers move. Comparing on markup made the blocking
+    `lessons-summary` lane report one lesson as BOTH added and removed, with no edit that could
+    satisfy it - `lessons summary` regenerated the identical file every time.
+    """
     text = f"{item['id']}: {item['title']}"
     if item["gist"]:
         text += f" - {item['gist']}"
+    text = re.sub(r"[*_`]+", "", text)
     return re.sub(r"\s+", " ", text).strip()
 
 

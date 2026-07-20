@@ -985,6 +985,49 @@ class SummaryStalenessTests(unittest.TestCase):
         self.assertEqual(lessons.parse_summary_digest(rendered),
                          lessons.expected_digest(entries))
 
+    # BG0216: the round trip must hold for a lesson whose OWN text carries emphasis.
+    #
+    # The renderer writes `- **{id}: {title}**` and SUMMARY_LINE_RE finds the title by scanning
+    # to the first `**`, so a lesson starting with bold splits at the wrong marker and reads back
+    # with the emphasis moved. `summary_status` then reported the SAME lesson as both added and
+    # removed, and `lessons summary` regenerated a byte-identical file every time - a BLOCKING
+    # gate lane with no satisfying state, which deadlocked a real sprint close.
+    #
+    # The fixture is the wording that actually caused it. Every prior fixture had a plain gist,
+    # so none of them could tell a stable round trip from an unstable one.
+    _BOLD_LEADING = (
+        "## L-9001: **A drift kind whose advertised remedy cannot clear it is worse than no "
+        "hint** - it sends the operator round a loop with no exit.\n\n"
+        "- **Added:** 2026-07-20\n- **Review-by:** 2026-10-18\n"
+    )
+
+    def test_a_lesson_whose_text_starts_with_bold_round_trips(self) -> None:
+        entries = lessons.parse_project_lessons(self._BOLD_LEADING)
+        self.assertTrue(entries, "fixture did not parse as a lesson")
+        rendered = lessons.build_summary_text(entries)
+        self.assertEqual(lessons.parse_summary_digest(rendered),
+                         lessons.expected_digest(entries),
+                         "a bold-leading lesson does not survive the render/parse round trip")
+
+    def test_a_bold_leading_lesson_does_not_report_as_added_and_removed(self) -> None:
+        """The symptom as the gate saw it: one lesson counted on BOTH sides of the diff."""
+        entries = lessons.parse_project_lessons(self._BOLD_LEADING)
+        expected = lessons.expected_digest(entries)
+        parsed = lessons.parse_summary_digest(lessons.build_summary_text(entries))
+        self.assertEqual([e for e in expected if e not in parsed], [], "reported as added")
+        self.assertEqual([p for p in parsed if p not in expected], [], "reported as removed")
+
+    def test_emphasis_is_the_only_thing_the_comparison_ignores(self) -> None:
+        """The normalisation must not make the check blind to a real edit.
+
+        Dropping markers to fix the round trip risks a digest that no longer notices a changed
+        lesson, which would be a worse defect than the deadlock: the lane would pass on a stale
+        summary. Same text but for one word must still compare unequal.
+        """
+        a = lessons.parse_project_lessons(self._BOLD_LEADING)
+        b = lessons.parse_project_lessons(self._BOLD_LEADING.replace("no exit", "an exit"))
+        self.assertNotEqual(lessons.expected_digest(a), lessons.expected_digest(b))
+
     def test_regenerated_summary_is_fresh(self) -> None:
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)

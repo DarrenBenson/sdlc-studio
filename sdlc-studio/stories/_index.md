@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 265 |
+| Done | 266 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **271** |
+| **Total** | **272** |
 
 ## All Stories
 
@@ -182,6 +182,7 @@
 | [US0269](US0269-reconcile-detect-reports-a-derivable-request-as-a.md) | reconcile detect reports a derivable request as a registered drift kind, using the SAME predicate the G2 gate enforces | Done | EP0087 | 2026-07-19 | 2026-07-19 |
 | [US0270](US0270-reconcile-apply-derives-the-request-terminal-through-transition.md) | reconcile apply derives the request terminal through transition, so every gate and cascade still runs | Done | EP0087 | 2026-07-19 | 2026-07-19 |
 | [US0271](US0271-the-derivation-refuses-what-g2-refuses-no-childless.md) | The derivation refuses what G2 refuses: no childless request, no unresolved child, and a no-op where the two-backlog workflow is unenforced | Done | EP0087 | 2026-07-19 | 2026-07-19 |
+| [US0272](US0272-validate-treats-a-draft-story-s-seeded-placeholder.md) | validate treats a Draft story's seeded placeholder ACs as a warning, so the refine commit lands while conformance still keeps it out of delivery | Done | EP0088 | 2026-07-20 | 2026-07-20 |
 
 ## Archived Releases
 
