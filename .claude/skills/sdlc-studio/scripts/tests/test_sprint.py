@@ -2946,6 +2946,132 @@ def _run_apply_signoff(root, mod, principal="Darren", retro="RETRO0001"):
     return rc, out.getvalue(), err.getvalue()
 
 
+class DeferredOperatorDecisions(unittest.TestCase):
+    """US0280/US0281 (CR0369): a unit needing an operator decision is set aside while the
+    batch continues; accumulated decisions are asked together at the stop, as structured
+    questions - named options with consequences, the recommendation marked with its reason -
+    and an autonomous run records and blocks, never silently defaults."""
+
+    def _defer(self, mod, root: Path, unit: str = "US0101", extra: tuple = ()) -> tuple:
+        out, err = io.StringIO(), io.StringIO()
+        argv = ["decision", "defer", "--unit", unit,
+                "--question", "Which auth method should the sync use?",
+                "--option", "oauth|tokens rotate themselves; needs an app registration",
+                "--option", "api-key|works today; the key sits in config for ever",
+                "--recommend", "oauth|rotation removes the standing secret",
+                "--root", str(root), *extra]
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(argv)
+        return rc, out.getvalue(), err.getvalue()
+
+    def _list(self, mod, root: Path) -> str:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            rc = mod.main(["decision", "list", "--root", str(root)])
+        self.assertEqual(rc, 0, out.getvalue())
+        return out.getvalue()
+
+    def test_undecidable_unit_is_set_aside_and_batch_continues(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            mod = _load()
+            rc, out, err = self._defer(mod, root)
+            self.assertEqual(rc, 0, err)
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json")
+                               .read_text(encoding="utf-8"))
+            self.assertEqual([p["unit"] for p in state["pending_decisions"]], ["US0101"])
+            self.assertIn("US0101", state["deferred_units"])
+            self.assertIsNone(state["pending_decisions"][0]["resolution"])
+            self.assertIn("batch continues", out)   # the stop happens later, not here
+
+    def test_accumulated_decisions_are_asked_together(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            mod = _load()
+            self._defer(mod, root, unit="US0101")
+            self._defer(mod, root, unit="US0102")
+            out = self._list(mod, root)   # ONE invocation carries every pending decision
+            self.assertIn("2", out.splitlines()[0])
+            self.assertIn("US0101", out)
+            self.assertIn("US0102", out)
+
+    def test_operator_question_has_named_options_and_consequences(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            mod = _load()
+            self._defer(mod, root)
+            out = self._list(mod, root)
+            self.assertIn("Which auth method should the sync use?", out)
+            self.assertIn("oauth", out)
+            self.assertIn("api-key", out)
+            self.assertIn("tokens rotate themselves", out)
+            self.assertIn("the key sits in config for ever", out)
+
+    def test_recommendation_is_marked_with_reason(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            mod = _load()
+            self._defer(mod, root)
+            out = self._list(mod, root)
+            marked = [ln for ln in out.splitlines() if "RECOMMENDED" in ln]
+            self.assertEqual(len(marked), 1)
+            self.assertIn("oauth", marked[0])
+            self.assertIn("rotation removes the standing secret", marked[0])
+
+    def test_autonomous_run_records_and_blocks_never_defaults(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            _signoffable_story(root)
+            (root / "sdlc-studio" / "stories" / "_index.md").write_text(
+                "# Stories\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [US0101](US0101-widget.md) | widget frobnicates | Review |\n",
+                encoding="utf-8")
+            mod = _load()
+            rc, out, err = self._defer(mod, root, extra=("--block",))
+            self.assertEqual(rc, 0, err)
+            story = (root / "sdlc-studio" / "stories" / "US0101-widget.md").read_text(
+                encoding="utf-8")
+            self.assertIn("Blocked", story)          # recorded and blocked...
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json")
+                               .read_text(encoding="utf-8"))
+            self.assertIsNone(state["pending_decisions"][0]["resolution"])  # ...never answered
+
+    def test_resolve_records_the_choice_and_empties_the_queue(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            mod = _load()
+            self._defer(mod, root)
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                rc = mod.main(["decision", "resolve", "--index", "1", "--choice", "oauth",
+                               "--note", "registration cost accepted", "--root", str(root)])
+            self.assertEqual(rc, 0, out.getvalue())
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json")
+                               .read_text(encoding="utf-8"))
+            self.assertEqual(state["pending_decisions"], [])
+            self.assertEqual(state["resolved_decisions"][0]["resolution"]["choice"], "oauth")
+
+    def test_defer_refuses_a_freeform_prose_question(self) -> None:
+        # fewer than two named options IS the prose failure mode - refused, with the fix named
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            mod = _load()
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = mod.main(["decision", "defer", "--unit", "US0101",
+                               "--question", "what should I do?",
+                               "--option", "yes|it happens", "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("two", err.getvalue())
+
+
 class ApplySignoffTailTests(unittest.TestCase):
     """US0237: the apply-signoff tail writes the run's velocity row (so a closed sprint no longer
     needs a forgotten manual `retro accuracy --write`) and runs a final reconcile."""

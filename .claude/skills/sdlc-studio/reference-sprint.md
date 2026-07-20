@@ -132,6 +132,15 @@ independent critic plus the gate - the check's output states this scoping.
    arithmetic is untouched - the total attempt budget still bounds thrash
    deterministically. Each escalation appends a ledger entry, and the close records
    `tier_recommended` vs `tier_delivered` + `escalated` in telemetry.
+5b. **Deferred operator decisions.** A unit only the operator can decide does not halt the
+   batch: `decision defer --unit USxxxx --question "..." --option "label|consequence"
+   (twice+) [--recommend "label|reason"]` sets it aside on the run state and the rest
+   continue - the run stops only when it can make no further progress. At the stop,
+   `decision list` asks everything together, structured (question, options with
+   consequences, recommendation marked with its reason; in Claude Code surface it via the
+   structured-question tool, never narrative). `decision resolve --index N --choice <label>`
+   is the only path that writes an answer - an autonomous run defers with `--block`
+   (unit Blocked): recorded, never silently defaulted.
 6. **Closing gate - the sprint review.** Every run ends with a mandatory
    `reconcile` (fix any drift) + `review` (the unified PRD/TRD/TSD/persona plus CODE
    review), **regardless of `--goal`**. The review is the sprint review; it produces the

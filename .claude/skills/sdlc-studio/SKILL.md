@@ -74,6 +74,7 @@ any of them is an error. For a mechanical task, reach for the script first
 | Diagnose structure or status-vocab errors | `scripts/validate.py check` |
 | Change a status (+ index/epic cascade) | `scripts/transition.py set --id CR0001 --status Approved` |
 | Verify a story's executable ACs | `scripts/verify_ac.py` |
+| Defer an operator decision mid-run (batch continues; ask together, structured) | `scripts/sprint.py decision defer / list / resolve` |
 | Run the portable CI gate | `scripts/gate.py` |
 | Gate a release tag (gate + executing AC verify, one exit code) | `scripts/gate.py --release` |
 

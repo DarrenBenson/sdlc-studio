@@ -21,6 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Deferred operator decisions - a run stops once, with structured questions (CR0369:
+  US0280, US0281).** `sprint decision defer` sets a unit needing an operator decision aside
+  on the run state while the batch continues; `decision list` asks everything accumulated
+  together - the question, named options with their consequences, and the recommendation
+  marked with its reason - never prose the operator must parse a choice out of; `decision
+  resolve` is the only path that writes an answer, recording the ruling to the run state and
+  the decisions ledger. The autonomous path (`defer --block`) records the question and marks
+  the unit Blocked, never silently defaulting it.
 - **`reconcile` derives a request terminal when its children are all resolved (CR0364).** The
   two-backlog workflow says a request reaches its successful terminal by DERIVATION, and
   `transition` enforced the guard half - it refuses a premature close - but nothing ever performed

@@ -1,6 +1,6 @@
 # US0281: Operator questions are presented as structured decisions with named options and a marked recommendation
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0369
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **Then** the surface is the question itself, the named options, and the consequence of each -
   not prose the operator must extract a choice from
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_operator_question_has_named_options_and_consequences
+- **Verified:** yes (2026-07-20)
 
 ### AC2: the agent's recommendation is marked as such, with the reason
 
@@ -32,6 +33,7 @@
 - **Then** its recommended option is marked with the reason, so the operator can accept the
   default quickly or override it deliberately
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_recommendation_is_marked_with_reason
+- **Verified:** yes (2026-07-20)
 
 ## Revision History
 

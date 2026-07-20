@@ -1,6 +1,6 @@
 # US0280: A unit needing an operator decision is set aside and the batch continues; accumulated decisions are asked together at the stop
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0369
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio new
@@ -25,6 +25,7 @@
 - **Then** it is set aside and the remaining units continue, so the run stops only when it can
   make no further progress
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_undecidable_unit_is_set_aside_and_batch_continues
+- **Verified:** yes (2026-07-20)
 
 ### AC2: accumulated decisions are asked together at the stop
 
@@ -32,6 +33,7 @@
 - **When** the run finally stops
 - **Then** they are presented together rather than one stop per decision
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_accumulated_decisions_are_asked_together
+- **Verified:** yes (2026-07-20)
 
 ### AC3: a non-interactive run never silently defaults a decision
 
@@ -40,6 +42,7 @@
 - **Then** the question is recorded and the unit is marked Blocked, exactly as today - never
   answered by default
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_autonomous_run_records_and_blocks_never_defaults
+- **Verified:** yes (2026-07-20)
 
 ## Revision History
 

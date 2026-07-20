@@ -3388,6 +3388,111 @@ def cmd_boundary(args: argparse.Namespace) -> int:
     return 0
 
 
+def _parse_labelled(spec: str, what: str) -> tuple[str, str]:
+    """'label|text' -> (label, text), refusing either half empty - a label with no
+    consequence (or a recommendation with no reason) is prose wearing a flag."""
+    label, _, text = (spec or "").partition("|")
+    if not label.strip() or not text.strip():
+        raise ValueError(f"{what} must be 'label|{'consequence' if what == '--option' else 'reason'}', got {spec!r}")
+    return label.strip(), text.strip()
+
+
+def cmd_decision(args) -> int:
+    """Deferred operator decisions: set the undecidable unit aside, keep the batch moving,
+    and ask everything together at the stop - structured, never prose."""
+    root = Path(args.root)
+    if args.action == "defer":
+        if not run_state.is_open(root):
+            print("decision defer refused: no open run - a deferred decision belongs to a "
+                  "run (`sprint plan --write` opens one)", file=sys.stderr)
+            return 2
+        if not args.unit or not args.question:
+            print("decision defer refused: --unit and --question are required", file=sys.stderr)
+            return 2
+        try:
+            options = [dict(zip(("label", "consequence"), _parse_labelled(s, "--option")))
+                       for s in (args.option or [])]
+            if len(options) < 2:
+                raise ValueError("a decision needs at least two named options - one option "
+                                 "is not a decision, and none is prose")
+            recommend = None
+            if args.recommend:
+                label, reason = _parse_labelled(args.recommend, "--recommend")
+                if label not in {o["label"] for o in options}:
+                    raise ValueError(f"--recommend names {label!r}, which is not one of the "
+                                     f"options")
+                recommend = {"label": label, "reason": reason}
+        except ValueError as exc:
+            print(f"decision defer refused: {exc}", file=sys.stderr)
+            return 2
+        state = run_state.read(root)
+        pending = list(state.get("pending_decisions") or [])
+        pending.append({"unit": args.unit, "question": args.question.strip(),
+                        "options": options, "recommend": recommend,
+                        "deferred_at": sdlc_md.now_iso8601(), "resolution": None})
+        deferred = list(state.get("deferred_units") or [])
+        if args.unit not in deferred:
+            deferred.append(args.unit)
+        run_state.update(root, pending_decisions=pending, deferred_units=deferred)
+        blocked = ""
+        if args.block:
+            import transition  # noqa: PLC0415
+            try:
+                transition.transition(root, args.unit, "Blocked")
+                blocked = ", unit marked Blocked (recorded, never defaulted)"
+            except (ValueError, OSError) as exc:
+                blocked = f", unit NOT marked Blocked ({exc})"
+        print(f"decision deferred for {args.unit}{blocked} - the batch continues; "
+              f"{len(pending)} pending, asked together at the stop (`sprint decision list`)")
+        return 0
+
+    state = run_state.read(root)
+    pending = list(state.get("pending_decisions") or [])
+    if args.action == "list":
+        if args.format == "json":
+            print(json.dumps(pending, indent=2))
+            return 0
+        if not pending:
+            print("no pending operator decisions")
+            return 0
+        print(f"pending operator decisions: {len(pending)} - asked together, one stop, "
+              f"not one stop per decision:")
+        for i, p in enumerate(pending, 1):
+            print(f"\n[{i}] {p['unit']}: {p['question']}")
+            rec = p.get("recommend") or {}
+            for o in p["options"]:
+                mark = (f"   <- RECOMMENDED: {rec['reason']}"
+                        if rec.get("label") == o["label"] else "")
+                print(f"    - {o['label']}: {o['consequence']}{mark}")
+        print("\nrecord each answer: `sprint decision resolve --index N --choice <label>`")
+        return 0
+
+    # resolve: the ONLY path that writes an answer - autonomous runs never reach it
+    idx = (args.index or 0) - 1
+    if idx < 0 or idx >= len(pending):
+        print(f"decision resolve refused: --index must be 1..{len(pending)}", file=sys.stderr)
+        return 2
+    entry = pending[idx]
+    if args.choice not in {o["label"] for o in entry["options"]}:
+        print(f"decision resolve refused: --choice must name one of the recorded options "
+              f"({', '.join(o['label'] for o in entry['options'])})", file=sys.stderr)
+        return 2
+    entry["resolution"] = {"choice": args.choice, "note": args.note,
+                           "resolved_at": sdlc_md.now_iso8601()}
+    del pending[idx]
+    resolved = list(state.get("resolved_decisions") or []) + [entry]
+    run_state.update(root, pending_decisions=pending, resolved_decisions=resolved)
+    try:
+        import ledger  # noqa: PLC0415
+        ledger.append_decision(root, entry["unit"],
+                               f"operator decision on {entry['unit']}: {args.choice}",
+                               rationale=args.note or entry["question"])
+    except (OSError, ValueError) as exc:   # the ruling is on the run state either way
+        print(f"ledger not appended ({exc})", file=sys.stderr)
+    print(f"decision for {entry['unit']} resolved: {args.choice} ({len(pending)} pending)")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="SDLC Studio sprint batch selection.")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -3535,6 +3640,33 @@ def build_parser() -> argparse.ArgumentParser:
                         "verdict is an assertion, not a review)")
     g.add_argument("--root", default=".", help="Repo root (default: .)")
     g.set_defaults(func=cmd_goal_verdict)
+
+    dc = sub.add_parser(
+        "decision",
+        help="Defer, list and resolve operator decisions. A unit that needs one is SET "
+             "ASIDE while the batch continues; the accumulated questions are asked together "
+             "at the stop, each a structured decision - the question, named options with "
+             "their consequences, and the recommendation marked with its reason - never "
+             "prose an operator must parse a choice out of.")
+    dc.add_argument("action", choices=("defer", "list", "resolve"))
+    dc.add_argument("--unit", help="(defer) the unit the decision blocks")
+    dc.add_argument("--question", help="(defer) the question itself, one sentence")
+    dc.add_argument("--option", action="append", metavar="LABEL|CONSEQUENCE",
+                    help="(defer) a named option and what choosing it means; repeat, "
+                         "at least twice - one option is not a decision")
+    dc.add_argument("--recommend", metavar="LABEL|REASON",
+                    help="(defer) the agent's recommended option with the reason, so the "
+                         "operator can accept the default quickly or override deliberately")
+    dc.add_argument("--block", action="store_true",
+                    help="(defer) also mark the unit Blocked - the autonomous path: the "
+                         "question is recorded and the unit held, never silently defaulted")
+    dc.add_argument("--index", type=int, help="(resolve) 1-based index from `decision list`")
+    dc.add_argument("--choice", help="(resolve) the chosen option's label")
+    dc.add_argument("--note", default="", help="(resolve) the operator's note, recorded "
+                                               "with the ruling")
+    dc.add_argument("--format", choices=("text", "json"), default="text")
+    dc.add_argument("--root", default=".", help="Repo root (default: .)")
+    dc.set_defaults(func=cmd_decision)
 
     sdlc_md.add_global_root(parser)
     return parser

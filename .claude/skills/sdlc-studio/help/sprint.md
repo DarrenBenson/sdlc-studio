@@ -40,6 +40,9 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 /sdlc-studio sprint prd.md --goal design             # greenfield: PRD -> epics -> stories
 /sdlc-studio sprint <worklist.md> --order wsjf       # a tranche file, WSJF order
 /sdlc-studio sprint --bugs Open --autonomous         # unattended: deterministic guardrails on
+/sdlc-studio sprint decision defer --unit US0001 --question "..." --option "a|..." --option "b|..."  # set the unit aside, batch continues
+/sdlc-studio sprint decision list                    # every accumulated decision, asked together, structured
+/sdlc-studio sprint decision resolve --index 1 --choice a   # record the operator's ruling (run state + ledger)
 /sdlc-studio sprint close                            # scaffolds the retro, then stops for you to fill it
 /sdlc-studio sprint close --retro RETRO0001          # the close ceremony as one command (retro already filled)
 /sdlc-studio sprint close --retro RETRO0001 --apply-signoff --principal "You"  # fan your approval into per-unit sign-offs + Done
