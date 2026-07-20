@@ -390,7 +390,7 @@ def cmd_list(args: argparse.Namespace) -> int:
             print(f"{r['id']}  {r['title']}  [{', '.join(r['tags'])}]")
         print(f"{len(rows)} lesson(s)")
         return 0
-    path = Path(args.project_file)
+    path = _project_file(args)
     if not path.is_file():
         if args.format == "json":
             print(json.dumps({"tier": "project", "lessons": [], "count": 0}, indent=2))
@@ -460,7 +460,7 @@ def cmd_add(args: argparse.Namespace) -> int:
         print("git version-controls that registry, so `git status` there shows the lesson; "
               "commit it to ship it with the next skill release.")
         return 0
-    path = Path(args.project_file)
+    path = _project_file(args)
     if path.is_file():
         text = path.read_text(encoding="utf-8")
     else:
@@ -494,7 +494,7 @@ def cmd_add(args: argparse.Namespace) -> int:
 
 def cmd_prune(args: argparse.Namespace) -> int:
     """Drop project-tier entries tied to epics <= --older, or == --epic."""
-    path = Path(args.project_file)
+    path = _project_file(args)
     if not path.is_file():
         print(f"No lessons file at {path}; nothing to prune.")
         return 0
@@ -551,7 +551,7 @@ def cmd_recall(args: argparse.Namespace) -> int:
         for r in rows if _matches(r["title"], r["tags"], want_tags, args.query)
     ]
     if args.all:
-        path = Path(args.project_file)
+        path = _project_file(args)
         if path.is_file():
             for e in parse_project_lessons(path.read_text(encoding="utf-8")):
                 tags = [t.strip() for t in e["fields"].get("tags", "").split(",") if t.strip()]
@@ -998,7 +998,7 @@ def cmd_revalidate(args: argparse.Namespace) -> int:
     ones no longer true, `--extend` the ones still true past their horizon, `--stamp` the ones
     carrying no horizon at all. Deterministic; the judgement stays the operator's, the record
     is mechanical - and the close gate reads that record."""
-    path = Path(args.project_file)
+    path = _project_file(args)
     if not path.is_file():
         if args.format == "json":
             print(json.dumps({"open": [], "closed": []}, indent=2))
@@ -1081,6 +1081,23 @@ def build_summary_text(entries: list[dict]) -> str:
             line += f" - {item['gist']}"
         out.append(line)
     return "\n".join(out).rstrip() + "\n"
+
+
+def _project_file(args) -> Path:
+    """The project-tier lessons file, resolved against `--root`.
+
+    `--project-file` defaults to a RELATIVE path, so taking it verbatim meant every subcommand
+    read and wrote relative to the CURRENT DIRECTORY and ignored the root it was handed - then
+    reported success naming the path it had used. `sprint close` passes `--root` correctly and
+    inherited it: a close run from anywhere but the project root regenerated the digest in the
+    wrong place and reported the step green. It worked from the repo root only because cwd
+    happened to equal root.
+
+    An ABSOLUTE `--project-file` is honoured as given, so pointing at another project's log
+    still works; only the relative default is anchored.
+    """
+    p = Path(args.project_file)
+    return p if p.is_absolute() else Path(getattr(args, "root", ".")) / p
 
 
 def _default_summary_out(project_file: Path) -> Path:
@@ -1172,7 +1189,7 @@ def cmd_rank(args: argparse.Namespace) -> int:
 
 def cmd_summary(args: argparse.Namespace) -> int:
     """Refresh the committed rolling lessons summary from the still-valid project lessons."""
-    path = Path(args.project_file)
+    path = _project_file(args)
     entries = parse_project_lessons(path.read_text(encoding="utf-8")) if path.is_file() else []
     out_path = Path(args.out) if args.out else _default_summary_out(path)
     text = build_summary_text(entries)

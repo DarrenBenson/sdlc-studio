@@ -84,3 +84,4 @@
 | US0273 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-20 | - |
 | US0274 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-20 | - |
 | US0275 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-20 | - |
+| US0276 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-20 | operator standing sign-off for this session; the round-1 REJECT was repaired and each of the three ACs re-verified to fail when its subject is removed |

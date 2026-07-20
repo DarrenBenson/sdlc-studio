@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 269 |
+| Done | 270 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **275** |
+| **Total** | **276** |
 
 ## All Stories
 
@@ -186,6 +186,7 @@
 | [US0273](US0273-a-standalone-preflight-reports-every-unmet-close-prerequisite.md) | a standalone preflight reports every unmet close prerequisite in one read-only pass | Done | EP0089 | 2026-07-20 | 2026-07-20 |
 | [US0274](US0274-the-preflight-covers-the-apply-signoff-prerequisites-per.md) | the preflight covers the apply-signoff prerequisites per unit, not just the gate lanes | Done | EP0089 | 2026-07-20 | 2026-07-20 |
 | [US0275](US0275-sprint-close-runs-the-preflight-before-executing-any.md) | sprint close runs the preflight before executing any step, so nothing is discovered serially | Done | EP0089 | 2026-07-20 | 2026-07-20 |
+| [US0276](US0276-forward-port-excludes-the-test-cache-so-a.md) | forward-port excludes the test cache, so a dev machine that has run the suite does not ship it to the installed copy | Done | EP0090 | 2026-07-20 | 2026-07-20 |
 
 ## Archived Releases
 

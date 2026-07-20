@@ -1,6 +1,7 @@
 # BG0219: lessons summary ignores --root and writes relative to the current directory
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (all six project-file call sites resolve through one root-aware helper; proven from a cwd that is not the root - the summary lands under --root and the cwd stays clean - and a mutant restoring the verbatim path is killed)
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py

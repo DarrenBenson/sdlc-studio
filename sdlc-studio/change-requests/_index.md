@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 23 |
+| Proposed | 24 |
 | Approved | 0 |
 | In Progress | 1 |
-| Complete | 328 |
+| Complete | 329 |
 | Rejected | 0 |
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **370** |
+| **Total** | **372** |
 
 ## All Changes
 
@@ -191,7 +191,9 @@
 | [CR-0367](CR0367-the-commit-message-check-runs-after-the-full.md) | the commit-message check runs after the full test gate, so a subject-line defect costs a whole suite run | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0368](CR0368-conformance-reports-a-unit-missing-critiqued-without-naming.md) | conformance reports a unit missing critiqued without naming which half is unmet | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0369](CR0369-a-sprint-that-needs-an-operator-decision-should.md) | a sprint that needs an operator decision should ask a structured question, not stop in dense prose | Proposed | High | Improvement | 2026-07-20 | -- |
-| [CR-0370](CR0370-forward-port-ships-untracked-test-cache-directories-into.md) | forward-port ships untracked test-cache directories into the installed skill | Proposed | Low | Improvement | 2026-07-20 | -- |
+| [CR-0370](CR0370-forward-port-ships-untracked-test-cache-directories-into.md) | forward-port ships untracked test-cache directories into the installed skill | Complete | Low | Improvement | 2026-07-20 | EP0090 |
+| [CR-0371](CR0371-sprint-close-should-offer-to-file-its-blockers.md) | sprint close should offer to file its blockers and close, rather than driving to a conclusion | Proposed | High | Improvement | 2026-07-20 | -- |
+| [CR-0372](CR0372-an-append-only-review-log-has-no-correction.md) | an append-only review log has no correction path, so one mis-entry can strand a unit permanently | Proposed | Medium | Improvement | 2026-07-20 | -- |
 
 ## Archived Releases
 

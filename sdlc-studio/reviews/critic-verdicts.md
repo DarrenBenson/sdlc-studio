@@ -6,6 +6,24 @@
 > The `pre-gate` author marks units closed before the independence gate existed
 > (under the prior risk-scaled policy that permitted light-tier self-review).
 
+## Errata
+
+An append-only log earns its authority by never being quietly rewritten, so a correction is
+recorded here rather than made invisibly. Written as prose, not a table: the row parser reads
+every pipe-delimited line in this file, and an errata TABLE is parsed as malformed verdicts.
+
+One row has been removed since adoption.
+
+- **2026-07-20, US0276.** An `APPROVE` row naming `Darren Benson (operator)` as REVIEWER, with
+  author `sdlc-studio; agent; v1`, was removed. The event it recorded did not happen: the operator
+  was the reviewer of RECORD (the principal who signs off), not the adversarial critic. The critic
+  pass was run by an independent subagent, and that row remains. The wrong row was written by the
+  author in error. Because the sign-off gate refuses a principal who is a recorded reviewer on the
+  same unit, it permanently blocked the legitimate sign-off - so leaving it would have both
+  stranded the unit and misreported who reviewed what. Removed with the operator's explicit
+  authorisation. CR0372 tracks giving this a `supersede` command, since hand-editing an
+  append-only log is exactly what it exists to prevent.
+
 | Unit | Verdict | Reviewer | Author | Date | Issues |
 | --- | --- | --- | --- | --- | --- |
 | US0009 | APPROVE | independent-critic | pre-gate | 2026-06-20 | - |
@@ -375,3 +393,4 @@
 | US0259 | APPROVE | independent-critic-a5444324 | sprint-author-fable5-RUN01KXRMQT | 2026-07-17 | v3 inbox lane now machine-guarded (was prose-only); pre-existing CURRENT\_SCHEMA=2 filed BG0189 |
 | US0260 | APPROVE | independent-critic-a5444324 | sprint-author-fable5-RUN01KXRMQT | 2026-07-17 | v3 inbox lane now machine-guarded (was prose-only); pre-existing CURRENT\_SCHEMA=2 filed BG0189 |
 | US0272 | APPROVE | independent-record-reviewer; agent; subagent (narrow brief: does the retrospective story describe SHIPPED behaviour) | sdlc-studio; agent; v1 | 2026-07-20 | APPROVE. Ran all three Verify commands and re-derived each claim independently rather than trusting the story. AC1's test asserts findings are non-empty AND all warn, so it cannot pass by silently dropping the placeholder. AC2 verified across the whole type/status matrix: story Ready/In Progress/Done and epic, bug, cr all error; only story Proposed/Draft warn; a missing status falls through to error rather than defaulting open - the relaxation does not leak. AC3 verified independently by constructing a Ready placeholder-only story in a clean repo: conformance exits 1 with missing decomposed, specified, verifiable. Chain honest: EP0088 Done with derived point total 2 matching US0272, US0272 the only child, CR0342 Complete via Decomposed-into, all index rows agree with the bodies. OVERCLAIM PROBE: transition set --status Ready SUCCEEDS on a pure-placeholder story, so anything claiming the placeholder blocks that transition is false. The STORY does not claim it - AC3 says moved to Ready, consistent with the move succeeding - but two shipped comments in validate.py did; both corrected in this commit. Three findings raised: Affects under-recorded conformance.py though AC3's own test targets it (fixed); the User Story block was still placeholders at Done (fixed); validate emits severity warn while its counters count only warning, so three printed WARN lines report as warnings=0 (reproduced independently, filed BG0217). |
+| US0276 | APPROVE | independent-reviewer; agent; subagent (narrow brief: one-line rsync exclude) | sdlc-studio; agent; v1 | 2026-07-20 | REJECT at round 1 on evidence, not code: AC1 passed with the fix deleted. Repaired and re-verified - all three ACs now fail when their subject is removed. |

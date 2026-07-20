@@ -10,8 +10,8 @@
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 88 |
-| **Total** | **89** |
+| Done | 89 |
+| **Total** | **90** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -112,3 +112,4 @@
 | [EP0087](EP0087-a-request-closes-itself-when-its-children-are.md) | A request closes itself when its children are done: reconcile derives the terminal that G2 only ever guarded | Done | -- | -- | 2026-07-19 | 2026-07-19 |
 | [EP0088](EP0088-the-gate-tolerates-a-refined-draft-backlog.md) | The gate tolerates a refined Draft backlog | Done | -- | -- | 2026-07-20 | 2026-07-20 |
 | [EP0089](EP0089-the-close-reports-every-blocker-in-one-pass.md) | The close reports every blocker in one pass | Done | -- | -- | 2026-07-20 | 2026-07-20 |
+| [EP0090](EP0090-forward-port-ships-only-the-skill.md) | Forward-port ships only the skill | Done | -- | -- | 2026-07-20 | 2026-07-20 |

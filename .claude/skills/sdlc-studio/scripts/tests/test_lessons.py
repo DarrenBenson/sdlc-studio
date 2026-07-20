@@ -6,6 +6,7 @@ Run from the repo root:
 from __future__ import annotations
 
 import contextlib
+import os
 import importlib.util
 import io
 import json
@@ -1016,6 +1017,35 @@ class SummaryStalenessTests(unittest.TestCase):
         parsed = lessons.parse_summary_digest(lessons.build_summary_text(entries))
         self.assertEqual([e for e in expected if e not in parsed], [], "reported as added")
         self.assertEqual([p for p in parsed if p not in expected], [], "reported as removed")
+
+    def test_summary_honours_root_from_a_different_cwd(self) -> None:
+        """BG0219: `--project-file` defaults to a RELATIVE path, so every subcommand read and
+        wrote relative to the CURRENT DIRECTORY and ignored `--root`, then reported success
+        naming the path it had used. `sprint close` passes `--root` correctly and inherited it.
+
+        Run from a cwd that is NOT the root - the only place the bug is visible. From the repo
+        root cwd equals root and the broken code looks correct.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            base = Path(t)
+            proj, elsewhere = base / "proj", base / "elsewhere"
+            (proj / "sdlc-studio" / ".local").mkdir(parents=True)
+            elsewhere.mkdir()
+            (proj / "sdlc-studio" / ".local" / "lessons.md").write_text(
+                "# Project Lessons\n\n**Last Updated:** 2026-07-20\n\n"
+                "## L-0001: a lesson worth keeping\n\n- **Added:** 2026-07-20\n",
+                encoding="utf-8")
+            cwd = os.getcwd()
+            os.chdir(elsewhere)
+            try:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    lessons.main(["summary", "--root", str(proj)])
+            finally:
+                os.chdir(cwd)
+            self.assertTrue((proj / "sdlc-studio" / "retros" / "LESSONS-SUMMARY.md").is_file(),
+                            "the summary did not land under --root")
+            self.assertFalse((elsewhere / "sdlc-studio").exists(),
+                             "the summary was written beside the cwd instead of under --root")
 
     def test_underscores_and_backticks_are_not_stripped(self) -> None:
         """The normalisation must be no wider than the instability it corrects.

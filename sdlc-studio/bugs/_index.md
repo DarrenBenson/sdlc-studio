@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 4 |
+| Open | 3 |
 | In Progress | 0 |
-| Fixed | 133 |
+| Fixed | 134 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -185,7 +185,7 @@
 | [BG0216](BG0216-a-lesson-gist-containing-bold-markup-makes-the.md) | A lesson gist containing bold markup makes the lessons-summary gate unsatisfiable | Fixed | High | 2026-07-20 | 2026-07-20 |
 | [BG0217](BG0217-validate-s-placeholder-warning-uses-a-severity-spelling.md) | validate's placeholder warning uses a severity spelling the counters do not count | Open | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0218](BG0218-the-velocity-record-omits-delivered-points-when-the.md) | the velocity record omits delivered points when the units carry no plan-time forecast | Open | High | 2026-07-20 | 2026-07-20 |
-| [BG0219](BG0219-lessons-summary-ignores-root-and-writes-relative-to.md) | lessons summary ignores --root and writes relative to the current directory | Open | High | 2026-07-20 | 2026-07-20 |
+| [BG0219](BG0219-lessons-summary-ignores-root-and-writes-relative-to.md) | lessons summary ignores --root and writes relative to the current directory | Fixed | High | 2026-07-20 | 2026-07-20 |
 
 ## Archived Releases
 

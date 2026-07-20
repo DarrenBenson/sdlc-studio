@@ -1,6 +1,7 @@
 # CR-0370: forward-port ships untracked test-cache directories into the installed skill
 
-> **Status:** Proposed
+> **Status:** Complete
+> **Decomposed-into:** EP0090
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S
@@ -19,9 +20,9 @@ Anyone forward-porting after running the test suite, which is everyone following
 
 ## Acceptance Criteria
 
-- [ ] Given a dev tree containing .`pytest_cache`, when forward-port runs, then no cache directory is transferred to the installed copy
-- [ ] Given the exclude list, when it is extended, then .local and `__pycache__` remain excluded exactly as today
-- [ ] Given an installed copy that already holds a stale cache directory, when forward-port runs, then it is not left behind as an orphan by the exclude
+- [x] Given a dev tree containing .`pytest_cache`, when forward-port runs, then no cache directory is transferred to the installed copy
+- [x] Given the exclude list, when it is extended, then .local and `__pycache__` remain excluded exactly as today
+- [x] Given an installed copy that already holds a stale cache directory, when forward-port runs, then it is not left behind as an orphan by the exclude
 
 ## Revision History
 

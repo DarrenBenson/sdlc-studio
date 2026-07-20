@@ -78,7 +78,11 @@ case "$repo_abs/" in
     exit 2 ;;
 esac
 
-RSYNC=(rsync -rci --delete --exclude='.local' --exclude='__pycache__' "$SRC/" "$target_abs/")
+# .pytest_cache is gitignored rather than absent, and rsync copies untracked files - so a dev
+# machine that has run the suite (which the gate does) shipped its test cache into the installed
+# skill, and --delete then churned it on every port.
+RSYNC=(rsync -rci --delete --exclude='.local' --exclude='__pycache__' \
+       --exclude='.pytest_cache' "$SRC/" "$target_abs/")
 
 echo "forward-port: $repo_abs/$SRC -> $target_abs (dry-run)"
 "${RSYNC[@]}" -n
@@ -88,4 +92,16 @@ if [[ "$APPLY" -ne 1 ]]; then
 fi
 mkdir -p "$target_abs"
 "${RSYNC[@]}"
-echo "forward-port applied -> $target_abs (.local and __pycache__ untouched)"
+# Excluding a path also removes it from --delete's view, so a cache already sitting in the target
+# would survive every future port - the exclude turns a reaped orphan into a permanent one. Two
+# kinds of exclude are in play and they need opposite treatment: `.local` is the consuming copy's
+# real state and must be preserved, while bytecode and test caches are deployment junk. Reap the
+# junk explicitly. NOT `--delete-excluded`, which cannot tell them apart and would destroy
+# `.local`.
+# Scoped away from `.local`: the reap must never walk the consuming copy's own state, even to
+# look. Only the two junk kinds are named, so a directory this script does not know about is
+# left alone rather than swept by a general emptiness rule.
+find "$target_abs" -name '.local' -prune -o \
+     \( -name '__pycache__' -o -name '.pytest_cache' \) -type d -prune \
+     -exec rm -rf {} + 2>/dev/null || true
+echo "forward-port applied -> $target_abs (.local preserved; bytecode and test caches reaped)"
