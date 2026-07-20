@@ -929,9 +929,15 @@ class HarnessTokenCapture(unittest.TestCase):
         self.assertTrue(cap["source"].endswith("s1.jsonl"))
 
     def test_harness_tokens_states_why_when_no_transcript(self) -> None:
+        # both empty-handed branches: no directory at all, and a directory with no session
+        # file - each must return the structured no-tokens shape with its own reason, never
+        # a bare None a caller would crash on (a mutation survivor pinned this)
         cap = retro.harness_tokens(str(self.root), transcripts_dir=self.root / "nope")
         self.assertIsNone(cap["tokens"])
         self.assertTrue(cap["reason"])
+        cap = retro.harness_tokens(str(self.root), transcripts_dir=self.transcripts)
+        self.assertIsNone(cap["tokens"])          # dir exists, holds no *.jsonl
+        self.assertIn("jsonl", cap["reason"])
 
     def _capture(self, *argv: str) -> str:
         import contextlib

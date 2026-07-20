@@ -3043,7 +3043,9 @@ class FileAndCloseTests(unittest.TestCase):
             rc, out, err = self._close(mod, root, self.ADMIN, extra=("--file-and-close",))
             self.assertEqual(rc, 0, err)
             rc2, out2, err2 = self._close(mod, root, self.ADMIN, extra=("--file-and-close",))
-            self.assertNotEqual(rc2, 0, "a closed run's filing must not be repeatable")
+            # exactly 2, not merely non-zero: a mutant stubbing the refusal's return to None
+            # passed `assertNotEqual(rc, 0)` while the CLI would have exited 0 over REFUSED
+            self.assertEqual(rc2, 2, "a closed run's filing must not be repeatable")
             self.assertIn("already", (out2 + err2).lower())
             crs = list((root / "sdlc-studio" / "change-requests").glob("CR*.md"))
             self.assertEqual(len(crs), 2, "no duplicate CR set")
