@@ -1196,8 +1196,12 @@ def measured_rate(root) -> dict:
     is to say it has none, not to hand back a number borrowed from somebody else's project.
     """
     project = telemetry.project_name(root)
+    # Fully-measured sprints only: the Points column is the DELIVERED series, so a
+    # sprint whose token sum covers a subset of its units would divide a partial numerator by
+    # the full denominator and quietly understate the rate. Excluded, not averaged in.
     rows = [r for r in velocity_history(root)
-            if r.get("points") and isinstance(r.get("actual_tokens"), (int, float))]
+            if r.get("points") and isinstance(r.get("actual_tokens"), (int, float))
+            and r.get("measured") is not None and r.get("measured") == r.get("units")]
     by_model: dict[str, dict] = {}
     mixed: list[str] = []
     for r in rows:
@@ -1348,7 +1352,12 @@ def record_velocity(root, res: dict) -> Path:
            "measured": res["n_measured"], "forecast": res.get("n_forecast"),
            # THE VELOCITY, and the count of units that were too big to be worth sizing. Both
            # recorded, so the rate can be derived from this file and its contamination seen.
-           "points": b.get("points") or None,
+           # Points-per-sprint is the PRIMARY series this file exists to hold, and it is
+           # independent of whether anyone forecast the units: DELIVERED points (artefact-read)
+           # first, the plan-recorded rated sum as the fallback for a batch whose artefacts
+           # carry no points. The ratio columns keep their forecast gate - an unforecast unit
+           # says nothing about the estimator, but its points were still delivered.
+           "points": b.get("delivered_points") or b.get("points") or None,
            "oversized": len(b.get("oversized") or []),
            "estimate": b["estimate"], "actual_tokens": b["actual_tokens"],
            "ratio": b["ratio"], "wall_time_s": b["wall_time_s"],
@@ -1363,7 +1372,11 @@ def record_velocity(root, res: dict) -> Path:
         sample = r.get("sample") or _sample_of(r["id"], r.get("constants"))
         # Derived at write time from the two columns beside it, and never read back as though it
         # were a measurement. It is here for a human reading the file, not for a tool.
-        rate = _rate(r["actual_tokens"] or 0, r.get("points") or 0)
+        # Only a FULLY measured sprint gets one: with Points now the delivered series, a
+        # partial token sum over the full points would understate the real rate.
+        fully_measured = (r.get("measured") is not None and r.get("measured") == r.get("units"))
+        rate = (_rate(r["actual_tokens"] or 0, r.get("points") or 0)
+                if fully_measured else None)
         lines.append(f"| {r['id']} | {r['date']} | {_fmt(r['units'])} | {_fmt(r['measured'])} | "
                      f"{_fmt(r.get('forecast'))} | {_fmt(r.get('points'))} | "
                      f"{_fmt(r['estimate'])} | "

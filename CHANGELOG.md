@@ -1042,6 +1042,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The velocity record states delivered points even when nothing was forecast (BG0218).**
+  VELOCITY.md's Points column is now the delivered-points series, read from the units' own
+  artefacts (plan-recorded sum as fallback), so an interactive build-first sprint records its
+  point total instead of `-`. The ratio columns keep their forecast gate, and the derived
+  tokens-per-point (row cell and `measured_rate`) now requires a FULLY measured sprint - a
+  partial token sum is no longer divided by the full points. RETRO0058's row is backfilled
+  (Points 14) as the live proof.
 - **The mutation gate names what its survivors were measured against (CR0363: US0277,
   US0278).** The report and text output now carry the test files the command statically
   resolves to (`selected_tests`; honest `UNRESOLVED` when nothing parses), and a warning per

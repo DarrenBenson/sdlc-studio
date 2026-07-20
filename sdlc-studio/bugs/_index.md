@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 5 |
+| Open | 4 |
 | In Progress | 0 |
-| Fixed | 135 |
+| Fixed | 136 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -184,7 +184,7 @@
 | [BG0215](BG0215-a-timed-out-mutation-run-leaves-the-mutant.md) | A timed-out mutation run leaves the mutant on disk and the restore captures it | Fixed | High | 2026-07-20 | 2026-07-20 |
 | [BG0216](BG0216-a-lesson-gist-containing-bold-markup-makes-the.md) | A lesson gist containing bold markup makes the lessons-summary gate unsatisfiable | Fixed | High | 2026-07-20 | 2026-07-20 |
 | [BG0217](BG0217-validate-s-placeholder-warning-uses-a-severity-spelling.md) | validate's placeholder warning uses a severity spelling the counters do not count | Open | Medium | 2026-07-20 | 2026-07-20 |
-| [BG0218](BG0218-the-velocity-record-omits-delivered-points-when-the.md) | the velocity record omits delivered points when the units carry no plan-time forecast | Open | High | 2026-07-20 | 2026-07-20 |
+| [BG0218](BG0218-the-velocity-record-omits-delivered-points-when-the.md) | the velocity record omits delivered points when the units carry no plan-time forecast | Fixed | High | 2026-07-20 | 2026-07-20 |
 | [BG0219](BG0219-lessons-summary-ignores-root-and-writes-relative-to.md) | lessons summary ignores --root and writes relative to the current directory | Fixed | High | 2026-07-20 | 2026-07-20 |
 | [BG0220](BG0220-verify-ac-writes-its-report-and-history-relative.md) | verify_ac writes its report and history relative to the current directory | Open | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0221](BG0221-refine-into-appends-a-duplicate-epic-level-ac.md) | refine --into appends a duplicate epic-level AC heading that fails the repo's own markdown gate | Open | Medium | 2026-07-20 | 2026-07-20 |

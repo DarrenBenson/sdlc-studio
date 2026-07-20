@@ -1,8 +1,9 @@
 # BG0218: the velocity record omits delivered points when the units carry no plan-time forecast
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
+> **Verification depth:** functional (a sprint of unforecast-but-sized units records its point total in the velocity row while ratio and estimate stay gated - the exact scenario from the report, plus the new guard proven both ways: a partially measured sprint contributes points to the series but is excluded from the derived rate, and every fully measured fixture keeps its rate; backfilled live on RETRO0058, whose row now records the 14 points it delivered)
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio file

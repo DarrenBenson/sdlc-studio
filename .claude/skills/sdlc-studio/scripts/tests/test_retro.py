@@ -854,6 +854,57 @@ class TheVelocityHistoryAccumulates(AccuracyBase):
 # faith the moment the project changes; this one is a QUOTIENT of two things the history
 # records, so it is re-measured every sprint and cannot drift away from the evidence.
 
+class TheVelocityRowRecordsDeliveredPoints(unittest.TestCase):
+    """BG0218: points-per-sprint is the PRIMARY series the velocity record exists to hold.
+    A unit built before its run was opened has no plan-time forecast, but its artefact
+    carries Points - the points series must not inherit the ratio columns' forecast gate."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        for d in ("retros", "bugs", ".local"):
+            (self.root / "sdlc-studio" / d).mkdir(parents=True, exist_ok=True)
+        (self.root / "sdlc-studio" / "retros" / "RETRO9002-t.md").write_text(
+            BATCH_RETRO.replace("BG0001, CR0001, CR0002", "BG0001, BG0002")
+                       .replace("RETRO-9000", "RETRO-9002"), encoding="utf-8")
+        for num, pts in (("0001", 3), ("0002", 5)):   # 8 delivered points, NO forecast
+            (self.root / "sdlc-studio" / "bugs" / f"BG{num}-a.md").write_text(
+                f"# BG{num}: a bug\n\n> **Status:** Fixed\n> **Severity:** Low\n"
+                f"> **Points:** {pts}\n", encoding="utf-8")
+        self.addCleanup(self.tmp.cleanup)
+
+    def test_unforecast_but_sized_sprint_records_its_point_total(self) -> None:
+        res = retro.accuracy(str(self.root), "RETRO9002")
+        retro.record_velocity(str(self.root), res)
+        row = retro.velocity_history(str(self.root))[0]
+        self.assertEqual(row["points"], 8, "delivered points, read from the artefacts")
+        self.assertIsNone(row["ratio"], "the ratio columns keep their forecast gate")
+        self.assertFalse(row["estimate"], "no plan-time estimate is invented")
+
+    def test_an_unforecast_sprint_contributes_points_but_never_a_rate(self) -> None:
+        retro.record_velocity(str(self.root), retro.accuracy(str(self.root), "RETRO9002"))
+        rate = retro.measured_rate(str(self.root))
+        self.assertIsNone(rate["tokens_per_point"], "no measured tokens, no rate")
+        self.assertEqual(rate["by_model"], {})
+
+
+class PartialMeasurementIsExcludedFromTheRate(AccuracyBase):
+    """BG0218's guard rail: once the Points column is the DELIVERED series, a sprint whose
+    token sum covers only SOME units must not divide that partial sum by the full points."""
+
+    def test_partially_measured_sprint_carries_points_but_no_rate(self) -> None:
+        self.forecast("BG0001", points={"BG0001": 2})
+        self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000, "model": "m1"})
+        retro.record_velocity(str(self.root), self.accuracy())
+        row = retro.velocity_history(str(self.root))[0]
+        self.assertEqual(row["points"], 2)          # the series still records what was sized
+        self.assertEqual((row["units"], row["measured"]), (3, 1))
+        rate = retro.measured_rate(str(self.root))
+        self.assertIsNone(rate["tokens_per_point"],
+                          "1 of 3 measured: the tokens describe a subset of the points")
+        self.assertEqual(rate["by_model"], {})
+
+
 class VelocityIsMeasuredInPoints(AccuracyBase):
     """Points delivered per sprint - the number an agile team actually plans with - and the
     tokens-per-point rate read back OUT of that history, never a constant."""
@@ -893,10 +944,13 @@ class VelocityIsMeasuredInPoints(AccuracyBase):
         self.assertEqual(rate["by_model"], {})
 
     def test_the_rate_is_never_pooled_across_models(self) -> None:
-        self.forecast("BG0001", "CR0001", points={"BG0001": 2, "CR0001": 2})
+        # fully measured (BG0218: a partial sprint is excluded before pooling is even asked)
+        self.forecast("BG0001", "CR0001", "CR0002",
+                      points={"BG0001": 2, "CR0001": 2, "CR0002": 2})
         self.telemetry(
             {"id": "BG0001", "type": "bug", "tokens": 40_000, "model": "small"},
             {"id": "CR0001", "type": "cr", "tokens": 40_000, "model": "large"},
+            {"id": "CR0002", "type": "cr", "tokens": 40_000, "model": "large"},
         )
         retro.record_velocity(str(self.root), self.accuracy())
         rate = retro.measured_rate(str(self.root))
@@ -909,10 +963,13 @@ class VelocityIsMeasuredInPoints(AccuracyBase):
         project, resolved from the repo and stamped on the result and every cell, so a figure
         lifted out of here is never mistaken for a different project's."""
         import telemetry as tel
-        self.forecast("BG0001", "CR0001", points={"BG0001": 2, "CR0001": 3})
+        # fully measured (BG0218: a partially measured sprint no longer reaches the rate)
+        self.forecast("BG0001", "CR0001", "CR0002",
+                      points={"BG0001": 2, "CR0001": 3, "CR0002": 5})
         self.telemetry(
             {"id": "BG0001", "type": "bug", "tokens": 50_000, "model": "m1"},
             {"id": "CR0001", "type": "cr", "tokens": 75_000, "model": "m1"},
+            {"id": "CR0002", "type": "cr", "tokens": 125_000, "model": "m1"},
         )
         retro.record_velocity(str(self.root), self.accuracy())
         rate = retro.measured_rate(str(self.root))
