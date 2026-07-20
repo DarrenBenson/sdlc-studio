@@ -1,6 +1,6 @@
 # US0270: reconcile apply derives the request terminal through transition, so every gate and cascade still runs
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0364
 > **Created:** 2026-07-19
 > **Created-by:** sdlc-studio new

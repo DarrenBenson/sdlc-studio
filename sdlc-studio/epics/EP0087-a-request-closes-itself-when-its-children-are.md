@@ -1,6 +1,6 @@
 # EP0087: A request closes itself when its children are done: reconcile derives the terminal that G2 only ever guarded
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0364
 > **Created:** 2026-07-19
@@ -14,9 +14,9 @@ Decomposed from CR0364. Delivers the work CR0364 requested.
 
 ## Story Breakdown
 
-- [ ] [US0269: reconcile detect reports a derivable request as a registered drift kind, using the SAME predicate the G2 gate enforces](../stories/US0269-reconcile-detect-reports-a-derivable-request-as-a.md)
-- [ ] [US0270: reconcile apply derives the request terminal through transition, so every gate and cascade still runs](../stories/US0270-reconcile-apply-derives-the-request-terminal-through-transition.md)
-- [ ] [US0271: The derivation refuses what G2 refuses: no childless request, no unresolved child, and a no-op where the two-backlog workflow is unenforced](../stories/US0271-the-derivation-refuses-what-g2-refuses-no-childless.md)
+- [x] [US0269: reconcile detect reports a derivable request as a registered drift kind, using the SAME predicate the G2 gate enforces](../stories/US0269-reconcile-detect-reports-a-derivable-request-as-a.md)
+- [x] [US0270: reconcile apply derives the request terminal through transition, so every gate and cascade still runs](../stories/US0270-reconcile-apply-derives-the-request-terminal-through-transition.md)
+- [x] [US0271: The derivation refuses what G2 refuses: no childless request, no unresolved child, and a no-op where the two-backlog workflow is unenforced](../stories/US0271-the-derivation-refuses-what-g2-refuses-no-childless.md)
 
 ## Acceptance Criteria (Epic Level)
 

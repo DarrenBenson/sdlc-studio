@@ -1,6 +1,6 @@
 # US0269: reconcile detect reports a derivable request as a registered drift kind, using the SAME predicate the G2 gate enforces
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0364
 > **Created:** 2026-07-19
 > **Created-by:** sdlc-studio new

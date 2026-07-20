@@ -3598,5 +3598,59 @@ class GateBriefingTests(unittest.TestCase):
             self.assertEqual(brief["units"], [])
 
 
+class CloseReconcileBlockedDerivableTests(unittest.TestCase):
+    """The close's reconcile step must not deadlock behind drift `apply` cannot clear.
+
+    A `request-derivable` item another gate refuses is real drift, but the remedy the step
+    prints - `reconcile.py apply` - provably cannot clear it, so every close in the project
+    stalls behind one pending decision. Found live: the sign-off and the Done transitions for
+    a fully-reviewed batch were stranded behind an RFC awaiting a decision nobody in the run
+    could make.
+
+    The exemption is narrow on purpose. These tests pin BOTH directions, because an exemption
+    that waves through ordinary drift is worse than the deadlock it replaces.
+    """
+
+    def _mod_with(self, detect_rc, derivable, per_type_drift=0):
+        mod = _load()
+        rec = mod.reconcile
+        self.addCleanup(setattr, rec, "main", rec.main)
+        self.addCleanup(setattr, rec, "derivable_request_drift", rec.derivable_request_drift)
+        self.addCleanup(setattr, rec, "detect_type", rec.detect_type)
+        rec.main = lambda argv: detect_rc
+        rec.derivable_request_drift = lambda root, explain=True: derivable
+        rec.detect_type = lambda t, root: {"drift": [{"x": 1}] * per_type_drift}
+        return mod
+
+    def test_a_blocked_derivable_request_does_not_stop_the_close(self) -> None:
+        mod = self._mod_with(1, [{"id": "RFC0046", "blocked_by": "1 Open decision"}])
+        ok, detail, _ = mod._close_reconcile(Path("."), "RETRO0001", {})
+        self.assertTrue(ok, detail)
+        self.assertIn("RFC0046", detail)
+        self.assertIn("not clearable by apply", detail)
+
+    def test_ordinary_drift_still_stops_the_close(self) -> None:
+        """The exemption must not become a blanket pass: real drift alongside a blocked item
+        still blocks. Without this, 'detect exited non-zero' would always be forgiven."""
+        mod = self._mod_with(1, [{"id": "RFC0046", "blocked_by": "1 Open decision"}],
+                             per_type_drift=1)
+        ok, _, remedy = mod._close_reconcile(Path("."), "RETRO0001", {})
+        self.assertFalse(ok)
+        self.assertIn("reconcile.py apply", remedy)
+
+    def test_an_unblocked_derivable_request_still_stops_the_close(self) -> None:
+        """It is clearable by the command the remedy names, so it must be cleared, not excused."""
+        mod = self._mod_with(1, [{"id": "CR0001", "blocked_by": None}])
+        ok, _, remedy = mod._close_reconcile(Path("."), "RETRO0001", {})
+        self.assertFalse(ok)
+        self.assertIn("reconcile.py apply", remedy)
+
+    def test_a_clean_tree_reports_no_drift(self) -> None:
+        mod = self._mod_with(0, [])
+        ok, detail, _ = mod._close_reconcile(Path("."), "RETRO0001", {})
+        self.assertTrue(ok)
+        self.assertEqual(detail, "no index drift")
+
+
 if __name__ == "__main__":
     unittest.main()

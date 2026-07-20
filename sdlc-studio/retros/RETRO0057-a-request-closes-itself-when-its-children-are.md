@@ -93,7 +93,9 @@ sprint instead of only when someone remembers to ask it.
 
 **0 of 3 unit(s) measured; 3 of 3 forecast at plan time.**
 
-**675,000 tokens supplied, but no rate:** the batch has no delivered unit carrying Points, so there is no denominator. Size the delivered stories/bugs, or the rate stays uncomputable.
+**Velocity: 39.02 points/elapsed-hour** (8 points over 0.205h, run-state, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
+
+  secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 Unmeasured: US0269, US0270, US0271. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
 No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
 
@@ -141,3 +143,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: see Estimate vs actual · Duration: one session · Critic rejects: 1 (round 1, four MAJORs)
+
+## Handoff
+
+- [HO-0012](../handoffs/HO0012-a-request-closes-itself-when-its-children-are.md) - 3 remaining item(s): 0 copilot-tail, 3 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

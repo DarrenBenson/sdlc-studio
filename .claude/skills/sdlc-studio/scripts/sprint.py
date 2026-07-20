@@ -2192,9 +2192,31 @@ def _close_handoff(root, retro_id, state):
 
 def _close_reconcile(root, retro_id, state):
     rc, out = _run_cli(reconcile.main, ["detect", "--root", str(root)])
-    if rc != 0:
-        return False, out, "`reconcile.py apply` clears mechanical drift, then re-run"
-    return True, "no index drift", ""
+    if rc == 0:
+        return True, "no index drift", ""
+    # A `request-derivable` item that another gate refuses is real drift, but `reconcile apply`
+    # provably CANNOT clear it - so the printed remedy is a loop with no exit, and every close in
+    # the project deadlocks behind one pending decision. It is reported, never suppressed, and it
+    # does not stop the ceremony. Anything else still blocks: the point of this step is that
+    # mechanical drift gets fixed before the run is sealed, not that drift gets waved through.
+    blocked = [d for d in reconcile.derivable_request_drift(root) if d.get("blocked_by")]
+    if blocked and _only_blocked_derivable_drift(root, blocked):
+        ids = ", ".join(d["id"] for d in blocked)
+        return True, (f"no mechanical drift; {len(blocked)} request(s) awaiting another gate "
+                      f"({ids}) - reported, not clearable by apply"), ""
+    return False, out, "`reconcile.py apply` clears mechanical drift, then re-run"
+
+
+def _only_blocked_derivable_drift(root, blocked) -> bool:
+    """True when the ONLY thing making detect non-zero is gate-blocked derivable requests.
+
+    Counted from the same census detect uses, so this cannot pass over a real drift item that
+    happens to share the sweep with a blocked one.
+    """
+    total = sum(len(reconcile.detect_type(t, Path(root)).get("drift", []))
+                for t in reconcile.DEFAULT_TYPES)
+    derivable = reconcile.derivable_request_drift(root)
+    return total == 0 and len(derivable) == len(blocked)
 
 
 # Chain order is the ceremony's order; cmd_close resolves each step through globals() at
@@ -2527,9 +2549,16 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
               file=sys.stderr)
     rc, _ = _run_cli(reconcile.main, ["detect", "--root", str(root)])
     if rc != 0:
-        print("apply-signoff: final reconcile reports drift - run `reconcile.py apply`",
-              file=sys.stderr)
-        return 1
+        # Same exemption as the close's reconcile step, and for the same reason: a derivable
+        # request another gate refuses cannot be cleared by the command this message names, so
+        # blocking on it strands the sign-off behind a decision nobody in this run can make.
+        blocked = [d for d in reconcile.derivable_request_drift(root) if d.get("blocked_by")]
+        if not (blocked and _only_blocked_derivable_drift(root, blocked)):
+            print("apply-signoff: final reconcile reports drift - run `reconcile.py apply`",
+                  file=sys.stderr)
+            return 1
+        print(f"apply-signoff: {len(blocked)} request(s) awaiting another gate "
+              f"({', '.join(d['id'] for d in blocked)}) - reported, not clearable by apply")
     _finalise_outcome(root, state)
     return 0
 

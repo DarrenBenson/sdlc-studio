@@ -1,6 +1,6 @@
 # CR-0364: reconcile should derive a request terminal when its children are all resolved - G2 is a gate with no counterpart
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0087
 > **Priority:** High
 > **Type:** Improvement

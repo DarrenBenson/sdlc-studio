@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 8 |
+| Draft | 5 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 262 |
+| Done | 265 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -179,9 +179,9 @@
 | [US0266](US0266-sprint-plan-prints-the-unit-lifecycle-and-the.md) | sprint plan prints the unit lifecycle and the gates each unit will meet, generated from the gate definitions rather than hand-written prose | Done | EP0086 | 2026-07-19 | 2026-07-19 |
 | [US0267](US0267-a-unit-close-names-the-fields-that-unit.md) | A unit close names the fields that unit type requires before its terminal transition, ahead of the work rather than on refusal | Done | EP0086 | 2026-07-19 | 2026-07-19 |
 | [US0268](US0268-order-the-pre-commit-lanes-cheapest-first-so.md) | Order the pre-commit lanes cheapest-first so a reworded comment does not cost a full unit-suite run | Done | EP0086 | 2026-07-19 | 2026-07-19 |
-| [US0269](US0269-reconcile-detect-reports-a-derivable-request-as-a.md) | reconcile detect reports a derivable request as a registered drift kind, using the SAME predicate the G2 gate enforces | Draft | EP0087 | 2026-07-19 | 2026-07-19 |
-| [US0270](US0270-reconcile-apply-derives-the-request-terminal-through-transition.md) | reconcile apply derives the request terminal through transition, so every gate and cascade still runs | Draft | EP0087 | 2026-07-19 | 2026-07-19 |
-| [US0271](US0271-the-derivation-refuses-what-g2-refuses-no-childless.md) | The derivation refuses what G2 refuses: no childless request, no unresolved child, and a no-op where the two-backlog workflow is unenforced | Draft | EP0087 | 2026-07-19 | 2026-07-19 |
+| [US0269](US0269-reconcile-detect-reports-a-derivable-request-as-a.md) | reconcile detect reports a derivable request as a registered drift kind, using the SAME predicate the G2 gate enforces | Done | EP0087 | 2026-07-19 | 2026-07-19 |
+| [US0270](US0270-reconcile-apply-derives-the-request-terminal-through-transition.md) | reconcile apply derives the request terminal through transition, so every gate and cascade still runs | Done | EP0087 | 2026-07-19 | 2026-07-19 |
+| [US0271](US0271-the-derivation-refuses-what-g2-refuses-no-childless.md) | The derivation refuses what G2 refuses: no childless request, no unresolved child, and a no-op where the two-backlog workflow is unenforced | Done | EP0087 | 2026-07-19 | 2026-07-19 |
 
 ## Archived Releases
 

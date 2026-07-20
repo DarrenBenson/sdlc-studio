@@ -1,6 +1,6 @@
 # US0271: The derivation refuses what G2 refuses: no childless request, no unresolved child, and a no-op where the two-backlog workflow is unenforced
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0364
 > **Created:** 2026-07-19
 > **Created-by:** sdlc-studio new

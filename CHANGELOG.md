@@ -46,6 +46,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     (an RFC carrying an open decision, which `--force` deliberately cannot bypass), the item names
     that gate and says `reconcile apply` CANNOT clear it, instead of pointing at a command
     guaranteed to refuse.
+  - **The close does not deadlock behind it.** `sprint close`'s reconcile step and
+    `--apply-signoff`'s final reconcile both refused to finish while ANY drift existed, and the
+    remedy they printed - `reconcile apply` - provably cannot clear a gate-blocked derivable
+    request. Found live: the sign-off and Done transitions for a fully reviewed batch were
+    stranded behind an RFC awaiting a decision nobody in the run could make. Both steps now
+    report such an item and continue. The exemption is narrow - ordinary drift, and a derivable
+    request that IS clearable, still block.
   - **The gate sees the new kind.** It counted only `detect_type` output, so `gate` reported PASS
     on a tree where `reconcile detect` exited 1. Only items `apply` can actually clear are counted:
     one blocked behind another gate is reported without blocking, because a gate that cannot be
