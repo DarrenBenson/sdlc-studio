@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0153: A pre-flight is worth building where a gate is a chain: the information is nearly always available before the first attempt, and serial...**
+- **L-0152: A fixture missing a config key can silently disable the whole branch under test.**
+- **L-0151: When a defect is fixed, the tests that were passing because of it will fail.**
+- **L-0150: A plan's premises decay.**
+- **L-0149: Check whether the work is already done before building it.**
 - **L-0148: **A drift kind whose advertised remedy cannot clear it is worse than no hint** - it sends the operator round a loop with no exit.**
 - **L-0147: **Fixture noise hides vacuous assertions.** The shared story fixture wrote an unrewritable placeholder status, so every apply in the class...**
 - **L-0146: **Prose written to justify code is code that has not been reviewed.** Three sessions running, the surviving defect has been in a comment or...**

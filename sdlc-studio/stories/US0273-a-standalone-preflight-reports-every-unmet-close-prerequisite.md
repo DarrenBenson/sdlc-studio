@@ -1,6 +1,6 @@
 # US0273: a standalone preflight reports every unmet close prerequisite in one read-only pass
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0359
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio new

@@ -81,3 +81,6 @@
 | US0270 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-20 | - |
 | US0271 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-20 | - |
 | US0272 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-20 | operator sign-off given in-session against the decision brief: independent record review APPROVE, all 3 ACs verified green, the relaxation confirmed scoped to pre-Ready across the full type/status matrix, 3 findings raised and handled (Affects corrected, User Story filled, BG0217 filed) |
+| US0273 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-20 | - |
+| US0274 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-20 | - |
+| US0275 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-20 | - |

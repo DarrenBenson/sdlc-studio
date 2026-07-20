@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 2 |
+| Draft | 1 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 87 |
+| Done | 88 |
 | **Total** | **89** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -111,4 +111,4 @@
 | [EP0086](EP0086-an-agent-is-briefed-by-the-gates-before.md) | An agent is briefed by the gates before the work, not stopped by them one refusal at a time | Done | -- | -- | 2026-07-19 | 2026-07-19 |
 | [EP0087](EP0087-a-request-closes-itself-when-its-children-are.md) | A request closes itself when its children are done: reconcile derives the terminal that G2 only ever guarded | Done | -- | -- | 2026-07-19 | 2026-07-19 |
 | [EP0088](EP0088-the-gate-tolerates-a-refined-draft-backlog.md) | The gate tolerates a refined Draft backlog | Done | -- | -- | 2026-07-20 | 2026-07-20 |
-| [EP0089](EP0089-the-close-reports-every-blocker-in-one-pass.md) | The close reports every blocker in one pass | Draft | -- | -- | 2026-07-20 | 2026-07-20 |
+| [EP0089](EP0089-the-close-reports-every-blocker-in-one-pass.md) | The close reports every blocker in one pass | Done | -- | -- | 2026-07-20 | 2026-07-20 |

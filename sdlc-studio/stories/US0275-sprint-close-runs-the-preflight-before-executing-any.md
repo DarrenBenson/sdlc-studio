@@ -1,6 +1,6 @@
 # US0275: sprint close runs the preflight before executing any step, so nothing is discovered serially
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0359
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio new

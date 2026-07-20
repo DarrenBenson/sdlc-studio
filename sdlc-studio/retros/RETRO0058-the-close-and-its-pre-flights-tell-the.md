@@ -90,7 +90,7 @@ sprint instead of only when someone remembers to ask it.
 
 **0 of 6 unit(s) measured; 1 of 6 forecast at plan time.**
 
-**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
+**Velocity: 14.75 points/elapsed-hour** (14 points over 0.949h, run-state, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 Unmeasured: BG0214. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
@@ -140,3 +140,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: see Estimate vs actual · Duration: one session · Critic rejects: pending the closing review
+
+## Handoff
+
+- [HO-0013](../handoffs/HO0013-the-close-and-its-pre-flights-tell-the.md) - 3 remaining item(s): 0 copilot-tail, 3 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

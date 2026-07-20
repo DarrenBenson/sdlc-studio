@@ -1,6 +1,6 @@
 # US0274: the preflight covers the apply-signoff prerequisites per unit, not just the gate lanes
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0359
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio new

@@ -46,6 +46,7 @@ about no run that ever happened.
 
 | Retro | Date | Units | Measured | Forecast | Points | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Constants | Sample | Model |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| RETRO-0058 | 2026-07-20 | 6 | 0 | 1 | - | 0 | 0 | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - |
 | RETRO0024 | 2026-07-14 | 6 | 6 | 6 | - | 1,285,000 | 384,278 | 3.34x | - | - | 1,848 | base=50000 tpc=5000 | in-sample | claude-opus-4-8 |
 | RETRO0025 | 2026-07-14 | 5 | 5 | 5 | - | 352,600 | 642,358 | 0.55x | - | - | 3,807 | base=50000 tpc=600 | in-sample | claude-opus-4-8 |
 | RETRO0026 | 2026-07-14 | 5 | 5 | 5 | - | 348,400 | 902,503 | 0.39x | - | - | 6,006 | base=50000 tpc=600 | in-sample | claude-opus-4-8 |
