@@ -71,20 +71,70 @@ def _request_criteria(text: str) -> list[str]:
     return _CRITERION_RE.findall(_section(text, "Acceptance Criteria"))
 
 
-def _seed_epic_criteria(epic_path: Path, criteria: list[str]) -> None:
+#: The epic's one carried-criteria heading, and the note that closes the section. A SHARED batch
+#: epic (`refine --into`) takes criteria from several requests, so both are written exactly once
+#: and later requests merge underneath - a second `## Acceptance Criteria (Epic Level)` is a
+#: duplicate sibling heading, which fails markdownlint MD024 in any project that lints its
+#: workspace and blocks the very commit the refine was preparing.
+_EPIC_AC_HEADING = "## Acceptance Criteria (Epic Level)"
+_EPIC_AC_NOTE = ("> Carried from the request. Author each story's own ACs against its\n"
+                 "> slice while grooming - these are the epic's completion bar, not any\n"
+                 "> single story's.")
+
+
+def _epic_ac_span(text: str) -> tuple[int, int]:
+    """(start, end) of the epic-level AC section in `text` - from its heading to the next `## `
+    heading or end of file. Caller has checked the heading is present."""
+    start = text.index(_EPIC_AC_HEADING)
+    after = start + len(_EPIC_AC_HEADING)
+    nxt = re.search(r"^## ", text[after:], re.M)
+    return start, (after + nxt.start() if nxt else len(text))
+
+
+def _merge_epic_criteria(epic_path: Path, text: str, bullets: str, rid: str | None) -> None:
+    """Merge further criteria UNDER the epic's existing AC heading, attributed to the request
+    they came from (`### From CRxxxx`), keeping the closing note last.
+
+    The `--into` case: a batch epic already carrying one request's criteria takes the next
+    request's without a second top-level heading.
+    """
+    start, end = _epic_ac_span(text)
+    body = text[start:end].rstrip("\n")
+    if _EPIC_AC_NOTE in body:            # lifted here, re-attached below so it closes the section
+        body = body.replace(_EPIC_AC_NOTE, "").rstrip("\n")
+    sub = f"### From {rid}" if rid else ""
+    if sub and sub in body:
+        # Same request merging twice: extend its existing block rather than repeat the
+        # subheading, which would itself be a duplicate sibling.
+        after = body.index(sub) + len(sub)
+        nxt = re.search(r"^#{2,3} ", body[after:], re.M)
+        cut = after + (nxt.start() if nxt else len(body) - after)
+        block = body[:cut].rstrip("\n") + "\n" + bullets.rstrip("\n")
+        body = (block + "\n\n" + body[cut:].lstrip("\n")).rstrip("\n")
+    else:
+        head = f"{sub}\n\n" if sub else ""
+        body = f"{body}\n\n{head}{bullets}"
+    section = body.rstrip("\n") + "\n\n" + _EPIC_AC_NOTE + "\n\n"
+    sdlc_md.atomic_write(epic_path, text[:start] + section + text[end:].lstrip("\n"))
+
+
+def _seed_epic_criteria(epic_path: Path, criteria: list[str], rid: str | None = None) -> None:
     """Carry a multi-story request's criteria onto the EPIC, as unticked criteria.
 
     They describe the request whole, and the epic is what the request became. Putting them
     on one of the stories claimed a distribution nothing had worked out - see `_seed_acs`.
     Written as `- [ ]` rather than AC blocks because an epic-level criterion is not
     executable on its own; each story's ACs are authored against its own slice at grooming.
+
+    An epic that already has the section is MERGED into (`_merge_epic_criteria`), not appended
+    to a second time.
     """
     text = epic_path.read_text(encoding="utf-8")
-    section = ("## Acceptance Criteria (Epic Level)\n\n"
-               + "".join(f"- [ ] {c}\n" for c in criteria)
-               + "\n> Carried from the request. Author each story's own ACs against its\n"
-                 "> slice while grooming - these are the epic's completion bar, not any\n"
-                 "> single story's.\n\n")
+    bullets = "".join(f"- [ ] {c}\n" for c in criteria)
+    if _EPIC_AC_HEADING in text:
+        _merge_epic_criteria(epic_path, text, bullets, rid)
+        return
+    section = f"{_EPIC_AC_HEADING}\n\n{bullets}\n{_EPIC_AC_NOTE}\n\n"
     # Callable replacement: criterion text is DATA, never a regex template (a criterion
     # holding \1 or C:\temp must land verbatim rather than expand or crash the mint).
     if "## Revision History" in text:
@@ -161,7 +211,7 @@ def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
             if idx == 0 and seed_criteria and len(stories) == 1:
                 _seed_acs(Path(s["path"]), seed_criteria)
         if seed_criteria and len(stories) > 1:
-            _seed_epic_criteria(epic_path, seed_criteria)
+            _seed_epic_criteria(epic_path, seed_criteria, rid)
         _insert_after_status(epic_path, f"> **Parent:** {rid}")
         _insert_after_status(epic_path, f"> **Derived Point Total:** {total}")
         _write_decomposed(rpath, [*existing_children, epic_id])
@@ -241,7 +291,7 @@ def _decompose_into(repo_root, rid: str, rpath: Path, epic_id: str,
             if idx == 0 and seed_criteria and len(stories) == 1:
                 _seed_acs(Path(s["path"]), seed_criteria)
         if seed_criteria and len(stories) > 1:
-            _seed_epic_criteria(epic_path, seed_criteria)
+            _seed_epic_criteria(epic_path, seed_criteria, rid)
         # Back-link: the shared epic names THIS request as a parent too (it already names the one
         # it was minted for). A batch epic carries one `Parent:` line per request it delivers, so
         # the child->parent link resolves both ways for each - the symmetry the link gates check.
