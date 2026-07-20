@@ -360,5 +360,76 @@ class CorruptBaselineTests(CloseOwedBase):
         self.assertNotIn("Run `close_owed baseline`", text)
 
 
+class BatchLineCoverageTests(CloseOwedBase):
+    """BG0225: a unit written inside parentheses on the `Batch` line went unseen.
+
+    Coverage was read through `retro.batch_ids`, which STRIPS every `(...)` before matching -
+    correct for `retro accuracy`, where a parenthetical is provenance (`(from CR0139)`) and
+    would pad the forecast with non-units, but wrong for "did a retro account for this?". A
+    Batch reading `BG0219, EP0090 (US0276)` - the natural way to write a story delivered under
+    its epic - left US0276 reported as owed by a retro that plainly names it. A false alarm is
+    the same failure as a miss: the operator reworded the line to silence the detector, which
+    is how a detector stops being read.
+
+    Coverage is therefore matched with the CANONICAL unanchored id matcher
+    (`sdlc_md.ID_SEARCH_RE`), the one the rest of the codebase already uses, rather than a
+    third hand-rolled regex - `retro.ARTEFACT_ID_RE` pins the digit run at exactly four, so a
+    five-digit id matched nothing at all.
+    """
+
+    def test_a_leaf_unit_in_parentheses_is_covered(self) -> None:
+        _story(self.root, "US0001", "Done")
+        _bug(self.root, "BG0001", "Fixed")
+        _retro(self.root, "RETRO0001", "BG0001, EP0090 (US0001)")
+        report = close_owed.owed(self.root)
+        self.assertEqual(report["owed"], [])
+        # ...and the REPORT is what the operator reads, so assert on the rendered text too.
+        self.assertNotIn("US0001", close_owed.render(report))
+
+    def test_a_bare_unit_is_still_covered(self) -> None:
+        _story(self.root, "US0001", "Done")
+        _bug(self.root, "BG0001", "Fixed")
+        _retro(self.root, "RETRO0001", "US0001, BG0001")
+        self.assertEqual(close_owed.owed(self.root)["owed"], [])
+
+    def test_a_unit_adjacent_to_punctuation_is_covered(self) -> None:
+        _story(self.root, "US0001", "Done")
+        _bug(self.root, "BG0001", "Fixed")
+        _retro(self.root, "RETRO0001", "[US0001] and *BG0001*.")
+        self.assertEqual(close_owed.owed(self.root)["owed"], [])
+
+    def test_a_five_digit_id_is_matched_whole_and_credits_only_itself(self) -> None:
+        """The trailing-boundary lesson: `\\d{4}` truncated or dropped a five-digit id."""
+        _story(self.root, "US01010", "Done")
+        _story(self.root, "US0101", "Done")
+        _retro(self.root, "RETRO0001", "US01010")
+        ids = {cid for cid, _ in close_owed.owed(self.root)["owed"]}
+        self.assertNotIn("US01010", ids, "the id the retro names must be covered")
+        self.assertIn("US0101", ids, "a shorter id must not be credited by a longer one")
+
+    def test_a_lookalike_token_does_not_count_as_coverage(self) -> None:
+        """Wider matching must not manufacture coverage out of prose."""
+        _story(self.root, "US0001", "Done")
+        _bug(self.root, "BG0001", "Fixed")
+        _retro(self.root, "RETRO0001", "SUS0001 (BUS0001, BG00012) - a CR0001/RFC0001 follow-up")
+        ids = {cid for cid, _ in close_owed.owed(self.root)["owed"]}
+        self.assertEqual(ids, {"US0001", "BG0001"})
+
+    def test_an_epic_in_a_provenance_parenthetical_earns_no_coverage(self) -> None:
+        """A parenthetical names WHICH epic decomposed the batch, not a delivered epic.
+
+        So only a LEAF unit (story or bug) earns coverage from inside `(...)`. A childless
+        epic has no derivation to inherit from, and must stay owed rather than be forgiven by
+        being mentioned as provenance.
+        """
+        _epic(self.root, "EP0001", "Done")                 # childless: nothing derived it
+        _bug(self.root, "BG0001", "Fixed")
+        _retro(self.root, "RETRO0001", "BG0001 (from EP0001)")
+        report = close_owed.owed(self.root)
+        ids = {cid for cid, _ in report["owed"]}
+        self.assertEqual(ids, {"EP0001"})
+        self.assertIn("EP0001", close_owed.render(report))
+
+
 if __name__ == "__main__":
     unittest.main()

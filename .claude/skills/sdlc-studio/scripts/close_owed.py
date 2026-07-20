@@ -29,19 +29,65 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
-import retro  # noqa: E402  (sibling - the batch-id parser, so "what a retro accounted for" has one answer)
+import retro  # noqa: E402  (sibling - for the `Batch` field pattern, so both read the same line)
 
 # The delivery backlog: the units a sprint sets out to complete and a retro accounts for.
 # Discovery artefacts (RFC/CR/Issue) reach terminal by derivation from these, so they are not
 # themselves a "close owed" trigger - closing the delivery work is what a retro records.
 DELIVERY_TYPES = ("epic", "story", "bug")
 
+# Id prefixes coverage can be earned by. Outside a parenthetical, any delivery unit; INSIDE one,
+# only a leaf. See `batch_covered_ids`.
+DELIVERY_PREFIXES = ("EP", "US", "BG")
+LEAF_PREFIXES = ("US", "BG")
+
+_PARENTHETICAL_RE = re.compile(r"\(([^)]*)\)")
+
 BASELINE_FILE = "sdlc-studio/.close-owed-baseline.json"
+
+
+def batch_covered_ids(text: str) -> set[str]:
+    """The unit ids a retro's `Batch` line accounts for, parentheticals included.
+
+    Deliberately NOT `retro.batch_ids`. That parses the same line for `retro accuracy`, which
+    asks a different question - which units carry a plan-time forecast - and so strips every
+    `(...)` as provenance (`(absorbing CR0139)`, `(EP0075-EP0077, from RFC0044)`). Read as
+    coverage, that strip made a Batch of `BG0219, EP0090 (US0276)` - the natural way to write a
+    story delivered under its epic - leave US0276 reported as owed by the very retro naming it.
+    A false alarm costs what a miss costs: the line gets reworded to silence the detector, and a
+    detector people work around has stopped detecting.
+
+    Matching uses `sdlc_md.ID_SEARCH_RE`, the canonical unanchored id matcher the rest of the
+    codebase shares, rather than a third private regex. It carries the boundary rules already
+    paid for: a leading letter is not an id (`SUS0001`), the digit run is `\\d{4,}` so a
+    five-digit id is claimed WHOLE instead of a four-digit prefix being credited to a different
+    real unit, and a v3 ULID id is matched at all.
+
+    Widening stops at the smallest set that answers the bug. Only a LEAF unit (story or bug)
+    earns coverage from inside a parenthetical, because that is what a parenthetical reports as
+    delivered; an epic there is provenance - which epic decomposed the batch - and crediting it
+    would forgive an epic no close had derived. Outside the parentheses the flat list credits
+    any delivery unit, as before.
+    """
+    m = retro.BATCH_RE.search(text)
+    if not m:
+        return set()
+    line = retro.PLACEHOLDER_RE.sub("", m.group(1))
+    flat = _PARENTHETICAL_RE.sub(" ", line)
+    inner = " ".join(_PARENTHETICAL_RE.findall(line))
+    out: set[str] = set()
+    for chunk, allowed in ((flat, DELIVERY_PREFIXES), (inner, LEAF_PREFIXES)):
+        for hit in sdlc_md.ID_SEARCH_RE.finditer(chunk):
+            rid = sdlc_md.norm_id(hit.group(0))
+            if rid.startswith(allowed):
+                out.add(rid)
+    return out
 
 
 def covered_ids(root: Path) -> set[str]:
@@ -51,8 +97,8 @@ def covered_ids(root: Path) -> set[str]:
     if not retros_dir.is_dir():
         return covered
     for p in sorted(retros_dir.glob("RETRO*.md")):
-        for rid in retro.batch_ids(sdlc_md.read_text_safe(p)):  # a bad retro must not crash the scan
-            covered.add(rid)
+        # a bad retro must not crash the scan
+        covered |= batch_covered_ids(sdlc_md.read_text_safe(p))
     return covered
 
 
