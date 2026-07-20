@@ -3820,6 +3820,31 @@ class ClosePreflightTests(unittest.TestCase):
             self.assertFalse(res["ready"], "the pre-flight reported ready on a refused close")
             self.assertIn("done-gate", self._stages(res))
 
+    def test_an_unreadable_unit_is_reported_not_raised(self) -> None:
+        """A pre-flight must never turn a clean refusal into a traceback.
+
+        The done-gate preview caught only `(ValueError, FileNotFoundError)`, so a PermissionError
+        escaped. Because the report correctly runs above EVERY refusal, that took down closes
+        which would otherwise have refused instantly for an unrelated reason - a regression the
+        placement fix enlarged the blast radius of.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"],
+                            verdicts={"US0101": {"verdict": "APPROVE"}},
+                            evidence=("US0101",), signoffs=("US0101",))
+            rid = self._retro(root)
+            import artifact as artifact_mod
+            self.addCleanup(setattr, artifact_mod, "close", artifact_mod.close)
+
+            def boom(*_a, **_k):
+                raise PermissionError(13, "Permission denied")
+            artifact_mod.close = boom
+            res = mod.close_preflight(root, rid)     # must not raise
+            detail = [b for b in res["blockers"] if b["stage"] == "done-gate"]
+            self.assertTrue(detail, res["blockers"])
+            self.assertIn("Permission denied", detail[0]["detail"])
+
     def test_preflight_ignores_a_batch_id_with_no_artefact(self) -> None:
         """US0274 AC2, the over-reporting half: apply-signoff resolves batch ids through
         `_batch_story_units` and skips one with no artefact behind it, so reporting it as owed
@@ -3889,25 +3914,34 @@ class ClosePreflightTests(unittest.TestCase):
             # test vacuous: a mutant that always printed the report still passed it.
             self.assertNotIn("close pre-flight", err.getvalue())
             self.assertNotIn("close pre-flight", out.getvalue())
-            self._assert_outcome_matches_a_close_without_the_preflight(rc)
+            self.assertIsNotNone(rc)
 
-    def _assert_outcome_matches_a_close_without_the_preflight(self, rc: int) -> None:
-        """"Never a new refusal" tested as the claim is worded: the SAME close, on an identical
-        workspace, with the pre-flight stubbed out, ends the same way.
+    def test_a_close_that_is_not_ready_still_reaches_its_chain(self) -> None:
+        """AC2 tested where the property CAN fail: a NOT-ready workspace.
 
-        Asserting `rc == 0` instead would demand a pristine fixture and would pass for reasons
-        unrelated to the pre-flight - this compares the two paths directly.
+        The previous version compared a ready workspace against one with the pre-flight stubbed
+        out. That could essentially never fail: with nothing unmet the report is silent, so both
+        arms agreed no matter what was mutated around the call. A literal `return 1` after the
+        pre-flight survived it, which is exactly the refusal AC2 forbids.
+
+        Here the pre-flight HAS blockers, so a mutant that turned the report into a refusal stops
+        the close before the chain and this goes red.
         """
-        with tempfile.TemporaryDirectory() as d2:
-            root2 = Path(d2)
-            mod2 = self._mod(root2, units=["US0101"],
-                             verdicts={"US0101": {"verdict": "APPROVE"}},
-                             evidence=("US0101",), signoffs=("US0101",))
-            rid2 = self._retro(root2)
-            mod2._report_preflight = lambda *a, **k: {"ready": True, "blockers": []}
-            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-                rc2 = mod2.main(["close", "--retro", rid2, "--root", str(root2)])
-        self.assertEqual(rc, rc2, "the pre-flight changed the close's outcome")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"])      # no verdict: the pre-flight is not ready
+            rid = self._retro(root)
+            self.assertFalse(mod.close_preflight(root, rid)["ready"])
+            reached = []
+            original = mod._close_retro_validate
+            mod._close_retro_validate = lambda *a, **k: (reached.append(1) or (True, "ok", ""))
+            try:
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    mod.main(["close", "--retro", rid, "--root", str(root)])
+            finally:
+                mod._close_retro_validate = original
+            self.assertEqual(reached, [1],
+                             "an unmet pre-flight stopped the close instead of only reporting")
 
 
 if __name__ == "__main__":

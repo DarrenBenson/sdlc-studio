@@ -2760,12 +2760,25 @@ def _done_gate_preflight(root: Path, state: dict) -> list[dict]:
     for unit in _batch_story_units(root, state.get("batch") or []):
         try:
             artifact.close(root, unit, dry_run=True)
-        except (ValueError, FileNotFoundError) as exc:
+        except (ValueError, OSError) as exc:
+            # OSError, not just FileNotFoundError. A PermissionError escaped and, because the
+            # report correctly runs above EVERY refusal, took down closes that would otherwise
+            # have refused cleanly for an unrelated reason - a pre-flight must never be able to
+            # turn a clean refusal into a traceback. Matches the retro branch above.
             out.append({"stage": "done-gate",
                         "detail": f"{unit}: {str(exc).strip().splitlines()[0]}",
                         "remedy": "clear the gate this names (commonly `verify_ac.py run "
                                   "--story <id>`), then re-run"})
     return out
+
+
+#: Stages only `close --apply-signoff` owes. A plain close performs no Done transitions and
+#: records no sign-off, so reporting these as flatly unmet overstates what THIS invocation needs.
+_SIGNOFF_ONLY_STAGES = ("sign-off", "done-gate")
+
+
+def _stage_label(stage: str) -> str:
+    return f"{stage}, for --apply-signoff" if stage in _SIGNOFF_ONLY_STAGES else stage
 
 
 def _render_preflight(data: dict) -> None:
@@ -2776,7 +2789,7 @@ def _render_preflight(data: dict) -> None:
     print(f"preflight: {n} unmet prerequisite(s) - ALL of them, so the close is one more run "
           f"once these are cleared:")
     for b in data["blockers"]:
-        print(f"  [{b['stage']}] {b['detail']}")
+        print(f"  [{_stage_label(b['stage'])}] {b['detail']}")
         print(f"      -> {b['remedy']}")
 
 
@@ -2791,7 +2804,8 @@ def _report_preflight(root, retro_id: str | None) -> dict:
         print(f"close pre-flight: {len(pre['blockers'])} unmet prerequisite(s) - this is ALL "
               f"of them, not the first:", file=sys.stderr)
         for b in pre["blockers"]:
-            print(f"  [{b['stage']}] {b['detail']}\n      -> {b['remedy']}", file=sys.stderr)
+            print(f"  [{_stage_label(b['stage'])}] {b['detail']}\n      -> {b['remedy']}",
+                  file=sys.stderr)
     return pre
 
 
