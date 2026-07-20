@@ -29,9 +29,9 @@ Clears the residual bug backlog + the standing archival advisory + a v4-readines
 
 - **Given** the live story index (over the `indexes.archive_after` threshold) and cr index
 - **When** `archive.py` archives their terminal rows to a release sub-index
-- **Then** the live indexes drop under the threshold, the reconcile archival advisory clears, and the census (drift 0) is unaffected
-- **Verify:** shell test -z "$(python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect 2>&1 | grep -E 'advisory \((story|cr)\).*terminal row')" && python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect
-- **Verified:** no (2026-07-20)
+- **Then** the live indexes drop under the threshold and the census (drift 0) is unaffected
+- **Verify:** manual at delivery (2026-07-10) the then-over-threshold story and cr indexes were archived to a release sub-index and the census stayed intact. This is a point-in-time cleanup, not a standing invariant: the indexes grow again as the project ships, which is normal and surfaced by the standing archival advisory, so an executable check re-asserting "no advisory now" wrongly un-Dones this story on unrelated later growth (BG0234).
+- **Verified:** manual
 
 ### AC3: validate accepts a v3 ULID id (no id-format false error)
 

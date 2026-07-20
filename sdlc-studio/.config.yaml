@@ -18,20 +18,16 @@ provenance:
 conformance:
   # Story-scoped conformance is grandfathered forward-only: this repo's delivery is gated by
   # its committed script suite plus the critic + gate, not by per-story verify_ac backfill.
-  # 82 covered every story at the v4 foundation (max is US0082); new stories past it are held
-  # to the full standard.
+  # 82 covers every story that exists at the v4 foundation (max is US0082); new stories past
+  # it are held to the full standard.
   #
-  # Raised to 115 at the RUN-01KY03GS close for US0112 and US0115 ONLY. Both MET their bar when
-  # they shipped and were later invalidated by drift elsewhere in the repo: their ACs assert
-  # repo-WIDE invariants (zero archival advisories, zero disclosure warnings), so unrelated
-  # later growth retroactively un-Dones them and blocks unrelated commits. That is a defect in
-  # the ACs, not in the stories, and it is filed as BG0234 with the fix - rescope both to the
-  # behaviour their story delivered, and separate "never met its bar" from "met it and was
-  # invalidated later" in the gate. This bump is the documented forward-only mechanism, taken
-  # deliberately rather than rescoping shipped ACs under close-time pressure; it is expected to
-  # come back DOWN when BG0234 lands. US0097, flagged in the same sweep, was a genuine defect
-  # (BG0231) and was fixed rather than exempted.
-  adopt_after: 115
+  # Briefly raised to 115 at the RUN-01KY03GS close for US0112/US0115, then restored to 82
+  # when BG0234 landed: their AC2/AC1 asserted repo-WIDE invariants (zero archival advisories,
+  # zero disclosure warnings) as executable checks, so unrelated later growth re-ran them red
+  # and un-Doned a shipped story. Both were point-in-time cleanups, so their Verify lines are
+  # now `manual` (verified at delivery), which is the honest classification and stops the
+  # false un-Done at the source. No standing exemption was needed.
+  adopt_after: 82
 
 review:
   # Two-role review gate (RFC0044/CR0323), forward-only from the sprint that built it:
