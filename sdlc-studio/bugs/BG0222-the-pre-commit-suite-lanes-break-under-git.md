@@ -1,7 +1,8 @@
 # BG0222: the pre-commit suite lanes break under git commit -a because hook GIT_* env leaks into test git calls
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
+> **Verification depth:** functional (reproduced in a THROWAWAY CLONE, never against the live repo - the filed reproduction points GIT_INDEX_FILE at $PWD/.git and is what caused this run's near-miss; clean env OK vs polluted FAILED with 8 failures. End-to-end: the full 3374-test suite run through skill-tests.sh under GIT_DIR + GIT_WORK_TREE + GIT_INDEX_FILE pollution passes, and the clone's index md5 is byte-identical before and after. Both bounds mutation-killed - dropping a variable from the scrub, and over-reaching onto a fixture-owned one)
 > **Points:** 2
 > **Affects:** tools/skill-tests.sh
 > **Created:** 2026-07-20

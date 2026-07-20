@@ -16,6 +16,35 @@
 # guards nothing.
 set -uo pipefail
 
+# The hook environment is part of the test environment. `git commit -a` runs the pre-commit
+# hook with GIT_INDEX_FILE set to an ABSOLUTE path (the outer repo's .git/index.lock); a
+# staged `git add` + `git commit` sets it to the RELATIVE `.git/index`. Every test that
+# builds a throwaway repo in a temp dir and shells out to git then inherits it: under the
+# relative form it resolves inside the fixture and nothing is wrong, under the absolute one
+# every fixture git call reads and writes the OUTER repo's index. That asymmetry is why this
+# read as flaky tests - the same commit passed when staged and failed with -a.
+#
+# Scrubbed below: every variable that can point git at a different repository, index, object
+# store or path prefix. That is the "The Git Repository" set in `git help git` ENVIRONMENT
+# VARIABLES, plus GIT_PREFIX, which git sets for hooks only. Measured against git 2.53, a
+# hook invoked by `git commit -a` is handed GIT_INDEX_FILE and GIT_PREFIX from this list;
+# the rest are scrubbed because a developer's shell or a CI runner can export them, not
+# because git itself does. GIT_INDEX_FILE, GIT_DIR and GIT_WORK_TREE were each confirmed to
+# break the suite on their own; GIT_PREFIX was confirmed harmless and is scrubbed anyway.
+#
+# Deliberately NOT scrubbed: GIT_AUTHOR_*/GIT_COMMITTER_* (confirmed harmless here - the
+# fixtures set their own identity via tests/gitutil.py), GIT_CONFIG_GLOBAL/GIT_CONFIG_SYSTEM
+# (tests set these to /dev/null themselves for hermeticity; clearing them would weaken that),
+# and GIT_EDITOR/GIT_EXEC_PATH (not repo state). Widen the list, do not delete it, if a
+# future git hands hooks another repo-locating variable.
+#
+# tools/tests/test_skill_tests_env.py pins this list from BOTH sides - every name here is
+# cleared for the child, and the fixture-owned variables above are NOT. It cannot know about
+# a variable a future git invents; adding one to that list is a human step.
+unset -v GIT_DIR GIT_COMMON_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_INDEX_VERSION \
+  GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_NAMESPACE \
+  GIT_CEILING_DIRECTORIES GIT_DISCOVERY_ACROSS_FILESYSTEM GIT_PREFIX
+
 skill="${1:-.claude/skills/sdlc-studio/scripts}"
 out="$(python3 -m unittest discover -s "$skill/tests" 2>&1)"
 rc=$?

@@ -1078,6 +1078,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The suite lanes run in a git environment of their own, not the caller's (BG0222).**
+  `git commit -a` hands the pre-commit hook `GIT_INDEX_FILE` and friends; the suite lanes
+  inherited them, so every test that builds a throwaway repo and shells out to git acted on
+  the OUTER repo instead. The same commit passed when staged and failed under `-a`, so it read
+  as flaky tests rather than an environment leak. `tools/skill-tests.sh` now clears the
+  repo-locating variables before invoking the suites, and deliberately leaves the fixtures' own
+  identity and config variables alone - the scrub has an upper bound as well as a lower one,
+  and both are pinned. This is defence at the caller; `BG0230` covers the wider case, that the
+  fixtures have no containment of their own and so remain reachable from any other polluted
+  environment.
+
 - **A path option is resolved against the project root, not the current directory (BG0220).**
   `verify_ac`'s `--root` defaulted to `"."`, so "the root" meant "wherever you happen to be":
   a run from a subdirectory wrote its report and history into a stray `sdlc-studio/.local`
