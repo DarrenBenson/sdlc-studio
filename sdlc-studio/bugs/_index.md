@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 8 |
+| Open | 9 |
 | In Progress | 0 |
 | Fixed | 144 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **234** |
+| **Total** | **235** |
 
 ## All Bugs
 
@@ -201,6 +201,7 @@
 | [BG0232](BG0232-ac-fingerprint-has-no-test-of-its-own.md) | ac_fingerprint has no test of its own: a no-op mutant of the freshness spine survives | Open | High | 2026-07-20 | 2026-07-20 |
 | [BG0233](BG0233-refine-s-heading-truncation-and-epic-t-shirt.md) | refine's heading truncation and epic T-shirt derivation are both unpinned: two mutants survive | Open | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0234](BG0234-a-story-ac-asserting-a-repo-wide-invariant.md) | a story AC asserting a repo-wide invariant retroactively un-Dones itself as the repo grows | Open | Medium | 2026-07-20 | 2026-07-20 |
+| [BG0235](BG0235-two-review-loop-properties-are-pinned-only-symbolically.md) | two review-loop properties are pinned only symbolically or in aggregate, so a single-class break ships green | Open | Low | 2026-07-20 | 2026-07-20 |
 
 ## Archived Releases
 

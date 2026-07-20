@@ -1,89 +1,79 @@
 # Reviews - LATEST (anchor)
 
-> Derived from the sprint-close review of **RUN-01KXZQF0** (instruments and stops,
-> 2026-07-20, RETRO-0060). Supersedes the RETRO-0058 picture.
+> Derived from the sprint-close review of **RUN-01KY03GS** (bound the close review loop and
+> clear the instruments close-debt, 2026-07-20, RETRO-0061). Supersedes the RETRO-0060 picture.
 
 ## Where the pipeline is (2026-07-20)
 
-**RUN-01KXZQF0 is built, verified and reviewed**: 9/9 units, 30 points - Phase 1 of the
-approved v5.0 plan (make the measurements trustworthy: BG0215, CR0363, CR0350, BG0218) plus
-the two operator-reported High CRs on bounded interaction (CR0369, CR0371). The closing
-review **REJECTed at round 1** (2 MAJOR, 5 MINOR, 2 NOTE - every finding carried a ran
-reproduction) and **APPROVEd at round 2** after one test-first repair round; the same
-reviewer instance re-ran its own reproductions verbatim.
+**RUN-01KY03GS is built, verified, reviewed and closing**: 13/13 units, 31 points - Phase 2
+of the v5.0 plan (EP0085 / CR0358, bound the close review loop) plus the eight close-debt bugs
+from the instruments sprint. The five stories were reviewed by an independent adversarial pass
+(APPROVE, round 1, reviewer != author) - the first exercise of the round-counting machinery on
+its own delivery - then countersigned by the operator as reviewer of record.
 
 ## What shipped
 
-- **BG0215** - a SIGKILLed mutation run cannot poison the next run's restore: originals are
-  persisted to `mutation-inflight.json` before each mutant lands and recovered before the
-  baseline; an unreadable or non-object sidecar refuses with the git remedy named.
-- **CR0363 (US0277, US0278)** - the mutation gate names what its survivors were measured
-  against: the statically resolved test selection is reported (honest UNRESOLVED when nothing
-  parses; `--ignore`/`--deselect` honoured), and a referencing test file outside the selection
-  warns as the manufactured-survivor condition. Advisory, never blocking. This close's own
-  evidence run printed both live.
-- **BG0218** - VELOCITY.md's Points column is the delivered-points series (artefact-read);
-  ratio columns keep their forecast gate; a partial token sum is never divided by the full
-  points. RETRO0058's row backfilled live (Points 14).
-- **CR0350 (US0279)** - an interactive close captures the harness-tracked token total itself
-  (`accuracy --tokens-from-harness`; cache reads excluded) and the velocity row records the
-  actual. Preservation lives in the row writer: no re-run can replace a recorded number with
-  its absence.
-- **CR0369 (US0280, US0281)** - `sprint decision defer/list/resolve`: an undecidable unit is
-  set aside while the batch continues; accumulated decisions are asked together as structured
-  questions (named options, consequences, recommendation marked with its reason); the close
-  renders the pending queue at the stop; the autonomous path records and blocks, never
-  defaults.
-- **CR0371 (US0282, US0283)** - a blocked close has a bounded exit: `close --file-and-close`
-  files administrative blockers as CRs linked to the run, names deferrals in retro + anchor,
-  closes with outcome `closed-outstanding`; a hard blocker (red gate, refusing Done gate, a
-  goal-less run) refuses the exit; re-runs are refused once filed; every close attempt records
-  its outstanding count and re-runs report the shrinking/growing trend.
+- **EP0085 / CR0358 (US0261-US0265)** - the close review is a bounded, priced, un-primed loop:
+  rounds counted on the run state with a configurable ceiling (default 3) and a recorded
+  override; a finding in the previous round's repair surface classified a repair regression by
+  file AND line; escalation to revert / redesign / accept-and-file instead of another patch
+  round; per-round token cost with an unmeasured round named not zeroed; and a reviewer brief
+  that carries the probes to re-execute but not the verdict prose, round number or conclusion.
+  US0265 narrowed CR0358's AC5 deliberately so the probe re-execution demand survives.
+- **BG0217** - validate's placeholder warning uses the severity the counters count.
+- **BG0220** - verify_ac resolves paths against the project root, on six surfaces.
+- **BG0221** - refine --into merges epic criteria instead of duplicating the AC heading.
+- **BG0222** - the suite lanes run in a git environment of their own.
+- **BG0223** - a run stopped mid-flight can still take the bounded exit.
+- **BG0224** - an explicit --tokens 0 clears a recorded actual.
+- **BG0225** - the close-owed detector reads a Batch line's parenthesised units.
+- **BG0226** - a dashed retro id no longer mints an invisible velocity row.
 
-The three touched suites: 48 mutation + 115 retro + 235 sprint, green; full skill and tools
-lanes green at every commit. Mutation evidence over the sprint diff: 15/16 killed, the one
-survivor a stubbed test body in a test file (vacuous by construction, not a product defect),
-diff coverage honestly reported.
+3396 tests green at every commit; 25/25 story ACs verified. Mutation over the sprint diff
+(scoped to product files): 16 applied, 13 killed, 3 survived, all three verified real gaps and
+filed. 16 of 3153 enumerated sampled - the rest recorded as un-checked, not clean.
 
-## The CODE leg - two rounds
+## The CODE leg - one round
 
 | Round | Findings | Outcome |
 | --- | --- | --- |
-| 1 | 2 MAJOR + 5 MINOR + 2 NOTE (all with ran repros) | REJECT |
-| 2 | 1 MINOR + 2 NOTE (non-blocking, filed as BG0223/BG0224) | APPROVE |
+| 1 | 2 test-completeness (both non-blocking, filed BG0235) | APPROVE |
 
-**Both round-1 MAJORs were truths this sprint creates being destroyed by an ordinary
-re-run** - the recorded interactive token actual erased to 0 by a plain `accuracy --write`
-(the guard lived only inside the capture flag; moved into the row writer itself), and
-`--file-and-close` re-runnable against a closed run, duplicating the CR set and both
-annotation sections (now refused). The recurring pattern held a fifth round: the sharpest
-defects sat in the gap between the code and its own prose claims.
+The independent reviewer mutation-pinned every central claim, confirmed the one known
+equivalent mutant is genuinely equivalent, and left the tree byte-identical. Its two findings
+were that the ceiling literal is asserted symbolically and the priming classes only in
+aggregate - real coverage gaps, no live defect.
+
+## The incident this run survived
+
+The BG0222 agent - fixing a bug about GIT_* environment leakage - pointed GIT_INDEX_FILE at
+the live repo's index lock, and the suites emptied the index (1845 files staged deleted, a
+fixture commit running against main). Recovered with git reset, no data lost. The filed
+reproduction itself is the hazard. BG0230 (High) filed for the wider cause: the fixtures have
+no containment of their own.
 
 ## Next steps
 
-- **Phase 2** - RFC0048 (write back the operator-settled D3/D6 first: all six rows still
-  read Open) and EP0085 / CR0358 (bound the review loop), ending at the falsifiable
-  points-per-sprint checkpoint - which BG0218 makes measurable and US0279 prices.
-- **CR0373** (new, from the operator's cross-model calibration question) - the interactive
-  token capture should record the delivering model, so Opus and Fable rows land in their own
-  (project, model) cells.
-- **BG0223** (round-2 finding) - file-and-close refuses a budget-spent/stopped run with a
-  false "already closed" message. **BG0224** - an explicit `--tokens 0` cannot clear a
-  recorded actual. **BG0221** (refine --into duplicate AC heading), **BG0222** (suite lanes
-  break under `git commit -a` - hook GIT_* env leak). **CR0351** (backtick-mangled fields)
-  still unbuilt.
-- Dogfooding frictions filed at this close: **CR0374** (nothing surfaces the window a live
-  mutation run has a mutant on the shared tree - the session serialised by hand), **BG0225**
-  (the close-owed detector misses a parenthesised unit on a retro Batch line), **CR0375**
-  (bare `status.py` errors instead of showing the pillars dashboard). Filing them made this
-  very anchor stale mid-close - CR0371's treadmill observed live, with the new trend line
-  reading "outstanding set 10 -> 8 (shrinking)".
-- Standing: **RFC0046** needs D1 closed or an override; **CR0355** is a launch-day action;
-  **CR0319** is the release cut itself. Release freeze holds.
+- **Freshness spine, top priority next sprint (operator-set):** BG0231 (a Done story stays
+  green after its named test is deleted), BG0232 (ac_fingerprint has no test of its own),
+  BG0234 (repo-wide-invariant ACs un-Done themselves as the repo grows). The mechanism that
+  certifies a Done story is still true is currently unpinned in both directions.
+- **RFC0048 option B next (operator-set):** attack the three heavy test files (test_gate.py is
+  56s, 41% of the suite) - no coverage change, no policy decision. Then D6 sets the per-commit
+  budget against the improved baseline, as this sprint resolved. The sprint ran ~2.4x baseline;
+  ~23 min of it was the pre-commit suite across nine commits.
+- **CR-0378** (never park the batch on one unit's decision) and **CR-0379** (log mutation yield
+  and cost as a series) - both filed from this run's own process failures.
+- **conformance.adopt_after is at 115** for US0112/US0115 only, expected to come back down when
+  BG0234 lands. **CR0374** (surface the single-writer window a live mutation run holds) was hit
+  twice this run and held by hand both times.
+- Standing: **RFC0046** needs D1 closed or an override; **CR0319** is the release cut. Release
+  freeze holds.
 
 ## Lessons this run paid for
 
-L-0155 to L-0157 (RETRO-0060): the hook environment is part of the test environment
-(`git commit -a` leaks GIT_* into the suites' own git calls); an upsert told not to
-overwrite must REUSE the recorded value, never omit it; a surviving mutant in a test file
-is vacuity by construction, not a finding.
+L-0158 to L-0162 (RETRO-0061): a bug about environment pollution must never be reproduced next
+to a live repo (assert the parent index hash unchanged); a guard unreachable through the public
+path cannot be tested through it; scope a mutation run to product code with a scoped test
+command; a -k filter is part of the harness and can silently exclude the tests you rely on; an
+AC's freshness must cover whether its verifier still exists.
