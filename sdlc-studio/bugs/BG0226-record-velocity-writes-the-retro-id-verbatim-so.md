@@ -1,6 +1,6 @@
 # BG0226: record_velocity writes the retro id verbatim, so a dashed id mints a row the history reader cannot see
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Verification depth:** functional (reader and writer fixed and independently covered; reverting the writer alone initially still passed because the tolerant reader masked it - the incidental-pass trap - so an on-disk line assertion was added and the writer mutant then failed)
 > **Points:** 2

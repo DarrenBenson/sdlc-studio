@@ -22,7 +22,7 @@
 - **Then** it bootstraps the folders it needs and produces a dated `reviews/RV*` report with three
   legs (architecture, quality, defensive security) and file:line evidence per finding
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_generate.py -k bootstrap
-- **Verified:** yes (2026-07-10)
+- **Verified:** no (2026-07-20)
 
 ### AC2: Remediation-only security, verbatim and enforced
 
@@ -31,7 +31,7 @@
 - **Then** the policy appears verbatim, and the finding gives location plus rotation with the secret
   value absent from every produced artefact
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_generate.py -k secret_handling
-- **Verified:** yes (2026-07-10)
+- **Verified:** no (2026-07-20)
 
 ## Revision History
 

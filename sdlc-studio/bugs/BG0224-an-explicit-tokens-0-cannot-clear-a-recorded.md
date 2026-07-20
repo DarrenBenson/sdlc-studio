@@ -1,6 +1,6 @@
 # BG0224: an explicit --tokens 0 cannot clear a recorded velocity actual because zero is falsy in the preservation guard
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Verification depth:** functional (supplied-ness carried as its own sentinel rather than inferred from falsiness; both halves pinned - an absent --tokens preserves and an explicit --tokens 0 clears; neutering the writer branch and forcing the sentinel each killed their own test)
 > **Points:** 1

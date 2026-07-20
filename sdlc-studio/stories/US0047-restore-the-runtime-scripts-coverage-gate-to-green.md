@@ -66,7 +66,7 @@ local-versus-CI gap here so it does not recur.
 - **Then** runtime-scripts coverage is >= 80% and the gate exits zero
 - **Verify:** shell coverage run --source=.claude/skills/sdlc-studio/scripts -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests && coverage report --omit='*/tests/*' --fail-under=80
 - **Verification target:** functional
-- **Verified:** yes (2026-07-10)
+- **Verified:** no (2026-07-20)
 
 ### AC2: Local-versus-CI discrepancy identified and removed
 

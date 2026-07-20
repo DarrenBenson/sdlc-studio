@@ -31,7 +31,7 @@ Clears the residual bug backlog + the standing archival advisory + a v4-readines
 - **When** `archive.py` archives their terminal rows to a release sub-index
 - **Then** the live indexes drop under the threshold, the reconcile archival advisory clears, and the census (drift 0) is unaffected
 - **Verify:** shell test -z "$(python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect 2>&1 | grep -E 'advisory \((story|cr)\).*terminal row')" && python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect
-- **Verified:** yes (2026-07-10)
+- **Verified:** no (2026-07-20)
 
 ### AC3: validate accepts a v3 ULID id (no id-format false error)
 

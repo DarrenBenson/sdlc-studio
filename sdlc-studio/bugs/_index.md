@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 10 |
+| Open | 8 |
 | In Progress | 0 |
-| Fixed | 138 |
+| Fixed | 144 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **230** |
+| **Total** | **234** |
 
 ## All Bugs
 
@@ -183,20 +183,24 @@
 | [BG0214](BG0214-artifact-py-close-dry-run-still-promises-a.md) | artifact.py close --dry-run still promises a close the real run refuses | Fixed | Medium | 2026-07-19 | 2026-07-19 |
 | [BG0215](BG0215-a-timed-out-mutation-run-leaves-the-mutant.md) | A timed-out mutation run leaves the mutant on disk and the restore captures it | Fixed | High | 2026-07-20 | 2026-07-20 |
 | [BG0216](BG0216-a-lesson-gist-containing-bold-markup-makes-the.md) | A lesson gist containing bold markup makes the lessons-summary gate unsatisfiable | Fixed | High | 2026-07-20 | 2026-07-20 |
-| [BG0217](BG0217-validate-s-placeholder-warning-uses-a-severity-spelling.md) | validate's placeholder warning uses a severity spelling the counters do not count | Open | Medium | 2026-07-20 | 2026-07-20 |
+| [BG0217](BG0217-validate-s-placeholder-warning-uses-a-severity-spelling.md) | validate's placeholder warning uses a severity spelling the counters do not count | Fixed | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0218](BG0218-the-velocity-record-omits-delivered-points-when-the.md) | the velocity record omits delivered points when the units carry no plan-time forecast | Fixed | High | 2026-07-20 | 2026-07-20 |
 | [BG0219](BG0219-lessons-summary-ignores-root-and-writes-relative-to.md) | lessons summary ignores --root and writes relative to the current directory | Fixed | High | 2026-07-20 | 2026-07-20 |
-| [BG0220](BG0220-verify-ac-writes-its-report-and-history-relative.md) | verify_ac writes its report and history relative to the current directory | Open | Medium | 2026-07-20 | 2026-07-20 |
-| [BG0221](BG0221-refine-into-appends-a-duplicate-epic-level-ac.md) | refine --into appends a duplicate epic-level AC heading that fails the repo's own markdown gate | Open | Medium | 2026-07-20 | 2026-07-20 |
+| [BG0220](BG0220-verify-ac-writes-its-report-and-history-relative.md) | verify_ac writes its report and history relative to the current directory | Fixed | Medium | 2026-07-20 | 2026-07-20 |
+| [BG0221](BG0221-refine-into-appends-a-duplicate-epic-level-ac.md) | refine --into appends a duplicate epic-level AC heading that fails the repo's own markdown gate | Fixed | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0222](BG0222-the-pre-commit-suite-lanes-break-under-git.md) | the pre-commit suite lanes break under git commit -a because hook GIT_* env leaks into test git calls | Fixed | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0223](BG0223-file-and-close-refuses-a-budget-spent-or.md) | file-and-close refuses a budget-spent or stopped run with a false already-closed message | Fixed | Medium | 2026-07-20 | 2026-07-20 |
-| [BG0224](BG0224-an-explicit-tokens-0-cannot-clear-a-recorded.md) | an explicit --tokens 0 cannot clear a recorded velocity actual because zero is falsy in the preservation guard | Open | Low | 2026-07-20 | 2026-07-20 |
-| [BG0225](BG0225-the-close-owed-detector-misses-a-unit-written.md) | the close-owed detector misses a unit written in parentheses on the retro Batch line | Open | Low | 2026-07-20 | 2026-07-20 |
-| [BG0226](BG0226-record-velocity-writes-the-retro-id-verbatim-so.md) | record_velocity writes the retro id verbatim, so a dashed id mints a row the history reader cannot see | Open | Medium | 2026-07-20 | 2026-07-20 |
+| [BG0224](BG0224-an-explicit-tokens-0-cannot-clear-a-recorded.md) | an explicit --tokens 0 cannot clear a recorded velocity actual because zero is falsy in the preservation guard | Fixed | Low | 2026-07-20 | 2026-07-20 |
+| [BG0225](BG0225-the-close-owed-detector-misses-a-unit-written.md) | the close-owed detector misses a unit written in parentheses on the retro Batch line | Fixed | Low | 2026-07-20 | 2026-07-20 |
+| [BG0226](BG0226-record-velocity-writes-the-retro-id-verbatim-so.md) | record_velocity writes the retro id verbatim, so a dashed id mints a row the history reader cannot see | Fixed | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0227](BG0227-critic-read-rows-returns-the-markdown-header-as.md) | critic._read_rows returns the markdown header as a data row for any table whose first column is not Unit | Open | Low | 2026-07-20 | 2026-07-20 |
 | [BG0228](BG0228-repo-map-build-writes-its-map-relative-to.md) | repo_map build writes its map relative to the current directory and ignores --root, then prints a relative path that hides where it went | Open | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0229](BG0229-verify-ac-ts-check-reads-a-missing-spec.md) | verify_ac ts-check reads a missing spec as an empty one and reports a clean matrix, so a typo'd --spec passes as green | Open | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0230](BG0230-a-skill-test-s-git-call-can-reach.md) | a skill test's git call can reach the parent repository, so a polluted GIT_ environment lets the suite rewrite the real repo's index | Open | High | 2026-07-20 | 2026-07-20 |
+| [BG0231](BG0231-a-done-story-stays-green-after-the-test.md) | a Done story stays green after the test its AC names is deleted: freshness tracks the AC text, not the existence of its verifier | Open | High | 2026-07-20 | 2026-07-20 |
+| [BG0232](BG0232-ac-fingerprint-has-no-test-of-its-own.md) | ac_fingerprint has no test of its own: a no-op mutant of the freshness spine survives | Open | High | 2026-07-20 | 2026-07-20 |
+| [BG0233](BG0233-refine-s-heading-truncation-and-epic-t-shirt.md) | refine's heading truncation and epic T-shirt derivation are both unpinned: two mutants survive | Open | Medium | 2026-07-20 | 2026-07-20 |
+| [BG0234](BG0234-a-story-ac-asserting-a-repo-wide-invariant.md) | a story AC asserting a repo-wide invariant retroactively un-Dones itself as the repo grows | Open | Medium | 2026-07-20 | 2026-07-20 |
 
 ## Archived Releases
 

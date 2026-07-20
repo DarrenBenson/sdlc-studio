@@ -65,7 +65,7 @@ This story implements the writer half of CR0125. The read path (`reconcile.parse
 - **Then** dry-run previews counts per status plus the target sub-index path and writes nothing; an unclassifiable row aborts with a non-zero exit and no partial write (fail loud, LL0008)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_index_archive.py::WriterTests::test_index_archive_dryrun_and_failloud
 - **Verification target:** functional
-- **Verified:** yes (2026-06-27)
+- **Verified:** no (2026-07-20)
 
 ### AC4: reconcile stays clean and the summary still equals the full census
 

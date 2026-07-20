@@ -1,6 +1,6 @@
 # BG0217: validate's placeholder warning uses a severity spelling the counters do not count
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Verification depth:** functional (RED-first; closed severity vocabulary so a third spelling cannot be added; summary count asserted equal to the lines printed end-to-end through main(); defect re-introduced under python3 -B with bytecode purged and all three tests failed)
 > **Points:** 2

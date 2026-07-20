@@ -23,6 +23,7 @@
 - **When** the brief is generated
 - **Then** it contains the diff scope, the risk surface and the return contract - everything the reviewer needs to do the work
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_neutral_brief_carries_diff_and_risk_surface
+- **Verified:** yes (2026-07-20)
 
 ### AC2: The brief carries no prior verdict prose, round number, or expected conclusion
 
@@ -30,6 +31,7 @@
 - **When** the brief is generated
 - **Then** it contains no verdict word from the prior round, no round number, and no assertion about what the reviewer is expected to find
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_brief_omits_verdict_round_and_expected_conclusion
+- **Verified:** yes (2026-07-20)
 
 ### AC3: The probes to re-execute still travel, stripped of their framing
 
@@ -37,6 +39,7 @@
 - **When** the re-review brief is generated
 - **Then** those probes are carried as a neutral list of checks to execute, without the verdict prose, severity labels or conclusions that surrounded them - the re-execution demand survives, the priming does not
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_probe_list_travels_without_its_framing
+- **Verified:** yes (2026-07-20)
 
 ### AC4: A prior verdict whose probes cannot be extracted is refused, not silently dropped
 
@@ -44,6 +47,7 @@
 - **When** the re-review brief is generated
 - **Then** it is refused loudly, naming the cause - a re-review that silently drops the re-execution demand would approve against a brief weaker than the one it replaced
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_unparseable_probe_list_is_refused
+- **Verified:** yes (2026-07-20)
 
 ### AC5: The neutrality check is mechanical, not a reviewer's impression
 
@@ -51,6 +55,7 @@
 - **When** the neutrality assertion runs
 - **Then** it mechanically checks the rendered text for the banned classes and fails on a violation, so a future edit that reintroduces priming is caught by the suite
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_neutrality_check_is_mechanical
+- **Verified:** yes (2026-07-20)
 
 ## Notes
 

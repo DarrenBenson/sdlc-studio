@@ -1,6 +1,6 @@
 # BG0225: the close-owed detector misses a unit written in parentheses on the retro Batch line
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Verification depth:** functional (6 tests covering parenthesised, bare, punctuation-adjacent, five-digit and lookalike ids; 4 separate defects re-introduced and each killed a named test; asserted on the rendered report rather than the helper, since the correct effect here is a unit ceasing to be falsely reported)
 > **Points:** 1

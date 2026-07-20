@@ -31,7 +31,7 @@
 - **Then** they are decomposed with no behaviour change, the raw-string escape is fixed, and
   `.local` logs roll with an opt-in SDLC_DEBUG channel
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
-- **Verified:** yes (2026-07-10)
+- **Verified:** no (2026-07-20)
 
 ## Revision History
 

@@ -57,7 +57,7 @@
 - **When** the run completes
 - **Then** the mutation records verdict error and the summary separates it from killed
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_runner_error_not_a_kill
-- **Verified:** yes (2026-07-04)
+- **Verified:** no (2026-07-20)
 
 ### AC5: unviable mutants are never counted killed
 

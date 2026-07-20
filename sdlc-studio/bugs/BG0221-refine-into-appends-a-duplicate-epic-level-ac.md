@@ -1,6 +1,6 @@
 # BG0221: refine --into appends a duplicate epic-level AC heading that fails the repo's own markdown gate
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Verification depth:** functional (pinned against the real markdownlint MD024 rule with the repo's own config, plus a local implementation of the rule so the pin holds without Node; both shown non-vacuous; merge dispatch deleted to re-introduce the defect and 5 tests failed)
 > **Points:** 2

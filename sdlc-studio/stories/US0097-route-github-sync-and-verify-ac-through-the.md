@@ -38,8 +38,8 @@ Delivers CR0181. No new behaviour beyond correct discovery + a consistent `--roo
 - **Given** `verify_ac.py run --root <dir>`
 - **When** invoked
 - **Then** it is accepted (alias of `--repo-root`), so the flag grammar matches every sibling script
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::SharedDiscoveryTests::test_root_is_alias_of_repo_root
-- **Verified:** yes (2026-07-09)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py -k "test_root_flag_always_binds_the_standard_dest or test_every_root_dealing_script_accepts_root_before_the_subcommand"
+- **Verified:** yes (2026-07-20)
 
 ### AC4: No duplicate type table; discovery flows through the shared layer
 
@@ -55,3 +55,4 @@ Delivers CR0181. No new behaviour beyond correct discovery + a consistent `--roo
 | --- | --- | --- |
 | 2026-07-09 | claude | Created via `new` (deterministic) |
 | 2026-07-09 | claude | Groomed from CR0181 |
+| 2026-07-20 | sdlc-studio | AC Verify repointed to the coverage that replaced it. The named test was added by this story's own delivery commit (20ae964) and DELETED by 95aaacd, which superseded the per-script `--root` alias with a family-wide CLI grammar; the AC text never changed, so freshness saw nothing stale and the entry read `Verified: yes` against a test that had not existed for weeks. The intent is now covered more strongly, across every root-dealing script rather than this one. Found by a full verify_ac sweep at the RUN-01KY03GS close; the underlying defect is BG0231 |

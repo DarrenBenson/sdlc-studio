@@ -27,7 +27,7 @@ CR0203's decision (ledgered at plan time): wire a bounded run in, do not remove 
 - **When** `disclosure.py --root .` runs
 - **Then** it reports 0 advisory findings (orphan pages catalogued, scripts executable, module-only libraries expose --help)
 - **Verify:** shell test "$(python3 .claude/skills/sdlc-studio/scripts/disclosure.py --root . 2>&1 | grep -c '\[warn\]')" -eq 0
-- **Verified:** yes (2026-07-10)
+- **Verified:** no (2026-07-20)
 
 ### AC2: a real bounded mutation run exists and the lane reads it
 

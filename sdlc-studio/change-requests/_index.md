@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 26 |
+| Proposed | 27 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 333 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **378** |
+| **Total** | **379** |
 
 ## All Changes
 
@@ -200,6 +200,7 @@
 | [CR-0376](CR0376-a-docs-only-sprint-s-close-should-record.md) | a docs-only sprint's close should record the mutation step as an explicit skip, not an error to work around | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0377](CR0377-mutation-run-should-derive-the-minimal-covering-test.md) | mutation run should derive the minimal covering test command from its own reference scan | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0378](CR0378-a-sprint-must-not-stop-while-any-unblocked.md) | a sprint must not stop while any unblocked unit remains: deferring one unit's decision may never park the batch | Proposed | High | Improvement | 2026-07-20 | -- |
+| [CR-0379](CR0379-log-mutation-yield-and-cost-as-a-series.md) | log mutation yield and cost as a series, so the gate can be judged on evidence rather than belief | Proposed | High | Improvement | 2026-07-20 | -- |
 
 ## Archived Releases
 

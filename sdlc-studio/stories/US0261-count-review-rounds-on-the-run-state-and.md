@@ -23,6 +23,7 @@
 - **When** a review verdict is recorded for the run
 - **Then** the run state carries a review-round count of 1, and a second recorded verdict makes it 2
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_recording_a_verdict_increments_the_run_review_round
+- **Verified:** yes (2026-07-20)
 
 ### AC2: Past the ceiling, a further round is refused rather than started
 
@@ -30,6 +31,7 @@
 - **When** another review round is requested
 - **Then** it is refused, naming the count, the ceiling and the override, and no brief is generated
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_round_past_the_ceiling_is_refused
+- **Verified:** yes (2026-07-20)
 
 ### AC3: The ceiling is configurable with a shipped default
 
@@ -37,6 +39,7 @@
 - **When** the ceiling is resolved
 - **Then** it comes from `review.max_rounds` in config with a shipped default, and an explicit project setting overrides it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_ceiling_resolves_from_config_with_default
+- **Verified:** yes (2026-07-20)
 
 ### AC4: The override is explicit, recorded, and never implicit
 
@@ -44,6 +47,7 @@
 - **When** the operator confirms the extra round explicitly
 - **Then** the round proceeds and the run state records that the ceiling was overridden and at which round, so the retro can read it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_ceiling_override_is_explicit_and_recorded
+- **Verified:** yes (2026-07-20)
 
 ### AC5: A run that never opened does not silently count rounds into nothing
 
@@ -51,6 +55,7 @@
 - **When** a verdict is recorded
 - **Then** the verdict is still recorded and the absence of a run is reported, never a phantom count written against a null run id
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_verdict_without_an_open_run_reports_rather_than_counts
+- **Verified:** yes (2026-07-20)
 
 ## Notes
 

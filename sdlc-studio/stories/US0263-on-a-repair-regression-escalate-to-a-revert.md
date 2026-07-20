@@ -23,6 +23,7 @@
 - **When** the loop reaches its next-step decision
 - **Then** it presents revert, redesign and accept-and-file as named options with their consequences, and does not offer another patch round as the default
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_repair_regression_presents_the_three_options
+- **Verified:** yes (2026-07-20)
 
 ### AC2: The choice is recorded, not just acted on
 
@@ -30,6 +31,7 @@
 - **When** the choice is taken
 - **Then** it is recorded against the run with the regression that triggered it, so the retro can read why the loop stopped
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_escalation_choice_is_recorded_against_the_run
+- **Verified:** yes (2026-07-20)
 
 ### AC3: Accept-and-file mints a real linked artefact
 
@@ -37,6 +39,7 @@
 - **When** the choice is applied
 - **Then** the finding is filed through the existing finding filer as a bug or CR linked to the run, and the id is reported - never a prose note claiming it was filed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_accept_and_file_mints_a_linked_artefact
+- **Verified:** yes (2026-07-20)
 
 ### AC4: Revert names exactly what it would revert before doing it
 
@@ -44,6 +47,7 @@
 - **When** the option is presented
 - **Then** it names the round whose repair would be reverted and the files involved, so the choice is not blind
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_revert_option_names_its_scope
+- **Verified:** yes (2026-07-20)
 
 ### AC5: The autonomous path records and blocks, never picks for you
 
@@ -51,6 +55,7 @@
 - **When** the escalation is reached
 - **Then** the decision is recorded as pending and the run blocks on it, matching the deferred-decision contract - it never selects an option on the operator's behalf
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_autonomous_regression_blocks_rather_than_chooses
+- **Verified:** yes (2026-07-20)
 
 ## Notes
 

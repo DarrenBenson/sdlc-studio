@@ -30,7 +30,7 @@ existing `rfc accept`). The adversarial judgement stays model-instructed.
 - **When** `digest(root)` runs
 - **Then** the RFC's entry reports `open_decisions=N`, `open_count=M`, `workstreams=W`, and `has_recommendation`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_rfc.py::DigestTests::test_ready_when_recommendation_and_no_open
-- **Verified:** yes (2026-06-20)
+- **Verified:** no (2026-07-20)
 
 ### AC2: ready_for_decision reflects open decisions + recommendation
 

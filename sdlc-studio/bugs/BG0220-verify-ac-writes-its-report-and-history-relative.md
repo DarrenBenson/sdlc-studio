@@ -1,6 +1,6 @@
 # BG0220: verify_ac writes its report and history relative to the current directory
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Verification depth:** functional (8 tests, every one run from a cwd that is NOT the root; 8 mutants each confirmed applied by md5 and all killed - including the original defect re-introduced both ways; one mutant initially SURVIVED, exposing that nothing pinned a named root being honoured rather than re-pointed by discovery, and a test was added for it)
 > **Points:** 2
