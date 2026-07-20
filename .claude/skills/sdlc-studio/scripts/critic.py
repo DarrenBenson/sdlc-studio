@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import sdlc_md  # noqa: E402
+from lib import run_state, sdlc_md  # noqa: E402
 
 APPROVE, REJECT = "APPROVE", "REJECT"
 # Visible grandfather marker for units closed before the independence gate existed
@@ -182,15 +182,22 @@ def _append_row(path: Path, header: str, cells: tuple[str, ...]) -> Path:
 
 
 def _read_rows(path: Path, cols: tuple[str, ...]) -> list[dict]:
+    """The table's DATA rows. The markdown header is identified by matching the whole cell
+    tuple against the declared column names, not by a first-column literal: the previous
+    check knew only `Unit`, so a table led by any other column (the sprint-review table's
+    `Base`) returned its own header as data. Matching every column generalises to each table
+    this serves and cannot lapse when the next one is added."""
     if not path.exists():
         return []
+    header = tuple(c.strip().lower() for c in cols)
     out: list[dict] = []
     for line in path.read_text(encoding="utf-8").splitlines():
         cells = sdlc_md.table_cells(line)  # escaped-pipe-aware
-        if not cells or cells[0] in ("Unit",):
+        if not cells or len(cells) != len(cols):
             continue
-        if len(cells) == len(cols):
-            out.append(dict(zip(cols, cells)))
+        if tuple(c.strip().lower() for c in cells) == header:
+            continue
+        out.append(dict(zip(cols, cells)))
     return out
 
 
@@ -329,7 +336,9 @@ def sprint_review_path(repo_root: Path | str) -> Path:
 
 
 def record_sprint_review(repo_root: Path | str, units: list[str], reviewer: str, author: str,
-                         verdict: str, findings: str, base: str = "") -> Path:
+                         verdict: str, findings: str, base: str = "",
+                         tokens: int | None = run_state.UNMEASURED,
+                         repaired: list[dict] | None = None) -> Path:
     """Record one sprint-level adversarial full-diff review over `units`.
 
     Independence is PROVEN, not assumed: reviewer and author are both required and must differ.
@@ -350,13 +359,123 @@ def record_sprint_review(repo_root: Path | str, units: list[str], reviewer: str,
     ids = [sdlc_md.norm_id(u) for u in units if sdlc_md.norm_id(u)]
     if not ids:
         raise ValueError("a sprint review must name the units it covers")
-    return _append_row(sprint_review_path(repo_root), _SPRINT_HEADER,
-                       (_clean(base) or "-", _clean(reviewer), _clean(author), v,
-                        sdlc_md.now_date(), _clean(" ".join(ids)), _clean(findings)))
+    written = _append_row(sprint_review_path(repo_root), _SPRINT_HEADER,
+                          (_clean(base) or "-", _clean(reviewer), _clean(author), v,
+                           sdlc_md.now_date(), _clean(" ".join(ids)), _clean(findings)))
+    # The review IS the round. Recorded after the row is written, so a run-state failure can
+    # never cost us the evidence; and skipped entirely when no run is open, which leaves the
+    # review recorded and nothing counted against a run that has no identity to count against.
+    run_state.record_review_round(repo_root, verdict=v, units=ids, reviewer=_clean(reviewer),
+                                  tokens=tokens, repaired=repaired)
+    return written
 
 
 def sprint_reviews(repo_root: Path | str) -> list[dict]:
     return _read_rows(sprint_review_path(repo_root), _SPRINT_COLS)
+
+
+# The shipped ceiling on close-review rounds. Three is the point past which this project's own
+# history stops paying: RUN-01KXVYGR ran five, and rounds 2, 3 and 4 each had a MAJOR created
+# by the previous round's repair. It is a stop-and-ask, never a hard refusal - the operator can
+# buy another round, but must do it deliberately and on the record.
+DEFAULT_REVIEW_CEILING = 3
+
+
+def review_ceiling(repo_root: Path | str) -> int:
+    """The configured round ceiling (`review.max_rounds`), or the shipped default.
+
+    Read through `project_override`, which degrades fully: a missing config, absent PyYAML or
+    malformed YAML all fall back to the default rather than breaking a close. A non-integer or
+    non-positive setting is ignored the same way - a ceiling of 0 would refuse the FIRST round
+    and make the close unrunnable."""
+    raw = sdlc_md.project_override(repo_root, "review.max_rounds", DEFAULT_REVIEW_CEILING)
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return DEFAULT_REVIEW_CEILING
+    return value if value > 0 else DEFAULT_REVIEW_CEILING
+
+
+# How a round-N finding relates to round N-1's repair. The distinction is the whole point:
+# a FRESH finding says the review is still earning its cost, a REPAIR_REGRESSION says the
+# repair loop is manufacturing the defects the review is being paid to catch, and those two
+# call for opposite responses. UNCLASSIFIED is neither, and is never quietly folded into
+# FRESH - a regression hidden inside the fresh count is the failure this exists to prevent.
+FRESH = "fresh"
+REPAIR_REGRESSION = "repair-regression"
+UNCLASSIFIED = "unclassified"
+
+
+def _spans(entry: dict) -> list[tuple[int, int]]:
+    """The (start, end) line spans of one repaired-file entry, malformed pairs dropped."""
+    out = []
+    for pair in entry.get("lines") or []:
+        try:
+            start, end = int(pair[0]), int(pair[1])
+        except (TypeError, ValueError, IndexError):
+            continue
+        out.append((start, end) if start <= end else (end, start))
+    return out
+
+
+def classify_finding(repo_root: Path | str, file: str | None = None,
+                     line: int | None = None) -> dict:
+    """Classify a finding against the PREVIOUS round's repair surface.
+
+    Compared against the latest recorded round only. An earlier round's surface has already
+    been re-reviewed by the round after it, so a finding there now is a fresh miss rather
+    than a defect the last repair created.
+
+    Matching is file AND line, not file alone: single files here run to thousands of lines,
+    and a file-level match would classify nearly every finding as a regression, which would
+    make the signal useless in exactly the case it exists for."""
+    rounds = run_state.review_rounds(repo_root)
+    if not rounds:
+        return {"class": FRESH, "round": None,
+                "reason": "no prior round: there is no repair surface to regress against"}
+    if not file or line is None:
+        return {"class": UNCLASSIFIED, "round": None,
+                "reason": "the finding has no parseable file and line, so it cannot be placed "
+                          "inside or outside the previous round's repair surface"}
+    try:
+        line = int(line)
+    except (TypeError, ValueError):
+        return {"class": UNCLASSIFIED, "round": None,
+                "reason": f"the finding's line {line!r} is not a number"}
+    last = rounds[-1]
+    target = Path(str(file)).name
+    for entry in last.get("repaired") or []:
+        if not isinstance(entry, dict) or Path(str(entry.get("file", ""))).name != target:
+            continue
+        for start, end in _spans(entry):
+            if start <= line <= end:
+                return {"class": REPAIR_REGRESSION, "round": last.get("round"),
+                        "reason": f"{target}:{line} lies in the surface round "
+                                  f"{last.get('round')}'s repair touched ({start}-{end})"}
+    return {"class": FRESH, "round": last.get("round"),
+            "reason": f"{target}:{line} lies outside round {last.get('round')}'s repair surface"}
+
+
+def review_round_guard(repo_root: Path | str, ceiling: int | None = None,
+                       override: bool = False) -> int:
+    """Refuse a further close-review round once `ceiling` rounds are recorded, unless the
+    operator overrides explicitly. Returns the rounds recorded so far.
+
+    The refusal names the count, the ceiling and the override, because a gate whose remedy is
+    not in its message sends the reader round a loop with no exit. An override is RECORDED, so
+    the retro can read that the ceiling was passed and at which round."""
+    limit = review_ceiling(repo_root) if ceiling is None else ceiling
+    count = run_state.review_round_count(repo_root)
+    if count < limit:
+        return count
+    if not override:
+        raise ValueError(
+            f"the close review has recorded {count} round(s), reaching the ceiling of {limit} "
+            f"(review.max_rounds). This project's rounds past three have historically found "
+            f"defects its own repairs created, not fresh ones - check the repair-regression "
+            f"report before buying another. To proceed deliberately, re-run with the override.")
+    run_state.record_ceiling_override(repo_root, at_round=count, ceiling=limit)
+    return count
 
 
 def _covered_ids(row: dict) -> set[str]:

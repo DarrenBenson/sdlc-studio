@@ -72,7 +72,20 @@ CLOSED = tuple(o for o in OUTCOMES if o != RUNNING)
 # The fields this module owns. Anything else a caller writes is preserved verbatim - see
 # the module docstring: this list documents, it does not gate.
 FIELDS = ("schema", "run_id", "started_at", "ended_at", "outcome", "goal", "batch",
-          "plan", "handoff")
+          "plan", "handoff", "review_rounds", "review_ceiling_overrides")
+
+# The close review's rounds, appended one per sprint-level review. Seeded in `_blank()` so a
+# new run carries them and `FIELDS` stays true of the record it documents; readers still go
+# through `.get(...) or []` because a run opened BEFORE these existed has no such key on disk
+# and must not raise.
+REVIEW_ROUNDS = "review_rounds"
+CEILING_OVERRIDES = "review_ceiling_overrides"
+
+# The sentinel for "this round's token cost was not measured", which is NOT the same fact as
+# a measured zero. A falsy test cannot tell them apart, and conflating them has shipped a
+# defect on this codebase before: an unmeasured round summed as 0 understates the
+# spend, and the operator is then shown a total that reads cheaper than the run was.
+UNMEASURED = None
 
 
 class RunStateError(RuntimeError):
@@ -223,7 +236,8 @@ def _blank() -> dict:
     None: a close that invented a start time would put a false fact in the one file the
     next reader trusts. An unopened run says so."""
     return {"schema": SCHEMA, "run_id": None, "started_at": None, "ended_at": None,
-            "outcome": RUNNING, "goal": None, "batch": [], "plan": None, "handoff": None}
+            "outcome": RUNNING, "goal": None, "batch": [], "plan": None, "handoff": None,
+            REVIEW_ROUNDS: [], CEILING_OVERRIDES: []}
 
 
 def _mutate(repo_root: Path | str, fn) -> dict:
@@ -311,6 +325,76 @@ def update(repo_root: Path | str, **fields) -> dict:
         return state
 
     return _mutate(repo_root, apply)
+
+
+def review_rounds(repo_root: Path | str) -> list[dict]:
+    """Every recorded close-review round, in order. A malformed entry is skipped rather than
+    raising: the rounds are a cost and convergence signal, and one bad record must not make
+    the run unreadable to the close that needs the rest."""
+    rounds = read(repo_root).get(REVIEW_ROUNDS) or []
+    if not isinstance(rounds, list):
+        return []
+    return [r for r in rounds if isinstance(r, dict)]
+
+
+def review_round_count(repo_root: Path | str) -> int:
+    """How many close-review rounds this run has recorded. Zero when no run is open - a round
+    counted against a run with no identity could not be joined to anything later, so it is
+    not counted at all (the review itself is still recorded by the caller)."""
+    if not read(repo_root).get("run_id"):
+        return 0
+    return len(review_rounds(repo_root))
+
+
+def record_review_round(repo_root: Path | str, verdict: str, units: list[str] | None = None,
+                        reviewer: str = "", tokens: int | None = UNMEASURED,
+                        repaired: list[dict] | None = None) -> dict | None:
+    """Append one close-review round to the run. Returns the round recorded, or None when no
+    run is open.
+
+    `tokens` distinguishes an unmeasured round (None) from a measured zero, and both are
+    preserved as given - see UNMEASURED. `repaired` is the file-and-line surface the round's
+    repair touched, which the NEXT round compares its findings against."""
+    if not read(repo_root).get("run_id"):
+        return None
+    entry = {
+        "round": len(review_rounds(repo_root)) + 1,
+        "verdict": (verdict or "").upper(),
+        "reviewer": reviewer,
+        "units": [sdlc_md.norm_id(u) for u in (units or [])],
+        "recorded_at": sdlc_md.now_iso8601(),
+        "tokens": tokens,
+        "repaired": repaired or [],
+    }
+
+    def apply(state: dict) -> dict:
+        state = state or _blank()
+        existing = state.get(REVIEW_ROUNDS)
+        state[REVIEW_ROUNDS] = ([r for r in existing if isinstance(r, dict)]
+                                if isinstance(existing, list) else []) + [entry]
+        return state
+
+    _mutate(repo_root, apply)
+    return entry
+
+
+def record_ceiling_override(repo_root: Path | str, at_round: int, ceiling: int) -> dict | None:
+    """Record that the operator explicitly bought a round past the ceiling. Returns the
+    override, or None with no run open. The record is what makes the override auditable: a
+    ceiling silently exceeded is the same as no ceiling."""
+    if not read(repo_root).get("run_id"):
+        return None
+    entry = {"at_round": at_round, "ceiling": ceiling}
+
+    def apply(state: dict) -> dict:
+        state = state or _blank()
+        existing = state.get(CEILING_OVERRIDES)
+        state[CEILING_OVERRIDES] = ([o for o in existing if isinstance(o, dict)]
+                                    if isinstance(existing, list) else []) + [entry]
+        return state
+
+    _mutate(repo_root, apply)
+    return entry
 
 
 def _check_outcome(outcome: str) -> None:

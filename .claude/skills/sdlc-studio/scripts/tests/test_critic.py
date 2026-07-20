@@ -807,6 +807,180 @@ class SignoffBriefTests(unittest.TestCase):
             self.assertNotIn("no adversarial evidence recorded", text.lower())
 
 
+def _run_state():
+    """The run_state module, loaded the same way critic.py reaches it."""
+    import importlib
+    sys.path.insert(0, str(SCRIPT.parent))
+    try:
+        return importlib.import_module("lib.run_state")
+    finally:
+        sys.path.pop(0)
+
+
+class ReviewRoundCountTests(unittest.TestCase):
+    """US0261 - the close review counts its rounds and stops at a ceiling."""
+
+    def _open(self, root):
+        rs = _run_state()
+        rs.open_run(root, batch=["US0001"], goal="done")
+        return rs
+
+    def test_recording_a_verdict_increments_the_run_review_round(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod, rs = _load(), self._open(root)
+            mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
+                                     verdict="reject", findings="something")
+            self.assertEqual(rs.review_round_count(root), 1)
+            mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
+                                     verdict="approve", findings="repaired")
+            self.assertEqual(rs.review_round_count(root), 2)
+
+    def test_round_past_the_ceiling_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod, rs = _load(), self._open(root)
+            for _ in range(3):
+                mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
+                                         verdict="reject", findings="f")
+            with self.assertRaises(ValueError) as ctx:
+                mod.review_round_guard(root, ceiling=3)
+            msg = str(ctx.exception)
+            self.assertIn("3", msg)            # the count and the ceiling are both named
+            self.assertIn("override", msg.lower())
+
+    def test_ceiling_resolves_from_config_with_default(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            self.assertEqual(mod.review_ceiling(root), mod.DEFAULT_REVIEW_CEILING)
+            cfg = root / "sdlc-studio" / ".config.yaml"
+            cfg.parent.mkdir(parents=True, exist_ok=True)
+            cfg.write_text("review:\n  max_rounds: 7\n", encoding="utf-8")
+            try:
+                import yaml  # noqa: F401
+            except ImportError:
+                self.skipTest("PyYAML absent - the override path cannot be exercised")
+            self.assertEqual(mod.review_ceiling(root), 7)
+
+    def test_ceiling_override_is_explicit_and_recorded(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod, rs = _load(), self._open(root)
+            for _ in range(3):
+                mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
+                                         verdict="reject", findings="f")
+            mod.review_round_guard(root, ceiling=3, override=True)
+            state = rs.read(root)
+            self.assertEqual(state["review_ceiling_overrides"], [{"at_round": 3, "ceiling": 3}])
+
+    def test_verdict_without_an_open_run_reports_rather_than_counts(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod, rs = _load(), _run_state()
+            mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
+                                     verdict="approve", findings="f")
+            # the review itself is still recorded - the evidence is never dropped
+            self.assertEqual(len(mod.sprint_reviews(root)), 1)
+            # but nothing is counted against a run that does not exist
+            self.assertIsNone(rs.read(root).get("run_id"))
+            self.assertEqual(rs.review_round_count(root), 0)
+
+    def test_rounds_without_a_run_id_are_not_counted(self) -> None:
+        """The guard's own mechanism, reached directly.
+
+        `record_review_round` already refuses with no run open, so through the public path
+        this state never arises and a test driving it proves nothing. A hand-edited or
+        partially-written run-state file DOES produce it, and rounds that belong to no run
+        must not be counted as the current run's - they cannot be attributed to it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rs = _run_state()
+            rs.write(root, {"schema": 1, "run_id": None, "outcome": "running",
+                            "review_rounds": [{"round": 1, "verdict": "REJECT"},
+                                              {"round": 2, "verdict": "APPROVE"}]})
+            self.assertEqual(len(rs.review_rounds(root)), 2)   # they are readable
+            self.assertEqual(rs.review_round_count(root), 0)   # but attributed to no run
+
+
+class RepairRegressionTests(unittest.TestCase):
+    """US0262 - a finding in code the previous round's repair touched is named as such."""
+
+    def _run_with_round(self, root, repaired):
+        rs = _run_state()
+        rs.open_run(root, batch=["US0001"], goal="done")
+        mod = _load()
+        mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
+                                 verdict="reject", findings="r1", repaired=repaired)
+        return mod
+
+    def test_round_records_its_repaired_file_set(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._run_with_round(root, [{"file": "critic.py", "lines": [[10, 20]]}])
+            rounds = _run_state().review_rounds(root)
+            self.assertEqual(rounds[0]["repaired"], [{"file": "critic.py", "lines": [[10, 20]]}])
+
+    def test_finding_in_prior_repair_surface_is_a_repair_regression(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._run_with_round(root, [{"file": "critic.py", "lines": [[10, 20]]}])
+            got = mod.classify_finding(root, file="critic.py", line=15)
+            self.assertEqual(got["class"], mod.REPAIR_REGRESSION)
+            self.assertEqual(got["round"], 1)
+
+    def test_finding_outside_prior_repair_surface_is_fresh(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._run_with_round(root, [{"file": "critic.py", "lines": [[10, 20]]}])
+            self.assertEqual(mod.classify_finding(root, file="sprint.py", line=15)["class"],
+                             mod.FRESH)
+
+    def test_same_file_outside_repaired_lines_is_fresh(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._run_with_round(root, [{"file": "critic.py", "lines": [[10, 20]]}])
+            # same file, well outside the repaired span - a file-level match would call this a
+            # regression and, on files of this size, would call almost everything one
+            self.assertEqual(mod.classify_finding(root, file="critic.py", line=800)["class"],
+                             mod.FRESH)
+
+    def test_first_round_findings_are_always_fresh(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rs = _run_state()
+            rs.open_run(root, batch=["US0001"], goal="done")
+            mod = _load()
+            # no round recorded yet: there is no prior repair surface to regress against
+            self.assertEqual(mod.classify_finding(root, file="critic.py", line=15)["class"],
+                             mod.FRESH)
+
+    def test_unlocatable_finding_is_unclassified_not_fresh(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._run_with_round(root, [{"file": "critic.py", "lines": [[10, 20]]}])
+            for bad in ({"file": None, "line": 15}, {"file": "critic.py", "line": None}):
+                got = mod.classify_finding(root, **bad)
+                self.assertEqual(got["class"], mod.UNCLASSIFIED, bad)
+                self.assertTrue(got["reason"].strip(), "an unclassified finding must say why")
+
+    def test_only_the_latest_round_is_the_comparison_surface(self) -> None:
+        """Round 3 regresses against round 2's repair, not round 1's.
+
+        Round 1's surface has already been re-reviewed by round 2; a finding there now is a
+        fresh miss by round 2, not a regression round 2's repair created."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._run_with_round(root, [{"file": "old.py", "lines": [[1, 5]]}])
+            mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
+                                     verdict="reject", findings="r2",
+                                     repaired=[{"file": "new.py", "lines": [[1, 5]]}])
+            self.assertEqual(mod.classify_finding(root, file="new.py", line=3)["class"],
+                             mod.REPAIR_REGRESSION)
+            self.assertEqual(mod.classify_finding(root, file="old.py", line=3)["class"],
+                             mod.FRESH)
+
+
 if __name__ == "__main__":
     unittest.main()
 
