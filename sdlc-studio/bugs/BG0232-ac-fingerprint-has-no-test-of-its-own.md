@@ -1,7 +1,8 @@
 # BG0232: ac_fingerprint has no test of its own: a no-op mutant of the freshness spine survives
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
+> **Verification depth:** functional (characterisation - ac_fingerprint was already correct, the gap was that nothing tested it. 15 tests pin it from both sides: stable across a Status change, a Revision History row and the Verified stamp; changes on a re-pointed verifier, a retitled AC, an added or removed AC. 4 mutants killed - constant hash (10 fails), title dropped (2), verifier dropped (3), ac_id-only (5))
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py
 > **Created:** 2026-07-20

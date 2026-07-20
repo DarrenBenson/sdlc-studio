@@ -1759,5 +1759,72 @@ class RootRelativeWriteTests(unittest.TestCase):
             self.assertEqual(verify_ac.discover_root(Path(bare)), Path(bare).resolve())
 
 
+class AcFingerprintTests(unittest.TestCase):
+    """BG0232 - the freshness spine pinned by its own test, from both sides.
+
+    A fingerprint that never changes is as useless as one that always does; only the pair -
+    differs on a material change, stable across an immaterial one - distinguishes a real hash
+    from a constant or a passthrough. Every mutation here purges bytecode implicitly (the
+    functions are pure), so a same-length edit cannot hide behind a cached .pyc.
+    """
+
+    STORY = (
+        "# US0001: x\n\n> **Status:** Ready\n\n"
+        "### AC1: the thing works\n"
+        "- **Given** a\n- **When** b\n- **Then** c\n"
+        "- **Verify:** pytest tests/test_x.py -k test_a\n"
+        "- **Verified:** yes (2026-01-01)\n"
+    )
+
+    def test_fingerprint_is_stable_across_a_status_change(self) -> None:
+        before = verify_ac.ac_fingerprint(self.STORY)
+        after = verify_ac.ac_fingerprint(self.STORY.replace("Status:** Ready", "Status:** Done"))
+        self.assertEqual(before, after, "a Status edit changed nothing the verifier runs")
+
+    def test_fingerprint_is_stable_across_a_revision_history_row(self) -> None:
+        before = verify_ac.ac_fingerprint(self.STORY)
+        after = verify_ac.ac_fingerprint(
+            self.STORY + "\n## Revision History\n\n| Date | Author | Change |\n"
+            "| --- | --- | --- |\n| 2026-01-02 | x | groomed |\n")
+        self.assertEqual(before, after, "a Revision History row is not an AC change")
+
+    def test_fingerprint_is_stable_across_the_verified_stamp(self) -> None:
+        before = verify_ac.ac_fingerprint(self.STORY)
+        after = verify_ac.ac_fingerprint(
+            self.STORY.replace("Verified:** yes (2026-01-01)", "Verified:** no (2026-05-05)"))
+        self.assertEqual(before, after, "the machine-maintained stamp must not feed back in")
+
+    def test_fingerprint_changes_when_a_verify_command_changes(self) -> None:
+        before = verify_ac.ac_fingerprint(self.STORY)
+        after = verify_ac.ac_fingerprint(
+            self.STORY.replace("test_x.py -k test_a", "test_x.py -k test_b"))
+        self.assertNotEqual(before, after, "a re-pointed verifier must go stale")
+
+    def test_fingerprint_changes_when_an_ac_title_changes(self) -> None:
+        before = verify_ac.ac_fingerprint(self.STORY)
+        after = verify_ac.ac_fingerprint(
+            self.STORY.replace("AC1: the thing works", "AC1: the thing works differently"))
+        self.assertNotEqual(before, after, "a retitled AC is a different claim")
+
+    def test_fingerprint_changes_when_an_ac_is_added(self) -> None:
+        before = verify_ac.ac_fingerprint(self.STORY)
+        after = verify_ac.ac_fingerprint(
+            self.STORY + "\n### AC2: another\n- **Verify:** file README.md\n")
+        self.assertNotEqual(before, after, "an added AC changes what must pass")
+
+    def test_fingerprint_changes_when_an_ac_is_removed(self) -> None:
+        two = self.STORY + "\n### AC2: another\n- **Verify:** file README.md\n"
+        self.assertNotEqual(verify_ac.ac_fingerprint(two),
+                            verify_ac.ac_fingerprint(self.STORY),
+                            "removing an AC changes the coverage the entry claims")
+
+    def test_fingerprint_is_not_a_constant(self) -> None:
+        # guards the crudest break - a hash function replaced by a literal passes every
+        # stability test above and fails only this
+        a = verify_ac.ac_fingerprint(self.STORY)
+        b = verify_ac.ac_fingerprint("### ACZ: unrelated\n- **Verify:** file X.md\n")
+        self.assertNotEqual(a, b)
+
+
 if __name__ == "__main__":
     unittest.main()
