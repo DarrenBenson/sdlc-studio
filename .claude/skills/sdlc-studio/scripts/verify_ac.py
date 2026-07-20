@@ -900,9 +900,56 @@ def _under_root(repo_root: Path, rel: str) -> Path:
     return p if p.is_absolute() else repo_root / p
 
 
+# A project root is a directory holding an `sdlc-studio/` workspace. The bare presence of a
+# directory by that name is not enough: the skill's own source sits at
+# `.claude/skills/sdlc-studio/`, so a marker-free check would stop at `.claude/skills` and
+# call it a project. Each marker below exists only in a real workspace.
+_ROOT_MARKERS = (
+    ".sdlc-studio.yaml",
+    "sdlc-studio/.config.yaml",
+    "sdlc-studio/stories",
+    "sdlc-studio/epics",
+    "sdlc-studio/bugs",
+    "sdlc-studio/change-requests",
+)
+
+
+def discover_root(start: Path | str) -> Path:
+    """The nearest directory at or above `start` that holds an sdlc-studio workspace.
+
+    Falls back to `start` when there is no project above it: with none in sight the cwd is
+    the honest answer, and walking to `/` would anchor the report somewhere unrelated.
+    """
+    start = Path(start).resolve()
+    for cand in (start, *start.parents):
+        if any((cand / m).exists() for m in _ROOT_MARKERS):
+            return cand
+    return start
+
+
+def _resolve_root(args: argparse.Namespace) -> Path:
+    """The project root every path in this run anchors on.
+
+    A root the caller NAMED is honoured verbatim - pointing the run at another project
+    must never be second-guessed. The family default `.` is not a named root; it means
+    "work it out from here", so it is DISCOVERED upward instead of assumed to be the cwd.
+    Assuming it was the defect: a run from any subdirectory - the skill's own `scripts/`
+    above all - wrote verify-report.json and verify-history.jsonl into a stray
+    `sdlc-studio/.local` tree beside the cwd, then printed the path it had used and exited
+    0. The report the Done gate reads was never where the gate looks.
+
+    Discovery only ever widens `.`: a cwd that IS a project root resolves to itself, so
+    the common case is unchanged.
+    """
+    named = getattr(args, "root", None) or "."
+    if named != ".":
+        return Path(named).resolve()
+    return discover_root(Path.cwd())
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     """Run verifiers across stories, update files, and write the report."""
-    repo_root = Path(args.root).resolve()
+    repo_root = _resolve_root(args)
 
     if args.story:
         paths = [Path(args.story)]
@@ -1107,10 +1154,13 @@ def scaffold_ac_matrix(repo_root: Path | str, epic_id: str) -> str:
 
 def cmd_scaffold(args: argparse.Namespace) -> int:
     """Emit the pre-filled AC Coverage Matrix for an epic to stdout (or a file)."""
-    matrix = scaffold_ac_matrix(args.root, args.epic)
+    repo_root = _resolve_root(args)
+    matrix = scaffold_ac_matrix(repo_root, args.epic)
     if getattr(args, "out", None):
-        Path(args.out).write_text(matrix, encoding="utf-8")
-        print(f"wrote {args.out}")
+        out = _under_root(repo_root, args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(matrix, encoding="utf-8")
+        print(f"wrote {out}")
     else:
         print(matrix, end="")
     return 0
@@ -1137,7 +1187,7 @@ def epic_test_spec_check(repo_root: Path | str, epic_id: str) -> dict:
 
 
 def cmd_epic_ts(args: argparse.Namespace) -> int:
-    r = epic_test_spec_check(args.root, args.epic)
+    r = epic_test_spec_check(_resolve_root(args), args.epic)
     if args.format == "json":
         print(json.dumps(r, indent=2))
     else:
@@ -1148,13 +1198,16 @@ def cmd_epic_ts(args: argparse.Namespace) -> int:
 
 
 def cmd_ts_check(args: argparse.Namespace) -> int:
-    issues = ts_check(args.spec, args.verify_report)
+    repo_root = _resolve_root(args)
+    spec = _under_root(repo_root, args.spec)
+    report = _under_root(repo_root, args.verify_report) if args.verify_report else None
+    issues = ts_check(spec, report)
     if args.format == "json":
         print(json.dumps(issues, indent=2))
         return 1 if issues else 0
     for it in issues:
         print(f"  {it['ac']}: {it['issue']}")
-    print(f"ts-check: {len(issues)} incomplete matrix row(s) in {Path(args.spec).name}")
+    print(f"ts-check: {len(issues)} incomplete matrix row(s) in {spec.name}")
     return 1 if issues else 0
 
 
@@ -1162,7 +1215,8 @@ def cmd_lint(args: argparse.Namespace) -> int:
     """Advisory: flag Verify lines that would fall through to `shell` but look like a
     mis-written runner invocation. Catches the AC↔test drift at author time
     instead of discovering it 0/7 at verify time. Never fails the build."""
-    paths = [Path(args.story)] if args.story else list(walk_stories(_under_root(Path(args.root), args.dir)))
+    repo_root = _resolve_root(args)
+    paths = [Path(args.story)] if args.story else list(walk_stories(_under_root(repo_root, args.dir)))
     flagged = 0
     for p in paths:
         if not p.exists():
@@ -1193,7 +1247,7 @@ def cmd_lint(args: argparse.Namespace) -> int:
 
 def cmd_report(args: argparse.Namespace) -> int:
     """Print the latest verification report in text or JSON form."""
-    report_path = Path(args.report)
+    report_path = _under_root(_resolve_root(args), args.report)
     if not report_path.exists():
         print(f"error: no report at {report_path}. Run `verify_ac.py run` first.", file=sys.stderr)
         return 2

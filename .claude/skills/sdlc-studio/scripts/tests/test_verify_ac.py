@@ -963,7 +963,7 @@ class SharedDiscoveryTests(unittest.TestCase):
             sd = Path(d) / "sdlc-studio" / "stories"
             self._story(sd, "us0099-lower.md")
             args = verify_ac.build_parser().parse_args(
-                ["run", "--dir", str(sd), "--id", "US0099", "--dry-run"])
+                ["run", "--dir", str(sd), "--id", "US0099", "--dry-run", "--root", d])
             self.assertEqual(_quiet_cmd_run(args), 0)           # found, not "no story file"
 
     def test_root_and_repo_root_bind_the_standard_dest(self):
@@ -1256,7 +1256,10 @@ class RunFileAliasTests(unittest.TestCase):
             # AC checks an absolute path so it passes regardless of the verifier's cwd - the
             # test isolates the flag alias (rc 0 = parsed + ran), not path resolution.
             story.write_text(f"# US0001: x\n\n### AC1: t\n\n- **Verify:** file {story}\n")
-            rc = _quiet_main(["run", "--file", str(story), "--dry-run"])
+            # --root pins the run to the tempdir: without it the report and history landed
+            # in whatever project sat above the cwd, so the suite appended to the live
+            # workspace's verify-history.jsonl every time it ran.
+            rc = _quiet_main(["run", "--file", str(story), "--dry-run", "--root", d])
             self.assertEqual(rc, 0)
 
 
@@ -1629,6 +1632,131 @@ class DuplicateVerifierTests(unittest.TestCase):
                 "### AC1: one\n- **Verify:** shell run-a\n\n"
                 "### AC2: two\n- **Verify:** shell run-b\n", encoding="utf-8")
             self.assertEqual(verify_ac.duplicate_verifiers(sorted(root.glob("*.md"))), [])
+
+
+class RootRelativeWriteTests(unittest.TestCase):
+    """BG0220: every path verify_ac reads or writes anchors on the PROJECT ROOT, never on
+    the current directory. Each test runs from a cwd that is not the root - a test that
+    chdir'd to the root would pass on a script that ignores `--root` entirely and prove
+    nothing. Same class as BG0219 (lessons.py wrote its digest beside the cwd)."""
+
+    def setUp(self) -> None:
+        self._prev_cwd = Path.cwd()
+        self._td = tempfile.TemporaryDirectory()
+        self.root = Path(self._td.name) / "proj"
+        (self.root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (self.root / "sdlc-studio" / "epics").mkdir(parents=True)
+        self.story = self.root / "sdlc-studio" / "stories" / "US0001-login.md"
+        self.story.write_text(
+            "# US0001: Login\n\n## Acceptance Criteria\n\n"
+            "### AC1: it runs\n- **Verify:** shell true\n", encoding="utf-8")
+        (self.root / "sdlc-studio" / "epics" / "EP0001-x.md").write_text(
+            "# EP0001: x\n\n## Stories\n\n| ID | Title |\n| --- | --- |\n| US0001 | Login |\n",
+            encoding="utf-8")
+        # a nested working directory inside the project, standing in for `scripts/`
+        self.inner = self.root / "scripts"
+        self.inner.mkdir()
+
+    def tearDown(self) -> None:
+        import os
+        os.chdir(self._prev_cwd)
+        self._td.cleanup()
+
+    def _chdir(self, d: Path) -> None:
+        import os
+        os.chdir(d)
+
+    def _strays(self, d: Path) -> list[str]:
+        """Anything verify_ac left beside `d` that was not there before."""
+        return sorted(p.name for p in d.iterdir())
+
+    def test_run_without_root_writes_under_the_discovered_root_not_the_cwd(self) -> None:
+        """The reported symptom: `run` from a subdirectory grew a stray sdlc-studio/.local
+        tree beside the cwd, because --root defaulted to the cwd rather than the project."""
+        self._chdir(self.inner)
+        rc = _quiet_main(["run", "--file", str(self.story), "--dry-run"])
+        self.assertEqual(rc, 0)
+        self.assertEqual(self._strays(self.inner), [],
+                         "verify_ac wrote beside the cwd instead of under the project root")
+        self.assertTrue(
+            (self.root / "sdlc-studio" / ".local" / "verify-report.dry-run.json").is_file(),
+            "the dry-run report did not land under the project root")
+
+    def test_run_without_root_writes_history_under_the_discovered_root(self) -> None:
+        self._chdir(self.inner)
+        rc = _quiet_main(["run", "--file", str(self.story)])
+        self.assertEqual(rc, 0)
+        self.assertEqual(self._strays(self.inner), [])
+        self.assertTrue(
+            (self.root / "sdlc-studio" / ".local" / "verify-history.jsonl").is_file(),
+            "the history log did not land under the project root")
+
+    def test_report_reads_the_report_run_wrote_under_the_same_root(self) -> None:
+        """`run --root X` then `--root X report` must agree on where the report is. They
+        did not: run anchored on the root and report resolved against the cwd, so the
+        gate that reads the report saw 'no report' from anywhere but the root."""
+        self._chdir(self.inner)
+        self.assertEqual(_quiet_main(["run", "--root", str(self.root)]), 0)
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+            rc = verify_ac.main(["--root", str(self.root), "report"])
+        self.assertEqual(rc, 0, err.getvalue())
+        self.assertNotIn("no report", err.getvalue())
+
+    def test_scaffold_matrix_out_is_written_under_the_root(self) -> None:
+        """`--out` is a write, and it resolved against the cwd."""
+        self._chdir(self.inner)
+        with contextlib.redirect_stdout(io.StringIO()):
+            rc = verify_ac.main(["--root", str(self.root), "scaffold-matrix",
+                                 "--epic", "EP0001", "--out", "matrix.md"])
+        self.assertEqual(rc, 0)
+        self.assertTrue((self.root / "matrix.md").is_file(),
+                        "the matrix was written beside the cwd, not under the root")
+        self.assertEqual(self._strays(self.inner), [])
+
+    def test_ts_check_spec_is_resolved_under_the_root(self) -> None:
+        """The spec carries a KNOWN-BAD row, so only a run that actually read the file can
+        report the issue. Asserting rc 0 here would be vacuous: `ts_check` reads a missing
+        spec as empty text and reports a clean matrix, so the cwd-relative miss passed."""
+        spec = self.root / "ts.md"
+        spec.write_text(
+            "## AC Coverage Matrix\n\n"
+            "| Story | AC | Test Case | Status |\n"
+            "| --- | --- | --- | --- |\n"
+            "| US0001 | AC1 | {{test}} | pass |\n", encoding="utf-8")
+        self._chdir(self.inner)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = verify_ac.main(["--root", str(self.root), "ts-check", "--spec", "ts.md"])
+        self.assertEqual(rc, 1, "a root-relative --spec was not read from a foreign cwd")
+        self.assertIn("placeholder", out.getvalue())
+
+    def test_an_absolute_path_is_still_honoured_verbatim(self) -> None:
+        """Anchoring must not capture an absolute path the caller chose deliberately."""
+        self._chdir(self.inner)
+        out = Path(self._td.name) / "outside-the-root.json"
+        rc = _quiet_main(["run", "--root", str(self.root), "--report", str(out)])
+        self.assertEqual(rc, 0)
+        self.assertTrue(out.is_file(), "an absolute --report was re-anchored under the root")
+
+    def test_a_named_root_is_honoured_verbatim_not_re_pointed_by_discovery(self) -> None:
+        """Discovery widens the default `.` only. A root the caller NAMED is where the run
+        writes, even when a bigger project sits above it - silently retargeting a named
+        root would be the same class of lie in the other direction."""
+        named = self.inner            # inside self.root, but not itself a project root
+        rc = _quiet_main(["run", "--root", str(named),
+                          "--dir", str(self.root / "sdlc-studio" / "stories")])
+        self.assertEqual(rc, 0)
+        self.assertTrue((named / "sdlc-studio" / ".local" / "verify-report.json").is_file(),
+                        "the named root was ignored")
+        self.assertFalse((self.root / "sdlc-studio" / ".local").exists(),
+                         "discovery overrode a root the caller named")
+
+    def test_discovery_does_not_escape_a_cwd_with_no_project_above_it(self) -> None:
+        """With no project root anywhere above, the cwd is the honest answer - discovery
+        must not silently walk to `/` and write somewhere unrelated."""
+        with tempfile.TemporaryDirectory() as bare:
+            self.assertEqual(verify_ac.discover_root(Path(bare)), Path(bare).resolve())
 
 
 if __name__ == "__main__":
