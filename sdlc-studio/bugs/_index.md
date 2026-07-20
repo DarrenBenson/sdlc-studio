@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 4 |
+| Open | 5 |
 | In Progress | 0 |
 | Fixed | 135 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **221** |
+| **Total** | **222** |
 
 ## All Bugs
 
@@ -188,6 +188,7 @@
 | [BG0219](BG0219-lessons-summary-ignores-root-and-writes-relative-to.md) | lessons summary ignores --root and writes relative to the current directory | Fixed | High | 2026-07-20 | 2026-07-20 |
 | [BG0220](BG0220-verify-ac-writes-its-report-and-history-relative.md) | verify_ac writes its report and history relative to the current directory | Open | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0221](BG0221-refine-into-appends-a-duplicate-epic-level-ac.md) | refine --into appends a duplicate epic-level AC heading that fails the repo's own markdown gate | Open | Medium | 2026-07-20 | 2026-07-20 |
+| [BG0222](BG0222-the-pre-commit-suite-lanes-break-under-git.md) | the pre-commit suite lanes break under git commit -a because hook GIT_* env leaks into test git calls | Open | Medium | 2026-07-20 | 2026-07-20 |
 
 ## Archived Releases
 

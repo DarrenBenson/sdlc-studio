@@ -49,6 +49,9 @@ fi
 # measurement of a blind detector: the exclusion list swallowed any indented line and any
 # capitalised one, and the leak patterns demanded an alarm word. A baseline is only ever as
 # true as the detector that produced it - re-measure after touching either.
-TEST_NOISE_BASELINE="${TEST_NOISE_BASELINE:-134}"
+# 134 -> 132 (US0277/US0278): the selection-reporting lines made two uncaptured
+# `main(...)` calls in test_mutation.py noisier; capturing their stdout/stderr also
+# retired the SURVIVED/REFUSED lines they had been leaking since before the ratchet.
+TEST_NOISE_BASELINE="${TEST_NOISE_BASELINE:-132}"
 
 printf '%s\n' "$out" | python3 "$(dirname "$0")/test_noise.py" --baseline "$TEST_NOISE_BASELINE"

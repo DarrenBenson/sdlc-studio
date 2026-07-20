@@ -1042,6 +1042,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The mutation gate names what its survivors were measured against (CR0363: US0277,
+  US0278).** The report and text output now carry the test files the command statically
+  resolves to (`selected_tests`; honest `UNRESOLVED` when nothing parses), and a warning per
+  test file that references a target module but sits outside that selection - the
+  manufactured-survivor condition that produced BG0203's two false survivors. Advisory only:
+  the exit code never changes, so a deliberately narrow run stays legal and stays honest.
+  The test command was already recorded in the JSON beside the result; a test now pins it.
 - **A SIGKILLed mutation run can no longer poison the next run's restore source (BG0215).**
   `mutation.py` persists each mutant's original bytes to an on-disk sidecar
   (`sdlc-studio/.local/mutation-inflight.json`) before the mutant lands and clears it on

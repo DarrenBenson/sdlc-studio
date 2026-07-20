@@ -165,13 +165,18 @@ class BridgeTests(unittest.TestCase):
             self.assertIn("unchecked", on_disk)
 
     def test_survivor_exits_nonzero(self) -> None:
+        import contextlib
+        import io
         mut = _load()
         with tempfile.TemporaryDirectory() as d:
             root = _fixture(Path(d))
-            rc = mut.main(["run", "--files", str(root / "target.py"),
-                           "--test", f"{sys.executable} -m unittest test_vacuous",
-                           "--root", str(root)])
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = mut.main(["run", "--files", str(root / "target.py"),
+                               "--test", f"{sys.executable} -m unittest test_vacuous",
+                               "--root", str(root)])
             self.assertNotEqual(rc, 0)
+            self.assertIn("SURVIVED", buf.getvalue())
 
     def test_broken_runner_baseline_refuses_never_a_kill(self) -> None:
         # BG0180: a baseline that ERRORS (the runner itself broke) proves nothing, so the gate
@@ -200,10 +205,15 @@ class BridgeTests(unittest.TestCase):
             self.assertEqual(r["summary"]["applied"], 0)
             self.assertTrue(r["remedy"])
             self.assertEqual((root / "target.py").read_bytes(), original)  # tree untouched
-            rc = mut.main(["run", "--files", str(root / "target.py"),
-                           "--test", f"{sys.executable} -m unittest test_red",
-                           "--root", str(root)])
+            import contextlib
+            import io
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = mut.main(["run", "--files", str(root / "target.py"),
+                               "--test", f"{sys.executable} -m unittest test_red",
+                               "--root", str(root)])
             self.assertNotEqual(rc, 0)                  # never a clean-looking zero
+            self.assertIn("REFUSED", err.getvalue())
 
 
 class LaneTests(unittest.TestCase):
@@ -748,6 +758,85 @@ class StrandedMutantRecoveryTests(unittest.TestCase):
             self.assertTrue(r["refused"], r)
             self.assertEqual(r["mutations"], [])       # nothing applied over the wreck
             self.assertIn("git", r["remedy"])          # remedy names the restore source
+
+
+class SelectionReportingTests(unittest.TestCase):
+    """US0277/US0278 (CR0363): a survivor must never be read without knowing what was
+    run against it - the run names the test files its command selected, records the
+    command in the JSON, and warns when a referencing test file is outside the
+    selection (the manufactured-survivor condition). Advisory: never blocks."""
+
+    def test_report_lists_selected_test_files(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            r = mut.run_gate(root, [root / "target.py"],
+                             f"{sys.executable} -m unittest test_good")
+            self.assertEqual(r["selected_tests"], [str(root / "test_good.py")])
+
+    def test_json_records_test_command(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            cmd = f"{sys.executable} -m unittest test_good"
+            mut.run_gate(root, [root / "target.py"], cmd)
+            on_disk = json.loads(
+                (root / "sdlc-studio" / ".local" / "mutation-report.json")
+                .read_text(encoding="utf-8"))
+            self.assertEqual(on_disk["test_cmd"], cmd)
+
+    def test_warns_on_referencing_test_file_outside_selection(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            # test_good.py references `target` but the command selects only test_vacuous
+            r = mut.run_gate(root, [root / "target.py"],
+                             f"{sys.executable} -m unittest test_vacuous")
+            warned = [w["test_file"] for w in r["selection_warnings"]]
+            self.assertIn(str(root / "test_good.py"), warned)
+            self.assertTrue(all(w["references"] == "target"
+                                for w in r["selection_warnings"]))
+
+    def test_selection_warning_never_blocks(self) -> None:
+        # a deliberately narrow but load-bearing selection: the excluded referencing
+        # file fires the warning, and the exit code stays 0 (no survivor, no block)
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            (root / "test_other_good.py").write_text(
+                GOOD_TEST.replace("class T", "class TOther"), encoding="utf-8")
+            import contextlib
+            import io
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = mut.main(["run", "--files", str(root / "target.py"),
+                               "--test", f"{sys.executable} -m unittest test_other_good",
+                               "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertIn("WARNING", buf.getvalue())   # the warning is SAID, not just stored
+            on_disk = json.loads(
+                (root / "sdlc-studio" / ".local" / "mutation-report.json")
+                .read_text(encoding="utf-8"))
+            warned = [w["test_file"] for w in on_disk["selection_warnings"]]
+            self.assertIn(str(root / "test_good.py"), warned)
+
+    def test_no_warning_when_selection_covers_references(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            r = mut.run_gate(root, [root / "target.py"],
+                             f"{sys.executable} -m unittest test_good test_vacuous")
+            self.assertEqual(r["selection_warnings"], [])
+
+    def test_unresolvable_command_reports_selection_unresolved(self) -> None:
+        # a command no static parse can map to files must say UNRESOLVED (None),
+        # never pretend an empty selection and warn on everything
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            r = mut.run_gate(root, [root / "target.py"], "make check")
+            self.assertIsNone(r["selected_tests"])
+            self.assertEqual(r["selection_warnings"], [])
 
 
 if __name__ == "__main__":

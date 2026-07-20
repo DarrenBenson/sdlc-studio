@@ -496,6 +496,11 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
         summary["diff_mutations"] = on_diff_total
         summary["diff_applied"] = on_diff_applied
         summary["diff_covered"] = (on_diff_total == on_diff_applied)
+    # What the survivors were measured AGAINST: the files the command selects, and the
+    # referencing test files it does NOT select (the manufactured-survivor condition).
+    # Advisory - computed even on a refused run, so a report is never read blind.
+    selected = _selected_test_files(root, test_cmd)
+    selection_warnings = _selection_warnings(root, files, selected)
     import hashlib
     target_hashes = {}
     for fp in files:
@@ -513,6 +518,8 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
         "refused": refused,
         "remedy": remedy,
         "recovered": recovered,
+        "selected_tests": ([str(p) for p in selected] if selected is not None else None),
+        "selection_warnings": selection_warnings,
         "mutations": records,
         "unchecked": unchecked,
         "summary": summary,
@@ -583,6 +590,77 @@ def _story_surface(root: Path, story_id: str) -> list[Path]:
                 if tok and cand.exists() and cand.suffix in PROFILES and cand not in out:
                     out.append(cand)
     return out
+
+
+_TEST_FILE_PATTERNS = ("test_*.py", "*_test.py")
+_SKIP_DIRS = {".git", "__pycache__", "node_modules", ".local", ".venv", "venv"}
+
+
+def _candidate_test_files(root: Path) -> list[Path]:
+    """Every test-shaped file under root (skipping vendored/derived trees)."""
+    out: set[Path] = set()
+    for pat in _TEST_FILE_PATTERNS:
+        for p in Path(root).rglob(pat):
+            if not any(part in _SKIP_DIRS for part in p.parts):
+                out.add(p)
+    return sorted(out)
+
+
+def _selected_test_files(root: Path, test_cmd: str) -> list[Path] | None:
+    """Best-effort STATIC resolution of which test files `test_cmd` selects.
+
+    Recognises path tokens (`tests/test_x.py`, `pytest path::TestC::test_n`),
+    directory tokens (each contributes its test-shaped files), and bare/dotted
+    module tokens (`test_good`, `tests.test_x`). Returns None when nothing in the
+    command resolves - an honest UNRESOLVED, never an empty selection that would
+    warn on every test file in the repo."""
+    import shlex
+    root = Path(root)
+    try:
+        tokens = shlex.split(test_cmd)
+    except ValueError:
+        return None
+    selected: set[Path] = set()
+    resolved = False
+    for tok in tokens[1:]:  # tokens[0] is the runner/interpreter, never a selection
+        t = tok.strip().split("::", 1)[0]
+        if not t or t.startswith("-"):
+            continue
+        direct = Path(t) if Path(t).is_absolute() else root / t
+        module_form = root / (t.replace(".", "/") + ".py")
+        for cand in (direct, module_form):
+            if cand.is_file() and cand.suffix == ".py":
+                selected.add(cand)
+                resolved = True
+                break
+            if cand.is_dir():
+                selected.update(_candidate_test_files(cand))
+                resolved = True
+                break
+    return sorted(selected) if resolved else None
+
+
+def _selection_warnings(root: Path, targets, selected: list[Path] | None) -> list[dict]:
+    """The manufactured-survivor condition: a test file that references a target
+    module but sits OUTSIDE the command's selection. Advisory only - a narrow run
+    stays legal; it just cannot stay silent about what it did not run."""
+    if selected is None:
+        return []
+    sel = {p.resolve() for p in selected}
+    stems = [Path(f).stem for f in targets]
+    warnings: list[dict] = []
+    for tf in _candidate_test_files(Path(root)):
+        if tf.resolve() in sel:
+            continue
+        try:
+            text = tf.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for stem in stems:
+            if re.search(rf"\b{re.escape(stem)}\b", text):
+                warnings.append({"test_file": str(tf), "references": stem})
+                break
+    return warnings
 
 
 def _git_rev(root: Path) -> str | None:
@@ -658,6 +736,17 @@ def cmd_run(args: argparse.Namespace) -> int:
               f"{s['survived']} survived, {s['errors']} error(s), "
               f"{s['unviable']} unviable, "
               f"{s['truncated']} truncated, {len(report['unchecked'])} un-checked")
+        sel = report.get("selected_tests")
+        if sel is None:
+            print("  test selection: UNRESOLVED - the command could not be statically "
+                  "mapped to test files; read survivors knowing only the recorded command")
+        else:
+            print(f"  test selection: {len(sel)} file(s) - "
+                  + ", ".join(Path(p).name for p in sel))
+        for w in report.get("selection_warnings", []):
+            print(f"  WARNING: {w['test_file']} references target `{w['references']}` but "
+                  f"is OUTSIDE the test command's selection - a survivor may be "
+                  f"manufactured by the narrow command, not proof of a missing test")
         for r in report["mutations"]:
             if r["verdict"] != "killed":
                 print(f"  {r['verdict'].upper():9} {r['file']}:{r['line']} "

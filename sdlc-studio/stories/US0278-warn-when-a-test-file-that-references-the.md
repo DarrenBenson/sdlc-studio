@@ -1,6 +1,6 @@
 # US0278: Warn when a test file that references the target module falls outside the test command's selection
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0363
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio new
@@ -26,6 +26,7 @@
 - **Then** that file is named in a warning, because unexercised coverage is the
   manufactured-survivor condition
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k test_warns_on_referencing_test_file_outside_selection
+- **Verified:** yes (2026-07-20)
 
 ### AC2: the warning is advisory and never blocks
 
@@ -34,6 +35,7 @@
 - **Then** the exit code and the killed/survived verdicts are unchanged - a narrow run stays
   legal and stays honest about what it covered
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k test_selection_warning_never_blocks
+- **Verified:** yes (2026-07-20)
 
 ### AC3: a covering selection produces no warning
 
@@ -41,6 +43,7 @@
 - **When** the run completes
 - **Then** no selection warning is emitted
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k test_no_warning_when_selection_covers_references
+- **Verified:** yes (2026-07-20)
 
 ## Revision History
 

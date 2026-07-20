@@ -48,6 +48,15 @@ python3 <skill>/scripts/mutation.py prefilter --tests tests/test_*.py
    git restore path.
 4. Writes `sdlc-studio/.local/mutation-report.json`; the release gate's `mutation` lane
    surfaces it (advisory in v1; absent report reads not-run, never PASS).
+5. Names what the survivors were measured against: the report and the text output carry
+   the test files the command statically resolves to (`selected_tests`; UNRESOLVED when
+   no file, directory or module token parses - never a guessed empty set), and a
+   **WARNING** per test file that references a target module but sits outside that
+   selection - the manufactured-survivor condition: a run scoped below the target's real
+   coverage over-reports absence, so a survivor from a narrow run must be read against
+   the recorded command (`test_cmd` in the JSON), not as proof of a missing test. The
+   warning is advisory and never changes the exit code: a deliberately narrow run stays
+   legal, and stays honest about what it covered.
 
 ## Reading the verdicts
 

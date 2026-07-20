@@ -1,6 +1,6 @@
 # US0277: Mutation run reports its selected test files and records the test command in the JSON result
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0363
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio new
@@ -25,6 +25,7 @@
 - **Then** the report lists the test files the command selected, beside the survivor list, so a
   reader can see what the survivors were measured against
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k test_report_lists_selected_test_files
+- **Verified:** yes (2026-07-20)
 
 ### AC2: the test command is recorded in the JSON result
 
@@ -33,6 +34,7 @@
 - **Then** the JSON carries the test command beside the survivors, so a survivor read later
   cannot be separated from the command that produced it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k test_json_records_test_command
+- **Verified:** yes (2026-07-20)
 
 ## Revision History
 
