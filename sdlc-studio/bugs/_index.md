@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 2 |
+| Open | 3 |
 | In Progress | 0 |
 | Fixed | 133 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **217** |
+| **Total** | **218** |
 
 ## All Bugs
 
@@ -184,6 +184,7 @@
 | [BG0215](BG0215-a-timed-out-mutation-run-leaves-the-mutant.md) | A timed-out mutation run leaves the mutant on disk and the restore captures it | Open | High | 2026-07-20 | 2026-07-20 |
 | [BG0216](BG0216-a-lesson-gist-containing-bold-markup-makes-the.md) | A lesson gist containing bold markup makes the lessons-summary gate unsatisfiable | Fixed | High | 2026-07-20 | 2026-07-20 |
 | [BG0217](BG0217-validate-s-placeholder-warning-uses-a-severity-spelling.md) | validate's placeholder warning uses a severity spelling the counters do not count | Open | Medium | 2026-07-20 | 2026-07-20 |
+| [BG0218](BG0218-the-velocity-record-omits-delivered-points-when-the.md) | the velocity record omits delivered points when the units carry no plan-time forecast | Open | High | 2026-07-20 | 2026-07-20 |
 
 ## Archived Releases
 
