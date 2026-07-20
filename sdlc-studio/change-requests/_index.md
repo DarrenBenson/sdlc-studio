@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 23 |
+| Proposed | 25 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 333 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **375** |
+| **Total** | **377** |
 
 ## All Changes
 
@@ -197,6 +197,8 @@
 | [CR-0373](CR0373-the-interactive-token-capture-should-record-the-delivering.md) | the interactive token capture should record the delivering model so the velocity row lands in the right (project, model) cell | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0374](CR0374-skill-scripts-should-warn-or-refuse-while-a.md) | skill scripts should warn or refuse while a mutation run's mutant may be on disk | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0375](CR0375-status-py-with-no-subcommand-should-default-to.md) | status.py with no subcommand should default to the pillars dashboard instead of erroring | Proposed | Low | Improvement | 2026-07-20 | -- |
+| [CR-0376](CR0376-a-docs-only-sprint-s-close-should-record.md) | a docs-only sprint's close should record the mutation step as an explicit skip, not an error to work around | Proposed | Medium | Improvement | 2026-07-20 | -- |
+| [CR-0377](CR0377-mutation-run-should-derive-the-minimal-covering-test.md) | mutation run should derive the minimal covering test command from its own reference scan | Proposed | Medium | Improvement | 2026-07-20 | -- |
 
 ## Archived Releases
 

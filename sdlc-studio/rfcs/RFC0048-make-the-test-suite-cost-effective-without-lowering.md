@@ -132,8 +132,23 @@ everything else is trusted, and it is the only one nothing adversarially attacks
 ## Evidence and prerequisites
 
 - Timings measured 2026-07-19 on this repo, serial, bytecode purged.
-- **CR0363** (a mutation run scoped below its target's coverage over-reports absence) is a hard
-  prerequisite for D2 and for G at scale.
+- **CR0363 DELIVERED** (RUN-01KXZQF0, 2026-07-20): the run now reports its selected test
+  files, warns when a referencing test file falls outside the selection, and honours
+  `--ignore`/`--deselect` - the manufactured-survivor prerequisite for D2 and G is met.
+- **First live cost/yield data for D3/D6** (RUN-01KXZQF0 close, RETRO0060): three close-time
+  evidence runs cost ~40 min wall-clock (~40s suite per mutant, 24-mutant ceiling) and ~zero
+  model tokens - the token cost of a sprint lives in the review rounds and the build, not
+  here. Yield was concentrated and real: the run found 2 test gaps that the full 3,300-test
+  suite, per-story AC verification AND two adversarial review rounds all missed (an
+  `assertNotEqual(rc, 0)` satisfied by a `None` return; an unpinned empty-directory branch).
+  Read for D3: the value case is strong at the CLOSE, diff-scoped and bounded; the cost case
+  is against blocking or per-commit placement, which would move a wall-clock cost onto every
+  commit for value that concentrates on the behaviour-dense diff. Read for D6: the per-commit
+  budget already bites - this sprint paid the ~150s suite roughly seven times before any
+  mutation ran.
+- **CR0376** (no-mutatable-surface close should skip loudly, not error) and **CR0377** (derive
+  the minimal covering test command from the selection scan, halving wall-time per mutant)
+  are the cost levers this data points at.
 - **CR0358** (the close review is an unbounded repair loop) is why F is rejected: the review loop
   is already the largest cost in a sprint and is itself unbounded.
 - **BG0212** established that a mutation survivor is not automatically a coverage gap - 6 of its
