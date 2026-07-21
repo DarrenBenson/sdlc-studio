@@ -1,6 +1,6 @@
 # RFC-0046: Should a sprint-level adversarial full-diff review satisfy the per-unit critiqued gate for a large batch?
 
-> **Status:** In Review
+> **Status:** Accepted
 > **Decomposed-into:** EP0080
 > **Affects:** .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/conformance.py
 > **Date:** 2026-07-17
@@ -25,10 +25,11 @@ Lean B or C: the full-diff pass is the doctrine's own sharper gate and it caught
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Open |
+| D1 | Act on this finding or keep status quo | Resolved: Option B, recorded as ALREADY DELIVERED rather than newly decided. EP0080 (Done, 8 points, RUN-01KXS5JY) built exactly option B and critic.py ships the sprint-review subcommand: one recorded adversarial full-diff verdict naming the diff range and reviewer seat satisfies the per-unit 'critiqued' stage for the units in that range, with per-unit REJECT-repairs still recorded per unit. The decision was settled by delivery and never written back to this row, which is why reconcile has been reporting RFC0046 as request-derivable drift. Option C (scale by risk) is declined: it would contradict shipped behaviour and needs a CR against EP0080, not a resolution here. -> EP0080 |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Filed |
+| 2026-07-21 | rfc resolve (operator decision) | resolve: D1 - Option B, recorded as ALREADY DELIVERED rather than newly decided. EP0080 (Done, 8 points, RUN-01KXS5JY) built exactly option B and critic.py ships the sprint-review subcommand: one recorded adversarial full-diff verdict naming the diff range and reviewer seat satisfies the per-unit 'critiqued' stage for the units in that range, with per-unit REJECT-repairs still recorded per unit. The decision was settled by delivery and never written back to this row, which is why reconcile has been reporting RFC0046 as request-derivable drift. Option C (scale by risk) is declined: it would contradict shipped behaviour and needs a CR against EP0080, not a resolution here. |
