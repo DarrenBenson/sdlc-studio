@@ -896,6 +896,14 @@ def _token_forecast(root: Path, batch: list[dict]) -> dict:
                      "token spend"}
 
 
+#: How a row's per-unit cost was arrived at. `measured` counts the units carrying PER-UNIT
+#: telemetry, which only a runner produces; an interactive sprint records a sprint-level total
+#: and 0 there. Both are real cost, and they are not the same measurement, so each row says
+#: which it is rather than being averaged into one undifferentiated number.
+HISTORY_PER_UNIT = "per-unit"        # telemetry per unit - the variance between units is visible
+HISTORY_SPRINT_LEVEL = "sprint-level"  # sprint total / units - per-unit variance is HIDDEN
+
+
 def batch_history(repo_root: Path | str) -> list[dict]:
     """What sprints have ACTUALLY cost, per sprint, oldest first - the plan's real cost input.
 
@@ -904,18 +912,38 @@ def batch_history(repo_root: Path | str) -> list[dict]:
     basis for sizing a third. A per-unit number derived from a signal that correlates with cost
     at r = +0.03 is not, and quoting one lent the plan an authority the measurement never had.
 
+    EVERY sprint with a recorded total is here, including the interactive ones. Requiring
+    per-unit telemetry excluded every sprint run without a runner - which is now the norm - and
+    left the oldest runner-era rows standing as the current cost picture, with nothing saying
+    two newer measured sprints had been dropped. A sprint that cost 2,390,624 over 9 units did
+    cost 265,625 per unit whether or not anything recorded each unit separately.
+
+    What that inclusion COSTS, recorded here because the row alone cannot say it: a sprint-level
+    figure is the total divided by the units, so a sprint where one unit ate half the budget
+    looks identical to one where the spend was even. Each row therefore carries its `basis`, and
+    the renderer prints it - the label is what keeps the two kinds of evidence apart.
+
+    The divisor is the measured-unit count where there is one, because a runner-era sprint that
+    delivered 7 units and recorded telemetry for 5 is evidence about those 5; otherwise it is
+    the delivered-unit count. With neither, no per-unit cost can be derived and no row is made.
+
     Read-only, from the recorded velocity history. Fail-safe: no history is an empty list, never
     an exception - a project with no measured sprints yet must still be able to plan.
     """
     out: list[dict] = []
     for r in _velocity_rows(repo_root):
-        actual, units = r.get("actual_tokens"), r.get("measured")
+        actual = r.get("actual_tokens")
         if not isinstance(actual, (int, float)) or not actual:
             continue
-        if not isinstance(units, (int, float)) or not units:
-            continue
-        out.append({"id": r.get("id"), "units": int(units), "tokens": int(actual),
-                    "per_unit": int(actual / units)})
+        measured, delivered = r.get("measured"), r.get("units")
+        if isinstance(measured, (int, float)) and measured:
+            units, basis = int(measured), HISTORY_PER_UNIT
+        elif isinstance(delivered, (int, float)) and delivered:
+            units, basis = int(delivered), HISTORY_SPRINT_LEVEL
+        else:
+            continue          # no divisor of either kind - a per-unit cost cannot be derived
+        out.append({"id": r.get("id"), "units": units, "tokens": int(actual),
+                    "per_unit": int(actual / units), "basis": basis})
     return out
 
 
@@ -1795,10 +1823,17 @@ def _render_token_forecast(data: dict) -> None:
         return
     hist = tf.get("history") or []
     if hist:
+        shown = hist[-4:]
         print("  batch history (what sprints ACTUALLY cost - the real planning input):")
-        for h in hist[-4:]:
+        for h in shown:
             print(f"    {h['id']}: {h['units']} unit(s), {h['tokens']:,} tokens "
-                  f"({h['per_unit']:,}/unit)")
+                  f"({h['per_unit']:,}/unit, {h.get('basis', HISTORY_SPRINT_LEVEL)})")
+        # Only when one is on screen: a caveat printed over a block it is not about is noise,
+        # and noise on a line that is usually fine is how a real caveat stops being read.
+        if any(h.get("basis") == HISTORY_SPRINT_LEVEL for h in shown):
+            print(f"    a {HISTORY_SPRINT_LEVEL} row divides the sprint total by its units - "
+                  f"real cost, but the variance between units is hidden, so one unit may have "
+                  f"taken far more than the figure shown")
     cap = data.get("capacity") or {}
     fc = cap.get("forecast") or {}
     band = (f" (plausible {fc['low']:,}-{fc['high']:,})"

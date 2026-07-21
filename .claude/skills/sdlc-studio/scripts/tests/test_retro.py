@@ -1053,16 +1053,21 @@ class TokenCaptureIsAttributedToTheRun(InteractiveSprintFixture):
 
     def test_a_second_run_in_one_session_captures_only_its_own_delta(self) -> None:
         # The reproduction, end to end: two sprints, one session, one growing transcript.
+        # Both runs cover RETRO9002's units, so the only thing under test here is the meter
+        # arithmetic; whether the OPEN run is this retro's run at all is BG0243's rule, pinned
+        # in TokenCaptureIsTiedToTheRetroItRecords below.
         self._session("s1.jsonl", {"input_tokens": 200_000})     # conversation before sprint 1
-        self._open_run("BG0001")
+        self._open_run()
         self._append("s1.jsonl", {"input_tokens": 1_000_000})    # sprint 1's own spend
-        first = retro.run_attributed_tokens(str(self.root), transcripts_dir=self.transcripts)
+        first = retro.run_attributed_tokens(str(self.root), "RETRO9002",
+                                          transcripts_dir=self.transcripts)
         self.assertEqual(first["tokens"], 1_000_000, "sprint 1 excludes the run-up to it")
 
         run_state.close_run(str(self.root), run_state.GOAL_REACHED)
-        self._open_run("BG0002")                                 # sprint 2, same session
+        self._open_run()                                         # sprint 2, same session
         self._append("s1.jsonl", {"input_tokens": 300_000})      # sprint 2's own spend
-        second = retro.run_attributed_tokens(str(self.root), transcripts_dir=self.transcripts)
+        second = retro.run_attributed_tokens(str(self.root), "RETRO9002",
+                                          transcripts_dir=self.transcripts)
         self.assertEqual(second["tokens"], 300_000,
                          "sprint 2 records its own delta, not the session total")
         self.assertNotEqual(second["tokens"], 1_500_000,
@@ -1079,7 +1084,8 @@ class TokenCaptureIsAttributedToTheRun(InteractiveSprintFixture):
         run_state.write(str(self.root), state)
         self.assertNotIn(run_state.TOKEN_BASELINE, run_state.read(str(self.root)))
 
-        cap = retro.run_attributed_tokens(str(self.root), transcripts_dir=self.transcripts)
+        cap = retro.run_attributed_tokens(str(self.root), "RETRO9002",
+                                          transcripts_dir=self.transcripts)
         self.assertIsNone(cap["tokens"], "no baseline, no number")
         self.assertIn("not attributable", cap["reason"].lower())
         self.assertNotIn("5,000,000", cap["reason"])
@@ -1106,7 +1112,8 @@ class TokenCaptureIsAttributedToTheRun(InteractiveSprintFixture):
         # An interactive sprint nobody opened a run for has no baseline either, and the same
         # rule holds: the session total is not this sprint's cost.
         self._session("s1.jsonl", {"input_tokens": 900_000})
-        cap = retro.run_attributed_tokens(str(self.root), transcripts_dir=self.transcripts)
+        cap = retro.run_attributed_tokens(str(self.root), "RETRO9002",
+                                          transcripts_dir=self.transcripts)
         self.assertIsNone(cap["tokens"])
         self.assertIn("not attributable", cap["reason"].lower())
 
@@ -1117,7 +1124,8 @@ class TokenCaptureIsAttributedToTheRun(InteractiveSprintFixture):
         self._open_run()
         later = self._session("s2.jsonl", {"input_tokens": 400_000})
         os.utime(later, (later.stat().st_mtime + 60, later.stat().st_mtime + 60))
-        cap = retro.run_attributed_tokens(str(self.root), transcripts_dir=self.transcripts)
+        cap = retro.run_attributed_tokens(str(self.root), "RETRO9002",
+                                          transcripts_dir=self.transcripts)
         self.assertIsNone(cap["tokens"], "a cross-session difference is not a spend")
         self.assertIn("different meters", cap["reason"])
 
@@ -1126,7 +1134,8 @@ class TokenCaptureIsAttributedToTheRun(InteractiveSprintFixture):
         # of this sprint, and a negative delta certainly is not.
         self._session("s1.jsonl", {"input_tokens": 500_000})
         self._open_run()
-        cap = retro.run_attributed_tokens(str(self.root), transcripts_dir=self.transcripts)
+        cap = retro.run_attributed_tokens(str(self.root), "RETRO9002",
+                                          transcripts_dir=self.transcripts)
         self.assertIsNone(cap["tokens"])
         self.assertIn("not attributable", cap["reason"].lower())
 
@@ -1140,8 +1149,120 @@ class TokenCaptureIsAttributedToTheRun(InteractiveSprintFixture):
             retro.harness_tokens(str(self.root), transcripts_dir=self.transcripts)["tokens"],
             250_000)
         self.assertEqual(
-            retro.run_attributed_tokens(str(self.root),
+            retro.run_attributed_tokens(str(self.root), "RETRO9002",
                                         transcripts_dir=self.transcripts)["tokens"], 50_000)
+
+
+class TokenCaptureIsTiedToTheRetroItRecords(InteractiveSprintFixture):
+    """BG0243: the capture read whatever run was open and `cmd_accuracy` never told it which
+    retro it was recording against, so `accuracy --id <an older retro> --tokens-from-harness`
+    run after a later `sprint plan --write` stamped the NEW run's delta onto the OLD retro's
+    row. The elapsed-hours path already required the run's batch to cover the retro's units;
+    the token path is now held to that same rule, by the same helper.
+    """
+
+    def _state(self, batch, *, tokens: int, source: Path,
+               started: str = "2026-07-16T00:00:00Z",
+               ended: str = "2026-07-16T02:00:00Z") -> None:
+        """A CLOSED run with a sound baseline, so only COVERAGE can refuse either path."""
+        run_state.write(str(self.root), {
+            "schema": 1, "run_id": "RUN-EARLIER", "started_at": started, "ended_at": ended,
+            "outcome": run_state.GOAL_REACHED, "goal": None, "batch": list(batch),
+            run_state.TOKEN_BASELINE: {"tokens": tokens, "source": str(source)}})
+
+    def test_a_later_unrelated_run_is_not_this_retro_s_spend(self) -> None:
+        # the reproduction: sprint A closes, `sprint plan --write` opens sprint B, and A's
+        # retro is then asked for its tokens
+        self._session("s1.jsonl", {"input_tokens": 100_000})
+        self._open_run()                                    # sprint A: BG0001, BG0002
+        self._append("s1.jsonl", {"input_tokens": 500_000})
+        run_state.close_run(str(self.root), run_state.GOAL_REACHED)
+        later = self._open_run("BG0003")                    # sprint B: a different batch
+        self._append("s1.jsonl", {"input_tokens": 700_000})
+        cap = retro.run_attributed_tokens(str(self.root), "RETRO9002",
+                                          transcripts_dir=self.transcripts)
+        self.assertIsNone(cap["tokens"], "the open run's spend belongs to the open run")
+        self.assertIn("RETRO9002", cap["reason"], "the reason must name the retro")
+        self.assertIn(later["run_id"], cap["reason"], "and the run it declined to read")
+        self.assertNotIn("700,000", cap["reason"])
+
+    def test_the_close_path_writes_no_figure_for_a_mismatched_run(self) -> None:
+        # end to end, through the command the close runs: no number reaches the row, and the
+        # row says why rather than carrying a spend that was never this sprint's
+        self._session("s1.jsonl", {"input_tokens": 100_000})
+        self._open_run()
+        run_state.close_run(str(self.root), run_state.GOAL_REACHED)
+        self._open_run("BG0003")
+        self._append("s1.jsonl", {"input_tokens": 700_000})
+        out = self._capture("accuracy", "--id", "RETRO9002", "--write",
+                            "--tokens-from-harness")
+        self.assertIn("NOT ATTRIBUTABLE", out)
+        self.assertIsNone(retro.velocity_history(str(self.root))[0]["actual_tokens"])
+        written = retro.velocity_path(str(self.root)).read_text(encoding="utf-8")
+        self.assertNotIn("700,000", written, "the other run's delta never reaches the history")
+        self.assertIn("RETRO9002", written)
+
+    def test_a_single_shared_unit_covers_neither_the_elapsed_nor_the_tokens(self) -> None:
+        # run-state batches are cumulative, so an older run can share ONE carried-over unit
+        # with this sprint. That is not this sprint's run on either measure.
+        meter = self._session("s1.jsonl", {"input_tokens": 900_000})
+        self._state(["OLD1", "OLD2", "BG0001"], tokens=100_000, source=meter)
+        self.assertEqual(retro._elapsed_hours(str(self.root), ["BG0001", "BG0002"]),
+                         (None, None), "one carried-over unit is not this sprint's run")
+        cap = retro.run_attributed_tokens(str(self.root), "RETRO9002",
+                                          transcripts_dir=self.transcripts)
+        self.assertIsNone(cap["tokens"], "and it is not this sprint's spend either")
+        self.assertNotIn("800,000", cap["reason"])
+
+    def test_a_covering_run_still_yields_both_numbers(self) -> None:
+        """The positive control, on both paths at once: the shared rule must not refuse the
+        ordinary case, or every close would report not-attributable and unmeasured."""
+        meter = self._session("s1.jsonl", {"input_tokens": 900_000})
+        self._state(["OLDER", "BG0001", "BG0002"], tokens=100_000, source=meter)
+        self.assertEqual(retro._elapsed_hours(str(self.root), ["BG0001", "BG0002"]),
+                         (2.0, "run-state"))
+        cap = retro.run_attributed_tokens(str(self.root), "RETRO9002",
+                                          transcripts_dir=self.transcripts)
+        self.assertEqual(cap["tokens"], 800_000)
+
+    def test_the_coverage_rule_is_a_strict_majority(self) -> None:
+        covers = retro._run_covers
+        self.assertFalse(covers({"batch": ["BG0001"]}, ["BG0001", "BG0002"]),
+                         "half the units is not a majority of them")
+        self.assertTrue(covers({"batch": ["BG0001", "BG0002"]}, ["BG0001", "BG0002"]))
+        self.assertTrue(covers({"batch": ["OLDER", "BG0001", "BG0002"]},
+                               ["BG0001", "BG0002"]), "a cumulative superset still covers")
+        self.assertFalse(covers({"batch": ["BG0001", "BG0002"]}, []),
+                         "a retro naming no units has nothing for a run to cover")
+
+    def test_the_command_asks_about_the_retro_it_was_given(self) -> None:
+        # the wiring itself: `--id` must reach the capture. A second retro, over a unit the
+        # open run does not carry, refuses - where the fixture's own retro would have been
+        # captured, so a capture here means the command asked about the wrong sprint.
+        (self.root / "sdlc-studio" / "retros" / "RETRO9004-other.md").write_text(
+            "# RETRO-9004: another sprint\n\n> **Date:** 2026-07-21\n> **Batch:** BG0003\n",
+            encoding="utf-8")
+        self._session("s1.jsonl", {"input_tokens": 100_000})
+        self._open_run()                                    # covers RETRO9002, not RETRO9004
+        self._append("s1.jsonl", {"input_tokens": 500_000})
+        out = self._capture("accuracy", "--id", "RETRO9004", "--write",
+                            "--tokens-from-harness")
+        self.assertIn("NOT ATTRIBUTABLE", out)
+        self.assertIn("RETRO9004", out)
+        self.assertNotIn("token actual captured", out)
+
+    def test_a_retro_that_names_no_units_gets_no_figure(self) -> None:
+        # `accuracy` on a retro with no Batch line has nothing to attribute a spend to, and
+        # the run that is open is not evidence that it should be attributed anyway
+        (self.root / "sdlc-studio" / "retros" / "RETRO9003-empty.md").write_text(
+            "# RETRO-9003: no batch\n\n> **Date:** 2026-07-21\n", encoding="utf-8")
+        self._session("s1.jsonl", {"input_tokens": 100_000})
+        self._open_run()
+        self._append("s1.jsonl", {"input_tokens": 500_000})
+        cap = retro.run_attributed_tokens(str(self.root), "RETRO9003",
+                                          transcripts_dir=self.transcripts)
+        self.assertIsNone(cap["tokens"])
+        self.assertIn("RETRO9003", cap["reason"])
 
 
 class TheVelocityRowIdIsNormalised(InteractiveSprintFixture):
@@ -1196,6 +1317,123 @@ class TheVelocityRowIdIsNormalised(InteractiveSprintFixture):
         hist = retro.velocity_history(str(self.root))
         self.assertEqual([r["id"] for r in hist], ["RETRO9002"])
         self.assertEqual(hist[0]["actual_tokens"], 800_000)
+
+
+class AnUnratedSprintRecordsNoTokenActual(InteractiveSprintFixture):
+    """BG0244: `batch.actual_tokens` is the SUM over the RATED units, and an interactive sprint
+    rates none, so the sum is 0 - and 0 was written into a column named Actual (tokens). The
+    Tokens/pt cell in the same row already refuses, so one row made two contradictory
+    statements. Three rows were corrected by hand, and the third correction was then
+    overwritten by the close that rewrote the row from the same code path.
+    """
+
+    def _cells(self, rid: str = "RETRO9002") -> dict:
+        """The written row, keyed by COLUMN NAME - read the way the history reader reads it,
+        so the assertions are about the published cell rather than a substring of the file."""
+        idx, cells = None, None
+        text = retro.velocity_path(str(self.root)).read_text(encoding="utf-8")
+        for line in text.splitlines():
+            if idx is None:
+                idx = retro._velocity_index(line)
+            elif line.startswith(f"| {rid} "):
+                cells = retro.sdlc_md.table_cells(line)
+        self.assertIsNotNone(cells, f"no {rid} row in:\n{text}")
+        return {key: (cells[pos].strip() if pos < len(cells) else "")
+                for key, pos in (idx or {}).items()}
+
+    def test_a_sprint_with_no_rated_unit_publishes_a_dash_not_a_zero(self) -> None:
+        # no telemetry, no --tokens: nothing was measured, and an unmeasured sprint must not
+        # be published as one that cost nothing
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        self.assertEqual(self._cells()["actual_tokens"], "-",
+                         "a sum over zero rated units is an absence, not a measurement of 0")
+        self.assertIsNone(retro.velocity_history(str(self.root))[0]["actual_tokens"])
+
+    def test_the_blank_actual_cell_carries_the_reason_it_is_blank(self) -> None:
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        note = self._cells().get("note", "")
+        self.assertIn("not attributable", note.lower(),
+                      "a blank cell with no reason is indistinguishable from an oversight")
+        self.assertIn("telemetry", note)
+
+    def test_the_close_s_own_not_attributable_reason_reaches_the_row(self) -> None:
+        # the live shape: `--tokens-from-harness` against a run with no baseline. The reason
+        # the capture gave is the reason the row should carry, rather than a generic one.
+        self._session("s1.jsonl", {"input_tokens": 5_000_000})
+        run_state.update(str(self.root), run_id="RUN-OLDSTYLE", batch=["BG0001", "BG0002"])
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens-from-harness")
+        cells = self._cells()
+        self.assertEqual(cells["actual_tokens"], "-")
+        self.assertIn("baseline", cells.get("note", ""))
+        self.assertNotIn("5,000,000", cells.get("note", ""),
+                         "the reason must not smuggle in the session total it refused")
+
+    def test_a_recorded_actual_still_lands_and_carries_no_note(self) -> None:
+        """The positive control: the blanking must not be a blanket one, or every row would
+        lose its measurement and the whole series would go dark."""
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens", "800000")
+        cells = self._cells()
+        self.assertEqual(cells["actual_tokens"], "800,000")
+        self.assertEqual(cells.get("note", ""), "-", "a measured row explains nothing")
+
+    def _legacy(self, model_cell: str = "-", actual: str = "0") -> None:
+        """A row already on disk, written by the code that published the false zero."""
+        path = retro.velocity_path(str(self.root))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(retro.VELOCITY_HEADER +
+                        f"| RETRO9001 | 2026-07-20 | 9 | 0 | 9 | 30 | 0 | {actual} | - | - | "
+                        f"0 | - | TOKENS_PER_POINT=25000 | out-of-sample | {model_cell} |\n",
+                        encoding="utf-8")
+
+    def test_a_historical_zero_is_not_read_back_as_a_measurement(self) -> None:
+        # the reader-side guard: three such rows exist only because a human caught them, and
+        # nothing downstream may take one as a data point about what a sprint cost
+        self._legacy()
+        self.assertIsNone(retro.velocity_history(str(self.root))[0]["actual_tokens"],
+                          "a recorded 0 is the old writer's absence, not a measured spend")
+
+    def test_a_historical_zero_is_not_republished_by_the_next_write(self) -> None:
+        # the rewrite is whole-file, so the next sprint's row is also the moment the older
+        # rows are re-published - and they must not be re-published as measurements
+        self._legacy()
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens", "800000")
+        self.assertEqual(self._cells("RETRO9001")["actual_tokens"], "-")
+        self.assertEqual(self._cells("RETRO9002")["actual_tokens"], "800,000")
+
+    def test_a_reason_written_where_the_model_column_was_reads_as_a_note(self) -> None:
+        # the three hand corrections had nowhere to put their reason but the last cell, which
+        # is the Model column. A sentence is not a model: it must not reach the per-model
+        # segmentation, and the rewrite must move it to the column that now exists for it.
+        self._legacy(model_cell="not-attributable: no per-unit telemetry (hand-corrected)")
+        row = retro.velocity_history(str(self.root))[0]
+        self.assertIsNone(row["model"], "prose in the Model cell is not a model")
+        self.assertIn("not-attributable", row.get("note") or "")
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens", "800000")
+        cells = self._cells("RETRO9001")
+        self.assertEqual(cells["model"], "-")
+        self.assertIn("not-attributable", cells.get("note", ""))
+
+    def test_the_velocity_report_quotes_no_rate_for_an_unmeasured_row(self) -> None:
+        # the second consumer of the false zero: `retro.py velocity` divided the Actual cell by
+        # the points and printed `0/pt` for a sprint whose cost was never measured
+        self._legacy()
+        out = self._capture("velocity")
+        line = next(ln for ln in out.splitlines() if "RETRO9001" in ln)
+        self.assertIn("-/pt", line, f"a rate was derived from an unmeasured sprint: {line}")
+        self.assertNotIn("0/pt", line)
+
+    def test_a_reason_is_flattened_into_one_cell(self) -> None:
+        # the reason is prose from elsewhere, and a pipe or a newline in it would break the
+        # row into columns that do not exist - taking the whole history's parse with it
+        self.assertEqual(retro._note_cell("spent 3 | 4 tokens\nin two sessions"),
+                         "spent 3 / 4 tokens in two sessions")
+        self.assertEqual(retro._note_cell(None), "-")
+
+    def test_a_real_model_cell_is_still_a_model(self) -> None:
+        """The other positive control: the salvage keys on prose, so an ordinary model id must
+        survive it untouched."""
+        self._legacy(model_cell="claude-opus-4-8")
+        self.assertEqual(retro.velocity_history(str(self.root))[0]["model"], "claude-opus-4-8")
 
 
 class PartialMeasurementIsExcludedFromTheRate(AccuracyBase):
@@ -1889,11 +2127,18 @@ class UnsourcedBaselineTests(unittest.TestCase):
     """
 
     def _state(self, root: Path, baseline: dict) -> None:
+        """A run over BG0001, and the retro that records it - the capture reads both, so the
+        refusal under test is the baseline's and not a missing retro's."""
         (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
         (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
             "schema": 1, "run_id": "RUN-TEST01", "outcome": "running",
             "batch": ["BG0001"], "goal": None, "session_token_baseline": baseline,
         }), encoding="utf-8")
+        retros = root / "sdlc-studio" / "retros"
+        retros.mkdir(parents=True, exist_ok=True)
+        (retros / "RETRO9001-t.md").write_text(
+            "# RETRO-9001: a sprint\n\n> **Date:** 2026-07-21\n> **Batch:** BG0001\n",
+            encoding="utf-8")
 
     def test_a_baseline_with_no_source_yields_no_number(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -1903,7 +2148,7 @@ class UnsourcedBaselineTests(unittest.TestCase):
                 json.dumps({"message": {"usage": {"input_tokens": 900000}}}) + "\n",
                 encoding="utf-8")
             self._state(root, {"tokens": 100000})            # no "source" key
-            cap = retro.run_attributed_tokens(str(root), transcripts_dir=str(tr))
+            cap = retro.run_attributed_tokens(str(root), "RETRO9001", transcripts_dir=str(tr))
             self.assertIsNone(cap["tokens"], f"an unsourced baseline produced {cap}")
             self.assertIn("does not name the session", cap["reason"])
             self.assertNotIn("800000", json.dumps(cap))      # ...and not the tempting delta
@@ -1918,7 +2163,7 @@ class UnsourcedBaselineTests(unittest.TestCase):
             meter.write_text(json.dumps({"message": {"usage": {"input_tokens": 900000}}}) + "\n",
                              encoding="utf-8")
             self._state(root, {"tokens": 100000, "source": str(meter)})
-            cap = retro.run_attributed_tokens(str(root), transcripts_dir=str(tr))
+            cap = retro.run_attributed_tokens(str(root), "RETRO9001", transcripts_dir=str(tr))
             self.assertEqual(cap["tokens"], 800000)
 
 

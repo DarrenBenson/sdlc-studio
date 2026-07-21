@@ -1105,6 +1105,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The plan's cost history includes interactive sprints instead of showing only the oldest data
+  (BG0246).** `batch_history` gated on a `measured` column counting PER-UNIT telemetry, which an
+  interactive sprint never has, so every one was dropped. The block titled "what sprints ACTUALLY
+  cost - the real planning input" listed RETRO0025 to RETRO0028 at 128k-188k per unit and silently
+  omitted RETRO0060 (2,390,624 over 9 units, 265,625 per unit) and RETRO0061. Planning read
+  systematically cheaper than reality, from the oldest rows in the file, presented as current.
+  Interactive sprints now contribute, with per-unit derived from the total, and **every row is
+  labelled `per-unit` or `sprint-level`** so the two kinds of evidence are never confused. The
+  accepted cost is printed beside them rather than buried in a decision record: a sprint-level row
+  hides the variance between its units, so one unit may have taken far more than the figure shown.
+
+- **Per-unit mutation evidence can be recorded by the practice that produces it (BG0245).** BG0238
+  built a ledger that accumulates mutation evidence, but only `mutation.py` could write to it,
+  while the practice is a builder hand-applying a mutant to the code a new test pins. A sprint
+  that followed policy exactly therefore read 0/N: 75 mutants were applied in the previous run and
+  coverage reported 0/4. A lane that reads red when the policy WAS followed gets ignored, which is
+  worse than a lane that is merely absent. `mutation.py register` now records an already-applied
+  mutant against the target's content hash. Crucially the ledger does not pretend a claim is a
+  measurement: every entry carries its **provenance**, registered entries are reported as
+  SELF-REPORTED by the gate lane, the two kinds are separate records so neither erases the other,
+  and verdicts only a runner can observe (`error`, `unviable`) are refused from a self-report.
+
+- **The velocity row publishes `-` rather than `0` when nothing was measured (BG0244).** `Actual
+  (tokens)` was a sum over RATED units, which is 0 when none are rated - the normal case for an
+  interactive sprint - so an absence was published as a measurement of zero, in the series the
+  estimator reads. The `Tokens/pt` cell in the same row already refused, so one row made two
+  contradictory statements. Three rows had been hand-corrected, and the third correction was then
+  overwritten automatically by `apply-signoff` rewriting the same row, so the workaround was
+  defeated by the ceremony that produced the error. The writer now clears a falsy actual, a `Note`
+  column carries the not-attributable reason, and a reader-side guard means a historical `0` is
+  never consumed as a data point: 7 rows printed `actual= 0` before and 0 do now.
+
+- **A token delta can no longer be stamped on an unrelated retro (BG0243).** `run_attributed_tokens`
+  read whatever run was open and `cmd_accuracy` never passed the retro id, so recording an older
+  retro after a later `sprint plan --write` would have attributed the new run's spend to it. The
+  retro id is now a required positional argument, so no caller can reach the capture without
+  declaring what it is for, and the batch-coverage rule was EXTRACTED from the elapsed path rather
+  than copied, so the two cannot drift into disagreeing about what a covering batch is.
+
+- **35 unconfined git call sites in the test suite are confined (BG0242).** BG0230 confined the
+  shared helper but 35 call sites across 8 modules never reached it, and `tools/skill-tests.sh`
+  scrubbed for them only when the suite ran through that script - not under the plain `unittest
+  discover` an agent typically uses. Containment was proven rather than asserted: a fresh victim
+  repository per module, with its worktree deliberately diverging from its index, showed **5 of 8
+  modules damaging the victim at HEAD** - three wiping its uncommitted state outright, reproducing
+  the incident this class has now caused twice - and none afterwards. The ratchet is no longer a
+  ceiling that may only fall but a zero-tolerance sweep, with an alias-aware detector: a naive
+  `subprocess.run(["git"` grep found only 24 of the 35, because one module imports `subprocess as
+  _sp`.
+
+- **A test spec with no AC Coverage Matrix is a finding, not a clean result (BG0241).** BG0229
+  fixed the absent FILE; this is the next vacuity in - a spec present, readable and valid UTF-8
+  but carrying no matrix at all still reported clean at exit 0, indistinguishable from a matrix
+  with nothing outstanding. It now exits 1, distinct from a complete matrix at 0 and an absent
+  file at 2. The meaning was decided before the code: of the three readings, only "deliberately
+  not applicable" is clean, and nothing absent can evidence a decision. The migration cost was
+  measured before the default changed rather than discovered afterwards: 0 of 2 specs in this
+  repo, and 30 of 178 across the workspaces on this machine, concentrated in four projects.
+
+- **`lessons.py` and `loop_guard.py` write under the root they were given (BG0240).**
+  `lessons summary --out` anchored a relative path on the cwd, and `loop_guard`'s state path
+  honoured a named `--root` but not the discovery half, so both wrote strays beside the cwd and
+  exited 0 while printing a relative path that hid where the file went. Both now use the same
+  resolver `repo_map` adopted rather than a third idiom, and print the resolved path. A third
+  instance was found in the same file and fixed with them: `cmd_budget` read run-state from the
+  unresolved root, so fixing only the two filed cases would have left `record` writing under the
+  discovered root while `budget` read the cwd.
+
 - **Per-unit mutation evidence survives to the close (BG0238).** The mutation report was a single
   blob, last-write-wins, whose staleness was keyed on a whole-repo `git_rev`. That shape assumes
   one run per sprint at the close, so running mutation per unit during the build - which is what

@@ -400,11 +400,18 @@ knowing which model paid it: a sprint delivered by a smaller model must not land
 average as one delivered by a larger, and the mean of the two would describe neither. A sprint
 that MIXED models records `mixed` and NO ratio at all, rather than an averaged number that is
 about no run that ever happened.
+
+An EMPTY Actual (tokens) cell means the sprint's token cost was not measured, and the NOTE
+column says why. It never means the sprint cost nothing: a sprint that spent no tokens does
+not exist, so a `0` there could only ever have been a sum over an empty set of measured units
+published as though it were a measurement. Rows written before that was fixed carried exactly
+that, and the reader treats such a `0` as the absence it is - it is not a data point, and no
+rate is derived from it.
 -->
 # Velocity history
 
-| Retro | Date | Units | Measured | Forecast | Points | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Constants | Sample | Model |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Retro | Date | Units | Measured | Forecast | Points | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Constants | Sample | Model | Note |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 """
 
 # The history is parsed by COLUMN NAME, not position, so a row written before the plan-time
@@ -422,7 +429,7 @@ VELOCITY_COLUMNS = (
     ("forecast", "forecast"), ("points", "points"), ("estimate", "estimate"),
     ("actual", "actual_tokens"), ("ratio", "ratio"), ("oversized", "oversized"),
     ("wall", "wall_time_s"), ("constants", "constants"), ("sample", "sample"),
-    ("model", "model"),
+    ("model", "model"), ("note", "note"),
 )
 #: A sprint whose rated units were delivered by more than one model. Its ratio is not recorded.
 MODEL_MIXED = "mixed"
@@ -525,34 +532,51 @@ def _worker_hours(root, unit_ids) -> float | None:
     return round(secs / 3600, 3) if seen else None
 
 
+def _run_covers(state: dict, unit_ids) -> bool:
+    """Does this run-state's batch speak for these units?
+
+    A strict MAJORITY of the units must be in the batch, not merely one in common. Run-state
+    batches are CUMULATIVE, so a previous sprint's state can share a single carried-over
+    (failed-then-redelivered) unit with this one, and a one-unit intersection would then lend
+    that other run's whole elapsed - and its whole spend - to this sprint. The majority rule
+    still accepts a cumulative superset that covers the sprint, which is the common case: the
+    current run's own state carries earlier ids too.
+
+    ONE rule, shared by both quantities read off a run: the hours it was open and the tokens
+    it spent. Either one taken from a run that is not this sprint's is the same error.
+    """
+    run_batch = {sdlc_md.norm_id(x) for x in (state.get("batch") or [])}
+    retro_units = {sdlc_md.norm_id(u) for u in unit_ids}
+    if not retro_units:
+        return False   # a retro naming no units gives nothing for a run to cover
+    return len(run_batch & retro_units) * 2 > len(retro_units)
+
+
+def retro_units(root, retro_id: str) -> list[str]:
+    """The delivery units a retro records, or an empty list when there is no such retro."""
+    path = find_retro(root, retro_id)
+    return batch_ids(path.read_text(encoding="utf-8")) if path else []
+
+
 def _elapsed_hours(root, unit_ids) -> tuple[float | None, str | None]:
     """Wall-clock hours the run was OPEN - the PRIMARY velocity's denominator, ceremony included -
     read from the run-state (`started_at` -> `ended_at`, or now if still open). Returns
     `(hours, source)`.
 
-    Trusted ONLY when the run-state's batch substantially COVERS this sprint's units - a strict
-    MAJORITY of them, not merely one in common. Run-state batches are cumulative, so a
-    previous runner sprint's closed run-state can share a single carried-over (failed-then-
-    redelivered) unit with this sprint; a one-unit intersection would then report that old run's
-    full age (observed live: 43h) as this sprint's elapsed - the exact confounding CR0273 warns
-    about. The majority rule still accepts a cumulative superset that covers the sprint (the common
-    case: the current run's own state carries earlier ids too). When it does not cover, or no run
-    was opened (an interactive sprint, whose wall-clock would count operator-away gaps as sprint
-    time), this returns None and the primary reads UNMEASURED unless the operator supplies a real
-    figure with `--elapsed-hours`."""
+    Trusted ONLY when the run-state's batch COVERS this sprint's units (`_run_covers`, the same
+    rule the token capture obeys). A one-unit intersection with an older cumulative batch would
+    otherwise report that run's full age (observed live: 43h) as this sprint's elapsed - the
+    exact confounding CR0273 warns about. When it does not cover, or no run was opened (an
+    interactive sprint, whose wall-clock would count operator-away gaps as sprint time), this
+    returns None and the primary reads UNMEASURED unless the operator supplies a real figure
+    with `--elapsed-hours`."""
     from datetime import datetime, timezone
     try:
         from lib import run_state
         st = run_state.read(root)
     except Exception:  # noqa: BLE001 - a velocity read must never break the retro
         return None, None
-    run_batch = {sdlc_md.norm_id(x) for x in (st.get("batch") or [])}
-    retro_units = {sdlc_md.norm_id(u) for u in unit_ids}
-    overlap = len(run_batch & retro_units)
-    # A strict majority of THIS sprint's units must be in the run-state's batch. `overlap * 2 >
-    # n` is the majority test; a one-unit carried-over intersection fails it for any sprint of two
-    # or more units, while a run-state covering all of them (cumulative or exact) passes.
-    if not retro_units or overlap * 2 <= len(retro_units):
+    if not _run_covers(st, unit_ids):
         return None, None  # the run-state does not cover this sprint - its elapsed is not ours
 
     def _parse(s):
@@ -1121,10 +1145,15 @@ TRANSCRIPTS_ENV = run_state.TRANSCRIPTS_ENV
 harness_tokens = run_state.session_tokens
 
 
-def run_attributed_tokens(root, transcripts_dir=None) -> dict:
-    """The tokens spent SINCE the open run started, or a stated reason there is no such
-    number. Same shape as `harness_tokens`: {"tokens", "source", "basis"} or
-    {"tokens": None, "reason"}.
+def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
+    """The tokens the open run spent, for the retro that is being recorded - or a stated
+    reason there is no such number. Same shape as `harness_tokens`: {"tokens", "source",
+    "basis"} or {"tokens": None, "reason"}.
+
+    `retro_id` is REQUIRED, and the units are read from that retro, because the delta is only
+    this retro's spend if the open run is the run that delivered it. Reading the open run and
+    trusting the caller to have asked about the right one is how a number correct about one
+    sprint gets stamped on another.
 
     The harness meter is cumulative per SESSION, not per sprint. Closing a second sprint in
     one session against the raw meter books the first sprint's spend - and the conversation
@@ -1136,6 +1165,8 @@ def run_attributed_tokens(root, transcripts_dir=None) -> dict:
 
     * no run is open, or the open run carries no baseline (it was opened before the baseline
       existed - the live case at this fix's own sprint);
+    * the open run's batch does not COVER the units the retro records, so the run that is open
+      is not the run that delivered this sprint;
     * the current session is not the one the baseline was taken in, so the two readings are
       of different meters;
     * the meter reads at or below the baseline, which is the same statement by other means.
@@ -1156,6 +1187,17 @@ def run_attributed_tokens(root, transcripts_dir=None) -> dict:
             f"cannot be separated from any earlier sprint's in the same session. A run opened "
             f"before the baseline existed reports no token figure rather than a session-wide "
             f"one")}
+    # WHOSE spend is it? The meter says what the open run cost; only the batch says whether the
+    # open run is the one this retro records. `sprint close` always works on the open run, but
+    # `accuracy --id <an older retro> --tokens-from-harness` after a later `sprint plan --write`
+    # does not, and the delta would land on the older sprint's row with nothing saying so.
+    units = retro_units(root, retro_id)
+    if not _run_covers(state, units):
+        named = ", ".join(units) if units else "no units at all"
+        return {"tokens": None, "reason": (
+            f"not attributable: {rid}'s batch does not cover the units {retro_id} records "
+            f"({named}), so its spend is a different sprint's. Record {retro_id} from the run "
+            f"that delivered it, or supply the figure with `accuracy --tokens N`")}
     cap = harness_tokens(root, transcripts_dir)
     if not cap.get("tokens"):
         return {"tokens": None, "reason": f"not attributable: {cap.get('reason')}"}
@@ -1258,6 +1300,14 @@ def velocity_history(root) -> list[dict]:
             return row[pos].strip() if pos is not None and pos < len(row) else ""
 
         model = cell("model").strip()
+        note = cell("note").strip()
+        # A model id is ONE token (`claude-opus-4-8`, `mixed`, `unrecorded`). A Model cell
+        # holding a sentence is a row somebody corrected by hand before the Note column
+        # existed, when the last cell was the only place a reason could go. Read it as the
+        # note it is: a sentence must never reach the per-model segmentation as a model, and
+        # the next rewrite then puts it in the column that now exists for it.
+        if " " in model:
+            note, model = note if note and note != "-" else model, "-"
         out.append({"id": rid.upper(), "date": cell("date"),
                     "units": _velocity_num(cell("units")),
                     "measured": _velocity_num(cell("measured")),
@@ -1269,12 +1319,18 @@ def velocity_history(root) -> list[dict]:
                     "points": _velocity_num(cell("points")),
                     "oversized": _velocity_num(cell("oversized")),
                     "estimate": _velocity_num(cell("estimate")),
-                    "actual_tokens": _velocity_num(cell("actual_tokens")),
+                    # A recorded 0 reads as ABSENT, not as a spend of nothing. No sprint costs
+                    # zero tokens, so a 0 in this column can only be the empty rated-unit sum
+                    # the old writer published, and rows carrying one are on disk. Read as 0 it
+                    # would be a data point about a sprint's cost; read as absent it is what it
+                    # is, and the next rewrite republishes it as a blank rather than a figure.
+                    "actual_tokens": _velocity_num(cell("actual_tokens")) or None,
                     "ratio": _velocity_num(cell("ratio")),
                     "wall_time_s": _velocity_num(cell("wall_time_s")),
                     "constants": parse_constants(cell("constants")),
                     "sample": cell("sample") or None,
-                    "model": model if model and model != "-" else None})
+                    "model": model if model and model != "-" else None,
+                    "note": note if note and note != "-" else None})
     return sorted(out, key=lambda r: r["id"])
 
 
@@ -1441,6 +1497,27 @@ def model_cell(res: dict) -> str:
     return models[0] if models else "-"
 
 
+def _note_cell(text) -> str:
+    """One table cell from a reason written for a human: single line, no pipe, or `-`."""
+    flat = " ".join(str(text or "").split()).replace("|", "/")
+    return flat or "-"
+
+
+def _actual_note(res: dict, actual) -> str | None:
+    """WHY this row's Actual (tokens) cell is blank, or None when it is not blank.
+
+    A blank with no reason beside it is indistinguishable from an oversight, and this project
+    has already published the alternative: a `0` that read as a measurement. The close's own
+    not-attributable reason is preferred when it has one - it names the run, the meter, or the
+    baseline that was missing - and a plain re-run with nothing measured falls back to the
+    generic statement of the same fact."""
+    if actual is not None:
+        return None
+    return (res.get("token_capture") or "").strip() or (
+        "not attributable: no unit carries per-unit telemetry and no sprint total was "
+        "supplied, so the sprint's token cost is unrecorded rather than 0")
+
+
 def record_velocity(root, res: dict) -> Path:
     """Upsert this retro's row into the history. Keyed by retro id, so re-running a sprint's
     accuracy report corrects its row rather than double-counting the sprint.
@@ -1494,6 +1571,14 @@ def record_velocity(root, res: dict) -> Path:
             existing = next((r for r in history if r["id"] == row["id"]), None)
             if existing and existing.get("actual_tokens"):
                 row["actual_tokens"] = existing["actual_tokens"]
+    # Whatever is left falsy here is an ABSENCE, and the cell says so. `b["actual_tokens"]` is
+    # a sum over the RATED units, so a sprint that rated none - every interactive sprint -
+    # summed an empty set to 0 and published it in a column named Actual (tokens). The
+    # Tokens/pt cell beside it already refused, so the row contradicted itself; three rows were
+    # corrected by hand, and the third correction was overwritten by the next close.
+    if not row["actual_tokens"]:
+        row["actual_tokens"] = None
+    row["note"] = _actual_note(res, row["actual_tokens"])
     rows = [r for r in history if r["id"] != row["id"]] + [row]
     rows.sort(key=lambda r: r["id"])
 
@@ -1515,7 +1600,7 @@ def record_velocity(root, res: dict) -> Path:
                      f"{_fmt(r['actual_tokens'])} | {ratio} | {_fmt(rate)} | "
                      f"{_fmt(r.get('oversized'))} | {_fmt(r['wall_time_s'])} | "
                      f"{constants_cell(r.get('constants'))} | {sample} | "
-                     f"{r.get('model') or '-'} |")
+                     f"{r.get('model') or '-'} | {_note_cell(r.get('note'))} |")
     path = velocity_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
     sdlc_md.atomic_write(path, "\n".join(lines) + "\n")
@@ -1858,7 +1943,7 @@ def cmd_accuracy(args) -> int:
             # THIS RUN's spend, not the session's. The meter is cumulative per session, so a
             # second sprint closed in one session would otherwise book the first sprint's
             # tokens too. No baseline, no number - never a session-wide fallback.
-            cap = run_attributed_tokens(args.root)
+            cap = run_attributed_tokens(args.root, args.id)
             if cap["tokens"]:
                 tokens = cap["tokens"]
                 capture_note = (f"token actual captured from the harness transcript: "
@@ -1952,7 +2037,11 @@ def cmd_velocity(args) -> int:
         sample = _sample_of(r["id"], r.get("constants"))
         model = r.get("model") or MODEL_UNRECORDED
         pts = _fmt(r.get("points"))
-        tpp = _fmt(_rate(r["actual_tokens"] or 0, r.get("points") or 0))
+        # The SAME rule the file's own Tokens/pt column obeys: a rate only where the tokens and
+        # the points describe the same units. Dividing an absent Actual by the points printed
+        # `0/pt` beside an `actual= -` on the same line.
+        tpp = _fmt(_rate(r["actual_tokens"] or 0, r.get("points") or 0)
+                   if _tokens_cover_points(r) else None)
         over = f"  ({r['oversized']} over {sdlc_md.POINTS_SPLIT_ABOVE}pt)" if r.get(
             "oversized") else ""
         print(f"  {r['id']}  {r['date']:12} {r['measured']}/{r['units']} measured  "

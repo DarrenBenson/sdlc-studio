@@ -1051,6 +1051,11 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 _PASS_TOKENS = {"pass", "passing", "passed", "done", "verified", "covered", "green"}
 
+# The section heading, used only to tell a BROKEN matrix from an unwritten one. The table
+# itself is found structurally (`_matrix_header`), never by this - a matrix under a differently
+# worded heading still counts.
+_MATRIX_HEADING_RE = re.compile(r"(?im)^\s{0,3}#{1,6}\s*AC Coverage Matrix\b")
+
 
 def _row_story_id(cell: str) -> str:
     """The normalised story id in a matrix Story cell (bare `US0001` or a `[US0001](..)`
@@ -1095,6 +1100,15 @@ def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> 
     verify-report marks failing is flagged (the matrix cannot claim green over a red runner).
     Returns a list of {ac, issue} findings (empty = the matrix is complete and honest).
 
+    A spec with NO matrix is a finding, not a clean result. Zero rows and zero findings was
+    the same output a fully mapped matrix produces, so a spec asserting no coverage was
+    indistinguishable from one asserting complete coverage. Absence is read as NOT YET
+    WRITTEN: of the three things it could mean - unwritten, malformed, or deliberately not
+    applicable - only the last is clean, and a deliberate exemption is a decision somebody
+    made, which nothing that is simply absent can evidence. A matrix table present but
+    holding no AC rows is the same nothing and reports the same way, or the finding could be
+    silenced with two lines that assert nothing.
+
     A spec that could not be read is a refusal, never a clean matrix - the two ways of
     failing to read one are kept apart because their callers differ:
       * ABSENT (no such file, or a directory) -> FileNotFoundError. A path that is not
@@ -1111,12 +1125,15 @@ def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> 
         return [{"ac": "-", "issue": f"spec is unreadable or not valid UTF-8: {p}"}]
     failed_in_report = _report_failed_acs(verify_report) if verify_report else set()
     issues: list[dict] = []
+    matrices = 0   # matrix TABLES found
+    acs = 0        # AC rows read out of them
     def _matrix_header(cells: list) -> bool:
         low = [c.strip().lower() for c in cells]
         return "ac" in low and ("test cases" in low or "test case" in low)
     for tbl in sdlc_md.iter_tables(text, header_predicate=_matrix_header):
         if tbl["header"] is None or not _matrix_header(tbl["header"]):
             continue  # only the AC Coverage Matrix table(s); later tables never bleed in
+        matrices += 1
         low = [c.strip().lower() for c in tbl["header"]]
         cols = {n: low.index(n) for n in ("ac", "test cases", "test case", "status") if n in low}
         story_col = low.index("story") if "story" in low else None
@@ -1124,6 +1141,7 @@ def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> 
             ac = cells[cols["ac"]].strip() if cols["ac"] < len(cells) else ""
             if not ac or ac.lower() == "ac":
                 continue
+            acs += 1
             if "{{" in "|".join(cells):
                 issues.append({"ac": ac, "issue": "unfilled placeholder in the matrix row"})
                 continue
@@ -1140,7 +1158,27 @@ def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> 
                 issues.append({"ac": ac, "issue": f"status {st!r} is not passing"})
             elif key in failed_in_report:
                 issues.append({"ac": ac, "issue": "matrix says passing but the verify-report marks it failing"})
+    if not matrices:
+        issues.append({"ac": "-", "issue": _no_matrix_issue(text)})
+    elif not acs:
+        issues.append({"ac": "-", "issue": "the AC Coverage Matrix has no AC rows - a header "
+                                           "with nothing under it maps no AC to any test"})
     return issues
+
+
+def _no_matrix_issue(text: str) -> str:
+    """Why the spec has no matrix, in the terms of the repair it needs.
+
+    A heading with nothing parseable under it is a BROKEN section (wrong columns, or prose
+    where the table should be); no heading at all is one nobody has written yet. Both are
+    findings and neither is clean, but telling them apart is the difference between "fix the
+    columns" and "write the matrix", and the reader cannot see which from the file.
+    """
+    if _MATRIX_HEADING_RE.search(text):
+        return ("an AC Coverage Matrix heading with no matrix table under it - the table "
+                "needs an `AC` column and a `Test Cases` column")
+    return ("no AC Coverage Matrix section - the spec never says which test case covers "
+            "which AC, so it asserts no coverage at all")
 
 
 def epic_stories(repo_root: Path | str, epic_id: str) -> list[Path]:

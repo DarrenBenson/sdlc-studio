@@ -158,7 +158,6 @@ class WorkspaceAdvisoryTests(unittest.TestCase):
     guesses, silent without git."""
 
     def _repo(self, d: Path) -> Path:
-        import subprocess
         root = Path(d)
         cd = root / "sdlc-studio" / "change-requests"
         cd.mkdir(parents=True)
@@ -184,13 +183,11 @@ class WorkspaceAdvisoryTests(unittest.TestCase):
             self.assertIn("another session", adv)   # awareness wording, no authorship claim
 
     def test_rename_names_both_ids(self) -> None:
-        import subprocess
         with tempfile.TemporaryDirectory() as d:
             root = self._repo(Path(d))
             cd = root / "sdlc-studio" / "change-requests"
-            subprocess.run(["git", "mv", "sdlc-studio/change-requests/CR0001-a.md",
-                            "sdlc-studio/change-requests/CR0002-b.md"],
-                           cwd=root, check=True, capture_output=True)
+            gitutil.git(["mv", "sdlc-studio/change-requests/CR0001-a.md",
+                         "sdlc-studio/change-requests/CR0002-b.md"], root)
             adv = status.workspace_advisory(root)
             self.assertIn("CR0001", adv)
             self.assertIn("CR0002", adv)
@@ -392,13 +389,12 @@ class HookWarningTests(unittest.TestCase):
 
     def test_pillars_surfaces_a_disabled_hook(self) -> None:
         import io
-        import subprocess
         from contextlib import redirect_stdout
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             (root / ".githooks").mkdir()
             (root / ".githooks" / "pre-commit").write_text("#!/bin/sh\n", encoding="utf-8")
-            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            gitutil.git(["init", "-q", str(root)], cwd=root)
             (root / "sdlc-studio").mkdir()
             buf = io.StringIO()
             with redirect_stdout(buf):

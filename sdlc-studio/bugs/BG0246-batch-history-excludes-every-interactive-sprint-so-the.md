@@ -1,6 +1,7 @@
 # BG0246: batch_history excludes every interactive sprint, so the plan's 'real cost input' silently shows only old runner-era sprints
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional - the exclusion was reproduced from the two velocity rows the bug names (RETRO0060 and RETRO0061, both `Measured` 0), the block was then re-rendered against this repo's real VELOCITY.md and both now appear with their per-unit cost and a `sprint-level` label. Seven mutants hand-applied across `batch_history` and `_render_token_forecast`; all seven killed.
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py
@@ -20,8 +21,36 @@
 
 Decide what the block is for. If it is per-unit cost, then a sprint with only a sprint-level total can still contribute tokens/unit as total/units, and `measured` is the wrong gate - use the units column and mark the row as sprint-level rather than per-unit. If per-unit telemetry is genuinely required, then the block must SAY how many measured sprints it excluded and why, because silence here reads as 'this is all the evidence there is'. Either way it must not present the oldest data as the current cost picture. Guard it with a test that puts an interactive-shaped row (actual set, measured 0) in the history and asserts it is either included or explicitly reported as excluded - never simply absent.
 
+## Resolution
+
+Fixed per operator ruling D0047: interactive sprints are INCLUDED, their per-unit cost derived as
+total/units, and every row carries a `basis` of `per-unit` or `sprint-level` which the renderer
+prints. The divisor stays the measured-unit count where there is one - a runner-era sprint that
+delivered 7 and recorded telemetry for 5 is evidence about those 5 - and falls back to the
+delivered-unit count otherwise. With neither, no row is made: the numerator was never the problem,
+and a total with no divisor cannot yield a per-unit figure.
+
+D0047's accepted risk is stated on screen, not only in the decision record. A sprint-level figure
+hides the variance between units, so a 9-unit sprint where one unit ate half the budget looks
+identical to nine even ones. The block prints that caveat under the rows, and only when a
+sprint-level row is actually on screen - a caveat printed over a block it is not about is noise,
+and noise on a line that is usually fine is how a real caveat stops being read.
+
+On this repo the block now shows RETRO0027 and RETRO0028 (per-unit) alongside RETRO0060 at
+265,624/unit and RETRO0061 at 97,337/unit (sprint-level), where before it ended at RETRO0028.
+
+WHAT THIS DID NOT FIX, contrary to the last sentence of the Summary and of D0047's rationale. The
+stalled counter is NOT this filter. `tokens_per_point` still reports "3 unit(s) of its own
+evidence", unchanged, because it reads a different source: the join of the plan-time forecast log
+against the PER-UNIT actuals log, not the velocity table's `Measured` column. This project has 208
+units with plan-time Points recorded and only 3 with a per-unit actual (CR0268-CR0270), so the
+counter is stuck for want of per-unit actuals, which an interactive sprint never writes. Moving it
+means changing where the rate is measured from, which D0047 did not rule on. Filed separately
+rather than done quietly here.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-21 | sdlc-studio | Filed |
+| 2026-07-21 | claude | Fixed per D0047: interactive sprints included, per-unit derived from the sprint total, every row labelled per-unit or sprint-level, and the hidden-variance caveat printed when a derived row is on screen. 7 mutants applied, 7 killed. The rate counter is a DIFFERENT filter and is unchanged at 3 - stated in the Resolution rather than left implied. |

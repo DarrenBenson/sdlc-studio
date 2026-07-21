@@ -20,6 +20,11 @@ Subcommands:
              sdlc-studio/.local/mutation-report.json (the latest run) and appends this
              run's per-target evidence to sdlc-studio/.local/mutation-runs.json (the
              bounded ledger the gate lane reads as coverage); non-zero on survivors.
+  register   record a mutant a builder ALREADY applied by hand, so the per-unit
+             practice (apply a mutant to the code a new test pins, see RED, restore)
+             leaves a trace in the same ledger. SELF-REPORTED: nothing here re-runs
+             anything, so the entry is marked `registered` and the gate lane reports
+             it as a claim, never as a measured run.
   prefilter  list test files with no recognisable assertion - the cheap static
              signal for which tests to mutate first (advisory).
 
@@ -45,6 +50,26 @@ DEFAULT_MAX_MUTATIONS = 25
 #: ledger grows with the number of distinct files ever mutated, not with the number of runs.
 LEDGER_LIMIT = 200
 _RUN_TIMEOUT = 600  # seconds per test run - a hung mutant must not hang the gate
+
+# WHERE a ledger entry's evidence came from. A `measured` entry is the record of a run that
+# applied the mutant and observed the suite's answer. A `registered` entry is a builder's report
+# that they applied one by hand: nothing in this file re-ran anything, so it is a CLAIM, and the
+# ledger holding both would be silently downgraded to the weaker of the two if the entries did
+# not say which they are. Every reader must be able to weight them differently.
+PROVENANCE_MEASURED = "measured"
+PROVENANCE_REGISTERED = "registered"
+#: The verdicts a hand-applied mutant can carry. `error` and `unviable` are things the RUNNER
+#: observes about a mutant it tried to execute; a builder reporting one would be reporting on a
+#: run that did not happen here.
+REGISTRABLE_VERDICTS = ("killed", "survived")
+
+
+def entry_provenance(entry: dict) -> str:
+    """A ledger entry's provenance. Absent means `measured`: before `register` existed only a
+    run could write an entry, so an unmarked entry is a run's, and treating it as a claim would
+    retro-actively weaken evidence that was really gathered."""
+    return str(entry.get("provenance") or PROVENANCE_MEASURED)
+
 
 # Language profiles: extension -> fault class -> (line regex, replacement builder).
 # A class absent for an extension is UN-CHECKED for files of that language.
@@ -580,19 +605,8 @@ def append_ledger(root: Path | str, report: dict, records: list[dict]) -> dict:
     so the truncation is never silent. An unreadable ledger is replaced and says so (`reset`).
     """
     root = Path(root)
-    state: dict = {"version": 1, "dropped": 0, "entries": []}
     path = ledger_path(root)
-    reset = False
-    if path.exists():
-        try:
-            loaded = json.loads(path.read_text(encoding="utf-8"))
-            if not isinstance(loaded, dict) or not isinstance(loaded.get("entries"), list):
-                raise ValueError("ledger is not a {entries: [...]} object")
-            state = {"version": loaded.get("version", 1),
-                     "dropped": int(loaded.get("dropped", 0) or 0),
-                     "entries": loaded["entries"]}
-        except (ValueError, OSError, TypeError):
-            reset = True
+    state, reset = _load_ledger(path)
     new: list[dict] = []
     for fp in report.get("targets", []):
         rs = [r for r in records if str(Path(r["file"])) == str(Path(fp))]
@@ -607,12 +621,42 @@ def append_ledger(root: Path | str, report: dict, records: list[dict]) -> dict:
             continue
         digest = (report.get("target_hashes") or {}).get(str(Path(fp)))
         new.append({"target": _ledger_target(root, fp), "hash": digest,
+                    "provenance": PROVENANCE_MEASURED,
                     "git_rev": report.get("git_rev"),
                     "generated_at": report.get("generated_at"),
                     "test_cmd": report.get("test_cmd"), "summary": summary})
+    # A run supersedes its OWN kind only. A later run's numbers replace an earlier run's for the
+    # same target, but a hand-registered claim about that file is a different statement, not a
+    # stale copy of this one, and dropping it here would delete evidence this run never gathered.
     superseded = {e["target"] for e in new}
     entries = [e for e in state["entries"]
-               if isinstance(e, dict) and e.get("target") not in superseded] + new
+               if isinstance(e, dict)
+               and not (e.get("target") in superseded
+                        and entry_provenance(e) == PROVENANCE_MEASURED)] + new
+    return _store_ledger(path, state, entries, reset)
+
+
+def _load_ledger(path: Path) -> tuple[dict, bool]:
+    """(state, reset). An unreadable ledger yields a fresh state and `reset` True, so the
+    replacement is reported rather than looking like an empty history."""
+    state: dict = {"version": 1, "dropped": 0, "entries": []}
+    if not path.exists():
+        return state, False
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(loaded, dict) or not isinstance(loaded.get("entries"), list):
+            raise ValueError("ledger is not a {entries: [...]} object")
+        return {"version": loaded.get("version", 1),
+                "dropped": int(loaded.get("dropped", 0) or 0),
+                "entries": loaded["entries"]}, False
+    except (ValueError, OSError, TypeError):
+        return state, True
+
+
+def _store_ledger(path: Path, state: dict, entries: list[dict], reset: bool) -> dict:
+    """Bound, write, and report. ONE truncation point, so every writer meets the same limit -
+    a per-unit practice registering every mutant it applies would otherwise grow it without
+    end. An empty result over a ledger that does not exist yet writes nothing."""
     dropped_now = max(0, len(entries) - LEDGER_LIMIT)
     state["entries"] = entries[dropped_now:]
     state["dropped"] += dropped_now
@@ -627,6 +671,79 @@ def append_ledger(root: Path | str, report: dict, records: list[dict]) -> dict:
     path.write_text(json.dumps(state, indent=2), encoding="utf-8")
     return {"path": str(path), "entries": len(state["entries"]), "dropped_now": dropped_now,
             "dropped_total": state["dropped"], "written": True}
+
+
+def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: str) -> dict:
+    """Record a mutant that was ALREADY applied by hand, against the target's content NOW.
+
+    The practice this exists for: a builder writes a test, applies a mutant to the code it
+    pins, confirms the test goes RED, and restores. That is stronger per-unit evidence than a
+    blanket sampling run, and until now it left no trace at all - so a sprint that followed the
+    policy for 75 mutants closed with the coverage lane reading 0/4. Forcing the practice
+    through a full run instead would have changed the practice to suit the tool.
+
+    WHAT THIS IS NOT. Nothing here applies a mutant, runs a test, or checks the claim in any
+    way. The entry is a self-report, marked `registered` so no reader can mistake it for a run,
+    and it is deliberately kept in the SAME ledger as the measured entries so a lane cannot
+    accidentally read one file and miss the other.
+
+    Keyed on the target's content hash, exactly as a run's entry is: an edit to the target
+    starts the entry again, because the earlier claim was about bytes that no longer exist.
+    Registrations on unchanged content ACCUMULATE, since a builder applies many mutants to one
+    file across a sprint and overwriting per call would leave the ledger permanently reading 1.
+
+    Raises ValueError on a target that cannot be read, an unknown verdict, or an empty
+    description: an entry that names neither what was mutated nor what judged it is unauditable,
+    and one with no hash could never go stale.
+    """
+    import hashlib
+    root = Path(root)
+    path = Path(target)
+    if not path.is_absolute():
+        path = root / path
+    if not path.is_file():
+        raise ValueError(f"no such target: {path} - a registered entry is keyed on the "
+                         "target's content hash, and a file that cannot be read has none")
+    if verdict not in REGISTRABLE_VERDICTS:
+        raise ValueError(f"verdict must be one of {', '.join(REGISTRABLE_VERDICTS)}, "
+                         f"not {verdict!r}")
+    mutant, test = str(mutant or "").strip(), str(test or "").strip()
+    if not mutant or not test:
+        raise ValueError("a registered mutant must name WHAT was mutated and WHICH test "
+                         "returned the verdict - a bare count cannot be audited")
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    rel = _ledger_target(root, path)
+    lpath = ledger_path(root)
+    state, reset = _load_ledger(lpath)
+    entries = [e for e in state["entries"] if isinstance(e, dict)]
+    record = {"mutant": mutant, "test": test, "verdict": verdict,
+              "at": sdlc_md.now_iso8601()}
+    entry = next((e for e in entries if e.get("target") == rel
+                  and entry_provenance(e) == PROVENANCE_REGISTERED
+                  and e.get("hash") == digest), None)
+    # any registered entry for this target on OTHER content is stale evidence: drop it rather
+    # than carry counts about bytes this file no longer has
+    entries = [e for e in entries
+               if not (e.get("target") == rel
+                       and entry_provenance(e) == PROVENANCE_REGISTERED
+                       and e is not entry)]
+    if entry is None:
+        entry = {"target": rel, "hash": digest, "provenance": PROVENANCE_REGISTERED,
+                 "git_rev": _git_rev(root), "generated_at": record["at"], "test_cmd": None,
+                 "summary": {"applied": 0, "killed": 0, "survived": 0,
+                             "errors": 0, "unviable": 0},
+                 "mutants": []}
+    else:
+        entries.remove(entry)              # re-appended below, so the newest entry sorts last
+        entry["git_rev"] = _git_rev(root)
+        entry["generated_at"] = record["at"]
+    entry.setdefault("mutants", []).append(record)
+    entry["summary"]["applied"] += 1
+    entry["summary"][verdict] += 1
+    entries.append(entry)
+    written = _store_ledger(lpath, state, entries, reset)
+    return {**written, "target": rel, "verdict": verdict,
+            "registered": len(entry["mutants"])}
 
 
 def select_files(repo_root: Path | str, files=None, since: str | None = None,
@@ -891,6 +1008,22 @@ def cmd_run(args: argparse.Namespace) -> int:
     return 1 if s["survived"] or s["errors"] else 0
 
 
+def cmd_register(args: argparse.Namespace) -> int:
+    try:
+        res = register_mutant(args.root, args.target, args.mutant, args.test, args.verdict)
+    except (ValueError, OSError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    print(f"mutation: registered a SELF-REPORTED mutant on {res['target']} "
+          f"({res['verdict']}) - {res['registered']} registered mutant(s) on this content. "
+          f"Nothing was re-run here, so the ledger holds this as a claim, not a measurement")
+    if res.get("dropped_now"):
+        print(f"  note: the mutation ledger dropped its {res['dropped_now']} oldest "
+              f"entr(ies) at the {LEDGER_LIMIT}-entry bound "
+              f"({res['dropped_total']} dropped in all)")
+    return 0
+
+
 def cmd_prefilter(args: argparse.Namespace) -> int:
     flagged = prefilter(args.tests)
     for p in flagged:
@@ -912,6 +1045,16 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--root", default=".")
     r.add_argument("--format", choices=("text", "json"), default="text")
     r.set_defaults(func=cmd_run)
+    g = sub.add_parser("register",
+                       help="Record a mutant applied BY HAND - self-reported, never measured.")
+    g.add_argument("--target", required=True, help="the file the mutant was applied to")
+    g.add_argument("--mutant", required=True,
+                   help="what was mutated, in words a reviewer can check against the diff")
+    g.add_argument("--test", required=True, help="the test that returned the verdict")
+    g.add_argument("--verdict", required=True, choices=REGISTRABLE_VERDICTS,
+                   help="killed (the test went red) or survived (it stayed green - a finding)")
+    g.add_argument("--root", default=".")
+    g.set_defaults(func=cmd_register)
     f = sub.add_parser("prefilter", help="List test files with no recognisable assertion.")
     f.add_argument("--tests", nargs="+", required=True)
     f.set_defaults(func=cmd_prefilter)

@@ -400,8 +400,8 @@ def _run(cwd, *args):
 def _behind_repo(d) -> Path:
     """A work repo one commit behind its origin (a teammate pushed while the run ran)."""
     origin = Path(d) / "origin.git"
-    _sp.run(["git", "init", "-q", "--bare", str(origin)])
-    _sp.run(["git", "-C", str(origin), "symbolic-ref", "HEAD", "refs/heads/main"])
+    _run(d, "init", "-q", "--bare", str(origin))
+    _run(origin, "symbolic-ref", "HEAD", "refs/heads/main")
     work = Path(d) / "work"; work.mkdir()
     _run(work, "init", "-q"); _run(work, "checkout", "-q", "-b", "main")
     _run(work, "config", "user.email", "t@t"); _run(work, "config", "user.name", "t")
@@ -410,7 +410,7 @@ def _behind_repo(d) -> Path:
     _run(work, "add", "-A"); _run(work, "commit", "-qm", "base")
     _run(work, "push", "-q", "origin", "main")
     other = Path(d) / "other"
-    _sp.run(["git", "clone", "-q", str(origin), str(other)])
+    _run(d, "clone", "-q", str(origin), str(other))
     _run(other, "config", "user.email", "o@o"); _run(other, "config", "user.name", "o")
     (other / "REMOTE.md").write_text("remote work\n", encoding="utf-8")
     _run(other, "add", "-A"); _run(other, "commit", "-qm", "remote")

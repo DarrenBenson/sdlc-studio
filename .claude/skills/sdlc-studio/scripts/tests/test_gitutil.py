@@ -265,26 +265,23 @@ class DiscoveryCannotClimbOutOfTheTempRootTests(unittest.TestCase):
 
 
 #: Test modules that still shell out to git WITHOUT passing an `env`, and how many such call
-#: sites each has today. They inherit whatever the ambient environment holds, so the fix in
-#: `gitutil` does not reach them: a module that builds its own repo with a bare
+#: sites each has today. They would inherit whatever the ambient environment holds, so the fix
+#: in `gitutil` would not reach them: a module that builds its own repo with a bare
 #: `subprocess.run(["git", ...])` is the same exposure this file exists to close, one layer
-#: further out. Fixing them is not in BG0230's remit, so the count is a ratchet instead - it
-#: may fall as call sites move onto the helper, and a rise or a NEW module fails here.
+#: further out.
+#:
+#: **The list is EMPTY, and an empty list is the point.** BG0230 froze 35 such call sites across
+#: 8 modules as declared debt, because closing them was outside its remit; BG0242 converted all
+#: 35 onto `gitutil.git` (or onto a module's own `env=gitutil.git_env()` helper). So this is no
+#: longer a ratchet that may only fall - it is a zero, and any module that acquires a single
+#: unconfined call fails the sweep below. Never add an entry to buy a green run: route the call
+#: through `gitutil.git` instead.
 #:
 #: What the sweep does NOT judge: a call site that passes `env=` at all is left alone, whether
 #: the value is `gitutil.git_env()`, a purpose-built dict, or `os.environ` with the leak still
 #: in it. Reading the value would need to resolve a name across the module, which the sweep
 #: cannot do honestly, so it counts only the case it can decide.
-UNCONFINED_RAW_GIT_CALLS: dict[str, int] = {
-    "test_deploy": 1,
-    "test_engagement_floor": 6,
-    "test_flow": 1,
-    "test_gate": 10,
-    "test_mutation": 4,
-    "test_sprint": 8,
-    "test_sprint_rolling": 3,
-    "test_status": 2,
-}
+UNCONFINED_RAW_GIT_CALLS: dict[str, int] = {}
 
 #: `subprocess` entry points that start a process.
 _RUNNERS = frozenset({"run", "check_output", "check_call", "call", "Popen"})
@@ -310,27 +307,47 @@ def _unconfined_raw_git_calls(source: str) -> int:
     return found
 
 
-def _unconfined_by_module() -> dict[str, int]:
+def _unconfined_by_module(tests_dir: Path = TESTS_DIR) -> dict[str, int]:
+    """`{module stem: unconfined call count}` over `tests_dir`, omitting the clean modules."""
     counts = {}
-    for path in sorted(TESTS_DIR.glob("test_*.py")):
+    for path in sorted(tests_dir.glob("test_*.py")):
         n = _unconfined_raw_git_calls(path.read_text(encoding="utf-8"))
         if n:
             counts[path.stem] = n
     return counts
 
 
+def _scanned_modules(tests_dir: Path = TESTS_DIR) -> list[str]:
+    """What the sweep actually opened. Separate from the counts because, at zero, the counts
+    are empty whether the sweep read 60 modules or none at all."""
+    return [p.stem for p in sorted(tests_dir.glob("test_*.py"))]
+
+
 class UnconfinedRawGitCallSweepTests(unittest.TestCase):
-    """The exposure one layer out from this helper, bounded so it cannot grow.
+    """The exposure one layer out from this helper, now closed rather than bounded.
 
     Confining `gitutil` protects every fixture that goes through it. It protects nothing in a
-    module that calls `subprocess.run(["git", ...])` itself, and 35 such call sites remain. The
-    caller-side scrub in `tools/skill-tests.sh` covers them when the suite is run through that
-    script, and covers nothing when someone runs `unittest discover` directly - which is the
-    command in this bug's own reproduction steps. So the debt is declared and frozen here.
+    module that calls `subprocess.run(["git", ...])` itself. BG0230 found 35 such call sites in
+    8 modules and could only freeze them; BG0242 converted every one. The caller-side scrub in
+    `tools/skill-tests.sh` covers them only when the suite is run through that script, and
+    covers nothing under a plain `unittest discover` - which is how an agent usually runs one
+    module, and is the command in BG0230's own reproduction steps. So the sweep now holds the
+    count at zero for every module rather than recording a debt.
+
+    The anti-vacuity problem this creates is the reason for the two tests below it: with the
+    debt at zero there is no live offender left to prove the detector still detects, so the
+    proof is a PLANTED offender in a throwaway directory, plus a check that the sweep's default
+    directory really is the one holding the suite.
     """
 
     def test_the_detector_counts_a_bare_git_call(self) -> None:
         self.assertEqual(_unconfined_raw_git_calls('subprocess.run(["git", "init"], cwd=d)'), 1)
+
+    def test_the_detector_counts_a_bare_call_through_an_import_alias(self) -> None:
+        """`test_sprint` imports `subprocess as _sp`, which hid 11 of BG0242's 35 sites from
+        the obvious `subprocess.run(["git"` grep. The detector matches on the attribute, not on
+        the name it hangs off, so an alias cannot hide a call site from it."""
+        self.assertEqual(_unconfined_raw_git_calls('_sp.run(["git", "init"], cwd=d)'), 1)
 
     def test_the_detector_ignores_a_call_that_passes_an_env(self) -> None:
         self.assertEqual(
@@ -339,12 +356,31 @@ class UnconfinedRawGitCallSweepTests(unittest.TestCase):
     def test_the_detector_ignores_git_named_in_a_string(self) -> None:
         self.assertEqual(_unconfined_raw_git_calls('x = "git init"\nprint("git")'), 0)
 
-    def test_the_detector_still_sees_the_modules_it_guards(self) -> None:
-        """A detector that stopped detecting would make the ratchet below vacuously true."""
-        counts = _unconfined_by_module()
-        self.assertIn("test_gate", counts, "the raw-git detector has stopped detecting")
+    def test_the_sweep_names_the_module_holding_a_planted_call(self) -> None:
+        """Anti-vacuity for the zero. A sweep whose file reading or counting had broken would
+        report zero for a directory full of offenders, and the gate below would pass on it.
 
-    def test_no_module_gains_an_unconfined_raw_git_call(self) -> None:
+        Planted in a temp directory, never in the live tests directory: a probe module dropped
+        beside the real suite would be collected by a concurrent `unittest discover`.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            probe = Path(d) / "test_probe.py"
+            probe.write_text('import subprocess as _sp\n'
+                             'subprocess.run(["git", "init"], cwd=".")\n'
+                             '_sp.run(["git", "add", "-A"], cwd=".")\n'
+                             'subprocess.run(["git", "log"], cwd=".", env={})\n',
+                             encoding="utf-8")
+            self.assertEqual(_unconfined_by_module(Path(d)), {"test_probe": 2})
+
+    def test_the_sweep_reads_the_real_tests_directory(self) -> None:
+        """The other half of the anti-vacuity pair: the planted-probe test proves the machinery
+        works on SOME directory, this proves the default directory is the suite's own."""
+        scanned = _scanned_modules()
+        for known in ("test_gate", "test_sprint", "test_gitutil"):
+            self.assertIn(known, scanned,
+                          f"the sweep is not reading the tests directory: {known} not scanned")
+
+    def test_no_module_calls_git_without_a_confined_environment(self) -> None:
         counts = _unconfined_by_module()
         risen = {mod: (n, UNCONFINED_RAW_GIT_CALLS.get(mod, 0))
                  for mod, n in counts.items() if n > UNCONFINED_RAW_GIT_CALLS.get(mod, 0)}
@@ -352,7 +388,7 @@ class UnconfinedRawGitCallSweepTests(unittest.TestCase):
             risen, {},
             "these modules shell out to git without an env more often than the frozen count "
             f"(actual, allowed): {risen}. Route the new call through gitutil.git rather than "
-            "raising the number - the whole point of the ratchet is that it only falls.")
+            "raising the number - the count only ever falls, and it is now at zero.")
 
     def test_the_ratchet_has_no_rotted_entries(self) -> None:
         counts = _unconfined_by_module()

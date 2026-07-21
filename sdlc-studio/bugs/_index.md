@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 8 |
+| Open | 4 |
 | In Progress | 0 |
-| Fixed | 157 |
+| Fixed | 164 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **247** |
+| **Total** | **250** |
 
 ## All Bugs
 
@@ -206,14 +206,17 @@
 | [BG0237](BG0237-two-dev-repo-only-gate-tests-lack-the.md) | Two dev-repo-only gate tests lack the skip guard, so the shipped suite fails from an installed copy | Fixed | Medium | 2026-07-21 | 2026-07-21 |
 | [BG0238](BG0238-per-unit-mutation-evidence-is-never-captured-the.md) | Per-unit mutation evidence is never captured: the close lane reads the previous sprint's report | Fixed | High | 2026-07-21 | 2026-07-21 |
 | [BG0239](BG0239-the-gate-budget-records-a-full-cost-total.md) | The gate budget records a full-cost total when a unit suite was invoked but ran almost nothing | Fixed | Low | 2026-07-21 | 2026-07-21 |
-| [BG0240](BG0240-lessons-py-summary-out-and-loop-guard-py.md) | `lessons.py summary --out` and `loop_guard.py _state_path` write relative to the cwd, ignoring or failing to discover the root | Open | Medium | 2026-07-21 | 2026-07-21 |
-| [BG0241](BG0241-a-test-spec-with-no-ac-coverage-matrix.md) | A test spec with no AC Coverage Matrix at all reports clean and exits 0 | Open | Medium | 2026-07-21 | 2026-07-21 |
-| [BG0242](BG0242-35-bare-subprocess-git-calls-in-8-test.md) | 35 bare subprocess git calls in 8 test modules bypass the confined helper entirely | Open | High | 2026-07-21 | 2026-07-21 |
-| [BG0243](BG0243-run-attributed-tokens-reads-whatever-run-is-open.md) | run_attributed_tokens reads whatever run is open, so a token delta can be stamped on an unrelated retro | Open | Medium | 2026-07-21 | 2026-07-21 |
-| [BG0244](BG0244-the-velocity-row-records-actual-tokens-as-0.md) | The velocity row records Actual (tokens) as 0 when NO unit was rated, publishing an absence as a measurement | Open | High | 2026-07-21 | 2026-07-21 |
-| [BG0245](BG0245-the-mutation-ledger-can-only-be-populated-by.md) | The mutation ledger can only be populated by mutation.py, but the per-unit practice is hand-applied mutants, so the coverage lane reads 0/N after a correctly-run sprint | Open | High | 2026-07-21 | 2026-07-21 |
-| [BG0246](BG0246-batch-history-excludes-every-interactive-sprint-so-the.md) | batch_history excludes every interactive sprint, so the plan's 'real cost input' silently shows only old runner-era sprints | Open | High | 2026-07-21 | 2026-07-21 |
+| [BG0240](BG0240-lessons-py-summary-out-and-loop-guard-py.md) | `lessons.py summary --out` and `loop_guard.py _state_path` write relative to the cwd, ignoring or failing to discover the root | Fixed | Medium | 2026-07-21 | 2026-07-21 |
+| [BG0241](BG0241-a-test-spec-with-no-ac-coverage-matrix.md) | A test spec with no AC Coverage Matrix at all reports clean and exits 0 | Fixed | Medium | 2026-07-21 | 2026-07-21 |
+| [BG0242](BG0242-35-bare-subprocess-git-calls-in-8-test.md) | 35 bare subprocess git calls in 8 test modules bypass the confined helper entirely | Fixed | High | 2026-07-21 | 2026-07-21 |
+| [BG0243](BG0243-run-attributed-tokens-reads-whatever-run-is-open.md) | run_attributed_tokens reads whatever run is open, so a token delta can be stamped on an unrelated retro | Fixed | Medium | 2026-07-21 | 2026-07-21 |
+| [BG0244](BG0244-the-velocity-row-records-actual-tokens-as-0.md) | The velocity row records Actual (tokens) as 0 when NO unit was rated, publishing an absence as a measurement | Fixed | High | 2026-07-21 | 2026-07-21 |
+| [BG0245](BG0245-the-mutation-ledger-can-only-be-populated-by.md) | The mutation ledger can only be populated by mutation.py, but the per-unit practice is hand-applied mutants, so the coverage lane reads 0/N after a correctly-run sprint | Fixed | High | 2026-07-21 | 2026-07-21 |
+| [BG0246](BG0246-batch-history-excludes-every-interactive-sprint-so-the.md) | batch_history excludes every interactive sprint, so the plan's 'real cost input' silently shows only old runner-era sprints | Fixed | High | 2026-07-21 | 2026-07-21 |
 | [BG0247](BG0247-the-wsjf-freshness-advisory-reports-the-age-of.md) | The WSJF freshness advisory reports the age of scores that cover none of the batch, disguising an unused ordering as a slightly stale one | Open | Medium | 2026-07-21 | 2026-07-21 |
+| [BG0248](BG0248-the-measured-tokens-per-point-rate-can-never.md) | The measured tokens-per-point rate can never advance while sprints are interactive: the join needs per-unit actuals no interactive sprint writes | Open | High | 2026-07-21 | 2026-07-21 |
+| [BG0249](BG0249-the-velocity-estimate-column-has-bg0244-s-defect.md) | The velocity Estimate column has BG0244's defect exactly: a sum over rated units, so an unrated sprint publishes 0 as a plan-time estimate | Open | High | 2026-07-21 | 2026-07-21 |
+| [BG0250](BG0250-quality-epic-requires-test-spec-is-documented-as.md) | quality.epic_requires_test_spec is documented as the caller's opt-out but is read by no Python code in the tree | Open | Medium | 2026-07-21 | 2026-07-21 |
 
 ## Archived Releases
 

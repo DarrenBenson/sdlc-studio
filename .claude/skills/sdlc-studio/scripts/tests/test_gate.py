@@ -1139,16 +1139,16 @@ class MutationLaneTests(unittest.TestCase):
             self.assertNotIn("sampled", report["checks"][0]["detail"])
 
     def test_stale_report_never_reads_pass(self) -> None:
-        import subprocess, tempfile
+        import tempfile
         with tempfile.TemporaryDirectory() as t:
             root = self._root(t, {"git_rev": "0" * 40,
                                   "summary": {"applied": 5, "killed": 5, "survived": 0,
                                               "errors": 0, "unviable": 0, "truncated": 0}})
-            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            gitutil.git(["init", "-q"], cwd=root)
             (root / "f.txt").write_text("x", encoding="utf-8")
-            subprocess.run(["git", "add", "-A"], cwd=root, check=True)
-            subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
-                            "commit", "-qm", "c"], cwd=root, check=True)
+            gitutil.git(["add", "-A"], cwd=root)
+            gitutil.git(["-c", "user.email=t@t", "-c", "user.name=t",
+                         "commit", "-qm", "c"], cwd=root)
             report = gate.run_gate(str(root), checks={"mutation": gate._mutation})
             lane = report["checks"][0]
             self.assertNotEqual(lane["status"], "pass")
@@ -1587,6 +1587,104 @@ class MutationCoverageTests(unittest.TestCase):
             self.assertEqual(lane["count"], 0, lane["detail"])
 
 
+class MutationProvenanceTests(unittest.TestCase):
+    """BG0245 / D0048: the ledger now holds two kinds of entry. A `measured` one is a run that
+    applied the mutant and watched the suite; a `registered` one is a builder's report that they
+    applied one by hand, which nothing here can check. Both are evidence, they are not the same
+    strength, and a lane that printed one figure over both would quietly downgrade every measured
+    entry in the ledger to the weaker claim - a worse defect than the empty lane being fixed.
+    """
+
+    _root = MutationCoverageTests._root
+    _commit_all = MutationCoverageTests._commit_all
+    _sha = staticmethod(MutationCoverageTests._sha)
+    _entry = staticmethod(MutationCoverageTests._entry)
+    CLEAN = MutationCoverageTests.CLEAN
+
+    def _mutation_module(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("mutation_for_gate_prov",
+                                                      SCRIPT.parent / "mutation.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def _fixture(self, t, entries):
+        """One committed file, a ledger of the given entries, and a clean report."""
+        root = self._root(t)
+        gitutil.git(["init", "-q"], cwd=root)
+        (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+        self._commit_all(root)
+        (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+            json.dumps({"version": 1, "dropped": 0, "entries": entries(root)}),
+            encoding="utf-8")
+        (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+            json.dumps(self.CLEAN), encoding="utf-8")
+        return root
+
+    def test_a_file_covered_only_by_a_self_report_is_named_as_one(self) -> None:
+        """The whole point of D0048's constraint: the file IS covered, and the reader is told
+        the cover is a claim, so a lane reading 1/1 cannot be mistaken for a measured sweep."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._fixture(t, lambda r: [
+                self._entry("a.py", self._sha(r / "a.py"), provenance="registered")])
+            lane = gate._mutation(str(root))
+            self.assertIn("1/1", lane["detail"])
+            self.assertIn("self-reported", lane["detail"])
+            self.assertIn("a.py", lane["detail"])
+            self.assertEqual(lane["count"], 0, lane["detail"])   # evidence, so not a finding
+
+    def test_a_measured_entry_is_never_labelled_self_reported(self) -> None:
+        """The other half. A marker printed over measured evidence too would say nothing, and a
+        label that is always there is a label nobody reads."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._fixture(t, lambda r: [
+                self._entry("a.py", self._sha(r / "a.py"), provenance="measured")])
+            lane = gate._mutation(str(root))
+            self.assertIn("1/1", lane["detail"])
+            self.assertNotIn("self-reported", lane["detail"])
+
+    def test_a_measured_entry_outranks_a_self_report_on_the_same_file(self) -> None:
+        """Both kinds can name one file: a builder registers a hand-applied mutant and a run
+        later measures the same content. The file is then measured, and calling it self-reported
+        because a weaker entry also exists would understate what was actually done."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._fixture(t, lambda r: [
+                self._entry("a.py", self._sha(r / "a.py"), provenance="registered"),
+                self._entry("a.py", self._sha(r / "a.py"), provenance="measured")])
+            lane = gate._mutation(str(root))
+            self.assertIn("1/1", lane["detail"])
+            self.assertNotIn("self-reported", lane["detail"])
+
+    def test_an_entry_written_before_provenance_existed_reads_as_measured(self) -> None:
+        """Only a run could write an entry before `register` existed, so an unmarked entry is a
+        run's. Reading it as a claim would retro-actively weaken evidence really gathered."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._fixture(t, lambda r: [self._entry("a.py", self._sha(r / "a.py"))])
+            lane = gate._mutation(str(root))
+            self.assertIn("1/1", lane["detail"])
+            self.assertNotIn("self-reported", lane["detail"])
+
+    def test_a_self_report_goes_stale_on_an_edit_like_any_other_entry(self) -> None:
+        """Provenance changes how an entry is WEIGHTED, never whether it expires: a claim about
+        bytes the file no longer has is not weaker evidence, it is evidence about other code."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._fixture(t, lambda r: [
+                self._entry("a.py", self._sha(r / "a.py"), provenance="registered")])
+            (root / "a.py").write_text("def a():\n    return 99\n", encoding="utf-8")
+            lane = gate._mutation(str(root))
+            self.assertIn("STALE", lane["detail"])
+            self.assertEqual(lane["count"], 1, lane["detail"])
+
+    def test_the_lane_reads_the_same_provenance_values_the_recorder_writes(self) -> None:
+        """Two hand-kept copies of the vocabulary would drift into a lane that silently stops
+        recognising self-reports and prints them as measured - which is exactly the failure the
+        marking exists to prevent."""
+        mod = self._mutation_module()
+        self.assertEqual(gate._PROVENANCE_MEASURED, mod.PROVENANCE_MEASURED)
+        self.assertEqual(gate._PROVENANCE_REGISTERED, mod.PROVENANCE_REGISTERED)
+
+
 class AdvisoryRegistryTests(unittest.TestCase):
     """Every lane that reads not-run (advisory) when its evidence is absent
     must be registered, so the upgrade capability digest can name it - the
@@ -1707,17 +1805,15 @@ class HookEnabledLaneTests(unittest.TestCase):
                 os.environ[k] = v
 
     def _tree(self, d, with_hook=True, git=True, enabled=False):
-        import subprocess
         root = Path(d)
         root.mkdir(parents=True, exist_ok=True)
         if with_hook:
             (root / ".githooks").mkdir(parents=True, exist_ok=True)
             (root / ".githooks" / "pre-commit").write_text("#!/bin/sh\n", encoding="utf-8")
         if git:
-            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            gitutil.git(["init", "-q", str(root)], cwd=root)
             if enabled:
-                subprocess.run(["git", "-C", str(root), "config", "core.hooksPath", ".githooks"],
-                               check=True)
+                gitutil.git(["config", "core.hooksPath", ".githooks"], cwd=root)
         return root
 
     def test_hook_present_but_disabled_warns_advisory(self) -> None:
@@ -1802,30 +1898,26 @@ class HookEnabledEquivalentConfigTests(HookEnabledLaneTests):
     env must not redirect the check."""
 
     def test_trailing_slash_hookspath_is_enabled(self) -> None:
-        import subprocess
         with tempfile.TemporaryDirectory() as d:
             root = self._tree(d)
-            subprocess.run(["git", "-C", str(root), "config", "core.hooksPath", ".githooks/"],
-                           check=True)
+            gitutil.git(["config", "core.hooksPath", ".githooks/"], cwd=root)
             self.assertIsNone(gate.hook_enablement_gap(str(root)))
 
     def test_absolute_hookspath_to_same_dir_is_enabled(self) -> None:
-        import subprocess
         with tempfile.TemporaryDirectory() as d:
             root = self._tree(d)
-            subprocess.run(["git", "-C", str(root), "config", "core.hooksPath",
-                            str((root / ".githooks").resolve())], check=True)
+            gitutil.git(["config", "core.hooksPath",
+                         str((root / ".githooks").resolve())], cwd=root)
             self.assertIsNone(gate.hook_enablement_gap(str(root)))
 
     def test_foreign_git_dir_env_does_not_redirect_the_check(self) -> None:
         import os
-        import subprocess
         with tempfile.TemporaryDirectory() as d:
             fixture = self._tree(Path(d) / "fixture")          # hook present, NOT enabled
             other = Path(d) / "other"
-            subprocess.run(["git", "init", "-q", str(other)], check=True)
-            subprocess.run(["git", "-C", str(other), "config", "core.hooksPath", ".githooks"],
-                           check=True)
+            other.mkdir()
+            gitutil.git(["init", "-q", str(other)], cwd=other)
+            gitutil.git(["config", "core.hooksPath", ".githooks"], cwd=other)
             old = os.environ.get("GIT_DIR")
             os.environ["GIT_DIR"] = str(other / ".git")
             try:
@@ -2208,11 +2300,10 @@ class CloseOwedGateLaneTests(unittest.TestCase):
 
 
 import json as _json  # noqa: E402
-import subprocess  # noqa: E402
 
 
 def _git(cwd, *args):
-    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+    gitutil.git(list(args), cwd=cwd)
 
 
 def _batch_repo(tmp, *, config=True, lines=30):

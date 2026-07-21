@@ -19,3 +19,4 @@
 {"id": "BG0241", "tokens": 50000, "points": 2, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-21T19:25:01Z", "project": "sdlc-studio"}
 {"id": "BG0243", "tokens": 50000, "points": 2, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-21T19:25:01Z", "project": "sdlc-studio"}
 {"id": "BG0246", "tokens": 50000, "points": 2, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-21T19:28:21Z", "project": "sdlc-studio"}
+{"id": "BG0247", "tokens": 50000, "points": 2, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-21T19:56:14Z", "project": "sdlc-studio"}

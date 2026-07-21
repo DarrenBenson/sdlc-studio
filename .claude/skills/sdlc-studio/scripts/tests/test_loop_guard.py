@@ -1,9 +1,13 @@
 """Unit tests for loop_guard.py (RED first - the script does not exist yet)."""
 from __future__ import annotations
 
+import contextlib
 import datetime as _dt
 import importlib.util
+import io
 import json
+import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -73,13 +77,20 @@ class CompleteTests(unittest.TestCase):
         self.assertTrue(_load().is_complete([]))
 
 
+def _quiet_main(mod, argv: list[str]) -> int:
+    """Run the CLI with its verdict line captured. A green suite must say nothing, or a
+    real error hides in the scroll."""
+    with contextlib.redirect_stdout(io.StringIO()):
+        return mod.main(argv)
+
+
 class CliTests(unittest.TestCase):
     def test_record_quarantine_exit(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             state = Path(d) / "loop-state.json"
             mod = _load()
-            rc = mod.main(["record", "--unit", "US", "--signature", "s",
-                           "--cap", "1", "--state", str(state)])
+            rc = _quiet_main(mod, ["record", "--unit", "US", "--signature", "s",
+                                   "--cap", "1", "--state", str(state)])
             self.assertEqual(rc, 3)  # quarantine signal
             data = json.loads(state.read_text(encoding="utf-8"))
             self.assertIn("US", data["units"])
@@ -93,8 +104,8 @@ class CliTests(unittest.TestCase):
             # High cap + repeat so neither guardrail fires; isolates accumulation.
             args = ["record", "--unit", "US", "--signature", "s",
                     "--cap", "9", "--repeat", "9", "--state", str(state)]
-            self.assertEqual(mod.main(args), 0)
-            self.assertEqual(mod.main(args), 0)
+            self.assertEqual(_quiet_main(mod, args), 0)
+            self.assertEqual(_quiet_main(mod, args), 0)
             data = json.loads(state.read_text(encoding="utf-8"))
             self.assertEqual(data["units"]["US"]["attempts"], 2)
 
@@ -178,7 +189,7 @@ class BudgetCliTests(unittest.TestCase):
                     ).strftime("%Y-%m-%dT%H:%M:%SZ")
             self._write_run_state(root, past, {"minutes": 1, "units": 0}, [])
             mod = _load()
-            rc = mod.main(["budget", "--root", str(root), "--format", "json"])
+            rc = _quiet_main(mod, ["budget", "--root", str(root), "--format", "json"])
             self.assertEqual(rc, mod.BUDGET_EXIT)
 
     def test_cli_unbounded_continues(self) -> None:
@@ -188,7 +199,7 @@ class BudgetCliTests(unittest.TestCase):
                     ).strftime("%Y-%m-%dT%H:%M:%SZ")
             self._write_run_state(root, past, {"minutes": 0, "units": 0}, [])
             mod = _load()
-            rc = mod.main(["budget", "--root", str(root), "--format", "json"])
+            rc = _quiet_main(mod, ["budget", "--root", str(root), "--format", "json"])
             self.assertEqual(rc, 0)
 
     def test_cli_flag_overrides_state(self) -> None:
@@ -199,17 +210,156 @@ class BudgetCliTests(unittest.TestCase):
                     ).strftime("%Y-%m-%dT%H:%M:%SZ")
             self._write_run_state(root, past, {"minutes": 0, "units": 0}, [])
             mod = _load()
-            rc = mod.main(["budget", "--root", str(root), "--appetite-minutes", "1",
-                           "--format", "json"])
+            rc = _quiet_main(mod, ["budget", "--root", str(root), "--appetite-minutes", "1",
+                                   "--format", "json"])
             self.assertEqual(rc, mod.BUDGET_EXIT)
 
     def test_cli_no_run_state_is_unbounded(self) -> None:
         # No run opened -> no start time -> the breaker cannot fire (it never fabricates one).
         with tempfile.TemporaryDirectory() as d:
             mod = _load()
-            rc = mod.main(["budget", "--root", str(d), "--appetite-minutes", "1",
-                           "--format", "json"])
+            rc = _quiet_main(mod, ["budget", "--root", str(d), "--appetite-minutes", "1",
+                                   "--format", "json"])
             self.assertEqual(rc, 0)
+
+
+class RootAnchoringTests(unittest.TestCase):
+    """The guardrail state is written and read under the PROJECT ROOT, never beside the cwd.
+
+    A NAMED `--root` was honoured; the family default `.` was taken as the cwd, so `record`
+    from any subdirectory - the skill's own `scripts/` above all - wrote a stray
+    `<cwd>/sdlc-studio/.local/loop-state.json`, printed a verdict and exited 0. The handoff
+    reads `<root>/sdlc-studio/.local/loop-state.json`, so every attempt and every failure
+    signature the run recorded was invisible to it. The `budget` breaker read its run state
+    the same way, and reported an appetite it had not found as no appetite at all.
+
+    Every test below runs from a cwd that is NOT the root: a test that chdir'd to the root
+    would pass on a script that ignored `--root` entirely, and would prove nothing. The
+    write-then-read pairs deliberately use DIFFERENT directories - sharing one cwd lets two
+    equally cwd-relative paths agree with each other and both still be wrong.
+    """
+
+    DEFAULT_STATE = Path("sdlc-studio") / ".local" / "loop-state.json"
+
+    def setUp(self) -> None:
+        self._prev_cwd = Path.cwd()
+        self.tmp = Path(tempfile.mkdtemp(prefix="loop_guard_root_"))
+        self.root = self.tmp / "proj"
+        # `sdlc-studio/stories` is one of the project-root markers discovery looks for.
+        (self.root / "sdlc-studio" / "stories").mkdir(parents=True)
+        self.inner = self.root / "scripts"      # a subdirectory inside the project
+        self.inner.mkdir()
+        self.outside = self.tmp / "elsewhere"   # a cwd with no project above it
+        self.outside.mkdir()
+        self.mod = _load()
+
+    def tearDown(self) -> None:
+        os.chdir(self._prev_cwd)
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = self.mod.main(argv)
+        return rc, out.getvalue(), err.getvalue()
+
+    def _record(self, extra: list[str]) -> tuple[int, str, str]:
+        return self._run(["record", "--unit", "US0010", "--signature", "sig",
+                          "--cap", "9", "--repeat", "9"] + extra)
+
+    def test_record_without_a_root_discovers_the_project_from_a_subdirectory(self) -> None:
+        os.chdir(self.inner)
+        rc, _out, err = self._record([])
+        self.assertEqual(rc, 0, err)
+        self.assertTrue((self.root / self.DEFAULT_STATE).is_file(),
+                        "the state did not land under the discovered project root")
+        self.assertEqual(sorted(p.name for p in self.inner.iterdir()), [],
+                         "the state was written beside the cwd")
+
+    def test_record_writes_under_the_named_root_not_the_cwd(self) -> None:
+        os.chdir(self.outside)
+        rc, _out, err = self._record(["--root", str(self.root)])
+        self.assertEqual(rc, 0, err)
+        self.assertTrue((self.root / self.DEFAULT_STATE).is_file())
+        self.assertEqual(sorted(p.name for p in self.outside.iterdir()), [])
+
+    def test_status_reads_what_record_wrote_from_a_different_directory(self) -> None:
+        """Write from inside the project on the default root, read from outside it on a
+        named one. If either end anchored on its own cwd the attempt count reads back 0,
+        which is exactly how the handoff lost the signatures it was meant to carry."""
+        os.chdir(self.inner)
+        self.assertEqual(self._record([])[0], 0)
+        os.chdir(self.outside)
+        rc, out, err = self._run(["status", "--unit", "US0010", "--root", str(self.root)])
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(json.loads(out)["attempts"], 1,
+                         "the reader did not find the state the writer wrote")
+
+    def test_record_prints_the_resolved_state_path(self) -> None:
+        """It printed no path at all, so a state file landing in the wrong tree looked
+        exactly like one landing in the right one."""
+        os.chdir(self.inner)
+        _rc, out, _err = self._record([])
+        self.assertIn(str(self.root / self.DEFAULT_STATE), out)
+
+    def test_a_quarantine_also_names_where_it_recorded(self) -> None:
+        """The louder verdict is the one whose destination matters most."""
+        os.chdir(self.inner)
+        rc, out, _err = self._run(["record", "--unit", "US0010", "--signature", "sig",
+                                   "--cap", "1"])
+        self.assertEqual(rc, self.mod.QUARANTINE_EXIT)
+        self.assertIn(str(self.root / self.DEFAULT_STATE), out)
+
+    def test_a_relative_state_flag_anchors_on_the_root(self) -> None:
+        os.chdir(self.outside)
+        rc, _out, err = self._record(["--root", str(self.root), "--state", "ls.json"])
+        self.assertEqual(rc, 0, err)
+        self.assertTrue((self.root / "ls.json").is_file(),
+                        "a relative --state was resolved against the cwd")
+
+    def test_an_absolute_state_flag_is_honoured_verbatim(self) -> None:
+        """Anchoring must not capture a path the caller chose deliberately."""
+        os.chdir(self.outside)
+        chosen = self.tmp / "chosen.json"
+        rc, _out, err = self._record(["--root", str(self.root), "--state", str(chosen)])
+        self.assertEqual(rc, 0, err)
+        self.assertTrue(chosen.is_file(), "an absolute --state was re-anchored under the root")
+
+    def test_a_named_root_is_not_re_pointed_by_discovery(self) -> None:
+        """Discovery widens the default `.` only. A root the caller NAMED is where the
+        state goes, even with a bigger project above it."""
+        os.chdir(self.outside)
+        rc, _out, err = self._record(["--root", str(self.inner)])
+        self.assertEqual(rc, 0, err)
+        self.assertTrue((self.inner / self.DEFAULT_STATE).is_file(),
+                        "the named root was overridden by discovery")
+        self.assertFalse((self.root / "sdlc-studio" / ".local").exists())
+
+    def test_discovery_does_not_escape_a_cwd_with_no_project_above_it(self) -> None:
+        """With no project anywhere above, the cwd is the honest answer - discovery must
+        not walk to `/` and write into something unrelated."""
+        os.chdir(self.outside)
+        rc, _out, err = self._record([])
+        self.assertEqual(rc, 0, err)
+        self.assertTrue((self.outside / self.DEFAULT_STATE).is_file())
+        self.assertFalse((self.root / "sdlc-studio" / ".local").exists())
+
+    def test_budget_finds_the_run_state_from_a_subdirectory(self) -> None:
+        """The appetite breaker read `<cwd>/sdlc-studio/.local/run-state.json`, found
+        nothing from a subdirectory, and reported the run unbounded with exit 0 - a spent
+        ceiling reads as 'continue'. The run it must stop is the one above it."""
+        past = (_dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(hours=2)
+                ).strftime("%Y-%m-%dT%H:%M:%SZ")
+        p = self.root / "sdlc-studio" / ".local" / "run-state.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"schema": 1, "run_id": "RUN-TEST", "started_at": past,
+                                 "ended_at": None, "outcome": "running", "goal": None,
+                                 "batch": [], "appetite": {"minutes": 1, "units": 0}}),
+                     encoding="utf-8")
+        os.chdir(self.inner)
+        rc, _out, err = self._run(["budget", "--format", "json"])
+        self.assertEqual(rc, self.mod.BUDGET_EXIT,
+                         f"a spent appetite read as unbounded from a subdirectory: {err!r}")
 
 
 if __name__ == "__main__":

@@ -235,6 +235,21 @@ def _key_under(root: str, p) -> str:
     return str((path if path.is_absolute() else Path(root) / path).resolve())
 
 
+#: The ledger's provenance vocabulary, as `mutation.py` writes it. A `measured` entry is a run
+#: that applied the mutant and observed the suite; a `registered` one is a builder's report that
+#: they applied one by hand, and nothing checked it. A test pins these against the recorder's own
+#: constants, because a lane that stopped recognising the second label would print a self-report
+#: as a measurement - the exact confusion the marking exists to prevent.
+_PROVENANCE_MEASURED = "measured"
+_PROVENANCE_REGISTERED = "registered"
+
+
+def _entry_provenance(entry: dict) -> str:
+    """Absent means measured: before registration existed only a run could write an entry, so an
+    unmarked entry is a run's, and reading it as a claim would weaken real evidence."""
+    return str(entry.get("provenance") or _PROVENANCE_MEASURED)
+
+
 def _mutation_coverage(root: str) -> dict:
     """How much of the surface carries mutation evidence, judged per file on content hash.
 
@@ -252,10 +267,17 @@ def _mutation_coverage(root: str) -> dict:
     matches -> covered; hash differs, or none was recorded -> STALE; no entry -> uncovered.
     Returns `known: False` when there is nothing to judge, so the caller falls back to the
     whole-report checks.
+
+    A file covered ONLY by a registered entry is covered by a SELF-REPORT: a builder said they
+    applied a mutant by hand, and no run confirmed it. It is named as such, because a lane that
+    printed one figure over both kinds would let a claim read exactly like a measurement and so
+    downgrade every measured entry in the ledger. A measured entry outranks a registered one on
+    the same content - the stronger evidence is what the file has.
     """
     import hashlib
     rootp = Path(root)
-    entries: dict[str, str | None] = {}
+    #: file key -> provenance -> the hash recorded under it
+    entries: dict[str, dict[str, str | None]] = {}
 
     def _key(p) -> str:
         return _key_under(root, p)
@@ -266,7 +288,8 @@ def _mutation_coverage(root: str) -> dict:
             loaded = json.loads(ledger.read_text(encoding="utf-8"))
             for e in loaded.get("entries", []):
                 if isinstance(e, dict) and e.get("target"):
-                    entries[_key(e["target"])] = e.get("hash")
+                    entries.setdefault(_key(e["target"]), {})[_entry_provenance(e)] = \
+                        e.get("hash")
         except (ValueError, OSError, TypeError, AttributeError):
             pass          # a corrupt ledger claims no coverage; it never breaks the lane
     surface = _mutation_changed_surface(root)
@@ -284,6 +307,7 @@ def _mutation_coverage(root: str) -> dict:
     if not judged:
         return {"known": False, "count": 0, "detail": ""}
     covered: list[str] = []
+    self_reported: list[str] = []
     stale: list[str] = []
     uncovered: list[str] = []
     for display, key in judged:
@@ -295,8 +319,23 @@ def _mutation_coverage(root: str) -> dict:
             current = hashlib.sha256(Path(key).read_bytes()).hexdigest()
         except OSError:
             current = None
-        (covered if recorded is not None and current == recorded else stale).append(display)
+
+        def _matches(provenance: str, seen=recorded, now=current) -> bool:
+            # a recorded None is not evidence: paired with a target that cannot be read now
+            # either, two unknowns would compare equal and read as "unchanged since the run"
+            return seen.get(provenance) is not None and now == seen[provenance]
+        if _matches(_PROVENANCE_MEASURED):
+            covered.append(display)
+        elif _matches(_PROVENANCE_REGISTERED):
+            covered.append(display)
+            self_reported.append(display)
+        else:
+            stale.append(display)
     detail = f"mutation evidence covers {len(covered)}/{len(judged)} file(s) of the {label}"
+    if self_reported:
+        n = len(self_reported)
+        detail += (f"; {n} of those {'is' if n == 1 else 'are'} self-reported (mutants "
+                   f"registered by hand, not a measured run): {_name_list(self_reported)}")
     if stale:
         detail += f"; STALE (edited since mutated): {_name_list(stale)}"
     if uncovered:

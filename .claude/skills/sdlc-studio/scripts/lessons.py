@@ -50,6 +50,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
+# The family root resolver, not a second path-joining idiom: `resolve_root` honours a root
+# the caller NAMED and discovers upward from the family default `.`, `under_root` anchors a
+# relative path on the result. Reached through the module, per the monkeypatch rule.
+import verify_ac  # noqa: E402  (sibling)
 
 DEFAULT_PROJECT_FILE = "sdlc-studio/.local/lessons.md"
 DEFAULT_SUMMARY_FILE = "sdlc-studio/retros/LESSONS-SUMMARY.md"
@@ -1083,6 +1087,16 @@ def build_summary_text(entries: list[dict]) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 
+def _root(args) -> Path:
+    """The project root every path in this invocation anchors on.
+
+    One answer per invocation, shared by the lessons log and the summary it writes: a run
+    that reads its source from one root and writes its digest against another is how a
+    summary comes to describe a project it did not read.
+    """
+    return verify_ac.resolve_root(args)
+
+
 def _project_file(args) -> Path:
     """The project-tier lessons file, resolved against `--root`.
 
@@ -1095,9 +1109,13 @@ def _project_file(args) -> Path:
 
     An ABSOLUTE `--project-file` is honoured as given, so pointing at another project's log
     still works; only the relative default is anchored.
+
+    The root is RESOLVED, not taken verbatim: the family default `.` means "work it out from
+    here", so a run from a subdirectory finds the project above it instead of summarising an
+    empty log beside the cwd and reporting that as the truth.
     """
     p = Path(args.project_file)
-    return p if p.is_absolute() else Path(getattr(args, "root", ".")) / p
+    return p if p.is_absolute() else _root(args) / p
 
 
 def _default_summary_out(project_file: Path) -> Path:
@@ -1191,7 +1209,10 @@ def cmd_summary(args: argparse.Namespace) -> int:
     """Refresh the committed rolling lessons summary from the still-valid project lessons."""
     path = _project_file(args)
     entries = parse_project_lessons(path.read_text(encoding="utf-8")) if path.is_file() else []
-    out_path = Path(args.out) if args.out else _default_summary_out(path)
+    # A relative --out anchors on the SAME resolved root the log was read from, so the digest
+    # and its source cannot come from two different projects; an absolute one is honoured as
+    # given. Taken verbatim, it landed beside whichever directory the run started in.
+    out_path = verify_ac.under_root(_root(args), args.out) if args.out else _default_summary_out(path)
     text = build_summary_text(entries)
     if not args.dry_run:
         out_path.parent.mkdir(parents=True, exist_ok=True)

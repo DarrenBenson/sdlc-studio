@@ -1,6 +1,7 @@
 # BG0244: The velocity row records Actual (tokens) as 0 when NO unit was rated, publishing an absence as a measurement
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional - the false zero was reproduced through the writer that produces it (an interactive sprint with no telemetry: `Actual (tokens)` came out `0` beside a `Tokens/pt` of `-`), then fixed, then the fix was mutation-proven with 8 hand-applied mutants, all killed. The reader guard was checked against the LIVE VELOCITY.md by running `retro.py velocity` read-only under the pre-fix and post-fix code: 7 historical rows moved from `actual= 0` to `actual= -`, 4 rows stopped publishing a `0/pt` rate (RETRO0058 and the 3 hand-corrected ones), and the 3 hand-corrected rows stopped reporting their reason prose as the delivering MODEL.
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py
@@ -32,8 +33,38 @@ That raises the severity of the argument for fixing it. The three prior correcti
 RETRO0063, RETRO0064-first-attempt) all happened to be made after the last write to the file. This
 one was not, and nothing announced that the correction had been discarded.
 
+## Resolution
+
+Four changes in `retro.py`, three of them where the filed proposal asked and one the
+investigation added.
+
+1. **The writer.** `record_velocity` clears a falsy `actual_tokens` to `None` after the
+   existing preservation and retraction rules have had their say, so the cell renders `-`. The
+   `--tokens 0` retraction (BG0224) and the reuse of an already-recorded actual both still
+   behave as they did; only the empty rated-unit sum changes.
+2. **The reason.** A `Note` column was added to the history. The three hand corrections had
+   nowhere to write their reason but the last cell, which is the Model column - so the file
+   was already telling us the column was missing. `_actual_note` prefers the close's own
+   not-attributable reason (it names the run, the meter or the missing baseline) and falls
+   back to a generic statement of the same fact for a plain re-run.
+3. **The reader.** `velocity_history` reads a recorded `0` in that column as ABSENT. No sprint
+   costs zero tokens, so a `0` there can only be the old writer's empty-set sum; read as a
+   number it is a data point about what a sprint cost. The same read salvages a Model cell
+   holding prose (a hand correction) into the note, so a sentence never reaches the per-model
+   segmentation as a model. The next whole-file rewrite then republishes both correctly, which
+   is what makes this self-healing rather than another correction waiting to be overwritten.
+4. **A second consumer, found while proving point 3.** `retro.py velocity` divided the Actual
+   cell by the points unconditionally and printed `0/pt` on the same line as `actual= -`. On
+   the live history that was 4 rows. It now obeys the rule the file's own `Tokens/pt` column
+   obeys (`_tokens_cover_points`).
+
+Not fixed, and NOT claimed to be: the `Estimate` column has the identical shape (a sum over the
+rated units, so `0` for a sprint that rated none) and 12 of the 17 live rows carry that `0`. It
+is outside this bug's scope, it is the same class of falsehood, and it is worth its own bug.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-21 | sdlc-studio | Filed |
+| 2026-07-21 | claude | Fixed: writer clears the empty-set sum, `Note` column carries the reason, reader treats a historical `0` as absent and salvages prose out of the Model cell, and `retro.py velocity` stopped deriving `0/pt` from an absent actual. 8 mutants applied by hand, 8 killed. |

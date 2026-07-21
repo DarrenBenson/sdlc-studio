@@ -5,12 +5,12 @@ NAMED unmeasurable, never guessed; a pass never means "found nothing to measure"
 """
 import datetime as dt
 import pathlib
-import subprocess
 import sys
 import tempfile
 import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import gitutil  # noqa: E402 - confined git for the fixture repos below
 import loader  # noqa: E402 - the canonical way to import a script under test (CR0317)
 
 SCRIPT_PATH = pathlib.Path(__file__).resolve().parent.parent / "flow.py"
@@ -18,7 +18,7 @@ flow = loader.load_script("flow")
 
 
 def _git(cwd, *args):
-    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+    gitutil.git(list(args), cwd=cwd)
 
 
 def _repo_with_story(tmp, status_flow):

@@ -729,8 +729,8 @@ class RevalidateTests(unittest.TestCase):
             data = json.loads(out.getvalue())
             self.assertEqual(data["count"], 2)
             # closing L-0001 records the closure and removes it from open
-            lessons.main(["revalidate", "--project-file", str(p),
-                          "--close", "L-0001", "--reason", "obsolete"])
+            _quiet_main(["revalidate", "--project-file", str(p),
+                         "--close", "L-0001", "--reason", "obsolete"])
             entries = lessons.parse_project_lessons(p.read_text(encoding="utf-8"))
             by_id = {e["id"]: e for e in entries}
             self.assertTrue(lessons.is_closed(by_id["L-0001"]))
@@ -741,10 +741,17 @@ class RevalidateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
             p = self._write(root)
-            lessons.main(["revalidate", "--project-file", str(p), "--close", "L-0001"])
+            _quiet_main(["revalidate", "--project-file", str(p), "--close", "L-0001"])
             after_first = p.read_text(encoding="utf-8")
-            lessons.main(["revalidate", "--project-file", str(p), "--close", "L-0001"])
+            _quiet_main(["revalidate", "--project-file", str(p), "--close", "L-0001"])
             self.assertEqual(p.read_text(encoding="utf-8"), after_first)  # no double-close
+
+
+def _quiet_main(argv: list[str]) -> int:
+    """Run the CLI with its progress line captured. A green suite must say nothing, or a
+    real error hides in the scroll."""
+    with contextlib.redirect_stdout(io.StringIO()):
+        return lessons.main(argv)
 
 
 class SummaryTests(unittest.TestCase):
@@ -759,14 +766,14 @@ class SummaryTests(unittest.TestCase):
             root = Path(t)
             p = self._write(root)
             out = root / "summary.md"
-            lessons.main(["summary", "--project-file", str(p), "--out", str(out)])
+            _quiet_main(["summary", "--project-file", str(p), "--out", str(out)])
             text = out.read_text(encoding="utf-8")
             self.assertIn("L-0001", text)
             self.assertIn("L-0002", text)
             self.assertIn("always do X", text)  # gist from the Rule field
             # closed lessons drop out of the summary
-            lessons.main(["revalidate", "--project-file", str(p), "--close", "L-0001"])
-            lessons.main(["summary", "--project-file", str(p), "--out", str(out)])
+            _quiet_main(["revalidate", "--project-file", str(p), "--close", "L-0001"])
+            _quiet_main(["summary", "--project-file", str(p), "--out", str(out)])
             text2 = out.read_text(encoding="utf-8")
             self.assertNotIn("L-0001", text2)
             self.assertIn("L-0002", text2)
@@ -776,9 +783,9 @@ class SummaryTests(unittest.TestCase):
             root = Path(t)
             p = self._write(root)
             out = root / "summary.md"
-            lessons.main(["summary", "--project-file", str(p), "--out", str(out)])
+            _quiet_main(["summary", "--project-file", str(p), "--out", str(out)])
             first = out.read_text(encoding="utf-8")
-            lessons.main(["summary", "--project-file", str(p), "--out", str(out)])
+            _quiet_main(["summary", "--project-file", str(p), "--out", str(out)])
             self.assertEqual(out.read_text(encoding="utf-8"), first)  # byte-identical
 
 
@@ -1405,6 +1412,116 @@ class PlanDigestTests(unittest.TestCase):
             d = lessons.plan_digest(Path(t))
             self.assertEqual(d["source"], "none")
             self.assertEqual(d["lessons"], [])
+
+
+class SummaryOutRootAnchoringTests(unittest.TestCase):
+    """`summary --out` writes under the PROJECT ROOT, never beside the cwd.
+
+    BG0219 anchored the READS on `--root`; this write was left taking `Path(args.out)`
+    verbatim, so a relative `--out` landed next to whatever directory the agent happened to
+    be in while the log it summarised was read from the root - the digest and its source
+    could come from two different projects. The default `--root .` was taken as the cwd as
+    well, so `summary` from a subdirectory summarised nothing and said so with exit 0.
+
+    Every test runs from a cwd that is NOT the root: from the root the two paths coincide
+    and the broken code looks correct. The read/write pair uses DIFFERENT directories,
+    because two equally cwd-relative paths agree with each other while both are wrong.
+    """
+
+    LOG = ("# Project Lessons\n\n**Last Updated:** 2026-07-20\n\n"
+           "## L-0001: a lesson worth keeping\n\n- **Added:** 2026-07-20\n")
+    DEFAULT_OUT = Path("sdlc-studio") / "retros" / "LESSONS-SUMMARY.md"
+
+    def setUp(self) -> None:
+        self._prev_cwd = Path.cwd()
+        self.tmp = Path(tempfile.mkdtemp(prefix="lessons_root_"))
+        self.root = self.tmp / "proj"
+        # `sdlc-studio/stories` is one of the project-root markers discovery looks for.
+        (self.root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (self.root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (self.root / "sdlc-studio" / ".local" / "lessons.md").write_text(
+            self.LOG, encoding="utf-8")
+        self.inner = self.root / "scripts"      # a subdirectory inside the project
+        self.inner.mkdir()
+        self.outside = self.tmp / "elsewhere"   # a cwd with no project above it
+        self.outside.mkdir()
+
+    def tearDown(self) -> None:
+        os.chdir(self._prev_cwd)
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _run(self, argv: list[str]) -> tuple[int, str]:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = lessons.main(argv)
+        return rc, out.getvalue()
+
+    def test_a_relative_out_lands_under_the_named_root(self) -> None:
+        os.chdir(self.outside)
+        self._run(["summary", "--root", str(self.root), "--out", "summary-out.md"])
+        self.assertTrue((self.root / "summary-out.md").is_file(),
+                        "the summary did not land under the root that was named")
+        self.assertEqual(sorted(p.name for p in self.outside.iterdir()), [],
+                         "the summary was written beside the cwd")
+
+    def test_summary_without_a_root_discovers_the_project_from_a_subdirectory(self) -> None:
+        """The default `--root .` means 'work it out from here', not 'assume the cwd is
+        the project'."""
+        os.chdir(self.inner)
+        self._run(["summary"])
+        self.assertTrue((self.root / self.DEFAULT_OUT).is_file(),
+                        "the summary did not land under the discovered project root")
+        self.assertEqual(sorted(p.name for p in self.inner.iterdir()), [],
+                         "the summary was written beside the cwd")
+
+    def test_the_log_it_read_and_the_summary_it_wrote_share_one_root(self) -> None:
+        """Written from inside the project on the default root, read back from OUTSIDE it.
+        A summary anchored on the cwd while the log is anchored on the root reports zero
+        open lessons over a log that holds one, and exits 0 saying so."""
+        os.chdir(self.inner)
+        self._run(["summary"])
+        os.chdir(self.outside)
+        written = (self.root / self.DEFAULT_OUT).read_text(encoding="utf-8")
+        self.assertIn("L-0001", written,
+                      "the digest was built from a log the writer never found")
+
+    def test_it_prints_the_resolved_path_it_wrote(self) -> None:
+        """A relative string could not distinguish the root from the cwd, which is what
+        hid the misplaced write."""
+        os.chdir(self.outside)
+        _rc, out = self._run(["summary", "--root", str(self.root), "--out", "summary-out.md"])
+        self.assertIn(str(self.root / "summary-out.md"), out)
+
+    def test_an_absolute_out_is_honoured_verbatim(self) -> None:
+        """Anchoring must not capture a path the caller chose deliberately."""
+        os.chdir(self.outside)
+        chosen = self.tmp / "chosen.md"
+        self._run(["summary", "--root", str(self.root), "--out", str(chosen)])
+        self.assertTrue(chosen.is_file(), "an absolute --out was re-anchored under the root")
+
+    def test_a_named_root_is_not_re_pointed_by_discovery(self) -> None:
+        """Discovery widens the default `.` only. A root the caller NAMED is where the
+        summary goes, even with a bigger project above it."""
+        os.chdir(self.outside)
+        self._run(["summary", "--root", str(self.inner), "--out", "summary-out.md"])
+        self.assertTrue((self.inner / "summary-out.md").is_file(),
+                        "the named root was overridden by discovery")
+        self.assertFalse((self.root / "summary-out.md").exists())
+
+    def test_discovery_does_not_escape_a_cwd_with_no_project_above_it(self) -> None:
+        """With no project anywhere above, the cwd is the honest answer."""
+        os.chdir(self.outside)
+        self._run(["summary", "--out", "summary-out.md"])
+        self.assertTrue((self.outside / "summary-out.md").is_file())
+        self.assertFalse((self.root / "summary-out.md").exists())
+
+    def test_dry_run_still_writes_nothing(self) -> None:
+        """Anchoring the path must not have turned a preview into a write."""
+        os.chdir(self.outside)
+        self._run(["summary", "--root", str(self.root), "--out", "summary-out.md",
+                   "--dry-run"])
+        self.assertFalse((self.root / "summary-out.md").exists())
+        self.assertFalse((self.outside / "summary-out.md").exists())
 
 
 if __name__ == "__main__":

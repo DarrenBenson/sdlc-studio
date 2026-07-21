@@ -11,6 +11,8 @@ from pathlib import Path
 
 SCR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCR))
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the git helper
+import gitutil  # noqa: E402 - confined git for the fixture repos below
 _spec = importlib.util.spec_from_file_location("deploy", SCR / "deploy.py")
 assert _spec and _spec.loader
 deploy = importlib.util.module_from_spec(_spec)
@@ -118,11 +120,10 @@ class SafetyGuardTests(unittest.TestCase):
 
 
 import datetime as dt  # noqa: E402
-import subprocess  # noqa: E402
 
 
 def _git(cwd, *args):
-    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+    gitutil.git(list(args), cwd=cwd)
 
 
 def _ledger(root: Path, rows) -> None:

@@ -11,11 +11,13 @@ Run from the repo root:
 from __future__ import annotations
 
 import importlib.util
-import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the git helper
+import gitutil  # noqa: E402 - confined git for the fixture repos below
 
 SCRIPTS = Path(__file__).resolve().parent.parent
 SCRIPT = SCRIPTS / "engagement_floor.py"
@@ -214,8 +216,7 @@ class GitCrossCheckTests(unittest.TestCase):
     files the unit's commits touched, and the count is the UNION of the two."""
 
     def _git(self, root, *args):
-        subprocess.run(["git", "-C", str(root), *args], check=True,
-                       capture_output=True, text=True)
+        gitutil.git(list(args), cwd=root, text=True)
 
     def _init_repo(self, root):
         self._git(root, "init", "-q")
@@ -273,8 +274,7 @@ class OmissionHoleTests(unittest.TestCase):
     blank ticket + terse commit the weak model produces cannot buy a silent pass."""
 
     def _git(self, root, *args):
-        subprocess.run(["git", "-C", str(root), *args], check=True,
-                       capture_output=True, text=True)
+        gitutil.git(list(args), cwd=root, text=True)
 
     def _init_repo(self, root):
         self._git(root, "init", "-q")
@@ -457,8 +457,7 @@ class BatchCommitUnderstatementLimitTests(unittest.TestCase):
     needs a commit-id convention (a tracked follow-on CR), out of scope for git-log-grep."""
 
     def _git(self, root, *args):
-        subprocess.run(["git", "-C", str(root), *args], check=True,
-                       capture_output=True, text=True)
+        gitutil.git(list(args), cwd=root, text=True)
 
     def test_understatement_in_a_multi_id_commit_is_not_caught(self):
         with tempfile.TemporaryDirectory() as d:
@@ -489,8 +488,7 @@ class RefsTrailerAttributionTests(unittest.TestCase):
     ids it names (each named id gets the full set)."""
 
     def _git(self, root, *args):
-        subprocess.run(["git", "-C", str(root), *args], check=True,
-                       capture_output=True, text=True)
+        gitutil.git(list(args), cwd=root, text=True)
 
     def _init_repo(self, root):
         self._git(root, "init", "-q")
@@ -720,8 +718,7 @@ class BatchCommitTests(unittest.TestCase):
     set to every id it names - it cannot know which file belongs to which id."""
 
     def _git(self, root, *args):
-        subprocess.run(["git", "-C", str(root), *args], check=True,
-                       capture_output=True, text=True)
+        gitutil.git(list(args), cwd=root, text=True)
 
     def _init_repo(self, root):
         self._git(root, "init", "-q")
@@ -762,8 +759,7 @@ class BatchGitAttributionAgreesTests(unittest.TestCase):
     preserved it."""
 
     def _git(self, root, *args):
-        subprocess.run(["git", "-C", str(root), *args], check=True,
-                       capture_output=True, text=True)
+        gitutil.git(list(args), cwd=root, text=True)
 
     def _init_repo(self, root):
         self._git(root, "init", "-q")

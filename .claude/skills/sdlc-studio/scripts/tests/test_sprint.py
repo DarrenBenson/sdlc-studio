@@ -830,8 +830,8 @@ def _run(cwd, *args):
 def _behind_repo(d):
     """A work repo one commit behind its origin (a teammate pushed a CR)."""
     origin = Path(d) / "origin.git"
-    _sp.run(["git", "init", "-q", "--bare", str(origin)])
-    _sp.run(["git", "-C", str(origin), "symbolic-ref", "HEAD", "refs/heads/main"])
+    _run(d, "init", "-q", "--bare", str(origin))
+    _run(origin, "symbolic-ref", "HEAD", "refs/heads/main")
     work = Path(d) / "work"; work.mkdir()
     _run(work, "init", "-q"); _run(work, "checkout", "-q", "-b", "main")
     _run(work, "config", "user.email", "t@t"); _run(work, "config", "user.name", "t")
@@ -840,7 +840,7 @@ def _behind_repo(d):
     _run(work, "add", "-A"); _run(work, "commit", "-qm", "base")
     _run(work, "push", "-q", "origin", "main")
     other = Path(d) / "other"
-    _sp.run(["git", "clone", "-q", str(origin), str(other)])
+    _run(d, "clone", "-q", str(origin), str(other))
     _run(other, "config", "user.email", "o@o"); _run(other, "config", "user.name", "o")
     crd = other / "sdlc-studio" / "change-requests"; crd.mkdir(parents=True)
     (crd / "CR0001-remote.md").write_text("# CR-0001: remote\n", encoding="utf-8")
@@ -852,8 +852,8 @@ def _behind_repo(d):
 def _up_to_date_repo(d):
     """A work clone that is level with origin (no divergence)."""
     origin = Path(d) / "origin.git"
-    _sp.run(["git", "init", "-q", "--bare", str(origin)])
-    _sp.run(["git", "-C", str(origin), "symbolic-ref", "HEAD", "refs/heads/main"])
+    _run(d, "init", "-q", "--bare", str(origin))
+    _run(origin, "symbolic-ref", "HEAD", "refs/heads/main")
     work = Path(d) / "work"; work.mkdir()
     _run(work, "init", "-q"); _run(work, "checkout", "-q", "-b", "main")
     _run(work, "config", "user.email", "t@t"); _run(work, "config", "user.name", "t")
@@ -868,8 +868,8 @@ def _up_to_date_repo(d):
 def _remote_id_repo(d, branch):
     """A work repo whose origin default branch (`branch`) holds CR0005 that local deleted."""
     origin = Path(d) / "origin.git"
-    _sp.run(["git", "init", "-q", "--bare", str(origin)])
-    _sp.run(["git", "-C", str(origin), "symbolic-ref", "HEAD", f"refs/heads/{branch}"])
+    _run(d, "init", "-q", "--bare", str(origin))
+    _run(origin, "symbolic-ref", "HEAD", f"refs/heads/{branch}")
     seed = Path(d) / "seed"; seed.mkdir()
     _run(seed, "init", "-q"); _run(seed, "checkout", "-q", "-b", branch)
     _run(seed, "config", "user.email", "s@s"); _run(seed, "config", "user.name", "s")
@@ -879,7 +879,7 @@ def _remote_id_repo(d, branch):
     _run(seed, "add", "-A"); _run(seed, "commit", "-qm", "cr5")
     _run(seed, "push", "-q", "origin", branch)
     work = Path(d) / "work"
-    _sp.run(["git", "clone", "-q", str(origin), str(work)])
+    _run(d, "clone", "-q", str(origin), str(work))
     _run(work, "config", "user.email", "w@w"); _run(work, "config", "user.name", "w")
     _run(work, "rm", "-q", "sdlc-studio/change-requests/CR0005-remote.md")
     _run(work, "commit", "-qm", "remove locally")   # gone from disk, still on origin/<branch>
@@ -1890,6 +1890,127 @@ class PointsForecastTests(unittest.TestCase):
             rec = telemetry.forecasts(root)["BG0001"]
             self.assertEqual(rec["points"], 5)
             self.assertEqual(rec["tokens"], 5 * sp.POINTS_RATE_SEED)
+
+
+class BatchHistoryTests(unittest.TestCase):
+    """What sprints ACTUALLY cost is the plan's real input, so it must not silently drop the
+    most relevant sprints. An interactive sprint has no runner and therefore no per-unit
+    telemetry, so its `Measured` column is 0 while its sprint-level Actual is real. Gating the
+    block on `Measured` dropped every one of them and left the OLDEST runner-era rows standing
+    as the current cost picture.
+
+    Both kinds are shown, and each row says WHICH it is: a sprint-level per-unit figure is the
+    sprint total divided by its units, so the variance between units is hidden - one unit may
+    have eaten half the budget. That is the accepted cost of including them, and the label is
+    what stops the two being read as the same measurement.
+    """
+
+    HEAD = ("| Retro | Date | Units | Measured | Estimate (tokens, plan-time) | "
+            "Actual (tokens) | Ratio (est/actual) | Constants | Sample |\n"
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
+
+    def _velocity(self, root: Path, rows: str) -> None:
+        retros = root / "sdlc-studio" / "retros"
+        retros.mkdir(parents=True, exist_ok=True)
+        (retros / "VELOCITY.md").write_text(self.HEAD + rows, encoding="utf-8")
+
+    #: The two sprints the filed bug names, verbatim from this project's own history.
+    INTERACTIVE = ("| RETRO0060 | 2026-07-20 | 9 | 0 | 0 | 2,390,624 | - | - | - |\n"
+                   "| RETRO0061 | 2026-07-20 | 13 | 0 | 0 | 1,265,392 | - | - | - |\n")
+    RUNNER = "| RETRO0025 | 2026-07-14 | 5 | 5 | 352,600 | 642,358 | 0.55x | - | - |\n"
+
+    def test_an_interactive_sprint_is_included_and_costed_from_its_total(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._velocity(root, self.INTERACTIVE)
+            hist = {h["id"]: h for h in sp.batch_history(root)}
+            self.assertEqual(sorted(hist), ["RETRO0060", "RETRO0061"])
+            self.assertEqual(hist["RETRO0060"]["units"], 9)
+            self.assertEqual(hist["RETRO0060"]["per_unit"], 2_390_624 // 9)
+            self.assertEqual(hist["RETRO0061"]["per_unit"], 1_265_392 // 13)
+
+    def test_each_row_says_which_kind_of_evidence_it_is(self) -> None:
+        """The label is the whole reason inclusion is honest: sprint-level hides per-unit
+        variance, per-unit does not, and a reader cannot weigh a row without knowing which."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._velocity(root, self.RUNNER + self.INTERACTIVE)
+            basis = {h["id"]: h["basis"] for h in sp.batch_history(root)}
+            self.assertEqual(basis["RETRO0025"], "per-unit")
+            self.assertEqual(basis["RETRO0060"], "sprint-level")
+            self.assertEqual(basis["RETRO0061"], "sprint-level")
+
+    def test_a_per_unit_row_divides_by_the_units_that_were_measured(self) -> None:
+        """A runner-era sprint that delivered 7 units but recorded telemetry for 5 is evidence
+        about those 5. Dividing by the 7 would report a per-unit cost for two units nothing was
+        measured on."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._velocity(root,
+                           "| RETRO0027 | 2026-07-14 | 7 | 5 | 349,000 | 789,591 | - | - | - |\n")
+            row = sp.batch_history(root)[0]
+            self.assertEqual(row["units"], 5)
+            self.assertEqual(row["per_unit"], 789_591 // 5)
+            self.assertEqual(row["basis"], "per-unit")
+
+    def test_a_sprint_with_no_recorded_actual_stays_out(self) -> None:
+        """Inclusion is about the DIVISOR, not the numerator. A sprint whose tokens were never
+        captured has no cost to report, and inventing one from units alone would be fabrication.
+        Both shapes of absence are here: a blank cell, and the 0 an earlier close wrote into one
+        - a recorded zero is the same non-measurement and must not become a 0/unit row."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._velocity(root, "| RETRO0064 | 2026-07-21 | 10 | 0 | 0 | - | - | - | - |\n"
+                                 "| RETRO0059 | 2026-07-20 | 6 | 0 | 0 | 0 | - | - | - |\n")
+            self.assertEqual(sp.batch_history(root), [])
+
+    def test_a_sprint_with_an_actual_but_no_units_at_all_stays_out(self) -> None:
+        """No divisor of either kind: a per-unit figure cannot be derived, so no row is made
+        rather than one that divides by zero or quietly reports the total as a per-unit cost."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._velocity(root, "| RETRO0065 | 2026-07-21 | 0 | 0 | 0 | 900,000 | - | - | - |\n")
+            self.assertEqual(sp.batch_history(root), [])
+
+    def test_the_printed_block_labels_every_row_and_explains_the_derived_kind(self) -> None:
+        """The label has to reach the operator's eye, not just the JSON: this block is read as
+        the authoritative cost picture, and an unlabelled derived figure reads as a measured one."""
+        sp = _load()
+        data = {"token_forecast": {
+            "tokens": 50_000, "points": 2, "rate": 25_000, "rate_source": "seed",
+            "rate_basis": "b", "rate_units": 0,
+            "history": [{"id": "RETRO0025", "units": 5, "tokens": 642_358,
+                         "per_unit": 128_471, "basis": "per-unit"},
+                        {"id": "RETRO0060", "units": 9, "tokens": 2_390_624,
+                         "per_unit": 265_625, "basis": "sprint-level"}]}}
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            sp._render_token_forecast(data)
+        text = buf.getvalue()
+        self.assertIn("RETRO0060", text)
+        self.assertIn("265,625/unit", text)
+        self.assertIn("sprint-level", text)
+        self.assertIn("per-unit", text)
+        self.assertIn("variance", text)          # the hidden risk is stated, not assumed known
+
+    def test_a_history_of_only_per_unit_rows_does_not_print_the_derived_caveat(self) -> None:
+        """The caveat is about sprint-level rows. Printed unconditionally it would be noise on
+        a block that is fine, which is how a real caveat stops being read."""
+        sp = _load()
+        data = {"token_forecast": {
+            "tokens": 50_000, "points": 2, "rate": 25_000, "rate_source": "seed",
+            "rate_basis": "b", "rate_units": 0,
+            "history": [{"id": "RETRO0025", "units": 5, "tokens": 642_358,
+                         "per_unit": 128_471, "basis": "per-unit"}]}}
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            sp._render_token_forecast(data)
+        self.assertNotIn("variance", buf.getvalue())
 
 
 class WsjfIsCostOfDelayOverPointsTests(unittest.TestCase):

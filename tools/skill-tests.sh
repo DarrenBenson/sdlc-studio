@@ -87,9 +87,12 @@ fi
 # measurement of a blind detector: the exclusion list swallowed any indented line and any
 # capitalised one, and the leak patterns demanded an alarm word. A baseline is only ever as
 # true as the detector that produced it - re-measure after touching either.
+# 132 -> 129 (RUN-01KY321Q): the root-anchoring and vacuity work captured three
+# more leaks in test_loop_guard and test_lessons, whose resolved-path lines made the
+# existing prints longer and easier to spot. Lowered to match, per the ratchet rule.
 # 134 -> 132 (US0277/US0278): the selection-reporting lines made two uncaptured
 # `main(...)` calls in test_mutation.py noisier; capturing their stdout/stderr also
 # retired the SURVIVED/REFUSED lines they had been leaking since before the ratchet.
-TEST_NOISE_BASELINE="${TEST_NOISE_BASELINE:-132}"
+TEST_NOISE_BASELINE="${TEST_NOISE_BASELINE:-129}"
 
 printf '%s\n' "$out" | python3 "$(dirname "$0")/test_noise.py" --baseline "$TEST_NOISE_BASELINE"

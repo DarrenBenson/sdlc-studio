@@ -34,6 +34,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import run_state, sdlc_md  # noqa: E402
 import config  # noqa: E402  (sibling - appetite.* project defaults)
+# The family root resolver, not a second path-joining idiom: `resolve_root` honours a root
+# the caller NAMED and discovers upward from the family default `.`, `under_root` anchors a
+# relative path on the result. Reached through the module, per the monkeypatch rule.
+import verify_ac  # noqa: E402  (sibling)
 
 TERMINAL = {"Done", "Blocked"}
 QUARANTINE_EXIT = 3
@@ -152,10 +156,29 @@ def _resolve_appetite(root: Path, args: argparse.Namespace) -> tuple[float, int]
     return float(minutes or 0), int(units or 0)
 
 
+def _root(args: argparse.Namespace) -> Path:
+    """The project root every path in this invocation anchors on.
+
+    One answer per invocation, shared by the state file and the appetite breaker: two
+    idioms in one script is how a writer and a reader end up disagreeing about which
+    project they are working on.
+    """
+    return verify_ac.resolve_root(args)
+
+
 def _state_path(args: argparse.Namespace) -> Path:
+    """Where the guardrail state lives, anchored on the RESOLVED root.
+
+    `Path(args.root)` honoured a named root but took the family default `.` as the cwd, so
+    `record` from any subdirectory wrote a stray `<cwd>/sdlc-studio/.local/loop-state.json`
+    and exited 0. The handoff reads `<root>/sdlc-studio/.local/loop-state.json`, so the
+    attempts and failure signatures it exists to carry were written where it never looks.
+    A relative `--state` anchors on the same root; an absolute one is honoured as given.
+    """
+    root = _root(args)
     if args.state:
-        return Path(args.state)
-    return Path(args.root) / "sdlc-studio" / ".local" / "loop-state.json"
+        return verify_ac.under_root(root, args.state)
+    return root / "sdlc-studio" / ".local" / "loop-state.json"
 
 
 def cmd_record(args: argparse.Namespace) -> int:
@@ -166,21 +189,26 @@ def cmd_record(args: argparse.Namespace) -> int:
     state = record_attempt(state, args.unit, args.signature)
     v = verdict(state, args.unit, cap=args.cap, repeat=args.repeat)
     sdlc_md.atomic_write(path, json.dumps(state, indent=2))  # atomic: a crash mid-write must not reset guardrail state
+    # The resolved path is printed on every verdict: a verdict that names no destination
+    # looks the same whether the state landed where the handoff reads it or beside the cwd.
     if getattr(args, "format", "text") == "json":
-        print(json.dumps(v, indent=2))
+        print(json.dumps({**v, "state": str(path)}, indent=2))
         return QUARANTINE_EXIT if v["quarantine"] else 0
     if v["quarantine"]:
-        print(f"{args.unit}: QUARANTINE after {v['attempts']} attempts (reason={v['reason']}) -> mark Blocked, continue")
+        print(f"{args.unit}: QUARANTINE after {v['attempts']} attempts "
+              f"(reason={v['reason']}) -> mark Blocked, continue [state: {path}]")
         return QUARANTINE_EXIT
-    print(f"{args.unit}: continue ({v['attempts']} attempt(s), under guardrails)")
+    print(f"{args.unit}: continue ({v['attempts']} attempt(s), under guardrails) "
+          f"[state: {path}]")
     return 0
 
 
 def cmd_status(args: argparse.Namespace) -> int:
     """Print the current guardrail verdict for a unit."""
-    state = sdlc_md.read_json(_state_path(args), {"units": {}})
+    path = _state_path(args)
+    state = sdlc_md.read_json(path, {"units": {}})
     v = verdict(state, args.unit, cap=args.cap, repeat=args.repeat)
-    print(json.dumps(v, indent=2))
+    print(json.dumps({**v, "state": str(path)}, indent=2))
     return 0
 
 
@@ -189,8 +217,12 @@ def cmd_budget(args: argparse.Namespace) -> int:
 
     Read-only: unlike `record`, a spent budget marks NOTHING - the units keep their true
     status and the run stops cleanly. The loop calls this BETWEEN units, so the appetite is
-    honoured at a boundary and no unit is abandoned mid-implementation."""
-    root = Path(args.root)
+    honoured at a boundary and no unit is abandoned mid-implementation.
+
+    Anchored on the same resolved root as the state file: read from the cwd, a run opened
+    above this directory produced no run state at all, and an appetite the breaker never
+    found reported as no appetite declared - a spent ceiling reading as `continue`."""
+    root = _root(args)
     try:
         state = run_state.read(root)
     except run_state.RunStateError as exc:

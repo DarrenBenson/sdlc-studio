@@ -5,7 +5,9 @@ nothing beyond python3. Test titles are pinned by TS0002's AC Coverage Matrix.
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import subprocess
@@ -224,8 +226,8 @@ class LaneTests(unittest.TestCase):
             (root / "other.py").write_text("def noop():\n    return 1\n", encoding="utf-8")
             explicit = mut.select_files(root, files=[str(root / "target.py")])
             self.assertEqual([p.name for p in explicit], ["target.py"])
-            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
-            subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+            gitutil.git(["init", "-q"], root)
+            gitutil.git(["add", "-A"], root)
             gitutil.git(["commit", "-qm", "base"], root)
             (root / "target.py").write_text(TARGET + "\n# touched\n", encoding="utf-8")
             since = mut.select_files(root, since="HEAD")
@@ -389,8 +391,8 @@ class StoryLaneTests(unittest.TestCase):
         mut = _load()
         with tempfile.TemporaryDirectory() as d:
             root = _fixture(Path(d))
-            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
-            subprocess.run(["git", "add", "target.py"], cwd=root, check=True)
+            gitutil.git(["init", "-q"], root)
+            gitutil.git(["add", "target.py"], root)
             gitutil.git(["commit", "-qm", "base"], root)
             (root / "brand_new.py").write_text("def n():\n    return 2\n", encoding="utf-8")
             since = mut.select_files(root, since="HEAD")
@@ -595,6 +597,221 @@ class LedgerTests(unittest.TestCase):
             mut.run_gate(root, [root / "target.py"],
                          f"{sys.executable} -m unittest test_good", write_report=False)
             self.assertFalse((root / "sdlc-studio" / ".local" / "mutation-runs.json").exists())
+
+
+class RegisterTests(unittest.TestCase):
+    """BG0245: the ledger could only be written by a mutation.py run, while the practice this
+    project follows is a builder hand-applying a mutant to the code a new test pins, seeing RED,
+    and restoring. That left no trace, so a sprint that applied 75 mutants closed with the lane
+    reporting 0/4 covered - a lane that reads empty precisely when the policy WAS followed.
+
+    `register` records an already-applied mutant so the practice becomes recordable without
+    changing the practice to suit the tool. What it records is a CLAIM: nothing here proves the
+    mutant was ever applied. Every entry therefore carries its provenance, so a reader can tell a
+    self-report from a machine-measured run and weight the two differently.
+    """
+
+    def _ledger(self, root: Path) -> dict:
+        return json.loads((root / "sdlc-studio" / ".local" / "mutation-runs.json")
+                          .read_text(encoding="utf-8"))
+
+    @staticmethod
+    def _sha(path: Path) -> str:
+        import hashlib
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+
+    def _register(self, mut, root: Path, **kw):
+        args = ["register", "--target", str(root / kw.pop("target", "target.py")),
+                "--mutant", kw.pop("mutant", "classify: inverted the x > 0 guard"),
+                "--test", kw.pop("test", "test_good.T.test_classify"),
+                "--verdict", kw.pop("verdict", "killed"), "--root", str(root)]
+        assert not kw, kw
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = mut.main(args)
+        return rc, buf.getvalue()
+
+    def test_a_registered_mutant_becomes_a_ledger_entry_marked_self_reported(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            rc, out = self._register(mut, root)
+            self.assertEqual(rc, 0, out)
+            entries = self._ledger(root)["entries"]
+            self.assertEqual(len(entries), 1)
+            e = entries[0]
+            self.assertEqual(e["target"], "target.py")
+            self.assertEqual(e["provenance"], mut.PROVENANCE_REGISTERED)
+            self.assertEqual(e["hash"], self._sha(root / "target.py"))
+            self.assertEqual(e["summary"]["killed"], 1)
+            self.assertEqual(e["summary"]["applied"], 1)
+            # WHAT was mutated, and WHICH test killed it - a bare count is unauditable
+            self.assertEqual(e["mutants"][0]["mutant"], "classify: inverted the x > 0 guard")
+            self.assertEqual(e["mutants"][0]["test"], "test_good.T.test_classify")
+            self.assertEqual(e["mutants"][0]["verdict"], "killed")
+
+    def test_the_command_says_the_entry_is_self_reported(self) -> None:
+        """One line, at the moment of recording, so nobody logs a claim believing they measured
+        something."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            _, out = self._register(mut, root)
+            self.assertIn("self-reported", out.lower())
+
+    def test_several_mutants_on_the_same_content_accumulate(self) -> None:
+        """A builder applies many mutants per file across a sprint. Overwriting per call would
+        leave the ledger permanently reading 1, which is the same silence in a new place."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            self._register(mut, root, mutant="one")
+            self._register(mut, root, mutant="two", verdict="survived")
+            entries = self._ledger(root)["entries"]
+            self.assertEqual(len(entries), 1)
+            self.assertEqual(entries[0]["summary"],
+                             {"applied": 2, "killed": 1, "survived": 1,
+                              "errors": 0, "unviable": 0})
+            self.assertEqual([m["mutant"] for m in entries[0]["mutants"]], ["one", "two"])
+
+    def test_a_survivor_is_recordable_and_is_not_counted_as_a_kill(self) -> None:
+        """A register subcommand that could only log good news would be a way to launder a
+        sprint that found nothing."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            self._register(mut, root, verdict="survived")
+            s = self._ledger(root)["entries"][0]["summary"]
+            self.assertEqual((s["killed"], s["survived"]), (0, 1))
+
+    def test_an_edit_to_the_target_starts_a_fresh_entry(self) -> None:
+        """The old claim was about bytes that no longer exist. Keeping its counts would carry
+        evidence forward across the very change it says nothing about."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            self._register(mut, root, mutant="before")
+            (root / "target.py").write_text(TARGET + "\ndef extra():\n    return 7\n",
+                                            encoding="utf-8")
+            self._register(mut, root, mutant="after")
+            entries = self._ledger(root)["entries"]
+            self.assertEqual(len(entries), 1)
+            self.assertEqual(entries[0]["hash"], self._sha(root / "target.py"))
+            self.assertEqual([m["mutant"] for m in entries[0]["mutants"]], ["after"])
+            self.assertEqual(entries[0]["summary"]["applied"], 1)
+
+    def test_a_registration_never_overwrites_a_measured_entry(self) -> None:
+        """The claim must not displace the measurement. A run that really applied mutants to
+        this file is the stronger evidence, and one `register` call must not be able to erase
+        it - which a single entry per target would do."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            mut.run_gate(root, [root / "target.py"],
+                         f"{sys.executable} -m unittest test_good")
+            self._register(mut, root)
+            entries = self._ledger(root)["entries"]
+            by_prov = {e.get("provenance"): e for e in entries}
+            self.assertEqual(sorted(by_prov), sorted([mut.PROVENANCE_MEASURED,
+                                                      mut.PROVENANCE_REGISTERED]))
+            self.assertGreater(by_prov[mut.PROVENANCE_MEASURED]["summary"]["killed"], 0)
+
+    def test_a_measured_run_supersedes_only_its_own_kind(self) -> None:
+        """The other direction. A re-run replaces the measured entry for that target, and leaves
+        the registered one standing - it is a different claim about the same file, not a stale
+        copy of the same one."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            self._register(mut, root, mutant="hand-applied")
+            mut.run_gate(root, [root / "target.py"],
+                         f"{sys.executable} -m unittest test_good")
+            mut.run_gate(root, [root / "target.py"],
+                         f"{sys.executable} -m unittest test_good")
+            entries = self._ledger(root)["entries"]
+            provs = sorted(e.get("provenance") for e in entries)
+            self.assertEqual(provs, [mut.PROVENANCE_MEASURED, mut.PROVENANCE_REGISTERED])
+
+    def test_a_run_stamps_its_own_entries_as_measured(self) -> None:
+        """Provenance is only readable if BOTH kinds carry it. Marking one and leaving the other
+        blank makes the distinction depend on a default nothing states."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            mut.run_gate(root, [root / "target.py"],
+                         f"{sys.executable} -m unittest test_good")
+            self.assertEqual(self._ledger(root)["entries"][0]["provenance"],
+                             mut.PROVENANCE_MEASURED)
+
+    def test_registering_a_target_that_does_not_exist_is_refused(self) -> None:
+        """No file, no content hash - an entry keyed on nothing could never go stale, so it
+        would read as coverage of the current code for ever.
+
+        Asserted at the LIBRARY boundary as well as the CLI, because the two are not the same
+        check: `cmd_register` also catches OSError, so a bare FileNotFoundError from the later
+        `read_bytes` produces an identical exit code and leaves the refusal itself pinned by
+        nothing - it survived exactly that mutant. The refusal is a stated contract (ValueError
+        for every bad input, naming why) and it is tested as one.
+        """
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            with self.assertRaises(ValueError) as caught:
+                mut.register_mutant(root, root / "nope.py", "m", "t", "killed")
+            self.assertIn("content hash", str(caught.exception))
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                rc = mut.main(["register", "--target", str(root / "nope.py"),
+                               "--mutant", "m", "--test", "t", "--verdict", "killed",
+                               "--root", str(root)])
+            self.assertEqual(rc, 2)
+            self.assertFalse((root / "sdlc-studio" / ".local" / "mutation-runs.json").exists())
+
+    def test_an_entry_naming_neither_the_mutant_nor_the_test_is_refused(self) -> None:
+        """A self-report is only auditable if it says what was mutated and what judged it. A
+        blank one is a number nobody can check against the diff, which is a claim of coverage
+        with nothing behind it at all."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            for mutant, test in (("", "t"), ("m", ""), ("   ", "t")):
+                with self.assertRaises(ValueError):
+                    mut.register_mutant(root, root / "target.py", mutant, test, "killed")
+            self.assertFalse((root / "sdlc-studio" / ".local" / "mutation-runs.json").exists())
+
+    def test_a_verdict_the_runner_alone_can_observe_is_refused(self) -> None:
+        """`error` and `unviable` are things a runner sees about a mutant it tried to execute.
+        A builder reporting one would be reporting on a run that never happened here, and the
+        library entry point has to refuse it, not just the flag parser."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            for bad in ("error", "unviable", "passed", ""):
+                with self.assertRaises(ValueError):
+                    mut.register_mutant(root, root / "target.py", "m", "t", bad)
+            self.assertFalse((root / "sdlc-studio" / ".local" / "mutation-runs.json").exists())
+
+    def test_a_registered_ledger_stays_bounded(self) -> None:
+        """The bound is the ledger's, not the writer's: registration must go through the same
+        truncation, or a per-unit practice logging every mutant grows it without limit."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True, exist_ok=True)
+            stale = [{"target": f"old{i}.py", "hash": "0" * 64, "git_rev": None,
+                      "provenance": mut.PROVENANCE_MEASURED,
+                      "generated_at": "2026-01-01T00:00:00Z",
+                      "summary": {"applied": 1, "killed": 1, "survived": 0,
+                                  "errors": 0, "unviable": 0}}
+                     for i in range(mut.LEDGER_LIMIT)]
+            (local / "mutation-runs.json").write_text(
+                json.dumps({"version": 1, "dropped": 0, "entries": stale}), encoding="utf-8")
+            self._register(mut, root)
+            led = self._ledger(root)
+            self.assertEqual(len(led["entries"]), mut.LEDGER_LIMIT)
+            self.assertEqual(led["dropped"], 1)
+            self.assertEqual(led["entries"][-1]["target"], "target.py")
 
 
 class BudgetDistributionTests(unittest.TestCase):

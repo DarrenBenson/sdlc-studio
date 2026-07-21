@@ -791,6 +791,164 @@ class TsCheckAbsentSpecTests(unittest.TestCase):
             self.assertNotEqual(rc, 2)
 
 
+class TsCheckAbsentMatrixTests(unittest.TestCase):
+    """A spec with NO AC Coverage Matrix asserts no coverage, and must not read as complete.
+
+    One step further in than the absent-FILE refusal: the file is present, readable and valid
+    UTF-8, but it holds no matrix. That produced zero rows, zero findings and exit 0 - the same
+    output a fully mapped matrix produces, so the two states were indistinguishable from the
+    command. Silence is not an assertion of coverage. Every test below therefore pins a
+    NON-zero exit or a non-empty finding list where the defect produced 0 and [].
+
+    Absence is read as NOT YET WRITTEN, never as a deliberate exemption: an exemption is a
+    decision somebody made, and nothing distinguishes a decision from an omission by looking
+    at what is not there.
+    """
+
+    HEADER = ("| Story | AC | Description | Test Cases | Status |\n"
+              "| --- | --- | --- | --- | --- |\n")
+
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = verify_ac.main(argv)
+        return rc, out.getvalue(), err.getvalue()
+
+    def _spec(self, d: str, body: str) -> Path:
+        p = Path(d) / "TS0001-x.md"
+        p.write_text(body, encoding="utf-8")
+        return p
+
+    def test_a_spec_with_no_matrix_section_reports_a_finding(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            spec = self._spec(d, "# TS0001: x\n\n## Scope\n\nProse, and no matrix.\n")
+            issues = verify_ac.ts_check(spec)
+            self.assertTrue(issues, "a spec with no matrix reported a clean matrix")
+            self.assertEqual(len(issues), 1, "one absent matrix reported as two findings")
+
+    def test_a_spec_with_no_matrix_section_exits_non_zero(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            spec = self._spec(d, "# TS0001: x\n\n## Scope\n\nProse, and no matrix.\n")
+            rc, out, _err = self._run(["ts-check", "--spec", str(spec)])
+            self.assertEqual(rc, 1, f"a matrix-less spec passed as green: {out!r}")
+
+    def test_the_missing_section_does_not_borrow_the_broken_invocation_exit(self) -> None:
+        """Exit 2 means "the path was wrong". This spec was found and read; its CONTENT is
+        the finding, so it must sit with the other content findings on exit 1."""
+        with tempfile.TemporaryDirectory() as d:
+            spec = self._spec(d, "# TS0001: x\n\nno matrix\n")
+            self.assertNotEqual(self._run(["ts-check", "--spec", str(spec)])[0], 2)
+
+    def test_its_output_differs_from_a_complete_matrix(self) -> None:
+        """The whole complaint: the two states printed the same line. Compare the real
+        outputs rather than asserting a wording nobody re-runs."""
+        with tempfile.TemporaryDirectory() as d:
+            bare = self._spec(d, "# TS0001: x\n\nno matrix\n")
+            full = Path(d) / "TS0002-x.md"
+            full.write_text("# TS0002: x\n\n### AC Coverage Matrix\n\n" + self.HEADER
+                            + "| US0001 | AC1 | x | jest \"x\" | pass |\n", encoding="utf-8")
+            _rc_a, out_a, _ = self._run(["ts-check", "--spec", str(bare)])
+            rc_b, out_b, _ = self._run(["ts-check", "--spec", str(full)])
+            self.assertEqual(rc_b, 0, "a complete matrix must stay green")
+            self.assertNotEqual(out_a.replace(bare.name, ""), out_b.replace(full.name, ""),
+                                "the two states are still indistinguishable from the output")
+
+    def test_a_complete_matrix_is_not_flagged(self) -> None:
+        """The guard must not fire on the case it exists to tell apart."""
+        with tempfile.TemporaryDirectory() as d:
+            spec = self._spec(d, "# TS0001: x\n\n### AC Coverage Matrix\n\n" + self.HEADER
+                              + "| US0001 | AC1 | x | jest \"x\" | pass |\n")
+            self.assertEqual(verify_ac.ts_check(spec), [])
+
+    def test_a_heading_with_no_table_under_it_is_named_as_malformed(self) -> None:
+        """Three readings of "no matrix" want three repairs. A heading with nothing
+        parseable under it is a BROKEN section, not an unwritten one, and saying which
+        is the difference between "write the matrix" and "fix the columns"."""
+        with tempfile.TemporaryDirectory() as d:
+            spec = self._spec(d, "# TS0001: x\n\n### AC Coverage Matrix\n\nTBD.\n")
+            issues = verify_ac.ts_check(spec)
+            self.assertTrue(issues)
+            bare = Path(d) / "TS0002-x.md"
+            bare.write_text("# TS0002: x\n\nno heading at all\n", encoding="utf-8")
+            self.assertNotEqual(issues[0]["issue"], verify_ac.ts_check(bare)[0]["issue"],
+                                "a malformed section and an unwritten one report identically")
+
+    def test_prose_naming_the_section_is_not_a_heading(self) -> None:
+        """The heading test must stay a HEADING test. A spec that merely mentions the
+        matrix in a sentence has not got one, and telling its author to fix the columns
+        of a table that does not exist sends them looking for nothing."""
+        with tempfile.TemporaryDirectory() as d:
+            mentions = self._spec(d, "# TS0001: x\n\nAn AC Coverage Matrix will follow.\n")
+            issue = verify_ac.ts_check(mentions)[0]["issue"]
+            bare = Path(d) / "TS0002-x.md"
+            bare.write_text("# TS0002: x\n\nnothing at all\n", encoding="utf-8")
+            self.assertEqual(issue, verify_ac.ts_check(bare)[0]["issue"],
+                             "a prose mention was read as a malformed section")
+
+    def test_a_matrix_with_a_header_and_no_rows_is_a_finding(self) -> None:
+        """The escape hatch the fix must close: if an empty header table were clean, an
+        author could silence the new finding by pasting two lines that assert nothing."""
+        with tempfile.TemporaryDirectory() as d:
+            spec = self._spec(d, "# TS0001: x\n\n### AC Coverage Matrix\n\n" + self.HEADER)
+            self.assertTrue(verify_ac.ts_check(spec),
+                            "an AC-less matrix table reported a clean matrix")
+
+    def test_a_non_matrix_table_does_not_count_as_a_matrix(self) -> None:
+        """Kills a counter that credits any table. A Revision History is not coverage.
+
+        The CLASSIFICATION is what is pinned, not merely that something was reported: a
+        counter crediting any table still produces a finding, just the wrong one ("the
+        matrix has no rows" over a table that is not the matrix), and that sends the
+        author to fix the columns of a Revision History. Asserting only that the list is
+        non-empty leaves that mutant alive - it did, first time round.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            spec = self._spec(d, "# TS0001: x\n\n## Revision History\n\n"
+                                 "| Date | Author | Change |\n| --- | --- | --- |\n"
+                                 "| 2026-07-21 | a | Filed |\n")
+            issues = verify_ac.ts_check(spec)
+            self.assertTrue(issues,
+                            "a Revision History table was counted as an AC Coverage Matrix")
+            bare = Path(d) / "TS0002-x.md"
+            bare.write_text("# TS0002: x\n\nno tables at all\n", encoding="utf-8")
+            self.assertEqual(issues[0]["issue"], verify_ac.ts_check(bare)[0]["issue"],
+                             "a Revision History table was counted as an AC Coverage Matrix")
+
+    def test_an_absent_spec_still_refuses_with_exit_2(self) -> None:
+        """The new finding must not swallow the older refusal: a path that is not there is
+        still a broken invocation, not a spec whose matrix is missing."""
+        with tempfile.TemporaryDirectory() as d:
+            rc, _out, err = self._run(["ts-check", "--spec", str(Path(d) / "nope.md")])
+            self.assertEqual(rc, 2)
+            self.assertIn("nope.md", err)
+
+    def test_epic_ts_fails_when_the_epic_s_only_spec_has_no_matrix(self) -> None:
+        """The semantics change this bug is really about: an epic whose test-spec asserts
+        no coverage no longer passes the epic-scope requirement."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "test-specs"
+            sd.mkdir(parents=True)
+            (sd / "TS0001-x.md").write_text(
+                "# TS0001: x\n\n> **Epic:** [EP0001](EP0001-x.md)\n\n## Scope\n\nNo matrix.\n",
+                encoding="utf-8")
+            r = verify_ac.epic_test_spec_check(root, "EP0001")
+            self.assertFalse(r["ok"], "an epic passed on a spec with no coverage matrix")
+            self.assertEqual(r["specs"], ["TS0001-x.md"])
+
+    def test_a_present_but_unreadable_spec_keeps_its_own_finding(self) -> None:
+        """A non-UTF-8 spec must report as unreadable, not as one with no matrix - the
+        repair for each is different and the wrong one wastes the reader's time."""
+        with tempfile.TemporaryDirectory() as d:
+            spec = Path(d) / "TS0001-x.md"
+            spec.write_bytes(b"\xff\xfe\x00\x00# TS0001\n")
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                issues = verify_ac.ts_check(spec)
+            self.assertEqual(len(issues), 1)
+            self.assertIn("unreadable", issues[0]["issue"])
+
+
 class ShellExecutionPolicyTests(unittest.TestCase):
     """BG0056/BG0057: shell execution is gated by provenance / --no-shell, and an
     unrecognised verifier does not silently fall through to shell."""
