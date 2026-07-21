@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 4 |
+| Open | 5 |
 | In Progress | 0 |
 | Fixed | 157 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **243** |
+| **Total** | **244** |
 
 ## All Bugs
 
@@ -210,6 +210,7 @@
 | [BG0241](BG0241-a-test-spec-with-no-ac-coverage-matrix.md) | A test spec with no AC Coverage Matrix at all reports clean and exits 0 | Open | Medium | 2026-07-21 | 2026-07-21 |
 | [BG0242](BG0242-35-bare-subprocess-git-calls-in-8-test.md) | 35 bare subprocess git calls in 8 test modules bypass the confined helper entirely | Open | High | 2026-07-21 | 2026-07-21 |
 | [BG0243](BG0243-run-attributed-tokens-reads-whatever-run-is-open.md) | run_attributed_tokens reads whatever run is open, so a token delta can be stamped on an unrelated retro | Open | Medium | 2026-07-21 | 2026-07-21 |
+| [BG0244](BG0244-the-velocity-row-records-actual-tokens-as-0.md) | The velocity row records Actual (tokens) as 0 when NO unit was rated, publishing an absence as a measurement | Open | High | 2026-07-21 | 2026-07-21 |
 
 ## Archived Releases
 

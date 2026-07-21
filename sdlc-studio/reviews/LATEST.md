@@ -48,15 +48,13 @@ did not have (L-0146, L-0173).
 
 ## Evidence
 
-**75 mutants in the build, 5 SURVIVED first time**, each driving a second fix; 12 more across the
+**75 mutants in the build, 5 SURVIVED first time**, each driving a second fix; 12 more across
 repair and re-verification. Every survivor read as coverage while pinning nothing - and the
 **unreachable-guard trap (L-0159) was hit three times by three authors** (BG0237's `_report()`
-guard, BG0236's `_session_baseline` backstop, BG0238's `recorded is None` fallback clause). None
-was deleted; all three now have direct tests.
+guard, BG0236's `_session_baseline` backstop, BG0238's `recorded is None` clause). All now pinned.
 
-Round 2 was verified by the **same** reviewer re-running its own reproductions, not a fresh one:
-both MAJOR fixtures re-executed, the fallback-reachability claim rebuilt across four cases, six
-malformed-transcript shapes swept, a no-op control mutant run to prove its harness was sound.
+Round 2 was verified by the **same** reviewer re-running its own reproductions: both MAJOR
+fixtures re-executed, the fallback claim rebuilt across four cases, six transcript shapes swept.
 
 **Dogfood:** this run predates BG0236's fix, carries no baseline, and reports
 **not-attributable** at its own close. No baseline was retrofitted.
@@ -64,14 +62,16 @@ malformed-transcript shapes swept, a no-op control mutant run to prove its harne
 ## Next steps
 
 - **CR0384** (High) - filing a finding passes every field through a shell, so reproduction steps
-  get executed: it deleted two commands from BG0240 and ran `git commit -a` twice here (both
-  blocked by the gate; nothing committed).
-- **BG0242** (High) - 35 bare `subprocess` git calls in 8 modules bypass BG0230's fix: bounded by
-  a ratchet, not closed. **CR0383** - 62 scripts declare `--root` and one discovers it.
-- **BG0240, BG0241, BG0243, CR0382, CR0385** open. **RFC0048 D2** authorised test retirement on
-  measured kill-yield, SEQUENCED behind CR0377 and BG0238.
-- **CR0319** is the release cut and the freeze has expired. **RFC0050** is unbuilt; its risk lens
-  subsumes RFC0049 option B - do not build both.
+  get EXECUTED: it deleted two commands from BG0240 and ran `git commit -a` twice here, both
+  blocked by the gate.
+- **BG0244** (High) - the velocity row wrote `Actual (tokens) = 0` when NO unit was rated: an
+  absence published as a measurement, hand-corrected for a third sprint. Found by dogfooding this
+  sprint's own close, against this sprint's own goal.
+- **BG0242** (High) - 35 bare `subprocess` git calls bypass BG0230's fix: bounded, not closed.
+- **BG0240, BG0241, BG0243, CR0382, CR0383, CR0385** open. **RFC0048 D2** authorised test
+  retirement on measured kill-yield, SEQUENCED behind CR0377 and BG0238.
+- **CR0319** is the release cut, freeze expired. **RFC0050** unbuilt; its risk lens subsumes
+  RFC0049 option B - do not build both.
 
 ## Lessons
 
