@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 7 |
+| Open | 8 |
 | In Progress | 0 |
 | Fixed | 147 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **236** |
+| **Total** | **237** |
 
 ## All Bugs
 
@@ -203,6 +203,7 @@
 | [BG0234](BG0234-a-story-ac-asserting-a-repo-wide-invariant.md) | a story AC asserting a repo-wide invariant retroactively un-Dones itself as the repo grows | Fixed | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0235](BG0235-two-review-loop-properties-are-pinned-only-symbolically.md) | two review-loop properties are pinned only symbolically or in aggregate, so a single-class break ships green | Open | Low | 2026-07-20 | 2026-07-20 |
 | [BG0236](BG0236-the-interactive-token-capture-sums-the-whole-session.md) | the interactive token capture sums the whole session, so a second sprint in one session double-counts the first sprint's tokens | Open | High | 2026-07-21 | 2026-07-21 |
+| [BG0237](BG0237-two-dev-repo-only-gate-tests-lack-the.md) | Two dev-repo-only gate tests lack the skip guard, so the shipped suite fails from an installed copy | Open | Medium | 2026-07-21 | 2026-07-21 |
 
 ## Archived Releases
 
