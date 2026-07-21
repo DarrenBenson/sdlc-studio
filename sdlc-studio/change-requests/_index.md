@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 33 |
+| Proposed | 35 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 334 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **385** |
+| **Total** | **387** |
 
 ## All Changes
 
@@ -207,6 +207,8 @@
 | [CR-0383](CR0383-root-anchoring-is-a-per-script-convention-not.md) | Root anchoring is a per-script convention, not a shared one: 62 scripts declare --root and one discovers it | Proposed | Medium | Improvement | 2026-07-21 | -- |
 | [CR-0384](CR0384-file-finding-py-has-no-non-shell-input.md) | file_finding.py has no non-shell input path, so the field most likely to contain commands is the one most likely to be executed | Proposed | High | Improvement | 2026-07-21 | -- |
 | [CR-0385](CR0385-document-the-mutation-evidence-ledger-four-surfaces-still.md) | Document the mutation evidence ledger: four surfaces still describe only the single-blob report | Proposed | Medium | Improvement | 2026-07-21 | -- |
+| [CR-0386](CR0386-the-handoff-line-tells-you-to-plan-a.md) | The handoff line tells you to plan a worklist that has zero items in it | Proposed | Low | Improvement | 2026-07-21 | -- |
+| [CR-0387](CR0387-the-run-opened-line-prints-goal-unset-on.md) | The run-opened line prints goal=unset on the same command that just set the Sprint Goal | Proposed | Low | Improvement | 2026-07-21 | -- |
 
 ## Archived Releases
 
