@@ -11,7 +11,7 @@ off - the two-role gate holds everything past US0192.
 
 ## What shipped
 
-A commit costs **93.1s instead of 196.7s**, with no coverage given up (suite 3,409 -> 3,422
+A commit costs **~99s instead of ~197s** (the hook's own end-to-end measurements), with no coverage given up (suite 3,409 -> 3,422
 tests). `run_gate`, which every commit pays, went **35.6s -> 6.95s**.
 
 - **US0284** - `test_gate.py` ran the full gate over this repo twice: once for its shape, once to
@@ -43,26 +43,26 @@ hitting (L-0146), now three sprints running.
    Pasting it back verbatim into a neighbouring class doubled the runtime with both guards
    silent. Now a module-scope refusal every route passes through, tested in both directions.
 
-Six MINORs also accepted: the baseline was a hand-sum the check could not reproduce (now the
-hook's own 99s, with the ~19% same-machine variance stated as a known limit); US0286 AC4
-over-claimed "did not narrow"; AC3's verifier could not compare before with after and is now
-manual; the parse cache was unbounded (now digest-keyed, capped).
+Six MINORs also accepted. **Round 2 then REJECTED the repair**, and was right twice more: the
+two new hook tests both exercised the BLOCKED branch, never the docs-only one they were named
+for, so a mutant restoring the live bug kept them green - the vacuous class again, in a test
+whose own docstring claimed "the behaviour is the claim"; and the corrected baseline landed in
+config but not in RFC0048's D6 row, which still asserted the retired 93.1s. Both fixed, plus a
+surviving mutant on the new guard and a module-scope leak. Round 3 verification pending.
 
 ## Evidence
 
 - `gate --format json` byte-identical before and after US0286 across all 15 lanes, reproduced
   independently by the reviewer.
-- **9 mutants killed** in the build, **3 more** proving the repairs (non-UTF-8 config, docs-only
-  recording, the deleted test replayed verbatim).
+- **9 mutants killed** in the build, **6 more** across two repair rounds (non-UTF-8 config; the
+  deleted test replayed verbatim; the docs-only recording bug; never-recording; the guard's
+  dropped `checks` clause; a module leak probe).
 - The reviewer could not break: the byte-identical claim, any new test's ability to fail, `$SECONDS`
   arithmetic, or US0284's "no assertion lost".
 
-## The premise was wrong three times
-
-All three substantive stories were planned on a premise the build falsified: US0286's "lanes
-re-walk the corpus" (it is 0.105s), US0285's injected cap (would have passed either way),
-US0287's shipped lane (would have been permanently silent). Each was caught by measuring or
-reading first. This is the evidence base for **RFC0050**'s plan-time adversarial pass.
+**The premise was wrong three times too** - US0286's "lanes re-walk the corpus" (it is 0.105s),
+US0285's injected cap (would have passed either way), US0287's shipped lane (permanently
+silent). Evidence base for **RFC0050**'s plan-time adversarial pass.
 
 ## Next steps
 
@@ -75,5 +75,6 @@ reading first. This is the evidence base for **RFC0050**'s plan-time adversarial
 
 ## Lessons
 
-A plan's premises decay; profile before optimising. A guard must be tested for its mechanism,
-not the case that prompted it. Narrowing an exception clause is a behaviour change, not a tidy-up.
+Profile before optimising. Test a guard's mechanism, not the case that prompted it. Narrowing an
+exception clause is a behaviour change. A test that never enters the branch it names is vacuous
+however real its fixture looks. See RETRO-0063 for the full set.

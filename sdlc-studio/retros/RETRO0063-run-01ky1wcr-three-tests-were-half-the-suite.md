@@ -10,14 +10,14 @@
 - **US0284** (3pts) - `GateRealWrapperTests` ran the full ~35s gate over this repo twice: once to assert shape, once to learn that `main` returns 0 or 1. One lazy run now serves both, with `main` pinned against a stub. `test_gate.py` 72.2s -> 36.2s; the stubbed test alone 35.451s -> 0.001s. One unstubbed end-to-end run kept deliberately.
 - **US0285** (2pts) - the never-rolled evidence-log pin drove 5,050 records through `record()`. It now seeds the log past the cap in one write and appends one record: identical failing condition, sharper attribution. 10.4s -> 0.259s.
 - **US0286** (5pts) - `engagement_floor.detect` ran `git log --grep` once per shipped unit (842 subprocesses); `project_override` re-parsed `.config.yaml` on every call (4,495 times per validate run). One git pass; parse memoised on file content. `run_gate` 35.6s -> 6.95s.
-- **US0287** (2pts) - RFC0048 D6 closed: a 120s per-commit budget against a measured 93.1s baseline, advisory, reporting trend not just verdict, reading the latest run not the median.
+- **US0287** (2pts) - RFC0048 D6 closed: a 120s per-commit budget against a measured 99s baseline, advisory, reporting trend not just verdict, reading the latest run not the median.
 
-**Whole gate: 196.7s -> 93.1s per commit. Suite: 153.1s -> 78.6s over 3,418 tests (up from 3,409).**
+**Whole gate: ~197s -> ~99s per commit, as the hook measures itself end to end (the 93.1s component sum was retired after the review - see the lessons). Suite: 153.1s -> 78.9s over 3,422 tests, up from 3,409.**
 
 ## Blocked / deferred
 
 - None delivered short. `test_sprint.py`'s 19.3s was deliberately left out of scope at plan time: it is diffuse (~100ms across 238 tests, no hotspot), so it is a different problem from the three concentrated ones and would have been a worse ratio.
-- The run is built and adversarially reviewed (REJECT round 1, repaired) but NOT closed: it still needs a reviewer of record to sign off before the four stories reach Done.
+- The run is built and adversarially reviewed. **Round 1 REJECT (3 MAJOR), repaired; round 2 REJECT (2 new MAJORs, both CREATED BY the round-1 repair), repaired.** Round 3 verification pending, then a reviewer of record must sign off before the four stories reach Done.
 
 ## What went well
 
@@ -33,6 +33,9 @@
 - **`Affects` was under-declared at plan time** on US0286, so the planner reported it as safely parallel with US0284 when both would edit `test_gate.py`. Caught by re-reading the waves, not by a tool.
 
 ## Lessons
+
+- **A test can look behavioural and still never enter the branch it names.** Round 2 killed the two hook tests written to close round 1's MAJOR: their fixture carried only the hook, so every cheap guard died on a missing file, `fail` was already 1, and both cases took the BLOCKED branch instead of the docs-only one they were named for. A mutant restoring the live bug for docs-only commits alone kept them green. Running the real thing is necessary and not sufficient - assert the branch marker, and carry a positive control, or "we ran it for real" becomes its own kind of vacuity.
+- **A correction has to be propagated to the decision of record, not just the file it was found in.** Retiring the 93.1s baseline in `.config.yaml` left RFC0048's D6 row asserting it, so the resolved decision was literally false about the file it pointed at - and US0287's AC4 ("Resolved with the chosen number AND the baseline it was measured against") silently became untrue. Spec rot created by accepting a finding halfway.
 
 - **Profile inside the file before optimising it.** The file-level table said "attack test_gate.py"; the profile said "two tests". The same table said "three lanes re-walk the corpus"; the profile said "842 git subprocesses and 4,495 YAML parses". A cost attributed to the wrong cause produces a plausible plan that fixes nothing.
 - **Read the binding rules of the thing you intend to inject before designing a test around injecting it.** A default argument binds at definition time, so patching the module constant it was defaulted from changes nothing - and the resulting test passes whether or not the behaviour is present. Making a test cheaper is exactly when vacuity is easiest to introduce, because the change looks like a simplification.

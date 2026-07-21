@@ -144,6 +144,19 @@ def _guarded_run_gate(root=".", *a, **kw):
 gate.run_gate = _guarded_run_gate
 
 
+def tearDownModule() -> None:
+    """Hand `gate.run_gate` back when this module is done.
+
+    The guard is installed at import and mutates a module global that every test module shares.
+    Left installed, an unrelated module making its OWN single real run over this repo would fail
+    with a message about `test_gate`'s budget - a confusing failure in a file whose author never
+    touched this one. No module hits it today, but `sprint.py` and `deploy.py` both call
+    `run_gate` with neither `only` nor `checks`, so a future test of sprint-close or deploy over
+    the real repo would. Found by the adversarial review.
+    """
+    gate.run_gate = _ORIG_RUN_GATE
+
+
 class GateRealWrapperTests(unittest.TestCase):
     _real_report: dict | None = None
 
@@ -218,7 +231,10 @@ class GateRealWrapperTests(unittest.TestCase):
             gate.run_gate(str(REPO), only=["index-derived"])   # scoped: not a full run
             with tempfile.TemporaryDirectory() as d:
                 gate.run_gate(d)                               # another root: not this repo
-            gate.run_gate(".", checks={"a": _fake(0)})         # injected registry: not real
+            # str(REPO), NOT ".": with a relative root the first clause is already False, so the
+            # `checks` clause is never reached and dropping it from the guard survived. Found by
+            # the adversarial review as a surviving mutant on this very test.
+            gate.run_gate(str(REPO), checks={"a": _fake(0)})    # injected registry: not real
             self.assertEqual(len(_REAL_FULL_GATE_RUNS), 1)     # ...none of them counted
         finally:
             _REAL_FULL_GATE_RUNS[:] = saved

@@ -9,8 +9,17 @@ report say `-85% since`. The gate had not got faster; it had just not run.
 That failure is OPEN, which is what makes it worth a test: alternate a docs commit with a code
 commit and the ratchet the budget exists to expose is invisible forever.
 
-These tests RUN THE REAL HOOK in a throwaway repo rather than grepping it. A grep would pin the
-shape of today's fix; only running it pins the behaviour, and the behaviour is the claim.
+These tests RUN THE REAL HOOK in a throwaway repo. Round 2 of the same review then killed the
+FIRST version of them: the fixture carried only the hook and `gate_timing.py`, so every cheap
+guard died on a missing file, `fail` was already 1, and BOTH tests silently exercised the
+`elif` (blocked) branch. The docs-only branch - the one that actually produced `-85% since` -
+was never executed, and a mutant restoring the original bug for docs-only commits alone kept
+them green. The fixture below therefore stubs every guard so the hook reaches `fail=0`, and
+each test ASSERTS THE BRANCH MARKER the hook prints, so a test can never again claim a branch
+it did not take.
+
+The positive control matters as much as the two negatives: without it, a hook that recorded
+nothing at all would pass this file.
 """
 from __future__ import annotations
 
@@ -24,33 +33,70 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 HOOK = REPO / ".githooks" / "pre-commit"
 
+#: The hook's own branch markers. Asserting on these is what makes each test's coverage claim
+#: checkable rather than assumed.
+DOCS_ONLY = "no test-relevant file staged"
+ALREADY_FAILED = "a cheaper lane already failed"
+
+PASS_SH = "#!/usr/bin/env bash\nexit 0\n"
+PASS_PY = "import sys\nsys.exit(0)\n"
+FAIL_SH = "#!/usr/bin/env bash\necho 'stub failure'\nexit 1\n"
+
 
 def _git(cwd: Path, *args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", "-C", str(cwd), *args],
-                          capture_output=True, text=True)
+    return subprocess.run(["git", "-C", str(cwd), *args], capture_output=True, text=True)
 
 
 class BudgetRecordingTests(unittest.TestCase):
     """Only a commit that actually paid for the unit suites may enter the budget series."""
 
     def _repo(self, tmp: Path) -> Path:
-        """A throwaway repo carrying just enough of this one to run the hook to its end."""
+        """A throwaway repo whose every guard PASSES, so the hook reaches its real branches."""
         root = tmp / "r"
-        (root / "tools").mkdir(parents=True)
+        (root / "tools" / "tests").mkdir(parents=True)
         (root / "sdlc-studio" / ".local").mkdir(parents=True)
         (root / ".githooks").mkdir(parents=True)
-        (root / ".githooks" / "pre-commit").write_text(
-            HOOK.read_text(encoding="utf-8"), encoding="utf-8")
-        (root / ".githooks" / "pre-commit").chmod(0o755)
-        for f in ("gate_timing.py",):
-            (root / "tools" / f).write_text(
-                (REPO / "tools" / f).read_text(encoding="utf-8"), encoding="utf-8")
+        (root / ".claude" / "skills" / "sdlc-studio" / "scripts").mkdir(parents=True)
+        (root / "node_modules" / ".bin").mkdir(parents=True)
+
+        hook = root / ".githooks" / "pre-commit"
+        hook.write_text(HOOK.read_text(encoding="utf-8"), encoding="utf-8")
+        hook.chmod(0o755)
+
+        for name in ("lint-style.sh", "check_action_pins.sh", "skill-tests.sh"):
+            p = root / "tools" / name
+            p.write_text(PASS_SH, encoding="utf-8")
+            p.chmod(0o755)
+        for name in ("check_links.py", "validate_skill.py", "check_versions.py",
+                     "check_budgets.py", "check_neutrality.py"):
+            (root / "tools" / name).write_text(PASS_PY, encoding="utf-8")
+        (root / ".claude" / "skills" / "sdlc-studio" / "scripts" / "gate.py").write_text(
+            PASS_PY, encoding="utf-8")
+        md = root / "node_modules" / ".bin" / "markdownlint"
+        md.write_text(PASS_SH, encoding="utf-8")
+        md.chmod(0o755)
+        (root / "tools" / "tests" / "__init__.py").write_text("", encoding="utf-8")
+        # `unittest discover` over an EMPTY dir exits 1 ("NO TESTS RAN"), which would make the
+        # tool-tests lane fail and send every case down the blocked branch.
+        (root / "tools" / "tests" / "test_stub.py").write_text(
+            "import unittest\n\n\nclass T(unittest.TestCase):\n"
+            "    def test_ok(self):\n        self.assertTrue(True)\n", encoding="utf-8")
+
+        # The one real tool: the thing under test.
+        (root / "tools" / "gate_timing.py").write_text(
+            (REPO / "tools" / "gate_timing.py").read_text(encoding="utf-8"), encoding="utf-8")
         (root / "sdlc-studio" / ".config.yaml").write_text(
-            "gate_budget:\n  seconds: 120\n  baseline_seconds: 93.1\n"
+            "gate_budget:\n  seconds: 120\n  baseline_seconds: 99\n"
             "  baseline_date: 2026-07-21\n", encoding="utf-8")
+
         _git(root, "init", "-q")
         _git(root, "config", "user.email", "t@t")
         _git(root, "config", "user.name", "t")
+        # Land the scaffolding in a FIRST commit that bypasses the hook. Without this, every
+        # test's `git add -A` also stages `tools/*`, which is test-relevant - so even the
+        # docs-only case would run the suites and the branch under test would never be reached.
+        _git(root, "add", "-A")
+        _git(root, "commit", "-q", "--no-verify", "-m", "fixture")
         _git(root, "config", "core.hooksPath", ".githooks")
         return root
 
@@ -60,32 +106,54 @@ class BudgetRecordingTests(unittest.TestCase):
             return []
         return json.loads(p.read_text(encoding="utf-8")).get("total", [])
 
-    def _commit(self, root: Path, rel: str, body: str) -> subprocess.CompletedProcess:
+    def _commit(self, root: Path, rel: str, body: str = "x\n") -> str:
         path = root / rel
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(body, encoding="utf-8")
         _git(root, "add", "-A")
         env = dict(os.environ)
         env.pop("GIT_INDEX_FILE", None)
-        return subprocess.run(["git", "-C", str(root), "commit", "-q", "-m", "x"],
-                              capture_output=True, text=True, env=env)
+        env.pop("GIT_DIR", None)
+        out = subprocess.run(["git", "-C", str(root), "commit", "-q", "-m", "x"],
+                             capture_output=True, text=True, env=env)
+        return out.stdout + out.stderr
 
     def test_a_docs_only_commit_does_not_enter_the_budget_series(self) -> None:
         """The exact regression: a commit that SKIPPED the suites must not be recorded as this
         gate's cost. Recorded, it made the next report read `-85% since`."""
         with tempfile.TemporaryDirectory() as d:
             root = self._repo(Path(d))
-            self._commit(root, "README.md", "hello\n")
+            out = self._commit(root, "README.md")
+            self.assertIn(DOCS_ONLY, out, "this test did not reach the docs-only branch")
+            self.assertNotIn(ALREADY_FAILED, out)
             self.assertEqual(self._totals(root), [],
                              "a docs-only commit was recorded as a gate cost")
+            self.assertNotIn("gate-budget:", out)
 
-    def test_the_budget_line_is_not_printed_when_the_suites_were_skipped(self) -> None:
-        """A budget line printed off a run that did not pay for the suites is a number about
-        nothing, and it is worse than silence because it reads as a measurement."""
+    def test_a_commit_blocked_before_the_suites_is_not_recorded_either(self) -> None:
+        """The other skip path: a cheap lane failed, so the suites never ran. Its 10s is not
+        this gate's cost either."""
         with tempfile.TemporaryDirectory() as d:
             root = self._repo(Path(d))
-            out = self._commit(root, "README.md", "hello\n")
-            self.assertNotIn("gate-budget:", out.stdout + out.stderr)
+            (root / "tools" / "lint-style.sh").write_text(FAIL_SH, encoding="utf-8")
+            (root / "tools" / "lint-style.sh").chmod(0o755)
+            out = self._commit(root, "tools/thing.py")     # test-relevant, so only `fail` skips
+            self.assertIn(ALREADY_FAILED, out, "this test did not reach the blocked branch")
+            self.assertNotIn(DOCS_ONLY, out)
+            self.assertEqual(self._totals(root), [])
+            self.assertNotIn("gate-budget:", out)
+
+    def test_a_commit_that_ran_the_suites_IS_recorded(self) -> None:
+        """The positive control, and the reason the two tests above are not vacuous: a hook that
+        recorded nothing at all would satisfy both of them."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            out = self._commit(root, "tools/thing.py")
+            self.assertNotIn(DOCS_ONLY, out)
+            self.assertNotIn(ALREADY_FAILED, out)
+            self.assertEqual(len(self._totals(root)), 1, "a full-lane commit was not recorded")
+            self.assertIn("gate-budget:", out)
+            self.assertIn("baseline 99s", out)          # ...against the corrected baseline
 
 
 if __name__ == "__main__":
