@@ -4,7 +4,7 @@
 > **Created:** 2026-07-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** sdlc-studio/.config.yaml,.claude/skills/sdlc-studio/scripts/gate.py,sdlc-studio/rfcs/RFC0048-make-the-test-suite-cost-effective-without-lowering.md
+> **Affects:** sdlc-studio/.config.yaml,tools/gate_timing.py,.githooks/pre-commit,tools/tests/test_gate_timing.py,sdlc-studio/rfcs/RFC0048-make-the-test-suite-cost-effective-without-lowering.md
 > **Epic:** EP0093
 > **Points:** 2
 > **Depends on:** US0284, US0285, US0286
@@ -36,7 +36,8 @@ the check reports the trend against a dated baseline.
 - **When** the budget is written to config
 - **Then** it carries the measured baseline and the date it was set against, so a later reader
   can tell what the number was a judgement about
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::BudgetLaneTests::test_budget_config_carries_its_baseline
+- **Verify:** pytest tools/tests/test_gate_timing.py::BudgetLaneTests::test_budget_config_carries_its_baseline
+- **Verified:** yes (2026-07-21)
 
 ### AC2: the report shows drift, not just the current value
 
@@ -44,7 +45,8 @@ the check reports the trend against a dated baseline.
 - **When** the lane reports
 - **Then** it names the baseline and its date alongside the current value, so a 28% drift is
   visible as drift rather than as a still-passing number
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::BudgetLaneTests
+- **Verify:** pytest tools/tests/test_gate_timing.py::BudgetLaneTests
+- **Verified:** yes (2026-07-21)
 
 ### AC3: over budget warns and never blocks
 
@@ -52,7 +54,8 @@ the check reports the trend against a dated baseline.
 - **When** the lane runs
 - **Then** it warns and the gate is not refused, so a slow or loaded machine cannot block a
   correct commit
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::BudgetLaneTests::test_over_budget_warns_and_never_blocks
+- **Verify:** pytest tools/tests/test_gate_timing.py::BudgetLaneTests::test_over_budget_warns_and_never_blocks
+- **Verified:** yes (2026-07-21)
 
 ### AC4: D6 is closed with the number and its baseline
 

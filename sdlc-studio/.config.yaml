@@ -85,3 +85,26 @@ capacity:
 
 two_backlog:
   enforce: true  # this repo dogfoods the two-backlog workflow; keep the gates on
+
+# The per-commit gate budget (RFC0048 D6). A DECLARATION the operator made against a measured
+# baseline, never a fitted constant, and it is recorded WITH that baseline because a ceiling
+# without the measurement it was chosen against cannot be reviewed later.
+#
+# D6's problem statement: without a target number every future guard is individually
+# justifiable and the ratchet never stops. That is not hypothetical here - between 19 and 21
+# July test_gate.py grew 56.4s -> 72.2s (+28%) while gaining three tests, and nobody noticed,
+# because it was under every ceiling the whole time. So the check reports the TREND against the
+# dated baseline, not just a pass or fail.
+#
+# Baseline measured 2026-07-21 after EP0093: 93.1s for a code commit
+#   skill-tests 78.1s (was 153.1s) + gate 6.95s (was 35.6s) + guards 8.0s
+# The pre-EP0093 figure was 196.7s, so the budget sits below what a commit cost two days ago.
+#
+# 120s is ~29% headroom: enough to absorb machine variance and normal growth without the lane
+# becoming noise that gets scrolled past, tight enough that a jump the size of test_gate.py's
+# trips it. ADVISORY ALWAYS - a wall-clock check on a loaded or shared machine must never refuse
+# a correct commit, which is the same call D3 made for mutation.
+gate_budget:
+  seconds: 120
+  baseline_seconds: 93.1
+  baseline_date: 2026-07-21

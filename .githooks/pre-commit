@@ -167,6 +167,13 @@ else
   printf '       Docs-only commit: style, links, budgets, markdown and the artefact gate still ran.\n'
 fi
 
+# What this commit actually cost, end to end, and how that sits against the declared budget
+# (RFC0048 D6). Recorded before the verdict so a BLOCKED commit's cost is measured too - the
+# expensive lanes ran either way, and a budget that only ever sees green runs under-reports.
+python3 tools/gate_timing.py record --suite total --seconds "$SECONDS" 2>/dev/null
+budget_line="$(python3 tools/gate_timing.py budget 2>/dev/null)"
+[ -n "$budget_line" ] && printf '  %s%s%s\n' "$Y" "$budget_line" "$N"
+
 if [ "$fail" -ne 0 ]; then
   printf '\n%sCommit blocked.%s Fix the failures above (each lists how), then commit again.\n' "$R" "$N"
   printf 'Genuine emergency only: %sgit commit --no-verify%s\n' "$B" "$N"

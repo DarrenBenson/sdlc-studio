@@ -60,6 +60,73 @@ def expected(root: Path, suite: str) -> float | None:
     return statistics.median(runs) if runs else None
 
 
+def latest(root: Path, suite: str) -> float | None:
+    """The MOST RECENT recorded run, or None with no history.
+
+    Deliberately not the median. `expected` answers "how long should I expect to wait", where a
+    median is right because it ignores one bad run. The budget answers "what does a commit cost
+    NOW", and a median over a ten-run window lags a step change badly: when the suite went from
+    ~153s to 79s the median still read ~152s, so a budget built on it would have reported a
+    number that was true of no run that had happened for two commits.
+    """
+    runs = [float(x) for x in _load(root).get(suite, []) if isinstance(x, (int, float))]
+    return runs[-1] if runs else None
+
+
+# The budget is a DECLARATION a human made against a measured baseline, not a fitted constant -
+# see RFC0048 D6. It is read from the project config so the number and the baseline it was
+# chosen against live together; a number without its baseline is not reviewable later.
+BUDGET_KEY = "gate_budget"
+
+
+def budget_config(root: Path) -> dict | None:
+    """The declared budget block, or None when the project has not set one."""
+    try:
+        import yaml
+    except ImportError:
+        return None
+    try:
+        cfg = yaml.safe_load((root / "sdlc-studio" / ".config.yaml").read_text(encoding="utf-8"))
+    except (OSError, ValueError, Exception):  # noqa: BLE001 - a bad config is not a commit failure
+        return None
+    block = (cfg or {}).get(BUDGET_KEY)
+    return block if isinstance(block, dict) else None
+
+
+def budget_report(root: Path) -> dict | None:
+    """Compare the latest recorded per-commit total against the declared budget.
+
+    Returns None when no budget is declared or nothing has been recorded yet - silence, never a
+    guessed number. `over` is advisory in every case: a wall-clock check on a loaded or shared
+    machine must never refuse a correct commit (RFC0048 D6, matching D3's advisory placement).
+    """
+    block = budget_config(root)
+    if not block:
+        return None
+    try:
+        budget = float(block.get("seconds"))
+    except (TypeError, ValueError):
+        return None
+    measured = latest(root, "total")
+    if measured is None:
+        return None
+    baseline = block.get("baseline_seconds")
+    when = block.get("baseline_date")
+    detail = f"{measured:.0f}s of a {budget:.0f}s budget"
+    if baseline is not None and when:
+        # The TREND, not just the instantaneous value. Reporting only "under budget" is how
+        # test_gate.py grew 28% in two days without anyone noticing: it was under every ceiling
+        # the whole time.
+        try:
+            drift = (measured - float(baseline)) / float(baseline) * 100.0
+            detail += (f" (baseline {float(baseline):.0f}s on {when}, "
+                       f"{drift:+.0f}% since)")
+        except (TypeError, ValueError):
+            detail += f" (baseline {baseline}s on {when})"
+    return {"measured": measured, "budget": budget, "baseline": baseline,
+            "baseline_date": when, "over": measured > budget, "detail": detail}
+
+
 def cmd_record(args: argparse.Namespace) -> int:
     record(Path(args.root), args.suite, args.seconds)
     return 0
@@ -74,6 +141,16 @@ def cmd_estimate(args: argparse.Namespace) -> int:
         print(f"{args.suite}: expect ~{exp:.0f}s from the last "
               f"{len(_load(Path(args.root)).get(args.suite, []))} run(s) - "
               f"allow at least {int(exp * 2)}s of timeout")
+    return 0
+
+
+def cmd_budget(args: argparse.Namespace) -> int:
+    """Report the per-commit total against the declared budget. ALWAYS returns 0: over budget is
+    a warning, never a blocked commit."""
+    rep = budget_report(Path(args.root))
+    if rep is None:
+        return 0                      # no budget declared, or nothing recorded yet: say nothing
+    print(f"gate-budget: {'OVER - ' if rep['over'] else ''}{rep['detail']}")
     return 0
 
 
@@ -92,6 +169,9 @@ def build_parser() -> argparse.ArgumentParser:
     e.add_argument("--suite", required=True)
     e.add_argument("--warn-seconds", type=float, default=60.0)
     e.set_defaults(func=cmd_estimate)
+
+    b = sub.add_parser("budget", help="report the per-commit total against the declared budget")
+    b.set_defaults(func=cmd_budget)
     return p
 
 
