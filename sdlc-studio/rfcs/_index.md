@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 2 |
+| Draft | 3 |
 | In Review | 1 |
 | Accepted | 42 |
 | Superseded | 0 |
 | Withdrawn | 3 |
-| **Total** | **48** |
+| **Total** | **49** |
 
 ## All RFCs
 
@@ -65,3 +65,4 @@
 | [RFC-0046](RFC0046-should-a-sprint-level-adversarial-full-diff-review.md) | Should a sprint-level adversarial full-diff review satisfy the per-unit critiqued gate for a large batch? | Medium | In Review | sdlc-studio | 2026-07-17 | -- |
 | [RFC-0047](RFC0047-declare-the-workspace-artefact-schema-a-versioned-public.md) | Declare the workspace artefact schema a versioned public contract | High | Accepted | sdlc-studio | 2026-07-17 | -- |
 | [RFC-0048](RFC0048-make-the-test-suite-cost-effective-without-lowering.md) | Make the test suite cost-effective without lowering the floor: tier it by measured value, and review tests adversarially | Medium | Draft | sdlc-studio | 2026-07-19 | -- |
+| [RFC-0049](RFC0049-a-test-strategy-set-at-sprint-planning-derived.md) | A test strategy set at sprint planning, derived from the TSD and the unit's risk band | High | Draft | sdlc-studio | 2026-07-21 | -- |
