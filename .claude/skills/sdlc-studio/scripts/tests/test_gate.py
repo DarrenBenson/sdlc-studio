@@ -5,6 +5,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -112,6 +113,86 @@ class IndexDerivedCheckTests(unittest.TestCase):
 
 
 class GateRealWrapperTests(unittest.TestCase):
+    #: The real gate over this repo costs ~35s, and this class used to pay it TWICE - once to
+    #: assert the result's shape, once to discover that `main` returns 0 or 1. That was 71s of a
+    #: 153s suite. It is now run ONCE for the class, here, and the shape assertions read this
+    #: result; `main`'s exit-code mapping is pinned against a stub, because what that test is
+    #: about is main's own arithmetic, not whether the 15 lanes work.
+    #:
+    #: One unstubbed end-to-end run is kept deliberately: it is the only thing that proves the
+    #: real lanes wire up and return the documented shape, and a cached shape assertion cannot
+    #: replace it.
+    _real_report: dict | None = None
+    _real_runs = 0
+    _orig_run_gate = None
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        # Count every FULL run over this repo for the life of the class, whoever triggers it -
+        # a test calling `main` goes through the same module global, so the counter sees it too.
+        cls._orig_run_gate = gate.run_gate
+
+        def _counting(root=".", *a, **kw):
+            if str(root) == str(REPO) and kw.get("checks") is None and not kw.get("only"):
+                GateRealWrapperTests._real_runs += 1
+            return GateRealWrapperTests._orig_run_gate(root, *a, **kw)
+
+        gate.run_gate = _counting
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        if cls._orig_run_gate is not None:
+            gate.run_gate = cls._orig_run_gate
+
+    @classmethod
+    def _report(cls) -> dict:
+        """The one real run, made on FIRST demand rather than in setUpClass, so a test in this
+        class that only needs a stub does not pay 35 seconds to get there. Running the stubbed
+        exit-code test alone costs milliseconds; running the class costs one real gate."""
+        if cls._real_report is None:
+            cls._real_report = gate.run_gate(str(REPO))
+        return cls._real_report
+
+    def test_the_real_gate_runs_once_per_class(self) -> None:
+        """The saving itself, pinned. Counts FULL runs over this repo across the class, so
+        re-introducing a second end-to-end run (the 35s this story removed) fails here rather
+        than only showing up as a slower suite nobody times."""
+        if not _in_dev_repo():
+            self.skipTest("dev-repo-only test: no sdlc-studio/ workspace at the expected "
+                          "root (running from an installed copy)")
+        self.assertIsNotNone(self._report())
+        self.assertEqual(self._real_runs, 1)
+
+    def test_main_maps_result_to_exit_code_without_rerunning(self) -> None:
+        """`main` returns 0 on a green report and 1 on a red one. That is main's OWN mapping,
+        and a stub proves it in milliseconds; the previous test spent 35 seconds running the
+        real gate to observe an exit code it then only asserted was 0 or 1."""
+        orig = gate.run_gate
+        seen: list[dict] = []
+
+        def _stub(root=".", **kw):
+            seen.append({"root": root, **kw})
+            return _stub.report
+
+        try:
+            gate.run_gate = _stub
+            _stub.report = {"ok": True, "checks": []}
+            self.assertEqual(gate.main(["--root", str(REPO), "--format", "json"]), 0)
+            _stub.report = {"ok": False, "checks": []}
+            self.assertEqual(gate.main(["--root", str(REPO), "--format", "json"]), 1)
+        finally:
+            gate.run_gate = orig
+        self.assertEqual(len(seen), 2)          # main ran the gate, it did not skip it
+        self.assertEqual(seen[0]["root"], str(REPO))   # ...and passed the root through
+
+    def test_exactly_one_unstubbed_end_to_end_run(self) -> None:
+        """Structural: the file must contain exactly ONE unstubbed full-gate call over this
+        repo. The counter above only sees this class; a second full run added to any OTHER
+        class in the file would be invisible to it, and this is what catches that."""
+        src = Path(__file__).read_text(encoding="utf-8")
+        calls = re.findall(r"gate\.run_gate\(str\(REPO\)\)", src)
+        self.assertEqual(len(calls), 1, f"expected 1 unstubbed full-gate run, found {len(calls)}")
+
     def test_dev_repo_detector_true_here(self) -> None:
         # Guarded like the wrappers: from an install this SKIPS (it must, or it would recreate
         # the misleading FAILED this bug exists to kill). In the dev repo the detector is True.
@@ -145,11 +226,12 @@ class GateRealWrapperTests(unittest.TestCase):
 
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
-        # not pass/fail (state-independent, so not fragile).
+        # not pass/fail (state-independent, so not fragile). Reads the ONE run made in
+        # setUpClass rather than making a second one of its own.
         if not _in_dev_repo():
             self.skipTest("dev-repo-only test: no sdlc-studio/ workspace at the expected "
                           "root (running from an installed copy)")
-        r = gate.run_gate(str(REPO))
+        r = self._report()
         self.assertIsInstance(r["ok"], bool)
         self.assertEqual(len(r["checks"]), 15)
         for c in r["checks"]:
@@ -292,10 +374,6 @@ class GateRealWrapperTests(unittest.TestCase):
         self.assertEqual(statuses["boom"], "error")     # reported, not raised
         self.assertEqual(statuses["a"], "pass")          # other checks still ran
         self.assertTrue(r["ok"])                          # error is non-blocking, gate not failed
-
-    def test_main_returns_exit_code(self) -> None:
-        rc = gate.main(["--root", str(REPO), "--format", "json"])
-        self.assertIn(rc, (0, 1))
 
     def test_missing_root_fails_not_vacuous_pass(self) -> None:
         import tempfile

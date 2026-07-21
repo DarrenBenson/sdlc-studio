@@ -90,12 +90,39 @@ class RecordTests(unittest.TestCase):
 
     def test_the_evidence_log_is_never_rolled(self) -> None:
         """A bounded roll drops the OLDEST records first. On a committed evidence log that means
-        deleting history out of git - and the oldest forecast is the authoritative one."""
+        deleting history out of git - and the oldest forecast is the authoritative one.
+
+        The log is seeded PAST the cap in one write and then a single record is appended, rather
+        than driving 5,050 records through `record` one at a time (10.1s of a 10.4s file, all of
+        it per-call overhead). The failing condition is identical - a log longer than the cap,
+        then an append - and it is sharper, because any roll is now attributable to that one
+        call rather than to somewhere in five thousand.
+
+        The real cap is used deliberately. `roll_jsonl`'s `max_lines` default binds at
+        definition time, so patching `DEFAULT_LOG_MAX_LINES` would NOT change the cap a
+        hypothetical `roll_jsonl(path)` call applied - a test using a small injected cap would
+        pass whether or not the log rolled, which is the vacuity this suite keeps finding.
+        """
         with tempfile.TemporaryDirectory() as d:
-            for n in range(sdlc_md.DEFAULT_LOG_MAX_LINES + 50):
-                tel.record(d, {"id": f"U{n:05d}"})
-            self.assertEqual(len(tel.read_all(d)), sdlc_md.DEFAULT_LOG_MAX_LINES + 50)
-            self.assertEqual(tel.read_all(d)[0]["id"], "U00000")
+            path = tel.actuals_path(d)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            over = sdlc_md.DEFAULT_LOG_MAX_LINES + 50
+            # Seed the history directly, past the cap, in one write.
+            path.write_text(
+                "".join(json.dumps({"id": f"U{n:05d}", "project": "x"}) + "\n"
+                        for n in range(over - 1)), encoding="utf-8")
+            # ...then append through the real path. This is the call that would roll.
+            tel.record(d, {"id": f"U{over - 1:05d}"})
+            rows = tel.read_all(d)
+            self.assertEqual(len(rows), over)          # nothing was dropped
+            self.assertEqual(rows[0]["id"], "U00000")  # ...and the OLDEST is what survived
+
+    def test_the_evidence_log_uses_the_shipped_default_cap(self) -> None:
+        """Guards the test above: it asserts the no-roll property AT the shipped boundary, so
+        that boundary must be the one the evidence log would actually be rolled against. If
+        `DEFAULT_LOG_MAX_LINES` were lowered, the seeded history above would still exceed it and
+        the pin would hold; this states the coupling rather than leaving it to be inferred."""
+        self.assertEqual(sdlc_md.roll_jsonl.__defaults__, (sdlc_md.DEFAULT_LOG_MAX_LINES,))
 
     def test_read_all_missing_file(self) -> None:
         with tempfile.TemporaryDirectory() as d:

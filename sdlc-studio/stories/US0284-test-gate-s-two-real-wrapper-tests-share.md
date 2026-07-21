@@ -35,6 +35,7 @@ that is the pin that the 15 real lanes wire up and return the documented shape.
 - **When** the class runs
 - **Then** the real gate is executed exactly once and the shape assertions read that one result
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::GateRealWrapperTests::test_the_real_gate_runs_once_per_class
+- **Verified:** yes (2026-07-21)
 
 ### AC2: main's exit-code contract is pinned without re-running the gate
 
@@ -43,6 +44,7 @@ that is the pin that the 15 real lanes wire up and return the documented shape.
 - **Then** the exit code it derives is asserted against that result, so the test pins main's own
   mapping rather than re-discovering it from a live run
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::GateRealWrapperTests::test_main_maps_result_to_exit_code_without_rerunning
+- **Verified:** yes (2026-07-21)
 
 ### AC3: exactly one true end-to-end execution survives
 
@@ -51,6 +53,7 @@ that is the pin that the 15 real lanes wire up and return the documented shape.
 - **Then** exactly one unstubbed end-to-end execution remains, so the real lanes are still wired
   up by a test rather than only by assertion of a cached shape
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::GateRealWrapperTests::test_exactly_one_unstubbed_end_to_end_run
+- **Verified:** yes (2026-07-21)
 
 ### AC4: no assertion is lost
 
@@ -59,12 +62,19 @@ that is the pin that the 15 real lanes wire up and return the documented shape.
 - **When** the file runs after the change
 - **Then** every one of those assertions is still made
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py
+- **Verified:** yes (2026-07-21)
 
 ### AC5: the saving is measured, not assumed
 
 - **Given** the 72.2s baseline measured on 2026-07-21
 - **When** the change is delivered
 - **Then** the measured wall time is recorded against that baseline
+- **Measured at delivery (2026-07-21):** `test_gate.py` **72.2s -> 36.2s**; the full suite
+  **153.1s -> 107.8s** across this story and US0285. Running the stubbed exit-code test alone
+  went **35.451s -> 0.001s**, because the real run is now made on first demand rather than in
+  `setUpClass`. Two mutants killed: inverting `cmd_gate`'s exit-code mapping fails AC2's test,
+  and re-introducing a second unstubbed end-to-end run fails both AC1's and AC3's - that mutant
+  run took 71.3s, so the regression is visible in the wall-clock as well as in the assertion.
 - **Verify:** manual record the measured time at delivery. Deliberately not executable: a
   standing wall-clock threshold is machine-dependent and would un-Done this story on an
   unrelated slower run (the lesson from BG0234).
