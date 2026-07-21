@@ -124,7 +124,9 @@ class IndexDerivedCheckTests(unittest.TestCase):
 # was spelled `gate.main(["--root", str(REPO), ...])` - so pasting that exact test back into a
 # neighbouring class restored the full cost (7.7s -> 14.7s) with both guards silent. Every route
 # to a full run goes through this module global, including `cmd_gate`'s, so refusing here catches
-# any spelling in any class. A stubbed `run_gate` is not a real run and is not counted.
+# any spelling, in any class, and - once installed - in any module that runs after this one.
+# That last clause is the whole point and is why nothing restores the original: see the note
+# below the guard. A stubbed `run_gate` is not a real run and is not counted.
 _REAL_FULL_GATE_RUNS: list[str] = []
 _ORIG_RUN_GATE = gate.run_gate
 
@@ -134,27 +136,28 @@ def _guarded_run_gate(root=".", *a, **kw):
         _REAL_FULL_GATE_RUNS.append(str(root))
         if len(_REAL_FULL_GATE_RUNS) > 1:
             raise AssertionError(
-                "a SECOND unstubbed full gate run over this repo was started. US0284 removed the "
-                "duplicate that cost 35s of the suite; if you need the real result, read "
-                "GateRealWrapperTests._report(). To pin `main`'s own behaviour, stub `run_gate` "
-                "as test_main_maps_result_to_exit_code_without_rerunning does.")
+                "This process has already made its ONE real full-gate run over this repo, in "
+                "test_gate.py. That budget is process-wide and deliberate: US0284 removed a "
+                "duplicate that cost 35s of the suite, and the guard is not torn down between "
+                "modules because handing it back let the duplicate return in a later module "
+                "unnoticed. Nothing is wrong with your test - it just needs the result rather "
+                "than a second run. Import test_gate and read "
+                "GateRealWrapperTests._report(), or scope your call (`only=`/`checks=`), or "
+                "stub `run_gate` as test_main_maps_result_to_exit_code_without_rerunning does. "
+                "If a second real run is genuinely required, change this guard on purpose.")
     return _ORIG_RUN_GATE(root, *a, **kw)
 
 
 gate.run_gate = _guarded_run_gate
 
 
-def tearDownModule() -> None:
-    """Hand `gate.run_gate` back when this module is done.
-
-    The guard is installed at import and mutates a module global that every test module shares.
-    Left installed, an unrelated module making its OWN single real run over this repo would fail
-    with a message about `test_gate`'s budget - a confusing failure in a file whose author never
-    touched this one. No module hits it today, but `sprint.py` and `deploy.py` both call
-    `run_gate` with neither `only` nor `checks`, so a future test of sprint-close or deploy over
-    the real repo would. Found by the adversarial review.
-    """
-    gate.run_gate = _ORIG_RUN_GATE
+# The guard is deliberately NOT torn down. It was, briefly: a `tearDownModule` restoring the
+# original was added so an unrelated module making its own real run would not fail with a
+# message about this file's budget. That handed the guard away - seven modules in this suite
+# sort after `test_gate`, and a full run placed in any of them took the suite from 7.9s to
+# 14.8s, green. Exactly the doubling US0284 removed, one module over and undetected. The
+# process-wide budget IS the contract; the message below carries the explanation instead, so a
+# reader who trips it is told what to do rather than blamed.
 
 
 class GateRealWrapperTests(unittest.TestCase):

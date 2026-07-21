@@ -43,8 +43,29 @@ PASS_PY = "import sys\nsys.exit(0)\n"
 FAIL_SH = "#!/usr/bin/env bash\necho 'stub failure'\nexit 1\n"
 
 
+#: Git hands a pre-commit hook GIT_INDEX_FILE pointing at the OUTER repo's `.git/index.lock`
+#: (absolute, under `git commit -a`). Every git call this module makes must therefore run with
+#: those variables gone, or the fixture writes ITS tree into the real repo's pending commit -
+#: reproduced on three victim repos by the adversarial review, and the same class as the index
+#: wipe this repo has already suffered once. `tools/skill-tests.sh` scrubs these for the skill
+#: suite; the hook's tool-tests lane now scrubs them too, and this is the second layer.
+_GIT_ENV_VARS = (
+    "GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_INDEX_VERSION",
+    "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_NAMESPACE",
+    "GIT_CEILING_DIRECTORIES", "GIT_DISCOVERY_ACROSS_FILESYSTEM", "GIT_PREFIX",
+)
+
+
+def _clean_env() -> dict:
+    env = dict(os.environ)
+    for var in _GIT_ENV_VARS:
+        env.pop(var, None)
+    return env
+
+
 def _git(cwd: Path, *args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", "-C", str(cwd), *args], capture_output=True, text=True)
+    return subprocess.run(["git", "-C", str(cwd), *args],
+                          capture_output=True, text=True, env=_clean_env())
 
 
 class BudgetRecordingTests(unittest.TestCase):
@@ -111,11 +132,8 @@ class BudgetRecordingTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(body, encoding="utf-8")
         _git(root, "add", "-A")
-        env = dict(os.environ)
-        env.pop("GIT_INDEX_FILE", None)
-        env.pop("GIT_DIR", None)
         out = subprocess.run(["git", "-C", str(root), "commit", "-q", "-m", "x"],
-                             capture_output=True, text=True, env=env)
+                             capture_output=True, text=True, env=_clean_env())
         return out.stdout + out.stderr
 
     def test_a_docs_only_commit_does_not_enter_the_budget_series(self) -> None:

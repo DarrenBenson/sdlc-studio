@@ -154,10 +154,20 @@ if [ "$fail" -eq 0 ] && git diff --cached --name-only | grep -qE "$test_relevant
     -- bash tools/skill-tests.sh "$skill"
   python3 tools/gate_timing.py record --suite skill-tests --seconds "$((SECONDS - t0))" 2>/dev/null
   t0=$SECONDS
+  # Scrubbed exactly as tools/skill-tests.sh scrubs its own suite, and for the same reason:
+  # a hook invoked by `git commit -a` is handed GIT_INDEX_FILE pointing at the OUTER repo's
+  # .git/index.lock, and any test that shells out to git then writes THIS repo's pending
+  # commit instead of its own fixture's. That protection existed only for the skill suite;
+  # this lane ran unscrubbed, and it takes just one tools/ test that builds a git fixture to
+  # turn a commit into a clobbered index. Found by the adversarial review of RUN-01KY1WCR,
+  # which reproduced the clobber on three victim repos.
   run "tool-tests" \
     "every repo-only tools/ checker unit test passes" \
     "fix the code or the test named in the failure above; re-run: python3 -m unittest discover -s tools/tests" \
-    -- python3 -m unittest discover -s tools/tests
+    -- /usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
+       -u GIT_INDEX_VERSION -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
+       -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
+       -u GIT_PREFIX python3 -m unittest discover -s tools/tests
   python3 tools/gate_timing.py record --suite tool-tests --seconds "$((SECONDS - t0))" 2>/dev/null
   suites_ran=1
 elif [ "$fail" -ne 0 ]; then

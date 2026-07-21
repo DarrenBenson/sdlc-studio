@@ -2,6 +2,8 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0177: **A protection built for one suite does not cover the suite beside it.** `skill-tests.sh` has scrubbed 11 git variables since the...**
+- **L-0176: **Restoring a global you patched can cost the guarantee the patch was for.** A `tearDownModule` was added so an unrelated module would not...**
 - **L-0175: **A correction has to be propagated to the decision of record, not just the file it was found in.** Retiring the 93.1s baseline in...**
 - **L-0174: **A test can look behavioural and still never enter the branch it names.** Round 2 killed the two hook tests written to close round 1's...**
 - **L-0173: **Prose written to justify code is code that has not been reviewed - for the third sprint running.** Two of this review's three MAJORs were...**

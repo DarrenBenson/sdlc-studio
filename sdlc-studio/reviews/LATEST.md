@@ -14,16 +14,15 @@ off - the two-role gate holds everything past US0192.
 A commit costs **~99s instead of ~197s** (the hook's own end-to-end measurements), with no coverage given up (suite 3,409 -> 3,422
 tests). `run_gate`, which every commit pays, went **35.6s -> 6.95s**.
 
-- **US0284** - `test_gate.py` ran the full gate over this repo twice: once for its shape, once to
-  learn that `main` returns 0 or 1. One lazy run now serves both; `main` is pinned against a
-  stub. 72.2s -> 36.2s.
-- **US0285** - the never-rolled evidence-log pin drove 5,050 records through `record()`. It now
-  seeds the log past the cap in one write and appends one. 10.4s -> 0.259s.
+- **US0284** - `test_gate.py` ran the full gate over this repo twice (shape, then exit code).
+  One lazy run serves both; `main` is pinned against a stub. 72.2s -> 36.2s.
+- **US0285** - the never-rolled pin drove 5,050 records through `record()`; it now seeds the log
+  past the cap in one write and appends one. 10.4s -> 0.259s.
 - **US0286** - `engagement_floor.detect` ran `git log --grep` once per shipped unit (842
-  subprocesses); `project_override` re-parsed `.config.yaml` on every call (4,495 times per
-  validate run). One git pass; the parse memoised on content digest.
-- **US0287** - RFC0048 **D6 closed**: a 120s per-commit budget against a measured 99s baseline,
-  advisory, reporting trend against a dated baseline.
+  subprocesses); `project_override` re-parsed `.config.yaml` on every call (4,495 per validate
+  run). One git pass; the parse memoised on content digest.
+- **US0287** - RFC0048 **D6 closed**: a 120s budget against a measured 99s baseline, advisory,
+  reporting trend against a dated baseline.
 
 ## The adversarial review found three MAJORs, and it was right about all of them
 
@@ -43,22 +42,22 @@ hitting (L-0146), now three sprints running.
    Pasting it back verbatim into a neighbouring class doubled the runtime with both guards
    silent. Now a module-scope refusal every route passes through, tested in both directions.
 
-Six MINORs also accepted. **Round 2 then REJECTED the repair**, and was right twice more: the
-two new hook tests both exercised the BLOCKED branch, never the docs-only one they were named
-for, so a mutant restoring the live bug kept them green - the vacuous class again, in a test
-whose own docstring claimed "the behaviour is the claim"; and the corrected baseline landed in
-config but not in RFC0048's D6 row, which still asserted the retired 93.1s. Both fixed, plus a
-surviving mutant on the new guard and a module-scope leak. Round 3 verification pending.
+**Three REJECT rounds, and rounds 2 and 3 were each caused by the previous repair.** Round 2:
+the two new hook tests both took the BLOCKED branch, never the docs-only one they were named
+for, so a mutant restoring the live bug kept them green - vacuity again, in a test whose own
+docstring claimed "the behaviour is the claim"; and the corrected baseline reached config but
+not RFC0048's D6 row. Round 3: the `tearDownModule` written to close a round-2 MINOR handed back
+the one-real-run guard, letting the 35s duplicate return in any of seven later modules (7.9s ->
+14.8s, green); and the new hook fixture ran git unscrubbed, so under `git commit -a` it wrote
+its own tree into the real repo's pending index - **the data-loss class this repo already
+suffered as BG0230**, reproduced on three victim repos. All repaired; round 4 pending.
 
 ## Evidence
 
-- `gate --format json` byte-identical before and after US0286 across all 15 lanes, reproduced
-  independently by the reviewer.
-- **9 mutants killed** in the build, **6 more** across two repair rounds (non-UTF-8 config; the
-  deleted test replayed verbatim; the docs-only recording bug; never-recording; the guard's
-  dropped `checks` clause; a module leak probe).
-- The reviewer could not break: the byte-identical claim, any new test's ability to fail, `$SECONDS`
-  arithmetic, or US0284's "no assertion lost".
+`gate --format json` byte-identical before and after across all 15 lanes, reproduced
+independently. **9 mutants killed in the build, 8 more across three repair rounds.** The reviewer
+could not break: the byte-identical claim, any new test's ability to fail, the fixture's
+non-vacuity, `$SECONDS` arithmetic, or US0284's "no assertion lost".
 
 **The premise was wrong three times too** - US0286's "lanes re-walk the corpus" (it is 0.105s),
 US0285's injected cap (would have passed either way), US0287's shipped lane (permanently

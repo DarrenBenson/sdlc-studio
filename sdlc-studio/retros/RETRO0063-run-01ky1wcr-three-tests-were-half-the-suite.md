@@ -17,14 +17,14 @@
 ## Blocked / deferred
 
 - None delivered short. `test_sprint.py`'s 19.3s was deliberately left out of scope at plan time: it is diffuse (~100ms across 238 tests, no hotspot), so it is a different problem from the three concentrated ones and would have been a worse ratio.
-- The run is built and adversarially reviewed. **Round 1 REJECT (3 MAJOR), repaired; round 2 REJECT (2 new MAJORs, both CREATED BY the round-1 repair), repaired.** Round 3 verification pending, then a reviewer of record must sign off before the four stories reach Done.
+- The run is built and adversarially reviewed. **Three REJECT rounds: round 1 (3 MAJOR), round 2 (2 MAJOR, both created by round 1's repair), round 3 (2 MAJOR, both created by round 2's repair - one of them the fix for a MINOR the reviewer had raised).** All repaired. Round 4 verification pending, then a reviewer of record must sign off before the four stories reach Done.
 
 ## What went well
 
 - **Measuring before planning changed the plan.** RFC0048's cost table was two days old. Re-measuring found `test_gate.py` had grown 28% in that time, and profiling INSIDE the files found three tests were 53% of the suite - a target the file-level view could not see.
 - **Every unit was mutation-checked during the build, per-unit, as it landed.** 9 mutants killed. No separate close-time pass was needed, and each kill was cheap because the context was live.
 - **Equivalence was proven on the real corpus, not just the suite.** `gate --format json` byte-identical before and after US0286 across all 15 lanes - evidence the unit tests structurally cannot provide.
-- **The budget lane reported on its own commit** (`99s of a 120s budget, +6% since`), so D6's mechanism was dogfooded the moment it existed.
+- **The budget lane reported on its own commit**, so D6's mechanism was dogfooded the moment it existed. The figure first recorded here was `+6% since`, computed against the 93.1s baseline that the review then retired; against the shipped 99s baseline the same run reads `+0%`. Quoted drift is only meaningful with the baseline that produced it.
 
 ## What was hard / what stalled
 
@@ -35,6 +35,8 @@
 ## Lessons
 
 - **A test can look behavioural and still never enter the branch it names.** Round 2 killed the two hook tests written to close round 1's MAJOR: their fixture carried only the hook, so every cheap guard died on a missing file, `fail` was already 1, and both cases took the BLOCKED branch instead of the docs-only one they were named for. A mutant restoring the live bug for docs-only commits alone kept them green. Running the real thing is necessary and not sufficient - assert the branch marker, and carry a positive control, or "we ran it for real" becomes its own kind of vacuity.
+- **Restoring a global you patched can cost the guarantee the patch was for.** A `tearDownModule` was added so an unrelated module would not fail with this file's message. It handed back the one-real-run guard: seven modules sort after `test_gate`, and a full run in any of them took the suite 7.9s -> 14.8s, green - the exact doubling the story removed. When a guard's value IS its process-wide scope, the fix for a confusing message is a better message, not a narrower guard.
+- **A protection built for one suite does not cover the suite beside it.** `skill-tests.sh` has scrubbed 11 git variables since the index-wipe incident, and `test_skill_tests_env.py` pins the list. The hook's tool-tests lane, invoked on the very next line, ran unscrubbed - so the first `tools/` test to build a git fixture could write ITS tree into the real repo's pending commit under `git commit -a`. Reproduced on three victim repos. A fix recorded as a lesson is not a fix applied everywhere it holds.
 - **A correction has to be propagated to the decision of record, not just the file it was found in.** Retiring the 93.1s baseline in `.config.yaml` left RFC0048's D6 row asserting it, so the resolved decision was literally false about the file it pointed at - and US0287's AC4 ("Resolved with the chosen number AND the baseline it was measured against") silently became untrue. Spec rot created by accepting a finding halfway.
 
 - **Profile inside the file before optimising it.** The file-level table said "attack test_gate.py"; the profile said "two tests". The same table said "three lanes re-walk the corpus"; the profile said "842 git subprocesses and 4,495 YAML parses". A cost attributed to the wrong cause produces a plausible plan that fixes nothing.
@@ -99,6 +101,8 @@ What does not pass is silence.
 
 | Finding | Disposition |
 | --- | --- |
+| The gate budget records a full-cost total when a suite was invoked but ran almost nothing | filed **BG0239**. Deferred deliberately at close time and the reviewer agreed: three consecutive close-time repairs each manufactured the next MAJOR, which is stronger evidence than the bounded signal loss |
+| The hook's tool-tests lane ran unscrubbed while skill-tests.sh scrubbed 11 git vars | declined as a backlog row: FIXED IN THIS SPRINT rather than tracked, because it is the data-loss class this repo has already suffered once (BG0230) and leaving it open for a sprint was not acceptable. Both the hook lane and the test module now scrub |
 | 9 mutants were killed this run and none is recorded anywhere but prose; the close lane still reads a report from two sprints ago | already filed as **BG0238** (High) - this run is its third consecutive confirming instance |
 | Two of the review's three MAJORs were false claims in comments, third sprint running | declined as a new backlog row: it is L-0146 recurring, already a standing lesson, and the countermeasure is RFC0050's plan-time pass plus the existing close review. Recorded here as its third confirming instance rather than refiled |
 | `artifact.py new` accepts a pipe-separated `--ac` and emits a malformed AC silently | filed **CR0381**. My first statement of this finding was WRONG - I claimed the paired `--verify` was being backticked. Probing it showed a correctly paired `--verify` is emitted clean; the mangling came from my own misuse, cramming the command into `--ac`. The real finding is the silent acceptance, and it is smaller. A finding is a hypothesis (L-0136) |
