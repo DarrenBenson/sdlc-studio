@@ -2,6 +2,21 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0204: **An operator ruling before the build is cheaper than a review rejection after it.** Three forks were ruled in advance; one of the rulings...**
+- **L-0203: **A number that looks like a successful measurement is more dangerous than an obvious absence.** Three closes reported not-attributable and...**
+- **L-0202: **Check what a measurement EXCLUDES before drawing a conclusion from it.** The first attributable token figure this project ever produced...**
+- **L-0201: **Do not diagnose from a diff taken while another process is mid-edit.** A transient mutation window looked exactly like a reviewer failing...**
+- **L-0200: **Check the incentive a new reporting path creates, not just its correctness.** Registering a SURVIVED mutant moves a file from "no...**
+- **L-0199: **A fix that rescues the value can leave the reason with the original defect.** BG0244 taught the velocity row to preserve a measured...**
+- **L-0198: **Say "not applied" rather than counting it as survived.** One mutant in the repair round hit an ambiguous two-occurrence anchor and did...**
+- **L-0197: **Fix the prose AND the thing the prose was wrong about.** MINOR 4 was a docstring claiming a bound the code did not provide.**
+- **L-0196: **Repeating someone else's unverified claim makes it yours.** The reviewer reported that `raw capture 5,672,289` existed nowhere else, and...**
+- **L-0195: **A self-report is not a measurement, and a ledger that cannot tell them apart is worse than one that holds neither.** Recording provenance...**
+- **L-0194: **Fixing a column obliges you to look at the one beside it.** `Actual` and `Estimate` are written by the same code in the same row from the...**
+- **L-0193: **Prove containment against a fixture that can actually fail.** The first victim repo had a worktree matching its index, so `git add -A`...**
+- **L-0192: **Count before sizing, and count with a pattern that survives an alias.** A naive `subprocess.run(["git"` grep found 24 of 35 sites because...**
+- **L-0191: **A gate whose input is derived from history cannot judge the commit that creates the history.** The engagement floor reads `git log...**
+- **L-0190: **Two numbers that look related can come from different sources, and "obviously connected" is not evidence.** The measured-rate counter and...**
 - **L-0189: **When a gate reports an absence, check whether the absence is real before filling it.** The first reflex at this close was a blanket...**
 - **L-0188: **A lane that reads red when the policy was followed will be ignored**, and is indistinguishable from a broken one.**
 - **L-0187: **Building the recorder is not the same as recording.** BG0238 made mutation evidence able to accumulate, and the sprint still closed with...**

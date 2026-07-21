@@ -264,3 +264,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
   by the reviewer against the repair. Every survivor drove a second fix.
 - **Gate:** 114s against a 120s budget (baseline 99s). Suites 3,618 skill + 273 tool green, noise
   129 at the lowered baseline, drift 0.
+
+## Handoff
+
+- [HO-0019](../handoffs/HO0019-this-project-can-plan-and-judge-a-sprint.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
