@@ -519,6 +519,75 @@ class ConfigOverrideWarnTests(unittest.TestCase):
             self.assertEqual(err.getvalue(), "")
 
 
+class ConfigParseCacheTests(unittest.TestCase):
+    """`project_override` is called once per artefact per lane - 4,495 times in one
+    `gate --only validate` over the dev repo - and re-parsed the YAML every time, which made
+    PyYAML scanning ~75% of both the validate and constitution lanes. The parse is now memoised
+    on the file's CONTENT.
+
+    Content-keying is the whole safety argument: a cache keyed on mtime can serve a stale parse
+    when two edits land inside the clock's granularity, and 'the gate passed on a tree it never
+    read' is the failure this project keeps finding in other guises. These tests attack the
+    staleness directly, not the happy path."""
+
+    def setUp(self) -> None:
+        if not _HAS_YAML:
+            self.skipTest("PyYAML absent - project_override degrades to defaults")
+
+    def _write(self, root: Path, body: str) -> None:
+        cfg = root / "sdlc-studio"
+        cfg.mkdir(parents=True, exist_ok=True)
+        (cfg / ".config.yaml").write_text(body, encoding="utf-8")
+
+    def test_repeated_reads_of_one_config_parse_it_once(self) -> None:
+        import yaml
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._write(root, "a: 1\nb: 2\n")
+            sdlc_md.project_override(root, "a")          # prime
+            calls = []
+            orig = yaml.safe_load
+            yaml.safe_load = lambda text: (calls.append(1), orig(text))[1]
+            try:
+                for _ in range(50):
+                    self.assertEqual(sdlc_md.project_override(root, "a"), 1)
+                    self.assertEqual(sdlc_md.project_override(root, "b"), 2)
+            finally:
+                yaml.safe_load = orig
+            self.assertEqual(calls, [], "100 reads of an unchanged config re-parsed it")
+
+    def test_an_edited_config_is_never_served_from_cache(self) -> None:
+        """The staleness attack. Same path, edited in place, SAME BYTE LENGTH - so an
+        mtime-and-size key could collide inside the clock's granularity. Content-keying cannot."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._write(root, "a: 1\n")
+            self.assertEqual(sdlc_md.project_override(root, "a"), 1)
+            self._write(root, "a: 2\n")      # identical length, immediately after
+            self.assertEqual(sdlc_md.project_override(root, "a"), 2)
+            self._write(root, "a: 3\n")
+            self.assertEqual(sdlc_md.project_override(root, "a"), 3)
+
+    def test_a_deleted_config_stops_being_honoured(self) -> None:
+        """A cache that outlived its file would keep answering from a config that is gone."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._write(root, "a: 1\n")
+            self.assertEqual(sdlc_md.project_override(root, "a"), 1)
+            (root / "sdlc-studio" / ".config.yaml").unlink()
+            self.assertEqual(sdlc_md.project_override(root, "a", "dflt"), "dflt")
+
+    def test_two_projects_do_not_share_a_parse(self) -> None:
+        """Keyed by path AND content: two roots whose configs differ must not cross-answer."""
+        with tempfile.TemporaryDirectory() as d1, tempfile.TemporaryDirectory() as d2:
+            r1, r2 = Path(d1), Path(d2)
+            self._write(r1, "a: 1\n")
+            self._write(r2, "a: 2\n")
+            self.assertEqual(sdlc_md.project_override(r1, "a"), 1)
+            self.assertEqual(sdlc_md.project_override(r2, "a"), 2)
+            self.assertEqual(sdlc_md.project_override(r1, "a"), 1)   # r2 did not evict r1
+
+
 class UlidIdentityTests(unittest.TestCase):
     """US0055/RFC0024: schema-v3 ULID ids coexist with v2 sequential ids; every id reader
     must parse both eras."""

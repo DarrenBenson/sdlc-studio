@@ -821,6 +821,40 @@ def _warn_unhonoured(cfg_path: Path, why: str) -> None:
         pass
 
 
+#: Parsed `.config.yaml` bodies, keyed by (path, FILE CONTENT). This function is called once
+#: per artefact per lane - 4,495 times in a single `gate --only validate` run over this repo -
+#: and re-parsed the YAML every time, which made PyYAML scanning ~75% of the validate and
+#: constitution lanes.
+#:
+#: The key is the file's CONTENT, not its mtime. Content-keying makes a stale hit impossible by
+#: construction rather than by argument: any edit, however fast, however same-sized, is a
+#: different key and re-parses. Reading a 2KB file is not what cost anything here - parsing it
+#: was - so the read still happens on every call and only the parse is saved.
+_CONFIG_PARSE_CACHE: dict[tuple[str, str], object] = {}
+
+
+def _parse_config_text(cfg_path: Path, text: str):
+    """Parse a config body, memoised on its exact content. Returns the mapping, or None when
+    it cannot be parsed (the caller then falls back to its default, as it always did)."""
+    key = (str(cfg_path), text)
+    if key in _CONFIG_PARSE_CACHE:
+        return _CONFIG_PARSE_CACHE[key]
+    try:
+        import yaml  # soft dependency, mirrors config.py
+    except ImportError:
+        _warn_unhonoured(cfg_path, "PyYAML is not installed")
+        return None
+    try:
+        parsed = yaml.safe_load(text) or {}
+    except Exception as exc:  # noqa: BLE001 - a broken override must never break parsing
+        _warn_unhonoured(cfg_path, f"it could not be parsed ({exc})")
+        parsed = None
+    # A failed parse is cached too: without it a broken config is re-parsed (and re-fails) on
+    # every one of those thousands of calls, which is the slowest possible way to reach a default.
+    _CONFIG_PARSE_CACHE[key] = parsed
+    return parsed
+
+
 def project_override(repo_root, dotted: str, default=None):
     """Read a dotted key from the project's `sdlc-studio/.config.yaml` (the override
     file only, no defaults merge). Self-contained and fully degrading: a missing
@@ -828,17 +862,12 @@ def project_override(repo_root, dotted: str, default=None):
     parser-critical paths that must never hard-depend on PyYAML; the richer merged
     config (defaults + override) lives in config.py."""
     cfg_path = Path(repo_root) / "sdlc-studio" / ".config.yaml"
-    if not cfg_path.exists():
-        return default
     try:
-        import yaml  # soft dependency, mirrors config.py
-    except ImportError:
-        _warn_unhonoured(cfg_path, "PyYAML is not installed")
-        return default
-    try:
-        cur = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
-    except Exception as exc:  # noqa: BLE001 - a broken override must never break parsing
-        _warn_unhonoured(cfg_path, f"it could not be parsed ({exc})")
+        text = cfg_path.read_text(encoding="utf-8")
+    except OSError:
+        return default          # absent or unreadable - same answer as before
+    cur = _parse_config_text(cfg_path, text)
+    if cur is None:
         return default
     for part in dotted.split("."):
         if not isinstance(cur, dict) or part not in cur:

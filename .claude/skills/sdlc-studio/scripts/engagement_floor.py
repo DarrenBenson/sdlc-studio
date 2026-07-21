@@ -197,6 +197,57 @@ def _git_touched_source_files(root: Path, rid: str) -> set[str]:
     return files
 
 
+def _git_touched_by_id(root: Path) -> dict[str, set[str]]:
+    """One pass over history returning {id: touched source files} for EVERY judged id at once.
+
+    `_git_touched_source_files` answers the same question for a single id, by running
+    `git log --grep` over the whole history. `detect` needs the answer for every shipped unit,
+    so it ran that once per unit: 842 git subprocesses on this repo, 10.5s of an 11.0s lane,
+    all of it spent waiting on a process that re-read the same history each time.
+
+    The attribution rule is unchanged - a commit's files attach to an id when a `Refs:` trailer
+    names it, or when the SUBJECT names at most one judged id - and is applied here per commit
+    rather than per id.
+
+    One deliberate difference from the per-id function: candidate ids come from the judged-id
+    regex (which requires word boundaries) rather than from git's `--grep` substring match. A
+    commit mentioning `US02845` or `XUS0284` matched the grep and had its files attributed to
+    `US0284`; here it does not. That is stricter, and correct - but it IS a difference, so
+    `test_batch_and_single_id_git_attribution_agree` pins the two against each other on real
+    commit shapes rather than leaving the claim to this comment.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(root), "-c", "core.quotepath=false", "log",
+             f"--format={_REC}%B{_MSGEND}", "--name-only"],
+            capture_output=True, text=True, timeout=_GIT_TIMEOUT)
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if out.returncode != 0:
+        return {}
+    by_id: dict[str, set[str]] = {}
+    for record in out.stdout.split(_REC):
+        if _MSGEND not in record:
+            continue
+        message, _, file_blob = record.partition(_MSGEND)
+        mentioned = {sdlc_md.norm_id(i) for i in _JUDGED_ID_RE.findall(message)}
+        if not mentioned:
+            continue
+        files = {f for f in (line.strip() for line in file_blob.splitlines())
+                 if f and Path(f).suffix in SOURCE_SUFFIXES}
+        if not files:
+            continue
+        refs = _refs_ids(message)
+        subject_ids = {sdlc_md.norm_id(i)
+                       for i in _JUDGED_ID_RE.findall(message.split("\n", 1)[0])}
+        batch = len(subject_ids) > 1
+        for rid in mentioned:
+            if batch and rid not in refs:
+                continue    # git cannot apportion a batch commit's files by id
+            by_id.setdefault(rid, set()).update(files)
+    return by_id
+
+
 def _declared_source_files(text: str) -> set[str]:
     """The source files a unit declares in its `Affects` field (doc/non-source paths dropped).
 
@@ -329,6 +380,7 @@ def detect(repo_root: Path | str) -> dict:
     project_waived = decisions.waiver_for(root, WAIVER_RULE) is not None
     max_id = _max_judged_id(root)
     cutoff_forward = cutoff is not None and max_id > 0 and cutoff > max_id
+    git_touched = _git_touched_by_id(root)   # ONE pass, not one `git log --grep` per unit
     units: list[dict] = []
     for type_, shipped in SHIPPED_STATUS.items():
         vocab = sdlc_md.status_vocab(type_, root)
@@ -338,7 +390,7 @@ def detect(repo_root: Path | str) -> dict:
             status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
             if status not in shipped:
                 continue
-            source_files = _declared_source_files(text) | _git_touched_source_files(root, rid)
+            source_files = _declared_source_files(text) | git_touched.get(sdlc_md.norm_id(rid), set())
             multi_file = len(source_files) > FLOOR_THRESHOLD
             has_planning = _has_planning(text)
             declared = _affects_declared(text)

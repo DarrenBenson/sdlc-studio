@@ -754,6 +754,73 @@ class BatchCommitTests(unittest.TestCase):
             self.assertTrue(any(t.endswith("c.py") for t in touched))
 
 
+class BatchGitAttributionAgreesTests(unittest.TestCase):
+    """`detect` used to call `_git_touched_source_files` once per shipped unit - 842 git
+    subprocesses on the dev repo, 10.5s of an 11.0s lane. It now calls `_git_touched_by_id`
+    ONCE and looks each id up. That is only safe if the two agree, so this asserts it directly
+    across the shapes the attribution rule turns on, rather than trusting that the rewrite
+    preserved it."""
+
+    def _git(self, root, *args):
+        subprocess.run(["git", "-C", str(root), *args], check=True,
+                       capture_output=True, text=True)
+
+    def _init_repo(self, root):
+        self._git(root, "init", "-q")
+        self._git(root, "config", "user.email", "t@t")
+        self._git(root, "config", "user.name", "t")
+
+    def _commit(self, root, name, msg):
+        (root / "src").mkdir(exist_ok=True)
+        (root / "src" / name).write_text("x=1\n", encoding="utf-8")
+        self._git(root, "add", "-A")
+        self._git(root, "commit", "-q", "-m", msg)
+
+    def test_batch_and_single_id_git_attribution_agree(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            # Every shape the attribution rule turns on, in one history.
+            self._commit(root, "a.py", "US0301: solo subject")
+            self._commit(root, "b.py", "US0302 US0303: batch subject, no trailer")
+            self._commit(root, "c.py", "US0304 US0305: batch subject\n\nRefs: US0304")
+            self._commit(root, "d.py", "chore: no id in subject\n\nRefs: US0306")
+            self._commit(root, "e.py", "US0307: solo subject\n\nalso see US0308 in the body")
+            self._commit(root, "f.py", "US-0309: hyphenated spelling")
+            ef = _load()
+            batch = ef._git_touched_by_id(root)
+            for rid in ("US0301", "US0302", "US0303", "US0304", "US0305",
+                        "US0306", "US0307", "US0308", "US0309"):
+                self.assertEqual(
+                    batch.get(rid, set()), ef._git_touched_source_files(root, rid),
+                    f"batch and per-id attribution disagree for {rid}")
+
+    def test_the_batch_pass_runs_one_git_log_not_one_per_id(self) -> None:
+        """The saving itself. Without this, reverting to a per-id loop inside the batch function
+        would keep every attribution test green while restoring the whole cost."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            for i, n in enumerate("abcdefgh"):
+                self._commit(root, f"{n}.py", f"US03{i:02d}: solo subject")
+            ef = _load()
+            calls = []
+            orig = ef.subprocess.run
+
+            def _counting(cmd, *a, **kw):
+                if isinstance(cmd, list) and "log" in cmd:
+                    calls.append(cmd)
+                return orig(cmd, *a, **kw)
+
+            ef.subprocess.run = _counting
+            try:
+                by_id = ef._git_touched_by_id(root)
+            finally:
+                ef.subprocess.run = orig
+            self.assertEqual(len(calls), 1, f"expected 1 git log, made {len(calls)}")
+            self.assertGreaterEqual(len(by_id), 8)   # ...and it still found every id
+
+
 class SummaryShapeTests(unittest.TestCase):
     """F3 (characterisation): the summary must count multi-file units separately from all judged
     shipped units, so the report cannot call every shipped unit 'multi-file'."""
