@@ -1,6 +1,6 @@
 # US0287: Set D6's per-commit gate budget against the improved baseline and pin the ratchet
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

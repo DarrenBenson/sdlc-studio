@@ -97,3 +97,7 @@
 | US0264 | Darren Benson | - | sdlc-studio-build-session | 2026-07-20 | - |
 | US0265 | Darren Benson | - | sdlc-studio-build-session | 2026-07-20 | - |
 | US0262 | Darren Benson | - | sdlc-studio-build-session | 2026-07-20 | - |
+| US0285 | Darren Benson (operator) | - | sdlc-studio sprint author (Claude, this session) | 2026-07-21 | - |
+| US0284 | Darren Benson (operator) | - | sdlc-studio sprint author (Claude, this session) | 2026-07-21 | - |
+| US0286 | Darren Benson (operator) | - | sdlc-studio sprint author (Claude, this session) | 2026-07-21 | - |
+| US0287 | Darren Benson (operator) | - | sdlc-studio sprint author (Claude, this session) | 2026-07-21 | - |

@@ -1,6 +1,6 @@
 # EP0093: Make the gate and its tests cost-effective: three tests are 53% of the suite
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** RFC0048
 > **Created:** 2026-07-21
 > **Created-by:** sdlc-studio new
@@ -14,10 +14,10 @@ RFC0048 option B, re-measured 2026-07-21 before planning. The suite is 153.1s ov
 
 ## Story Breakdown
 
-- [ ] [US0284: test_gate's two real-wrapper tests share one gate execution instead of running it twice](../stories/US0284-test-gate-s-two-real-wrapper-tests-share.md)
-- [ ] [US0285: The never-rolled evidence-log pin drives an injected cap, not 5,050 real records](../stories/US0285-the-never-rolled-evidence-log-pin-drives-an.md)
-- [ ] [US0286: The three heavy gate lanes share one artefact corpus instead of walking it each](../stories/US0286-the-three-heavy-gate-lanes-share-one-artefact.md)
-- [ ] [US0287: Set D6's per-commit gate budget against the improved baseline and pin the ratchet](../stories/US0287-set-d6-s-per-commit-gate-budget-against.md)
+- [x] [US0284: test_gate's two real-wrapper tests share one gate execution instead of running it twice](../stories/US0284-test-gate-s-two-real-wrapper-tests-share.md)
+- [x] [US0285: The never-rolled evidence-log pin drives an injected cap, not 5,050 real records](../stories/US0285-the-never-rolled-evidence-log-pin-drives-an.md)
+- [x] [US0286: The three heavy gate lanes share one artefact corpus instead of walking it each](../stories/US0286-the-three-heavy-gate-lanes-share-one-artefact.md)
+- [x] [US0287: Set D6's per-commit gate budget against the improved baseline and pin the ratchet](../stories/US0287-set-d6-s-per-commit-gate-budget-against.md)
 
 ## Revision History
 

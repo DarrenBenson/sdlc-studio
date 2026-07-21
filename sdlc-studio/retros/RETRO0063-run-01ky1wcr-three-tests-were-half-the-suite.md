@@ -17,7 +17,7 @@
 ## Blocked / deferred
 
 - None delivered short. `test_sprint.py`'s 19.3s was deliberately left out of scope at plan time: it is diffuse (~100ms across 238 tests, no hotspot), so it is a different problem from the three concentrated ones and would have been a worse ratio.
-- The run is built and adversarially reviewed. **Four adversarial rounds: round 1 (3 MAJOR, 6 MINOR), round 2 (2 MAJOR, both created by round 1's repair), round 3 (2 MAJOR, both created by round 2's repair - one of them the fix for a MINOR the reviewer had raised), round 4 APPROVE with 3 MINOR.** Round 4 was the first where the repair manufactured nothing. All findings reproduced twice in an isolated worktree; every repair mutation-checked against the defect it claimed to fix. Awaiting a reviewer of record's sign-off before the four stories reach Done.
+- The run is built and adversarially reviewed. **Four adversarial rounds: round 1 (3 MAJOR, 6 MINOR), round 2 (2 MAJOR, both created by round 1's repair), round 3 (2 MAJOR, both created by round 2's repair - one of them the fix for a MINOR the reviewer had raised), round 4 APPROVE with 3 MINOR.** Round 4 was the first where the repair manufactured nothing. All findings reproduced twice in an isolated worktree; every repair mutation-checked against the defect it claimed to fix. Signed off by the operator as reviewer of record on 2026-07-21; all four stories Done, EP0093 derived Done.
 
 ## What went well
 
@@ -46,6 +46,7 @@
 - **Narrowing an exception clause is a behaviour change, not a tidy-up.** Moving a read out of a broad `except` and catching only `OSError` let `UnicodeDecodeError` - a `ValueError` - escape a function documented as never raising. The refactor looked like it only changed cost.
 - **A guard must be tested for the MECHANISM, not the spelling that prompted it.** The structural check matched one literal call form; the regression it existed to prevent used another, and walked straight back in. Where a guard can be a runtime refusal on the path everything shares, prefer that to a source-text match.
 - **A baseline the check cannot itself reproduce is not a baseline.** 93.1s was a hand-sum of three separately timed runs; the hook's own measurements of the same work were 99s and 83s. Measure the thing with the instrument that will do the measuring.
+- **The harness token capture (5,672,289 -> 472,691/pt) is NOT this sprint's cost and was blanked from the VELOCITY row as not-attributable.** This is the THIRD sprint closed in one session (transcript opens 2026-07-20T15:36Z; this run started 2026-07-21T08:22Z), and `--tokens-from-harness` sums the whole session transcript - so it re-counts RETRO0061 and RETRO0062's sprints and four adversarial review rounds, then divides by only these 12 points. The result is ~19x the measured ~25,000/pt rate. Same finding as RETRO0062's, now recurring: BG0236 (a session-token baseline recorded at plan time, so the close captures a delta) is not a nice-to-have - every close in a long session publishes a false rate until it lands. Recorded as not-attributable rather than published, so the series stays honest. The generated `Sprint tokens/point` line above is the raw capture and is superseded by this paragraph.
 - **Prose written to justify code is code that has not been reviewed - for the third sprint running.** Two of this review's three MAJORs were comments asserting a property the code did not have ("same answer as before"; "the expensive lanes ran either way"). Both read as reassuring and both were false.
 
 ## Estimate vs actual
@@ -81,6 +82,12 @@ sprints fits noise.
 | **Batch (rated units only)** | **0** | **0** | **0** | - | **-** | | **-** | - |
 
 **0 of 4 unit(s) measured; 4 of 4 forecast at plan time.**
+
+**Sprint tokens/point: 472,691** (5,672,289 tokens over 12 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+
+**Velocity: 1.9 points/elapsed-hour** (12 points over 6.306h, run-state, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
+
+  secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 Unmeasured: US0284, US0285, US0286, US0287. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
 No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
 
@@ -127,3 +134,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: {{tokens}} · Duration: {{duration}} · Critic rejects: {{rejects}}
+
+## Handoff
+
+- [HO-0017](../handoffs/HO0017-a-commit-costs-materially-less-to-gate-than.md) - 4 remaining item(s): 0 copilot-tail, 4 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

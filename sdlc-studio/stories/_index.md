@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 4 |
+| Draft | 0 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 282 |
+| Done | 286 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -194,10 +194,10 @@
 | [US0281](US0281-operator-questions-are-presented-as-structured-decisions-with.md) | Operator questions are presented as structured decisions with named options and a marked recommendation | Done | EP0092 | 2026-07-20 | 2026-07-20 |
 | [US0282](US0282-close-offers-a-bounded-file-and-close-path.md) | Close offers a bounded file-and-close path: blockers filed as linked artefacts, outcome records outstanding work | Done | EP0092 | 2026-07-20 | 2026-07-20 |
 | [US0283](US0283-close-reports-whether-the-outstanding-set-shrinks-or.md) | Close reports whether the outstanding set shrinks or grows across re-runs; hard correctness gates stay unwaivable | Done | EP0092 | 2026-07-20 | 2026-07-20 |
-| [US0284](US0284-test-gate-s-two-real-wrapper-tests-share.md) | test_gate's two real-wrapper tests share one gate execution instead of running it twice | Draft | EP0093 | 2026-07-21 | 2026-07-21 |
-| [US0285](US0285-the-never-rolled-evidence-log-pin-drives-an.md) | The never-rolled evidence-log pin drives an injected cap, not 5,050 real records | Draft | EP0093 | 2026-07-21 | 2026-07-21 |
-| [US0286](US0286-the-three-heavy-gate-lanes-share-one-artefact.md) | The three heavy gate lanes share one artefact corpus instead of walking it each | Draft | EP0093 | 2026-07-21 | 2026-07-21 |
-| [US0287](US0287-set-d6-s-per-commit-gate-budget-against.md) | Set D6's per-commit gate budget against the improved baseline and pin the ratchet | Draft | EP0093 | 2026-07-21 | 2026-07-21 |
+| [US0284](US0284-test-gate-s-two-real-wrapper-tests-share.md) | test_gate's two real-wrapper tests share one gate execution instead of running it twice | Done | EP0093 | 2026-07-21 | 2026-07-21 |
+| [US0285](US0285-the-never-rolled-evidence-log-pin-drives-an.md) | The never-rolled evidence-log pin drives an injected cap, not 5,050 real records | Done | EP0093 | 2026-07-21 | 2026-07-21 |
+| [US0286](US0286-the-three-heavy-gate-lanes-share-one-artefact.md) | The three heavy gate lanes share one artefact corpus instead of walking it each | Done | EP0093 | 2026-07-21 | 2026-07-21 |
+| [US0287](US0287-set-d6-s-per-commit-gate-budget-against.md) | Set D6's per-commit gate budget against the improved baseline and pin the ratchet | Done | EP0093 | 2026-07-21 | 2026-07-21 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # US0284: test_gate's two real-wrapper tests share one gate execution instead of running it twice
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

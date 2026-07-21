@@ -5,9 +5,9 @@
 
 ## Where the pipeline is (2026-07-21)
 
-**RUN-01KY1WCR is built and adversarially reviewed to APPROVE over four rounds.** 4/4 stories,
-12 points, EP0093 under RFC0048. The four stories sit at Draft until a reviewer of record signs
-off - the two-role gate holds everything past US0192.
+**RUN-01KY1WCR is CLOSED goal-reached.** Adversarially reviewed to APPROVE over four rounds,
+then signed off by the operator as reviewer of record. 4/4 stories Done, 12 points, EP0093
+derived Done under RFC0048. Nothing outstanding on this run.
 
 ## What shipped
 
@@ -47,7 +47,7 @@ the two new hook tests both took the BLOCKED branch, never the docs-only one the
 for, so a mutant restoring the live bug kept them green - vacuity again, in a test whose own
 docstring claimed "the behaviour is the claim"; and the corrected baseline reached config but
 not RFC0048's D6 row. Round 3: the `tearDownModule` written to close a round-2 MINOR handed back
-the one-real-run guard, letting the 35s duplicate return in any of seven later modules (7.9s ->
+the one-real-run guard, letting the 35s duplicate return in any of 59 later modules (7.9s ->
 14.8s, green); and the new hook fixture ran git unscrubbed, so under `git commit -a` it wrote
 its own tree into the real repo's pending index - **the data-loss class this repo already
 suffered as BG0230**, reproduced on three victim repos. All repaired. **Round 4: APPROVE** - the first round whose repair manufactured nothing - with 3 MINORs, all fixed at close (a three-way pin on the git-scrub list, and a false module count that had reached the standing lessons digest).
@@ -65,8 +65,9 @@ silent). Evidence base for **RFC0050**'s plan-time adversarial pass.
 
 ## Next steps
 
-- **Sign-off** by a reviewer of record is the only thing left; the adversarial evidence is recorded in `sprint-review-record.md`.
 - **RFC0050** / **RFC0049** - RFC0050's risk lens subsumes RFC0049 option B; do not build both.
+- **BG0236** (High) - the close's token capture is session-cumulative and RECURRED here: it
+  published 472,691/pt over a 3-sprint session. Blanked by hand for the second close running.
 - **BG0238** (High) - per-unit mutation evidence is still never captured; 12 mutants died this
   run and none is recorded outside prose.
 - **CR0381**, **BG0237**, **BG0236**, **CR0380** open. **RFC0046** needs D1 or an override;

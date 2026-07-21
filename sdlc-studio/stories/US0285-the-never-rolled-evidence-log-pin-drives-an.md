@@ -1,6 +1,6 @@
 # US0285: The never-rolled evidence-log pin drives an injected cap, not 5,050 real records
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

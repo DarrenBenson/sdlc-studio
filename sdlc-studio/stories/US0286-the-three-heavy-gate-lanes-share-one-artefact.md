@@ -1,6 +1,6 @@
 # US0286: The three heavy gate lanes stop re-parsing config and re-shelling git
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
