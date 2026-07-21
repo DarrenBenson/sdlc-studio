@@ -50,6 +50,50 @@ def record(root: Path, suite: str, seconds: float) -> dict:
     return data
 
 
+#: A run may lose this fraction of the historic peak test count and still be treated as having
+#: run its scope. Deliberately generous: tests are legitimately deleted (US0284 deleted one), and
+#: a floor that fires on real deletions would train people to ignore it. It exists for the case
+#: where a chunk of the suite silently did not run at all.
+SCOPE_FLOOR = 0.8
+
+
+def scope_ok(root: Path, suite: str, tests: int, loader_error: bool = False) -> dict:
+    """Did this run actually run its scope, or did it only get invoked?
+
+    The budget series is only comparable between runs that did the same work. BG0239: the hook set
+    `suites_ran` once the lane was INVOKED, so a commit where a module failed to import recorded a
+    short run as this commit's cost, and the budget read '-26% since' - a broken suite reading as
+    an improvement, the same magnitude as the ratchet the lane exists to expose.
+
+    Two signals, and NEITHER is the run's duration. Judging duration by duration history is
+    circular, and it fails in the one direction that matters: the improvement shipped in EP0093
+    took a commit from 196.7s to 99s, which any plausibility band over prior history would have
+    rejected as implausible. A real speedup must never be discarded as noise.
+
+    So:
+    - `loader_error` - a module that failed to import. This is the filed reproduction exactly, and
+      it is a fact rather than a threshold, so it is checked first and needs no history.
+    - the test COUNT against the historic peak. Catches a lane that ran a fraction of its scope
+      without erroring, which no single fact reveals.
+
+    With no history the run is accepted: a fresh clone must be able to start a series, and
+    refusing to record until a baseline exists means never recording one.
+    """
+    prior = [float(x) for x in _load(root).get(f"{suite}.tests", [])
+             if isinstance(x, (int, float))]
+    peak = max(prior) if prior else None
+    if loader_error:
+        ok, why = False, "a test module failed to import, so the suite ran only part of its scope"
+    elif peak is None:
+        ok, why = True, "no test-count history yet - starting the series"
+    elif tests < peak * SCOPE_FLOOR:
+        ok, why = False, (f"{tests} tests ran against a peak of {int(peak)} "
+                          f"({tests / peak:.0%}, floor {SCOPE_FLOOR:.0%})")
+    else:
+        ok, why = True, f"{tests} tests against a peak of {int(peak)}"
+    return {"ok": ok, "why": why, "tests": tests, "peak": peak}
+
+
 def expected(root: Path, suite: str) -> float | None:
     """Median of the recorded runs, or None with no history.
 
@@ -132,6 +176,21 @@ def cmd_record(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_scope(args: argparse.Namespace) -> int:
+    """Judge whether a run covered its scope, then record its test count.
+
+    Exit 0 = the run is comparable and its total may be recorded; exit 1 = it only got invoked.
+    The count is appended either way, so the peak keeps improving and one truncated run does not
+    poison the series. Never raises into a commit.
+    """
+    root = Path(args.root)
+    verdict = scope_ok(root, args.suite, args.tests, args.loader_error)
+    record(root, f"{args.suite}.tests", args.tests)
+    if not verdict["ok"]:
+        print(f"gate-budget: total NOT recorded - {verdict['why']}")
+    return 0 if verdict["ok"] else 1
+
+
 def cmd_estimate(args: argparse.Namespace) -> int:
     """Print the expected duration when it is worth announcing. Silent otherwise."""
     exp = expected(Path(args.root), args.suite)
@@ -164,6 +223,13 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--suite", required=True)
     r.add_argument("--seconds", type=float, required=True)
     r.set_defaults(func=cmd_record)
+
+    s = sub.add_parser("scope", help="did the run cover its scope? (exit 1 if it only got invoked)")
+    s.add_argument("--suite", required=True)
+    s.add_argument("--tests", type=int, required=True)
+    s.add_argument("--loader-error", action="store_true",
+                   help="a test module failed to import, so the scope was truncated")
+    s.set_defaults(func=cmd_scope)
 
     e = sub.add_parser("estimate", help="warn when the expected duration is long")
     e.add_argument("--suite", required=True)

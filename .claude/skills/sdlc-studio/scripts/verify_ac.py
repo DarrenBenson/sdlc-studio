@@ -900,10 +900,14 @@ def append_history(path: Path, stories: list[StoryReport], dry_run: bool) -> Non
 # -----------------------------------------------------------------------------
 
 
-def _under_root(repo_root: Path, rel: str) -> Path:
+def under_root(repo_root: Path, rel: str) -> Path:
     """Resolve a --dir/--report value against the repo root when it is relative, so a run
     from any cwd discovers stories and writes the report where the Done gate reads them
-    (root/sdlc-studio/.local/...). An absolute path the caller passed is honoured as-is."""
+    (root/sdlc-studio/.local/...). An absolute path the caller passed is honoured as-is.
+
+    Public, with `resolve_root` and `discover_root`, because sibling scripts anchor on the
+    same rule (repo_map.py imports them). One resolver, not a second path-joining idiom
+    per script, is what keeps a writer and its reader agreeing about where a file lives."""
     p = Path(rel)
     return p if p.is_absolute() else repo_root / p
 
@@ -935,7 +939,7 @@ def discover_root(start: Path | str) -> Path:
     return start
 
 
-def _resolve_root(args: argparse.Namespace) -> Path:
+def resolve_root(args: argparse.Namespace) -> Path:
     """The project root every path in this run anchors on.
 
     A root the caller NAMED is honoured verbatim - pointing the run at another project
@@ -957,7 +961,7 @@ def _resolve_root(args: argparse.Namespace) -> Path:
 
 def cmd_run(args: argparse.Namespace) -> int:
     """Run verifiers across stories, update files, and write the report."""
-    repo_root = _resolve_root(args)
+    repo_root = resolve_root(args)
 
     if args.story:
         paths = [Path(args.story)]
@@ -970,7 +974,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             rec = sdlc_md.extract_record_id(args.story)
             if rec and args.story == rec:
                 target = sdlc_md.norm_id(rec)
-                matches = [p for p in walk_stories(_under_root(repo_root, args.dir))
+                matches = [p for p in walk_stories(under_root(repo_root, args.dir))
                            if sdlc_md.norm_id(sdlc_md.extract_record_id(p.stem) or "") == target]
                 if matches:
                     paths = matches[:1]
@@ -983,14 +987,14 @@ def cmd_run(args: argparse.Namespace) -> int:
                 return 2
     elif getattr(args, "id", None):  # resolve --id USNNNN under --dir (case-insensitive)
         target = sdlc_md.norm_id(args.id)
-        matches = [p for p in walk_stories(_under_root(repo_root, args.dir))
+        matches = [p for p in walk_stories(under_root(repo_root, args.dir))
                    if sdlc_md.norm_id(sdlc_md.extract_record_id(p.stem) or "") == target]
         if not matches:
             print(f"no story file for id {args.id} under {args.dir}", file=sys.stderr)
             return 2
         paths = matches[:1]
     else:
-        paths = list(walk_stories(_under_root(repo_root, args.dir)))
+        paths = list(walk_stories(under_root(repo_root, args.dir)))
 
     if not paths:
         print("no stories found", file=sys.stderr)
@@ -1035,7 +1039,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     # Write the report in dry-run too (to a distinct path, so the live report is
     # not clobbered) and append the run to the history log.
-    report_path = _under_root(repo_root, args.report)
+    report_path = under_root(repo_root, args.report)
     if args.dry_run:
         report_path = report_path.with_name(report_path.stem + ".dry-run" + report_path.suffix)
     write_report(report_path, reports, dry_run=args.dry_run, merge=not getattr(args, "fresh", False))
@@ -1089,8 +1093,22 @@ def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> 
     matrix authored before code is what makes the AC and its test converge by construction.
     When `verify_report` is given, also cross-check: an AC the matrix calls passing but the
     verify-report marks failing is flagged (the matrix cannot claim green over a red runner).
-    Returns a list of {ac, issue} findings (empty = the matrix is complete and honest)."""
-    text = _read_body(spec_path)
+    Returns a list of {ac, issue} findings (empty = the matrix is complete and honest).
+
+    A spec that could not be read is a refusal, never a clean matrix - the two ways of
+    failing to read one are kept apart because their callers differ:
+      * ABSENT (no such file, or a directory) -> FileNotFoundError. A path that is not
+        there is a broken invocation, and every caller must see that rather than [].
+      * PRESENT but not valid UTF-8 -> a returned finding naming the file. A scanner
+        walking a whole tree has to survive one wreck, so this one does not raise; it
+        still makes the result non-empty, so nothing reads it as a passing matrix.
+    """
+    p = Path(spec_path)
+    if not p.is_file():
+        raise FileNotFoundError(f"no test-spec file at {p}")
+    text = _read_body(p)
+    if not text and p.stat().st_size:
+        return [{"ac": "-", "issue": f"spec is unreadable or not valid UTF-8: {p}"}]
     failed_in_report = _report_failed_acs(verify_report) if verify_report else set()
     issues: list[dict] = []
     def _matrix_header(cells: list) -> bool:
@@ -1162,10 +1180,10 @@ def scaffold_ac_matrix(repo_root: Path | str, epic_id: str) -> str:
 
 def cmd_scaffold(args: argparse.Namespace) -> int:
     """Emit the pre-filled AC Coverage Matrix for an epic to stdout (or a file)."""
-    repo_root = _resolve_root(args)
+    repo_root = resolve_root(args)
     matrix = scaffold_ac_matrix(repo_root, args.epic)
     if getattr(args, "out", None):
-        out = _under_root(repo_root, args.out)
+        out = under_root(repo_root, args.out)
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(matrix, encoding="utf-8")
         print(f"wrote {out}")
@@ -1195,7 +1213,7 @@ def epic_test_spec_check(repo_root: Path | str, epic_id: str) -> dict:
 
 
 def cmd_epic_ts(args: argparse.Namespace) -> int:
-    r = epic_test_spec_check(_resolve_root(args), args.epic)
+    r = epic_test_spec_check(resolve_root(args), args.epic)
     if args.format == "json":
         print(json.dumps(r, indent=2))
     else:
@@ -1206,16 +1224,25 @@ def cmd_epic_ts(args: argparse.Namespace) -> int:
 
 
 def cmd_ts_check(args: argparse.Namespace) -> int:
-    repo_root = _resolve_root(args)
-    spec = _under_root(repo_root, args.spec)
-    report = _under_root(repo_root, args.verify_report) if args.verify_report else None
-    issues = ts_check(spec, report)
+    repo_root = resolve_root(args)
+    spec = under_root(repo_root, args.spec)
+    report = under_root(repo_root, args.verify_report) if args.verify_report else None
+    try:
+        issues = ts_check(spec, report)
+    except FileNotFoundError as exc:
+        # Exit 2 (a broken invocation), never 1 (a matrix with findings) and never 0. The
+        # resolved path is named because that is the only way the caller can see WHICH
+        # path was wrong when --spec was relative to a root it did not expect.
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     if args.format == "json":
         print(json.dumps(issues, indent=2))
         return 1 if issues else 0
     for it in issues:
         print(f"  {it['ac']}: {it['issue']}")
-    print(f"ts-check: {len(issues)} incomplete matrix row(s) in {spec.name}")
+    # "finding(s)", not "incomplete matrix row(s)": an unreadable spec is one finding and
+    # no rows at all, and the summary must not describe it as a row it never read.
+    print(f"ts-check: {len(issues)} finding(s) in {spec.name}")
     return 1 if issues else 0
 
 
@@ -1223,8 +1250,8 @@ def cmd_lint(args: argparse.Namespace) -> int:
     """Advisory: flag Verify lines that would fall through to `shell` but look like a
     mis-written runner invocation. Catches the AC↔test drift at author time
     instead of discovering it 0/7 at verify time. Never fails the build."""
-    repo_root = _resolve_root(args)
-    paths = [Path(args.story)] if args.story else list(walk_stories(_under_root(repo_root, args.dir)))
+    repo_root = resolve_root(args)
+    paths = [Path(args.story)] if args.story else list(walk_stories(under_root(repo_root, args.dir)))
     flagged = 0
     for p in paths:
         if not p.exists():
@@ -1255,7 +1282,7 @@ def cmd_lint(args: argparse.Namespace) -> int:
 
 def cmd_report(args: argparse.Namespace) -> int:
     """Print the latest verification report in text or JSON form."""
-    report_path = _under_root(_resolve_root(args), args.report)
+    report_path = under_root(resolve_root(args), args.report)
     if not report_path.exists():
         print(f"error: no report at {report_path}. Run `verify_ac.py run` first.", file=sys.stderr)
         return 2

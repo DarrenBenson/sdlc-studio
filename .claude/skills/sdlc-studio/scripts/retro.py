@@ -72,13 +72,12 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import sdlc_md  # noqa: E402
+from lib import run_state, sdlc_md  # noqa: E402  (run_state: the run a close's tokens belong to)
 import lessons  # noqa: E402  (sibling - the store a retro's lessons are extracted into)
 import telemetry  # noqa: E402  (sibling - the measured actuals an estimate is judged against)
 
@@ -1111,55 +1110,69 @@ def write_accuracy(root, res: dict) -> Path:
 # ---------------------------------------------------------------------------
 
 #: Where the harness keeps its per-session transcripts, overridable for tests and
-#: non-standard installs. The default is Claude Code's layout: one directory per
-#: project (the absolute path with `/` replaced by `-`), one JSONL file per session.
-TRANSCRIPTS_ENV = "SDLC_STUDIO_TRANSCRIPTS"
+#: non-standard installs. Defined beside the reader in `lib.run_state` (which stamps the
+#: run's opening baseline from the same meter) and re-exported here.
+TRANSCRIPTS_ENV = run_state.TRANSCRIPTS_ENV
+
+#: The CURRENT session's harness-tracked token total. The ONE reader, shared with the
+#: baseline `open_run` stamps - see `run_state.session_tokens`. It is a per-SESSION total,
+#: which is why the close does not record it directly: `run_attributed_tokens` below turns
+#: it into this run's own spend.
+harness_tokens = run_state.session_tokens
 
 
-def harness_tokens(root, transcripts_dir=None) -> dict:
-    """The CURRENT session's harness-tracked token total, read from the transcript.
+def run_attributed_tokens(root, transcripts_dir=None) -> dict:
+    """The tokens spent SINCE the open run started, or a stated reason there is no such
+    number. Same shape as `harness_tokens`: {"tokens", "source", "basis"} or
+    {"tokens": None, "reason"}.
 
-    The harness records usage per message; the most recently modified session file is
-    the one running this close. Summed: input, output and cache-creation tokens of every
-    record carrying usage. Cache READS are excluded - they re-bill the same context every
-    turn, so counting them would price the conversation quadratically rather than the work.
+    The harness meter is cumulative per SESSION, not per sprint. Closing a second sprint in
+    one session against the raw meter books the first sprint's spend - and the conversation
+    around it - as the second sprint's own: it published 341,450 then 472,691 tokens/point
+    against a measured ~25,000/pt rate, and both had to be blanked by hand afterwards. So
+    the run's opening reading is subtracted from the current one.
 
-    Returns {"tokens", "source", "basis"} on success, {"tokens": None, "reason"} when the
-    total cannot be read - and the caller must SAY which it got: the whole defect this
-    closes is five retros of silence where a measurable number should have been.
+    NOT ATTRIBUTABLE, never a fallback to the raw total, when:
+
+    * no run is open, or the open run carries no baseline (it was opened before the baseline
+      existed - the live case at this fix's own sprint);
+    * the current session is not the one the baseline was taken in, so the two readings are
+      of different meters;
+    * the meter reads at or below the baseline, which is the same statement by other means.
+
+    The failure mode this closes is a published number that LOOKS measured, so every one of
+    those returns no number at all rather than a plausible one.
     """
-    d = transcripts_dir or os.environ.get(TRANSCRIPTS_ENV)
-    if not d:
-        d = Path.home() / ".claude" / "projects" / str(Path(root).resolve()).replace("/", "-")
-    d = Path(d)
-    if not d.is_dir():
-        return {"tokens": None, "reason": f"no harness transcript directory at {d}"}
-    files = sorted(d.glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
-    if not files:
-        return {"tokens": None, "reason": f"no session transcript (*.jsonl) in {d}"}
-    src = files[-1]
-    total, seen = 0, False
     try:
-        with src.open(encoding="utf-8") as fh:
-            for line in fh:
-                try:
-                    rec = json.loads(line)
-                except ValueError:
-                    continue
-                msg = rec.get("message")
-                usage = (msg.get("usage") if isinstance(msg, dict) else None) or rec.get("usage")
-                if not isinstance(usage, dict):
-                    continue
-                seen = True
-                total += sum(int(usage.get(k) or 0) for k in
-                             ("input_tokens", "output_tokens", "cache_creation_input_tokens"))
-    except OSError as exc:
-        return {"tokens": None, "reason": f"transcript {src} unreadable ({exc})"}
-    if not seen or total <= 0:
-        return {"tokens": None, "reason": f"transcript {src.name} carries no usage records"}
-    return {"tokens": total, "source": str(src),
-            "basis": "current-session transcript usage sum "
-                     "(input + output + cache creation; cache reads excluded)"}
+        state = run_state.read(root)
+    except run_state.RunStateError as exc:
+        return {"tokens": None, "reason": f"not attributable: the run state is unreadable ({exc})"}
+    rid = state.get("run_id") or "the current run"
+    base = state.get(run_state.TOKEN_BASELINE)
+    baseline = base.get("tokens") if isinstance(base, dict) else None
+    if not isinstance(baseline, int) or isinstance(baseline, bool) or baseline < 0:
+        return {"tokens": None, "reason": (
+            f"not attributable: {rid} carries no session-token baseline, so the session total "
+            f"cannot be separated from any earlier sprint's in the same session. A run opened "
+            f"before the baseline existed reports no token figure rather than a session-wide "
+            f"one")}
+    cap = harness_tokens(root, transcripts_dir)
+    if not cap.get("tokens"):
+        return {"tokens": None, "reason": f"not attributable: {cap.get('reason')}"}
+    if base.get("source") and cap.get("source") and base["source"] != cap["source"]:
+        return {"tokens": None, "reason": (
+            f"not attributable: {rid} took its baseline in session {Path(base['source']).name} "
+            f"but this close is running in {Path(cap['source']).name} - two different meters, "
+            f"so their difference is not a spend")}
+    delta = cap["tokens"] - baseline
+    if delta <= 0:
+        return {"tokens": None, "reason": (
+            f"not attributable: the session meter reads {cap['tokens']:,}, at or below {rid}'s "
+            f"opening baseline of {baseline:,} - no spend can be derived from that")}
+    return {"tokens": delta, "source": cap["source"],
+            "basis": (f"{rid}'s own spend: the current-session total {cap['tokens']:,} less the "
+                      f"{baseline:,} on the meter when the run opened (input + output + cache "
+                      f"creation; cache reads excluded)")}
 
 
 def _tokens_cover_points(row: dict) -> bool:
@@ -1833,14 +1846,19 @@ def cmd_accuracy(args) -> int:
                             f"({existing['actual_tokens']:,}) - reused, not re-captured; "
                             f"correct it with an explicit `--tokens N`")
         else:
-            cap = harness_tokens(args.root)
+            # THIS RUN's spend, not the session's. The meter is cumulative per session, so a
+            # second sprint closed in one session would otherwise book the first sprint's
+            # tokens too. No baseline, no number - never a session-wide fallback.
+            cap = run_attributed_tokens(args.root)
             if cap["tokens"]:
                 tokens = cap["tokens"]
                 capture_note = (f"token actual captured from the harness transcript: "
                                 f"{tokens:,} ({cap['basis']}; {cap['source']})")
             else:
-                capture_note = (f"token actual NOT captured: {cap['reason']} - supply it "
-                                f"with `accuracy --tokens N`")
+                capture_note = (f"token actual NOT ATTRIBUTABLE: {cap['reason']}. The sprint's "
+                                f"token cost is left unrecorded rather than filled with a "
+                                f"session-wide total; supply a real figure with "
+                                f"`accuracy --tokens N` if you have one")
     res = accuracy(args.root, args.id, sprint_tokens=tokens,
                    elapsed_hours=getattr(args, "elapsed_hours", None))
     if capture_note:

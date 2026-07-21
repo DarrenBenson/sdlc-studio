@@ -11,6 +11,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the sibling helper
+import gitutil  # noqa: E402 - confined git for the fixture repos below
 import workspace  # noqa: E402 - the shared "am I in the dev repo?" check
 
 SCRIPT = Path(__file__).resolve().parent.parent / "gate.py"
@@ -167,7 +168,17 @@ class GateRealWrapperTests(unittest.TestCase):
     def _report(cls) -> dict:
         """The one real run, made on FIRST demand rather than in setUpClass, so a test in this
         class that only needs a stub does not pay 35 seconds to get there. Running the stubbed
-        exit-code test alone costs milliseconds; running the class costs one real gate."""
+        exit-code test alone costs milliseconds; running the class costs one real gate.
+
+        The dev-repo guard lives HERE, not only at the call sites, so a future test that reaches
+        for the real run inherits it instead of having to remember it (BG0237). Reaching the real
+        gate is exactly what cannot work from an installed copy, so the one place that reaches it
+        is the one place the rule belongs.
+        """
+        if not _in_dev_repo():
+            raise unittest.SkipTest(
+                "dev-repo-only: the real gate run needs an sdlc-studio/ workspace at the "
+                "expected root (running from an installed copy)")
         if cls._real_report is None:
             cls._real_report = gate.run_gate(str(REPO))
         return cls._real_report
@@ -175,10 +186,10 @@ class GateRealWrapperTests(unittest.TestCase):
     def test_the_real_gate_runs_once_per_class(self) -> None:
         """The saving itself, pinned. Counts FULL runs over this repo across the whole MODULE, so
         re-introducing a second end-to-end run - in any class, by any spelling - fails rather than
-        only showing up as a slower suite nobody times."""
-        if not _in_dev_repo():
-            self.skipTest("dev-repo-only test: no sdlc-studio/ workspace at the expected "
-                          "root (running from an installed copy)")
+        only showing up as a slower suite nobody times.
+
+        No dev-repo guard here: `_report()` carries it, so the rule has one home (BG0237).
+        """
         self.assertIsNotNone(self._report())
         self.assertEqual(len(_REAL_FULL_GATE_RUNS), 1)
 
@@ -275,11 +286,9 @@ class GateRealWrapperTests(unittest.TestCase):
 
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
-        # not pass/fail (state-independent, so not fragile). Reads the ONE run made in
-        # setUpClass rather than making a second one of its own.
-        if not _in_dev_repo():
-            self.skipTest("dev-repo-only test: no sdlc-studio/ workspace at the expected "
-                          "root (running from an installed copy)")
+        # not pass/fail (state-independent, so not fragile). Reads the ONE run made on first
+        # demand rather than making a second one of its own, and inherits that helper's
+        # dev-repo guard rather than repeating it (BG0237).
         r = self._report()
         self.assertIsInstance(r["ok"], bool)
         self.assertEqual(len(r["checks"]), 15)
@@ -311,15 +320,24 @@ class GateRealWrapperTests(unittest.TestCase):
         regression this kind exists to catch could return unnoticed."""
         import reconcile
         orig, orig_d = reconcile.detect_type, reconcile.derivable_request_drift
+        orig_e = gate.sdlc_md.two_backlog_enforced
         reconcile.detect_type = lambda t, root: {
             "census_total": 0, "census_counts": {}, "row_counts": {},
             "index_exists": True, "index_summary": {}, "drift": []}
         reconcile.derivable_request_drift = lambda root, explain=True: [
             {"id": "CR0001", "kind": "request-derivable", "blocked_by": None}]
         try:
+            # The THIRD live dependency, stubbed so this is hermetic rather than dev-repo-only
+            # (BG0237). `_reconcile` consults the sweep only when the two-backlog workflow is
+            # enforced; from an installed copy that detector is False, the sweep never ran, and
+            # this test failed on 0 != 1 for a reason that had nothing to do with what it pins.
+            # Stubbing it keeps the test running everywhere; whether the detector is consulted
+            # at all is pinned separately, both ways, by the paired test below.
+            gate.sdlc_md.two_backlog_enforced = lambda root: True
             res = gate._reconcile(str(REPO))
         finally:
             reconcile.detect_type, reconcile.derivable_request_drift = orig, orig_d
+            gate.sdlc_md.two_backlog_enforced = orig_e
         self.assertEqual(res["count"], 1, res)
 
     def test_gate_does_not_block_on_a_request_another_gate_refuses(self) -> None:
@@ -333,15 +351,21 @@ class GateRealWrapperTests(unittest.TestCase):
         """
         import reconcile
         orig, orig_d = reconcile.detect_type, reconcile.derivable_request_drift
+        orig_e = gate.sdlc_md.two_backlog_enforced
         reconcile.detect_type = lambda t, root: {
             "census_total": 0, "census_counts": {}, "row_counts": {},
             "index_exists": True, "index_summary": {}, "drift": []}
         reconcile.derivable_request_drift = lambda root, explain=True: [
             {"id": "RFC0001", "kind": "request-derivable", "blocked_by": "1 Open decision"}]
         try:
+            # Stubbed for the same reason as the test above (BG0237): without it, an installed
+            # copy skips the sweep entirely and the assertion fails on a missing detail string
+            # rather than on the blocked/counted distinction it exists to pin.
+            gate.sdlc_md.two_backlog_enforced = lambda root: True
             res = gate._reconcile(str(REPO))
         finally:
             reconcile.detect_type, reconcile.derivable_request_drift = orig, orig_d
+            gate.sdlc_md.two_backlog_enforced = orig_e
         self.assertEqual(res["count"], 0, res)
         self.assertIn("awaiting another gate", res["detail"])
 
@@ -366,6 +390,68 @@ class GateRealWrapperTests(unittest.TestCase):
             gate.sdlc_md.two_backlog_enforced = orig_e
         self.assertEqual((off, on), (0, 1))   # paired, so neither half can pass vacuously
 
+    def test_the_real_run_helper_refuses_from_an_installed_copy(self) -> None:
+        """`_report()`'s own guard, pinned DIRECTLY because nothing else can reach it (L-0159).
+
+        Deleting the guard was a surviving mutant while both callers guarded at their own call
+        site: they skipped before ever reaching it, so it read as coverage while being pinned by
+        nothing. Those call-site copies are now gone and this is the single home of the rule, so
+        it needs a test that exercises it rather than one that skips past it.
+        """
+        cls = type(self)
+        g = globals()
+        orig_dev, orig_cache = g["_in_dev_repo"], cls._real_report
+        try:
+            g["_in_dev_repo"] = lambda *a, **k: False
+            cls._real_report = None
+            with self.assertRaises(unittest.SkipTest):
+                cls._report()
+        finally:
+            g["_in_dev_repo"] = orig_dev
+            cls._real_report = orig_cache
+
+    def test_no_test_in_this_class_fails_from_an_installed_copy(self) -> None:
+        """The MECHANISM, not the two tests that prompted it (L-0171).
+
+        BG0237 was two tests reading live workspace state without declaring it, which FAILED from
+        an installed copy on `0 != 1` - a consumer sees 2 failures in 3,409 with nothing saying
+        the cause is location rather than code. Guarding just those two would fix the instances
+        and leave the next one to be found by a consumer, which is how the omission happened in
+        the first place: three siblings already carried the guard.
+
+        So this runs every OTHER test in the class under the installed-copy condition and demands
+        each either PASSES or SKIPS. Failing is the only outcome forbidden. A new real-wrapper
+        test that reads live state is caught here however it is spelled, and the failure message
+        names it.
+        """
+        cls = type(self)
+        mine = self._testMethodName
+        names = [n for n in unittest.TestLoader().getTestCaseNames(cls) if n != mine]
+        self.assertGreater(len(names), 1, "the sweep found no siblings - it would pass vacuously")
+
+        g = globals()
+        orig_dev = g["_in_dev_repo"]
+        orig_enf = gate.sdlc_md.two_backlog_enforced
+        orig_cache = cls._real_report
+        try:
+            # Exactly what an installed copy presents: parents[5] is the home dir, so there is no
+            # sdlc-studio/ workspace under it and the two-backlog detector is False.
+            g["_in_dev_repo"] = lambda *a, **k: False
+            gate.sdlc_md.two_backlog_enforced = lambda root: False
+            cls._real_report = None
+            suite = unittest.TestSuite(cls(n) for n in names)
+            result = unittest.TestResult()
+            suite.run(result)
+        finally:
+            g["_in_dev_repo"] = orig_dev
+            gate.sdlc_md.two_backlog_enforced = orig_enf
+            cls._real_report = orig_cache
+
+        broken = [f"{t.id().rsplit('.', 1)[-1]}: {tb.strip().splitlines()[-1]}"
+                  for t, tb in (result.failures + result.errors)]
+        self.assertEqual(broken, [], "these fail from an installed copy - guard them with the "
+                                     "dev-repo skip, or stub the live state they read: " +
+                                     "; ".join(broken))
 
     def test_duplicate_index_row_fails_gate(self) -> None:
         # CR0055 regression (hermetic): two rows for one id in an index must FAIL the gate
@@ -1109,6 +1195,234 @@ class MutationLaneTests(unittest.TestCase):
                 os.chdir(old_cwd)
             self.assertEqual(report["checks"][0]["status"], "pass",
                              report["checks"][0]["detail"])
+
+
+class MutationCoverageTests(unittest.TestCase):
+    """BG0238: the lane judges COVERAGE of a surface from the accumulating per-run ledger,
+    not the freshness of one blob. A per-file entry is keyed on that file's content hash, so
+    it survives later commits that touch other files - which is what lets evidence gathered
+    per unit during a build still be readable at the close."""
+
+    def _root(self, t, ledger=None, report=None):
+        import json as _json
+        root = Path(t)
+        local = root / "sdlc-studio" / ".local"
+        local.mkdir(parents=True)
+        if report is not None:
+            (local / "mutation-report.json").write_text(_json.dumps(report), encoding="utf-8")
+        if ledger is not None:
+            (local / "mutation-runs.json").write_text(
+                ledger if isinstance(ledger, str) else _json.dumps(ledger), encoding="utf-8")
+        return root
+
+    @staticmethod
+    def _sha(path: Path) -> str:
+        import hashlib
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+
+    @staticmethod
+    def _entry(target, digest, **kw):
+        e = {"target": target, "hash": digest, "git_rev": "0" * 40,
+             "generated_at": "2026-07-21T00:00:00Z",
+             "summary": {"applied": 2, "killed": 2, "survived": 0, "errors": 0, "unviable": 0}}
+        e.update(kw)
+        return e
+
+    CLEAN = {"summary": {"applied": 2, "killed": 2, "survived": 0,
+                         "errors": 0, "unviable": 0, "truncated": 0}}
+
+    def _commit_all(self, root, msg="c"):
+        gitutil.git(["add", "-A"], cwd=root)
+        gitutil.git(["commit", "-qm", msg], cwd=root)
+
+    def test_per_unit_evidence_survives_later_commits_to_other_files(self) -> None:
+        """The filed bug: two files mutated in turn during a build, both committed, tree clean
+        at the close. Neither file has changed since it was mutated, so the lane reads both as
+        covered and PASSes - where a whole-blob git_rev stamp read the whole thing STALE."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            gitutil.git(["init", "-q"], cwd=root)
+            (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+            (root / "b.py").write_text("def b():\n    return 2\n", encoding="utf-8")
+            self._commit_all(root, "unit one")
+            ledger = {"version": 1, "dropped": 0, "entries": [
+                self._entry("a.py", self._sha(root / "a.py")),
+                self._entry("b.py", self._sha(root / "b.py"))]}
+            (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+                json.dumps(ledger), encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                json.dumps({**self.CLEAN, "git_rev": "0" * 40}), encoding="utf-8")
+            (root / "note.md").write_text("later work\n", encoding="utf-8")
+            self._commit_all(root, "unit two")
+            lane = gate._mutation(str(root))
+            self.assertEqual(lane["count"], 0, lane["detail"])
+            self.assertIn("2/2", lane["detail"])
+            self.assertNotIn("STALE", lane["detail"])
+
+    def test_a_changed_file_with_no_entry_reads_uncovered_and_is_named(self) -> None:
+        """An unmutated file in the changed surface is uncovered, named, and counted, while
+        its mutated sibling stays covered."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            gitutil.git(["init", "-q"], cwd=root)
+            (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+            self._commit_all(root)
+            (root / "a.py").write_text("def a():\n    return 1  # unit\n", encoding="utf-8")
+            (root / "c.py").write_text("def c():\n    return 3\n", encoding="utf-8")
+            ledger = {"version": 1, "dropped": 0,
+                      "entries": [self._entry("a.py", self._sha(root / "a.py"))]}
+            (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+                json.dumps(ledger), encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                json.dumps(self.CLEAN), encoding="utf-8")
+            lane = gate._mutation(str(root))
+            self.assertEqual(lane["count"], 1, lane["detail"])
+            self.assertIn("1/2", lane["detail"])
+            self.assertIn("c.py", lane["detail"])
+            self.assertFalse(lane["blocking"])       # advisory, always
+
+    def test_a_file_edited_since_it_was_mutated_reads_stale_and_is_named(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            gitutil.git(["init", "-q"], cwd=root)
+            (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+            self._commit_all(root)
+            ledger = {"version": 1, "dropped": 0,
+                      "entries": [self._entry("a.py", self._sha(root / "a.py"))]}
+            (root / "a.py").write_text("def a():\n    return 99\n", encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+                json.dumps(ledger), encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                json.dumps(self.CLEAN), encoding="utf-8")
+            lane = gate._mutation(str(root))
+            self.assertEqual(lane["count"], 1, lane["detail"])
+            self.assertIn("STALE", lane["detail"])
+            self.assertIn("a.py", lane["detail"])
+
+    def test_coverage_degrades_to_the_ledger_when_git_cannot_name_a_surface(self) -> None:
+        """A repo with no commits cannot answer `git diff HEAD`. The lane must then judge the
+        ledger's own recorded files rather than raise or claim a surface it does not have."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            gitutil.git(["init", "-q"], cwd=root)
+            (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+            ledger = {"version": 1, "dropped": 0,
+                      "entries": [self._entry("a.py", self._sha(root / "a.py"))]}
+            (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+                json.dumps(ledger), encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                json.dumps({**self.CLEAN, "git_rev": "0" * 40}), encoding="utf-8")
+            lane = gate._mutation(str(root))
+            self.assertEqual(lane["count"], 0, lane["detail"])
+            self.assertIn("1/1", lane["detail"])
+
+    def test_an_unreadable_ledger_never_raises_into_the_gate(self) -> None:
+        """A corrupt ledger degrades to no coverage claim; the lane still returns."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t, ledger="{not json", report=self.CLEAN)
+            lane = gate._mutation(str(root))
+            self.assertFalse(lane["blocking"])
+            self.assertNotIn("covers", lane["detail"])
+
+    def test_uncovered_surface_never_blocks_the_gate(self) -> None:
+        """RFC0048 D3 / BG0212: the mutation lane reports and never refuses a close."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            gitutil.git(["init", "-q"], cwd=root)
+            (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+            self._commit_all(root)
+            (root / "c.py").write_text("def c():\n    return 3\n", encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+                json.dumps({"version": 1, "dropped": 0, "entries": []}), encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                json.dumps(self.CLEAN), encoding="utf-8")
+            report = gate.run_gate(str(root), checks={"mutation": gate._mutation})
+            lane = report["checks"][0]
+            self.assertFalse(lane["blocking"])
+            self.assertTrue(report["ok"])
+            self.assertNotEqual(lane["status"], "pass")
+
+    def test_an_entry_with_no_recorded_hash_is_not_evidence(self) -> None:
+        """A null hash means the target could not be read when it was mutated. Paired with a
+        target that cannot be read NOW either, two unknowns compare equal - and 'both
+        unreadable' must not read as 'unchanged since the run'."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            ledger = {"version": 1, "dropped": 0, "entries": [self._entry("gone.py", None)]}
+            (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+                json.dumps(ledger), encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                json.dumps(self.CLEAN), encoding="utf-8")
+            lane = gate._mutation(str(root))
+            self.assertIn("STALE", lane["detail"])
+            self.assertEqual(lane["count"], 1, lane["detail"])
+
+    def test_the_surface_extensions_match_the_mutator_s_own_profiles(self) -> None:
+        """The lane calls a changed file uncovered only if mutation.py could have mutated it.
+        Two hand-kept copies of that list would drift into a false 'no evidence' claim."""
+        import importlib.util
+        path = SCRIPT.parent / "mutation.py"
+        spec = importlib.util.spec_from_file_location("mutation_for_gate_test", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        self.assertEqual(gate._MUTATABLE_SUFFIXES, set(mod.PROFILES))
+
+    def test_a_root_below_the_repository_top_reads_as_unknown_not_clean(self) -> None:
+        """git names changed paths relative to the repository TOP, so from a root below it the
+        surface cannot be read in this gate's frame. That is 'unknown' (None), a different
+        claim from 'nothing changed' ([]) - the surface is dirty in both fixtures here."""
+        with tempfile.TemporaryDirectory() as t:
+            repo = Path(t)
+            gitutil.git(["init", "-q"], cwd=repo)
+            sub = repo / "sub"
+            sub.mkdir()
+            (sub / "x.py").write_text("def x():\n    return 1\n", encoding="utf-8")
+            self._commit_all(repo)
+            (sub / "x.py").write_text("def x():\n    return 2\n", encoding="utf-8")
+            self.assertIsNone(gate._mutation_changed_surface(str(sub)))
+            self.assertEqual(gate._mutation_changed_surface(str(repo)), ["sub/x.py"])
+
+    def test_a_long_gap_list_is_bounded_and_says_how_many_it_did_not_print(self) -> None:
+        """Truncating the names silently would read as 'that is all of them'."""
+        line = gate._name_list([f"pkg/f{i}.py" for i in range(5)])
+        self.assertEqual(line.count(".py"), 3)
+        self.assertIn("+2 more", line)
+        self.assertEqual(gate._name_list(["a.py", "b.py"]), "a.py, b.py")   # no bound noise
+
+    def test_a_raising_coverage_probe_never_breaks_the_lane(self) -> None:
+        """Coverage is advisory: whatever it hits, the lane still returns a verdict."""
+        orig = gate._mutation_coverage
+
+        def _boom(root, data):
+            raise RuntimeError("kaboom")
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t, report=self.CLEAN)
+            try:
+                gate._mutation_coverage = _boom
+                lane = gate._mutation(str(root))
+            finally:
+                gate._mutation_coverage = orig
+            self.assertFalse(lane["blocking"])
+            self.assertIn("2/2 mutations killed", lane["detail"])
+
+    def test_test_files_are_not_counted_as_uncovered_surface(self) -> None:
+        """The surface is production code: a changed test file is the assertion, not a
+        mutation target, so it must not read as missing evidence for ever."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            gitutil.git(["init", "-q"], cwd=root)
+            (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+            self._commit_all(root)
+            (root / "test_a.py").write_text("def test_a():\n    assert True\n", encoding="utf-8")
+            ledger = {"version": 1, "dropped": 0,
+                      "entries": [self._entry("a.py", self._sha(root / "a.py"))]}
+            (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+                json.dumps(ledger), encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                json.dumps(self.CLEAN), encoding="utf-8")
+            lane = gate._mutation(str(root))
+            self.assertNotIn("test_a.py", lane["detail"])
+            self.assertEqual(lane["count"], 0, lane["detail"])
 
 
 class AdvisoryRegistryTests(unittest.TestCase):

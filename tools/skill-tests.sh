@@ -41,6 +41,15 @@ set -uo pipefail
 # tools/tests/test_skill_tests_env.py pins this list from BOTH sides - every name here is
 # cleared for the child, and the fixture-owned variables above are NOT. It cannot know about
 # a variable a future git invents; adding one to that list is a human step.
+#
+# This scrub protects the child of THIS script and nothing else, which is why it is no longer
+# the only defence. A protection built for one suite does not cover the suite beside it: the
+# hook's tool-tests lane, a CI runner, and a developer's shell all reach the same fixtures by
+# other routes. The shipped fixture helper - .claude/skills/sdlc-studio/scripts/tests/gitutil.py -
+# therefore drops the same variables at the point a fixture git call is actually made, and
+# ships that defence to consuming projects, where this script does not exist. The same list is
+# now written out in four places; test_skill_tests_env.py holds them equal AND sweeps the repo
+# for an unregistered fifth, so a new copy cannot arrive with nothing pinning it.
 unset -v GIT_DIR GIT_COMMON_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_INDEX_VERSION \
   GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_NAMESPACE \
   GIT_CEILING_DIRECTORIES GIT_DISCOVERY_ACROSS_FILESYSTEM GIT_PREFIX

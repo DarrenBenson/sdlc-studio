@@ -47,9 +47,15 @@ the batch's telemetry and appends this sprint's row to `retros/VELOCITY.md`.
 A unit with no per-unit telemetry record has its PER-UNIT ratio reported as **UNMEASURED** and
 excluded from that ratio - it is never counted as accurate. But the token count itself is NOT
 unmeasurable: the harness tracks it deterministically. An INTERACTIVE sprint (no runner) records no
-per-unit actual, so the close captures the harness-tracked sprint total itself (`accuracy
---tokens-from-harness`, run by `sprint close --apply-signoff`) and the velocity row records it; when
-the capture fails, the close states why and `accuracy --tokens N` remains the manual override.
+per-unit actual, so the close captures this RUN's share of the harness-tracked total itself
+(`accuracy --tokens-from-harness`, run by `sprint close --apply-signoff`) and the velocity row
+records it. The meter is per-SESSION and cumulative, so what is captured is the delta from the
+baseline stamped when the run opened - not the session total, which in a session holding more than
+one sprint counts the earlier ones again. A run with no baseline (opened before the baseline
+existed, or closed from a different session) reports **not-attributable** rather than a number:
+there is no fallback to the raw total, because a plausible-looking figure that is not this sprint's
+cost is worse than an absent one. When the capture cannot attribute, the close states why and
+`accuracy --tokens N` remains the manual override.
 Report it as **not-yet-captured** only while neither has happened, never as if the number were
 unknowable. That figure is DESCRIPTIVE, never a target (see CR0273).
 

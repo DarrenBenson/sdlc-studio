@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 29 |
+| Proposed | 33 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 334 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **381** |
+| **Total** | **385** |
 
 ## All Changes
 
@@ -203,6 +203,10 @@
 | [CR-0379](CR0379-log-mutation-yield-and-cost-as-a-series.md) | log mutation yield and cost as a series, so the gate can be judged on evidence rather than belief | Proposed | High | Improvement | 2026-07-20 | -- |
 | [CR-0380](CR0380-re-verify-an-already-done-story-s-verifiers.md) | re-verify an already-Done story's verifiers, so a stale green is caught between closes not only at a manual sweep | Proposed | Medium | Improvement | 2026-07-21 | -- |
 | [CR-0381](CR0381-artifact-py-new-accepts-a-pipe-separated-ac.md) | artifact.py new accepts a pipe-separated --ac and emits a malformed AC without warning | Proposed | Medium | Improvement | 2026-07-21 | -- |
+| [CR-0382](CR0382-a-test-audit-lens-profile-attack-the-claims.md) | A test audit lens profile: attack the claims tests and comments make, which mutation cannot | Proposed | High | Improvement | 2026-07-21 | -- |
+| [CR-0383](CR0383-root-anchoring-is-a-per-script-convention-not.md) | Root anchoring is a per-script convention, not a shared one: 62 scripts declare --root and one discovers it | Proposed | Medium | Improvement | 2026-07-21 | -- |
+| [CR-0384](CR0384-file-finding-py-has-no-non-shell-input.md) | file_finding.py has no non-shell input path, so the field most likely to contain commands is the one most likely to be executed | Proposed | High | Improvement | 2026-07-21 | -- |
+| [CR-0385](CR0385-document-the-mutation-evidence-ledger-four-surfaces-still.md) | Document the mutation evidence ledger: four surfaces still describe only the single-blob report | Proposed | Medium | Improvement | 2026-07-21 | -- |
 
 ## Archived Releases
 

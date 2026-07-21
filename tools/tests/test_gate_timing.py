@@ -223,3 +223,101 @@ class BudgetLaneTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ScopeTests(unittest.TestCase):
+    """BG0239: a lane that was INVOKED is not a lane that RAN.
+
+    The budget series is only comparable between runs that did the same work, so a run that
+    covered a fraction of its scope must stay out of it rather than read as a speed-up.
+    """
+
+    def test_no_history_starts_the_series(self) -> None:
+        # A fresh clone has no peak to judge against. Refusing to record until a baseline exists
+        # would mean never recording one.
+        with tempfile.TemporaryDirectory() as d:
+            v = gt.scope_ok(Path(d), "total", 3400)
+            self.assertTrue(v["ok"])
+            self.assertIsNone(v["peak"])
+
+    def test_a_full_run_against_an_established_peak_is_recorded(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 3400)
+            self.assertTrue(gt.scope_ok(root, "total", 3400)["ok"])
+
+    def test_a_loader_error_is_refused_even_at_a_full_count(self) -> None:
+        """The filed reproduction. A module that fails to import is a FACT, not a threshold, so it
+        is refused regardless of how many tests the remaining modules managed to run - and with no
+        history at all, where every count-based rule is blind."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 3400)
+            v = gt.scope_ok(root, "total", 3400, loader_error=True)
+            self.assertFalse(v["ok"])
+            self.assertIn("failed to import", v["why"])
+            # ...and with no history, where the count floor cannot fire at all
+            with tempfile.TemporaryDirectory() as d2:
+                self.assertFalse(gt.scope_ok(Path(d2), "total", 3400, loader_error=True)["ok"])
+
+    def test_a_truncated_count_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 3400)
+            v = gt.scope_ok(root, "total", 1000)
+            self.assertFalse(v["ok"])
+            self.assertIn("3400", v["why"])
+
+    def test_the_floor_brackets_the_boundary_two_sided(self) -> None:
+        """Pins the value of SCOPE_FLOOR behaviourally, so moving it fails rather than silently
+        widening what counts as a full run."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 1000)
+            self.assertTrue(gt.scope_ok(root, "total", 800)["ok"])    # exactly at the floor
+            self.assertFalse(gt.scope_ok(root, "total", 799)["ok"])   # one below it
+
+    def test_a_real_speedup_is_never_refused(self) -> None:
+        """The trap the count-based rule exists to avoid. EP0093 took a commit from 196.7s to 99s;
+        any plausibility band over DURATION history would have rejected that as implausible and
+        discarded the improvement. Scope is judged on tests, not seconds, so a run that got twice
+        as fast while running MORE tests is recorded."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for s in (196.7, 190.0, 193.0):
+                gt.record(root, "total", s)
+            gt.record(root, "total.tests", 3409)
+            self.assertTrue(gt.scope_ok(root, "total", 3422)["ok"])
+
+    def test_the_count_is_recorded_even_when_the_run_is_refused(self) -> None:
+        """Otherwise one truncated run poisons the series: the peak could never recover, because
+        the counts that would rebuild it are exactly the ones being thrown away."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 3400)
+            with contextlib.redirect_stdout(io.StringIO()):   # captured: a green run is silent
+                rc = gt.main(["--root", str(root), "scope", "--suite", "total", "--tests", "10"])
+            self.assertEqual(rc, 1)
+            data = json.loads((root / gt.REL).read_text(encoding="utf-8"))
+            self.assertEqual(data["total.tests"], [3400, 10])
+
+    def test_the_refusal_is_said_out_loud_and_never_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 3400)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = gt.main(["--root", str(root), "scope", "--suite", "total",
+                              "--tests", "3400", "--loader-error"])
+            self.assertEqual(rc, 1)
+            self.assertIn("NOT recorded", buf.getvalue())
+
+    def test_a_full_run_prints_nothing_and_exits_zero(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 3400)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = gt.main(["--root", str(root), "scope", "--suite", "total", "--tests", "3400"])
+            self.assertEqual(rc, 0)
+            self.assertEqual(buf.getvalue(), "")

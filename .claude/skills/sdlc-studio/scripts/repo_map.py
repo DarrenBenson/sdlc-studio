@@ -34,6 +34,10 @@ from typing import Iterable
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 import complexity  # noqa: E402  (sibling; per-function complexity for the map)
+# The family root resolver, not a second path-joining idiom: `resolve_root` honours a root
+# the caller named and discovers upward from the default `.`, `under_root` anchors a
+# relative --out/--map on it. Build and query must not disagree about where the map lives.
+import verify_ac  # noqa: E402  (sibling; reused via the module, per the monkeypatch rule)
 
 # Languages are identified by extension. Each language provides a symbol
 # extractor and an import extractor. Python uses the stdlib ast module;
@@ -448,7 +452,7 @@ def query_index(map_path: Path, story_text: str, top_n: int) -> list[dict]:
 
 def cmd_build(args: argparse.Namespace) -> int:
     """Walk the repo, build the index, and write it to disk."""
-    root = Path(args.root).resolve()
+    root = verify_ac.resolve_root(args)
     if not root.exists():
         print(f"error: root does not exist: {root}", file=sys.stderr)
         return 2
@@ -458,8 +462,11 @@ def cmd_build(args: argparse.Namespace) -> int:
     start = time.time()
     entries = build_index(root, ignores)
     elapsed = time.time() - start
-    out = Path(args.out)
+    out = verify_ac.under_root(root, args.out)
     write_index(entries, out, root)
+    # The resolved path, not the relative default: printing `sdlc-studio/.local/repo-map.json`
+    # cannot show whether the map landed under the root or beside the cwd, which is exactly
+    # what hid the misplaced write.
     print(
         f"indexed {len(entries)} files in {elapsed:.2f}s "
         f"-> {out}"
@@ -469,7 +476,7 @@ def cmd_build(args: argparse.Namespace) -> int:
 
 def cmd_query(args: argparse.Namespace) -> int:
     """Rank files against a story file or free-text query and print them."""
-    map_path = Path(args.map)
+    map_path = verify_ac.under_root(verify_ac.resolve_root(args), args.map)
     if not map_path.exists():
         print(
             f"error: repo map not found at {map_path}. "
@@ -511,7 +518,7 @@ def cmd_query(args: argparse.Namespace) -> int:
 
 def cmd_stats(args: argparse.Namespace) -> int:
     """Print index size, language breakdown, and top hub files."""
-    map_path = Path(args.map)
+    map_path = verify_ac.under_root(verify_ac.resolve_root(args), args.map)
     if not map_path.exists():
         print(f"error: repo map not found at {map_path}", file=sys.stderr)
         return 2

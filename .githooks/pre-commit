@@ -23,10 +23,15 @@ run() {
   local key="$1" what="$2" fixhint="$3"; shift 3
   [ "$1" = "--" ] && shift
   local out
+  # Stashed for the caller on BOTH paths. A green run's output used to be discarded, but the
+  # budget lane needs to know how many tests actually ran, and that is only knowable from the
+  # output of a run that passed as well as one that failed (BG0239).
   if out="$("$@" 2>&1)"; then
+    last_run_out="$out"
     printf '  %sok%s   %s\n' "$G" "$N" "$key"
     return 0
   fi
+  last_run_out="$out"
   fail=1
   printf '  %sFAIL%s %s%s%s\n' "$R" "$N" "$B" "$key" "$N"
   printf '       enforces: %s\n' "$what"
@@ -153,6 +158,8 @@ if [ "$fail" -eq 0 ] && git diff --cached --name-only | grep -qE "$test_relevant
     "fix the code or the test named above; re-run: bash tools/skill-tests.sh" \
     -- bash tools/skill-tests.sh "$skill"
   python3 tools/gate_timing.py record --suite skill-tests --seconds "$((SECONDS - t0))" 2>/dev/null
+  suite_tests=$(printf '%s\n' "$last_run_out" | sed -n 's/^Ran \([0-9]*\) tests\{0,1\} in .*/\1/p' | tail -1)
+  printf '%s\n' "$last_run_out" | grep -q '_FailedTest' && loader_error=1
   t0=$SECONDS
   # Scrubbed exactly as tools/skill-tests.sh scrubs its own suite, and for the same reason:
   # a hook invoked by `git commit -a` is handed GIT_INDEX_FILE pointing at the OUTER repo's
@@ -169,6 +176,10 @@ if [ "$fail" -eq 0 ] && git diff --cached --name-only | grep -qE "$test_relevant
        -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
        -u GIT_PREFIX python3 -m unittest discover -s tools/tests
   python3 tools/gate_timing.py record --suite tool-tests --seconds "$((SECONDS - t0))" 2>/dev/null
+  tool_tests=$(printf '%s\n' "$last_run_out" | sed -n 's/^Ran \([0-9]*\) tests\{0,1\} in .*/\1/p' | tail -1)
+  printf '%s\n' "$last_run_out" | grep -q '_FailedTest' && loader_error=1
+  # Both lanes together are what a code commit pays for, so the scope check reads their sum.
+  suite_tests=$(( ${suite_tests:-0} + ${tool_tests:-0} ))
   suites_ran=1
 elif [ "$fail" -ne 0 ]; then
   printf '  %sSKIP%s unit suites - a cheaper lane already failed, so the commit is blocked either way.\n' "$Y" "$N"
@@ -190,10 +201,26 @@ fi
 #
 # A BLOCKED commit is still recorded when the suites ran - the expensive lanes were paid for
 # whatever the verdict - which is why this sits before the exit, not after it.
+#
+# But "the lane was invoked" is not "the lane ran its scope" (BG0239). A commit where a module
+# failed to import took this branch too, recording 73s against a 99s baseline: a broken suite
+# reading as a 26% improvement, the same magnitude as the ratchet the lane exists to expose, in
+# the opposite direction. `scope` answers that from the test COUNT and from whether any module
+# failed to load - never from the duration, since judging duration by duration history would have
+# thrown away the genuine 196.7s -> 99s improvement as implausible.
 if [ "${suites_ran:-0}" -eq 1 ]; then
-  python3 tools/gate_timing.py record --suite total --seconds "$SECONDS" 2>/dev/null
-  budget_line="$(python3 tools/gate_timing.py budget 2>/dev/null)"
-  [ -n "$budget_line" ] && printf '  %s%s%s\n' "$Y" "$budget_line" "$N"
+  scope_args="--suite total --tests ${suite_tests:-0}"
+  [ "${loader_error:-0}" -eq 1 ] && scope_args="$scope_args --loader-error"
+  # shellcheck disable=SC2086
+  if scope_note="$(python3 tools/gate_timing.py scope $scope_args 2>/dev/null)"; then
+    python3 tools/gate_timing.py record --suite total --seconds "$SECONDS" 2>/dev/null
+    budget_line="$(python3 tools/gate_timing.py budget 2>/dev/null)"
+    [ -n "$budget_line" ] && printf '  %s%s%s\n' "$Y" "$budget_line" "$N"
+  else
+    # Said out loud, never silent: a skipped recording that looks like a normal commit is how
+    # the series quietly stops meaning anything.
+    [ -n "$scope_note" ] && printf '  %s%s%s\n' "$Y" "$scope_note" "$N"
+  fi
 fi
 
 if [ "$fail" -ne 0 ]; then

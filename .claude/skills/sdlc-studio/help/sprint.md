@@ -58,9 +58,11 @@ raised - from the retro, `retro accuracy` and the telemetry evidence log. Run it
 filled: after a close, or any time later to re-read what a past sprint delivered and cost. The close
 ceremony draws the same page for you, so this is for a sprint you are revisiting or a run whose page
 you want in another shape (`--format json`). The close captures an interactive sprint's
-harness-tracked token total itself (via the transcript; it states plainly when it cannot), so
-`--tokens N` is the manual override and `--elapsed-hours H` supplies the elapsed the run-state
-cannot know. Read-only.
+harness-tracked token cost itself - this run's DELTA from the baseline stamped when it opened, not
+the session total, since one session can hold several sprints and the meter is cumulative. A run
+with no baseline reports not-attributable rather than a number, and it states plainly when it
+cannot attribute, so `--tokens N` is the manual override and `--elapsed-hours H` supplies the
+elapsed the run-state cannot know. Read-only.
 
 **`--apply-signoff --principal "<you>"`** turns the close's decision brief into an action: instead
 of hand-running `critic signoff` and `transition` for every unit, one command records your

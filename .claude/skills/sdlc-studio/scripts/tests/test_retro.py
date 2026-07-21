@@ -22,6 +22,7 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import retro  # noqa: E402
+from lib import run_state  # noqa: E402  (the run a close's token spend is attributed to)
 
 FULL = """# RETRO-9999: a sprint
 ## Delivered
@@ -907,6 +908,11 @@ class InteractiveSprintFixture(unittest.TestCase):
                 f"> **Points:** {pts}\n", encoding="utf-8")
         self.transcripts = self.root / "transcripts"
         self.transcripts.mkdir()
+        # The harness transcript location, for the whole test: `run_state.open_run` reads the
+        # session meter to stamp its baseline, so a direct call needs it too, not only `_capture`.
+        env = mock.patch.dict(os.environ, {"SDLC_STUDIO_TRANSCRIPTS": str(self.transcripts)})
+        env.start()
+        self.addCleanup(env.stop)
         self.addCleanup(self.tmp.cleanup)
 
     def _session(self, name: str, *usages: dict) -> Path:
@@ -915,6 +921,20 @@ class InteractiveSprintFixture(unittest.TestCase):
         lines += [json.dumps({"message": {"usage": u}}) for u in usages]
         p.write_text("".join(ln + "\n" for ln in lines), encoding="utf-8")
         return p
+
+    def _append(self, name: str, *usages: dict) -> Path:
+        """More spend on an EXISTING session file - the harness meter running on within one
+        session, which is the shape BG0236 mis-attributed."""
+        p = self.transcripts / name
+        with p.open("a", encoding="utf-8") as fh:
+            for u in usages:
+                fh.write(json.dumps({"message": {"usage": u}}) + "\n")
+        return p
+
+    def _open_run(self, *batch: str) -> dict:
+        """Open a run the way `sprint plan --write` does, so it carries a token baseline."""
+        return run_state.open_run(str(self.root), batch=list(batch) or ["BG0001", "BG0002"],
+                                  goal="a goal")
 
     def _capture(self, *argv: str) -> str:
         import contextlib
@@ -958,9 +978,11 @@ class HarnessTokenCapture(InteractiveSprintFixture):
         self.assertIn("jsonl", cap["reason"])
 
     def test_velocity_row_records_interactive_token_actual(self) -> None:
-        self._session("s1.jsonl", {"input_tokens": 300_000, "output_tokens": 100_000,
-                                   "cache_creation_input_tokens": 400_000,
-                                   "cache_read_input_tokens": 9_000_000})
+        self._session("s1.jsonl", {"input_tokens": 60_000})   # the meter before the run opens
+        self._open_run()
+        self._append("s1.jsonl", {"input_tokens": 300_000, "output_tokens": 100_000,
+                                  "cache_creation_input_tokens": 400_000,
+                                  "cache_read_input_tokens": 9_000_000})
         out = self._capture("accuracy", "--id", "RETRO9002", "--write",
                             "--tokens-from-harness")
         self.assertIn("token actual captured", out)
@@ -974,7 +996,9 @@ class HarnessTokenCapture(InteractiveSprintFixture):
         # round-1 MAJOR: the guard lived only inside --tokens-from-harness, so the plain
         # `accuracy --write` re-read - the exact workflow the flag's help directs users to -
         # re-upserted the row with the per-unit sum (0 interactive) over the recorded actual
-        self._session("s1.jsonl", {"input_tokens": 800_000})
+        self._session("s1.jsonl", {"input_tokens": 60_000})
+        self._open_run()
+        self._append("s1.jsonl", {"input_tokens": 800_000})
         self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens-from-harness")
         self._capture("accuracy", "--id", "RETRO9002", "--write")   # no flags at all
         self.assertEqual(retro.velocity_history(str(self.root))[0]["actual_tokens"], 800_000,
@@ -982,7 +1006,9 @@ class HarnessTokenCapture(InteractiveSprintFixture):
 
     def test_recorded_actual_survives_a_later_session(self) -> None:
         # a re-run in ANOTHER session must not re-stamp the sprint with that session's total
-        self._session("s1.jsonl", {"input_tokens": 800_000})
+        self._session("s1.jsonl", {"input_tokens": 60_000})
+        self._open_run()
+        self._append("s1.jsonl", {"input_tokens": 800_000})
         self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens-from-harness")
         later = self._session("s2.jsonl", {"input_tokens": 50_000})
         os.utime(later, (later.stat().st_mtime + 60, later.stat().st_mtime + 60))
@@ -1013,6 +1039,109 @@ class HarnessTokenCapture(InteractiveSprintFixture):
         self._capture("accuracy", "--id", "RETRO9002", "--write")
         self.assertEqual(retro.velocity_history(str(self.root))[0]["actual_tokens"], 800_000,
                          "an absent --tokens is not an instruction to forget the actual")
+
+
+class TokenCaptureIsAttributedToTheRun(InteractiveSprintFixture):
+    """BG0236: the harness meter is cumulative per SESSION, so a close that recorded the raw
+    total booked every earlier sprint in that session to itself. Three consecutive closes
+    published a figure that read as a measurement - 341,450 then 472,691 tokens/point against
+    a measured ~25,000/pt rate - and two were blanked by hand afterwards.
+
+    The capture is now the DELTA from the baseline `open_run` stamps. Where there is no
+    baseline to subtract, the answer is no number at all.
+    """
+
+    def test_a_second_run_in_one_session_captures_only_its_own_delta(self) -> None:
+        # The reproduction, end to end: two sprints, one session, one growing transcript.
+        self._session("s1.jsonl", {"input_tokens": 200_000})     # conversation before sprint 1
+        self._open_run("BG0001")
+        self._append("s1.jsonl", {"input_tokens": 1_000_000})    # sprint 1's own spend
+        first = retro.run_attributed_tokens(str(self.root), transcripts_dir=self.transcripts)
+        self.assertEqual(first["tokens"], 1_000_000, "sprint 1 excludes the run-up to it")
+
+        run_state.close_run(str(self.root), run_state.GOAL_REACHED)
+        self._open_run("BG0002")                                 # sprint 2, same session
+        self._append("s1.jsonl", {"input_tokens": 300_000})      # sprint 2's own spend
+        second = retro.run_attributed_tokens(str(self.root), transcripts_dir=self.transcripts)
+        self.assertEqual(second["tokens"], 300_000,
+                         "sprint 2 records its own delta, not the session total")
+        self.assertNotEqual(second["tokens"], 1_500_000,
+                            "the session-wide total is exactly what BG0236 published")
+
+    def test_a_run_opened_before_the_baseline_existed_reports_not_attributable(self) -> None:
+        # The live case at this fix's own sprint (RUN-01KY2K5R was opened before the baseline
+        # existed). A run state with no baseline key at all - not merely a null one.
+        self._session("s1.jsonl", {"input_tokens": 5_000_000})
+        state = run_state.read(str(self.root)) or {}
+        state.update({"schema": 1, "run_id": "RUN-OLDSTYLE", "started_at": "2026-07-21T09:00:00Z",
+                      "outcome": run_state.RUNNING, "batch": ["BG0001"]})
+        state.pop(run_state.TOKEN_BASELINE, None)
+        run_state.write(str(self.root), state)
+        self.assertNotIn(run_state.TOKEN_BASELINE, run_state.read(str(self.root)))
+
+        cap = retro.run_attributed_tokens(str(self.root), transcripts_dir=self.transcripts)
+        self.assertIsNone(cap["tokens"], "no baseline, no number")
+        self.assertIn("not attributable", cap["reason"].lower())
+        self.assertNotIn("5,000,000", cap["reason"])
+        self.assertNotIn("5000000", cap["reason"])
+
+    def test_a_baseline_less_run_writes_no_token_figure_to_the_velocity_row(self) -> None:
+        # The property that matters is what reaches VELOCITY.md: an absent figure, not a
+        # plausible one. A fallback to the session total would put 5,000,000 over 8 points
+        # into the series and read as measured.
+        self._session("s1.jsonl", {"input_tokens": 5_000_000})
+        run_state.update(str(self.root), run_id="RUN-OLDSTYLE", batch=["BG0001"])
+        out = self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens-from-harness")
+        self.assertIn("NOT ATTRIBUTABLE", out)
+        row = retro.velocity_history(str(self.root))[0]
+        self.assertFalse(row["actual_tokens"], "no token actual is recorded for the sprint")
+        self.assertIsNone(retro.measured_rate(str(self.root))["tokens_per_point"])
+        written = retro.velocity_path(str(self.root)).read_text(encoding="utf-8")
+        self.assertNotIn("5,000,000", written, "the session total never reaches the history")
+        self.assertNotIn("625,000", written,
+                         "nor the tokens-per-point it would imply over 8 points")
+        self.assertNotIn("Sprint tokens/point", out, "and the report quotes no rate")
+
+    def test_no_run_at_all_reports_not_attributable(self) -> None:
+        # An interactive sprint nobody opened a run for has no baseline either, and the same
+        # rule holds: the session total is not this sprint's cost.
+        self._session("s1.jsonl", {"input_tokens": 900_000})
+        cap = retro.run_attributed_tokens(str(self.root), transcripts_dir=self.transcripts)
+        self.assertIsNone(cap["tokens"])
+        self.assertIn("not attributable", cap["reason"].lower())
+
+    def test_a_close_running_in_a_different_session_is_not_attributable(self) -> None:
+        # The baseline is a reading of ONE meter. A close in a later session is subtracting
+        # from a different meter, which can yield a positive - and meaningless - difference.
+        self._session("s1.jsonl", {"input_tokens": 100_000})
+        self._open_run()
+        later = self._session("s2.jsonl", {"input_tokens": 400_000})
+        os.utime(later, (later.stat().st_mtime + 60, later.stat().st_mtime + 60))
+        cap = retro.run_attributed_tokens(str(self.root), transcripts_dir=self.transcripts)
+        self.assertIsNone(cap["tokens"], "a cross-session difference is not a spend")
+        self.assertIn("different meters", cap["reason"])
+
+    def test_a_meter_at_or_below_the_baseline_reports_not_attributable(self) -> None:
+        # Same session, no measurable spend since the run opened: zero is not a measurement
+        # of this sprint, and a negative delta certainly is not.
+        self._session("s1.jsonl", {"input_tokens": 500_000})
+        self._open_run()
+        cap = retro.run_attributed_tokens(str(self.root), transcripts_dir=self.transcripts)
+        self.assertIsNone(cap["tokens"])
+        self.assertIn("not attributable", cap["reason"].lower())
+
+    def test_the_session_reader_still_reports_the_whole_session_total(self) -> None:
+        # `harness_tokens` is unchanged - it is the raw meter, and the delta is derived from
+        # it. Pinning both keeps "the meter grew" and "the run spent" distinguishable.
+        self._session("s1.jsonl", {"input_tokens": 200_000})
+        self._open_run()
+        self._append("s1.jsonl", {"input_tokens": 50_000})
+        self.assertEqual(
+            retro.harness_tokens(str(self.root), transcripts_dir=self.transcripts)["tokens"],
+            250_000)
+        self.assertEqual(
+            retro.run_attributed_tokens(str(self.root),
+                                        transcripts_dir=self.transcripts)["tokens"], 50_000)
 
 
 class TheVelocityRowIdIsNormalised(InteractiveSprintFixture):
@@ -1047,7 +1176,9 @@ class TheVelocityRowIdIsNormalised(InteractiveSprintFixture):
     def test_a_dashed_close_leaves_an_actual_the_reuse_guard_finds(self) -> None:
         # the live symptom at the RUN-01KXZQF0 close: the second tail re-read the transcript
         # because the row it had just written was invisible to the lookup
-        self._session("s1.jsonl", {"input_tokens": 800_000})
+        self._session("s1.jsonl", {"input_tokens": 60_000})
+        self._open_run()
+        self._append("s1.jsonl", {"input_tokens": 800_000})
         self._capture("accuracy", "--id", "RETRO-9002", "--write", "--tokens-from-harness")
         out = self._capture("accuracy", "--id", "RETRO-9002", "--write",
                             "--tokens-from-harness")

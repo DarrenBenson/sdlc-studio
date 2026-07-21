@@ -173,6 +173,40 @@ class BudgetRecordingTests(unittest.TestCase):
             self.assertIn("gate-budget:", out)
             self.assertIn("baseline 99s", out)          # ...against the corrected baseline
 
+    def test_a_suite_that_failed_to_import_is_not_recorded_as_this_commit_s_cost(self) -> None:
+        """BG0239: `suites_ran` was set once the lane was INVOKED, not once it ran its scope. A
+        module that fails to import takes the same branch, so a run that executed a fraction of
+        the tests was recorded as the gate's cost - measured at 73s against a 99s baseline, which
+        the budget then reported as `-26% since`. A broken suite reading as an improvement, and
+        the same magnitude as the ratchet the lane exists to expose."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            (root / "tools" / "tests" / "test_broken.py").write_text(
+                "import nonexistent_module_xyz\n", encoding="utf-8")
+            out = self._commit(root, "tools/thing.py")
+            self.assertNotIn(DOCS_ONLY, out)
+            self.assertNotIn(ALREADY_FAILED, out, "a cheap lane failed - wrong branch")
+            self.assertEqual(self._totals(root), [],
+                             "a run whose module failed to import was recorded as a gate cost")
+            self.assertIn("NOT recorded", out)          # ...and it SAID so rather than going quiet
+
+    def test_a_suite_that_ran_its_scope_and_FAILED_is_still_recorded(self) -> None:
+        """The distinction BG0239 turns on, and the reason the test above is not simply 'do not
+        record red commits'. A suite that ran everything and reported a failure COST the full
+        time, so its total is a true measurement of what this commit paid. Only 'barely ran' is
+        excluded."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            (root / "tools" / "tests" / "test_red.py").write_text(
+                "import unittest\n\n\nclass T(unittest.TestCase):\n"
+                "    def test_red(self):\n        self.fail('deliberate')\n", encoding="utf-8")
+            out = self._commit(root, "tools/thing.py")
+            self.assertNotIn(DOCS_ONLY, out)
+            self.assertNotIn(ALREADY_FAILED, out)
+            self.assertEqual(len(self._totals(root)), 1,
+                             "a suite that ran its scope and failed should still be recorded")
+            self.assertNotIn("NOT recorded", out)
+
 
 if __name__ == "__main__":
     unittest.main()

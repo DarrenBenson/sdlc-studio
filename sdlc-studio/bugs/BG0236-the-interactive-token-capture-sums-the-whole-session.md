@@ -1,8 +1,9 @@
 # BG0236: the interactive token capture sums the whole session, so a second sprint in one session double-counts the first sprint's tokens
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
+> **Verification depth:** functional (red-then-green: against the unfixed code the close printed `Sprint tokens/point: 625,000 (5,000,000 tokens over 8 delivered points, harness-tracked)` for a baseline-less run - the defect itself - and now prints NOT ATTRIBUTABLE with no figure on the row. Two runs in one growing session assert the second captures 300,000 rather than the 1,500,000 session total. Seven hand-applied mutants all KILLED, including the exact regression of falling back to the raw session total, dropping the subtraction, dropping the baseline stamp, defaulting an unreadable meter to zero, and an `update` that pops the field (L-0156))
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py,.claude/skills/sdlc-studio/scripts/lib/run_state.py
 > **Created:** 2026-07-21
 > **Created-by:** sdlc-studio file

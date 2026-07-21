@@ -1,6 +1,7 @@
 # BG0237: Two dev-repo-only gate tests lack the skip guard, so the shipped suite fails from an installed copy
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional - the installed-copy condition was reproduced through the mechanism that causes it (`two_backlog_enforced` False at the expected root), giving the filed symptoms verbatim: `0 != 1` and `'awaiting another gate' not found`. Both fixes were then mutation-proven, and one mutant SURVIVED first time and drove a second fix.
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_gate.py
@@ -20,8 +21,38 @@ tests/`test_gate.py` GateRealWrapperTests resolves REPO as parents[5], which is 
 
 Add the same dev-repo-only skipTest guard the three sibling tests use, keyed on the sdlc-studio/ workspace being present under REPO. Prefer a shared helper or setUpClass guard on GateRealWrapperTests over a fourth hand-copied guard, so the next real-wrapper test inherits it rather than repeating the omission.
 
+## Resolution
+
+Fixed differently from the filed proposal, which asked for the same skip guard the three sibling
+tests use. Skipping is the wrong remedy here: both tests already stub `detect_type` and
+`derivable_request_drift` and were trying to be hermetic, they simply missed the third live
+dependency. Stubbing `two_backlog_enforced` makes them location-independent, so an installed copy
+gains the coverage a skip would have removed. Whether the detector is consulted at all stays
+pinned, both ways, by the paired sibling test that was already there.
+
+The bug also asked that the next real-wrapper test inherit the guard rather than repeat the
+omission. Two changes deliver that:
+
+1. The dev-repo guard moved INTO `GateRealWrapperTests._report()`, the single place that reaches
+   the real gate, and the two hand-copied call-site guards were deleted. The rule now has one
+   home instead of four copies that drift, which is the underlying complaint.
+2. `test_no_test_in_this_class_fails_from_an_installed_copy` runs every other test in the class
+   under the installed-copy condition and demands each PASS or SKIP. A future test that reads
+   live state is caught however it is spelled, and the failure names it and states the remedy.
+
+The `_report()` guard needed its own direct test. Deleting it was a SURVIVING mutant while both
+callers guarded at their own call site: they skipped before reaching it, so it read as coverage
+while being pinned by nothing (L-0159). Removing the redundant call-site copies made it reachable,
+and `test_the_real_run_helper_refuses_from_an_installed_copy` now exercises it.
+
+Verified the sweep does not consume the one allowed real gate run: the once-per-class assertion
+still passes, so this did not recreate the restore-a-global regression of L-0176.
+
+Module: 206 tests, green, 8.0s.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-21 | sdlc-studio | Filed |
+| 2026-07-21 | claude | Fixed: hermetic stubs over a fourth skip guard; guard single-sourced into `_report()`; class-wide installed-copy sweep added. Mutant A (revert the stub) killed by the sweep, which named the test. Mutant B (delete the `_report()` guard) SURVIVED the first attempt, exposing an unreachable guard; after single-sourcing plus a direct test it is killed by 4 tests. |

@@ -17,7 +17,9 @@ over broken code - a finding). Honest by construction:
 Subcommands:
   run        apply the mutation set to a surface (--files / --since REF / --story)
              and re-run the test command per mutation; writes
-             sdlc-studio/.local/mutation-report.json; exits non-zero on survivors.
+             sdlc-studio/.local/mutation-report.json (the latest run) and appends this
+             run's per-target evidence to sdlc-studio/.local/mutation-runs.json (the
+             bounded ledger the gate lane reads as coverage); non-zero on survivors.
   prefilter  list test files with no recognisable assertion - the cheap static
              signal for which tests to mutate first (advisory).
 
@@ -38,6 +40,10 @@ from lib import sdlc_md  # noqa: E402
 
 FAULT_CLASSES = ("invert-guard", "stub-return-null", "unset-delivered-field", "no-op-mapper")
 DEFAULT_MAX_MUTATIONS = 25
+#: Ledger bound: the most recent LEDGER_LIMIT per-target entries are kept, oldest first out.
+#: Entries are one per target (a later run on the same file supersedes the earlier), so the
+#: ledger grows with the number of distinct files ever mutated, not with the number of runs.
+LEDGER_LIMIT = 200
 _RUN_TIMEOUT = 600  # seconds per test run - a hung mutant must not hang the gate
 
 # Language profiles: extension -> fault class -> (line regex, replacement builder).
@@ -528,10 +534,94 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
         "summary": summary,
     }
     if write_report:
+        report["ledger"] = append_ledger(root, report, records)
         out = root / "sdlc-studio" / ".local" / "mutation-report.json"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report
+
+
+def ledger_path(root: Path | str) -> Path:
+    """Where the accumulating per-target evidence lives, beside the latest-run report."""
+    return Path(root) / "sdlc-studio" / ".local" / "mutation-runs.json"
+
+
+def _ledger_target(root: Path, fp) -> str:
+    """Repo-relative target path where possible, so the ledger survives a moved checkout."""
+    p = Path(fp)
+    try:
+        return str(p.resolve().relative_to(Path(root).resolve()))
+    except (ValueError, OSError):
+        return str(p)
+
+
+def append_ledger(root: Path | str, report: dict, records: list[dict]) -> dict:
+    """Append this run's per-target evidence to the bounded ledger and return its state.
+
+    One report is last-write-wins: a per-unit run mid-sprint erases the previous unit's
+    evidence, and the whole blob goes stale as soon as any file is committed. The ledger is
+    the durable half - a per-target entry carrying that file's content hash AT RUN TIME, so
+    a later commit touching OTHER files leaves it readable.
+
+    ONE rule decides what is recorded, because recording more would claim evidence the run did
+    not gather: a target is entered only when the test command returned a killed or survived
+    verdict on it. A target whose mutants were all unviable, all errored, or fell beyond the
+    cost ceiling is therefore absent, and so is every target of a refused run - a refusal
+    applies no mutant at all, so no target has a verdict. A separate `refused` test here would
+    read as a second rule while being pinned by nothing: deleting it as a hand-applied
+    mutant survived the whole suite.
+
+    Bounded at LEDGER_LIMIT entries, oldest dropped first, with a cumulative `dropped` count
+    so the truncation is never silent. An unreadable ledger is replaced and says so (`reset`).
+    """
+    root = Path(root)
+    state: dict = {"version": 1, "dropped": 0, "entries": []}
+    path = ledger_path(root)
+    reset = False
+    if path.exists():
+        try:
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(loaded, dict) or not isinstance(loaded.get("entries"), list):
+                raise ValueError("ledger is not a {entries: [...]} object")
+            state = {"version": loaded.get("version", 1),
+                     "dropped": int(loaded.get("dropped", 0) or 0),
+                     "entries": loaded["entries"]}
+        except (ValueError, OSError, TypeError):
+            reset = True
+    new: list[dict] = []
+    for fp in report.get("targets", []):
+        rs = [r for r in records if str(Path(r["file"])) == str(Path(fp))]
+        summary = {
+            "applied": len(rs),
+            "killed": sum(1 for r in rs if r["verdict"] == "killed"),
+            "survived": sum(1 for r in rs if r["verdict"] == "survived"),
+            "errors": sum(1 for r in rs if r["verdict"] == "error"),
+            "unviable": sum(1 for r in rs if r["verdict"] == "unviable"),
+        }
+        if not summary["killed"] and not summary["survived"]:
+            continue
+        digest = (report.get("target_hashes") or {}).get(str(Path(fp)))
+        new.append({"target": _ledger_target(root, fp), "hash": digest,
+                    "git_rev": report.get("git_rev"),
+                    "generated_at": report.get("generated_at"),
+                    "test_cmd": report.get("test_cmd"), "summary": summary})
+    superseded = {e["target"] for e in new}
+    entries = [e for e in state["entries"]
+               if isinstance(e, dict) and e.get("target") not in superseded] + new
+    dropped_now = max(0, len(entries) - LEDGER_LIMIT)
+    state["entries"] = entries[dropped_now:]
+    state["dropped"] += dropped_now
+    state["limit"] = LEDGER_LIMIT
+    if reset:
+        state["reset"] = True
+    if not state["entries"] and not path.exists():
+        # nothing was proven and there is no ledger yet: do not create an empty one
+        return {"path": str(path), "entries": 0, "dropped_now": 0,
+                "dropped_total": state["dropped"], "written": False}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(state, indent=2), encoding="utf-8")
+    return {"path": str(path), "entries": len(state["entries"]), "dropped_now": dropped_now,
+            "dropped_total": state["dropped"], "written": True}
 
 
 def select_files(repo_root: Path | str, files=None, since: str | None = None,
@@ -767,6 +857,11 @@ def cmd_run(args: argparse.Namespace) -> int:
         else:
             print(f"  test selection: {len(sel)} file(s) - "
                   + ", ".join(Path(p).name for p in sel))
+        led = report.get("ledger") or {}
+        if led.get("dropped_now"):
+            print(f"  note: the mutation ledger dropped its {led['dropped_now']} oldest "
+                  f"entr(ies) at the {LEDGER_LIMIT}-entry bound "
+                  f"({led['dropped_total']} dropped in all)")
         for w in report.get("selection_warnings", []):
             print(f"  WARNING: {w['test_file']} references target `{w['references']}` but "
                   f"is OUTSIDE the test command's selection - a survivor may be "

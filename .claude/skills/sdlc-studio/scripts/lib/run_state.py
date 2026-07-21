@@ -38,6 +38,7 @@ A library, not a command: the writers are `sprint.py` and `handoff.py`.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from . import sdlc_md
@@ -72,7 +73,21 @@ CLOSED = tuple(o for o in OUTCOMES if o != RUNNING)
 # The fields this module owns. Anything else a caller writes is preserved verbatim - see
 # the module docstring: this list documents, it does not gate.
 FIELDS = ("schema", "run_id", "started_at", "ended_at", "outcome", "goal", "batch",
-          "plan", "handoff", "review_rounds", "review_ceiling_overrides")
+          "plan", "handoff", "review_rounds", "review_ceiling_overrides",
+          "session_token_baseline")
+
+# The session's token meter reading at the moment this run opened. The close subtracts it from
+# the meter's CURRENT reading to get the tokens THIS run spent, because the harness transcript
+# records one cumulative total per SESSION and a session can hold several sprints: without a
+# baseline the second sprint closed in a session books the first sprint's spend as its own, and
+# the third books both. That is not a rounding error - it published 341,450 and then 472,691
+# tokens per point against a measured ~25,000/pt rate, each time as if it were a measurement.
+#
+# Absent means NOT ATTRIBUTABLE, never zero. A run opened before this field existed, or one whose
+# session could not be read, has no baseline, and the honest report is then that the sprint's
+# token cost cannot be attributed - exactly as an unmeasured elapsed reads UNMEASURED rather than
+# falling back to a plausible number.
+TOKEN_BASELINE = "session_token_baseline"
 
 # The close review's rounds, appended one per sprint-level review. Seeded in `_blank()` so a
 # new run carries them and `FIELDS` stays true of the record it documents; readers still go
@@ -86,6 +101,12 @@ CEILING_OVERRIDES = "review_ceiling_overrides"
 # defect on this codebase before: an unmeasured round summed as 0 understates the
 # spend, and the operator is then shown a total that reads cheaper than the run was.
 UNMEASURED = None
+
+
+#: Where the harness keeps its per-session transcripts, overridable for tests and non-standard
+#: installs. The default is Claude Code's layout: one directory per project (the absolute path
+#: with `/` replaced by `-`), one JSONL file per session.
+TRANSCRIPTS_ENV = "SDLC_STUDIO_TRANSCRIPTS"
 
 
 class RunStateError(RuntimeError):
@@ -232,12 +253,12 @@ def is_open(repo_root: Path | str) -> bool:
 
 
 def _blank() -> dict:
-    """The record for a run nobody opened. `run_id` and `started_at` are None, and stay
-    None: a close that invented a start time would put a false fact in the one file the
-    next reader trusts. An unopened run says so."""
+    """The record for a run nobody opened. `run_id`, `started_at` and the token baseline are
+    None, and stay None: a close that invented a start time - or a baseline - would put a
+    false fact in the one file the next reader trusts. An unopened run says so."""
     return {"schema": SCHEMA, "run_id": None, "started_at": None, "ended_at": None,
             "outcome": RUNNING, "goal": None, "batch": [], "plan": None, "handoff": None,
-            REVIEW_ROUNDS: [], CEILING_OVERRIDES: []}
+            REVIEW_ROUNDS: [], CEILING_OVERRIDES: [], TOKEN_BASELINE: None}
 
 
 def _mutate(repo_root: Path | str, fn) -> dict:
@@ -281,6 +302,80 @@ def _is_spent(state: dict) -> bool:
     return any(state.get(k) for k in _CLOSE_ARTEFACTS)
 
 
+def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = None) -> dict:
+    """The CURRENT session's harness-tracked token total, read from the transcript.
+
+    The harness records usage per message; the most recently modified session file is the one
+    running this call. Summed: input, output and cache-creation tokens of every record carrying
+    usage. Cache READS are excluded - they re-bill the same context every turn, so counting them
+    would price the conversation quadratically rather than the work.
+
+    Returns {"tokens", "source", "basis"} on success, {"tokens": None, "reason"} when the total
+    cannot be read - and the caller must SAY which it got.
+
+    It lives in this module rather than in `retro` because `open_run` has to stamp the baseline
+    itself: `open_run` is the only place that knows a fresh run is being minted, and `retro`
+    imports this module, so the reader has to sit at the lower layer. `retro.harness_tokens`
+    wraps it, so both the baseline and the close read one definition.
+    """
+    d = transcripts_dir or os.environ.get(TRANSCRIPTS_ENV)
+    if not d:
+        d = Path.home() / ".claude" / "projects" / str(Path(repo_root).resolve()).replace("/", "-")
+    d = Path(d)
+    if not d.is_dir():
+        return {"tokens": None, "reason": f"no harness transcript directory at {d}"}
+    files = sorted(d.glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
+    if not files:
+        return {"tokens": None, "reason": f"no session transcript (*.jsonl) in {d}"}
+    src = files[-1]
+    total, seen = 0, False
+    try:
+        with src.open(encoding="utf-8") as fh:
+            for line in fh:
+                try:
+                    rec = json.loads(line)
+                except ValueError:
+                    continue
+                msg = rec.get("message")
+                usage = (msg.get("usage") if isinstance(msg, dict) else None) or rec.get("usage")
+                if not isinstance(usage, dict):
+                    continue
+                seen = True
+                total += sum(int(usage.get(k) or 0) for k in
+                             ("input_tokens", "output_tokens", "cache_creation_input_tokens"))
+    except OSError as exc:
+        return {"tokens": None, "reason": f"transcript {src} unreadable ({exc})"}
+    if not seen or total <= 0:
+        return {"tokens": None, "reason": f"transcript {src.name} carries no usage records"}
+    return {"tokens": total, "source": str(src),
+            "basis": "current-session transcript usage sum "
+                     "(input + output + cache creation; cache reads excluded)"}
+
+
+def _session_baseline(repo_root: Path | str) -> dict | None:
+    """The token meter reading to stamp on a run being minted, or None.
+
+    `{"tokens": N, "source": <transcript path>, "at": <iso>}`. The SOURCE is half the record:
+    the delta is only meaningful against the same session file, so a close that happens in a
+    later session can tell that this baseline is not its own rather than subtracting a number
+    from an unrelated meter.
+
+    None whenever the meter cannot be read - including a session whose transcript carries no
+    usage yet, whose true baseline is zero. That is a deliberate false negative: the run then
+    reports NOT ATTRIBUTABLE, and losing a measurement is the cheap failure here while
+    publishing a wrong one is the expensive one. Never raises: a plan must not fail because a
+    transcript was unreadable.
+    """
+    try:
+        cap = session_tokens(repo_root)
+    except OSError:
+        return None
+    if not cap.get("tokens"):
+        return None
+    return {"tokens": int(cap["tokens"]), "source": cap.get("source"),
+            "at": sdlc_md.now_iso8601()}
+
+
 def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | None = None,
              plan: str | None = None) -> dict:
     """Open a run, or re-plan the OPEN one.
@@ -291,6 +386,10 @@ def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | 
     has been CLOSED - or judged but left `running`, an inconsistent state - is history: the
     next open mints a fresh run with a fresh batch, so a handoff can never be re-attributed
     to the run after it.
+
+    A FRESH run is stamped with the session's token baseline (see TOKEN_BASELINE). A re-plan
+    is not: the baseline belongs to the moment the run started, and moving it forward mid-run
+    would silently discount everything spent before the re-cut.
     """
     def apply(state: dict) -> dict:
         if _is_spent(state):
@@ -300,7 +399,8 @@ def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | 
             # close, and without this its record would be destroyed here unrecorded.
             archive(repo_root, state)
             state = {**_blank(), "run_id": f"RUN-{sdlc_md.short_ulid()}",
-                     "started_at": sdlc_md.now_iso8601()}
+                     "started_at": sdlc_md.now_iso8601(),
+                     TOKEN_BASELINE: _session_baseline(repo_root)}
         if batch is not None:
             state["batch"] = _union(state.get("batch"), batch)
         if goal is not None:

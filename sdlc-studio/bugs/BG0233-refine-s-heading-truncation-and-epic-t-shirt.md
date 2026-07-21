@@ -1,8 +1,9 @@
 # BG0233: refine's heading truncation and epic T-shirt derivation are both unpinned: two mutants survive
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
+> **Verification depth:** functional (both named survivors re-applied by hand and shown to change the file: the invert-guard at refine.py:63 and the no-op-mapper at refine.py:38 each SURVIVED the pre-fix `test_refine.py` and each is now KILLED - 6 failures and 2 failures respectively, `python3 -B` over a purged `__pycache__`. Boundary cases pinned at the limit, one over it, a cut that exposes punctuation, and a raw form over the limit whose stripped form fits; `_tshirt_for` pinned at every band edge and once through the real epic-creation path)
 > **Affects:** .claude/skills/sdlc-studio/scripts/refine.py
 > **Created:** 2026-07-20
 > **Created-by:** sdlc-studio file

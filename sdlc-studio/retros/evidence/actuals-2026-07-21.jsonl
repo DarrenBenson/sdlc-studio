@@ -3,3 +3,8 @@
 {"id": "US0286", "type": "story", "project": "sdlc-studio"}
 {"id": "US0287", "type": "story", "project": "sdlc-studio"}
 {"id": "EP0093", "type": "epic", "project": "sdlc-studio"}
+{"id": "RFC0046", "type": "rfc", "project": "sdlc-studio"}
+{"id": "RFC0048", "type": "rfc", "project": "sdlc-studio"}
+{"id": "BG0230", "type": "bug", "project": "sdlc-studio"}
+{"id": "BG0233", "type": "bug", "project": "sdlc-studio"}
+{"id": "BG0236", "type": "bug", "project": "sdlc-studio"}

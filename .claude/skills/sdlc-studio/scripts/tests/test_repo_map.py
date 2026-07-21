@@ -5,7 +5,9 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import shutil
@@ -773,6 +775,114 @@ class CliTests(unittest.TestCase):
         # argparse with required subparser raises SystemExit on no args.
         with self.assertRaises(SystemExit):
             repo_map.main([])
+
+
+class RootAnchoringTests(unittest.TestCase):
+    """BG0228: the map is written and read under the PROJECT ROOT, never beside the cwd.
+
+    `build --root /proj` from another directory resolved its relative `--out` against the
+    cwd, so the map landed in a stray `sdlc-studio/.local` tree next to wherever the agent
+    happened to be, and `query`/`stats` then looked for it somewhere else again. Every test
+    below runs from a cwd that is NOT the root: a test that chdir'd to the root would pass
+    on a script that ignores `--root` completely and would prove nothing.
+    """
+
+    DEFAULT_MAP = Path("sdlc-studio") / ".local" / "repo-map.json"
+
+    def setUp(self) -> None:
+        self._prev_cwd = Path.cwd()
+        self.tmp = Path(tempfile.mkdtemp(prefix="repo_map_root_"))
+        self.root = self.tmp / "proj"
+        # `sdlc-studio/stories` is one of the project-root markers discovery looks for.
+        (self.root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (self.root / "a.py").write_text("def billing_run():\n    pass\n")
+        self.inner = self.root / "scripts"          # a subdirectory inside the project
+        self.inner.mkdir()
+        self.outside = self.tmp / "elsewhere"       # a cwd with no project above it
+        self.outside.mkdir()
+
+    def tearDown(self) -> None:
+        os.chdir(self._prev_cwd)
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = repo_map.main(argv)
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_build_writes_the_map_under_the_named_root_not_the_cwd(self) -> None:
+        os.chdir(self.outside)
+        rc, _out, err = self._run(["build", "--root", str(self.root)])
+        self.assertEqual(rc, 0, err)
+        self.assertTrue((self.root / self.DEFAULT_MAP).is_file(),
+                        "the map did not land under the root that was named")
+        self.assertEqual(sorted(p.name for p in self.outside.iterdir()), [],
+                         "the map was written beside the cwd")
+
+    def test_build_without_a_root_discovers_the_project_from_a_subdirectory(self) -> None:
+        """The default `--root .` means 'work it out from here', not 'assume the cwd is
+        the project' - running from `scripts/` must still index and write the project."""
+        os.chdir(self.inner)
+        rc, _out, err = self._run(["build"])
+        self.assertEqual(rc, 0, err)
+        self.assertTrue((self.root / self.DEFAULT_MAP).is_file(),
+                        "the map did not land under the discovered project root")
+        self.assertEqual(sorted(p.name for p in self.inner.iterdir()), [],
+                         "the map was written beside the cwd")
+
+    def test_build_prints_the_absolute_path_it_wrote(self) -> None:
+        """The relative path it used to print could not distinguish the root from the cwd,
+        which is what hid the misplaced write."""
+        os.chdir(self.outside)
+        _rc, out, _err = self._run(["build", "--root", str(self.root)])
+        self.assertIn(str(self.root / self.DEFAULT_MAP), out)
+
+    def test_query_reads_the_map_build_wrote_under_the_same_root(self) -> None:
+        """Build and read from DIFFERENT working directories. Sharing one cwd would let
+        two equally cwd-relative paths agree with each other and still both be wrong."""
+        os.chdir(self.outside)
+        self.assertEqual(self._run(["build", "--root", str(self.root)])[0], 0)
+        os.chdir(self.inner)
+        rc, _out, err = self._run(["--root", str(self.root), "query", "--story", "billing"])
+        self.assertEqual(rc, 0, err)
+        self.assertNotIn("repo map not found", err)
+
+    def test_stats_reads_the_map_build_wrote_under_the_same_root(self) -> None:
+        os.chdir(self.outside)
+        self.assertEqual(self._run(["build", "--root", str(self.root)])[0], 0)
+        os.chdir(self.inner)
+        rc, _out, err = self._run(["--root", str(self.root), "stats"])
+        self.assertEqual(rc, 0, err)
+        self.assertNotIn("repo map not found", err)
+
+    def test_an_absolute_out_is_honoured_verbatim(self) -> None:
+        """Anchoring must not capture a path the caller chose deliberately."""
+        os.chdir(self.outside)
+        out_path = self.tmp / "chosen.json"
+        rc, _out, err = self._run(["build", "--root", str(self.root), "--out", str(out_path)])
+        self.assertEqual(rc, 0, err)
+        self.assertTrue(out_path.is_file(), "an absolute --out was re-anchored under the root")
+
+    def test_a_named_root_is_not_re_pointed_by_discovery(self) -> None:
+        """Discovery widens the default `.` only. A root the caller NAMED is where the map
+        goes, even with a bigger project above it - silently retargeting it would be the
+        same lie in the other direction."""
+        os.chdir(self.outside)
+        rc, _out, err = self._run(["build", "--root", str(self.inner)])
+        self.assertEqual(rc, 0, err)
+        self.assertTrue((self.inner / self.DEFAULT_MAP).is_file(),
+                        "the named root was overridden by discovery")
+        self.assertFalse((self.root / "sdlc-studio" / ".local").exists())
+
+    def test_discovery_does_not_escape_a_cwd_with_no_project_above_it(self) -> None:
+        """With no project root anywhere above, the cwd is the honest answer - discovery
+        must not walk to `/` and index something unrelated."""
+        os.chdir(self.outside)
+        rc, _out, err = self._run(["build"])
+        self.assertEqual(rc, 0, err)
+        self.assertTrue((self.outside / self.DEFAULT_MAP).is_file())
+        self.assertFalse((self.root / "sdlc-studio" / ".local").exists())
 
 
 if __name__ == "__main__":

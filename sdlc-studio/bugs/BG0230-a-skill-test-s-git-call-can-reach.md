@@ -1,6 +1,7 @@
 # BG0230: a skill test's git call can reach the parent repository, so a polluted GIT_ environment lets the suite rewrite the real repo's index
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green against two throwaway repos: a victim standing in for the parent repository and a fixture standing in for a test's temp repo. Before the fix the fixture's `git add -A` moved the victim from 3 tracked files to 2 and left the fixture's own index empty; after it, the victim's index is byte-identical and the add lands in the fixture. The hook shape is simulated, not produced - absolute `GIT_INDEX_FILE` at `.git/index.lock` plus `GIT_PREFIX`, asserting no stale lock is stranded. Eleven hand mutants run with `__pycache__` purged and `python3 -B`; the first pass left one survivor, which was a test too weak to tell an override from a default, and it was strengthened until it killed. Every reproduction ran inside `mktemp`; none touched this repository.)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/gitutil.py,tools/skill-tests.sh
@@ -25,3 +26,4 @@ Confine the fixtures rather than only scrubbing the caller. Have the shared git 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-20 | sdlc-studio | Filed |
+| 2026-07-21 | sdlc-studio | Fixed at the fixture: `tests/gitutil.py` drops every repo-locating variable and fences discovery at the temp root; `tests/test_gitutil.py` pins it against throwaway victim repos and freezes the 35 remaining bare `subprocess.run(["git", ...])` call sites as a ratchet; `tools/tests/test_skill_tests_env.py` holds the four copies of the scrub list equal and sweeps the repo for an unregistered fifth |

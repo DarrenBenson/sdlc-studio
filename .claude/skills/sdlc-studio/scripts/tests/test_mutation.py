@@ -417,6 +417,166 @@ class StalenessHashTests(unittest.TestCase):
                              hashlib.sha256((root / "target.py").read_bytes()).hexdigest())
 
 
+class LedgerTests(unittest.TestCase):
+    """BG0238: one report is last-write-wins, so a per-unit run mid-sprint erases the
+    previous unit's evidence. Each run therefore ALSO appends a per-target entry - path,
+    content hash at run time, rev, timestamp, and that target's own kill/survive counts -
+    to a bounded ledger the gate can read as coverage."""
+
+    def _ledger(self, root: Path) -> dict:
+        return json.loads((root / "sdlc-studio" / ".local" / "mutation-runs.json")
+                          .read_text(encoding="utf-8"))
+
+    def test_a_run_appends_a_per_target_entry_with_its_content_hash(self) -> None:
+        import hashlib
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            mut.run_gate(root, [root / "target.py"],
+                         f"{sys.executable} -m unittest test_good")
+            led = self._ledger(root)
+            entries = led["entries"]
+            self.assertEqual([e["target"] for e in entries], ["target.py"])
+            self.assertEqual(led["dropped"], 0)        # nothing dropped, and it says so
+            e = entries[0]
+            self.assertEqual(e["hash"],
+                             hashlib.sha256((root / "target.py").read_bytes()).hexdigest())
+            self.assertTrue(e["generated_at"])
+            self.assertIn("git_rev", e)
+            self.assertGreater(e["summary"]["killed"], 0)
+            self.assertEqual(e["summary"]["applied"],
+                             sum(e["summary"][k] for k in
+                                 ("killed", "survived", "errors", "unviable")))
+
+    def test_an_earlier_target_survives_a_later_run_on_another_file(self) -> None:
+        """The accumulation the bug is about: mutating file two must not erase file one."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            (root / "other.py").write_text(TARGET.replace("classify", "sort_of"),
+                                           encoding="utf-8")
+            mut.run_gate(root, [root / "target.py"],
+                         f"{sys.executable} -m unittest test_good")
+            mut.run_gate(root, [root / "other.py"],
+                         f"{sys.executable} -m unittest test_good")
+            self.assertEqual(sorted(e["target"] for e in self._ledger(root)["entries"]),
+                             ["other.py", "target.py"])
+            # ...and the latest report is still the single latest run, unchanged
+            on_disk = json.loads((root / "sdlc-studio" / ".local" / "mutation-report.json")
+                                 .read_text(encoding="utf-8"))
+            self.assertEqual(on_disk["targets"], [str(root / "other.py")])
+
+    def test_a_later_run_on_the_same_target_supersedes_its_entry(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            mut.run_gate(root, [root / "target.py"],
+                         f"{sys.executable} -m unittest test_good")
+            first = self._ledger(root)["entries"][0]["hash"]
+            (root / "target.py").write_text(TARGET + "\ndef extra():\n    return 7\n",
+                                            encoding="utf-8")
+            mut.run_gate(root, [root / "target.py"],
+                         f"{sys.executable} -m unittest test_good")
+            entries = self._ledger(root)["entries"]
+            self.assertEqual(len(entries), 1)          # superseded, not accumulated
+            self.assertNotEqual(entries[0]["hash"], first)
+
+    def test_a_refused_run_records_no_evidence(self) -> None:
+        """A red baseline applies no mutant, so it proves nothing about any target and
+        must not appear in the ledger as coverage."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            (root / "test_good.py").write_text(
+                GOOD_TEST.replace('"positive"', '"WRONG"'), encoding="utf-8")
+            r = mut.run_gate(root, [root / "target.py"],
+                             f"{sys.executable} -m unittest test_good")
+            self.assertTrue(r["refused"])
+            self.assertFalse((root / "sdlc-studio" / ".local" / "mutation-runs.json").exists())
+
+    def test_a_target_the_suite_never_judged_is_not_recorded(self) -> None:
+        """With a ceiling too small to reach the second file, that file carries no verdict -
+        listing it would claim evidence the run did not gather."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            (root / "other.py").write_text(TARGET.replace("classify", "sort_of"),
+                                           encoding="utf-8")
+            r = mut.run_gate(root, [root / "target.py", root / "other.py"],
+                             f"{sys.executable} -m unittest test_good", max_mutations=1)
+            self.assertEqual(r["summary"]["applied"], 1)
+            judged = {Path(m["file"]).name for m in r["mutations"]
+                      if m["verdict"] in ("killed", "survived")}
+            self.assertEqual(len(judged), 1, r["mutations"])   # only one file was reached
+            recorded = {e["target"] for e in self._ledger(root)["entries"]}
+            self.assertEqual(recorded, judged)
+
+    def test_the_ledger_is_bounded_and_counts_what_it_dropped(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True, exist_ok=True)
+            stale = [{"target": f"old{i}.py", "hash": "0" * 64, "git_rev": None,
+                      "generated_at": "2026-01-01T00:00:00Z",
+                      "summary": {"applied": 1, "killed": 1, "survived": 0,
+                                  "errors": 0, "unviable": 0}}
+                     for i in range(mut.LEDGER_LIMIT + 5)]
+            (local / "mutation-runs.json").write_text(
+                json.dumps({"version": 1, "dropped": 0, "entries": stale}), encoding="utf-8")
+            mut.run_gate(root, [root / "target.py"],
+                         f"{sys.executable} -m unittest test_good")
+            led = self._ledger(root)
+            self.assertEqual(len(led["entries"]), mut.LEDGER_LIMIT)
+            self.assertEqual(led["dropped"], 6)        # 5 over the bound, plus this run's
+            self.assertEqual(led["entries"][-1]["target"], "target.py")   # newest kept
+            self.assertNotIn("old0.py", [e["target"] for e in led["entries"]])  # oldest gone
+
+    def test_a_run_that_drops_entries_says_so_where_a_human_reads_it(self) -> None:
+        """Silent truncation reads as 'we kept everything', so the drop is printed too."""
+        import contextlib
+        import io
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True, exist_ok=True)
+            stale = [{"target": f"old{i}.py", "hash": "0" * 64, "git_rev": None,
+                      "generated_at": "2026-01-01T00:00:00Z",
+                      "summary": {"applied": 1, "killed": 1, "survived": 0,
+                                  "errors": 0, "unviable": 0}}
+                     for i in range(mut.LEDGER_LIMIT)]
+            (local / "mutation-runs.json").write_text(
+                json.dumps({"version": 1, "dropped": 0, "entries": stale}), encoding="utf-8")
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                mut.main(["run", "--files", str(root / "target.py"),
+                          "--test", f"{sys.executable} -m unittest test_good",
+                          "--root", str(root)])
+            self.assertIn("ledger dropped its 1 oldest", buf.getvalue())
+
+    def test_a_corrupt_ledger_is_replaced_rather_than_crashing_the_run(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True, exist_ok=True)
+            (local / "mutation-runs.json").write_text("{not json", encoding="utf-8")
+            mut.run_gate(root, [root / "target.py"],
+                         f"{sys.executable} -m unittest test_good")
+            led = self._ledger(root)
+            self.assertEqual([e["target"] for e in led["entries"]], ["target.py"])
+            self.assertTrue(led["reset"])   # says it discarded an unreadable ledger
+
+    def test_no_ledger_is_written_when_the_report_is_not(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            mut.run_gate(root, [root / "target.py"],
+                         f"{sys.executable} -m unittest test_good", write_report=False)
+            self.assertFalse((root / "sdlc-studio" / ".local" / "mutation-runs.json").exists())
+
+
 class BudgetDistributionTests(unittest.TestCase):
     """CR0146: the ceiling distributes round-robin over (file, class), never
     first-N in file order."""

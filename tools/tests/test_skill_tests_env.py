@@ -106,22 +106,51 @@ class ScrubClearsTheCallersGitEnvironment(unittest.TestCase):
                           "the add did not land in the fixture's own index either")
 
 
+#: Every place in the repo that writes out a git repo-locating scrub list, and what stops that
+#: copy drifting. The sweep below fails on a code file naming several of these variables that
+#: is NOT registered here, which is the structural answer to L-0177: a protection built for one
+#: suite does not cover the suite beside it, and the copy nobody pinned is the one that drifts.
+#: An entry beginning `PARTIAL` is declared debt, not a clean bill of health.
+SCRUB_SITES: dict[str, str] = {
+    "tools/skill-tests.sh":
+        "pinned by test_the_script_itself_still_scrubs_them",
+    ".githooks/pre-commit":
+        "pinned by test_the_hook_lane_scrubs_the_same_variables_as_the_script",
+    "tools/tests/test_precommit_budget_recording.py":
+        "pinned by test_the_hook_fixture_module_scrubs_the_same_variables",
+    "tools/tests/test_skill_tests_env.py":
+        "this file: REPO_LOCATING is the list every other copy is held to",
+    ".claude/skills/sdlc-studio/scripts/tests/test_gitutil.py":
+        "asserts the shipped helper's confinement behaviourally, against throwaway repos",
+    ".claude/skills/sdlc-studio/scripts/tests/gitutil.py":
+        "pinned by test_the_shipped_fixture_helper_scrubs_the_same_variables",
+    ".claude/skills/sdlc-studio/scripts/gate.py":
+        "PARTIAL: clears only GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE before a read-only "
+        "`rev-parse`. It reads rather than writes, so an escape misreports rather than "
+        "damages, and it is out of BG0230's scope. Widen it to REPO_LOCATING when touched.",
+    ".claude/skills/sdlc-studio/scripts/lessons.py":
+        "PARTIAL: same three variables, same read-only `git -C` shape, same debt as gate.py.",
+}
+
+
 class ScrubListsAgreeTests(unittest.TestCase):
-    """The scrub list now exists in THREE places and nothing kept them equal.
+    """The scrub list exists in several places and nothing kept them equal.
 
     `skill-tests.sh` has always had it; RUN-01KY1WCR added a copy to the hook's tool-tests lane
     (which git also hands a polluted environment, and which invokes `unittest` directly rather
-    than through the script) and a third to the fixture module that builds git repos. The
-    adversarial review pointed out that dropping three variables from the hook's copy alone left
-    all 254 tool tests green - so the newest copy, guarding the lane that actually caused the
-    finding, was pinned by nothing.
+    than through the script) and a third to the fixture module that builds git repos. BG0230
+    added a fourth, in the shipped fixture helper the skill suites build their git repos with.
+    The adversarial review pointed out that dropping three variables from the hook's copy alone
+    left all 254 tool tests green - so the newest copy, guarding the lane that actually caused
+    the finding, was pinned by nothing.
 
     This module's own docstring is the argument: a copy drifts, and a drifted copy tests itself
-    rather than the shipped script. So assert the three agree, by parsing each one from source.
+    rather than the shipped script. So assert they all agree, by parsing each one from source.
     """
 
     HOOK = REPO / ".githooks" / "pre-commit"
     MODULE = REPO / "tools" / "tests" / "test_precommit_budget_recording.py"
+    GITUTIL = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests" / "gitutil.py"
 
     def _hook_scrub_list(self) -> tuple[str, ...]:
         """The `-u VAR` flags on the hook's tool-tests lane."""
@@ -131,27 +160,98 @@ class ScrubListsAgreeTests(unittest.TestCase):
         self.assertIsNotNone(m, "no `/usr/bin/env -u ...` scrub found on a hook lane")
         return tuple(re.findall(r"-u\s+(\w+)", m.group(1)))
 
-    def _module_scrub_list(self) -> tuple[str, ...]:
+    def _named_tuple_in(self, path: Path, name: str) -> tuple[str, ...]:
+        """The string tuple assigned to `name` in `path`, read from source rather than imported.
+
+        Parsed, not imported: the shipped helper reads `os.environ` and the repo module builds
+        git fixtures, and neither should run merely to have its declaration inspected.
+        """
         import ast
-        tree = ast.parse(self.MODULE.read_text(encoding="utf-8"))
+        tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if (isinstance(node, ast.Assign)
-                    and any(getattr(t, "id", None) == "_GIT_ENV_VARS" for t in node.targets)):
+                    and any(getattr(t, "id", None) == name for t in node.targets)):
                 return tuple(el.value for el in node.value.elts)
-        self.fail("no _GIT_ENV_VARS in the fixture module")
+        self.fail(f"no {name} in {path.relative_to(REPO)}")
 
     def test_the_hook_lane_scrubs_the_same_variables_as_the_script(self) -> None:
         self.assertEqual(sorted(self._hook_scrub_list()), sorted(REPO_LOCATING))
 
-    def test_the_fixture_module_scrubs_the_same_variables(self) -> None:
-        self.assertEqual(sorted(self._module_scrub_list()), sorted(REPO_LOCATING))
+    def test_the_hook_fixture_module_scrubs_the_same_variables(self) -> None:
+        self.assertEqual(
+            sorted(self._named_tuple_in(self.MODULE, "_GIT_ENV_VARS")), sorted(REPO_LOCATING))
+
+    def test_the_shipped_fixture_helper_scrubs_the_same_variables(self) -> None:
+        """The skill suites' own git fixtures (BG0230). This copy is the one that matters most:
+        it is the layer where a fixture git call is actually made, and it ships to consuming
+        projects, where neither the hook nor `skill-tests.sh` exists to protect them."""
+        self.assertEqual(
+            sorted(self._named_tuple_in(self.GITUTIL, "REPO_LOCATING_GIT_VARS")),
+            sorted(REPO_LOCATING))
 
     def test_the_script_itself_still_scrubs_them(self) -> None:
-        """Closes the loop: without this, all three copies could drift together away from the
-        list this file asserts, and the two tests above would still agree with each other."""
+        """Closes the loop: without this, every copy could drift together away from the list
+        this file asserts, and the tests above would still agree with each other."""
         prelude = _scrub_prelude()
         for var in REPO_LOCATING:
             self.assertIn(var, prelude, f"{var} dropped from tools/skill-tests.sh")
+
+
+class ScrubSiteSweepTests(unittest.TestCase):
+    """A new scrub list cannot arrive unpinned.
+
+    The tests above hold the copies that exist today equal. They say nothing about the fifth
+    copy someone adds next week, which is exactly how the hook's lane came to be unpinned. This
+    sweep reads the repo instead of a fixed list: any code file naming several repo-locating
+    variables must be registered in `SCRUB_SITES`, with what keeps it honest.
+    """
+
+    #: Two names, not one: a partial scrub is still a scrub list, and the two shipped scripts
+    #: that clear only `GIT_DIR`/`GIT_WORK_TREE`/`GIT_INDEX_FILE` are exactly what the sweep
+    #: must not skip past. A single mention is usually prose about one variable.
+    THRESHOLD = 2
+    SKIP_DIRS = frozenset({".git", "node_modules", "__pycache__", ".local"})
+
+    def _sites(self) -> dict[str, int]:
+        """`{repo-relative path: how many repo-locating names it mentions}` for code files."""
+        found: dict[str, int] = {}
+        for path in sorted(REPO.rglob("*")):
+            if not path.is_file() or self.SKIP_DIRS & set(path.parts):
+                continue
+            if path.suffix not in (".py", ".sh") and path.name != "pre-commit":
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (UnicodeDecodeError, OSError):
+                continue
+            hits = sum(1 for name in REPO_LOCATING if name in text)
+            if hits >= self.THRESHOLD:
+                found[str(path.relative_to(REPO))] = hits
+        return found
+
+    def test_the_sweep_still_finds_the_sites_it_exists_to_guard(self) -> None:
+        """A sweep that stopped finding anything would pass over every copy in the tree."""
+        sites = self._sites()
+        for known in ("tools/skill-tests.sh", ".githooks/pre-commit"):
+            self.assertIn(known, sites, f"the sweep no longer sees {known}")
+
+    def test_every_scrub_site_is_registered(self) -> None:
+        unregistered = sorted(set(self._sites()) - set(SCRUB_SITES))
+        self.assertEqual(
+            unregistered, [],
+            "these files write out a git repo-locating scrub list that nothing pins: "
+            f"{unregistered}. Add a test holding it to REPO_LOCATING, then register it in "
+            "SCRUB_SITES saying what pins it.")
+
+    def test_the_registry_has_no_rotted_entries(self) -> None:
+        """An entry for a file that no longer carries a scrub list is dead weight the sweep
+        would otherwise hide behind."""
+        stale = sorted(set(SCRUB_SITES) - set(self._sites()))
+        self.assertEqual(stale, [], f"registered files with no scrub list left: {stale}")
+
+    def test_every_registry_entry_states_what_pins_it(self) -> None:
+        blank = sorted(k for k, v in SCRUB_SITES.items() if not v.strip())
+        self.assertEqual(blank, [], f"registry entries with no reason: {blank}")
 
 
 if __name__ == "__main__":

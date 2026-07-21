@@ -1105,6 +1105,121 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Per-unit mutation evidence survives to the close (BG0238).** The mutation report was a single
+  blob, last-write-wins, whose staleness was keyed on a whole-repo `git_rev`. That shape assumes
+  one run per sprint at the close, so running mutation per unit during the build - which is what
+  the lessons say to do - meant each run overwrote the last and every one went stale the moment
+  the next unit committed. By the close, nothing from the sprint survived: 12 mutants died in
+  RUN-01KY1WCR and not one existed outside prose, while the lane reported STALE and PASS and
+  nothing said the claim was unbacked. Evidence now accumulates in a bounded ledger keyed on each
+  target's CONTENT HASH rather than a repo-wide rev, so a file's evidence stays valid across later
+  commits that touch other files - which is exactly what makes per-unit runs reach the close. The
+  gate lane judges COVERAGE of the changed surface instead of freshness of one blob: hash matches
+  is covered, hash differs is stale, no entry is uncovered, and it states the fraction and names
+  the gaps. The old whole-blob check survives as the degraded fallback when there is nothing
+  per-file to judge, so nothing is lost. Advisory throughout, per RFC0048 D3. The ledger is bounded
+  at 200 entries with a cumulative dropped count and a printed note, because silent truncation
+  reads as "we kept everything".
+
+- **A sprint's token cost is its own, not the whole session's (BG0236).** The close captured the
+  harness meter's absolute reading, which is cumulative per SESSION. Close two sprints in one
+  session and the second recorded everything the first had spent: RETRO0062 published 341,000
+  tokens per point and RETRO0063 published 472,691, against a measured rate near 25,000. Both had
+  to be blanked by hand after the fact, which is the argument for the fix rather than the
+  workaround - the honest value was only recorded when somebody noticed, and the failure mode is a
+  published number that reads as measured. `open_run` now stamps a session-token baseline when a
+  run is minted (a re-plan leaves it alone), and the close captures the DELTA. Crucially there is
+  no fallback: a run with no baseline, or closed from a different session, reports
+  **not-attributable** rather than a number, because a plausible figure that is not this sprint's
+  cost is worse than an absent one. Dogfooded honestly - this very run was opened before the fix
+  existed, carries no baseline, and will report not-attributable at its own close rather than have
+  one retrofitted.
+
+- **A test fixture's git call can no longer be redirected at the parent repository (BG0230).**
+  `gitutil.git_env` passed the ambient environment through unfiltered, so `GIT_DIR`,
+  `GIT_WORK_TREE` and `GIT_INDEX_FILE` decided which repository a fixture acted on rather than its
+  `cwd`. Reproduced with a purpose-built victim repo: a fixture's `git add -A` moved the victim
+  from 3 tracked files to 2 and left the fixture's own index empty. This is the class the repo has
+  already suffered twice, most recently inside RUN-01KY1WCR where an unscrubbed fixture wrote its
+  own tree into the real repo's pending index under `git commit -a`. Two escape routes are closed,
+  because closing one leaves the other open: the repo-locating variables are dropped so git
+  resolves by discovery from `cwd`, and discovery itself is fenced with `GIT_CEILING_DIRECTORIES`
+  so a fixture under a `TMPDIR` that sits inside a checkout cannot walk up into it. Rather than
+  pinning today's copies of the scrub list, a sweep now fails on any code file naming two or more
+  of those variables that is not registered - so a fifth copy cannot arrive unpinned. The
+  remaining hole is bounded and declared rather than hidden: 35 bare `subprocess` git calls in 8
+  modules bypass the helper entirely, frozen as a ratchet and filed as BG0242.
+
+- **`refine`'s heading truncation and epic T-shirt derivation are pinned (BG0233).** Both were
+  correct and neither was covered: inverting the truncation guard and stubbing the T-shirt mapper
+  to return nothing both left the suite green. Tests only, no behaviour change. Every band edge is
+  now pinned (0/1/3, 4/8, 9/20, 21/100) and the truncation boundary is pinned from both sides, so
+  the two mutants that survived are each killed several times over.
+
+- **A missing test-spec is refused instead of read as an empty one (BG0229).** `ts-check` routed
+  its read through a helper that defaults to `""` on any `OSError`, so an absent file - or a
+  directory - produced zero matrix rows and reported a clean matrix at exit 0. A typo'd `--spec`
+  therefore passed as green, which is silence read as assertion integrity. An absent spec now
+  raises from `ts_check` itself, so no caller can be handed `[]` for a spec that is not there;
+  the command names the resolved path on stderr and exits **2**, distinct from exit 1 (a matrix
+  with findings) and from exit 0. The two read failures stay apart on purpose: a spec that is
+  present but not valid UTF-8 returns a finding naming the file rather than raising, so a
+  tree-walking scanner still survives one wreck. A present-but-empty file is readable and remains
+  a clean result rather than a refusal.
+
+- **`repo map` writes its map under the root it was given (BG0228).** `build` resolved `--out`
+  against the current directory and never applied `--root`, then printed a relative path that hid
+  where the file had gone; `query` and `stats` had the same hole on `--map`. Run from anywhere but
+  the root, the map was written beside the cwd and the later read looked in a different place
+  again. All three now resolve through the same resolver rather than a second idiom - a named root
+  taken verbatim, a default `.` discovered upward, a relative `--out`/`--map` anchored on the
+  result and an absolute one honoured as given - and `build` prints the resolved path. The sweep
+  this fix required found the same shape in two more scripts, filed as BG0240, and the missing
+  convention behind all three as CR0383.
+
+- **`critic._read_rows` no longer returns a table's header as a data row (BG0227).** The header
+  skip matched only a first cell reading `Unit`, so any table whose first column is named
+  something else yielded its own header as a row of data. The code fix had already landed with
+  US0261/US0262; what was missing was the pin, and the property survived only as a side effect of
+  one length assertion in an unrelated test. Now pinned directly, including a near-miss guard: a
+  data row whose first cell alone reads `Unit` is kept, which a first-column-name match would have
+  discarded.
+
+- **Two review-loop properties are pinned behaviourally rather than symbolically (BG0235).** The
+  review ceiling was asserted only as a symbol, so changing its value broke nothing, and the
+  neutrality check was asserted in aggregate, so a single class silently ceasing to fire still
+  passed. The ceiling is now bracketed two-sided through the guard itself (two recorded rounds
+  return, three raise, with no explicit ceiling passed), and each neutrality class is driven by
+  text carrying only that class and asserted against the exact violation list, so an over-firing
+  class fails too. Four mutants that previously survived - both ceiling values and each of the
+  class regexes - are now each killed by a distinct test.
+
+- **The gate budget ignores a commit whose suite only got invoked (BG0239).** The hook set
+  `suites_ran` once the lane was started, not once it had run its scope, so a commit where a test
+  module failed to import recorded a short run as this commit's cost: 73s against a 99s baseline,
+  reported as `-26% since`. A broken suite read as an improvement, and at the same magnitude as
+  the ratchet the lane exists to expose. `gate_timing scope` now decides whether a run may enter
+  the series, from two signals and explicitly NOT from its duration - judging duration by duration
+  history is circular, and would have rejected the genuine 196.7s -> 99s improvement as
+  implausible. The signals are a module that failed to import (a fact, needing no history, and the
+  filed reproduction exactly) and the test count against the historic peak, floor 80% - generous,
+  because tests are legitimately deleted and a floor that fires on real deletions gets ignored. A
+  suite that ran everything and FAILED is still recorded: the cost was paid whatever the verdict,
+  and only "barely ran" is excluded. The count is recorded even when the run is refused, or one
+  truncated run would poison the series permanently. The skip is printed, never silent.
+
+- **A dev-repo-only gate test no longer fails from an installed copy, and the rule has one home
+  (BG0237).** `GateRealWrapperTests` resolves its root as `parents[5]`, which from an installed
+  copy is the home directory: `two_backlog_enforced` returns False, the derivable-request sweep
+  never runs, and two tests failed on a count of 0. A consumer saw 2 failures in 3,409 with
+  nothing saying the cause was location rather than code. Both tests already stubbed two of their
+  three live dependencies, so the fix stubs the third rather than adding a fourth hand-copied skip
+  guard - an installed copy now gains that coverage instead of skipping it. The dev-repo guard
+  moved INTO the one helper that reaches the real gate and the two call-site copies were deleted,
+  so the rule has a single home rather than four that drift. A class-wide sweep runs every other
+  test in the class under installed-copy conditions and demands each pass or skip, so a future
+  test that reads live state is caught however it is spelled.
+
 - **A run stopped mid-flight can still take the bounded exit (BG0223).** The re-run guard on
   `--file-and-close` gated on the bare outcome string, so a run stamped `budget-spent` or
   `stopped` - `loop_guard`'s own recommended flow, and states the close path documents as

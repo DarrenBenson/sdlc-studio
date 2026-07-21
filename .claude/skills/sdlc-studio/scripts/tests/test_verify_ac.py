@@ -700,6 +700,97 @@ class TsCheckCrossReportTests(unittest.TestCase):
             self.assertEqual([i["ac"] for i in issues], ["AC1"])  # A.AC1 genuinely red
 
 
+class TsCheckAbsentSpecTests(unittest.TestCase):
+    """BG0229: a spec that could not be read is a REFUSAL, never a clean matrix.
+
+    `ts_check` read a missing file as empty text, found no matrix rows, and reported
+    'every AC is mapped to a passing test case' with exit 0 - so a moved, renamed or
+    typo'd `--spec` passed a gate that had read nothing at all. Every assertion below
+    therefore pins a NON-zero exit or a raised error; an rc-0 assertion here would be
+    satisfied by the defect itself.
+    """
+
+    NOT_UTF8 = b"\xff\xfe\x00\x00# TS0001\n"
+
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = verify_ac.main(argv)
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_a_missing_spec_exits_2_and_names_the_path_tried(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            missing = Path(d) / "TS-DOES-NOT-EXIST.md"
+            rc, out, err = self._run(["ts-check", "--spec", str(missing)])
+            self.assertEqual(rc, 2, f"a missing spec passed as green: {out!r}")
+            self.assertIn(str(missing), err, "the refusal did not name the path it tried")
+            self.assertNotIn("ts-check:", out, "a summary line was printed over a spec "
+                                               "that was never read")
+
+    def test_the_refusal_names_the_resolved_path_not_the_bare_argument(self) -> None:
+        """A relative --spec is anchored on the root, so the refusal must print where it
+        actually looked - the whole point is telling the caller which path was wrong."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            rc, _out, err = self._run(["--root", str(root), "ts-check",
+                                       "--spec", "test-specs/nope.md"])
+            self.assertEqual(rc, 2)
+            self.assertIn(str(root / "test-specs" / "nope.md"), err)
+
+    def test_json_format_refuses_rather_than_printing_an_empty_finding_list(self) -> None:
+        """`--format json` is what a gate parses. An empty array plus exit 0 reads as
+        'no findings'; the file was never opened."""
+        with tempfile.TemporaryDirectory() as d:
+            missing = Path(d) / "nope.md"
+            rc, out, _err = self._run(["ts-check", "--spec", str(missing), "--format", "json"])
+            self.assertEqual(rc, 2)
+            self.assertNotEqual(out.strip(), "[]", "a gate would read this as a clean matrix")
+
+    def test_a_directory_given_as_spec_is_refused(self) -> None:
+        """A directory reads back as empty text exactly as a missing file does."""
+        with tempfile.TemporaryDirectory() as d:
+            rc, _out, err = self._run(["ts-check", "--spec", d])
+            self.assertEqual(rc, 2)
+            self.assertIn(d, err)
+
+    def test_ts_check_itself_raises_on_an_absent_spec(self) -> None:
+        """The refusal lives in the library, so no caller can obtain [] from a spec that
+        is not there - the CLI is not the only entry point."""
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(FileNotFoundError):
+                verify_ac.ts_check(Path(d) / "nope.md")
+
+    def test_an_unreadable_spec_is_flagged_and_exits_non_zero(self) -> None:
+        """Present but not valid UTF-8: the bytes exist, so a scanner walking a tree must
+        survive it (it stays a returned finding, not an exception), but it must never be
+        counted as a matrix with nothing wrong in it."""
+        with tempfile.TemporaryDirectory() as d:
+            spec = Path(d) / "ts.md"
+            spec.write_bytes(self.NOT_UTF8)
+            # Captured, not silenced: the warning naming the file is the wanted behaviour and
+            # is asserted, but a green suite must say nothing or a real error hides in it.
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                issues = verify_ac.ts_check(spec)
+            self.assertIn("ts.md", buf.getvalue(),
+                          "the unreadable spec was not named in the warning")
+            self.assertTrue(issues, "an unreadable spec reported a clean matrix")
+            self.assertIn("unreadable", issues[0]["issue"])
+            rc, _out, _err = self._run(["ts-check", "--spec", str(spec)])
+            self.assertNotEqual(rc, 0)
+
+    def test_a_present_empty_spec_does_not_share_the_absent_exit_code(self) -> None:
+        """'Absent' and 'present but empty' are different facts. The zero-byte file is
+        readable, so it is not the refusal path - only that distinction is pinned here,
+        not any claim that an empty spec is a good one."""
+        with tempfile.TemporaryDirectory() as d:
+            spec = Path(d) / "ts.md"
+            spec.write_text("", encoding="utf-8")
+            rc, _out, _err = self._run(["ts-check", "--spec", str(spec)])
+            self.assertNotEqual(rc, 2)
+
+
 class ShellExecutionPolicyTests(unittest.TestCase):
     """BG0056/BG0057: shell execution is gated by provenance / --no-shell, and an
     unrecognised verifier does not silently fall through to shell."""

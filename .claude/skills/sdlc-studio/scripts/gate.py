@@ -168,48 +168,177 @@ def _engagement_floor(root: str) -> dict:
             "detail": engagement_floor.remedy_detail(result)}
 
 
+#: Extensions mutation.py has a language profile for. A changed file outside this set cannot
+#: carry mutation evidence, so it is not counted as an uncovered surface.
+_MUTATABLE_SUFFIXES = {".py", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".go"}
+
+
+def _is_test_path(name: str) -> bool:
+    """Test-shaped by the conventions the suites here use: `test_x.py`, `x_test.go`,
+    `x.test.ts`, `x.spec.ts`. A test file is the assertion, not a mutation target."""
+    stem = Path(name).stem
+    return (stem.startswith("test_") or stem.endswith("_test")
+            or stem.endswith(".test") or stem.endswith(".spec"))
+
+
+def _mutation_changed_surface(root: str) -> list[str] | None:
+    """Repo-relative mutatable, non-test files with uncommitted changes - staged, unstaged or
+    untracked. That is the surface a pre-commit gate is actually about, and it needs no sprint
+    run and no sdlc-studio state, so the lane works in a consuming project too.
+
+    Returns None when git cannot answer: no git, no commit to diff against, or a `root` that
+    is not the repository top level (git would then report paths relative to some other root).
+    The caller degrades to the ledger's own contents rather than inventing a surface.
+    """
+    import subprocess
+    rootp = Path(root)
+
+    def _git(*args):
+        return subprocess.run(["git", *args], cwd=str(rootp),
+                              capture_output=True, text=True, timeout=10)
+    names: list[str] = []
+    try:
+        top = _git("rev-parse", "--show-toplevel")
+        if top.returncode != 0:
+            return None
+        if Path(top.stdout.strip() or ".").resolve() != rootp.resolve():
+            return None
+        for cmd in (("diff", "--name-only", "HEAD"),
+                    ("ls-files", "--others", "--exclude-standard")):
+            proc = _git(*cmd)
+            if proc.returncode != 0:
+                return None
+            names.extend(proc.stdout.splitlines())
+    except Exception:  # noqa: BLE001 - a surface probe must never break the gate
+        return None
+    out: list[str] = []
+    for raw in names:
+        name = raw.strip()
+        if not name or Path(name).suffix not in _MUTATABLE_SUFFIXES or _is_test_path(name):
+            continue
+        if (rootp / name).is_file() and name not in out:
+            out.append(name)
+    return out
+
+
+def _name_list(names: list[str], limit: int = 3) -> str:
+    """First `limit` names, then a count of the rest - a lane line must stay readable
+    without hiding how many it did not print."""
+    shown = ", ".join(Path(n).name for n in names[:limit])
+    return shown + (f" (+{len(names) - limit} more)" if len(names) > limit else "")
+
+
+def _mutation_coverage(root: str, data: dict) -> dict:
+    """How much of the surface carries mutation evidence, judged per file on content hash.
+
+    A whole-blob `git_rev` stamp cannot answer this: it goes stale the moment ANY file is
+    committed, so per-unit evidence gathered during a build is unreadable by the close.
+    A per-file entry keyed on that file's content hash stays valid across later
+    commits to other files, which is exactly what makes the per-unit runs survive.
+
+    Sources, newest last: the accumulating ledger `mutation-runs.json`, overlaid with the
+    latest report's own `target_hashes` (a project that has only ever written reports still
+    gets a reading). Verdicts: hash matches -> covered; hash differs, or none was recorded ->
+    STALE; no entry at all -> uncovered. Returns `known: False` when there is nothing to
+    judge, so the caller can fall back to the older whole-report checks.
+    """
+    import hashlib
+    rootp = Path(root)
+    entries: dict[str, str | None] = {}
+
+    def _key(p) -> str:
+        path = Path(p)
+        return str((path if path.is_absolute() else rootp / path).resolve())
+
+    ledger = rootp / "sdlc-studio" / ".local" / "mutation-runs.json"
+    if ledger.exists():
+        try:
+            loaded = json.loads(ledger.read_text(encoding="utf-8"))
+            for e in loaded.get("entries", []):
+                if isinstance(e, dict) and e.get("target"):
+                    entries[_key(e["target"])] = e.get("hash")
+        except (ValueError, OSError, TypeError, AttributeError):
+            pass          # a corrupt ledger claims no coverage; it never breaks the lane
+    for fp, recorded in (data.get("target_hashes") or {}).items():
+        entries[_key(fp)] = recorded      # the latest run wins over its own older entry
+    surface = _mutation_changed_surface(root)
+    if surface:
+        judged = [(name, _key(name)) for name in surface]
+        label = "changed surface"
+    else:
+        # clean tree, or git could not answer: judge what the ledger actually holds
+        judged = [(k, k) for k in sorted(entries)]
+        label = "recorded surface"
+    if not judged:
+        return {"known": False, "count": 0, "detail": ""}
+    covered: list[str] = []
+    stale: list[str] = []
+    uncovered: list[str] = []
+    for display, key in judged:
+        if key not in entries:
+            uncovered.append(display)
+            continue
+        recorded = entries[key]
+        try:
+            current = hashlib.sha256(Path(key).read_bytes()).hexdigest()
+        except OSError:
+            current = None
+        (covered if recorded is not None and current == recorded else stale).append(display)
+    detail = f"mutation evidence covers {len(covered)}/{len(judged)} file(s) of the {label}"
+    if stale:
+        detail += f"; STALE (edited since mutated): {_name_list(stale)}"
+    if uncovered:
+        detail += f"; no evidence: {_name_list(uncovered)}"
+    return {"known": True, "count": len(stale) + len(uncovered), "detail": detail}
+
+
+def _mutation_coverage_safe(root: str, data: dict) -> dict:
+    try:
+        return _mutation_coverage(root, data)
+    except Exception:  # noqa: BLE001 - coverage is advisory; it must never raise into the gate
+        return {"known": False, "count": 0, "detail": ""}
+
+
 def _mutation(root: str) -> dict:
-    """Advisory v1 lane: surface the mutation-check report's survivors. An absent
-    report reads NOT-RUN (advisory) - never PASS: silence is not assertion integrity."""
+    """Advisory v1 lane: the mutation-check report's survivors, plus how much of the surface
+    carries evidence at all. An absent report reads NOT-RUN (advisory) - never PASS: silence
+    is not assertion integrity. Advisory throughout: survivors and gaps are reported,
+    never a refusal to close."""
     report_path = Path(root) / "sdlc-studio" / ".local" / "mutation-report.json"
+
+    def _with_coverage(result: dict, cov: dict) -> dict:
+        if cov["detail"]:
+            result["detail"] += f"; {cov['detail']}"
+            result["count"] += cov["count"]
+        return result
+
     if not report_path.exists():
-        return {"count": 1, "blocking": False,
-                "detail": "mutation gate not run (no mutation-report.json) - advisory; "
-                          "run scripts/mutation.py over the changed surface"}
+        return _with_coverage(
+            {"count": 1, "blocking": False,
+             "detail": "mutation gate not run (no mutation-report.json) - advisory; "
+                       "run scripts/mutation.py over the changed surface"},
+            _mutation_coverage_safe(root, {}))
     try:
         data = json.loads(report_path.read_text(encoding="utf-8"))
         s = data.get("summary", {})
     except (ValueError, OSError) as exc:
         return {"count": 1, "blocking": False, "detail": f"mutation-report unreadable: {exc}"}
-    # staleness: a report from another rev is about some other change - it must
-    # not render this diff's lane as PASS
-    report_rev = data.get("git_rev")
-    if report_rev:
-        try:
-            import subprocess
-            head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root,
-                                  capture_output=True, text=True, timeout=10).stdout.strip()
-        except Exception:  # noqa: BLE001 - staleness must not break the gate (Exception covers OSError)
-            head = None
-        if head and head != report_rev:
-            return {"count": 1, "blocking": False,
-                    "detail": f"mutation-report is STALE (run at {report_rev[:9]}, tree at "
-                              f"{head[:9]}) - re-run scripts/mutation.py (advisory)"}
-    # content-hash staleness: same rev but an edited/missing target is still
-    # evidence about code that no longer exists (the dirty-tree pre-commit flow)
-    hashes = data.get("target_hashes") or {}
-    if hashes:
-        import hashlib
-        for fp, recorded in hashes.items():
-            fpath = Path(fp) if Path(fp).is_absolute() else Path(root) / fp
+    cov = _mutation_coverage_safe(root, data)
+    if not cov["known"]:
+        # Nothing per-file to judge: fall back to the whole-report checks. A report from
+        # another rev is about some other change and must not render this diff's lane PASS.
+        report_rev = data.get("git_rev")
+        if report_rev:
             try:
-                current = hashlib.sha256(fpath.read_bytes()).hexdigest()
-            except OSError:
-                current = None
-            if current != recorded:
+                import subprocess
+                head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root,
+                                      capture_output=True, text=True, timeout=10).stdout.strip()
+            except Exception:  # noqa: BLE001 - staleness must not break the gate (Exception covers OSError)
+                head = None
+            if head and head != report_rev:
                 return {"count": 1, "blocking": False,
-                        "detail": f"mutation-report is STALE ({Path(fp).name} changed since "
-                                  f"the run) - re-run scripts/mutation.py (advisory)"}
+                        "detail": f"mutation-report is STALE (run at {report_rev[:9]}, tree at "
+                                  f"{head[:9]}) - re-run scripts/mutation.py (advisory)"}
     # a refused run applied no mutant, so its summary is all zeros: rendered as
     # "0/0 mutations killed" a refusal reads as a clean sweep. Carry the report's
     # own failure state and remedy instead - silence is not assertion integrity.
@@ -220,7 +349,7 @@ def _mutation(root: str) -> dict:
         remedy = data.get("remedy")
         if remedy:
             detail += f"; {remedy}"
-        return {"count": 1, "blocking": False, "detail": detail}
+        return _with_coverage({"count": 1, "blocking": False, "detail": detail}, cov)
     n = int(s.get("survived", 0)) + int(s.get("errors", 0))
     detail = (f"{s.get('survived', 0)} survived, {s.get('errors', 0)} error(s) of "
               f"{s.get('applied', 0)} applied ({s.get('truncated', 0)} truncated) - advisory"
@@ -233,7 +362,7 @@ def _mutation(root: str) -> dict:
     if int(s.get("truncated", 0)) and enumerated:
         pct = f"{100.0 * applied / enumerated:.1f}%"
         detail += f" - {applied}/{enumerated} enumerated sampled ({pct})"
-    return {"count": n, "blocking": False, "detail": detail}
+    return _with_coverage({"count": n, "blocking": False, "detail": detail}, cov)
 
 
 # Lanes that read NOT-RUN (advisory) when their evidence file is absent. The

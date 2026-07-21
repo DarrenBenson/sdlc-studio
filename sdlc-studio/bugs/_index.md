@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 10 |
+| Open | 3 |
 | In Progress | 0 |
-| Fixed | 147 |
+| Fixed | 157 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **239** |
+| **Total** | **242** |
 
 ## All Bugs
 
@@ -193,19 +193,22 @@
 | [BG0224](BG0224-an-explicit-tokens-0-cannot-clear-a-recorded.md) | an explicit --tokens 0 cannot clear a recorded velocity actual because zero is falsy in the preservation guard | Fixed | Low | 2026-07-20 | 2026-07-20 |
 | [BG0225](BG0225-the-close-owed-detector-misses-a-unit-written.md) | the close-owed detector misses a unit written in parentheses on the retro Batch line | Fixed | Low | 2026-07-20 | 2026-07-20 |
 | [BG0226](BG0226-record-velocity-writes-the-retro-id-verbatim-so.md) | record_velocity writes the retro id verbatim, so a dashed id mints a row the history reader cannot see | Fixed | Medium | 2026-07-20 | 2026-07-20 |
-| [BG0227](BG0227-critic-read-rows-returns-the-markdown-header-as.md) | critic._read_rows returns the markdown header as a data row for any table whose first column is not Unit | Open | Low | 2026-07-20 | 2026-07-20 |
-| [BG0228](BG0228-repo-map-build-writes-its-map-relative-to.md) | repo_map build writes its map relative to the current directory and ignores --root, then prints a relative path that hides where it went | Open | Medium | 2026-07-20 | 2026-07-20 |
-| [BG0229](BG0229-verify-ac-ts-check-reads-a-missing-spec.md) | verify_ac ts-check reads a missing spec as an empty one and reports a clean matrix, so a typo'd --spec passes as green | Open | Medium | 2026-07-20 | 2026-07-20 |
-| [BG0230](BG0230-a-skill-test-s-git-call-can-reach.md) | a skill test's git call can reach the parent repository, so a polluted GIT_ environment lets the suite rewrite the real repo's index | Open | High | 2026-07-20 | 2026-07-20 |
+| [BG0227](BG0227-critic-read-rows-returns-the-markdown-header-as.md) | critic._read_rows returns the markdown header as a data row for any table whose first column is not Unit | Fixed | Low | 2026-07-20 | 2026-07-20 |
+| [BG0228](BG0228-repo-map-build-writes-its-map-relative-to.md) | repo_map build writes its map relative to the current directory and ignores --root, then prints a relative path that hides where it went | Fixed | Medium | 2026-07-20 | 2026-07-20 |
+| [BG0229](BG0229-verify-ac-ts-check-reads-a-missing-spec.md) | verify_ac ts-check reads a missing spec as an empty one and reports a clean matrix, so a typo'd --spec passes as green | Fixed | Medium | 2026-07-20 | 2026-07-20 |
+| [BG0230](BG0230-a-skill-test-s-git-call-can-reach.md) | a skill test's git call can reach the parent repository, so a polluted GIT_ environment lets the suite rewrite the real repo's index | Fixed | High | 2026-07-20 | 2026-07-20 |
 | [BG0231](BG0231-a-done-story-stays-green-after-the-test.md) | a Done story stays green after the test its AC names is deleted: freshness tracks the AC text, not the existence of its verifier | Fixed | High | 2026-07-20 | 2026-07-20 |
 | [BG0232](BG0232-ac-fingerprint-has-no-test-of-its-own.md) | ac_fingerprint has no test of its own: a no-op mutant of the freshness spine survives | Fixed | High | 2026-07-20 | 2026-07-20 |
-| [BG0233](BG0233-refine-s-heading-truncation-and-epic-t-shirt.md) | refine's heading truncation and epic T-shirt derivation are both unpinned: two mutants survive | Open | Medium | 2026-07-20 | 2026-07-20 |
+| [BG0233](BG0233-refine-s-heading-truncation-and-epic-t-shirt.md) | refine's heading truncation and epic T-shirt derivation are both unpinned: two mutants survive | Fixed | Medium | 2026-07-20 | 2026-07-20 |
 | [BG0234](BG0234-a-story-ac-asserting-a-repo-wide-invariant.md) | a story AC asserting a repo-wide invariant retroactively un-Dones itself as the repo grows | Fixed | Medium | 2026-07-20 | 2026-07-20 |
-| [BG0235](BG0235-two-review-loop-properties-are-pinned-only-symbolically.md) | two review-loop properties are pinned only symbolically or in aggregate, so a single-class break ships green | Open | Low | 2026-07-20 | 2026-07-20 |
-| [BG0236](BG0236-the-interactive-token-capture-sums-the-whole-session.md) | the interactive token capture sums the whole session, so a second sprint in one session double-counts the first sprint's tokens | Open | High | 2026-07-21 | 2026-07-21 |
-| [BG0237](BG0237-two-dev-repo-only-gate-tests-lack-the.md) | Two dev-repo-only gate tests lack the skip guard, so the shipped suite fails from an installed copy | Open | Medium | 2026-07-21 | 2026-07-21 |
-| [BG0238](BG0238-per-unit-mutation-evidence-is-never-captured-the.md) | Per-unit mutation evidence is never captured: the close lane reads the previous sprint's report | Open | High | 2026-07-21 | 2026-07-21 |
-| [BG0239](BG0239-the-gate-budget-records-a-full-cost-total.md) | The gate budget records a full-cost total when a unit suite was invoked but ran almost nothing | Open | Low | 2026-07-21 | 2026-07-21 |
+| [BG0235](BG0235-two-review-loop-properties-are-pinned-only-symbolically.md) | two review-loop properties are pinned only symbolically or in aggregate, so a single-class break ships green | Fixed | Low | 2026-07-20 | 2026-07-20 |
+| [BG0236](BG0236-the-interactive-token-capture-sums-the-whole-session.md) | the interactive token capture sums the whole session, so a second sprint in one session double-counts the first sprint's tokens | Fixed | High | 2026-07-21 | 2026-07-21 |
+| [BG0237](BG0237-two-dev-repo-only-gate-tests-lack-the.md) | Two dev-repo-only gate tests lack the skip guard, so the shipped suite fails from an installed copy | Fixed | Medium | 2026-07-21 | 2026-07-21 |
+| [BG0238](BG0238-per-unit-mutation-evidence-is-never-captured-the.md) | Per-unit mutation evidence is never captured: the close lane reads the previous sprint's report | Fixed | High | 2026-07-21 | 2026-07-21 |
+| [BG0239](BG0239-the-gate-budget-records-a-full-cost-total.md) | The gate budget records a full-cost total when a unit suite was invoked but ran almost nothing | Fixed | Low | 2026-07-21 | 2026-07-21 |
+| [BG0240](BG0240-lessons-py-summary-out-and-loop-guard-py.md) | `lessons.py summary --out` and `loop_guard.py _state_path` write relative to the cwd, ignoring or failing to discover the root | Open | Medium | 2026-07-21 | 2026-07-21 |
+| [BG0241](BG0241-a-test-spec-with-no-ac-coverage-matrix.md) | A test spec with no AC Coverage Matrix at all reports clean and exits 0 | Open | Medium | 2026-07-21 | 2026-07-21 |
+| [BG0242](BG0242-35-bare-subprocess-git-calls-in-8-test.md) | 35 bare subprocess git calls in 8 test modules bypass the confined helper entirely | Open | High | 2026-07-21 | 2026-07-21 |
 
 ## Archived Releases
 

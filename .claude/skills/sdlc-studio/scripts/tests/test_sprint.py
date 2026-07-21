@@ -3307,28 +3307,38 @@ class ApplySignoffTailTests(unittest.TestCase):
     def test_interactive_close_captures_token_actuals(self) -> None:
         """US0279 (CR0350): the close captures the harness-tracked token total itself -
         no operator hand-supply - and the velocity row records the actual, so
-        estimate-versus-actual closes for interactive runs as it does for runner ones."""
+        estimate-versus-actual closes for interactive runs as it does for runner ones.
+
+        BG0236: what it records is the run's own DELTA from the baseline stamped at
+        `open_run`, not the session meter. Here the session already carried 900,000 tokens
+        when the run opened, and the row must show the 120,000 this run spent."""
         import os
         import unittest.mock as _mock
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _close_state(root, scaffolded_retro="RETRO0001")
-            _signoffable_story(root)
-            _close_retro(root, batch="US0101")
             tdir = root / "transcripts"
             tdir.mkdir()
-            (tdir / "session.jsonl").write_text(json.dumps(
-                {"message": {"usage": {"input_tokens": 10_000, "output_tokens": 40_000,
-                                       "cache_creation_input_tokens": 70_000,
-                                       "cache_read_input_tokens": 5_000_000}}}) + "\n",
+            src = tdir / "session.jsonl"
+            src.write_text(
+                json.dumps({"message": {"usage": {"input_tokens": 900_000}}}) + "\n" +
+                json.dumps(
+                    {"message": {"usage": {"input_tokens": 10_000, "output_tokens": 40_000,
+                                           "cache_creation_input_tokens": 70_000,
+                                           "cache_read_input_tokens": 5_000_000}}}) + "\n",
                 encoding="utf-8")
+            _close_state(root, scaffolded_retro="RETRO0001",
+                         session_token_baseline={"tokens": 900_000, "source": str(src),
+                                                 "at": "2026-07-16T00:00:00Z"})
+            _signoffable_story(root)
+            _close_retro(root, batch="US0101")
             mod = _load()
             with _mock.patch.dict(os.environ, {"SDLC_STUDIO_TRANSCRIPTS": str(tdir)}):
                 rc, out, err = _run_apply_signoff(root, mod)
             self.assertEqual(rc, 0, err)
             self.assertIn("token actual captured", out)
             vel = (root / "sdlc-studio" / "retros" / "VELOCITY.md").read_text(encoding="utf-8")
-            self.assertIn("120,000", vel, "the harness total is ON the row")
+            self.assertIn("120,000", vel, "the run's own spend is ON the row")
+            self.assertNotIn("1,020,000", vel, "and the session meter is not")
             row = [ln for ln in vel.splitlines() if "RETRO0001" in ln][0]
             self.assertIn("| 5 |", row, "the delivered points are on the row beside it")
 

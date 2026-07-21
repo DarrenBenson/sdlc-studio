@@ -863,6 +863,38 @@ class ReviewRoundCountTests(unittest.TestCase):
                 self.skipTest("PyYAML absent - the override path cannot be exercised")
             self.assertEqual(mod.review_ceiling(root), 7)
 
+    def test_the_shipped_ceiling_default_is_three(self) -> None:
+        """The literal 3, pinned by value rather than through its own symbol.
+
+        Comparing `review_ceiling` to `DEFAULT_REVIEW_CEILING` is true for any value the
+        constant takes, so it pins the wiring and not the number US0261 shipped.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            self.assertEqual(mod.DEFAULT_REVIEW_CEILING, 3)
+            self.assertEqual(mod.review_ceiling(root), 3)   # no config present
+
+    def test_the_default_ceiling_refuses_the_fourth_round_not_the_third(self) -> None:
+        """The numeric boundary, driven through the guard with no explicit ceiling.
+
+        Two-sided: with two rounds recorded the guard returns rather than raises, and with
+        three it raises. A larger default would permit a fourth round; a smaller one would
+        refuse the third.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod, rs = _load(), self._open(root)
+            for _ in range(2):
+                mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
+                                         verdict="reject", findings="f")
+            self.assertEqual(mod.review_round_guard(root), 2)   # still under the ceiling
+            mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
+                                     verdict="reject", findings="f")
+            with self.assertRaises(ValueError):
+                mod.review_round_guard(root)
+            self.assertEqual(rs.review_round_count(root), 3)
+
     def test_ceiling_override_is_explicit_and_recorded(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -901,6 +933,68 @@ class ReviewRoundCountTests(unittest.TestCase):
                                               {"round": 2, "verdict": "APPROVE"}]})
             self.assertEqual(len(rs.review_rounds(root)), 2)   # they are readable
             self.assertEqual(rs.review_round_count(root), 0)   # but attributed to no run
+
+
+class ReadRowsHeaderTests(unittest.TestCase):
+    """BG0227 - the header skip is derived from the declared column names, not one table's
+    first-column literal, so a table led by any other column does not return its own header."""
+
+    def test_sprint_review_table_does_not_return_its_header_as_data(self) -> None:
+        """One recorded sprint review reads back as exactly one row.
+
+        The sprint-review table is led by `Base`, not `Unit`. A first-column literal skip
+        knows only `Unit`, so it returned the `| Base | Reviewer | ... |` header as a data
+        row with every cell set to its own column name.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
+                                     verdict="approve", findings="f")
+            rows = mod.sprint_reviews(root)
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["base"], "-")
+            self.assertEqual(rows[0]["reviewer"], "seat")
+            # the shape the defect produced: every cell equal to its own column name
+            self.assertNotIn({"base": "Base", "reviewer": "Reviewer", "author": "Author",
+                              "verdict": "Verdict", "date": "Date", "units": "Units",
+                              "findings": "Findings"}, rows)
+
+    def test_header_skip_generalises_to_a_table_with_unrelated_columns(self) -> None:
+        """A table whose columns share no name with any shipped table still loses its header.
+
+        This is the claim the docstring on `_read_rows` makes - that the skip cannot lapse
+        when the next table is added - reached directly rather than through a caller, because
+        no shipped caller uses these column names.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            path = root / "novel-table.md"
+            path.write_text("# Novel\n\n"
+                            "| Alpha | Beta |\n"
+                            "| --- | --- |\n"
+                            "| a1 | b1 |\n"
+                            "| a2 | b2 |\n", encoding="utf-8")
+            rows = mod._read_rows(path, ("alpha", "beta"))
+            self.assertEqual(rows, [{"alpha": "a1", "beta": "b1"},
+                                    {"alpha": "a2", "beta": "b2"}])
+
+    def test_a_data_row_that_looks_like_a_header_only_in_its_first_cell_is_kept(self) -> None:
+        """`Unit` as a first cell is data unless the WHOLE row is the column names.
+
+        The old literal skip dropped any row whose first cell read `Unit`; the column-name
+        match drops only the header itself.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            path = root / "look-alike.md"
+            path.write_text("| Unit | Reviewer |\n"
+                            "| --- | --- |\n"
+                            "| Unit | someone |\n", encoding="utf-8")
+            self.assertEqual(mod._read_rows(path, ("unit", "reviewer")),
+                             [{"unit": "Unit", "reviewer": "someone"}])
 
 
 class RepairRegressionTests(unittest.TestCase):
@@ -1223,13 +1317,39 @@ class NeutralBriefTests(unittest.TestCase):
                                   prior="VERDICT: REJECT\nISSUES: it felt wrong\nBLOCKING: yes\n")
             self.assertRegex(str(ctx.exception), r"(?i)probe")
 
-    def test_neutrality_check_is_mechanical(self) -> None:
+    def test_neutral_text_reports_no_violations(self) -> None:
         mod = _load()
         clean = "Review the diff for US0001. Return the contract below."
         self.assertEqual(mod.neutrality_violations(clean), [])
-        primed = "This is round 3. The prior verdict was REJECT and the pattern will continue."
-        self.assertTrue(mod.neutrality_violations(primed),
-                        "a mechanical check must catch the priming classes")
+
+    # BG0235 - one case per priming class, each carrying ONLY that class, asserting the exact
+    # violation list. A single test tripping all four at once and asserting truthiness stays
+    # green when any one class regexp is neutered; these fail one test per broken class.
+
+    def test_a_verdict_word_alone_is_flagged(self) -> None:
+        mod = _load()
+        self.assertEqual(mod.neutrality_violations("The prior outcome was REJECT."),
+                         ["a prior verdict word"])
+        self.assertEqual(mod.neutrality_violations("The prior outcome was APPROVE."),
+                         ["a prior verdict word"])
+
+    def test_a_severity_label_alone_is_flagged(self) -> None:
+        mod = _load()
+        for label in ("MAJOR", "MINOR", "BLOCKING"):
+            self.assertEqual(mod.neutrality_violations(f"The finding was a {label} one."),
+                             ["a severity label that pre-grades the finding"], label)
+
+    def test_a_round_number_alone_is_flagged(self) -> None:
+        mod = _load()
+        self.assertEqual(mod.neutrality_violations("This is round 3 of the pass."),
+                         ["a round number"])
+
+    def test_an_asserted_conclusion_alone_is_flagged(self) -> None:
+        mod = _load()
+        for phrase in ("the pattern will continue", "you will find the same shape",
+                       "expect to find the same shape", "as in the previous round"):
+            self.assertEqual(mod.neutrality_violations(f"Note that {phrase}."),
+                             ["an asserted conclusion"], phrase)
 
     def test_a_brief_with_no_prior_is_still_neutral(self) -> None:
         with tempfile.TemporaryDirectory() as d:

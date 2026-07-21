@@ -1,5 +1,14 @@
-"""BG0221: `refine --into` must MERGE a further request's epic-level criteria under the
+"""refine's generated surfaces: the epic-level AC merge, the AC heading, and the epic's
+derived T-shirt Size.
+
+BG0221: `refine --into` must MERGE a further request's epic-level criteria under the
 existing `## Acceptance Criteria (Epic Level)` heading, not append a second one.
+
+BG0233: two mutants survived the close-time mutation run over refine.py, both real
+coverage gaps. An invert-guard on `_ac_heading`'s length test truncated short headings
+and left long ones whole with nothing noticing, and `_tshirt_for` (the Size an epic is
+born with, which feeds sprint planning) was referenced by no test at all. Both are pinned
+below: the heading at its length boundary, the Size at every band edge.
 
 The gate this pins is the repo's own markdown lane: markdownlint MD024
 (no-duplicate-heading) configured `siblings_only: true`. Two `##` headings with the
@@ -15,6 +24,8 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import re
 import shutil
@@ -178,6 +189,132 @@ class RefineIntoEpicCriteriaMergeTests(unittest.TestCase):
             self.assertIn("- [ ] a later criterion", block.split("###")[1])
             self.assertEqual(text.count(refine._EPIC_AC_NOTE), 1,
                              "the closing note is written once and stays last")
+
+
+def _phrase(length: int) -> str:
+    """A space-separated phrase of EXACTLY `length` characters, free of punctuation.
+
+    Whole five-letter words, the last one padded with `z`s so the total is exact - so a
+    test can sit a criterion ON the limit, or one character over it, without counting
+    characters by hand. `PhraseHelperTests` pins the exactness, or every boundary case
+    built from it would be measuring the wrong boundary.
+    """
+    if length < 5:
+        return "a" * length
+    words = ["alpha"] * max(1, (length + 1) // 6)
+    words[-1] += "z" * (length - len(" ".join(words)))
+    return " ".join(words)
+
+
+class PhraseHelperTests(unittest.TestCase):
+    """`_phrase` must produce the exact length it claims, or the boundary tests below
+    assert against a boundary that is not the one in the code."""
+
+    def test_refine_phrase_helper_is_exact_at_the_lengths_the_tests_use(self) -> None:
+        for n in (35, 39, 40, 41, 99, 100, 101):
+            self.assertEqual(len(_phrase(n)), n, f"_phrase({n}) is not {n} characters")
+            self.assertEqual(_phrase(n), " ".join(_phrase(n).split()),
+                             "no doubled or trailing whitespace")
+
+
+class AcHeadingTruncationTests(unittest.TestCase):
+    """BG0233: `_ac_heading` truncates ONLY what is over the limit, at a word boundary,
+    and never leaves trailing punctuation.
+
+    The invert-guard mutant on the length test is killed twice over: a criterion at the
+    limit must come back word-for-word (the mutant truncates it), and one over the limit
+    must come back shortened (the mutant leaves it whole).
+    """
+
+    LIMIT = 40
+
+    def test_refine_ac_heading_leaves_a_criterion_at_the_limit_word_for_word(self) -> None:
+        at = _phrase(self.LIMIT)
+        self.assertEqual(refine._ac_heading(at, self.LIMIT), at,
+                         "a criterion that fits keeps every word")
+
+    def test_refine_ac_heading_truncates_one_character_over_the_limit(self) -> None:
+        over = _phrase(self.LIMIT + 1)
+        head = refine._ac_heading(over, self.LIMIT)
+        self.assertLessEqual(len(head), self.LIMIT, "an over-long heading is truncated")
+        self.assertNotEqual(head, over)
+        self.assertTrue(over.startswith(head), "truncation keeps a prefix of the criterion")
+        self.assertEqual(over[len(head)], " ", "the cut lands on a word boundary")
+
+    def test_refine_ac_heading_truncation_leaves_no_trailing_punctuation(self) -> None:
+        # The cut can expose punctuation the first strip never saw (MD026: no trailing
+        # punctuation in a heading), so the second strip is the property, not a tidy-up.
+        criterion = "alpha, beta, gamma, delta, epsilon, zeta, eta"
+        head = refine._ac_heading(criterion, self.LIMIT)
+        self.assertEqual(head, "alpha, beta, gamma, delta, epsilon")
+        self.assertLessEqual(len(head), self.LIMIT)
+        self.assertFalse(head.endswith((",", ".", ";", ":", "!", "?")))
+
+    def test_refine_ac_heading_keeps_the_last_word_when_the_stripped_form_fits(self) -> None:
+        # The stated behaviour of stripping BEFORE the length test: a criterion whose RAW
+        # form is over the limit but whose collapsed form fits keeps its last word.
+        raw = "alpha  alpha  alpha  alpha  alpha  alpha."
+        self.assertGreater(len(raw), self.LIMIT, "the raw form really is over the limit")
+        head = refine._ac_heading(raw, self.LIMIT)
+        self.assertEqual(head, "alpha alpha alpha alpha alpha alpha")
+        self.assertTrue(head.endswith("alpha"), "the last word is not lost to truncation")
+
+    def test_refine_ac_heading_applies_the_same_boundary_at_its_default_limit(self) -> None:
+        # The default (100) is the limit every generated AC heading actually gets.
+        self.assertEqual(refine._ac_heading(_phrase(100)), _phrase(100))
+        self.assertLessEqual(len(refine._ac_heading(_phrase(101))), 100)
+        self.assertNotEqual(refine._ac_heading(_phrase(101)), _phrase(101))
+
+    def test_refine_seeded_story_ac_heading_is_truncated_on_the_real_path(self) -> None:
+        # End to end: a single-story refine seeds the STORY's ACs from the request's
+        # criteria, and the `### ACn:` heading it writes is the truncated one.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            long_criterion = _phrase(140)
+            _cr(root, "CR0009", [long_criterion])
+            res = refine.refine(root, "CR0009", "One story epic", [("Only", 3, None)])
+            story = sdlc_md.find_by_id(root, res["stories"][0])[0]
+            heading = next(ln for ln in story.read_text(encoding="utf-8").splitlines()
+                           if ln.startswith("### AC1:"))
+            title = heading[len("### AC1:"):].strip()
+            self.assertLessEqual(len(title), 100)
+            self.assertTrue(long_criterion.startswith(title))
+
+
+class EpicTshirtBandTests(unittest.TestCase):
+    """BG0233: the T-shirt Size an epic is born with, derived from its stories' point
+    total. Pinned at every band EDGE - a no-op mapper or an off-by-one band shows only
+    there - and once through the real creation path, so the derivation and the field it
+    lands in are both covered."""
+
+    def test_refine_tshirt_bands_hold_at_each_edge(self) -> None:
+        for total, size in ((0, "S"), (1, "S"), (3, "S"), (4, "M"), (8, "M"),
+                            (9, "L"), (20, "L"), (21, "XL"), (100, "XL")):
+            self.assertEqual(refine._tshirt_for(total), size,
+                             f"{total} points must derive Size {size}")
+
+    def test_refine_epic_is_born_with_the_size_its_points_derive(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0005", ["a criterion"])
+            # 5 points total sits in the M band; 21 in XL. Both through `refine`, so the
+            # derived Size is read off the epic on disk, not off the helper.
+            m_epic = refine.refine(root, "CR0005", "Small batch",
+                                   [("A", 2, None), ("B", 3, None)])["epic"]
+            _cr(root, "CR0006", ["another criterion"])
+            # Captured, not silenced: a 13-point unit is above the split threshold, so the
+            # filer warns. That warning is correct and wanted - it is asserted below - but a
+            # green suite must say nothing, or a real error hides in the noise.
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                xl_epic = refine.refine(root, "CR0006", "Large batch",
+                                        [("C", 8, None), ("D", 13, None)])["epic"]
+            self.assertIn("should be SPLIT", buf.getvalue(),
+                          "the over-threshold unit was written without the split warning")
+            for epic_id, size in ((m_epic, "M"), (xl_epic, "XL")):
+                text = sdlc_md.find_by_id(root, epic_id)[0].read_text(encoding="utf-8")
+                self.assertEqual(sdlc_md.read_size(text), size,
+                                 f"{epic_id} must be born Size {size}")
 
 
 class Md024HelperTests(unittest.TestCase):

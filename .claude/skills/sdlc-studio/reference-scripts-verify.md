@@ -120,7 +120,10 @@ Executes AC verifiers defined in story files and updates each AC's
   calls (`npm test -- ... -t`, `curl ... returns N`), nudging to the DSL
 - `ts-check --spec <ts>`: validate a test-spec's AC Coverage Matrix is not decorative -
   every AC mapped to a passing test case, no placeholders; `--verify-report` cross-checks the
-  matrix's claimed status against the live report
+  matrix's claimed status against the live report. A spec that is not there is **refused**
+  (exit 2, the path named on stderr) rather than read as an empty one: a typo'd `--spec`
+  used to produce a clean matrix and exit 0, so a broken invocation passed as green. Exit 1
+  stays "a matrix with findings", so the two are distinguishable by exit code alone
 - `epic-ts --epic EPxxxx`: require an epic to have a test-spec (linked by its `Epic:` field)
   whose matrix passes `ts-check` - the hard epic-scope TS requirement, gated by
   `quality.epic_requires_test_spec` (default true; single-story work is exempt)
