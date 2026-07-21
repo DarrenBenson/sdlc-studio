@@ -105,6 +105,14 @@
 - **A self-report is not a measurement, and a ledger that cannot tell them apart is worse than one
   that holds neither.** Recording provenance was the constraint that made BG0245 safe rather than a
   quiet downgrade of every entry in the ledger.
+- **Fix the prose AND the thing the prose was wrong about.** MINOR 4 was a docstring claiming a
+  bound the code did not provide. Correcting only the sentence would have been honest and would
+  have left 500 registrations producing one 76KB entry. The repair measured that first, then
+  bounded it, so the claim became true rather than merely withdrawn.
+- **Say "not applied" rather than counting it as survived.** One mutant in the repair round hit an
+  ambiguous two-occurrence anchor and did not change the file. A mutation that does not apply is
+  indistinguishable from a surviving mutant unless the harness asserts the bytes changed, and this
+  project has recorded that near-miss before.
 - **A fix that rescues the value can leave the reason with the original defect.** BG0244 taught
   the velocity row to preserve a measured `actual_tokens` across a re-record, and left the Note
   column - created specifically to explain a blank - regenerated unconditionally. The bug it was
