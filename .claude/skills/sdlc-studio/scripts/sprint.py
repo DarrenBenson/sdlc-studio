@@ -903,6 +903,11 @@ def _token_forecast(root: Path, batch: list[dict]) -> dict:
 HISTORY_PER_UNIT = "per-unit"        # telemetry per unit - the variance between units is visible
 HISTORY_SPRINT_LEVEL = "sprint-level"  # sprint total / units - per-unit variance is HIDDEN
 
+#: The velocity row's provenance mark for a TYPED total. `basis` answers what the number was
+#: divided by; this answers where it came from, and only one of the two can tell a measurement
+#: from a claim. A row recorded before the column existed carries no mark and gets none here.
+HISTORY_TYPED_SOURCE = "supplied"
+
 
 def batch_history(repo_root: Path | str) -> list[dict]:
     """What sprints have ACTUALLY cost, per sprint, oldest first - the plan's real cost input.
@@ -922,6 +927,13 @@ def batch_history(repo_root: Path | str) -> list[dict]:
     figure is the total divided by the units, so a sprint where one unit ate half the budget
     looks identical to one where the spend was even. Each row therefore carries its `basis`, and
     the renderer prints it - the label is what keeps the two kinds of evidence apart.
+
+    It also carries its `source`, because `basis` answers the wrong question for the second
+    cost of that inclusion. A sprint-level total is either read off the harness meter or TYPED
+    by an operator, and the divisor is identical either way, so a keyed-in number reached this
+    block reading exactly like a captured one. `supplied` is a claim about what a sprint cost;
+    `harness` and `per-unit` are measurements of it. A row written before the velocity history
+    recorded provenance carries None, which is unrecorded and is never read as either.
 
     The divisor is the measured-unit count where there is one, because a runner-era sprint that
     delivered 7 units and recorded telemetry for 5 is evidence about those 5; otherwise it is
@@ -943,7 +955,11 @@ def batch_history(repo_root: Path | str) -> list[dict]:
         else:
             continue          # no divisor of either kind - a per-unit cost cannot be derived
         out.append({"id": r.get("id"), "units": units, "tokens": int(actual),
-                    "per_unit": int(actual / units), "basis": basis})
+                    "per_unit": int(actual / units), "basis": basis,
+                    # Carried, never derived from `basis`: a sprint-level total is a harness
+                    # capture or an operator's typed figure, and the divisor cannot tell them
+                    # apart. None is unrecorded, and unrecorded is not a third measurement.
+                    "source": r.get("source") or None})
     return out
 
 
@@ -1826,14 +1842,20 @@ def _render_token_forecast(data: dict) -> None:
         shown = hist[-4:]
         print("  batch history (what sprints ACTUALLY cost - the real planning input):")
         for h in shown:
+            src = h.get("source")
             print(f"    {h['id']}: {h['units']} unit(s), {h['tokens']:,} tokens "
-                  f"({h['per_unit']:,}/unit, {h.get('basis', HISTORY_SPRINT_LEVEL)})")
+                  f"({h['per_unit']:,}/unit, {h.get('basis', HISTORY_SPRINT_LEVEL)}"
+                  f"{', ' + src if src else ''})")
         # Only when one is on screen: a caveat printed over a block it is not about is noise,
         # and noise on a line that is usually fine is how a real caveat stops being read.
         if any(h.get("basis") == HISTORY_SPRINT_LEVEL for h in shown):
             print(f"    a {HISTORY_SPRINT_LEVEL} row divides the sprint total by its units - "
                   f"real cost, but the variance between units is hidden, so one unit may have "
                   f"taken far more than the figure shown")
+        if any(h.get("source") == HISTORY_TYPED_SOURCE for h in shown):
+            print(f"    a `{HISTORY_TYPED_SOURCE}` total was TYPED by an operator, not read off "
+                  f"a meter - a claim about what the sprint cost, and the only row kind here "
+                  f"that nothing measured")
     cap = data.get("capacity") or {}
     fc = cap.get("forecast") or {}
     band = (f" (plausible {fc['low']:,}-{fc['high']:,})"

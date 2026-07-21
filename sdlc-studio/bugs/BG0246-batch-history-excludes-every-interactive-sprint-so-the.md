@@ -57,9 +57,33 @@ counter is stuck for want of per-unit actuals, which an interactive sprint never
 means changing where the rate is measured from, which D0047 did not rule on. Filed separately
 rather than done quietly here.
 
+### Repair round 1: a typed total could pass as a measured one
+
+The independent review raised a MINOR the inclusion created. Before it, `measured > 0` was the
+entry condition, so every row in "what sprints ACTUALLY cost" was machine-measured. A
+sprint-level row can now reach the block from two very different places - the harness meter, or
+an operator typing `accuracy --tokens N` - and `basis` cannot tell them apart, because `basis`
+is a fact about the DIVISOR. A keyed-in figure rendered as `sprint-level`, indistinguishable
+from a capture, in the block the plan quotes as its cost picture. This is the same
+claim-versus-measurement distinction BG0245 spent most of its effort establishing for the
+mutation ledger, left unmade for the token ledger in the same sprint.
+
+The velocity history now records a `Source` for the Actual cell, decided where the figure is
+fetched rather than inferred afterwards: `per-unit` (summed from per-unit telemetry),
+`harness` (read off the transcript meter by `--tokens-from-harness`), `supplied` (typed into
+`accuracy --tokens N`). Re-using an already-recorded actual keeps the provenance that actual
+was recorded under, so a close re-run cannot relabel a capture as a claim. `batch_history`
+carries it through and the renderer prints it on the row, with one caveat under the block
+naming `supplied` as the only row kind nothing measured.
+
+A row written before the column existed carries no Source, and unrecorded is what it stays.
+Back-filling one would invent the very distinction the column exists to record, and the table
+is parsed by column NAME precisely so a column can be added without rewriting a historical row.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-21 | sdlc-studio | Filed |
 | 2026-07-21 | claude | Fixed per D0047: interactive sprints included, per-unit derived from the sprint total, every row labelled per-unit or sprint-level, and the hidden-variance caveat printed when a derived row is on screen. 7 mutants applied, 7 killed. The rate counter is a DIFFERENT filter and is unchanged at 3 - stated in the Resolution rather than left implied. |
+| 2026-07-21 | claude | Review REJECT, repair round 1. MINOR: the inclusion admitted operator-TYPED totals into "what sprints actually cost" with no provenance mark, so a keyed-in number rendered identically to a harness capture. The velocity history now records a `Source` (`per-unit` / `harness` / `supplied`, absent = unrecorded), `batch_history` carries it and the renderer names a typed total as a claim. 3 mutants applied by hand, 3 killed; a 4th SURVIVED (the per-row mark was pinned only by the caveat line beneath it) and the test was strengthened until it died. |

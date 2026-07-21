@@ -1436,6 +1436,147 @@ class AnUnratedSprintRecordsNoTokenActual(InteractiveSprintFixture):
         self.assertEqual(retro.velocity_history(str(self.root))[0]["model"], "claude-opus-4-8")
 
 
+class AReasonSurvivesTheRowItExplains(InteractiveSprintFixture):
+    """The Note column was created so a hand-written reason would stop being lost. It rescued
+    the FIGURE across a re-record and left the REASON regenerated unconditionally, so a
+    recorded reason was destroyed by the next write of its OWN row - the exact behaviour the
+    column exists to end, reproduced inside it. Every earlier test wrote the note on one row
+    and then recorded a DIFFERENT one, so the same-row case was never exercised.
+    """
+
+    _cells = AnUnratedSprintRecordsNoTokenActual._cells
+
+    #: A live row's reason, carrying a figure recorded nowhere else in the project.
+    ON_DISK = ("not-attributable: third sprint in one session, harness capture is "
+               "session-cumulative; raw capture 5,672,289")
+
+    def _row(self, note: str, actual: str = "-") -> None:
+        path = retro.velocity_path(str(self.root))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(retro.VELOCITY_HEADER +
+                        f"| RETRO9002 | 2026-07-20 | 2 | 0 | 2 | 8 | 0 | {actual} | - | - | "
+                        f"0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | {note} |\n",
+                        encoding="utf-8")
+
+    def test_a_recorded_reason_survives_a_rewrite_of_its_own_row(self) -> None:
+        self._row(self.ON_DISK)
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        self.assertIn("5,672,289", self._cells()["note"],
+                      "the row's own re-record destroyed the reason recorded against it")
+
+    def test_the_generic_reason_is_still_written_where_none_was_recorded(self) -> None:
+        """The positive control: preservation must not become a refusal to write a reason at
+        all, or a blank cell would go back to being indistinguishable from an oversight."""
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        self.assertIn("not attributable", self._cells()["note"].lower())
+
+    def test_filling_the_cell_drops_the_reason_it_was_blank(self) -> None:
+        """The other side: a reason explains a BLANK cell. Carried onto a cell that now holds a
+        figure it would contradict the number beside it."""
+        self._row(self.ON_DISK)
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens", "800000")
+        cells = self._cells()
+        self.assertEqual(cells["actual_tokens"], "800,000")
+        self.assertEqual(cells["note"], "-")
+
+
+class ARetractionSaysItWasOne(InteractiveSprintFixture):
+    """`--tokens 0` is the documented retraction: an operator withdrawing a figure they know to
+    be wrong. `record_velocity` reasons about it by name, `_actual_note` did not, so the row
+    published `no sprint total was supplied` about the one case where one deliberately was -
+    and it reads to a human as nobody having looked yet."""
+
+    _cells = AnUnratedSprintRecordsNoTokenActual._cells
+
+    def test_a_retraction_is_not_published_as_an_absent_total(self) -> None:
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens", "800000")
+        self.assertEqual(self._cells()["actual_tokens"], "800,000")
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens", "0")
+        cells = self._cells()
+        self.assertEqual(cells["actual_tokens"], "-", "the retraction must clear the cell")
+        self.assertNotIn("no sprint total was supplied", cells["note"],
+                         "a total was supplied, as 0, on purpose")
+        self.assertIn("retract", cells["note"].lower())
+
+    def test_a_retraction_replaces_the_reason_the_row_was_carrying(self) -> None:
+        """The interaction with the preservation above: preserving a reason must not outrank
+        this run's own statement, or a retraction would be recorded under the old reason."""
+        AReasonSurvivesTheRowItExplains._row(self, AReasonSurvivesTheRowItExplains.ON_DISK,
+                                             actual="800,000")
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens", "0")
+        cells = self._cells()
+        self.assertEqual(cells["actual_tokens"], "-")
+        self.assertIn("retract", cells["note"].lower())
+        self.assertNotIn("5,672,289", cells["note"])
+
+
+class TheActualCellSaysWhereItsFigureCameFrom(InteractiveSprintFixture):
+    """A sprint-level total is either read off the harness meter or typed in by an operator,
+    and the history recorded no difference between them, so a typed number reached the plan's
+    cost picture reading exactly like a measured one. The Source column is the same
+    claim-versus-measurement mark the mutation ledger carries."""
+
+    _cells = AnUnratedSprintRecordsNoTokenActual._cells
+
+    def test_a_typed_total_is_recorded_as_supplied(self) -> None:
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens", "800000")
+        self.assertEqual(self._cells()["source"], retro.SOURCE_SUPPLIED)
+
+    def test_a_harness_capture_is_recorded_as_a_capture(self) -> None:
+        self._session("s1.jsonl", {"input_tokens": 60_000})
+        self._open_run()
+        self._append("s1.jsonl", {"input_tokens": 800_000})
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens-from-harness")
+        cells = self._cells()
+        self.assertEqual(cells["actual_tokens"], "800,000")
+        self.assertEqual(cells["source"], retro.SOURCE_HARNESS)
+
+    def test_a_reused_capture_keeps_the_source_it_was_recorded_under(self) -> None:
+        """The close re-runs against a row it already filled. Reusing the figure while
+        restamping its source `supplied` would convert a measurement into a claim."""
+        self._session("s1.jsonl", {"input_tokens": 60_000})
+        self._open_run()
+        self._append("s1.jsonl", {"input_tokens": 800_000})
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens-from-harness")
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens-from-harness")
+        self.assertEqual(self._cells()["source"], retro.SOURCE_HARNESS)
+
+    def test_a_row_written_before_the_column_existed_records_no_source(self) -> None:
+        """Unrecorded is its own answer. Back-filling one would invent provenance for every
+        historical row at once, which is the failure being fixed."""
+        path = retro.velocity_path(str(self.root))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        # the table exactly as it stood before the column was added, header included
+        path.write_text(
+            "| Retro | Date | Units | Measured | Forecast | Points | Estimate (tokens, "
+            "plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | "
+            "Wall (s) | Constants | Sample | Model | Note |\n"
+            + "| --- " * 16 + "|\n"
+            "| RETRO9002 | 2026-07-20 | 2 | 0 | 2 | 8 | 0 | 800,000 | - | 100,000 | 0 | - | "
+            "- | - | - | - |\n", encoding="utf-8")
+        row = retro.velocity_history(str(self.root))[0]
+        self.assertEqual(row["actual_tokens"], 800_000)
+        self.assertIsNone(row["source"])
+
+    def test_a_per_unit_sum_is_recorded_as_telemetry(self) -> None:
+        """The strongest of the three, and the one that must not be confused with a typed
+        sprint total: every unit carried its own record."""
+        import telemetry as tel
+        tel.record_forecasts(str(self.root), [
+            {"id": uid, "tokens": 400_000, "points": 4, "seed": 0, "seed_source": "none",
+             "constants": {"TOKENS_PER_POINT": 25_000},
+             "planned_at": "2026-07-20T09:00:00+00:00"} for uid in ("BG0001", "BG0002")])
+        path = self.root / "sdlc-studio" / ".local" / "telemetry.jsonl"
+        with path.open("a", encoding="utf-8") as fh:
+            for uid, spend in (("BG0001", 300_000), ("BG0002", 500_000)):
+                fh.write(json.dumps({"id": uid, "type": "bug", "tokens": spend,
+                                     "model": "m1"}) + "\n")
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        cells = self._cells()
+        self.assertEqual(cells["actual_tokens"], "800,000")
+        self.assertEqual(cells["source"], retro.SOURCE_PER_UNIT)
+
+
 class PartialMeasurementIsExcludedFromTheRate(AccuracyBase):
     """BG0218's guard rail: once the Points column is the DELIVERED series, a sprint whose
     token sum covers only SOME units must not divide that partial sum by the full points."""

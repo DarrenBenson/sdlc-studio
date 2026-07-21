@@ -49,6 +49,12 @@ DEFAULT_MAX_MUTATIONS = 25
 #: Entries are one per target (a later run on the same file supersedes the earlier), so the
 #: ledger grows with the number of distinct files ever mutated, not with the number of runs.
 LEDGER_LIMIT = 200
+#: The OTHER bound, on the other axis. `register` accumulates into one entry per (target,
+#: content), so a builder registering every mutant they apply across a sprint grows that one
+#: entry's `mutants` list while the entry count stays at 1 - LEDGER_LIMIT never fires on it.
+#: The newest are kept, oldest first out, as everywhere else here; the entry's `summary`
+#: counts are never truncated, so what was dropped is the description, never the tally.
+MUTANT_LIMIT = 100
 _RUN_TIMEOUT = 600  # seconds per test run - a hung mutant must not hang the gate
 
 # WHERE a ledger entry's evidence came from. A `measured` entry is the record of a run that
@@ -654,9 +660,14 @@ def _load_ledger(path: Path) -> tuple[dict, bool]:
 
 
 def _store_ledger(path: Path, state: dict, entries: list[dict], reset: bool) -> dict:
-    """Bound, write, and report. ONE truncation point, so every writer meets the same limit -
-    a per-unit practice registering every mutant it applies would otherwise grow it without
-    end. An empty result over a ledger that does not exist yet writes nothing."""
+    """Bound the ENTRY COUNT, write, and report. ONE truncation point for that axis, so every
+    writer meets the same limit however it arrived here.
+
+    It is not the only axis. A registration accumulates into an existing entry rather than
+    adding one, so this bound never fires on a repeated `register` against unchanged content -
+    `register_mutant` bounds that entry's own mutant list at MUTANT_LIMIT before calling here.
+
+    An empty result over a ledger that does not exist yet writes nothing."""
     dropped_now = max(0, len(entries) - LEDGER_LIMIT)
     state["entries"] = entries[dropped_now:]
     state["dropped"] += dropped_now
@@ -691,6 +702,12 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     starts the entry again, because the earlier claim was about bytes that no longer exist.
     Registrations on unchanged content ACCUMULATE, since a builder applies many mutants to one
     file across a sprint and overwriting per call would leave the ledger permanently reading 1.
+    Accumulation is bounded at MUTANT_LIMIT descriptions per entry, oldest out - the entry
+    count never grows on this path, so the ledger's own bound cannot reach it.
+
+    A `survived` verdict is a FINDING, not a filing: the test named against it does not pin the
+    behaviour that was mutated. The gate's coverage lane reads it back out of the entry's
+    summary and counts it, so recording bad news is never quieter than recording nothing.
 
     Raises ValueError on a target that cannot be read, an unknown verdict, or an empty
     description: an entry that names neither what was mutated nor what judged it is unauditable,
@@ -740,10 +757,19 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     entry.setdefault("mutants", []).append(record)
     entry["summary"]["applied"] += 1
     entry["summary"][verdict] += 1
+    # The list is what grows here, and the ledger's entry bound cannot reach it: this entry is
+    # rewritten, never added. Bounded on its own axis, newest kept, and what was dropped is
+    # recorded - the summary tally below is never truncated, so the COUNT of what was
+    # registered stays exact even when the oldest descriptions have gone.
+    over = max(0, len(entry["mutants"]) - MUTANT_LIMIT)
+    if over:
+        entry["mutants"] = entry["mutants"][over:]
+        entry["dropped_mutants"] = int(entry.get("dropped_mutants") or 0) + over
     entries.append(entry)
     written = _store_ledger(lpath, state, entries, reset)
     return {**written, "target": rel, "verdict": verdict,
-            "registered": len(entry["mutants"])}
+            "registered": entry["summary"]["applied"],
+            "retained": len(entry["mutants"])}
 
 
 def select_files(repo_root: Path | str, files=None, since: str | None = None,
@@ -1017,6 +1043,13 @@ def cmd_register(args: argparse.Namespace) -> int:
     print(f"mutation: registered a SELF-REPORTED mutant on {res['target']} "
           f"({res['verdict']}) - {res['registered']} registered mutant(s) on this content. "
           f"Nothing was re-run here, so the ledger holds this as a claim, not a measurement")
+    if res["verdict"] == "survived":
+        print(f"  FINDING: the mutant SURVIVED, so {args.test} does not pin the behaviour it "
+              f"was applied to. The gate's coverage lane counts this - fix the test or file it")
+    if res["registered"] > res["retained"]:
+        print(f"  note: this entry keeps the {MUTANT_LIMIT} most recent mutant descriptions; "
+              f"{res['registered'] - res['retained']} older one(s) have been dropped (the "
+              f"counts are not truncated)")
     if res.get("dropped_now"):
         print(f"  note: the mutation ledger dropped its {res['dropped_now']} oldest "
               f"entr(ies) at the {LEDGER_LIMIT}-entry bound "

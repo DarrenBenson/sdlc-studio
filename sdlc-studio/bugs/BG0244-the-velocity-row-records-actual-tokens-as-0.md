@@ -71,9 +71,36 @@ Not fixed, and NOT claimed to be: the `Estimate` column has the identical shape 
 rated units, so `0` for a sprint that rated none) and 12 of the 17 live rows carry that `0`. It
 is outside this bug's scope, it is the same class of falsehood, and it is worth its own bug.
 
+### Repair round 1: the review found the fix reproducing the defect inside the new column
+
+The independent review REJECTed the sprint on two findings in the work above, both in
+`_actual_note`/`record_velocity`.
+
+**The `Note` was destroyed by the next write of its OWN row.** Point 1 preserved a previously
+recorded `actual_tokens` across a re-run; the note beside it was regenerated unconditionally,
+so a recorded reason - and any number it carried - was replaced by the generic sentence. AC3
+claimed the correction "survives a whole-file rewrite", which held only for rewrites triggered
+by OTHER rows. Every note test wrote the note on one row and then recorded a different one, so
+the same-row case was never exercised. Reproduced against a copy of the live history:
+`accuracy --id RETRO0063 --write` replaced `raw capture 5,672,289` - a figure recorded nowhere
+else in the project - with the generic sentence. `_actual_note` now takes the reason already
+recorded against the row and returns it when this run has nothing more specific to say. A cell
+that has since been FILLED still drops its reason: a reason explains a blank.
+
+**An explicit `--tokens 0` published a false reason.** The retraction path is the one case
+`record_velocity` reasons about by name (`sprint_tokens_supplied`), and `_actual_note` fell
+through it into a sentence asserting "no sprint total was supplied". A total was supplied,
+deliberately, as zero, to withdraw a wrong figure - and to a human the generic sentence reads
+as nobody having looked yet. The retraction now writes its own reason, and it outranks a
+preserved one, because it is this run's own statement about the cell.
+
+Order in `_actual_note` is now: this run's own statement (the close's not-attributable reason,
+then a retraction), then the reason already on the row, then the generic fact.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-21 | sdlc-studio | Filed |
 | 2026-07-21 | claude | Fixed: writer clears the empty-set sum, `Note` column carries the reason, reader treats a historical `0` as absent and salvages prose out of the Model cell, and `retro.py velocity` stopped deriving `0/pt` from an absent actual. 8 mutants applied by hand, 8 killed. |
+| 2026-07-21 | claude | Review REJECT, repair round 1. Two MAJORs, both reproducing this bug inside its own fix: a recorded `Note` was overwritten by the re-record of its own row (RETRO0063's `raw capture 5,672,289` destroyed, proven against a copy and now proven to survive), and `--tokens 0` published "no sprint total was supplied" about the one case where one deliberately was. Same-row re-record now has a test; 4 mutants applied by hand across the two branches, 4 killed. |

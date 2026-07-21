@@ -407,11 +407,17 @@ not exist, so a `0` there could only ever have been a sum over an empty set of m
 published as though it were a measurement. Rows written before that was fixed carried exactly
 that, and the reader treats such a `0` as the absence it is - it is not a data point, and no
 rate is derived from it.
+
+Read the SOURCE column before quoting an Actual as evidence. `per-unit` is a sum of per-unit
+telemetry and `harness` is read off the harness meter; both are machine reads. `supplied` is a
+figure an operator TYPED, which is a claim about what a sprint cost, not a measurement of it.
+An empty Source is unrecorded - the rows written before the column existed - and unrecorded is
+what it stays, because back-filling provenance would invent the very thing the column records.
 -->
 # Velocity history
 
-| Retro | Date | Units | Measured | Forecast | Points | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Constants | Sample | Model | Note |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Retro | Date | Units | Measured | Forecast | Points | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Constants | Sample | Model | Note | Source |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 """
 
 # The history is parsed by COLUMN NAME, not position, so a row written before the plan-time
@@ -429,7 +435,7 @@ VELOCITY_COLUMNS = (
     ("forecast", "forecast"), ("points", "points"), ("estimate", "estimate"),
     ("actual", "actual_tokens"), ("ratio", "ratio"), ("oversized", "oversized"),
     ("wall", "wall_time_s"), ("constants", "constants"), ("sample", "sample"),
-    ("model", "model"), ("note", "note"),
+    ("model", "model"), ("note", "note"), ("source", "source"),
 )
 #: A sprint whose rated units were delivered by more than one model. Its ratio is not recorded.
 MODEL_MIXED = "mixed"
@@ -1330,7 +1336,10 @@ def velocity_history(root) -> list[dict]:
                     "constants": parse_constants(cell("constants")),
                     "sample": cell("sample") or None,
                     "model": model if model and model != "-" else None,
-                    "note": note if note and note != "-" else None})
+                    "note": note if note and note != "-" else None,
+                    # Absent on every row written before the column existed, and absent is what
+                    # it stays. None reads as UNRECORDED downstream, never as a measurement.
+                    "source": cell("source").strip() or None})
     return sorted(out, key=lambda r: r["id"])
 
 
@@ -1503,19 +1512,67 @@ def _note_cell(text) -> str:
     return flat or "-"
 
 
-def _actual_note(res: dict, actual) -> str | None:
+def _actual_note(res: dict, actual, existing=None) -> str | None:
     """WHY this row's Actual (tokens) cell is blank, or None when it is not blank.
 
     A blank with no reason beside it is indistinguishable from an oversight, and this project
-    has already published the alternative: a `0` that read as a measurement. The close's own
-    not-attributable reason is preferred when it has one - it names the run, the meter, or the
-    baseline that was missing - and a plain re-run with nothing measured falls back to the
-    generic statement of the same fact."""
+    has already published the alternative: a `0` that read as a measurement.
+
+    THIS RUN'S OWN STATEMENT FIRST, then what the row already carries, then the generic fact:
+
+    - the close's not-attributable reason, which names the run, the meter, or the baseline that
+      was missing;
+    - an explicit `--tokens 0`, which is an operator RETRACTING a figure they know to be wrong.
+      A total was supplied, deliberately, and the generic sentence below says the opposite;
+    - the reason already recorded against this row. The column was added to stop a hand-written
+      reason being lost, and regenerating it unconditionally lost it on the row's own next
+      write - a rescued figure beside an overwritten reason for it. A recorded reason for a
+      cell that is still blank is still the reason it is blank;
+    - the generic statement, for a row that has never carried one.
+    """
     if actual is not None:
         return None
-    return (res.get("token_capture") or "").strip() or (
+    capture = (res.get("token_capture") or "").strip()
+    if capture:
+        return capture
+    if (res.get("batch") or {}).get("sprint_tokens_supplied"):
+        return ("retracted: a sprint total WAS supplied, as 0, withdrawing a figure recorded "
+                "here in error. The cell is blank by instruction, not for want of a look")
+    recorded = " ".join(str(existing or "").split())
+    return recorded or (
         "not attributable: no unit carries per-unit telemetry and no sprint total was "
         "supplied, so the sprint's token cost is unrecorded rather than 0")
+
+
+#: WHERE a row's Actual (tokens) figure came from. Two of the three are machine reads; the
+#: third is an operator's typed claim, and a plan that cannot tell them apart quotes a typed
+#: number as evidence of what a sprint cost. Absent is its own value: a row written before the
+#: column existed records no provenance, and nothing back-fills one for it.
+SOURCE_PER_UNIT = "per-unit"    # summed from per-unit telemetry - only a runner writes it
+SOURCE_HARNESS = "harness"      # read off the harness transcript meter by --tokens-from-harness
+SOURCE_SUPPLIED = "supplied"    # typed by an operator into `accuracy --tokens N`
+#: Not a recorded value: cmd_accuracy's signal that it re-used the figure already on the row,
+#: so whatever provenance that row holds is the provenance of the figure it still holds.
+SOURCE_UNCHANGED = "unchanged"
+
+
+def _actual_source(res: dict, actual, existing=None) -> str | None:
+    """The provenance mark for this row's Actual cell, or None when there is nothing to mark.
+
+    A per-unit sum outranks everything: every unit carried its own record. Otherwise the figure
+    is sprint-level, and the two ways one arrives are not the same evidence."""
+    if actual is None:
+        return None
+    if res.get("n_measured"):
+        return SOURCE_PER_UNIT
+    declared = (res.get("token_source") or "").strip()
+    if declared == SOURCE_UNCHANGED:
+        return existing or None
+    if declared in (SOURCE_HARNESS, SOURCE_SUPPLIED):
+        return declared
+    if (res.get("batch") or {}).get("sprint_tokens_supplied"):
+        return SOURCE_SUPPLIED
+    return existing or None
 
 
 def record_velocity(root, res: dict) -> Path:
@@ -1564,13 +1621,16 @@ def record_velocity(root, res: dict) -> Path:
     # the operator retracting a wrongly recorded actual. It reaches here as
     # `sprint_tokens_supplied` because zero cannot be told from absent by truthiness, and it
     # clears the cell rather than re-quoting the figure being retracted.
+    #
+    # The row as it already stands, read ONCE: the figure, the reason, and the provenance are
+    # three facts about the same cell, and each is preserved by the same rule - this run's own
+    # statement wins, and what is already recorded is never discarded for want of one.
+    existing = next((r for r in history if r["id"] == row["id"]), None)
     if not row["actual_tokens"]:
         if b.get("sprint_tokens_supplied"):
             row["actual_tokens"] = None
-        else:
-            existing = next((r for r in history if r["id"] == row["id"]), None)
-            if existing and existing.get("actual_tokens"):
-                row["actual_tokens"] = existing["actual_tokens"]
+        elif existing and existing.get("actual_tokens"):
+            row["actual_tokens"] = existing["actual_tokens"]
     # Whatever is left falsy here is an ABSENCE, and the cell says so. `b["actual_tokens"]` is
     # a sum over the RATED units, so a sprint that rated none - every interactive sprint -
     # summed an empty set to 0 and published it in a column named Actual (tokens). The
@@ -1578,7 +1638,8 @@ def record_velocity(root, res: dict) -> Path:
     # corrected by hand, and the third correction was overwritten by the next close.
     if not row["actual_tokens"]:
         row["actual_tokens"] = None
-    row["note"] = _actual_note(res, row["actual_tokens"])
+    row["note"] = _actual_note(res, row["actual_tokens"], (existing or {}).get("note"))
+    row["source"] = _actual_source(res, row["actual_tokens"], (existing or {}).get("source"))
     rows = [r for r in history if r["id"] != row["id"]] + [row]
     rows.sort(key=lambda r: r["id"])
 
@@ -1600,7 +1661,8 @@ def record_velocity(root, res: dict) -> Path:
                      f"{_fmt(r['actual_tokens'])} | {ratio} | {_fmt(rate)} | "
                      f"{_fmt(r.get('oversized'))} | {_fmt(r['wall_time_s'])} | "
                      f"{constants_cell(r.get('constants'))} | {sample} | "
-                     f"{r.get('model') or '-'} | {_note_cell(r.get('note'))} |")
+                     f"{r.get('model') or '-'} | {_note_cell(r.get('note'))} | "
+                     f"{r.get('source') or '-'} |")
     path = velocity_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
     sdlc_md.atomic_write(path, "\n".join(lines) + "\n")
@@ -1925,6 +1987,10 @@ def cmd_estimator(args) -> int:
 def cmd_accuracy(args) -> int:
     tokens = getattr(args, "tokens", None)
     capture_note = None
+    # WHERE the figure below came from, decided where it is fetched rather than inferred later.
+    # An explicit `--tokens N` is an operator's typed claim; the branches below overwrite this
+    # with what they actually did.
+    token_source = SOURCE_SUPPLIED if tokens is not None else None
     if tokens is None and getattr(args, "tokens_from_harness", False):
         # The close's path: capture the harness-tracked total itself. An actual already on
         # the sprint's row is NEVER re-stamped from a (possibly different) session - the
@@ -1936,6 +2002,9 @@ def cmd_accuracy(args) -> int:
             # Reused, not merely skipped: the upsert rewrites the whole row, so dropping the
             # figure here would erase the recorded actual while claiming to protect it.
             tokens = existing["actual_tokens"]
+            # The figure is the one already on the row, so its provenance is too. Re-stamping
+            # it from this path would relabel a harness capture as an operator's typed claim.
+            token_source = SOURCE_UNCHANGED
             capture_note = (f"token actual already recorded for {args.id} "
                             f"({existing['actual_tokens']:,}) - reused, not re-captured; "
                             f"correct it with an explicit `--tokens N`")
@@ -1946,6 +2015,7 @@ def cmd_accuracy(args) -> int:
             cap = run_attributed_tokens(args.root, args.id)
             if cap["tokens"]:
                 tokens = cap["tokens"]
+                token_source = SOURCE_HARNESS
                 capture_note = (f"token actual captured from the harness transcript: "
                                 f"{tokens:,} ({cap['basis']}; {cap['source']})")
             else:
@@ -1955,6 +2025,8 @@ def cmd_accuracy(args) -> int:
                                 f"`accuracy --tokens N` if you have one")
     res = accuracy(args.root, args.id, sprint_tokens=tokens,
                    elapsed_hours=getattr(args, "elapsed_hours", None))
+    if token_source:
+        res["token_source"] = token_source
     if capture_note:
         res["token_capture"] = capture_note
         if args.format != "json":

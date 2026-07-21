@@ -791,6 +791,35 @@ class RegisterTests(unittest.TestCase):
                     mut.register_mutant(root, root / "target.py", "m", "t", bad)
             self.assertFalse((root / "sdlc-studio" / ".local" / "mutation-runs.json").exists())
 
+    def test_repeated_registration_on_one_file_is_bounded_too(self) -> None:
+        """`_store_ledger` bounds the ENTRY count and named this writer as the reason it does,
+        but registrations on unchanged content accumulate into ONE entry's mutant list: the
+        entry count never grows, the truncation never fires, and the list grows without end.
+        The docstring described a bound that was not on the path it named."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            for i in range(mut.MUTANT_LIMIT + 25):
+                mut.register_mutant(root, root / "target.py", f"mutant {i}", "t", "killed")
+            entry = self._ledger(root)["entries"][0]
+            self.assertEqual(len(entry["mutants"]), mut.MUTANT_LIMIT)
+            self.assertEqual(entry["dropped_mutants"], 25)
+            # the newest survive: the oldest go first, as everywhere else in this ledger
+            self.assertEqual(entry["mutants"][-1]["mutant"],
+                             f"mutant {mut.MUTANT_LIMIT + 24}")
+
+    def test_the_count_reported_is_every_mutant_registered_not_the_ones_retained(self) -> None:
+        """Truncating the list must not quietly reduce the number of mutants the builder is
+        told they registered - that would be the ledger under-reporting its own evidence."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            total = mut.MUTANT_LIMIT + 3
+            for i in range(total):
+                res = mut.register_mutant(root, root / "target.py", f"m{i}", "t", "killed")
+            self.assertEqual(res["registered"], total)
+            self.assertEqual(self._ledger(root)["entries"][0]["summary"]["applied"], total)
+
     def test_a_registered_ledger_stays_bounded(self) -> None:
         """The bound is the ledger's, not the writer's: registration must go through the same
         truncation, or a per-unit practice logging every mutant grows it without limit."""

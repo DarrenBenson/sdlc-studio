@@ -273,11 +273,20 @@ def _mutation_coverage(root: str) -> dict:
     printed one figure over both kinds would let a claim read exactly like a measurement and so
     downgrade every measured entry in the ledger. A measured entry outranks a registered one on
     the same content - the stronger evidence is what the file has.
+
+    A registered SURVIVOR is read too, and is a finding. `survived` means the test the builder
+    wrote does not pin the behaviour they mutated, which is the worst news the practice can
+    produce - and it reached the ledger and stopped there, because nothing here read anything
+    from an entry but its target, hash and provenance. The file moved from `no evidence` to
+    `covered` and the lane got QUIETER for saying so, which is the incentive running backwards.
+    Counting it keeps a self-reported survivor at least as loud as registering nothing at all.
+    Survivors from a MEASURED entry are not counted here: those are the report lane's, and
+    counting them in both places would report one run's findings twice.
     """
     import hashlib
     rootp = Path(root)
-    #: file key -> provenance -> the hash recorded under it
-    entries: dict[str, dict[str, str | None]] = {}
+    #: file key -> provenance -> {hash, survived} as that provenance recorded them
+    entries: dict[str, dict[str, dict]] = {}
 
     def _key(p) -> str:
         return _key_under(root, p)
@@ -288,8 +297,12 @@ def _mutation_coverage(root: str) -> dict:
             loaded = json.loads(ledger.read_text(encoding="utf-8"))
             for e in loaded.get("entries", []):
                 if isinstance(e, dict) and e.get("target"):
-                    entries.setdefault(_key(e["target"]), {})[_entry_provenance(e)] = \
-                        e.get("hash")
+                    summary = e.get("summary")
+                    survived = (summary or {}).get("survived") if isinstance(summary, dict) else 0
+                    entries.setdefault(_key(e["target"]), {})[_entry_provenance(e)] = {
+                        "hash": e.get("hash"),
+                        "survived": int(survived or 0) if isinstance(survived, (int, float))
+                        else 0}
         except (ValueError, OSError, TypeError, AttributeError):
             pass          # a corrupt ledger claims no coverage; it never breaks the lane
     surface = _mutation_changed_surface(root)
@@ -308,6 +321,7 @@ def _mutation_coverage(root: str) -> dict:
         return {"known": False, "count": 0, "detail": ""}
     covered: list[str] = []
     self_reported: list[str] = []
+    survivors: list[str] = []
     stale: list[str] = []
     uncovered: list[str] = []
     for display, key in judged:
@@ -323,12 +337,16 @@ def _mutation_coverage(root: str) -> dict:
         def _matches(provenance: str, seen=recorded, now=current) -> bool:
             # a recorded None is not evidence: paired with a target that cannot be read now
             # either, two unknowns would compare equal and read as "unchanged since the run"
-            return seen.get(provenance) is not None and now == seen[provenance]
+            rec = seen.get(provenance) or {}
+            return rec.get("hash") is not None and now == rec["hash"]
         if _matches(_PROVENANCE_MEASURED):
             covered.append(display)
         elif _matches(_PROVENANCE_REGISTERED):
             covered.append(display)
             self_reported.append(display)
+            n = recorded[_PROVENANCE_REGISTERED]["survived"]
+            if n:
+                survivors.append(f"{display} ({n})")
         else:
             stale.append(display)
     detail = f"mutation evidence covers {len(covered)}/{len(judged)} file(s) of the {label}"
@@ -336,11 +354,15 @@ def _mutation_coverage(root: str) -> dict:
         n = len(self_reported)
         detail += (f"; {n} of those {'is' if n == 1 else 'are'} self-reported (mutants "
                    f"registered by hand, not a measured run): {_name_list(self_reported)}")
+    if survivors:
+        detail += (f"; SELF-REPORTED SURVIVOR(S) - a registered mutant the named test did NOT "
+                   f"catch, so that behaviour is unpinned: {_name_list(survivors)}")
     if stale:
         detail += f"; STALE (edited since mutated): {_name_list(stale)}"
     if uncovered:
         detail += f"; no evidence: {_name_list(uncovered)}"
-    return {"known": True, "count": len(stale) + len(uncovered), "detail": detail}
+    return {"known": True, "count": len(stale) + len(uncovered) + len(survivors),
+            "detail": detail}
 
 
 def _mutation_coverage_safe(root: str) -> dict:

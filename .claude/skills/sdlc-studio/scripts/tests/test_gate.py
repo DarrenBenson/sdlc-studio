@@ -1676,6 +1676,93 @@ class MutationProvenanceTests(unittest.TestCase):
             self.assertIn("STALE", lane["detail"])
             self.assertEqual(lane["count"], 1, lane["detail"])
 
+    def _changed(self, t, entries):
+        """One file CHANGED since HEAD, so the lane judges a real surface rather than falling
+        back to whatever the ledger happens to hold. This is the shape the finding was
+        reproduced in, and the fallback shape judges nothing and so proves nothing."""
+        root = self._root(t)
+        gitutil.git(["init", "-q"], cwd=root)
+        (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+        self._commit_all(root)
+        (root / "a.py").write_text("def a():\n    return 2\n", encoding="utf-8")
+        (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+            json.dumps({"version": 1, "dropped": 0, "entries": entries(root)}),
+            encoding="utf-8")
+        (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+            json.dumps(self.CLEAN), encoding="utf-8")
+        return root
+
+    def _registered(self, r, **summary):
+        base = {"applied": 1, "killed": 0, "survived": 0, "errors": 0, "unviable": 0}
+        base.update(summary)
+        return [self._entry("a.py", self._sha(r / "a.py"), provenance="registered",
+                            summary=base)]
+
+    def test_a_self_reported_survivor_is_reported_as_the_finding_it_is(self) -> None:
+        """The one verdict that means "the test you just wrote does not catch this" reached the
+        ledger and stopped there: nothing downstream read a registered entry's summary, so the
+        adverse half of `register` was write-only while its coverage half read loud and clear.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = self._changed(t, lambda r: self._registered(r, survived=1))
+            lane = gate._mutation(str(root))
+            self.assertIn("surviv", lane["detail"].lower(),
+                          f"a registered survivor is unsayable: {lane['detail']}")
+            self.assertIn("a.py", lane["detail"])
+            self.assertGreaterEqual(lane["count"], 1, lane["detail"])
+
+    def test_reporting_a_survivor_is_never_quieter_than_reporting_nothing(self) -> None:
+        """The incentive, which is the actual defect: registering a survivor moved the file
+        from `no evidence` to `covered` and took the finding with it, so the honest builder's
+        lane was quieter than the silent one's. Whatever else changes, that must not."""
+        with tempfile.TemporaryDirectory() as t:
+            silent = gate._mutation(str(self._changed(t, lambda r: [])))
+        with tempfile.TemporaryDirectory() as t:
+            honest = gate._mutation(str(self._changed(t,
+                                                      lambda r: self._registered(r, survived=1))))
+        self.assertIn("no evidence", silent["detail"])      # the fixture judges a real surface
+        self.assertGreaterEqual(silent["count"], 1, silent["detail"])
+        self.assertGreaterEqual(honest["count"], silent["count"],
+                                f"honest={honest['detail']!r} silent={silent['detail']!r}")
+
+    def test_a_registered_kill_still_reads_as_evidence_gained(self) -> None:
+        """The positive control. If every registration counted, the subcommand would be a way
+        to make your own lane worse and nobody would use it - the same incentive, inverted."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._changed(t, lambda r: self._registered(r, killed=1))
+            lane = gate._mutation(str(root))
+            self.assertIn("1/1", lane["detail"])
+            self.assertNotIn("surviv", lane["detail"].lower())
+            self.assertEqual(lane["count"], 0, lane["detail"])
+
+    def test_a_measured_entry_s_survivors_are_left_to_the_report_lane(self) -> None:
+        """The docstring says this, so something has to hold it: a run's survivors already
+        reach the operator through mutation-report.json, and counting them here as well would
+        report one run's findings twice in one line."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._changed(t, lambda r: [
+                self._entry("a.py", self._sha(r / "a.py"), provenance="measured",
+                            summary={"applied": 3, "killed": 2, "survived": 1,
+                                     "errors": 0, "unviable": 0})])
+            lane = gate._mutation(str(root))
+            self.assertIn("1/1", lane["detail"])
+            self.assertNotIn("SELF-REPORTED SURVIVOR", lane["detail"])
+            self.assertEqual(lane["count"], 0, lane["detail"])
+
+    def test_the_recorder_and_the_lane_agree_end_to_end_on_a_survivor(self) -> None:
+        """Through the real writer, not a hand-built ledger: `register --verdict survived` calls
+        the verdict a finding in its own help, and the lane must be where that becomes true."""
+        mod = self._mutation_module()
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            gitutil.git(["init", "-q"], cwd=root)
+            (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+            self._commit_all(root)
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                json.dumps(self.CLEAN), encoding="utf-8")
+            mod.register_mutant(root, "a.py", "returned 2 instead of 1", "test_a", "survived")
+            self.assertIn("surviv", gate._mutation(str(root))["detail"].lower())
+
     def test_the_lane_reads_the_same_provenance_values_the_recorder_writes(self) -> None:
         """Two hand-kept copies of the vocabulary would drift into a lane that silently stops
         recognising self-reports and prints them as measured - which is exactly the failure the

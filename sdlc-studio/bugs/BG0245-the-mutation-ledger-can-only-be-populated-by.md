@@ -81,9 +81,50 @@ NOT DONE HERE, and deliberately: `reference-sprint.md` still describes the per-u
 without mentioning `register`, and the scripts catalogue does not list the subcommand. Both are
 outside this unit's permitted file set.
 
+### Repair round 1: a self-reported `survived` was write-only, and the incentive ran backwards
+
+The independent review REJECTed on a hole that is the inverse of D0048's constraint. D0048
+required that a registration never read as a measurement; what nobody checked was whether its
+ADVERSE content read at all.
+
+`--verdict survived` calls itself "a finding" in its own help, and nothing treated it as one.
+Survivors reached the gate only through `mutation-report.json`; `register` writes no report,
+and `_mutation_coverage` read nothing from a ledger entry but `target`, `hash` and
+`provenance`. So the one verdict meaning "the test you just wrote does not catch this" was
+recorded and then silently absorbed - while simultaneously moving the file from `no evidence`
+to `covered`. Reproduced: before registering, `covers 0/1 file(s) ... no evidence: target.py`,
+count 2; after registering a SURVIVED verdict, `covers 1/1 ... 1 of those is self-reported`,
+count 1, and the substring `surviv` appeared ZERO times anywhere in the lane. Reporting bad
+news made the lane quieter than reporting nothing.
+
+`_mutation_coverage` now reads a registered entry's `summary.survived` alongside its hash, and
+a self-reported survivor is named and counted:
+
+```text
+mutation evidence covers 1/1 file(s) of the changed surface; 1 of those is self-reported
+(mutants registered by hand, not a measured run): target.py; SELF-REPORTED SURVIVOR(S) - a
+registered mutant the named test did NOT catch, so that behaviour is unpinned: target.py (1)
+```
+
+Count after registering a survivor is 2, the same as registering nothing, so the honest
+builder's lane is never quieter than the silent one's; a registered KILL still reads as
+evidence gained and drops it to 1. `cmd_register` says the same thing at the moment of
+recording. Survivors from a MEASURED entry are deliberately not counted here - those are the
+report lane's, and counting them twice would report one run's findings twice.
+
+Also fixed, a MINOR of the class this project keeps shipping: `_store_ledger`'s docstring said
+the truncation existed because "a per-unit practice registering every mutant it applies would
+otherwise grow it without end", and `LEDGER_LIMIT` bounds the ENTRY count while `register`
+accumulates into one entry's `mutants` list - so on the exact writer the sentence named, the
+bound never fires. Measured: 500 registrations on unchanged content gave 1 entry, 0 dropped,
+501 mutants, 76KB. `MUTANT_LIMIT` now bounds that list on its own axis (newest kept, drops
+recorded), the summary counts are never truncated so the tally stays exact, and the docstring
+names both axes.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-21 | sdlc-studio | Filed |
 | 2026-07-21 | claude | Fixed per D0048: `mutation.py register` records an already-applied mutant; every ledger entry carries `provenance`; measured and registered entries coexist and neither supersedes the other; the gate lane names a self-reported cover and a measured entry outranks a registered one. 15 mutants applied, 14 killed, 1 survivor (the missing-target refusal, bypassed by `cmd_register`'s OSError catch) fixed by pinning the guard at the library boundary. Docs left for a follow-up - outside this unit's file set. |
+| 2026-07-21 | claude | Review REJECT, repair round 1. MAJOR: a registered `survived` verdict was write-only and registering one made the lane QUIETER than registering nothing (count 2 to 1, `surviv` printed zero times). The coverage lane now reads the entry's survivor count, names it, and counts it. MINOR: `_store_ledger`'s docstring claimed a bound over the exact writer it does not bound (measured: 501 mutants in 1 entry, 0 dropped); `MUTANT_LIMIT` now bounds the per-entry list and the prose names both axes. 5 mutants applied by hand, 5 killed. |

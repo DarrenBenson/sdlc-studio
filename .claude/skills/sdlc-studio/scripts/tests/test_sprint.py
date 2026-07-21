@@ -1977,6 +1977,65 @@ class BatchHistoryTests(unittest.TestCase):
             self._velocity(root, "| RETRO0065 | 2026-07-21 | 0 | 0 | 0 | 900,000 | - | - | - |\n")
             self.assertEqual(sp.batch_history(root), [])
 
+    #: The same table with the Source column the history now records. Provenance is a fact
+    #: about the NUMERATOR; `basis` is a fact about the divisor, and neither answers the other.
+    HEAD_SOURCED = ("| Retro | Date | Units | Measured | Estimate (tokens, plan-time) | "
+                    "Actual (tokens) | Ratio (est/actual) | Constants | Sample | Source |\n"
+                    + "| --- " * 10 + "|\n")
+
+    def _sourced(self, root: Path, rows: str) -> None:
+        retros = root / "sdlc-studio" / "retros"
+        retros.mkdir(parents=True, exist_ok=True)
+        (retros / "VELOCITY.md").write_text(self.HEAD_SOURCED + rows, encoding="utf-8")
+
+    def test_a_typed_total_cannot_pass_as_a_measured_one(self) -> None:
+        """Admitting sprint-level rows admitted operator-TYPED ones with them, and the label
+        `sprint-level` describes the divisor, not where the number came from - so a figure
+        somebody keyed in read exactly like a harness capture in the block the plan quotes."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._sourced(root,
+                          "| RETRO0060 | 2026-07-20 | 9 | 0 | 0 | 2,390,624 | - | - | - | "
+                          "harness |\n"
+                          "| RETRO0061 | 2026-07-20 | 13 | 0 | 0 | 1,265,392 | - | - | - | "
+                          "supplied |\n")
+            hist = {h["id"]: h for h in sp.batch_history(root)}
+            self.assertEqual(hist["RETRO0060"]["source"], "harness")
+            self.assertEqual(hist["RETRO0061"]["source"], "supplied")
+
+    def test_a_row_with_no_recorded_source_says_unrecorded_not_measured(self) -> None:
+        """Every row already on disk. Absent provenance is absent, and defaulting it to either
+        answer would invent the distinction the column exists to record."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._velocity(root, self.INTERACTIVE)
+            self.assertIsNone(sp.batch_history(root)[0]["source"])
+
+    def test_the_printed_block_names_a_typed_total_as_a_claim(self) -> None:
+        """It has to reach the operator's eye. A typed figure quoted in the cost picture with
+        nothing marking it is the same defect the mutation ledger's provenance mark fixed."""
+        sp = _load()
+        data = {"token_forecast": {
+            "tokens": 50_000, "points": 2, "rate": 25_000, "rate_source": "seed",
+            "rate_basis": "b", "rate_units": 0,
+            "history": [{"id": "RETRO0025", "units": 5, "tokens": 642_358,
+                         "per_unit": 128_471, "basis": "per-unit", "source": "per-unit"},
+                        {"id": "RETRO0061", "units": 13, "tokens": 1_265_392,
+                         "per_unit": 97_337, "basis": "sprint-level",
+                         "source": "supplied"}]}}
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            sp._render_token_forecast(data)
+        text = buf.getvalue()
+        self.assertIn("typed", text.lower())          # the caveat, once, under the block
+        # ON THE ROW, not only in the caveat below it: a reader scanning four rows for the one
+        # they want must be able to see which of them is a claim without counting caveats.
+        row = next(ln for ln in text.splitlines() if "RETRO0061" in ln)
+        self.assertIn("supplied", row, row)
+        self.assertNotIn("supplied", next(ln for ln in text.splitlines() if "RETRO0025" in ln))
+
     def test_the_printed_block_labels_every_row_and_explains_the_derived_kind(self) -> None:
         """The label has to reach the operator's eye, not just the JSON: this block is read as
         the authoritative cost picture, and an unlabelled derived figure reads as a measured one."""
