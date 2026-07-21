@@ -172,7 +172,7 @@ sprints fits noise.
 
 **0 of 10 unit(s) measured; 10 of 10 forecast at plan time.**
 
-**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
+**Velocity: 10.81 points/elapsed-hour** (21 points over 1.943h, run-state, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 Unmeasured: BG0227, BG0235, BG0230, BG0236, BG0238, BG0228, BG0229, BG0233, BG0237, BG0239. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
@@ -227,7 +227,7 @@ not an answer.
 | `repo map build` changed its input surface, not only its output path (review MINOR 6) | declined: it is the root-discovery convention the project is moving towards, so it was DOCUMENTED in the CHANGELOG as a deliberate behaviour change rather than reverted |
 | A literal test count in a bug's Resolution had already rotted (review MINOR 7) | declined: correcting the number would only reset the clock, so the rotting claim was removed instead and the count left to the runner |
 | `wsjf-inputs.json` is 11 days stale, so ordering fell back to priority | Declined: the whole backlog was in the batch and nothing declared `Depends on:`, so ordering could not change the outcome. It matters again the moment a batch is a subset |
-| The velocity row published `Actual (tokens) = 0` when no unit was rated - an absence rendered as a measurement, found by dogfooding this sprint's own close | BG0244 |
+| The velocity row published `Actual (tokens) = 0` when no unit was rated - an absence rendered as a measurement, found by dogfooding this sprint's own close, and the hand correction was then OVERWRITTEN by apply-signoff rewriting the same row | BG0244 |
 | BG0238's ledger records only `mutation.py` runs, but the per-unit practice is hand-applied mutants, so the lane reads 0/N after a sprint that followed policy | BG0245 |
 | 208 units are grandfathered under the engagement floor's `adopt_after` | Declined: pre-existing debt, unchanged by this sprint, and forward-only by design |
 

@@ -4,7 +4,7 @@
 > **Created-by:** sdlc-studio new
 > **Run:** RUN-01KY2K5R (started 2026-07-21T15:03:16Z)
 > **Outcome:** goal-reached
-> **Batch source:** run-state.json
+> **Batch source:** argument
 
 ## Where to pick up
 
@@ -13,7 +13,7 @@ Every unit in the batch is terminal. There is no tail: close the run and plan th
 ## Appetite
 
 - **Declared:** wall-clock 240 min, units 10 unit(s)
-- **Spent:** 116.6 min, 10 unit(s) terminal
+- **Spent:** 173.7 min, 10 unit(s) terminal
 - **Delivered:** 10 unit(s)
 - **Token forecast:** ~525,000 tokens - a plan-time estimate, never a gate (a script cannot observe token spend)
 
