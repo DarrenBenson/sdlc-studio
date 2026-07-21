@@ -87,7 +87,7 @@ def budget_config(root: Path) -> dict | None:
         return None
     try:
         cfg = yaml.safe_load((root / "sdlc-studio" / ".config.yaml").read_text(encoding="utf-8"))
-    except (OSError, ValueError, Exception):  # noqa: BLE001 - a bad config is not a commit failure
+    except Exception:  # noqa: BLE001 - a bad config is advisory here, never a commit failure
         return None
     block = (cfg or {}).get(BUDGET_KEY)
     return block if isinstance(block, dict) else None

@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0173: **Prose written to justify code is code that has not been reviewed - for the third sprint running.** Two of this review's three MAJORs were...**
+- **L-0172: **A baseline the check cannot itself reproduce is not a baseline.** 93.1s was a hand-sum of three separately timed runs; the hook's own...**
+- **L-0171: **A guard must be tested for the MECHANISM, not the spelling that prompted it.** The structural check matched one literal call form; the...**
+- **L-0170: **Narrowing an exception clause is a behaviour change, not a tidy-up.** Moving a read out of a broad `except` and catching only `OSError`...**
 - **L-0169: **A trend against a dated baseline catches what a ceiling cannot.** `test_gate.py` grew 28% in two days while under every threshold in...**
 - **L-0168: **Ask where the data lives before deciding where the check lives.** A check placed away from the data it reads is not wrong so much as...**
 - **L-0167: **Read the binding rules of the thing you intend to inject before designing a test around injecting it.** A default argument binds at...**

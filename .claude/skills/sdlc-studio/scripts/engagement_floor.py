@@ -215,6 +215,14 @@ def _git_touched_by_id(root: Path) -> dict[str, set[str]]:
     `US0284`; here it does not. That is stricter, and correct - but it IS a difference, so
     `test_batch_and_single_id_git_attribution_agree` pins the two against each other on real
     commit shapes rather than leaving the claim to this comment.
+
+    Two limits, stated rather than left to be found. A commit message containing a literal
+    record separator (`\\x1e`) splits its own record, so an id in the resulting fragment loses
+    attribution here but keeps it per-id; and the single timeout now disables the git
+    cross-check for EVERY id at once rather than for one, so on a very large history the floor
+    silently falls back to declared `Affects` alone. Both are conservative - they can only
+    UNDER-attribute, never inflate a unit's footprint - which is the safe direction for a gate
+    that blocks on the result.
     """
     try:
         out = subprocess.run(

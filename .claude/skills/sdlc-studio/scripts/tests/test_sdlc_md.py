@@ -577,6 +577,52 @@ class ConfigParseCacheTests(unittest.TestCase):
             (root / "sdlc-studio" / ".config.yaml").unlink()
             self.assertEqual(sdlc_md.project_override(root, "a", "dflt"), "dflt")
 
+    def test_a_non_utf8_config_warns_and_degrades_instead_of_raising(self) -> None:
+        """Adversarial review, MAJOR: moving the read out of the broad `except` and narrowing it
+        to OSError let UnicodeDecodeError - a ValueError - escape. One legacy-encoded byte in a
+        consuming project's config turned 7 blocking gate lanes red with a message that never
+        named the file. `project_override` is the reader that must NEVER raise."""
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cfg = root / "sdlc-studio"
+            cfg.mkdir(parents=True)
+            (cfg / ".config.yaml").write_bytes(b"a: caf\xe9\n")   # latin-1, not UTF-8
+            sdlc_md._OVERRIDE_WARNED.discard(str(cfg / ".config.yaml"))
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                self.assertEqual(sdlc_md.project_override(root, "a", "dflt"), "dflt")
+            self.assertIn("was not applied", err.getvalue())
+
+    def test_an_unreadable_config_warns_rather_than_degrading_silently(self) -> None:
+        """The same review's second arm: returning the right value without the warning is only
+        half right. Silent-default is the exact failure `_warn_unhonoured` exists to prevent, so
+        a config that is PRESENT but unreadable must say so."""
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cfg = root / "sdlc-studio"
+            cfg.mkdir(parents=True)
+            (cfg / ".config.yaml").mkdir()          # present, but a directory
+            sdlc_md._OVERRIDE_WARNED.discard(str(cfg / ".config.yaml"))
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                self.assertEqual(sdlc_md.project_override(root, "a", "dflt"), "dflt")
+            self.assertIn("was not applied", err.getvalue())
+
+    def test_the_cache_is_bounded(self) -> None:
+        """Keying on the file BODY retained every distinct config in full for the life of the
+        process. The suite alone walks thousands of temp roots."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for n in range(sdlc_md._CONFIG_PARSE_CACHE_MAX + 20):
+                self._write(root, f"a: {n}\n")
+                self.assertEqual(sdlc_md.project_override(root, "a"), n)
+            self.assertLessEqual(len(sdlc_md._CONFIG_PARSE_CACHE),
+                                 sdlc_md._CONFIG_PARSE_CACHE_MAX)
+
     def test_two_projects_do_not_share_a_parse(self) -> None:
         """Keyed by path AND content: two roots whose configs differ must not cross-answer."""
         with tempfile.TemporaryDirectory() as d1, tempfile.TemporaryDirectory() as d2:

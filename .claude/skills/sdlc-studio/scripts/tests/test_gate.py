@@ -112,37 +112,40 @@ class IndexDerivedCheckTests(unittest.TestCase):
             self.assertFalse(r["ok"])
 
 
+# The real gate over this repo costs ~35s (now ~7s), and this file used to pay it TWICE - once
+# to assert the result's shape, once to discover that `main` returns 0 or 1. That was 71s of a
+# 153s suite. Exactly ONE unstubbed end-to-end run is kept, deliberately: it is the only thing
+# proving the real lanes wire up and return the documented shape, and a cached shape assertion
+# cannot replace it.
+#
+# The guard is installed at MODULE scope and REFUSES a second one, rather than counting within a
+# single class. The adversarial review of RUN-01KY1WCR killed the first attempt at this: the
+# structural check matched the literal `gate.run_gate(str(REPO))`, but the test US0284 deleted
+# was spelled `gate.main(["--root", str(REPO), ...])` - so pasting that exact test back into a
+# neighbouring class restored the full cost (7.7s -> 14.7s) with both guards silent. Every route
+# to a full run goes through this module global, including `cmd_gate`'s, so refusing here catches
+# any spelling in any class. A stubbed `run_gate` is not a real run and is not counted.
+_REAL_FULL_GATE_RUNS: list[str] = []
+_ORIG_RUN_GATE = gate.run_gate
+
+
+def _guarded_run_gate(root=".", *a, **kw):
+    if str(root) == str(REPO) and kw.get("checks") is None and not kw.get("only"):
+        _REAL_FULL_GATE_RUNS.append(str(root))
+        if len(_REAL_FULL_GATE_RUNS) > 1:
+            raise AssertionError(
+                "a SECOND unstubbed full gate run over this repo was started. US0284 removed the "
+                "duplicate that cost 35s of the suite; if you need the real result, read "
+                "GateRealWrapperTests._report(). To pin `main`'s own behaviour, stub `run_gate` "
+                "as test_main_maps_result_to_exit_code_without_rerunning does.")
+    return _ORIG_RUN_GATE(root, *a, **kw)
+
+
+gate.run_gate = _guarded_run_gate
+
+
 class GateRealWrapperTests(unittest.TestCase):
-    #: The real gate over this repo costs ~35s, and this class used to pay it TWICE - once to
-    #: assert the result's shape, once to discover that `main` returns 0 or 1. That was 71s of a
-    #: 153s suite. It is now run ONCE for the class, here, and the shape assertions read this
-    #: result; `main`'s exit-code mapping is pinned against a stub, because what that test is
-    #: about is main's own arithmetic, not whether the 15 lanes work.
-    #:
-    #: One unstubbed end-to-end run is kept deliberately: it is the only thing that proves the
-    #: real lanes wire up and return the documented shape, and a cached shape assertion cannot
-    #: replace it.
     _real_report: dict | None = None
-    _real_runs = 0
-    _orig_run_gate = None
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        # Count every FULL run over this repo for the life of the class, whoever triggers it -
-        # a test calling `main` goes through the same module global, so the counter sees it too.
-        cls._orig_run_gate = gate.run_gate
-
-        def _counting(root=".", *a, **kw):
-            if str(root) == str(REPO) and kw.get("checks") is None and not kw.get("only"):
-                GateRealWrapperTests._real_runs += 1
-            return GateRealWrapperTests._orig_run_gate(root, *a, **kw)
-
-        gate.run_gate = _counting
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        if cls._orig_run_gate is not None:
-            gate.run_gate = cls._orig_run_gate
 
     @classmethod
     def _report(cls) -> dict:
@@ -154,14 +157,14 @@ class GateRealWrapperTests(unittest.TestCase):
         return cls._real_report
 
     def test_the_real_gate_runs_once_per_class(self) -> None:
-        """The saving itself, pinned. Counts FULL runs over this repo across the class, so
-        re-introducing a second end-to-end run (the 35s this story removed) fails here rather
-        than only showing up as a slower suite nobody times."""
+        """The saving itself, pinned. Counts FULL runs over this repo across the whole MODULE, so
+        re-introducing a second end-to-end run - in any class, by any spelling - fails rather than
+        only showing up as a slower suite nobody times."""
         if not _in_dev_repo():
             self.skipTest("dev-repo-only test: no sdlc-studio/ workspace at the expected "
                           "root (running from an installed copy)")
         self.assertIsNotNone(self._report())
-        self.assertEqual(self._real_runs, 1)
+        self.assertEqual(len(_REAL_FULL_GATE_RUNS), 1)
 
     def test_main_maps_result_to_exit_code_without_rerunning(self) -> None:
         """`main` returns 0 on a green report and 1 on a red one. That is main's OWN mapping,
@@ -185,13 +188,40 @@ class GateRealWrapperTests(unittest.TestCase):
         self.assertEqual(len(seen), 2)          # main ran the gate, it did not skip it
         self.assertEqual(seen[0]["root"], str(REPO))   # ...and passed the root through
 
-    def test_exactly_one_unstubbed_end_to_end_run(self) -> None:
-        """Structural: the file must contain exactly ONE unstubbed full-gate call over this
-        repo. The counter above only sees this class; a second full run added to any OTHER
-        class in the file would be invisible to it, and this is what catches that."""
-        src = Path(__file__).read_text(encoding="utf-8")
-        calls = re.findall(r"gate\.run_gate\(str\(REPO\)\)", src)
-        self.assertEqual(len(calls), 1, f"expected 1 unstubbed full-gate run, found {len(calls)}")
+    def test_a_second_real_full_gate_run_is_refused_by_any_route(self) -> None:
+        """The guard's MECHANISM, not just the case that prompted it (L-0138).
+
+        The first version of this test was a regex for the literal `gate.run_gate(str(REPO))`.
+        The adversarial review pasted the DELETED test back verbatim - spelled
+        `gate.main(["--root", str(REPO), ...])` - into a neighbouring class and both guards
+        stayed silent while the suite went 7.7s -> 14.7s. So this exercises BOTH routes, and
+        neither actually runs a gate: the guard refuses before delegating.
+        """
+        saved = list(_REAL_FULL_GATE_RUNS)
+        try:
+            _REAL_FULL_GATE_RUNS[:] = ["a run already happened"]
+            with self.assertRaises(AssertionError):
+                gate.run_gate(str(REPO))                       # the direct route
+            _REAL_FULL_GATE_RUNS[:] = ["a run already happened"]
+            with self.assertRaises(AssertionError):
+                gate.main(["--root", str(REPO), "--format", "json"])   # the route that escaped
+        finally:
+            _REAL_FULL_GATE_RUNS[:] = saved
+
+    def test_the_guard_does_not_fire_on_a_scoped_or_stubbed_run(self) -> None:
+        """The other half: a guard that refused everything would pass the test above while
+        breaking every legitimate call. A scoped run over this repo, and a run over any other
+        root, must not count towards the one-real-run budget."""
+        saved = list(_REAL_FULL_GATE_RUNS)
+        try:
+            _REAL_FULL_GATE_RUNS[:] = ["a run already happened"]
+            gate.run_gate(str(REPO), only=["index-derived"])   # scoped: not a full run
+            with tempfile.TemporaryDirectory() as d:
+                gate.run_gate(d)                               # another root: not this repo
+            gate.run_gate(".", checks={"a": _fake(0)})         # injected registry: not real
+            self.assertEqual(len(_REAL_FULL_GATE_RUNS), 1)     # ...none of them counted
+        finally:
+            _REAL_FULL_GATE_RUNS[:] = saved
 
     def test_dev_repo_detector_true_here(self) -> None:
         # Guarded like the wrappers: from an install this SKIPS (it must, or it would recreate

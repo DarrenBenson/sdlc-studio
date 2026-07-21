@@ -46,14 +46,20 @@ that is the pin that the 15 real lanes wire up and return the documented shape.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::GateRealWrapperTests::test_main_maps_result_to_exit_code_without_rerunning
 - **Verified:** yes (2026-07-21)
 
-### AC3: exactly one true end-to-end execution survives
+### AC3: a second end-to-end execution is refused by any route
 
-- **Given** the whole test file after the change
-- **When** its real-gate call sites are counted
-- **Then** exactly one unstubbed end-to-end execution remains, so the real lanes are still wired
-  up by a test rather than only by assertion of a cached shape
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::GateRealWrapperTests::test_exactly_one_unstubbed_end_to_end_run
+- **Given** a full gate run over this repo that is not the sanctioned one
+- **When** it is started, by either `run_gate` or `main`, from any class in the file
+- **Then** it is refused, so exactly one unstubbed end-to-end execution can exist - and a scoped
+  run, a run over another root, and a stubbed run are all still allowed
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::GateRealWrapperTests::test_a_second_real_full_gate_run_is_refused_by_any_route
 - **Verified:** yes (2026-07-21)
+
+> **Rewritten after the adversarial review.** This AC was first met by a regex for the literal
+> `gate.run_gate(str(REPO))`. The reviewer pasted the DELETED test back verbatim - spelled
+> `gate.main(["--root", str(REPO), ...])` - into a neighbouring class, and both guards stayed
+> silent while the file went 7.7s -> 14.7s. The guard is now a module-scope refusal that every
+> route passes through, and it is tested for its mechanism in both directions (L-0138).
 
 ### AC4: no assertion is lost
 

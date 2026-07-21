@@ -159,6 +159,7 @@ if [ "$fail" -eq 0 ] && git diff --cached --name-only | grep -qE "$test_relevant
     "fix the code or the test named in the failure above; re-run: python3 -m unittest discover -s tools/tests" \
     -- python3 -m unittest discover -s tools/tests
   python3 tools/gate_timing.py record --suite tool-tests --seconds "$((SECONDS - t0))" 2>/dev/null
+  suites_ran=1
 elif [ "$fail" -ne 0 ]; then
   printf '  %sSKIP%s unit suites - a cheaper lane already failed, so the commit is blocked either way.\n' "$Y" "$N"
   printf '       Fix the failure above and commit again; the suites run once the cheap guards are green.\n'
@@ -168,11 +169,22 @@ else
 fi
 
 # What this commit actually cost, end to end, and how that sits against the declared budget
-# (RFC0048 D6). Recorded before the verdict so a BLOCKED commit's cost is measured too - the
-# expensive lanes ran either way, and a budget that only ever sees green runs under-reports.
-python3 tools/gate_timing.py record --suite total --seconds "$SECONDS" 2>/dev/null
-budget_line="$(python3 tools/gate_timing.py budget 2>/dev/null)"
-[ -n "$budget_line" ] && printf '  %s%s%s\n' "$Y" "$budget_line" "$N"
+# (RFC0048 D6).
+#
+# ONLY recorded when the unit suites actually ran. Recording every commit put 9-14s docs-only
+# and early-failed runs into the same series the budget reads, and because the budget reads the
+# LATEST run rather than a median, one docs commit made the next report say "-85% since" - the
+# gate had not got faster, it had just not run. A series mixing full and skipped runs makes real
+# drift unreadable, and it fails OPEN: alternate a docs commit with a code commit and the ratchet
+# is invisible forever.
+#
+# A BLOCKED commit is still recorded when the suites ran - the expensive lanes were paid for
+# whatever the verdict - which is why this sits before the exit, not after it.
+if [ "${suites_ran:-0}" -eq 1 ]; then
+  python3 tools/gate_timing.py record --suite total --seconds "$SECONDS" 2>/dev/null
+  budget_line="$(python3 tools/gate_timing.py budget 2>/dev/null)"
+  [ -n "$budget_line" ] && printf '  %s%s%s\n' "$Y" "$budget_line" "$N"
+fi
 
 if [ "$fail" -ne 0 ]; then
   printf '\n%sCommit blocked.%s Fix the failures above (each lists how), then commit again.\n' "$R" "$N"

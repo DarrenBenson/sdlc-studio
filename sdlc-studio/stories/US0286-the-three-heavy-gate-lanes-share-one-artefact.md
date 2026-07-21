@@ -66,7 +66,12 @@ argument - and AC2 and AC5 attack that failure directly rather than the happy pa
 - **Given** the same tree, before and after the change
 - **When** all 15 lanes run
 - **Then** each reports the same count, status, blocking flag and detail
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py
+- **Verify:** manual capture `gate --format json` at the pre-change commit and at HEAD over the
+  same tree and diff them. Deliberately NOT the unit suite: a suite run only shows the lanes
+  pass NOW, and cannot compare before with after, so pointing this AC at `pytest test_gate.py`
+  made it a verifier that could not fail for the criterion it named (found by the adversarial
+  review; the vacuity class of US0226-0228).
+- **Verified:** manual - byte-identical, confirmed independently by the reviewer
 - **Verified:** yes (2026-07-21)
 
 ### AC4: the one-pass git attribution agrees with the per-id function
@@ -74,7 +79,9 @@ argument - and AC2 and AC5 attack that failure directly rather than the happy pa
 - **Given** a history containing every shape the attribution rule turns on - solo subject, batch
   subject with and without a `Refs:` trailer, an id only in the body, a hyphenated spelling
 - **When** the one-pass map and the per-id function are both asked about each id
-- **Then** they agree for every one, so the batch rewrite did not narrow or widen attribution
+- **Then** they agree on every well-formed id, and where they deliberately differ the
+  difference is the documented word-boundary narrowing - the batch pass never attributes MORE
+  than the per-id function, only less
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::BatchGitAttributionAgreesTests
 - **Verified:** yes (2026-07-21)
 
@@ -111,6 +118,12 @@ the unit suite alone, which cannot see the real corpus.
 Mutants killed: 3. Keying the parse cache on path alone fails AC2's test; dropping the
 batch-commit rule fails AC4's agreement test and an existing understatement test; reverting the
 one-pass git query to a per-id loop fails the one-git-log pin.
+
+The AC4 wording above was corrected after the adversarial review: it originally claimed the
+rewrite "did not narrow or widen attribution", which contradicted the function's own docstring
+saying it narrows. A differential fuzz over 37 ids and 27 commit shapes found 6 disagreements -
+4 the documented narrowing, 2 a commit message carrying a literal record separator. All are in
+the under-attributing direction, which is the safe one for a blocking gate.
 
 One deliberate behavioural narrowing, recorded rather than buried: candidate ids in the one-pass
 attribution come from the judged-id regex (word-bounded) rather than git's `--grep` substring

@@ -96,15 +96,27 @@ two_backlog:
 # because it was under every ceiling the whole time. So the check reports the TREND against the
 # dated baseline, not just a pass or fail.
 #
-# Baseline measured 2026-07-21 after EP0093: 93.1s for a code commit
-#   skill-tests 78.1s (was 153.1s) + gate 6.95s (was 35.6s) + guards 8.0s
-# The pre-EP0093 figure was 196.7s, so the budget sits below what a commit cost two days ago.
+# Baseline: 99s, the first END-TO-END measurement the hook recorded itself, on 2026-07-21.
+# Component sum for reference: skill-tests 78.1s (was 153.1s) + gate 6.95s (was 35.6s) +
+# guards 8.0s = 93.1s. The pre-EP0093 equivalent was 196.7s, so the budget sits well below what
+# a commit cost two days earlier.
 #
-# 120s is ~29% headroom: enough to absorb machine variance and normal growth without the lane
-# becoming noise that gets scrolled past, tight enough that a jump the size of test_gate.py's
-# trips it. ADVISORY ALWAYS - a wall-clock check on a loaded or shared machine must never refuse
-# a correct commit, which is the same call D3 made for mutation.
+# The baseline is the hook's OWN figure, not that component sum. The adversarial review of
+# RUN-01KY1WCR pointed out that 93.1 was a hand-arithmetic total of three separately-timed runs
+# and the hook was recording 99s and 83s for the same work, so a zero-change commit could read
+# +6% or -11%. A baseline the check cannot itself reproduce is not a baseline.
+#
+# KNOWN LIMIT, worth stating rather than discovering later: same-machine run-to-run variance
+# measured ~19% (83s vs 99s), which is comparable to the ~28% ratchet this lane exists to
+# expose. So a single reading means little; the series is the signal, and a drift is only real
+# once several consecutive runs sit above the baseline. That is also why 120s is not tighter.
+#
+# 120s is ~21% headroom over 99s: enough to absorb that variance without the lane becoming noise
+# that gets scrolled past. ADVISORY ALWAYS - a wall-clock check on a loaded or shared machine
+# must never refuse a correct commit, which is the same call D3 made for mutation. Only commits
+# that actually ran the unit suites are recorded, or docs-only runs would flood the series with
+# 9-14s entries that make real drift unreadable.
 gate_budget:
   seconds: 120
-  baseline_seconds: 93.1
+  baseline_seconds: 99
   baseline_date: 2026-07-21

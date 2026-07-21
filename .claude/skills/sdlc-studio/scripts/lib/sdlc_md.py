@@ -826,19 +826,28 @@ def _warn_unhonoured(cfg_path: Path, why: str) -> None:
 #: and re-parsed the YAML every time, which made PyYAML scanning ~75% of the validate and
 #: constitution lanes.
 #:
-#: The key is the file's CONTENT, not its mtime. Content-keying makes a stale hit impossible by
-#: construction rather than by argument: any edit, however fast, however same-sized, is a
-#: different key and re-parses. Reading a 2KB file is not what cost anything here - parsing it
-#: was - so the read still happens on every call and only the parse is saved.
+#: The key is the file's CONTENT (hashed), not its mtime. Content-keying makes a stale hit
+#: impossible by construction rather than by argument: any edit, however fast, however
+#: same-sized, is a different key and re-parses. Reading a 2KB file is not what cost anything
+#: here - parsing it was - so the read still happens on every call and only the parse is saved.
+#:
+#: The key holds a DIGEST rather than the body, and the map is bounded. Keying on the body meant
+#: every distinct config ever seen was retained in full for the life of the process: fine for a
+#: short CLI, but the suite alone walks thousands of temp roots, and a long-lived agent process
+#: would accumulate indefinitely.
 _CONFIG_PARSE_CACHE: dict[tuple[str, str], object] = {}
+_CONFIG_PARSE_CACHE_MAX = 256
 
 
 def _parse_config_text(cfg_path: Path, text: str):
     """Parse a config body, memoised on its exact content. Returns the mapping, or None when
     it cannot be parsed (the caller then falls back to its default, as it always did)."""
-    key = (str(cfg_path), text)
+    import hashlib
+    key = (str(cfg_path), hashlib.sha256(text.encode("utf-8", "surrogatepass")).hexdigest())
     if key in _CONFIG_PARSE_CACHE:
         return _CONFIG_PARSE_CACHE[key]
+    if len(_CONFIG_PARSE_CACHE) >= _CONFIG_PARSE_CACHE_MAX:
+        _CONFIG_PARSE_CACHE.clear()   # bounded: a whole-map drop, since the win is within one run
     try:
         import yaml  # soft dependency, mirrors config.py
     except ImportError:
@@ -862,10 +871,21 @@ def project_override(repo_root, dotted: str, default=None):
     parser-critical paths that must never hard-depend on PyYAML; the richer merged
     config (defaults + override) lives in config.py."""
     cfg_path = Path(repo_root) / "sdlc-studio" / ".config.yaml"
+    if not cfg_path.exists():
+        return default          # absent: silently the default, as it always was
     try:
         text = cfg_path.read_text(encoding="utf-8")
-    except OSError:
-        return default          # absent or unreadable - same answer as before
+    except (OSError, ValueError) as exc:
+        # BOTH arms matter, and narrowing this to OSError was a real regression. The read used to
+        # sit inside the same broad `except` as the parse, so a non-UTF-8 byte in a config -
+        # UnicodeDecodeError, which is a ValueError, NOT an OSError - warned and degraded. Moved
+        # out and narrowed, it escaped instead: one legacy-encoded byte in a consuming project's
+        # config turned 7 blocking gate lanes red with a message that never named the file.
+        # A present-but-unreadable config (a directory, a permissions error) must also WARN and
+        # not just return the default: silent-default is the exact failure `_warn_unhonoured`
+        # exists to prevent, so returning the right value without the warning is only half right.
+        _warn_unhonoured(cfg_path, f"it could not be read ({exc})")
+        return default
     cur = _parse_config_text(cfg_path, text)
     if cur is None:
         return default

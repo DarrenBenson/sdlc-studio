@@ -17,7 +17,7 @@
 ## Blocked / deferred
 
 - None delivered short. `test_sprint.py`'s 19.3s was deliberately left out of scope at plan time: it is diffuse (~100ms across 238 tests, no hotspot), so it is a different problem from the three concentrated ones and would have been a worse ratio.
-- The run is built but NOT closed: the two-role gate needs an adversarial pass and an independent sign-off before the four stories reach Done.
+- The run is built and adversarially reviewed (REJECT round 1, repaired) but NOT closed: it still needs a reviewer of record to sign off before the four stories reach Done.
 
 ## What went well
 
@@ -38,6 +38,10 @@
 - **Read the binding rules of the thing you intend to inject before designing a test around injecting it.** A default argument binds at definition time, so patching the module constant it was defaulted from changes nothing - and the resulting test passes whether or not the behaviour is present. Making a test cheaper is exactly when vacuity is easiest to introduce, because the change looks like a simplification.
 - **Ask where the data lives before deciding where the check lives.** A check placed away from the data it reads is not wrong so much as inert: it degrades to permanent silence, which reads identical to permanent success.
 - **A trend against a dated baseline catches what a ceiling cannot.** `test_gate.py` grew 28% in two days while under every threshold in force. A budget that reports only pass or fail would have stayed green throughout.
+- **Narrowing an exception clause is a behaviour change, not a tidy-up.** Moving a read out of a broad `except` and catching only `OSError` let `UnicodeDecodeError` - a `ValueError` - escape a function documented as never raising. The refactor looked like it only changed cost.
+- **A guard must be tested for the MECHANISM, not the spelling that prompted it.** The structural check matched one literal call form; the regression it existed to prevent used another, and walked straight back in. Where a guard can be a runtime refusal on the path everything shares, prefer that to a source-text match.
+- **A baseline the check cannot itself reproduce is not a baseline.** 93.1s was a hand-sum of three separately timed runs; the hook's own measurements of the same work were 99s and 83s. Measure the thing with the instrument that will do the measuring.
+- **Prose written to justify code is code that has not been reviewed - for the third sprint running.** Two of this review's three MAJORs were comments asserting a property the code did not have ("same answer as before"; "the expensive lanes ran either way"). Both read as reassuring and both were false.
 
 ## Estimate vs actual
 
@@ -93,6 +97,7 @@ What does not pass is silence.
 | Finding | Disposition |
 | --- | --- |
 | 9 mutants were killed this run and none is recorded anywhere but prose; the close lane still reads a report from two sprints ago | already filed as **BG0238** (High) - this run is its third consecutive confirming instance |
+| Two of the review's three MAJORs were false claims in comments, third sprint running | declined as a new backlog row: it is L-0146 recurring, already a standing lesson, and the countermeasure is RFC0050's plan-time pass plus the existing close review. Recorded here as its third confirming instance rather than refiled |
 | `artifact.py new` accepts a pipe-separated `--ac` and emits a malformed AC silently | filed **CR0381**. My first statement of this finding was WRONG - I claimed the paired `--verify` was being backticked. Probing it showed a correctly paired `--verify` is emitted clean; the mangling came from my own misuse, cramming the command into `--ac`. The real finding is the silent acceptance, and it is smaller. A finding is a hypothesis (L-0136) |
 | All three substantive stories were planned on a falsified premise, each caught only during the build | declined as a defect: it is the case FOR **RFC0050**'s plan-time adversarial pass and belongs there as evidence, not as a separate backlog row. Recorded in RFC0050 as this run's supporting data |
 | `test_sprint.py`'s diffuse 19.3s remains unattacked | declined for now: no hotspot, so it is a broad refactor with a worse ratio than anything delivered here. RFC0048 D1 records it as deliberately out of scope, not forgotten |
