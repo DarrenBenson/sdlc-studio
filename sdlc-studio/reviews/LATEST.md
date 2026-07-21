@@ -35,13 +35,15 @@ only the main thread. See below.
 
 ## What this sprint got wrong about itself
 
-**The closing review REJECTED** on three MAJORs: two in BG0244's new Note column reproducing the
-defect BG0244 was filed to end, and one where registering a SURVIVED mutant makes the gate quieter
-than registering nothing.
+**The closing review REJECTED, then APPROVED at round 2.** Three MAJORs: two in BG0244's new Note
+column reproducing the defect it was filed to end, one where registering a SURVIVED mutant made the
+gate quieter than registering nothing. Repaired; the same reviewer re-ran its reproductions and
+mutation-tested the repair. **Goal: PARTIAL** - guards done, measurement not: the close still
+cannot state its own cost within 3x.
 
 **A false claim went into a bug about numeric honesty, then into a decision of record.** BG0246's
 summary and D0047's rationale both said `batch_history`'s filter stalled the measured-rate counter.
-It does not - different sources. Corrected in **D0050**, filed as **BG0248**.
+It does not. Corrected in **D0050**, filed as **BG0248**.
 
 **The first token figure this project ever measured is wrong by nearly 3x and looks right.** The
 capture sums the session transcript, which carries ZERO sidechain records, so delegated agents are
@@ -68,12 +70,11 @@ again. Noise ratchet **DOWN, 132 to 129**. Suites 3,598 + 273 green, gate PASS, 
   **BG0250** a config key no code reads.
 - **CR0383** carries a measured census: 20 scripts resolve `--root` without discovery, 10 driving
   writes, worst `next_id.py` minting **colliding ids** from a subdirectory.
-- **CR0388** (High) - `git add -A` during a review stages whatever a concurrent process left; the
-  gate refused this one only because it broke tests. **LL0039** - a symlink farm plus a redirect
-  writes into the source tree, which is how the reviewer reverted two units mid-review.
-- **BG0247, CR0384, CR0386, CR0387** open. **CR0319** is the release cut. **RFC0050** unbuilt.
+- **CR0388** / **LL0039** - `git add -A` during a review stages whatever a concurrent process
+  left; and a symlink farm plus a redirect writes into the source tree, which is how the reviewer
+  reverted two units mid-review before detecting and restoring them.
+- **BG0247, BG0253, CR0384, CR0386-0388** open. **CR0319** is the release cut.
 
 ## Lessons
 
-Check what a measurement EXCLUDES before concluding from it. Two related-looking numbers can come
-from different logs. A gate deriving its input from history cannot judge its own commit. See RETRO-0065.
+Check what a measurement EXCLUDES before concluding from it. A gate deriving its input from history cannot judge its own commit. See RETRO-0065.

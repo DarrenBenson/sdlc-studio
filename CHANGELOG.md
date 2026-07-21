@@ -1105,6 +1105,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The velocity history records where a token figure CAME FROM, and a reason survives the row it
+  explains.** Three defects found by the closing review, all in the reporting the previous entries
+  describe. (1) The `Note` column added for BG0244 was regenerated unconditionally, so re-recording
+  a row destroyed its own reason - the fix had rescued the value and left the reason with exactly
+  the behaviour it was filed to end. A recorded reason now survives its own row's rewrite, while a
+  cell that has since been FILLED still drops it, because a reason explains a blank. (2) After the
+  documented `--tokens 0` retraction the note claimed no total had been supplied, which the code
+  knew to be untrue; it now states the cell is blank by instruction rather than for want of a look,
+  and the retraction outranks preservation so neither fix swallows the other. (3) A new `Source`
+  column records `per-unit`, `harness` or `supplied`, so a hand-typed total can no longer pass as a
+  measured one under "what sprints ACTUALLY cost" - the same claim-versus-measurement distinction
+  the mutation ledger already draws. Re-using an already-recorded actual keeps its original source,
+  so a close re-run cannot relabel a capture as a claim. Historical rows carry no Source and are
+  given none; the table is parsed by column name precisely so a column can be added without
+  rewriting a row.
+
+- **A self-reported mutation SURVIVOR is reported instead of quietly improving the gate.** Survivors
+  reached the lane only through the mutation report, which `register` does not write, so registering
+  a survived verdict moved a file from "no evidence" to "covered" while the survivor itself was
+  never shown - reporting a failure made the gate QUIETER than reporting nothing, and the incentive
+  ran backwards. The lane now names self-reported survivors and holds its finding count, while a
+  registered kill still reads as evidence gained. `register` prints the finding as it records it.
+  Measured-entry survivors are deliberately still left to the report lane, and that is now pinned
+  by a test rather than only asserted in a comment.
+
+- **The mutation ledger is bounded on both axes it can grow along.** `LEDGER_LIMIT` bounded the
+  entry count while a per-entry mutant list grew without limit, so the docstring claiming "one
+  truncation point, so every writer meets the same limit" was untrue of `register`, the writer it
+  named. Measured before fixing: 500 registrations on unchanged content produced one entry of 501
+  mutants and 76,097 bytes, with the existing limit never firing. A per-entry `MUTANT_LIMIT` now
+  bounds the list and announces what it drops, while summary counts stay exact so the recorded
+  tally remains true. Known residue: eviction is by age, not severity, so a survivor's description
+  can be dropped while its count and the gate's report of it remain correct.
+
 - **The plan's cost history includes interactive sprints instead of showing only the oldest data
   (BG0246).** `batch_history` gated on a `measured` column counting PER-UNIT telemetry, which an
   interactive sprint never has, so every one was dropped. The block titled "what sprints ACTUALLY

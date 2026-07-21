@@ -105,6 +105,10 @@
 - **A self-report is not a measurement, and a ledger that cannot tell them apart is worse than one
   that holds neither.** Recording provenance was the constraint that made BG0245 safe rather than a
   quiet downgrade of every entry in the ledger.
+- **Repeating someone else's unverified claim makes it yours.** The reviewer reported that
+  `raw capture 5,672,289` existed nowhere else, and that went into two commit messages before
+  anyone grepped for it. It appears in five other files. A claim inherited from a source you trust
+  is still a claim you published.
 - **Fix the prose AND the thing the prose was wrong about.** MINOR 4 was a docstring claiming a
   bound the code did not provide. Correcting only the sentence would have been honest and would
   have left 500 registrations producing one 76KB entry. The repair measured that first, then
@@ -206,6 +210,10 @@ not an answer.
 | A self-reported `survived` verdict is write-only, so registering bad news makes the gate QUIETER than registering nothing (review MAJOR 3) | BG0245 - repaired in round 2 |
 | `_store_ledger`'s docstring claims a bound it does not provide for `register` (review MINOR 4) | BG0245 - repaired in round 2 |
 | `batch_history` admits hand-typed `--tokens N` totals with no provenance mark (review MINOR 5) | BG0246 - repaired in round 2 |
+| `MUTANT_LIMIT` evicts by age not severity, so a survivor's DESCRIPTION can be dropped while its count and the gate's report of it stay correct (review round 2, non-blocking) | declined: the finding is never silently lost, which was the property under test; the residue is that the ledger can say `survived: 1` without saying which. Worth fixing when the ledger next changes, not worth a round-3 repair |
+| The filled-cell rule drops a recorded reason when a real figure arrives (review round 2) | declined: the rule is coherent - a reason explains a blank - and the reviewer's premise that the datum exists nowhere else is FALSE. 5,672,289 appears in RETRO0063, LESSONS-SUMMARY.md, BG0236, BG0244 and the review record |
+| The repair round owed a CHANGELOG entry naming the Source column, self-reported survivor counting and MUTANT_LIMIT (review round 2, LL0004) | declined: paperwork debt rather than a defect, and it was written before the close rather than deferred |
+| `test_the_next_cycle_mints_a_fresh_run` asserts inequality of a probabilistically-unique id, so the commit gate fails at random about 1 in 1,024 | BG0253 |
 | The reviewer overwrote live source via a symlink farm plus a shell redirect, reverting two delivered units before restoring them | LL0039 (global lesson) |
 | `git add -A` during the closing review staged a file the reviewer had a mutant applied to; the gate refused it only because that mutant broke tests, so a SURVIVING mutant would have been committed silently | CR0388 |
 | The token capture counts only the main thread, so this sprint published 439,982 against a known true cost of at least 1,227,816 - a 64% understatement labelled as the run's own spend | BG0252 |
@@ -240,4 +248,19 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 
 ## Metrics
 
-- Tokens: {{tokens}} · Duration: {{duration}} · Critic rejects: {{rejects}}
+- **Tokens: 439,982 published, at least 1,227,816 actually spent.** The capture works and counts
+  only the main thread; the four cluster agents plus two review passes are invisible to it. The
+  published figure is recorded here as UNDER-STATED rather than presented as this sprint's cost.
+  See BG0252.
+- **Rate:** 24,443/pt published against a 25,000 seed, which reads as validation and is not. True
+  rate at least 68,212/pt, about 2.7x the seed. The forecast recorded at plan time was 400,000 for
+  16 points, before BG0242 was re-sized to 5; deliberately not re-priced, so the plan is judged on
+  the number it actually made.
+- **Duration:** not recorded. An interactive sprint's wall-clock counts operator-away gaps as
+  sprint time, so no elapsed was supplied rather than a wrong one invented.
+- **Critic rejects:** 1 (round 1 REJECT, 3 MAJOR + 2 MINOR; round 2 APPROVE by the same reviewer
+  re-running its own reproductions, which also mutation-tested the repair with 9 mutants).
+- **Mutants:** ~62 in the build with 3 surviving first time, 17 in the repair with 1 surviving, 9
+  by the reviewer against the repair. Every survivor drove a second fix.
+- **Gate:** 114s against a 120s budget (baseline 99s). Suites 3,618 skill + 273 tool green, noise
+  129 at the lowered baseline, drift 0.
