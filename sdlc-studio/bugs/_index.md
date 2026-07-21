@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 4 |
+| Open | 5 |
 | In Progress | 0 |
 | Fixed | 164 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **250** |
+| **Total** | **251** |
 
 ## All Bugs
 
@@ -217,6 +217,7 @@
 | [BG0248](BG0248-the-measured-tokens-per-point-rate-can-never.md) | The measured tokens-per-point rate can never advance while sprints are interactive: the join needs per-unit actuals no interactive sprint writes | Open | High | 2026-07-21 | 2026-07-21 |
 | [BG0249](BG0249-the-velocity-estimate-column-has-bg0244-s-defect.md) | The velocity Estimate column has BG0244's defect exactly: a sum over rated units, so an unrated sprint publishes 0 as a plan-time estimate | Open | High | 2026-07-21 | 2026-07-21 |
 | [BG0250](BG0250-quality-epic-requires-test-spec-is-documented-as.md) | quality.epic_requires_test_spec is documented as the caller's opt-out but is read by no Python code in the tree | Open | Medium | 2026-07-21 | 2026-07-21 |
+| [BG0251](BG0251-the-engagement-floor-cannot-see-a-violation-the.md) | The engagement floor cannot see a violation the gating commit itself creates, because shipped is derived from git log --grep | Open | Medium | 2026-07-21 | 2026-07-21 |
 
 ## Archived Releases
 

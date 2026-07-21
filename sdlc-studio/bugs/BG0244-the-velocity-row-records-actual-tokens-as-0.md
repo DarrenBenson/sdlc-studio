@@ -13,6 +13,15 @@
 
 Found by dogfooding at the close of RUN-01KY2K5R, the sprint whose goal was that every published number is measured or refused. The velocity row's `Actual (tokens)` column is fed from `batch.actual_tokens`, which is the SUM over rated units. When no unit carries per-unit telemetry - the normal case for an interactive sprint - that sum is 0, and 0 is written into a column named Actual (tokens). A reader, and the estimator that reads this series, cannot distinguish 'this sprint cost zero tokens' from 'nothing was measured'. The project's own convention disagrees with the code: RETRO0062 and RETRO0063 both carry `-` in that column with a not-attributable note, because both were corrected BY HAND after the fact. RETRO0064 was corrected by hand for the third time running. That is the same argument BG0236 made for fixing rather than working around: the honest value is only recorded when somebody notices. Distinct from BG0236, which fixed the harness capture: this is the per-unit sum, a different input to the same column, and it survives that fix untouched. The `Tokens/pt` column already renders `-` correctly, so the two columns disagree with each other in the same row.
 
+## Acceptance Criteria
+
+- [x] **AC1:** A sprint that rates no unit publishes `-` in Actual (tokens), never `0`, so an absence is never rendered as a measurement of zero.
+      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_retro.py
+- [x] **AC2:** The row carries a Note giving the not-attributable reason, so the blank is explained rather than merely blank.
+      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_retro.py
+- [x] **AC3:** A historical `0` already in the file is treated as absent by every reader, so the three hand-corrected rows cannot be consumed as data points and the correction survives a whole-file rewrite.
+      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_retro.py
+
 ## Steps to Reproduce
 
 1. Close an interactive sprint whose units have no per-unit telemetry records. 2. Run retro.py accuracy --id RETROxxxx --write. 3. Read the appended VELOCITY.md row. Observed: `Measured` is 0 and `Actual (tokens)` is 0, while `Tokens/pt` is `-`. Expected: `Actual (tokens)` is `-`, matching Tokens/pt and matching the hand-corrected rows for RETRO0062 and RETRO0063.

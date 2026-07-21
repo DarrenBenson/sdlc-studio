@@ -13,6 +13,15 @@
 
 `sprint.batch_history` requires BOTH a non-zero `actual_tokens` AND a non-zero `measured` column, where `measured` counts units carrying PER-UNIT telemetry. An interactive sprint has no runner and therefore no per-unit records, so measured is 0 even when the sprint-level harness capture recorded a real total. Every interactive sprint is dropped. Observed planning the follow-up batch on 2026-07-21: the plan printed 'batch history (what sprints ACTUALLY cost - the real planning input)' listing RETRO0025 through RETRO0028 at 128,471 to 188,022 tokens per unit, and silently excluded RETRO0060 (2,390,624 tokens over 9 units = 265,625/unit) and RETRO0061 (1,265,392 over 13 units = 97,338/unit) - the two most recent sprints with measured totals. RETRO0060 alone is 1.4x the per-unit cost of the most expensive sprint shown. The rows the planner does display are the OLDEST measured data in the file, from the runner era, and nothing in the output says two newer measured sprints were left out. This is the project's recurring defect class - a number presented as authoritative that quietly omits the most relevant evidence - and it sits in the one block the docstring calls 'what the operator should plan against'. It also interacts with the stalled calibration: the plan says 'this project has 3 unit(s) of its own evidence so far; the rate becomes ITS measurement at 5', and that counter cannot advance while the same filter discards the sprints that would advance it.
 
+## Acceptance Criteria
+
+- [x] **AC1:** A sprint with a real total but no per-unit telemetry appears in the plan's batch history, deriving per-unit cost from the total.
+      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint.py
+- [x] **AC2:** Every row states its basis, `per-unit` or `sprint-level`, so the two kinds of evidence cannot be read as one.
+      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint.py
+- [x] **AC3:** The hidden-variance caveat is printed when, and only when, a derived row is actually shown, so it is neither missing nor noise.
+      **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint.py
+
 ## Steps to Reproduce
 
 1. Ensure the velocity history contains at least one interactive sprint with a sprint-level actual and measured=0 (RETRO0060 and RETRO0061 both qualify today). 2. Run sprint.py plan --bugs Open. 3. Read the 'batch history' block. Observed: only RETRO0025-0028 are listed. Expected: the most recent measured sprints, or an explicit statement that N measured sprints were excluded and why. Confirm the cause directly: `batch_history` skips a row unless isinstance(r['measured'], (int,float)) and r['measured'] is truthy, and every interactive sprint records measured=0.
