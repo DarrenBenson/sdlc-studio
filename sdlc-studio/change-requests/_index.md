@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 35 |
+| Proposed | 36 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 334 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **387** |
+| **Total** | **388** |
 
 ## All Changes
 
@@ -209,6 +209,7 @@
 | [CR-0385](CR0385-document-the-mutation-evidence-ledger-four-surfaces-still.md) | Document the mutation evidence ledger: four surfaces still describe only the single-blob report | Proposed | Medium | Improvement | 2026-07-21 | -- |
 | [CR-0386](CR0386-the-handoff-line-tells-you-to-plan-a.md) | The handoff line tells you to plan a worklist that has zero items in it | Proposed | Low | Improvement | 2026-07-21 | -- |
 | [CR-0387](CR0387-the-run-opened-line-prints-goal-unset-on.md) | The run-opened line prints goal=unset on the same command that just set the Sprint Goal | Proposed | Low | Improvement | 2026-07-21 | -- |
+| [CR-0388](CR0388-committing-while-an-adversarial-reviewer-is-mutating-the.md) | Committing while an adversarial reviewer is mutating the tree can stage a mutant; nothing but the gate stands in the way | Proposed | High | Improvement | 2026-07-21 | -- |
 
 ## Archived Releases
 

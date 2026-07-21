@@ -51,6 +51,7 @@ and from per-project memory (project-specific facts).
 | [LL0036](LL0036-set-the-bar-before-you-measure-it-is-what-makes-a-negative-result-possible.md) | Set the bar before you measure - it is what makes a negative result possible |  |
 | [LL0037](LL0037-a-relative-fibonacci-estimate-predicts-cost-a-computed-metric-does-not.md) | A relative Fibonacci estimate predicts cost; a computed metric does not |  |
 | [LL0038](LL0038-decomposition-does-not-just-make-done-checkable-it-makes-the-estimate-accurate.md) | Decomposition does not just make Done checkable - it makes the estimate accurate |  |
+| [LL0039](LL0039-a-symlink-farm-turns-any-shell-redirect-into-a-write-into-the-source-tree.md) | A symlink farm turns any shell redirect into a write into the source tree | safety, tooling, review |
 
 ## Notes
 

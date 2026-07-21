@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 5 |
+| Open | 6 |
 | In Progress | 0 |
 | Fixed | 164 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **251** |
+| **Total** | **252** |
 
 ## All Bugs
 
@@ -218,6 +218,7 @@
 | [BG0249](BG0249-the-velocity-estimate-column-has-bg0244-s-defect.md) | The velocity Estimate column has BG0244's defect exactly: a sum over rated units, so an unrated sprint publishes 0 as a plan-time estimate | Open | High | 2026-07-21 | 2026-07-21 |
 | [BG0250](BG0250-quality-epic-requires-test-spec-is-documented-as.md) | quality.epic_requires_test_spec is documented as the caller's opt-out but is read by no Python code in the tree | Open | Medium | 2026-07-21 | 2026-07-21 |
 | [BG0251](BG0251-the-engagement-floor-cannot-see-a-violation-the.md) | The engagement floor cannot see a violation the gating commit itself creates, because shipped is derived from git log --grep | Open | Medium | 2026-07-21 | 2026-07-21 |
+| [BG0252](BG0252-the-harness-token-capture-counts-only-the-main.md) | The harness token capture counts only the main thread, so a fan-out sprint publishes roughly a third of what it actually cost, labelled as the run's own spend | Open | High | 2026-07-21 | 2026-07-21 |
 
 ## Archived Releases
 
