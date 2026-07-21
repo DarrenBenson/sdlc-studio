@@ -28,9 +28,9 @@ Seven of the ten were one defect class - a number or gate reporting something ne
 - **BG0230** - a fixture's git call could be redirected at the parent repo by the ambient
   environment. Variables dropped AND discovery fenced, plus a sweep so a fifth scrub-list copy
   cannot arrive unpinned. Residual hole declared, not hidden: BG0242.
-- **BG0237 / BG0229 / BG0228 / BG0227 / BG0233 / BG0235** - installed-copy test failures made
-  hermetic and the dev-repo rule single-sourced; a missing spec refused instead of read as empty;
-  `repo_map` anchored on its root; three pin-only units closing surviving mutants.
+- **BG0237 / BG0229 / BG0228 / BG0227 / BG0233 / BG0235** - installed-copy failures made hermetic
+  and the dev-repo rule single-sourced; a missing spec refused not read as empty; `repo_map`
+  anchored on its root; three pin-only units closing surviving mutants.
 
 ## The review REJECTED, and both MAJORs were the sprint's own sin
 
@@ -56,17 +56,18 @@ guard, BG0236's `_session_baseline` backstop, BG0238's `recorded is None` clause
 Round 2 was verified by the **same** reviewer re-running its own reproductions: both MAJOR
 fixtures re-executed, the fallback claim rebuilt across four cases, six transcript shapes swept.
 
-**Dogfood:** this run predates BG0236's fix, carries no baseline, and reports
-**not-attributable** at its own close. No baseline was retrofitted.
+**Dogfood:** this run predates BG0236's fix, carries no baseline, and reports **not-attributable**
+at its own close. No baseline was retrofitted.
 
 ## Next steps
 
-- **CR0384** (High) - filing a finding passes every field through a shell, so reproduction steps
-  get EXECUTED: it deleted two commands from BG0240 and ran `git commit -a` twice here, both
-  blocked by the gate.
-- **BG0244** (High) - the velocity row wrote `Actual (tokens) = 0` when NO unit was rated: an
-  absence published as a measurement, hand-corrected for a third sprint. Found by dogfooding this
-  sprint's own close, against this sprint's own goal.
+- **CR0384** (High) - filing a finding passes fields through a shell, so reproduction steps get
+  EXECUTED: it deleted two commands from BG0240 and ran `git commit -a` twice, both gate-blocked.
+- **BG0244** (High) - the velocity row wrote `Actual (tokens) = 0` when NO unit was rated - an
+  absence published as a measurement, hand-corrected for a third sprint.
+- **BG0245** (High) - the mutation ledger is written only by `mutation.py` while the practice is
+  hand-applied mutants, so the lane reads 0/N after a sprint that followed policy: 75 mutants
+  applied here, coverage reported 0/4. BG0238 built the recorder, not the recording.
 - **BG0242** (High) - 35 bare `subprocess` git calls bypass BG0230's fix: bounded, not closed.
 - **BG0240, BG0241, BG0243, CR0382, CR0383, CR0385** open. **RFC0048 D2** authorised test
   retirement on measured kill-yield, SEQUENCED behind CR0377 and BG0238.
@@ -76,5 +77,4 @@ fixtures re-executed, the fallback claim rebuilt across four cases, six transcri
 ## Lessons
 
 A rule enforced in the producer is not enforced in the consumer. Deleting a guard needs evidence
-from the surface the guard protects. Never judge a measurement by the history of that same
-measurement. Full set: RETRO-0064.
+from the surface it protects. Building the recorder is not recording. Full set: RETRO-0064.

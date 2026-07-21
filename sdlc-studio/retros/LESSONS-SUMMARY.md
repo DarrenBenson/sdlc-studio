@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0189: **When a gate reports an absence, check whether the absence is real before filling it.** The first reflex at this close was a blanket...**
+- **L-0188: **A lane that reads red when the policy was followed will be ignored**, and is indistinguishable from a broken one.**
+- **L-0187: **Building the recorder is not the same as recording.** BG0238 made mutation evidence able to accumulate, and the sprint still closed with...**
 - **L-0186: **Reproduction steps are executable content and must never be passed through a shell.** The field most likely to contain commands is the...**
 - **L-0185: **Prose that justifies code is the least-reviewed code in the repo** - four sprints running now.**
 - **L-0184: **A literal count in prose rots.** "206 tests" was true when written, wrong when the reviewer read it, and wrong again an hour later.**

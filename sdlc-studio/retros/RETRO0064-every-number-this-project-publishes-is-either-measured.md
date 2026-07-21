@@ -115,6 +115,16 @@ the ten were one defect class: a number or a gate reporting something that was n
   an untested claim until something executes it.
 - **Reproduction steps are executable content and must never be passed through a shell.** The
   field most likely to contain commands is the field most likely to be executed.
+- **Building the recorder is not the same as recording.** BG0238 made mutation evidence able to
+  accumulate, and the sprint still closed with none: the ledger is written by `mutation.py`, while
+  the practice is a builder hand-applying a mutant. 75 mutants were applied and the lane reported
+  0/4. Ask where the evidence is PRODUCED before deciding where it is stored.
+- **A lane that reads red when the policy was followed will be ignored**, and is indistinguishable
+  from a broken one. The remedy is a way for the practice to record itself, never a quieter lane.
+- **When a gate reports an absence, check whether the absence is real before filling it.** The
+  first reflex at this close was a blanket mutation sweep to make 0/4 go green - which would have
+  mutated code no changed test pins, sampled under 1% of the enumerated mutants, and buried good
+  per-unit evidence under weaker aggregate evidence. The operator caught it.
 
 ## Estimate vs actual
 
@@ -218,6 +228,7 @@ not an answer.
 | A literal test count in a bug's Resolution had already rotted (review MINOR 7) | declined: correcting the number would only reset the clock, so the rotting claim was removed instead and the count left to the runner |
 | `wsjf-inputs.json` is 11 days stale, so ordering fell back to priority | Declined: the whole backlog was in the batch and nothing declared `Depends on:`, so ordering could not change the outcome. It matters again the moment a batch is a subset |
 | The velocity row published `Actual (tokens) = 0` when no unit was rated - an absence rendered as a measurement, found by dogfooding this sprint's own close | BG0244 |
+| BG0238's ledger records only `mutation.py` runs, but the per-unit practice is hand-applied mutants, so the lane reads 0/N after a sprint that followed policy | BG0245 |
 | 208 units are grandfathered under the engagement floor's `adopt_after` | Declined: pre-existing debt, unchanged by this sprint, and forward-only by design |
 
 <!-- file one with: scripts/file_finding.py · check with: scripts/retro.py dispose --id RETROxxxx -->

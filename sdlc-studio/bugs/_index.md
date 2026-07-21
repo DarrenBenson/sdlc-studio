@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 5 |
+| Open | 6 |
 | In Progress | 0 |
 | Fixed | 157 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **244** |
+| **Total** | **245** |
 
 ## All Bugs
 
@@ -211,6 +211,7 @@
 | [BG0242](BG0242-35-bare-subprocess-git-calls-in-8-test.md) | 35 bare subprocess git calls in 8 test modules bypass the confined helper entirely | Open | High | 2026-07-21 | 2026-07-21 |
 | [BG0243](BG0243-run-attributed-tokens-reads-whatever-run-is-open.md) | run_attributed_tokens reads whatever run is open, so a token delta can be stamped on an unrelated retro | Open | Medium | 2026-07-21 | 2026-07-21 |
 | [BG0244](BG0244-the-velocity-row-records-actual-tokens-as-0.md) | The velocity row records Actual (tokens) as 0 when NO unit was rated, publishing an absence as a measurement | Open | High | 2026-07-21 | 2026-07-21 |
+| [BG0245](BG0245-the-mutation-ledger-can-only-be-populated-by.md) | The mutation ledger can only be populated by mutation.py, but the per-unit practice is hand-applied mutants, so the coverage lane reads 0/N after a correctly-run sprint | Open | High | 2026-07-21 | 2026-07-21 |
 
 ## Archived Releases
 
