@@ -48,7 +48,10 @@ and `test_the_real_run_helper_refuses_from_an_installed_copy` now exercises it.
 Verified the sweep does not consume the one allowed real gate run: the once-per-class assertion
 still passes, so this did not recreate the restore-a-global regression of L-0176.
 
-Module: 206 tests, green, 8.0s.
+Module green throughout, and the sweep is what states its own scope rather than a count written
+here: a literal test count in prose rots the moment the module grows, which the adversarial review
+caught it doing within the same sprint (206 at the time of writing, 218 by the time the review read
+it, 222 an hour later). The count belongs in the runner's output, not in a claim nobody re-runs.
 
 ## Revision History
 

@@ -143,5 +143,89 @@ class SessionTokenReaderTests(unittest.TestCase):
         self.assertEqual(retro.TRANSCRIPTS_ENV, run_state.TRANSCRIPTS_ENV)
 
 
+class MalformedTranscriptTests(unittest.TestCase):
+    """A malformed transcript record must not abort the plan, and must not produce a short total.
+
+    Found by the adversarial review of RUN-01KY2K5R. The reader summed `int(usage.get(k) or 0)`
+    under a clause catching only OSError, so one non-numeric usage value raised TypeError out of
+    `session_tokens`, through `_session_baseline` (which also caught only OSError) and out of
+    `open_run` - so `sprint plan --write` minted no run at all and wrote no run-state.json. Both
+    docstrings claimed otherwise: "Never raises: a plan must not fail because a transcript was
+    unreadable", and a documented return shape of {"tokens": None, "reason"}.
+
+    The transcript format is the harness's, not this project's, and it has moved before - the
+    reader already probes two shapes. So the clause is the whole family, matching what
+    `archived()._index` in the same module learned from its own repairs.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / "sdlc-studio" / ".local").mkdir(parents=True)
+        self.transcripts = self.root / "transcripts"
+        self.transcripts.mkdir()
+        env = mock.patch.dict(os.environ, {"SDLC_STUDIO_TRANSCRIPTS": str(self.transcripts)})
+        env.start()
+        self.addCleanup(env.stop)
+        self.addCleanup(self.tmp.cleanup)
+
+    def _write(self, *records: str) -> None:
+        (self.transcripts / "s1.jsonl").write_text("".join(r + "\n" for r in records),
+                                                   encoding="utf-8")
+
+    def test_a_malformed_usage_value_reports_a_reason_instead_of_raising(self) -> None:
+        self._write(json.dumps({"message": {"usage": {"input_tokens": ["oops"],
+                                                      "output_tokens": 5}}}))
+        cap = run_state.session_tokens(str(self.root))          # must not raise
+        self.assertIsNone(cap["tokens"])
+        self.assertIn("malformed", cap["reason"])
+
+    def test_every_malformed_shape_is_handled_not_just_the_one_that_was_reported(self) -> None:
+        """The clause is the family, not the shape that prompted it. A list, a dict and a
+        non-numeric string each reach `int()` by a different route."""
+        for bad in (["oops"], {"a": 1}, "not-a-number"):
+            with self.subTest(bad=bad):
+                self._write(json.dumps({"message": {"usage": {"input_tokens": bad}}}))
+                cap = run_state.session_tokens(str(self.root))
+                self.assertIsNone(cap["tokens"], f"{bad!r} produced a number")
+
+    def test_a_malformed_record_refuses_the_total_rather_than_returning_a_short_one(self) -> None:
+        """Skipping the bad record would return a quietly SHORT total, and a short baseline
+        inflates the delta measured against it - a wrong number, which is the expensive failure.
+        The good record's 900,000 must NOT come back on its own."""
+        self._write(json.dumps({"message": {"usage": {"input_tokens": 900000}}}),
+                    json.dumps({"message": {"usage": {"input_tokens": ["oops"]}}}))
+        cap = run_state.session_tokens(str(self.root))
+        self.assertIsNone(cap["tokens"])
+        self.assertNotIn("900000", json.dumps(cap))
+
+    def test_the_plan_still_mints_a_run_and_stamps_no_baseline(self) -> None:
+        """The consequence that made this MAJOR: `sprint plan --write` could not open a run."""
+        self._write(json.dumps({"message": {"usage": {"input_tokens": ["oops"]}}}))
+        rec = run_state.open_run(str(self.root), batch=["BG0001"], goal="g")   # must not raise
+        self.assertTrue(rec.get("run_id"))
+        self.assertTrue((self.root / "sdlc-studio" / ".local" / "run-state.json").exists(),
+                        "the run state was never written, so the run does not exist")
+        self.assertIsNone(rec.get(run_state.TOKEN_BASELINE),
+                          "an untrustworthy meter must leave the baseline absent, not zero")
+
+    def test_the_baseline_backstop_holds_even_if_the_reader_starts_raising(self) -> None:
+        """`_session_baseline`'s own clause, pinned DIRECTLY because nothing else reaches it.
+
+        Reverting it to OSError-only was a SURVIVING mutant: `session_tokens` now returns rather
+        than raising, so the backstop is unreachable through the public path and read as coverage
+        while pinned by nothing (L-0159). It is kept rather than deleted because it enforces the
+        stated contract - a plan must not fail because a transcript was unreadable - against a
+        future change to the reader, which is exactly what happened here. So it is tested against
+        a reader that DOES raise.
+        """
+        with mock.patch.object(run_state, "session_tokens",
+                               side_effect=TypeError("reader started raising")):
+            self.assertIsNone(run_state._session_baseline(str(self.root)))
+            rec = run_state.open_run(str(self.root), batch=["BG0001"], goal="g")
+            self.assertTrue(rec.get("run_id"), "the plan failed on an unreadable transcript")
+            self.assertIsNone(rec.get(run_state.TOKEN_BASELINE))
+
+
 if __name__ == "__main__":
     unittest.main()

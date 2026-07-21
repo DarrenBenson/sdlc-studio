@@ -221,8 +221,6 @@ class BudgetLaneTests(unittest.TestCase):
             self.assertIsNone(gt.budget_report(root))        # declared, but nothing recorded
 
 
-if __name__ == "__main__":
-    unittest.main()
 
 
 class ScopeTests(unittest.TestCase):
@@ -321,3 +319,7 @@ class ScopeTests(unittest.TestCase):
                 rc = gt.main(["--root", str(root), "scope", "--suite", "total", "--tests", "3400"])
             self.assertEqual(rc, 0)
             self.assertEqual(buf.getvalue(), "")
+
+
+if __name__ == "__main__":
+    unittest.main()

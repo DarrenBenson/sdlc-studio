@@ -510,6 +510,11 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     # Advisory - computed even on a refused run, so a report is never read blind.
     selected = _selected_test_files(root, test_cmd)
     selection_warnings = _selection_warnings(root, files, selected)
+    # A FRESHNESS stamp over the surface this run was pointed at, and never evidence: it is
+    # computed from `files`, outside every verdict and refusal path, so it names a file the
+    # cost ceiling never reached and every target of a refused run. What was PROVEN is the
+    # ledger below, which enters a target only on a killed-or-survived verdict. A consumer
+    # that reads this field as coverage reports files no mutant ran on; that is what happened.
     import hashlib
     target_hashes = {}
     for fp in files:

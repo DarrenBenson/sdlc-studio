@@ -69,9 +69,80 @@ still describe only `mutation-report.json`, so the new ledger is undocumented fo
 
 Modules: `test_gate.py` + `test_mutation.py`, 275 tests, green, 19s.
 
+### Repair after the RUN-01KY2K5R review (REJECT, MAJOR + 2 MINOR)
+
+The review was right and both reproductions stood up as filed.
+
+**What was wrong.** The lane read the ledger and then overlaid the report's own
+`target_hashes` on top of it, so any hash-matching file the report NAMED read as evidence.
+`mutation.py` computes that field from `files`, outside every verdict and refusal path, so it
+names a target no mutant ever reached. Reproduced twice, verbatim: a refused run printed "no
+mutants applied, nothing was proven ... mutation evidence covers 1/1 file(s)" in one sentence;
+and three changed files with a real green suite and `--max-mutations 1` printed "covers 3/3
+file(s)" and PASSED while the ledger correctly held only `a.py`.
+
+**Why the deleted guard was wrong to delete.** Removing `if not report.get("refused")` from
+`append_ledger` was justified above with "the verdict rule already excludes every target". That
+is true of the LEDGER and was never checked against the consumer reading the report directly,
+which is the very thing being written in the same change. The surviving mutant proved the guard
+was redundant *in `append_ledger`*; the sentence then generalised it to the report, and the
+overlay in `gate.py` made the generalisation false. The guard itself stays deleted - it really
+was pinned by nothing - and the rule it expressed is now enforced where it belongs: coverage
+cannot see the report at all.
+
+**What the lane does now.**
+
+- `_mutation_coverage(root)` no longer takes the report. Evidence is the ledger alone, so a
+  file can be called covered only when the suite returned a killed or survived verdict on it.
+- The degraded fallback is REACHABLE, not merely present - the previous MINOR. With no per-file
+  evidence, the lane checks the report's own target hashes (the CR0146 behaviour, now carried by
+  `_report_hash_stale`), then the whole-blob rev. Verified by execution, not by reasoning: a
+  refused run in a fixture repo wrote a report with `target_hashes` and no ledger, an unrelated
+  commit moved HEAD, and the lane said `mutation-report is STALE (run at 3076e9920, tree at
+  6a73a5251)`; deleting the ledger and editing the target in a non-git fixture gave
+  `mutation-report is STALE (target(s) edited since the run: a.py)`.
+- `None` and `[]` from `_mutation_changed_surface` no longer collapse - the second MINOR. The
+  line names which non-surface it fell back to: "(git could not name the changed files)" against
+  "(nothing changed since HEAD)", so a figure about the ledger's own files is never read as a
+  figure about this change.
+- The survivor summary carries its run. Coverage is per file, the summary is per run, and the
+  old whole-blob check said so out loud where the first cut said nothing: the lane now appends
+  "summary is from the run at <rev>, not this tree (<head>)". Attribution, not a finding - it
+  adds no count, so a covered surface still passes.
+
+**On this repo at HEAD**, where no ledger exists and the report is the previous sprint's:
+`3 survived, 0 error(s) of 16 applied (3137 truncated) - advisory - 16/3153 enumerated sampled
+(0.5%) - summary is from the run at 8c47cc83e, not this tree (b93ab9c2c); mutation evidence
+covers 0/4 file(s) of the changed surface; no evidence: gate.py, run_state.py, mutation.py (+1
+more)`. Both things the old lane and the broken lane each got half right.
+
+Seven tests added, one changed. Five were seen RED before the code that makes them pass: the
+four reproductions above, and the run-attribution test. Two were GREEN from the moment they
+were written and are said so plainly rather than counted as red-first - the negative guard that
+an in-tree summary carries NO attribution, and the writer-side test that `target_hashes` names
+every target asked for. Both are pinned by mutants instead. The changed one is a signature
+(`_boom(root, data)` -> `_boom(root)`), no behaviour.
+
+Eight hand-applied mutants, every one killed, each applied to the file on disk with
+`__pycache__` purged and `python3 -B`: restoring the report overlay (kills 3), collapsing the
+two fallback labels (1), neutering `_report_hash_stale` (1, and it is the CR0146 test that
+catches it), disabling the rev branch (2), making `_key_under` ignore the root (8), dropping the
+run attribution (1), making the attribution unconditional (1), and restricting `target_hashes`
+to judged targets (1).
+
+`test_gate.py` 224 + `test_mutation.py` 58 green; the whole script suite 3523 green, `tools/`
+273 green, style/links/budgets/neutrality/versions clean, `reconcile detect` drift 0.
+
+Not covered here: `help/mutation.md` and the spec docs are still undocumented for the ledger,
+unchanged from above. The ledger is also durable across sprints, so the "recorded surface"
+figure can span older files - the label says which surface it is, but nothing bounds it to the
+current run.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-21 | sdlc-studio | Filed |
 | 2026-07-21 | claude | Fixed: bounded per-target ledger `mutation-runs.json` beside the unchanged report; gate lane judges content-hash coverage of the git-derived changed surface, degrading to the ledger when git cannot answer; still advisory. 22 mutants applied, 20 killed; the 2 survivors deleted a redundant guard and rewrote a test that pinned nothing. |
+| 2026-07-21 | claude | Repaired after review REJECT: coverage read the report's `target_hashes` as evidence, so a refused run and a ceiling-truncated run both reported files no mutant ran on. Evidence is now the ledger alone; the degraded fallback was proved reachable by execution; `None` vs `[]` surfaces are named apart; the survivor summary states which run it came from. 7 tests added and 1 changed: FIVE seen red first (the four reproductions and the run-attribution test), TWO green from the moment they were written and pinned by mutants instead - see the body, which is the honest account. 8 mutants killed. |
+| 2026-07-21 | claude | Round-2 review APPROVE, with one MINOR against this unit fixed at close: the `recorded is None` clause in `_report_hash_stale` was a SURVIVING mutant - the guard was copied from the ledger path into the fallback and its test was not, so dropping it left all 224 tests green while a report hash of null read as fresh. Now pinned by `test_a_report_hash_of_null_is_not_evidence_in_the_FALLBACK_either`, and the mutant dies. Third instance this sprint of a guard reading as coverage while pinned by nothing (L-0159). |

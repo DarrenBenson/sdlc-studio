@@ -1357,6 +1357,27 @@ class MutationCoverageTests(unittest.TestCase):
             self.assertIn("STALE", lane["detail"])
             self.assertEqual(lane["count"], 1, lane["detail"])
 
+    def test_a_report_hash_of_null_is_not_evidence_in_the_FALLBACK_either(self) -> None:
+        """The fallback's twin of `test_an_entry_with_no_recorded_hash_is_not_evidence`.
+
+        The `recorded is None` clause was copied into `_report_hash_stale` and its test was not,
+        so dropping it left the whole module green - a SURVIVING mutant found by the round-2
+        review, and the third instance this sprint of a guard that reads as coverage while pinned
+        by nothing (L-0159). A null recorded hash means the target could not be read when the
+        report was written; paired with a target that cannot be read now either, `current` is also
+        None and two unknowns compare EQUAL, so the file reads as unchanged since the run.
+
+        This is the fallback path, so there must be no ledger and no changed surface for it to be
+        reached at all.
+        """
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t, report={**self.CLEAN, "git_rev": "0" * 40,
+                                         "target_hashes": {"gone.py": None}})
+            lane = gate._mutation(str(root))          # no ledger written: the fallback path
+            self.assertIn("STALE", lane["detail"], lane)
+            self.assertIn("gone.py", lane["detail"], lane)
+            self.assertEqual(lane["count"], 1, lane["detail"])
+
     def test_the_surface_extensions_match_the_mutator_s_own_profiles(self) -> None:
         """The lane calls a changed file uncovered only if mutation.py could have mutated it.
         Two hand-kept copies of that list would drift into a false 'no evidence' claim."""
@@ -1382,6 +1403,147 @@ class MutationCoverageTests(unittest.TestCase):
             self.assertIsNone(gate._mutation_changed_surface(str(sub)))
             self.assertEqual(gate._mutation_changed_surface(str(repo)), ["sub/x.py"])
 
+    def test_the_lane_says_which_of_the_two_non_surfaces_it_fell_back_from(self) -> None:
+        """None (git could not answer) and [] (nothing changed) are different claims, and a
+        reader of the coverage line has to be able to tell them apart: one figure is about a
+        surface that could not be read, the other about files this change did not touch.
+        Collapsing both to one label makes the None/[] distinction unobservable."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            gitutil.git(["init", "-q"], cwd=root)
+            (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+            ledger = {"version": 1, "dropped": 0,
+                      "entries": [self._entry("a.py", self._sha(root / "a.py"))]}
+            (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+                json.dumps(ledger), encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                json.dumps(self.CLEAN), encoding="utf-8")
+            # no commit yet: `git diff HEAD` cannot answer, so the surface is unknown
+            self.assertIsNone(gate._mutation_changed_surface(str(root)))
+            unknown = gate._mutation(str(root))["detail"]
+            self._commit_all(root)
+            # committed and clean: git answers, and the answer is "nothing changed"
+            self.assertEqual(gate._mutation_changed_surface(str(root)), [])
+            clean = gate._mutation(str(root))["detail"]
+            self.assertIn("1/1", unknown)
+            self.assertIn("1/1", clean)
+            self.assertNotEqual(unknown, clean)
+            self.assertIn("git could not name the changed files", unknown)
+            self.assertIn("nothing changed since HEAD", clean)
+
+    def test_a_target_the_report_names_but_no_mutant_ran_on_is_not_evidence(self) -> None:
+        """The reviewer's second reproduction. `mutation.py` writes `target_hashes` for every
+        file NAMED as a target, before any verdict exists; the ledger enters a target only
+        when the suite returned killed or survived on it. Reading the report's hashes as
+        coverage let three changed files read 3/3 covered when one mutant had run, on one
+        file - the ledger held a.py alone and the lane PASSED."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            gitutil.git(["init", "-q"], cwd=root)
+            (root / "seed.md").write_text("seed\n", encoding="utf-8")
+            self._commit_all(root)
+            for name in ("a.py", "b.py", "c.py"):
+                (root / name).write_text(f"def {name[0]}():\n    return 1\n", encoding="utf-8")
+            hashes = {n: self._sha(root / n) for n in ("a.py", "b.py", "c.py")}
+            ledger = {"version": 1, "dropped": 0,
+                      "entries": [self._entry("a.py", hashes["a.py"])]}
+            (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+                json.dumps(ledger), encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                json.dumps({**self.CLEAN, "targets": list(hashes),
+                            "target_hashes": hashes}), encoding="utf-8")
+            report = gate.run_gate(str(root), checks={"mutation": gate._mutation})
+            lane = report["checks"][0]
+            self.assertIn("1/3", lane["detail"])
+            self.assertIn("b.py", lane["detail"])
+            self.assertIn("c.py", lane["detail"])
+            self.assertEqual(lane["count"], 2, lane["detail"])
+            self.assertNotEqual(lane["status"], "pass")
+
+    def test_a_summary_from_another_rev_says_whose_numbers_it_is_printing(self) -> None:
+        """Coverage is per FILE and comes from the ledger; the survivor summary is per RUN and
+        comes from the report, so the two can be about different things. Judging coverage must
+        not lose what the old whole-blob check said out loud: on this repo the lane printed
+        '3 survived of 16 applied' from a report at another rev with nothing marking it as
+        another change's numbers. Attribution only - it is not a finding and must not count."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            gitutil.git(["init", "-q"], cwd=root)
+            (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+            self._commit_all(root)
+            ledger = {"version": 1, "dropped": 0,
+                      "entries": [self._entry("a.py", self._sha(root / "a.py"))]}
+            (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+                json.dumps(ledger), encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                json.dumps({**self.CLEAN, "git_rev": "0" * 40}), encoding="utf-8")
+            report = gate.run_gate(str(root), checks={"mutation": gate._mutation})
+            lane = report["checks"][0]
+            self.assertIn("1/1", lane["detail"])              # the per-file evidence still reads
+            self.assertIn("run at 000000000", lane["detail"])  # ...and whose summary it is
+            self.assertEqual(lane["count"], 0, lane["detail"])
+            self.assertEqual(lane["status"], "pass")
+
+    def test_a_summary_from_this_rev_is_not_annotated(self) -> None:
+        """The other half: an attribution printed on every run would be noise, and noise on a
+        line that is usually fine is how a real warning stops being read."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            gitutil.git(["init", "-q"], cwd=root)
+            (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+            self._commit_all(root)
+            head = gitutil.git(["rev-parse", "HEAD"], cwd=root).stdout.decode().strip()
+            ledger = {"version": 1, "dropped": 0,
+                      "entries": [self._entry("a.py", self._sha(root / "a.py"))]}
+            (root / "sdlc-studio" / ".local" / "mutation-runs.json").write_text(
+                json.dumps(ledger), encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                json.dumps({**self.CLEAN, "git_rev": head}), encoding="utf-8")
+            lane = gate._mutation(str(root))
+            self.assertNotIn("run at", lane["detail"])
+            self.assertIn("1/1", lane["detail"])
+
+    def test_a_refused_run_carries_no_coverage_claim(self) -> None:
+        """The reviewer's first reproduction. A refusal applies no mutant, so no target has a
+        verdict and the ledger enters none of them - but the report still names them all. One
+        lane line said 'no mutants applied, nothing was proven' and 'covers 1/1' at once."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            gitutil.git(["init", "-q"], cwd=root)
+            (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+            self._commit_all(root)
+            head = gitutil.git(["rev-parse", "HEAD"], cwd=root).stdout.decode().strip()
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                json.dumps({"refused": True, "baseline": "fail", "git_rev": head,
+                            "targets": ["a.py"],
+                            "target_hashes": {"a.py": self._sha(root / "a.py")},
+                            "summary": {"applied": 0, "killed": 0, "survived": 0,
+                                        "errors": 0, "unviable": 0, "truncated": 0}}),
+                encoding="utf-8")
+            lane = gate._mutation(str(root))
+            self.assertIn("nothing was proven", lane["detail"])
+            self.assertNotIn("covers", lane["detail"])
+
+    def test_a_report_from_another_rev_with_no_ledger_still_reads_stale(self) -> None:
+        """The degraded fallback has to be REACHABLE, not merely present. Every report
+        `mutation.py` writes carries `target_hashes`, so while those doubled as evidence the
+        whole-blob rev check could never run: a report from a foreign rev whose hashes happen
+        to match read 'covers 1/1' and PASSED."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            gitutil.git(["init", "-q"], cwd=root)
+            (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+            self._commit_all(root)
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                json.dumps({**self.CLEAN, "git_rev": "0" * 40, "targets": ["a.py"],
+                            "target_hashes": {"a.py": self._sha(root / "a.py")}}),
+                encoding="utf-8")
+            report = gate.run_gate(str(root), checks={"mutation": gate._mutation})
+            lane = report["checks"][0]
+            self.assertIn("STALE", lane["detail"])
+            self.assertNotIn("covers", lane["detail"])
+            self.assertNotEqual(lane["status"], "pass")
+
     def test_a_long_gap_list_is_bounded_and_says_how_many_it_did_not_print(self) -> None:
         """Truncating the names silently would read as 'that is all of them'."""
         line = gate._name_list([f"pkg/f{i}.py" for i in range(5)])
@@ -1393,7 +1555,7 @@ class MutationCoverageTests(unittest.TestCase):
         """Coverage is advisory: whatever it hits, the lane still returns a verdict."""
         orig = gate._mutation_coverage
 
-        def _boom(root, data):
+        def _boom(root):
             raise RuntimeError("kaboom")
         with tempfile.TemporaryDirectory() as t:
             root = self._root(t, report=self.CLEAN)

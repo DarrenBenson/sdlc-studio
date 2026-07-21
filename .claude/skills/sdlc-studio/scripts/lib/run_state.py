@@ -341,10 +341,23 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
                 if not isinstance(usage, dict):
                     continue
                 seen = True
-                total += sum(int(usage.get(k) or 0) for k in
-                             ("input_tokens", "output_tokens", "cache_creation_input_tokens"))
-    except OSError as exc:
-        return {"tokens": None, "reason": f"transcript {src} unreadable ({exc})"}
+                try:
+                    total += sum(int(usage.get(k) or 0) for k in
+                                 ("input_tokens", "output_tokens", "cache_creation_input_tokens"))
+                except (ArithmeticError, AttributeError, TypeError, ValueError) as exc:
+                    # A malformed usage value REFUSES the whole read rather than skipping the
+                    # record. Skipping would return a total that is quietly short, and a short
+                    # baseline inflates the delta measured against it - a wrong number, which is
+                    # the expensive failure here. Not-attributable is the cheap one.
+                    return {"tokens": None,
+                            "reason": f"transcript {src.name} carries a malformed usage record "
+                                      f"({type(exc).__name__}: {exc}) - the total cannot be "
+                                      f"trusted, so no figure is reported"}
+    except (ArithmeticError, AttributeError, OSError, TypeError, ValueError) as exc:
+        # The whole family, not the shapes seen so far. This transcript format is the harness's,
+        # not this project's, and it has already moved once (hence the two-shape probe above).
+        # `archived()._index` in this same file records the same lesson from its own repairs.
+        return {"tokens": None, "reason": f"transcript {src} unreadable ({type(exc).__name__}: {exc})"}
     if not seen or total <= 0:
         return {"tokens": None, "reason": f"transcript {src.name} carries no usage records"}
     return {"tokens": total, "source": str(src),
@@ -368,7 +381,11 @@ def _session_baseline(repo_root: Path | str) -> dict | None:
     """
     try:
         cap = session_tokens(repo_root)
-    except OSError:
+    except (ArithmeticError, AttributeError, OSError, TypeError, ValueError):
+        # Backstop, deliberately the whole family: `session_tokens` is meant to return rather
+        # than raise, but "a plan must not fail because a transcript was unreadable" has to hold
+        # even when that contract is broken. A narrower clause here let a TypeError from one
+        # malformed record abort `sprint plan --write` entirely, so no run was minted at all.
         return None
     if not cap.get("tokens"):
         return None

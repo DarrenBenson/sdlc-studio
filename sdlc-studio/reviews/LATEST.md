@@ -1,80 +1,80 @@
 # Reviews - LATEST (anchor)
 
-> Derived from **RUN-01KY1WCR** (RFC0048 option B, 2026-07-21, RETRO-0063).
-> Supersedes the RETRO-0062 picture.
+> Derived from **RUN-01KY2K5R** (the open-bug batch, 2026-07-21, RETRO-0064).
+> Supersedes the RETRO-0063 picture. Full detail lives in RETRO-0064; this is the anchor.
 
 ## Where the pipeline is (2026-07-21)
 
-**RUN-01KY1WCR is CLOSED goal-reached.** Adversarially reviewed to APPROVE over four rounds,
-then signed off by the operator as reviewer of record. 4/4 stories Done, 12 points, EP0093
-derived Done under RFC0048. Nothing outstanding on this run.
+**RUN-01KY2K5R delivered 10/10 units, 21 points, one wave** - the entire open-bug backlog. The
+closing review REJECTED at round 1 on two MAJORs; both were repaired and the same reviewer
+re-executed its own reproductions to APPROVE at round 2.
+
+Sprint Goal: *every number this project publishes is either measured or refused, and the test
+suite cannot reach the repository that runs it.*
 
 ## What shipped
 
-A commit costs **~99s instead of ~197s** (the hook's own end-to-end measurements), with no coverage given up (suite 3,409 -> 3,422
-tests). `run_gate`, which every commit pays, went **35.6s -> 6.95s**.
+Seven of the ten were one defect class - a number or gate reporting something never measured.
 
-- **US0284** - `test_gate.py` ran the full gate over this repo twice (shape, then exit code).
-  One lazy run serves both; `main` is pinned against a stub. 72.2s -> 36.2s.
-- **US0285** - the never-rolled pin drove 5,050 records through `record()`; it now seeds the log
-  past the cap in one write and appends one. 10.4s -> 0.259s.
-- **US0286** - `engagement_floor.detect` ran `git log --grep` once per shipped unit (842
-  subprocesses); `project_override` re-parsed `.config.yaml` on every call (4,495 per validate
-  run). One git pass; the parse memoised on content digest.
-- **US0287** - RFC0048 **D6 closed**: a 120s budget against a measured 99s baseline, advisory,
-  reporting trend against a dated baseline.
+- **BG0236** - the close captured the harness meter's ABSOLUTE reading, cumulative per session, so
+  a second sprint in one session booked the first's spend (472,691 tokens/point against a ~25,000
+  rate, hand-blanked twice). `open_run` stamps a baseline, the close reports the delta, and a
+  baseline-less run says **not-attributable** with no fallback.
+- **BG0238** - mutation evidence was one blob, last-write-wins, stale-keyed on a repo-wide
+  `git_rev`, so per-unit runs never reached the close. Now a bounded ledger keyed on each target's
+  content hash, with the lane judging **coverage of the changed surface**.
+- **BG0239** - the budget recorded a total whenever the suite lane was INVOKED. Now gated on a
+  loader-error fact plus a test-count floor, deliberately **not** on duration.
+- **BG0230** - a fixture's git call could be redirected at the parent repo by the ambient
+  environment. Variables dropped AND discovery fenced, plus a sweep so a fifth scrub-list copy
+  cannot arrive unpinned. Residual hole declared, not hidden: BG0242.
+- **BG0237 / BG0229 / BG0228 / BG0227 / BG0233 / BG0235** - installed-copy test failures made
+  hermetic and the dev-repo rule single-sourced; a missing spec refused instead of read as empty;
+  `repo_map` anchored on its root; three pin-only units closing surviving mutants.
 
-## The adversarial review found three MAJORs, and it was right about all of them
+## The review REJECTED, and both MAJORs were the sprint's own sin
 
-Two were **false claims written in prose to justify my own code** - the failure this repo keeps
-hitting (L-0146), now three sprints running.
+For the **fourth consecutive sprint** the surviving defect was prose asserting a property the code
+did not have (L-0146, L-0173).
 
-1. **A shipped library path was made to raise.** Narrowing `project_override`'s read to
-   `except OSError` let `UnicodeDecodeError` escape: one legacy-encoded byte in a consuming
-   project's config turned 7 blocking lanes red with a message that never named the file. My
-   comment said "same answer as before". Now catches `(OSError, ValueError)` and warns.
-2. **The budget lane reported drift that was not drift.** The hook recorded a `total` on every
-   commit, including docs-only ones that skip the 85s suites, so the live gate read
-   `-85% since`. The hook comment claiming "the expensive lanes ran either way" was false. Now
-   recorded only when the suites ran; the series is purged of the non-comparable entry.
-3. **The guard for US0284's own saving did not guard.** It matched the literal
-   `gate.run_gate(str(REPO))`, but the test US0284 deleted was spelled `gate.main([...])`.
-   Pasting it back verbatim into a neighbouring class doubled the runtime with both guards
-   silent. Now a module-scope refusal every route passes through, tested in both directions.
-
-**Three REJECT rounds, and rounds 2 and 3 were each caused by the previous repair.** Round 2:
-the two new hook tests both took the BLOCKED branch, never the docs-only one they were named
-for, so a mutant restoring the live bug kept them green - vacuity again, in a test whose own
-docstring claimed "the behaviour is the claim"; and the corrected baseline reached config but
-not RFC0048's D6 row. Round 3: the `tearDownModule` written to close a round-2 MINOR handed back
-the one-real-run guard, letting the 35s duplicate return in any of 59 later modules (7.9s ->
-14.8s, green); and the new hook fixture ran git unscrubbed, so under `git commit -a` it wrote
-its own tree into the real repo's pending index - **the data-loss class this repo already
-suffered as BG0230**, reproduced on three victim repos. All repaired. **Round 4: APPROVE** - the first round whose repair manufactured nothing - with 3 MINORs, all fixed at close (a three-way pin on the git-scrub list, and a false module count that had reached the standing lessons digest).
+1. **The mutation coverage lane counted files nothing had mutated.** The gate overlaid the report's
+   `target_hashes` - written for every named target before any verdict exists - on top of the
+   ledger that correctly applies the verdict rule. A REFUSED run printed "nothing was proven" and
+   "covers 1/1" in one sentence. **A bug meant to stop unmeasured numbers was publishing one.** The
+   deleted `if not refused` guard had been removed on evidence from the ledger, never from the
+   report the gate actually reads.
+2. **`session_tokens` raised on a malformed transcript record**, so `sprint plan --write` minted no
+   run at all - while its docstring promised "never raises". The counter-example sat 100 lines up.
 
 ## Evidence
 
-`gate --format json` byte-identical before and after across all 15 lanes, reproduced
-independently. **9 mutants killed in the build, 8 more across three repair rounds.** The reviewer
-could not break: the byte-identical claim, any new test's ability to fail, the fixture's
-non-vacuity, `$SECONDS` arithmetic, or US0284's "no assertion lost".
+**75 mutants in the build, 5 SURVIVED first time**, each driving a second fix; 12 more across the
+repair and re-verification. Every survivor read as coverage while pinning nothing - and the
+**unreachable-guard trap (L-0159) was hit three times by three authors** (BG0237's `_report()`
+guard, BG0236's `_session_baseline` backstop, BG0238's `recorded is None` fallback clause). None
+was deleted; all three now have direct tests.
 
-**The premise was wrong three times too** - US0286's "lanes re-walk the corpus" (it is 0.105s),
-US0285's injected cap (would have passed either way), US0287's shipped lane (permanently
-silent). Evidence base for **RFC0050**'s plan-time adversarial pass.
+Round 2 was verified by the **same** reviewer re-running its own reproductions, not a fresh one:
+both MAJOR fixtures re-executed, the fallback-reachability claim rebuilt across four cases, six
+malformed-transcript shapes swept, a no-op control mutant run to prove its harness was sound.
+
+**Dogfood:** this run predates BG0236's fix, carries no baseline, and reports
+**not-attributable** at its own close. No baseline was retrofitted.
 
 ## Next steps
 
-- **RFC0050** / **RFC0049** - RFC0050's risk lens subsumes RFC0049 option B; do not build both.
-- **BG0236** (High) - the close's token capture is session-cumulative and RECURRED here: it
-  published 472,691/pt over a 3-sprint session. Blanked by hand for the second close running.
-- **BG0238** (High) - per-unit mutation evidence is still never captured; 12 mutants died this
-  run and none is recorded outside prose.
-- **CR0381**, **BG0237**, **BG0236**, **CR0380** open. **RFC0046** needs D1 or an override;
-  **CR0319** is the release cut. Release freeze holds.
+- **CR0384** (High) - filing a finding passes every field through a shell, so reproduction steps
+  get executed: it deleted two commands from BG0240 and ran `git commit -a` twice here (both
+  blocked by the gate; nothing committed).
+- **BG0242** (High) - 35 bare `subprocess` git calls in 8 modules bypass BG0230's fix: bounded by
+  a ratchet, not closed. **CR0383** - 62 scripts declare `--root` and one discovers it.
+- **BG0240, BG0241, BG0243, CR0382, CR0385** open. **RFC0048 D2** authorised test retirement on
+  measured kill-yield, SEQUENCED behind CR0377 and BG0238.
+- **CR0319** is the release cut and the freeze has expired. **RFC0050** is unbuilt; its risk lens
+  subsumes RFC0049 option B - do not build both.
 
 ## Lessons
 
-Profile before optimising. Test a guard's mechanism, not the case that prompted it. Narrowing an
-exception clause is a behaviour change. A test that never enters the branch it names is vacuous
-however real its fixture looks. See RETRO-0063 for the full set.
+A rule enforced in the producer is not enforced in the consumer. Deleting a guard needs evidence
+from the surface the guard protects. Never judge a measurement by the history of that same
+measurement. Full set: RETRO-0064.

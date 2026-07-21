@@ -511,6 +511,26 @@ class LedgerTests(unittest.TestCase):
             recorded = {e["target"] for e in self._ledger(root)["entries"]}
             self.assertEqual(recorded, judged)
 
+    def test_target_hashes_name_every_target_asked_for_not_every_one_proven(self) -> None:
+        """The writer's half of the same rule, stated where the field is produced. The report's
+        `target_hashes` records the surface the run was POINTED at, and is computed before any
+        verdict exists, so it names a file the ceiling never reached and every target of a
+        refused run. It is a freshness stamp, never evidence: the gate lane read it as coverage
+        and reported 3/3 files covered on a run that mutated one, and 1/1 covered on a run that
+        applied no mutant at all. Only the ledger applies the verdict rule."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            (root / "other.py").write_text(TARGET.replace("classify", "sort_of"),
+                                           encoding="utf-8")
+            r = mut.run_gate(root, [root / "target.py", root / "other.py"],
+                             f"{sys.executable} -m unittest test_good", max_mutations=1)
+            named = {Path(p).name for p in r["target_hashes"]}
+            recorded = {Path(e["target"]).name for e in self._ledger(root)["entries"]}
+            self.assertEqual(named, {"target.py", "other.py"})   # both were asked for
+            self.assertEqual(len(recorded), 1)                   # one was proven
+            self.assertTrue(recorded < named)
+
     def test_the_ledger_is_bounded_and_counts_what_it_dropped(self) -> None:
         mut = _load()
         with tempfile.TemporaryDirectory() as d:

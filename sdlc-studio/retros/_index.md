@@ -73,3 +73,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0061](RETRO0061-run-01ky03gs-bound-the-close-review-loop-and.md) | RUN-01KY03GS: bound the close review loop and clear the instruments close-debt | 2026-07-20 | -- | -- |
 | [RETRO-0062](RETRO0062-run-01ky0vnv-the-freshness-spine-certifies-a-done.md) | RUN-01KY0VNV: the freshness spine certifies a Done story truthfully | 2026-07-21 | -- | -- |
 | [RETRO-0063](RETRO0063-run-01ky1wcr-three-tests-were-half-the-suite.md) | RUN-01KY1WCR: three tests were half the suite, and the premise was wrong three times | 2026-07-21 | -- | -- |
+| [RETRO-0064](RETRO0064-every-number-this-project-publishes-is-either-measured.md) | Every number this project publishes is either measured or refused, and the test suite cannot reach the repository that runs it | 2026-07-21 | -- | -- |

@@ -1159,7 +1159,16 @@ def run_attributed_tokens(root, transcripts_dir=None) -> dict:
     cap = harness_tokens(root, transcripts_dir)
     if not cap.get("tokens"):
         return {"tokens": None, "reason": f"not attributable: {cap.get('reason')}"}
-    if base.get("source") and cap.get("source") and base["source"] != cap["source"]:
+    # The source is half the record, so a MISSING source refuses rather than waves through. The
+    # earlier `base.get("source") and cap.get("source") and ...` form disabled the guard entirely
+    # whenever either side lacked one, which is the failure mode the guard exists to prevent: an
+    # unsourced baseline is precisely the one that cannot be shown to be this meter's.
+    if not base.get("source") or not cap.get("source"):
+        return {"tokens": None, "reason": (
+            f"not attributable: {rid}'s baseline does not name the session it was read from, so "
+            f"it cannot be shown to be a reading of this meter. A delta between two meters that "
+            f"may not be the same one is not a spend")}
+    if base["source"] != cap["source"]:
         return {"tokens": None, "reason": (
             f"not attributable: {rid} took its baseline in session {Path(base['source']).name} "
             f"but this close is running in {Path(cap['source']).name} - two different meters, "

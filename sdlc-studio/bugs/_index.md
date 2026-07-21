@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 3 |
+| Open | 4 |
 | In Progress | 0 |
 | Fixed | 157 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **242** |
+| **Total** | **243** |
 
 ## All Bugs
 
@@ -209,6 +209,7 @@
 | [BG0240](BG0240-lessons-py-summary-out-and-loop-guard-py.md) | `lessons.py summary --out` and `loop_guard.py _state_path` write relative to the cwd, ignoring or failing to discover the root | Open | Medium | 2026-07-21 | 2026-07-21 |
 | [BG0241](BG0241-a-test-spec-with-no-ac-coverage-matrix.md) | A test spec with no AC Coverage Matrix at all reports clean and exits 0 | Open | Medium | 2026-07-21 | 2026-07-21 |
 | [BG0242](BG0242-35-bare-subprocess-git-calls-in-8-test.md) | 35 bare subprocess git calls in 8 test modules bypass the confined helper entirely | Open | High | 2026-07-21 | 2026-07-21 |
+| [BG0243](BG0243-run-attributed-tokens-reads-whatever-run-is-open.md) | run_attributed_tokens reads whatever run is open, so a token delta can be stamped on an unrelated retro | Open | Medium | 2026-07-21 | 2026-07-21 |
 
 ## Archived Releases
 

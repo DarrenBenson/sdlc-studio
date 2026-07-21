@@ -1878,5 +1878,49 @@ class AnUnmeasuredSprintIsNotReportedAsUnforecast(AccuracyBase):
         self.assertEqual(self.accuracy()["constants"], "mixed-constants")
 
 
+class UnsourcedBaselineTests(unittest.TestCase):
+    """A baseline that does not name its session must REFUSE, not wave through.
+
+    Found by the adversarial review of RUN-01KY2K5R. The cross-session guard read
+    `base.get("source") and cap.get("source") and base != cap`, so a baseline carrying no source
+    disabled the guard entirely - and an unsourced baseline is exactly the one that cannot be
+    shown to belong to this meter. Not reachable from the shipped writer, which always records a
+    source, but the guard's whole purpose is the case where the record is not what is expected.
+    """
+
+    def _state(self, root: Path, baseline: dict) -> None:
+        (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
+            "schema": 1, "run_id": "RUN-TEST01", "outcome": "running",
+            "batch": ["BG0001"], "goal": None, "session_token_baseline": baseline,
+        }), encoding="utf-8")
+
+    def test_a_baseline_with_no_source_yields_no_number(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            tr = root / "tr"; tr.mkdir()
+            (tr / "s.jsonl").write_text(
+                json.dumps({"message": {"usage": {"input_tokens": 900000}}}) + "\n",
+                encoding="utf-8")
+            self._state(root, {"tokens": 100000})            # no "source" key
+            cap = retro.run_attributed_tokens(str(root), transcripts_dir=str(tr))
+            self.assertIsNone(cap["tokens"], f"an unsourced baseline produced {cap}")
+            self.assertIn("does not name the session", cap["reason"])
+            self.assertNotIn("800000", json.dumps(cap))      # ...and not the tempting delta
+
+    def test_a_properly_sourced_baseline_still_produces_its_delta(self) -> None:
+        """The positive control: the refusal above must not be a blanket one, or the whole
+        capture would be dead and every close would read not-attributable."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            tr = root / "tr"; tr.mkdir()
+            meter = tr / "s.jsonl"
+            meter.write_text(json.dumps({"message": {"usage": {"input_tokens": 900000}}}) + "\n",
+                             encoding="utf-8")
+            self._state(root, {"tokens": 100000, "source": str(meter)})
+            cap = retro.run_attributed_tokens(str(root), transcripts_dir=str(tr))
+            self.assertEqual(cap["tokens"], 800000)
+
+
 if __name__ == "__main__":
     unittest.main()

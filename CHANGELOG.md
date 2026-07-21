@@ -1116,10 +1116,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   commits that touch other files - which is exactly what makes per-unit runs reach the close. The
   gate lane judges COVERAGE of the changed surface instead of freshness of one blob: hash matches
   is covered, hash differs is stale, no entry is uncovered, and it states the fraction and names
-  the gaps. The old whole-blob check survives as the degraded fallback when there is nothing
-  per-file to judge, so nothing is lost. Advisory throughout, per RFC0048 D3. The ledger is bounded
-  at 200 entries with a cumulative dropped count and a printed note, because silent truncation
-  reads as "we kept everything".
+  the gaps. Evidence is read from the LEDGER alone, because the ledger is the only surface that
+  applies the verdict rule. The report's `target_hashes` is a freshness stamp over the files the
+  run was pointed at, written before any verdict exists, so a first cut that overlaid it as
+  evidence had a refused run report its target covered while saying "nothing was proven" in the
+  same sentence, and a run stopped by the cost ceiling report 3/3 files covered having mutated
+  one. The whole-report checks remain as the degraded fallback, and are now reachable rather than
+  merely present: with no per-file evidence the lane checks the report's own target hashes, then
+  the whole-blob rev, and says STALE. Where per-file evidence does exist the aggregate is still
+  attributed - a summary written before the current HEAD prints whose run it came from, since
+  coverage is per file and survivor counts are per run. Advisory throughout, per RFC0048 D3. The
+  ledger is bounded at 200 entries with a cumulative dropped count and a printed note, because
+  silent truncation reads as "we kept everything".
 
 - **A sprint's token cost is its own, not the whole session's (BG0236).** The close captured the
   harness meter's absolute reading, which is cumulative per SESSION. Close two sprints in one
@@ -1175,7 +1183,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   taken verbatim, a default `.` discovered upward, a relative `--out`/`--map` anchored on the
   result and an absolute one honoured as given - and `build` prints the resolved path. The sweep
   this fix required found the same shape in two more scripts, filed as BG0240, and the missing
-  convention behind all three as CR0383.
+  convention behind all three as CR0383. **A behaviour change wider than the written scope**,
+  surfaced by the closing review: adopting the shared resolver also changed what `build` INDEXES,
+  not only where it writes. With the default `--root .` from a subdirectory it now discovers the
+  project root upward and indexes the whole project, where before it indexed the current
+  directory. That is the convention CR0383 argues for and it is deliberate, but it is a change of
+  input surface rather than of output path, so it is recorded here instead of being left for
+  somebody to discover from a differently-sized map.
 
 - **`critic._read_rows` no longer returns a table's header as a data row (BG0227).** The header
   skip matched only a first cell reading `Unit`, so any table whose first column is named
