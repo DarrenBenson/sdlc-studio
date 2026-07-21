@@ -61,3 +61,4 @@ about no run that ever happened.
 | RETRO0060 | 2026-07-20 | 9 | 0 | 9 | 30 | 0 | 2,390,624 | - | 79,687 | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - |
 | RETRO0061 | 2026-07-20 | 13 | 0 | 13 | 31 | 0 | 1,265,392 | - | 40,819 | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - |
 | RETRO0062 | 2026-07-21 | 3 | 0 | 3 | 8 | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | not-attributable: second sprint in one session, harness capture is session-cumulative (BG0236) |
+| RETRO0063 | 2026-07-21 | 4 | 0 | 4 | - | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | points pending: units held at Draft by the two-role gate, so the row completes at sign-off (12 forecast). tokens not-attributable: third sprint in one session, harness capture is session-cumulative (BG0236) |

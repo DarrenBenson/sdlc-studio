@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0169: **A trend against a dated baseline catches what a ceiling cannot.** `test_gate.py` grew 28% in two days while under every threshold in...**
+- **L-0168: **Ask where the data lives before deciding where the check lives.** A check placed away from the data it reads is not wrong so much as...**
+- **L-0167: **Read the binding rules of the thing you intend to inject before designing a test around injecting it.** A default argument binds at...**
+- **L-0166: **Profile inside the file before optimising it.** The file-level table said "attack test_gate.py"; the profile said "two tests".**
 - **L-0165: **Vacuity is not gated on exit 0.** A runner that ran nothing proves nothing whatever its exit code; pytest signals it with codes 4 and 5...**
 - **L-0164: **A point-in-time acceptance criterion is manual by nature.** An executable check that re-asserts a snapshot state ('zero advisories at...**
 - **L-0163: **A characterisation test still needs mutation to earn its keep.** BG0232's 15 tests all passed on first write because the code was already...**
