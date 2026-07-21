@@ -106,5 +106,53 @@ class ScrubClearsTheCallersGitEnvironment(unittest.TestCase):
                           "the add did not land in the fixture's own index either")
 
 
+class ScrubListsAgreeTests(unittest.TestCase):
+    """The scrub list now exists in THREE places and nothing kept them equal.
+
+    `skill-tests.sh` has always had it; RUN-01KY1WCR added a copy to the hook's tool-tests lane
+    (which git also hands a polluted environment, and which invokes `unittest` directly rather
+    than through the script) and a third to the fixture module that builds git repos. The
+    adversarial review pointed out that dropping three variables from the hook's copy alone left
+    all 254 tool tests green - so the newest copy, guarding the lane that actually caused the
+    finding, was pinned by nothing.
+
+    This module's own docstring is the argument: a copy drifts, and a drifted copy tests itself
+    rather than the shipped script. So assert the three agree, by parsing each one from source.
+    """
+
+    HOOK = REPO / ".githooks" / "pre-commit"
+    MODULE = REPO / "tools" / "tests" / "test_precommit_budget_recording.py"
+
+    def _hook_scrub_list(self) -> tuple[str, ...]:
+        """The `-u VAR` flags on the hook's tool-tests lane."""
+        import re
+        text = self.HOOK.read_text(encoding="utf-8")
+        m = re.search(r"/usr/bin/env((?:\s*\\?\s*-u\s+\w+)+)", text)
+        self.assertIsNotNone(m, "no `/usr/bin/env -u ...` scrub found on a hook lane")
+        return tuple(re.findall(r"-u\s+(\w+)", m.group(1)))
+
+    def _module_scrub_list(self) -> tuple[str, ...]:
+        import ast
+        tree = ast.parse(self.MODULE.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Assign)
+                    and any(getattr(t, "id", None) == "_GIT_ENV_VARS" for t in node.targets)):
+                return tuple(el.value for el in node.value.elts)
+        self.fail("no _GIT_ENV_VARS in the fixture module")
+
+    def test_the_hook_lane_scrubs_the_same_variables_as_the_script(self) -> None:
+        self.assertEqual(sorted(self._hook_scrub_list()), sorted(REPO_LOCATING))
+
+    def test_the_fixture_module_scrubs_the_same_variables(self) -> None:
+        self.assertEqual(sorted(self._module_scrub_list()), sorted(REPO_LOCATING))
+
+    def test_the_script_itself_still_scrubs_them(self) -> None:
+        """Closes the loop: without this, all three copies could drift together away from the
+        list this file asserts, and the two tests above would still agree with each other."""
+        prelude = _scrub_prelude()
+        for var in REPO_LOCATING:
+            self.assertIn(var, prelude, f"{var} dropped from tools/skill-tests.sh")
+
+
 if __name__ == "__main__":
     unittest.main()

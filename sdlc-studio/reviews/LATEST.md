@@ -5,7 +5,7 @@
 
 ## Where the pipeline is (2026-07-21)
 
-**RUN-01KY1WCR is built, adversarially reviewed, REJECTED once, and repaired.** 4/4 stories,
+**RUN-01KY1WCR is built and adversarially reviewed to APPROVE over four rounds.** 4/4 stories,
 12 points, EP0093 under RFC0048. The four stories sit at Draft until a reviewer of record signs
 off - the two-role gate holds everything past US0192.
 
@@ -50,7 +50,7 @@ not RFC0048's D6 row. Round 3: the `tearDownModule` written to close a round-2 M
 the one-real-run guard, letting the 35s duplicate return in any of seven later modules (7.9s ->
 14.8s, green); and the new hook fixture ran git unscrubbed, so under `git commit -a` it wrote
 its own tree into the real repo's pending index - **the data-loss class this repo already
-suffered as BG0230**, reproduced on three victim repos. All repaired; round 4 pending.
+suffered as BG0230**, reproduced on three victim repos. All repaired. **Round 4: APPROVE** - the first round whose repair manufactured nothing - with 3 MINORs, all fixed at close (a three-way pin on the git-scrub list, and a false module count that had reached the standing lessons digest).
 
 ## Evidence
 
@@ -65,7 +65,7 @@ silent). Evidence base for **RFC0050**'s plan-time adversarial pass.
 
 ## Next steps
 
-- **Sign-off** by a reviewer of record, then the four stories reach Done.
+- **Sign-off** by a reviewer of record is the only thing left; the adversarial evidence is recorded in `sprint-review-record.md`.
 - **RFC0050** / **RFC0049** - RFC0050's risk lens subsumes RFC0049 option B; do not build both.
 - **BG0238** (High) - per-unit mutation evidence is still never captured; 12 mutants died this
   run and none is recorded outside prose.

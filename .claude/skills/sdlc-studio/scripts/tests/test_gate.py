@@ -153,9 +153,9 @@ gate.run_gate = _guarded_run_gate
 
 # The guard is deliberately NOT torn down. It was, briefly: a `tearDownModule` restoring the
 # original was added so an unrelated module making its own real run would not fail with a
-# message about this file's budget. That handed the guard away - seven modules in this suite
-# sort after `test_gate`, and a full run placed in any of them took the suite from 7.9s to
-# 14.8s, green. Exactly the doubling US0284 removed, one module over and undetected. The
+# message about this file's budget. That handed the guard away - 59 of this suite's 98 test
+# modules sort after `test_gate`, and a full run placed in any of them took the suite from
+# 7.9s to 14.8s, green. Exactly the doubling US0284 removed, one module over and undetected. The
 # process-wide budget IS the contract; the message below carries the explanation instead, so a
 # reader who trips it is told what to do rather than blamed.
 
