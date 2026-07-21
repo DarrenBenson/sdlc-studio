@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 0 |
+| Draft | 1 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 92 |
-| **Total** | **92** |
+| **Total** | **93** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -115,3 +115,4 @@
 | [EP0090](EP0090-forward-port-ships-only-the-skill.md) | Forward-port ships only the skill | Done | -- | -- | 2026-07-20 | 2026-07-20 |
 | [EP0091](EP0091-trustworthy-sprint-measurements.md) | Trustworthy sprint measurements | Done | -- | -- | 2026-07-20 | 2026-07-20 |
 | [EP0092](EP0092-bounded-operator-interaction-at-stops-and-closes.md) | Bounded operator interaction at stops and closes | Done | -- | -- | 2026-07-20 | 2026-07-20 |
+| [EP0093](EP0093-make-the-gate-and-its-tests-cost-effective.md) | Make the gate and its tests cost-effective: three tests are 53% of the suite | Draft | -- | -- | 2026-07-21 | 2026-07-21 |
