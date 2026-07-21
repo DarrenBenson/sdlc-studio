@@ -248,3 +248,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
   nothing; all six are now pinned.
 - **Gate:** 110s against a 120s budget (baseline 99s, +11%), recorded because the suites ran their
   full scope. Suites 3,524 skill + 273 tool green, noise 132/132, drift 0.
+
+## Handoff
+
+- [HO-0018](../handoffs/HO0018-every-number-this-project-publishes-is-either-measured.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
