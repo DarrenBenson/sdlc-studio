@@ -21,7 +21,7 @@ only the main thread. See below.
   included, labelled `per-unit` or `sprint-level`.
 - **BG0245** - the mutation ledger could only be written by `mutation.py` while the practice is
   hand-applied mutants, so a policy-following sprint read 0/N. `register` records one, with
-  **provenance** so a self-report cannot pose as a measurement.
+  **provenance**, and a self-reported SURVIVOR is now named rather than quietly improving the lane.
 - **BG0244 / BG0243** - `Actual (tokens)` published an absence as zero (7 rows before, 0 now); the
   token delta could land on an unrelated retro, so the retro id is now required.
 
@@ -29,9 +29,8 @@ only the main thread. See below.
 
 - **BG0242** - 35 unconfined git call sites confined, proven not asserted: a victim repo per module
   showed **5 of 8 damaging it at HEAD**, three wiping uncommitted state; none after.
-- **BG0241 / BG0240** - a matrix-less spec reported clean, now exits 1 (distinct from complete 0
-  and absent 2; migration cost measured first: 30 of 178 specs); two cwd-anchored writers fixed,
-  plus a third found beside them.
+- **BG0241 / BG0240** - a matrix-less spec reported clean, now exits 1 (migration cost measured
+  first: 30 of 178 specs); three cwd-anchored writers fixed.
 
 ## What this sprint got wrong about itself
 
@@ -42,8 +41,8 @@ mutation-tested the repair. **Goal: PARTIAL** - guards done, measurement not: th
 cannot state its own cost within 3x.
 
 **A false claim went into a bug about numeric honesty, then into a decision of record.** BG0246's
-summary and D0047's rationale both said `batch_history`'s filter stalled the measured-rate counter.
-It does not. Corrected in **D0050**, filed as **BG0248**.
+summary and D0047's rationale said `batch_history`'s filter stalled the measured-rate counter. It
+does not. Corrected in **D0050**, filed as **BG0248**.
 
 **The first token figure this project ever measured is wrong by nearly 3x and looks right.** The
 capture sums the session transcript, which carries ZERO sidechain records, so delegated agents are
@@ -65,14 +64,15 @@ again. Noise ratchet **DOWN, 132 to 129**. Suites 3,598 + 273 green, gate PASS, 
 
 ## Next steps
 
-- **BG0248** (High) the measured rate cannot advance under interactive sprints; **BG0249** (High)
-  the `Estimate` column has BG0244's defect in 12 of 17 rows; **BG0251** the floor's blind spot;
-  **BG0250** a config key no code reads.
-- **CR0383** carries a measured census: 20 scripts resolve `--root` without discovery, 10 driving
-  writes, worst `next_id.py` minting **colliding ids** from a subdirectory.
+- **BG0248** the rate cannot advance under interactive sprints; **BG0249** the `Estimate` column
+  has BG0244's defect in 12 of 17 rows; **BG0251** the floor's blind spot; **BG0250** a dead key.
+- **CR0383** census: 20 scripts resolve `--root` without discovery, 10 driving writes, worst
+  `next_id.py` minting **colliding ids** from a subdirectory.
 - **CR0388** / **LL0039** - `git add -A` during a review stages whatever a concurrent process
-  left; and a symlink farm plus a redirect writes into the source tree, which is how the reviewer
-  reverted two units mid-review before detecting and restoring them.
+  left; a symlink farm plus a redirect writes into the source tree, as the reviewer discovered.
+- **BG0254** (High) - measured at sign-off: the forecast said 400,000 and the sprint cost at
+  least 4,119,916, over 10x, because the forecast prices only the BUILD (787,834 of it) and this
+  project spends most of its budget proving the build correct. The seed is 5.9x to 9.2x low.
 - **BG0247, BG0253, CR0384, CR0386-0388** open. **CR0319** is the release cut.
 
 ## Lessons

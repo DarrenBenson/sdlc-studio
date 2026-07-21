@@ -41,25 +41,39 @@ knowing which model paid it: a sprint delivered by a smaller model must not land
 average as one delivered by a larger, and the mean of the two would describe neither. A sprint
 that MIXED models records `mixed` and NO ratio at all, rather than an averaged number that is
 about no run that ever happened.
+
+An EMPTY Actual (tokens) cell means the sprint's token cost was not measured, and the NOTE
+column says why. It never means the sprint cost nothing: a sprint that spent no tokens does
+not exist, so a `0` there could only ever have been a sum over an empty set of measured units
+published as though it were a measurement. Rows written before that was fixed carried exactly
+that, and the reader treats such a `0` as the absence it is - it is not a data point, and no
+rate is derived from it.
+
+Read the SOURCE column before quoting an Actual as evidence. `per-unit` is a sum of per-unit
+telemetry and `harness` is read off the harness meter; both are machine reads. `supplied` is a
+figure an operator TYPED, which is a claim about what a sprint cost, not a measurement of it.
+An empty Source is unrecorded - the rows written before the column existed - and unrecorded is
+what it stays, because back-filling provenance would invent the very thing the column records.
 -->
 # Velocity history
 
-| Retro | Date | Units | Measured | Forecast | Points | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Constants | Sample | Model |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| RETRO0024 | 2026-07-14 | 6 | 6 | 6 | - | 1,285,000 | 384,278 | 3.34x | - | - | 1,848 | base=50000 tpc=5000 | in-sample | claude-opus-4-8 |
-| RETRO0025 | 2026-07-14 | 5 | 5 | 5 | - | 352,600 | 642,358 | 0.55x | - | - | 3,807 | base=50000 tpc=600 | in-sample | claude-opus-4-8 |
-| RETRO0026 | 2026-07-14 | 5 | 5 | 5 | - | 348,400 | 902,503 | 0.39x | - | - | 6,006 | base=50000 tpc=600 | in-sample | claude-opus-4-8 |
-| RETRO0027 | 2026-07-14 | 7 | 5 | 7 | - | 349,000 | 789,591 | 0.44x | - | - | 5,042 | base=50000 tpc=600 | stale-constants | claude-opus-4-8 |
-| RETRO0028 | 2026-07-15 | 3 | 3 | 3 | 10 | 250,000 | 564,066 | 0.44x | 56,407 | 0 | 3,840 | TOKENS_PER_POINT=25000 | out-of-sample | claude-opus-4-8 |
-| RETRO0044 | 2026-07-17 | 13 | 0 | 8 | - | 0 | 0 | - | - | 0 | - | - | unforecast | - |
-| RETRO0045 | 2026-07-17 | 29 | 0 | 29 | - | 0 | 0 | - | - | 0 | - | - | unforecast | - |
-| RETRO0048 | 2026-07-18 | 7 | 0 | 7 | - | 0 | 0 | - | - | 0 | - | - | unforecast | - |
-| RETRO0049 | 2026-07-18 | 9 | 0 | 9 | - | 0 | 0 | - | - | 0 | - | - | unforecast | - |
-| RETRO0050 | 2026-07-19 | 10 | 0 | 10 | - | 0 | 0 | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - |
-| RETRO0057 | 2026-07-20 | 3 | 0 | 3 | - | 0 | 0 | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - |
-| RETRO0058 | 2026-07-20 | 6 | 0 | 1 | 14 | 0 | 0 | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - |
-| RETRO0060 | 2026-07-20 | 9 | 0 | 9 | 30 | 0 | 2,390,624 | - | 79,687 | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - |
-| RETRO0061 | 2026-07-20 | 13 | 0 | 13 | 31 | 0 | 1,265,392 | - | 40,819 | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - |
-| RETRO0062 | 2026-07-21 | 3 | 0 | 3 | 8 | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | not-attributable: second sprint in one session, harness capture is session-cumulative (BG0236) |
-| RETRO0063 | 2026-07-21 | 4 | 0 | 4 | 12 | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | not-attributable: third sprint in one session, harness capture is session-cumulative (BG0236); raw capture 5,672,289 |
-| RETRO0064 | 2026-07-21 | 10 | 0 | 10 | 21 | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | not-attributable: run opened before BG0236's baseline existed, so the harness delta cannot be derived; no unit carries per-unit telemetry either. Actual left blank rather than recorded as 0 - hand-corrected TWICE, the second time because apply-signoff rewrote the row (BG0245 evidence in BG0244) |
+| Retro | Date | Units | Measured | Forecast | Points | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Constants | Sample | Model | Note | Source |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| RETRO0024 | 2026-07-14 | 6 | 6 | 6 | - | 1,285,000 | 384,278 | 3.34x | - | - | 1,848 | base=50000 tpc=5000 | in-sample | claude-opus-4-8 | - | - |
+| RETRO0025 | 2026-07-14 | 5 | 5 | 5 | - | 352,600 | 642,358 | 0.55x | - | - | 3,807 | base=50000 tpc=600 | in-sample | claude-opus-4-8 | - | - |
+| RETRO0026 | 2026-07-14 | 5 | 5 | 5 | - | 348,400 | 902,503 | 0.39x | - | - | 6,006 | base=50000 tpc=600 | in-sample | claude-opus-4-8 | - | - |
+| RETRO0027 | 2026-07-14 | 7 | 5 | 7 | - | 349,000 | 789,591 | 0.44x | - | - | 5,042 | base=50000 tpc=600 | stale-constants | claude-opus-4-8 | - | - |
+| RETRO0028 | 2026-07-15 | 3 | 3 | 3 | 10 | 250,000 | 564,066 | 0.44x | 56,407 | 0 | 3,840 | TOKENS_PER_POINT=25000 | out-of-sample | claude-opus-4-8 | - | - |
+| RETRO0044 | 2026-07-17 | 13 | 0 | 8 | - | 0 | - | - | - | 0 | - | - | unforecast | - | - | - |
+| RETRO0045 | 2026-07-17 | 29 | 0 | 29 | - | 0 | - | - | - | 0 | - | - | unforecast | - | - | - |
+| RETRO0048 | 2026-07-18 | 7 | 0 | 7 | - | 0 | - | - | - | 0 | - | - | unforecast | - | - | - |
+| RETRO0049 | 2026-07-18 | 9 | 0 | 9 | - | 0 | - | - | - | 0 | - | - | unforecast | - | - | - |
+| RETRO0050 | 2026-07-19 | 10 | 0 | 10 | - | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |
+| RETRO0057 | 2026-07-20 | 3 | 0 | 3 | - | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |
+| RETRO0058 | 2026-07-20 | 6 | 0 | 1 | 14 | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |
+| RETRO0060 | 2026-07-20 | 9 | 0 | 9 | 30 | 0 | 2,390,624 | - | 79,687 | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |
+| RETRO0061 | 2026-07-20 | 13 | 0 | 13 | 31 | 0 | 1,265,392 | - | 40,819 | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |
+| RETRO0062 | 2026-07-21 | 3 | 0 | 3 | 8 | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not-attributable: second sprint in one session, harness capture is session-cumulative (BG0236) | - |
+| RETRO0063 | 2026-07-21 | 4 | 0 | 4 | 12 | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not-attributable: third sprint in one session, harness capture is session-cumulative (BG0236); raw capture 5,672,289 | - |
+| RETRO0064 | 2026-07-21 | 10 | 0 | 10 | 21 | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not-attributable: run opened before BG0236's baseline existed, so the harness delta cannot be derived; no unit carries per-unit telemetry either. Actual left blank rather than recorded as 0 - hand-corrected TWICE, the second time because apply-signoff rewrote the row (BG0245 evidence in BG0244) | - |
+| RETRO0065 | 2026-07-21 | 7 | 0 | 7 | 18 | 0 | 2,634,055 | - | 146,336 | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | harness |
