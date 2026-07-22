@@ -1,101 +1,80 @@
 # Reviews - LATEST (anchor)
 
-> Derived from **RUN-01KY3MFX** (2026-07-22). Supersedes the RETRO-0065 picture.
-> The run is BUILT, REVIEWED THREE TIMES and REPAIRED TWICE. RETRO0066 and its velocity row
-> are recorded. It is NOT closed: round 3's repair is UNREVIEWED and the sign-off is owed.
+> Derived from **RUN-01KY5EJX** (2026-07-22). Supersedes the RUN-01KY3MFX picture.
+> That run is CLOSED: 33 units, 100 points, goal verdict `partial`, RETRO0066 recorded,
+> sign-off landed, `close_owed detect` reports none. The current run is a DESIGN rung,
+> groomed and committed, with its closing review in flight.
 
 ## Where the pipeline is (2026-07-22)
 
-**RUN-01KY3MFX delivered 33 units, 100 points** - 10 bugs plus 23 stories decomposed from the
-ten High-priority requests, in seven file-disjoint lanes (BG0256 was filed and fixed mid-run).
-Goal: *every open bug and every High-priority request built, verified and independently
-reviewed.*
+**RUN-01KY5EJX is open at the design rung over 38 units / 108 points** - EP0106-EP0115 plus
+six bugs. Its whole output is acceptance criteria; the delivery run follows.
 
-**It stops one step short by design.** `review.two_role_after: 192` means every story here
-reaches Done only with a reviewer-of-record sign-off the authoring session is refused. The
-stories sit at **Review**. See RFC0051.
+Goal: *every story's acceptance criteria would fail if the behaviour were absent, every bug
+states what makes its fix complete and tested, and any declared dependency records a logical
+constraint the file census cannot already derive.*
 
-## What shipped
-
-- **Measurement** - the rate reads the velocity record and REFUSES across models (BG0248,
-  US0290); the velocity row is owed at close, 24 rows backfilled with blanks not zeroes
-  (US0288, US0289, BG0249); the capture names main-thread measured and delegated supplied, the
-  sum a lower bound (BG0252); the forecast declares it prices the BUILD (BG0254); the mutation
-  gate logs cost against yield (US0301, US0302, US0309).
-- **Guards that reach** - collision files derive from Verify lines and a contradicted `Affects`
-  is reported from ONE predicate shared by planner and validate (US0291, US0292);
-  `quality.epic_requires_test_spec` is read by the code four documents said read it (BG0250);
-  the floor sees the violation its own commit creates (BG0251); a declared rewrite window
-  refuses a commit staging what it claims (US0307, US0308, US0310); run ids are collision
-  checked (BG0253).
-- **Onboarding** - migrate seeds a missing AGENTS.md (US0293, US0294); the hygiene check
-  verifies the working model, not just pointers (US0295, US0296); init no longer ships a
-  literal placeholder (BG0255); a non-shell filing path (US0305, US0306); a `test` audit lens
-  (US0303, US0304); the seats review the Sprint Goal (US0297, US0298); a sprint stops only when
-  nothing can proceed (US0299, US0300).
-
-## What the reviews found
-
-**Round 1: REJECT from three independent instances. 11 MAJOR.** The two worst were structural:
-US0307 and US0308 shipped CONTRADICTING each other (the gate's window lane froze every commit
-while the hook printed that staging was merely scoped, hidden because the fixture stubbed the
-gate out), and US0310's four `grep` verifiers all passed on prose asserting the opposite of
-their criteria - so the published "84 ACs verified" was four higher than the evidence supported.
-
-**Round 2: REJECT. Of round 1's eleven repairs, 5 CLOSED, 3 OVER-CLAIMED, 3 MOVED.** All three
-over-claims were the same species - the code improved and the prose describing it got ahead of
-the code, the surviving MAJOR in seven consecutive closing reviews. One was the author's own:
-the engagement floor's unreadable-index refusal was reached by NO test, its guard mutated to
-`if False:` left 3,891 tests green, and BG0251's Resolution called it mutation-proven.
-
-**The standing lesson, hit three times: a repair can MASK the defect beside it.** Un-stubbing
-the gate hid two hook mutants; removing the hook's traversal branch leaves the end-to-end test
-green because the fixture's gate stub refuses the record for its own reason. Only isolation
-tests kill them. Recorded as a property of the fixture in US0308.
+The batch attacks the loop that cost the previous sprint ten review rounds: plan a repair
+before executing it (EP0106), derive a claim about a guard from the guard (EP0107), brief the
+reviewer with the practices that found defects (EP0108), inventory claims first not last
+(EP0109), validate `Affects` at mint (EP0110), stop a second sprint fusing into an open run
+(EP0111), check the CHANGELOG's structure (EP0112), carry a REJECT forward as filed findings
+(EP0113), price the sprint not the build (EP0114), hunt work done before its contract
+(EP0115).
 
 ## Evidence
 
-3,938 skill tests + 312 tool tests green. Drift 0, conformance 0 non-conformant, floor 0
-violations, no rewrite window open. ~220 hand-applied mutants across build and both repair
-rounds; 13 survived first time and every one drove a change rather than a re-run. Installed copy
-forward-ported and verified.
+3,947 skill tests and 312 tool tests green. Drift 0, validate 0 errors, engagement floor 0
+violations. Red-now ledger over the batch: **pass=0, fail=89, manual=5** - no criterion is
+vacuously green at a rung where the behaviour is absent. Two waves, five declared dependency
+edges. `verify_ac lint` exits 0: no markdown-only verifier survives in the batch.
+
+## What shipped as code
+
+**BG0264** only. `verify_ac lint` REFUSES a `grep`/`file` verifier whose every target is
+markdown, on a story at Draft or Ready; its fixture is the four verifiers US0310 actually
+shipped, recovered from git. Five mutants applied, four killed. The fifth is equivalent, and
+it falsified the docstring beside it - a decision justified by a scenario `_expand_globs`
+rules out. No mutation-coverage claim is made for that line.
+
+## The first plan review, and what it cost
+
+The Sprint Goal was REJECTED by the engineering seat before any work started: it asserted
+acceptance criteria for six bugs that carry none, its dependency clause was information-free
+because the shared-file clusters are already derived from `Affects`, and its bar was
+satisfiable by 32 trivially-true verifiers. Reframed, it was accepted. Two seats
+independently reached the same objection - a counterfactual bar is a belief, not a check -
+and both noted the red run is free at a rung where the behaviour is genuinely absent.
+
+Filed from the ceremony itself: **BG0262** (a seat saying NOT achievable discharges the gate
+exactly as one saying yes - `achievable` is never parsed), **BG0263** (no rounds, so
+rewriting a rejected goal erases the rejection), **CR0408** (acting on the review invalidates
+every verdict including the proposing seat's, so the cheapest path is to leave a bad goal
+alone), **CR0409** (the seat brief is assembled by the author the review exists to check).
+
+## Known holes, recorded not hidden
+
+- **D0056:** the goal sets dependency QUALITY, not coverage. Declaring nothing would satisfy
+  it. Shared-file warnings therefore remain in the plan and are expected.
+- **BG0265:** `parse_story` keeps only the FIRST `Verify:` line per AC block, so seven
+  verifiers in this workspace have never run - four on Done stories, two of them inside
+  RUN-01KY3MFX's published claim of 84 criteria verified.
+- **BG0256:** nothing re-runs a bug's verifier; `walk_stories` yields only `US` records, so a
+  bug's `Verified:` stamp is a dated record, not a live guarantee.
+- The kill list carried by the grooming commit: US0323's untestable future writer, US0324's
+  ordering claim, US0316's polarity scan, US0341/US0342's manual lens checks, US0331's
+  staged-diff bound, and CR0403's "drawn from real failures" - the weakest leg in the batch,
+  with no criterion anywhere holding it.
 
 ## Next steps
 
-- **Round 3 REJECTED; its three MAJORs are now REPAIRED, and that repair is UNREVIEWED.**
-  `review.max_rounds` is 3 and the ceiling is spent, so nothing has attacked this last change.
-  `window open` now prints the NORMALISED claims and says plainly when a window claims the whole
-  tree (the default invocation did, while promising the opposite). The docs checker's `NEG_REACH`
-  comment claimed an unrelated negation cannot launder an assertion; it can, the comment now says
-  so, and the gap is pinned by tests that go RED if it is ever closed. `_run_window` scores run
-  records by CLOSENESS rather than overlap, so a superset batch no longer ties the exact one.
-  The two code changes were mutation-proven; the docs-checker change is prose plus tests and
-  carries NO mutant at this content, so the ledger cannot show evidence for it - a claim that
-  all three were proven was itself false and is corrected here. Round 4 then reviewed this
-  repair and REJECTED it: `window open` was wrong a FOURTH time, because the fix rendered what
-  the record CLAIMS rather than what the matcher DECIDES, so a bare `.` or an absolute path read
-  as one narrow path while every commit was refused. Now fixed by a shared `claims_everything`
-  rule. Round 4 also found a FIFTH escape in the docs checker's stated bound and a false "all
-  three were mutation-proven" claim in this file; both corrected.
-- **Round 5 was bought too, and REJECTED again.** `claims_everything` enumerated literal
-  spellings while both matchers end in `fnmatch`, so `**`, `***`, `?*` and `**/` claimed
-  everything while the message said one narrow path - the FIFTH wrong version of that sentence,
-  and `*` had only ever worked by accident. Worse, the test that declared the two "cannot
-  diverge again" had picked its 15 shapes from exactly the families where they agree by
-  construction. The helper now PROBES the matcher's question over a battery of unrelated paths
-  instead of enumerating, the oracle asks about a battery rather than one path, and the glob
-  family is pinned. A SIXTH escape in the docs checker was named with it: `normalise` strips
-  asterisk emphasis but not underscore, so `_proves_` is never judged where `*proves*` is.
-- **Round 5's own repair is unreviewed.** Five rounds have each found something real
-  (11, 6, 3, 1, 1 MAJOR). Buying a sixth, or accepting this unreviewed, is an operator decision.
-- **Sign-off is owed and is the operator's.** `sprint close --retro <id> --apply-signoff
-  --principal "..."`. RFC0051 records why an agent cannot honestly supply it.
-- **Recorded at close:** RETRO0066, and a velocity row carrying the supplied delegated figure.
-  `close_owed detect` reports none.
-- **Filed during the run:** BG0255, BG0256, CR0389, CR0390, CR0391, CR0392, RFC0051, D0051-D0053.
+- The closing adversarial review of the design rung is in flight. Its verdict decides whether
+  this run closes or repairs.
+- Then the DELIVERY run over the same 38 units, against the goal recorded for it.
 - **CR0319** is the 5.0.0 release cut, still outstanding.
 
 ## Lessons
 
-A library test is not a lane test. A repair can mask the defect beside it. Prose that justifies
-code is the least-reviewed code in the repo, for the seventh sprint running.
+A repair can mask the defect beside it. Prose that justifies code is the least-reviewed code
+in the repo. A counterfactual bar needs a ledger beside it. The data to detect a defect is
+usually already present and unread.
