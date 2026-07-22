@@ -2287,8 +2287,16 @@ class MarkdownEvidenceLintTests(unittest.TestCase):
         'grep "anything" sdlc-studio/reviews/*',
         # a flag read as the pattern, so the real pattern was counted as a target
         'grep -c "window" .claude/skills/sdlc-studio/reference-sprint.md',
-        # a bare recursive directory: nothing to expand, nothing ends in .md
+        # an explicit -r directory
         'grep -r "x" .claude/skills/sdlc-studio/best-practices/',
+        # round 2: a BARE directory. `rg -q` recurses by default, so the earlier code's
+        # "grep without -r never reads a directory" was true of grep and false of this DSL.
+        'grep "anything" sdlc-studio/reviews/',
+        # round 2: value-taking flags, where the VALUE occupies the pattern slot
+        'grep -m 1 "x" .claude/skills/sdlc-studio/reference-cr.md',
+        'grep --include x "y" .claude/skills/sdlc-studio/reference-rfc.md',
+        # the long spelling, which no test pinned when _GREP_RECURSIVE was a literal set
+        'grep -R "x" .claude/skills/sdlc-studio/help/',
     ]
 
     def test_every_expression_that_escaped_the_first_guard_is_refused(self) -> None:
@@ -2298,18 +2306,22 @@ class MarkdownEvidenceLintTests(unittest.TestCase):
             with self.subTest(expr=expr):
                 self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, root))
 
-    def test_a_flag_is_never_counted_as_a_target(self) -> None:
-        # `-c` must not displace the pattern; if it does, the pattern becomes a "target"
-        # that does not end .md and the whole expression is allowed.
-        self.assertEqual(verify_ac._verifier_targets('grep -c "x" a.md'), ["a.md"])
-        self.assertEqual(verify_ac._verifier_targets('grep -i -n "x" a.md b.py'),
-                         ["a.md", "b.py"])
+    def test_the_written_reading_matches_the_dsl_split_not_an_invented_one(self) -> None:
+        # Round 1 "fixed" the flag escape by inventing a flag-aware split here. That was a
+        # RESTATEMENT, and it disagreed with the runner: `_build_command` does
+        # `pattern, *paths = args`, so `-c` IS the pattern and `x` IS a path. The guard must
+        # agree with the runner and then handle the consequence (the bogus path does not
+        # exist, so it is dropped as unread), rather than parse the expression its own way.
+        self.assertEqual(verify_ac._verifier_targets('grep -c "x" a.md'), ["x", "a.md"])
+        _, argv = verify_ac._build_command('grep -c "x" a.md', cwd=".")
+        self.assertEqual(argv[argv.index("--") + 1:], ["x", "a.md"])
 
-    def test_a_directory_is_dropped_unless_the_grep_is_recursive(self) -> None:
-        # grep without -r never reads a directory, so a directory in the target list
-        # contributes nothing to the search and must not dilute the verdict.
+    def test_a_directory_is_always_walked_because_this_dsl_always_recurses(self) -> None:
+        # The inverse of what round 1 asserted. `_build_command` emits `rg -q` (recursive by
+        # default) or `grep -rqE`, so "grep without -r never reads a directory" is true of
+        # grep and FALSE here. A bare directory reads everything beneath it either way.
         root = Path(__file__).resolve().parent.parent  # scripts/
-        self.assertEqual(verify_ac._verifier_reads(f'grep "x" {root}'), [])
+        self.assertTrue(verify_ac._verifier_reads(f'grep "x" {root}'))
         self.assertTrue(verify_ac._verifier_reads(f'grep -r "x" {root}'))
 
     def test_the_written_reading_still_refuses_when_nothing_resolves(self) -> None:
@@ -2332,6 +2344,49 @@ class MarkdownEvidenceLintTests(unittest.TestCase):
         root = Path(__file__).resolve().parent.parent  # scripts/
         self.assertIsNone(verify_ac.lint_markdown_evidence(
             f'grep "x" {root}/verify_ac.py {root}/../SKILL.md'))
+
+    def test_a_missing_operand_is_dropped_because_the_runner_does_not_read_it(self) -> None:
+        # MEASURED, not reasoned. `rg -q -e -r -- x best-practices/` exits 0, warning
+        # `rg: x: No such file or directory` on stderr while matching inside the directory.
+        # So a flag form is NOT a loudly-broken verifier - it is a working, silent,
+        # markdown-only one, and dropping the unread operand is what lets the guard see it.
+        root = Path(__file__).resolve().parents[5]
+        reads = verify_ac._verifier_reads('grep -r "x" .claude/skills/sdlc-studio/help/', root)
+        self.assertTrue(reads)
+        self.assertNotIn("x", [Path(r).name for r in reads])
+
+    def test_the_guard_asks_build_command_rather_than_re_parsing(self) -> None:
+        # The rule that defeated three versions of this guard was a RESTATEMENT of how the
+        # runner parses a verifier. Pin the derivation: if _build_command's argv changes,
+        # the guard's view changes with it, because it reads that argv.
+        root = Path(__file__).resolve().parents[5]
+        expr = 'grep "anything" sdlc-studio/reviews/'
+        _, argv = verify_ac._build_command(expr, cwd=root)
+        self.assertEqual(argv[argv.index("--") + 1:], ["sdlc-studio/reviews/"])
+        self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, root))
+
+    def test_a_source_directory_is_allowed(self) -> None:
+        root = Path(__file__).resolve().parents[5]
+        self.assertIsNone(verify_ac.lint_markdown_evidence(
+            'grep "x" .claude/skills/sdlc-studio/scripts/', root))
+
+    def test_the_directory_walk_stops_at_the_first_non_markdown_file(self) -> None:
+        # Pins MINOR-5's fix. Removing the short-circuit does not change any VERDICT - the
+        # `all(...)` test sees the non-markdown file either way - so a verdict-based test
+        # cannot kill that mutant. What it changes is how much of the tree is walked, and
+        # `grep "x" .` made that O(repo) per verifier line. So the property pinned here is
+        # the walk, not the answer.
+        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_walk_"))
+        try:
+            (tmp / "a.md").write_text("x")
+            (tmp / "b.py").write_text("x")
+            for i in range(50):
+                (tmp / f"z{i:03d}.md").write_text("x")
+            reads = verify_ac._verifier_reads(f'grep "x" {tmp}')
+            self.assertLess(len(reads), 52, "the walk did not stop at the first non-markdown file")
+            self.assertTrue(any(r.endswith(".py") for r in reads))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
 
     def test_a_glob_that_matches_no_file_here_is_still_refused(self) -> None:
         # The verdict is about what the author WROTE, not about what exists on this

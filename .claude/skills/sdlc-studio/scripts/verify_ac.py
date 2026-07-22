@@ -395,30 +395,35 @@ _PROSE_VERBS = {"grep", "file"}
 _AUTHORING_STATUSES = {"draft", "ready"}
 
 
-#: `grep` flags this project's verifiers actually use that take no value. Anything else
-#: starting with `-` is treated as a flag too; the point is only to stop a flag being
-#: counted as the pattern, which is what let `grep -c "x" a.md` escape the guard.
-_GREP_RECURSIVE = {"-r", "-R", "--recursive"}
-
-
 def _verifier_reads(expr: str, cwd=None) -> list[str]:
-    """The FILES a `grep`/`file` expression actually reads, resolved.
+    """The FILES a `grep`/`file` expression actually reads, DERIVED from the command the
+    runner will execute rather than re-parsed here.
 
-    Not the tokens as written. The written reading was defeated three separate ways, each
-    found by attacking the rule rather than by testing it:
+    Three earlier versions of this restated the parse instead of deriving it, and each was
+    defeated by an expression the runner reads differently from the way the guard read it:
+    a directory glob, a flag counted as a target, and a bare directory. The last of those
+    escaped because the code asserted "grep without `-r` never reads a directory" - true of
+    grep, FALSE of this DSL, where `_build_command` always emits `rg -q` (recursive by
+    default) or `grep -rqE`. A rule restated beside the thing it describes is only correct
+    until the thing moves; this now asks `_build_command` itself, so the guard and the
+    runner cannot disagree about what a verifier searches.
 
-    * `grep "x" .claude/skills/sdlc-studio/*` - the written token holds no `.md`, yet every
-      file the glob reaches is markdown.
-    * `grep -c "x" a.md` - `-c` was read as the pattern and `"x"` as a target, so the target
-      list was not all-markdown and the expression passed.
-    * `grep -r "x" docs/` - a bare directory, no glob character, nothing to expand.
+    Consequences that follow from the derivation rather than from a separate rule: globs are
+    expanded because `_build_command` expands them; a directory contributes the files
+    beneath it because both runners recurse; a leading flag becomes the PATTERN with the real
+    pattern demoted to a path, exactly as the runner treats it; and a path that does not
+    exist is DROPPED, because the runner does not read it.
 
-    So: split flags from the pattern properly, expand globs, and drop directory entries
-    unless the expression is recursive - `grep` without `-r` never reads a directory, so a
-    directory in the list contributes nothing to the search and must not dilute the verdict.
+    That last rule was measured, not reasoned. The obvious argument - that a flag form
+    demotes a real pattern to a missing path and therefore fails loudly - is FALSE:
+    `rg -q -e -r -- x best-practices/` exits 0, printing `rg: x: No such file or directory`
+    to stderr while still matching inside the directory. So `grep -r "x" docs/` is a
+    working, silent, markdown-only verifier, and dropping the missing operand is what makes
+    the guard see it. Asserting the comfortable version of this without running it would
+    have shipped the same escape a third time.
 
-    Returns [] when nothing resolves, which the caller reads as "fall back to the written
-    tokens" rather than as "reads no markdown" - a glob matching nothing today is the same
+    Returns [] when nothing resolves, which the caller reads as "fall back to the tokens as
+    written" rather than as "reads no markdown" - a glob matching nothing today is the same
     self-confirming verifier tomorrow when it matches, and the verdict must not depend on
     the filesystem the lint happened to run on.
     """
@@ -432,22 +437,29 @@ def _verifier_reads(expr: str, cwd=None) -> list[str]:
     if head != "grep":
         return []
     try:
-        args = shlex.split(tail)
+        kind, argv = _build_command(expr, cwd=cwd)
     except ValueError:
-        return []  # malformed quoting is lint_verifier's business, not ours
-    recursive = any(a in _GREP_RECURSIVE for a in args if a.startswith("-"))
-    operands = [a for a in args if not a.startswith("-")]
-    targets = operands[1:]  # operand 0 is the pattern, once flags are out of the way
+        return []  # a malformed expression is lint_verifier's business, not ours
+    if kind != "grep" or not isinstance(argv, list) or "--" not in argv:
+        return []
+    # Slicing from the `--` terminator itself instead of past it is an EQUIVALENT mutation:
+    # `--` is not a path that exists, so the `p.exists()` guard below drops it. Recorded
+    # rather than pinned, because the two forms cannot be told apart by any behaviour.
     resolved: list[str] = []
-    for t in _expand_globs(targets, cwd):
+    for t in argv[argv.index("--") + 1:]:
         p = Path(t) if Path(t).is_absolute() or cwd is None else Path(cwd) / t
+        if not p.exists():
+            continue  # the runner warns and carries on; an unread path proves nothing
         if p.is_dir():
-            if not recursive:
-                continue  # grep without -r reads nothing here
-            # `-r` reads every file beneath, so the directory's CONTENTS are what is
-            # searched. Judging the directory token itself would let `grep -r "x" docs/`
-            # pass while every file under it is prose.
-            resolved.extend(str(f) for f in sorted(p.rglob("*")) if f.is_file())
+            # Short-circuit: the only question is whether EVERY file read is markdown, so
+            # the first non-markdown file settles it. Walking a whole tree per verifier
+            # line made `grep "x" .` an O(repo) lint step.
+            for f in p.rglob("*"):
+                if not f.is_file():
+                    continue
+                resolved.append(str(f))
+                if not f.suffix.lower() == ".md":
+                    return resolved
             continue
         resolved.append(str(p))
     return resolved
@@ -467,8 +479,9 @@ def _verifier_targets(expr: str) -> list[str]:
             args = shlex.split(tail)
         except ValueError:
             return []
-        operands = [a for a in args if not a.startswith("-")]
-        return operands[1:]
+        # The DSL's own split, matching `_build_command`: operand 0 is the pattern,
+        # whatever it looks like. A flag-aware split here would disagree with the runner.
+        return args[1:]
     return []
 
 
@@ -500,7 +513,9 @@ def lint_markdown_evidence(expr: str, cwd=None) -> str | None:
 
     Still NOT closed, deliberately: a `shell`-prefixed grep bypasses this entirely, because
     `shell` is the documented escape hatch, and an expression whose resolved files are a mix
-    of markdown and code is allowed by the same all-or-nothing rule stated above.
+    of markdown and code is allowed by the same all-or-nothing rule stated above. Both are
+    disclosed on BG0264 as well, because a residual named only in a docstring is a residual
+    the next author will not read.
     """
     head = (expr.split(None, 1)[0].lower() if expr.split() else "")
     if head not in _PROSE_VERBS:

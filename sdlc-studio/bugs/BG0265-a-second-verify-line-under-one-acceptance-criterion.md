@@ -24,7 +24,7 @@ Worth noting the interaction with the duplicate-verifier lint, which already exi
 
 ## Proposed Fix
 
-Refuse a second `Verify:` line in one AC block, at author time, and say that a criterion needing two checks is two criteria. That is the cheaper half and it matches the existing grain: the creators already refuse a pseudo-verify rather than accepting it and warning later. Running every verifier in a block is the alternative, but it changes what an AC MEANS - one criterion, one discriminating check - and it would quietly turn the four dead verifiers already on disk into newly-failing ones without anybody deciding to. Whichever is chosen, the seven existing occurrences must be dispositioned explicitly rather than left: US0307 AC3 and US0308 AC2 in particular were counted as verified evidence in a sprint that published the number.
+Refuse a second `Verify:` line in one AC block, at author time, and say that a criterion needing two checks is two criteria. That is the cheaper half and it matches the existing grain: the creators already refuse a pseudo-verify rather than accepting it and warning later. Running every verifier in a block is the alternative, but it changes what an AC MEANS - one criterion, one discriminating check - and it would quietly turn the four dead verifiers already on disk into newly-failing ones without anybody deciding to. Whichever is chosen, the six existing occurrences must be dispositioned explicitly rather than left: US0307 AC3 and US0308 AC2 in particular were counted as verified evidence in a sprint that published the number.
 
 ## Acceptance Criteria
 
@@ -37,7 +37,7 @@ Refuse a second `Verify:` line in one AC block, at author time, and say that a c
   already apply rather than accepting and warning later
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StackedVerifierTests::test_a_second_verify_line_in_one_block_is_refused
 
-### AC2: the seven already on disk are dispositioned, not left
+### AC2: the six already on disk are dispositioned, not left
 
 - **Given** the four AC blocks in this workspace that carry more than one Verify line
 - **When** the guard ships

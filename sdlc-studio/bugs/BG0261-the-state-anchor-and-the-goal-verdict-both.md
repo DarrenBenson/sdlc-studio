@@ -63,7 +63,7 @@ because nothing reads the ledger back at record time.
   with its own index
 - **Then** each is refused or reported at that moment, and the round count a note carries
   is derived from the ledger rather than restated beside it
-- **Verify:** red today, green when the ledger checks land: `pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::ReviewLedgerHonestyTests::test_a_note_round_or_label_contradicting_the_ledger_is_refused`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::ReviewLedgerHonestyTests::test_a_note_round_or_label_contradicting_the_ledger_is_refused
 
 ## Revision History
 
