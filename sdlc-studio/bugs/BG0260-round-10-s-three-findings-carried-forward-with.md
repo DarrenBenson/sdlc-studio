@@ -45,7 +45,7 @@ in an AC block.
 - **Then** it is derived by enumerating the fixture lists in `DisclosedLimitsAreRealTests`
   and comparing against the items THE BOUND names, so it cannot be wrong in prose while
   the fixtures say otherwise
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::DisclosedLimitsAreRealTests::test_which_bound_items_have_fixtures_is_derived_not_asserted`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::DisclosedLimitsAreRealTests::test_which_bound_items_have_fixtures_is_derived_not_asserted
 
 ### AC2: a cross-reference to this file's own layout resolves
 
@@ -56,7 +56,7 @@ in an AC block.
 - **Then** the disclaimer is restored verbatim and every cross-reference in THE BOUND
   resolves to a block that exists, so a structural claim about a file's own layout is
   checked mechanically rather than read past for two rounds
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::DisclosedLimitsAreRealTests::test_every_cross_reference_in_the_bound_resolves_within_this_module`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::DisclosedLimitsAreRealTests::test_every_cross_reference_in_the_bound_resolves_within_this_module
 
 ### AC3: the comment's glob examples come from the probe battery
 
@@ -66,7 +66,7 @@ in an AC block.
 - **Then** they are produced from the battery rather than typed, so an example that does
   not match every probe cannot be written - the comment criticising an enumeration of
   spellings currently contains a wrong spelling in its own enumeration
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::EverythingReasonProbeTests::test_the_glob_examples_are_derived_from_the_probe_battery`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::EverythingReasonProbeTests::test_the_glob_examples_are_derived_from_the_probe_battery
 
 ### AC4: a prefix glob is not announced as the whole tree
 
@@ -76,7 +76,7 @@ in an AC block.
 - **Then** `a*` is not announced as the whole tree, so the shrunk battery goes red and the
   five probes stop being redundant - a one-probe battery announces WHOLE TREE for `a*`
   while the matcher refuses only paths under `a`
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::EverythingReasonProbeTests::test_a_prefix_glob_is_not_announced_as_the_whole_tree`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::EverythingReasonProbeTests::test_a_prefix_glob_is_not_announced_as_the_whole_tree
 
 ## Revision History
 

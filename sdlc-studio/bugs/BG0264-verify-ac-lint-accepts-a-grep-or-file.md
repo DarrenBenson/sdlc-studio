@@ -38,7 +38,7 @@ Add a path-suffix check to the lint: a `grep` or `file` verifier whose resolved 
 - **When** `lint_markdown_evidence` judges each, alongside a `pytest` verifier, a `manual`
   one, a `grep` over a Python file, and a mixed target list naming both markdown and code
 - **Then** all four originals are refused and none of the others is
-- **Verify:** passed 2026-07-22, and nothing re-runs it: `pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k "test_every_verifier_us0310_shipped_is_refused or test_a_behavioural_verifier_is_untouched or test_a_mixed_target_list_is_not_refused or test_file_verb_on_markdown_is_refused"`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k "test_every_verifier_us0310_shipped_is_refused or test_a_behavioural_verifier_is_untouched or test_a_mixed_target_list_is_not_refused or test_file_verb_on_markdown_is_refused"
 - **Verified:** yes (2026-07-22)
 
 ### AC2: the refusal fails the command while authoring, and lifts once the story has shipped
@@ -47,7 +47,7 @@ Add a path-suffix check to the lint: a `grep` or `file` verifier whose resolved 
 - **When** `verify_ac lint` runs against it at `Draft`, then again at `Done`
 - **Then** the first exits non-zero and the second exits zero, so authoring is interrupted
   and a lint over shipped history still runs
-- **Verify:** passed 2026-07-22, and nothing re-runs it: `pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k "test_lint_exits_non_zero_on_a_draft_story_and_zero_once_done or test_uppercase_extension_is_refused"`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k "test_lint_exits_non_zero_on_a_draft_story_and_zero_once_done or test_uppercase_extension_is_refused"
 - **Verified:** yes (2026-07-22)
 
 ## Resolution
@@ -71,9 +71,23 @@ sweep re-runs a bug's verifier and these will read green forever regardless of w
 happens to the tests they name. That is BG0256, open in this same batch, and this
 artefact is an instance of it rather than an exception to it.
 
+**What this guard still does NOT close, after the round-1 repair.** Named here rather than
+left for the next reader to find, because the first version of this fix shipped believing it
+was complete.
+
+- A `shell`-prefixed grep bypasses it entirely. `shell` is the documented escape hatch and
+  narrowing it is a separate decision.
+- An expression whose resolved files are a MIX of markdown and code is allowed, by the same
+  all-or-nothing rule that keeps the guard from second-guessing a legitimate verifier.
+- The resolved reading depends on the filesystem the lint runs on. The written reading is
+  kept as a floor for exactly that reason, and a test pins the one case that distinguishes
+  them - a directory named `*.md` under a non-recursive grep. That case was found by
+  mutation, after removing the written reading left every other test green.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Filed |
 | 2026-07-22 | sdlc-studio | Fixed. Acceptance criteria added after the engagement floor refused the commit: two source files with an `Affects` field but no criterion is unplanned work, which is the floor's whole point and this run's own bar for a bug. |
+| 2026-07-22 | sdlc-studio | REPAIRED after the closing review REJECTED. The guard judged only the tokens as WRITTEN and was defeated three ways: a directory glob (`sdlc-studio/reviews/*`), a flag read as the pattern (`grep -c "x" a.md`), and a bare recursive directory. It now judges the files actually READ - flags split from the pattern, globs expanded, directories walked under `-r` and dropped without it - with the written tokens kept as a floor. The claim that the previously surviving mutant was EQUIVALENT was FALSE and is withdrawn; that mutant is now killed, along with four others. The repair plan itself was attacked before execution and REFUTED: the first proposed fix closed none of the three escapes. |

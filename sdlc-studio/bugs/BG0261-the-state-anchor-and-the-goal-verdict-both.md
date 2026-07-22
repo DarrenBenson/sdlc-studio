@@ -53,7 +53,7 @@ because nothing reads the ledger back at record time.
 - **Then** it reports both the landed-but-claimed-owed sign-off and the round-count
   divergence as findings, distinct from the line-count finding, and reports neither when
   the document agrees with the state
-- **Verify:** red today, green when the checks land: `pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py::AnchorClaimsCheckedAgainstRunStateTests::test_a_landed_signoff_and_a_contradicted_round_count_are_both_reported`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py::AnchorClaimsCheckedAgainstRunStateTests::test_a_landed_signoff_and_a_contradicted_round_count_are_both_reported
 
 ### AC2: the round ledger cannot be contradicted at the moment it is written
 

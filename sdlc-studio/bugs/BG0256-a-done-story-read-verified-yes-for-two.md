@@ -31,7 +31,7 @@ Make a stamp depend on the verifier RESOLVING, not only on the AC text being unc
 - Both shapes are covered: a node address whose class or method no longer exists, and a
   `-k` pattern that matches nothing while the file it names still collects. The second is
   the shape that produced this bug and the one a file-exists check would pass.
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StampResolutionTests::test_a_recorded_green_whose_selector_selects_nothing_is_reported_stale`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StampResolutionTests::test_a_recorded_green_whose_selector_selects_nothing_is_reported_stale
 
 ### AC2: conformance refuses to count a Done story verified on an unresolvable stamp
 
@@ -40,7 +40,7 @@ Make a stamp depend on the verifier RESOLVING, not only on the AC text being unc
   non-conformant and appears in `missing` with a reason a reader can act on.
 - The existing remediation registry carries a hint for whatever finding kind this adds, so
   the guard that derives its key set from the stage vocabulary stays green.
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::StampResolutionTests::test_a_done_story_stamped_against_a_selector_that_resolves_to_nothing_is_not_verified`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::StampResolutionTests::test_a_done_story_stamped_against_a_selector_that_resolves_to_nothing_is_not_verified
 
 ### AC3: a resolving selector stays green, and the check collects rather than runs
 
@@ -50,7 +50,7 @@ Make a stamp depend on the verifier RESOLVING, not only on the AC text being unc
 - Resolution is decided by collection, not execution, so the check costs a collection pass
   per distinct selector and executes no test body - it can therefore run beside the
   freshness check rather than only in a full suite sweep, which is what let two days pass.
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StampResolutionTests::test_a_resolving_selector_stays_green_and_no_test_body_is_executed`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StampResolutionTests::test_a_resolving_selector_stays_green_and_no_test_body_is_executed
 
 ### AC4: the condition is catchable from the command line, on a story, without a suite run
 
@@ -60,7 +60,7 @@ Make a stamp depend on the verifier RESOLVING, not only on the AC text being unc
 - The instance that produced this bug is repaired in the same change: US0265 AC5 is
   re-pointed at `test_neutral_text_reports_no_violations`, which exists and passes. That
   repair is stated as a completion item, not as the fix.
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StampResolutionTests::test_the_command_exits_non_zero_on_a_story_whose_stamped_verifier_cannot_resolve`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StampResolutionTests::test_the_command_exits_non_zero_on_a_story_whose_stamped_verifier_cannot_resolve
 
 ## Revision History
 

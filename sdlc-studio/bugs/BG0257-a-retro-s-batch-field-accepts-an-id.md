@@ -40,7 +40,7 @@ against the code as it stands today:
 - The refusal is actionable: it says what to do (name the units individually) rather than
   reporting a count mismatch and stopping.
 
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::TheBatchIsCrossCheckedAgainstItsDeclaredCount::test_a_range_batch_is_refused_naming_the_parsed_and_declared_counts`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::TheBatchIsCrossCheckedAgainstItsDeclaredCount::test_a_range_batch_is_refused_naming_the_parsed_and_declared_counts
 
 ### AC2: the refusal writes nothing and disturbs nothing already written
 
@@ -50,14 +50,14 @@ against the code as it stands today:
 - **Then** no row is added for that retro and every existing row is byte-identical, because a
   partial denominator paired with a whole-sprint numerator must never reach the file the
   planner re-measures its rate from
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::TheBatchIsCrossCheckedAgainstItsDeclaredCount::test_a_refused_batch_writes_no_velocity_row_and_disturbs_no_existing_one`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::TheBatchIsCrossCheckedAgainstItsDeclaredCount::test_a_refused_batch_writes_no_velocity_row_and_disturbs_no_existing_one
 
 ### AC3: a batch that parses completely still records, so the check is a cross-check and not a new obstacle
 
 - **Given** a retro whose Batch line names every unit individually and parses in full
 - **When** the accuracy run executes
 - **Then** its row is recorded as before
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::TheBatchIsCrossCheckedAgainstItsDeclaredCount::test_a_fully_parsed_batch_still_records_its_row`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::TheBatchIsCrossCheckedAgainstItsDeclaredCount::test_a_fully_parsed_batch_still_records_its_row
 
 ## Revision History
 

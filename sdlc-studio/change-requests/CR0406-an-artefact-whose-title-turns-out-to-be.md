@@ -19,6 +19,14 @@ The corrective is worth stating because it is the general shape: a field with no
 
 Note the interaction with links. A rename breaks every inbound reference - epic breakdown lines, Decomposed-into fields, Delivers fields, LATEST.md, retros - which is exactly why nobody does it by hand, and exactly why a tool should. `check_links.py` already knows how to find them.
 
+**Measured during RUN-01KY5EJX's repair round.** BG0265's title carried a count that the
+run's own grooming falsified. Correcting it required three separate edits: the H1, the index
+row, and a filename check. `reconcile.py apply` was run first and reported `changed 0 row(s)`, since
+it syncs status and counts but not titles, so the index row had to be hand-edited, which is
+the failure this CR describes, performed while filing evidence for it. The filename happened
+to be slug-stable because the changed words were past the slug's truncation point; had they
+not been, a rename would also have been needed with no tool to keep the three in step.
+
 ## Impact
 
 Every project using this skill, and worst in the projects that use it best: the more an artefact is cited, the more expensive its title is to correct, so a wrong title on a well-linked artefact is effectively permanent. The concrete cost today is one shipped CR whose title asserts something false about this repository, kept that way deliberately because the alternative was worse.

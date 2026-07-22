@@ -47,7 +47,7 @@ in an AC block.
 - **Then** each reason carries what was established for that claim - the branch that
   decided it, and for the glob branch which probes it matched - so the sentence varies
   with its input and cannot be satisfied by a constant
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::WindowOpenMessageTests::test_the_reason_clause_reports_the_evidence_the_probe_produced`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::WindowOpenMessageTests::test_the_reason_clause_reports_the_evidence_the_probe_produced
 
 ### AC2: inverting the clause goes red while it still says "glob"
 
@@ -55,7 +55,7 @@ in an AC block.
   word `glob` the current assertion pins
 - **When** the window suite runs
 - **Then** it FAILS - today it passes, measured above, which is the whole of this bug
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::WindowOpenMessageTests::test_an_inverted_reason_clause_fails_even_though_it_keeps_the_word_glob`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::WindowOpenMessageTests::test_an_inverted_reason_clause_fails_even_though_it_keeps_the_word_glob
 
 ### AC3: a claim matching every probe but not every path agrees with the lane
 
@@ -66,7 +66,7 @@ in an AC block.
 - **Then** they agree: either the sentence stops claiming more than the probe established,
   or the verdict matches the sentence - the message and the verdict currently contradict
   each other on a real input
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::WindowOpenMessageTests::test_a_claim_matching_every_probe_but_not_every_path_agrees_with_the_lane`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::WindowOpenMessageTests::test_a_claim_matching_every_probe_but_not_every_path_agrees_with_the_lane
 
 ## Revision History
 

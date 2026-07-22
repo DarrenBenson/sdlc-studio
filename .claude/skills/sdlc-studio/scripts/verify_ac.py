@@ -395,23 +395,66 @@ _PROSE_VERBS = {"grep", "file"}
 _AUTHORING_STATUSES = {"draft", "ready"}
 
 
-def _verifier_targets(expr: str) -> list[str]:
-    """The paths a `grep`/`file` expression searches, as WRITTEN - never expanded.
+#: `grep` flags this project's verifiers actually use that take no value. Anything else
+#: starting with `-` is treated as a flag too; the point is only to stop a flag being
+#: counted as the pattern, which is what let `grep -c "x" a.md` escape the guard.
+_GREP_RECURSIVE = {"-r", "-R", "--recursive"}
 
-    Deliberately not `_expand_globs`, but NOT because expansion would change this
-    verdict - it would not. `_expand_globs` passes an unmatched glob through literally
-    rather than dropping it, so a `*.md` pattern reads as markdown whether it matches
-    anything or not, and substituting the expanding version leaves every case here
-    identical. That was checked by mutation rather than assumed: the swap survives, and
-    it survives because the two are equivalent for this question.
 
-    The reason is that expansion answers a different question. It resolves what exists on
-    THIS filesystem right now, and this guard judges what the AUTHOR WROTE. A criterion
-    whose glob happens to match no markdown today is the same self-confirming verifier
-    tomorrow when it does, so binding the verdict to the current working tree would make
-    it depend on where it ran. Keeping it textual also means the check needs no cwd and
-    touches no disk.
+def _verifier_reads(expr: str, cwd=None) -> list[str]:
+    """The FILES a `grep`/`file` expression actually reads, resolved.
+
+    Not the tokens as written. The written reading was defeated three separate ways, each
+    found by attacking the rule rather than by testing it:
+
+    * `grep "x" .claude/skills/sdlc-studio/*` - the written token holds no `.md`, yet every
+      file the glob reaches is markdown.
+    * `grep -c "x" a.md` - `-c` was read as the pattern and `"x"` as a target, so the target
+      list was not all-markdown and the expression passed.
+    * `grep -r "x" docs/` - a bare directory, no glob character, nothing to expand.
+
+    So: split flags from the pattern properly, expand globs, and drop directory entries
+    unless the expression is recursive - `grep` without `-r` never reads a directory, so a
+    directory in the list contributes nothing to the search and must not dilute the verdict.
+
+    Returns [] when nothing resolves, which the caller reads as "fall back to the written
+    tokens" rather than as "reads no markdown" - a glob matching nothing today is the same
+    self-confirming verifier tomorrow when it matches, and the verdict must not depend on
+    the filesystem the lint happened to run on.
     """
+    parts = expr.split(None, 1)
+    head = parts[0].lower() if parts else ""
+    tail = parts[1] if len(parts) > 1 else ""
+    if not tail:
+        return []
+    if head == "file":
+        return [tail.strip('"\'')]
+    if head != "grep":
+        return []
+    try:
+        args = shlex.split(tail)
+    except ValueError:
+        return []  # malformed quoting is lint_verifier's business, not ours
+    recursive = any(a in _GREP_RECURSIVE for a in args if a.startswith("-"))
+    operands = [a for a in args if not a.startswith("-")]
+    targets = operands[1:]  # operand 0 is the pattern, once flags are out of the way
+    resolved: list[str] = []
+    for t in _expand_globs(targets, cwd):
+        p = Path(t) if Path(t).is_absolute() or cwd is None else Path(cwd) / t
+        if p.is_dir():
+            if not recursive:
+                continue  # grep without -r reads nothing here
+            # `-r` reads every file beneath, so the directory's CONTENTS are what is
+            # searched. Judging the directory token itself would let `grep -r "x" docs/`
+            # pass while every file under it is prose.
+            resolved.extend(str(f) for f in sorted(p.rglob("*")) if f.is_file())
+            continue
+        resolved.append(str(p))
+    return resolved
+
+
+def _verifier_targets(expr: str) -> list[str]:
+    """The paths a `grep`/`file` expression names, as WRITTEN. The floor reading."""
     parts = expr.split(None, 1)
     head = parts[0].lower() if parts else ""
     tail = parts[1] if len(parts) > 1 else ""
@@ -423,12 +466,13 @@ def _verifier_targets(expr: str) -> list[str]:
         try:
             args = shlex.split(tail)
         except ValueError:
-            return []  # malformed quoting is lint_verifier's business, not ours
-        return args[1:]  # the first token is the pattern
+            return []
+        operands = [a for a in args if not a.startswith("-")]
+        return operands[1:]
     return []
 
 
-def lint_markdown_evidence(expr: str) -> str | None:
+def lint_markdown_evidence(expr: str, cwd=None) -> str | None:
     """REFUSAL: a `grep`/`file` verifier whose every target is markdown proves that
     somebody wrote a sentence, not that the behaviour exists.
 
@@ -446,12 +490,23 @@ def lint_markdown_evidence(expr: str) -> str | None:
     rather than in the passing count where it is indistinguishable from a test. A mixed
     expression that also searches a non-markdown path is left alone: it can discriminate,
     and narrowing it further is a judgement this check has no basis to make.
+
+    The verdict takes the FILES ACTUALLY READ where they resolve, and the tokens as written
+    where they do not. Judging only what was written let three expressions through - a
+    directory glob, a flag mistaken for the pattern, and a bare recursive directory - and the
+    first version of this guard called that difference equivalent in a docstring, which was
+    false. Neither reading is sufficient alone: the resolved one depends on the filesystem
+    the lint runs on, the written one cannot see where a glob points.
+
+    Still NOT closed, deliberately: a `shell`-prefixed grep bypasses this entirely, because
+    `shell` is the documented escape hatch, and an expression whose resolved files are a mix
+    of markdown and code is allowed by the same all-or-nothing rule stated above.
     """
     head = (expr.split(None, 1)[0].lower() if expr.split() else "")
     if head not in _PROSE_VERBS:
         return None
-    targets = _verifier_targets(expr)
-    if not targets or not all(t.lower().endswith(".md") for t in targets):
+    md = lambda ts: bool(ts) and all(t.lower().endswith(".md") for t in ts)
+    if not (md(_verifier_reads(expr, cwd)) or md(_verifier_targets(expr))):
         return None
     return ("this verifier only searches markdown, so it proves someone wrote a sentence, "
             "not that the behaviour exists - the shape that passed four US0310 criteria "
@@ -1423,7 +1478,7 @@ def cmd_lint(args: argparse.Namespace) -> int:
             if not m:
                 continue
             expr = m.group(2).strip()
-            markdown_only = lint_markdown_evidence(expr) if authoring else None
+            markdown_only = lint_markdown_evidence(expr, repo_root) if authoring else None
             if markdown_only:
                 refused += 1
                 print(f"{p.name}: {expr!r}\n    -> REFUSED: {markdown_only}")

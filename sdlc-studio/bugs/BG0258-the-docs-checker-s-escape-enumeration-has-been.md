@@ -43,7 +43,7 @@ Each criterion below carries its own verifier, because `verify_ac` executes only
 - **Then** it names the axis that selected the sentence or reports that none did, whether
   an enumerated asserting word was present, and which cue set the polarity - so the answer
   comes from running the mechanism, not from reading a list beside it
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::EscapeExplanationTests::test_explain_names_the_selecting_axis_and_why_a_sentence_was_not_judged`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::EscapeExplanationTests::test_explain_names_the_selecting_axis_and_why_a_sentence_was_not_judged
 
 ### AC2: an unselected sentence is reported as unselected, never as clean
 
@@ -54,7 +54,7 @@ Each criterion below carries its own verifier, because `verify_ac` executes only
   instead of coming back indistinguishable from prose the scan judged and passed - today
   the two are the same empty result, which is how five rounds each read a lower bound as
   coverage
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::EscapeExplanationTests::test_a_partial_topic_sentence_is_reported_as_unselected_not_as_clean`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::EscapeExplanationTests::test_a_partial_topic_sentence_is_reported_as_unselected_not_as_clean
 
 ### AC3: the escape corpus is generated, and every escape it finds is reported
 
@@ -63,7 +63,7 @@ Each criterion below carries its own verifier, because `verify_ac` executes only
 - **Then** every escape it finds is reported, so a new escape appears without a reviewer
   having to invent the sentence - and the test fails if the corpus is a hand-written list,
   because a hand-written list is the defect this bug names
-- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::GeneratedEscapeCorpusTests::test_the_corpus_is_generated_from_the_axes_and_every_escape_it_finds_is_reported`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::GeneratedEscapeCorpusTests::test_the_corpus_is_generated_from_the_axes_and_every_escape_it_finds_is_reported
 
 ## Revision History
 

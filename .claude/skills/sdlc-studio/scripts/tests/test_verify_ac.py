@@ -2278,6 +2278,61 @@ class MarkdownEvidenceLintTests(unittest.TestCase):
         self.assertIsNone(verify_ac.lint_markdown_evidence(
             "grep 'refuses' reference-sprint.md scripts/sprint.py"))
 
+    #: The three expressions that defeated the first version of this guard, quoted exactly as
+    #: the reviewer and the plan-attacker wrote them. Each escaped for a different reason, so
+    #: a fix that closes one and not the others passes its own reasoning and fails the finding
+    #: - which is what the first repair plan proposed before it was refuted.
+    ESCAPES_FOUND_BY_REVIEW = [
+        # a directory glob: no `.md` in the written token, every file it reaches is markdown
+        'grep "anything" sdlc-studio/reviews/*',
+        # a flag read as the pattern, so the real pattern was counted as a target
+        'grep -c "window" .claude/skills/sdlc-studio/reference-sprint.md',
+        # a bare recursive directory: nothing to expand, nothing ends in .md
+        'grep -r "x" .claude/skills/sdlc-studio/best-practices/',
+    ]
+
+    def test_every_expression_that_escaped_the_first_guard_is_refused(self) -> None:
+        # Resolved against the real repo root, which is where a lint run resolves them.
+        root = Path(__file__).resolve().parents[5]
+        for expr in self.ESCAPES_FOUND_BY_REVIEW:
+            with self.subTest(expr=expr):
+                self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, root))
+
+    def test_a_flag_is_never_counted_as_a_target(self) -> None:
+        # `-c` must not displace the pattern; if it does, the pattern becomes a "target"
+        # that does not end .md and the whole expression is allowed.
+        self.assertEqual(verify_ac._verifier_targets('grep -c "x" a.md'), ["a.md"])
+        self.assertEqual(verify_ac._verifier_targets('grep -i -n "x" a.md b.py'),
+                         ["a.md", "b.py"])
+
+    def test_a_directory_is_dropped_unless_the_grep_is_recursive(self) -> None:
+        # grep without -r never reads a directory, so a directory in the target list
+        # contributes nothing to the search and must not dilute the verdict.
+        root = Path(__file__).resolve().parent.parent  # scripts/
+        self.assertEqual(verify_ac._verifier_reads(f'grep "x" {root}'), [])
+        self.assertTrue(verify_ac._verifier_reads(f'grep -r "x" {root}'))
+
+    def test_the_written_reading_still_refuses_when_nothing_resolves(self) -> None:
+        # Why BOTH readings are kept. Here the target is a DIRECTORY that happens to be
+        # named `*.md`, and the grep is not recursive - so the resolved reading drops it
+        # and sees nothing, while the author plainly wrote a markdown-only verifier. Drop
+        # the written reading and this is allowed. Found by mutation: removing that half
+        # left every other test in this class green, so without this case the claim that
+        # both readings are load-bearing would be an assertion, not a measurement.
+        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_md_dir_"))
+        try:
+            (tmp / "notes.md").mkdir()
+            expr = 'grep "x" notes.md'
+            self.assertEqual(verify_ac._verifier_reads(expr, tmp), [])
+            self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, tmp))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_a_resolved_mix_of_markdown_and_code_is_allowed(self) -> None:
+        root = Path(__file__).resolve().parent.parent  # scripts/
+        self.assertIsNone(verify_ac.lint_markdown_evidence(
+            f'grep "x" {root}/verify_ac.py {root}/../SKILL.md'))
+
     def test_a_glob_that_matches_no_file_here_is_still_refused(self) -> None:
         # The verdict is about what the author WROTE, not about what exists on this
         # filesystem, so it must not depend on where the lint runs. This does NOT pin

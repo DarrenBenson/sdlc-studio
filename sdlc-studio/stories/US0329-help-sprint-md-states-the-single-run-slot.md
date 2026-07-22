@@ -37,8 +37,7 @@ goal verdict cannot be given honestly
 - **Then** both name the same two routes, closing the open run and deliberately
   re-planning it, spelled as the same commands, so an operator following either surface
   takes the same action
-- **Verify:** manual - run a refused disjoint plan, put its output beside help/sprint.md
-  and confirm the routes and the command spellings agree
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::HelpAndRefusalNameTheSameRoutesTests::test_the_refusal_and_help_sprint_name_the_same_two_routes_and_spellings
 
 ## Revision History
 

@@ -35,14 +35,15 @@ it applies, and it is the sentence a future author would use to reject US0336.
   base term does worse
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheSeedBasisNamesItsConditionTests::test_the_seed_basis_states_the_data_the_no_base_term_finding_was_measured_on
 
-### AC2: the basis travelling with every forecast carries the same qualification
+### AC2: the qualification survives when the project HAS measured a rate of its own
 
-- **Given** the basis string the forecast returns on every plan, which is printed wherever the
-  number is
-- **When** it is read
-- **Then** it no longer claims a base term does worse without saying on what, so the
-  qualification cannot be separated from the figure it qualifies
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheSeedBasisNamesItsConditionTests::test_the_forecast_basis_no_longer_makes_the_unconditional_claim
+- **Given** a project whose velocity record yields a usable rate, so the forecast quotes that
+  rather than the shipped seed
+- **When** the basis travelling with the figure is read
+- **Then** it still states the condition rather than the bare no-base-term claim, because the
+  two basis strings are the SAME string only while no local rate exists - a criterion checked
+  solely in the seed case is satisfied by the same fixture as AC1 and discriminates nothing
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheSeedBasisNamesItsConditionTests::test_the_qualification_survives_when_a_local_rate_replaces_the_seed
 
 ### AC3: the reference document and the code do not disagree
 
@@ -50,7 +51,7 @@ it applies, and it is the sentence a future author would use to reject US0336.
 - **When** a reader reaches its account of what a point costs and why the model has no base term
 - **Then** the section states the condition under which that held, matching the code's basis,
   so the doc cannot be cited against the fixed term the same release ships
-- **Verify:** manual - read the estimator section of `.claude/skills/sdlc-studio/reference-sprint.md` and confirm the no-base-term finding is stated with the data it was measured on, not as an unconditional claim
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::EstimatorBasisAgreesWithTheCodeTests::test_the_reference_no_base_term_account_carries_the_same_condition_as_the_code
 
 ## Revision History
 
