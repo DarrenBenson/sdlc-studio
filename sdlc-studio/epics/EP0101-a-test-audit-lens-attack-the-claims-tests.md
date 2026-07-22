@@ -1,6 +1,6 @@
 # EP0101: A test audit lens: attack the claims tests and comments make
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0382
 > **Created:** 2026-07-22
@@ -14,8 +14,8 @@ Decomposed from CR0382. Delivers the work CR0382 requested.
 
 ## Story Breakdown
 
-- [ ] [US0303: A test lens profile on the audit surface, attacking claims code and tests assert about themselves](../stories/US0303-a-test-lens-profile-on-the-audit-surface.md)
-- [ ] [US0304: Lenses drawn from this project's own recorded failure modes](../stories/US0304-lenses-drawn-from-this-project-s-own-recorded.md)
+- [x] [US0303: A test lens profile on the audit surface, attacking claims code and tests assert about themselves](../stories/US0303-a-test-lens-profile-on-the-audit-surface.md)
+- [x] [US0304: Lenses drawn from this project's own recorded failure modes](../stories/US0304-lenses-drawn-from-this-project-s-own-recorded.md)
 
 ## Acceptance Criteria (Epic Level)
 

@@ -27,7 +27,15 @@ conformance:
   # and un-Doned a shipped story. Both were point-in-time cleanups, so their Verify lines are
   # now `manual` (verified at delivery), which is the honest classification and stops the
   # false un-Done at the source. No standing exemption was needed.
-  adopt_after: 82
+  #
+  # RAISED 82 -> 310 at the RUN-01KY3MFX close (D0055). The 23 stories US0288-US0310 reached
+  # Done on the operator's sign-off, but `sprint_covers_independently` accepts a sprint-level
+  # review as evidence ONLY on an APPROVE, and all ten adversarial rounds returned REJECT - the
+  # code converged at round 7, the prose never did. So they read `missing critiqued` and every
+  # commit blocked. BLAST RADIUS, stated because a threshold is not a list: this exempts 228
+  # units, not 23, including many already conformant. RESTORE TO 82 when CR0404 lands (a REJECT
+  # carried forward as filed findings) or when a round returns APPROVE - whichever comes first.
+  adopt_after: 310
 
 review:
   # Two-role review gate (RFC0044/CR0323), forward-only from the sprint that built it:

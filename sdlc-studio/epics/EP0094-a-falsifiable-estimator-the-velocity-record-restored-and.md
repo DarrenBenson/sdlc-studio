@@ -1,6 +1,6 @@
 # EP0094: A falsifiable estimator: the velocity record restored and enforced
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 11
 > **Parent:** CR0284
 > **Created:** 2026-07-22
@@ -14,9 +14,9 @@ Decomposed from CR0284. Delivers the work CR0284 requested.
 
 ## Story Breakdown
 
-- [ ] [US0288: close_owed treats a missing velocity row as an owed close item](../stories/US0288-close-owed-treats-a-missing-velocity-row-as.md)
-- [ ] [US0289: Backfill the velocity record from RETRO0029, marking unmeasurable rows as such](../stories/US0289-backfill-the-velocity-record-from-retro0029-marking-unmeasurable.md)
-- [ ] [US0290: Each plan re-measures the rate from the velocity record or names why it cannot](../stories/US0290-each-plan-re-measures-the-rate-from-the.md)
+- [x] [US0288: close_owed treats a missing velocity row as an owed close item](../stories/US0288-close-owed-treats-a-missing-velocity-row-as.md)
+- [x] [US0289: Backfill the velocity record from RETRO0029, marking unmeasurable rows as such](../stories/US0289-backfill-the-velocity-record-from-retro0029-marking-unmeasurable.md)
+- [x] [US0290: Each plan re-measures the rate from the velocity record or names why it cannot](../stories/US0290-each-plan-re-measures-the-rate-from-the.md)
 
 ## Acceptance Criteria (Epic Level)
 

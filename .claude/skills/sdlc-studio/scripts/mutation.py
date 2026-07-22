@@ -460,18 +460,32 @@ def claims_everything(claim) -> bool:
     `window_claims` passes through unchanged, and the CLI called it one narrow path while every
     commit was refused. Four successive versions of that sentence were wrong; the first three
     asked the record what it said, and the question is what the MATCHER will do with it."""
+    return everything_reason(claim) is not None
+
+
+def everything_reason(claim) -> str | None:
+    """WHY this claim claims the whole tree, in words, or None when it does not.
+
+    `claims_everything` is this function asked as a yes/no. It exists because a message that
+    lists EVERY cause for every input cannot be asserted against: a test reading it can only
+    check that a word appears, which passes for a claim the word does not describe, and a
+    mutant deleting the other causes survives. Naming the ONE cause that applies makes the
+    sentence vary with its input, which is what makes it checkable.
+    """
     if not isinstance(claim, str):
-        return True
+        return "it is not a path (the record cannot be interpreted)"
     pat = claim.strip()
     if pat.startswith("./"):
         pat = pat[2:]
     pat = pat.rstrip("/")
-    if pat in ("", "."):
-        return True
+    if pat == "":
+        return "it names no path, which claims everything rather than nothing"
+    if pat == ".":
+        return "it is the repository root"
     if pat.startswith("/"):
-        return True
+        return "it is absolute, so it is not comparable with a repo-relative staged path"
     if pat == ".." or pat.startswith("../") or "/../" in pat or pat.endswith("/.."):
-        return True
+        return "it traverses out of the repository, so no literal pattern can match it"
     # ASK THE MATCHER'S QUESTION, DO NOT ENUMERATE SPELLINGS. Both matchers end in
     # `fnmatch.fnmatch`, where a whole FAMILY of patterns matches every path - `**`, `***`,
     # `?*`, `*.` and more. The previous version listed literal spellings and got `*` right only
@@ -482,7 +496,9 @@ def claims_everything(claim) -> bool:
     # construction: a claim that matches every one of these unrelated paths claims everything.
     import fnmatch  # noqa: PLC0415 - local, as elsewhere in the matcher family
     probes = ("a", "a/b.py", "z/y/x/w.md", "README", "x.y", ".githooks/pre-commit")
-    return all(s.startswith(pat + "/") or fnmatch.fnmatch(s, pat) for s in probes)
+    if all(s.startswith(pat + "/") or fnmatch.fnmatch(s, pat) for s in probes):
+        return "it is a glob matching every path the matcher probes"
+    return None
 
 
 def window_claims(raw) -> list[str]:
@@ -1714,8 +1730,11 @@ def cmd_window(args: argparse.Namespace) -> int:
         # before this one; the fix is to render what the MATCHER will be handed.
         claims = window_claims(rec["paths"])
         everything = any(claims_everything(c) for c in claims)
-        scope = ("the WHOLE TREE (every commit is refused: a claim that is empty, `.`, absolute "
-                 "or a traversal matches everything, not nothing)"
+        # Name the ONE cause that applies to THIS window, not a list of every cause there is.
+        # A static list cannot be asserted against - see `everything_reason`.
+        why = next((f"`{c}`: {everything_reason(c)}" for c in claims
+                    if everything_reason(c) is not None), "")
+        scope = (f"the WHOLE TREE - every commit is refused, because {why}"
                  if everything else f"{len(claims)} path(s): {', '.join(claims)}")
         consequence = ("Every commit will be refused until it is closed."
                        if everything else

@@ -1,6 +1,6 @@
 # US0310: reference-sprint.md states the concurrent-write hazard where it states the single-writer rule
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0388
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

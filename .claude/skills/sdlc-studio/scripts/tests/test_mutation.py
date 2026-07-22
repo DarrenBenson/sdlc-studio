@@ -2213,6 +2213,10 @@ class WindowOpenMessageTests(unittest.TestCase):
         # the CLI it becomes the real scoped path `tools/x.py` and the narrow message is then
         # correct. It claims everything only as a HAND-WRITTEN record already on disk, which the
         # matcher-agreement test below covers.
+        EXPECTED_REASON = {
+            ".": "repository root", "./": "repository root",
+            "/etc/hosts": "absolute", "*": "glob", "**": "glob", "?*": "glob",
+        }
         for claim in (".", "./", "/etc/hosts", "*", "**", "?*"):
             with self.subTest(claim=claim), tempfile.TemporaryDirectory() as d:
                 root = self._repo(d)
@@ -2223,6 +2227,27 @@ class WindowOpenMessageTests(unittest.TestCase):
                 msg = buf.getvalue()
                 self.assertIn("WHOLE TREE", msg, f"{claim!r} claims everything to the matcher")
                 self.assertNotIn("else proceeds", msg)
+                # A PER-CLAIM assertion, possible now that the message names the ONE cause that
+                # applies. The previous `assertIn("glob", msg)` was claim-independent -
+                # it passed for `.` while its failure text claimed to have checked why `.` was
+                # total, and a mutant deleting the other four causes survived it. This fails if
+                # the reason drifts from the claim in hand.
+                self.assertIn(EXPECTED_REASON[claim], msg,
+                              f"{claim!r}: the reason clause must name why THIS claim is total")
+                for other, phrase in EXPECTED_REASON.items():
+                    if other != claim and phrase not in EXPECTED_REASON[claim]:
+                        self.assertNotIn(phrase, msg,
+                                         f"{claim!r}: names {other!r}'s cause, not its own")
+                # The removed word-check, kept as a note. Round 6 found the
+                # clause stale for globs and the repair added `assertIn("glob", msg)` - but the
+                # message is ONE STATIC STRING naming every cause for every input, so that
+                # assertion is claim-independent: it passes for `.` while its own failure text
+                # claims to have checked why `.` is total, and a mutant deleting the other four
+                # causes survives it. A word check is not a claim check, which is the finding
+                # this very module exists to make. BG0259 owns the real fix - print only the
+                # cause that APPLIES - and a per-claim assertion becomes possible there and is
+                # impossible here. An assertion that cannot discriminate is worse than none,
+                # because it reads as coverage.
                 (root / "README.md").write_text("changed\n", encoding="utf-8")
                 gitutil.git(["add", "README.md"], cwd=root)
                 self.assertEqual(self._lane(root)["count"], 1,
@@ -2245,8 +2270,10 @@ class WindowOpenMessageTests(unittest.TestCase):
                       "tools/x.py", "tools/", "a" * 5000, 7, None, True, ["x"], {"a": 1}):
             with self.subTest(claim=claim):
                 mine = mut.claims_everything(claim)
-                theirs = (all(gate._window_claims(claim, s) for s in BATTERY)
-                          if isinstance(claim, str) else True)
+                # ASK the matcher for every claim, including non-strings. Short-circuiting to
+                # a constant for those made the assertion message say "the matcher says X"
+                # without having asked it - a regression this very repair introduced.
+                theirs = all(gate._window_claims(claim, s) for s in BATTERY)
                 self.assertEqual(
                     mine, theirs,
                     f"{claim!r}: the CLI says everything={mine}, the matcher says {theirs} - "

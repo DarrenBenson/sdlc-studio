@@ -1,6 +1,6 @@
 # EP0104: The close shows what the mutation gate cost against what it found
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 3
 > **Parent:** CR0379
 > **Created:** 2026-07-22
@@ -14,7 +14,7 @@ Decomposed from CR0379. Delivers the work CR0379 requested.
 
 ## Story Breakdown
 
-- [ ] [US0309: The sprint report renders mutation cost against yield for the run and the trailing history](../stories/US0309-the-sprint-report-renders-mutation-cost-against-yield.md)
+- [x] [US0309: The sprint report renders mutation cost against yield for the run and the trailing history](../stories/US0309-the-sprint-report-renders-mutation-cost-against-yield.md)
 
 ## Revision History
 

@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 12 |
+| Draft | 1 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 93 |
-| **Total** | **105** |
+| Done | 105 |
+| **Total** | **106** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -116,15 +116,16 @@
 | [EP0091](EP0091-trustworthy-sprint-measurements.md) | Trustworthy sprint measurements | Done | -- | -- | 2026-07-20 | 2026-07-20 |
 | [EP0092](EP0092-bounded-operator-interaction-at-stops-and-closes.md) | Bounded operator interaction at stops and closes | Done | -- | -- | 2026-07-20 | 2026-07-20 |
 | [EP0093](EP0093-make-the-gate-and-its-tests-cost-effective.md) | Make the gate and its tests cost-effective: three tests are 53% of the suite | Done | -- | -- | 2026-07-21 | 2026-07-21 |
-| [EP0094](EP0094-a-falsifiable-estimator-the-velocity-record-restored-and.md) | A falsifiable estimator: the velocity record restored and enforced | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0095](EP0095-collision-analysis-that-does-not-trust-a-declaration.md) | Collision analysis that does not trust a declaration | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0096](EP0096-migrate-seeds-what-it-can-rather-than-reporting.md) | migrate seeds what it can rather than reporting it as a human task | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0097](EP0097-the-hygiene-check-verifies-the-working-model-not.md) | The hygiene check verifies the working model, not just the pointers | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0098](EP0098-the-seats-review-the-sprint-goal-not-only.md) | The seats review the Sprint Goal, not only the ordering | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0099](EP0099-a-sprint-stops-only-when-nothing-can-proceed.md) | A sprint stops only when nothing can proceed | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0100](EP0100-the-mutation-gate-judged-on-its-own-yield.md) | The mutation gate judged on its own yield | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0101](EP0101-a-test-audit-lens-attack-the-claims-tests.md) | A test audit lens: attack the claims tests and comments make | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0102](EP0102-a-filing-path-that-never-passes-prose-through.md) | A filing path that never passes prose through a shell | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0103](EP0103-a-declared-review-window-the-writers-can-see.md) | A declared review window the writers can see | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0104](EP0104-the-close-shows-what-the-mutation-gate-cost.md) | The close shows what the mutation gate cost against what it found | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0105](EP0105-the-single-writer-rule-is-written-down-for.md) | The single-writer rule is written down for review time, not only for build time | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0094](EP0094-a-falsifiable-estimator-the-velocity-record-restored-and.md) | A falsifiable estimator: the velocity record restored and enforced | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0095](EP0095-collision-analysis-that-does-not-trust-a-declaration.md) | Collision analysis that does not trust a declaration | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0096](EP0096-migrate-seeds-what-it-can-rather-than-reporting.md) | migrate seeds what it can rather than reporting it as a human task | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0097](EP0097-the-hygiene-check-verifies-the-working-model-not.md) | The hygiene check verifies the working model, not just the pointers | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0098](EP0098-the-seats-review-the-sprint-goal-not-only.md) | The seats review the Sprint Goal, not only the ordering | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0099](EP0099-a-sprint-stops-only-when-nothing-can-proceed.md) | A sprint stops only when nothing can proceed | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0100](EP0100-the-mutation-gate-judged-on-its-own-yield.md) | The mutation gate judged on its own yield | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0101](EP0101-a-test-audit-lens-attack-the-claims-tests.md) | A test audit lens: attack the claims tests and comments make | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0102](EP0102-a-filing-path-that-never-passes-prose-through.md) | A filing path that never passes prose through a shell | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0103](EP0103-a-declared-review-window-the-writers-can-see.md) | A declared review window the writers can see | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0104](EP0104-the-close-shows-what-the-mutation-gate-cost.md) | The close shows what the mutation gate cost against what it found | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0105](EP0105-the-single-writer-rule-is-written-down-for.md) | The single-writer rule is written down for review time, not only for build time | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0106](EP0106-a-repair-is-planned-the-plan-is-attacked.md) | A repair is planned, the plan is attacked, and only then is it executed | Draft | -- | -- | 2026-07-22 | 2026-07-22 |

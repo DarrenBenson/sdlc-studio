@@ -1,6 +1,6 @@
 # US0302: Artefacts filed from survivors link back, so yield is attributable to a run
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0379
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

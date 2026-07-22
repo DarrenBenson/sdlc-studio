@@ -2,6 +2,12 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0210: **A -k selector matching nothing reports NO TESTS RAN, which is not a pass.** Hit by the author directly, and it is also how BG0256's story...**
+- **L-0209: **Check what a two-point fit cannot tell you** - see Estimate vs actual.**
+- **L-0208: **`grep` cannot verify a claim about meaning.** Four ACs passed on prose asserting the exact opposite of their criteria, because `grep` is...**
+- **L-0207: **An estimator's identity is the parameters it takes, not the values they were measured at.** `sample_class` compared constants by value...**
+- **L-0206: **A repair can mask the defect beside it.** If a mutant survives, test that branch in ISOLATION before believing it.**
+- **L-0205: **A library test is not a lane test.** The author fixed the engagement floor's false clean, mutation-tested it, and wrote "mutation-proven"...**
 - **L-0204: **An operator ruling before the build is cheaper than a review rejection after it.** Three forks were ruled in advance; one of the rulings...**
 - **L-0203: **A number that looks like a successful measurement is more dangerous than an obvious absence.** Three closes reported not-attributable and...**
 - **L-0202: **Check what a measurement EXCLUDES before drawing a conclusion from it.** The first attributable token figure this project ever produced...**

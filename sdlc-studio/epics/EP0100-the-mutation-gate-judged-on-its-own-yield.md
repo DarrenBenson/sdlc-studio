@@ -1,6 +1,6 @@
 # EP0100: The mutation gate judged on its own yield
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0379
 > **Created:** 2026-07-22
@@ -14,8 +14,8 @@ Decomposed from CR0379. Delivers the work CR0379 requested.
 
 ## Story Breakdown
 
-- [ ] [US0301: Each mutation run appends applied, killed, survived, unchecked and wall-clock to a series](../stories/US0301-each-mutation-run-appends-applied-killed-survived-unchecked.md)
-- [ ] [US0302: Artefacts filed from survivors link back, so yield is attributable to a run](../stories/US0302-artefacts-filed-from-survivors-link-back-so-yield.md)
+- [x] [US0301: Each mutation run appends applied, killed, survived, unchecked and wall-clock to a series](../stories/US0301-each-mutation-run-appends-applied-killed-survived-unchecked.md)
+- [x] [US0302: Artefacts filed from survivors link back, so yield is attributable to a run](../stories/US0302-artefacts-filed-from-survivors-link-back-so-yield.md)
 
 ## Acceptance Criteria (Epic Level)
 

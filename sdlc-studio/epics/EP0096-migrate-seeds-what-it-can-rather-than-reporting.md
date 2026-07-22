@@ -1,6 +1,6 @@
 # EP0096: migrate seeds what it can rather than reporting it as a human task
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0352
 > **Created:** 2026-07-22
@@ -14,8 +14,8 @@ Decomposed from CR0352. Delivers the work CR0352 requested.
 
 ## Story Breakdown
 
-- [ ] [US0293: migrate --apply seeds a missing AGENTS.md and CLAUDE.md from the template, preserving project sections](../stories/US0293-migrate-apply-seeds-a-missing-agents-md-and.md)
-- [ ] [US0294: The hygiene check reports a missing instructions file as seedable rather than as an error](../stories/US0294-the-hygiene-check-reports-a-missing-instructions-file.md)
+- [x] [US0293: migrate --apply seeds a missing AGENTS.md and CLAUDE.md from the template, preserving project sections](../stories/US0293-migrate-apply-seeds-a-missing-agents-md-and.md)
+- [x] [US0294: The hygiene check reports a missing instructions file as seedable rather than as an error](../stories/US0294-the-hygiene-check-reports-a-missing-instructions-file.md)
 
 ## Acceptance Criteria (Epic Level)
 

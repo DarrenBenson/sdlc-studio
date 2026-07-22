@@ -101,3 +101,26 @@
 | US0284 | Darren Benson (operator) | - | sdlc-studio sprint author (Claude, this session) | 2026-07-21 | - |
 | US0286 | Darren Benson (operator) | - | sdlc-studio sprint author (Claude, this session) | 2026-07-21 | - |
 | US0287 | Darren Benson (operator) | - | sdlc-studio sprint author (Claude, this session) | 2026-07-21 | - |
+| US0288 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0289 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0290 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0291 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0292 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0293 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0294 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0295 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0296 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0297 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0298 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0299 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0300 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0301 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0302 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0303 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0304 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0305 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0306 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0307 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0308 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0309 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0310 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |

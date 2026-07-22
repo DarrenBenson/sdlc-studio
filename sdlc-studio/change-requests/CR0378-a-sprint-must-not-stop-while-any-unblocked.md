@@ -1,6 +1,6 @@
 # CR-0378: a sprint must not stop while any unblocked unit remains: deferring one unit's decision may never park the batch
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0099
 > **Priority:** High
 > **Type:** Improvement

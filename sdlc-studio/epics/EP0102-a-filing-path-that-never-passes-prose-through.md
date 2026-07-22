@@ -1,6 +1,6 @@
 # EP0102: A filing path that never passes prose through a shell
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0384
 > **Created:** 2026-07-22
@@ -14,8 +14,8 @@ Decomposed from CR0384. Delivers the work CR0384 requested.
 
 ## Story Breakdown
 
-- [ ] [US0305: file_finding accepts every field as data through a non-shell input path](../stories/US0305-file-finding-accepts-every-field-as-data-through.md)
-- [ ] [US0306: Sweep the sibling filers for the same hazard](../stories/US0306-sweep-the-sibling-filers-for-the-same-hazard.md)
+- [x] [US0305: file_finding accepts every field as data through a non-shell input path](../stories/US0305-file-finding-accepts-every-field-as-data-through.md)
+- [x] [US0306: Sweep the sibling filers for the same hazard](../stories/US0306-sweep-the-sibling-filers-for-the-same-hazard.md)
 
 ## Acceptance Criteria (Epic Level)
 

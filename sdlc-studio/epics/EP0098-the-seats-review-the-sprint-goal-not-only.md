@@ -1,6 +1,6 @@
 # EP0098: The seats review the Sprint Goal, not only the ordering
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0354
 > **Created:** 2026-07-22
@@ -14,8 +14,8 @@ Decomposed from CR0354. Delivers the work CR0354 requested.
 
 ## Story Breakdown
 
-- [ ] [US0297: The plan puts the Sprint Goal to the resolved seats and records achievability and definition of done](../stories/US0297-the-plan-puts-the-sprint-goal-to-the.md)
-- [ ] [US0298: A goal unreachable by construction is detected and named at plan time](../stories/US0298-a-goal-unreachable-by-construction-is-detected-and.md)
+- [x] [US0297: The plan puts the Sprint Goal to the resolved seats and records achievability and definition of done](../stories/US0297-the-plan-puts-the-sprint-goal-to-the.md)
+- [x] [US0298: A goal unreachable by construction is detected and named at plan time](../stories/US0298-a-goal-unreachable-by-construction-is-detected-and.md)
 
 ## Acceptance Criteria (Epic Level)
 

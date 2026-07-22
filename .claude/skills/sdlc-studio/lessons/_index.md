@@ -52,6 +52,13 @@ and from per-project memory (project-specific facts).
 | [LL0037](LL0037-a-relative-fibonacci-estimate-predicts-cost-a-computed-metric-does-not.md) | A relative Fibonacci estimate predicts cost; a computed metric does not |  |
 | [LL0038](LL0038-decomposition-does-not-just-make-done-checkable-it-makes-the-estimate-accurate.md) | Decomposition does not just make Done checkable - it makes the estimate accurate |  |
 | [LL0039](LL0039-a-symlink-farm-turns-any-shell-redirect-into-a-write-into-the-source-tree.md) | A symlink farm turns any shell redirect into a write into the source tree | safety, tooling, review |
+| [LL0040](LL0040-a-library-test-is-not-a-lane-test.md) | A library test is not a lane test | review, testing |
+| [LL0041](LL0041-a-repair-masks-the-defect-beside-it.md) | A repair masks the defect beside it | review, mutation |
+| [LL0042](LL0042-derive-a-message-from-the-guard-never-restate-it-beside-it.md) | Derive a message from the guard; never restate it beside it | design, guards |
+| [LL0043](LL0043-an-enumeration-of-a-rule-is-a-lower-bound-not-a-boundary.md) | An enumeration of a rule is a lower bound, not a boundary | documentation, testing |
+| [LL0044](LL0044-a-test-whose-shape-list-the-author-chose-must-be-checked-for-selection-bias.md) | A test whose shape list the author chose must be checked for selection bias | review, testing |
+| [LL0045](LL0045-rule-each-repair-closed-over-claimed-or-moved-not-just-reviewed.md) | Rule each repair CLOSED, OVER-CLAIMED or MOVED, not just reviewed | review, process |
+| [LL0046](LL0046-the-antidote-s-own-author-vibe-coded-check-the-contract-before-acting-not-after-the-gate-refuses.md) | The antidote's own author vibe-coded: check the contract BEFORE acting, not after the gate refuses | process, discipline |
 
 ## Notes
 

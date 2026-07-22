@@ -1,6 +1,6 @@
 # CR-0388: Committing while an adversarial reviewer is mutating the tree can stage a mutant; nothing but the gate stands in the way
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0103, EP0105
 > **Priority:** High
 > **Type:** Improvement

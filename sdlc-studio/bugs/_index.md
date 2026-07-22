@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 5 |
 | In Progress | 0 |
 | Fixed | 173 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **256** |
+| **Total** | **260** |
 
 ## All Bugs
 
@@ -223,6 +223,10 @@
 | [BG0254](BG0254-the-token-forecast-prices-only-the-build-so.md) | The token forecast prices only the build, so it under-forecasts by roughly an order of magnitude on a project that spends most of its budget proving the build correct | Fixed | High | 2026-07-21 | 2026-07-21 |
 | [BG0255](BG0255-init-seeds-every-new-project-s-agents-md.md) | init seeds every new project's AGENTS.md with a literal {{PROJECT_NAME}} placeholder, because the filler matches lowercase and the template ships uppercase | Fixed | High | 2026-07-22 | 2026-07-22 |
 | [BG0256](BG0256-a-done-story-read-verified-yes-for-two.md) | A Done story read Verified yes for two days against a test that does not exist, because nothing rechecks a verifier's target after the stamp | Open | Medium | 2026-07-22 | 2026-07-22 |
+| [BG0257](BG0257-a-retro-s-batch-field-accepts-an-id.md) | A retro's Batch field accepts an id RANGE, silently reads 4 units instead of 33, and publishes a velocity row an order of magnitude wrong | Open | High | 2026-07-22 | 2026-07-22 |
+| [BG0258](BG0258-the-docs-checker-s-escape-enumeration-has-been.md) | The docs-checker's escape enumeration has been wrong at three, four, five and six, because each repair enumerates instead of deriving | Open | Medium | 2026-07-22 | 2026-07-22 |
+| [BG0259](BG0259-the-window-message-s-reason-clause-is-a.md) | The window message's reason clause is a single static string, so an assertion on it pins a WORD and an inverted clause survives the whole suite | Open | Medium | 2026-07-22 | 2026-07-22 |
+| [BG0260](BG0260-round-10-s-three-findings-carried-forward-with.md) | Round 10's three findings, carried forward with a written repair plan instead of another unplanned fix | Open | Medium | 2026-07-22 | 2026-07-22 |
 
 ## Archived Releases
 

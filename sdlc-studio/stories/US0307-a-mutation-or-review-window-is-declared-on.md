@@ -1,6 +1,6 @@
 # US0307: A mutation or review window is declared on disk and skill scripts refuse or warn while it is open
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0388
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

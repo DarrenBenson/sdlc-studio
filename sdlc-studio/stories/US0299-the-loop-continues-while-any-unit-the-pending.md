@@ -1,6 +1,6 @@
 # US0299: The loop continues while any unit the pending question does not block remains
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0378
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

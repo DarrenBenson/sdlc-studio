@@ -1,6 +1,6 @@
 # US0288: close_owed treats a missing velocity row as an owed close item
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0284
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

@@ -108,8 +108,12 @@ def _forbids(raw: str, pattern: str, why: str, ac: str) -> list[str]:
 # THE BOUND, stated rather than implied, and CORRECTED after round 3 caught this comment
 # overstating it TWICE - round 3 found a fourth escape it denied, round 4 a fifth it never named.
 # A sentence is SELECTED by topic vocabulary, JUDGED only if it also carries an enumerated
-# ASSERTING word, and its polarity read from negation cues. SIX things slip through (the count
-# has been wrong at three, four and five; each round found one the previous had denied):
+# ASSERTING word, and its polarity read from negation cues. the escapes below are the ones KNOWN,
+# not the ones possible. THE COUNT HAS BEEN WRONG AT THREE, FOUR, FIVE, SIX AND SEVEN - five
+# consecutive rounds each found one the previous enumeration had DENIED, twice inside an item
+# that positively excluded the new case. Read it as a LOWER BOUND, never as coverage. BG0258
+# tracks replacing this enumeration with something derived from the mechanism, which is the
+# only way it stops being wrong:
 #   1. prose about a guarded property that uses none of its topic words;
 #   2. a reversal carried by irony or by layout rather than by a cue;
 #   3. a negation sitting further from its verb than NEG_REACH;
@@ -117,20 +121,38 @@ def _forbids(raw: str, pattern: str, why: str, ac: str) -> list[str]:
 #      contradiction. There is NO attachment check: any cue in the run-up counts. So
 #      "Nothing else matters: a green run proves the staged tree is clean" passes, because
 #      "Nothing" sits within reach of "proves" while modifying something else entirely.
-#   5. a sentence using every topic word but NO enumerated asserting word - the widest gap, and
-#      the one this comment previously did not name at all. "A green gate certifies the staged
+#   5. a sentence using every topic word but NO enumerated asserting word, which items 1-4 did
+#      not name at all. "A green gate certifies the staged
 #      tree is clean" and "The window guard is decorative" both escape.
 #   6. an asserting word wrapped in UNDERSCORE emphasis. `normalise` strips `*` and backticks
 #      but not `_`, and `_` is a word character, so a \b-anchored regex never fires inside it:
 #      "A green gate *proves* ... " is caught and "A green gate _proves_ ... " is not. This is a
 #      normalisation hole rather than a semantic limit, so the closing disclaimer below does NOT
 #      cover it - the axis selects the sentence and the normaliser drops it before it is read.
-# It also OVER-fires in the same way: "A review must never proceed without a declared window"
-# is correct prose that this scan reports as asserting the opposite, because the cue attaches
-# to "proceed" rather than to the rule being stated.
-# This is a polarity scan over named topics, not a semantic proof. It raises the cost of
-# contradicting the docs; it does not make it impossible. Treat a green result as "no
-# contradiction in the shapes enumerated here", never as "the documentation is consistent".
+#   7. a sentence matching SOME but not all of an axis's topic patterns. Selection requires
+#      EVERY topic group to match, and AC3's object group is a closed list
+#      (tree|concurrent write|staged|staging|nothing but), so any synonym escapes selection
+#      entirely: "A green gate proves the working copy is uncontaminated" is never judged.
+#      Item 1 is the same mechanism at its limit - none of the words rather than some of them.
+#   8. a polarity cue outside the closed NEG_CUES vocabulary, in BOTH directions. "A review
+#      without a declared window is perfectly fine" is a direct denial that reads as an
+#      assertion, because `without` is not a cue; "A green gate hasn't proved the staged tree
+#      is clean" is correct prose reported as its own opposite, because `hasn't` is not one
+#      either. Item 2 explicitly EXCLUDES this case ("rather than by a cue") - the reversal
+#      here IS carried by a cue; the regex simply does not hold it. Found by round 7.
+# It also OVER-fires - correct prose reported as asserting its opposite - and the mechanisms
+# below are the ones KNOWN, not the ones possible. Stating a NUMBER here was wrong the first
+# time it was written and wrong again when it was corrected, so it no longer states one:
+#   - cue ATTACHMENT: the cue is in range but modifies something else.
+#   - cue VOCABULARY (item 8) and cue DISTANCE (item 3), read backwards.
+#   - cue DIRECTION: `_polarity` looks only BACKWARDS from the asserting word, so a negation
+#     AFTER it is invisible however close and however correctly attached. This is the damaging
+#     one: "A green gate proves nothing about a concurrent write in the staged tree" is a
+#     natural paraphrase of AC3's own rule and is FLAGGED.
+#   - NORMALISATION, read backwards (item 6): a cue in underscore emphasis is not seen, so
+#     "does _not_ prove" is flagged where "does *not* prove" is clean.
+#   - QUOTATION SCOPE: fenced blocks and blockquotes are read as prose, so documentation
+#     QUOTING a forbidden sentence as an example of what not to write is flagged.
 
 #: Words that flip an assertion, looked for in the run-up to the asserting word.
 NEG_CUES = re.compile(r"\b(not|never|no|nobody|none|nothing|neither|nor|cannot|can't|doesn't|"
@@ -407,7 +429,7 @@ class DisclosedLimitsAreRealTests(unittest.TestCase):
     ]
 
     #: Contradictions using every topic word but NO enumerated asserting word - THE BOUND item 5,
-    #: found by round 4 and the widest gap of the five.
+    #: found by round 4.
     NO_ASSERTING_WORD = [
         "A green gate certifies the staged tree is clean.",
         "A passing suite settles the question of whether the staged tree is clean.",
@@ -447,6 +469,45 @@ class DisclosedLimitsAreRealTests(unittest.TestCase):
         "A green gate __proves__ the staged tree is clean.",
         "The window guard is _advisory_.",
     ]
+
+    #: THE BOUND item 7 - a sentence matching some but not all of an axis's topic patterns.
+    #: Found by round 6.
+    PARTIAL_TOPIC = [
+        "A green gate proves the working copy is uncontaminated.",
+        "A green run shows the checkout holds only your own edits.",
+        "The green gate proves everything that matters.",
+    ]
+
+    #: THE BOUND item 8 - a polarity cue outside the closed NEG_CUES vocabulary. Found by
+    #: round 7. Both directions: a denial that reads as an assertion, and correct prose
+    #: reported as its own opposite.
+    OUT_OF_VOCAB_DENIAL = [
+        "A review without a declared window is perfectly fine.",
+        "Hardly anyone need declare a window for a review.",
+        "A reviewer needn't declare a window.",
+    ]
+
+    def test_the_out_of_vocabulary_cue_gap_is_real_and_still_open(self) -> None:
+        """Item 8, which was the only enumerated escape with no fixture - and this class
+        docstring says a disclosed limit that nothing exercises is just a sentence."""
+        sprint, review = read_docs()
+        for line in self.OUT_OF_VOCAB_DENIAL:
+            with self.subTest(line=line):
+                self.assertEqual(
+                    check_all(sprint + "\n\n" + line, review),
+                    {"AC1": [], "AC2": [], "AC3": [], "AC4": []},
+                    "if this FAILS, NEG_CUES grew: update THE BOUND item 8 and this list")
+
+    def test_the_partial_topic_gap_is_real_and_still_open(self) -> None:
+        """An axis fires only when EVERY topic group matches, and AC3's object group is a closed
+        list, so any synonym for the staged tree escapes selection entirely."""
+        sprint, review = read_docs()
+        for line in self.PARTIAL_TOPIC:
+            with self.subTest(line=line):
+                self.assertEqual(
+                    check_all(sprint + "\n\n" + line, review),
+                    {"AC1": [], "AC2": [], "AC3": [], "AC4": []},
+                    "if this FAILS the axis widened: update THE BOUND item 7 and this list")
 
     def test_the_underscore_emphasis_gap_is_real_and_still_open(self) -> None:
         """The asterisk form IS caught; the underscore form is not. Both are standard markdown."""

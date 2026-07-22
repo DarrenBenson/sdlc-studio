@@ -1,6 +1,6 @@
 # US0289: Backfill the velocity record from RETRO0029, marking unmeasurable rows as such
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0284
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # EP0103: A declared review window the writers can see
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0388
 > **Created:** 2026-07-22
@@ -14,8 +14,8 @@ Decomposed from CR0388. Delivers the work CR0388 requested.
 
 ## Story Breakdown
 
-- [ ] [US0307: A mutation or review window is declared on disk and skill scripts refuse or warn while it is open](../stories/US0307-a-mutation-or-review-window-is-declared-on.md)
-- [ ] [US0308: The commit path refuses to stage files outside the declared change set while a window is open](../stories/US0308-the-commit-path-refuses-to-stage-files-outside.md)
+- [x] [US0307: A mutation or review window is declared on disk and skill scripts refuse or warn while it is open](../stories/US0307-a-mutation-or-review-window-is-declared-on.md)
+- [x] [US0308: The commit path refuses to stage files outside the declared change set while a window is open](../stories/US0308-the-commit-path-refuses-to-stage-files-outside.md)
 
 ## Acceptance Criteria (Epic Level)
 

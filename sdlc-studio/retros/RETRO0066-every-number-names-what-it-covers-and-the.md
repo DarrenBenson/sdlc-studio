@@ -121,9 +121,9 @@ All 33 units built, committed and gate-green (BG0256 was filed mid-run and fixed
 
 **0 of 33 unit(s) measured; 32 of 33 forecast at plan time.**
 
-**Sprint tokens/point: 236,115** (5,194,538 tokens over 22 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+**Sprint tokens/point: 51,945** (5,194,538 tokens over 100 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 
-**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
+**Velocity: 9.09 points/elapsed-hour** (100 points over 11.007h, run-state, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 Unmeasured: BG0247, BG0248, BG0249, BG0250, BG0251, BG0252, BG0253, BG0254, BG0255, US0288, US0289, US0290, US0291, US0292, US0293, US0294, US0295, US0296, US0297, US0298, US0299, US0300, US0301, US0302, US0303, US0304, US0305, US0306, US0307, US0308, US0309, US0310. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
@@ -207,3 +207,7 @@ signs is itself worth noticing: the cost is spent, the number is not yet earned.
 - Critic rejects: **2** (rounds 1 and 2; round 3 pending at the time of writing)
 - Tests: 3,927 skill + 312 tool, green. Drift 0. Conformance 0 non-conformant. Floor 0
   violations. ~220 hand-applied mutants; 13 survived first time and every one drove a change.
+
+## Handoff
+
+- [HO-0020](../handoffs/HO0020-every-open-bug-and-every-high-priority-request.md) - 23 remaining item(s): 0 copilot-tail, 23 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

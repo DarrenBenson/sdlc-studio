@@ -1,6 +1,6 @@
 # EP0099: A sprint stops only when nothing can proceed
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 7
 > **Parent:** CR0378
 > **Created:** 2026-07-22
@@ -14,8 +14,8 @@ Decomposed from CR0378. Delivers the work CR0378 requested.
 
 ## Story Breakdown
 
-- [ ] [US0299: The loop continues while any unit the pending question does not block remains](../stories/US0299-the-loop-continues-while-any-unit-the-pending.md)
-- [ ] [US0300: A stop names what could have proceeded, so the cost of stopping is visible](../stories/US0300-a-stop-names-what-could-have-proceeded-so.md)
+- [x] [US0299: The loop continues while any unit the pending question does not block remains](../stories/US0299-the-loop-continues-while-any-unit-the-pending.md)
+- [x] [US0300: A stop names what could have proceeded, so the cost of stopping is visible](../stories/US0300-a-stop-names-what-could-have-proceeded-so.md)
 
 ## Acceptance Criteria (Epic Level)
 

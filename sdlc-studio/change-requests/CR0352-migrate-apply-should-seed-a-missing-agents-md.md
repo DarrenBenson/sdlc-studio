@@ -1,6 +1,6 @@
 # CR-0352: migrate --apply should seed a missing AGENTS.md rather than report it as a human task
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0096
 > **Priority:** High
 > **Type:** Improvement

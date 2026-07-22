@@ -1,6 +1,6 @@
 # EP0105: The single-writer rule is written down for review time, not only for build time
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 2
 > **Parent:** CR0388
 > **Created:** 2026-07-22
@@ -14,7 +14,7 @@ Decomposed from CR0388. Delivers the work CR0388 requested.
 
 ## Story Breakdown
 
-- [ ] [US0310: reference-sprint.md states the concurrent-write hazard where it states the single-writer rule](../stories/US0310-reference-sprint-md-states-the-concurrent-write-hazard.md)
+- [x] [US0310: reference-sprint.md states the concurrent-write hazard where it states the single-writer rule](../stories/US0310-reference-sprint-md-states-the-concurrent-write-hazard.md)
 
 ## Revision History
 

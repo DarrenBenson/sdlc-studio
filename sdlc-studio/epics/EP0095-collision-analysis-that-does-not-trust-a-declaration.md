@@ -1,6 +1,6 @@
 # EP0095: Collision analysis that does not trust a declaration
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0347
 > **Created:** 2026-07-22
@@ -14,8 +14,8 @@ Decomposed from CR0347. Delivers the work CR0347 requested.
 
 ## Story Breakdown
 
-- [ ] [US0291: Derive shared-file clusters from the files a unit's ACs and verifiers name, not Affects alone](../stories/US0291-derive-shared-file-clusters-from-the-files-a.md)
-- [ ] [US0292: Report an Affects line the unit's own content contradicts, at plan time](../stories/US0292-report-an-affects-line-the-unit-s-own.md)
+- [x] [US0291: Derive shared-file clusters from the files a unit's ACs and verifiers name, not Affects alone](../stories/US0291-derive-shared-file-clusters-from-the-files-a.md)
+- [x] [US0292: Report an Affects line the unit's own content contradicts, at plan time](../stories/US0292-report-an-affects-line-the-unit-s-own.md)
 
 ## Acceptance Criteria (Epic Level)
 

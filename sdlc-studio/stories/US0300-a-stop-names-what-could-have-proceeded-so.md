@@ -1,6 +1,6 @@
 # US0300: A stop names what could have proceeded, so the cost of stopping is visible
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0378
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

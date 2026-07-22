@@ -1,6 +1,6 @@
 # CR-0284: The velocity record died at RETRO0028: sprints close 'not-yet-captured', the enforced close-down never checks the accuracy/velocity write, and plans still quote the 25k seed whose only out-of-sample test failed at 0.44x
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0094
 > **Priority:** High
 > **Type:** process

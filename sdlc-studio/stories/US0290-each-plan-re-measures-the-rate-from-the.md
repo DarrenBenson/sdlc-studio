@@ -1,6 +1,6 @@
 # US0290: Each plan re-measures the rate from the velocity record or names why it cannot
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0284
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

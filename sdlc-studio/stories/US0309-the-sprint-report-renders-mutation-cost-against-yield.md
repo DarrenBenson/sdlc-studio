@@ -1,6 +1,6 @@
 # US0309: The sprint report renders mutation cost against yield for the run and the trailing history
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0379
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

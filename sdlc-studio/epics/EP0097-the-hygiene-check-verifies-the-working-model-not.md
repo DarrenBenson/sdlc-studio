@@ -1,6 +1,6 @@
 # EP0097: The hygiene check verifies the working model, not just the pointers
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0353
 > **Created:** 2026-07-22
@@ -14,8 +14,8 @@ Decomposed from CR0353. Delivers the work CR0353 requested.
 
 ## Story Breakdown
 
-- [ ] [US0295: check_instructions verifies the working model is stated, not only that cross-references exist](../stories/US0295-check-instructions-verifies-the-working-model-is-stated.md)
-- [ ] [US0296: A file passing the pointer rules while stating no working model is reported with what is missing](../stories/US0296-a-file-passing-the-pointer-rules-while-stating.md)
+- [x] [US0295: check_instructions verifies the working model is stated, not only that cross-references exist](../stories/US0295-check-instructions-verifies-the-working-model-is-stated.md)
+- [x] [US0296: A file passing the pointer rules while stating no working model is reported with what is missing](../stories/US0296-a-file-passing-the-pointer-rules-while-stating.md)
 
 ## Acceptance Criteria (Epic Level)
 
