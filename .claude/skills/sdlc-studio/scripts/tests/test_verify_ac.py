@@ -2388,6 +2388,76 @@ class MarkdownEvidenceLintTests(unittest.TestCase):
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
+    def test_a_hidden_or_symlinked_non_markdown_file_does_not_make_a_prose_dir_mixed(self) -> None:
+        # Round 3's escape, verified PASSING before it was fixed. `rg` skips hidden files and
+        # does not follow symlinks, so a directory of pure prose plus one dotfile or one
+        # symlinked .py was read by rglob as "mixed" and ALLOWED, while the verifier searched
+        # only markdown and passed. The guard must walk the way the runner walks.
+        outer = Path(tempfile.mkdtemp(prefix="verify_ac_walk_parity_"))
+        try:
+            # The symlink TARGET lives outside the searched directory - inside it, rg would
+            # read it legitimately and "mixed" would be the correct answer.
+            (outer / "real.py").write_text("code\n")
+            tmp = outer / "docs"
+            tmp.mkdir()
+            (tmp / "note.md").write_text("the guard refuses\n")
+            (tmp / ".hidden.py").write_text("code\n")
+            try:
+                (tmp / "link.py").symlink_to(outer / "real.py")
+            except OSError:
+                pass  # platform without symlink permission; the dotfile case still applies
+            self.assertIsNotNone(verify_ac.lint_markdown_evidence(f'grep "refuses" {tmp}', tmp))
+        finally:
+            shutil.rmtree(outer, ignore_errors=True)
+
+    def test_a_nested_all_markdown_directory_is_refused(self) -> None:
+        # MINOR-2: every directory fixture in this class was FLAT, so deleting the
+        # non-file filter from the walk changed no verdict and survived mutation while
+        # flipping a nested prose tree from REFUSED to ALLOWED. Fixtures that agree by
+        # construction is the defect a previous sprint shipped; this is the nested case.
+        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_nested_"))
+        try:
+            (tmp / "a.md").write_text("x\n")
+            deep = tmp / "sub" / "deeper"
+            deep.mkdir(parents=True)
+            (deep / "b.md").write_text("x\n")
+            self.assertIsNotNone(verify_ac.lint_markdown_evidence(f'grep "x" {tmp}', tmp))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_the_no_rg_fallback_walk_is_exercised_too(self) -> None:
+        # Without rg the runner is `grep -rqE`, which reads everything, so the fallback
+        # walks everything. That branch had NO coverage: deleting its non-file filter
+        # survived mutation purely because every test ran on a machine with rg.
+        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_norg_"))
+        try:
+            (tmp / "a.md").write_text("x\n")
+            (tmp / "sub").mkdir()
+            (tmp / "sub" / "b.md").write_text("x\n")
+            real_which = verify_ac.shutil.which
+            verify_ac.shutil.which = lambda n: None if n == "rg" else real_which(n)
+            try:
+                files = verify_ac._runner_files(tmp)
+                self.assertTrue(files)
+                self.assertTrue(all(f.is_file() for f in files),
+                                "the fallback walk yielded a non-file entry")
+                self.assertIsNotNone(
+                    verify_ac.lint_markdown_evidence(f'grep "x" {tmp}', tmp))
+            finally:
+                verify_ac.shutil.which = real_which
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_an_uppercase_extension_on_a_RESOLVED_file_is_still_markdown(self) -> None:
+        # The existing uppercase test judges a WRITTEN token. Case-folding on a resolved
+        # directory entry is a separate code path, and dropping .lower() there survived.
+        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_case_"))
+        try:
+            (tmp / "NOTE.MD").write_text("x\n")
+            self.assertIsNotNone(verify_ac.lint_markdown_evidence(f'grep "x" {tmp}', tmp))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
     def test_a_glob_that_matches_no_file_here_is_still_refused(self) -> None:
         # The verdict is about what the author WROTE, not about what exists on this
         # filesystem, so it must not depend on where the lint runs. This does NOT pin

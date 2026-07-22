@@ -395,6 +395,27 @@ _PROSE_VERBS = {"grep", "file"}
 _AUTHORING_STATUSES = {"draft", "ready"}
 
 
+def _runner_files(directory: Path) -> list[Path]:
+    """The files the grep runner would actually READ under `directory`.
+
+    `rg --files` when rg is present, because that is precisely the set `rg -q` searches -
+    .gitignore honoured, hidden files skipped, symlinks not followed. Without rg the runner
+    is `grep -rqE`, which reads everything, so the fallback walks everything.
+
+    Sorted, and directories excluded either way. A non-file entry is not read by anything and
+    must not count as a non-markdown file, which would flip a prose directory to "mixed".
+    """
+    if shutil.which("rg"):
+        try:
+            cp = subprocess.run(["rg", "--files", str(directory)],
+                                capture_output=True, text=True, timeout=30)
+            if cp.returncode in (0, 1):
+                return sorted(Path(line) for line in cp.stdout.splitlines() if line.strip())
+        except (OSError, subprocess.SubprocessError):
+            pass  # fall through to the walk; never let the lint die on a tool
+    return sorted(f for f in directory.rglob("*") if f.is_file())
+
+
 def _verifier_reads(expr: str, cwd=None) -> list[str]:
     """The FILES a `grep`/`file` expression actually reads, DERIVED from the command the
     runner will execute rather than re-parsed here.
@@ -451,15 +472,21 @@ def _verifier_reads(expr: str, cwd=None) -> list[str]:
         if not p.exists():
             continue  # the runner warns and carries on; an unread path proves nothing
         if p.is_dir():
-            # Short-circuit: the only question is whether EVERY file read is markdown, so
-            # the first non-markdown file settles it. Walking a whole tree per verifier
-            # line made `grep "x" .` an O(repo) lint step.
-            for f in p.rglob("*"):
-                if not f.is_file():
-                    continue
+            # The runner's WALK, not ours. Deriving the parse from `_build_command` and then
+            # walking the directory with `rglob` left the guard and the runner disagreeing
+            # in the other half: `rg` obeys .gitignore, skips hidden files and does not
+            # follow symlinks, so a single dotfile or symlinked `.py` made the guard call an
+            # all-prose directory "mixed" and allow it, while the verifier searched only
+            # markdown and passed. Verified as a working escape before this was written.
+            # Asking `rg --files` is the same derivation applied to the walk.
+            for f in _runner_files(p):
                 resolved.append(str(f))
-                if not f.suffix.lower() == ".md":
-                    return resolved
+                # `.lower()` here is EQUIVALENT to omitting it, and the mutant survives:
+                # the verdict's own test lowercases, so dropping the fold changes only how
+                # far the walk runs, never the answer. Kept for the reader, recorded as
+                # uncovered rather than pinned by a test contrived to see a walk length.
+                if f.suffix.lower() != ".md":
+                    return resolved  # first non-markdown file settles it
             continue
         resolved.append(str(p))
     return resolved

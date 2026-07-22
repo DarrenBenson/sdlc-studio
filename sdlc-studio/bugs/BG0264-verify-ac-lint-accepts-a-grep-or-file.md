@@ -80,9 +80,14 @@ was complete.
 - An expression whose resolved files are a MIX of markdown and code is allowed, by the same
   all-or-nothing rule that keeps the guard from second-guessing a legitimate verifier.
 - The resolved reading depends on the filesystem the lint runs on. The written reading is
-  kept as a floor for exactly that reason, and a test pins the one case that distinguishes
-  them - a directory named `*.md` under a non-recursive grep. That case was found by
-  mutation, after removing the written reading left every other test green.
+  kept as a floor for exactly that reason, and a test pins a case that distinguishes them.
+  **Withdrawn from an earlier version of this list:** the claim that a directory is "dropped
+  without `-r`". That was false - `_build_command` always emits a recursive runner - and the
+  guard no longer behaves that way. It is named here rather than quietly deleted, because
+  this artefact asserted the deleted rule as shipped for one round after it was withdrawn.
+- The walk is derived from `rg --files` where rg is present, so it honours .gitignore, hidden
+  files and symlinks exactly as the runner does. Without rg the runner reads everything and
+  so does the fallback. A guard that walked differently from the runner was round 3's escape.
 
 ## Revision History
 
@@ -90,4 +95,6 @@ was complete.
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Filed |
 | 2026-07-22 | sdlc-studio | Fixed. Acceptance criteria added after the engagement floor refused the commit: two source files with an `Affects` field but no criterion is unplanned work, which is the floor's whole point and this run's own bar for a bug. |
+| 2026-07-22 | sdlc-studio | Round 2 REJECT repaired: a FOURTH escape (a bare directory) traced to a comment restating grep's semantics rather than deriving this DSL's, which always recurses. The guard now reads `_build_command`'s argv, so guard and runner share one parse. |
+| 2026-07-22 | sdlc-studio | Round 3 REJECT repaired, and UNREVIEWED - `review.max_rounds` is 3 and the ceiling is spent. An EIGHTH escape, verified passing: the guard shared the runner's parse but not its WALK, so one hidden, gitignored or symlinked non-markdown file made an all-prose directory read as mixed and pass. The walk now derives from `rg --files`. A surviving mutant that flipped a nested all-markdown directory from refused to allowed is also closed; every directory fixture had been flat, so the tests and the mutant agreed by construction. |
 | 2026-07-22 | sdlc-studio | REPAIRED after the closing review REJECTED. The guard judged only the tokens as WRITTEN and was defeated three ways: a directory glob (`sdlc-studio/reviews/*`), a flag read as the pattern (`grep -c "x" a.md`), and a bare recursive directory. It now judges the files actually READ - flags split from the pattern, globs expanded, directories walked under `-r` and dropped without it - with the written tokens kept as a floor. The claim that the previously surviving mutant was EQUIVALENT was FALSE and is withdrawn; that mutant is now killed, along with four others. The repair plan itself was attacked before execution and REFUTED: the first proposed fix closed none of the three escapes. |
