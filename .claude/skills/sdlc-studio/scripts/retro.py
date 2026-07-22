@@ -411,8 +411,17 @@ rate is derived from it.
 Read the SOURCE column before quoting an Actual as evidence. `per-unit` is a sum of per-unit
 telemetry and `harness` is read off the harness meter; both are machine reads. `supplied` is a
 figure an operator TYPED, which is a claim about what a sprint cost, not a measurement of it.
+`harness+supplied` is the meter read PLUS the totals delegated agents reported for themselves.
 An empty Source is unrecorded - the rows written before the column existed - and unrecorded is
 what it stays, because back-filling provenance would invent the very thing the column records.
+
+A `harness` figure is a LOWER BOUND, never an equality. The meter is the session transcript,
+and the transcript records no subagent usage at all: measured on one live session, 6,624,813
+tokens of usage carried ZERO sidechain records. So a sprint that delegated work to agents cost
+MORE than its harness row says - one published 439,982 while its cluster agents had reported
+787,834 between them. Their totals reach a row only when somebody supplies them, which is what
+`harness+supplied` marks, and even that sum bounds the sprint from below rather than measuring
+it. Compare a fan-out sprint's rate with a single-thread sprint's only with that in mind.
 -->
 # Velocity history
 
@@ -576,7 +585,6 @@ def _elapsed_hours(root, unit_ids) -> tuple[float | None, str | None]:
     interactive sprint, whose wall-clock would count operator-away gaps as sprint time), this
     returns None and the primary reads UNMEASURED unless the operator supplies a real figure
     with `--elapsed-hours`."""
-    from datetime import datetime, timezone
     try:
         from lib import run_state
         st = run_state.read(root)
@@ -584,23 +592,15 @@ def _elapsed_hours(root, unit_ids) -> tuple[float | None, str | None]:
         return None, None
     if not _run_covers(st, unit_ids):
         return None, None  # the run-state does not cover this sprint - its elapsed is not ours
-
-    def _parse(s):
-        try:
-            return datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
-        except (TypeError, ValueError):
-            return None
-
-    start = _parse(st.get("started_at"))
-    end = _parse(st.get("ended_at"))
-    if start is None or end is None:
-        # An OPEN run (no `ended_at`) has no measured elapsed: extending it to `now` would report
-        # its own age - including any operator-away gap since it opened - as sprint time, the
-        # confounder CR0273 warns about. Only a CLOSED run gives a clean start->end elapsed; an open
-        # one reads UNMEASURED until the operator supplies a real figure.
-        return None, None
-    hours = (end - start).total_seconds() / 3600
-    return (round(hours, 3), "run-state") if hours > 0 else (None, None)
+    # The idle deduction is `telemetry`'s, CALLED rather than re-derived (D0052). Two copies of
+    # a duration rule is how one sprint comes to have two elapsed figures, and the published
+    # points-per-hour is then set by whichever reader the close happens to ask. `hours` is None
+    # for an OPEN run (no `ended_at`): extending it to `now` would report the run's own age,
+    # including any operator-away gap since it opened, as sprint time - the confounder CR0273
+    # warns about. It reads UNMEASURED until the operator supplies a real figure.
+    span = telemetry.elapsed_excluding_idle(st.get("started_at"), st.get("ended_at"), st)
+    hours = span.get("hours")
+    return (hours, "run-state") if hours else (None, None)
 
 
 def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
@@ -728,6 +728,16 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
                      if sprint_tokens_supplied and sprint_tokens > 0 else None)
     est_sum = sum(u["estimate"] for u in rated)
     act_sum = sum(u["actual_tokens"] for u in rated)
+    # THE PLAN'S FORECAST FOR THE WHOLE BATCH, over every unit that HAS one - not only the
+    # rated units. `est_sum` above is the ratio's numerator and must describe exactly the units
+    # `act_sum` does, but the published plan-time estimate is a fact about the PLAN, knowable
+    # whether or not anything was later measured. Summed over the rated units it read 0 for
+    # every sprint that measured nothing, which the history then published in a column named
+    # `Estimate (tokens, plan-time)` - a prediction of zero tokens, next to a forecast that had
+    # been recorded and simply was not read. None when no unit was forecast: that is an
+    # absence, and the writer renders it blank rather than as a prediction nobody made.
+    forecast_est = [u["estimate"] for u in units if u["estimate"]]
+    plan_est = sum(forecast_est) if forecast_est else None
     walls = [u["wall_time_s"] for u in rated if isinstance(u["wall_time_s"], (int, float))]
     # THE SPRINT'S VELOCITY: the points its rated units carried, as the PLAN recorded them.
     # A rated unit with no recorded size is unsized - counted nowhere, invented nowhere.
@@ -807,6 +817,9 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
         "by_model": _by_model(rated),
         "batch": {
             "estimate": est_sum,
+            # The forecast the PLAN made for this batch, over every forecast unit. The history's
+            # Estimate column reads this one; `estimate` above stays the ratio's numerator.
+            "plan_estimate": plan_est,
             "actual_tokens": act_sum,
             "ratio": None if mixed else (round(est_sum / act_sum, 2) if act_sum else None),
             "refused": refused,
@@ -1226,10 +1239,30 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
         return {"tokens": None, "reason": (
             f"not attributable: the session meter reads {cap['tokens']:,}, at or below {rid}'s "
             f"opening baseline of {baseline:,} - no spend can be derived from that")}
-    return {"tokens": delta, "source": cap["source"],
-            "basis": (f"{rid}'s own spend: the current-session total {cap['tokens']:,} less the "
-                      f"{baseline:,} on the meter when the run opened (input + output + cache "
-                      f"creation; cache reads excluded)")}
+    # MEASURED (main thread) + SUPPLIED (delegated), and the sum is a LOWER BOUND. The two halves
+    # are different evidence and stay separately named: the delta is a meter reading, a delegated
+    # total is a figure an agent reported. Neither the label nor the arithmetic may imply that
+    # the transcript saw the delegated work - it never does.
+    delegated = run_state.delegated_records(state)
+    supplied = run_state.delegated_total(state)
+    total = delta + supplied
+    meter = (f"the current-session total {cap['tokens']:,} less the {baseline:,} on the meter "
+             f"when the run opened (input + output + cache creation; cache reads excluded)")
+    bound = (f"a LOWER BOUND, not the run's cost: the session transcript records no subagent "
+             f"usage at all, so any delegated work no one supplied a total for is missing from "
+             f"it")
+    if supplied:
+        basis = (f"{rid} cost AT LEAST {total:,}: {delta:,} MEASURED on the main thread "
+                 f"({meter}), plus {supplied:,} SUPPLIED by {len(delegated)} delegated "
+                 f"agent(s), which is a figure they reported rather than one measured here. "
+                 f"{bound}")
+    else:
+        basis = (f"{rid} cost AT LEAST {delta:,}, its MAIN-THREAD spend: {meter}. No delegated "
+                 f"total was supplied, and {bound}. Record one with "
+                 f"`accuracy --delegated-tokens N --delegated-agent NAME`")
+    return {"tokens": total, "measured_tokens": delta, "delegated_tokens": supplied,
+            "delegated_records": len(delegated), "lower_bound": True,
+            "source": cap["source"], "basis": basis}
 
 
 def _tokens_cover_points(row: dict) -> bool:
@@ -1324,7 +1357,11 @@ def velocity_history(root) -> list[dict]:
                     # inventing a prediction after the fact.
                     "points": _velocity_num(cell("points")),
                     "oversized": _velocity_num(cell("oversized")),
-                    "estimate": _velocity_num(cell("estimate")),
+                    # A recorded 0 reads as ABSENT, for the same reason the Actual cell beside
+                    # it does: it can only be the empty rated-unit sum the old writer published,
+                    # and read as a number it is a plan-time prediction of zero tokens. 12 of
+                    # the 17 rows on disk when this was fixed carried one.
+                    "estimate": _velocity_num(cell("estimate")) or None,
                     # A recorded 0 reads as ABSENT, not as a spend of nothing. No sprint costs
                     # zero tokens, so a 0 in this column can only be the empty rated-unit sum
                     # the old writer published, and rows carrying one are on disk. Read as 0 it
@@ -1341,6 +1378,52 @@ def velocity_history(root) -> list[dict]:
                     # it stays. None reads as UNRECORDED downstream, never as a measurement.
                     "source": cell("source").strip() or None})
     return sorted(out, key=lambda r: r["id"])
+
+
+def _retro_index(rid: str) -> int:
+    """The numeric part of a retro id, for bounding a window. 0 when it has none."""
+    m = re.search(r"(\d+)\s*$", sdlc_md.norm_id(rid) or "")
+    return int(m.group(1)) if m else 0
+
+
+def velocity_gaps(root, since: str | None = None) -> dict:
+    """Every retro on disk with NO row in the velocity record, oldest first.
+
+    Nothing else detects this. `velocity_history` reads the rows that are there and the report
+    prints them, so a retro that never reached the file is invisible to both: the record can rot
+    with no command saying so, and a skipped accuracy write cannot be told from a sprint that
+    never happened. The rows are read with the same reader the planner uses, so a row the reader
+    cannot parse counts as the gap it effectively is.
+
+    `since` bounds the window at a retro id, by the same doctrine the close-owed baseline obeys:
+    a project adopting this must not be handed a tail of history nothing can ever clear.
+    """
+    have = {r["id"] for r in velocity_history(root)}
+    floor = _retro_index(since) if since else 0
+    d = Path(root) / RETRO_DIR
+    gaps: list[dict] = []
+    total = 0
+    if d.is_dir():
+        for p in sorted(d.glob("RETRO*.md")):
+            m = _STEM_ID_RE.match(p.stem)
+            if not m:
+                continue
+            rid = sdlc_md.norm_id(m.group(1))
+            if _retro_index(rid) < floor:
+                continue
+            total += 1
+            if rid in have:
+                continue
+            text = sdlc_md.read_text_safe(p)
+            dm = DATE_RE.search(text)
+            gaps.append({"id": rid, "date": dm.group(1).strip() if dm else "",
+                         "path": str(p)})
+    gaps.sort(key=lambda g: g["id"])
+    return {"gaps": gaps, "since": sdlc_md.norm_id(since) if since else None,
+            "retros": total, "rows": len(have),
+            "basis": "a retro with no row in the velocity record. The row is the demand, not a "
+                     "token total: a row with a blank Actual and the reason it is blank records "
+                     "that the sprint's cost was not recoverable, which no row at all does"}
 
 
 def measured_rate(root) -> dict:
@@ -1551,6 +1634,10 @@ def _actual_note(res: dict, actual, existing=None) -> str | None:
 SOURCE_PER_UNIT = "per-unit"    # summed from per-unit telemetry - only a runner writes it
 SOURCE_HARNESS = "harness"      # read off the harness transcript meter by --tokens-from-harness
 SOURCE_SUPPLIED = "supplied"    # typed by an operator into `accuracy --tokens N`
+#: The harness meter read PLUS delegated totals the agents themselves reported. Part machine
+#: read, part claim, and the whole is a LOWER BOUND: the transcript carries no subagent usage,
+#: so a delegated agent nobody supplied a total for is still missing from it.
+SOURCE_HARNESS_SUPPLIED = "harness+supplied"
 #: Not a recorded value: cmd_accuracy's signal that it re-used the figure already on the row,
 #: so whatever provenance that row holds is the provenance of the figure it still holds.
 SOURCE_UNCHANGED = "unchanged"
@@ -1568,7 +1655,7 @@ def _actual_source(res: dict, actual, existing=None) -> str | None:
     declared = (res.get("token_source") or "").strip()
     if declared == SOURCE_UNCHANGED:
         return existing or None
-    if declared in (SOURCE_HARNESS, SOURCE_SUPPLIED):
+    if declared in (SOURCE_HARNESS, SOURCE_SUPPLIED, SOURCE_HARNESS_SUPPLIED):
         return declared
     if (res.get("batch") or {}).get("sprint_tokens_supplied"):
         return SOURCE_SUPPLIED
@@ -1605,7 +1692,11 @@ def record_velocity(root, res: dict) -> Path:
            # The Actual cell: the per-unit sum for a measured (runner) sprint; the sprint-level
            # harness total for an interactive one that has no per-unit actuals. Never both
            # blended - which one a row carries is decidable from its own Measured cell.
-           "estimate": b["estimate"],
+           # The plan-time forecast over every unit that carried one, NOT the sum over the rated
+           # units: a sprint that measured nothing rated nothing, so that sum was over an empty
+           # set and published 0 as a prediction. Falsy is an absence here, exactly as it is in
+           # the Actual cell below, and the preservation rule is the same.
+           "estimate": b.get("plan_estimate") or b.get("estimate") or None,
            "actual_tokens": (b["actual_tokens"] if res["n_measured"]
                              else (b.get("sprint_actual_tokens") or b["actual_tokens"])),
            "ratio": b["ratio"], "wall_time_s": b["wall_time_s"],
@@ -1626,6 +1717,11 @@ def record_velocity(root, res: dict) -> Path:
     # three facts about the same cell, and each is preserved by the same rule - this run's own
     # statement wins, and what is already recorded is never discarded for want of one.
     existing = next((r for r in history if r["id"] == row["id"]), None)
+    # The forecast log lives in `.local/`, which is not committed, so a re-record on another
+    # clone - or after a prune - sees no forecast at all. A recorded prediction is never
+    # replaced by the absence of one; only a fresh forecast overrides it.
+    if not row["estimate"] and existing and existing.get("estimate"):
+        row["estimate"] = existing["estimate"]
     if not row["actual_tokens"]:
         if b.get("sprint_tokens_supplied"):
             row["actual_tokens"] = None
@@ -1655,7 +1751,11 @@ def record_velocity(root, res: dict) -> Path:
         # would understate the real rate, so it gets no cell.
         rate = (_rate(r["actual_tokens"] or 0, r.get("points") or 0)
                 if _tokens_cover_points(r) else None)
-        lines.append(f"| {r['id']} | {r['date']} | {_fmt(r['units'])} | {_fmt(r['measured'])} | "
+        # An EMPTY cell is not a value, and a `|  |` in a markdown table is a lint failure as
+        # well as an ambiguity: a retro that records no Date renders `-`, like every other
+        # absent cell in the row.
+        lines.append(f"| {r['id']} | {r['date'] or '-'} | {_fmt(r['units'])} | "
+                     f"{_fmt(r['measured'])} | "
                      f"{_fmt(r.get('forecast'))} | {_fmt(r.get('points'))} | "
                      f"{_fmt(r['estimate'])} | "
                      f"{_fmt(r['actual_tokens'])} | {ratio} | {_fmt(rate)} | "
@@ -1987,6 +2087,24 @@ def cmd_estimator(args) -> int:
 def cmd_accuracy(args) -> int:
     tokens = getattr(args, "tokens", None)
     capture_note = None
+    # A delegated agent's own reported total, recorded against the open run BEFORE the capture
+    # below reads it. The harness transcript never sees a subagent, so this is the only way a
+    # fan-out sprint's delegated spend reaches the record at all - and it is a claim, so it is
+    # recorded as `supplied` and published as part of a lower bound.
+    delegated = getattr(args, "delegated_tokens", None)
+    if delegated is not None:
+        try:
+            rec = run_state.record_delegated_tokens(
+                args.root, delegated, agent=getattr(args, "delegated_agent", "") or "")
+        except ValueError as exc:
+            print(f"delegated total refused: {exc}", file=sys.stderr)
+            return 1
+        if rec is None:
+            print("no run is open, so the delegated total was not recorded against one - "
+                  "supply the sprint's whole figure with `--tokens N` instead")
+        else:
+            print(f"delegated total recorded (supplied, not measured): {rec['tokens']:,}"
+                  + (f" for {rec['agent']}" if rec["agent"] else ""))
     # WHERE the figure below came from, decided where it is fetched rather than inferred later.
     # An explicit `--tokens N` is an operator's typed claim; the branches below overwrite this
     # with what they actually did.
@@ -2015,9 +2133,12 @@ def cmd_accuracy(args) -> int:
             cap = run_attributed_tokens(args.root, args.id)
             if cap["tokens"]:
                 tokens = cap["tokens"]
-                token_source = SOURCE_HARNESS
+                # Part meter read, part reported claim: the row must say so, or a figure half
+                # of which nobody measured would be published under a machine read's provenance.
+                token_source = (SOURCE_HARNESS_SUPPLIED if cap.get("delegated_tokens")
+                                else SOURCE_HARNESS)
                 capture_note = (f"token actual captured from the harness transcript: "
-                                f"{tokens:,} ({cap['basis']}; {cap['source']})")
+                                f"AT LEAST {tokens:,} ({cap['basis']}; {cap['source']})")
             else:
                 capture_note = (f"token actual NOT ATTRIBUTABLE: {cap['reason']}. The sprint's "
                                 f"token cost is left unrecorded rather than filled with a "
@@ -2092,10 +2213,35 @@ def cmd_accuracy(args) -> int:
     return 0
 
 
+def _report_gaps(args) -> int:
+    """`velocity --gaps`: the retros the record never recorded. Non-zero when there are any, so
+    a gate or a close can branch on it rather than a human noticing a missing line."""
+    rep = velocity_gaps(args.root, since=getattr(args, "since", None))
+    if args.format == "json":
+        print(json.dumps(rep, indent=2))
+        return 1 if rep["gaps"] else 0
+    window = f" since {rep['since']}" if rep["since"] else ""
+    if not rep["gaps"]:
+        print(f"velocity record: no gap{window} - all {rep['retros']} retro(s) in the window "
+              f"carry a row in {VELOCITY_FILE}.")
+        return 0
+    print(f"velocity record: {len(rep['gaps'])} of {rep['retros']} retro(s){window} have NO row "
+          f"in {VELOCITY_FILE}. Each is a close whose accuracy write did not run, so the "
+          f"tokens-per-point rate the plans quote was never measured against it:")
+    for g in rep["gaps"]:
+        print(f"  {g['id']}  {g['date'] or '(no date recorded)'}")
+    print("Record one with `retro.py accuracy --id RETROxxxx --write`. A sprint whose token "
+          "cost cannot be recovered still gets a row: a blank Actual with the reason stated is "
+          "a fact about that sprint, and no row at all is indistinguishable from an oversight.")
+    return 1
+
+
 def cmd_velocity(args) -> int:
     """The history the next plan reads: the points delivered per sprint, the tokens-per-point
     rate DERIVED from them, and how the forecast has actually performed."""
     rows = velocity_history(args.root)
+    if getattr(args, "gaps", False):
+        return _report_gaps(args)
     rate = measured_rate(args.root)
     if args.format == "json":
         print(json.dumps({"history": rows, "rate": rate}, indent=2))
@@ -2335,6 +2481,14 @@ def main() -> int:
                                 "record names its own project, so they may be separate dirs or "
                                 "one pooled dir")
         p.add_argument("--format", choices=("text", "json"), default="text")
+        if name == "velocity":
+            p.add_argument("--gaps", action="store_true",
+                           help="report every retro on disk with NO row in the velocity record "
+                                "and exit non-zero, so a skipped accuracy write is visible "
+                                "instead of looking like a sprint that never happened")
+            p.add_argument("--since", metavar="RETROxxxx",
+                           help="bound the gap report at a retro id, so adopting it creates no "
+                                "tail of history nothing can clear")
         if name == "extract":
             p.add_argument("--dry-run", action="store_true")
         if name == "accuracy":
@@ -2357,6 +2511,17 @@ def main() -> int:
                                 "modified transcript is taken as this session, so a close run "
                                 "beside a concurrent session can capture the wrong one - the "
                                 "recorded basis says exactly what was read")
+            p.add_argument("--delegated-tokens", dest="delegated_tokens", type=int,
+                           default=None, metavar="N",
+                           help="one delegated agent's OWN reported token total, recorded "
+                                "against the open run. The harness transcript carries no "
+                                "subagent usage, so a fan-out sprint's delegated spend can only "
+                                "be supplied - it is recorded as a claim, and the captured "
+                                "figure is published as a lower bound on what the run cost. "
+                                "Repeat the command once per agent")
+            p.add_argument("--delegated-agent", dest="delegated_agent", default="",
+                           metavar="NAME",
+                           help="which agent reported the --delegated-tokens figure")
             p.add_argument("--elapsed-hours", dest="elapsed_hours", type=float, default=None,
                            metavar="H",
                            help="the sprint's real elapsed hours (start to close), for the PRIMARY "

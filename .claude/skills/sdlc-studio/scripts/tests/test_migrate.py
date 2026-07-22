@@ -143,6 +143,59 @@ class MigrateTests(unittest.TestCase):
         finally:
             vc.installed_version = orig
 
+    def _deterministic_section(self, res: dict) -> str:
+        """The rendered report's deterministic half, up to the needs-human heading."""
+        return migrate.render(res).split("## Needs a human")[0]
+
+    def test_apply_seeds_a_missing_agents_md(self) -> None:
+        # US0293 AC1: seeding a file that does not exist is deterministic, so the command whose
+        # purpose is bringing a project up to date writes it instead of handing back a task.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _mixed(root)
+            res = migrate.migrate(root, apply=True)
+            agents = root / "AGENTS.md"
+            self.assertTrue(agents.exists(), "AGENTS.md was not seeded")
+            text = agents.read_text(encoding="utf-8")
+            self.assertTrue(text.startswith("# "), "the guidance comment was not stripped")
+            self.assertIn(root.resolve().name, text)      # the derivable placeholder is filled
+            self.assertNotRegex(text, r"(?i)\{\{\s*project_name\s*\}\}")
+            self.assertIn("{{", text)                     # judgement fields stay visibly unfilled
+            self.assertIn("AGENTS.md", self._deterministic_section(res))
+
+    def test_dry_run_names_the_seed_and_writes_nothing(self) -> None:
+        # US0293 AC2: seeding is visible before it happens.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _mixed(root)
+            res = migrate.migrate(root)                   # no --apply
+            section = self._deterministic_section(res)
+            self.assertIn("AGENTS.md", section)
+            self.assertIn("CLAUDE.md", section)
+            self.assertFalse((root / "AGENTS.md").exists())
+            self.assertFalse((root / "CLAUDE.md").exists())
+
+    def test_claude_md_seeded_when_absent_and_reported_when_duplicating(self) -> None:
+        # US0293 AC4: absent -> the thin pointer is written; duplicating -> untouched, reported
+        # with the one-line pointer that would replace it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _mixed(root)
+            migrate.migrate(root, apply=True)
+            self.assertIn("@AGENTS.md", (root / "CLAUDE.md").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _mixed(root)
+            (root / "AGENTS.md").write_text("# Proj\n\nour own instructions\n", encoding="utf-8")
+            dup = root / "CLAUDE.md"
+            dup.write_text("# Proj\n\nthe whole instructions restated inline\n", encoding="utf-8")
+            before = dup.read_bytes()
+            res = migrate.migrate(root, apply=True)
+            self.assertEqual(dup.read_bytes(), before, "a CLAUDE.md that exists was rewritten")
+            human = " ".join(h["detail"] for h in res["needs_human"])
+            self.assertIn("claude-not-pointer", human)
+            self.assertIn("@AGENTS.md", human)
+
     def test_render_has_both_sections(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

@@ -125,8 +125,13 @@ Executes AC verifiers defined in story files and updates each AC's
   used to produce a clean matrix and exit 0, so a broken invocation passed as green. Exit 1
   stays "a matrix with findings", so the two are distinguishable by exit code alone
 - `epic-ts --epic EPxxxx`: require an epic to have a test-spec (linked by its `Epic:` field)
-  whose matrix passes `ts-check` - the hard epic-scope TS requirement, gated by
-  `quality.epic_requires_test_spec` (default true; single-story work is exempt)
+  whose matrix passes `ts-check` - the epic-scope TS requirement, gated by
+  `quality.epic_requires_test_spec` in `sdlc-studio/.config.yaml` (default true; the check is
+  epic-scope only, so single-story work never reaches it). The key is read here: with it false
+  the check still runs and still prints every finding, but a FAIL exits 0 and the verdict line
+  says `advisory only`. The JSON output carries `enforced` alongside `ok`, so a caller can tell
+  a failing check from one the project gates on. A value that is not true or false warns on
+  stderr and keeps the gate enforced
 
 Full workflow: `reference-verify.md`. User-facing help:
 `help/verify.md`.

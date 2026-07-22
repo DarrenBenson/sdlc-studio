@@ -1,6 +1,7 @@
 # CR-0382: A test audit lens profile: attack the claims tests and comments make, which mutation cannot
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0101
 > **Parent:** RFC0048
 > **Priority:** High
 > **Type:** Improvement

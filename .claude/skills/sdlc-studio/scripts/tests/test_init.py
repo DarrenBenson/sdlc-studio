@@ -224,6 +224,49 @@ class TailorTests(unittest.TestCase):
             self.assertEqual(r["tailoring"]["suggestions"], [])
 
 
+class PlaceholderFillTests(unittest.TestCase):
+    """BG0255: the filler matched `{{project_name}}` case-SENSITIVELY while the shipped
+    agent-instructions template heads with `{{PROJECT_NAME}}`, so every seeded AGENTS.md
+    shipped a literal unfilled placeholder and nothing noticed. The fix is in the FILLER,
+    and the postcondition is the guard: a placeholder the filler claims to know may never
+    survive a seed."""
+
+    TEMPLATE = init.SKILL / "templates" / "agent-instructions.md"
+
+    def test_shipped_template_gets_its_project_name_filled(self) -> None:
+        text = self.TEMPLATE.read_text(encoding="utf-8")
+        out = init._fill_known(text, {"project_name": "ACME", "date": "2026-01-01",
+                                      "last_updated": "2026-01-01"})
+        self.assertIn("ACME", out, "the project name never reached the template")
+        self.assertNotRegex(out, r"(?i)\{\{\s*project_name\s*\}\}")
+
+    def test_seeded_agent_files_carry_no_known_placeholder(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            init.init(repo)
+            for dst in ("AGENTS.md", "CLAUDE.md"):
+                text = (repo / dst).read_text(encoding="utf-8")
+                self.assertEqual(
+                    init.unfilled_known(text, {"project_name": repo.resolve().name}), [],
+                    f"{dst} kept a placeholder the filler claims to know")
+            self.assertIn(repo.resolve().name, (repo / "AGENTS.md").read_text(encoding="utf-8"))
+
+    def test_unfilled_known_reports_only_the_survivors_it_claims(self) -> None:
+        fields = {"project_name": "ACME", "date": "2026-01-01"}
+        self.assertEqual(init.unfilled_known("# {{PROJECT_NAME}}\n", fields), ["project_name"])
+        self.assertEqual(init.unfilled_known("# ACME on 2026-01-01\n", fields), [])
+        # a key the caller never supplied is not the filler's claim, so it is not a survivor
+        self.assertEqual(init.unfilled_known("{{language}}\n", fields), [])
+
+    def test_fill_known_refuses_to_return_a_surviving_known_placeholder(self) -> None:
+        # The postcondition, exercised: a value that re-introduces the placeholder must
+        # raise rather than be written out. This is the class the bug was - a substitution
+        # doing nothing, silently.
+        with self.assertRaises(RuntimeError) as ctx:
+            init._fill_known("# {{PROJECT_NAME}}\n", {"project_name": "{{project_name}}"})
+        self.assertIn("project_name", str(ctx.exception))
+
+
 class TailorRegistryTests(unittest.TestCase):
     """CR0326 AC2: the tailored result passes slice 1's registry validation."""
 

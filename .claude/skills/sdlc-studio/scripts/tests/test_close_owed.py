@@ -431,5 +431,156 @@ class BatchLineCoverageTests(CloseOwedBase):
         self.assertIn("EP0001", close_owed.render(report))
 
 
+def _dated_retro(root: Path, rid: str, batch: str, date: str, override: str = "") -> None:
+    """A retro carrying the Date the baseline doctrine is applied to, and optionally the
+    recorded override that says why it can have no velocity row."""
+    lines = [f"# RETRO-{rid[5:]}: a sprint", "", f"> **Date:** {date}",
+             f"> **Batch:** {batch}"]
+    if override:
+        lines.append(f"> **Velocity-override:** {override}")
+    lines += ["", "## Delivered", "- shipped", ""]
+    _write(root / "sdlc-studio" / "retros" / f"{rid}-r.md", "\n".join(lines))
+
+
+def _velocity_row(root: Path, rid: str) -> None:
+    """A row for `rid` in the velocity record, as `accuracy --write` appends one."""
+    p = root / "sdlc-studio" / "retros" / "VELOCITY.md"
+    header = ("| Retro | Date | Units | Measured | Forecast | Points | "
+              "Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | "
+              "Tokens/pt | Oversized | Wall (s) | Constants | Sample | Model | Note | Source |\n"
+              "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | "
+              "--- | --- | --- | --- |\n")
+    text = p.read_text(encoding="utf-8") if p.is_file() else "# Velocity history\n\n" + header
+    _write(p, text + f"| {rid} | 2026-07-20 | 1 | 0 | 0 | 2 | - | - | - | - | 0 | - | - | "
+                     f"unforecast | - | not attributable: interactive sprint | - |\n")
+
+
+class AVelocityRowIsPartOfTheClose(CloseOwedBase):
+    """US0288 (CR0284): `covered_ids` asked one question - does some retro's Batch name this
+    unit - and nothing anywhere asked whether the accuracy and velocity write ran. So
+    `accuracy --tokens N --write` shipped and RETRO0039 onwards still closed with no row in
+    VELOCITY.md, and the rate every plan quotes was never re-measured against them.
+
+    The demand is for the ROW, not for a token total: a row with a blank Actual and a recorded
+    reason is a complete close - it states that the sprint's cost was not recoverable, which is
+    a fact the record holds. No row at all states nothing, and is indistinguishable from an
+    oversight.
+    """
+
+    def _baselined(self, stamp: str = "2026-07-16") -> None:
+        _story(self.root, "US0001", "Done")
+        close_owed.stamp_baseline(self.root, date=stamp)
+
+    def test_a_retro_with_no_velocity_row_is_owed(self) -> None:
+        self._baselined()
+        _story(self.root, "US0005", "Done")
+        _dated_retro(self.root, "RETRO0002", "US0005", "2026-07-20")
+        report = close_owed.owed(self.root)
+        self.assertEqual(report["owed"], [], "the unit half is clean")
+        self.assertEqual([r for r, _d in report["velocity_owed"]], ["RETRO0002"])
+        self.assertIn("RETRO0002", close_owed.render(report))
+        self.assertIn("VELOCITY", close_owed.render(report).upper())
+
+    def test_a_retro_that_has_a_row_is_not_owed(self) -> None:
+        """The positive control: a close that DID write its row must not be demanded again, or
+        the signal would be permanently red and read as noise."""
+        self._baselined()
+        _story(self.root, "US0005", "Done")
+        _dated_retro(self.root, "RETRO0002", "US0005", "2026-07-20")
+        _velocity_row(self.root, "RETRO0002")
+        report = close_owed.owed(self.root)
+        self.assertEqual(report["velocity_owed"], [])
+
+    def test_a_blank_actual_with_a_reason_is_a_complete_close(self) -> None:
+        """The row `_velocity_row` writes carries no token total at all - a blank Actual and the
+        reason it is blank. That is the record saying the cost was not recoverable, and the
+        demand is satisfied: the story asks for the ROW, never for a number."""
+        self._baselined()
+        _dated_retro(self.root, "RETRO0002", "US0005", "2026-07-20")
+        _velocity_row(self.root, "RETRO0002")
+        self.assertEqual(close_owed.owed(self.root)["velocity_owed"], [])
+
+    def test_detect_exits_non_zero_on_a_missing_velocity_row(self) -> None:
+        self._baselined()
+        _dated_retro(self.root, "RETRO0002", "US0005", "2026-07-20")
+        with contextlib.redirect_stdout(io.StringIO()) as buf:
+            rc = close_owed.main(["--root", str(self.root), "detect"])
+        self.assertEqual(rc, 1, buf.getvalue())
+        self.assertIn("RETRO0002", buf.getvalue())
+
+    def test_retros_before_the_baseline_stamp_owe_no_velocity_row(self) -> None:
+        # the unclearable-debt failure the baseline exists to prevent: 65 retros on disk, and
+        # adopting the check must not hand the project a tail no close can ever clear
+        self._baselined(stamp="2026-07-16")
+        _dated_retro(self.root, "RETRO0001", "US0001", "2026-07-15")
+        _dated_retro(self.root, "RETRO0002", "US0005", "2026-07-16")   # the stamp day counts
+        report = close_owed.owed(self.root)
+        self.assertEqual([r for r, _d in report["velocity_owed"]], ["RETRO0002"])
+
+    def test_an_undated_retro_is_not_demanded_but_is_named(self) -> None:
+        """The baseline is applied to the retro's DATE, so a retro carrying none cannot be
+        placed either side of the stamp. It is not demanded - guessing would recreate the
+        unclearable tail - and it is REPORTED, so the escape is visible rather than silent."""
+        self._baselined()
+        _write(self.root / "sdlc-studio" / "retros" / "RETRO0002-r.md",
+               "# RETRO-0002: a sprint\n\n> **Batch:** US0005\n\n## Delivered\n- shipped\n")
+        report = close_owed.owed(self.root)
+        self.assertEqual(report["velocity_owed"], [])
+        self.assertEqual(report["velocity_undated"], ["RETRO0002"])
+        self.assertIn("RETRO0002", close_owed.render(report))
+
+    def test_a_recorded_velocity_override_is_named_not_owed(self) -> None:
+        self._baselined()
+        _dated_retro(self.root, "RETRO0002", "US0005", "2026-07-20",
+                     override="the run predates the harness baseline and its telemetry is gone")
+        report = close_owed.owed(self.root)
+        self.assertEqual(report["velocity_owed"], [])
+        self.assertEqual([r for r, _why in report["velocity_overrides"]], ["RETRO0002"])
+        rendered = close_owed.render(report)
+        self.assertIn("predates the harness baseline", rendered,
+                      "an escape nobody can read is a silent pass")
+
+    def test_a_bare_override_with_no_reason_is_not_an_override(self) -> None:
+        """The escape is the RECORDED REASON. A bare marker is the dodge the whole ceremony
+        exists to refuse - the same rule the retro's own `declined:` disposition obeys."""
+        self._baselined()
+        _dated_retro(self.root, "RETRO0002", "US0005", "2026-07-20", override="   ")
+        report = close_owed.owed(self.root)
+        self.assertEqual([r for r, _d in report["velocity_owed"]], ["RETRO0002"])
+
+    def test_an_unfilled_placeholder_is_not_a_reason(self) -> None:
+        self._baselined()
+        _dated_retro(self.root, "RETRO0002", "US0005", "2026-07-20", override="{{why}}")
+        self.assertEqual([r for r, _d in close_owed.owed(self.root)["velocity_owed"]],
+                         ["RETRO0002"])
+
+    def test_a_blank_override_does_not_borrow_the_next_line_as_its_reason(self) -> None:
+        """`extract_field` falls through an empty value to the next non-blank line, which would
+        let a bare marker be 'reasoned' by whatever prose followed it - the dodge wearing the
+        ceremony's own clothes."""
+        self._baselined()
+        _write(self.root / "sdlc-studio" / "retros" / "RETRO0002-r.md",
+               "# RETRO-0002: a sprint\n\n> **Date:** 2026-07-20\n> **Batch:** US0005\n"
+               "> **Velocity-override:**\n\n## Delivered\n- shipped\n")
+        report = close_owed.owed(self.root)
+        self.assertEqual([r for r, _d in report["velocity_owed"]], ["RETRO0002"])
+        self.assertEqual(report["velocity_overrides"], [])
+
+    def test_an_unbaselined_project_demands_no_row(self) -> None:
+        """Without a stamp there is no date to scope the demand to, and reporting every retro
+        on disk would be the unclearable tail again. The baseline nudge stands on its own."""
+        _dated_retro(self.root, "RETRO0002", "US0005", "2026-07-20")
+        report = close_owed.owed(self.root)
+        self.assertFalse(report["baselined"])
+        self.assertEqual(report["velocity_owed"], [])
+
+    def test_a_corrupt_baseline_still_reports_nothing_but_the_corruption(self) -> None:
+        _dated_retro(self.root, "RETRO0002", "US0005", "2026-07-20")
+        _write(self.root / close_owed.BASELINE_FILE, '["US0005"]')
+        report = close_owed.owed(self.root)
+        self.assertTrue(report["corrupt"])
+        self.assertEqual(report["velocity_owed"], [])
+
+
 if __name__ == "__main__":
     unittest.main()

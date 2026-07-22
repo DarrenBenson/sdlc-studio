@@ -22,6 +22,7 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import retro  # noqa: E402
+import telemetry  # noqa: E402  (the one implementation of the idle-gap deduction)
 from lib import run_state  # noqa: E402  (the run a close's token spend is attributed to)
 
 FULL = """# RETRO-9999: a sprint
@@ -809,7 +810,10 @@ class TheVelocityHistoryAccumulates(AccuracyBase):
         self.assertEqual(row["id"], "RETRO9000")
         self.assertEqual(row["date"], "2026-07-14")
         self.assertEqual((row["units"], row["measured"]), (3, 1))
-        self.assertEqual(row["estimate"], self.EST)
+        # BG0249: the WHOLE plan's forecast - all three units were forecast at plan time, and
+        # the column is a record of the prediction, not of the part that was later measured.
+        # The ratio below still judges only the one rated unit.
+        self.assertEqual(row["estimate"], 3 * self.EST)
         self.assertEqual(row["actual_tokens"], 50_000)
         self.assertEqual(row["ratio"], 1.0)
 
@@ -1225,6 +1229,47 @@ class TokenCaptureIsTiedToTheRetroItRecords(InteractiveSprintFixture):
                                           transcripts_dir=self.transcripts)
         self.assertEqual(cap["tokens"], 800_000)
 
+    def test_a_recorded_idle_gap_is_deducted_from_the_retro_s_elapsed(self) -> None:
+        """D0052: the idle rule is implemented ONCE and shared, so a run's elapsed reads the
+        same through `sprint` and through the retro. Before this, `telemetry` deducted the gap
+        and `retro` did not, so one sprint had two durations and the slower one set the
+        published points-per-hour."""
+        meter = self._session("s1.jsonl", {"input_tokens": 900_000})
+        self._state(["OLDER", "BG0001", "BG0002"], tokens=100_000, source=meter)
+        state = run_state.read(str(self.root))
+        state[telemetry.IDLE_GAPS] = [{"from": "2026-07-16T00:30:00Z",
+                                       "to": "2026-07-16T01:30:00Z", "reason": "operator away"}]
+        run_state.write(str(self.root), state)
+        self.assertEqual(
+            retro._elapsed_hours(str(self.root), ["BG0001", "BG0002"]), (1.0, "run-state"),
+            "a 2h run holding a recorded 1h idle gap worked for 1h")
+        self.assertEqual(
+            telemetry.elapsed_excluding_idle("2026-07-16T00:00:00Z", "2026-07-16T02:00:00Z",
+                                             state)["hours"], 1.0,
+            "and the two readers agree, because there is only one rule")
+
+    def test_an_unrecorded_idle_gap_leaves_the_elapsed_whole(self) -> None:
+        """The negative control. A gap is only ever written, so no gaps is a MEASURED absence
+        of waiting, not an unmeasured one - the deduction must not fire on silence."""
+        meter = self._session("s1.jsonl", {"input_tokens": 900_000})
+        self._state(["OLDER", "BG0001", "BG0002"], tokens=100_000, source=meter)
+        self.assertEqual(retro._elapsed_hours(str(self.root), ["BG0001", "BG0002"]),
+                         (2.0, "run-state"))
+
+    def test_an_open_run_reports_no_elapsed_AND_no_source(self) -> None:
+        """Found by a surviving mutant. An open run has no measured elapsed, and the SOURCE must
+        go with it: returning `(None, 'run-state')` names a provenance for a figure that does not
+        exist, which is this project's recurring defect - a label claiming more than the value
+        behind it. The covering check passes here, so this reaches the guard rather than the
+        early return."""
+        meter = self._session("s1.jsonl", {"input_tokens": 900_000})
+        self._state(["OLDER", "BG0001", "BG0002"], tokens=100_000, source=meter)
+        state = run_state.read(str(self.root))
+        del state["ended_at"]
+        run_state.write(str(self.root), state)
+        self.assertEqual(retro._elapsed_hours(str(self.root), ["BG0001", "BG0002"]),
+                         (None, None), "no hours means no source either")
+
     def test_the_coverage_rule_is_a_strict_majority(self) -> None:
         covers = retro._run_covers
         self.assertFalse(covers({"batch": ["BG0001"]}, ["BG0001", "BG0002"]),
@@ -1434,6 +1479,312 @@ class AnUnratedSprintRecordsNoTokenActual(InteractiveSprintFixture):
         survive it untouched."""
         self._legacy(model_cell="claude-opus-4-8")
         self.assertEqual(retro.velocity_history(str(self.root))[0]["model"], "claude-opus-4-8")
+
+
+class TheEstimateColumnIsTheForecastThatWasRecorded(InteractiveSprintFixture):
+    """BG0249: BG0244's defect in the column BESIDE the one BG0244 fixed.
+
+    `Estimate (tokens, plan-time)` was written from `sum(u["estimate"] for u in rated)`, and a
+    RATED unit needs a measurement as well as a forecast. An interactive sprint measures none,
+    so the sum ran over an empty set and the row published `0` in a column whose name says it
+    holds a plan-time prediction - 12 of 17 live rows carried one. It is worse than the Actual
+    zero it sits next to: that one is contradicted by the Tokens/pt cell on the same row, while
+    a `0` estimate sits beside a forecast that really was recorded and simply was not read.
+
+    The forecast log is first-record-wins precisely so the number survives, so the column reads
+    every unit that HAS a recorded forecast. Where none was recorded the cell is blank, never 0,
+    and a blank one already on disk is read as the absence it is.
+    """
+
+    _cells = AnUnratedSprintRecordsNoTokenActual._cells
+
+    def _forecast(self, *unit_ids: str, tokens: int = 200_000) -> None:
+        """The plan-time forecast, as `sprint plan --write` records it. No `points`, and no
+        telemetry actual anywhere: this is the interactive sprint that rates nothing."""
+        import telemetry as tel
+        tel.record_forecasts(str(self.root), [
+            {"id": uid, "tokens": tokens, "points": None, "seed": 0, "seed_source": "none",
+             "constants": {"TOKENS_PER_POINT": 25_000},
+             "planned_at": "2026-07-20T09:00:00+00:00"} for uid in unit_ids])
+
+    def _legacy_zero(self) -> None:
+        """A row written by the code that published the false zero."""
+        path = retro.velocity_path(str(self.root))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(retro.VELOCITY_HEADER +
+                        "| RETRO9001 | 2026-07-20 | 9 | 0 | 9 | 30 | 0 | - | - | - | "
+                        "0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |\n",
+                        encoding="utf-8")
+
+    def test_a_forecast_sprint_that_rates_nothing_records_its_forecast(self) -> None:
+        # the bug's own shape: two units forecast at plan time, neither measured
+        self._forecast("BG0001", "BG0002")
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        self.assertEqual(self._cells()["estimate"], "400,000",
+                         "the forecast was on disk and the column did not read it")
+        self.assertEqual(retro.velocity_history(str(self.root))[0]["estimate"], 400_000)
+
+    def test_a_partly_forecast_sprint_records_every_forecast_that_was_made(self) -> None:
+        # the column is about the PLAN, so a unit nobody forecast contributes nothing and the
+        # one that was forecast is not dropped with it
+        self._forecast("BG0001")
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        self.assertEqual(self._cells()["estimate"], "200,000")
+
+    def test_a_sprint_that_recorded_no_forecast_publishes_a_dash_not_a_zero(self) -> None:
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        self.assertEqual(self._cells()["estimate"], "-",
+                         "no forecast was recorded, and 0 is a prediction nobody made")
+        self.assertIsNone(retro.velocity_history(str(self.root))[0]["estimate"])
+
+    def test_a_historical_zero_is_not_read_back_as_a_forecast(self) -> None:
+        self._legacy_zero()
+        self.assertIsNone(retro.velocity_history(str(self.root))[0]["estimate"],
+                          "a recorded 0 is the old writer's absence, not a prediction")
+
+    def test_a_historical_zero_is_not_republished_by_the_next_write(self) -> None:
+        self._legacy_zero()
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        self.assertEqual(self._cells("RETRO9001")["estimate"], "-")
+
+    def test_a_recorded_estimate_survives_a_rerun_that_can_no_longer_see_it(self) -> None:
+        """The forecast log lives in `.local/`, which is not committed, so a re-record on
+        another clone reads no forecast at all. That must not blank a figure the history
+        already holds - the same rule the Actual column obeys (L-0156)."""
+        self._forecast("BG0001", "BG0002")
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        for p in self.root.rglob("forecasts*.jsonl"):
+            p.unlink()
+        self.assertEqual(retro.accuracy(str(self.root), "RETRO9002")["batch"]["plan_estimate"],
+                         None, "the fixture must really have lost sight of the forecast")
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        self.assertEqual(self._cells()["estimate"], "400,000",
+                         "a rewrite must never replace a recorded forecast with its absence")
+
+    def test_the_ratio_still_judges_only_the_rated_units(self) -> None:
+        """The positive control, and the reason the two sums stay separate: the ratio is
+        estimate over actual and both sides must describe the SAME units, so widening the
+        published estimate must not widen the ratio's numerator."""
+        import telemetry as tel
+        self._forecast("BG0001", "BG0002")
+        tel.record(str(self.root), {"id": "BG0001", "type": "bug", "tokens": 100_000,
+                                    "model": "m"})
+        res = retro.accuracy(str(self.root), "RETRO9002")
+        self.assertEqual(res["batch"]["estimate"], 200_000, "the ratio's numerator is rated-only")
+        self.assertEqual(res["batch"]["plan_estimate"], 400_000)
+        self.assertEqual(res["batch"]["ratio"], 2.0)
+
+
+class TheCaptureMeasuresTheMainThreadAndSaysSo(InteractiveSprintFixture):
+    """BG0252: the capture is a MAIN-THREAD figure wearing a whole-run label.
+
+    `session_tokens` sums the session transcript's usage records, and subagent work is not in
+    them: measured on one live transcript, 6,624,813 tokens of usage carried ZERO sidechain
+    records. A fan-out sprint published 439,982 as "RUN-xxxx's own spend" while its four cluster
+    agents had reported 787,834 between them and the review agent was still running - so the
+    published figure understated the known cost by 64 per cent, and read as 24,443 tokens per
+    point against a 25,000 seed, which invites the conclusion that the seed is validated.
+
+    It is more dangerous than a plain absence because it looks like a successful measurement. So
+    the label is most of the fix: the main thread is published as MEASURED, delegated totals are
+    accepted as SUPPLIED, and their sum is published as a LOWER BOUND - never as the run's cost.
+    """
+
+    _cells = AnUnratedSprintRecordsNoTokenActual._cells
+
+    def _spent(self) -> dict:
+        """An open run with 400,000 measured on the main thread since it opened."""
+        self._session("s1.jsonl", {"input_tokens": 60_000})
+        self._open_run()
+        self._append("s1.jsonl", {"input_tokens": 400_000})
+        return retro.run_attributed_tokens(str(self.root), "RETRO9002",
+                                           transcripts_dir=self.transcripts)
+
+    def test_a_capture_with_no_delegated_total_is_labelled_main_thread_and_bounded(self) -> None:
+        cap = self._spent()
+        self.assertEqual(cap["tokens"], 400_000)
+        self.assertEqual(cap["measured_tokens"], 400_000)
+        self.assertEqual(cap["delegated_tokens"], 0)
+        self.assertTrue(cap["lower_bound"], "a main-thread reading bounds the run from below")
+        self.assertIn("main-thread", cap["basis"].lower())
+        self.assertIn("lower bound", cap["basis"].lower())
+
+    def test_the_basis_never_claims_the_figure_is_the_run_s_own_spend(self) -> None:
+        """The defect in one sentence. The old basis read `RUN-xxxx's own spend: ...`, which is
+        a claim about the run and was true only of its main thread."""
+        cap = self._spent()
+        self.assertNotIn("own spend", cap["basis"])
+
+    def test_a_supplied_delegated_total_is_added_and_named_as_supplied(self) -> None:
+        self._session("s1.jsonl", {"input_tokens": 60_000})
+        self._open_run()
+        self._append("s1.jsonl", {"input_tokens": 400_000})
+        run_state.record_delegated_tokens(str(self.root), 500_000, agent="cluster-1")
+        run_state.record_delegated_tokens(str(self.root), 300_000, agent="cluster-2")
+        cap = retro.run_attributed_tokens(str(self.root), "RETRO9002",
+                                          transcripts_dir=self.transcripts)
+        self.assertEqual(cap["tokens"], 1_200_000, "the delegated halves are not dropped")
+        self.assertEqual(cap["measured_tokens"], 400_000)
+        self.assertEqual(cap["delegated_tokens"], 800_000)
+        self.assertEqual(cap["delegated_records"], 2)
+        self.assertIn("supplied", cap["basis"].lower())
+        self.assertIn("400,000", cap["basis"])
+        self.assertIn("800,000", cap["basis"])
+
+    def test_the_published_figure_is_never_an_equality(self) -> None:
+        """Whether or not anything was delegated, the transcript cannot see a subagent, so the
+        figure bounds the run from below. A capture that ever published `=` would be back to
+        claiming a measurement of a quantity it cannot observe."""
+        for delegated in (None, 500_000):
+            with self.subTest(delegated=delegated):
+                self.setUp()
+                self._session("s1.jsonl", {"input_tokens": 60_000})
+                self._open_run()
+                self._append("s1.jsonl", {"input_tokens": 400_000})
+                if delegated:
+                    run_state.record_delegated_tokens(str(self.root), delegated)
+                cap = retro.run_attributed_tokens(str(self.root), "RETRO9002",
+                                                  transcripts_dir=self.transcripts)
+                self.assertTrue(cap["lower_bound"])
+                self.assertIn("at least", cap["basis"].lower())
+
+    def test_the_close_records_the_supplied_half_in_the_row_s_source(self) -> None:
+        # what reaches VELOCITY.md: a figure that is part meter-read and part operator claim
+        # must not be published under the same provenance as a clean machine read
+        self._session("s1.jsonl", {"input_tokens": 60_000})
+        self._open_run()
+        self._append("s1.jsonl", {"input_tokens": 400_000})
+        out = self._capture("accuracy", "--id", "RETRO9002", "--write",
+                            "--delegated-tokens", "800000", "--delegated-agent", "cluster",
+                            "--tokens-from-harness")
+        self.assertIn("1,200,000", out)
+        cells = self._cells()
+        self.assertEqual(cells["actual_tokens"], "1,200,000")
+        self.assertEqual(cells["source"], retro.SOURCE_HARNESS_SUPPLIED)
+        self.assertEqual(retro.velocity_history(str(self.root))[0]["source"],
+                         retro.SOURCE_HARNESS_SUPPLIED)
+
+    def test_a_wholly_main_thread_capture_keeps_the_plain_harness_source(self) -> None:
+        """The positive control: a run that delegated nothing must not be marked as carrying a
+        supplied figure, or the provenance column would stop distinguishing them."""
+        self._session("s1.jsonl", {"input_tokens": 60_000})
+        self._open_run()
+        self._append("s1.jsonl", {"input_tokens": 400_000})
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens-from-harness")
+        self.assertEqual(self._cells()["source"], retro.SOURCE_HARNESS)
+
+    def test_the_meter_reader_says_it_sees_only_the_main_thread(self) -> None:
+        """At the source. `session_tokens` is where the sidechain records are absent, so its own
+        basis is where a reader must be told - not only the close that wraps it."""
+        self._session("s1.jsonl", {"input_tokens": 200_000})
+        cap = retro.harness_tokens(str(self.root), transcripts_dir=self.transcripts)
+        self.assertEqual(cap["tokens"], 200_000)
+        self.assertIn("main thread", cap["basis"].lower())
+        self.assertIn("cache reads excluded", cap["basis"])
+
+
+class TheVelocityRecordReportsItsOwnGaps(InteractiveSprintFixture):
+    """US0289 (CR0284): 65 retros on disk, 18 rows in the record, and nothing detected the
+    difference. `velocity_history` reads the rows that exist and `cmd_velocity` prints them, so a
+    retro that never reached the file is invisible to both - the record can rot without any
+    command saying so, and a skipped accuracy write is indistinguishable from a sprint that never
+    happened. The backfill is worth nothing without this: the same hole reopens the next time a
+    close skips the write.
+    """
+
+    _cells = AnUnratedSprintRecordsNoTokenActual._cells
+
+    def _retro(self, rid: str, date: str = "2026-07-20") -> None:
+        (self.root / "sdlc-studio" / "retros" / f"{rid}-t.md").write_text(
+            f"# {rid}: a sprint\n\n> **Date:** {date}\n> **Batch:** BG0001\n\n"
+            f"## Delivered\n- shipped\n", encoding="utf-8")
+
+    def _run(self, *argv: str) -> tuple[int, str]:
+        """`retro.py` with its real exit code, which `_capture` asserts away."""
+        import contextlib
+        import io
+        buf = io.StringIO()
+        with mock.patch.object(sys, "argv", ["retro.py", "--root", str(self.root), *argv]), \
+                contextlib.redirect_stdout(buf):
+            rc = retro.main()
+        return rc, buf.getvalue()
+
+    def test_velocity_gaps_names_every_retro_with_no_row(self) -> None:
+        self._retro("RETRO9003")
+        self._retro("RETRO9004")
+        self._capture("accuracy", "--id", "RETRO9002", "--write")     # one row written
+        gaps = retro.velocity_gaps(str(self.root))
+        self.assertEqual([g["id"] for g in gaps["gaps"]], ["RETRO9003", "RETRO9004"])
+        rc, out = self._run("velocity", "--gaps")
+        self.assertEqual(rc, 1, "a rotting record must not report success")
+        self.assertIn("RETRO9003", out)
+        self.assertIn("RETRO9004", out)
+        self.assertNotIn("RETRO9002", out, "the retro that has a row is not a gap")
+        # the machine-readable half exits the same way: a gate reading JSON must not be told
+        # the record is clean while the report it just printed lists two holes
+        rc, out = self._run("velocity", "--gaps", "--format", "json")
+        self.assertEqual(rc, 1)
+        self.assertEqual([g["id"] for g in json.loads(out)["gaps"]],
+                         ["RETRO9003", "RETRO9004"])
+
+    def test_a_record_with_no_gap_reports_none_and_exits_zero(self) -> None:
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        rc, out = self._run("velocity", "--gaps")
+        self.assertEqual(rc, 0)
+        self.assertIn("no gap", out.lower())
+
+    def test_the_window_is_bounded_so_older_retros_are_not_demanded(self) -> None:
+        # the same doctrine the close-owed baseline obeys: a bound exists so adopting the
+        # report does not hand the project a tail nothing can ever clear
+        self._retro("RETRO9001")
+        self._retro("RETRO9003")
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        gaps = retro.velocity_gaps(str(self.root), since="RETRO9003")
+        self.assertEqual([g["id"] for g in gaps["gaps"]], ["RETRO9003"])
+        rc, out = self._run("velocity", "--gaps", "--since", "RETRO9003")
+        self.assertEqual(rc, 1)
+        self.assertNotIn("RETRO9001", out)
+
+    def test_a_row_with_no_recorded_date_renders_a_dash_not_an_empty_cell(self) -> None:
+        """Two retros in this repo record no Date, and an empty table cell is both ambiguous
+        and a markdown-lint failure (MD060) that CI blocks on."""
+        (self.root / "sdlc-studio" / "retros" / "RETRO9003-t.md").write_text(
+            "# RETRO9003: a sprint\n\n> **Batch:** BG0001\n\n## Delivered\n- shipped\n",
+            encoding="utf-8")
+        self._capture("accuracy", "--id", "RETRO9003", "--write")
+        self.assertEqual(self._cells("RETRO9003")["date"], "-")
+        self.assertNotIn("|  |", retro.velocity_path(str(self.root)).read_text(encoding="utf-8"))
+
+    def test_an_unrecoverable_total_is_a_blank_actual_with_a_reason(self) -> None:
+        """AC3: a sprint whose cost cannot be recovered records a BLANK Actual and says why. A
+        `0` there is a sum over an empty set of measured units published as a measurement, and
+        no row in the record may carry one."""
+        self._retro("RETRO9003")
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        self._capture("accuracy", "--id", "RETRO9003", "--write")
+        for rid in ("RETRO9002", "RETRO9003"):
+            cells = self._cells(rid)
+            self.assertEqual(cells["actual_tokens"], "-", f"{rid} published a figure")
+            self.assertIn("not attributable", cells["note"].lower())
+        text = retro.velocity_path(str(self.root)).read_text(encoding="utf-8")
+        rows = [ln for ln in text.splitlines() if ln.startswith("| RETRO")]
+        idx = retro._velocity_index(next(ln for ln in text.splitlines()
+                                         if retro._velocity_index(ln)))
+        for ln in rows:
+            cells = retro.sdlc_md.table_cells(ln)
+            self.assertNotEqual(cells[idx["actual_tokens"]].strip(), "0",
+                                f"a zero Actual survived in: {ln}")
+
+    def test_a_backfilled_row_records_no_forecast_it_never_made(self) -> None:
+        """AC4: the row of a sprint that recorded no plan-time forecast leaves the Estimate
+        empty and says UNFORECAST. Re-deriving one from the constants in force today would make
+        the row read as a prediction nobody made, and a history of those cannot falsify the
+        estimator that wrote it."""
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        cells = self._cells()
+        self.assertEqual(cells["estimate"], "-")
+        self.assertEqual(cells["sample"], "unforecast")
+        self.assertEqual(cells["constants"], "-", "no estimator produced a forecast here")
 
 
 class AReasonSurvivesTheRowItExplains(InteractiveSprintFixture):

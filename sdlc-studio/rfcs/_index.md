@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 3 |
+| Draft | 4 |
 | In Review | 0 |
 | Accepted | 44 |
 | Superseded | 0 |
 | Withdrawn | 3 |
-| **Total** | **50** |
+| **Total** | **51** |
 
 ## All RFCs
 
@@ -67,3 +67,4 @@
 | [RFC-0048](RFC0048-make-the-test-suite-cost-effective-without-lowering.md) | Make the test suite cost-effective without lowering the floor: tier it by measured value, and review tests adversarially | Medium | Accepted | sdlc-studio | 2026-07-19 | -- |
 | [RFC-0049](RFC0049-a-test-strategy-set-at-sprint-planning-derived.md) | A test strategy set at sprint planning, derived from the TSD and the unit's risk band | High | Draft | sdlc-studio | 2026-07-21 | -- |
 | [RFC-0050](RFC0050-an-adversarial-pass-over-the-sprint-plan-and.md) | An adversarial pass over the sprint plan and test plan before the build starts | High | Draft | sdlc-studio | 2026-07-21 | -- |
+| [RFC-0051](RFC0051-an-operator-cannot-delegate-reviewer-of-record-sign.md) | An operator cannot delegate reviewer-of-record sign-off to an agent: the trust boundary the guard requires cannot exist inside the authoring session | High | Draft | sdlc-studio | 2026-07-22 | -- |

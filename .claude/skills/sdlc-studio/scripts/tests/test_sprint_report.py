@@ -208,5 +208,117 @@ class GoalTests(ReportBase):
         self.assertNotIn("Sprint Goal", sr.render(rep))
 
 
+def _mutation():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "mutation", Path(__file__).resolve().parents[1] / "mutation.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["mutation"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+class MutationCostTests(ReportBase):
+    """US0309 (CR0379 AC4): the close is where the keep-or-cut decision is actually taken, so
+    the trade belongs there. Asked directly at the RUN-01KY03GS close, the best available
+    answer had to be reconstructed by hand from timeouts and timestamps."""
+
+    def _run(self, *, survived: int, elapsed: float, refused: bool = False,
+             applied: int = 10) -> str:
+        mut = _mutation()
+        rid = mut._new_run_id()
+        mut.append_series(self.root, {
+            "run_id": rid, "generated_at": "2026-07-22T09:00:00Z", "git_rev": "abc1234",
+            "test_cmd": "python3 -m unittest discover", "targets": ["src/thing.py"],
+            "refused": refused, "unchecked": [],
+            "summary": {"applied": 0 if refused else applied,
+                        "killed": 0 if refused else applied - survived,
+                        "survived": 0 if refused else survived,
+                        "errors": 0, "unviable": 0, "truncated": 0}}, elapsed)
+        return rid
+
+    def _bug(self, name: str, run_id: str) -> None:
+        d = self.root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{name}-a-survivor.md").write_text(
+            f"# {name}: a survivor\n\n> **Status:** Open\n> **Severity:** High\n"
+            f"> **Mutation-run:** {run_id}\n\n## Summary\n\ns\n", encoding="utf-8")
+
+    def test_the_report_renders_mutation_cost_beside_yield(self) -> None:
+        rid = self._run(survived=3, elapsed=612.5)
+        self._bug("BG0232", rid)
+        rep = sr.report(self.root, "RETRO9100")
+        text = sr.render(rep)
+        self.assertIn("612.5s", text)          # what it cost
+        self.assertIn("BG0232", text)          # what it produced
+        self.assertIn("3 survived", text)      # and the raw survivors beside the yield
+        # one place, not three sections
+        line = next(ln for ln in text.splitlines() if ln.startswith("Mutation gate"))
+        self.assertIn("612.5s", line)
+        self.assertIn("BG0232", line)
+
+    def test_the_report_shows_the_trailing_mutation_history(self) -> None:
+        old = self._run(survived=1, elapsed=100.0)
+        self._bug("BG0100", old)
+        self._run(survived=2, elapsed=200.0)
+        current = self._run(survived=3, elapsed=300.0)
+        text = sr.render(sr.report(self.root, "RETRO9100"))
+        self.assertIn("300.0s", text)          # the current run
+        self.assertIn("200.0s", text)          # ...and the ones before it
+        self.assertIn("100.0s", text)
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertEqual(rep["mutation"]["current"]["run_id"], current)
+        self.assertEqual(len(rep["mutation"]["trailing"]), 2)
+
+    def test_a_run_without_mutation_evidence_is_named_not_zeroed(self) -> None:
+        # no series at all: the step was skipped, so there is nothing to count
+        rep = sr.report(self.root, "RETRO9100")
+        text = sr.render(rep)
+        self.assertIn("no mutation evidence", text)
+        self.assertNotIn("0 survived", text)   # a zero would read as a run that found nothing
+        self.assertIsNone(rep["mutation"]["current"])
+        # ...and a run that WAS attempted and refused says so, rather than reading as a
+        # clean sweep of zero survivors
+        self._run(survived=0, elapsed=44.0, refused=True)
+        text = sr.render(sr.report(self.root, "RETRO9100"))
+        self.assertIn("no mutation evidence", text)
+        self.assertIn("refused", text)
+        self.assertNotIn("0 survived", text)
+
+    def test_cost_per_finding_is_derived_only_where_both_halves_exist(self) -> None:
+        barren = self._run(survived=3, elapsed=400.0)         # cost, no filed artefact
+        fruitful = self._run(survived=2, elapsed=600.0)       # both halves
+        self._bug("BG0233", fruitful)
+        rep = sr.report(self.root, "RETRO9100")
+        cur = rep["mutation"]["current"]
+        self.assertEqual(cur["run_id"], fruitful)
+        self.assertEqual(cur["cost_per_finding_s"], 600.0)    # 600s / 1 filed
+        prev = rep["mutation"]["trailing"][0]
+        self.assertEqual(prev["run_id"], barren)
+        self.assertIsNone(prev["cost_per_finding_s"])         # never a divide by zero
+        self.assertTrue(prev["cost_per_finding_note"])        # and never a blank that reads free
+        text = sr.render(rep)
+        self.assertIn("600.0s per finding", text)
+        self.assertIn(prev["cost_per_finding_note"], text)
+
+    def test_an_equivalent_survivor_is_visible_in_the_report(self) -> None:
+        mut = _mutation()
+        rid = self._run(survived=2, elapsed=120.0)
+        target = self.root / "thing.py"
+        target.write_text("x = 1\n", encoding="utf-8")
+        mut.register_mutant(self.root, target, "a no-op swap", None, "equivalent",
+                            reason="unkillable by construction", run=rid)
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertEqual(rep["mutation"]["current"]["equivalent"], 1)
+        self.assertIn("1 equivalent", sr.render(rep))
+
+    def test_an_unreadable_series_does_not_break_the_report(self) -> None:
+        p = self.root / "sdlc-studio" / ".local" / "mutation-series.jsonl"
+        p.write_text("{not json\n", encoding="utf-8")
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertTrue(rep["ok"])
+        self.assertIn("no mutation evidence", sr.render(rep))
+
+
 if __name__ == "__main__":
     unittest.main()

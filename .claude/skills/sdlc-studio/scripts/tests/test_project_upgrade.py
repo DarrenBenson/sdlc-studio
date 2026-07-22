@@ -250,6 +250,62 @@ class ApplyTests(unittest.TestCase):
             self.assertEqual(before, snap())     # byte-identical: dry-run writes nothing
 
 
+class InstructionsSeedTests(unittest.TestCase):
+    """US0293: a file that does not exist is seeded deterministically; a file that DOES exist is
+    never rewritten - project sections must survive - and its drift is reported with the rules
+    it fails."""
+
+    DRIFTED = ("# Our Project - Agent Instructions\n\n"
+               "## Project specifics\n\nOur stack is bespoke and this section is ours.\n")
+
+    def test_apply_never_rewrites_an_existing_agents_md(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(d)
+            agents = root / "AGENTS.md"
+            agents.write_text(self.DRIFTED, encoding="utf-8")
+            before = agents.read_bytes()
+            report = pu.audit(d)
+            pu.apply(d)
+            self.assertEqual(agents.read_bytes(), before, "an existing AGENTS.md was rewritten")
+            # not offered as a deterministic seed either - the dry run must not promise the write
+            self.assertNotIn("AGENTS.md", [f.get("target") for f in report["auto"]])
+            finding = next(f for f in report["manual"] if f["kind"] == "agents")
+            for rule in ("no-doctrine-pointer", "no-latest-pointer", "no-release-gate",
+                         "no-compaction-rule"):
+                self.assertIn(rule, finding["detail"],
+                              "the needs-human item must name the specific rules it fails")
+
+    def test_a_recorded_opt_out_is_not_a_needs_human_hygiene_finding(self):
+        # A deliberate opt-out is an acknowledgement; reporting it as drift to repair would
+        # contradict the check that emitted it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = _project(d)
+            (root / "AGENTS.md").write_text(
+                "# Proj\n\nRead `reference-doctrine.md` and `sdlc-studio/reviews/LATEST.md`.\n"
+                "Pre-release gate: `reconcile --verify`. After a `/compact`, re-read it.\n"
+                "Every change flows through the skill. No ad-hoc coding.\n"
+                "Never hand-allocate ids or hand-author `_index.md`.\n"
+                "A story reaches Done only when its executable ACs pass.\n", encoding="utf-8")
+            (root / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
+            (sd / ".config.yaml").write_text(
+                "instructions:\n  working_model_opt_out: independent-review\n", encoding="utf-8")
+            self.assertEqual([f for f in pu.audit(d)["manual"] if f["kind"] == "agents"], [])
+
+    def test_apply_seeds_both_agent_files_when_absent(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(d)
+            self.assertIn("seed-instructions", [f["kind"] for f in pu.audit(d)["auto"]])
+            pu.apply(d)
+            self.assertIn(root.resolve().name,
+                          (root / "AGENTS.md").read_text(encoding="utf-8"))
+            self.assertIn("@AGENTS.md", (root / "CLAUDE.md").read_text(encoding="utf-8"))
+            # idempotent: a second apply seeds nothing more and the audit is clear of the seed
+            self.assertNotIn("seed-instructions", [f["kind"] for f in pu.audit(d)["auto"]])
+
+
 class SafetyAndReconcileTests(unittest.TestCase):
     def test_apply_refuses_non_project(self):
         with tempfile.TemporaryDirectory() as d:

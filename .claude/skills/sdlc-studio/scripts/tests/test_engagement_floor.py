@@ -854,5 +854,300 @@ class ModeTests(unittest.TestCase):
             self.assertEqual(_load().detect(root)["mode"], "floor")
 
 
+class PendingCommitTests(unittest.TestCase):
+    """BG0251: the floor could not see a violation the gating commit itself creates.
+
+    `_git_touched_by_id` derives "what this unit touched" from `git log --grep` over the
+    HISTORY, so a commit's own files attach to a unit only once that commit exists. The
+    pre-commit gate therefore structurally could not detect a violation the commit it is
+    gating is about to introduce - observed during RUN-01KY321Q, where the floor reported
+    0 violations, the gate passed, the commit landed, and the same check immediately
+    afterwards reported 2 NEW violations in files nothing had touched.
+
+    `detect(root, include_staged=True)` folds the STAGED index in, so the same verdict is
+    available one commit earlier. The equivalence test below is the point of the fix: the
+    pending verdict and the post-commit verdict must be the same verdict.
+    """
+
+    def _git(self, root, *args):
+        gitutil.git(list(args), cwd=root, text=True)
+
+    def _init_repo(self, root):
+        self._git(root, "init", "-q")
+        self._git(root, "config", "user.email", "t@t")
+        self._git(root, "config", "user.name", "t")
+
+    def _stage_a_multifile_delivery(self, root, num=251):
+        """A bug artefact declaring ONE file and carrying no planning artefact, staged to
+        Fixed alongside three source files. Below the floor on committed evidence; a
+        violation the instant the commit exists."""
+        self._init_repo(root)
+        _write_unit(root, "bug", num, status="Fixed", affects=["src/one.py"])
+        (root / "src").mkdir(exist_ok=True)
+        for n in ("one", "two", "three"):
+            (root / "src" / f"{n}.py").write_text("x = 1\n", encoding="utf-8")
+        self._git(root, "add", "-A")
+
+    def test_the_pending_commit_is_invisible_to_the_committed_evidence_leg(self):
+        """The defect itself, pinned. Everything is staged and nothing is committed, so
+        the floor's own history leg has nothing to attribute and the unit reads clean."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._stage_a_multifile_delivery(root)
+            u = _units(root)["BG0251"]
+            self.assertFalse(u["violation"])
+            self.assertEqual(u["source_files"], 1)   # the declared Affects, and nothing else
+
+    def test_a_unit_this_commit_puts_below_the_floor_is_seen_before_it_lands(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._stage_a_multifile_delivery(root)
+            u = {x["id"]: x for x in
+                 _load().detect(root, include_staged=True)["units"]}["BG0251"]
+            self.assertTrue(u["violation"], "the pending commit's own files were not counted")
+            self.assertEqual(u["kind"], "unplanned")
+            self.assertTrue(u["staged_new"],
+                            "the violation is one THIS commit creates, and must say so")
+            self.assertGreaterEqual(u["source_files"], 3)
+
+    def test_the_pending_verdict_is_the_verdict_the_commit_actually_produces(self):
+        """The equivalence the fix rests on, and the only thing that makes the pending leg
+        worth trusting: what it says before the commit is what the unchanged history leg
+        says after it. Without this, the pending leg could be flagging something the floor
+        would never have flagged, and the gate would be refusing commits for its own
+        reasons."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._stage_a_multifile_delivery(root)
+            pending = {x["id"]: x for x in
+                       _load().detect(root, include_staged=True)["units"]}["BG0251"]
+            # The real delivery-commit shape: ids in the BODY, none in the subject.
+            self._git(root, "commit", "-q", "-m",
+                      "fix: three modules\n\nBG0251 the thing that spans them")
+            landed = _units(root)["BG0251"]
+            self.assertTrue(landed["violation"], "premise: the commit does create a violation")
+            self.assertEqual(pending["kind"], landed["kind"])
+            self.assertEqual(pending["source_files"], landed["source_files"])
+
+    def test_a_planned_unit_is_not_flagged_by_the_pending_leg(self):
+        """The negative control. The pending leg raises a FILE COUNT; it does not invent a
+        new rule, so a unit with a planning artefact is still below the floor."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            _write_unit(root, "bug", 252, status="Fixed", affects=["src/one.py"], ac=True)
+            (root / "src").mkdir()
+            for n in ("one", "two", "three"):
+                (root / "src" / f"{n}.py").write_text("x = 1\n", encoding="utf-8")
+            self._git(root, "add", "-A")
+            u = {x["id"]: x for x in
+                 _load().detect(root, include_staged=True)["units"]}["BG0252"]
+            self.assertFalse(u["violation"])
+            self.assertFalse(u["staged_new"])
+
+    def test_nothing_staged_leaves_the_verdict_unchanged(self):
+        """The common commit stages no judged artefact at all. The flag must then be a
+        no-op, or every unrelated commit inherits the whole backlog's footprint."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            _write_unit(root, "bug", 253, status="Fixed", affects=["src/one.py"])
+            (root / "src").mkdir()
+            (root / "src" / "one.py").write_text("x = 1\n", encoding="utf-8")
+            self._git(root, "add", "-A")
+            self._git(root, "commit", "-q", "-m", "chore: baseline")
+            (root / "src" / "two.py").write_text("y = 2\n", encoding="utf-8")
+            (root / "src" / "three.py").write_text("z = 3\n", encoding="utf-8")
+            self._git(root, "add", "-A")   # source only: no judged artefact staged
+            u = {x["id"]: x for x in
+                 _load().detect(root, include_staged=True)["units"]}["BG0253"]
+            self.assertFalse(u["violation"],
+                             "a commit staging no artefact for this unit must not feed it")
+
+    def test_a_unit_named_only_in_the_pending_message_is_still_invisible(self):
+        """The residual gap, tested so the claim of coverage stays exact. A pre-commit hook
+        is NOT given the commit message it is gating - git writes COMMIT_EDITMSG after the
+        hook runs, so at hook time that file still holds the PREVIOUS commit's message. A
+        unit this commit will name in prose alone, staging no artefact for it, therefore
+        cannot be judged until the commit exists. The floor is still one commit behind for
+        that case, and this test is what stops the docstring claiming otherwise."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            _write_unit(root, "bug", 254, status="Fixed", affects=["src/one.py"])
+            (root / "src").mkdir()
+            (root / "src" / "one.py").write_text("x = 1\n", encoding="utf-8")
+            self._git(root, "add", "-A")
+            self._git(root, "commit", "-q", "-m", "chore: baseline")
+            for n in ("two", "three"):
+                (root / "src" / f"{n}.py").write_text("y = 2\n", encoding="utf-8")
+            self._git(root, "add", "-A")
+            before = {x["id"]: x for x in
+                      _load().detect(root, include_staged=True)["units"]}["BG0254"]
+            self.assertFalse(before["violation"])
+            # ...and once the commit lands, naming it, the floor sees what it could not.
+            self._git(root, "commit", "-q", "-m", "chore: more modules\n\nper BG0254")
+            self.assertTrue(_units(root)["BG0254"]["violation"],
+                            "premise: the landed commit DOES create the violation")
+
+    def test_only_judged_artefact_ids_are_attributed(self):
+        """The pending leg's id set is "the judged units this commit stages", and both
+        halves of that need saying. An epic staged beside them is not a judged type, and a
+        SOURCE file whose name happens to start with an id is not an artefact at all."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            _write_unit(root, "bug", 260, status="Fixed", affects=["src/one.py"])
+            epics = root / "sdlc-studio" / "epics"
+            epics.mkdir(parents=True, exist_ok=True)
+            (epics / "EP0103-sample.md").write_text("# EP0103: sample\n", encoding="utf-8")
+            (root / "src").mkdir(exist_ok=True)
+            (root / "src" / "one.py").write_text("x = 1\n", encoding="utf-8")
+            (root / "src" / "BG0261-helper.py").write_text("y = 2\n", encoding="utf-8")
+            self._git(root, "add", "-A")
+            self.assertEqual(set(_load()._pending_touched_by_id(root)), {"BG0260"})
+
+    def test_the_pending_leg_never_lowers_a_verdict(self):
+        """One-directional by construction: it can only add files. A unit already in
+        violation on committed evidence must not become clean because something is staged."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            _write_unit(root, "bug", 255, status="Fixed",
+                        affects=["src/one.py", "src/two.py"])
+            (root / "src").mkdir()
+            (root / "src" / "one.py").write_text("x = 1\n", encoding="utf-8")
+            self._git(root, "add", "-A")
+            ef = _load()
+            plain = {x["id"]: x for x in ef.detect(root)["units"]}["BG0255"]
+            staged = {x["id"]: x for x in
+                      ef.detect(root, include_staged=True)["units"]}["BG0255"]
+            self.assertTrue(plain["violation"])
+            self.assertTrue(staged["violation"])
+            self.assertFalse(staged["staged_new"],
+                             "a pre-existing violation is not one this commit creates")
+
+    def test_the_flag_defaults_off_so_every_existing_caller_is_unchanged(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._stage_a_multifile_delivery(root, num=256)
+            result = _load().detect(root)
+            self.assertFalse(result["summary"]["staged_evaluated"])
+            self.assertEqual(result["summary"]["staged_new"], 0)
+            self.assertFalse(result["units"][0]["staged_new"])
+
+
+class PendingCliTests(unittest.TestCase):
+    """`check --pending` is the lane the pre-commit hook runs: it judges the commit in
+    hand, and says exactly what it could and could not see."""
+
+    def _git(self, root, *args):
+        gitutil.git(list(args), cwd=root, text=True)
+
+    def _run(self, root, *args):
+        import contextlib
+        import io
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = _load().main(["check", "--root", str(root), *args])
+        return code, buf.getvalue()
+
+    def _stage(self, root):
+        self._git(root, "init", "-q")
+        self._git(root, "config", "user.email", "t@t")
+        self._git(root, "config", "user.name", "t")
+        _write_unit(root, "bug", 251, status="Fixed", affects=["src/one.py"])
+        (root / "src").mkdir()
+        for n in ("one", "two", "three"):
+            (root / "src" / f"{n}.py").write_text("x = 1\n", encoding="utf-8")
+        self._git(root, "add", "-A")
+
+    def test_pending_exits_non_zero_and_names_the_unit(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._stage(root)
+            code, out = self._run(root, "--pending")
+            self.assertEqual(code, 1, out)
+            self.assertIn("BG0251", out)
+
+    def test_pending_reports_only_what_this_commit_creates(self):
+        """The lane must not re-report the backlog the standing gate lane already fails
+        on: a duplicated failure teaches an author to read past both."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._git(root, "init", "-q")
+            self._git(root, "config", "user.email", "t@t")
+            self._git(root, "config", "user.name", "t")
+            # A pre-existing violation, committed and untouched by this commit...
+            _write_unit(root, "story", 100, status="Done",
+                        affects=["old/a.py", "old/b.py"])
+            self._git(root, "add", "-A")
+            self._git(root, "commit", "-q", "-m", "chore: baseline")
+            # ...and a clean staged commit.
+            (root / "src").mkdir()
+            (root / "src" / "one.py").write_text("x = 1\n", encoding="utf-8")
+            self._git(root, "add", "-A")
+            code, out = self._run(root, "--pending")
+            self.assertEqual(code, 0, out)
+            self.assertNotIn("US0100", out)
+
+    def test_pending_states_what_it_cannot_see(self):
+        """The refusal covers the staged index; it does not cover the commit message,
+        which git does not give a pre-commit hook."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._stage(root)
+            _, out = self._run(root, "--pending")
+            self.assertIn("commit message", out.lower())
+
+    def test_the_green_pending_lane_also_states_its_scope(self):
+        """And this is the one that matters, because a PASS is what gets read as "this
+        commit is compliant" - which is the overclaim BG0251 filed. The refusal carrying
+        the caveat while the pass drops it would leave the misreading exactly where it
+        was."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._git(root, "init", "-q")
+            self._git(root, "config", "user.email", "t@t")
+            self._git(root, "config", "user.name", "t")
+            _write_unit(root, "bug", 251, status="Fixed", affects=["src/one.py"], ac=True)
+            (root / "src").mkdir()
+            (root / "src" / "one.py").write_text("x = 1\n", encoding="utf-8")
+            self._git(root, "add", "-A")
+            code, out = self._run(root, "--pending")
+            self.assertEqual(code, 0, out)
+            self.assertIn("commit message", out.lower())
+
+    def test_the_gate_facing_detail_says_its_evidence_is_committed_history(self):
+        """The same honesty, in the string the GATE prints. The CLI line and this one are
+        separate strings, and only this one reaches an author running `gate.py`."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write_unit(root, "story", 100, status="Done", affects=["a/one.py"])
+            ef = _load()
+            detail = ef.remedy_detail(ef.detect(root))
+            self.assertIn("committed evidence", detail)
+
+    def test_the_standing_lane_says_its_evidence_is_committed_history(self):
+        """The adjacent honesty problem BG0251 names: a green floor means 'no ALREADY
+        SHIPPED unit violates', not 'this commit is compliant'."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write_unit(root, "story", 100, status="Done", affects=["a/one.py"])
+            _, out = self._run(root)
+            self.assertIn("committed", out.lower())
+
+    def test_judgement_mode_keeps_the_pending_lane_advisory(self):
+        """The project-global opt-out must reach the new lane too, or a project that opted
+        out of the floor is blocked by it anyway."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._stage(root)
+            _config(root, "engagement_floor: judgement\n")
+            code, out = self._run(root, "--pending")
+            self.assertEqual(code, 0, out)
+            self.assertIn("BG0251", out)     # still reported, never silently dropped
+
+
 if __name__ == "__main__":
     unittest.main()

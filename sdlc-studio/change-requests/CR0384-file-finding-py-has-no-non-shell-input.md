@@ -1,6 +1,7 @@
 # CR-0384: file_finding.py has no non-shell input path, so the field most likely to contain commands is the one most likely to be executed
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0102
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** S

@@ -262,6 +262,113 @@ def scan_prose_acs(text: str) -> list[tuple[int, str, str]]:
     return out
 
 
+# --- The non-shell input path, and the hazard report on the one that survives ----------------
+#
+# Every field of a filed finding used to arrive as a command-line argument, so the caller's shell
+# saw it first - and the fields that matter most (`--steps`, `--fix`) are precisely the ones whose
+# content is COMMANDS. Inside a double-quoted argument a backtick and a `$(` are command
+# substitution, so the prose was executed rather than stored. Twice in one sprint: BG0240 was
+# filed with two reproduction commands silently deleted, and BG0242 - a bug about destructive git
+# commands - EXECUTED `git commit -a` against the live repository while being filed.
+#
+# The remedy is a document no shell expands. A FILE rather than stdin, deliberately: a file can be
+# re-run, committed as evidence and diffed, and reproducibility is the whole point of moving prose
+# off the command line. The flags survive for compatibility - removing them breaks every caller -
+# but they gain the report below, because the silent half of the defect is worse than the loud one.
+
+#: Fields a creator may supply in a `--fields-file` document. Shared with `artifact new`, which
+#: adds its own (an epic, a persona, verifiers); an unlisted key is REFUSED rather than ignored,
+#: so a typo is a message and not a field that quietly went missing.
+COMMON_FIELDS_FILE_KEYS: tuple[str, ...] = (
+    "title", "summary", "severity", "priority", "ctype", "steps", "fix", "impact",
+    "points", "size", "affects", "acs", "options", "recommendation", "parent", "author",
+    "date",
+)
+FIELDS_FILE_KEYS: tuple[str, ...] = (*COMMON_FIELDS_FILE_KEYS,
+                                     "mutation_run", "mutation_target")
+
+#: The prose fields a shell would have expanded. Checked for damage, never rewritten.
+HAZARD_FIELDS: tuple[str, ...] = ("title", "summary", "steps", "fix", "impact", "recommendation")
+
+
+def shell_hazards(fields: dict) -> list[tuple[str, str]]:
+    """(field, what was found) for every value bearing the marks of a shell that already ate it.
+
+    Three shapes, each a known outcome of passing prose through a double-quoted shell argument:
+    an UNBALANCED backtick (the pair's other half, and everything between, is gone), a surviving
+    `$(` (substitution the shell did not complete, or prose that would be substituted next time),
+    and a TRAILING backslash (a line continuation that swallowed what followed).
+
+    Detection only. The value is reported, never rewritten: a field quietly repaired is a
+    success the tool did not achieve, and the author is the only one who knows what was lost."""
+    out: list[tuple[str, str]] = []
+    for key in HAZARD_FIELDS:
+        val = fields.get(key)
+        if not isinstance(val, str) or not val:
+            continue
+        if val.count("`") % 2:
+            out.append((key, "an unbalanced backtick - a backtick pair is command "
+                             "substitution, and its other half (with everything between) "
+                             "is what a shell removes"))
+        if "$(" in val:
+            out.append((key, "a `$(` - command substitution the shell either already ran "
+                             "or will run next time this value is passed as an argument"))
+        stripped = val.rstrip(" \t\n")
+        if stripped.endswith("\\") and not stripped.endswith("\\\\"):
+            out.append((key, "a trailing backslash - a line continuation swallows whatever "
+                             "followed it"))
+    return out
+
+
+def report_shell_hazards(fields: dict, source: str = "the command line",
+                         stream=None) -> list[tuple[str, str]]:
+    """Report, on stderr, every field arriving through a shell already mangled. Returns what it
+    found (empty when clean), so a caller can act on it.
+
+    ONE implementation, called by every creator that takes free prose on the command line. Two
+    copies of a pattern list drift, and a drifted list is the silent half of this defect all over
+    again. A report, not a refusal: refusing would lose the content the author has in hand, and
+    the flag path is the compatible one. What must not happen is silence."""
+    found = shell_hazards(fields)
+    if not found:
+        return []
+    out = stream if stream is not None else sys.stderr
+    print(f"warning: {len(found)} field(s) reached the filer through {source} carrying shell "
+          f"metacharacters - what is stored may already be missing what the shell removed:",
+          file=out)
+    for key, what in found:
+        print(f"  --{key}: {what}", file=out)
+    print("  Fix: pass the finding as a JSON document instead - `--fields-file finding.json` "
+          "with the same field names. Nothing in it crosses a shell, so the text is stored "
+          "exactly as written.", file=out)
+    return found
+
+
+def load_fields_file(path: Path | str, allowed: tuple[str, ...] = FIELDS_FILE_KEYS) -> dict:
+    """Read a `--fields-file` JSON document into a fields dict, or raise ValueError.
+
+    The whole point is that no value here has crossed a shell, so the text is stored exactly as
+    written. Refuses an unreadable file, a document that is not an object, and any key outside
+    `allowed` - a mistyped key that is silently ignored is the same silent-loss class the file
+    exists to end."""
+    p = Path(path)
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise ValueError(f"--fields-file {p} cannot be read: {exc}") from exc
+    except ValueError as exc:
+        raise ValueError(f"--fields-file {p} is not valid JSON: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ValueError(f"--fields-file {p} holds {type(data).__name__}, not a JSON object of "
+                         f"field names - e.g. {{\"title\": \"...\", \"steps\": \"...\"}}")
+    unknown = sorted(k for k in data if k not in allowed)
+    if unknown:
+        raise ValueError(f"--fields-file {p} carries unknown field(s): {', '.join(unknown)} - "
+                         f"known fields are {', '.join(allowed)}. A key nobody reads is a field "
+                         f"that silently went missing, so it is refused rather than ignored")
+    return {k: v for k, v in data.items() if v is not None}
+
+
 def index_template_path(type_: str) -> Path:
     return Path(__file__).resolve().parent.parent / "templates" / "indexes" / f"{type_}.md"
 
@@ -388,6 +495,48 @@ def _affects_line(f: dict) -> str:
     return f"> **Affects:** {val}\n" if val else ""
 
 
+def _mutation_link_lines(f: dict) -> str:
+    """The `Mutation-run` / `Mutation-target` metadata lines: which mutation run raised this
+    finding, and which file the mutant sat in.
+
+    A survivor is a hypothesis until somebody files it, and nothing on disk connected the two
+    before: RUN-01KY03GS raised three survivors, two became bugs, and the link had to be
+    reconstructed from memory. It is cheap to record at filing time and impossible to
+    reconstruct afterwards, so it is recorded here or not at all."""
+    run = str(f.get("mutation_run") or "").strip()
+    if not run:
+        return ""
+    target = str(f.get("mutation_target") or "").strip()
+    return (f"> **Mutation-run:** {run}\n"
+            + (f"> **Mutation-target:** {target}\n" if target else ""))
+
+
+def check_mutation_run(repo_root: Path | str, fields: dict) -> dict:
+    """Resolve a `mutation_run` attribution before anything is minted, or refuse.
+
+    Returns the fields with `mutation_target` filled in from the run's own surface when the
+    caller did not name one. A run the series does not hold is REFUSED by name: an artefact
+    stamped with an unresolvable run id claims a provenance nobody can check, and yield counted
+    from it would be counted against a run that never happened."""
+    run = str(fields.get("mutation_run") or "").strip()
+    if not run:
+        return fields
+    sdlc_md.require_single_line("mutation_run", run)
+    import mutation  # noqa: PLC0415 - local: the filer reads the series, it does not own it
+    row = mutation.series_row(repo_root, run)
+    if row is None:
+        raise ValueError(
+            f"no mutation run {run} in {mutation.series_path(repo_root)} - refusing to stamp a "
+            "finding with a run nobody recorded. Run `mutation.py run` first, or file without "
+            "--mutation-run; a yield counted from an unresolvable id is counted against a run "
+            "that never happened")
+    target = str(fields.get("mutation_target") or "").strip()
+    if not target:
+        target = ", ".join(str(t) for t in (row.get("targets") or []))
+    sdlc_md.require_single_line("mutation_target", target)
+    return {**fields, "mutation_run": run, "mutation_target": target}
+
+
 def _size_line(f: dict) -> str:
     """The `Size` metadata line: the T-shirt size (S/M/L/XL) a CR/RFC carries in place of points.
     Canonicalised through `sdlc_md.check_size` (a `--size m` becomes `M`) and written only when
@@ -437,7 +586,7 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
         points = f"> **Points:** {f['points']}\n" if f.get("points") is not None else ""
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Open'}\n> **Severity:** {f['severity']}\n"
-                f"{points}{_affects_line(f)}"
+                f"{points}{_affects_line(f)}{_mutation_link_lines(f)}"
                 f"> **Created:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Steps to Reproduce\n\n{f['steps']}\n\n"
@@ -452,6 +601,7 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Proposed'}\n> **Priority:** {f['priority']}\n"
                 f"> **Type:** {f['ctype']}\n{_size_line(f)}{_affects_line(f)}"
+                f"{_mutation_link_lines(f)}"
                 f"> **Date:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Impact\n\n{f['impact']}\n\n"
@@ -462,6 +612,7 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
     decision = _decision_question(title, f["options"])
     return (f"# {disp_id}: {title}\n\n"
             f"> **Status:** {status or 'Draft'}\n{_size_line(f)}{_affects_line(f)}"
+            f"{_mutation_link_lines(f)}"
             f"> **Date:** {today}\n{_stamp(f)}\n"
             f"## Summary\n\n{f['summary']}\n\n"
             f"## Design Options\n\n{options}\n\n"
@@ -558,6 +709,9 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     root = Path(repo_root)
     today = fields.get("date") or date.today().isoformat()
     fields = {**fields, "date": today}
+    # ... and refuse an attribution to a mutation run the series does not hold, before an id is
+    # allocated: a finding stamped with an unresolvable run claims a provenance nobody can check.
+    fields = check_mutation_run(root, fields)
     # ... and refuse an artefact the PLANNER would then refuse to plan: the body about to be
     # written is judged by `sprint.breakdown` itself. A preview id is enough - the grooming
     # fields the gate reads are in the metadata block, which does not depend on the id.
@@ -656,19 +810,37 @@ def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields:
 
 
 def cmd_file(args: argparse.Namespace) -> int:
-    fields = {"severity": args.severity, "priority": args.priority, "ctype": args.ctype,
-              "summary": args.summary, "steps": args.steps, "fix": args.fix,
-              "impact": args.impact, "points": args.points, "size": args.size,
-              "affects": args.affects,
-              "author": args.author, "recommendation": args.recommendation,
-              "parent": getattr(args, "parent", None)}
-    fields = {k: v for k, v in fields.items() if v is not None}
+    flags = {"severity": args.severity, "priority": args.priority, "ctype": args.ctype,
+             "summary": args.summary, "steps": args.steps, "fix": args.fix,
+             "impact": args.impact, "points": args.points, "size": args.size,
+             "affects": args.affects,
+             "author": args.author, "recommendation": args.recommendation,
+             "parent": getattr(args, "parent", None),
+             "mutation_run": getattr(args, "mutation_run", None),
+             "mutation_target": getattr(args, "mutation_target", None)}
+    flags = {k: v for k, v in flags.items() if v is not None}
     if args.ac:
-        fields["acs"] = args.ac
+        flags["acs"] = args.ac
     if args.option:
-        fields["options"] = args.option
+        flags["options"] = args.option
+    if args.title:
+        flags["title"] = args.title
+    # The values that DID cross a shell, and only those: a `$(` that arrived intact through the
+    # file is data, and warning about it would train the reader to ignore the warning.
+    report_shell_hazards(flags)
     try:
-        result = file_finding(args.root, args.type, args.title, fields, dry_run=args.dry_run)
+        from_file = load_fields_file(args.fields_file) if args.fields_file else {}
+    except ValueError as exc:
+        print(f"file refused: {exc}", file=sys.stderr)
+        return 1
+    fields = {**from_file, **flags}          # an explicit flag wins over the document
+    title = fields.pop("title", None)
+    if not title:
+        print("file refused: no title - pass --title, or a \"title\" key in the "
+              "--fields-file document", file=sys.stderr)
+        return 1
+    try:
+        result = file_finding(args.root, args.type, title, fields, dry_run=args.dry_run)
     except (ValueError, FileExistsError) as exc:
         # a refusal is a message, not a traceback - the reason and the fix, on stderr
         # (exit 1: the same code the top-level guard has always given refusals)
@@ -697,7 +869,15 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="cmd", required=True)
     f = sub.add_parser("file", help="File one structured artifact from a finding.")
     f.add_argument("--type", required=True, choices=("bug", "cr", "rfc"))
-    f.add_argument("--title", required=True)
+    f.add_argument("--fields-file", dest="fields_file", metavar="FINDING.json",
+                   help="THE RECOMMENDED PATH. A JSON object of the same field names, read "
+                        "straight off disk so no value ever crosses a shell. Use it for any "
+                        "finding whose prose contains commands - backticks and `$(` are command "
+                        "substitution inside a shell argument, so on the flag path the steps are "
+                        "EXECUTED rather than stored (a filing once ran `git commit -a` against "
+                        "the live repository). A file is also re-runnable, committable as "
+                        "evidence and diffable. An explicit flag overrides the document")
+    f.add_argument("--title", help="required unless the --fields-file document carries a title")
     f.add_argument("--summary")
     f.add_argument("--severity", help="bug severity")
     f.add_argument("--priority", help="cr/rfc priority")
@@ -734,6 +914,13 @@ def build_parser() -> argparse.ArgumentParser:
     f.add_argument("--option", action="append", help="rfc design option (repeatable)")
     f.add_argument("--recommendation", help="rfc recommendation")
     f.add_argument("--parent", help="spawn this finding as a child of an existing RFC/CR: the parent must resolve, and BOTH link directions are wired at mint")
+    f.add_argument("--mutation-run", dest="mutation_run", metavar="MRUNxxx",
+                   help="the mutation run that raised this finding, as recorded in "
+                        "sdlc-studio/.local/mutation-series.jsonl. The run's yield is counted "
+                        "in artefacts filed against it, so a survivor only becomes yield here. "
+                        "A run the series does not hold is refused, never stamped")
+    f.add_argument("--mutation-target", dest="mutation_target",
+                   help="the file the surviving mutant sat in (default: the run's own targets)")
     f.add_argument("--author",
                    help="authorship of record, stamped as `Raised-by`: 'Name; type; version' "
                         "(type is human|persona|agent) or a bare name; defaults to the "

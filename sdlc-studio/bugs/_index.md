@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 8 |
+| Open | 1 |
 | In Progress | 0 |
-| Fixed | 164 |
+| Fixed | 173 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **254** |
+| **Total** | **256** |
 
 ## All Bugs
 
@@ -213,14 +213,16 @@
 | [BG0244](BG0244-the-velocity-row-records-actual-tokens-as-0.md) | The velocity row records Actual (tokens) as 0 when NO unit was rated, publishing an absence as a measurement | Fixed | High | 2026-07-21 | 2026-07-21 |
 | [BG0245](BG0245-the-mutation-ledger-can-only-be-populated-by.md) | The mutation ledger can only be populated by mutation.py, but the per-unit practice is hand-applied mutants, so the coverage lane reads 0/N after a correctly-run sprint | Fixed | High | 2026-07-21 | 2026-07-21 |
 | [BG0246](BG0246-batch-history-excludes-every-interactive-sprint-so-the.md) | batch_history excludes every interactive sprint, so the plan's 'real cost input' silently shows only old runner-era sprints | Fixed | High | 2026-07-21 | 2026-07-21 |
-| [BG0247](BG0247-the-wsjf-freshness-advisory-reports-the-age-of.md) | The WSJF freshness advisory reports the age of scores that cover none of the batch, disguising an unused ordering as a slightly stale one | Open | Medium | 2026-07-21 | 2026-07-21 |
-| [BG0248](BG0248-the-measured-tokens-per-point-rate-can-never.md) | The measured tokens-per-point rate can never advance while sprints are interactive: the join needs per-unit actuals no interactive sprint writes | Open | High | 2026-07-21 | 2026-07-21 |
-| [BG0249](BG0249-the-velocity-estimate-column-has-bg0244-s-defect.md) | The velocity Estimate column has BG0244's defect exactly: a sum over rated units, so an unrated sprint publishes 0 as a plan-time estimate | Open | High | 2026-07-21 | 2026-07-21 |
-| [BG0250](BG0250-quality-epic-requires-test-spec-is-documented-as.md) | quality.epic_requires_test_spec is documented as the caller's opt-out but is read by no Python code in the tree | Open | Medium | 2026-07-21 | 2026-07-21 |
-| [BG0251](BG0251-the-engagement-floor-cannot-see-a-violation-the.md) | The engagement floor cannot see a violation the gating commit itself creates, because shipped is derived from git log --grep | Open | Medium | 2026-07-21 | 2026-07-21 |
-| [BG0252](BG0252-the-harness-token-capture-counts-only-the-main.md) | The harness token capture counts only the main thread, so a fan-out sprint publishes roughly a third of what it actually cost, labelled as the run's own spend | Open | High | 2026-07-21 | 2026-07-21 |
-| [BG0253](BG0253-test-the-next-cycle-mints-a-fresh-run.md) | test_the_next_cycle_mints_a_fresh_run asserts inequality of a probabilistically-unique id, so the commit gate fails at random about once in a thousand | Open | Medium | 2026-07-21 | 2026-07-21 |
-| [BG0254](BG0254-the-token-forecast-prices-only-the-build-so.md) | The token forecast prices only the build, so it under-forecasts by roughly an order of magnitude on a project that spends most of its budget proving the build correct | Open | High | 2026-07-21 | 2026-07-21 |
+| [BG0247](BG0247-the-wsjf-freshness-advisory-reports-the-age-of.md) | The WSJF freshness advisory reports the age of scores that cover none of the batch, disguising an unused ordering as a slightly stale one | Fixed | Medium | 2026-07-21 | 2026-07-21 |
+| [BG0248](BG0248-the-measured-tokens-per-point-rate-can-never.md) | The measured tokens-per-point rate can never advance while sprints are interactive: the join needs per-unit actuals no interactive sprint writes | Fixed | High | 2026-07-21 | 2026-07-21 |
+| [BG0249](BG0249-the-velocity-estimate-column-has-bg0244-s-defect.md) | The velocity Estimate column has BG0244's defect exactly: a sum over rated units, so an unrated sprint publishes 0 as a plan-time estimate | Fixed | High | 2026-07-21 | 2026-07-21 |
+| [BG0250](BG0250-quality-epic-requires-test-spec-is-documented-as.md) | quality.epic_requires_test_spec is documented as the caller's opt-out but is read by no Python code in the tree | Fixed | Medium | 2026-07-21 | 2026-07-21 |
+| [BG0251](BG0251-the-engagement-floor-cannot-see-a-violation-the.md) | The engagement floor cannot see a violation the gating commit itself creates, because shipped is derived from git log --grep | Fixed | Medium | 2026-07-21 | 2026-07-21 |
+| [BG0252](BG0252-the-harness-token-capture-counts-only-the-main.md) | The harness token capture counts only the main thread, so a fan-out sprint publishes roughly a third of what it actually cost, labelled as the run's own spend | Fixed | High | 2026-07-21 | 2026-07-21 |
+| [BG0253](BG0253-test-the-next-cycle-mints-a-fresh-run.md) | test_the_next_cycle_mints_a_fresh_run asserts inequality of a probabilistically-unique id, so the commit gate fails at random about once in a thousand | Fixed | Medium | 2026-07-21 | 2026-07-21 |
+| [BG0254](BG0254-the-token-forecast-prices-only-the-build-so.md) | The token forecast prices only the build, so it under-forecasts by roughly an order of magnitude on a project that spends most of its budget proving the build correct | Fixed | High | 2026-07-21 | 2026-07-21 |
+| [BG0255](BG0255-init-seeds-every-new-project-s-agents-md.md) | init seeds every new project's AGENTS.md with a literal {{PROJECT_NAME}} placeholder, because the filler matches lowercase and the template ships uppercase | Fixed | High | 2026-07-22 | 2026-07-22 |
+| [BG0256](BG0256-a-done-story-read-verified-yes-for-two.md) | A Done story read Verified yes for two days against a test that does not exist, because nothing rechecks a verifier's target after the stamp | Open | Medium | 2026-07-22 | 2026-07-22 |
 
 ## Archived Releases
 

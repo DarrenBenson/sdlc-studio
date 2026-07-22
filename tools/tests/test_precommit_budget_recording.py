@@ -91,8 +91,13 @@ class BudgetRecordingTests(unittest.TestCase):
         for name in ("check_links.py", "validate_skill.py", "check_versions.py",
                      "check_budgets.py", "check_neutrality.py"):
             (root / "tools" / name).write_text(PASS_PY, encoding="utf-8")
-        (root / ".claude" / "skills" / "sdlc-studio" / "scripts" / "gate.py").write_text(
-            PASS_PY, encoding="utf-8")
+        scripts = root / ".claude" / "skills" / "sdlc-studio" / "scripts"
+        # `gate.py` and the pending-floor lane are stubbed: this fixture is not a whole
+        # project, and either failing would send every case down the blocked branch
+        # instead of the one under test. Their own behaviour is tested elsewhere
+        # (test_precommit_floor_pending.py runs the REAL floor against the real hook).
+        for name in ("gate.py", "engagement_floor.py"):
+            (scripts / name).write_text(PASS_PY, encoding="utf-8")
         md = root / "node_modules" / ".bin" / "markdownlint"
         md.write_text(PASS_SH, encoding="utf-8")
         md.chmod(0o755)

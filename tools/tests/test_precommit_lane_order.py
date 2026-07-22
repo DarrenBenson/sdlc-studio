@@ -46,7 +46,7 @@ def _lane_keys() -> list[str]:
 #: `gate` is deliberately absent: it is an inline if/else block, not a `run "..."` lane.
 EXPECTED_LANES = {
     "style", "links", "skill-spec", "versions", "budgets", "neutrality", "action-pins",
-    "skill-tests", "tool-tests", "markdown", "markdown-payload",
+    "floor-pending", "skill-tests", "tool-tests", "markdown", "markdown-payload",
 }
 
 
@@ -60,7 +60,7 @@ class LaneOrderTests(unittest.TestCase):
 
     def test_the_cheap_static_guards_all_precede_the_suites(self) -> None:
         suites = _lane_line("skill-tests")
-        for cheap in ("style", "links", "budgets", "neutrality", "versions"):
+        for cheap in ("style", "links", "budgets", "neutrality", "versions", "floor-pending"):
             self.assertLess(_lane_line(cheap), suites)
 
     def test_no_lane_is_lost_in_the_reorder(self) -> None:

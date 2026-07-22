@@ -8,6 +8,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import re
 import sys
 import tempfile
 import pathlib
@@ -174,6 +175,68 @@ class ValidateFileTests(unittest.TestCase):
             self.assertIn("no-ac", rules)
 
 
+class ContradictedAffectsTests(unittest.TestCase):
+    """US0292 AC4. `validate` and the planner must reach the same verdict on one artefact,
+    because they read the same field for different purposes - the planner to cluster parallel
+    work, the engagement floor to judge a declared footprint. Two implementations of
+    "contradicted" is how the same bytes come to pass one check and fail the other."""
+
+    def _story(self, root: Path, affects: str, verify: str) -> Path:
+        return _write(root, "sdlc-studio/stories/US0001-x.md",
+                      f"# US0001: s\n\n> **Status:** Ready\n> **Affects:** {affects}\n"
+                      f"> **Points:** 2\n\n## Acceptance Criteria\n\n### AC1: a\n\n"
+                      f"- **Given** x\n- **Verify:** {verify}\n")
+
+    def test_validate_reports_an_affects_the_story_contradicts(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "src/real.py", "x = 1\n")
+            _write(root, "tests/test_p.py", "def test_x(): pass\n")
+            p = self._story(root, "src/real.py,src/typo.py", "pytest tests/test_p.py -k test_x")
+            rules = {v["rule"] for v in validate.validate_file(p, "story", repo_root=root)}
+            self.assertIn("affects-unresolvable", rules)
+            self.assertIn("affects-undeclared", rules)
+
+    def test_a_clean_affects_is_reported_by_neither_rule(self) -> None:
+        """The negative control: without it, a function reporting every story unconditionally
+        would satisfy the test above."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "src/real.py", "x = 1\n")
+            _write(root, "tests/test_p.py", "def test_x(): pass\n")
+            p = self._story(root, "src/real.py,tests/test_p.py",
+                            "pytest tests/test_p.py -k test_x")
+            rules = {v["rule"] for v in validate.validate_file(p, "story", repo_root=root)}
+            self.assertNotIn("affects-unresolvable", rules)
+            self.assertNotIn("affects-undeclared", rules)
+
+    def test_both_readers_agree_on_the_same_artefact(self) -> None:
+        """The point of the shared predicate, asserted directly rather than assumed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "src/real.py", "x = 1\n")
+            _write(root, "tests/test_p.py", "def test_x(): pass\n")
+            p = self._story(root, "src/real.py,src/typo.py", "pytest tests/test_p.py -k test_x")
+            sys.path.insert(0, str(Path(validate.__file__).parent))
+            import sprint
+            mism = sprint.affects_mismatch(root, p.read_text(encoding="utf-8"))
+            msgs = " ".join(v["message"] for v in validate.validate_file(p, "story",
+                                                                        repo_root=root))
+            for path in mism["unresolvable"] + mism["undeclared"]:
+                self.assertIn(path, msgs, "validate names exactly what the planner found")
+
+    def test_the_severity_is_a_warning_not_an_error(self) -> None:
+        """A path to a file the unit will CREATE is legitimate, so an error would fail the
+        ordinary case and the rule would be turned off."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "src/real.py", "x = 1\n")
+            p = self._story(root, "src/real.py,src/not-yet.py", "file src/real.py")
+            sev = {v["severity"] for v in validate.validate_file(p, "story", repo_root=root)
+                   if v["rule"].startswith("affects-")}
+            self.assertEqual(sev, {validate.SEVERITY_WARNING})
+
+
 class InferTypeTests(unittest.TestCase):
     def test_infer_from_dir(self) -> None:
         self.assertEqual(validate.infer_type(Path("sdlc-studio/epics/EP0001-x.md")), "epic")
@@ -221,12 +284,36 @@ class CheckCmdTests(unittest.TestCase):
             self.assertNotIn("ERROR", out)
 
 
-GOOD_AGENTS = (
+# The pointer half: the four cross-reference rules and nothing else. This is the fixture
+# CR0353 was raised about - it passes every rule the check had while saying nothing about how
+# the project is developed.
+POINTERS_ONLY_AGENTS = (
     "# Proj\n\n"
     "Read `reference-doctrine.md`. Read `sdlc-studio/reviews/LATEST.md` first.\n"
     "IMPORTANT pre-release gate: `/sdlc-studio reconcile --verify` + the review legs.\n"
     "After `/compact` or a reset, re-read LATEST.md and run status.\n"
 )
+
+# A sound file: the pointers PLUS the working model the pointers used to stand in for.
+GOOD_AGENTS = POINTERS_ONLY_AGENTS + (
+    "Every substantive change flows through the skill: CR -> Epic -> Story -> plan ->\n"
+    "implement -> verify. No ad-hoc coding.\n"
+    "Never hand-allocate ids or hand-author `_index.md` - the index is derived.\n"
+    "A story reaches Done only when its executable ACs pass.\n"
+    "Review is independent of the author: the reviewer of record never wrote the change.\n"
+)
+
+
+def _shipped_template() -> str:
+    """The shipped agent-instructions template as a project would save it - guidance
+    comment stripped. The exemplar the check tells people to copy."""
+    text = (SCRIPT_PATH.parent.parent / "templates" / "agent-instructions.md").read_text(
+        encoding="utf-8")
+    return re.sub(r"^<!--.*?-->\n+", "", text, count=1, flags=re.DOTALL)
+
+
+def _template_headings() -> set[str]:
+    return set(re.findall(r"^#{2,}\s+(.*)$", _shipped_template(), re.M))
 
 
 class InstructionsTests(unittest.TestCase):
@@ -260,6 +347,32 @@ class InstructionsTests(unittest.TestCase):
             self.assertIn("no-release-gate", rules)
             self.assertIn("no-compaction-rule", rules)
 
+    def test_no_agents_finding_is_marked_seedable(self) -> None:
+        # US0294: the one rule whose remedy is fully deterministic carries a machine-readable
+        # remedy, so the caller acts on the structure and never parses the prose.
+        with tempfile.TemporaryDirectory() as d:
+            f = next(x for x in validate.check_instructions(Path(d)) if x["rule"] == "no-agents")
+            self.assertTrue(f.get("seedable"))
+            self.assertEqual(f.get("template"), "templates/agent-instructions.md")
+            self.assertEqual(f.get("target"), "AGENTS.md")
+            # D0052: severity stays `error` even once seeding is possible - CI reads the exit code.
+            self.assertEqual(f["severity"], validate.SEVERITY_ERROR)
+
+    def test_only_the_absent_file_case_is_seedable(self) -> None:
+        # A caller acting on the marker can never overwrite a file that exists.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "AGENTS.md").write_text("# Proj\n\nNothing useful here.\n", encoding="utf-8")
+            (root / "CLAUDE.md").write_text("# full instructions inline\n", encoding="utf-8")
+            findings = validate.check_instructions(root)
+            self.assertTrue(findings, "the fixture must fail rules for this to mean anything")
+            self.assertEqual([f["rule"] for f in findings if f.get("seedable")], [])
+
+    def test_no_agents_message_names_the_seeding_command(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            f = next(x for x in validate.check_instructions(Path(d)) if x["rule"] == "no-agents")
+            self.assertIn("migrate --apply", f["message"])
+
     def test_cmd_exit_nonzero_when_no_agents(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             with contextlib.redirect_stdout(io.StringIO()):
@@ -272,6 +385,103 @@ class InstructionsTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()):
                 rc = validate.main(["instructions", "--root", d])
             self.assertEqual(rc, 0)
+
+
+class WorkingModelTests(unittest.TestCase):
+    """US0295/US0296: the check tests that the file establishes how the project is developed,
+    not only that it cross-references four other documents. A file can hold every pointer and
+    never say work is done this way; the check used to call that good."""
+
+    def _root(self, d, agents: str, *, claude: str = "@AGENTS.md\n") -> Path:
+        root = Path(d)
+        (root / "AGENTS.md").write_text(agents, encoding="utf-8")
+        (root / "CLAUDE.md").write_text(claude, encoding="utf-8")
+        return root
+
+    def _working_model(self, findings: list[dict]) -> list[dict]:
+        keys = {s["key"] for s in validate.WORKING_MODEL_RULES}
+        return [f for f in findings if f.get("element") in keys]
+
+    def test_working_model_rules_fire_per_missing_element(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, POINTERS_ONLY_AGENTS)
+            rules = {f["rule"] for f in validate.check_instructions(root)}
+            for spec in validate.WORKING_MODEL_RULES:
+                self.assertIn("no-" + spec["key"], rules)
+            # one distinct rule per element, not one lumped finding
+            self.assertEqual(len(self._working_model(validate.check_instructions(root))),
+                             len(validate.WORKING_MODEL_RULES))
+
+    def test_shipped_template_satisfies_the_working_model_rules(self) -> None:
+        # The exemplar the check tells people to copy must clear the bar the check sets.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, _shipped_template())
+            findings = validate.check_instructions(root)
+            self.assertEqual(self._working_model(findings), [],
+                             "the shipped template fails its own working-model rules")
+            self.assertEqual(findings, [], "the shipped template fails the hygiene check")
+
+    def test_a_recorded_opt_out_is_reported_as_such(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, POINTERS_ONLY_AGENTS)
+            cfg = root / "sdlc-studio"
+            cfg.mkdir(parents=True, exist_ok=True)
+            (cfg / ".config.yaml").write_text(
+                "instructions:\n  working_model_opt_out:\n    - independent-review\n",
+                encoding="utf-8")
+            findings = validate.check_instructions(root)
+            rules = {f["rule"] for f in findings}
+            self.assertIn("independent-review-opted-out", rules)   # its own rule id
+            self.assertNotIn("no-independent-review", rules)       # not counted as a defect
+            opt = next(f for f in findings if f["rule"] == "independent-review-opted-out")
+            self.assertEqual(opt["severity"], validate.SEVERITY_INFO)
+            self.assertTrue(opt.get("opted_out"))
+            # the other three still apply, unchanged
+            for key in ("delivery-flow", "tool-allocated-ids", "executable-ac-gate"):
+                self.assertIn("no-" + key, rules)
+
+    def test_pointer_perfect_fixture_fails_only_the_working_model_rules(self) -> None:
+        # The proof obligation: if the fixture failed the six existing rules too, the new
+        # rules would only be restating them.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, POINTERS_ONLY_AGENTS)
+            findings = validate.check_instructions(root)
+            existing = {"no-agents", "claude-not-pointer", "no-doctrine-pointer",
+                        "no-latest-pointer", "no-release-gate", "no-compaction-rule"}
+            self.assertEqual({f["rule"] for f in findings} & existing, set())
+            self.assertEqual(len(self._working_model(findings)),
+                             len(validate.WORKING_MODEL_RULES))
+
+    def test_each_working_model_finding_cites_a_template_section(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, POINTERS_ONLY_AGENTS)
+            for f in self._working_model(validate.check_instructions(root)):
+                spec = next(s for s in validate.WORKING_MODEL_RULES if s["key"] == f["element"])
+                self.assertIn(spec["element"], f["message"])          # the missing element
+                self.assertIn(f["template_section"], f["message"])    # and where it comes from
+                self.assertIn("templates/agent-instructions.md", f["message"])
+
+    def test_cited_template_sections_exist_in_the_shipped_template(self) -> None:
+        # Renaming or removing a cited section must fail here, not leave the messages
+        # pointing at nothing.
+        headings = _template_headings()
+        body = _shipped_template()
+        for spec in validate.WORKING_MODEL_RULES:
+            self.assertIn(spec["section"], headings,
+                          f"{spec['key']} cites a section the template does not have")
+            self.assertIn(spec["anchor"], body,
+                          f"{spec['key']} cites an anchor the template does not carry")
+
+    def test_report_never_calls_a_working_model_less_file_good(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self._root(d, POINTERS_ONLY_AGENTS)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                validate.main(["instructions", "--root", d])
+            out = buf.getvalue()
+            self.assertNotIn("agent-instructions files look good.", out)
+            for spec in validate.WORKING_MODEL_RULES:
+                self.assertIn("no-" + spec["key"], out)
 
 
 class PlaceholderTests(unittest.TestCase):

@@ -1230,11 +1230,45 @@ def cmd_scaffold(args: argparse.Namespace) -> int:
     return 0
 
 
+EPIC_TS_KEY = "quality.epic_requires_test_spec"
+
+
+def epic_ts_enforced(repo_root: Path | str) -> bool:
+    """Does a failing epic-scope test-spec check GATE this project?
+    `quality.epic_requires_test_spec` in `sdlc-studio/.config.yaml`, default true.
+
+    The key was documented as the opt-out from the epic-scope requirement and read by nothing,
+    so a project staging the migration set it in good faith and got no effect and no warning.
+    It is read here, once, and the reading is what the documentation now describes.
+
+    Only a real YAML boolean decides. A value that is not one (`maybe`, `"false"`, a list) is
+    the same failure in miniature - a setting acted on that cannot be honoured - so it WARNS on
+    stderr and falls back to enforcing. Guessing that a non-boolean meant "off" would silently
+    drop the gate on a typo; the safe direction is the documented default.
+    """
+    val = sdlc_md.project_override(repo_root, EPIC_TS_KEY, True)
+    if isinstance(val, bool):
+        return val
+    print(f"warning: {EPIC_TS_KEY}: {val!r} is not true or false; the epic-scope test-spec "
+          "requirement stays enforced (set the key to a boolean to change it)", file=sys.stderr)
+    return True
+
+
 def epic_test_spec_check(repo_root: Path | str, epic_id: str) -> dict:
-    """Hard epic-scope test-spec requirement: an epic must have a test-spec (linked by
-    its `Epic:` field) whose AC Coverage Matrix passes `ts-check`. Returns {epic, ok, specs,
-    issues}. The caller gates on it per `quality.epic_requires_test_spec` (default true);
-    single-story work is exempt. Reuses `ts_check` - no new verification logic."""
+    """Epic-scope test-spec requirement: an epic must have a test-spec (linked by its
+    `Epic:` field) whose AC Coverage Matrix passes `ts-check`. Reuses `ts_check` - no new
+    verification logic.
+
+    Returns {epic, ok, specs, issues, enforced}. `ok` is the check's own verdict and never
+    moves with configuration - the findings are the findings. `enforced` is
+    `quality.epic_requires_test_spec` (default true), and it is what decides whether a false
+    `ok` gates: `epic-ts` exits 1 only when the check failed AND the project enforces,
+    otherwise it prints the same findings as advisory and exits 0. That split is the opt-out a
+    project mid-migration needs - it can see the specs it owes without the gate stopping it.
+
+    The check is epic-scope by construction: it is reached only through `epic-ts --epic`, so
+    single-story work (`story implement`) never invokes it.
+    """
     root = Path(repo_root)
     eid = sdlc_md.norm_id(epic_id)
     specs = []
@@ -1243,22 +1277,29 @@ def epic_test_spec_check(repo_root: Path | str, epic_id: str) -> dict:
         m = sdlc_md.ID_SEARCH_RE.search(ef)
         if m and sdlc_md.norm_id(m.group(0)) == eid:
             specs.append(p)
+    enforced = epic_ts_enforced(root)
     if not specs:
-        return {"epic": epic_id, "ok": False, "specs": [],
+        return {"epic": epic_id, "ok": False, "specs": [], "enforced": enforced,
                 "issues": [{"issue": "no test-spec links to this epic (epic-scope TS required)"}]}
     issues = [{**i, "spec": sp.name} for sp in specs for i in ts_check(sp)]
-    return {"epic": epic_id, "ok": not issues, "specs": [s.name for s in specs], "issues": issues}
+    return {"epic": epic_id, "ok": not issues, "specs": [s.name for s in specs],
+            "issues": issues, "enforced": enforced}
 
 
 def cmd_epic_ts(args: argparse.Namespace) -> int:
     r = epic_test_spec_check(resolve_root(args), args.epic)
+    advisory = not r["ok"] and not r["enforced"]
     if args.format == "json":
         print(json.dumps(r, indent=2))
     else:
         for it in r["issues"]:
             print(f"  {it.get('spec', args.epic)}: {it.get('ac', '')} {it['issue']}")
-        print(f"epic-ts: {args.epic} {'OK' if r['ok'] else 'FAIL'} ({len(r['specs'])} spec(s))")
-    return 0 if r["ok"] else 1
+        # A FAIL that exits 0 must say why on the same line as the verdict. An exit code
+        # that disagrees with the printed word, with the reason nowhere, reads as a bug.
+        why = f" - advisory only ({EPIC_TS_KEY}: false)" if advisory else ""
+        print(f"epic-ts: {args.epic} {'OK' if r['ok'] else 'FAIL'} "
+              f"({len(r['specs'])} spec(s)){why}")
+    return 0 if (r["ok"] or advisory) else 1
 
 
 def cmd_ts_check(args: argparse.Namespace) -> int:

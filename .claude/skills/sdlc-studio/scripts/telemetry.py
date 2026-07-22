@@ -115,6 +115,74 @@ FIELDS = ("id", "type", "iterations", "wall_time_s", "stages", "critic_verdict",
 PROJECT_UNKNOWN = "unknown"
 
 
+# ---------------------------------------------------------------------------
+# IDLE GAPS: the intervals a run spent WAITING, not working. ONE implementation.
+# ---------------------------------------------------------------------------
+# A run that stops for an operator answer keeps accruing wall-clock, and the wall-clock is the
+# denominator of the points-per-elapsed-hour series. An idle gap therefore makes that number a
+# lie while it still reads as a measurement - the exact class of false-but-plausible figure this
+# project keeps paying to remove.
+#
+# THE RULE LIVES HERE, ONCE, AND EVERY READER SHARES IT (D0052, following the BG0243 precedent
+# where the shared rule was EXTRACTED rather than copied). Two consumers need the same
+# deduction - the run-state elapsed the sprint reports, and the retro's elapsed hours - and a
+# second copy would drift into a second definition of how long a sprint took.
+#
+# A gap with no `to` is OPEN and contributes NOTHING. Closing it at `now` would book every hour
+# since the run stopped as measured idle time, which is a different claim from the one the
+# record supports: the gap has no measured length until the run comes back.
+IDLE_GAPS = "idle_gaps"
+_ISO_Z = "%Y-%m-%dT%H:%M:%SZ"
+
+
+def _parse_iso(value) -> "datetime | None":
+    from datetime import datetime, timezone  # noqa: PLC0415 - local, as elsewhere here
+    try:
+        return datetime.strptime(str(value), _ISO_Z).replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        return None
+
+
+def idle_gaps(state: dict) -> list[dict]:
+    """The CLOSED idle intervals recorded on a run state, each with its measured seconds.
+
+    An entry missing either end, or whose end precedes its start, is dropped rather than
+    guessed at: a malformed gap must not silently shorten a sprint's measured elapsed."""
+    out: list[dict] = []
+    for gap in (state or {}).get(IDLE_GAPS) or []:
+        if not isinstance(gap, dict):
+            continue
+        start, end = _parse_iso(gap.get("from")), _parse_iso(gap.get("to"))
+        if start is None or end is None or end <= start:
+            continue
+        out.append({**gap, "seconds": (end - start).total_seconds()})
+    return out
+
+
+def idle_hours(state: dict) -> float:
+    """Total measured idle hours on a run state. 0.0 when nothing is recorded - which is a
+    measured absence of waiting, not an unmeasured one, because a gap is only ever written."""
+    return round(sum(g["seconds"] for g in idle_gaps(state)) / 3600.0, 3)
+
+
+def elapsed_excluding_idle(started_at, ended_at, state: dict) -> dict:
+    """`{raw_hours, idle_hours, hours, gaps}` - the wall-clock a run was open, the idle it
+    recorded, and the difference. `hours` is None when either end is missing or the span is
+    not positive: an open run has no measured elapsed, and extending it to `now` would report
+    its own age as sprint time. The deduction is floored at 0 - a recorded idle longer than
+    the run is malformed data, and negative elapsed is not the honest reading of it."""
+    start, end = _parse_iso(started_at), _parse_iso(ended_at)
+    gaps = idle_gaps(state)
+    idle = round(sum(g["seconds"] for g in gaps) / 3600.0, 3)
+    if start is None or end is None:
+        return {"raw_hours": None, "idle_hours": idle, "hours": None, "gaps": gaps}
+    raw = round((end - start).total_seconds() / 3600.0, 3)
+    if raw <= 0:
+        return {"raw_hours": raw, "idle_hours": idle, "hours": None, "gaps": gaps}
+    return {"raw_hours": raw, "idle_hours": idle,
+            "hours": round(max(0.0, raw - idle), 3), "gaps": gaps}
+
+
 def _git(repo_root: Path | str, *args: str) -> str:
     """`git -C <root> <args>` stdout, or "" when git is absent, times out, or the command fails.
     Read-only and best-effort: resolving the project must never break the recording path."""

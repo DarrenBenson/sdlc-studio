@@ -671,7 +671,7 @@ class RegisterTests(unittest.TestCase):
             self.assertEqual(len(entries), 1)
             self.assertEqual(entries[0]["summary"],
                              {"applied": 2, "killed": 1, "survived": 1,
-                              "errors": 0, "unviable": 0})
+                              "errors": 0, "unviable": 0, "equivalent": 0})
             self.assertEqual([m["mutant"] for m in entries[0]["mutants"]], ["one", "two"])
 
     def test_a_survivor_is_recordable_and_is_not_counted_as_a_kill(self) -> None:
@@ -1298,6 +1298,472 @@ class SelectionReportingTests(unittest.TestCase):
             r = mut.run_gate(root, [root / "target.py"], "make check")
             self.assertIsNone(r["selected_tests"])
             self.assertEqual(r["selection_warnings"], [])
+
+
+class MutationSeriesRowTests(unittest.TestCase):
+    """US0301 AC1: every completed run appends ONE durable row carrying its counts and its
+    MEASURED wall-clock, so the gate is judged on its accumulated record rather than on the
+    run that happened last."""
+
+    def _rows(self, root: Path) -> list[dict]:
+        mut = _load()
+        return mut.series_rows(root)
+
+    def test_a_completed_run_appends_one_row_with_counts_and_wall_clock(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            rep = mut.run_gate(root, [root / "target.py"],
+                               f"{sys.executable} -m unittest test_good")
+            rows = self._rows(root)
+            self.assertEqual(len(rows), 1, rows)
+            row = rows[0]
+            s = rep["summary"]
+            for key in ("applied", "killed", "survived"):
+                self.assertEqual(row[key], s[key], key)
+            self.assertEqual(row["unchecked"], len(rep["unchecked"]))
+            self.assertEqual(row["run_id"], rep["run_id"])
+            self.assertEqual(row["git_rev"], rep["git_rev"])
+            self.assertEqual(row["at"], rep["generated_at"])
+            self.assertTrue(row["at"])
+            self.assertGreater(row["elapsed_s"], 0)
+
+    def test_elapsed_is_measured_not_a_constant(self) -> None:
+        # The property a hardcoded number satisfies every other assertion of: the wall-clock
+        # must TRACK the time the run spent. Two runs of the same shape, one delayed by a known
+        # amount, so a constant (of any value) fails on the difference rather than the size.
+        mut = _load()
+        import time as _time
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            cmd = f"{sys.executable} -m unittest test_good"
+            mut.run_gate(root, [root / "target.py"], cmd, max_mutations=1)
+            fast = self._rows(root)[-1]["elapsed_s"]
+            real = mut._run_tests
+
+            def _slow(command, cwd):
+                _time.sleep(0.4)
+                return real(command, cwd)
+
+            with unittest.mock.patch.object(mut, "_run_tests", _slow):
+                mut.run_gate(root, [root / "target.py"], cmd, max_mutations=1)
+            slow = self._rows(root)[-1]["elapsed_s"]
+            self.assertGreater(fast, 0)
+            # baseline + one mutant, delayed 0.4s each: the same run, 0.8s longer
+            self.assertGreaterEqual(slow - fast, 0.6)
+
+    def test_the_row_names_the_run_surface_and_command(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            cmd = f"{sys.executable} -m unittest test_good"
+            mut.run_gate(root, [root / "target.py"], cmd)
+            row = self._rows(root)[0]
+            self.assertEqual(row["test_cmd"], cmd)
+            self.assertEqual([Path(t).name for t in row["targets"]], ["target.py"])
+
+
+class MutationSeriesNoEvidenceTests(unittest.TestCase):
+    """US0301 AC2: a refused, errored or killed run is recorded as producing NO EVIDENCE, so a
+    reader summing the series can never count it as a clean run."""
+
+    def _rows(self, root: Path) -> list[dict]:
+        return _load().series_rows(root)
+
+    def test_a_refused_run_records_no_evidence_and_zero_yield(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            (root / "test_red.py").write_text(RED_TEST, encoding="utf-8")
+            mut.run_gate(root, [root / "target.py"],
+                         f"{sys.executable} -m unittest test_red")
+            row = self._rows(root)[0]
+            self.assertFalse(row["evidence"])
+            self.assertEqual(row["outcome"], "no-evidence")
+            self.assertEqual(row["killed"], 0)
+            self.assertEqual(row["survived"], 0)
+            self.assertEqual(row["applied"], 0)
+            self.assertIn("refused", row["no_evidence_reason"].lower())
+
+    def test_an_all_error_run_records_no_evidence_even_though_it_applied_mutants(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            outcomes = iter(["pass"])   # baseline green, then every mutant errors
+
+            def _fake(cmd, cwd):
+                return next(outcomes, "error")
+
+            with unittest.mock.patch.object(mut, "_run_tests", _fake):
+                mut.run_gate(root, [root / "target.py"],
+                             f"{sys.executable} -m unittest test_good", max_mutations=3)
+            row = self._rows(root)[0]
+            self.assertGreater(row["applied"], 0)      # mutants WERE applied...
+            self.assertEqual(row["killed"], 0)
+            self.assertEqual(row["survived"], 0)
+            self.assertFalse(row["evidence"])          # ...and none of them judged anything
+            self.assertEqual(row["outcome"], "no-evidence")
+
+    def test_zero_survivors_over_nothing_differs_from_zero_over_twenty(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            (root / "test_red.py").write_text(RED_TEST, encoding="utf-8")
+            mut.run_gate(root, [root / "target.py"],
+                         f"{sys.executable} -m unittest test_red")          # refused
+            mut.run_gate(root, [root / "target.py"],
+                         f"{sys.executable} -m unittest test_good")         # measured
+            refused, measured = self._rows(root)
+            self.assertEqual(refused["survived"], measured["survived"])     # both zero
+            self.assertNotEqual(refused["applied"], measured["applied"])
+            self.assertNotEqual(refused["outcome"], measured["outcome"])
+            self.assertTrue(measured["evidence"])
+            self.assertEqual(measured["outcome"], "measured")
+
+
+class MutationSeriesAppendTests(unittest.TestCase):
+    """US0301 AC3: the series accumulates. Earlier rows survive an append byte-identical, a
+    malformed file is replaced rather than crashing the run and says so, and a dry run appends
+    nothing at all."""
+
+    def _path(self, root: Path) -> Path:
+        return _load().series_path(root)
+
+    def test_earlier_rows_are_byte_identical_after_an_append(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            cmd = f"{sys.executable} -m unittest test_good"
+            mut.run_gate(root, [root / "target.py"], cmd)
+            before = self._path(root).read_bytes()
+            mut.run_gate(root, [root / "target.py"], cmd)
+            after = self._path(root).read_bytes()
+            self.assertTrue(after.startswith(before), after)
+            self.assertEqual(len(mut.series_rows(root)), 2)
+
+    def test_a_malformed_series_is_replaced_and_the_replacement_is_reported(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            path = self._path(root)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("{not json at all\n", encoding="utf-8")
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = mut.main(["run", "--files", str(root / "target.py"),
+                               "--test", f"{sys.executable} -m unittest test_good",
+                               "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertIn("mutation series", buf.getvalue())
+            self.assertIn("replaced", buf.getvalue())
+            self.assertEqual(len(mut.series_rows(root)), 1)   # the run's own row, and only it
+
+    def test_a_dry_run_appends_nothing(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            with contextlib.redirect_stdout(io.StringIO()):
+                mut.main(["run", "--files", str(root / "target.py"),
+                          "--test", f"{sys.executable} -m unittest test_good",
+                          "--root", str(root), "--dry-run"])
+            self.assertFalse(self._path(root).exists())
+            self.assertEqual(mut.series_rows(root), [])
+
+
+def _seed_series_row(mut, root: Path, *, survived: int = 3, run_id: str | None = None) -> str:
+    """One measured row in the series without running a gate - the yield reader's fixture."""
+    rid = run_id or mut._new_run_id()
+    mut.append_series(root, {
+        "run_id": rid, "generated_at": "2026-07-22T09:00:00Z", "git_rev": "abc1234",
+        "test_cmd": "python3 -m unittest discover", "targets": ["src/thing.py"],
+        "refused": False, "unchecked": [],
+        "summary": {"applied": 10, "killed": 7, "survived": survived,
+                    "errors": 0, "unviable": 0, "truncated": 0}}, 612.5)
+    return rid
+
+
+def _seed_bug(root: Path, name: str, run_id: str | None) -> Path:
+    """A filed bug, optionally carrying the mutation-run link file_finding stamps."""
+    d = root / "sdlc-studio" / "bugs"
+    d.mkdir(parents=True, exist_ok=True)
+    link = f"> **Mutation-run:** {run_id}\n" if run_id else ""
+    p = d / f"{name}-a-survivor.md"
+    p.write_text(f"# {name}: a survivor\n\n> **Status:** Open\n> **Severity:** High\n"
+                 f"{link}\n## Summary\n\ns\n", encoding="utf-8")
+    return p
+
+
+class MutationYieldAttributionTests(unittest.TestCase):
+    """US0302 AC2: a run's YIELD is the artefacts filed from it, never its survivor count. A
+    survivor is a hypothesis; counting hypotheses overstates the gate."""
+
+    def test_yield_counts_filed_artefacts_not_survivors(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            rid = _seed_series_row(mut, root, survived=3)
+            _seed_bug(root, "BG0001", rid)
+            y = mut.run_yield(root, rid)
+            self.assertEqual(y["yield"], 1)
+            self.assertEqual(y["survivors"], 3)      # still visible beside it
+            self.assertEqual(y["filed"], ["BG0001"])
+
+    def test_survivors_with_nothing_filed_report_zero_yield(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            rid = _seed_series_row(mut, root, survived=3)
+            y = mut.run_yield(root, rid)
+            self.assertEqual(y["yield"], 0)          # never inherits the survivor count
+            self.assertEqual(y["survivors"], 3)
+            self.assertEqual(y["outstanding"], 3)
+
+    def test_an_artefact_filed_against_another_run_is_not_this_run_s_yield(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            mine = _seed_series_row(mut, root, survived=2)
+            theirs = _seed_series_row(mut, root, survived=2)
+            _seed_bug(root, "BG0002", theirs)
+            _seed_bug(root, "BG0003", None)          # a bug from no mutation run at all
+            self.assertEqual(mut.run_yield(root, mine)["yield"], 0)
+            self.assertEqual(mut.run_yield(root, theirs)["filed"], ["BG0002"])
+
+    def test_an_unknown_run_is_reported_as_unfound_not_as_a_zero_yield_run(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            _seed_series_row(mut, root)
+            y = mut.run_yield(root, "MRUN-ghost-000000")
+            self.assertFalse(y["found"])
+            self.assertIsNone(y["survivors"])
+
+
+class EquivalentMutantExclusionTests(unittest.TestCase):
+    """US0302 AC3 / D0052: the verdict vocabulary GAINS `equivalent`, carrying a mandatory
+    reason. An equivalent mutant counts towards neither yield nor outstanding survivors, and
+    the exclusion is auditable rather than a silent decrement."""
+
+    def _target(self, root: Path) -> Path:
+        p = root / "thing.py"
+        p.write_text("x = 1\n", encoding="utf-8")
+        return p
+
+    def test_equivalent_is_a_registrable_verdict_and_demands_a_reason(self) -> None:
+        mut = _load()
+        self.assertIn("equivalent", mut.REGISTRABLE_VERDICTS)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            target = self._target(root)
+            with self.assertRaises(ValueError) as ctx:
+                mut.register_mutant(root, target, "swapped a constant for itself",
+                                    None, "equivalent", reason="")
+            self.assertIn("reason", str(ctx.exception).lower())
+
+    def test_an_equivalent_survivor_counts_towards_neither_yield_nor_outstanding(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            target = self._target(root)
+            rid = _seed_series_row(mut, root, survived=3)
+            _seed_bug(root, "BG0004", rid)
+            mut.register_mutant(root, target, "reordered two independent assignments",
+                                None, "equivalent",
+                                reason="no observable behaviour changed - unkillable", run=rid)
+            y = mut.run_yield(root, rid)
+            self.assertEqual(y["yield"], 1)                     # the filed bug, and only it
+            self.assertEqual(y["survivors"], 3)
+            self.assertEqual(len(y["equivalent"]), 1)
+            self.assertEqual(y["outstanding"], 1)               # 3 - 1 filed - 1 equivalent
+
+    def test_the_exclusion_states_its_reason_so_it_is_auditable(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            target = self._target(root)
+            rid = _seed_series_row(mut, root, survived=1)
+            mut.register_mutant(root, target, "reordered two independent assignments",
+                                None, "equivalent",
+                                reason="no observable behaviour changed - unkillable", run=rid)
+            rec = mut.run_yield(root, rid)["equivalent"][0]
+            self.assertEqual(rec["reason"], "no observable behaviour changed - unkillable")
+            self.assertIn("reordered two independent", rec["mutant"])
+            self.assertEqual(rec["verdict"], "equivalent")
+
+    def test_an_equivalent_registered_against_another_run_does_not_discount_this_one(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            target = self._target(root)
+            mine = _seed_series_row(mut, root, survived=2)
+            theirs = _seed_series_row(mut, root, survived=2)
+            mut.register_mutant(root, target, "a no-op swap", None, "equivalent",
+                                reason="unkillable by construction", run=theirs)
+            self.assertEqual(mut.run_yield(root, mine)["equivalent"], [])
+            self.assertEqual(mut.run_yield(root, mine)["outstanding"], 2)
+
+    def test_the_cli_registers_an_equivalent_verdict_with_its_reason(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            target = self._target(root)
+            rid = _seed_series_row(mut, root, survived=1)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = mut.main(["register", "--root", str(root), "--target", str(target),
+                               "--mutant", "a no-op swap", "--verdict", "equivalent",
+                               "--reason", "unkillable by construction", "--run", rid])
+            self.assertEqual(rc, 0)
+            self.assertIn("EXCLUDED", buf.getvalue())
+            self.assertEqual(len(mut.run_yield(root, rid)["equivalent"]), 1)
+
+    def test_a_killed_or_survived_verdict_still_demands_the_test_that_judged_it(self) -> None:
+        # The vocabulary grew; it did not loosen. Only `equivalent` is testless, because no
+        # test could have killed it - a survived claim with no test names nothing auditable.
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            target = self._target(root)
+            with self.assertRaises(ValueError):
+                mut.register_mutant(root, target, "a real mutant", None, "survived")
+
+
+class WindowDeclarationTests(unittest.TestCase):
+    """US0307 / CR0388: any process rewriting source files in place declares an open window on
+    disk, so a concurrent author is TOLD rather than discovering it from an alarming diff.
+
+    Built against CR0388's CORRECTION, not its Summary. The staged `retro.py` carried no mutant:
+    a reviewer's helper directory of `ln -sf` links turned a `git show <sha>:path > file` redirect
+    into a write straight through to the live source tree. So the record must not depend on the
+    change being recognisable as a mutant, nor on the suite going red - a SURVIVING mutant leaves
+    the suite green by definition. A FILE, like `mutation-inflight.json`, because in-memory state
+    dies with the SIGKILL that a file does not."""
+
+    def test_a_run_declares_a_window_naming_owner_and_paths_and_clears_it(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            seen: list[dict | None] = []
+            real = mut._run_tests
+
+            def _peek(cmd, cwd):
+                seen.append(mut.read_window(root))
+                return real(cmd, cwd)
+
+            with unittest.mock.patch.object(mut, "_run_tests", _peek):
+                mut.run_gate(root, [root / "target.py"],
+                             f"{sys.executable} -m unittest test_good", max_mutations=1)
+            mid = [w for w in seen if w]
+            self.assertTrue(mid, "no window was open while the run rewrote the tree")
+            w = mid[-1]
+            self.assertIn("mutation", w["owner"])
+            self.assertEqual([Path(p).name for p in w["paths"]], ["target.py"])
+            self.assertTrue(w["opened_at"])
+            self.assertTrue(w["clear_with"])
+            # ...and a run that finishes normally leaves nothing behind
+            self.assertIsNone(mut.read_window(root))
+            self.assertFalse(mut.window_path(root).exists())
+
+    def test_a_window_left_by_a_killed_run_is_still_reported_open(self) -> None:
+        # SIGKILL: no handler, no `finally`, no atexit. Only the file survives, which is why
+        # the record is a file. Driven for real rather than simulated by hand.
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            script = (
+                "import os, signal, sys\n"
+                f"sys.path.insert(0, {str(SCRIPT.parent)!r})\n"
+                "import mutation\n"
+                f"mutation.open_window({str(root)!r}, 'the reviewer', [{str(root / 'target.py')!r}])\n"
+                "os.kill(os.getpid(), signal.SIGKILL)\n")
+            proc = subprocess.run([sys.executable, "-c", script], capture_output=True)
+            self.assertEqual(proc.returncode, -9, proc.stderr)
+            w = mut.read_window(root)
+            self.assertIsNotNone(w, "the window died with the process it was meant to outlive")
+            self.assertEqual(w["owner"], "the reviewer")
+            self.assertIn("window close", w["clear_with"])
+
+    def test_an_unreadable_or_truncated_record_reads_open_never_closed(self) -> None:
+        mut = _load()
+        for payload in ("{not json", "", "[1, 2]", '"a string"', '{"owner": "x"'):
+            with tempfile.TemporaryDirectory() as d:
+                root = _fixture(Path(d))
+                p = mut.window_path(root)
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(payload, encoding="utf-8")
+                w = mut.read_window(root)
+                self.assertIsNotNone(w, payload)   # never read as absent
+                self.assertTrue(w["unreadable"], payload)
+                self.assertTrue(w["owner"], payload)
+
+    def test_open_refuses_a_second_window_naming_who_holds_the_first(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            mut.open_window(root, "the reviewer", [root / "target.py"])
+            with self.assertRaises(ValueError) as ctx:
+                mut.open_window(root, "the author", [root / "target.py"])
+            self.assertIn("the reviewer", str(ctx.exception))
+
+    def test_close_clears_it_and_a_wrong_owner_is_refused(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            mut.open_window(root, "the reviewer", [root / "target.py"])
+            with self.assertRaises(ValueError):
+                mut.close_window(root, owner="somebody else")
+            self.assertIsNotNone(mut.read_window(root))    # not cleared by the wrong hand
+            mut.close_window(root, owner="the reviewer")
+            self.assertIsNone(mut.read_window(root))
+
+    def test_a_run_refuses_to_start_while_another_owner_holds_a_window(self) -> None:
+        # The single-writer rule, executable. Two processes rewriting the same tree is the
+        # hazard; a run that shouldered in would be the second writer.
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            original = (root / "target.py").read_bytes()
+            mut.open_window(root, "the reviewer", [root / "target.py"])
+            r = mut.run_gate(root, [root / "target.py"],
+                             f"{sys.executable} -m unittest test_good")
+            self.assertTrue(r["refused"], r)
+            self.assertEqual(r["mutations"], [])
+            self.assertIn("the reviewer", r["remedy"])
+            self.assertEqual((root / "target.py").read_bytes(), original)
+            self.assertIsNotNone(mut.read_window(root))   # the other owner's window survives
+
+    def test_the_cli_opens_reports_and_closes_a_window(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = mut.main(["window", "open", "--root", str(root), "--owner", "the reviewer",
+                               "--paths", str(root / "target.py"),
+                               "--note", "hand-applying mutants"])
+            self.assertEqual(rc, 0)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = mut.main(["window", "status", "--root", str(root)])
+            self.assertEqual(rc, 1)                       # open is not a clean state
+            self.assertIn("the reviewer", buf.getvalue())
+            self.assertIn("target.py", buf.getvalue())
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = mut.main(["window", "close", "--root", str(root),
+                               "--owner", "the reviewer"])
+            self.assertEqual(rc, 0)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(mut.main(["window", "status", "--root", str(root)]), 0)
 
 
 if __name__ == "__main__":

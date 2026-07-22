@@ -34,6 +34,9 @@ INDEX_TYPES = ["epic", "story", "plan", "bug", "cr", "rfc", "test-spec", "workfl
 SINGLETONS = ["prd", "trd", "tsd", "personas"]
 AGENT_FILES = [("agent-instructions.md", "AGENTS.md"),
                ("agent-instructions.CLAUDE.md", "CLAUDE.md")]
+# The placeholders init can derive without judgement. Everything else is left visibly
+# unfilled - see `_fill_known`, which owns the substitution and its postcondition.
+KNOWN_FIELDS = ("project_name", "language", "date", "last_updated")
 # Stack detection: marker file -> (language, framework hint).
 DETECT = [("package.json", "typescript/node"), ("pyproject.toml", "python"),
           ("go.mod", "go"), ("Cargo.toml", "rust"), ("pom.xml", "java"),
@@ -110,13 +113,53 @@ def _strip_comment(text: str) -> str:
     return re.sub(r"^<!--.*?-->\n+", "", text, count=1, flags=re.DOTALL)
 
 
+def _placeholder_re(key: str) -> str:
+    """The `{{key}}` pattern, tolerant of inner whitespace. Compiled with IGNORECASE by
+    both users, so one spelling of the key covers every case a template may use."""
+    return r"\{\{\s*" + re.escape(key) + r"\s*\}\}"
+
+
+def unfilled_known(text: str, fields: dict) -> list[str]:
+    """The placeholders the filler CLAIMS to know - a `KNOWN_FIELDS` key the caller
+    supplied a value for - that are still in `text`. Always empty after `_fill_known`;
+    a non-empty result means a substitution silently did nothing."""
+    return [k for k in KNOWN_FIELDS
+            if k in fields and re.search(_placeholder_re(k), text, re.IGNORECASE)]
+
+
 def _fill_known(text: str, fields: dict) -> str:
     """Fill only the placeholders init can know; leave high-judgement fields (e.g.
-    {{problem_description}}) visibly empty so a default is never mistaken for a decision."""
-    for key in ("project_name", "language", "date", "last_updated"):
+    {{problem_description}}) visibly empty so a default is never mistaken for a decision.
+
+    Matching is case-INSENSITIVE: a template author reaches for
+    `{{PROJECT_NAME}}` as readily as `{{project_name}}`, and a case-sensitive filler
+    silently shipped the unfilled placeholder into every seeded AGENTS.md. The
+    postcondition is checked rather than assumed - a known placeholder that survives
+    raises, because the defect was not the mismatch but that nothing noticed it."""
+    for key in KNOWN_FIELDS:
         if key in fields:
-            text = text.replace("{{" + key + "}}", fields[key])
+            value = fields[key]
+            text = re.sub(_placeholder_re(key), lambda _m: value, text, flags=re.IGNORECASE)
+    survived = unfilled_known(text, fields)
+    if survived:
+        raise RuntimeError(
+            "init: substitution did nothing for " + ", ".join(survived)
+            + " - the placeholder is still in the text. Fix the filler or the value; "
+              "a seeded file must never ship a placeholder the tool claims to fill.")
     return text
+
+
+def seed_text(template: Path, fields: dict) -> str:
+    """The body a template-seeded file gets: guidance comment stripped, derivable
+    placeholders filled, judgement fields left visibly unfilled. The one seeding path -
+    the upgrade route into a brownfield project calls it too, so a file seeded there
+    cannot drift from one seeded here."""
+    return _fill_known(_strip_comment(template.read_text(encoding="utf-8")), fields)
+
+
+def seed_fields(root: Path | str, today: str) -> dict:
+    """The placeholder values derivable from a project root alone (no stack detection)."""
+    return {"project_name": Path(root).resolve().name, "date": today, "last_updated": today}
 
 
 def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
@@ -125,7 +168,7 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
     root = Path(repo_root)
     today = date.today().isoformat()
     lang = detect_stack(root) if detect else None
-    fields = {"project_name": root.resolve().name, "date": today, "last_updated": today}
+    fields = seed_fields(root, today)
     if lang:
         fields["language"] = lang
     created: list[str] = []
@@ -179,7 +222,7 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
     for src, dst in AGENT_FILES:
         st = SKILL / "templates" / src
         if st.exists():
-            _write(dst, _fill_known(_strip_comment(st.read_text(encoding="utf-8")), fields))
+            _write(dst, seed_text(st, fields))
 
     # 5. decisions log (project infrastructure, always seeded empty)
     dec_tmpl = SKILL / "templates" / "decisions.md"
@@ -215,8 +258,7 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
         for name in SINGLETONS:
             st = SKILL / "templates" / "core" / f"{name}.md"
             if st.exists():
-                _write(f"{SDLC}/{name}.md",
-                       _fill_known(_strip_comment(st.read_text(encoding="utf-8")), fields))
+                _write(f"{SDLC}/{name}.md", seed_text(st, fields))
 
     return {"created": created, "skipped": skipped, "language": lang,
             "scaffold": scaffold, "dry_run": dry_run,

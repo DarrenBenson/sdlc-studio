@@ -9,6 +9,7 @@ from pathlib import Path
 
 SCR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCR))
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the gitutil helper
 from lib import sdlc_md  # noqa: E402
 import validate  # noqa: E402
 import reconcile  # noqa: E402
@@ -1382,6 +1383,305 @@ class GroomingDemandTests(unittest.TestCase):
                 path = Path(r["path"])
                 self.assertEqual(self._plan_verdict(repo, path, "cr")["ungroomed"], [],
                                  f"{template}: the planner refuses a CR this creator wrote")
+
+
+# --- US0306: the sweep (L-0154 - a defect found in one writer is swept across its siblings) ---
+
+#: The payload, shaped exactly as `test_file_finding` shapes it: commands in the prose, a
+#: `$(...)`, a trailing backslash, and a sentinel path inside the test's own temp tree (never the
+#: working tree - L-0158). Free of bare `snake_case` and of any `**Field:**` line, so the
+#: markdown-safety pass is the identity and "character for character" means exactly that.
+STEPS_PAYLOAD = (
+    "1. Stage a change, then run `git commit -a` against the live tree.\n"
+    "2. Read the head back with `$(git rev-parse HEAD)`.\n"
+    "3. Break the command over a line with a trailing backslash \\\n"
+    "4. And here is the one that proves it: `$(touch {sentinel})`\n"
+)
+#: The sentinel command is BACKTICKED so the temp path inside it sits in a code span:
+#: the filer's markdown-safety pass rewrites bare `snake_case` outside code spans, and a
+#: temp directory whose random name happens to hold an underscore would otherwise make
+#: this fidelity assertion pass or fail by luck of the draw.
+
+
+def _git_repo(repo: Path) -> None:
+    import gitutil
+    gitutil.git(["init", "-q", "-b", "main"], repo)
+    (repo / "seed.txt").write_text("seed\n", encoding="utf-8")
+    gitutil.git(["add", "seed.txt"], repo)
+    gitutil.git(["commit", "-qm", "seed"], repo)
+    (repo / "staged.txt").write_text("staged\n", encoding="utf-8")
+    gitutil.git(["add", "staged.txt"], repo)
+
+
+def _git_state(repo: Path) -> tuple[str, bytes]:
+    import gitutil
+    head = gitutil.git(["rev-parse", "HEAD"], repo).stdout.decode()
+    return head, (repo / ".git" / "index").read_bytes()
+
+
+class ArtifactJsonInputTests(unittest.TestCase):
+    """US0306 AC1: `artifact new` accepts the same non-shell input path with the same fidelity
+    as `file_finding file`. It is the writer the skill's own guidance pushes agents towards, so
+    fixing one and not the other would leave the likelier caller carrying the defect."""
+
+    def _spec(self, repo: Path, payload: str) -> Path:
+        import json
+        p = repo / "finding.json"
+        p.write_text(json.dumps({
+            "title": "creating executes the steps it is given",
+            "severity": "High", "summary": f"see the steps: {payload}",
+            "steps": payload, "fix": "read the fields from a file",
+            "affects": "src/thing.py", "points": 3}), encoding="utf-8")
+        return p
+
+    def _created(self, repo: Path) -> Path:
+        return next(p for p in (repo / "sdlc-studio" / "bugs").glob("*.md")
+                    if p.name != "_index.md")
+
+    def test_a_bug_created_from_json_reads_back_character_for_character(self) -> None:
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            payload = STEPS_PAYLOAD.format(sentinel=repo / "EXECUTED")
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = artifact.main(["new", "--type", "bug", "--fields-file",
+                                    str(self._spec(repo, payload)), "--root", str(repo)])
+            self.assertEqual(rc, 0)
+            body = self._created(repo).read_text(encoding="utf-8")
+            self.assertIn(payload, body)          # every character, in one contiguous run
+            self.assertIn("`git commit -a`", body)
+            self.assertIn("$(git rev-parse HEAD)", body)
+
+    def test_creating_that_payload_leaves_head_and_the_index_untouched(self) -> None:
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _git_repo(repo)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            sentinel = repo / "EXECUTED"
+            payload = STEPS_PAYLOAD.format(sentinel=sentinel)
+            spec = self._spec(repo, payload)
+            before = _git_state(repo)
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = artifact.main(["new", "--type", "bug", "--fields-file", str(spec),
+                                    "--root", str(repo)])
+            self.assertEqual(rc, 0)
+            self.assertEqual(_git_state(repo), before)
+            self.assertFalse(sentinel.exists())
+
+    def test_an_unknown_key_is_refused_here_too(self) -> None:
+        import contextlib
+        import io
+        import json
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            spec = repo / "finding.json"
+            spec.write_text(json.dumps({"title": "t", "severity": "High", "summary": "s",
+                                        "steps": "x", "fix": "y", "stpes": "typo",
+                                        "affects": "src/thing.py", "points": 3}),
+                            encoding="utf-8")
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = artifact.main(["new", "--type", "bug", "--fields-file", str(spec),
+                                    "--root", str(repo)])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("stpes", err.getvalue())
+
+    def test_a_story_can_carry_its_own_fields_in_the_document(self) -> None:
+        # The allowed keys are per-writer: `artifact new` also takes an epic, a persona and
+        # verifiers, and refusing them here would make the safe path unusable for a story.
+        import contextlib
+        import io
+        import json
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo)
+            spec = repo / "story.json"
+            spec.write_text(json.dumps({"title": "do a thing", "epic": "EP0001",
+                                        "summary": "s", "points": 3}), encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = artifact.main(["new", "--type", "story", "--fields-file", str(spec),
+                                    "--root", str(repo)])
+            self.assertEqual(rc, 0)
+
+
+class SharedHazardHelperTests(unittest.TestCase):
+    """US0306 AC2: ONE hazard implementation, called by both writers. Two copies of a pattern
+    list drift, and a drifted list is the silent half of this defect all over again."""
+
+    def _flag_create(self, repo: Path, steps: str) -> str:
+        import contextlib
+        import io
+        err = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+            artifact.main(["new", "--type", "bug", "--title", "a defect", "--severity", "High",
+                           "--summary", "s", "--steps", steps, "--fix", "y",
+                           "--affects", "src/thing.py", "--points", "3", "--root", str(repo)])
+        return err.getvalue()
+
+    def _flag_file(self, repo: Path, steps: str) -> str:
+        import contextlib
+        import io
+        import file_finding
+        err = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+            file_finding.main(["file", "--type", "bug", "--title", "a defect",
+                               "--severity", "High", "--summary", "s", "--steps", steps,
+                               "--fix", "y", "--affects", "src/thing.py", "--points", "3",
+                               "--root", str(repo)])
+        return err.getvalue()
+
+    def test_both_writers_report_the_same_field_with_the_same_wording(self) -> None:
+        steps = "run `git status and read it"
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            via_artifact = self._flag_create(repo, steps)
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            via_filer = self._flag_file(repo, steps)
+        self.assertTrue(via_artifact.strip())
+        self.assertEqual(via_artifact, via_filer)   # same helper, so byte-identical
+
+    def test_the_helper_has_one_home_and_the_creator_borrows_it(self) -> None:
+        # By SOURCE FILE, not by object identity: a sibling suite that reloads `file_finding`
+        # rebinds the module object, and an identity assertion would then fail for a reason
+        # that has nothing to do with where the helper lives.
+        import inspect
+        for fn in (artifact.file_finding.shell_hazards,
+                   artifact.file_finding.report_shell_hazards):
+            self.assertEqual(Path(inspect.getsourcefile(fn)).name, "file_finding.py")
+        # ...and the creator keeps no copy of its own to drift from that one
+        self.assertFalse(hasattr(artifact, "shell_hazards"))
+        self.assertFalse(hasattr(artifact, "report_shell_hazards"))
+
+    def test_every_hazard_shape_is_reported_by_both(self) -> None:
+        for steps in ("run `git status and read it", "capture $(git rev-parse HEAD)",
+                      "continue the command \\"):
+            with tempfile.TemporaryDirectory() as d:
+                repo = Path(d)
+                _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+                a = self._flag_create(repo, steps)
+            with tempfile.TemporaryDirectory() as d:
+                repo = Path(d)
+                _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+                f = self._flag_file(repo, steps)
+            self.assertTrue(a.strip(), steps)
+            self.assertEqual(a, f, steps)
+
+
+#: The writers that HAVE the non-shell input path. Adding a writer here without the flag fails
+#: the sweep, and so does adding a prose writer to `scripts/` that appears in neither list.
+SAFE_INPUT_WRITERS = {"file_finding.py", "artifact.py"}
+
+#: The sibling prose writers the sweep found and could NOT reach in this batch, each with the
+#: reason. D0052 ruled the sweep WIDER than the two files CR0384 names, and these four carry the
+#: same free-prose flags for the same reason - they are recorded here, named, rather than the
+#: sweep being quietly narrowed to the two that were convenient. Each is owned by another unit's
+#: file scope in this batch, so the fix is a follow-up; this list is what makes that visible.
+#: Emptying an entry is the point: when a writer gains `--fields-file`, delete its line here.
+KNOWN_PROSE_WRITER_GAPS = {
+    "critic.py": "verdict prose on the command line; deferred - owned by another unit's scope",
+    "close_owed.py": "note prose on the command line; deferred - owned by another unit's scope",
+    "telemetry.py": "note prose on the command line; deferred - owned by another unit's scope",
+    "sprint.py": "goal/note prose on the command line; deferred - owned by another unit's scope",
+    "mutation.py": "its only free-prose flag is `window open --note`, a short operator label "
+                   "written to transient .local state rather than into an artefact body, so it "
+                   "is outside the filing hazard - recorded here rather than quietly dropped "
+                   "from the enumeration",
+}
+
+#: A flag whose value is free prose an author writes - the shape that carries the hazard. An
+#: enum, a path or an id does not: a shell metacharacter in `--status Done` is a typo, not a
+#: swallowed command.
+_PROSE_FLAGS = ("--steps", "--fix", "--summary", "--impact", "--note", "--goal")
+
+
+def _parser_options(parser) -> set[str]:
+    """Every option string an argparse parser accepts, walking into its subparsers."""
+    import argparse as _ap
+    out: set[str] = set()
+    for action in parser._actions:
+        out.update(action.option_strings)
+        if isinstance(action, _ap._SubParsersAction):
+            for sub in action.choices.values():
+                out |= _parser_options(sub)
+    return out
+
+
+class ProseWriterSweepTests(unittest.TestCase):
+    """US0306 AC3: the sweep is ENUMERATED, not grepped once by hand. A writer added later with
+    free-prose flags and no non-shell path FAILS this test, rather than being discovered by the
+    next silent truncation."""
+
+    def _prose_writers(self) -> dict[str, str]:
+        """script name -> source, for every script exposing a free-prose flag."""
+        import re as _re
+        found: dict[str, str] = {}
+        for path in sorted(SCR.glob("*.py")):
+            try:
+                src = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            if any(_re.search(rf'add_argument\(\s*"{_re.escape(flag)}"', src)
+                   for flag in _PROSE_FLAGS):
+                found[path.name] = src
+        return found
+
+    def test_the_enumeration_finds_something_to_judge(self) -> None:
+        # A sweep that enumerated nothing would pass vacuously, which is the failure mode this
+        # whole test exists to refuse elsewhere.
+        writers = self._prose_writers()
+        self.assertTrue(writers)
+        for name in SAFE_INPUT_WRITERS:
+            self.assertTrue(name in writers, f"{name} no longer exposes a free-prose flag")
+
+    def test_every_prose_writer_is_either_safe_or_a_named_gap(self) -> None:
+        unaccounted = sorted(set(self._prose_writers())
+                             - SAFE_INPUT_WRITERS - set(KNOWN_PROSE_WRITER_GAPS))
+        self.assertEqual(
+            unaccounted, [],
+            "these scripts take free prose on the command line with no non-shell input path "
+            f"and no recorded reason: {unaccounted}. Give them `--fields-file` (see "
+            "file_finding.load_fields_file), or record why not in KNOWN_PROSE_WRITER_GAPS")
+
+    def _options_of(self, name: str) -> set[str]:
+        """Every flag the script's own PARSER accepts, subcommands included.
+
+        Asked of the parser, never of the source text: a grep for the flag name is satisfied by
+        a help string or an error message that merely MENTIONS it, so a writer that renamed its
+        safe path would still read as safe."""
+        spec = importlib.util.spec_from_file_location(f"_sweep_{name[:-3]}", SCR / name)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = mod
+        spec.loader.exec_module(mod)
+        return _parser_options(mod.build_parser())
+
+    def test_every_safe_writer_really_offers_the_path(self) -> None:
+        for name in sorted(SAFE_INPUT_WRITERS):
+            self.assertIn("--fields-file", self._options_of(name),
+                          f"{name} is listed as safe but its parser accepts no --fields-file")
+
+    def test_a_gap_that_has_been_closed_must_leave_the_list(self) -> None:
+        # The list records what is OWED. An entry that is no longer true is a debt nobody will
+        # ever pay off, because nothing says it was paid.
+        stale = sorted(n for n in KNOWN_PROSE_WRITER_GAPS
+                       if "--fields-file" in self._options_of(n))
+        self.assertEqual(stale, [],
+                         f"{stale} now offer --fields-file - move them to SAFE_INPUT_WRITERS")
+
+    def test_each_recorded_gap_names_a_reason(self) -> None:
+        for name, why in KNOWN_PROSE_WRITER_GAPS.items():
+            self.assertTrue(why.strip(), name)
+            self.assertTrue(name in self._prose_writers(),
+                            f"{name} is recorded as a gap but exposes no free-prose flag - "
+                            "delete the entry rather than leaving a claim nothing checks")
 
 
 if __name__ == "__main__":

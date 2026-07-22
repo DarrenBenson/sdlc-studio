@@ -130,6 +130,141 @@ class TokenBaselineTests(unittest.TestCase):
         self.assertIn(run_state.TOKEN_BASELINE, run_state.FIELDS)
 
 
+class DelegatedSpendIsSuppliedNotMeasured(unittest.TestCase):
+    """BG0252: the session transcript records the MAIN THREAD only.
+
+    Measured on one live transcript: 6,624,813 tokens of usage, of which sidechain records
+    accounted for zero. So a fan-out sprint's delegated agents are invisible to the meter, and
+    the run that published 439,982 had spent at least 1,227,816. A delegated total therefore
+    cannot be measured here; it can only be SUPPLIED - each agent reports its own total when it
+    finishes - and the record keeps that distinction, exactly as the mutation ledger separates a
+    registered claim from a re-run measurement.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / "sdlc-studio" / ".local").mkdir(parents=True)
+        self.addCleanup(self.tmp.cleanup)
+
+    def _open(self) -> dict:
+        return run_state.open_run(str(self.root), batch=["BG0001"], goal="g")
+
+    def test_a_delegated_total_is_recorded_against_the_run_and_marked_supplied(self) -> None:
+        self._open()
+        rec = run_state.record_delegated_tokens(str(self.root), 198_734, agent="cluster-1")
+        self.assertEqual(rec["tokens"], 198_734)
+        self.assertEqual(rec["agent"], "cluster-1")
+        self.assertEqual(rec["provenance"], run_state.SUPPLIED,
+                         "a figure an agent reported is a claim, never a meter reading")
+        state = run_state.read(str(self.root))
+        self.assertEqual(run_state.delegated_total(state), 198_734)
+
+    def test_delegated_totals_accumulate_rather_than_overwrite(self) -> None:
+        # the live shape: four cluster agents finish one after another, each reporting its own
+        self._open()
+        for n, tokens in enumerate((198_734, 220_109, 163_373, 205_618)):
+            run_state.record_delegated_tokens(str(self.root), tokens, agent=f"a{n}")
+        state = run_state.read(str(self.root))
+        self.assertEqual(len(run_state.delegated_records(state)), 4)
+        self.assertEqual(run_state.delegated_total(state), 787_834)
+
+    def test_a_total_nobody_can_attribute_to_a_run_is_not_recorded(self) -> None:
+        self.assertIsNone(run_state.record_delegated_tokens(str(self.root), 1_000),
+                          "a spend counted against no run cannot be joined to anything later")
+
+    def test_a_non_positive_total_is_refused_rather_than_recorded_as_zero(self) -> None:
+        self._open()
+        for bad in (0, -5, None, "lots", True):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                run_state.record_delegated_tokens(str(self.root), bad)
+        self.assertEqual(run_state.delegated_total(run_state.read(str(self.root))), 0)
+
+    def test_the_records_survive_a_close_and_the_archive(self) -> None:
+        # L-0156 again: every whole-record rewrite is a chance to drop the field
+        self._open()
+        run_state.record_delegated_tokens(str(self.root), 300_000, agent="reviewer")
+        run_state.update(str(self.root), appetite={"minutes": 90})
+        closed = run_state.close_run(str(self.root), run_state.GOAL_REACHED, handoff="HO0001")
+        self.assertEqual(run_state.delegated_total(closed), 300_000)
+        archived = run_state.read_archived(str(self.root), closed["run_id"])
+        self.assertEqual(run_state.delegated_total(archived), 300_000)
+
+    def test_a_malformed_entry_is_skipped_rather_than_poisoning_the_total(self) -> None:
+        self._open()
+        run_state.record_delegated_tokens(str(self.root), 100_000)
+        run_state.update(str(self.root), **{run_state.DELEGATED: [
+            {"tokens": 100_000}, "not a record", {"tokens": "lots"}, {"tokens": 50_000}]})
+        state = run_state.read(str(self.root))
+        self.assertEqual(run_state.delegated_total(state), 150_000)
+
+    def test_the_delegated_field_is_declared_in_fields(self) -> None:
+        self.assertIn(run_state.DELEGATED, run_state.FIELDS)
+
+
+class ARunIdIsUniqueByConstructionNotByLuck(unittest.TestCase):
+    """BG0253: the RUN id was minted with no collision check at all.
+
+    `short_ulid` is 6 timestamp characters - roughly a 17-minute bucket - plus 2 random ones, so
+    two mints milliseconds apart collide about once in 1,024, and its own docstring says the
+    allocator's glob-retry is the real backstop. The RUN id path never went through one, so the
+    commit gate failed at random on an unchanged tree (`'RUN-01KY38CE' == 'RUN-01KY38CE'`), and
+    the underlying risk is worse than a flaky test: two runs sharing an identity in the telemetry
+    and velocity records.
+
+    The generator cannot provide uniqueness, so the ALLOCATOR does - checked against the runs
+    this project has already recorded. That is what makes "two consecutive mints differ" a
+    property rather than a 1-in-1,024 bet, and it is the reason these tests drive the generator
+    with a CONSTANT: an inequality test that only passes because a random suffix happened to
+    differ would also pass a generator returning the same id every time.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / "sdlc-studio" / ".local").mkdir(parents=True)
+        self.addCleanup(self.tmp.cleanup)
+
+    def _next_run(self) -> str:
+        """Close the open run and open the next one, as a cycle boundary does."""
+        if run_state.read(str(self.root)).get("run_id"):
+            run_state.close_run(str(self.root), run_state.GOAL_REACHED)
+        return run_state.open_run(str(self.root), batch=["BG0001"], goal="g")["run_id"]
+
+    def test_a_constant_generator_still_mints_two_different_run_ids(self) -> None:
+        from lib import sdlc_md
+        with mock.patch.object(sdlc_md, "short_ulid", return_value="AAAA1111"):
+            first, second = self._next_run(), self._next_run()
+        self.assertEqual(first, "RUN-AAAA1111")
+        self.assertNotEqual(second, first,
+                            "the second run took an id the first one already holds")
+
+    def test_the_clashing_mint_is_retried_rather_than_extended_immediately(self) -> None:
+        """The cheap path first, exactly as `mint_v3_id` does: retry the generator, and only
+        extend the suffix when it keeps clashing."""
+        from lib import sdlc_md
+        with mock.patch.object(sdlc_md, "short_ulid",
+                               side_effect=["AAAA1111", "AAAA1111", "BBBB2222"]):
+            self.assertEqual(self._next_run(), "RUN-AAAA1111")
+            self.assertEqual(self._next_run(), "RUN-BBBB2222")
+
+    def test_an_archived_run_s_id_is_never_minted_again(self) -> None:
+        """The archive is the register of every run this project has opened, and it outlives the
+        live file - so it, not the live record alone, is what the mint is checked against."""
+        from lib import sdlc_md
+        with mock.patch.object(sdlc_md, "short_ulid", return_value="AAAA1111"):
+            first = self._next_run()
+            self._next_run()                      # first is now archived
+            third = self._next_run()
+        self.assertNotIn(first, {third}, "an archived run's identity was handed out twice")
+        self.assertEqual(len({r["run_id"] for r in run_state.archived(str(self.root))}), 2)
+
+    def test_an_ordinary_mint_is_not_disturbed_by_the_check(self) -> None:
+        ids = {self._next_run() for _ in range(5)}
+        self.assertEqual(len(ids), 5)
+        self.assertTrue(all(i.startswith("RUN-") for i in ids))
+
+
 class SessionTokenReaderTests(unittest.TestCase):
     """`session_tokens` is the ONE meter reader, shared by the baseline stamp and the close.
     Its own contract - cache reads excluded, a stated reason when it cannot read - is pinned

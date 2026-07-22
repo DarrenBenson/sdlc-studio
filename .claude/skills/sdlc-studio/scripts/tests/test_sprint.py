@@ -570,6 +570,82 @@ class SeatProvenanceTests(unittest.TestCase):
             self.assertIsNone(data.get("seat_provenance"))
 
 
+class SeatCoverageTests(unittest.TestCase):
+    """BG0247: an inputs file that scores NO unit in the batch is not a stale file.
+
+    The two facts call for the same action and describe different situations, and only one
+    of them was ever true here: 'your scores are old' hid 'you have no scores for this work'."""
+
+    def _inputs(self, root, mapping, age_days=0):
+        import json as _json
+        import os
+        import time
+        p = root / "sdlc-studio" / ".local" / "wsjf-inputs.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(_json.dumps(mapping), encoding="utf-8")
+        if age_days:
+            t = time.time() - age_days * 86400
+            os.utime(p, (t, t))
+        return p
+
+    def _plan(self, root):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root),
+                               "--no-fetch", "--order", "wsjf"])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_out_of_batch_scores_are_not_reported_as_merely_stale(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            _cr(root, 2)
+            # scored: only ids that are NOT in the batch, and long past the window
+            self._inputs(root, {"CR0900": {"value": 5, "time_criticality": 1,
+                                           "risk_reduction": 1}}, age_days=11)
+            data = _load().build_plan(root, "cr", "Proposed", order="wsjf")
+            prov = data["seat_provenance"]
+            self.assertEqual(prov["covered"], 0)
+            self.assertEqual(prov["entries"], 1)
+            self.assertTrue(prov["irrelevant"])
+            self.assertFalse(prov["stale"])     # scores that apply to nothing cannot be stale
+            rc, out, err = self._plan(root)
+            self.assertEqual(rc, 0)
+            blob = out + err
+            self.assertNotIn("day(s) old", blob)         # the age advisory is suppressed
+            self.assertIn("scores NO unit in this batch", blob)
+            self.assertIn("0/2", blob)                   # coverage leads, not age
+
+    def test_scores_that_apply_are_still_reported_stale(self) -> None:
+        """The advisory must survive for the case it was written for."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            self._inputs(root, {"CR0001": {"value": 5, "time_criticality": 1,
+                                           "risk_reduction": 1}}, age_days=11)
+            data = _load().build_plan(root, "cr", "Proposed", order="wsjf")
+            self.assertTrue(data["seat_provenance"]["stale"])
+            self.assertFalse(data["seat_provenance"]["irrelevant"])
+            rc, out, err = self._plan(root)
+            self.assertIn("day(s) old", out + err)
+
+    def test_the_unscored_line_does_not_claim_the_order_fell_back_to_priority(self) -> None:
+        """WSJF still RUNS with no seat inputs: the Cost of Delay falls back to Priority,
+        the ordering does not. Saying otherwise is the same class of defect as the age
+        advisory - a message describing a situation that is not the one on screen."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            rc, out, err = self._plan(root)
+            self.assertEqual(rc, 0)
+            blob = out + err
+            self.assertNotIn("priority fallback", blob)
+            self.assertIn("Cost of Delay derived from Priority", blob)
+            data = _load().build_plan(root, "cr", "Proposed", order="wsjf")
+            self.assertEqual(data["batch"][0]["cod_source"], "priority")
+            self.assertIn("wsjf", data["batch"][0])   # the order really is still WSJF
+
+
 class ReconcileBeforePlanTests(unittest.TestCase):
     """CR0094: the planner surfaces index drift before selecting; --strict refuses."""
 
@@ -1661,6 +1737,160 @@ class SharedFileClusterTests(unittest.TestCase):
             self.assertEqual(bd["clusters"], [])
 
 
+def _verified_story(root: Path, num: int, affects: str | None, verifiers: list[str],
+                    points: int = 2, status: str = "Ready") -> Path:
+    """A story whose ACs carry `Verify:` lines - the files a unit will touch, named in the
+    one place a unit already names them."""
+    d = root / "sdlc-studio" / "stories"
+    d.mkdir(parents=True, exist_ok=True)
+    aff = f"> **Affects:** {affects}\n" if affects else ""
+    body = "".join(
+        f"\n### AC{i}: a\n\n- **Given** x\n- **Verify:** {v}\n" for i, v in enumerate(verifiers, 1))
+    p = d / f"US{num:04d}-x.md"
+    p.write_text(f"# US{num:04d}: s\n\n> **Status:** {status}\n> **Priority:** Medium\n"
+                 f"{aff}> **Points:** {points}\n\n## Acceptance Criteria\n{body}",
+                 encoding="utf-8")
+    return p
+
+
+class ContradictedAffectsTests(unittest.TestCase):
+    """US0292/CR0347. `breakdown` already computed `unresolvable` per path but reported it only
+    when EVERY declared path failed, so four real files plus one typo read as fully groomed and
+    the typo travelled on into the collision analysis and the engagement floor, both of which
+    read `Affects`.
+
+    This is not a hypothetical: four of the twenty-two stories minted for this batch carried a
+    wrong or incomplete `Affects`, one written by the author minutes after ruling on the defect."""
+
+    def _bd(self, root: Path) -> dict:
+        return _load().build_plan(root, "story", "Ready", skip_personas=True)["breakdown"]
+
+    def test_a_partly_unresolvable_affects_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _src(root, "src/real.py")
+            _src(root, "tests/test_p.py")
+            _verified_story(root, 1, "src/real.py,src/typo.py",
+                            ["pytest tests/test_p.py -k test_x"])
+            adv = {a["id"]: a for a in self._bd(root)["affects_advisories"]}
+            self.assertIn("US0001", adv, "one bad path among good ones is still reported")
+            self.assertEqual(adv["US0001"]["unresolvable"], ["src/typo.py"])
+
+    def test_a_file_the_acs_name_but_affects_omits_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _src(root, "src/real.py")
+            _src(root, "tests/test_p.py")
+            _verified_story(root, 1, "src/real.py", ["pytest tests/test_p.py -k test_x"])
+            adv = {a["id"]: a for a in self._bd(root)["affects_advisories"]}
+            self.assertIn("tests/test_p.py", adv["US0001"]["undeclared"])
+
+    def test_the_affects_advisory_never_changes_the_grooming_verdict(self) -> None:
+        """The bound that keeps this reportable rather than obstructive. A path to a file the
+        unit will CREATE cannot resolve, so refusing on it would refuse the ordinary case."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _src(root, "src/real.py")
+            _src(root, "tests/test_p.py")
+            _verified_story(root, 1, "src/real.py,src/not-yet.py",
+                            ["pytest tests/test_p.py -k test_x"])
+            bd = self._bd(root)
+            self.assertTrue(bd["affects_advisories"], "the precondition: it IS reported")
+            self.assertEqual(bd["groomed"], ["US0001"])
+            self.assertEqual(bd["ungroomed"], [])
+            self.assertTrue(bd["ok"])
+
+    def test_a_clean_affects_raises_no_advisory(self) -> None:
+        """The negative control. Without it every assertion above is satisfied by a function
+        that reports every unit unconditionally."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _src(root, "src/real.py")
+            _src(root, "tests/test_p.py")
+            _verified_story(root, 1, "src/real.py,tests/test_p.py",
+                            ["pytest tests/test_p.py -k test_x"])
+            self.assertEqual(self._bd(root)["affects_advisories"], [])
+
+
+class DerivedClusterFileTests(unittest.TestCase):
+    """US0291/CR0347: the collision analysis saw only what somebody DECLARED, and test files
+    are almost never declared - so the one file parallel work most often shares was the one
+    file the analysis was blind to. US0252 and US0256 both wrote test_reconcile.py, neither
+    declared it, two agents edited it concurrently and the suite failed with an import error
+    belonging to neither.
+
+    D0053 bounds it: derived from Verify lines ONLY (prose has no grammar to parse), and a
+    derived path must NEVER satisfy the grooming gate's `Affects` requirement."""
+
+    def _bd(self, root: Path) -> dict:
+        return _load().build_plan(root, "story", "Ready", skip_personas=True)["breakdown"]
+
+    def test_units_sharing_an_undeclared_test_file_are_one_cluster(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _src(root, "src/a.py")
+            _src(root, "src/b.py")
+            _src(root, "tests/test_shared.py")
+            _verified_story(root, 1, "src/a.py", ["pytest tests/test_shared.py -k test_one"])
+            _verified_story(root, 2, "src/b.py", ["pytest tests/test_shared.py -k test_two"])
+            bd = self._bd(root)
+            self.assertEqual([c["units"] for c in bd["clusters"]], [["US0001", "US0002"]])
+            self.assertIn("tests/test_shared.py", bd["clusters"][0]["files"])
+
+    def test_derived_files_come_from_the_verifier_parser(self) -> None:
+        """Every path is the one `verify_ac` resolves for that expression, across the DSL
+        verbs that carry one - so the planner and the verifier cannot disagree about what a
+        Verify line targets."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            for rel in ("tests/test_p.py", "docs/ref.md", "src/one.py", "src/two.py"):
+                _src(root, rel)
+            text = _verified_story(root, 1, "src/one.py", [
+                "pytest tests/test_p.py -k test_x",
+                "file docs/ref.md",
+                "grep \"a pattern\" src/two.py",
+                "jest some test name",          # carries no path - nothing is invented
+            ]).read_text(encoding="utf-8")
+            derived = sp.verify_files(root, text)
+            self.assertEqual(sorted(derived),
+                             ["docs/ref.md", "src/two.py", "tests/test_p.py"])
+            # ...and they are the SAME strings verify_ac builds its command from
+            sys.path.insert(0, str(SCRIPT.parent))
+            import verify_ac
+            _, cmd = verify_ac._build_command("pytest tests/test_p.py -k test_x", cwd=root)
+            self.assertIn("tests/test_p.py", cmd)
+
+    def test_cluster_files_record_declared_or_derived(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _src(root, "src/shared.py")
+            _src(root, "tests/test_shared.py")
+            _verified_story(root, 1, "src/shared.py",
+                            ["pytest tests/test_shared.py -k test_one"])
+            _verified_story(root, 2, "src/shared.py",
+                            ["pytest tests/test_shared.py -k test_two"])
+            cluster = self._bd(root)["clusters"][0]
+            self.assertEqual(cluster["sources"]["src/shared.py"], "declared")
+            self.assertEqual(cluster["sources"]["tests/test_shared.py"], "derived")
+
+    def test_derived_files_do_not_satisfy_the_affects_gate(self) -> None:
+        """D0053: if derivation could satisfy the gate, a unit declaring NOTHING would pass
+        by having its verifiers read - disarming the field the engagement floor depends on."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _src(root, "tests/test_shared.py")
+            _verified_story(root, 1, None, ["pytest tests/test_shared.py -k test_one"])
+            _verified_story(root, 2, None, ["pytest tests/test_shared.py -k test_two"])
+            bd = self._bd(root)
+            missing = {u["id"]: u["missing"] for u in bd["ungroomed"]}
+            self.assertEqual(sorted(missing), ["US0001", "US0002"])
+            self.assertIn("Affects", missing["US0001"])
+            # ...and the derived files still reach the collision analysis
+            self.assertEqual([c["units"] for c in bd["clusters"]], [["US0001", "US0002"]])
+            self.assertIn("tests/test_shared.py", bd["clusters"][0]["files"])
+
+
 def _pointed_cr(root: Path, num: int, points, affects: str = None, priority: str = "Medium",
                 status: str = "Proposed") -> None:
     """A CR carrying a Points estimate (and, by default, a resolvable Affects)."""
@@ -1890,6 +2120,230 @@ class PointsForecastTests(unittest.TestCase):
             rec = telemetry.forecasts(root)["BG0001"]
             self.assertEqual(rec["points"], 5)
             self.assertEqual(rec["tokens"], 5 * sp.POINTS_RATE_SEED)
+
+
+_VELOCITY_HEADER = (
+    "| Retro | Date | Units | Measured | Forecast | Points | Estimate (tokens, plan-time) | "
+    "Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Constants | "
+    "Sample | Model | Note | Source |\n"
+    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | "
+    "--- | --- | --- |\n")
+
+
+def _velocity(root: Path, rows: list[dict]) -> Path:
+    """Write a VELOCITY.md holding `rows` - the record the tokens-per-point rate is MANDATED
+    to be re-measured from. Each row: id/points/actual/model/estimate/constants."""
+    p = root / "sdlc-studio" / "retros" / "VELOCITY.md"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    body = ""
+    for r in rows:
+        units = r.get("units", 3)
+        body += ("| {id} | 2026-01-01 | {units} | 0 | {units} | {points} | {estimate} | "
+                 "{actual} | {ratio} | - | 0 | - | {constants} | - | {model} | - | harness |\n"
+                 ).format(id=r["id"], units=units, points=r.get("points", "-"),
+                          estimate=r.get("estimate", 0), actual=r.get("actual", "-"),
+                          ratio=r.get("ratio", "-"), constants=r.get("constants", "-"),
+                          model=r.get("model", "-"))
+    p.write_text(_VELOCITY_HEADER + body, encoding="utf-8")
+    return p
+
+
+class RateFromVelocityRecordTests(unittest.TestCase):
+    """US0290: VELOCITY.md is the MANDATED source of the tokens-per-point rate, and nothing in
+    the planner read it. The per-unit evidence log an interactive sprint never writes was the
+    only source, so the plan quoted the seed forever while the record held real measurements."""
+
+    def _plan(self, root: Path, *extra: str) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root),
+                               "--no-fetch", "--skip-personas", *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_the_plan_rate_is_measured_from_the_velocity_record(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _velocity(root, [{"id": "RETRO0001", "points": 30, "actual": 2_390_624,
+                              "model": "claude-opus-4-8"},
+                             {"id": "RETRO0002", "points": 31, "actual": 1_265_392,
+                              "model": "claude-opus-4-8"}])
+            rate = sp.tokens_per_point(root)
+            self.assertEqual(rate["source"], "velocity-record")
+            self.assertEqual(rate["rate"], round((2_390_624 + 1_265_392) / 61))
+            self.assertIn("VELOCITY.md", rate["basis"])
+            _pointed_cr(root, 1, 3)
+            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
+            self.assertEqual(fc["rate_source"], "velocity-record")
+            self.assertEqual(fc["tokens"], 3 * rate["rate"])
+            rc, out, err = self._plan(root)
+            self.assertEqual(rc, 0)
+            self.assertIn("velocity-record", out)
+
+    def test_an_interactive_sprint_can_now_advance_the_rate(self) -> None:
+        """BG0248, stated as the property it denied. An interactive sprint has no runner and so
+        writes NO per-unit actual: on this repo 208 forecast records carried plan-time points and
+        exactly 3 had a per-unit actual, all from the runner era, so a rate joined against that
+        log could never advance however well a sprint was measured. The assertion that matters is
+        the emptiness: with nothing in the per-unit log at all, the velocity record alone must
+        still yield a MEASURED rate."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _velocity(root, [{"id": "RETRO0001", "points": 30, "actual": 2_390_624,
+                              "model": "claude-opus-4-8"},
+                             {"id": "RETRO0002", "points": 31, "actual": 1_265_392,
+                              "model": "claude-opus-4-8"}])
+            import telemetry
+            self.assertEqual(telemetry.actuals(root), {},
+                             "the premise: an interactive project records no per-unit actual")
+            rate = sp.tokens_per_point(root)
+            self.assertEqual(rate["source"], "velocity-record",
+                             "the rate advances on sprint-level evidence alone")
+            self.assertEqual(rate["rate"], round((2_390_624 + 1_265_392) / 61))
+            self.assertIsNone(rate.get("refused"))
+
+    def test_a_rate_spanning_two_models_refuses_rather_than_averaging(self) -> None:
+        """The other half of BG0248, and the reason this repo still reads `seed` today: three of
+        its four velocity rows carry no model, so the record spans `unrecorded` and a named one.
+        Averaging them would publish a rate describing neither. Recording the delivering model is
+        CR0373 and is NOT in this batch, so the honest outcome here is a refusal carrying its
+        reason, never a silent seed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _velocity(root, [{"id": "RETRO0001", "points": 30, "actual": 2_390_624,
+                              "model": "claude-opus-4-8"},
+                             {"id": "RETRO0002", "points": 31, "actual": 1_265_392}])
+            rate = sp.tokens_per_point(root)
+            self.assertEqual(rate["source"], "seed")
+            self.assertIn("REFUSED", rate["refused"])
+            self.assertIn("model", rate["refused"])
+            _pointed_cr(root, 1, 3)   # the forecast block only renders for a non-empty batch
+            rc, out, err = self._plan(root)
+            self.assertEqual(rc, 0, "a plan is never refused over a token estimate")
+            self.assertIn("velocity record yields no usable rate", out,
+                          "the refusal reaches the operator instead of a bare seed")
+
+    def test_no_measured_rate_is_quoted_as_a_seed_and_says_so(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _velocity(root, [])          # a record with no row that carries both
+            rate = sp.tokens_per_point(root)
+            self.assertEqual(rate["source"], "seed")
+            self.assertEqual(rate["rate"], sp.POINTS_RATE_SEED)
+            _pointed_cr(root, 1, 3)
+            rc, out, err = self._plan(root)
+            self.assertEqual(rc, 0)
+            self.assertIn("rate (seed)", out)
+            self.assertIn("measured no rate of its own", out)
+            self.assertIn("token forecast", out)          # planning is never refused over it
+
+    def test_a_refused_rate_reaches_the_plan_output(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _velocity(root, [{"id": "RETRO0001", "points": 30, "actual": 2_390_624,
+                              "model": "claude-opus-4-8"},
+                             {"id": "RETRO0002", "points": 31, "actual": 1_265_392,
+                              "model": "claude-haiku-4-5"}])
+            rate = sp.tokens_per_point(root)
+            self.assertEqual(rate["source"], "seed")
+            self.assertIn("claude-opus-4-8", rate["refused"])
+            self.assertIn("claude-haiku-4-5", rate["refused"])
+            _pointed_cr(root, 1, 3)
+            rc, out, err = self._plan(root)
+            self.assertEqual(rc, 0)
+            blob = out + err
+            self.assertIn("claude-opus-4-8", blob)
+            self.assertIn("claude-haiku-4-5", blob)
+
+    def test_the_seed_line_carries_its_out_of_sample_result(self) -> None:
+        """The seed's one live test failed at 0.44x. A seed quoted with nothing beside it
+        reads as calibrated."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _velocity(root, [{"id": "RETRO0028", "estimate": 250_000, "actual": 564_066,
+                              "ratio": "0.44x",
+                              "constants": f"TOKENS_PER_POINT={sp.POINTS_RATE_SEED}"}])
+            _pointed_cr(root, 1, 3)
+            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
+            self.assertEqual([r["id"] for r in fc["rate_out_of_sample"]], ["RETRO0028"])
+            self.assertEqual(fc["rate_out_of_sample"][0]["ratio"], 0.44)
+            rc, out, err = self._plan(root)
+            self.assertEqual(rc, 0)
+            # the result must sit ON the rate line, not somewhere else in the plan: a reader
+            # of a seed must see its one live test beside the number, not three blocks away
+            line = next(ln for ln in out.splitlines() if "out-of-sample test of this seed" in ln)
+            self.assertIn("RETRO0028", line)
+            self.assertIn("0.44x", line)
+
+
+class ForecastScopeTests(unittest.TestCase):
+    """BG0254: the point forecast prices the BUILD. On this project the review, the repair
+    rounds and the re-verification cost more than the build did, and the forecast did not
+    admit they exist - so every plan understated by design and the capacity check that reads
+    it was calibrated against a fiction. The fix is to name the exclusion and show the
+    measured excess, NOT to refit the constant against one sprint."""
+
+    def _plan(self, root: Path) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root),
+                               "--no-fetch", "--skip-personas"])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_the_forecast_names_what_it_prices_and_what_it_excludes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _pointed_cr(root, 1, 3)
+            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
+            self.assertEqual(fc["scope"], "build")
+            excl = " ".join(fc["excludes"]).lower()
+            self.assertIn("review", excl)
+            self.assertIn("repair", excl)
+            rc, out, err = self._plan(root)
+            self.assertEqual(rc, 0)
+            self.assertIn("prices the BUILD", out)
+            self.assertIn("excludes", out)
+
+    def test_the_excess_over_the_build_forecast_is_measured_not_a_constant(self) -> None:
+        """The proving term the operator can see. It is READ OFF the record - every sprint
+        that carries both a plan-time forecast and a whole-sprint actual - and it is never
+        attributed to proving alone, because the record cannot separate proving cost from an
+        under-estimated build."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            seed = sp.POINTS_RATE_SEED
+            _velocity(root, [{"id": "RETRO0065", "estimate": 400_000, "actual": 2_634_055,
+                              "ratio": "0.15x", "constants": f"TOKENS_PER_POINT={seed}"}])
+            term = sp.whole_sprint_excess(root)
+            self.assertTrue(term["measured"])
+            self.assertEqual(term["sprints"], ["RETRO0065"])
+            self.assertAlmostEqual(term["high"], round(2_634_055 / 400_000, 2))
+            _pointed_cr(root, 1, 3)
+            rc, out, err = self._plan(root)
+            self.assertEqual(rc, 0)
+            self.assertIn("RETRO0065", out)
+            self.assertIn("whole-sprint", out)
+            self.assertNotIn("proving cost is 1.5x", out)   # no fitted multiplier is invented
+
+    def test_an_unmeasured_excess_says_so_rather_than_assuming_a_multiplier(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _pointed_cr(root, 1, 3)
+            term = sp.whole_sprint_excess(root)
+            self.assertFalse(term["measured"])
+            self.assertEqual(term["sprints"], [])
+            self.assertIsNone(term["low"])
+            rc, out, err = self._plan(root)
+            self.assertEqual(rc, 0)
+            self.assertIn("UNMEASURED", out)
 
 
 class BatchHistoryTests(unittest.TestCase):
@@ -2308,6 +2762,245 @@ class SprintGoalTests(unittest.TestCase):
             self.assertEqual(rc, 0)
             plan = json.loads((root / "sdlc-studio" / ".local" / "sprint-plan.json").read_text())
             self.assertIsNone(plan["sprint_goal"])
+
+
+def _pointed_story(root: Path, num: int, points: int, status: str = "Ready") -> None:
+    """A groomed story - resolvable Affects and Points, so the gate plans it."""
+    d = root / "sdlc-studio" / "stories"
+    d.mkdir(parents=True, exist_ok=True)
+    aff = _src(root, f"src/us{num:04d}.py")
+    (d / f"US{num:04d}-x.md").write_text(
+        f"# US{num:04d}: s\n\n> **Status:** {status}\n> **Priority:** Medium\n"
+        f"> **Affects:** {aff}\n> **Points:** {points}\n", encoding="utf-8")
+
+
+def _seats(root: Path, roles: tuple[str, ...] = ("product", "engineering", "qa")) -> None:
+    """Project review seats. The goal consult is demanded of seats that EXIST: a project
+    that has adopted none has nobody to demand it of."""
+    d = root / "sdlc-studio" / "personas" / "seats"
+    d.mkdir(parents=True, exist_ok=True)
+    for role in roles:
+        (d / f"{role}.md").write_text(
+            f"# Sam - {role} seat\n\n<!-- role: {role} -->\n\n## Lens\nx\n\n"
+            f"## Pushes Back When\ny\n\n## Shadow\nz\n", encoding="utf-8")
+
+
+def _goal_review(root: Path, goal: str, seats=(("product", "yes", "every unit Fixed", "yes"),)):
+    d = root / "sdlc-studio" / ".local"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "goal-review.json").write_text(json.dumps({
+        "goal": goal, "reviewed_at": "2026-07-22T00:00:00Z",
+        "seats": [{"seat": s, "achievable": a, "done_means": dm, "one_increment": oi}
+                  for s, a, dm, oi in seats]}), encoding="utf-8")
+
+
+class GoalConsultTests(unittest.TestCase):
+    """US0297/CR0354/D0045: the seats scored WSJF and nothing reviewed what the run was FOR.
+
+    RUN-01KXVYGR is the argument: a Sprint Goal unreachable BY CONSTRUCTION, unnoticed for a
+    whole session and closed as partial. D0045 ruled the consult BLOCKING, because an advisory
+    goal review would have been skipped exactly as the advisory WSJF consult was."""
+
+    def _plan(self, root, *extra):
+        mod = _load()
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                unittest.mock.patch.object(sys, "stdin", io.StringIO("")):
+            rc = mod.main(["plan", "--bugs", "Open", "--no-fetch", "--root", str(root), *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_plan_records_a_seat_verdict_on_the_sprint_goal(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            _goal_review(root, "empty the sized backlog",
+                         seats=(("product", "no", "every bug Fixed and signed off", "yes"),))
+            rc, out, err = self._plan(root, "--format", "json", "--order", "wsjf",
+                                      "--sprint-goal", "empty the sized backlog")
+            self.assertEqual(rc, 0, err)
+            data = json.loads(out)
+            gr = data["goal_review"]
+            self.assertTrue(gr["reviewed"])
+            seat = gr["seats"][0]
+            self.assertEqual(seat["seat"], "product")
+            self.assertEqual(seat["achievable"], "no")
+            self.assertEqual(seat["done_means"], "every bug Fixed and signed off")
+            self.assertEqual(seat["one_increment"], "yes")
+            # alongside the WSJF components, never in place of them
+            self.assertIsNotNone(data.get("seat_provenance"))
+
+    def test_goal_review_is_stamped_on_the_run_state_at_plan_time(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            _goal_review(root, "empty the sized backlog")
+            rc, out, err = self._plan(root, "--write", "--sprint-goal",
+                                      "empty the sized backlog")
+            self.assertEqual(rc, 0, err)
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertEqual(state["sprint_goal"], "empty the sized backlog")
+            gr = state["sprint_goal_review"]
+            self.assertTrue(gr["reviewed"])
+            self.assertEqual(gr["reviewed_at"], "2026-07-22T00:00:00Z")
+            self.assertEqual([s["seat"] for s in gr["seats"]], ["product"])
+
+    def test_plan_refuses_a_sprint_goal_no_seat_has_reviewed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            rc, out, err = self._plan(root, "--write", "--sprint-goal", "empty the backlog")
+            self.assertEqual(rc, 2)
+            self.assertFalse((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
+            self.assertFalse((root / "sdlc-studio" / ".local" / "run-state.json").exists())
+            self.assertIn("goal-review record", err)
+
+    def test_a_review_of_a_different_goal_does_not_count_as_a_review(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            _goal_review(root, "some other goal entirely")
+            rc, out, err = self._plan(root, "--write", "--sprint-goal", "empty the backlog")
+            self.assertEqual(rc, 2)
+            self.assertIn("a different goal", err)
+
+    def test_a_verdict_missing_an_answer_is_not_a_review(self) -> None:
+        """Achievability without a definition of done is an opinion about an unstated target:
+        the close would then judge the increment against a definition nobody wrote down."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / ".local" / "goal-review.json").write_text(json.dumps({
+                "goal": "empty the backlog", "reviewed_at": "2026-07-22T00:00:00Z",
+                "seats": [{"seat": "product", "achievable": "yes", "one_increment": "yes"}]}),
+                encoding="utf-8")
+            status = _load().goal_review_status(root, "empty the backlog")
+            self.assertFalse(status["reviewed"])
+            rc, out, err = self._plan(root, "--write", "--sprint-goal", "empty the backlog")
+            self.assertEqual(rc, 2)
+
+    def test_skip_personas_records_the_goal_as_unreviewed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            rc, out, err = self._plan(root, "--write", "--skip-personas",
+                                      "--sprint-goal", "empty the backlog")
+            self.assertEqual(rc, 0, err)
+            self.assertTrue((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertFalse(state["sprint_goal_review"]["reviewed"])
+            self.assertEqual(state["sprint_goal_review"]["skipped"], "--skip-personas")
+            self.assertIn("went UNREVIEWED", out)
+
+    def test_a_project_with_no_seats_of_its_own_is_not_blocked(self) -> None:
+        """The gate demands a review from seats that EXIST. Refusing every plan on a project
+        that never adopted personas would block on a ceremony nobody there can perform."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            rc, out, err = self._plan(root, "--write", "--sprint-goal", "empty the backlog")
+            self.assertEqual(rc, 0, err)
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertFalse(state["sprint_goal_review"]["reviewed"])
+            self.assertIn("no review seats", out + err)
+
+    def test_the_record_command_writes_what_the_plan_reads(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+                rc = mod.main(["goal-review", "record", "--root", str(root),
+                               "--goal", "empty the backlog",
+                               "--seat", "product|yes|every bug Fixed|yes"])
+            self.assertEqual(rc, 0, out.getvalue())
+            status = mod.goal_review_status(root, "empty the backlog")
+            self.assertTrue(status["reviewed"])
+            self.assertEqual(status["seats"][0]["done_means"], "every bug Fixed")
+
+
+class ReachableEndStateTests(unittest.TestCase):
+    """US0298/CR0354: RUN-01KXVYGR's goal, 'the sized delivery backlog is empty', could not
+    be reached BY CONSTRUCTION - with `review.two_role_after` set, every unit past the cutoff
+    needs a reviewer-of-record sign-off the authoring session is refused, so the furthest
+    reachable state was Review. Nobody noticed until the close."""
+
+    def _config(self, root: Path, body: str) -> None:
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(body, encoding="utf-8")
+
+    def test_plan_names_the_reachable_end_state_under_the_two_role_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root, "review:\n  two_role_after: 192\n")
+            _pointed_story(root, 200, 3)
+            _pointed_story(root, 201, 3)
+            data = _load().build_plan(root, "story", "Ready", skip_personas=True)
+            res = data["reachable_end_state"]
+            self.assertEqual(res["state"], "Review")
+            self.assertIn("two_role_after", res["reason"])
+            self.assertEqual(res["units"], ["US0200", "US0201"])
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = _load().main(["plan", "--stories", "Ready", "--root", str(root),
+                                   "--no-fetch", "--skip-personas"])
+            self.assertEqual(rc, 0)
+            self.assertIn("reachable end state: Review", out.getvalue() + err.getvalue())
+
+    def test_a_batch_the_two_role_gate_does_not_reach_can_still_reach_done(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root, "review:\n  two_role_after: 192\n")
+            _pointed_story(root, 10, 3)          # below the cutoff
+            data = _load().build_plan(root, "story", "Ready", skip_personas=True)
+            self.assertEqual(data["reachable_end_state"]["state"], "Done")
+            self.assertIsNone(data["reachable_end_state"]["reason"])
+            self.assertEqual(data["reachable_end_state"]["units"], [])
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)                       # ...and with no cutoff configured at all
+            _pointed_story(root, 200, 3)
+            data = _load().build_plan(root, "story", "Ready", skip_personas=True)
+            self.assertEqual(data["reachable_end_state"]["state"], "Done")
+            self.assertIsNone(data["reachable_end_state"]["reason"])
+
+    def test_a_project_that_stood_the_two_role_rule_down_still_reaches_done(self) -> None:
+        """The cap is derived from the SAME fields the conformance gate reads, including the
+        story Definition of Done's `review.two-role` stand-down. A cap that disagreed with the
+        gate it claims to derive would be worse than no cap at all."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root, "review:\n  two_role_after: 192\n")
+            (root / "sdlc-studio" / "definition-of-done.md").write_text(
+                "# DoD\n\n## Story\n\n- verified [check: verify.acs]\n", encoding="utf-8")
+            _pointed_story(root, 200, 3)
+            data = _load().build_plan(root, "story", "Ready", skip_personas=True)
+            self.assertEqual(data["reachable_end_state"]["state"], "Done")
+            self.assertIsNone(data["reachable_end_state"]["reason"])
+
+    def test_the_reachable_end_state_is_recorded_on_the_run_state(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root, "review:\n  two_role_after: 192\n")
+            _pointed_story(root, 200, 3)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                    unittest.mock.patch.object(sys, "stdin", io.StringIO("")):
+                rc = _load().main(["plan", "--stories", "Ready", "--root", str(root),
+                                   "--no-fetch", "--skip-personas", "--write",
+                                   "--sprint-goal", "every story Done"])
+            self.assertEqual(rc, 0, err.getvalue())
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            res = state["reachable_end_state"]
+            self.assertEqual(res["state"], "Review")
+            self.assertIn("two_role_after", res["reason"])
+            self.assertEqual(res["units"], ["US0200"])
+            self.assertEqual(state["sprint_goal"], "every story Done")
 
 
 class GoalVerdictTests(unittest.TestCase):
@@ -3465,6 +4158,195 @@ class DeferredOperatorDecisions(unittest.TestCase):
                                "--option", "yes|it happens", "--root", str(root)])
             self.assertNotEqual(rc, 0)
             self.assertIn("two", err.getvalue())
+
+
+def _batch_story(root: Path, num: int, status: str = "Ready", depends: str = "") -> None:
+    d = root / "sdlc-studio" / "stories"
+    d.mkdir(parents=True, exist_ok=True)
+    dep = f"> **Depends on:** {depends}\n" if depends else ""
+    (d / f"US{num:04d}-x.md").write_text(
+        f"# US{num:04d}: s\n\n> **Status:** {status}\n> **Priority:** Medium\n{dep}",
+        encoding="utf-8")
+
+
+class UnblockedWorkBlocksTheStopTests(unittest.TestCase):
+    """US0299/CR0378: in RUN-01KY03GS one unit needed an operator decision and the whole
+    13-unit sprint stopped waiting for it, while four units nothing blocked could have been
+    built meanwhile. The mechanism to prevent that already existed and nothing obliged its
+    use, so the available-but-optional path was not taken and the expensive one was.
+
+    D0052 bounds the blocked set: only a declared `Depends on:` edge blocks. A shared-file
+    cluster is a SEQUENCING constraint, and treating a collision as blockage would let one
+    deferred decision stop a whole file cluster - the over-stopping this exists to end."""
+
+    def _fixture(self, root: Path, batch=("US0101", "US0102", "US0103")) -> None:
+        _close_state(root, batch=list(batch))
+        _batch_story(root, 101)
+        _batch_story(root, 102)
+        _batch_story(root, 103, depends="US0101")
+
+    def _defer(self, mod, root: Path, unit: str = "US0101") -> tuple:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(["decision", "defer", "--unit", unit,
+                           "--question", "which auth?",
+                           "--option", "a|one consequence", "--option", "b|another",
+                           "--root", str(root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _stop(self, mod, root: Path, *extra: str) -> tuple:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(["stop", "--root", str(root), "--reason",
+                           "waiting on the auth decision", *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_defer_names_the_units_the_batch_continues_with(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            rc, out, err = self._defer(_load(), root)
+            self.assertEqual(rc, 0, err)
+            self.assertIn("US0102", out)               # named, not merely counted
+            self.assertNotIn("US0103", out)            # a declared dependant is blocked too
+            self.assertIn("batch continues", out)
+
+    def test_a_stop_with_unblocked_work_remaining_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            mod = _load()
+            self._defer(mod, root)
+            rc, out, err = self._stop(mod, root)
+            self.assertNotEqual(rc, 0)
+            self.assertIn("US0102", err)
+            self.assertIn("sprint decision defer", err)
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertEqual(state["outcome"], "running")   # the refusal changed nothing
+            self.assertIsNone(state.get("stop"))
+
+    def test_a_stop_is_allowed_when_no_unit_can_proceed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            mod = _load()
+            self._defer(mod, root, unit="US0101")
+            self._defer(mod, root, unit="US0102")
+            rc, out, err = self._stop(mod, root)
+            self.assertEqual(rc, 0, err)
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertEqual(state["stop"]["cause"], "pending-decision")
+            self.assertEqual(state["outcome"], "stopped")
+
+    def test_only_the_deferred_unit_and_its_dependants_are_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            mod = _load()
+            self._defer(mod, root, unit="US0101")
+            blocked = mod.blocked_by_pending(root)
+            self.assertEqual(blocked["blocked"], ["US0101", "US0103"])
+            self.assertEqual(blocked["unblocked"], ["US0102"])
+
+    def test_a_shared_file_is_not_a_declared_dependency(self) -> None:
+        """D0052: a collision is a sequencing constraint, never a reason a unit cannot
+        proceed. Treating it as blockage is the over-stopping this change exists to end."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, batch=["US0101", "US0102"])
+            _src(root, "src/shared.py")
+            for num in (101, 102):
+                (root / "sdlc-studio" / "stories" / f"US{num:04d}-x.md").parent.mkdir(
+                    parents=True, exist_ok=True)
+                (root / "sdlc-studio" / "stories" / f"US{num:04d}-x.md").write_text(
+                    f"# US{num:04d}: s\n\n> **Status:** Ready\n> **Priority:** Medium\n"
+                    f"> **Affects:** src/shared.py\n", encoding="utf-8")
+            mod = _load()
+            self._defer(mod, root, unit="US0101")
+            self.assertEqual(mod.blocked_by_pending(root)["unblocked"], ["US0102"])
+
+
+class StopRecordTests(unittest.TestCase):
+    """US0300/CR0378: a stop is expensive and its cost was invisible, so nothing pushed back
+    on taking one. A parked run looked exactly like a finished one."""
+
+    def _fixture(self, root: Path) -> None:
+        _close_state(root, batch=["US0101", "US0102"])
+        _batch_story(root, 101)
+        _batch_story(root, 102)
+
+    def _stop(self, mod, root: Path, *extra: str) -> tuple:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(["stop", "--root", str(root), "--reason", "operator called it",
+                           *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_a_stop_records_its_cause_and_the_units_it_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                mod.main(["decision", "defer", "--unit", "US0101", "--question", "q?",
+                          "--option", "a|x", "--option", "b|y", "--root", str(root)])
+            rc, out, err = self._stop(mod, root, "--force")
+            self.assertEqual(rc, 0, err)
+            stop = json.loads((root / "sdlc-studio" / ".local" / "run-state.json")
+                              .read_text())["stop"]
+            self.assertEqual(stop["cause"], "operator")
+            self.assertEqual(stop["blocked"], ["US0101"])
+            self.assertTrue(stop["stopped_at"])
+            self.assertEqual(stop["detail"], "operator called it")
+
+    def test_a_forced_stop_names_the_units_that_could_have_proceeded(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                mod.main(["decision", "defer", "--unit", "US0101", "--question", "q?",
+                          "--option", "a|x", "--option", "b|y", "--root", str(root)])
+            rc, out, err = self._stop(mod, root, "--force")
+            self.assertEqual(rc, 0, err)
+            blob = out + err
+            self.assertIn("US0102", blob)              # named individually...
+            self.assertNotIn("1 unit(s) remaining", blob)   # ...never folded into a count
+            stop = json.loads((root / "sdlc-studio" / ".local" / "run-state.json")
+                              .read_text())["stop"]
+            self.assertEqual(stop["could_have_proceeded"], ["US0102"])
+
+    def test_elapsed_marks_and_excludes_the_recorded_idle_gap(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            state = {"started_at": "2026-07-22T00:00:00Z", "ended_at": "2026-07-22T04:00:00Z",
+                     "idle_gaps": [{"from": "2026-07-22T01:00:00Z",
+                                    "to": "2026-07-22T02:30:00Z", "cause": "pending-decision"}]}
+            _close_state(root, **state)
+            el = mod.run_elapsed(root)
+            self.assertEqual(el["raw_hours"], 4.0)
+            self.assertEqual(el["idle_hours"], 1.5)
+            self.assertEqual(el["hours"], 2.5)          # the denominator excludes the wait
+            self.assertEqual(len(el["gaps"]), 1)
+            # ...and the rule lives in ONE place, shared rather than copied (D0052)
+            sys.path.insert(0, str(SCRIPT.parent))
+            import telemetry
+            self.assertEqual(telemetry.idle_hours(state), 1.5)
+            self.assertEqual(
+                telemetry.elapsed_excluding_idle(
+                    state["started_at"], state["ended_at"], state)["hours"], 2.5)
+
+    def test_an_open_gap_is_not_counted_as_idle_time(self) -> None:
+        """A gap the run never came back from has no measured length. Extending it to `now`
+        would book the wall-clock since as measured idle, which is a different claim."""
+        sys.path.insert(0, str(SCRIPT.parent))
+        import telemetry
+        state = {"idle_gaps": [{"from": "2026-07-22T01:00:00Z", "to": None}]}
+        self.assertEqual(telemetry.idle_hours(state), 0.0)
+        self.assertEqual(telemetry.idle_gaps(state), [])
 
 
 class ApplySignoffTailTests(unittest.TestCase):

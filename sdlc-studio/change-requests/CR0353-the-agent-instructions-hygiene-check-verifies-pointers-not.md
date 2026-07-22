@@ -1,6 +1,7 @@
 # CR-0353: the agent-instructions hygiene check verifies pointers, not that the working model is established
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0097
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

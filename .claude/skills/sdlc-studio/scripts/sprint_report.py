@@ -54,6 +54,62 @@ def _flow_summary(root: Path) -> dict | None:
         return None
 
 
+#: How many previous runs the trailing history shows. Enough to read a trend from; short enough
+#: that the page stays a page.
+MUTATION_HISTORY = 4
+
+
+def _mutation_row(mut, root: Path, row: dict) -> dict:
+    """One series row rendered as cost BESIDE yield.
+
+    Cost is the run's wall-clock. Yield is the artefacts filed against it, never its survivor
+    count: a survivor is a hypothesis, and RUN-01KY03GS raised three of which two became bugs -
+    counting survivors would have overstated that run by half. `cost_per_finding_s` is derived
+    ONLY when both halves are present; otherwise it is None and the note says why, because a
+    blank there reads as free and a zero divisor is not an answer."""
+    y = mut.run_yield(root, row.get("run_id"))
+    elapsed = row.get("elapsed_s")
+    filed = y.get("filed") or []
+    cost, note = None, None
+    if not row.get("evidence"):
+        note = "no evidence, so nothing to divide"
+    elif not elapsed:
+        note = "the run recorded no wall-clock"
+    elif not filed:
+        note = "nothing was filed from this run, so it has no cost per finding (not a free run)"
+    else:
+        cost = round(float(elapsed) / len(filed), 1)
+    return {"run_id": row.get("run_id"), "at": row.get("at"), "elapsed_s": elapsed,
+            "applied": row.get("applied"), "killed": row.get("killed"),
+            "survived": row.get("survived"), "evidence": bool(row.get("evidence")),
+            "outcome": row.get("outcome"),
+            "no_evidence_reason": row.get("no_evidence_reason"),
+            "filed": filed, "yield": len(filed),
+            "equivalent": len(y.get("equivalent") or []),
+            "cost_per_finding_s": cost, "cost_per_finding_note": note}
+
+
+def _mutation_summary(root: Path) -> dict:
+    """The mutation gate's cost against its yield, for this run and the ones before it.
+
+    `current` is None when the series holds nothing - the step was skipped, refused before it
+    could write, or never run. That is NOT a run of zero survivors, and the renderer says so
+    rather than printing counts of zero, which would read as a gate that looked and found
+    nothing."""
+    try:
+        import mutation
+        rows = mutation.series_rows(root)
+    except Exception as exc:  # noqa: BLE001 - the report never fails on its evidence being absent
+        print(f"note: mutation series unavailable ({type(exc).__name__}: {exc})", file=sys.stderr)
+        return {"current": None, "trailing": []}
+    if not rows:
+        return {"current": None, "trailing": []}
+    current = _mutation_row(mutation, root, rows[-1])
+    trailing = [_mutation_row(mutation, root, r)
+                for r in reversed(rows[:-1][-MUTATION_HISTORY:])]
+    return {"current": current, "trailing": trailing}
+
+
 def _sprint_goal(root: Path, unit_ids: list[str]) -> tuple[str | None, dict | None]:
     """The run state's Sprint Goal + verdict - ONLY when its batch names this sprint's
     units. A run state from a different run says nothing about this report (the same
@@ -111,6 +167,7 @@ def report(root: Path, retro_id: str, *, sprint_tokens: int | None = None,
         "ok": True, "id": retro_id, "date": acc.get("date", ""),
         "sprint_goal": goal, "sprint_goal_verdict": goal_verdict,
         "flow": _flow_summary(Path(root)),
+        "mutation": _mutation_summary(Path(root)),
         "units": unit_ids,
         "delivered_points": b.get("delivered_points"),
         "spend": _spend(root, unit_ids),
@@ -145,6 +202,41 @@ def _spend_line(sp: dict, sprint_tokens: int | None) -> str:
             f"{dollars}{unpriced}. Set `pricing.<model>` in .config.yaml for your contract rate.")
 
 
+def _mutation_lines(m: dict | None) -> list[str]:
+    """The mutation gate's trade, in one place: what it cost against what it produced.
+
+    A gate that cannot show its yield gets cut on a bad day and kept on a good one, so this is
+    rendered at the close, where the decision is actually taken. A run with no evidence is NAMED
+    - never rendered as a tidy row of zeros, which reads as a gate that looked and found
+    nothing rather than one that never looked."""
+    if not m or not m.get("current"):
+        return ["Mutation gate: no mutation evidence recorded for this run (the step was "
+                "skipped, or was killed before it could record anything) - not a run that "
+                "found nothing."]
+    cur = m["current"]
+    if not cur["evidence"]:
+        return [f"Mutation gate: no mutation evidence recorded for this run - "
+                f"{cur['no_evidence_reason']} ({cur['elapsed_s']}s spent). "
+                f"Not a run that found nothing."]
+    filed = ", ".join(cur["filed"]) if cur["filed"] else "nothing filed"
+    per = (f" - {cur['cost_per_finding_s']}s per finding" if cur["cost_per_finding_s"]
+           else f" - {cur['cost_per_finding_note']}")
+    equiv = f", {cur['equivalent']} equivalent (excluded)" if cur["equivalent"] else ""
+    lines = [f"Mutation gate: {cur['elapsed_s']}s, {cur['applied']} applied, "
+             f"{cur['killed']} killed, {cur['survived']} survived{equiv}; "
+             f"yield {cur['yield']} filed artefact(s) ({filed}){per}."]
+    for prev in m.get("trailing") or []:
+        if not prev["evidence"]:
+            lines.append(f"  previous run {prev['run_id']}: {prev['elapsed_s']}s, no evidence "
+                         f"({prev['no_evidence_reason']}).")
+            continue
+        pper = (f", {prev['cost_per_finding_s']}s per finding" if prev["cost_per_finding_s"]
+                else f", {prev['cost_per_finding_note']}")
+        lines.append(f"  previous run {prev['run_id']}: {prev['elapsed_s']}s, "
+                     f"{prev['survived']} survived, yield {prev['yield']}{pper}.")
+    return lines
+
+
 def render(rep: dict) -> str:
     if not rep.get("ok"):
         return f"sprint report {rep['id']}: unavailable ({'; '.join(rep.get('errors', []))})"
@@ -176,6 +268,7 @@ def render(rep: dict) -> str:
                      f"{acc['n_measured']} measured unit(s).")
     if acc["models"]:
         lines.append(f"Models: {', '.join(acc['models'])}.")
+    lines.extend(_mutation_lines(rep.get("mutation")))
     lines.append(f"Tickets raised: {', '.join(rep['tickets']) if rep['tickets'] else 'none'}.")
     lines.append(f"Lessons: {len(rep['lessons'])} recorded.")
     fl = rep.get("flow")

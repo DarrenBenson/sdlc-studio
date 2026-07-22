@@ -256,6 +256,68 @@ def _git_touched_by_id(root: Path) -> dict[str, set[str]]:
     return by_id
 
 
+def _staged_paths(root: Path) -> list[str]:
+    """Repo-relative paths in the index (`git diff --cached`). Empty when git cannot be
+    asked, which degrades to the committed-evidence behaviour rather than to a false clean:
+    with no staged paths the pending leg simply attributes nothing."""
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(root), "-c", "core.quotepath=false", "diff", "--cached",
+             "--name-only"], capture_output=True, text=True, timeout=_GIT_TIMEOUT)
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if out.returncode != 0:
+        return []
+    return [ln.strip() for ln in out.stdout.splitlines() if ln.strip()]
+
+
+def _pending_touched_by_id(root: Path) -> dict[str, set[str]]:
+    """{id: source files THIS commit is about to attribute to it}, read from the index.
+
+    Why this exists. The git leg reads `git log`, so a commit's files attach to a
+    unit only once that commit exists. The pre-commit gate could therefore never see a
+    violation the commit it is gating was about to create: the floor reported clean, the
+    commit landed, and the same check immediately afterwards reported new violations in
+    files nothing had touched.
+
+    What is available at pre-commit time is the INDEX, and that is what this reads. The
+    ids are those whose own artefact file is staged - a delivery commit stages the
+    artefact that reaches Done/Fixed/Complete alongside the code - and each gets this
+    commit's staged source files, which is what the history leg will attribute to them the
+    moment the commit exists.
+
+    What is NOT available is the commit MESSAGE. Git writes `COMMIT_EDITMSG` AFTER the
+    pre-commit hook runs, so at hook time that file still holds the previous commit's
+    message; reading it would judge the wrong commit. A unit this commit names in prose
+    alone, staging no artefact for it, therefore cannot be judged until the commit exists.
+    That case remains one commit behind, is stated at the lane, and has its own test.
+
+    One deliberate asymmetry with the history leg, in the strict direction: the history leg
+    skips a commit whose SUBJECT names more than one judged id, because it cannot apportion
+    the files. The subject is unknown here, so nothing is skipped. A unit escaping only
+    through that blind spot is refused here instead. The blind spot is a disclosed limit of
+    the git leg, not an entitlement, and the remedy is the floor's ordinary one: one
+    acceptance criterion, or a declared footprint.
+    """
+    staged = _staged_paths(root)
+    if not staged:
+        return {}
+    files = {f for f in staged if Path(f).suffix in SOURCE_SUFFIXES}
+    if not files:
+        return {}
+    ids: set[str] = set()
+    for path in staged:
+        if Path(path).suffix.lower() != ".md":
+            continue
+        rid = sdlc_md.extract_record_id(Path(path).stem)
+        if not rid:
+            continue
+        norm = sdlc_md.norm_id(rid)
+        if _JUDGED_ID_RE.fullmatch(norm):
+            ids.add(norm)
+    return {rid: set(files) for rid in ids}
+
+
 def _declared_source_files(text: str) -> set[str]:
     """The source files a unit declares in its `Affects` field (doc/non-source paths dropped).
 
@@ -374,7 +436,7 @@ def _classify(multi_file: bool, has_planning: bool, declared: bool) -> str | Non
     return None
 
 
-def detect(repo_root: Path | str) -> dict:
+def detect(repo_root: Path | str, include_staged: bool = False) -> dict:
     """Per-unit engagement-floor state over the shipped story/bug/CR units.
 
     Returns {"mode": floor|judgement, "units": [...], "summary": {...}}. Each judged unit carries
@@ -382,6 +444,12 @@ def detect(repo_root: Path | str) -> dict:
     DECLARED its footprint, its violation kind, and whether it is exempt (cutoff) or waived. A live
     violation is a would-violate unit that is neither exempt nor waived. An adopt_after cutoff above
     the highest existing id is a silent forward disarm and is flagged (`cutoff_forward`).
+
+    `include_staged` folds the pending commit in (`_pending_touched_by_id`), so a violation the
+    commit in hand is about to create is visible BEFORE it lands rather than one commit later.
+    Each unit then carries `staged_new`: True when it is clean on committed evidence and a
+    violation once this commit's staged files are attributed. Default off, so every existing
+    caller sees exactly what it saw before.
     """
     root = Path(repo_root)
     mode, cutoff = _mode_and_cutoff(root)
@@ -389,6 +457,7 @@ def detect(repo_root: Path | str) -> dict:
     max_id = _max_judged_id(root)
     cutoff_forward = cutoff is not None and max_id > 0 and cutoff > max_id
     git_touched = _git_touched_by_id(root)   # ONE pass, not one `git log --grep` per unit
+    pending = _pending_touched_by_id(root) if include_staged else {}
     units: list[dict] = []
     for type_, shipped in SHIPPED_STATUS.items():
         vocab = sdlc_md.status_vocab(type_, root)
@@ -398,7 +467,9 @@ def detect(repo_root: Path | str) -> dict:
             status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
             if status not in shipped:
                 continue
-            source_files = _declared_source_files(text) | git_touched.get(sdlc_md.norm_id(rid), set())
+            norm = sdlc_md.norm_id(rid)
+            committed = _declared_source_files(text) | git_touched.get(norm, set())
+            source_files = committed | pending.get(norm, set())
             multi_file = len(source_files) > FLOOR_THRESHOLD
             has_planning = _has_planning(text)
             declared = _affects_declared(text)
@@ -407,6 +478,10 @@ def detect(repo_root: Path | str) -> dict:
             exempt = cutoff is not None and rid_num is not None and rid_num <= cutoff
             waived = project_waived or (_unit_waiver(root, rid) is not None)
             violation = kind is not None and not exempt and not waived
+            # Was it already a violation without this commit? The difference is what the
+            # commit in hand CREATES, and is the only thing the pending lane reports.
+            committed_kind = _classify(len(committed) > FLOOR_THRESHOLD, has_planning, declared)
+            committed_violation = committed_kind is not None and not exempt and not waived
             units.append({
                 "id": rid,
                 "type": type_,
@@ -419,6 +494,7 @@ def detect(repo_root: Path | str) -> dict:
                 "exempt": exempt,
                 "waived": waived,
                 "violation": violation,
+                "staged_new": violation and not committed_violation,
             })
     units.sort(key=lambda u: u["id"])
     return {
@@ -429,6 +505,11 @@ def detect(repo_root: Path | str) -> dict:
             "judged": len(units),
             "multi_file": sum(1 for u in units if u["multi_file"]),
             "violations": sum(1 for u in units if u["violation"]),
+            # Whether the pending commit was folded in at all, and how many violations it
+            # creates. `staged_evaluated` false means these zeros are "not looked at",
+            # never "looked at and found none".
+            "staged_evaluated": include_staged,
+            "staged_new": sum(1 for u in units if u["staged_new"]),
             "waived": sum(1 for u in units if u["waived"]),
             "exempt": sum(1 for u in units if u["exempt"]),
             # Exempt units that WOULD violate but for the cutoff - kept visible so a grandfather
@@ -475,7 +556,10 @@ def remedy_detail(result: dict) -> str:
               f"adopt_after {s['cutoff']})" if s["exempt_would_violate"] else "")
     n = s["violations"]
     if not n:
-        return f"no live violation across {s['judged']} shipped unit(s){hidden}{mode_note}"
+        # Say what the green means. It is "no ALREADY-COMMITTED unit violates", not "this
+        # commit is compliant" - the pending commit is judged by `check --pending`.
+        return (f"no live violation across {s['judged']} shipped unit(s) on committed "
+                f"evidence{hidden}{mode_note}")
     ids = [u["id"] for u in result["units"] if u["violation"]]
     named = ", ".join(ids[:_MAX_NAMED]) + (f" (+{len(ids) - _MAX_NAMED} more)"
                                            if len(ids) > _MAX_NAMED else "")
@@ -549,9 +633,46 @@ def cmd_check_commit_msg(args: argparse.Namespace) -> int:
     return code
 
 
+#: What `--pending` can and cannot see, printed at the lane rather than left in a docstring.
+#: A green lane that reads as "this commit is compliant" would be the same overclaim the
+#: standing lane made before BG0251.
+PENDING_SCOPE = (
+    "Scope: the STAGED index. Git writes the commit message after a pre-commit hook runs, "
+    "so this lane cannot read the message it is gating - a unit named only in that message, "
+    "whose artefact this commit does not stage, is still judged one commit later."
+)
+
+
+def _cmd_check_pending(result: dict) -> int:
+    """`check --pending`: report only what the commit in hand CREATES.
+
+    Deliberately silent about violations that already exist on committed evidence - the
+    standing gate lane fails on those, and a lane that repeats them teaches an author to
+    read past both.
+    """
+    s = result["summary"]
+    new = [u for u in result["units"] if u["staged_new"]]
+    advisory = result["mode"] == "judgement"
+    if not new:
+        print(f"engagement floor (pending commit): no new violation from the "
+              f"{s['judged']} shipped unit(s) judged. {PENDING_SCOPE}")
+        return 0
+    note = " [advisory: judgement mode]" if advisory else ""
+    print(f"engagement floor (pending commit): {len(new)} unit(s) this commit puts below "
+          f"the floor{note}: " + ", ".join(u["id"] for u in new))
+    for u in new:
+        print(f"  {u['id']} ({u['status']}): {u['source_files']} source file(s) once this "
+              f"commit lands, {u['kind']}")
+    print("Remedies:")
+    for r in (REMEDY_ADD, REMEDY_CUTOFF, REMEDY_WAIVER):
+        print(f"  - {r}")
+    print(PENDING_SCOPE)
+    return 0 if advisory else 1
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     """Run the floor; exit non-zero on a violation unless the project is in judgement mode."""
-    result = detect(args.root)
+    result = detect(args.root, include_staged=args.pending)
     s = result["summary"]
     if args.format == "json":
         print(json.dumps(result, indent=2))
@@ -559,11 +680,14 @@ def cmd_check(args: argparse.Namespace) -> int:
         if s["cutoff_forward"]:
             print(f"engagement floor: {_forward_cutoff_detail(s)}")
             return 1
+        if args.pending:
+            return _cmd_check_pending(result)
         extra = (f", {s['exempt']} exempt" if s["exempt"] else "") + \
                 (f", {s['waived']} waived" if s["waived"] else "")
         advisory = " [advisory: judgement mode]" if result["mode"] == "judgement" else ""
         print(f"engagement floor: {s['violations']} violation(s) across {s['judged']} shipped "
-              f"unit(s) ({s['multi_file']} multi-file){extra}{advisory}")
+              f"unit(s) on committed evidence ({s['multi_file']} multi-file)"
+              f"{extra}{advisory}")
         for u in result["units"]:
             if u["violation"]:
                 print(f"  {u['id']} ({u['status']}): {u['source_files']} source file(s), "
@@ -576,6 +700,8 @@ def cmd_check(args: argparse.Namespace) -> int:
             for r in (REMEDY_ADD, REMEDY_CUTOFF, REMEDY_WAIVER):
                 print(f"  - {r}")
     # Judgement mode reports but never fails; a forward cutoff always fails (handled above).
+    if args.pending:   # the --format json path; the text path returned above
+        return 1 if (s["staged_new"] and result["mode"] != "judgement") else 0
     return 1 if (s["violations"] and result["mode"] != "judgement") else 0
 
 
@@ -585,6 +711,9 @@ def build_parser() -> argparse.ArgumentParser:
     c = sub.add_parser("check", help="Flag shipped multi-file units with no plan/AC artefact.")
     c.add_argument("--root", default=".", help="Repo root (default: .)")
     c.add_argument("--format", choices=("text", "json"), default="text")
+    c.add_argument("--pending", action="store_true",
+                   help="Judge the commit in hand: fold the staged index in and report only "
+                        "the violations THIS commit would create (the pre-commit lane).")
     c.set_defaults(func=cmd_check)
     m = sub.add_parser("check-commit-msg",
                        help="Commit-msg hook: warn on a multi-id subject with no Refs: trailer.")

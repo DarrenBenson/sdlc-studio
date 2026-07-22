@@ -44,6 +44,161 @@ run() {
 
 echo "${B}sdlc-studio pre-commit gate${N}"
 
+# Concurrent-write window guard. A window is a record on disk saying another process may
+# be REWRITING named paths in this working tree right now: an independent review applying
+# and restoring mutants, a mutation run, a reviewer pulling an old revision back over a
+# file. While one is open, what is staged for a claimed path is not necessarily what the
+# author wrote, and a green gate is no evidence otherwise - the write that prompted this
+# guard was a `git show <sha>:...retro.py > retro.py` redirect following a symlink into
+# the live tree, and it was caught only because the reverted source happened to fail the
+# suite. A rewrite leaving the suite green would have committed in silence under a commit
+# message about paperwork. So this REFUSES rather than warning: a warning inside a passing
+# run is exactly what the observed failure mode defeats.
+#
+# Record contract (written by the window's owner, read here):
+#   sdlc-studio/.local/*window*.json  or  sdlc-studio/.local/windows/*.json
+#   {"owner": "who holds it", "opened": "<iso8601>", "paths": ["a/file.py", "dir/", "glob*"]}
+# No record on disk means no window: this guard then prints nothing and costs nothing.
+# A record that is unreadable, is not an object, or names no paths is read as an OPEN
+# window claiming the whole tree - a truncated record must never read as "closed".
+window_out="$(python3 - <<'PY'
+import fnmatch
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+LOCAL = Path("sdlc-studio") / ".local"
+EVERYTHING = "*"
+
+
+def records():
+    """Every window record on disk, in both spellings of the contract."""
+    found = []
+    if LOCAL.is_dir():
+        found += sorted(p for p in LOCAL.glob("*window*.json") if p.is_file())
+        sub = LOCAL / "windows"
+        if sub.is_dir():
+            found += sorted(p for p in sub.glob("*.json") if p.is_file())
+    return found
+
+
+def parse(path):
+    """(owner, opened, claimed paths, clear hint). Anything unreadable claims the tree."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return "unknown (the record is unreadable)", "", [EVERYTHING], ""
+    if not isinstance(data, dict):
+        return "unknown (the record is unreadable: not a JSON object)", "", [EVERYTHING], ""
+    owner = str(data.get("owner") or "").strip() or "unknown"
+    opened = str(data.get("opened_at") or data.get("opened")
+                 or data.get("started") or "").strip()
+    raw = data.get("paths")
+    if isinstance(raw, str):
+        raw = [raw]
+    claimed = ([str(x).strip() for x in raw if str(x).strip()]
+               if isinstance(raw, list) else [])
+    # A record may name the command that clears it; that beats any guess made here.
+    clear = str(data.get("clear_with") or "").strip()
+    # A window that does not say what it may rewrite has not said it may rewrite nothing.
+    return owner, opened, (claimed or [EVERYTHING]), clear
+
+
+def claims(pattern, staged):
+    """True when `pattern` covers the staged path: the path itself, a directory it sits
+    under, or a glob it matches. Two clauses, not four: fnmatch already answers the exact
+    case (a wildcard-free pattern matches only itself), the whole-tree case (EVERYTHING is
+    just `*`), and - since its `*` crosses `/` - a `pat + "/*"` spelling too. Each of those
+    three was written here first and deleted after a mutant removing it survived."""
+    pat = pattern.strip()
+    if pat.startswith("./"):
+        pat = pat[2:]
+    pat = pat.rstrip("/")
+    if pat in ("", "."):
+        return True   # a claim on the repo root ("/", ".") is a claim on everything
+    if staged.startswith(pat + "/"):   # a directory claim covers everything beneath it
+        return True
+    return fnmatch.fnmatch(staged, pat)
+
+
+def staged_paths():
+    """Repo-relative staged paths, or None when git could not be asked."""
+    try:
+        out = subprocess.run(
+            ["git", "-c", "core.quotepath=false", "diff", "--cached", "--name-only"],
+            capture_output=True, text=True)
+    except OSError:
+        return None
+    if out.returncode != 0:
+        return None
+    return [ln.strip() for ln in out.stdout.splitlines() if ln.strip()]
+
+
+def main():
+    open_windows = records()
+    if not open_windows:
+        return 0
+    staged = staged_paths()
+    refused = False
+    for rec in open_windows:
+        owner, opened, claimed, clear = parse(rec)
+        rel = rec.as_posix()
+        when = " (opened %s)" % opened if opened else ""
+        if staged is None:
+            hit = ["(the staged file list could not be read, so every path is treated "
+                   "as claimed)"]
+        else:
+            hit = [s for s in staged if any(claims(c, s) for c in claimed)]
+        if not hit:
+            print("  note concurrent-write window OPEN: %s, owner %s%s. No staged path "
+                  "is claimed by it, so this commit proceeds." % (rel, owner, when))
+            continue
+        refused = True
+        print("  REFUSED  a concurrent-write window claims a staged path")
+        print("       record:  %s" % rel)
+        print("       owner:   %s%s" % (owner, when))
+        print("       claims:  %s" % ", ".join(claimed))
+        print("       staged path(s) this window claims:")
+        for s in hit:
+            print("         - %s" % s)
+        print("       While the window is open, what is staged for a claimed path is not")
+        print("       necessarily what you wrote: another process may be rewriting it. A")
+        print("       green gate is no evidence otherwise - a rewrite that leaves the tests")
+        print("       passing commits in silence.")
+        print("       -> fix: stage only the paths the window does not claim, by naming")
+        print("          them - `git add <path> ...` then `git commit` - never `git add -A`.")
+        print("          Otherwise wait for the window's owner to close it.")
+        print("       -> stale window? A killed process leaves its record behind and nothing")
+        print("          clears it. Check with the owner, then clear it:")
+        if clear:
+            print("          %s" % clear)
+        print("          rm %s" % rel)
+    return 1 if refused else 0
+
+
+try:
+    sys.exit(main())
+except Exception as exc:  # never block a commit on this guard's own confusion
+    print("  note window guard could not run (%s); it did not check this commit." % exc)
+    sys.exit(0)
+PY
+)"
+window_rc=$?
+if [ "$window_rc" -eq 1 ]; then
+  printf '%s\n' "$window_out"
+  printf '\n%sCommit blocked.%s A concurrent-write window claims a path this commit stages.\n' "$R" "$N"
+  printf 'Genuine emergency only: %sgit commit --no-verify%s\n' "$B" "$N"
+  exit 1
+elif [ "$window_rc" -ne 0 ]; then
+  # Said out loud rather than skipped in silence: an interpreter that is missing or that
+  # died leaves this commit unchecked, and that must not look like a clean check.
+  printf '  %snote%s window guard exited %s - it did NOT check this commit for an open window.\n' \
+    "$Y" "$N" "$window_rc"
+  [ -n "$window_out" ] && printf '%s\n' "$window_out"
+fi
+[ "$window_rc" -eq 0 ] && [ -n "$window_out" ] && printf '%s\n' "$window_out"
+
 run "style" \
   "house style: no em-dash (U+2014); no jargon (synergy/leverage/robust/journey); no internal provenance tags (CR1234) in reference/help/scripts" \
   "reword the flagged line; a legitimate case can be allowlisted in tools/style-allowlist.txt" \
@@ -78,6 +233,16 @@ run "action-pins" \
   "every GitHub Action is pinned to a full commit SHA (a moved tag cannot inject code into CI)" \
   "pin the flagged Action to its tag's commit SHA: uses: owner/repo@<40-hex> # vN" \
   -- bash tools/check_action_pins.sh
+
+# The engagement floor over the PENDING commit. The standing floor lane inside the gate
+# below reads committed history, so it could never see a violation the commit it is gating
+# was about to create: the condition does not exist until the commit lands. Observed - the
+# floor reported 0 violations, the gate passed, the commit landed, and the same check run
+# seconds later reported 2 NEW violations in files nothing had touched.
+run "floor-pending" \
+  "the engagement floor over the STAGED index: a unit THIS commit puts below the floor (multi-file, no acceptance criterion, no declared footprint) is refused now rather than discovered one commit later. It reads the index, NOT the commit message - git writes the message after this hook runs - so a unit named only in the message is still judged next commit" \
+  "plan the unit (one acceptance criterion, a Verify line, or a linked plan), or declare a real single-file footprint in its Affects field; the lane prints the per-unit remedies" \
+  -- python3 "$skill/engagement_floor.py" check --pending --root .
 
 # Comprehensive artefact gate (fast, ~1s): conformance, reconcile drift, validate,
 # integrity, duplicate-id, doc-coverage, doc-freshness. This is the same gate CI runs.

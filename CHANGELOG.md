@@ -21,6 +21,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The plan measures its rate from the velocity record, and refuses rather than averaging
+  across models (BG0248, US0290, CR0284).** `tokens_per_point` reads `retro.measured_rate` over
+  VELOCITY.md first, falls back to the per-unit evidence log, and reaches the seed last. The
+  previous join needed per-unit actuals that an interactive sprint never writes: 208 forecast
+  records on this repo carried plan-time points and exactly 3 carried an actual, all from the
+  runner era, so the counter promising "your own rate in two more units" described a state that
+  could never arrive. A record spanning two models is REFUSED with its reason carried to the
+  plan, because a rate averaged over two models describes neither.
+
+- **The velocity record is part of the close, and its gaps are reportable (US0288, US0289,
+  CR0284).** `close_owed` treats a missing velocity row as owed and `close_guard` blocks on it;
+  `retro velocity --gaps` names every retro with no row. VELOCITY.md is backfilled for 24
+  historical sprints through the normal writer, every unrecoverable Actual left blank beside a
+  stated reason rather than rendered as a zero.
+
+- **The token capture says which half is measured and which is supplied (BG0252).** The session
+  transcript carries no sidechain records, so a fan-out sprint's delegated agents were invisible
+  while the published figure was labelled "the run's own spend". The basis now names the main
+  thread explicitly, delegated totals are recorded with `supplied` provenance beside `measured`,
+  and the sum is published as a LOWER BOUND.
+
+- **The forecast names what it excludes (BG0254).** The seed is unchanged at 25,000 - it is not
+  refitted against a single sprint. The forecast now declares that it prices the BUILD, and shows
+  a whole-sprint excess measured from the velocity record (1.63x to 6.59x across four retros),
+  with an explicit note that this is proving cost plus any build under-estimate, since the record
+  cannot split them.
+
+- **Collision analysis derives files from Verify lines, and a contradicted `Affects` is reported
+  (US0291, US0292, CR0347).** Test files are almost never declared, so the file parallel work
+  most often shares was the one the analysis could not see; paths are now derived through the
+  verifier parser itself. A declaration the artefact's own content contradicts - a path not on
+  disk, or a file its Verify lines target but it omits - is reported per unit rather than only
+  when every path fails. `validate` and the planner share ONE predicate so they cannot disagree.
+  Advisory throughout: a path to a file the unit will create is legitimate, and a derived path
+  never satisfies the `Affects` requirement.
+
+- **The seats review the Sprint Goal, and an unreachable goal is named at plan time (US0297,
+  US0298, CR0354).** `sprint goal-review record|show` captures a seat verdict on achievability
+  and definition of done, blocking where a project declares seats. A goal unreachable by
+  construction - `review.two_role_after` making Done unattainable inside the authoring session -
+  is derived and reported before the work rather than discovered at the close.
+
+- **A sprint stops only when nothing can proceed, and a stop is priced (US0299, US0300,
+  CR0378).** The loop continues while any unit the pending question does not block remains;
+  blockage is the transitive closure over declared `Depends on:` edges only, never a shared file.
+  A stop records its cause, the units it blocked and the units that could have proceeded. The
+  idle-gap deduction lives once in `telemetry.py` and is CALLED by both `sprint` and `retro`, so
+  one sprint can no longer have two elapsed figures.
+
+- **The mutation gate is judged on its own yield (US0301, US0302, US0309, CR0379).** Each run
+  appends applied/killed/survived/unchecked and measured wall-clock to a series; artefacts filed
+  from survivors link back to the run that found them; an `equivalent` verdict carrying a
+  mandatory reason excludes a mutant from yield while keeping the exclusion visible. The sprint
+  report renders cost against yield for the run and its trailing history, deriving cost per
+  finding only where both halves exist and naming a run with no evidence instead of printing
+  zeroes.
+
+- **A declared rewrite window, enforced at the commit (US0307, US0308, US0310, CR0388).** A
+  mutation or review window is a first-class declarable object surviving SIGKILL; an unreadable
+  record reads OPEN, never closed. The pre-commit hook REFUSES a commit staging any path an open
+  window claims. Built against the corrected mechanism - a shell redirect through a symlink farm,
+  no mutant involved - so the guard depends on neither recognising a mutant nor the suite going
+  red, which a surviving mutant leaves green by definition.
+
+- **A non-shell filing path (US0305, US0306, CR0384).** `file_finding` and `artifact new` accept
+  `--fields-file`, so prose reaches an artefact as data. The field most likely to contain shell
+  commands is a bug's reproduction steps, which is exactly the field a shell mangles. The flag
+  path survives for compatibility and now reports a detected hazard rather than silently emptying
+  a field. The prose-writers still lacking the path are held in a registry whose stale entries
+  fail a test, so the remaining debt cannot quietly expire.
+
+- **A `test` audit lens profile (US0303, US0304, CR0382).** The qualitative backstop to the
+  mutation gate: a surviving mutant proves a test cannot fail and says nothing about a docstring
+  that lies. Four lenses, each citing a shipped lesson recording a failure this project produced.
+
+- **`migrate --apply` seeds a missing AGENTS.md instead of reporting it as a human task (US0293,
+  US0294, CR0352).** Seeding a file that does not exist is strictly safer than editing artefacts
+  that do, which apply already did. An absent instructions file is marked seedable and its
+  message names the command; severity and exit code are unchanged, because CI reads them.
+
+- **The agent-instructions check verifies the working model, not just the pointers (US0295,
+  US0296, CR0353).** Four rules test that the file establishes how the project is actually
+  developed - delivery through stories and sprints, tool-allocated ids, executable ACs gating
+  Done, review independent of the author - each citing the template section that supplies it. An
+  opt-out is a `.config.yaml` key that is READ, with a test proving it changes behaviour.
+
 - **The close review counts its rounds and stops at a ceiling (CR0358: US0261).** Each
   sprint-level review is recorded as a round on the run state. Past `review.max_rounds`
   (default 3) a further round is refused, naming the count, the ceiling and the override
@@ -1104,6 +1190,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   added, removed or renamed.
 
 ### Fixed
+
+- **`quality.epic_requires_test_spec` is now read by the code that documents it (BG0250).** Four
+  documentation surfaces described it as the caller's opt-out and no Python read it, so a project
+  setting it in good faith got no effect and no warning. The key is read, the default is
+  unchanged, a non-boolean warns and falls back to enforcing, and the findings stay the findings
+  whether or not enforcement is on.
+
+- **The engagement floor can see the violation its own gating commit creates (BG0251).**
+  "Shipped" was derived from `git log --grep`, so a unit no commit had yet mentioned was
+  invisible and the gate green-lit commits that were non-compliant the instant they existed. The
+  floor now folds the staged index into its file-count signal and the hook runs a `floor-pending`
+  lane. The residual case - a unit named ONLY in the commit message - is NOT closed and is pinned
+  by a test saying so, because a pre-commit hook is not given the message it is gating.
+
+- **A run id is unique by construction, not by luck (BG0253).** `short_ulid` is six timestamp
+  characters plus two random, so two consecutive mints collided about once in 1,024 and the
+  commit gate failed at random. Run ids are now collision-checked against archived runs and the
+  suffix extended on a persistent clash. The old test would also have passed a generator
+  returning a constant 999 times in 1,000; it is now driven with exactly that.
+
+- **The velocity Estimate column publishes the forecast that was recorded (BG0249).** It was a
+  sum over RATED units, so an interactive sprint that rates none published 0 - an absence
+  rendered as a plan-time estimate of zero, in 12 of 17 live rows, beside a real forecast that
+  had in fact been recorded.
+
+- **The WSJF advisory reports coverage, not age (BG0247).** With no seat score covering the batch
+  it printed a staleness warning, implying scores were in use and merely ageing when none
+  applied. It now leads with coverage. The bug's own premise was corrected rather than
+  implemented: the ordering was never "priority instead of WSJF" - Cost of Delay is derived from
+  Priority and the ranking is still CoD over points - the `priority fallback` wording caused the
+  misreading and has been rewritten.
+
+- **`init` no longer ships a literal placeholder in every new project's AGENTS.md (BG0255).** The
+  filler substituted lowercase keys while the template carried an uppercase project-name
+  placeholder, so the name was never filled in the first file a project adopting the skill reads.
+  Fixed in the FILLER, case-insensitively, so a future template reaching for the natural
+  uppercase form is not trapped, plus a postcondition that a known placeholder surviving a seed
+  raises rather than ships.
 
 - **The velocity history records where a token figure CAME FROM, and a reason survives the row it
   explains.** Three defects found by the closing review, all in the reporting the previous entries

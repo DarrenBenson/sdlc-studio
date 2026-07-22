@@ -65,7 +65,7 @@ find  ──►  verify  ──►  merge  ──►  file
 
 ## Profiles
 
-Four ship. The profile chooses the lenses; every one of them runs through the same refute
+Five ship. The profile chooses the lenses; every one of them runs through the same refute
 panel, so the choice never changes whether a plausible-but-wrong finding gets filed.
 
 | Profile | Invocation | Lenses | Pack |
@@ -74,6 +74,7 @@ panel, so the choice never changes whether a plausible-but-wrong finding gets fi
 | `skill` | `audit --profile skill` | over-engineering, token-economy, determinism, external-benchmark | `templates/audit-profiles/skill.md` |
 | `repo` | `audit --profile repo` | architecture, code-quality, defensive-security | `templates/audit-profiles/repo.md` |
 | `code` | `audit --profile code` | correctness, security-smells, pattern-violations, ac-drift | `templates/audit-profiles/code.md` |
+| `test` | `audit --profile test` | can-it-fail, reaches-the-code, docstring-vs-assertion, incidentally-green (source and tests together) | `templates/audit-profiles/test.md` |
 
 Resolve a pack before launching, and see its lenses and refute threshold:
 

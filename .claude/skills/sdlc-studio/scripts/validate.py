@@ -32,12 +32,15 @@ _AC_SECTION_RE = re.compile(r"^#{2,}\s+.*acceptance criteria", re.I | re.M)
 # from a different vocabulary than the others.
 TEMPLATE_TIERS = tiers.TEMPLATE_TIERS
 
-# The closed severity vocabulary. Every check emits one of these two spellings and the summary
-# counters count these same two, so a per-line finding can never be reported and then omitted
+# The closed severity vocabulary. Every check emits one of these spellings and the summary
+# counters count every one of them, so a per-line finding can never be reported and then omitted
 # from the tail. A near-miss spelling (`warn`) once printed WARN lines under `warnings=0`.
+# `info` is an acknowledgement, not a violation: it is printed and counted, but it does not make
+# a file unclean and never affects an exit code. Only the instructions check emits it today.
 SEVERITY_ERROR = "error"
 SEVERITY_WARNING = "warning"
-SEVERITIES = (SEVERITY_ERROR, SEVERITY_WARNING)
+SEVERITY_INFO = "info"
+SEVERITIES = (SEVERITY_ERROR, SEVERITY_WARNING, SEVERITY_INFO)
 
 
 def _has_ac_section(text: str) -> bool:
@@ -167,6 +170,30 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
                 f"({cmd!r}) that NOTHING executes - only a story's `- **Verify:**` line is run. "
                 f"Restate it as the observable outcome; executable proof belongs on the stories "
                 f"this is actioned into. Offending line: {line.strip()}")
+
+    # An `Affects` the artefact's OWN content contradicts: a declared path with nothing behind it,
+    # or a file its `Verify:` lines target but the declaration omits. THE PREDICATE IS THE
+    # PLANNER'S (`sprint.affects_mismatch`), imported rather than re-derived, so a single artefact
+    # checked here and the same artefact checked in a batch cannot reach opposite verdicts.
+    # A WARNING, deliberately: a path to a file the unit will CREATE is legitimate and common, so
+    # an error would fail the ordinary case. It is named because `Affects` is read by the
+    # collision analysis and by the engagement floor, and a wrong one degrades both silently.
+    if repo_root is not None and type_ in ("story", "bug", "cr"):
+        try:
+            import sprint  # noqa: PLC0415 - deferred sibling; validate must run without it
+            mism = sprint.affects_mismatch(repo_root, text)
+        except Exception as exc:  # noqa: BLE001 - a validate run must never break on this
+            sdlc_md.debug("validate.affects_mismatch", exc)
+            mism = {"unresolvable": [], "undeclared": []}
+        if mism["unresolvable"]:
+            add(SEVERITY_WARNING, "affects-unresolvable",
+                "`Affects` names path(s) not on disk: "
+                f"{', '.join(mism['unresolvable'])} - legitimate for a file this unit will "
+                "create, a typo otherwise")
+        if mism["undeclared"]:
+            add(SEVERITY_WARNING, "affects-undeclared",
+                "the artefact's own `Verify:` lines target file(s) its `Affects` omits: "
+                f"{', '.join(mism['undeclared'])}")
 
     # Schema-v3 team-schema: a typed, resolvable `raised_by`. v2 artefacts are exempt, so the
     # rule cannot fail an existing sequential-id project until it opts into v3.
@@ -446,6 +473,51 @@ def cmd_check(args: argparse.Namespace) -> int:
     return 1 if errors else 0
 
 
+# The working model: what the instructions file must ESTABLISH, as opposed to what it points
+# at. Each element is its own rule so a finding is specific, and each cites the section and the
+# line of `templates/agent-instructions.md` that supplies it, so a repair needs no read of the
+# whole template. `markers` are the spellings that count as stating the element - several per
+# element, because a project writes its own words and the check must not demand the template's.
+WORKING_MODEL_RULES = (
+    {"key": "delivery-flow",
+     "element": "delivery flows through stories and sprints, not ad-hoc coding",
+     "section": "Non-negotiable gates",
+     "anchor": "No ad-hoc coding",
+     "markers": ("ad-hoc coding", "ad hoc coding", "flows through the skill", "-> story ->")},
+    {"key": "tool-allocated-ids",
+     "element": "ids and index rows are tool-allocated, never hand-authored",
+     "section": "How to work",
+     "anchor": "Never hand-allocate ids or hand-author",
+     "markers": ("hand-allocate", "hand-author", "artifact.py", "the index is derived")},
+    {"key": "executable-ac-gate",
+     "element": "a story reaches Done only when its executable ACs pass",
+     "section": "How to work",
+     "anchor": "A story reaches Done only when its executable ACs pass",
+     "markers": ("executable ac", "transition -> done", "gated on the verify")},
+    {"key": "independent-review",
+     "element": "review is independent of the author",
+     "section": "Non-negotiable gates",
+     "anchor": "Review is independent of the author",
+     "markers": ("independent of the author", "independent review", "reviewer of record",
+                 "author != reviewer")},
+)
+_OPT_OUT_KEY = "instructions.working_model_opt_out"
+
+
+def working_model_opt_outs(root: Path) -> set[str]:
+    """The working-model elements a project has deliberately scoped out, read from
+    `instructions.working_model_opt_out` in `sdlc-studio/.config.yaml` (a single name or a
+    list). An unknown name is ignored: an opt-out may not switch off a rule that does not
+    exist, or a typo would silently disable the check it was aimed at."""
+    raw = sdlc_md.project_override(root, _OPT_OUT_KEY)
+    if raw is None:
+        return set()
+    values = raw if isinstance(raw, (list, tuple, set)) else [raw]
+    known = {spec["key"] for spec in WORKING_MODEL_RULES}
+    named = {str(v).strip().lower().removeprefix("no-") for v in values}
+    return named & known
+
+
 def check_instructions(root: Path) -> list[dict]:
     """Hygiene-check a project's agent-instructions files (AGENTS.md / CLAUDE.md).
 
@@ -455,16 +527,22 @@ def check_instructions(root: Path) -> list[dict]:
     """
     out: list[dict] = []
 
-    def add(severity: str, rule: str, message: str) -> None:
-        out.append({"severity": severity, "rule": rule, "message": message})
+    def add(severity: str, rule: str, message: str, **extra) -> None:
+        out.append({"severity": severity, "rule": rule, "message": message, **extra})
 
     agents = root / "AGENTS.md"
     claude = root / "CLAUDE.md"
 
     if not agents.exists():
-        add("error", "no-agents",
-            "no AGENTS.md (the canonical instructions file); seed it from "
-            "templates/agent-instructions.md")
+        # The ONLY rule whose remedy is fully deterministic: writing a file that does not
+        # exist. Every other rule is about content already present, which cannot be rewritten
+        # without losing project sections. The `seedable` marker (plus `target`/`template`)
+        # is what lets a caller act on the structure instead of parsing this message; the
+        # severity stays `error` so the exit contract CI reads is unchanged.
+        add(SEVERITY_ERROR, "no-agents",
+            "no AGENTS.md (the canonical instructions file); `migrate --apply` seeds it "
+            "from templates/agent-instructions.md",
+            seedable=True, target="AGENTS.md", template="templates/agent-instructions.md")
 
     if claude.exists():
         ctext = claude.read_text(encoding="utf-8")
@@ -493,7 +571,26 @@ def check_instructions(root: Path) -> list[dict]:
          "no context-compaction re-read rule (re-read LATEST.md + run status after a reset)"),
     ]:
         if not present:
-            add("warning", rule, message)
+            add(SEVERITY_WARNING, rule, message)
+
+    # The working model. Every rule above is a cross-reference; a file can satisfy all of them
+    # and never say work is done this way. These test that the practice is stated.
+    opted_out = working_model_opt_outs(root)
+    for spec in WORKING_MODEL_RULES:
+        if spec["key"] in opted_out:
+            add(SEVERITY_INFO, f"{spec['key']}-opted-out",
+                f"{spec['element']} - recorded as a deliberate opt-out "
+                f"(`{_OPT_OUT_KEY}` in sdlc-studio/.config.yaml), so it is not checked",
+                element=spec["key"], opted_out=True)
+            continue
+        if any(m in lower for m in spec["markers"]):
+            continue
+        add(SEVERITY_WARNING, f"no-{spec['key']}",
+            f"AGENTS.md does not establish that {spec['element']}; supply it from "
+            f"templates/agent-instructions.md, section \"{spec['section']}\" "
+            f"(\"{spec['anchor']}\")",
+            element=spec["key"], template_section=spec["section"],
+            template_anchor=spec["anchor"])
 
     n_lines = text.count("\n") + 1
     if n_lines > 300:
@@ -514,18 +611,22 @@ def cmd_instructions(args: argparse.Namespace) -> int:
     violations = check_instructions(Path(args.root).resolve())
     errors = sum(1 for v in violations if v["severity"] == SEVERITY_ERROR)
     warnings = sum(1 for v in violations if v["severity"] == SEVERITY_WARNING)
+    notes = sum(1 for v in violations if v["severity"] == SEVERITY_INFO)
     if args.format == "json":
         print(json.dumps({
             "generated_at": sdlc_md.now_iso8601(),
             "violations": violations,
-            "summary": {"errors": errors, "warnings": warnings},
+            "summary": {"errors": errors, "warnings": warnings, "info": notes},
         }, indent=2))
     else:
         for v in violations:
             print(f"{v['severity'].upper():7} [{v['rule']}] {v['message']}")
-        if not violations:
+        # A recorded opt-out is an acknowledgement, not a defect, so it does not withhold the
+        # clean line - but a single real finding does. The false assurance this check exists to
+        # end was exactly this line printed over a file that established nothing.
+        if not errors and not warnings:
             print("agent-instructions files look good.")
-        print(f"errors={errors} warnings={warnings}")
+        print(f"errors={errors} warnings={warnings} info={notes}")
     return 1 if errors else 0
 
 

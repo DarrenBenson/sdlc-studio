@@ -167,6 +167,23 @@ When modifying the skill:
   This is the discipline the shipped `agent-instructions.md` enforces for consuming projects
   (CR0083) - dogfooded here.
 
+## Non-negotiable gates
+
+**No ad-hoc coding: delivery flows through stories and sprints.** Work becomes a
+story or a bug with acceptance criteria before it becomes a diff. A request (CR or
+RFC) is not work until `refine` decomposes it into sized units - that is the
+two-backlog rule, and this repo is held to it like any consuming project. A change
+that arrives without a unit behind it is the failure the engagement floor exists to
+catch.
+
+**Review is independent of the author.** Whoever wrote the change never records its
+sign-off. Two roles, never merged: an **adversarial reviewer** (a fresh context that
+did not write the code) files findings as evidence, and a **reviewer of record** - the
+operator, or a named delegate in a separate trust boundary - approves. This repo sets
+`review.two_role_after` in `sdlc-studio/.config.yaml`, so a unit past that number holds
+at Review until that sign-off lands. A delegate the author controls does not satisfy
+this, which is the whole point of the trust boundary.
+
 ## Style Requirements
 
 **Enforced by `tools/lint-style.sh`** (run it, or `npm run lint`, before committing;

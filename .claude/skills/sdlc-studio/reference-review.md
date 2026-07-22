@@ -265,6 +265,11 @@ After detecting findings, automatically apply fixes that are purely mechanical (
 
 To skip auto-fix: `--no-fix` flag.
 
+**Single-writer during a review.** A review rewrites files in the author's tree, and a green suite is NOT
+evidence the tree is clean: at RUN-01KY321Q a shell redirect through a symlink farm reverted live source,
+caught only because it broke the suite. Declare the window (`mutation.py window open|close`), stage named
+paths, never `git add -A` - see [reference-sprint.md](reference-sprint.md#single-writer).
+
 ### 4. Close the Review (tool-carried)
 
 **CRITICAL - and one command, not hand-steps:** the close is

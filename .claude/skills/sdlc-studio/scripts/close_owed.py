@@ -51,6 +51,32 @@ _PARENTHETICAL_RE = re.compile(r"\(([^)]*)\)")
 
 BASELINE_FILE = "sdlc-studio/.close-owed-baseline.json"
 
+# THE OTHER HALF OF A CLOSE: the velocity row.
+#
+# The coverage rule above asks one question - does some retro's `Batch` name this unit - and
+# nothing asked whether the accuracy and velocity write ran at all. So `accuracy --write`
+# shipped and sprint after sprint still closed with no row in the velocity record, which means
+# the tokens-per-point rate every plan quotes was never re-measured against them.
+#
+# The demand is for the ROW, never for a token total. A row with a blank Actual and a recorded
+# reason is a COMPLETE close: it states that the sprint's cost was not recoverable, which is a
+# fact the record holds. No row at all states nothing, and is indistinguishable from the write
+# having been skipped.
+#
+# Scoped by the same grandfather doctrine the unit half obeys: only a retro DATED on or after
+# the baseline stamp can owe a row. Without that, adopting the check hands a project a tail of
+# historical retros no close can ever clear.
+VELOCITY_FILE = "sdlc-studio/retros/VELOCITY.md"
+#: The recorded escape: `> **Velocity-override:** <why this retro can have no row>`. It travels
+#: with the record rather than in a command flag, so the reason is auditable afterwards - and a
+#: BARE marker with no reason is not an override, by the same rule the retro's own `declined:`
+#: disposition obeys.
+#:
+#: Read with its OWN line-anchored pattern rather than `sdlc_md.extract_field`, which falls
+#: through an empty value to the next non-blank line: an override left blank would then be
+#: "reasoned" by whatever prose followed it, which is the bare dodge dressed as a reason.
+VELOCITY_OVERRIDE_RE = re.compile(r"(?mi)^>?\s*\*\*Velocity-override:\*\*[ \t]*(.*)$")
+
 
 def batch_covered_ids(text: str) -> set[str]:
     """The unit ids a retro's `Batch` line accounts for, parentheticals included.
@@ -100,6 +126,57 @@ def covered_ids(root: Path) -> set[str]:
         # a bad retro must not crash the scan
         covered |= batch_covered_ids(sdlc_md.read_text_safe(p))
     return covered
+
+
+def velocity_owed(root: Path, stamped: str) -> dict:
+    """Which retros dated on or after `stamped` have no row in the velocity record.
+
+    `{"owed": [(retro_id, date)], "overrides": [(retro_id, reason)], "undated": [retro_id]}`.
+
+    THREE outcomes, and each is reported rather than assumed:
+
+    * OWED - dated on or after the stamp, no row, no recorded override. The accuracy write did
+      not run, and nothing else in this project would ever say so.
+    * OVERRIDDEN - the retro records why it can have no row. Named, with its reason, because an
+      escape nobody can read afterwards is a silent pass.
+    * UNDATED - the retro carries no `Date`, so it cannot be placed either side of the stamp.
+      Not demanded (guessing would rebuild the unclearable tail the baseline exists to prevent)
+      and not hidden either.
+
+    The rows are read with `retro.velocity_history`, so this asks the same question of the file
+    that the planner does: a row the reader cannot parse is a row that is not there.
+    """
+    retros_dir = root / "sdlc-studio" / "retros"
+    if not retros_dir.is_dir():
+        return {"owed": [], "overrides": [], "undated": []}
+    have = {r["id"] for r in retro.velocity_history(root)}
+    owed_rows: list[tuple[str, str]] = []
+    overrides: list[tuple[str, str]] = []
+    undated: list[str] = []
+    for p in sorted(retros_dir.glob("RETRO*.md")):
+        # `retro._STEM_ID_RE`, not the general artefact matcher: a RETRO id is a meta id the
+        # latter does not recognise, and this must resolve a filename the same way `find_retro`
+        # does or the two halves of the close would disagree about which files exist.
+        m = retro._STEM_ID_RE.match(p.stem)
+        if not m:
+            continue
+        rid = sdlc_md.norm_id(m.group(1))
+        if rid in have:
+            continue
+        text = sdlc_md.read_text_safe(p)
+        m = retro.DATE_RE.search(text)
+        date = (m.group(1).strip() if m else "")
+        if date and date < stamped:
+            continue                       # grandfathered: adoption creates no debt
+        mo = VELOCITY_OVERRIDE_RE.search(text)
+        why = " ".join(retro.PLACEHOLDER_RE.sub("", mo.group(1)).split()) if mo else ""
+        if why:
+            overrides.append((rid, why))
+        elif not date:
+            undated.append(rid)
+        else:
+            owed_rows.append((rid, date))
+    return {"owed": sorted(owed_rows), "overrides": sorted(overrides), "undated": sorted(undated)}
 
 
 def scan_delivery(root: Path) -> tuple[list[tuple[str, str]], set[str]]:
@@ -256,17 +333,30 @@ def owed(root: Path) -> dict:
         # re-stamp nudge. The enforcement halves must fail closed and direct a repair.
         return {"baselined": False, "corrupt": True, "error": str(exc), "owed": [],
                 "grandfathered": 0, "covered": len(covered), "terminal": len(terminal),
-                "dead_breakdown_ids": dead_ids}
+                "dead_breakdown_ids": dead_ids, **_no_velocity_demand()}
     if baseline is None:
+        # No stamp, so no date to scope the velocity demand to. Reporting every retro on disk
+        # would be the unclearable tail again; the baseline nudge below stands on its own.
         return {"baselined": False, "corrupt": False, "owed": sorted(uncovered),
                 "grandfathered": 0, "covered": len(covered), "terminal": len(terminal),
-                "dead_breakdown_ids": dead_ids}
+                "dead_breakdown_ids": dead_ids, **_no_velocity_demand()}
     forgiven = {sdlc_md.norm_id(x) for x in baseline["grandfathered"]}
     owed_units = [(cid, t) for (cid, t) in uncovered if sdlc_md.norm_id(cid) not in forgiven]
+    vel = velocity_owed(root, str(baseline.get("stamped") or ""))
     return {"baselined": True, "corrupt": False, "owed": sorted(owed_units),
             "grandfathered": len(uncovered) - len(owed_units),
             "covered": len(covered), "terminal": len(terminal),
-            "dead_breakdown_ids": dead_ids}
+            "dead_breakdown_ids": dead_ids,
+            # The close's OTHER half: a retro whose accuracy and velocity write never ran.
+            "velocity_owed": vel["owed"], "velocity_overrides": vel["overrides"],
+            "velocity_undated": vel["undated"]}
+
+
+def _no_velocity_demand() -> dict:
+    """The velocity fields on a report that cannot make the demand (unbaselined, or corrupt).
+    Present and empty rather than absent: a consumer that has to test for the key would read a
+    missing one as 'nothing owed' on exactly the reports that can judge nothing at all."""
+    return {"velocity_owed": [], "velocity_overrides": [], "velocity_undated": []}
 
 
 def stamp_baseline(root: Path, date: str | None = None, note: str | None = None,
@@ -301,6 +391,12 @@ def render(report: dict) -> str:
         head = (f"close owed: UNBASELINED - {n} uncovered terminal unit(s). "
                 f"Run `close_owed baseline` to grandfather the existing tail, "
                 f"then only later work can owe a close.")
+    elif n == 0 and report.get("velocity_owed"):
+        # The unit half is clean and the close is still unfinished. Saying "none" here and
+        # listing the missing rows two lines below would be one report contradicting itself.
+        head = (f"close owed: {len(report['velocity_owed'])} retro(s) closed without their "
+                f"velocity row - the delivery units are all accounted for, the accuracy write "
+                f"is not.")
     elif n == 0:
         head = (f"close owed: none. {report['covered']} unit(s) accounted for by retros; "
                 f"{report['grandfathered']} grandfathered.")
@@ -314,6 +410,22 @@ def render(report: dict) -> str:
     elif n:
         shown = report["owed"][:40]
         lines.append("  " + ", ".join(f"{cid} ({t})" for cid, t in shown) + f", +{n - 40} more")
+    vel = report.get("velocity_owed") or []
+    if vel:
+        lines.append(f"  {len(vel)} retro(s) closed with no row in {VELOCITY_FILE} - the "
+                     f"accuracy and velocity write did not run, so the tokens-per-point rate "
+                     f"the plans quote has never been measured against them. Record it: "
+                     f"`retro.py accuracy --id RETROxxxx --write` (a sprint whose cost is not "
+                     f"recoverable still writes a row, with a blank Actual and the reason):")
+        lines.append("  " + ", ".join(f"{rid} ({date})" for rid, date in vel[:20])
+                     + (f", +{len(vel) - 20} more" if len(vel) > 20 else ""))
+    for rid, why in report.get("velocity_overrides") or []:
+        lines.append(f"  velocity override: {rid} records no row on purpose - {why}")
+    undated = report.get("velocity_undated") or []
+    if undated:
+        lines.append(f"  advisory: {len(undated)} retro(s) with no row carry no Date either, so "
+                     f"the baseline cannot place them and no row is demanded of them: "
+                     f"{', '.join(undated[:20])}")
     dead = report.get("dead_breakdown_ids") or []
     if dead:
         # Advisory, never blocking: the epic is forgiven above precisely because no close can
@@ -334,10 +446,13 @@ def cmd_detect(args: argparse.Namespace) -> int:
         print(json.dumps(report, indent=2))
     else:
         print(render(report))
-    # Non-zero when a close is genuinely owed (baselined AND owed units exist) OR when the baseline
-    # is corrupt - so a gate or hook can branch on the exit code. An unbaselined project is a soft
-    # state (exit 0); a corrupt baseline is a loud blocking failure, never a silent pass.
-    return 1 if (report.get("corrupt") or (report["baselined"] and report["owed"])) else 0
+    # Non-zero when a close is genuinely owed (baselined AND owed units exist, or a retro closed
+    # without its velocity row) OR when the baseline is corrupt - so a gate or hook can branch on
+    # the exit code. An unbaselined project is a soft state (exit 0); a corrupt baseline is a loud
+    # blocking failure, never a silent pass.
+    return 1 if (report.get("corrupt")
+                 or (report["baselined"]
+                     and (report["owed"] or report.get("velocity_owed")))) else 0
 
 
 def cmd_baseline(args: argparse.Namespace) -> int:

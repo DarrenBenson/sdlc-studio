@@ -1,6 +1,7 @@
 # CR-0347: the collision analysis trusts Affects, and Affects is unreliable
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0095
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 36 |
+| Proposed | 29 |
 | Approved | 0 |
-| In Progress | 0 |
+| In Progress | 10 |
 | Complete | 334 |
 | Rejected | 0 |
-| Deferred | 5 |
+| Deferred | 4 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **388** |
+| **Total** | **390** |
 
 ## All Changes
 
@@ -105,7 +105,7 @@
 | [CR-0281](CR0281-prd-coverage-clause-promises-exhaustive-unreleased-marking-but.md) | PRD coverage clause promises exhaustive [Unreleased] marking but roughly 14 committed Done epics of shipped features are absent from the feature tables | Complete | High | docs | 2026-07-16 | EP0071 |
 | [CR-0282](CR0282-prd-security-nfr-and-trd-script-contract-rule.md) | PRD security NFR and TRD script-contract rule 6/threat model deny the shipped network surface: a default-on GitHub phone-home via urllib and sprint plan's git fetch | Complete | High | docs | 2026-07-16 | EP0071 |
 | [CR-0283](CR0283-story-workflows-read-only-the-legacy-personas-md.md) | Story workflows read only the legacy personas.md; the Cooper design registry (personas/) with the declared Primary is unreachable from story generation | Complete | High | Improvement | 2026-07-16 | EP0049 |
-| [CR-0284](CR0284-the-velocity-record-died-at-retro0028-sprints-close.md) | The velocity record died at RETRO0028: sprints close 'not-yet-captured', the enforced close-down never checks the accuracy/velocity write, and plans still quote the 25k seed whose only out-of-sample test failed at 0.44x | Deferred | High | process | 2026-07-16 | -- |
+| [CR-0284](CR0284-the-velocity-record-died-at-retro0028-sprints-close.md) | The velocity record died at RETRO0028: sprints close 'not-yet-captured', the enforced close-down never checks the accuracy/velocity write, and plans still quote the 25k seed whose only out-of-sample test failed at 0.44x | In Progress | High | process | 2026-07-16 | EP0094 |
 | [CR-0285](CR0285-prd-section-9-configuration-reference-is-wrong-on.md) | PRD Section 9 configuration reference is wrong on four counts: gate defaults inverted, a retired env var documented as live, four live env vars omitted, and two_backlog.enforce undocumented everywhere | Complete | High | docs | 2026-07-16 | EP0071 |
 | [CR-0286](CR0286-trd-adr-008-sells-the-ulid-id-scheme.md) | TRD ADR-008 sells the ULID id scheme as absolutely collision-proof; the implementation is 2 random chars (~1/1024) in a ~17-minute timestamp bucket with the cross-machine case unguarded | Complete | Medium | docs | 2026-07-16 | EP0071 |
 | [CR-0287](CR0287-tsd-denies-the-blocking-ci-gates-that-exist.md) | TSD denies the blocking CI gates that exist: coverage ('not wired into CI' vs a blocking 80% gate) and security ('no dedicated scanner' vs a blocking bandit step) | Complete | Medium | docs | 2026-07-16 | EP0071 |
@@ -168,14 +168,14 @@
 | [CR-0344](CR0344-pre-commit-gate-lanes-are-whole-workspace-so.md) | Pre-commit gate lanes are whole-workspace, so pre-existing backlog debt blocks every unrelated commit | Proposed | Low | Improvement | 2026-07-17 | -- |
 | [CR-0345](CR0345-sprint-close-scaffolds-the-retro-via-the-deterministic.md) | sprint close scaffolds the retro via the deterministic path instead of requiring a pre-made one | Complete | Medium | Improvement | 2026-07-17 | -- |
 | [CR-0346](CR0346-settle-rfc0017-d1-how-a-primary-persona-is.md) | settle RFC0017 D1: how a Primary persona is selected when candidates compete | Proposed | Low | Improvement | 2026-07-19 | -- |
-| [CR-0347](CR0347-the-collision-analysis-trusts-affects-and-affects-is.md) | the collision analysis trusts Affects, and Affects is unreliable | Proposed | High | Improvement | 2026-07-19 | -- |
+| [CR-0347](CR0347-the-collision-analysis-trusts-affects-and-affects-is.md) | the collision analysis trusts Affects, and Affects is unreliable | In Progress | High | Improvement | 2026-07-19 | EP0095 |
 | [CR-0348](CR0348-the-gate-lints-only-changed-markdown-so-a.md) | the gate lints only changed markdown, so a broken file stays green until something touches it | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0349](CR0349-sprint-plan-cannot-record-a-deliberate-over-appetite.md) | sprint plan cannot record a deliberate over-appetite batch, only silently raise the ceiling | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0350](CR0350-record-the-sprint-s-token-actuals-automatically-for.md) | record the sprint's token actuals automatically for an interactive run | Complete | Medium | Improvement | 2026-07-19 | EP0091 |
 | [CR-0351](CR0351-file-finding-silently-accepts-shell-mangled-text-so.md) | prose reaches the scripts through a shell argument, so a backtick silently empties the field it was documenting | Proposed | Medium | Improvement | 2026-07-19 | -- |
-| [CR-0352](CR0352-migrate-apply-should-seed-a-missing-agents-md.md) | migrate --apply should seed a missing AGENTS.md rather than report it as a human task | Proposed | High | Improvement | 2026-07-19 | -- |
-| [CR-0353](CR0353-the-agent-instructions-hygiene-check-verifies-pointers-not.md) | the agent-instructions hygiene check verifies pointers, not that the working model is established | Proposed | High | Improvement | 2026-07-19 | -- |
-| [CR-0354](CR0354-the-review-seats-never-see-the-sprint-goal.md) | the review seats never see the Sprint Goal - they score WSJF and nothing reviews what the run is for | Proposed | High | Improvement | 2026-07-19 | -- |
+| [CR-0352](CR0352-migrate-apply-should-seed-a-missing-agents-md.md) | migrate --apply should seed a missing AGENTS.md rather than report it as a human task | In Progress | High | Improvement | 2026-07-19 | EP0096 |
+| [CR-0353](CR0353-the-agent-instructions-hygiene-check-verifies-pointers-not.md) | the agent-instructions hygiene check verifies pointers, not that the working model is established | In Progress | High | Improvement | 2026-07-19 | EP0097 |
+| [CR-0354](CR0354-the-review-seats-never-see-the-sprint-goal.md) | the review seats never see the Sprint Goal - they score WSJF and nothing reviews what the run is for | In Progress | High | Improvement | 2026-07-19 | EP0098 |
 | [CR-0355](CR0355-hold-until-v5-launch-acknowledge-the-claude-for.md) | HOLD UNTIL v5 LAUNCH - acknowledge the Claude for Open Source programme in the README | Proposed | Low | Improvement | 2026-07-19 | -- |
 | [CR-0356](CR0356-reconcile-never-checks-the-index-row-s-title.md) | reconcile never checks the index row's title, so a retitled artefact drifts silently and no script can fix it | Proposed | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0357](CR0357-the-rfc-accept-gate-s-fail-closed-fallback.md) | the RFC accept gate's fail-closed fallback can refuse a valid RFC, and says nothing about why | Proposed | Low | Improvement | 2026-07-19 | -- |
@@ -199,17 +199,19 @@
 | [CR-0375](CR0375-status-py-with-no-subcommand-should-default-to.md) | status.py with no subcommand should default to the pillars dashboard instead of erroring | Proposed | Low | Improvement | 2026-07-20 | -- |
 | [CR-0376](CR0376-a-docs-only-sprint-s-close-should-record.md) | a docs-only sprint's close should record the mutation step as an explicit skip, not an error to work around | Proposed | Medium | Improvement | 2026-07-20 | -- |
 | [CR-0377](CR0377-mutation-run-should-derive-the-minimal-covering-test.md) | mutation run should derive the minimal covering test command from its own reference scan | Proposed | Medium | Improvement | 2026-07-20 | -- |
-| [CR-0378](CR0378-a-sprint-must-not-stop-while-any-unblocked.md) | a sprint must not stop while any unblocked unit remains: deferring one unit's decision may never park the batch | Proposed | High | Improvement | 2026-07-20 | -- |
-| [CR-0379](CR0379-log-mutation-yield-and-cost-as-a-series.md) | log mutation yield and cost as a series, so the gate can be judged on evidence rather than belief | Proposed | High | Improvement | 2026-07-20 | -- |
+| [CR-0378](CR0378-a-sprint-must-not-stop-while-any-unblocked.md) | a sprint must not stop while any unblocked unit remains: deferring one unit's decision may never park the batch | In Progress | High | Improvement | 2026-07-20 | EP0099 |
+| [CR-0379](CR0379-log-mutation-yield-and-cost-as-a-series.md) | log mutation yield and cost as a series, so the gate can be judged on evidence rather than belief | In Progress | High | Improvement | 2026-07-20 | EP0100, EP0104 |
 | [CR-0380](CR0380-re-verify-an-already-done-story-s-verifiers.md) | re-verify an already-Done story's verifiers, so a stale green is caught between closes not only at a manual sweep | Proposed | Medium | Improvement | 2026-07-21 | -- |
 | [CR-0381](CR0381-artifact-py-new-accepts-a-pipe-separated-ac.md) | artifact.py new accepts a pipe-separated --ac and emits a malformed AC without warning | Proposed | Medium | Improvement | 2026-07-21 | -- |
-| [CR-0382](CR0382-a-test-audit-lens-profile-attack-the-claims.md) | A test audit lens profile: attack the claims tests and comments make, which mutation cannot | Proposed | High | Improvement | 2026-07-21 | -- |
+| [CR-0382](CR0382-a-test-audit-lens-profile-attack-the-claims.md) | A test audit lens profile: attack the claims tests and comments make, which mutation cannot | In Progress | High | Improvement | 2026-07-21 | EP0101 |
 | [CR-0383](CR0383-root-anchoring-is-a-per-script-convention-not.md) | Root anchoring is a per-script convention, not a shared one: 62 scripts declare --root and one discovers it | Proposed | Medium | Improvement | 2026-07-21 | -- |
-| [CR-0384](CR0384-file-finding-py-has-no-non-shell-input.md) | file_finding.py has no non-shell input path, so the field most likely to contain commands is the one most likely to be executed | Proposed | High | Improvement | 2026-07-21 | -- |
+| [CR-0384](CR0384-file-finding-py-has-no-non-shell-input.md) | file_finding.py has no non-shell input path, so the field most likely to contain commands is the one most likely to be executed | In Progress | High | Improvement | 2026-07-21 | EP0102 |
 | [CR-0385](CR0385-document-the-mutation-evidence-ledger-four-surfaces-still.md) | Document the mutation evidence ledger: four surfaces still describe only the single-blob report | Proposed | Medium | Improvement | 2026-07-21 | -- |
 | [CR-0386](CR0386-the-handoff-line-tells-you-to-plan-a.md) | The handoff line tells you to plan a worklist that has zero items in it | Proposed | Low | Improvement | 2026-07-21 | -- |
 | [CR-0387](CR0387-the-run-opened-line-prints-goal-unset-on.md) | The run-opened line prints goal=unset on the same command that just set the Sprint Goal | Proposed | Low | Improvement | 2026-07-21 | -- |
-| [CR-0388](CR0388-committing-while-an-adversarial-reviewer-is-mutating-the.md) | Committing while an adversarial reviewer is mutating the tree can stage a mutant; nothing but the gate stands in the way | Proposed | High | Improvement | 2026-07-21 | -- |
+| [CR-0388](CR0388-committing-while-an-adversarial-reviewer-is-mutating-the.md) | Committing while an adversarial reviewer is mutating the tree can stage a mutant; nothing but the gate stands in the way | In Progress | High | Improvement | 2026-07-21 | EP0103, EP0105 |
+| [CR-0389](CR0389-nothing-reports-that-the-installed-skill-copy-has.md) | Nothing reports that the installed skill copy has drifted from the repo, so the operator has to remember to ask | Proposed | Medium | Improvement | 2026-07-22 | -- |
+| [CR-0390](CR0390-sprint-plan-s-batch-selection-error-names-the.md) | sprint plan's batch-selection error names the flags but not that each one takes a status, costing two failed invocations to discover | Proposed | Low | Improvement | 2026-07-22 | -- |
 
 ## Archived Releases
 

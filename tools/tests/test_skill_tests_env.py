@@ -118,6 +118,10 @@ SCRUB_SITES: dict[str, str] = {
         "pinned by test_the_hook_lane_scrubs_the_same_variables_as_the_script",
     "tools/tests/test_precommit_budget_recording.py":
         "pinned by test_the_hook_fixture_module_scrubs_the_same_variables",
+    "tools/tests/test_precommit_window_guard.py":
+        "pinned by test_every_hook_fixture_module_scrubs_the_same_variables",
+    "tools/tests/test_precommit_floor_pending.py":
+        "pinned by test_every_hook_fixture_module_scrubs_the_same_variables",
     "tools/tests/test_skill_tests_env.py":
         "this file: REPO_LOCATING is the list every other copy is held to",
     ".claude/skills/sdlc-studio/scripts/tests/test_gitutil.py":
@@ -180,6 +184,20 @@ class ScrubListsAgreeTests(unittest.TestCase):
     def test_the_hook_fixture_module_scrubs_the_same_variables(self) -> None:
         self.assertEqual(
             sorted(self._named_tuple_in(self.MODULE, "_GIT_ENV_VARS")), sorted(REPO_LOCATING))
+
+    def test_every_hook_fixture_module_scrubs_the_same_variables(self) -> None:
+        """Every module that builds a throwaway repo and RUNS THE HOOK in it carries this
+        list, so each is a place the scrub can drift. Found by globbing rather than by
+        naming them: a fixture module added next week is caught by the sweep below only if
+        something here actually holds its copy to the list."""
+        modules = sorted((REPO / "tools" / "tests").glob("test_precommit_*.py"))
+        self.assertGreaterEqual(len(modules), 2, "the hook fixture modules moved or vanished")
+        for path in modules:
+            if "_GIT_ENV_VARS" not in path.read_text(encoding="utf-8"):
+                continue     # a module that never shells out to git needs no scrub list
+            with self.subTest(module=path.name):
+                self.assertEqual(sorted(self._named_tuple_in(path, "_GIT_ENV_VARS")),
+                                 sorted(REPO_LOCATING))
 
     def test_the_shipped_fixture_helper_scrubs_the_same_variables(self) -> None:
         """The skill suites' own git fixtures (BG0230). This copy is the one that matters most:

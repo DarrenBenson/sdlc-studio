@@ -10,6 +10,8 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import re
 import subprocess
@@ -17,6 +19,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import loader  # noqa: E402
@@ -36,6 +39,31 @@ SECURITY_POSTURE = (
     "committed secret by its location plus rotation instructions, and leave the "
     "value where it is."
 )
+
+
+# The file-or-decline discipline, verbatim. The test pack's whole value is in its lenses
+# being run and answered, so silence on a candidate is the failure mode to design against;
+# this literal is what stops a later edit softening it into a suggestion.
+FILE_OR_DECLINE = (
+    "Every candidate that survives the refute panel is either filed through "
+    "`file_finding.py` or declined with a stated reason. Silence on a candidate is "
+    "not an outcome of this run."
+)
+
+#: Ids of the shipped lessons registry, i.e. the ids a pack citation may resolve to.
+_LESSON_ROW_RE = re.compile(r"^\|\s*\[(LL\d{4})\]\(([^)]+)\)")
+_LESSON_ID_RE = re.compile(r"LL\d{4}")
+
+
+def _registry_lessons() -> dict[str, str]:
+    """`{LL id: filename}` for every lesson the shipped registry lists."""
+    index = SKILL / "lessons" / "_index.md"
+    out: dict[str, str] = {}
+    for line in index.read_text(encoding="utf-8").splitlines():
+        m = _LESSON_ROW_RE.match(line.strip())
+        if m:
+            out[m.group(1)] = m.group(2)
+    return out
 
 
 def _run_cli(*argv: str) -> subprocess.CompletedProcess:
@@ -143,6 +171,102 @@ class CodeProfileLensTests(unittest.TestCase):
         got = audit.resolve_profile("code")
         self.assertEqual(got["source"], "templates/audit-profiles/code.md")
         self.assertEqual(len(got["lenses"]), len(self.EXPECTED))
+
+
+class TestProfileTests(unittest.TestCase):
+    """The `test` pack as a surface: it resolves, it is panel-wired, it refuses to run
+    empty, and it hands the finder the file-or-decline discipline.
+
+    A mutant cannot detect a docstring that lies, so this profile's value is entirely in
+    its lenses being run at all. The failure to design against is therefore a `test` run
+    reporting a clean audit having examined nothing.
+    """
+
+    def setUp(self) -> None:
+        self.pack = PACKS / "test.md"
+        self.assertTrue(self.pack.is_file(), "templates/audit-profiles/test.md is missing")
+
+    def test_test_profile_is_listed_and_resolves_to_its_pack(self) -> None:
+        listed = _run_cli("profile", "--list", "--format", "json")
+        self.assertEqual(listed.returncode, 0, listed.stderr)
+        self.assertIn("test", json.loads(listed.stdout)["profiles"])
+        proc = _run_cli("profile", "--name", "test")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("profile test -> templates/audit-profiles/test.md", proc.stdout)
+        count = re.search(r"lenses: (\d+)", proc.stdout)
+        self.assertIsNotNone(count, "the resolve output reported no lens count")
+        self.assertGreater(int(count.group(1)), 0, "the pack resolved to zero lenses")
+
+    def test_test_pack_declares_the_shared_refute_threshold(self) -> None:
+        got = audit.resolve_profile("test")
+        self.assertEqual(got["threshold"], {"survive": 2, "votes": 3})
+        self.assertIn("does not opt out", got["refute"],
+                      "the pack never states that it is panel-wired")
+
+    def test_a_lensless_test_pack_is_refused_rather_than_run(self) -> None:
+        """A pack whose lens table is emptied by a later edit is refused, not run clean."""
+        with tempfile.TemporaryDirectory() as td:
+            fixture = Path(td)
+            packs = fixture / "templates" / "audit-profiles"
+            packs.mkdir(parents=True)
+            gutted = "\n".join(line for line in self.pack.read_text(encoding="utf-8").splitlines()
+                               if not line.startswith("|"))
+            (packs / "test.md").write_text(gutted, encoding="utf-8")
+            with self.assertRaises(audit.UnknownProfile) as ctx:
+                audit.resolve_profile("test", fixture)
+            self.assertIn("test", str(ctx.exception))
+            self.assertIn("templates/audit-profiles/test.md", str(ctx.exception))
+
+            err = io.StringIO()
+            with mock.patch.object(audit, "SKILL_DIR", fixture), \
+                    mock.patch.object(audit, "PROFILE_DIR", packs), \
+                    contextlib.redirect_stderr(err):
+                rc = audit.main(["profile", "--name", "test"])
+        self.assertNotEqual(rc, 0, "a lens-less pack exited 0, i.e. reported a clean audit")
+        self.assertIn("declares no lens", err.getvalue())
+
+    def test_the_pack_states_file_or_decline(self) -> None:
+        # Whitespace is re-wrapped in markdown, so compare on collapsed whitespace.
+        body = " ".join(self.pack.read_text(encoding="utf-8").split())
+        self.assertIn(" ".join(FILE_OR_DECLINE.split()), body)
+
+
+class TestProfileLensTests(unittest.TestCase):
+    """The `test` pack's content: four lenses, each anchored to a recorded failure mode.
+
+    A lens appended without a citation is a lens invented from first principles, and a
+    citation that no longer resolves is a dangling reference; the pack is where either
+    would go unnoticed.
+    """
+
+    #: The four failure classes the profile was adopted for.
+    EXPECTED = ["can-it-fail", "docstring-vs-assertion", "incidentally-green",
+                "reaches-the-code"]
+
+    def setUp(self) -> None:
+        self.pack = PACKS / "test.md"
+        self.assertTrue(self.pack.is_file(), "templates/audit-profiles/test.md is missing")
+        self.parsed = audit.parse_pack(self.pack)
+
+    def test_the_four_lenses_are_declared_with_question_and_hunts(self) -> None:
+        self.assertEqual(sorted(lens["name"] for lens in self.parsed["lenses"]), self.EXPECTED)
+        for lens in self.parsed["lenses"]:
+            self.assertIn("?", lens["question"],
+                          f"{lens['name']}: the adversarial question is not a question")
+            self.assertTrue(lens["hunts"].strip(),
+                            f"{lens['name']}: nothing declared as hunted")
+
+    def test_every_lens_cites_a_lesson_id_that_resolves(self) -> None:
+        registry = _registry_lessons()
+        self.assertTrue(registry, "the shipped lessons registry parsed as empty")
+        for lens in self.parsed["lenses"]:
+            cited = _LESSON_ID_RE.findall(lens.get("drawn_from", ""))
+            self.assertTrue(cited, f"{lens['name']}: no recorded failure mode cited")
+            for lesson in cited:
+                self.assertIn(lesson, registry,
+                              f"{lens['name']} cites {lesson}, which the registry does not list")
+                self.assertTrue((SKILL / "lessons" / registry[lesson]).is_file(),
+                                f"{lesson} is listed but its file is missing")
 
 
 def _catalogued(path: Path, heading: str) -> set[str]:
@@ -292,8 +416,9 @@ class ProfileCatalogueTests(unittest.TestCase):
     def test_the_help_catalogue_matches_the_profiles_that_exist(self) -> None:
         self.assertEqual(_catalogued(self.HELP, "## Profiles"), set(audit.profile_names()))
 
-    def test_the_four_promised_profiles_are_all_present(self) -> None:
-        self.assertEqual(set(audit.profile_names()), {"project", "skill", "repo", "code"})
+    def test_every_promised_profile_is_present(self) -> None:
+        self.assertEqual(set(audit.profile_names()),
+                         {"project", "skill", "repo", "code", "test"})
 
     def test_no_profile_opts_out_of_the_shared_refute_panel(self) -> None:
         for name in audit.profile_names():

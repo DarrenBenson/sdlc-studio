@@ -528,6 +528,33 @@ def hook_enablement_gap(root) -> str | None:
             "unset or elsewhere) - the commit gate is not running; fix: bash tools/enable-hooks.sh")
 
 
+def _window(root: str) -> dict:
+    """Blocking standard-gate lane: a process has DECLARED that it is rewriting source files in
+    place, so this tree is being written to by somebody else right now.
+
+    CR0388, as corrected: a reviewer's shell redirect through a symlink farm overwrote live
+    source while the author was committing ceremony artefacts, and `git add -A` staged it. The
+    commit was refused only because the reverted file happened to break the suite - a rewrite
+    that left the suite GREEN would have been committed silently under a paperwork message. So
+    this lane does not look for mutants and does not lean on the suite: it reads the declaration.
+
+    REFUSE rather than warn (D0053). A warning is what the observed failure mode defeats: in a
+    passing run it reads as noise, and the run that matters is exactly the passing one. The
+    reader is `mutation.read_window`, so the rule that an unreadable record counts as OPEN has
+    ONE home rather than a copy here that could drift the safe way into 'closed'."""
+    import mutation
+    held = mutation.read_window(root)
+    if held is None:
+        return {"count": 0, "blocking": True, "detail": "no rewrite window is open"}
+    paths = ", ".join(held.get("paths") or []) or "(unstated paths)"
+    detail = (f"a rewrite window is OPEN - {held['owner']} has claimed {paths} since "
+              f"{held.get('opened_at')}; a commit now stages whatever that process has left "
+              f"on disk. Wait for it, or clear it: {held['clear_with']}")
+    if held.get("unreadable"):
+        detail += f" ({held['detail']})"
+    return {"count": 1, "blocking": True, "detail": detail}
+
+
 def _hook_enabled(root: str) -> dict:
     gap = hook_enablement_gap(root)
     return {"count": 0 if gap is None else 1, "blocking": False,
@@ -574,7 +601,7 @@ BLOCKING_ON_ERROR = {
     "conformance", "reconcile", "index-derived", "validate",
     "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
     "lessons-summary", "lessons-validity", "handoff", "review-legs",
-    "engagement-floor", "review-current", "close-owed",
+    "engagement-floor", "review-current", "close-owed", "window",
 }
 
 def _changelog_fragments(root: str) -> dict:
@@ -716,6 +743,7 @@ DEFAULT_CHECKS = {
     "disclosure": _disclosure,
     "doc-freshness": _doc_freshness,
     "mutation": _mutation,
+    "window": _window,
     "hook-enabled": _hook_enabled,
     "batch-size": _batch_size,
 }

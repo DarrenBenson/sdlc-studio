@@ -1023,6 +1023,119 @@ class EpicTestSpecTests(unittest.TestCase):
             self.assertFalse(verify_ac.epic_test_spec_check(root, "EP0001")["ok"])
 
 
+class EpicTestSpecOptOutTests(unittest.TestCase):
+    """BG0250: `quality.epic_requires_test_spec` is documented in four places as the
+    caller's opt-out from the epic-scope test-spec requirement, and was read by no code.
+    These pin the read, so the documentation cannot silently become false again."""
+
+    def _project(self, d: str, matrix_row: str, config: str | None = None) -> Path:
+        root = Path(d)
+        sd = root / "sdlc-studio"
+        (sd / "test-specs").mkdir(parents=True, exist_ok=True)
+        (sd / "test-specs" / "TS0001-x.md").write_text(
+            "# TS0001: x\n\n> **Epic:** [EP0001](EP0001-x.md)\n\n### AC Coverage Matrix\n\n"
+            "| Story | AC | Description | Test Cases | Status |\n| --- | --- | --- | --- | --- |\n"
+            + matrix_row, encoding="utf-8")
+        if config is not None:
+            (sd / ".config.yaml").write_text(config, encoding="utf-8")
+        return root
+
+    def _epic_ts(self, root: Path) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = verify_ac.main(["epic-ts", "--epic", "EP0001", "--root", str(root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    FAILING = "| US0001 | AC1 | x | -- | pass |\n"          # no test case mapped
+    PASSING = '| US0001 | AC1 | x | jest "x" | pass |\n'
+
+    def test_the_key_set_false_downgrades_the_failure_to_advisory(self) -> None:
+        """The documented opt-out must actually change the outcome: a failing epic exits 0
+        instead of 1. Red before the config read existed - the run exited 1 regardless."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._project(d, self.FAILING,
+                                 "quality:\n  epic_requires_test_spec: false\n")
+            self.assertFalse(verify_ac.epic_test_spec_check(root, "EP0001")["enforced"],
+                             "epic_requires_test_spec: false was not read")
+            rc, out, _err = self._epic_ts(root)
+            self.assertEqual(rc, 0, f"the documented opt-out did not lift the gate: {out!r}")
+
+    def test_the_opt_out_still_reports_the_findings_it_stops_enforcing(self) -> None:
+        """An opt-out that hides the findings is a different, worse feature: the project
+        staging a migration must still see which specs it owes."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._project(d, self.FAILING,
+                                 "quality:\n  epic_requires_test_spec: false\n")
+            r = verify_ac.epic_test_spec_check(root, "EP0001")
+            self.assertFalse(r["ok"], "the opt-out silenced the check's own verdict")
+            self.assertTrue(r["issues"], "the opt-out discarded the findings")
+            _rc, out, _err = self._epic_ts(root)
+            self.assertIn("no test case mapped", out, "the findings were not printed")
+            self.assertIn("epic_requires_test_spec", out,
+                          "the run did not say why a FAIL exited 0")
+
+    def test_the_default_with_no_config_at_all_still_enforces(self) -> None:
+        """The default is unchanged for a project that sets nothing: still exit 1."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._project(d, self.FAILING)
+            self.assertTrue(verify_ac.epic_test_spec_check(root, "EP0001")["enforced"])
+            rc, out, _err = self._epic_ts(root)
+            self.assertEqual(rc, 1, f"the default stopped enforcing: {out!r}")
+
+    def test_the_key_set_true_enforces(self) -> None:
+        """Kills a read that treats the key's mere PRESENCE as the opt-out."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._project(d, self.FAILING,
+                                 "quality:\n  epic_requires_test_spec: true\n")
+            self.assertTrue(verify_ac.epic_test_spec_check(root, "EP0001")["enforced"])
+            self.assertEqual(self._epic_ts(root)[0], 1)
+
+    def test_an_unrelated_quality_key_does_not_lift_the_gate(self) -> None:
+        """Kills a read of the wrong key: another `quality.*` setting must not disable
+        this one."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._project(d, self.FAILING,
+                                 "quality:\n  done_requires_verified: false\n")
+            self.assertTrue(verify_ac.epic_test_spec_check(root, "EP0001")["enforced"])
+            self.assertEqual(self._epic_ts(root)[0], 1)
+
+    def test_a_passing_epic_exits_0_whichever_way_the_key_is_set(self) -> None:
+        """The opt-out governs the FAILURE only; it must not turn a green run amber."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._project(d, self.PASSING,
+                                 "quality:\n  epic_requires_test_spec: false\n")
+            rc, out, _err = self._epic_ts(root)
+            self.assertEqual(rc, 0)
+            self.assertIn("OK", out)
+            self.assertNotIn("advisory", out, "a passing run was reported as advisory")
+
+    def test_a_non_boolean_value_warns_and_keeps_enforcing(self) -> None:
+        """A value the reader cannot honour is the same defect this bug is: a setting
+        acted on in good faith with no effect and no warning. It must say so, and it must
+        fail safe (still enforce) rather than guess the project meant off."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._project(d, self.FAILING,
+                                 "quality:\n  epic_requires_test_spec: maybe\n")
+            rc, _out, err = self._epic_ts(root)
+            self.assertEqual(rc, 1, "a value that is not a boolean silently lifted the gate")
+            self.assertIn("epic_requires_test_spec", err, "the unhonoured value was silent")
+            self.assertIn("maybe", err, "the warning did not name the value it could not honour")
+
+    def test_json_output_carries_the_enforcement_state(self) -> None:
+        """A programmatic caller must be able to tell "the check failed" from "the check
+        failed and the project gates on it" without re-reading the config itself."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._project(d, self.FAILING,
+                                 "quality:\n  epic_requires_test_spec: false\n")
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                verify_ac.main(["epic-ts", "--epic", "EP0001", "--root", str(root),
+                                "--format", "json"])
+            payload = json.loads(out.getvalue())
+            self.assertFalse(payload["ok"])
+            self.assertFalse(payload["enforced"])
+
+
 class JestBatchTests(unittest.TestCase):
     """CR0111: resolve jest verifiers from one cached --json run."""
 

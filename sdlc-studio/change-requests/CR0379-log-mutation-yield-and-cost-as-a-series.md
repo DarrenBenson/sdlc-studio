@@ -1,6 +1,7 @@
 # CR-0379: log mutation yield and cost as a series, so the gate can be judged on evidence rather than belief
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0100, EP0104
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** S

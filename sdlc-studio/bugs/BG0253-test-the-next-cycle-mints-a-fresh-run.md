@@ -1,6 +1,13 @@
 # BG0253: test_the_next_cycle_mints_a_fresh_run asserts inequality of a probabilistically-unique id, so the commit gate fails at random about once in a thousand
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional - the collision was reproduced deterministically rather
+> than waited for, by driving the mint with a CONSTANT generator (which is also the false
+> negative the filed report names: the old assertion would have passed a constant 999 times in
+> 1,000). Red first: two consecutive mints returned the same id. Then fixed, then mutation-
+> proven with 5 hand-applied mutants, all killed. The flaky test itself now asserts the
+> properties that say a fresh run was minted - a new record, the previous one closed and
+> archived, and an id no archived run holds.
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_sprint_rolling.py,.claude/skills/sdlc-studio/scripts/lib/run_state.py
@@ -20,8 +27,43 @@ Found by the closing review of RUN-01KY321Q, whose first full suite run failed a
 
 Decide what the test is actually for, because the two answers differ. If it is that a NEW cycle mints a NEW run rather than reusing the old record, assert the property that matters - that the run record was replaced, that its opened-at moved, that the previous run is closed - none of which depends on the id being unique. If uniqueness of the id itself is the property, then the generator must provide it and the test is correctly failing: widen the random suffix or make the mint collision-checked against existing ids, which the id-allocation path already does elsewhere. Do NOT fix it by retrying or by seeding the random source, which would leave a test that passes a constant generator. Note the adjacent risk while deciding: if run ids can collide, two runs can share an identity in the telemetry and velocity records, which is a data problem rather than a test problem.
 
+## Acceptance Criteria
+
+- [x] **AC1:** A run id is collision-checked against the runs this project has already
+      recorded, so two consecutive mints differ even when the generator returns a constant.
+      Pinned by `test_run_state.ARunIdIsUniqueByConstructionNotByLuck`.
+- [x] **AC2:** The check reads the ARCHIVE, not only the live record, because a closed run's
+      identity outlives the file it was minted into.
+      Pinned by `test_run_state.test_an_archived_run_s_id_is_never_minted_again`.
+- [x] **AC3:** The cycle-boundary test asserts the properties that say a fresh run was minted,
+      not an id inequality alone.
+      Pinned by `test_sprint_rolling.test_the_next_cycle_mints_a_fresh_run`.
+
+## Resolution
+
+Both halves of the filed choice, because the report is right that they answer different
+questions and wrong that only one is needed.
+
+The GENERATOR could not provide uniqueness, so the ALLOCATOR does. `run_state._mint_run_id`
+checks a candidate against every archived run and the run being replaced, retries on a clash,
+and extends the suffix on a persistent one - the same shape `sdlc_md.mint_v3_id` has always used
+for artefact ids, and the backstop `short_ulid`'s own docstring names. It is minted after the
+outgoing run is archived, so the run being replaced is already in the register the new id is
+checked against. Nothing retries the test and nothing seeds the random source, which the report
+correctly ruled out: both would leave a test a constant generator passes.
+
+The TEST then asserts what it is actually for. The id inequality is kept, because it is now a
+property the allocator genuinely provides rather than a 1-in-1,024 bet, and beside it the
+boundary asserts a new open record, the previous run closed and archived, and an id no archived
+run holds.
+
+The adjacent risk the report flagged is what made this worth more than a flake fix: telemetry,
+the run archive and the velocity record all join on the run id, so two runs sharing one is a data
+problem, not a test problem. That is the hole the allocator closes.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-21 | sdlc-studio | Filed |
+| 2026-07-22 | sdlc-studio | Fixed: collision-checked run-id mint, and the test asserts the property it is for |

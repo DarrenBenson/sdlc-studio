@@ -24,6 +24,7 @@ import version_check  # noqa: E402
 import reconcile  # noqa: E402
 import validate  # noqa: E402
 import next_id  # noqa: E402
+import init  # noqa: E402  (the agent-instructions seeding path - reused, never copied)
 
 # The upgrade target: the CURRENT schema version, derived from the single source of truth
 # (templates/config.yaml, what `init` seeds new projects with) - never the config-defaults.yaml
@@ -257,6 +258,23 @@ def _max_id(root: Path) -> int:
                 (next_id.local_ids(t, root) for t in sdlc_md.ARTIFACT_TYPES)), default=0)
 
 
+def instructions_seeds(root: Path | str, findings: list[dict] | None = None) -> list[dict]:
+    """The agent-instructions files a caller may WRITE, derived from the hygiene check's own
+    `seedable` markers plus the Claude Code pointer, on which the check only rules when it
+    exists. Bounded to a file that is ABSENT: writing one is deterministic, editing one that
+    exists is judgement (project sections must survive), so drift stays needs-human."""
+    root = Path(root)
+    if findings is None:
+        findings = validate.check_instructions(root)
+    seeds = [{"target": f["target"], "template": f["template"]}
+             for f in findings if f.get("seedable")]
+    claude_tmpl = "templates/agent-instructions.CLAUDE.md"
+    if not (root / "CLAUDE.md").exists():
+        seeds.append({"target": "CLAUDE.md", "template": claude_tmpl})
+    return [s for s in seeds
+            if not (root / s["target"]).exists() and (init.SKILL / s["template"]).is_file()]
+
+
 def audit(root: Path | str) -> dict:
     """Findings split into auto-correctable vs needs-judgment. Read-only."""
     root = Path(root)
@@ -339,10 +357,24 @@ def audit(root: Path | str) -> dict:
         manual.append({"kind": "personas", "signals": signals,
                        "detail": "old persona model present - " + "; ".join(signals)})
     instr = validate.check_instructions(root)
-    if instr:
-        manual.append({"kind": "agents", "count": len(instr),
-                       "detail": f"{len(instr)} AGENTS.md/CLAUDE.md hygiene finding(s) - refresh from "
-                                 "templates/agent-instructions.md, preserving project sections"})
+    for seed in instructions_seeds(root, instr):
+        # `auto`, so the dry run previews the write and `--apply` performs it. Absent-file only:
+        # apply never touches a file that exists, and the two must agree on what is deterministic.
+        auto.append({"kind": "seed-instructions", "target": seed["target"],
+                     "template": seed["template"],
+                     "detail": f"no {seed['target']} - seed it from {seed['template']}"})
+    # Neither a seedable finding (reported as auto above) nor an `info` acknowledgement - a
+    # recorded opt-out is not a hygiene defect and must not be counted as one here either.
+    residual = [f for f in instr
+                if not f.get("seedable") and f["severity"] != validate.SEVERITY_INFO]
+    if residual:
+        # Name the rules and their messages: a count alone tells a maintainer nothing about what
+        # to repair, and this item is the whole report for a file the tooling must not rewrite.
+        manual.append({"kind": "agents", "count": len(residual),
+                       "rules": [f["rule"] for f in residual],
+                       "detail": f"{len(residual)} AGENTS.md/CLAUDE.md hygiene finding(s) - refresh from "
+                                 "templates/agent-instructions.md, preserving project sections: "
+                                 + "; ".join(f"[{f['rule']}] {f['message']}" for f in residual)})
     verrs = sum(1 for t in sdlc_md.ARTIFACT_TYPES for p in sdlc_md.artifact_files(t, root)
                 for v in validate.validate_file(p, t, root) if v["severity"] == "error")
     if verrs:
@@ -405,6 +437,15 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
         ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill,
                                           today, schema=stamp), encoding="utf-8")
         actions.append(f"repaired sdlc-studio/.version (schema -> {stamp})")
+    # Agent-instructions seed. A project adopting the skill on an existing repo has no AGENTS.md,
+    # and the file that establishes how the project is run is exactly what such a project needs
+    # first. Writing an absent file is deterministic and reversible; an existing one is left
+    # alone and its drift reported, so project sections can never be lost here.
+    fields = init.seed_fields(root, today)
+    for seed in instructions_seeds(root):
+        (root / seed["target"]).write_text(
+            init.seed_text(init.SKILL / seed["template"], fields), encoding="utf-8")
+        actions.append(f"seeded {seed['target']} from {seed['template']}")
     # Converged home: migrate legacy personas/amigos/ cards into
     # personas/seats/ mechanically - a role comment is ensured (from the filename stem for the
     # default-named cards), an existing seats/ filename is never overwritten (skip + report),

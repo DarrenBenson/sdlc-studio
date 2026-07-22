@@ -8,11 +8,15 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import json
 import re
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for gitutil
 
 try:
     import yaml  # noqa: F401
@@ -922,6 +926,353 @@ class RfcBoilerplateDecisionRowRetiredTests(unittest.TestCase):
             row = _decision_rows(body)[0]
             self.assertNotIn(self.BOILERPLATE, row)
             self.assertIn("adopt the new parser", row)
+
+
+def _load_mutation():
+    spec = importlib.util.spec_from_file_location(
+        "mutation", Path(__file__).resolve().parent.parent / "mutation.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["mutation"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _seed_run(root: Path, *, survived: int = 3, run_id: str | None = None) -> str:
+    """One measured row in the mutation series, without running a mutation gate."""
+    mut = _load_mutation()
+    rid = run_id or mut._new_run_id()
+    report = {"run_id": rid, "generated_at": "2026-07-22T09:00:00Z", "git_rev": "abc1234",
+              "test_cmd": "python3 -m unittest discover", "targets": ["src/thing.py"],
+              "refused": False, "unchecked": [],
+              "summary": {"applied": 10, "killed": 7, "survived": survived,
+                          "errors": 0, "unviable": 0, "truncated": 0}}
+    mut.append_series(root, report, 612.5)
+    return rid
+
+
+class MutationRunAttributionTests(unittest.TestCase):
+    """US0302 AC1: a finding filed from a surviving mutant names the run that found it, and a
+    filing against a run nobody recorded is REFUSED rather than stamped as an unresolvable
+    reference."""
+
+    def test_a_finding_filed_from_a_survivor_records_the_run_and_the_target(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rid = _seed_run(root)
+            res = ff.file_finding(root, "bug", "a survivor nobody kills",
+                                  {**BUG, "mutation_run": rid})
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertEqual(sdlc_md.extract_field(body, "Mutation-run"), rid)
+            # the mutated surface travels with the link - derived from the run when unstated
+            self.assertEqual(sdlc_md.extract_field(body, "Mutation-target"), "src/thing.py")
+
+    def test_an_explicit_target_wins_over_the_derived_one(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rid = _seed_run(root)
+            res = ff.file_finding(root, "bug", "a survivor nobody kills",
+                                  {**BUG, "mutation_run": rid,
+                                   "mutation_target": "src/other.py"})
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertEqual(sdlc_md.extract_field(body, "Mutation-target"), "src/other.py")
+
+    def test_filing_against_an_unknown_run_is_refused_naming_the_run(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            _seed_run(root)
+            with self.assertRaises(ValueError) as ctx:
+                ff.file_finding(root, "bug", "a survivor nobody kills",
+                                {**BUG, "mutation_run": "MRUN-nope-000000"})
+            self.assertIn("MRUN-nope-000000", str(ctx.exception))
+            # nothing was minted against the missing run
+            self.assertEqual([p for p in (root / "sdlc-studio" / "bugs").glob("*.md")
+                              if p.name != "_index.md"], [])
+
+    def test_the_cli_exposes_the_link_and_refuses_an_unknown_run(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rid = _seed_run(root)
+            argv = ["file", "--type", "bug", "--title", "a survivor nobody kills",
+                    "--severity", "High", "--summary", "s", "--steps", "x", "--fix", "y",
+                    "--affects", "src/thing.py", "--points", "3", "--root", str(root)]
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = ff.main([*argv, "--mutation-run", rid])
+            self.assertEqual(rc, 0)
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = ff.main([*argv, "--mutation-run", "MRUN-ghost-000000"])
+            self.assertEqual(rc, 1)
+            self.assertIn("MRUN-ghost-000000", err.getvalue())
+
+
+#: The payload CR0384 is about: reproduction steps whose content is COMMANDS. A backtick pair
+#: and a `$(...)` are command substitution inside a double-quoted shell argument, so on the flag
+#: path the shell ATE them - BG0240 lost two commands silently and BG0242 executed `git commit
+#: -a` twice against the live repository while being filed. `{sentinel}` is substituted with a
+#: path inside the test's own temp tree (never the working tree - L-0158), so an execution of
+#: this text leaves a mark the test can see.
+#:
+#: Deliberately free of bare `snake_case` tokens and of any `**Field:**` line, so the filer's
+#: markdown-safety pass is the identity here and "character for character" means exactly that.
+STEPS_PAYLOAD = (
+    "1. Stage a change, then run `git commit -a` against the live tree.\n"
+    "2. Read the head back with `$(git rev-parse HEAD)`.\n"
+    "3. Break the command over a line with a trailing backslash \\\n"
+    "4. And here is the one that proves it: `$(touch {sentinel})`\n"
+)
+#: The sentinel command is BACKTICKED so the temp path inside it sits in a code span:
+#: the filer's markdown-safety pass rewrites bare `snake_case` outside code spans, and a
+#: temp directory whose random name happens to hold an underscore would otherwise make
+#: this fidelity assertion pass or fail by luck of the draw.
+
+
+def _git_repo(root: Path) -> None:
+    """A throwaway git work tree with a commit, a staged change and an unstaged one, so the
+    no-side-effect assertion has real state to be unchanged."""
+    import gitutil
+    gitutil.git(["init", "-q", "-b", "main"], root)
+    (root / "seed.txt").write_text("seed\n", encoding="utf-8")
+    gitutil.git(["add", "seed.txt"], root)
+    gitutil.git(["commit", "-qm", "seed"], root)
+    (root / "staged.txt").write_text("staged\n", encoding="utf-8")
+    gitutil.git(["add", "staged.txt"], root)
+    (root / "seed.txt").write_text("seed edited\n", encoding="utf-8")
+
+
+def _git_state(root: Path) -> tuple[str, bytes]:
+    import gitutil
+    head = gitutil.git(["rev-parse", "HEAD"], root).stdout.decode()
+    return head, (root / ".git" / "index").read_bytes()
+
+
+def _section(body: str, heading: str) -> str:
+    """The text of one `## heading` section, verbatim."""
+    m = re.search(rf"^## {re.escape(heading)}\n\n(.*?)(?=\n## )", body, re.S | re.M)
+    assert m, f"no {heading} section in\n{body}"
+    return m.group(1).rstrip("\n")
+
+
+class JsonInputFidelityTests(unittest.TestCase):
+    """US0305 AC1: a finding handed over as a JSON document is stored character for character -
+    the whole point of an input path no shell ever sees."""
+
+    def _fields_file(self, root: Path, payload: str) -> Path:
+        p = root / "finding.json"
+        p.write_text(json.dumps({
+            "title": "filing executes the steps it is given",
+            "severity": "High", "summary": "the filer runs its own reproduction",
+            "steps": payload, "fix": "read the fields from a file", **GROOM,
+        }), encoding="utf-8")
+        return p
+
+    def test_a_finding_supplied_as_json_is_stored_character_for_character(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            payload = STEPS_PAYLOAD.format(sentinel=root / "EXECUTED")
+            spec = self._fields_file(root, payload)
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = ff.main(["file", "--type", "bug", "--fields-file", str(spec),
+                              "--root", str(root)])
+            self.assertEqual(rc, 0)
+            filed = next(p for p in (root / "sdlc-studio" / "bugs").glob("*.md")
+                         if p.name != "_index.md")
+            body = filed.read_text(encoding="utf-8")
+            self.assertEqual(_section(body, "Steps to Reproduce"), payload.rstrip("\n"))
+            self.assertIn(payload, body)          # every character, in one contiguous run
+            self.assertIn("`git commit -a`", body)
+            self.assertIn("$(git rev-parse HEAD)", body)
+            self.assertIn("backslash \\", body)
+
+    def test_the_title_need_not_pass_through_a_shell_either(self) -> None:
+        # `--title` is the other field a caller must supply, so it has to be suppliable from
+        # the file - otherwise "no field passes through a shell" is false by construction.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            spec = root / "finding.json"
+            spec.write_text(json.dumps({
+                "title": "a title carrying `$(id)` verbatim", "severity": "High",
+                "summary": "s", "steps": "x", "fix": "y", **GROOM}), encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = ff.main(["file", "--type", "bug", "--fields-file", str(spec),
+                              "--root", str(root)])
+            self.assertEqual(rc, 0)
+            filed = next(p for p in (root / "sdlc-studio" / "bugs").glob("*.md")
+                         if p.name != "_index.md")
+            self.assertIn("a title carrying `$(id)` verbatim",
+                          filed.read_text(encoding="utf-8"))
+
+    def test_a_flag_still_wins_over_the_file_so_the_two_paths_compose(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            spec = self._fields_file(root, "plain steps")
+            with contextlib.redirect_stdout(io.StringIO()):
+                ff.main(["file", "--type", "bug", "--fields-file", str(spec),
+                         "--severity", "Low", "--root", str(root)])
+            filed = next(p for p in (root / "sdlc-studio" / "bugs").glob("*.md")
+                         if p.name != "_index.md")
+            self.assertIn("> **Severity:** Low", filed.read_text(encoding="utf-8"))
+
+    def test_an_unknown_key_in_the_document_is_refused_not_ignored(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            spec = root / "finding.json"
+            spec.write_text(json.dumps({"title": "t", "severity": "High", "summary": "s",
+                                        "steps": "x", "fix": "y", "stpes": "typo", **GROOM}),
+                            encoding="utf-8")
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = ff.main(["file", "--type", "bug", "--fields-file", str(spec),
+                              "--root", str(root)])
+            self.assertEqual(rc, 1)
+            self.assertIn("stpes", err.getvalue())
+
+
+class JsonInputNoSideEffectTests(unittest.TestCase):
+    """US0305 AC2: filing that same content changes nothing. HEAD and the index are what they
+    were, and no process was spawned to evaluate any field - BG0242's `git commit -a` ran twice
+    against the live repository, and only a red pre-commit gate made the damage zero."""
+
+    def test_filing_a_destructive_payload_leaves_head_and_the_index_untouched(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _git_repo(root)
+            _seed_index(root, "bug")
+            sentinel = root / "EXECUTED"
+            payload = STEPS_PAYLOAD.format(sentinel=sentinel)
+            spec = root / "finding.json"
+            spec.write_text(json.dumps({
+                "title": "a bug about destructive commands", "severity": "High",
+                "summary": "s", "steps": payload, "fix": "f", **GROOM}), encoding="utf-8")
+            before = _git_state(root)
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = ff.main(["file", "--type", "bug", "--fields-file", str(spec),
+                              "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertEqual(_git_state(root), before)   # HEAD and index byte-identical
+            self.assertFalse(sentinel.exists())          # nothing evaluated the payload
+
+    def test_no_spawned_process_carries_any_field_of_the_finding(self) -> None:
+        import subprocess as sp
+        seen: list[str] = []
+        real_run, real_popen = sp.run, sp.Popen
+
+        def _rec_run(cmd, *a, **kw):
+            seen.append(repr(cmd))
+            return real_run(cmd, *a, **kw)
+
+        def _rec_popen(cmd, *a, **kw):
+            seen.append(repr(cmd))
+            return real_popen(cmd, *a, **kw)
+
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            payload = STEPS_PAYLOAD.format(sentinel=root / "EXECUTED")
+            spec = root / "finding.json"
+            spec.write_text(json.dumps({
+                "title": "a bug about destructive commands", "severity": "High",
+                "summary": "s", "steps": payload, "fix": "f", **GROOM}), encoding="utf-8")
+            with unittest.mock.patch.object(sp, "run", _rec_run), \
+                    unittest.mock.patch.object(sp, "Popen", _rec_popen), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                rc = ff.main(["file", "--type", "bug", "--fields-file", str(spec),
+                              "--root", str(root)])
+            self.assertEqual(rc, 0)
+            for marker in ("commit -a", "EXECUTED", "touch"):
+                self.assertFalse([c for c in seen if marker in c],
+                                 f"{marker!r} reached a spawned process: {seen}")
+
+
+class ShellHazardReportTests(unittest.TestCase):
+    """US0305 AC3: a field arriving on the FLAG path already mangled is reported at file time.
+    BG0240 is the case this exists for: two reproduction commands were silently removed and the
+    artefact read complete - the worse of the two outcomes, because nothing signalled it."""
+
+    def _file(self, root: Path, steps: str) -> str:
+        err = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+            ff.main(["file", "--type", "bug", "--title", "a defect", "--severity", "High",
+                     "--summary", "s", "--steps", steps, "--fix", "y",
+                     "--affects", "src/thing.py", "--points", "3", "--root", str(root)])
+        return err.getvalue()
+
+    def test_an_unbalanced_backtick_is_reported_naming_the_field(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            out = self._file(root, "run `git status and read it")
+            self.assertIn("steps", out)
+            self.assertIn("backtick", out.lower())
+            self.assertIn("--fields-file", out)      # the fix is named, not just the fault
+
+    def test_a_dollar_parenthesis_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            self.assertIn("$(", self._file(root, "capture $(git rev-parse HEAD)"))
+
+    def test_a_trailing_backslash_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            self.assertIn("backslash", self._file(root, "continue the command \\").lower())
+
+    def test_clean_prose_is_not_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            self.assertEqual(self._file(root, "run the command and read the output"), "")
+
+    def test_a_balanced_backtick_pair_is_not_a_hazard(self) -> None:
+        # PARITY is the signal, not presence: a pair that survived the shell intact is a code
+        # span, and reporting it would make the warning noise on every well-formed filing.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            self.assertEqual(self._file(root, "run `git status` and read the output"), "")
+
+    def test_two_pairs_are_still_not_a_hazard_but_three_backticks_are(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            self.assertEqual(self._file(root, "run `a` then `b` and compare"), "")
+            self.assertIn("backtick", self._file(root, "run `a` then `b and compare").lower())
+
+    def test_the_report_is_a_report_not_a_refusal(self) -> None:
+        # The finding is still filed: refusing would lose the content the author has in hand,
+        # and the flag path survives for compatibility. What must not happen is silence.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            self._file(root, "run `git status and read it")
+            self.assertTrue([p for p in (root / "sdlc-studio" / "bugs").glob("*.md")
+                             if p.name != "_index.md"])
+
+    def test_the_json_path_is_not_reported_because_nothing_mangled_it(self) -> None:
+        # The hazard is what a SHELL did to the value. A `$(` that arrived intact through a
+        # file is data, and warning about it would train the reader to ignore the warning.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            spec = root / "finding.json"
+            spec.write_text(json.dumps({
+                "title": "a defect", "severity": "High", "summary": "s",
+                "steps": "capture $(git rev-parse HEAD) and a stray ` too",
+                "fix": "y", **GROOM}), encoding="utf-8")
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = ff.main(["file", "--type", "bug", "--fields-file", str(spec),
+                              "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertEqual(err.getvalue(), "")
 
 
 if __name__ == "__main__":

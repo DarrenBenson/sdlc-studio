@@ -17,14 +17,23 @@ over broken code - a finding). Honest by construction:
 Subcommands:
   run        apply the mutation set to a surface (--files / --since REF / --story)
              and re-run the test command per mutation; writes
-             sdlc-studio/.local/mutation-report.json (the latest run) and appends this
+             sdlc-studio/.local/mutation-report.json (the latest run), appends this
              run's per-target evidence to sdlc-studio/.local/mutation-runs.json (the
-             bounded ledger the gate lane reads as coverage); non-zero on survivors.
+             bounded ledger the gate lane reads as coverage) and appends ONE row to
+             sdlc-studio/.local/mutation-series.jsonl (the per-run cost/yield series);
+             non-zero on survivors.
   register   record a mutant a builder ALREADY applied by hand, so the per-unit
              practice (apply a mutant to the code a new test pins, see RED, restore)
              leaves a trace in the same ledger. SELF-REPORTED: nothing here re-runs
              anything, so the entry is marked `registered` and the gate lane reports
              it as a claim, never as a measured run.
+  yield      what one run COST (wall-clock) against what was FILED from it - the
+             artefacts attributed to the run, never its raw survivor count, with any
+             mutant judged `equivalent` quoted as excluded rather than decremented.
+  window     declare (or clear) that a process is rewriting source files in place.
+             A file, so it survives the SIGKILL that in-memory state does not; the
+             gate refuses while one is open, so a concurrent commit is told rather
+             than staging whatever that process has left on disk.
   prefilter  list test files with no recognisable assertion - the cheap static
              signal for which tests to mutate first (advisory).
 
@@ -67,7 +76,17 @@ PROVENANCE_REGISTERED = "registered"
 #: The verdicts a hand-applied mutant can carry. `error` and `unviable` are things the RUNNER
 #: observes about a mutant it tried to execute; a builder reporting one would be reporting on a
 #: run that did not happen here.
-REGISTRABLE_VERDICTS = ("killed", "survived")
+#:
+#: `equivalent` is the judgement verdict: a survivor that changed no observable behaviour, so no
+#: test could have killed it. It exists in the VOCABULARY rather than in a side-file because an
+#: exclusion recorded away from the verdict is applied by memory and lost - and a silent
+#: exclusion is indistinguishable from a mutant nobody ran. It carries a mandatory reason and is
+#: excluded from yield while staying VISIBLE as excluded.
+EQUIVALENT_VERDICT = "equivalent"
+REGISTRABLE_VERDICTS = ("killed", "survived", EQUIVALENT_VERDICT)
+#: The counters a ledger entry's summary carries. One list, so a new verdict cannot be countable
+#: in one writer and absent in another.
+SUMMARY_VERDICTS = ("killed", "survived", "errors", "unviable", EQUIVALENT_VERDICT)
 
 
 def entry_provenance(entry: dict) -> str:
@@ -353,6 +372,116 @@ def _inflight_path(root: Path) -> Path:
     return Path(root) / "sdlc-studio" / ".local" / "mutation-inflight.json"
 
 
+# --- The rewrite window ----------------------------------------------------------------------
+#
+# CR0388, as CORRECTED: the incident was NOT a hand-applied mutant. A reviewer built a helper
+# directory with `ln -sf <repo>/scripts/*.py .` and ran `git show <sha>:...retro.py > retro.py`
+# inside it; the redirect followed the symlink and overwrote the live working tree with the
+# pre-sprint version, reverting two units' work. Meanwhile the author was committing ceremony
+# artefacts in the same tree, and `git add -A` staged whatever the concurrent process had left.
+#
+# Two things follow, and both shape this record. The guard cannot recognise MUTANTS, because no
+# mutant was involved. And it cannot lean on the suite going red, because the commit was blocked
+# only by luck - the reverted source happened to fail; a rewrite that left the suite green (which
+# is exactly what a SURVIVING mutant is) would have been committed silently under a paperwork
+# commit message.
+#
+# So a window is a first-class DECLARABLE object, not a side effect of running this tool: any
+# process rewriting files in place says who it is, what it may touch, and for how long. It is a
+# FILE, modelled on `mutation-inflight.json`, because in-memory state dies with a SIGKILL and a
+# file does not. An unreadable one reads OPEN: the one direction an error may never fail in is
+# "closed".
+#: Owner recorded for this tool's own runs; a reviewer's window names the reviewer instead.
+WINDOW_OWNER_RUN = "mutation.py run"
+
+
+def window_path(root: Path | str) -> Path:
+    """Where an open rewrite window is declared, beside the in-flight sidecar."""
+    return Path(root) / "sdlc-studio" / ".local" / "mutation-window.json"
+
+
+def _clear_hint(owner: str) -> str:
+    return f"mutation.py window close --owner {owner!r}"
+
+
+def read_window(root: Path | str) -> dict | None:
+    """The open window, or None when there is none.
+
+    None means ABSENT and nothing else. A record that exists but cannot be parsed - truncated by
+    the kill that stranded it, or half-written - is reported OPEN with `unreadable` set, because
+    the only unsafe way to be wrong here is to report a live writer as finished."""
+    path = window_path(root)
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict) or not data.get("owner"):
+            raise ValueError("window record is not an object naming an owner")
+    except (ValueError, OSError) as exc:
+        return {"owner": "unknown (the record is unreadable)", "paths": [],
+                "opened_at": None, "note": None, "pid": None, "unreadable": True,
+                "detail": f"{path} exists but cannot be read ({exc}) - a process declared a "
+                          f"rewrite window and its record did not survive; treat the tree as "
+                          f"being written to until somebody says otherwise",
+                "clear_with": f"delete {path} once you have confirmed nothing is rewriting "
+                              f"the tree"}
+    data.setdefault("unreadable", False)
+    data.setdefault("paths", [])
+    data.setdefault("clear_with", _clear_hint(str(data.get("owner"))))
+    return data
+
+
+def open_window(root: Path | str, owner: str, paths, note: str | None = None) -> dict:
+    """Declare that `owner` may rewrite `paths` until it closes the window.
+
+    Refuses while another window is open, naming who holds it: two declared writers in one tree
+    is the hazard itself, and a silent takeover would make the record a decoration."""
+    owner = str(owner or "").strip()
+    if not owner:
+        raise ValueError("a window must name its owner - an anonymous claim tells a blocked "
+                         "author nothing about who to ask or what to wait for")
+    held = read_window(root)
+    if held is not None:
+        raise ValueError(
+            f"a rewrite window is already open, held by {held['owner']} since "
+            f"{held.get('opened_at')} over {', '.join(held.get('paths') or []) or '(unstated)'}"
+            f" - two writers in one tree is the hazard this record exists to announce. "
+            f"Wait for it, or clear it: {held['clear_with']}")
+    record = {
+        "owner": owner,
+        "opened_at": sdlc_md.now_iso8601(),
+        "paths": [str(p) for p in (paths or [])],
+        "note": note or None,
+        "pid": __import__("os").getpid(),
+        "clear_with": _clear_hint(owner),
+    }
+    path = window_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    sdlc_md.atomic_write(path, json.dumps(record, indent=2) + "\n")
+    return record
+
+
+def close_window(root: Path | str, owner: str | None = None) -> dict | None:
+    """Clear the open window and return what it held, or None when none was open.
+
+    With `owner`, a window held by somebody else is REFUSED: clearing another writer's claim
+    would leave them rewriting the tree with nothing saying so. An unreadable record can be
+    cleared by anyone, since nobody can prove whose it was."""
+    held = read_window(root)
+    if held is None:
+        return None
+    if owner and not held.get("unreadable") and str(owner).strip() != held["owner"]:
+        raise ValueError(
+            f"the open window is held by {held['owner']}, not {owner} - refusing to clear "
+            f"another writer's claim. Ask them to close it, or clear it deliberately with no "
+            f"--owner once you have confirmed nothing is rewriting the tree")
+    try:
+        window_path(root).unlink()
+    except FileNotFoundError:
+        pass
+    return held
+
+
 def _recover_stranded(root: Path) -> list[str]:
     """Restore any mutant a killed previous run stranded on disk, from its sidecar.
 
@@ -478,7 +607,10 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     cannot judge anything, so the gate REFUSES immediately - no mutant is applied, the report
     is marked `refused` with the remedy, and the caller exits non-zero. Running the mutants
     anyway would only produce a worthless all-`error` report the run could mistake for done."""
+    import time
     root = Path(repo_root)
+    started = time.monotonic()          # the run's own wall-clock, measured, never assumed
+    run_id = _new_run_id()
     ceiling = max_mutations if max_mutations is not None else DEFAULT_MAX_MUTATIONS
     all_mutations, unchecked = enumerate_mutations(files, classes)
     to_apply, truncated = apply_budget(all_mutations, ceiling, changed)
@@ -489,34 +621,51 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     baseline = "error"
     refused = True
     remedy = None
-    try:
-        recovered = _recover_stranded(root)
-    except ValueError as exc:
-        remedy = str(exc)
+    # Another declared writer in this tree makes this run the SECOND one, which is the hazard
+    # itself: refuse before touching a byte, rather than interleaving two processes' rewrites.
+    blocking = read_window(root)
+    if blocking is not None:
+        remedy = (f"a rewrite window is open, held by {blocking['owner']} over "
+                  f"{', '.join(blocking.get('paths') or []) or '(unstated paths)'} - refusing to "
+                  f"be the second process rewriting this tree. Wait for it, or clear it: "
+                  f"{blocking['clear_with']}")
     else:
-        baseline = _run_tests(test_cmd, root)
-        refused = baseline != "pass"
-        if refused:
-            remedy = ("a red baseline proves nothing: clean the working tree (a stranded mutant "
-                      "from a killed run?) or fix the failing suite, then re-run"
-                      if baseline == "fail"
-                      else "the test command errored on unmutated code: fix the command or the "
-                           "environment, then re-run")
+        try:
+            recovered = _recover_stranded(root)
+        except ValueError as exc:
+            remedy = str(exc)
+        else:
+            baseline = _run_tests(test_cmd, root)
+            refused = baseline != "pass"
+            if refused:
+                remedy = ("a red baseline proves nothing: clean the working tree (a stranded "
+                          "mutant from a killed run?) or fix the failing suite, then re-run"
+                          if baseline == "fail"
+                          else "the test command errored on unmutated code: fix the command or "
+                               "the environment, then re-run")
     records: list[dict] = []
     if not refused:
         sidecar = _inflight_path(root)
-        for m in to_apply:
-            mutated = mutated_text(m)
-            unviable_reason = _viability(Path(m["file"]), mutated)
-            if unviable_reason:
-                # evidence of nothing: any suite fails on a non-parsing mutant,
-                # so it must never count as killed (nor as survived)
-                records.append({**m, "verdict": "unviable", "reason": unviable_reason})
-                continue
-            with applied(m, sidecar=sidecar):
-                outcome = _run_tests(test_cmd, root)
-            verdict = {"pass": "survived", "fail": "killed", "error": "error"}[outcome]
-            records.append({**m, "verdict": verdict})
+        # Declare the window BEFORE the first mutant lands and clear it after the last restore.
+        # A concurrent `git add -A` is then told a writer is active instead of silently staging
+        # whatever this loop has left on disk.
+        open_window(root, WINDOW_OWNER_RUN, [str(Path(f)) for f in files],
+                    note=f"mutation gate over {len(to_apply)} mutant(s)")
+        try:
+            for m in to_apply:
+                mutated = mutated_text(m)
+                unviable_reason = _viability(Path(m["file"]), mutated)
+                if unviable_reason:
+                    # evidence of nothing: any suite fails on a non-parsing mutant,
+                    # so it must never count as killed (nor as survived)
+                    records.append({**m, "verdict": "unviable", "reason": unviable_reason})
+                    continue
+                with applied(m, sidecar=sidecar):
+                    outcome = _run_tests(test_cmd, root)
+                verdict = {"pass": "survived", "fail": "killed", "error": "error"}[outcome]
+                records.append({**m, "verdict": verdict})
+        finally:
+            close_window(root, owner=WINDOW_OWNER_RUN)
     summary = {
         "applied": len(records),
         "killed": sum(1 for r in records if r["verdict"] == "killed"),
@@ -554,6 +703,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
         except OSError:
             target_hashes[str(Path(fp))] = None
     report = {
+        "run_id": run_id,
         "generated_at": sdlc_md.now_iso8601(),
         "git_rev": _git_rev(root),
         "target_hashes": target_hashes,
@@ -562,6 +712,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
         "baseline": baseline,
         "refused": refused,
         "remedy": remedy,
+        "blocked_by_window": blocking,
         "recovered": recovered,
         "selected_tests": ([str(p) for p in selected] if selected is not None else None),
         "selection_warnings": selection_warnings,
@@ -569,8 +720,13 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
         "unchecked": unchecked,
         "summary": summary,
     }
+    report["elapsed_s"] = round(time.monotonic() - started, 3)
     if write_report:
         report["ledger"] = append_ledger(root, report, records)
+        # The per-run series, written whatever the outcome: a refused or all-errored run costs
+        # wall-clock too, and a series that recorded only the runs that worked would flatter the
+        # gate exactly where CR0379 wants it judged.
+        report["series"] = append_series(root, report, report["elapsed_s"])
         out = root / "sdlc-studio" / ".local" / "mutation-report.json"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(report, indent=2), encoding="utf-8")
@@ -580,6 +736,206 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
 def ledger_path(root: Path | str) -> Path:
     """Where the accumulating per-target evidence lives, beside the latest-run report."""
     return Path(root) / "sdlc-studio" / ".local" / "mutation-runs.json"
+
+
+# --- The per-run cost/yield series -----------------------------------------------------------
+#
+# The report is last-write-wins and the ledger supersedes a target's earlier numbers, so neither
+# answers "what has this gate cost and what has it found". The series is the third file and the
+# only per-RUN one: append-only, one JSON object per line, in the same shape `verify_ac.py` uses
+# for `verify-history.jsonl` - and bounded by the same shared roller, so it cannot grow without
+# limit while the trailing history stays long enough to read a trend from.
+
+
+def series_path(root: Path | str) -> Path:
+    """The append-only per-run series: one row per run, cost beside counts."""
+    return Path(root) / "sdlc-studio" / ".local" / "mutation-series.jsonl"
+
+
+def series_rows(root: Path | str) -> list[dict]:
+    """Every readable row of the series, oldest first. A line that does not parse as an object
+    is skipped rather than raising: a reader of the history must not die on one bad line."""
+    path = series_path(root)
+    if not path.exists():
+        return []
+    rows: list[dict] = []
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(row, dict):
+            rows.append(row)
+    return rows
+
+
+def _series_malformed(path: Path) -> bool:
+    """True when the file on disk is not a clean JSONL of objects. Checked before an append,
+    because appending a good row to a corrupt file leaves a file that is still corrupt."""
+    if not path.exists():
+        return False
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return True
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError:
+            return True
+        if not isinstance(row, dict):
+            return True
+    return False
+
+
+def _new_run_id() -> str:
+    """A per-run identity an artefact can point back at. Timestamped so the series sorts
+    readably, with random bytes so two runs in the same second never collide."""
+    import secrets
+    from datetime import datetime, timezone
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+    return f"MRUN-{stamp}-{secrets.token_hex(3)}"
+
+
+def append_series(root: Path | str, report: dict, elapsed_s: float) -> dict:
+    """Append this run's row to the series and report what happened to the file.
+
+    EVIDENCE is the property the row exists to carry. A run that was refused by the baseline
+    guard, or that ended with no killed and no survived verdict (every mutant unviable, errored
+    or timed out), judged nothing - so it is recorded as `no-evidence` with the reason named.
+    Summing the series without that flag would count a 40-minute refusal as a clean run, which
+    is the reading CR0379 exists to make impossible.
+
+    A malformed file is REPLACED rather than appended to, and the replacement is reported to the
+    caller (`reset`) so the run can say so on stdout - a silently rewritten history is a history
+    nobody can trust.
+    """
+    path = series_path(root)
+    s = report.get("summary") or {}
+    killed, survived = int(s.get("killed", 0)), int(s.get("survived", 0))
+    refused = bool(report.get("refused"))
+    evidence = (not refused) and (killed + survived) > 0
+    if refused:
+        reason = f"run refused - baseline {report.get('baseline')}, no mutant was applied"
+    elif not evidence:
+        reason = (f"{int(s.get('applied', 0))} mutant(s) applied and none returned a killed or "
+                  f"survived verdict (unviable, errored or timed out) - nothing was judged")
+    else:
+        reason = None
+    row = {
+        "run_id": report.get("run_id"),
+        "at": report.get("generated_at"),
+        "git_rev": report.get("git_rev"),
+        "test_cmd": report.get("test_cmd"),
+        "targets": list(report.get("targets") or []),
+        "applied": int(s.get("applied", 0)),
+        "killed": killed,
+        "survived": survived,
+        "errors": int(s.get("errors", 0)),
+        "unviable": int(s.get("unviable", 0)),
+        "truncated": int(s.get("truncated", 0)),
+        "unchecked": len(report.get("unchecked") or []),
+        "elapsed_s": round(float(elapsed_s), 3),
+        "evidence": evidence,
+        "outcome": "measured" if evidence else "no-evidence",
+        "no_evidence_reason": reason,
+    }
+    reset = _series_malformed(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if reset:
+        sdlc_md.atomic_write(path, json.dumps(row) + "\n")
+    else:
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row) + "\n")
+    rolled = sdlc_md.roll_jsonl(path)
+    return {"path": str(path), "rows": len(series_rows(root)),
+            "reset": reset, "rolled": rolled, "row": row}
+
+
+def series_row(root: Path | str, run_id: str) -> dict | None:
+    """The series row for one run, or None when the series holds no such run. None is what makes
+    an attribution refusable: a link to a run nobody recorded can never be checked."""
+    if not run_id:
+        return None
+    for row in reversed(series_rows(root)):
+        if row.get("run_id") == run_id:
+            return row
+    return None
+
+
+def _artefacts_filed_from(root: Path | str, run_id: str) -> list[str]:
+    """The ids of findings whose `Mutation-run` metadata names this run, sorted.
+
+    A survivor is a hypothesis; a filed artefact is a finding. This is the only count that may
+    be called the run's YIELD, because it is the only one somebody judged worth acting on."""
+    found: list[str] = []
+    root = Path(root)
+    for type_ in sdlc_md.FINDING_TYPES:
+        for path in sdlc_md.artifact_files(type_, root):
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            if (sdlc_md.extract_field(text, "Mutation-run") or "").strip() == run_id:
+                found.append(sdlc_md.extract_record_id(path.stem) or path.stem)
+    return sorted(found)
+
+
+def _equivalents_of(root: Path | str, run_id: str) -> list[dict]:
+    """Every mutant registered `equivalent` against this run, newest last. Read back out of the
+    ledger where the verdict lives, so the exclusion is visible wherever the verdicts are."""
+    state, _ = _load_ledger(ledger_path(root))
+    out: list[dict] = []
+    for entry in state["entries"]:
+        if not isinstance(entry, dict):
+            continue
+        for rec in entry.get("mutants") or []:
+            if (isinstance(rec, dict) and rec.get("verdict") == EQUIVALENT_VERDICT
+                    and rec.get("run") == run_id):
+                out.append({"mutant": rec.get("mutant"), "reason": rec.get("reason"),
+                            "verdict": EQUIVALENT_VERDICT, "target": entry.get("target"),
+                            "at": rec.get("at")})
+    return out
+
+
+def run_yield(root: Path | str, run_id: str) -> dict:
+    """What one mutation run COST and what it FOUND, with the two kept apart.
+
+    `survivors` is what the run raised; `yield` is what somebody then filed from it, and the two
+    are never conflated - RUN-01KY03GS raised three survivors of which two became bugs, so
+    counting survivors would have overstated it by half. `equivalent` names the survivors judged
+    unkillable, excluded from both counts and quoted with their reasons so the exclusion is
+    auditable. `outstanding` is what is left: raised, not filed, not excused.
+
+    An unknown run reports `found: False` with null counts rather than a tidy row of zeros - a
+    run nobody recorded has no yield of zero, it has no yield at all.
+    """
+    row = series_row(root, run_id)
+    if row is None:
+        return {"run": run_id, "found": False, "survivors": None, "filed": [], "yield": 0,
+                "equivalent": [], "outstanding": None, "elapsed_s": None, "evidence": False}
+    filed = _artefacts_filed_from(root, run_id)
+    equivalent = _equivalents_of(root, run_id)
+    survivors = int(row.get("survived", 0))
+    return {
+        "run": run_id, "found": True,
+        "survivors": survivors,
+        "filed": filed,
+        "yield": len(filed),
+        "equivalent": equivalent,
+        "outstanding": max(0, survivors - len(filed) - len(equivalent)),
+        "elapsed_s": row.get("elapsed_s"),
+        "evidence": bool(row.get("evidence")),
+        "row": row,
+    }
 
 
 def _ledger_target(root: Path, fp) -> str:
@@ -684,7 +1040,8 @@ def _store_ledger(path: Path, state: dict, entries: list[dict], reset: bool) -> 
             "dropped_total": state["dropped"], "written": True}
 
 
-def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: str) -> dict:
+def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: str,
+                    reason: str | None = None, run: str | None = None) -> dict:
     """Record a mutant that was ALREADY applied by hand, against the target's content NOW.
 
     The practice this exists for: a builder writes a test, applies a mutant to the code it
@@ -709,9 +1066,17 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     behaviour that was mutated. The gate's coverage lane reads it back out of the entry's
     summary and counts it, so recording bad news is never quieter than recording nothing.
 
-    Raises ValueError on a target that cannot be read, an unknown verdict, or an empty
-    description: an entry that names neither what was mutated nor what judged it is unauditable,
-    and one with no hash could never go stale.
+    An `equivalent` verdict is the one EXCLUSION the vocabulary allows: the mutant changed no
+    observable behaviour, so no test could have killed it and counting it as an outstanding
+    survivor would overstate what the gate found. It demands a `reason` - an exclusion nobody
+    justified is a decrement nobody can audit - and takes no test, because there is no test to
+    name. `run` attributes it to the series row it discounts, so the exclusion applies to the
+    run that raised the survivor and to no other.
+
+    Raises ValueError on a target that cannot be read, an unknown verdict, an empty description,
+    an equivalent verdict with no reason, or a run id the series does not hold: an entry that
+    names neither what was mutated nor what judged it is unauditable, and one with no hash could
+    never go stale.
     """
     import hashlib
     root = Path(root)
@@ -725,15 +1090,27 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
         raise ValueError(f"verdict must be one of {', '.join(REGISTRABLE_VERDICTS)}, "
                          f"not {verdict!r}")
     mutant, test = str(mutant or "").strip(), str(test or "").strip()
-    if not mutant or not test:
+    reason = str(reason or "").strip()
+    if verdict == EQUIVALENT_VERDICT:
+        if not mutant or not reason:
+            raise ValueError(
+                "an equivalent mutant must name WHAT was mutated and give a reason it could "
+                "not be killed - an exclusion nobody justified is a silent decrement, "
+                "indistinguishable from a mutant nobody ran")
+    elif not mutant or not test:
         raise ValueError("a registered mutant must name WHAT was mutated and WHICH test "
                          "returned the verdict - a bare count cannot be audited")
+    run = str(run or "").strip() or None
+    if run is not None and series_row(root, run) is None:
+        raise ValueError(f"no mutation run {run} in the series - a verdict attributed to a run "
+                         "nobody recorded discounts nothing and can never be checked")
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     rel = _ledger_target(root, path)
     lpath = ledger_path(root)
     state, reset = _load_ledger(lpath)
     entries = [e for e in state["entries"] if isinstance(e, dict)]
-    record = {"mutant": mutant, "test": test, "verdict": verdict,
+    record = {"mutant": mutant, "test": test or None, "verdict": verdict,
+              "reason": reason or None, "run": run,
               "at": sdlc_md.now_iso8601()}
     entry = next((e for e in entries if e.get("target") == rel
                   and entry_provenance(e) == PROVENANCE_REGISTERED
@@ -747,8 +1124,7 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     if entry is None:
         entry = {"target": rel, "hash": digest, "provenance": PROVENANCE_REGISTERED,
                  "git_rev": _git_rev(root), "generated_at": record["at"], "test_cmd": None,
-                 "summary": {"applied": 0, "killed": 0, "survived": 0,
-                             "errors": 0, "unviable": 0},
+                 "summary": {"applied": 0, **{k: 0 for k in SUMMARY_VERDICTS}},
                  "mutants": []}
     else:
         entries.remove(entry)              # re-appended below, so the newest entry sorts last
@@ -756,7 +1132,9 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
         entry["generated_at"] = record["at"]
     entry.setdefault("mutants", []).append(record)
     entry["summary"]["applied"] += 1
-    entry["summary"][verdict] += 1
+    # setdefault, not [verdict] += 1: an entry written before this verdict existed has no such
+    # counter, and a KeyError on an older ledger would make the vocabulary's growth a crash
+    entry["summary"][verdict] = entry["summary"].get(verdict, 0) + 1
     # The list is what grows here, and the ledger's entry bound cannot reach it: this entry is
     # rewritten, never added. Bounded on its own axis, newest kept, and what was dropped is
     # recorded - the summary tally below is never truncated, so the COUNT of what was
@@ -977,8 +1355,14 @@ def cmd_run(args: argparse.Namespace) -> int:
     # low ceiling on a large file samples peripheral helpers and reports a kill rate about
     # code nobody touched (L-0086).
     changed = changed_lines(root, args.since) if args.since else None
-    report = run_gate(root, files, args.test, max_mutations=ceiling, changed=changed)
+    report = run_gate(root, files, args.test, max_mutations=ceiling, changed=changed,
+                      write_report=not getattr(args, "dry_run", False))
     s = report["summary"]
+    ser = report.get("series") or {}
+    if ser.get("reset") and args.format != "json":
+        # a silently rewritten history is a history nobody can trust
+        print(f"  note: the mutation series at {ser['path']} was malformed and has been "
+              f"replaced - this run's row is the only one it now holds")
     if report.get("refused"):
         # a red/broken baseline proves nothing: refuse loudly, name the remedy, exit non-zero -
         # NEVER a clean-looking zero over a report that judged nothing
@@ -997,7 +1381,8 @@ def cmd_run(args: argparse.Namespace) -> int:
         print(f"mutation: {s['applied']} applied, {s['killed']} killed, "
               f"{s['survived']} survived, {s['errors']} error(s), "
               f"{s['unviable']} unviable, "
-              f"{s['truncated']} truncated, {len(report['unchecked'])} un-checked")
+              f"{s['truncated']} truncated, {len(report['unchecked'])} un-checked "
+              f"in {report.get('elapsed_s')}s")
         sel = report.get("selected_tests")
         if sel is None:
             print("  test selection: UNRESOLVED - the command could not be statically "
@@ -1036,10 +1421,19 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 def cmd_register(args: argparse.Namespace) -> int:
     try:
-        res = register_mutant(args.root, args.target, args.mutant, args.test, args.verdict)
+        res = register_mutant(args.root, args.target, args.mutant, args.test, args.verdict,
+                              reason=getattr(args, "reason", None),
+                              run=getattr(args, "run", None))
     except (ValueError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
+    if res["verdict"] == EQUIVALENT_VERDICT:
+        # excluded from yield, and said out loud: a silent exclusion is indistinguishable
+        # from a mutant nobody ran
+        print(f"mutation: recorded an EQUIVALENT mutant on {res['target']} - EXCLUDED from "
+              f"this run's yield and from its outstanding survivors, because "
+              f"{args.reason}. Self-reported: nothing here re-ran anything")
+        return 0
     print(f"mutation: registered a SELF-REPORTED mutant on {res['target']} "
           f"({res['verdict']}) - {res['registered']} registered mutant(s) on this content. "
           f"Nothing was re-run here, so the ledger holds this as a claim, not a measurement")
@@ -1055,6 +1449,67 @@ def cmd_register(args: argparse.Namespace) -> int:
               f"entr(ies) at the {LEDGER_LIMIT}-entry bound "
               f"({res['dropped_total']} dropped in all)")
     return 0
+
+
+def cmd_yield(args: argparse.Namespace) -> int:
+    y = run_yield(args.root, args.run)
+    if args.format == "json":
+        print(json.dumps(y, indent=2))
+        return 0 if y["found"] else 2
+    if not y["found"]:
+        print(f"mutation: no run {args.run} in the series - it has no yield of zero, it has "
+              f"no yield at all", file=sys.stderr)
+        return 2
+    print(f"mutation run {args.run}: {y['elapsed_s']}s, {y['survivors']} survivor(s), "
+          f"yield {y['yield']} filed artefact(s)"
+          + (f" ({', '.join(y['filed'])})" if y["filed"] else "")
+          + f", {y['outstanding']} outstanding")
+    for eq in y["equivalent"]:
+        print(f"  EXCLUDED (equivalent): {eq['mutant']} - {eq['reason']}")
+    if not y["evidence"]:
+        print(f"  note: this run recorded NO EVIDENCE "
+              f"({y['row'].get('no_evidence_reason')}) - read its yield knowing that")
+    return 0
+
+
+def cmd_window(args: argparse.Namespace) -> int:
+    """open / close / status over the rewrite window. A REVIEWER hand-editing files needs a
+    command of their own: the incident CR0388 records involved no mutation run at all, so a
+    window only this tool could arm would not have covered it."""
+    if args.window_cmd == "open":
+        if not (args.owner or "").strip():
+            print("error: `window open` needs --owner - an anonymous claim tells a blocked "
+                  "author nothing about who to ask or what to wait for", file=sys.stderr)
+            return 2
+        try:
+            rec = open_window(args.root, args.owner, args.paths or [], note=args.note)
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        print(f"mutation: rewrite window OPEN, held by {rec['owner']} over "
+              f"{len(rec['paths'])} path(s). Commits in this tree will be refused until it is "
+              f"closed: {rec['clear_with']}")
+        return 0
+    if args.window_cmd == "close":
+        try:
+            held = close_window(args.root, owner=args.owner)
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        print("mutation: no rewrite window was open" if held is None
+              else f"mutation: rewrite window CLOSED (was held by {held['owner']})")
+        return 0
+    held = read_window(args.root)
+    if held is None:
+        print("mutation: no rewrite window is open")
+        return 0
+    print(f"mutation: rewrite window OPEN - {held['owner']} since {held.get('opened_at')} "
+          f"over {', '.join(held.get('paths') or []) or '(unstated paths)'}"
+          + (f" ({held['note']})" if held.get("note") else ""))
+    if held.get("unreadable"):
+        print(f"  {held['detail']}")
+    print(f"  clear it with: {held['clear_with']}")
+    return 1
 
 
 def cmd_prefilter(args: argparse.Namespace) -> int:
@@ -1076,6 +1531,9 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--max-mutations", type=int, default=None,
                    help=f"cost ceiling (default quality.mutation_max, else {DEFAULT_MAX_MUTATIONS})")
     r.add_argument("--root", default=".")
+    r.add_argument("--dry-run", action="store_true", dest="dry_run",
+                   help="run the mutants and print the verdicts, but write no report, no "
+                        "ledger entry and no series row - a rehearsal leaves no evidence")
     r.add_argument("--format", choices=("text", "json"), default="text")
     r.set_defaults(func=cmd_run)
     g = sub.add_parser("register",
@@ -1083,11 +1541,38 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--target", required=True, help="the file the mutant was applied to")
     g.add_argument("--mutant", required=True,
                    help="what was mutated, in words a reviewer can check against the diff")
-    g.add_argument("--test", required=True, help="the test that returned the verdict")
+    g.add_argument("--test", help="the test that returned the verdict (required for "
+                                  "killed/survived; an equivalent mutant has none)")
     g.add_argument("--verdict", required=True, choices=REGISTRABLE_VERDICTS,
-                   help="killed (the test went red) or survived (it stayed green - a finding)")
+                   help="killed (the test went red), survived (it stayed green - a finding), "
+                        "or equivalent (no behaviour changed, so no test could kill it - "
+                        "excluded from yield, and it needs --reason)")
+    g.add_argument("--reason", help="why an equivalent mutant could not be killed - mandatory "
+                                    "for --verdict equivalent, since an unjustified exclusion "
+                                    "is a silent decrement")
+    g.add_argument("--run", metavar="MRUNxxx",
+                   help="the mutation run this verdict belongs to (must be in the series)")
     g.add_argument("--root", default=".")
     g.set_defaults(func=cmd_register)
+    y = sub.add_parser("yield", help="What one run COST and what was FILED from it.")
+    y.add_argument("--run", required=True, metavar="MRUNxxx")
+    y.add_argument("--root", default=".")
+    y.add_argument("--format", choices=("text", "json"), default="text")
+    y.set_defaults(func=cmd_yield)
+    w = sub.add_parser("window",
+                       help="Declare (or clear) that a process is rewriting source files "
+                            "in place, so a concurrent commit is refused rather than staging "
+                            "whatever that process has left on disk.")
+    # One subcommand level, as every script in this family has: the action is a positional,
+    # not a nested subparser, so `--root` keeps working on either side of the verb.
+    w.add_argument("window_cmd", choices=("open", "close", "status"),
+                   help="open a window, close it, or report the one that is open")
+    w.add_argument("--owner", help="who is rewriting the tree - a reviewer, an agent, a tool "
+                                   "(required to open; on close, refuse unless it matches)")
+    w.add_argument("--paths", nargs="+", default=[], help="the files this window may rewrite")
+    w.add_argument("--note", help="what is being done, for whoever the guard blocks")
+    w.add_argument("--root", default=".")
+    w.set_defaults(func=cmd_window)
     f = sub.add_parser("prefilter", help="List test files with no recognisable assertion.")
     f.add_argument("--tests", nargs="+", required=True)
     f.set_defaults(func=cmd_prefilter)

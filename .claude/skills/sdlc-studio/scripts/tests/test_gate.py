@@ -282,7 +282,8 @@ class GateRealWrapperTests(unittest.TestCase):
         self.assertEqual(set(gate.DEFAULT_CHECKS),
                          {"conformance", "reconcile", "index-derived", "validate", "constitution",
                           "integrity", "duplicate-id", "provenance", "doc-coverage", "engagement-floor",
-                          "disclosure", "doc-freshness", "mutation", "hook-enabled", "batch-size"})
+                          "disclosure", "doc-freshness", "mutation", "window", "hook-enabled",
+                          "batch-size"})
 
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
@@ -291,7 +292,7 @@ class GateRealWrapperTests(unittest.TestCase):
         # dev-repo guard rather than repeating it (BG0237).
         r = self._report()
         self.assertIsInstance(r["ok"], bool)
-        self.assertEqual(len(r["checks"]), 15)
+        self.assertEqual(len(r["checks"]), 16)
         for c in r["checks"]:
             self.assertEqual(set(c), {"check", "count", "blocking", "status", "detail"})
 
@@ -2744,6 +2745,83 @@ class ReleaseChangelogMismatchTests(ReleaseGateTests):
             lane = [c for c in gate.run_gate(str(root), release=True)["checks"]
                     if c["check"] == "versions"][0]
             self.assertEqual(lane["status"], "pass", lane)
+
+
+class WindowCheckTests(unittest.TestCase):
+    """US0307 AC3/AC4 (CR0388): a declared rewrite window is a FAILING gate check, naming who
+    holds it and what they claimed.
+
+    D0053 ruled REFUSE, not warn. The incident was caught only by luck - the file a concurrent
+    process left happened to break the suite - and a warning is exactly what that failure mode
+    defeats, because a rewrite that leaves the suite green (a SURVIVING mutant, by definition)
+    produces a passing run in which a warning reads as noise."""
+
+    def _root(self, tmp: str) -> Path:
+        root = Path(tmp)
+        (root / "sdlc-studio").mkdir(parents=True)
+        return root
+
+    def _open(self, root: Path, owner: str = "the reviewer", paths=("scripts/retro.py",)) -> None:
+        import importlib.util as _il
+        spec = _il.spec_from_file_location("mutation", SCRIPT.parent / "mutation.py")
+        mod = _il.module_from_spec(spec)
+        sys.modules["mutation"] = mod
+        spec.loader.exec_module(mod)
+        mod.open_window(root, owner, list(paths), note="hand-applying mutants")
+
+    def _lane(self, root: Path) -> dict:
+        return gate.DEFAULT_CHECKS["window"](str(root))
+
+    def test_an_open_window_fails_the_gate_naming_owner_and_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            self._open(root)
+            lane = self._lane(root)
+            self.assertEqual(lane["count"], 1, lane)
+            self.assertTrue(lane["blocking"], lane)      # refuse, never warn
+            self.assertIn("the reviewer", lane["detail"])
+            self.assertIn("scripts/retro.py", lane["detail"])
+            self.assertIn("window close", lane["detail"])
+
+    def test_no_window_leaves_the_gate_result_unchanged(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            clean = self._lane(root)
+            self.assertEqual(clean["count"], 0, clean)
+            before = gate.run_gate(str(root))
+            self._open(root)
+            after = gate.run_gate(str(root))
+            self.assertNotEqual(before["ok"], after["ok"])   # the window, and only the window
+            other_before = {c["check"]: (c["status"], c["count"]) for c in before["checks"]
+                            if c["check"] != "window"}
+            other_after = {c["check"]: (c["status"], c["count"]) for c in after["checks"]
+                           if c["check"] != "window"}
+            self.assertEqual(other_before, other_after)
+
+    def test_an_unreadable_record_still_fails_the_lane(self) -> None:
+        # The one direction this may never be wrong in is "closed": a truncated record means a
+        # process declared a window and its record did not survive, not that nobody is writing.
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            p = root / "sdlc-studio" / ".local" / "mutation-window.json"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("{truncated", encoding="utf-8")
+            lane = self._lane(root)
+            self.assertEqual(lane["count"], 1, lane)
+            self.assertTrue(lane["blocking"], lane)
+
+    def test_the_lane_blocks_on_crash_too(self) -> None:
+        # A lane whose failure blocks must block when it CRASHES: a green gate over an
+        # unproven blocking lane is the false-assurance class.
+        self.assertIn("window", gate.BLOCKING_ON_ERROR)
+
+    def test_an_open_window_fails_the_whole_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            self._open(root)
+            report = gate.run_gate(str(root), only=["window"])
+            self.assertFalse(report["ok"])
+            self.assertEqual(report["checks"][0]["status"], "fail")
 
 
 if __name__ == "__main__":

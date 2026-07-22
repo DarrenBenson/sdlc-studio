@@ -54,8 +54,8 @@
 - **Given** any generated brief
 - **When** the neutrality assertion runs
 - **Then** it mechanically checks the rendered text for the banned classes and fails on a violation, so a future edit that reintroduces priming is caught by the suite
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_neutrality_check_is_mechanical
-- **Verified:** yes (2026-07-20)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_neutral_text_reports_no_violations
+- **Verified:** yes (2026-07-22)
 
 ## Notes
 

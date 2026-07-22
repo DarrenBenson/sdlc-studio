@@ -56,7 +56,7 @@ find  ──►  verify  ──►  merge  ──►  file
 
 ## Lens Profiles {#audit-profiles}
 
-A profile is a set of lenses. Four ship; projects can extend. Every one of them is
+A profile is a set of lenses. Five ship; projects can extend. Every one of them is
 wired to the same refute panel - the profile chooses the lenses, never whether a
 plausible-but-wrong finding gets filed.
 
@@ -66,6 +66,7 @@ plausible-but-wrong finding gets filed.
 | `skill` | `templates/audit-profiles/skill.md` | an agent skill itself: over-engineering, token-economy, determinism, external-benchmark | shared |
 | `repo` | `templates/audit-profiles/repo.md` | an existing repository, zero setup: architecture, code-quality, defensive-security | shared |
 | `code` | `templates/audit-profiles/code.md` | an implementation: correctness, security-smells, pattern-violations, ac-drift | shared |
+| `test` | `templates/audit-profiles/test.md` | the claims code makes about itself: can-it-fail, reaches-the-code, docstring-vs-assertion, incidentally-green | shared |
 
 Resolve one with `scripts/audit.py profile --name repo`, which reports the pack's lenses
 and its refute threshold; a name no profile declares is refused, naming the ones that
@@ -110,6 +111,17 @@ For auditing an implementation rather than the specs around it: correctness,
 security-smells, pattern-violations, ac-drift. Packaged at
 `templates/audit-profiles/code.md`. The `ac-drift` lens needs the unit's acceptance
 criteria in the finder's context, not the diff alone.
+
+### Test profile {#audit-test-profile}
+
+The qualitative backstop to a mutation run, hunting the claims code and tests make about
+themselves: can-it-fail, reaches-the-code, docstring-vs-assertion, incidentally-green.
+Packaged at `templates/audit-profiles/test.md`. A mutant proves a test can fail; nothing
+mechanical detects a docstring that lies, which is what this pack is for. Its default
+scope is **source and tests together**, because prose asserting a property the code lacks
+sits in source at least as often as in a test file. Each lens cites the recorded failure
+modes it was drawn from (`lessons/_index.md`); read those entries into the finder's
+context, and give any lens appended later the same evidence.
 
 ### Extending {#audit-extend}
 
@@ -169,6 +181,12 @@ It allocates the ID, renders the structured artifact, stamps the authorship of r
 row, and recomputes the index counts. A CR without an impact statement and a `--points`
 size is refused, because the validator refuses it too. Triage first (review the
 survivors), then file the approved set.
+
+**File or decline, never neither.** Every candidate that survives the panel is either
+filed through `file_finding.py` or declined with a stated reason in the run report.
+Silence on a survivor is not an answer: an unmentioned candidate is indistinguishable
+from one nobody looked at, and the reason is what a later reader needs when the same
+candidate resurfaces.
 
 ## Budget {#audit-budget}
 

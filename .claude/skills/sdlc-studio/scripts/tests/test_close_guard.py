@@ -79,6 +79,38 @@ class CloseGuardTests(unittest.TestCase):
         self.assertIn("corrupt", decision["reason"].lower())
         self.assertIn("restore", decision["reason"].lower())  # directs a repair, not a re-stamp
 
+    def test_block_reason_names_a_retro_missing_its_velocity_row(self) -> None:
+        """US0288 AC4: the unit half being clean is not the whole close. A retro that never
+        wrote its velocity row is an unfinished close, and the hook must say so rather than
+        reporting nothing because no unit is uncovered."""
+        _story(self.root, "US0001", "Done")
+        close_owed.stamp_baseline(self.root, date="2026-07-16")
+        (self.root / "sdlc-studio" / "retros" / "RETRO0002-r.md").write_text(
+            "# RETRO-0002: s\n\n> **Date:** 2026-07-20\n> **Batch:** US0001\n\n"
+            "## Delivered\n- x\n", encoding="utf-8")
+        decision = close_guard.decide({"cwd": str(self.root)})
+        self.assertIsNotNone(decision, "a close with no velocity row is still owed")
+        self.assertEqual(decision["decision"], "block")
+        self.assertIn("RETRO0002", decision["reason"])
+        self.assertIn("VELOCITY", decision["reason"].upper())
+        self.assertIn("accuracy", decision["reason"])
+
+    def test_a_retro_with_its_row_written_does_not_block(self) -> None:
+        _story(self.root, "US0001", "Done")
+        close_owed.stamp_baseline(self.root, date="2026-07-16")
+        (self.root / "sdlc-studio" / "retros" / "RETRO0002-r.md").write_text(
+            "# RETRO-0002: s\n\n> **Date:** 2026-07-20\n> **Batch:** US0001\n\n"
+            "## Delivered\n- x\n", encoding="utf-8")
+        (self.root / "sdlc-studio" / "retros" / "VELOCITY.md").write_text(
+            "# Velocity history\n\n"
+            "| Retro | Date | Units | Measured | Forecast | Points | Estimate | Actual | "
+            "Ratio | Tokens/pt | Oversized | Wall | Constants | Sample | Model | Note | "
+            "Source |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | "
+            "--- | --- | --- | --- | --- | --- |\n"
+            "| RETRO0002 | 2026-07-20 | 1 | 0 | 0 | 2 | - | - | - | - | 0 | - | - | "
+            "unforecast | - | not attributable | - |\n", encoding="utf-8")
+        self.assertIsNone(close_guard.decide({"cwd": str(self.root)}))
+
     def test_read_event_tolerates_garbage(self) -> None:
         import io
         from unittest import mock

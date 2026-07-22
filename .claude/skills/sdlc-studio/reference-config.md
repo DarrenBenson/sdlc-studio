@@ -437,6 +437,10 @@ quality:
   done_requires_verified: true
   # epic_requires_test_spec (default true): an epic must have a test-spec (linked by its
   # Epic: field) whose AC Coverage Matrix passes `verify_ac epic-ts`. Single-story work is exempt.
+  # Read by verify_ac.py: set false and `epic-ts` still runs and still prints every finding,
+  # but a FAIL exits 0 and says `advisory only` - the opt-out a project staging the migration
+  # to matrix-bearing specs needs. Only true/false are honoured; any other value warns on
+  # stderr and keeps enforcing.
   epic_requires_test_spec: true
   # depth_parity_gate (default false): the story->Done depth-parity check (an AC's declared
   # `Verification target` above `functional` must not out-run the recorded depth) is advisory

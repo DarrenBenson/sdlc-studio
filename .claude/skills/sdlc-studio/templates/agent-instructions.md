@@ -56,6 +56,13 @@ In order, before tagging any release:
 Triage and **fix** the findings before tagging. No exceptions - even a genuine
 production hotfix files a `bug` (rationale + `Verify:` expression + audit pin).
 
+**Review is independent of the author.** Whoever wrote the change never records its
+sign-off. Two roles, never merged: an **adversarial reviewer** (a fresh context that
+did not write the code) files findings as evidence, and a **reviewer of record** - the
+operator, or a named delegate in a separate trust boundary - approves. With
+`review.two_role_after` set in `.config.yaml`, a unit holds at Review until that
+sign-off lands.
+
 **Index & verification conventions.** Keep **one canonical status summary** per `_index.md` - the
 `| Status | Count |` table with a `**Total**` row, which `reconcile` maintains. Per-section / per-epic
 count tables are author-maintained; do not give them a `Total` row (reconcile would treat them as the

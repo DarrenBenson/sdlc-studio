@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 0 |
+| Draft | 23 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **287** |
+| **Total** | **310** |
 
 ## All Stories
 
@@ -198,6 +198,29 @@
 | [US0285](US0285-the-never-rolled-evidence-log-pin-drives-an.md) | The never-rolled evidence-log pin drives an injected cap, not 5,050 real records | Done | EP0093 | 2026-07-21 | 2026-07-21 |
 | [US0286](US0286-the-three-heavy-gate-lanes-share-one-artefact.md) | The three heavy gate lanes share one artefact corpus instead of walking it each | Done | EP0093 | 2026-07-21 | 2026-07-21 |
 | [US0287](US0287-set-d6-s-per-commit-gate-budget-against.md) | Set D6's per-commit gate budget against the improved baseline and pin the ratchet | Done | EP0093 | 2026-07-21 | 2026-07-21 |
+| [US0288](US0288-close-owed-treats-a-missing-velocity-row-as.md) | close_owed treats a missing velocity row as an owed close item | Draft | EP0094 | 2026-07-22 | 2026-07-22 |
+| [US0289](US0289-backfill-the-velocity-record-from-retro0029-marking-unmeasurable.md) | Backfill the velocity record from RETRO0029, marking unmeasurable rows as such | Draft | EP0094 | 2026-07-22 | 2026-07-22 |
+| [US0290](US0290-each-plan-re-measures-the-rate-from-the.md) | Each plan re-measures the rate from the velocity record or names why it cannot | Draft | EP0094 | 2026-07-22 | 2026-07-22 |
+| [US0291](US0291-derive-shared-file-clusters-from-the-files-a.md) | Derive shared-file clusters from the files a unit's ACs and verifiers name, not Affects alone | Draft | EP0095 | 2026-07-22 | 2026-07-22 |
+| [US0292](US0292-report-an-affects-line-the-unit-s-own.md) | Report an Affects line the unit's own content contradicts, at plan time | Draft | EP0095 | 2026-07-22 | 2026-07-22 |
+| [US0293](US0293-migrate-apply-seeds-a-missing-agents-md-and.md) | migrate --apply seeds a missing AGENTS.md and CLAUDE.md from the template, preserving project sections | Draft | EP0096 | 2026-07-22 | 2026-07-22 |
+| [US0294](US0294-the-hygiene-check-reports-a-missing-instructions-file.md) | The hygiene check reports a missing instructions file as seedable rather than as an error | Draft | EP0096 | 2026-07-22 | 2026-07-22 |
+| [US0295](US0295-check-instructions-verifies-the-working-model-is-stated.md) | check_instructions verifies the working model is stated, not only that cross-references exist | Draft | EP0097 | 2026-07-22 | 2026-07-22 |
+| [US0296](US0296-a-file-passing-the-pointer-rules-while-stating.md) | A file passing the pointer rules while stating no working model is reported with what is missing | Draft | EP0097 | 2026-07-22 | 2026-07-22 |
+| [US0297](US0297-the-plan-puts-the-sprint-goal-to-the.md) | The plan puts the Sprint Goal to the resolved seats and records achievability and definition of done | Draft | EP0098 | 2026-07-22 | 2026-07-22 |
+| [US0298](US0298-a-goal-unreachable-by-construction-is-detected-and.md) | A goal unreachable by construction is detected and named at plan time | Draft | EP0098 | 2026-07-22 | 2026-07-22 |
+| [US0299](US0299-the-loop-continues-while-any-unit-the-pending.md) | The loop continues while any unit the pending question does not block remains | Draft | EP0099 | 2026-07-22 | 2026-07-22 |
+| [US0300](US0300-a-stop-names-what-could-have-proceeded-so.md) | A stop names what could have proceeded, so the cost of stopping is visible | Draft | EP0099 | 2026-07-22 | 2026-07-22 |
+| [US0301](US0301-each-mutation-run-appends-applied-killed-survived-unchecked.md) | Each mutation run appends applied, killed, survived, unchecked and wall-clock to a series | Draft | EP0100 | 2026-07-22 | 2026-07-22 |
+| [US0302](US0302-artefacts-filed-from-survivors-link-back-so-yield.md) | Artefacts filed from survivors link back, so yield is attributable to a run | Draft | EP0100 | 2026-07-22 | 2026-07-22 |
+| [US0303](US0303-a-test-lens-profile-on-the-audit-surface.md) | A test lens profile on the audit surface, attacking claims code and tests assert about themselves | Draft | EP0101 | 2026-07-22 | 2026-07-22 |
+| [US0304](US0304-lenses-drawn-from-this-project-s-own-recorded.md) | Lenses drawn from this project's own recorded failure modes | Draft | EP0101 | 2026-07-22 | 2026-07-22 |
+| [US0305](US0305-file-finding-accepts-every-field-as-data-through.md) | file_finding accepts every field as data through a non-shell input path | Draft | EP0102 | 2026-07-22 | 2026-07-22 |
+| [US0306](US0306-sweep-the-sibling-filers-for-the-same-hazard.md) | Sweep the sibling filers for the same hazard | Draft | EP0102 | 2026-07-22 | 2026-07-22 |
+| [US0307](US0307-a-mutation-or-review-window-is-declared-on.md) | A mutation or review window is declared on disk and skill scripts refuse or warn while it is open | Draft | EP0103 | 2026-07-22 | 2026-07-22 |
+| [US0308](US0308-the-commit-path-refuses-to-stage-files-outside.md) | The commit path refuses to stage files outside the declared change set while a window is open | Draft | EP0103 | 2026-07-22 | 2026-07-22 |
+| [US0309](US0309-the-sprint-report-renders-mutation-cost-against-yield.md) | The sprint report renders mutation cost against yield for the run and the trailing history | Draft | EP0104 | 2026-07-22 | 2026-07-22 |
+| [US0310](US0310-reference-sprint-md-states-the-concurrent-write-hazard.md) | reference-sprint.md states the concurrent-write hazard where it states the single-writer rule | Draft | EP0105 | 2026-07-22 | 2026-07-22 |
 
 ## Archived Releases
 

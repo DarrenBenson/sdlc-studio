@@ -121,6 +121,13 @@ lists every script with a one-line summary; open the linked page for the full en
 - `archive.py` - Index archival for large boards. `archive --type <t> --release <r>` moves a
 - `refine.py` - Decompose a request (RFC/CR) into an epic and stories, with the two-backlog links wired. `refine show --request <id>` surfaces the request's content and confirms it is refinable; `refine apply --request <id> --epic-title "..." --story "title|points[|affects]" ...` creates the epic (T-shirt sized from the point total, `Parent:` the request) and each story, writes the request's `Decomposed-into:`, rolls the epic's `Derived Point Total`, moves the request to its working status (In Progress / In Review), and surfaces `--question` items for a Three-Amigos consult. The automation of the hand-decomposition the two-backlog gates otherwise ask an operator to do, and the migration path for an upgrading project (an old childless CR becomes stories). Validates before minting: a non-request, an already-decomposed request, or an off-scale story point is refused and nothing is written.
 - `file_finding.py` - Deterministic Bug/CR/RFC filer for audit findings. Allocates a
+  collision-free id, renders a structured artefact and appends the index row. **File a
+  finding with `--fields-file finding.json`, not with prose flags** - a JSON document is
+  read off disk, so no value crosses a shell. Backticks and `$(` are command substitution
+  inside a shell argument, so on the flag path reproduction steps are executed rather than
+  stored (a filing once ran `git commit -a` against the live repository, and another lost
+  two commands silently). The flags still work and now report a field that arrives already
+  mangled. `artifact.py new` takes the same `--fields-file`.
 - `persona_gen.py` - Deterministic floor of team/stakeholder generation: `stamp` marks a generated card provisional with a content hash, `classify` reports authored / generated-pristine / generated-edited (the never-clobber discriminator), `accept` clears provisional labels (batch-accept + persona review)
 - `next_id.py` - `allocate`: next free ID for a type (`--remote` also scans `origin/main`)
 - `ledger.py` - The append-only per-tranche decisions ledger. `record` appends a decision + rationale to `sdlc-studio/decisi...
@@ -134,6 +141,13 @@ lists every script with a one-line summary; open the linked page for the full en
   `--require-retro` is the sprint-close form (retro present + lessons re-validated + summary current)
 - `verify_ac.py` - Executes AC verifiers defined in story files and updates each AC's
 - `mutation.py` - The executable mutation-check gate - the complement of `verify_ac.py`: verify_ac
+  confirms an AC's tests pass, this asks whether they would fail if the feature broke. Every run
+  appends one row to `sdlc-studio/.local/mutation-series.jsonl` recording what it cost
+  (wall-clock) and what it found, so the gate is judged on its record rather than on the run that
+  happened last; a refused or all-errored run is recorded as producing no evidence and can never
+  be read as a clean run. `yield --run MRUNxxx` reports the artefacts filed from a run beside its
+  survivor count. A window (`window open` / `window close`) declares that a process is rewriting
+  source files in place, and the gate refuses to pass while one is open.
 - `reconcile.py` - Builds the artifact-file census and reports `_index.md` drift as JSON.
 - `status.py` - `pillars`: four-pillar census (Requirements/Code/Tests/Reviews) as JSON
 - `validate.py` - `check`: lint artifact structure (ID, Status vocabulary, title, AC presence, an optional

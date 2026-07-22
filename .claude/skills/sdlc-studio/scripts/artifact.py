@@ -1004,6 +1004,14 @@ def cmd_promote(args: argparse.Namespace) -> int:
     return 0
 
 
+#: The keys this creator accepts in a `--fields-file` document: the shared finding fields plus
+#: the ones only `artifact new` writes. Its own list, not the filer's: a key nobody here reads
+#: is a field that silently went missing, which is the class the file exists to end.
+FIELDS_FILE_KEYS: tuple[str, ...] = (*file_finding.COMMON_FIELDS_FILE_KEYS,
+                                     "epic", "persona", "verify", "target", "template",
+                                     "provenance")
+
+
 def cmd_new(args: argparse.Namespace) -> int:
     f = {k: v for k, v in {"epic": args.epic, "priority": args.priority, "ctype": args.ctype,
                            "severity": args.severity, "author": args.author,
@@ -1017,11 +1025,32 @@ def cmd_new(args: argparse.Namespace) -> int:
                            "recommendation": args.recommendation,
                            "provenance": getattr(args, "provenance", None),
                            "parent": getattr(args, "parent", None)}.items() if v}
+    if args.title:
+        f["title"] = args.title
+    # The values that DID cross a shell, and only those - reported from the ONE helper the filer
+    # uses, so the two writers cannot drift into disagreeing about what a mangled field is.
+    file_finding.report_shell_hazards(f)
+    try:
+        from_file = (file_finding.load_fields_file(args.fields_file, FIELDS_FILE_KEYS)
+                     if args.fields_file else {})
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    f = {**from_file, **f}                   # an explicit flag wins over the document
+    # `--template` carries an argparse default, so it is always present and would otherwise
+    # override a template named in the document; the document wins unless the flag was typed.
+    if args.template == MINIMAL and "template" in from_file:
+        f["template"] = from_file["template"]
+    title = f.pop("title", None)
+    if not title:
+        print("error: no title - pass --title, or a \"title\" key in the --fields-file document",
+              file=sys.stderr)
+        return 2
     try:
         if args.type in META:
-            r = meta_new(args.root, args.type, args.title, f, dry_run=args.dry_run)
+            r = meta_new(args.root, args.type, title, f, dry_run=args.dry_run)
         else:
-            r = new(args.root, args.type, args.title, f, dry_run=args.dry_run)
+            r = new(args.root, args.type, title, f, dry_run=args.dry_run)
     except conventions.ConventionsError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -1114,7 +1143,14 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="cmd", required=True)
     n = sub.add_parser("new", help="Create + wire any numbered artifact.")
     n.add_argument("--type", required=True, choices=tuple(SPEC) + META)
-    n.add_argument("--title", required=True)
+    n.add_argument("--fields-file", dest="fields_file", metavar="ARTEFACT.json",
+                   help="THE RECOMMENDED PATH for anything with prose in it. A JSON object of "
+                        "the same field names, read straight off disk so no value crosses a "
+                        "shell. Backticks and `$(` are command substitution inside a shell "
+                        "argument, so on the flag path prose whose content is COMMANDS gets "
+                        "executed rather than stored. A file is also re-runnable, committable "
+                        "as evidence and diffable. An explicit flag overrides the document")
+    n.add_argument("--title", help="required unless the --fields-file document carries a title")
     n.add_argument("--epic", help="parent epic (required for a story)")
     n.add_argument("--parent", help="spawn as a child of an existing RFC/CR: the parent must resolve, and both link directions are wired at mint")
     n.add_argument("--priority")

@@ -52,8 +52,17 @@ rate is derived from it.
 Read the SOURCE column before quoting an Actual as evidence. `per-unit` is a sum of per-unit
 telemetry and `harness` is read off the harness meter; both are machine reads. `supplied` is a
 figure an operator TYPED, which is a claim about what a sprint cost, not a measurement of it.
+`harness+supplied` is the meter read PLUS the totals delegated agents reported for themselves.
 An empty Source is unrecorded - the rows written before the column existed - and unrecorded is
 what it stays, because back-filling provenance would invent the very thing the column records.
+
+A `harness` figure is a LOWER BOUND, never an equality. The meter is the session transcript,
+and the transcript records no subagent usage at all: measured on one live session, 6,624,813
+tokens of usage carried ZERO sidechain records. So a sprint that delegated work to agents cost
+MORE than its harness row says - one published 439,982 while its cluster agents had reported
+787,834 between them. Their totals reach a row only when somebody supplies them, which is what
+`harness+supplied` marks, and even that sum bounds the sprint from below rather than measuring
+it. Compare a fan-out sprint's rate with a single-thread sprint's only with that in mind.
 -->
 # Velocity history
 
@@ -64,16 +73,40 @@ what it stays, because back-filling provenance would invent the very thing the c
 | RETRO0026 | 2026-07-14 | 5 | 5 | 5 | - | 348,400 | 902,503 | 0.39x | - | - | 6,006 | base=50000 tpc=600 | in-sample | claude-opus-4-8 | - | - |
 | RETRO0027 | 2026-07-14 | 7 | 5 | 7 | - | 349,000 | 789,591 | 0.44x | - | - | 5,042 | base=50000 tpc=600 | stale-constants | claude-opus-4-8 | - | - |
 | RETRO0028 | 2026-07-15 | 3 | 3 | 3 | 10 | 250,000 | 564,066 | 0.44x | 56,407 | 0 | 3,840 | TOKENS_PER_POINT=25000 | out-of-sample | claude-opus-4-8 | - | - |
-| RETRO0044 | 2026-07-17 | 13 | 0 | 8 | - | 0 | - | - | - | 0 | - | - | unforecast | - | - | - |
-| RETRO0045 | 2026-07-17 | 29 | 0 | 29 | - | 0 | - | - | - | 0 | - | - | unforecast | - | - | - |
-| RETRO0048 | 2026-07-18 | 7 | 0 | 7 | - | 0 | - | - | - | 0 | - | - | unforecast | - | - | - |
-| RETRO0049 | 2026-07-18 | 9 | 0 | 9 | - | 0 | - | - | - | 0 | - | - | unforecast | - | - | - |
-| RETRO0050 | 2026-07-19 | 10 | 0 | 10 | - | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |
-| RETRO0057 | 2026-07-20 | 3 | 0 | 3 | - | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |
-| RETRO0058 | 2026-07-20 | 6 | 0 | 1 | 14 | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |
-| RETRO0060 | 2026-07-20 | 9 | 0 | 9 | 30 | 0 | 2,390,624 | - | 79,687 | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |
-| RETRO0061 | 2026-07-20 | 13 | 0 | 13 | 31 | 0 | 1,265,392 | - | 40,819 | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |
-| RETRO0062 | 2026-07-21 | 3 | 0 | 3 | 8 | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not-attributable: second sprint in one session, harness capture is session-cumulative (BG0236) | - |
-| RETRO0063 | 2026-07-21 | 4 | 0 | 4 | 12 | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not-attributable: third sprint in one session, harness capture is session-cumulative (BG0236); raw capture 5,672,289 | - |
-| RETRO0064 | 2026-07-21 | 10 | 0 | 10 | 21 | 0 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not-attributable: run opened before BG0236's baseline existed, so the harness delta cannot be derived; no unit carries per-unit telemetry either. Actual left blank rather than recorded as 0 - hand-corrected TWICE, the second time because apply-signoff rewrote the row (BG0245 evidence in BG0244) | - |
-| RETRO0065 | 2026-07-21 | 7 | 0 | 7 | 18 | 0 | 2,634,055 | - | 146,336 | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | harness |
+| RETRO0029 | 2026-07-15 | 7 | 0 | 7 | 19 | 475,000 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0030 | 2026-07-15 | 4 | 0 | 4 | 13 | 300,000 | - | - | - | 0 | - | mixed | mixed-constants | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0031 | 2026-07-15 | 7 | 0 | 0 | 19 | - | - | - | - | 0 | - | - | unforecast | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0032 | 2026-07-15 | 2 | 0 | 0 | 5 | - | - | - | - | 0 | - | - | unforecast | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0033 | 2026-07-15 | 3 | 0 | 0 | 8 | - | - | - | - | 0 | - | - | unforecast | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0034 | 2026-07-15 | 2 | 0 | 0 | 5 | - | - | - | - | 0 | - | - | unforecast | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0035 | 2026-07-15 | 2 | 0 | 0 | 8 | - | - | - | - | 0 | - | - | unforecast | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0036 | 2026-07-15 | 2 | 0 | 0 | 8 | - | - | - | - | 0 | - | - | unforecast | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0037 | 2026-07-15 | 3 | 0 | 0 | 11 | - | - | - | - | 0 | - | - | unforecast | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0038 | 2026-07-15 | 6 | 0 | 0 | 22 | - | - | - | - | 0 | - | - | unforecast | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0039 | 2026-07-16 | 4 | 0 | 0 | 18 | - | - | - | - | 0 | - | - | unforecast | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0040 | 2026-07-16 | 5 | 0 | 0 | 20 | - | - | - | - | 0 | - | - | unforecast | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0041 | 2026-07-16 | 5 | 0 | 0 | 20 | - | - | - | - | 0 | - | - | unforecast | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0042 | 2026-07-16 | 6 | 0 | 6 | 19 | 475,000 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0043 | 2026-07-16 | 8 | 0 | 8 | 23 | 575,000 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0044 | 2026-07-17 | 13 | 0 | 8 | - | 750,000 | - | - | - | 0 | - | - | unforecast | - | - | - |
+| RETRO0045 | 2026-07-17 | 29 | 0 | 29 | - | 1,175,000 | - | - | - | 0 | - | - | unforecast | - | - | - |
+| RETRO0046 | - | 17 | 0 | 17 | 42 | 1,050,000 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0047 | - | 3 | 0 | 3 | 11 | 275,000 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0048 | 2026-07-18 | 7 | 0 | 7 | - | 650,000 | - | - | - | 0 | - | - | unforecast | - | - | - |
+| RETRO0049 | 2026-07-18 | 9 | 0 | 9 | - | 650,000 | - | - | - | 0 | - | - | unforecast | - | - | - |
+| RETRO0050 | 2026-07-19 | 10 | 0 | 10 | - | 600,000 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |
+| RETRO0051 | 2026-07-19 | 33 | 0 | 32 | 91 | 2,225,000 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0052 | 2026-07-19 | 4 | 0 | 4 | 9 | 225,000 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0053 | 2026-07-19 | 6 | 0 | 0 | 7 | - | - | - | - | 0 | - | - | unforecast | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0054 | 2026-07-19 | 2 | 0 | 0 | 5 | - | - | - | - | 0 | - | - | unforecast | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0055 | 2026-07-19 | 6 | 0 | 6 | 11 | 275,000 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0056 | 2026-07-19 | 5 | 0 | 5 | 17 | 425,000 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0057 | 2026-07-20 | 3 | 0 | 3 | - | 200,000 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |
+| RETRO0058 | 2026-07-20 | 6 | 0 | 1 | 14 | 50,000 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |
+| RETRO0059 | 2026-07-20 | 4 | 0 | 0 | 3 | - | - | - | - | 0 | - | - | unforecast | - | not attributable: backfilled from the retro 2026-07-22. The run closed before the session-token baseline existed and no unit carries per-unit telemetry, so the cost is unrecorded rather than 0 | - |
+| RETRO0060 | 2026-07-20 | 9 | 0 | 9 | 30 | 750,000 | 2,390,624 | - | 79,687 | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |
+| RETRO0061 | 2026-07-20 | 13 | 0 | 13 | 31 | 775,000 | 1,265,392 | - | 40,819 | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |
+| RETRO0062 | 2026-07-21 | 3 | 0 | 3 | 8 | 200,000 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not-attributable: second sprint in one session, harness capture is session-cumulative (BG0236) | - |
+| RETRO0063 | 2026-07-21 | 4 | 0 | 4 | 12 | 300,000 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not-attributable: third sprint in one session, harness capture is session-cumulative (BG0236); raw capture 5,672,289 | - |
+| RETRO0064 | 2026-07-21 | 10 | 0 | 10 | 21 | 525,000 | - | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not-attributable: run opened before BG0236's baseline existed, so the harness delta cannot be derived; no unit carries per-unit telemetry either. Actual left blank rather than recorded as 0 - hand-corrected TWICE, the second time because apply-signoff rewrote the row (BG0245 evidence in BG0244) | - |
+| RETRO0065 | 2026-07-21 | 7 | 0 | 7 | 18 | 400,000 | 2,634,055 | - | 146,336 | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | harness |

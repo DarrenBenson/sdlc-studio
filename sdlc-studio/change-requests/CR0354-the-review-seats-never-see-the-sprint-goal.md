@@ -1,6 +1,7 @@
 # CR-0354: the review seats never see the Sprint Goal - they score WSJF and nothing reviews what the run is for
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0098
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

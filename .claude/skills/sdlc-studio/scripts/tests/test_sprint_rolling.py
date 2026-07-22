@@ -701,6 +701,13 @@ class PerCycleRunStateTests(unittest.TestCase):
     """AC1: a fresh run per cycle, and the closed cycle's record stays readable."""
 
     def test_the_next_cycle_mints_a_fresh_run(self) -> None:
+        """BG0253: this asserted only that two ids differ, which was neither necessary nor
+        sufficient. Not sufficient - a generator returning a constant would have passed it 999
+        times in 1,000. Not reliable - `short_ulid` collides about 1 in 1,024, so the gate went
+        red at random on an unchanged tree. The id inequality is kept, because the mint is now
+        collision-checked and therefore genuinely provides it, but the properties that say a
+        FRESH run was minted are asserted directly: a new record, its own clock, and the
+        previous run closed and archived rather than continued."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             rid = _ready_cycle(root)
@@ -710,6 +717,12 @@ class PerCycleRunStateTests(unittest.TestCase):
             self.assertEqual(rc, 0, out)
             second = run_state.read(root)
             self.assertNotEqual(second["run_id"], first["run_id"])
+            self.assertEqual(second["outcome"], run_state.RUNNING, "the new run is open")
+            kept = run_state.read_archived(root, first["run_id"])
+            self.assertIn(kept.get("outcome"), run_state.CLOSED,
+                          "the previous run was continued rather than closed and replaced")
+            self.assertNotIn(second["run_id"], {r["run_id"] for r in run_state.archived(root)},
+                             "the fresh run took an id a closed run already holds")
             # Its OWN start time - stamped afresh, not inherited. (Not asserted as strictly
             # later: the stamp is second-resolution and a fixture boundary is faster than that,
             # so `!=` would be testing the clock rather than the code.)

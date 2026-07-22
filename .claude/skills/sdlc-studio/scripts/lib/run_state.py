@@ -74,7 +74,7 @@ CLOSED = tuple(o for o in OUTCOMES if o != RUNNING)
 # the module docstring: this list documents, it does not gate.
 FIELDS = ("schema", "run_id", "started_at", "ended_at", "outcome", "goal", "batch",
           "plan", "handoff", "review_rounds", "review_ceiling_overrides",
-          "session_token_baseline")
+          "session_token_baseline", "delegated_tokens")
 
 # The session's token meter reading at the moment this run opened. The close subtracts it from
 # the meter's CURRENT reading to get the tokens THIS run spent, because the harness transcript
@@ -88,6 +88,21 @@ FIELDS = ("schema", "run_id", "started_at", "ended_at", "outcome", "goal", "batc
 # token cost cannot be attributed - exactly as an unmeasured elapsed reads UNMEASURED rather than
 # falling back to a plausible number.
 TOKEN_BASELINE = "session_token_baseline"
+
+# The delegated agents' token totals, one record per agent, SUPPLIED rather than measured.
+#
+# The session transcript the baseline above is read from records the MAIN THREAD only: measured
+# on one live transcript, 6,624,813 tokens of usage carried ZERO sidechain records, so every
+# delegated agent's spend was invisible to it. A run that fanned out to four cluster agents
+# published 439,982 as "the run's own spend" while the known true figure was at least 1,227,816.
+#
+# A delegated total therefore cannot be measured here. It can only be SUPPLIED - each agent
+# reports its own total when it finishes - so it is recorded with its own provenance and the
+# published sum is a LOWER BOUND (>=), never an equality. Same discipline as the mutation
+# ledger's registered-versus-re-run distinction: a claim is kept, and kept labelled.
+DELEGATED = "delegated_tokens"
+#: The provenance every delegated record carries. Never `measured`: nothing here read a meter.
+SUPPLIED = "supplied"
 
 # The close review's rounds, appended one per sprint-level review. Seeded in `_blank()` so a
 # new run carries them and `FIELDS` stays true of the record it documents; readers still go
@@ -258,7 +273,7 @@ def _blank() -> dict:
     false fact in the one file the next reader trusts. An unopened run says so."""
     return {"schema": SCHEMA, "run_id": None, "started_at": None, "ended_at": None,
             "outcome": RUNNING, "goal": None, "batch": [], "plan": None, "handoff": None,
-            REVIEW_ROUNDS: [], CEILING_OVERRIDES: [], TOKEN_BASELINE: None}
+            REVIEW_ROUNDS: [], CEILING_OVERRIDES: [], TOKEN_BASELINE: None, DELEGATED: []}
 
 
 def _mutate(repo_root: Path | str, fn) -> dict:
@@ -292,6 +307,29 @@ def _union(existing, incoming) -> list[str]:
 # inconsistent state. `open_run` treats such a run as CLOSED so the next plan mints a fresh run
 # rather than accumulating the new batch onto - and clobbering the verdict of - the judged one.
 _CLOSE_ARTEFACTS = ("sprint_goal_verdict", "ended_at", "handoff")
+
+
+def _mint_run_id(repo_root: Path | str, outgoing: dict | None = None) -> str:
+    """A run id no run in this project has already used.
+
+    `short_ulid` is 6 timestamp characters - roughly a 17-minute bucket - plus 2 random ones, so
+    two mints inside one bucket collide with probability about 1 in 1,024, and its own docstring
+    names the allocator's glob-retry as the true backstop. The RUN id never went through one: it
+    was minted and used. That surfaced as a commit gate failing at random on an unchanged tree,
+    but the real exposure is that two runs could share an identity, and the telemetry, archive
+    and velocity records all join on it.
+
+    So the ALLOCATOR provides what the generator cannot. Checked against every archived run (the
+    register of what this project has opened) and the run being replaced, retried on a clash and
+    extended on a persistent one - the same shape `sdlc_md.mint_v3_id` uses for artefact ids.
+    """
+    taken = {r.get("run_id") for r in archived(repo_root)}
+    taken.add((outgoing or {}).get("run_id"))
+    for _ in range(16):
+        rid = f"RUN-{sdlc_md.short_ulid()}"
+        if rid not in taken:
+            return rid
+    return f"RUN-{sdlc_md.new_ulid()[:12]}"   # extend the suffix on a persistent clash
 
 
 def _is_spent(state: dict) -> bool:
@@ -361,8 +399,14 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
     if not seen or total <= 0:
         return {"tokens": None, "reason": f"transcript {src.name} carries no usage records"}
     return {"tokens": total, "source": str(src),
-            "basis": "current-session transcript usage sum "
-                     "(input + output + cache creation; cache reads excluded)"}
+            # MAIN THREAD ONLY, said here because here is where it is true: the transcript
+            # carries no subagent (sidechain) usage record at all - measured, 6,624,813 tokens
+            # of usage with ZERO from sidechains - so a session that delegated work spent more
+            # than this. Every caller inherits the sentence, and none of them may drop it.
+            "basis": "current-session transcript usage sum, MAIN THREAD only "
+                     "(input + output + cache creation; cache reads excluded). The transcript "
+                     "records no subagent usage, so this is a LOWER BOUND on what the session "
+                     "cost"}
 
 
 def _session_baseline(repo_root: Path | str) -> dict | None:
@@ -415,7 +459,9 @@ def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | 
             # rewrites the same key, but a run judged and left `running` never reached a
             # close, and without this its record would be destroyed here unrecorded.
             archive(repo_root, state)
-            state = {**_blank(), "run_id": f"RUN-{sdlc_md.short_ulid()}",
+            # Minted AFTER the archive above, so the run being replaced is already in the
+            # register the new id is checked against.
+            state = {**_blank(), "run_id": _mint_run_id(repo_root, state),
                      "started_at": sdlc_md.now_iso8601(),
                      TOKEN_BASELINE: _session_baseline(repo_root)}
         if batch is not None:
@@ -489,6 +535,67 @@ def record_review_round(repo_root: Path | str, verdict: str, units: list[str] | 
         existing = state.get(REVIEW_ROUNDS)
         state[REVIEW_ROUNDS] = ([r for r in existing if isinstance(r, dict)]
                                 if isinstance(existing, list) else []) + [entry]
+        return state
+
+    _mutate(repo_root, apply)
+    return entry
+
+
+def delegated_records(state: dict) -> list[dict]:
+    """Every SUPPLIED delegated total on a run record, in the order they landed.
+
+    Pure over a state dict, because the close already holds one and re-reading the file would
+    let the two answers drift. A malformed entry is skipped rather than raising: these are cost
+    records, and one bad entry must not make the run unreadable to the close that needs the
+    rest. A record whose `tokens` is not a positive number carries no total and is not one.
+    """
+    recs = (state or {}).get(DELEGATED)
+    if not isinstance(recs, list):
+        return []
+    out = []
+    for r in recs:
+        if not isinstance(r, dict):
+            continue
+        t = r.get("tokens")
+        if isinstance(t, bool) or not isinstance(t, int) or t <= 0:
+            continue
+        out.append(r)
+    return out
+
+
+def delegated_total(state: dict) -> int:
+    """The supplied delegated spend on a run, or 0 when none was supplied.
+
+    0 here means NOTHING WAS SUPPLIED, which is not the same fact as no delegation happening -
+    which is exactly why the figure it is added to is published as a lower bound rather than as
+    the run's cost."""
+    return sum(r["tokens"] for r in delegated_records(state))
+
+
+def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
+                            note: str = "") -> dict | None:
+    """Record one delegated agent's SUPPLIED token total against the open run.
+
+    Returns the record, or None when no run is open - a spend counted against a run with no
+    identity could not be joined to anything later, so it is not counted at all.
+
+    A non-positive or non-integer total RAISES rather than being recorded: the whole point of
+    this record is that it is a real figure an agent reported, and a 0 recorded here would be
+    added into a published total as though a delegated agent had cost nothing.
+    """
+    if isinstance(tokens, bool) or not isinstance(tokens, int) or tokens <= 0:
+        raise ValueError(f"a delegated token total must be a positive integer, got {tokens!r} - "
+                         f"an absent or zero total is not a measurement of a delegated agent")
+    if not read(repo_root).get("run_id"):
+        return None
+    entry = {"tokens": tokens, "agent": agent, "note": note,
+             "provenance": SUPPLIED, "recorded_at": sdlc_md.now_iso8601()}
+
+    def apply(state: dict) -> dict:
+        state = state or _blank()
+        existing = state.get(DELEGATED)
+        state[DELEGATED] = ([r for r in existing if isinstance(r, dict)]
+                            if isinstance(existing, list) else []) + [entry]
         return state
 
     _mutate(repo_root, apply)

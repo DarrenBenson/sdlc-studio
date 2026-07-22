@@ -434,6 +434,32 @@ core (`epic`-from-PRD + `story`-from-epic + `cr action`), not a parallel path (D
    block the "reviewable backlog" sign-off; advisory findings are reported. This is the check
    that replaces the operator as the structural coordinator.
 
+## The single-writer rule {#single-writer}
+
+One process rewrites source files in a tree at a time. The rule has always covered a
+`mutation.py` run during a build: a mutant is applied to a real file and restored moments
+later, so anything reading, testing or committing meanwhile sees a file nobody wrote.
+
+**An independent review is a concurrent-writer window too, and it is the more dangerous of the
+two.** The reviewer hand-edits source to prove a test goes red, while the author is making the
+ceremony commits a close is made of - the retro, the review anchor, filed findings, the CHANGELOG
+row - which touch nothing the reviewer is working on and therefore feel safe. A `git add -A`
+during that window stages whatever state the reviewer's process has left behind.
+
+**A passing gate does not establish that no concurrent write is staged.** At RUN-01KY321Q a
+`git add -A` staged a `retro.py` a reviewer's shell redirect had overwritten through a symlink
+farm, silently reverting two units of shipped work; the commit was refused only because the
+reverted source failed the suite. A change that left the suite green - which is exactly what a
+surviving mutant is - would have been committed under a paperwork commit message.
+
+**The enforcement path is the declared window, not this prose.** Any process rewriting files in
+place declares one (`mutation.py window open --owner <who> --paths <...>`, cleared with
+`mutation.py window close --owner <who>`); the commit gate reports an open window as a failing
+check naming its owner and the paths it claims, and the pre-commit hook refuses a staged path
+that window claims. A reviewer editing by hand opens one explicitly - the guard is not armed as
+a side effect of running `mutation.py`, and the incident above had no mutation run in flight at
+all. During a review, stage named paths; never `git add -A`. See [reference-review.md](reference-review.md).
+
 ## Guardrails
 
 - **Never deploys.** `deploy` is a stop-condition (hard-to-reverse) action: the loop may prepare up to "gate green,
@@ -475,6 +501,18 @@ stops measuring):
 - **Cost** is points x a measured tokens-per-point rate - the plan's token forecast,
   judged by the retro against the recorded prediction. It answers "what will this batch
   burn", never "when will it land".
+
+  **The rate is re-measured every plan, from `VELOCITY.md` first** - the mandated source (actual
+  tokens over points delivered, per project and per model, refused across models). The per-unit
+  evidence log is the fallback for a runner-driven project; the shipped seed is quoted as a seed,
+  saying so, with its out-of-sample result beside it.
+
+  **It prices the BUILD, and the plan says what it excludes:** the closing review, repair rounds
+  and re-verification, orchestration, and delegated-agent spend the capture cannot yet see. Where
+  proving dominates the budget that is most of the total, so the plan also reports the measured
+  whole-sprint multiple of the forecast that priced it - read off the out-of-sample rows, never
+  fitted, and never attributed to proving alone: the record cannot separate proving cost from an
+  under-estimated build.
 - **Schedule** is the flow instrument (`flow.py`): measured cycle time, throughput
   and work-item age, and a **seeded Monte Carlo completion forecast**
   (`flow.py forecast --units N [--bucket day|week|sprint]`) sampling measured

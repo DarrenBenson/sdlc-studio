@@ -23,9 +23,13 @@ file is ~1000 lines and a whole-file read is never required for one workflow.
 
 > **Epic-scope test-spec requirement.** An epic must have a test-spec (linked by its
 > `Epic:` field) whose AC Coverage Matrix passes `verify_ac epic-ts --epic EPxxxx` before it
-> reaches Done - the AC-to-test bridge made mandatory at epic scale. Gated by
-> `quality.epic_requires_test_spec` (default true); single-story work (`story implement`) is
-> exempt. This is what makes the bridge non-optional for fan-out-sized work.
+> reaches Done - the AC-to-test bridge made mandatory at epic scale. The requirement is
+> carried by running `epic-ts` (its exit code is the gate; `transition.py` does not itself
+> block an epic reaching Done on a missing spec), and its exit code answers to
+> `quality.epic_requires_test_spec` (default true). The check is epic-scope only, so
+> single-story work (`story implement`) never reaches it. A project setting the key false in
+> `sdlc-studio/.config.yaml` still sees every finding, but a failing `epic-ts` exits 0 and
+> reports `advisory only` - stage the migration, do not lose sight of what it owes.
 
 ### Resuming a partial epic (`epic implement --resume`) {#epic-implement-resume}
 

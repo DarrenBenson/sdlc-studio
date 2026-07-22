@@ -110,8 +110,13 @@ def _split_row(line: str) -> list[str]:
 def _parse_lens_table(lines: list[str]) -> tuple[list[str], list[dict]]:
     """(column headers, lens rows) for the first markdown table in `lines`.
 
-    A lens row is `{name, question, hunts}`. A two-column table (the project
-    profile's artifact/lens shape) leaves `hunts` empty rather than dropping the row.
+    A lens row is `{name, question, hunts, drawn_from}`. Every cell after the first is
+    filled when the row has it and left empty otherwise, never dropped: a two-column
+    table (the project profile's artifact/lens shape) yields an empty `hunts`, and a
+    pack with no provenance column an empty `drawn_from`. `drawn_from` carries the
+    recorded failure modes a lens was drawn from, as lesson ids, for the packs that
+    cite them. Nothing here judges a row's content; a pack that must declare more is
+    held to it by its own test.
     """
     columns: list[str] = []
     lenses: list[dict] = []
@@ -133,7 +138,8 @@ def _parse_lens_table(lines: list[str]) -> tuple[list[str], list[dict]]:
             continue
         lenses.append({"name": cells[0],
                        "question": cells[1] if len(cells) > 1 else "",
-                       "hunts": cells[2] if len(cells) > 2 else ""})
+                       "hunts": cells[2] if len(cells) > 2 else "",
+                       "drawn_from": cells[3] if len(cells) > 3 else ""})
     return columns, lenses
 
 

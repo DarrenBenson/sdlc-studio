@@ -88,17 +88,33 @@ def decide(event: dict) -> dict | None:
             f"until it is repaired. Restore .close-owed-baseline.json from git (or fix the JSON). "
             f"Do NOT run `close_owed.py baseline` - re-stamping would grandfather the very units "
             f"that owe a close.")}
-    if not report.get("baselined") or not report.get("owed"):
+    if not report.get("baselined"):
         return None
-    ids = [cid for cid, _ in report["owed"]]
-    shown = ", ".join(ids[:8]) + (f", +{len(ids) - 8} more" if len(ids) > 8 else "")
+    ids = [cid for cid, _ in report.get("owed") or []]
+    # The close has TWO halves, and the unit half being clean is not the close being finished:
+    # a retro that never wrote its velocity row is an unfinished close too, and reporting
+    # nothing for it is how the accuracy write silently lapsed sprint after sprint.
+    rows = [rid for rid, _date in report.get("velocity_owed") or []]
+    if not ids and not rows:
+        return None
+    parts = []
+    if ids:
+        shown = ", ".join(ids[:8]) + (f", +{len(ids) - 8} more" if len(ids) > 8 else "")
+        parts.append(f"{len(ids)} delivery unit(s) reached a terminal state with no retro "
+                     f"accounting for them ({shown}). Write the batch retro (retro.py), extract "
+                     f"its lessons, then run `gate --require-retro RETROxxxx` and show it green")
+    if rows:
+        shown = ", ".join(rows[:8]) + (f", +{len(rows) - 8} more" if len(rows) > 8 else "")
+        parts.append(f"{len(rows)} retro(s) closed with no row in sdlc-studio/retros/VELOCITY.md "
+                     f"({shown}), so the accuracy write never ran and the tokens-per-point rate "
+                     f"the plans quote has not been measured against them. Record it with "
+                     f"`retro.py accuracy --id RETROxxxx --write` - a sprint whose cost is not "
+                     f"recoverable still writes a row, blank with the reason stated")
     reason = (
-        f"A sprint close is owed before this turn ends: {len(ids)} delivery unit(s) reached a "
-        f"terminal state with no retro accounting for them ({shown}). This is the Definition of "
-        f"Done's close clause - a sprint is complete only when the close gate is green, never at "
-        f"'deployed'. Write the batch retro (retro.py), extract its lessons, then run "
-        f"`gate --require-retro RETROxxxx` and show it green. If a close is genuinely not owed here "
-        f"(e.g. these predate adoption), run `close_owed.py baseline` to record that once."
+        f"A sprint close is owed before this turn ends: " + "; and ".join(parts) + ". "
+        f"This is the Definition of Done's close clause - a sprint is complete only when the "
+        f"close gate is green, never at 'deployed'. If a close is genuinely not owed here (e.g. "
+        f"these predate adoption), run `close_owed.py baseline` to record that once."
     )
     return {"decision": "block", "reason": reason}
 
