@@ -33,7 +33,7 @@ of the axes select is still not caught, and no test here should be read as sayin
 AC2 has no axis: its mechanism is guarded by the blocklist alone.
 
 Both reference files are part of the shipped skill, so these checks run identically from
-an installed copy. Prose is normalised (emphasis and code markers dropped, whitespace
+an installed copy. Prose is normalised (asterisk emphasis and code markers dropped (NOT underscore emphasis - see THE BOUND item 6), whitespace
 collapsed) before matching, so a required sentence wrapped across two lines still matches
 - which a line-oriented grep cannot do.
 """
@@ -108,7 +108,8 @@ def _forbids(raw: str, pattern: str, why: str, ac: str) -> list[str]:
 # THE BOUND, stated rather than implied, and CORRECTED after round 3 caught this comment
 # overstating it TWICE - round 3 found a fourth escape it denied, round 4 a fifth it never named.
 # A sentence is SELECTED by topic vocabulary, JUDGED only if it also carries an enumerated
-# ASSERTING word, and its polarity read from negation cues. FIVE things slip through:
+# ASSERTING word, and its polarity read from negation cues. SIX things slip through (the count
+# has been wrong at three, four and five; each round found one the previous had denied):
 #   1. prose about a guarded property that uses none of its topic words;
 #   2. a reversal carried by irony or by layout rather than by a cue;
 #   3. a negation sitting further from its verb than NEG_REACH;
@@ -119,6 +120,11 @@ def _forbids(raw: str, pattern: str, why: str, ac: str) -> list[str]:
 #   5. a sentence using every topic word but NO enumerated asserting word - the widest gap, and
 #      the one this comment previously did not name at all. "A green gate certifies the staged
 #      tree is clean" and "The window guard is decorative" both escape.
+#   6. an asserting word wrapped in UNDERSCORE emphasis. `normalise` strips `*` and backticks
+#      but not `_`, and `_` is a word character, so a \b-anchored regex never fires inside it:
+#      "A green gate *proves* ... " is caught and "A green gate _proves_ ... " is not. This is a
+#      normalisation hole rather than a semantic limit, so the closing disclaimer below does NOT
+#      cover it - the axis selects the sentence and the normaliser drops it before it is read.
 # It also OVER-fires in the same way: "A review must never proceed without a declared window"
 # is correct prose that this scan reports as asserting the opposite, because the cue attaches
 # to "proceed" rather than to the rule being stated.
@@ -433,6 +439,26 @@ class DisclosedLimitsAreRealTests(unittest.TestCase):
                     check_all(sprint + "\n\n" + line, review),
                     {"AC1": [], "AC2": [], "AC3": [], "AC4": []},
                     "if this FAILS the scan improved: update THE BOUND item 5 and this list")
+
+    #: THE BOUND item 6 - an asserting word inside underscore emphasis, which `normalise` does
+    #: not strip. Found by round 5.
+    UNDERSCORE_EMPHASIS = [
+        "A green gate _proves_ the staged tree is clean.",
+        "A green gate __proves__ the staged tree is clean.",
+        "The window guard is _advisory_.",
+    ]
+
+    def test_the_underscore_emphasis_gap_is_real_and_still_open(self) -> None:
+        """The asterisk form IS caught; the underscore form is not. Both are standard markdown."""
+        sprint, review = read_docs()
+        caught = check_all(sprint + "\n\nA green gate *proves* the staged tree is clean.", review)
+        self.assertTrue(any(caught.values()), "the control: asterisk emphasis IS judged")
+        for line in self.UNDERSCORE_EMPHASIS:
+            with self.subTest(line=line):
+                self.assertEqual(
+                    check_all(sprint + "\n\n" + line, review),
+                    {"AC1": [], "AC2": [], "AC3": [], "AC4": []},
+                    "if this FAILS, `normalise` learned underscores: update THE BOUND item 6")
 
     def test_the_over_firing_is_real_and_still_open(self) -> None:
         sprint, review = read_docs()

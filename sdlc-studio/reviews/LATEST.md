@@ -55,7 +55,7 @@ tests kill them. Recorded as a property of the fixture in US0308.
 
 ## Evidence
 
-3,937 skill tests + 312 tool tests green. Drift 0, conformance 0 non-conformant, floor 0
+3,938 skill tests + 312 tool tests green. Drift 0, conformance 0 non-conformant, floor 0
 violations, no rewrite window open. ~220 hand-applied mutants across build and both repair
 rounds; 13 survived first time and every one drove a change rather than a re-run. Installed copy
 forward-ported and verified.
@@ -75,12 +75,19 @@ forward-ported and verified.
   repair and REJECTED it: `window open` was wrong a FOURTH time, because the fix rendered what
   the record CLAIMS rather than what the matcher DECIDES, so a bare `.` or an absolute path read
   as one narrow path while every commit was refused. Now fixed by a shared `claims_everything`
-  rule pinned against the gate matcher over 15 shapes. Round 4 also found a FIFTH escape in the
-  docs checker's stated bound (a sentence with every topic word but no enumerated asserting word
-  escapes entirely) and a false "all three were mutation-proven" claim in this file. Both
-  corrected. **Round 4's own repair is in turn unreviewed, and the ceiling has already been
-  bought once.** **Buying a fourth round, or
-  accepting the repair unreviewed, is an operator decision.**
+  rule. Round 4 also found a FIFTH escape in the docs checker's stated bound and a false "all
+  three were mutation-proven" claim in this file; both corrected.
+- **Round 5 was bought too, and REJECTED again.** `claims_everything` enumerated literal
+  spellings while both matchers end in `fnmatch`, so `**`, `***`, `?*` and `**/` claimed
+  everything while the message said one narrow path - the FIFTH wrong version of that sentence,
+  and `*` had only ever worked by accident. Worse, the test that declared the two "cannot
+  diverge again" had picked its 15 shapes from exactly the families where they agree by
+  construction. The helper now PROBES the matcher's question over a battery of unrelated paths
+  instead of enumerating, the oracle asks about a battery rather than one path, and the glob
+  family is pinned. A SIXTH escape in the docs checker was named with it: `normalise` strips
+  asterisk emphasis but not underscore, so `_proves_` is never judged where `*proves*` is.
+- **Round 5's own repair is unreviewed.** Five rounds have each found something real
+  (11, 6, 3, 1, 1 MAJOR). Buying a sixth, or accepting this unreviewed, is an operator decision.
 - **Sign-off is owed and is the operator's.** `sprint close --retro <id> --apply-signoff
   --principal "..."`. RFC0051 records why an agent cannot honestly supply it.
 - **Recorded at close:** RETRO0066, and a velocity row carrying the supplied delegated figure.

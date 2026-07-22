@@ -448,7 +448,9 @@ def claims_everything(claim) -> bool:
 
     The matchers' rule, in one place a caller can ask BEFORE a commit is attempted. It is
     duplicated in `gate._window_claims` and inline in the pre-commit hook (which must run where
-    these scripts are absent), and the three are pinned against each other by test.
+    these scripts are absent), and the three are pinned against each other by test over a
+    battery of unrelated paths - NOT over a hand-picked list of spellings, which is how the
+    previous version came to agree with the matchers on exactly the shapes it had chosen.
 
     THIS EXISTS BECAUSE RENDERING `window_claims` IS NOT RENDERING THE VERDICT. `window_claims`
     normalises the RECORD - it turns an empty or all-blank `paths` into WINDOW_EVERYTHING. The
@@ -464,11 +466,23 @@ def claims_everything(claim) -> bool:
     if pat.startswith("./"):
         pat = pat[2:]
     pat = pat.rstrip("/")
-    if pat in ("", ".", WINDOW_EVERYTHING):
+    if pat in ("", "."):
         return True
     if pat.startswith("/"):
         return True
-    return pat == ".." or pat.startswith("../") or "/../" in pat or pat.endswith("/..")
+    if pat == ".." or pat.startswith("../") or "/../" in pat or pat.endswith("/.."):
+        return True
+    # ASK THE MATCHER'S QUESTION, DO NOT ENUMERATE SPELLINGS. Both matchers end in
+    # `fnmatch.fnmatch`, where a whole FAMILY of patterns matches every path - `**`, `***`,
+    # `?*`, `*.` and more. The previous version listed literal spellings and got `*` right only
+    # by accident, because `*` happened to be WINDOW_EVERYTHING sitting in the tuple. It never
+    # reasoned about globs at all, so `--paths '**'` printed "1 path(s) ... anything else
+    # proceeds" while every commit was refused. That was the FIFTH wrong version of this
+    # sentence, and the four before it were all enumerations too. Probing settles it by
+    # construction: a claim that matches every one of these unrelated paths claims everything.
+    import fnmatch  # noqa: PLC0415 - local, as elsewhere in the matcher family
+    probes = ("a", "a/b.py", "z/y/x/w.md", "README", "x.y", ".githooks/pre-commit")
+    return all(s.startswith(pat + "/") or fnmatch.fnmatch(s, pat) for s in probes)
 
 
 def window_claims(raw) -> list[str]:

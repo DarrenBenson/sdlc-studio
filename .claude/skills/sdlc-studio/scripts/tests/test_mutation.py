@@ -2213,7 +2213,7 @@ class WindowOpenMessageTests(unittest.TestCase):
         # the CLI it becomes the real scoped path `tools/x.py` and the narrow message is then
         # correct. It claims everything only as a HAND-WRITTEN record already on disk, which the
         # matcher-agreement test below covers.
-        for claim in (".", "./", "/etc/hosts", "*"):
+        for claim in (".", "./", "/etc/hosts", "*", "**", "?*"):
             with self.subTest(claim=claim), tempfile.TemporaryDirectory() as d:
                 root = self._repo(d)
                 buf = io.StringIO()
@@ -2235,12 +2235,18 @@ class WindowOpenMessageTests(unittest.TestCase):
         import importlib.util as _il
         spec = _il.spec_from_file_location("gate", SCRIPT.parent / "gate.py")
         gate = _il.module_from_spec(spec); spec.loader.exec_module(gate)
-        unrelated = "some/unrelated/file.md"
-        for claim in ("", " ", ".", "./", "/abs/x.py", "..", "../x.py", "a/../b.py", "*",
-                      "tools/x.py", "tools/", "src/**/*.py", 7, None, ["x"]):
+        # A BATTERY, not one path. Round 5: the previous oracle asked the matcher about a
+        # SINGLE unrelated path, which cannot distinguish "claims everything" from "happens to
+        # match this one" - so `*.md` or `*/*` would have failed it falsely, and the shape list
+        # had been chosen around exactly the families where the two agree by construction.
+        BATTERY = ("a", "a/b.py", "z/y/x/w.md", "README", "x.y", ".githooks/pre-commit")
+        for claim in ("", " ", "\t", ".", "./", "/abs/x.py", "..", "../x.py", "a/../b.py",
+                      "*", "**", "***", "?*", "**/", "*.md", "*/*", "src/**/*.py",
+                      "tools/x.py", "tools/", "a" * 5000, 7, None, True, ["x"], {"a": 1}):
             with self.subTest(claim=claim):
                 mine = mut.claims_everything(claim)
-                theirs = gate._window_claims(claim, unrelated)
+                theirs = (all(gate._window_claims(claim, s) for s in BATTERY)
+                          if isinstance(claim, str) else True)
                 self.assertEqual(
                     mine, theirs,
                     f"{claim!r}: the CLI says everything={mine}, the matcher says {theirs} - "
