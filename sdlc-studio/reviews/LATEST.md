@@ -1,80 +1,76 @@
 # Reviews - LATEST (anchor)
 
-> Derived from **RUN-01KY321Q** (the follow-up batch, 2026-07-21, RETRO-0065).
-> Supersedes the RETRO-0064 picture. Full detail lives in RETRO-0065; this is the anchor.
+> Derived from **RUN-01KY3MFX** (2026-07-22). Supersedes the RETRO-0065 picture.
+> The run is BUILT, REVIEWED TWICE and REPAIRED TWICE. It is NOT closed: no retro, no
+> sign-off, no velocity row. Full detail lives in the review record; this is the anchor.
 
-## Where the pipeline is (2026-07-21)
+## Where the pipeline is (2026-07-22)
 
-**RUN-01KY321Q delivered 7/7 units, 18 points.** The batch was the follow-up backlog the previous
-sprint filed. Goal: *this project can plan and judge a sprint on its own recent measured evidence,
-and every guard reaches the code it claims to cover.*
-It is the **first run opened with a session-token baseline**, and it did publish an attributable
-cost - 439,982 tokens. It is also where the sprint found its sharpest defect: that figure counts
-only the main thread. See below.
+**RUN-01KY3MFX delivered 32 units, 100 points** - 9 bugs plus 23 stories decomposed from the
+ten High-priority requests, in seven file-disjoint lanes. Goal: *every open bug and every
+High-priority request built, verified and independently reviewed.*
+
+**It stops one step short by design.** `review.two_role_after: 192` means every story here
+reaches Done only with a reviewer-of-record sign-off the authoring session is refused. The
+stories sit at **Review**. See RFC0051.
 
 ## What shipped
 
-**Evidence the planner and close rely on**
+- **Measurement** - the rate reads the velocity record and REFUSES across models (BG0248,
+  US0290); the velocity row is owed at close, 24 rows backfilled with blanks not zeroes
+  (US0288, US0289, BG0249); the capture names main-thread measured and delegated supplied, the
+  sum a lower bound (BG0252); the forecast declares it prices the BUILD (BG0254); the mutation
+  gate logs cost against yield (US0301, US0302, US0309).
+- **Guards that reach** - collision files derive from Verify lines and a contradicted `Affects`
+  is reported from ONE predicate shared by planner and validate (US0291, US0292);
+  `quality.epic_requires_test_spec` is read by the code four documents said read it (BG0250);
+  the floor sees the violation its own commit creates (BG0251); a declared rewrite window
+  refuses a commit staging what it claims (US0307, US0308, US0310); run ids are collision
+  checked (BG0253).
+- **Onboarding** - migrate seeds a missing AGENTS.md (US0293, US0294); the hygiene check
+  verifies the working model, not just pointers (US0295, US0296); init no longer ships a
+  literal placeholder (BG0255); a non-shell filing path (US0305, US0306); a `test` audit lens
+  (US0303, US0304); the seats review the Sprint Goal (US0297, US0298); a sprint stops only when
+  nothing can proceed (US0299, US0300).
 
-- **BG0246** - `batch_history` gated on per-unit telemetry, dropping every interactive sprint, so
-  "what sprints ACTUALLY cost" showed the OLDEST rows while hiding RETRO0060 at 265,625/unit. Now
-  included, labelled `per-unit` or `sprint-level`.
-- **BG0245** - the mutation ledger could only be written by `mutation.py` while the practice is
-  hand-applied mutants, so a policy-following sprint read 0/N. `register` records one, with
-  **provenance**, and a self-reported SURVIVOR is now named rather than quietly improving the lane.
-- **BG0244 / BG0243** - `Actual (tokens)` published an absence as zero (7 rows before, 0 now); the
-  token delta could land on an unrelated retro, so the retro id is now required.
+## What the reviews found
 
-**Guards that did not reach**
+**Round 1: REJECT from three independent instances. 11 MAJOR.** The two worst were structural:
+US0307 and US0308 shipped CONTRADICTING each other (the gate's window lane froze every commit
+while the hook printed that staging was merely scoped, hidden because the fixture stubbed the
+gate out), and US0310's four `grep` verifiers all passed on prose asserting the opposite of
+their criteria - so the published "84 ACs verified" was four higher than the evidence supported.
 
-- **BG0242** - 35 unconfined git call sites confined, proven not asserted: a victim repo per module
-  showed **5 of 8 damaging it at HEAD**, three wiping uncommitted state; none after.
-- **BG0241 / BG0240** - a matrix-less spec reported clean, now exits 1 (migration cost measured
-  first: 30 of 178 specs); three cwd-anchored writers fixed.
+**Round 2: REJECT. Of round 1's eleven repairs, 5 CLOSED, 3 OVER-CLAIMED, 3 MOVED.** All three
+over-claims were the same species - the code improved and the prose describing it got ahead of
+the code, the surviving MAJOR in seven consecutive closing reviews. One was the author's own:
+the engagement floor's unreadable-index refusal was reached by NO test, its guard mutated to
+`if False:` left 3,891 tests green, and BG0251's Resolution called it mutation-proven.
 
-## What this sprint got wrong about itself
-
-**The closing review REJECTED, then APPROVED at round 2.** Three MAJORs: two in BG0244's new Note
-column reproducing the defect it was filed to end, one where registering a SURVIVED mutant made the
-gate quieter than registering nothing. Repaired; the same reviewer re-ran its reproductions and
-mutation-tested the repair. **Goal: PARTIAL** - guards done, measurement not: the close still
-cannot state its own cost within 3x.
-
-**A false claim went into a bug about numeric honesty, then into a decision of record.** BG0246's
-summary and D0047's rationale said `batch_history`'s filter stalled the measured-rate counter. It
-does not. Corrected in **D0050**, filed as **BG0248**.
-
-**The first token figure this project ever measured is wrong by nearly 3x and looks right.** The
-capture sums the session transcript, which carries ZERO sidechain records, so delegated agents are
-invisible. Published 439,982; the four cluster agents alone spent 787,834, so the true cost is at
-least 1,227,816 - a **64% understatement** labelled "the run's own spend". At 18 points it reads
-24,443/pt against a 25,000 seed, a 2.2% miss inviting the conclusion the estimator is validated;
-the true rate is at least 68,212/pt. The calibration was computed BEFORE the exclusion was
-checked. Filed as **BG0252**.
-
-**A gate passed a commit that was non-compliant the instant it existed.** The engagement floor
-derives "shipped" from `git log --grep`, so a unit no commit has mentioned is invisible. It read 0
-violations, the gate passed, the commit landed, and the check then reported 2 new violations in
-files nothing had touched. Filed as **BG0251**.
+**The standing lesson, hit three times: a repair can MASK the defect beside it.** Un-stubbing
+the gate hid two hook mutants; removing the hook's traversal branch leaves the end-to-end test
+green because the fixture's gate stub refuses the record for its own reason. Only isolation
+tests kill them. Recorded as a property of the fixture in US0308.
 
 ## Evidence
 
-~62 mutants hand-applied. **Three survived first time**, two the L-0159 unreachable-guard class
-again. Noise ratchet **DOWN, 132 to 129**. Suites 3,598 + 273 green, gate PASS, drift 0.
+3,927 skill tests + 312 tool tests green. Drift 0, conformance 0 non-conformant, floor 0
+violations, no rewrite window open. ~220 hand-applied mutants across build and both repair
+rounds; 13 survived first time and every one drove a change rather than a re-run. Installed copy
+forward-ported and verified.
 
 ## Next steps
 
-- **BG0248** the rate cannot advance under interactive sprints; **BG0249** the `Estimate` column
-  has BG0244's defect in 12 of 17 rows; **BG0251** the floor's blind spot; **BG0250** a dead key.
-- **CR0383** census: 20 scripts resolve `--root` without discovery, 10 driving writes, worst
-  `next_id.py` minting **colliding ids** from a subdirectory.
-- **CR0388** / **LL0039** - `git add -A` during a review stages whatever a concurrent process
-  left; a symlink farm plus a redirect writes into the source tree, as the reviewer discovered.
-- **BG0254** (High) - measured at sign-off: the forecast said 400,000 and the sprint cost at
-  least 4,119,916, over 10x, because the forecast prices only the BUILD (787,834 of it) and this
-  project spends most of its budget proving the build correct. The seed is 5.9x to 9.2x low.
-- **BG0247, BG0253, CR0384, CR0386-0388** open. **CR0319** is the release cut.
+- **Round 3 review has NOT been run.** The ceiling is 3 (`review.max_rounds`). Round 2's repair
+  is unreviewed.
+- **Sign-off is owed and is the operator's.** `sprint close --retro <id> --apply-signoff
+  --principal "..."`. RFC0051 records why an agent cannot honestly supply it.
+- **Owed at close:** a retro, a velocity row (US0288's own gate will demand it), and the
+  delegated-token figure BG0252 needs supplied by hand.
+- **Filed during the run:** BG0255, BG0256, CR0389, CR0390, RFC0051, D0051-D0053.
+- **CR0319** is the 5.0.0 release cut, still outstanding.
 
 ## Lessons
 
-Check what a measurement EXCLUDES before concluding from it. A gate deriving its input from history cannot judge its own commit. See RETRO-0065.
+A library test is not a lane test. A repair can mask the defect beside it. Prose that justifies
+code is the least-reviewed code in the repo, for the seventh sprint running.
