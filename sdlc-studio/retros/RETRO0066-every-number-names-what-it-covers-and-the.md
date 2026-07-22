@@ -3,11 +3,11 @@
 > **Date:** 2026-07-22
 > **Batch:** BG0247, BG0248, BG0249, BG0250, BG0251, BG0252, BG0253, BG0254, BG0255, BG0256, US0288, US0289, US0290, US0291, US0292, US0293, US0294, US0295, US0296, US0297, US0298, US0299, US0300, US0301, US0302, US0303, US0304, US0305, US0306, US0307, US0308, US0309, US0310
 > **Goal:** Every open bug and every High-priority request built, verified and independently reviewed, so the only thing between this backlog and the v5 release is the operator's signature
-> **Delivered:** 32 / 32   **Blocked:** 0
+> **Delivered:** 33 / 33   **Blocked:** 0
 
 ## Delivered
 
-All 32 units built, committed and gate-green. Grouped by what they change:
+All 33 units built, committed and gate-green (BG0256 was filed mid-run and fixed with the batch). Grouped by what they change:
 
 - **Measurement** - BG0248/US0290 (the rate reads the velocity record and REFUSES across
   models), US0288/US0289/BG0249 (the velocity row is owed at close; 24 rows backfilled with

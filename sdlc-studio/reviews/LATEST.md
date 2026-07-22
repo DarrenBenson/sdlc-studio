@@ -1,14 +1,15 @@
 # Reviews - LATEST (anchor)
 
 > Derived from **RUN-01KY3MFX** (2026-07-22). Supersedes the RETRO-0065 picture.
-> The run is BUILT, REVIEWED TWICE and REPAIRED TWICE. It is NOT closed: no retro, no
-> sign-off, no velocity row. Full detail lives in the review record; this is the anchor.
+> The run is BUILT, REVIEWED THREE TIMES and REPAIRED TWICE. RETRO0066 and its velocity row
+> are recorded. It is NOT closed: the round-3 REJECT is unrepaired and the sign-off is owed.
 
 ## Where the pipeline is (2026-07-22)
 
-**RUN-01KY3MFX delivered 32 units, 100 points** - 9 bugs plus 23 stories decomposed from the
-ten High-priority requests, in seven file-disjoint lanes. Goal: *every open bug and every
-High-priority request built, verified and independently reviewed.*
+**RUN-01KY3MFX delivered 33 units, 100 points** - 10 bugs plus 23 stories decomposed from the
+ten High-priority requests, in seven file-disjoint lanes (BG0256 was filed and fixed mid-run).
+Goal: *every open bug and every High-priority request built, verified and independently
+reviewed.*
 
 **It stops one step short by design.** `review.two_role_after: 192` means every story here
 reaches Done only with a reviewer-of-record sign-off the authoring session is refused. The
@@ -61,13 +62,17 @@ forward-ported and verified.
 
 ## Next steps
 
-- **Round 3 review has NOT been run.** The ceiling is 3 (`review.max_rounds`). Round 2's repair
-  is unreviewed.
+- **Round 3 REJECTED and the ceiling is now EXHAUSTED** (`review.max_rounds` 3). Three MAJORs
+  stand unrepaired, each small and each precisely described in the review record: `window open`
+  still prints a message the guard contradicts for the default whole-tree window; the docs
+  checker's `NEG_REACH` comment claims an unrelated negation cannot launder an assertion, and it
+  can; `_run_window` still attributes a foreign run whose batch is a SUPERSET of this sprint's
+  units. Buying a fourth round is an operator decision.
 - **Sign-off is owed and is the operator's.** `sprint close --retro <id> --apply-signoff
   --principal "..."`. RFC0051 records why an agent cannot honestly supply it.
-- **Owed at close:** a retro, a velocity row (US0288's own gate will demand it), and the
-  delegated-token figure BG0252 needs supplied by hand.
-- **Filed during the run:** BG0255, BG0256, CR0389, CR0390, RFC0051, D0051-D0053.
+- **Recorded at close:** RETRO0066, and a velocity row carrying the supplied delegated figure.
+  `close_owed detect` reports none.
+- **Filed during the run:** BG0255, BG0256, CR0389, CR0390, CR0391, RFC0051, D0051-D0053.
 - **CR0319** is the 5.0.0 release cut, still outstanding.
 
 ## Lessons
