@@ -17,6 +17,17 @@ BRIEFING. There is no command that emits what a seat needs to review a goal. The
 
 VERDICT ENTRY. `--seat` takes a pipe-delimited string of free prose on the command line, with no --fields-file path. This is exactly the class CR0392 names for four other prose-writing scripts: backticks and dollar-parenthesis are command substitution inside a shell argument, so a seat's note containing a command is EXECUTED rather than stored. A real verdict quotes commands and file paths constantly - the three recorded here all did - so this surface is more exposed than most, not less. It should be added to CR0392's scope rather than fixed separately.
 
+**MEASURED, in the command this CR names, while recording the review this CR is about.** A seat
+note quoting `equivalent` in backticks was passed to `goal-review record` as a shell argument.
+The shell performed command substitution, `equivalent: command not found` went to stderr, and
+the WORD WAS SILENTLY DELETED from the stored verdict: the recorded QA note read "a
+self-registered  verdict with free text discharges any survivor", missing the term the sentence
+was about. Nothing in the tool noticed; the record simply held a different sentence from the one
+the reviewer wrote. It was caught by reading the stored JSON afterwards, and re-recorded intact.
+This is the second surface where this class has now been observed rather than argued, and it is
+the one holding an independent reviewer's words - the artefact whose whole value is being an
+unaltered account of what somebody else said.
+
 ## Impact
 
 Every project running the goal review, and worst where it matters most: the seats are supposed to be an independent check on the author's plan, and today both the input to that check and the transcription of its output pass through the author's hands unaided. The consult is also not reproducible - two operators briefing the same seats on the same goal get different reviews, and nothing records which brief was given.

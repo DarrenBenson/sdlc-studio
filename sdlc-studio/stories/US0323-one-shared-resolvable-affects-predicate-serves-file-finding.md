@@ -1,6 +1,7 @@
 # US0323: One shared resolvable-Affects predicate serves file_finding, artifact new and refine apply, so a future writer cannot be added without it
 
 > **Status:** Draft
+> **Depends on:** BG0265, BG0256
 > **Delivers:** CR0400
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

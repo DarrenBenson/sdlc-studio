@@ -1,6 +1,7 @@
 # US0316: The best-practice guide states the derivation rule and names its counter-example: an enumeration of spellings is a restatement wearing a function's clothes
 
 > **Status:** Draft
+> **Depends on:** BG0265, BG0256
 > **Delivers:** CR0394
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,7 @@
 # US0343: A repair answering a finding in the same class as a previous round must state whether the design is retained or changed, and a plan describing only a better instance is refused past the threshold
 
 > **Status:** Draft
+> **Depends on:** BG0265, BG0256
 > **Delivers:** CR0410
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

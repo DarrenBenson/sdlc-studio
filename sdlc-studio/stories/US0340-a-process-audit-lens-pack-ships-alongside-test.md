@@ -1,6 +1,7 @@
 # US0340: A process audit lens pack ships alongside test, with lenses drawn from failures this project actually produced
 
 > **Status:** Draft
+> **Depends on:** BG0265, BG0256
 > **Delivers:** CR0403
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

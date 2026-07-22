@@ -1,6 +1,7 @@
 # US0311: A REJECT verdict produces a written repair plan, one entry per finding, naming the change, the approach and what it might break
 
 > **Status:** Draft
+> **Depends on:** BG0265, BG0256
 > **Delivers:** RFC0053
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

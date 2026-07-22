@@ -1,6 +1,7 @@
 # US0332: A project declares a review policy: block-on-REJECT, today's behaviour and the default, or carry-forward
 
 > **Status:** Draft
+> **Depends on:** BG0265, BG0256
 > **Delivers:** CR0404
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
