@@ -589,6 +589,68 @@ def lint_stacked_verifiers(block: "ACBlock") -> str | None:
             f"checks is two criteria - split the block")
 
 
+#: Verbs whose selector can be resolved by COLLECTION - asking the runner what a selector
+#: would select, without executing a single test body.
+_COLLECTABLE = {"pytest"}
+
+
+def selector_resolves(expr: str, cwd=None) -> bool | None:
+    """Does this verifier's selector still select anything? None when unanswerable.
+
+    Resolution is decided by COLLECTION, not execution: `pytest --collect-only` answers
+    "would this select a test" for the cost of an import, runs no test body, and so can sit
+    beside the freshness check rather than only inside a full suite sweep. A sweep is what
+    let a stamp read green for two days against a test that did not exist.
+
+    Returns None - not False - for a verifier whose selector cannot be resolved this way
+    (`manual`, `grep`, `shell`, a runner that is absent). Unanswerable is not the same fact
+    as unresolvable, and reporting it as stale would mark every non-pytest stamp dead.
+    """
+    head = (expr.split(None, 1)[0].lower() if expr.split() else "")
+    if head not in _COLLECTABLE or _is_manual(expr):
+        return None
+    if not shutil.which(head):
+        return None  # the runner is absent here; that says nothing about the selector
+    try:
+        kind, argv = _build_command(expr, cwd=cwd)
+    except ValueError:
+        return None
+    if not isinstance(argv, list):
+        return None
+    cmd = [argv[0], "--collect-only", "-q"] + argv[1:]
+    try:
+        cp = subprocess.run(cmd, capture_output=True, text=True, timeout=120,
+                            cwd=str(cwd) if cwd else None)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    # 0 = something was collected. 5 = collected nothing, which is exactly the shape that
+    # produced this bug: the file still imports, the `-k` pattern matches no test, and a
+    # file-exists check would have passed it. 4 = usage error, e.g. a node address whose
+    # class or method is gone.
+    if cp.returncode == 0:
+        return True
+    if cp.returncode in (4, 5):
+        return False
+    return None
+
+
+def unresolvable_stamps(path: Path, cwd=None) -> list[dict]:
+    """Stamped-green ACs in `path` whose verifier no longer selects anything.
+
+    Only ACs recorded as verified are examined: an unstamped AC makes no claim, so a dead
+    selector there is the author's business at the next run, not a false green on disk.
+    """
+    out: list[dict] = []
+    text = sdlc_md.read_text_safe(path)
+    for block in parse_story(text):
+        if (block.verified_state or "").strip().lower() != "yes" or not block.verifier:
+            continue
+        if selector_resolves(block.verifier, cwd) is False:
+            out.append({"ac": block.ac_id, "verifier": block.verifier,
+                        "record": sdlc_md.extract_record_id(path.stem) or path.stem})
+    return out
+
+
 def duplicate_verifiers(paths) -> list[dict]:
     """Verify commands that appear byte-identically under more than one AC.
 
@@ -1586,6 +1648,37 @@ def cmd_lint(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_stamps(args: argparse.Namespace) -> int:
+    """Report stamped-green ACs whose verifier no longer selects anything.
+
+    The routine this condition lacked. A stamp went green for two days against a test that
+    did not exist, and nothing looked: freshness compared the AC text, which had not changed,
+    and the only thing that would have caught it was a full suite run nobody had reason to do.
+    Exits non-zero so it can gate rather than inform.
+    """
+    repo_root = resolve_root(args)
+    paths = ([Path(args.story)] if args.story
+             else list(walk_stories(under_root(repo_root, args.dir))))
+    if args.bugs:
+        bugs = under_root(repo_root, "sdlc-studio/bugs")
+        if bugs.is_dir():
+            paths += sorted(p for p in bugs.glob("*.md") if not p.name.startswith("_"))
+    dead = 0
+    for p in paths:
+        if not p.exists():
+            continue
+        for row in unresolvable_stamps(p, repo_root):
+            dead += 1
+            print(f"{row['record']} {row['ac']}: stamped verified, but its verifier selects "
+                  f"nothing\n    {row['verifier']}")
+    if dead:
+        print(f"verify-stamps: {dead} stamped AC(s) resting on a selector that resolves to "
+              f"nothing - the stamp is STALE, not green", file=sys.stderr)
+        return 1
+    print(f"verify-stamps: {len(paths)} file(s) checked, every stamped verifier still resolves")
+    return 0
+
+
 def cmd_report(args: argparse.Namespace) -> int:
     """Print the latest verification report in text or JSON form."""
     report_path = under_root(resolve_root(args), args.report)
@@ -1669,6 +1762,14 @@ def build_parser() -> argparse.ArgumentParser:
              "verb and the flag after it resolve to one root, never diverge",
     )
     r.set_defaults(func=cmd_run)
+
+    st = sub.add_parser("stamps", help="Flag stamped-green ACs whose verifier selects nothing")
+    st.add_argument("--root", default=".", help="Repo root --dir is resolved under")
+    st.add_argument("--dir", default="sdlc-studio/stories", help="Stories directory")
+    st.add_argument("--story", "--file", dest="story", help="Single story or bug file")
+    st.add_argument("--bugs", action="store_true",
+                    help="also check sdlc-studio/bugs, which walk_stories does not reach")
+    st.set_defaults(func=cmd_stamps)
 
     ln = sub.add_parser("lint", help="Advisory: flag non-DSL / mis-written Verify lines")
     ln.add_argument("--root", default=".", help="Repo root --dir is resolved under")

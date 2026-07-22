@@ -25,6 +25,10 @@ from lib import sdlc_md, tiers  # noqa: E402
 import reconcile  # noqa: E402  (sibling scripts; scripts dir is on sys.path)
 import critic  # noqa: E402
 import doc_coverage  # noqa: E402  (the `documented` stage)
+try:
+    import verify_ac  # noqa: E402  (stamp resolution; a green on a dead pointer is not one)
+except ImportError:  # pragma: no cover - conformance must survive a partial install
+    verify_ac = None
 
 _PLACEHOLDER = re.compile(r"\{\{[^}]*\}\}")
 # A bullet's fillable value: strip the leading marker (checkbox, **Label:**) -> group(1).
@@ -86,7 +90,7 @@ def _ac_signals(text: str) -> tuple[bool, bool, list[str]]:
 
 
 def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
-                 two_role_cutoff=None, critic_required=True) -> tuple:
+                 two_role_cutoff=None, critic_required=True, dead_stamps=0) -> tuple:
     """The four Done-only conformance stages (verified, reconciled, critiqued, documented).
 
     The critiqued stage composes its two halves independently, so a story DoD that
@@ -94,7 +98,14 @@ def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
     APPROVE) applies while `critic_required`; the two-role half (evidence + an
     independent reviewer-of-record sign-off) applies for units past `two_role_cutoff`.
     """
-    verified = bool(verified_states) and all(v in ("yes", "manual") for v in verified_states)
+    # A stamp is evidence only while the thing it points at still exists. `dead_stamps`
+    # counts ACs recorded green whose verifier now selects NOTHING - a `-k` pattern matching
+    # no test, or a node address whose class is gone. One such stamp read green for two days
+    # while the test it named did not exist, because freshness compares the AC TEXT and the
+    # text had not changed. A green resting on a dead pointer is not verification.
+    verified = (bool(verified_states)
+                and all(v in ("yes", "manual") for v in verified_states)
+                and dead_stamps == 0)
     reconciled = (not no_index) and sdlc_md.norm_id(rid) not in drift_ids
     verdict = critic.verdict_for(root, rid)
     # A sprint-level adversarial full-diff review covers every unit in its range at once. It
@@ -194,9 +205,11 @@ def detect_conformance(repo_root: Path | str) -> dict:
         has_ac, has_verify, verified_states = _ac_signals(text)
         verified = reconciled = critiqued = documented = promoted = None
         if status == "Done":
+            dead = len(verify_ac.unresolvable_stamps(path, root)) if verify_ac else 0
             verified, reconciled, critiqued, documented = _done_stages(
                 root, rid, verified_states, _no_index, drift_ids, _doc_ok,
-                two_role_cutoff=two_role_cutoff, critic_required=critic_required)
+                two_role_cutoff=two_role_cutoff, critic_required=critic_required,
+                dead_stamps=dead)
             # The backstop to the transition gate. That gate guards the tool path; a
             # hand-edited `Status: Done` walks round it, and the story is then Done without
             # the sections the tier deferred. Same doubling the AC-verify gate already has

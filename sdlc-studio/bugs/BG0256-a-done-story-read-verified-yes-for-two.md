@@ -1,6 +1,7 @@
 # BG0256: A Done story read Verified yes for two days against a test that does not exist, because nothing rechecks a verifier's target after the stamp
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional - 5 tests in StampResolutionTests plus a conformance discrimination test holding every argument but dead_stamps identical; six hand-applied mutants all killed with bytecode purged under python3 -B; the two live shapes reproduced end to end and the command exits 1 on them
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py,.claude/skills/sdlc-studio/scripts/verify_ac.py,.claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py,.claude/skills/sdlc-studio/scripts/tests/test_conformance.py
@@ -61,6 +62,35 @@ Make a stamp depend on the verifier RESOLVING, not only on the AC text being unc
   re-pointed at `test_neutral_text_reports_no_violations`, which exists and passes. That
   repair is stated as a completion item, not as the fix.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StampResolutionTests::test_the_command_exits_non_zero_on_a_story_whose_stamped_verifier_cannot_resolve
+
+## Resolution
+
+`selector_resolves` asks the runner what a selector would SELECT, by collection rather than
+execution: `pytest --collect-only`. Exit 5 (collected nothing) and exit 4 (usage error, e.g. a
+node whose class is gone) both mean the pointer is dead; exit 0 means it is live. The check
+costs an import and runs no test body, so it sits beside the freshness check instead of only
+inside a full suite sweep - which is what let two days pass.
+
+`unresolvable_stamps` reports only ACs recorded green: an unstamped AC claims nothing, so a
+dead selector there is the author's business at the next run, not a false green on disk.
+
+`conformance` no longer counts a Done story verified while any stamp rests on a dead pointer,
+and `verify_ac stamps` exposes the check per story with a non-zero exit, naming the story, the
+AC and the selector - the routine the condition lacked. `--bugs` reaches
+`sdlc-studio/bugs`, which `walk_stories` does not.
+
+**Unanswerable is kept distinct from unresolvable.** A `manual`, `grep` or `shell` selector
+returns None rather than False; calling it dead would mark every non-pytest stamp stale.
+
+US0265 AC5, the instance that produced this bug, was already re-pointed at
+`test_neutral_text_reports_no_violations` when the bug was filed, and it resolves.
+
+Mutation: six applied, six killed - exit 5 treated as resolving, `--collect-only` dropped so
+the check would EXECUTE, unanswerable reported as dead, unstamped ACs checked too, the command
+always exiting 0, and conformance ignoring dead stamps. The third survived at first and was
+NOT equivalent: it returned None for every tested input only by luck downstream, so the guard
+could have been deleted with the suite green while the check began shelling out for verifiers
+it cannot answer. The test now pins that no subprocess is spawned at all.
 
 ## Revision History
 

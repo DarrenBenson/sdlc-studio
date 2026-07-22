@@ -2550,5 +2550,121 @@ class StackedVerifierTests(unittest.TestCase):
         self.assertEqual(offenders, [], "AC blocks stacking verifiers that will never run")
 
 
+class StampResolutionTests(unittest.TestCase):
+    """BG0256: a stamp is evidence only while the thing it points at still exists."""
+
+    TESTFILE = ".claude/skills/sdlc-studio/scripts/tests/test_critic.py"
+    LIVE = "test_neutral_text_reports_no_violations"
+
+    def _story(self, tmp: Path, verifier: str, stamped: str = "yes") -> Path:
+        d = tmp / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / "US9001-dead.md"
+        f.write_text(
+            "# US9001: a stamped criterion\n\n> **Status:** Done\n\n"
+            "## Acceptance Criteria\n\n### AC1: it holds\n\n"
+            f"- **Verify:** {verifier}\n- **Verified:** {stamped} (2026-07-20)\n")
+        return f
+
+    def test_a_recorded_green_whose_selector_selects_nothing_is_reported_stale(self) -> None:
+        """Both shapes, in one test so neither can carry the other: a `-k` pattern matching
+        nothing while its file still collects - the shape that produced this bug, and the one
+        a file-exists check passes - and a node address whose class is gone."""
+        root = Path(__file__).resolve().parents[5]
+        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_stamp_"))
+        try:
+            for verifier in (f"pytest {self.TESTFILE} -k test_no_such_name_anywhere",
+                             f"pytest {self.TESTFILE}::NoSuchClass::test_gone"):
+                with self.subTest(verifier=verifier):
+                    f = self._story(tmp, verifier)
+                    rows = verify_ac.unresolvable_stamps(f, root)
+                    self.assertEqual([r["ac"] for r in rows], ["AC1"])
+                    # The reader must be told WHICH pointer died, not that the story changed.
+                    self.assertIn(verifier.split()[-1], rows[0]["verifier"])
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_a_resolving_selector_stays_green_and_no_test_body_is_executed(self) -> None:
+        """The negative control. Without it the fix is indistinguishable from marking every
+        stamp stale, which is the same defect with the sign flipped. Resolution is decided by
+        COLLECTION: the check must answer without running the test it names."""
+        root = Path(__file__).resolve().parents[5]
+        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_live_"))
+        try:
+            f = self._story(tmp, f"pytest {self.TESTFILE} -k {self.LIVE}")
+            self.assertEqual(verify_ac.unresolvable_stamps(f, root), [])
+            captured = {}
+            real = verify_ac.subprocess.run
+
+            def spy(cmd, *a, **kw):
+                captured["cmd"] = cmd
+                return real(cmd, *a, **kw)
+
+            verify_ac.subprocess.run = spy
+            try:
+                self.assertIs(verify_ac.selector_resolves(
+                    f"pytest {self.TESTFILE} -k {self.LIVE}", root), True)
+            finally:
+                verify_ac.subprocess.run = real
+            self.assertIn("--collect-only", captured["cmd"])
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_an_unanswerable_verifier_is_not_reported_as_dead_and_costs_no_subprocess(self) -> None:
+        """None, not False: a `manual`/`grep`/`shell` selector cannot be collected, and
+        calling it unresolvable would mark every non-pytest stamp stale.
+
+        The subprocess assertion is the load-bearing half. Deleting the verb guard still
+        returned None for all three - but only by luck downstream (`which("manual")` misses,
+        `rg` chokes on `--collect-only`), which meant the guard could be removed with every
+        test green while the check started shelling out for verifiers it cannot answer."""
+        real = verify_ac.subprocess.run
+        calls = []
+        verify_ac.subprocess.run = lambda cmd, *a, **kw: calls.append(cmd)
+        try:
+            for expr in ("manual the operator confirms it",
+                         'grep "x" .claude/skills/sdlc-studio/scripts/verify_ac.py',
+                         "shell scripts/gate.py --check"):
+                with self.subTest(expr=expr):
+                    self.assertIsNone(verify_ac.selector_resolves(expr, "."))
+        finally:
+            verify_ac.subprocess.run = real
+        self.assertEqual(calls, [], "an unanswerable verifier shelled out anyway")
+
+    def test_an_unstamped_ac_with_a_dead_selector_is_not_reported(self) -> None:
+        # An unstamped AC claims nothing, so a dead selector there is the author's business
+        # at the next run - not a false green on disk, which is what this bug is about.
+        root = Path(__file__).resolve().parents[5]
+        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_unstamped_"))
+        try:
+            f = self._story(tmp, f"pytest {self.TESTFILE} -k test_no_such_name", stamped="no")
+            self.assertEqual(verify_ac.unresolvable_stamps(f, root), [])
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_the_command_exits_non_zero_on_a_story_whose_stamped_verifier_cannot_resolve(self) -> None:
+        root = Path(__file__).resolve().parents[5]
+        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_cmd_"))
+        try:
+            dead = self._story(tmp, f"pytest {self.TESTFILE} -k test_no_such_name_anywhere")
+            args = argparse.Namespace(root=str(root), dir="sdlc-studio/stories",
+                                      story=str(dead), bugs=False, repo_root=None)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+                rc = verify_ac.cmd_stamps(args)
+            self.assertEqual(rc, 1)
+            out = buf.getvalue()
+            self.assertIn("US9001", out)
+            self.assertIn("AC1", out)
+            self.assertIn("test_no_such_name_anywhere", out)
+
+            live = self._story(tmp, f"pytest {self.TESTFILE} -k {self.LIVE}")
+            args.story = str(live)
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(verify_ac.cmd_stamps(args), 0)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
 if __name__ == "__main__":
     unittest.main()

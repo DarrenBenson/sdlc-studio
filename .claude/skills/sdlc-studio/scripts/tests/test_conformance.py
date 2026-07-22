@@ -629,5 +629,22 @@ class GlobalAttributionTests(unittest.TestCase):
             self.assertEqual(u9["missing_global"], [])
 
 
+class StampResolutionTests(unittest.TestCase):
+    """BG0256: conformance must not count a Done story verified on a dead pointer."""
+
+    def test_a_done_story_stamped_against_a_selector_that_resolves_to_nothing_is_not_verified(self) -> None:
+        """The two calls differ in ONE argument. Everything else - the stamps, the index, the
+        drift set - is held identical, so the assertion cannot pass on some other stage's
+        behaviour. Without that, a fixture with unrelated conformance gaps would report
+        `verified: False` either way and the test would prove nothing."""
+        conformance = _load()
+        dead = conformance._done_stages(".", "US9001", ["yes", "yes"], False, set(), True,
+                                        dead_stamps=1)
+        live = conformance._done_stages(".", "US9001", ["yes", "yes"], False, set(), True,
+                                        dead_stamps=0)
+        self.assertFalse(dead[0], "a green resting on a selector that selects nothing counted as verified")
+        self.assertTrue(live[0], "a live stamp stopped counting as verified - the sign is flipped")
+
+
 if __name__ == "__main__":
     unittest.main()
