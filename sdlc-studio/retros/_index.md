@@ -75,3 +75,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0063](RETRO0063-run-01ky1wcr-three-tests-were-half-the-suite.md) | RUN-01KY1WCR: three tests were half the suite, and the premise was wrong three times | 2026-07-21 | -- | -- |
 | [RETRO-0064](RETRO0064-every-number-this-project-publishes-is-either-measured.md) | Every number this project publishes is either measured or refused, and the test suite cannot reach the repository that runs it | 2026-07-21 | -- | -- |
 | [RETRO-0065](RETRO0065-this-project-can-plan-and-judge-a-sprint.md) | This project can plan and judge a sprint on its own recent measured evidence, and every guard reaches the code it claims to cover | 2026-07-21 | -- | -- |
+| [RETRO-0066](RETRO0066-every-number-names-what-it-covers-and-the.md) | Every number names what it covers, and the guards reach the code - a 100-point batch that its own review rejected twice | 2026-07-22 | -- | -- |
