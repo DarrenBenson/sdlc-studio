@@ -106,8 +106,9 @@ def _forbids(raw: str, pattern: str, why: str, ac: str) -> list[str]:
 # it is added and whatever words it uses inside the topic vocabulary.
 #
 # THE BOUND, stated rather than implied, and CORRECTED after round 3 caught this comment
-# overstating it. A sentence is SELECTED by topic vocabulary and JUDGED by negation cues, both
-# enumerated here. Four things slip through, and the fourth was previously DENIED here:
+# overstating it TWICE - round 3 found a fourth escape it denied, round 4 a fifth it never named.
+# A sentence is SELECTED by topic vocabulary, JUDGED only if it also carries an enumerated
+# ASSERTING word, and its polarity read from negation cues. FIVE things slip through:
 #   1. prose about a guarded property that uses none of its topic words;
 #   2. a reversal carried by irony or by layout rather than by a cue;
 #   3. a negation sitting further from its verb than NEG_REACH;
@@ -115,6 +116,9 @@ def _forbids(raw: str, pattern: str, why: str, ac: str) -> list[str]:
 #      contradiction. There is NO attachment check: any cue in the run-up counts. So
 #      "Nothing else matters: a green run proves the staged tree is clean" passes, because
 #      "Nothing" sits within reach of "proves" while modifying something else entirely.
+#   5. a sentence using every topic word but NO enumerated asserting word - the widest gap, and
+#      the one this comment previously did not name at all. "A green gate certifies the staged
+#      tree is clean" and "The window guard is decorative" both escape.
 # It also OVER-fires in the same way: "A review must never proceed without a declared window"
 # is correct prose that this scan reports as asserting the opposite, because the cue attaches
 # to "proceed" rather than to the rule being stated.
@@ -396,6 +400,15 @@ class DisclosedLimitsAreRealTests(unittest.TestCase):
         "It is not unusual for the window guard to be advisory.",
     ]
 
+    #: Contradictions using every topic word but NO enumerated asserting word - THE BOUND item 5,
+    #: found by round 4 and the widest gap of the five.
+    NO_ASSERTING_WORD = [
+        "A green gate certifies the staged tree is clean.",
+        "A passing suite settles the question of whether the staged tree is clean.",
+        "The window guard is decorative.",
+        "Treat the window guard as a courtesy.",
+    ]
+
     #: Correct prose the scan wrongly reports as asserting its opposite (THE BOUND, over-firing).
     OVER_FIRED = [
         "A review must never proceed without a declared window.",
@@ -411,15 +424,26 @@ class DisclosedLimitsAreRealTests(unittest.TestCase):
                                                                  "AC3": [], "AC4": []},
                     "if this now FAILS, the scan improved: update THE BOUND item 4 and this list")
 
+    def test_the_asserting_word_gap_is_real_and_still_open(self) -> None:
+        """THE BOUND item 5. Named only after round 4; the comment had claimed four escapes."""
+        sprint, review = read_docs()
+        for line in self.NO_ASSERTING_WORD:
+            with self.subTest(line=line):
+                self.assertEqual(
+                    check_all(sprint + "\n\n" + line, review),
+                    {"AC1": [], "AC2": [], "AC3": [], "AC4": []},
+                    "if this FAILS the scan improved: update THE BOUND item 5 and this list")
+
     def test_the_over_firing_is_real_and_still_open(self) -> None:
         sprint, review = read_docs()
-        hits = 0
         for line in self.OVER_FIRED:
-            res = check_all(sprint + "\n\n" + line, review)
-            hits += sum(len(v) for v in res.values())
-        self.assertGreater(hits, 0,
-                           "if this now finds nothing, the over-firing was fixed: update THE "
-                           "BOUND and this list rather than deleting the test")
+            with self.subTest(line=line):
+                res = check_all(sprint + "\n\n" + line, review)
+                self.assertTrue(
+                    any(res.values()),
+                    "if this line stops over-firing, the scan improved: update THE BOUND and "
+                    "this list rather than deleting the test. Asserted PER LINE, because a sum "
+                    "across lines stays green when one of the two is fixed.")
 
     def test_the_shipped_docs_are_still_clean(self) -> None:
         """The control that keeps the two above honest: the gaps are real, and the scan is not

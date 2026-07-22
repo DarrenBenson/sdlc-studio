@@ -55,7 +55,7 @@ tests kill them. Recorded as a property of the fixture in US0308.
 
 ## Evidence
 
-3,934 skill tests + 312 tool tests green. Drift 0, conformance 0 non-conformant, floor 0
+3,937 skill tests + 312 tool tests green. Drift 0, conformance 0 non-conformant, floor 0
 violations, no rewrite window open. ~220 hand-applied mutants across build and both repair
 rounds; 13 survived first time and every one drove a change rather than a re-run. Installed copy
 forward-ported and verified.
@@ -69,7 +69,17 @@ forward-ported and verified.
   comment claimed an unrelated negation cannot launder an assertion; it can, the comment now says
   so, and the gap is pinned by tests that go RED if it is ever closed. `_run_window` scores run
   records by CLOSENESS rather than overlap, so a superset batch no longer ties the exact one.
-  Each was mutation-proven; none has been independently reviewed. **Buying a fourth round, or
+  The two code changes were mutation-proven; the docs-checker change is prose plus tests and
+  carries NO mutant at this content, so the ledger cannot show evidence for it - a claim that
+  all three were proven was itself false and is corrected here. Round 4 then reviewed this
+  repair and REJECTED it: `window open` was wrong a FOURTH time, because the fix rendered what
+  the record CLAIMS rather than what the matcher DECIDES, so a bare `.` or an absolute path read
+  as one narrow path while every commit was refused. Now fixed by a shared `claims_everything`
+  rule pinned against the gate matcher over 15 shapes. Round 4 also found a FIFTH escape in the
+  docs checker's stated bound (a sentence with every topic word but no enumerated asserting word
+  escapes entirely) and a false "all three were mutation-proven" claim in this file. Both
+  corrected. **Round 4's own repair is in turn unreviewed, and the ceiling has already been
+  bought once.** **Buying a fourth round, or
   accepting the repair unreviewed, is an operator decision.**
 - **Sign-off is owed and is the operator's.** `sprint close --retro <id> --apply-signoff
   --principal "..."`. RFC0051 records why an agent cannot honestly supply it.

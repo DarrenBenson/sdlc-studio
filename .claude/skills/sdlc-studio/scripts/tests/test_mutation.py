@@ -2202,6 +2202,50 @@ class WindowOpenMessageTests(unittest.TestCase):
             self.assertIn("WHOLE TREE", msg)
             self.assertNotIn("2 path(s)", msg)
 
+    def test_a_claim_the_MATCHER_treats_as_everything_is_named_as_everything(self) -> None:
+        """Round 4 MAJOR. The message rendered what `window_claims` RETURNS, not what the
+        matcher DECIDES. `--paths .` and `--paths /etc/hosts` normalise to themselves, so the
+        CLI said "1 path(s)" and promised anything else proceeds, while both matchers refuse
+        every staged path. Fourth wrong version of this sentence; the first three all asked the
+        record what it said instead of asking what would be done with it."""
+        mut = _load()
+        # NOT `tools/../tools/x.py`: `window_claim` normalises traversal AT OPEN TIME, so via
+        # the CLI it becomes the real scoped path `tools/x.py` and the narrow message is then
+        # correct. It claims everything only as a HAND-WRITTEN record already on disk, which the
+        # matcher-agreement test below covers.
+        for claim in (".", "./", "/etc/hosts", "*"):
+            with self.subTest(claim=claim), tempfile.TemporaryDirectory() as d:
+                root = self._repo(d)
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf):
+                    mut.main(["window", "open", "--root", str(root), "--owner", "r",
+                              "--paths", claim])
+                msg = buf.getvalue()
+                self.assertIn("WHOLE TREE", msg, f"{claim!r} claims everything to the matcher")
+                self.assertNotIn("else proceeds", msg)
+                (root / "README.md").write_text("changed\n", encoding="utf-8")
+                gitutil.git(["add", "README.md"], cwd=root)
+                self.assertEqual(self._lane(root)["count"], 1,
+                                 "the lane must agree with the sentence")
+
+    def test_the_helper_agrees_with_the_gate_matcher_on_every_shape(self) -> None:
+        """The message and the verdict share ONE rule. Two implementations of "claims
+        everything" is how the sentence came to disagree with the guard four times."""
+        mut = _load()
+        import importlib.util as _il
+        spec = _il.spec_from_file_location("gate", SCRIPT.parent / "gate.py")
+        gate = _il.module_from_spec(spec); spec.loader.exec_module(gate)
+        unrelated = "some/unrelated/file.md"
+        for claim in ("", " ", ".", "./", "/abs/x.py", "..", "../x.py", "a/../b.py", "*",
+                      "tools/x.py", "tools/", "src/**/*.py", 7, None, ["x"]):
+            with self.subTest(claim=claim):
+                mine = mut.claims_everything(claim)
+                theirs = gate._window_claims(claim, unrelated)
+                self.assertEqual(
+                    mine, theirs,
+                    f"{claim!r}: the CLI says everything={mine}, the matcher says {theirs} - "
+                    "the message and the verdict must come from one rule")
+
     def test_a_scoped_window_still_says_what_it_scopes(self) -> None:
         """Negative control. Without it, a message hard-coded to WHOLE TREE would pass the two
         tests above while destroying the scoped case the feature exists for."""

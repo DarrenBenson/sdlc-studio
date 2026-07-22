@@ -443,6 +443,34 @@ def _clear_hint(owner: str) -> str:
     return f"mutation.py window close --owner {owner!r}"
 
 
+def claims_everything(claim) -> bool:
+    """Does this single claim cause a MATCHER to refuse every staged path?
+
+    The matchers' rule, in one place a caller can ask BEFORE a commit is attempted. It is
+    duplicated in `gate._window_claims` and inline in the pre-commit hook (which must run where
+    these scripts are absent), and the three are pinned against each other by test.
+
+    THIS EXISTS BECAUSE RENDERING `window_claims` IS NOT RENDERING THE VERDICT. `window_claims`
+    normalises the RECORD - it turns an empty or all-blank `paths` into WINDOW_EVERYTHING. The
+    matchers then treat several further spellings as everything: a bare `.`, `./`, a trailing
+    slash, an absolute path (not comparable with a repo-relative staged path), and a traversal
+    that no literal pattern can match. So `--paths .` produced a record claiming `.`, which
+    `window_claims` passes through unchanged, and the CLI called it one narrow path while every
+    commit was refused. Four successive versions of that sentence were wrong; the first three
+    asked the record what it said, and the question is what the MATCHER will do with it."""
+    if not isinstance(claim, str):
+        return True
+    pat = claim.strip()
+    if pat.startswith("./"):
+        pat = pat[2:]
+    pat = pat.rstrip("/")
+    if pat in ("", ".", WINDOW_EVERYTHING):
+        return True
+    if pat.startswith("/"):
+        return True
+    return pat == ".." or pat.startswith("../") or "/../" in pat or pat.endswith("/..")
+
+
 def window_claims(raw) -> list[str]:
     """What a record's `paths` field CLAIMS, normalised to what a matcher may be handed.
 
@@ -1671,8 +1699,9 @@ def cmd_window(args: argparse.Namespace) -> int:
         # everything believes the guard is inert. Two roundings of the same sentence were wrong
         # before this one; the fix is to render what the MATCHER will be handed.
         claims = window_claims(rec["paths"])
-        everything = claims == [WINDOW_EVERYTHING]
-        scope = ("the WHOLE TREE (no paths were named, which claims everything, not nothing)"
+        everything = any(claims_everything(c) for c in claims)
+        scope = ("the WHOLE TREE (every commit is refused: a claim that is empty, `.`, absolute "
+                 "or a traversal matches everything, not nothing)"
                  if everything else f"{len(claims)} path(s): {', '.join(claims)}")
         consequence = ("Every commit will be refused until it is closed."
                        if everything else

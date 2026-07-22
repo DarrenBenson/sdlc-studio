@@ -129,7 +129,7 @@ gate run meaning a clean tree, nobody needing to declare a window - and all four
 stayed green. The polarity scan above is the answer to that, and the appended shape is now
 permanent in the suite (`AppendedContradictionTests`).
 
-**What the checker still cannot do.** A sentence is *selected* by topic vocabulary and
+**What the checker still cannot do (corrected after round 4 found a FIFTH escape).** A sentence is *selected* by topic vocabulary and
 *judged* by negation cues, both enumerated in `POLARITY_AXES`. A contradiction phrased
 without any of the topic words, or one carried by irony or by layout rather than by a cue,
 or a negation sitting further from its verb than `NEG_REACH`, is not caught. It is a
@@ -144,6 +144,21 @@ The discrimination proof is built into the suite (`NegatedProseTests`,
 appended contradiction, every axis RED on a probe of its own property, and every AC GREEN
 against the shipped files, while all four original greps still passed on the same text.
 Fixtures live in memory or in a temp directory, never in this tree ([[LL0039]]).
+
+### Round 4 correction: the escape list was under-stated twice
+
+The module comment said three escapes, round 3 proved a fourth (an unrelated negation within
+NEG_REACH launders a contradiction, because there is no attachment check), and round 4 proved a
+FIFTH and widest one: a sentence is selected by topic vocabulary but only JUDGED if it also
+contains an enumerated asserting word, and that third list is named nowhere. So
+"A green gate certifies the staged tree is clean", "A passing suite settles the question of
+whether the staged tree is clean", "The window guard is decorative" and "Treat the window guard
+as a courtesy" all use every topic word, carry no negation, and escape cleanly.
+
+The honest reading of this story's AC3: the checker raises the cost of contradicting the
+documentation and does not make it impossible, and a green result means "no contradiction in the
+shapes enumerated" rather than "the documentation is consistent". That is weaker than the AC's
+wording implies, and it is recorded here rather than left for a sixth round to find.
 
 ## Revision History
 
