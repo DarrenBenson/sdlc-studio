@@ -1,14 +1,13 @@
 # Reviews - LATEST (anchor)
 
-> Derived from **RUN-01KY5EJX** (2026-07-22). Supersedes the RUN-01KY3MFX picture.
-> That run is CLOSED: 33 units, 100 points, goal verdict `partial`, RETRO0066 recorded,
-> sign-off landed, `close_owed detect` reports none. The current run is a DESIGN rung,
-> groomed and committed, with its closing review in flight.
+> Derived from **RUN-01KY5EJX** (2026-07-22), the design rung over 40 units / 111 points.
+> Closed `partial` with RETRO0067. Round 3 REJECTED and **its repair is UNREVIEWED** -
+> `review.max_rounds` is 3 and the ceiling is spent. Sign-off is the operator's.
 
 ## Where the pipeline is (2026-07-22)
 
-**RUN-01KY5EJX is open at the design rung over 38 units / 108 points** - EP0106-EP0115 plus
-six bugs. Its whole output is acceptance criteria; the delivery run follows.
+**The batch is groomed and ready to build.** EP0106-EP0115 plus eight bugs carry real
+acceptance criteria; the DELIVERY run over the same units is the next step.
 
 Goal: *every story's acceptance criteria would fail if the behaviour were absent, every bug
 states what makes its fix complete and tested, and any declared dependency records a logical
@@ -24,57 +23,55 @@ reviewer with the practices that found defects (EP0108), inventory claims first 
 
 ## Evidence
 
-3,947 skill tests and 312 tool tests green. Drift 0, validate 0 errors, engagement floor 0
-violations. Red-now ledger over the batch: **pass=0, fail=89, manual=5** - no criterion is
-vacuously green at a rung where the behaviour is absent. Two waves, five declared dependency
-edges. `verify_ac lint` exits 0: no markdown-only verifier survives in the batch.
+3,960 skill tests and 312 tool tests green. Drift 0, validate 0 errors, floor 0 violations,
+no rewrite window open. **Red-now ledger: 94 criteria, pass=0, fail=91, manual=3** - nothing
+vacuously green at a rung where the behaviour is absent, which is the only proof a
+counterfactual bar admits. Two waves on five declared dependency edges, three of them between
+units with disjoint file sets.
 
 ## What shipped as code
 
-**BG0264** only. `verify_ac lint` REFUSES a `grep`/`file` verifier whose every target is
-markdown, on a story at Draft or Ready; its fixture is the four verifiers US0310 actually
-shipped, recovered from git. Five mutants applied, four killed. The fifth is equivalent, and
-it falsified the docstring beside it - a decision justified by a scenario `_expand_globs`
-rules out. No mutation-coverage claim is made for that line.
+**BG0264** only, and it took four versions and three rejections. `verify_ac lint` refuses a
+verifier whose every read is markdown. Each earlier version was defeated by an expression the
+runner reads differently from the way the guard read it: the tokens as written, then an
+invented flag-aware split, then "grep without `-r` never reads a directory" (true of grep,
+false of this DSL), then an `rglob` walk that saw hidden and symlinked files `rg` will not
+read. The parse now comes from `_build_command` and the walk from `rg --files`.
 
-## The first plan review, and what it cost
+## The reviews
 
-The Sprint Goal was REJECTED by the engineering seat before any work started: it asserted
-acceptance criteria for six bugs that carry none, its dependency clause was information-free
-because the shared-file clusters are already derived from `Affects`, and its bar was
-satisfiable by 32 trivially-true verifiers. Reframed, it was accepted. Two seats
-independently reached the same objection - a counterfactual bar is a belief, not a check -
-and both noted the red run is free at a rung where the behaviour is genuinely absent.
+Three rounds, each finding something real, each finding the SAME CLASS: a rule restated
+beside the thing it describes rather than derived from it. Round 1 also found that
+normalising bug verifiers to a prose prefix had made all 21 unparseable while the commit
+claimed they passed. Round 3 found an eighth escape and a mutant that survived because every
+directory fixture was flat - fixtures agreeing by construction, unintentionally.
 
-Filed from the ceremony itself: **BG0262** (a seat saying NOT achievable discharges the gate
-exactly as one saying yes - `achievable` is never parsed), **BG0263** (no rounds, so
-rewriting a rejected goal erases the rejection), **CR0408** (acting on the review invalidates
-every verdict including the proposing seat's, so the cheapest path is to leave a bad goal
-alone), **CR0409** (the seat brief is assembled by the author the review exists to check).
+**Round 1's repair plan was attacked before execution and REFUTED in full** - it closed none
+of the three escapes, and the attacker found two the review had missed. EP0106 is not built;
+its discipline was dogfooded anyway, and it saved three rounds.
 
 ## Known holes, recorded not hidden
 
-- **D0056:** the goal sets dependency QUALITY, not coverage. Declaring nothing would satisfy
-  it. Shared-file warnings therefore remain in the plan and are expected.
-- **BG0265:** `parse_story` keeps only the FIRST `Verify:` line per AC block, so seven
-  verifiers in this workspace have never run - four on Done stories, two of them inside
-  RUN-01KY3MFX's published claim of 84 criteria verified.
-- **BG0256:** nothing re-runs a bug's verifier; `walk_stories` yields only `US` records, so a
-  bug's `Verified:` stamp is a dated record, not a live guarantee.
-- The kill list carried by the grooming commit: US0323's untestable future writer, US0324's
-  ordering claim, US0316's polarity scan, US0341/US0342's manual lens checks, US0331's
-  staged-diff bound, and CR0403's "drawn from real failures" - the weakest leg in the batch,
-  with no criterion anywhere holding it.
+- **Round 3's repair is unreviewed.** Buying a fourth round or accepting it is the operator's
+  decision.
+- **D0056:** the goal sets dependency QUALITY, not coverage. Declaring nothing satisfies it,
+  so the plan's shared-file warnings are expected.
+- **BG0266:** `file <directory>` is an always-passing prose verifier the guard does not see.
+- **BG0265:** a second `Verify:` line per AC block is silently dropped; six such verifiers
+  have never run, all on Done stories, two inside a published claim of 84 criteria verified.
+- **BG0256:** no routine sweep runs a bug's verifier at all - `walk_stories` yields only `US`
+  records - so "story lint exit 0" says nothing about where these criteria were authored.
+- The kill list carried by the grooming commit, including CR0403's "drawn from real failures",
+  the batch's weakest leg with no criterion anywhere holding it.
 
 ## Next steps
 
-- The closing adversarial review of the design rung is in flight. Its verdict decides whether
-  this run closes or repairs.
-- Then the DELIVERY run over the same 38 units, against the goal recorded for it.
+- **Sign-off is owed and is the operator's.** `sprint close --retro RETRO0067 --apply-signoff`.
+- Then the DELIVERY run over the same 40 units.
 - **CR0319** is the 5.0.0 release cut, still outstanding.
 
 ## Lessons
 
-A repair can mask the defect beside it. Prose that justifies code is the least-reviewed code
-in the repo. A counterfactual bar needs a ledger beside it. The data to detect a defect is
-usually already present and unread.
+Derive the whole behaviour, not the half you were looking at. A counterfactual bar needs a
+ledger beside it. Plan the repair, attack the plan, then execute. Check whether the tool you
+are about to build already exists.

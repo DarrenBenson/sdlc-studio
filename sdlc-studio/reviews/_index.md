@@ -25,3 +25,4 @@ The volatile project-state pointer lives in `LATEST.md` (not a numbered review).
 | [RV-0012](RV0012-sprint-close-review-the-audit-backlog-sprint.md) | RV0012 – Sprint-close review – the audit-backlog sprint (RUN-01KXQH64) | 2026-07-17 |
 | [RV-0013](RV0013-run-01kxt0yv-close-the-gate-and-close-chain.md) | RUN-01KXT0YV close: the gate and close chain report their own state honestly | 2026-07-18 |
 | [RV-0014](RV0014-run-01kxvd74-close-evidence-earns-the-green.md) | RUN-01KXVD74 close: evidence earns the green | 2026-07-19 |
+| [RV-0015](RV0015-design-rung-closing-review-three-rounds-three-rejections.md) | Design-rung closing review: three rounds, three rejections, one class | 2026-07-22 |

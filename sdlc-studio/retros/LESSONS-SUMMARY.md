@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0214: **Check whether the tool you are about to build already exists.** CR0405 asserted CHANGELOG had no helper; `changelog.py` had been there...**
+- **L-0213: **The plan gate belongs before the repair, and the evidence is now in this repo.** Round 1's plan was refuted in full.**
+- **L-0212: **A counterfactual bar cannot be checked by any run, so it needs a ledger beside it.** The goal asked whether criteria "would fail if the...**
+- **L-0211: **Derive the whole behaviour, not the half you were looking at.** Round 2 derived the parse from the runner and left the walk restated...**
 - **L-0210: **A -k selector matching nothing reports NO TESTS RAN, which is not a pass.** Hit by the author directly, and it is also how BG0256's story...**
 - **L-0209: **Check what a two-point fit cannot tell you** - see Estimate vs actual.**
 - **L-0208: **`grep` cannot verify a claim about meaning.** Four ACs passed on prose asserting the exact opposite of their criteria, because `grep` is...**
