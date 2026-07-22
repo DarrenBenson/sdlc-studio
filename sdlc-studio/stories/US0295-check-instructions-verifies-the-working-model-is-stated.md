@@ -1,6 +1,6 @@
 # US0295: check_instructions verifies the working model is stated, not only that cross-references exist
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0353
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

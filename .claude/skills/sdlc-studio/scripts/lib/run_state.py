@@ -322,14 +322,35 @@ def _mint_run_id(repo_root: Path | str, outgoing: dict | None = None) -> str:
     So the ALLOCATOR provides what the generator cannot. Checked against every archived run (the
     register of what this project has opened) and the run being replaced, retried on a clash and
     extended on a persistent one - the same shape `sdlc_md.mint_v3_id` uses for artefact ids.
+
+    EVERY candidate is checked, including the extended one. An unchecked final fallback would be
+    exactly the luck this allocator exists to replace: drive both generators constant and the old
+    one returned a duplicate while the docstring above claimed uniqueness by construction. When
+    even the extended suffix cannot produce a free id, that is a broken generator rather than an
+    unlucky one, so this RAISES: returning a known-duplicate id would silently merge two runs'
+    telemetry, archive and velocity records, which is the data problem the whole allocator exists
+    to prevent.
     """
     taken = {r.get("run_id") for r in archived(repo_root)}
+    # Not dead, and deliberately kept: `open_run` archives the outgoing run before minting, so
+    # this is usually redundant - but only while the archive write SUCCEEDS. An archive that
+    # could not be written (a read-only or full `.local`) leaves the register without the run
+    # being replaced, and this is then the only thing standing between the new run and its
+    # predecessor's identity. Pinned directly by test rather than through `open_run`.
     taken.add((outgoing or {}).get("run_id"))
     for _ in range(16):
         rid = f"RUN-{sdlc_md.short_ulid()}"
         if rid not in taken:
             return rid
-    return f"RUN-{sdlc_md.new_ulid()[:12]}"   # extend the suffix on a persistent clash
+    for _ in range(16):
+        rid = f"RUN-{sdlc_md.new_ulid()[:12]}"   # extend the suffix on a persistent clash
+        if rid not in taken:
+            return rid
+    raise RuntimeError(
+        "could not mint a run id no run in this project already holds: 32 candidates, from both "
+        "the short and the extended generator, were all already taken. That is a broken id "
+        "generator, not bad luck - refusing to hand back a duplicate, because the telemetry, "
+        "archive and velocity records all join on the run id")
 
 
 def _is_spent(state: dict) -> bool:

@@ -69,6 +69,24 @@ scope on the pass as well as on the refusal.
 
 Make the check see what the commit is ABOUT to ship rather than only what history records. The id is available at commit time from the staged artefact changes and from the commit message the hook is already handed, and `check-commit-msg` in this same script already parses that message, so the input exists and is simply not joined to the floor. Treat a unit named by the pending commit as shipped for the purposes of that commit's gate. Guard it with a test that stages an unplanned multi-file unit, runs the hook's floor lane against the pending message, and asserts it REFUSES - today it passes. Note the adjacent honesty problem to fix at the same time: a green floor lane currently means 'no already-shipped unit violates', not 'this commit is compliant', and the wording should say which until the check can mean the stronger thing.
 
+### Round-1 review addition: an unreadable index refused rather than read clean
+
+The closing review found the pending leg printing a CLEAN when it could not read the index:
+`_staged_paths` returned `[]` both when git ANSWERED that nothing was staged and when git could
+not be asked at all, so a lane that failed to read the index printed "no new violation" and
+exited 0. That is a false clean on the single signal this leg exists to provide, and it is this
+bug's own defect class committed inside this bug's own fix.
+
+`_staged_paths` now returns None when git cannot answer, `_pending_touched_by_id` raises
+`StagedIndexUnreadable` rather than letting any caller treat it as empty, and the lane REFUSES
+with a line saying plainly that it is reporting nothing rather than reporting no violations.
+
+Mutation-proven, and the first pass found a survivor worth recording: reverting the `OSError`
+branch to `[]` - the original defect exactly - left the suite green, because the non-git-directory
+test reaches the `returncode != 0` branch instead. The guard for a MISSING git binary was pinned
+by nothing while reading as covered. A direct test patching `subprocess.run` to raise, and to
+time out, kills it. Three of the four mutants were killed on the first pass; this was the fourth.
+
 ## Revision History
 
 | Date | Author | Change |

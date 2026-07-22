@@ -1,6 +1,6 @@
 # US0310: reference-sprint.md states the concurrent-write hazard where it states the single-writer rule
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0388
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -44,7 +44,7 @@ carries no code.
 - **When** the rule is read
 - **Then** it also states that an independent review is a concurrent-writer window, and names
   the ceremony commits an author typically makes during one
-- **Verify:** grep "review is a concurrent-writer window" .claude/skills/sdlc-studio/reference-sprint.md
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py -k "test_the_rule_covers_review_time_and_names_the_ceremony_commits or test_ac1_rejects_a_denial_of_the_review_window or test_a_ceremony_list_stripped_from_the_rule_is_caught"
 - **Verified:** yes (2026-07-22)
 
 ### AC2: The documented mechanism is the corrected one
@@ -54,7 +54,7 @@ carries no code.
 - **When** the hazard is described in either reference file
 - **Then** the description names the redirect-through-a-symlink mechanism, and does not claim
   a staged mutant was the cause
-- **Verify:** grep "symlink" .claude/skills/sdlc-studio/reference-review.md
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py -k "test_the_mechanism_documented_is_the_redirect_through_a_symlink or test_ac2_rejects_blaming_a_staged_mutant"
 - **Verified:** yes (2026-07-22)
 
 ### AC3: The rule states why a green suite is not evidence the tree is clean
@@ -63,7 +63,7 @@ carries no code.
   and that a surviving mutant by definition leaves the suite green
 - **When** the rule is read
 - **Then** it states that a passing gate does not establish that no concurrent write is staged
-- **Verify:** grep "green" .claude/skills/sdlc-studio/reference-review.md
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py -k "test_a_passing_gate_is_documented_as_no_evidence_of_a_clean_tree or test_ac3_rejects_a_green_gate_treated_as_proof_of_a_clean_tree"
 - **Verified:** yes (2026-07-22)
 
 ### AC4: Both reference files point at the guard rather than restating it
@@ -72,11 +72,60 @@ carries no code.
 - **When** either reference file describes the rule
 - **Then** it names the window commands as the enforcement path, so the prose and the mechanism
   cannot drift into describing different rules
-- **Verify:** grep "window" .claude/skills/sdlc-studio/reference-sprint.md
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py -k "test_both_files_cite_the_window_guard_as_the_tool_really_offers_it or test_ac4_rejects_prose_that_names_no_window_command or test_a_command_the_tool_does_not_have_is_caught or test_a_flag_the_tool_does_not_accept_is_caught"
 - **Verified:** yes (2026-07-22)
+
+## Verification Note
+
+**The original evidence for all four criteria was vacuous, and the prose it claimed to
+verify was never wrong.** Each AC shipped `Verified: yes` on a substring `grep`:
+`grep "review is a concurrent-writer window"`, `grep "symlink"`, `grep "green"`,
+`grep "window"`. An independent review built a temp root, replaced both reference files
+with prose asserting the OPPOSITE of every criterion, and all four greps still passed:
+`green`, `window` and `symlink` each survive inside their own denial, and a distinctive
+phrase survives being quoted in order to be denied. Nothing in the toolchain objected -
+`grep` is deliberately exempt from the vacuity gate (it could otherwise match a signature
+inside the file it searches), and `verify-lint` reported 0 suspicious lines. The sprint's
+published AC-verified count included these four, so the count was four higher than the
+evidence supported.
+
+The documentation was not touched. Rewriting correct prose to satisfy a verifier would be
+the same defect in the other direction, and both reference files are within a line of
+their CI ceilings anyway (`reference-sprint.md` 656 of 656, `reference-review.md` 600 of
+600), so adding prose was not available either.
+
+What changed is the evidence. All four criteria are now executable, against a new checker,
+`scripts/tests/test_docs_single_writer.py`. None is manual: each of the four states
+something a machine can be made to judge, and the one genuinely unjudgeable part (whether
+the ceremony commits named are the ones an author *typically* makes) is a matter of
+wording inside a list the checker requires to be present.
+
+The checker is two-sided, and the positive half carries the weight:
+
+- **Required.** A whole asserted sentence, normalised across line breaks (which a
+  line-oriented grep cannot even match), plus the facts that must sit beside it: AC1 the
+  four ceremony commits in the same paragraph; AC2 one sentence naming the redirect AND
+  the symlink as a single mechanism, in *both* files; AC3 the polarity of the claim, that
+  every occurrence of "evidence the tree is clean" carries a negation; AC4 the literal
+  `mutation.py window open|close --owner` commands, cross-checked against `mutation.py`'s
+  own argparse so prose and mechanism cannot drift.
+- **Forbidden.** A curated family of contradicting phrasings: a sentence denying the
+  window, one attributing the incident to a mutant, one saying a gate "does establish".
+
+Negated prose fails on the required half alone, structurally: it cannot contain the
+asserted sentence and assert the opposite at the same time. The forbidden half is
+belt-and-braces, and it is a blocklist rather than a semantic proof - a new phrasing of
+the same contradiction has to be added to it. That limit is stated here rather than
+implied.
+
+The discrimination proof is built into the suite (`NegatedProseTests`) so it cannot rot,
+and was also run against the reviewer's own prose written into a temp directory (never
+into this tree, per [[LL0039]]): every AC RED there, every AC GREEN against the shipped
+files, while all four original greps still passed on the same negated text.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-22 | sdlc-studio | Repair: four vacuous `grep` verifiers replaced by `test_docs_single_writer.py`; evidence re-derived |

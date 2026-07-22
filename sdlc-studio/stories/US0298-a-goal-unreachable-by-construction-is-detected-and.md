@@ -1,6 +1,6 @@
 # US0298: A goal unreachable by construction is detected and named at plan time
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0354
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

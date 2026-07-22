@@ -1,6 +1,6 @@
 # US0300: A stop names what could have proceeded, so the cost of stopping is visible
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0378
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -46,6 +46,16 @@ record rather than inferred
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_elapsed_marks_and_excludes_the_recorded_idle_gap
 - **Verified:** yes (2026-07-22)
 
+### AC4: only idle the run's own window contained is ever deducted
+
+- **Given** a wait recorded by the REAL `sprint stop` flow, which opens the gap at the instant
+  the run closes, so the wait lies wholly outside the measured window
+- **When** the elapsed wall-clock is reported
+- **Then** the deduction removes nothing, the run reports the hours it actually worked, and the
+  wait is still reported in full as recorded idle rather than discarded
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k "test_a_wait_that_begins_when_the_run_stops_deducts_nothing or test_only_the_part_of_a_wait_inside_the_run_is_deducted"
+- **Verified:** yes (2026-07-22)
+
 ## Open Questions
 
 - [ ] CR0378 says the elapsed a run reports must mark any idle gap, but not where the deduction
@@ -62,3 +72,4 @@ record rather than inferred
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-22 | sdlc-studio | Groomed: user story and ACs authored against CR0378 |
+| 2026-07-22 | claude | Repair round 1 - AC3's verifier hand-wrote a gap INSIDE the run window, a shape the system cannot produce: `cmd_stop` opens the gap immediately before `close_run`, so it always begins at `ended_at` and closes afterwards, and the deduction removed time the wall clock never held (2h worked plus a 3h wait reported 0.0h). The deduction is now clamped to each gap's intersection with the run, AC4 added, and the property is driven through the real `sprint stop` CLI |

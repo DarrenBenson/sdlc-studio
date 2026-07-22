@@ -1,6 +1,6 @@
 # US0292: Report an Affects line the unit's own content contradicts, at plan time
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0347
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

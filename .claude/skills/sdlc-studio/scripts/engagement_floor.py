@@ -256,18 +256,28 @@ def _git_touched_by_id(root: Path) -> dict[str, set[str]]:
     return by_id
 
 
-def _staged_paths(root: Path) -> list[str]:
-    """Repo-relative paths in the index (`git diff --cached`). Empty when git cannot be
-    asked, which degrades to the committed-evidence behaviour rather than to a false clean:
-    with no staged paths the pending leg simply attributes nothing."""
+class StagedIndexUnreadable(RuntimeError):
+    """git could not be asked what is staged. Raised rather than returned so no caller can
+    treat an unreadable index as an empty one and print a clean."""
+
+
+def _staged_paths(root: Path) -> list[str] | None:
+    """Repo-relative paths in the index (`git diff --cached`), or None when git could not be
+    asked at all.
+
+    THE TWO CASES ARE NOT THE SAME and must not share a return value. An empty list is git
+    ANSWERING that nothing is staged; None is git failing to answer. Both used to be `[]`, so
+    a lane that could not read the index printed the same clean line as a lane that read it
+    and found nothing - a false clean on the one signal this leg exists to provide. That is
+    the defect class the floor itself was built to catch, in the floor."""
     try:
         out = subprocess.run(
             ["git", "-C", str(root), "-c", "core.quotepath=false", "diff", "--cached",
              "--name-only"], capture_output=True, text=True, timeout=_GIT_TIMEOUT)
     except (OSError, subprocess.SubprocessError):
-        return []
+        return None
     if out.returncode != 0:
-        return []
+        return None
     return [ln.strip() for ln in out.stdout.splitlines() if ln.strip()]
 
 
@@ -300,6 +310,9 @@ def _pending_touched_by_id(root: Path) -> dict[str, set[str]]:
     acceptance criterion, or a declared footprint.
     """
     staged = _staged_paths(root)
+    if staged is None:
+        raise StagedIndexUnreadable(
+            "the staged index could not be read, so this commit's own attribution is unknown")
     if not staged:
         return {}
     files = {f for f in staged if Path(f).suffix in SOURCE_SUFFIXES}
@@ -457,7 +470,11 @@ def detect(repo_root: Path | str, include_staged: bool = False) -> dict:
     max_id = _max_judged_id(root)
     cutoff_forward = cutoff is not None and max_id > 0 and cutoff > max_id
     git_touched = _git_touched_by_id(root)   # ONE pass, not one `git log --grep` per unit
-    pending = _pending_touched_by_id(root) if include_staged else {}
+    staged_unreadable = False
+    try:
+        pending = _pending_touched_by_id(root) if include_staged else {}
+    except StagedIndexUnreadable:
+        pending, staged_unreadable = {}, True
     units: list[dict] = []
     for type_, shipped in SHIPPED_STATUS.items():
         vocab = sdlc_md.status_vocab(type_, root)
@@ -510,6 +527,7 @@ def detect(repo_root: Path | str, include_staged: bool = False) -> dict:
             # never "looked at and found none".
             "staged_evaluated": include_staged,
             "staged_new": sum(1 for u in units if u["staged_new"]),
+            "staged_unreadable": staged_unreadable,
             "waived": sum(1 for u in units if u["waived"]),
             "exempt": sum(1 for u in units if u["exempt"]),
             # Exempt units that WOULD violate but for the cutoff - kept visible so a grandfather
@@ -651,6 +669,11 @@ def _cmd_check_pending(result: dict) -> int:
     read past both.
     """
     s = result["summary"]
+    if result["summary"].get("staged_unreadable"):
+        print("engagement floor (pending commit): REFUSED - the staged index could not be "
+              "read, so what this commit attributes is unknown. This is not a clean: the lane "
+              "reports nothing rather than reporting no violations.")
+        return 1
     new = [u for u in result["units"] if u["staged_new"]]
     advisory = result["mode"] == "judgement"
     if not new:

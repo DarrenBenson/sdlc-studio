@@ -61,9 +61,29 @@ The adjacent risk the report flagged is what made this worth more than a flake f
 the run archive and the velocity record all join on the run id, so two runs sharing one is a data
 problem, not a test problem. That is the hole the allocator closes.
 
+### Repair round (independent review of RUN-01KY3MFX)
+
+The claim above - "unique BY CONSTRUCTION, not by luck" - was not yet true of the last
+candidate. After 16 clashes the mint returned `RUN-{new_ulid()[:12]}` **unchecked**, so driving
+both generators constant produced a duplicate: the fallback was exactly the luck the allocator
+exists to replace, and the only candidate the register never saw. Every candidate is now
+checked, and when even the extended suffix cannot produce a free id the mint RAISES rather than
+handing back a known duplicate - that is a broken generator, not an unlucky one, and returning
+a duplicate would merge two runs' records. Pinned by
+`test_run_state.test_the_extended_fallback_is_checked_against_taken_too` and
+`test_run_state.test_both_generators_constant_refuses_rather_than_returning_a_duplicate`.
+
+The review also found `taken.add((outgoing or {}).get("run_id"))` dead: `open_run` archives the
+outgoing run before minting, so mutating that line to `pass` killed nothing. It STAYS, and now
+says why in the code - the redundancy holds only while the archive write succeeds, and an
+archive that could not be written leaves the register without the run being replaced. It is
+pinned directly by `test_the_outgoing_run_is_excluded_even_when_the_archive_missed_it`, since
+no path through `open_run` can reach it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-21 | sdlc-studio | Filed |
 | 2026-07-22 | sdlc-studio | Fixed: collision-checked run-id mint, and the test asserts the property it is for |
+| 2026-07-22 | sdlc-studio | Repair round: the extended fallback is checked too and refuses rather than duplicating; the outgoing-run exclusion kept and pinned directly; 2 hand-applied mutants, both killed |

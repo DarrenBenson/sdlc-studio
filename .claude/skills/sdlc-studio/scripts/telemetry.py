@@ -165,21 +165,52 @@ def idle_hours(state: dict) -> float:
     return round(sum(g["seconds"] for g in idle_gaps(state)) / 3600.0, 3)
 
 
+def _idle_within(gaps: list[dict], start, end) -> float:
+    """Seconds of recorded idle that fall INSIDE `[start, end]` - the intersection, never the
+    whole gap.
+
+    THE DEDUCTION MAY ONLY REMOVE TIME THE MEASURED WINDOW ACTUALLY CONTAINED. Deducting a
+    gap's full length regardless of where it sat subtracted time the wall clock never held:
+    `sprint stop` opens a gap immediately BEFORE it closes the run, so the gap begins at
+    `ended_at` and closes entirely afterwards, and a run that worked two hours then waited
+    three reported ZERO hours worked - which `retro` publishes as points per elapsed-hour.
+    Clamping rather than refusing to record such a gap keeps the wait itself measured (it is
+    a real fact about the operator loop, reported as `recorded_idle_hours`) while keeping the
+    arithmetic true for every shape, including a gap that straddles either end.
+    """
+    total = 0.0
+    for gap in gaps:
+        gs, ge = _parse_iso(gap.get("from")), _parse_iso(gap.get("to"))
+        if gs is None or ge is None:
+            continue
+        lo, hi = max(gs, start), min(ge, end)
+        if hi > lo:
+            total += (hi - lo).total_seconds()
+    return total
+
+
 def elapsed_excluding_idle(started_at, ended_at, state: dict) -> dict:
-    """`{raw_hours, idle_hours, hours, gaps}` - the wall-clock a run was open, the idle it
-    recorded, and the difference. `hours` is None when either end is missing or the span is
-    not positive: an open run has no measured elapsed, and extending it to `now` would report
-    its own age as sprint time. The deduction is floored at 0 - a recorded idle longer than
-    the run is malformed data, and negative elapsed is not the honest reading of it."""
+    """`{raw_hours, idle_hours, recorded_idle_hours, hours, gaps}` - the wall-clock a run was
+    open, the idle DEDUCTED from it, the idle RECORDED in total, and the difference. `hours` is
+    None when either end is missing or the span is not positive: an open run has no measured
+    elapsed, and extending it to `now` would report its own age as sprint time.
+
+    `idle_hours` is the in-window idle, so `raw_hours - idle_hours == hours` always reads true;
+    `recorded_idle_hours` is every gap in full, so a wait outside the window is still visible
+    rather than dropped. The deduction is floored at 0 - a recorded idle longer than the run is
+    malformed data, and negative elapsed is not the honest reading of it."""
     start, end = _parse_iso(started_at), _parse_iso(ended_at)
     gaps = idle_gaps(state)
-    idle = round(sum(g["seconds"] for g in gaps) / 3600.0, 3)
+    recorded = round(sum(g["seconds"] for g in gaps) / 3600.0, 3)
     if start is None or end is None:
-        return {"raw_hours": None, "idle_hours": idle, "hours": None, "gaps": gaps}
+        return {"raw_hours": None, "idle_hours": 0.0, "recorded_idle_hours": recorded,
+                "hours": None, "gaps": gaps}
+    idle = round(_idle_within(gaps, start, end) / 3600.0, 3)
     raw = round((end - start).total_seconds() / 3600.0, 3)
     if raw <= 0:
-        return {"raw_hours": raw, "idle_hours": idle, "hours": None, "gaps": gaps}
-    return {"raw_hours": raw, "idle_hours": idle,
+        return {"raw_hours": raw, "idle_hours": idle, "recorded_idle_hours": recorded,
+                "hours": None, "gaps": gaps}
+    return {"raw_hours": raw, "idle_hours": idle, "recorded_idle_hours": recorded,
             "hours": round(max(0.0, raw - idle), 3), "gaps": gaps}
 
 

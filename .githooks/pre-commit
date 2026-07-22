@@ -97,10 +97,22 @@ def parse(path):
     raw = data.get("paths")
     if isinstance(raw, str):
         raw = [raw]
-    claimed = ([str(x).strip() for x in raw if str(x).strip()]
-               if isinstance(raw, list) else [])
     # A record may name the command that clears it; that beats any guess made here.
     clear = str(data.get("clear_with") or "").strip()
+    if not isinstance(raw, list):
+        return owner, opened, [EVERYTHING], clear
+    claimed = []
+    for x in raw:
+        # A claim that is not a string is a claim this reader cannot interpret. It used to be
+        # str()-ed - so [{"path": "tools/thing.py"}] became "{'path': 'tools/thing.py'}", which
+        # matched nothing, and the commit rewriting that very file LANDED. Objects, nested
+        # lists and numbers all failed OPEN that way. An uninterpretable claim now claims the
+        # whole tree: the record says a writer is active, and the one direction this may never
+        # be wrong in is "harmless".
+        if not isinstance(x, str):
+            return owner, opened, [EVERYTHING], clear
+        if x.strip():
+            claimed.append(x.strip())
     # A window that does not say what it may rewrite has not said it may rewrite nothing.
     return owner, opened, (claimed or [EVERYTHING]), clear
 
@@ -110,13 +122,23 @@ def claims(pattern, staged):
     under, or a glob it matches. Two clauses, not four: fnmatch already answers the exact
     case (a wildcard-free pattern matches only itself), the whole-tree case (EVERYTHING is
     just `*`), and - since its `*` crosses `/` - a `pat + "/*"` spelling too. Each of those
-    three was written here first and deleted after a mutant removing it survived."""
+    three was written here first and deleted after a mutant removing it survived.
+
+    Uninterpretable claims fail SAFE. `git diff --cached --name-only` is always repo-relative,
+    so an ABSOLUTE claim can never equal a staged path: `window open --paths <abs>/tools/x.py`
+    announced a rewrite and then matched nothing, and the commit rewriting that file landed.
+    Windows are now normalised to repo-relative at open time; a record already on disk with an
+    absolute claim is read here as claiming everything."""
+    if not isinstance(pattern, str):
+        return True
     pat = pattern.strip()
     if pat.startswith("./"):
         pat = pat[2:]
     pat = pat.rstrip("/")
     if pat in ("", "."):
         return True   # a claim on the repo root ("/", ".") is a claim on everything
+    if pat.startswith("/"):
+        return True   # absolute: not comparable with a repo-relative staged path
     if staged.startswith(pat + "/"):   # a directory claim covers everything beneath it
         return True
     return fnmatch.fnmatch(staged, pat)

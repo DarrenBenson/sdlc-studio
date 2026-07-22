@@ -1,6 +1,6 @@
 # US0307: A mutation or review window is declared on disk and skill scripts refuse or warn while it is open
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0388
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -64,13 +64,16 @@ readers inside the skill.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::WindowDeclarationTests::test_a_window_left_by_a_killed_run_is_still_reported_open
 - **Verified:** yes (2026-07-22)
 
-### AC3: the gate reports an open window as a failing check, naming owner and paths
+### AC3: the gate reports an open window, and FAILS when it claims a staged path
 
 - **Given** a window open over named paths
 - **When** `gate.py` runs
-- **Then** the window check fails and its message names the owner and the claimed paths,
-  so an author running the gate is told before committing rather than after
+- **Then** the window check reports the open window with its owner and the claimed paths, so
+  an author running the gate is told before committing rather than after; it FAILS when the
+  window claims a path this commit has staged, and passes when it does not, so a reviewer
+  holding a window scopes staging rather than freezing the tree
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::WindowCheckTests::test_an_open_window_fails_the_gate_naming_owner_and_paths
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::WindowLaneIsPathScopedTests
 - **Verified:** yes (2026-07-22)
 
 ### AC4: with no window open, the gate result is unchanged
@@ -81,6 +84,38 @@ readers inside the skill.
   cannot be disabled for being a nuisance on the common path
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::WindowCheckTests::test_no_window_leaves_the_gate_result_unchanged
 - **Verified:** yes (2026-07-22)
+
+## The record contract, as READ by this module
+
+The published contract (see US0308) names two spellings, and this module now honours both:
+
+- `sdlc-studio/.local/*window*.json`, or `sdlc-studio/.local/windows/*.json`
+- `mutation.window_records` is the ONE discovery. `read_window` / `read_windows` /
+  `open_window` / `close_window` and the gate's `window` lane all go through it, and
+  `close_window` unlinks the record it actually read rather than a fixed filename.
+- Claimed paths are normalised to repo-relative at OPEN time (`window_claim`), because the
+  readers compare them against repo-relative `git diff --cached --name-only`. A path outside
+  the root is left verbatim, where both readers treat it as uninterpretable and so claiming
+  the whole tree.
+
+## Repair round (independent review of RUN-01KY3MFX)
+
+Three findings, all reproduced first and all now pinned:
+
+1. **The gate lane was PATH-BLIND and blocking**, so while any window was open no commit could
+   land whatever it staged - contradicting the hook, which in the same run printed "No staged
+   path is claimed by it, so this commit proceeds". The lane now judges the staged paths. AC3
+   above is rewritten to what the code does; the contradiction is pinned by
+   `test_gate.WindowLaneIsPathScopedTests` and by
+   `test_precommit_window_guard.WindowGuardTests.test_the_gate_lane_does_not_contradict_the_guard_in_the_same_run`.
+2. **`read_window` honoured one spelling of the two**, so a record at `.local/windows/*.json`
+   was reported "no rewrite window is open" while blocking commits, and `window open` let a
+   second writer in. Fixed by `window_records`; pinned by
+   `test_mutation.WindowRecordContractTests` and by the cross-reader agreement tests in
+   `test_precommit_window_guard.OneRecordContractTests`.
+3. **`open_window` stored claims verbatim**, so any absolute `--root` (which is what
+   `select_files` produces) wrote claims no reader could match: the window announced a rewrite
+   and the commit rewriting that exact file landed. Fixed by `window_claim`.
 
 ## Open Questions
 
@@ -100,3 +135,4 @@ readers inside the skill.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-22 | sdlc-studio | Repair round: gate lane made path-scoped, one reader over both record spellings, claims normalised at open time; 15 hand-applied mutants, all killed |

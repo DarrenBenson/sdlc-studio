@@ -1,6 +1,6 @@
 # US0306: Sweep the sibling filers for the same hazard
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0384
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

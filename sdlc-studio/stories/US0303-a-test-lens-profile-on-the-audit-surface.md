@@ -1,6 +1,6 @@
 # US0303: A test lens profile on the audit surface, attacking claims code and tests assert about themselves
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0382
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

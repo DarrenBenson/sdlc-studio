@@ -1191,6 +1191,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Repairs from RUN-01KY3MFX's closing review (three independent instances, all REJECT).** A
+  velocity row's estimator class is now compared by the PARAMETERS it takes rather than the
+  VALUES they were measured at, so re-measuring the rate no longer reclassifies history and empty
+  the whole-sprint excess. A refused velocity record carries its reason on every rate source, not
+  only the seed. The sprint report joins the mutation series to the run being reported, so a
+  sprint that ran none is named rather than given the previous sprint's cost. The whole-sprint
+  excess now delegates coverage to the predicate the record already obeys, so a per-unit build sum
+  is no longer published under a whole-sprint heading. The idle deduction is clamped to its
+  intersection with the measured window, because a wait recorded after a run closed was being
+  subtracted from a span that never contained it. The gate's window lane judges STAGED PATHS
+  rather than the record's existence, so a declared window no longer freezes every commit while
+  the hook says it merely scopes staging. Window records are discovered through one reader over
+  both spellings; a claim the matcher cannot interpret, or an absolute one, now claims the whole
+  tree instead of nothing. An `equivalent` mutant no longer counts as mutation coverage - it is
+  evidence about the mutant, not about the tests. An unreadable staged index refuses instead of
+  printing a clean.
+
 - **`quality.epic_requires_test_spec` is now read by the code that documents it (BG0250).** Four
   documentation surfaces described it as the caller's opt-out and no Python read it, so a project
   setting it in good faith got no effect and no warning. The key is read, the default is

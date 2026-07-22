@@ -1,6 +1,6 @@
 # US0294: The hygiene check reports a missing instructions file as seedable rather than as an error
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0352
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

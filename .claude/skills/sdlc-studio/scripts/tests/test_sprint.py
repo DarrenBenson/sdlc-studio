@@ -2132,15 +2132,21 @@ _VELOCITY_HEADER = (
 
 def _velocity(root: Path, rows: list[dict]) -> Path:
     """Write a VELOCITY.md holding `rows` - the record the tokens-per-point rate is MANDATED
-    to be re-measured from. Each row: id/points/actual/model/estimate/constants."""
+    to be re-measured from. Each row: id/points/actual/model/estimate/constants.
+
+    `measured` is a KEY, not a constant. It used to be hardcoded to 0 on every fixture row,
+    which pinned every test to the sprint-level shape and made the per-unit-sum shape - the
+    one whose Actual measures the BUILD and not the whole sprint - unreachable from the
+    suite (L-0174)."""
     p = root / "sdlc-studio" / "retros" / "VELOCITY.md"
     p.parent.mkdir(parents=True, exist_ok=True)
     body = ""
     for r in rows:
         units = r.get("units", 3)
-        body += ("| {id} | 2026-01-01 | {units} | 0 | {units} | {points} | {estimate} | "
-                 "{actual} | {ratio} | - | 0 | - | {constants} | - | {model} | - | harness |\n"
-                 ).format(id=r["id"], units=units, points=r.get("points", "-"),
+        body += ("| {id} | 2026-01-01 | {units} | {measured} | {units} | {points} | {estimate} "
+                 "| {actual} | {ratio} | - | 0 | - | {constants} | - | {model} | - | harness |\n"
+                 ).format(id=r["id"], units=units, measured=r.get("measured", 0),
+                          points=r.get("points", "-"),
                           estimate=r.get("estimate", 0), actual=r.get("actual", "-"),
                           ratio=r.get("ratio", "-"), constants=r.get("constants", "-"),
                           model=r.get("model", "-"))
@@ -2344,6 +2350,205 @@ class ForecastScopeTests(unittest.TestCase):
             rc, out, err = self._plan(root)
             self.assertEqual(rc, 0)
             self.assertIn("UNMEASURED", out)
+
+    def test_the_caveat_that_the_excess_is_not_proving_cost_is_printed(self) -> None:
+        """The caveat is the honesty of the number, not decoration around it: the excess is
+        proving PLUS whatever the build was under-estimated by, and the record carries no split
+        between them. Deleting the line left 289 tests green, so nothing pinned the one
+        sentence that stops the figure being read as a measured proving multiplier."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            seed = sp.POINTS_RATE_SEED
+            _velocity(root, [{"id": "RETRO0065", "estimate": 400_000, "actual": 2_634_055,
+                              "constants": f"TOKENS_PER_POINT={seed}"}])
+            _pointed_cr(root, 1, 3)
+            rc, out, err = self._plan(root)
+            self.assertEqual(rc, 0)
+            self.assertIn("NOT attributed to proving alone", out)
+            self.assertIn("under-estimate of the build", out)
+            # ...and it sits with the excess, not in some other block
+            lines = out.splitlines()
+            at = next(i for i, ln in enumerate(lines) if "whole-sprint cost against" in ln)
+            self.assertIn("NOT attributed to proving alone", lines[at + 1])
+
+    def test_a_row_the_estimator_in_force_did_not_forecast_is_not_an_observation(self) -> None:
+        """The in-sample filter is load-bearing and nothing pinned it: deleting it left 289
+        tests green while widening the published span on this project's own record from
+        1.63x-6.59x over 4 sprints to 0.3x-6.59x over 8. A row forecast by the RETIRED
+        base/tpc estimator judges that estimator, so its multiple says nothing about the
+        forecast this plan is about to quote."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            seed = sp.POINTS_RATE_SEED
+            _velocity(root, [{"id": "RETRO0026", "estimate": 348_400, "actual": 902_503,
+                              "constants": "base=50000 tpc=600"},
+                             {"id": "RETRO0065", "estimate": 400_000, "actual": 2_634_055,
+                              "constants": f"TOKENS_PER_POINT={seed}"}])
+            self.assertEqual(sp.sample_class("RETRO0026",
+                                             {"BASE_TOKEN_BUDGET": 50_000,
+                                              "TOKENS_PER_COGNITIVE": 600}, root),
+                             sp.SAMPLE_STALE)
+            term = sp.whole_sprint_excess(root)
+            self.assertEqual(term["sprints"], ["RETRO0065"])
+            self.assertEqual(term["low"], term["high"])
+            self.assertNotIn("RETRO0026", [o["id"] for o in term["observations"]])
+
+    def test_a_per_unit_build_sum_is_not_a_whole_sprint_actual(self) -> None:
+        """The span is labelled whole-sprint, so only a whole-sprint Actual may enter it. A row
+        whose every unit carries per-unit telemetry (Measured == Units) holds the sum of the
+        units' BUILD cost - orchestration, review and repair are not in it - and dividing that
+        by a build forecast measures nothing about the whole sprint. This repo published
+        RETRO0028 (Units 3 / Measured 3) at 2.26x inside exactly that span."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            seed = sp.POINTS_RATE_SEED
+            _velocity(root, [{"id": "RETRO0028", "units": 3, "measured": 3, "points": 10,
+                              "estimate": 250_000, "actual": 564_066,
+                              "constants": f"TOKENS_PER_POINT={seed}"},
+                             {"id": "RETRO0065", "units": 7, "measured": 0, "points": 18,
+                              "estimate": 400_000, "actual": 2_634_055,
+                              "constants": f"TOKENS_PER_POINT={seed}"}])
+            term = sp.whole_sprint_excess(root)
+            self.assertEqual(term["sprints"], ["RETRO0065"],
+                             "a per-unit build sum is excluded, not published as whole-sprint")
+            self.assertAlmostEqual(term["low"], round(2_634_055 / 400_000, 2))
+            # the negative control: the same row, measured as a sprint-level total, IS one
+            _velocity(root, [{"id": "RETRO0028", "units": 3, "measured": 0, "points": 10,
+                              "estimate": 250_000, "actual": 564_066,
+                              "constants": f"TOKENS_PER_POINT={seed}"}])
+            self.assertEqual(sp.whole_sprint_excess(root)["sprints"], ["RETRO0028"])
+
+
+class RowClassSurvivesRemeasurementTests(unittest.TestCase):
+    """MAJOR, RUN-01KY3MFX review: US0290 made the tokens-per-point rate RE-MEASURED from
+    VELOCITY.md on every plan, while `sample_class` still classified each recorded row by
+    comparing its stamped constants against that live rate. So the moment a later sprint moved
+    the rate, every historical row read `stale-constants` - the measured whole-sprint excess
+    emptied to UNMEASURED and the forecast band silently reverted to its default, without one
+    recorded fact having changed.
+
+    A row's class is a fact about the plan that WROTE it. Nothing measured afterwards can
+    reach back and change what a past plan forecast with."""
+
+    #: This repo's own four rows carrying both a forecast and a sprint actual. Three record no
+    #: model, which is what refuses the record today and pins the rate at the seed; CR0373 will
+    #: stamp them, and that stamp alone is the whole trigger.
+    ROWS = ((28, 10, 250_000, 564_066), (60, 30, 750_000, 2_390_624),
+            (61, 31, 775_000, 1_265_392), (65, 18, 400_000, 2_634_055))
+
+    def _record(self, root: Path, *, stamped: bool) -> None:
+        seed = _load().POINTS_RATE_SEED
+        _velocity(root, [{"id": f"RETRO00{n}", "points": pts, "estimate": est, "actual": act,
+                          "constants": f"TOKENS_PER_POINT={seed}",
+                          "model": "claude-opus-4-8" if (stamped or n == 28) else "-"}
+                         for n, pts, est, act in self.ROWS])
+
+    def test_stamping_the_model_does_not_empty_the_measured_excess(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._record(root, stamped=False)
+            before_rate, before = sp.tokens_per_point(root), sp.whole_sprint_excess(root)
+            self.assertEqual(before_rate["source"], "seed")   # refused across two models
+            self.assertTrue(before["measured"])
+            self.assertEqual(before["low"], 1.63)
+            self.assertEqual(before["high"], 6.59)
+
+            self._record(root, stamped=True)                  # the CR0373 stamp, and nothing else
+            after_rate, after = sp.tokens_per_point(root), sp.whole_sprint_excess(root)
+            self.assertEqual(after_rate["source"], "velocity-record")
+            self.assertEqual(after_rate["rate"], 77_013)      # the rate DID move, as it should
+            self.assertTrue(after["measured"],
+                            "a re-measurement must not retire the evidence that justified it")
+            self.assertEqual(after["sprints"], before["sprints"])
+            self.assertEqual((after["low"], after["high"]), (before["low"], before["high"]))
+
+    def test_the_calibration_band_does_not_revert_when_the_rate_moves(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _velocity(root, [{"id": "RETRO0028", "points": 10, "estimate": 250_000,
+                              "actual": 564_066, "ratio": "0.44x",
+                              "constants": f"TOKENS_PER_POINT={sp.POINTS_RATE_SEED}",
+                              "model": "claude-opus-4-8"}])
+            cal = sp.calibration(root)
+            self.assertEqual(cal["sprints"], 1)
+            self.assertEqual(cal["stale_constants"], 0)
+            self.assertGreater(cal["high"], 1.0 + sp.FORECAST_BAND)   # the row WIDENED the band
+            self.assertEqual(sp.tokens_per_point(root)["source"], "velocity-record",
+                             "the premise: this row's own model now sets the live rate")
+
+    def test_a_row_is_classified_against_the_estimator_that_forecast_it(self) -> None:
+        """Directly, without a record: the live rate is the seed here, and a row forecast at a
+        DIFFERENT calibration of the same estimator is still evidence about that estimator.
+        Only a row carrying the retired estimator's parameters is stale."""
+        sp = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.assertEqual(sp.tokens_per_point(root)["rate"], sp.POINTS_RATE_SEED)
+            self.assertEqual(sp.sample_class("RETRO0099", {"TOKENS_PER_POINT": 999_999}, root),
+                             sp.SAMPLE_OUT)
+            self.assertEqual(sp.sample_class("RETRO0099", {"BASE_TOKEN_BUDGET": 50_000,
+                                                           "TOKENS_PER_COGNITIVE": 600}, root),
+                             sp.SAMPLE_STALE)
+
+
+class RefusalTravelsWithEverySourceTests(unittest.TestCase):
+    """MAJOR, RUN-01KY3MFX review: `tokens_per_point` promises that neither source is ever
+    silently substituted for the other, and BG0248 AC2 claims the refusal reason is carried to
+    the plan output. The per-unit evidence branch carried no `refused` key at all, so a
+    REFUSED velocity record was discarded in silence whenever the evidence log had enough
+    units. Every existing refusal test left that log EMPTY, so all four landed on the seed and
+    the branch was never reached (L-0174)."""
+
+    def _log(self, root: Path, units: int, points: int, tokens: int) -> None:
+        import telemetry
+        telemetry.record_forecasts(root, [{"id": f"BG{i:04d}", "points": points,
+                                           "tokens": points * 25_000}
+                                          for i in range(1, units + 1)])
+        for i in range(1, units + 1):
+            telemetry.record(root, {"id": f"BG{i:04d}", "tokens": tokens,
+                                    "model": "claude-opus-4-8"})
+
+    def _refusing_record(self, root: Path) -> None:
+        _velocity(root, [{"id": "RETRO0001", "points": 30, "actual": 2_390_624,
+                          "model": "claude-opus-4-8"},
+                         {"id": "RETRO0002", "points": 31, "actual": 1_265_392,
+                          "model": "claude-haiku-4-5"}])
+
+    def test_the_evidence_log_answer_still_carries_the_records_refusal(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._refusing_record(root)
+            self._log(root, sp.RATE_MIN_UNITS + 1, 3, 120_000)
+            rate = sp.tokens_per_point(root)
+            self.assertEqual(rate["source"], "measured", "the premise: the branch is reached")
+            self.assertIn("REFUSED", rate["refused"] or "",
+                          "the mandated source was set aside; the reason travels with the answer")
+            self.assertIn("claude-haiku-4-5", rate["refused"])
+
+    def test_the_refusal_reaches_the_plan_whatever_source_stood_instead(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._refusing_record(root)
+            self._log(root, sp.RATE_MIN_UNITS + 1, 3, 120_000)
+            _pointed_cr(root, 1, 3)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = sp.main(["plan", "--crs", "Proposed", "--root", str(root),
+                              "--no-fetch", "--skip-personas"])
+            self.assertEqual(rc, 0)
+            blob = out.getvalue()
+            self.assertIn("velocity record yields no usable rate", blob)
+            self.assertIn("claude-haiku-4-5", blob)
+            self.assertNotIn("so the seed stands instead", blob,
+                             "the seed did NOT stand: the evidence log did, and it says so")
+            self.assertIn("per-unit evidence log stands instead", blob)
 
 
 class BatchHistoryTests(unittest.TestCase):
@@ -4347,6 +4552,112 @@ class StopRecordTests(unittest.TestCase):
         state = {"idle_gaps": [{"from": "2026-07-22T01:00:00Z", "to": None}]}
         self.assertEqual(telemetry.idle_hours(state), 0.0)
         self.assertEqual(telemetry.idle_gaps(state), [])
+
+    def test_a_wait_that_begins_when_the_run_stops_deducts_nothing(self) -> None:
+        """MAJOR, RUN-01KY3MFX review. Driven through the REAL `sprint stop` flow, because the
+        AC's verifier hand-wrote a gap INSIDE the window and the system cannot produce one:
+        `cmd_stop` opens the gap immediately BEFORE `close_run`, so the gap always begins at
+        `ended_at` and closes entirely after the measured window. The deduction then removed
+        time the wall clock never contained - two hours of work and a three-hour wait after
+        the stop reported ZERO hours, and `retro` publishes that as points per elapsed-hour."""
+        sys.path.insert(0, str(SCRIPT.parent))
+        import telemetry
+        from lib import sdlc_md as md
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, batch=["US0101", "US0102"],
+                         started_at="2026-07-22T00:00:00Z", ended_at=None, outcome="running")
+            _batch_story(root, 101)
+            _batch_story(root, 102)
+            mod = _load()
+
+            def run(argv, at):
+                with unittest.mock.patch.object(md, "now_iso8601", return_value=at), \
+                        contextlib.redirect_stdout(io.StringIO()), \
+                        contextlib.redirect_stderr(io.StringIO()):
+                    return mod.main([*argv, "--root", str(root)])
+
+            self.assertEqual(run(["decision", "defer", "--unit", "US0101", "--question", "q?",
+                                  "--option", "a|x", "--option", "b|y"],
+                                 "2026-07-22T02:00:00Z"), 0)
+            # two hours of work, then the operator is asked and the run stops
+            self.assertEqual(run(["stop", "--force", "--reason", "waiting"],
+                                 "2026-07-22T02:00:00Z"), 0)
+            # ...and answers three hours later, which closes the gap
+            self.assertEqual(run(["decision", "resolve", "--index", "1", "--choice", "a"],
+                                 "2026-07-22T05:00:00Z"), 0)
+
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertEqual(state["ended_at"], "2026-07-22T02:00:00Z")
+            gap = state["idle_gaps"][0]                 # the wait IS recorded, in full
+            self.assertEqual((gap["from"], gap["to"]),
+                             ("2026-07-22T02:00:00Z", "2026-07-22T05:00:00Z"))
+            self.assertEqual(telemetry.idle_hours(state), 3.0)
+
+            el = mod.run_elapsed(root)
+            self.assertEqual(el["raw_hours"], 2.0)
+            self.assertEqual(el["hours"], 2.0,
+                             "a sprint that worked two hours worked two hours")
+            self.assertEqual(el["idle_hours"], 0.0,
+                             "the deduction may only remove time the window CONTAINED")
+            self.assertEqual(el["recorded_idle_hours"], 3.0,
+                             "and the wait itself is still reported, not discarded")
+
+    def test_only_the_part_of_a_wait_inside_the_run_is_deducted(self) -> None:
+        """The general rule, stated on a gap that straddles the end: a run open 00:00-02:00
+        that waited 01:30-05:00 waited half an hour of its own wall-clock, not three and a
+        half. Clamping to the intersection is what makes the arithmetic true for every shape,
+        rather than only for the one the fixture happened to hand-write."""
+        sys.path.insert(0, str(SCRIPT.parent))
+        import telemetry
+        state = {"idle_gaps": [{"from": "2026-07-22T01:30:00Z", "to": "2026-07-22T05:00:00Z"}]}
+        el = telemetry.elapsed_excluding_idle("2026-07-22T00:00:00Z", "2026-07-22T02:00:00Z",
+                                              state)
+        self.assertEqual(el["raw_hours"], 2.0)
+        self.assertEqual(el["idle_hours"], 0.5)
+        self.assertEqual(el["recorded_idle_hours"], 3.5)
+        self.assertEqual(el["hours"], 1.5)
+        # a gap wholly BEFORE the run is outside it too
+        before = {"idle_gaps": [{"from": "2026-07-21T01:00:00Z", "to": "2026-07-21T04:00:00Z"}]}
+        self.assertEqual(
+            telemetry.elapsed_excluding_idle("2026-07-22T00:00:00Z", "2026-07-22T02:00:00Z",
+                                             before)["hours"], 2.0)
+
+
+class ReachableEndStateBoundaryTests(unittest.TestCase):
+    """MINOR, RUN-01KY3MFX review: `reachable_end_state` and the conformance gate both compare
+    a unit's id number against `review.two_role_after` with a STRICT `>`, and the docstring
+    leans on the two agreeing. Mutating either comparison to `>=` left all 289 tests green,
+    because no test ever put a unit ON the cutoff. The boundary unit is the only one the two
+    can disagree about."""
+
+    def _batch(self, root: Path, num: int) -> list[dict]:
+        _batch_story(root, num)
+        return [{"id": f"US{num:04d}",
+                 "path": str(root / "sdlc-studio" / "stories" / f"US{num:04d}-x.md")}]
+
+    def _cutoff(self, root: Path, value: int) -> None:
+        p = root / "sdlc-studio" / ".config.yaml"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(f"review:\n  two_role_after: US{value:04d}\n", encoding="utf-8")
+
+    def test_the_unit_ON_the_cutoff_is_not_past_it(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cutoff(root, 192)
+            res = _load().reachable_end_state(root, self._batch(root, 192))
+            self.assertEqual(res["cutoff"], 192)
+            self.assertEqual(res["state"], "Done")
+            self.assertEqual(res["units"], [])
+
+    def test_the_next_unit_after_the_cutoff_is_capped(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cutoff(root, 192)
+            res = _load().reachable_end_state(root, self._batch(root, 193))
+            self.assertEqual(res["cutoff"], 192)
+            self.assertEqual(res["state"], "Review")
+            self.assertEqual(res["units"], ["US0193"])
 
 
 class ApplySignoffTailTests(unittest.TestCase):

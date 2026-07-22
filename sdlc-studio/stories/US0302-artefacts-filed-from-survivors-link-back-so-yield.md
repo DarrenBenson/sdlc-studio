@@ -1,6 +1,6 @@
 # US0302: Artefacts filed from survivors link back, so yield is attributable to a run
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0379
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -58,6 +58,32 @@ mean something.
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_mutation.py -k EquivalentMutantExclusionTests
 - **Verified:** yes (2026-07-22)
 
+### AC4: an equivalent is excluded from COVERAGE too, not only from yield
+
+- **Given** a file whose only mutation evidence is a registered `equivalent`
+- **When** the gate's mutation-coverage lane reads it
+- **Then** the file is NOT covered and the lane's finding count does not drop, because
+  `equivalent` asserts that no test could have killed the mutant and so proves nothing about
+  the tests; the exclusion is named in the line rather than reading as "nobody registered
+  anything"
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_gate.py -k EquivalentIsNotCoverageTests
+- **Verified:** yes (2026-07-22)
+
+## Repair round (independent review of RUN-01KY3MFX)
+
+One finding, reproduced first and now pinned. `equivalent` joined `REGISTRABLE_VERDICTS` and
+`--test` became optional for it - correctly, since there is no test to name. But
+`gate._mutation_coverage` counted ANY registered entry on matching content as coverage, so
+registering one equivalent with no `--test` at all took a file from `no evidence` to `covered`
+and dropped the lane's count from 1 to 0. That is the silent decrement `register_mutant`'s own
+docstring promises to prevent, produced by the one verdict that asserts no test could have
+killed the mutant.
+
+The fix is AC4 above: `mutation.COVERING_VERDICTS` names what counts as evidence about the
+TESTS (`killed`, `survived`), the lane reads the entry's own summary rather than its mere
+existence, and an equivalent-only file is reported as `no evidence` with an `EQUIVALENT-ONLY`
+clause naming why - so the builder is not told to redo work they already did.
+
 ## Open Questions
 
 - Nothing in `mutation.py` records mutant equivalence today: the verdict vocabulary is
@@ -74,3 +100,4 @@ mean something.
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-22 | sdlc-studio | Groomed: user story and acceptance criteria authored |
+| 2026-07-22 | sdlc-studio | Repair round: an equivalent registration no longer counts as mutation coverage (AC4); 2 hand-applied mutants, both killed |

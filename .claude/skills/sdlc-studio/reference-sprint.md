@@ -454,11 +454,11 @@ surviving mutant is - would have been committed under a paperwork commit message
 
 **The enforcement path is the declared window, not this prose.** Any process rewriting files in
 place declares one (`mutation.py window open --owner <who> --paths <...>`, cleared with
-`mutation.py window close --owner <who>`); the commit gate reports an open window as a failing
-check naming its owner and the paths it claims, and the pre-commit hook refuses a staged path
-that window claims. A reviewer editing by hand opens one explicitly - the guard is not armed as
-a side effect of running `mutation.py`, and the incident above had no mutation run in flight at
-all. During a review, stage named paths; never `git add -A`. See [reference-review.md](reference-review.md).
+`mutation.py window close --owner <who>`); the commit gate reports any open window, naming its
+owner and the paths it claims, and gate and pre-commit hook alike REFUSE a staged path that
+window claims - it scopes staging, it does not freeze the tree. A reviewer editing by hand opens
+one explicitly; it is never armed as a side effect of running `mutation.py`, and the incident had
+none in flight. Stage named paths; never `git add -A`. See [reference-review.md](reference-review.md).
 
 ## Guardrails
 

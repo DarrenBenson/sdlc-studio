@@ -264,6 +264,48 @@ class ARunIdIsUniqueByConstructionNotByLuck(unittest.TestCase):
         self.assertEqual(len(ids), 5)
         self.assertTrue(all(i.startswith("RUN-") for i in ids))
 
+    # -- the fallback, which was the one candidate nobody checked ---------------------
+    def test_the_extended_fallback_is_checked_against_taken_too(self) -> None:
+        """The Resolution claims "unique BY CONSTRUCTION, not by luck". It was luck: after 16
+        clashes the mint returned `RUN-{new_ulid()[:12]}` with no check at all, so driving BOTH
+        generators constant produced a duplicate. Found by the independent review of
+        RUN-01KY3MFX."""
+        from lib import sdlc_md
+        with mock.patch.object(sdlc_md, "short_ulid", return_value="AAAA1111"), \
+                mock.patch.object(sdlc_md, "new_ulid",
+                                  side_effect=["BBBB2222CCCC"] * 1 + ["DDDD3333EEEE"] * 40):
+            first, second = self._next_run(), self._next_run()
+        self.assertEqual(first, "RUN-AAAA1111")
+        self.assertEqual(second, "RUN-BBBB2222CCCC")
+        self.assertNotEqual(second, first)
+
+    def test_both_generators_constant_refuses_rather_than_returning_a_duplicate(self) -> None:
+        """When even the extended suffix cannot produce a free id, that is a broken generator,
+        not an unlucky one. Handing back a known duplicate would merge two runs' telemetry,
+        archive and velocity records - the data problem this allocator exists to prevent - so it
+        RAISES and names why."""
+        from lib import sdlc_md
+        # both generators pinned to the SAME value, so the extended suffix is no escape either
+        with mock.patch.object(sdlc_md, "short_ulid", return_value="AAAA1111ZZZZ"), \
+                mock.patch.object(sdlc_md, "new_ulid", return_value="AAAA1111ZZZZ"):
+            self.assertEqual(self._next_run(), "RUN-AAAA1111ZZZZ")
+            with self.assertRaises(RuntimeError) as ctx:
+                self._next_run()
+        self.assertIn("duplicate", str(ctx.exception))
+
+    def test_the_outgoing_run_is_excluded_even_when_the_archive_missed_it(self) -> None:
+        """`open_run` archives the outgoing run before minting, so passing it in is usually
+        redundant - and a mutant replacing that line with `pass` killed nothing. It is kept for
+        the case the redundancy does not cover: an archive write that did not happen (a
+        read-only or full `.local`) leaves the register without the run being replaced, and this
+        is then the only thing between the new run and its predecessor's identity. Pinned
+        directly, since no path through `open_run` can reach it."""
+        from lib import sdlc_md
+        with mock.patch.object(sdlc_md, "short_ulid", return_value="AAAA1111"):
+            minted = run_state._mint_run_id(str(self.root), {"run_id": "RUN-AAAA1111"})
+        self.assertNotEqual(minted, "RUN-AAAA1111",
+                            "the outgoing run's identity was handed to its successor")
+
 
 class SessionTokenReaderTests(unittest.TestCase):
     """`session_tokens` is the ONE meter reader, shared by the baseline stamp and the close.

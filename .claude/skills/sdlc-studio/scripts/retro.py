@@ -1159,15 +1159,18 @@ TRANSCRIPTS_ENV = run_state.TRANSCRIPTS_ENV
 
 #: The CURRENT session's harness-tracked token total. The ONE reader, shared with the
 #: baseline `open_run` stamps - see `run_state.session_tokens`. It is a per-SESSION total,
-#: which is why the close does not record it directly: `run_attributed_tokens` below turns
-#: it into this run's own spend.
+#: which is why the close does not record it directly: `run_attributed_tokens` below narrows
+#: it to a LOWER BOUND on what this run cost. Never to what the run actually spent: the
+#: transcript records no subagent usage at all, so delegated work is missing from the figure.
 harness_tokens = run_state.session_tokens
 
 
 def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
-    """The tokens the open run spent, for the retro that is being recorded - or a stated
-    reason there is no such number. Same shape as `harness_tokens`: {"tokens", "source",
-    "basis"} or {"tokens": None, "reason"}.
+    """The tokens the open run is known to have spent AT LEAST, for the retro that is being
+    recorded - or a stated reason there is no such number. Never the run's cost: the session
+    transcript records no subagent usage, so any delegated work nobody supplied a total for is
+    absent from it, and the figure bounds the run from below. Same shape as `harness_tokens`:
+    {"tokens", "source", "basis"} or {"tokens": None, "reason"}.
 
     `retro_id` is REQUIRED, and the units are read from that retro, because the delta is only
     this retro's spend if the open run is the run that delivered it. Reading the open run and
@@ -1696,7 +1699,14 @@ def record_velocity(root, res: dict) -> Path:
            # units: a sprint that measured nothing rated nothing, so that sum was over an empty
            # set and published 0 as a prediction. Falsy is an absence here, exactly as it is in
            # the Actual cell below, and the preservation rule is the same.
-           "estimate": b.get("plan_estimate") or b.get("estimate") or None,
+           #
+           # ONE limb, deliberately. A fallback to `b["estimate"]` - the rated-unit sum - read
+           # as a live alternative and was dead code: the rated units are a subset of the
+           # forecast ones and no estimate is negative, so `estimate <= plan_estimate` always,
+           # and `plan_estimate` is absent only when NO unit was forecast, which makes the
+           # rated sum 0 too. Restoring that limb would restore the exact 0-as-a-prediction
+           # this column was fixed to stop publishing.
+           "estimate": b.get("plan_estimate") or None,
            "actual_tokens": (b["actual_tokens"] if res["n_measured"]
                              else (b.get("sprint_actual_tokens") or b["actual_tokens"])),
            "ratio": b["ratio"], "wall_time_s": b["wall_time_s"],

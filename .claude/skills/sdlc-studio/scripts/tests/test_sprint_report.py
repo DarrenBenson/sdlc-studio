@@ -223,12 +223,27 @@ class MutationCostTests(ReportBase):
     the trade belongs there. Asked directly at the RUN-01KY03GS close, the best available
     answer had to be reconstructed by hand from timeouts and timestamps."""
 
+    #: The sprint being reported ran 08:00-10:00, so a row stamped 09:00 is ITS row. The window
+    #: is what joins the project-wide series to this report; without one nothing can be
+    #: attributed, which is a fact and not a licence to publish the newest row going.
+    WINDOW = ("2026-07-22T08:00:00Z", "2026-07-22T10:00:00Z")
+
+    def setUp(self) -> None:
+        super().setUp()
+        self._window(*self.WINDOW, batch=["US0001", "US0002"])
+
+    def _window(self, started: str, ended: str | None, batch: list[str]) -> None:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        from lib import run_state
+        run_state.open_run(self.root, batch=batch, goal="done")
+        run_state.update(self.root, started_at=started, ended_at=ended)
+
     def _run(self, *, survived: int, elapsed: float, refused: bool = False,
-             applied: int = 10) -> str:
+             applied: int = 10, at: str = "2026-07-22T09:00:00Z") -> str:
         mut = _mutation()
         rid = mut._new_run_id()
         mut.append_series(self.root, {
-            "run_id": rid, "generated_at": "2026-07-22T09:00:00Z", "git_rev": "abc1234",
+            "run_id": rid, "generated_at": at, "git_rev": "abc1234",
             "test_cmd": "python3 -m unittest discover", "targets": ["src/thing.py"],
             "refused": refused, "unchecked": [],
             "summary": {"applied": 0 if refused else applied,
@@ -318,6 +333,81 @@ class MutationCostTests(ReportBase):
         rep = sr.report(self.root, "RETRO9100")
         self.assertTrue(rep["ok"])
         self.assertIn("no mutation evidence", sr.render(rep))
+
+
+class MutationBelongsToThisRunTests(ReportBase):
+    """MAJOR, RUN-01KY3MFX review: `current` was the newest row of the PROJECT-WIDE series,
+    whichever run wrote it. A sprint that ran no mutation therefore republished the PREVIOUS
+    sprint's cost and yield as its own and UNLABELLED, while the trailing rows beneath it were
+    correctly prefixed `previous run`. US0309 AC1 says "the run's wall-clock cost" and AC3 says
+    a run with no evidence is named as such; both were false on that path.
+
+    The precedent is `_sprint_goal` in the same file, which refuses a run state whose batch
+    does not name this sprint's units."""
+
+    def _run(self, at: str, elapsed: float, survived: int = 3) -> str:
+        mut = _mutation()
+        rid = mut._new_run_id()
+        mut.append_series(self.root, {
+            "run_id": rid, "generated_at": at, "git_rev": "abc1234",
+            "test_cmd": "t", "targets": ["src/thing.py"], "refused": False, "unchecked": [],
+            "summary": {"applied": 10, "killed": 10 - survived, "survived": survived,
+                        "errors": 0, "unviable": 0, "truncated": 0}}, elapsed)
+        return rid
+
+    def _window(self, started: str, ended: str | None, batch: list[str]) -> None:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        from lib import run_state
+        run_state.open_run(self.root, batch=batch, goal="done")
+        run_state.update(self.root, started_at=started, ended_at=ended)
+
+    def test_a_previous_runs_row_is_not_republished_as_this_sprints(self) -> None:
+        self._run("2026-07-21T12:00:00Z", 987.0)          # yesterday's sprint proved something
+        self._window("2026-07-22T08:00:00Z", "2026-07-22T10:00:00Z", ["US0001", "US0002"])
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertIsNone(rep["mutation"]["current"],
+                          "this sprint ran no mutation, so it HAS no mutation row")
+        text = sr.render(rep)
+        self.assertIn("no mutation evidence", text)
+        self.assertNotIn("987.0s, 10 applied", text)      # never as this run's own figure
+        # ...and the older row is still shown, labelled as what it is
+        self.assertIn("previous run", text)
+        self.assertIn("987.0s", text)
+
+    def test_a_row_inside_the_runs_window_is_this_sprints(self) -> None:
+        self._window("2026-07-22T08:00:00Z", "2026-07-22T10:00:00Z", ["US0001", "US0002"])
+        rid = self._run("2026-07-22T09:00:00Z", 612.5)
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertEqual(rep["mutation"]["current"]["run_id"], rid)
+        self.assertIn("612.5s", sr.render(rep))
+
+    def test_a_row_after_the_run_closed_is_not_this_sprints(self) -> None:
+        self._window("2026-07-22T08:00:00Z", "2026-07-22T10:00:00Z", ["US0001", "US0002"])
+        self._run("2026-07-22T11:30:00Z", 55.0)           # the NEXT sprint's proving run
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertIsNone(rep["mutation"]["current"])
+        self.assertIn("no mutation evidence", sr.render(rep))
+
+    def test_a_foreign_run_state_cannot_attribute_a_row_to_this_sprint(self) -> None:
+        self._run("2026-07-22T09:00:00Z", 400.0)
+        self._window("2026-07-22T08:00:00Z", "2026-07-22T10:00:00Z", ["US0900"])
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertIsNone(rep["mutation"]["current"])
+        text = sr.render(rep)
+        self.assertIn("no mutation evidence", text)
+        self.assertIn("no run state names this sprint", text)
+
+    def test_a_closed_run_is_found_in_the_archive(self) -> None:
+        """The report is normally read AFTER the close, and the close archives the run. A
+        window that only exists in the archive is still this sprint's window."""
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        from lib import run_state
+        self._window("2026-07-22T08:00:00Z", "2026-07-22T10:00:00Z", ["US0001", "US0002"])
+        rid = self._run("2026-07-22T09:00:00Z", 300.0)
+        run_state.archive(self.root)
+        run_state.open_run(self.root, batch=["US0900"], goal="done")   # the NEXT run is live
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertEqual(rep["mutation"]["current"]["run_id"], rid)
 
 
 if __name__ == "__main__":

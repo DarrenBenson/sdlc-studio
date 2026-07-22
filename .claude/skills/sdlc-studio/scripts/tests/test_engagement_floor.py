@@ -12,8 +12,10 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import subprocess
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the git helper
@@ -1147,6 +1149,58 @@ class PendingCliTests(unittest.TestCase):
             code, out = self._run(root, "--pending")
             self.assertEqual(code, 0, out)
             self.assertIn("BG0251", out)     # still reported, never silently dropped
+
+
+class StagedIndexUnreadableTests(unittest.TestCase):
+    """An unreadable index must REFUSE, never print a clean.
+
+    Found by the closing review of RUN-01KY3MFX. `_staged_paths` returned `[]` both when git
+    said nothing was staged and when git could not be asked, so a lane that could not read the
+    index printed 'no new violation' and exited 0. That is a false clean on the one signal this
+    leg exists to provide, and it is the floor committing the defect class the floor was built
+    to catch."""
+
+    def test_an_unreadable_index_raises_rather_than_reading_as_empty(self) -> None:
+        mod = _load()   # ONE module object: `_load()` re-imports, so a second call would
+                        # hand back a DIFFERENT exception class and assertRaises would miss it
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)          # not a git repository at all
+            self.assertIsNone(mod._staged_paths(root),
+                              "git could not be asked - that is None, never []")
+            with self.assertRaises(mod.StagedIndexUnreadable):
+                mod._pending_touched_by_id(root)
+
+    def test_git_being_absent_entirely_is_also_unreadable_not_empty(self) -> None:
+        """Found by a SURVIVING mutant. The non-git-directory case above reaches the
+        `returncode != 0` branch, so the OSError branch - git missing from PATH, or the call
+        raising - was pinned by nothing while reading as covered. Reverting it to `[]` left the
+        suite green, which is the original defect returning unnoticed."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            with mock.patch.object(mod.subprocess, "run",
+                                   side_effect=OSError("git is not installed")):
+                self.assertIsNone(mod._staged_paths(Path(d)))
+            with mock.patch.object(mod.subprocess, "run",
+                                   side_effect=mod.subprocess.TimeoutExpired("git", 5)):
+                self.assertIsNone(mod._staged_paths(Path(d)),
+                                  "a timeout is git failing to answer, not an empty index")
+
+    def test_detect_marks_the_run_unreadable_instead_of_reporting_no_violations(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            res = _load().detect(Path(d), include_staged=True)
+            self.assertTrue(res["summary"]["staged_unreadable"])
+            self.assertEqual(res["summary"]["staged_new"], 0,
+                             "and the zero is explicitly NOT to be read as a clean")
+
+    def test_an_empty_index_is_still_an_honest_empty(self) -> None:
+        """The negative control. Without it, a function that always raised would pass the two
+        assertions above while making the lane useless on every real commit."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gitutil.git(["init", "-q", "."], cwd=root)
+            self.assertEqual(_load()._staged_paths(root), [],
+                             "git ANSWERED that nothing is staged")
+            self.assertEqual(_load()._pending_touched_by_id(root), {})
 
 
 if __name__ == "__main__":

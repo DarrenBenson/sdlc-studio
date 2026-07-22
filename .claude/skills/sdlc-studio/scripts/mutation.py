@@ -85,8 +85,19 @@ PROVENANCE_REGISTERED = "registered"
 EQUIVALENT_VERDICT = "equivalent"
 REGISTRABLE_VERDICTS = ("killed", "survived", EQUIVALENT_VERDICT)
 #: The counters a ledger entry's summary carries. One list, so a new verdict cannot be countable
-#: in one writer and absent in another.
+#: in one writer and absent in another. BOTH writers derive from it: `register_mutant` counts the
+#: verdict it was handed, and `append_ledger` maps a RUN's verdict onto its counter below.
 SUMMARY_VERDICTS = ("killed", "survived", "errors", "unviable", EQUIVALENT_VERDICT)
+#: A run's verdict word -> the summary counter it increments. `error` is pluralised in the
+#: summary and `equivalent` is never produced by a run, but it is listed so a counter cannot go
+#: missing from one writer while the constant above claims it cannot.
+RUN_VERDICT_COUNTER = {"killed": "killed", "survived": "survived", "error": "errors",
+                       "unviable": "unviable", EQUIVALENT_VERDICT: EQUIVALENT_VERDICT}
+#: The registered verdicts that are EVIDENCE ABOUT THE TESTS, and so count as mutation coverage
+#: of a file. `equivalent` is deliberately absent: it asserts that no test could have killed the
+#: mutant, which is a statement about the mutant, not about what the suite pins. A file carrying
+#: only equivalent registrations has had nothing proven about its tests.
+COVERING_VERDICTS = ("killed", "survived")
 
 
 def entry_provenance(entry: dict) -> str:
@@ -395,24 +406,43 @@ def _inflight_path(root: Path) -> Path:
 WINDOW_OWNER_RUN = "mutation.py run"
 
 
+def window_dir(root: Path | str) -> Path:
+    """Where window records live, beside the in-flight sidecar."""
+    return Path(root) / "sdlc-studio" / ".local"
+
+
 def window_path(root: Path | str) -> Path:
-    """Where an open rewrite window is declared, beside the in-flight sidecar."""
-    return Path(root) / "sdlc-studio" / ".local" / "mutation-window.json"
+    """Where THIS tool declares its own window. One of the spellings `window_records` reads."""
+    return window_dir(root) / "mutation-window.json"
+
+
+def window_records(root: Path | str) -> list[Path]:
+    """Every window record on disk, in BOTH spellings of the published contract.
+
+    The contract has always named two spellings - `.local/*window*.json` for a single record,
+    and `.local/windows/*.json` for one file per window - and for a while only the pre-commit
+    hook honoured both while this module read the single fixed filename. A reviewer who wrote
+    `windows/reviewer.json` was then told by `window status` that no window was open, and
+    `window open` let a second writer declare one over the same tree: the refusal that exists
+    precisely because two declared writers in one tree is the hazard. So discovery lives HERE,
+    once, and the hook's inline reader is pinned against it by test."""
+    base = window_dir(root)
+    found: list[Path] = []
+    if base.is_dir():
+        found += sorted(p for p in base.glob("*window*.json") if p.is_file())
+        sub = base / "windows"
+        if sub.is_dir():
+            found += sorted(p for p in sub.glob("*.json") if p.is_file())
+    return found
 
 
 def _clear_hint(owner: str) -> str:
     return f"mutation.py window close --owner {owner!r}"
 
 
-def read_window(root: Path | str) -> dict | None:
-    """The open window, or None when there is none.
-
-    None means ABSENT and nothing else. A record that exists but cannot be parsed - truncated by
-    the kill that stranded it, or half-written - is reported OPEN with `unreadable` set, because
-    the only unsafe way to be wrong here is to report a live writer as finished."""
-    path = window_path(root)
-    if not path.exists():
-        return None
+def _read_window_record(path: Path) -> dict:
+    """One record, read. Never returns None: the caller has already found the file, and a file
+    that exists is a window until somebody says otherwise."""
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(data, dict) or not data.get("owner"):
@@ -420,6 +450,7 @@ def read_window(root: Path | str) -> dict | None:
     except (ValueError, OSError) as exc:
         return {"owner": "unknown (the record is unreadable)", "paths": [],
                 "opened_at": None, "note": None, "pid": None, "unreadable": True,
+                "record_path": str(path),
                 "detail": f"{path} exists but cannot be read ({exc}) - a process declared a "
                           f"rewrite window and its record did not survive; treat the tree as "
                           f"being written to until somebody says otherwise",
@@ -428,7 +459,46 @@ def read_window(root: Path | str) -> dict | None:
     data.setdefault("unreadable", False)
     data.setdefault("paths", [])
     data.setdefault("clear_with", _clear_hint(str(data.get("owner"))))
+    data["record_path"] = str(path)
     return data
+
+
+def read_windows(root: Path | str) -> list[dict]:
+    """Every open window, in both spellings. Empty means none is open."""
+    return [_read_window_record(p) for p in window_records(root)]
+
+
+def read_window(root: Path | str) -> dict | None:
+    """The open window, or None when there is none.
+
+    None means ABSENT and nothing else. A record that exists but cannot be parsed - truncated by
+    the kill that stranded it, or half-written - is reported OPEN with `unreadable` set, because
+    the only unsafe way to be wrong here is to report a live writer as finished. With several
+    records on disk the first is returned; `read_windows` gives the caller all of them."""
+    held = read_windows(root)
+    return held[0] if held else None
+
+
+def window_claim(root: Path | str, path) -> str:
+    """One claimed path, normalised to the repo-relative spelling a reader can match.
+
+    The reader compares claims against `git diff --cached --name-only`, which is always
+    repo-relative. `run` builds its claim list from `select_files`, which returns `root / f`, so
+    ANY absolute `--root` produced absolute claims - a window that announced it was rewriting a
+    file and then matched nothing a commit staged. Normalising at OPEN time is what keeps the
+    two spellings from ever meeting: a path under the root becomes relative to it, and a path
+    outside the root is left verbatim, where the reader treats it as uninterpretable and so
+    claims the whole tree rather than nothing."""
+    p = Path(path)
+    try:
+        if p.is_absolute():
+            return p.relative_to(Path(root).resolve()).as_posix()
+    except ValueError:
+        try:
+            return p.relative_to(Path(root).absolute()).as_posix()
+        except ValueError:
+            return str(path)
+    return p.as_posix()
 
 
 def open_window(root: Path | str, owner: str, paths, note: str | None = None) -> dict:
@@ -450,7 +520,7 @@ def open_window(root: Path | str, owner: str, paths, note: str | None = None) ->
     record = {
         "owner": owner,
         "opened_at": sdlc_md.now_iso8601(),
-        "paths": [str(p) for p in (paths or [])],
+        "paths": [window_claim(root, p) for p in (paths or [])],
         "note": note or None,
         "pid": __import__("os").getpid(),
         "clear_with": _clear_hint(owner),
@@ -476,7 +546,10 @@ def close_window(root: Path | str, owner: str | None = None) -> dict | None:
             f"another writer's claim. Ask them to close it, or clear it deliberately with no "
             f"--owner once you have confirmed nothing is rewriting the tree")
     try:
-        window_path(root).unlink()
+        # the record this read, not a fixed filename: the contract has two spellings, and
+        # unlinking the one this tool happens to write would leave a reviewer's own record open
+        # while reporting it closed
+        Path(held.get("record_path") or window_path(root)).unlink()
     except FileNotFoundError:
         pass
     return held
@@ -972,13 +1045,15 @@ def append_ledger(root: Path | str, report: dict, records: list[dict]) -> dict:
     new: list[dict] = []
     for fp in report.get("targets", []):
         rs = [r for r in records if str(Path(r["file"])) == str(Path(fp))]
-        summary = {
-            "applied": len(rs),
-            "killed": sum(1 for r in rs if r["verdict"] == "killed"),
-            "survived": sum(1 for r in rs if r["verdict"] == "survived"),
-            "errors": sum(1 for r in rs if r["verdict"] == "error"),
-            "unviable": sum(1 for r in rs if r["verdict"] == "unviable"),
-        }
+        # Built from SUMMARY_VERDICTS, not from a hand-written list. The two writers of a
+        # ledger summary (here, and `register_mutant`) hard-coded their own counters, so a
+        # verdict added to the vocabulary was countable in one and absent from the other -
+        # exactly what the constant's comment says cannot happen. Now it cannot.
+        summary = {"applied": len(rs), **{k: 0 for k in SUMMARY_VERDICTS}}
+        for r in rs:
+            key = RUN_VERDICT_COUNTER.get(r["verdict"])
+            if key:
+                summary[key] += 1
         if not summary["killed"] and not summary["survived"]:
             continue
         digest = (report.get("target_hashes") or {}).get(str(Path(fp)))

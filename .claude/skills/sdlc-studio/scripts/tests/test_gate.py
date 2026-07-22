@@ -2824,5 +2824,215 @@ class WindowCheckTests(unittest.TestCase):
             self.assertEqual(report["checks"][0]["status"], "fail")
 
 
+class WindowLaneIsPathScopedTests(unittest.TestCase):
+    """The lane judges the STAGED PATHS, not the record's existence.
+
+    Reproduced by the independent review of RUN-01KY3MFX: one pre-commit run printed both
+    `No staged path is claimed by it, so this commit proceeds.` (the hook's own guard) and
+    `[FAIL] window: a rewrite window is OPEN` (this lane, reached through `gate.py --root .`)
+    and then `Commit blocked.` The two halves of the same feature contradicted each other, and
+    the blocking half won: while ANY window was open, NO commit could land whatever it staged.
+    A reviewer holding a window froze the whole tree, which is the opposite of the promise the
+    story, the hook's remedy text and the reference all make.
+
+    Every case below is a REAL git repo with a REAL index, because the behaviour under test is
+    "what is staged": a fixture that never stages anything can only assert the fallback.
+    """
+
+    def _repo(self, t) -> Path:
+        root = Path(t)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (root / "tools").mkdir()
+        (root / "tools" / "thing.py").write_text("VALUE = 1\n", encoding="utf-8")
+        (root / "README.md").write_text("notes\n", encoding="utf-8")
+        gitutil.git(["init", "-q"], cwd=root)
+        gitutil.git(["add", "-A"], cwd=root)
+        gitutil.git(["commit", "-qm", "fixture"], cwd=root)
+        return root
+
+    def _record(self, root: Path, paths, name="mutation-window.json") -> None:
+        p = root / "sdlc-studio" / ".local" / name
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"owner": "the reviewer", "opened_at": "2026-07-22T10:00:00Z",
+                                 "paths": paths}), encoding="utf-8")
+
+    def _stage(self, root: Path, rel: str, body: str) -> None:
+        (root / rel).write_text(body, encoding="utf-8")
+        gitutil.git(["add", rel], cwd=root)
+
+    def test_an_open_window_claiming_no_staged_path_does_not_refuse(self) -> None:
+        """The ceremony commit during a review: the reviewer holds `tools/thing.py`, the author
+        stages a note. This is the case the hook already allowed and the lane already blocked."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            self._record(root, ["tools/thing.py"])
+            self._stage(root, "README.md", "notes and more notes\n")
+            lane = gate.DEFAULT_CHECKS["window"](str(root))
+            self.assertEqual(lane["count"], 0, lane["detail"])
+
+    def test_the_unclaimed_case_still_REPORTS_the_open_window(self) -> None:
+        """Not refusing is not the same as saying nothing: an author running the gate must
+        still learn a concurrent writer is active before they stage into its paths."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            self._record(root, ["tools/thing.py"])
+            self._stage(root, "README.md", "notes and more notes\n")
+            lane = gate.DEFAULT_CHECKS["window"](str(root))
+            self.assertIn("OPEN", lane["detail"])
+            self.assertIn("the reviewer", lane["detail"])
+            self.assertIn("tools/thing.py", lane["detail"])
+
+    def test_a_staged_path_the_window_claims_still_refuses(self) -> None:
+        """The half that must not be lost while fixing the half above."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            self._record(root, ["tools/thing.py"])
+            self._stage(root, "tools/thing.py", "VALUE = 999\n")
+            lane = gate.DEFAULT_CHECKS["window"](str(root))
+            self.assertEqual(lane["count"], 1, lane["detail"])
+            self.assertIn("tools/thing.py", lane["detail"])
+            self.assertTrue(lane["blocking"])
+
+    def test_an_index_that_cannot_be_read_refuses_rather_than_passing(self) -> None:
+        """"I cannot tell" must never be reported as "nothing is staged". A root that is not a
+        git repo at all is the reachable shape of it."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._record(root, ["tools/thing.py"])
+            lane = gate.DEFAULT_CHECKS["window"](str(root))
+            self.assertEqual(lane["count"], 1, lane["detail"])
+            self.assertIn("could not be read", lane["detail"])
+
+    def test_a_claim_the_matcher_cannot_interpret_claims_everything(self) -> None:
+        """Fail SAFE, the direction the record's whole purpose demands. `paths` holding objects,
+        nested lists or numbers used to be str()-ed into patterns that matched nothing, and an
+        absolute claim can never equal a repo-relative staged path."""
+        for claim in ([{"path": "tools/thing.py"}], [["tools/thing.py"]], [0], ["/elsewhere/x"]):
+            with self.subTest(claim=claim), tempfile.TemporaryDirectory() as t:
+                root = self._repo(t)
+                self._record(root, claim)
+                self._stage(root, "README.md", "notes, uninterpretable-claim case\n")
+                lane = gate.DEFAULT_CHECKS["window"](str(root))
+                self.assertEqual(lane["count"], 1, lane["detail"])
+
+    def test_a_window_naming_no_paths_claims_everything(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            self._record(root, [])
+            self._stage(root, "README.md", "notes, path-less-record case\n")
+            lane = gate.DEFAULT_CHECKS["window"](str(root))
+            self.assertEqual(lane["count"], 1, lane["detail"])
+
+    def test_a_record_in_the_windows_directory_is_read_by_the_lane_too(self) -> None:
+        """Both spellings of the published contract, through the one reader in `mutation`."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            (root / "sdlc-studio" / ".local" / "windows").mkdir(parents=True)
+            self._record(root, ["tools/thing.py"], name="windows/reviewer.json")
+            self._stage(root, "tools/thing.py", "VALUE = 999\n")
+            lane = gate.DEFAULT_CHECKS["window"](str(root))
+            self.assertEqual(lane["count"], 1, lane["detail"])
+            self.assertIn("the reviewer", lane["detail"])
+
+    def test_no_window_open_is_silent_and_passes(self) -> None:
+        """The negative control: without it every assertion above is satisfied by a lane that
+        refuses on everything."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            self._stage(root, "tools/thing.py", "VALUE = 999\n")
+            lane = gate.DEFAULT_CHECKS["window"](str(root))
+            self.assertEqual(lane["count"], 0, lane["detail"])
+            self.assertEqual(lane["detail"], "no rewrite window is open")
+
+
+class EquivalentIsNotCoverageTests(unittest.TestCase):
+    """An `equivalent` registration is evidence about the MUTANT, never about the tests.
+
+    Found by the independent review of RUN-01KY3MFX. `equivalent` joined the registrable
+    vocabulary and `--test` became optional for it - correctly, since there is no test to name.
+    But this lane counted ANY registered entry on matching content as coverage, so registering
+    one equivalent with no `--test` at all took a file from `no evidence` to `covered` and
+    DROPPED the lane's finding count from 1 to 0: the silent decrement `register_mutant`'s own
+    docstring promises to prevent, produced by the one verdict that asserts no test could have
+    killed the mutant.
+    """
+
+    _root = MutationCoverageTests._root
+    _commit_all = MutationCoverageTests._commit_all
+    _sha = staticmethod(MutationCoverageTests._sha)
+    _entry = staticmethod(MutationCoverageTests._entry)
+    CLEAN = MutationCoverageTests.CLEAN
+    _changed = MutationProvenanceTests._changed
+
+    def _registered(self, r, **summary):
+        base = {"applied": 1, "killed": 0, "survived": 0, "errors": 0, "unviable": 0,
+                "equivalent": 0}
+        base.update(summary)
+        return [self._entry("a.py", self._sha(r / "a.py"), provenance="registered",
+                            summary=base)]
+
+    def test_an_equivalent_only_registration_is_not_coverage(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = self._changed(t, lambda r: self._registered(r, equivalent=1))
+            lane = gate._mutation(str(root))
+            self.assertIn("0/1", lane["detail"])
+            self.assertIn("no evidence", lane["detail"])
+            self.assertGreaterEqual(lane["count"], 1, lane["detail"])
+
+    def test_registering_an_equivalent_never_makes_the_lane_quieter(self) -> None:
+        """The incentive, stated as the property. Registering an equivalent must not be a way
+        to lower your own finding count below what registering NOTHING would give."""
+        with tempfile.TemporaryDirectory() as t:
+            silent = gate._mutation(str(self._changed(t, lambda r: [])))
+        with tempfile.TemporaryDirectory() as t:
+            excused = gate._mutation(str(self._changed(
+                t, lambda r: self._registered(r, equivalent=1))))
+        self.assertGreaterEqual(excused["count"], silent["count"],
+                                f"excused={excused['detail']!r} silent={silent['detail']!r}")
+
+    def test_the_exclusion_is_NAMED_rather_than_read_as_nothing_registered(self) -> None:
+        """A file with an equivalent registration is not the same as a file nobody touched, and
+        the line has to say so or the builder is told to do work they already did."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._changed(t, lambda r: self._registered(r, equivalent=1))
+            self.assertIn("EQUIVALENT-ONLY", gate._mutation(str(root))["detail"])
+
+    def test_a_kill_alongside_an_equivalent_still_covers(self) -> None:
+        """The positive control. The exclusion is of the equivalent's evidence, not of the
+        entry: a builder who registered a kill AND an equivalent has covered the file."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._changed(t, lambda r: self._registered(r, killed=1, equivalent=1,
+                                                               applied=2))
+            lane = gate._mutation(str(root))
+            self.assertIn("1/1", lane["detail"])
+            self.assertNotIn("EQUIVALENT-ONLY", lane["detail"])
+            self.assertEqual(lane["count"], 0, lane["detail"])
+
+    def test_the_recorder_and_the_lane_agree_end_to_end(self) -> None:
+        """Through the real writer, not a hand-built ledger: `register --verdict equivalent`
+        with no `--test` at all, which is the exact command the review reproduced with."""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("mutation_for_gate_equiv",
+                                                      SCRIPT.parent / "mutation.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t)
+            gitutil.git(["init", "-q"], cwd=root)
+            (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+            self._commit_all(root)
+            (root / "a.py").write_text("def a():\n    return 2\n", encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                json.dumps(self.CLEAN), encoding="utf-8")
+            before = gate._mutation(str(root))
+            mod.register_mutant(root, "a.py", "return 1 -> return 1", None,
+                                mod.EQUIVALENT_VERDICT, reason="no observable behaviour change")
+            after = gate._mutation(str(root))
+            self.assertGreaterEqual(after["count"], before["count"],
+                                    f"before={before['detail']!r} after={after['detail']!r}")
+            self.assertIn("no evidence", after["detail"])
+
+
 if __name__ == "__main__":
     unittest.main()

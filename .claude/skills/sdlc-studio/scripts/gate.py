@@ -299,10 +299,17 @@ def _mutation_coverage(root: str) -> dict:
                 if isinstance(e, dict) and e.get("target"):
                     summary = e.get("summary")
                     survived = (summary or {}).get("survived") if isinstance(summary, dict) else 0
+                    def _n(field, s=summary):
+                        v = (s or {}).get(field) if isinstance(s, dict) else 0
+                        return int(v or 0) if isinstance(v, (int, float)) else 0
                     entries.setdefault(_key(e["target"]), {})[_entry_provenance(e)] = {
                         "hash": e.get("hash"),
                         "survived": int(survived or 0) if isinstance(survived, (int, float))
-                        else 0}
+                        else 0,
+                        # what the entry proves ABOUT THE TESTS. `equivalent` is excluded on
+                        # purpose - see `_covering` below.
+                        "covering": _n("killed") + _n("survived"),
+                        "equivalent": _n("equivalent")}
         except (ValueError, OSError, TypeError, AttributeError):
             pass          # a corrupt ledger claims no coverage; it never breaks the lane
     surface = _mutation_changed_surface(root)
@@ -324,6 +331,7 @@ def _mutation_coverage(root: str) -> dict:
     survivors: list[str] = []
     stale: list[str] = []
     uncovered: list[str] = []
+    equivalent_only: list[str] = []
     for display, key in judged:
         if key not in entries:
             uncovered.append(display)
@@ -342,9 +350,20 @@ def _mutation_coverage(root: str) -> dict:
         if _matches(_PROVENANCE_MEASURED):
             covered.append(display)
         elif _matches(_PROVENANCE_REGISTERED):
+            reg = recorded[_PROVENANCE_REGISTERED]
+            # An `equivalent` entry says NO TEST COULD HAVE KILLED this mutant. That is evidence
+            # about the mutant, never about the suite, so it cannot make a file covered. It did:
+            # registering one equivalent with no `--test` at all took a file from "no evidence"
+            # to "covered" and DROPPED the lane's finding count - the silent decrement
+            # `register_mutant`'s own docstring promises to prevent.
+            if not reg.get("covering"):
+                uncovered.append(display)
+                if reg.get("equivalent"):
+                    equivalent_only.append(display)
+                continue
             covered.append(display)
             self_reported.append(display)
-            n = recorded[_PROVENANCE_REGISTERED]["survived"]
+            n = reg["survived"]
             if n:
                 survivors.append(f"{display} ({n})")
         else:
@@ -361,6 +380,10 @@ def _mutation_coverage(root: str) -> dict:
         detail += f"; STALE (edited since mutated): {_name_list(stale)}"
     if uncovered:
         detail += f"; no evidence: {_name_list(uncovered)}"
+    if equivalent_only:
+        detail += (f"; EQUIVALENT-ONLY (a registered equivalent says no test could have killed "
+                   f"the mutant, which proves nothing about the tests): "
+                   f"{_name_list(equivalent_only)}")
     return {"known": True, "count": len(stale) + len(uncovered) + len(survivors),
             "detail": detail}
 
@@ -528,6 +551,25 @@ def hook_enablement_gap(root) -> str | None:
             "unset or elsewhere) - the commit gate is not running; fix: bash tools/enable-hooks.sh")
 
 
+def _window_staged(root: str):
+    """Repo-relative staged paths, or None when git could not be asked.
+
+    None is "I cannot tell", never "nothing is staged": the lane below refuses on it, because
+    reading an unanswerable index as an empty one would wave through exactly the commit this
+    guard exists to stop."""
+    import subprocess
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(root), "-c", "core.quotepath=false",
+             "diff", "--cached", "--name-only"],
+            capture_output=True, text=True)
+    except OSError:
+        return None
+    if out.returncode != 0:
+        return None
+    return [ln.strip() for ln in out.stdout.splitlines() if ln.strip()]
+
+
 def _window(root: str) -> dict:
     """Blocking standard-gate lane: a process has DECLARED that it is rewriting source files in
     place, so this tree is being written to by somebody else right now.
@@ -538,21 +580,76 @@ def _window(root: str) -> dict:
     that left the suite GREEN would have been committed silently under a paperwork message. So
     this lane does not look for mutants and does not lean on the suite: it reads the declaration.
 
-    REFUSE rather than warn (D0053). A warning is what the observed failure mode defeats: in a
-    passing run it reads as noise, and the run that matters is exactly the passing one. The
-    reader is `mutation.read_window`, so the rule that an unreadable record counts as OPEN has
-    ONE home rather than a copy here that could drift the safe way into 'closed'."""
+    It judges the STAGED PATHS, not the record's existence. A lane that failed on existence
+    alone froze the whole tree for a review's duration while the pre-commit hook - reading the
+    same records - printed "no staged path is claimed by it, so this commit proceeds": one run
+    saying both, and the blocking one winning. The window scopes staging; it does not stop work.
+
+    REFUSE rather than warn (D0053) for a path a window claims. A warning is what the observed
+    failure mode defeats: in a passing run it reads as noise, and the run that matters is
+    exactly the passing one. An open window claiming nothing staged is still REPORTED, so an
+    author running the gate learns of the concurrent writer before staging into it.
+
+    Discovery and parsing are `mutation`'s, so the rule that an unreadable record counts as OPEN
+    has ONE home rather than a copy here that could drift the safe way into 'closed'."""
     import mutation
-    held = mutation.read_window(root)
-    if held is None:
+    held = mutation.read_windows(root)
+    if not held:
         return {"count": 0, "blocking": True, "detail": "no rewrite window is open"}
-    paths = ", ".join(held.get("paths") or []) or "(unstated paths)"
-    detail = (f"a rewrite window is OPEN - {held['owner']} has claimed {paths} since "
-              f"{held.get('opened_at')}; a commit now stages whatever that process has left "
-              f"on disk. Wait for it, or clear it: {held['clear_with']}")
-    if held.get("unreadable"):
-        detail += f" ({held['detail']})"
-    return {"count": 1, "blocking": True, "detail": detail}
+    staged = _window_staged(root)
+    lines, claimed_any = [], False
+    for win in held:
+        raw = win.get("paths")
+        if isinstance(raw, str):
+            raw = [raw]
+        if not isinstance(raw, list):
+            raw = []          # `paths` that is not a list names nothing this can match
+        # str() for DISPLAY only, never for matching: str()-ing a claim into a pattern is how
+        # an uninterpretable one came to match nothing and wave the commit through.
+        paths = ", ".join(str(x) for x in raw) or "(unstated paths)"
+        if staged is None:
+            hit = ["(the staged file list could not be read, so every path is treated "
+                   "as claimed)"]
+        else:
+            claims = raw or [_WINDOW_EVERYTHING]
+            hit = [s for s in staged if any(_window_claims(c, s) for c in claims)]
+        note = (f"{win['owner']} has claimed {paths} since {win.get('opened_at')}")
+        if win.get("unreadable"):
+            note += f" ({win['detail']})"
+        if not hit:
+            lines.append(f"a rewrite window is OPEN - {note}; no staged path is claimed by it, "
+                         f"so this gate does not refuse. Stage named paths, never `git add -A`")
+            continue
+        claimed_any = True
+        lines.append(f"a rewrite window is OPEN and claims a STAGED path - {note}; staged: "
+                     f"{', '.join(hit)}. A commit now stages whatever that process has left on "
+                     f"disk. Wait for it, or clear it: {win['clear_with']}")
+    return {"count": 1 if claimed_any else 0, "blocking": True, "detail": "; ".join(lines)}
+
+
+#: A window that names no paths has not said it may rewrite nothing.
+_WINDOW_EVERYTHING = "*"
+
+
+def _window_claims(pattern, staged: str) -> bool:
+    """True when `pattern` covers the staged path. Kept identical in rule to the pre-commit
+    hook's own matcher, and pinned against it by test: a claim this cannot INTERPRET (anything
+    that is not a string, or an absolute path outside this root) claims EVERYTHING, because the
+    record says a writer is active and a matcher that shrugged would report it as harmless."""
+    import fnmatch
+    if not isinstance(pattern, str):
+        return True
+    pat = pattern.strip()
+    if pat.startswith("./"):
+        pat = pat[2:]
+    pat = pat.rstrip("/")
+    if pat in ("", "."):
+        return True
+    if pat.startswith("/"):
+        return True          # absolute: not comparable with a repo-relative staged path
+    if staged.startswith(pat + "/"):
+        return True
+    return fnmatch.fnmatch(staged, pat)
 
 
 def _hook_enabled(root: str) -> dict:

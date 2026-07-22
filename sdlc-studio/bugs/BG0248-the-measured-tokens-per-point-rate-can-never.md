@@ -19,8 +19,10 @@ The plan reports 'this project has 3 unit(s) of its own evidence so far; the rat
       yields a measured rate, so an interactive sprint can advance it.
       Pinned by `test_sprint.RateFromVelocityRecordTests.test_an_interactive_sprint_can_now_advance_the_rate`.
 - [x] **AC2:** A velocity record spanning two models is REFUSED with its reason carried to the
-      plan output, never averaged into a rate describing neither.
-      Pinned by `test_sprint.RateFromVelocityRecordTests.test_a_rate_spanning_two_models_refuses_rather_than_averaging`.
+      plan output, never averaged into a rate describing neither. Carried on EVERY answer,
+      whichever source stands in - seed or per-unit evidence log - and the plan names which did.
+      Pinned by `test_sprint.RateFromVelocityRecordTests.test_a_rate_spanning_two_models_refuses_rather_than_averaging`
+      and `test_sprint.RefusalTravelsWithEverySourceTests`.
 - [x] **AC3:** A plan is never refused over a token estimate, whatever the rate source resolves
       to.
       Pinned by `test_sprint.RateFromVelocityRecordTests.test_a_rate_spanning_two_models_refuses_rather_than_averaging`.
@@ -74,9 +76,24 @@ Mutation-proven: 2 mutants on this bug's tests (the velocity source disabled; th
 suppressed into a silent seed), both killed, bytecode purged and the on-disk change asserted
 before each verdict.
 
+### Repair round 1 (independent review of RUN-01KY3MFX): AC2 was FALSE on one branch
+
+AC2 above claimed the refusal reason is carried to the plan output. It was carried on two of
+`tokens_per_point`'s three returns. The per-unit evidence-log return carried NO `refused` key at
+all, so when the velocity record REFUSED and the evidence log held at least `RATE_MIN_UNITS`
+units, the mandated source was set aside and the reason dropped entirely - on the one path where
+a second source genuinely does stand in for the first. Every existing refusal test left that log
+EMPTY, so all four landed on the seed and the branch was never executed (L-0174).
+
+Fixed: `refused` is carried on every return, and the renderer NAMES what stood instead rather
+than asserting the seed did. `RefusalTravelsWithEverySourceTests` drives both halves with a
+NON-empty evidence log. Two further mutants killed: the `refused` key removed from the
+evidence-log return, and the renderer hardcoded back to "the seed stands instead".
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-21 | sdlc-studio | Filed |
 | 2026-07-22 | claude | Fixed - the rate's source moved to the velocity record (US0290); this bug pins the interactive-sprint property directly and records the residual model-column blocker as CR0373 |
+| 2026-07-22 | claude | Repair round 1 - AC2 was false on the evidence-log branch; `refused` now travels on every answer and the plan names the source that stood |

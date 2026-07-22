@@ -1,6 +1,6 @@
 # US0301: Each mutation run appends applied, killed, survived, unchecked and wall-clock to a series
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0379
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

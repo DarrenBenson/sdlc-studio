@@ -1,6 +1,6 @@
 # US0296: A file passing the pointer rules while stating no working model is reported with what is missing
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0353
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

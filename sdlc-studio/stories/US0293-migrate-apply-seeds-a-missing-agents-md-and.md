@@ -1,6 +1,6 @@
 # US0293: migrate --apply seeds a missing AGENTS.md and CLAUDE.md from the template, preserving project sections
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0352
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

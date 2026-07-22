@@ -1,6 +1,6 @@
 # US0291: Derive shared-file clusters from the files a unit's ACs and verifiers name, not Affects alone
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0347
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

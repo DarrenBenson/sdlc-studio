@@ -1,6 +1,6 @@
 # US0297: The plan puts the Sprint Goal to the resolved seats and records achievability and definition of done
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0354
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

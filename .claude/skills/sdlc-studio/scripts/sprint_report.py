@@ -89,25 +89,89 @@ def _mutation_row(mut, root: Path, row: dict) -> dict:
             "cost_per_finding_s": cost, "cost_per_finding_note": note}
 
 
-def _mutation_summary(root: Path) -> dict:
-    """The mutation gate's cost against its yield, for this run and the ones before it.
+def _run_window(root: Path, unit_ids: list[str]) -> tuple | None:
+    """`(started_at, ended_at)` of the run that delivered THIS sprint, or None.
 
-    `current` is None when the series holds nothing - the step was skipped, refused before it
-    could write, or never run. That is NOT a run of zero survivors, and the renderer says so
-    rather than printing counts of zero, which would read as a gate that looked and found
-    nothing."""
+    Same guard as `_sprint_goal`: a run record counts only when its batch names this sprint's
+    units. The live record is tried first, then the archive, because a report is normally read
+    after the close and the close archives the run it describes. `ended_at` may be None - an
+    open run has a start and no end, and a row after its start still belongs to it."""
+    want = {sdlc_md.norm_id(u) for u in unit_ids}
+    records = []
+    try:
+        live = run_state.read(root) or {}
+        if live:
+            records.append(live)
+    except run_state.RunStateError:
+        pass                      # the report stays renderable; the close gate owns that failure
+    try:
+        records.extend(reversed(run_state.archived(root)))
+    except OSError:
+        pass
+    for state in records:
+        batch = {sdlc_md.norm_id(u) for u in (state.get("batch") or [])}
+        if not (batch & want):
+            continue
+        start = telemetry._parse_iso(state.get("started_at"))  # noqa: SLF001 - ONE stamp reader
+        if start is None:
+            continue              # a run with no start bounds nothing
+        return start, telemetry._parse_iso(state.get("ended_at"))  # noqa: SLF001
+    return None
+
+
+#: Said when no run record can be joined to this sprint. The series is project-wide, so without
+#: a window every row in it belongs to SOME run and none of them provably to this one.
+NO_ATTRIBUTION = ("no run state names this sprint's units, so no mutation run can be attributed "
+                  "to it")
+
+
+def _mutation_summary(root: Path, unit_ids: list[str]) -> dict:
+    """The mutation gate's cost against its yield, for THIS run and the ones before it.
+
+    The series is PROJECT-WIDE, so the newest row in it is whatever the project last proved -
+    not what this sprint proved. It is joined to the run being reported by the run's own
+    measured window, and a row outside that window is never this sprint's: a sprint that ran no
+    mutation was republishing the previous sprint's cost and yield as its own, unlabelled,
+    while the rows beneath it were correctly prefixed `previous run`.
+
+    `current` is None when this run has no row of its own - the step was skipped, refused
+    before it could write, or never run. That is NOT a run of zero survivors, and the renderer
+    says so rather than printing counts of zero, which would read as a gate that looked and
+    found nothing."""
     try:
         import mutation
         rows = mutation.series_rows(root)
     except Exception as exc:  # noqa: BLE001 - the report never fails on its evidence being absent
         print(f"note: mutation series unavailable ({type(exc).__name__}: {exc})", file=sys.stderr)
-        return {"current": None, "trailing": []}
+        return {"current": None, "trailing": [], "attribution": None}
     if not rows:
-        return {"current": None, "trailing": []}
-    current = _mutation_row(mutation, root, rows[-1])
-    trailing = [_mutation_row(mutation, root, r)
-                for r in reversed(rows[:-1][-MUTATION_HISTORY:])]
-    return {"current": current, "trailing": trailing}
+        return {"current": None, "trailing": [], "attribution": None}
+    window = _run_window(root, unit_ids)
+    if window is None:
+        # Nothing can be claimed as this sprint's. The rows are still SHOWN, as the previous
+        # runs they are, and the reason no `current` was picked is said out loud.
+        return {"current": None, "attribution": NO_ATTRIBUTION,
+                "trailing": [_mutation_row(mutation, root, r)
+                             for r in reversed(rows[-MUTATION_HISTORY:])]}
+    start, end = window
+    mine, before = [], []
+    for r in rows:
+        at = telemetry._parse_iso(r.get("at"))  # noqa: SLF001 - ONE stamp reader
+        if at is None:
+            continue              # an unstamped row cannot be placed in or out of the window
+        if at < start:
+            before.append(r)
+        elif end is None or at <= end:
+            mine.append(r)
+        # a row AFTER this run closed belongs to a LATER sprint and is not this report's
+    # The trailing history is every EARLIER mutation run, whether it ran inside this sprint (a
+    # second pass over the same diff) or in one before it. Both are prior runs of the gate,
+    # which is the trend the history exists to show; only `current` is a claim about ownership.
+    trailing = (before + mine[:-1]) if mine else before
+    return {"current": _mutation_row(mutation, root, mine[-1]) if mine else None,
+            "attribution": None,
+            "trailing": [_mutation_row(mutation, root, r)
+                         for r in reversed(trailing[-MUTATION_HISTORY:])]}
 
 
 def _sprint_goal(root: Path, unit_ids: list[str]) -> tuple[str | None, dict | None]:
@@ -167,7 +231,7 @@ def report(root: Path, retro_id: str, *, sprint_tokens: int | None = None,
         "ok": True, "id": retro_id, "date": acc.get("date", ""),
         "sprint_goal": goal, "sprint_goal_verdict": goal_verdict,
         "flow": _flow_summary(Path(root)),
-        "mutation": _mutation_summary(Path(root)),
+        "mutation": _mutation_summary(Path(root), unit_ids),
         "units": unit_ids,
         "delivered_points": b.get("delivered_points"),
         "spend": _spend(root, unit_ids),
@@ -208,33 +272,37 @@ def _mutation_lines(m: dict | None) -> list[str]:
     A gate that cannot show its yield gets cut on a bad day and kept on a good one, so this is
     rendered at the close, where the decision is actually taken. A run with no evidence is NAMED
     - never rendered as a tidy row of zeros, which reads as a gate that looked and found
-    nothing rather than one that never looked."""
+    nothing rather than one that never looked - and never handed a PREVIOUS run's numbers to
+    stand in for the ones it does not have. The trailing history renders either way: those runs
+    are the same facts whether or not this sprint proved anything of its own."""
+    trailing: list[str] = []
+    for prev in (m or {}).get("trailing") or []:
+        if not prev["evidence"]:
+            trailing.append(f"  previous run {prev['run_id']}: {prev['elapsed_s']}s, no "
+                            f"evidence ({prev['no_evidence_reason']}).")
+            continue
+        pper = (f", {prev['cost_per_finding_s']}s per finding" if prev["cost_per_finding_s"]
+                else f", {prev['cost_per_finding_note']}")
+        trailing.append(f"  previous run {prev['run_id']}: {prev['elapsed_s']}s, "
+                        f"{prev['survived']} survived, yield {prev['yield']}{pper}.")
     if not m or not m.get("current"):
-        return ["Mutation gate: no mutation evidence recorded for this run (the step was "
-                "skipped, or was killed before it could record anything) - not a run that "
-                "found nothing."]
+        why = (m or {}).get("attribution")
+        return [(f"Mutation gate: no mutation evidence recorded for this run - {why}." if why
+                 else "Mutation gate: no mutation evidence recorded for this run (the step was "
+                      "skipped, or was killed before it could record anything) - not a run "
+                      "that found nothing."), *trailing]
     cur = m["current"]
     if not cur["evidence"]:
         return [f"Mutation gate: no mutation evidence recorded for this run - "
                 f"{cur['no_evidence_reason']} ({cur['elapsed_s']}s spent). "
-                f"Not a run that found nothing."]
+                f"Not a run that found nothing.", *trailing]
     filed = ", ".join(cur["filed"]) if cur["filed"] else "nothing filed"
     per = (f" - {cur['cost_per_finding_s']}s per finding" if cur["cost_per_finding_s"]
            else f" - {cur['cost_per_finding_note']}")
     equiv = f", {cur['equivalent']} equivalent (excluded)" if cur["equivalent"] else ""
-    lines = [f"Mutation gate: {cur['elapsed_s']}s, {cur['applied']} applied, "
-             f"{cur['killed']} killed, {cur['survived']} survived{equiv}; "
-             f"yield {cur['yield']} filed artefact(s) ({filed}){per}."]
-    for prev in m.get("trailing") or []:
-        if not prev["evidence"]:
-            lines.append(f"  previous run {prev['run_id']}: {prev['elapsed_s']}s, no evidence "
-                         f"({prev['no_evidence_reason']}).")
-            continue
-        pper = (f", {prev['cost_per_finding_s']}s per finding" if prev["cost_per_finding_s"]
-                else f", {prev['cost_per_finding_note']}")
-        lines.append(f"  previous run {prev['run_id']}: {prev['elapsed_s']}s, "
-                     f"{prev['survived']} survived, yield {prev['yield']}{pper}.")
-    return lines
+    return [f"Mutation gate: {cur['elapsed_s']}s, {cur['applied']} applied, "
+            f"{cur['killed']} killed, {cur['survived']} survived{equiv}; "
+            f"yield {cur['yield']} filed artefact(s) ({filed}){per}.", *trailing]
 
 
 def render(rep: dict) -> str:

@@ -19,7 +19,8 @@ Measured at RUN-01KY321Q's sign-off, the first close with a working capture. The
       (review, repair and re-verification, orchestration, delegated spend).
       Pinned by `test_sprint.ForecastScopeTests`.
 - [x] **AC2:** A whole-sprint excess is measured from velocity rows carrying both a plan-time
-      forecast and a sprint actual, and printed beside the forecast.
+      forecast and a WHOLE-SPRINT actual, and printed beside the forecast. A row whose Actual
+      is a per-unit build sum measures the build, not the sprint, and is excluded.
       Pinned by `test_sprint.ForecastScopeTests`.
 - [x] **AC3:** With no such evidence the excess reads UNMEASURED rather than a figure, and the
       seed constant is NOT refitted.
@@ -71,9 +72,33 @@ bug's Proposed Fix asked first for a DECISION on whether to model the phases sep
 decision is not taken here and is not implied by this change. The capacity check still consumes
 the build figure as its point estimate, with the measured whole-sprint span reported beside it.
 
+### Repair round 1 (independent review of RUN-01KY3MFX)
+
+Three corrections. The first two are the same defect in different places: prose claiming a
+property nothing tested.
+
+1. **The span published a BUILD figure under a whole-sprint heading.** `whole_sprint_excess`
+   tested only that a forecast and an actual were both present. It never asked whether the
+   Actual described the whole sprint. RETRO0028 is `Units 3 / Measured 3` - a full per-unit
+   telemetry sum, which is the units' BUILD cost with the review, repair and orchestration
+   around it excluded by construction - and it was published at 2.26x inside a span the plan
+   labels whole-sprint. `_whole_sprint_actual` now requires the sprint-level shape the record's
+   own coverage rule (`retro._tokens_cover_points`) distinguishes, and the basis line says so.
+   On this repo the span is unchanged at 1.63x-6.59x; the observation count drops 4 to 3.
+2. **"the plan says so on its own line" was pinned by nothing.** Deleting the caveat print left
+   289 tests green - a grep for the sentence found only a test DOCSTRING. It is now asserted,
+   and asserted to sit on the line immediately after the excess.
+3. **The out-of-sample filter was pinned by nothing either,** and it is load-bearing: deleting
+   it widened this repo's published span from 1.63x-6.59x over 4 sprints to 0.3x-6.59x over 8.
+   Now asserted with a row forecast by the retired base/tpc estimator.
+
+Four further mutants, all killed: the coverage check deleted; `_whole_sprint_actual` returning
+True for every row; the caveat print deleted; the out-of-sample filter deleted.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-21 | sdlc-studio | Filed |
 | 2026-07-22 | claude-opus-4-8 | Fixed: the forecast names its scope and exclusions and carries a measured whole-sprint excess; the rate constant is unchanged |
+| 2026-07-22 | claude-opus-4-8 | Repair round 1 - a per-unit build sum is no longer published as a whole-sprint excess; the caveat line and the out-of-sample filter are now pinned |

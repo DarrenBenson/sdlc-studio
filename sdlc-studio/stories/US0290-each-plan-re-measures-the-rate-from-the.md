@@ -1,6 +1,6 @@
 # US0290: Each plan re-measures the rate from the velocity record or names why it cannot
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0284
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -58,14 +58,26 @@ is that the token half informs and the wall-clock/unit-count appetite is what br
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_no_measured_rate_is_quoted_as_a_seed_and_says_so
 - **Verified:** yes (2026-07-22)
 
-### AC3: a refused rate is reported, not collapsed into a silent seed
+### AC3: a refused rate is reported, not collapsed into a silent fallback
 
 - **Given** a record whose rate is refused, because its rows span more than one model or a sprint
   was delivered by more than one
 - **When** the plan quotes a rate
-- **Then** the refusal reason reaches the plan output naming the models involved, instead of the
-  plan falling back to the seed with nothing said about why the record was not used
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_a_refused_rate_reaches_the_plan_output
+- **Then** the refusal reason reaches the plan output naming the models involved, and the plan
+  NAMES the source that stood instead - the seed, or the per-unit evidence log - rather than
+  falling back with nothing said about why the record was not used
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k "test_a_refused_rate_reaches_the_plan_output or test_the_refusal_reaches_the_plan_whatever_source_stood_instead"
+- **Verified:** yes (2026-07-22)
+
+### AC5: re-measuring the rate does not reclassify the rows it was measured from
+
+- **Given** a velocity record whose out-of-sample rows carry a measured whole-sprint excess, and
+  a change that moves the live rate - stamping the delivering model on rows that had none is
+  enough
+- **When** the plan re-measures the rate and re-reads the record
+- **Then** every recorded row keeps the sample class its own plan-time constants earned, so the
+  measured excess and the calibration band stand rather than emptying to their defaults
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k RowClassSurvivesRemeasurementTests
 - **Verified:** yes (2026-07-22)
 
 ### AC4: the seed is never presented as calibrated
@@ -90,3 +102,4 @@ is that the token half informs and the wall-clock/unit-count appetite is what br
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-22 | sdlc-studio | Groomed against CR0284 AC3, retro.measured_rate and sprint.tokens_per_point |
+| 2026-07-22 | claude | Repair round 1 - AC5 added and delivered: `sample_class` compared each row's stamped constants against the LIVE rate, so this story's own re-measurement would have turned every historical row `stale-constants` the moment CR0373 stamped a model. It now compares the ESTIMATOR (its parameter names), which a later measurement cannot change. AC3 widened: the refusal now names whichever source stood in |

@@ -1,6 +1,6 @@
 # US0304: Lenses drawn from this project's own recorded failure modes
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0382
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

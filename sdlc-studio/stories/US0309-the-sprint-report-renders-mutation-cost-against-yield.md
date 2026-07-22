@@ -1,6 +1,6 @@
 # US0309: The sprint report renders mutation cost against yield for the run and the trailing history
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0379
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -59,6 +59,17 @@ kept on a good one.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py -k test_a_run_without_mutation_evidence_is_named_not_zeroed
 - **Verified:** yes (2026-07-22)
 
+### AC5: A series row is only this sprint's when it was written inside this run
+
+- **Given** a project-wide mutation series holding a PREVIOUS sprint's row, and a run being
+  reported that wrote none of its own
+- **When** the sprint report is rendered
+- **Then** the previous row is shown as a previous run and never as this run's figures, and this
+  run is named as having no mutation evidence; a run state whose batch does not name this
+  sprint's units attributes nothing and says why
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py -k MutationBelongsToThisRunTests
+- **Verified:** yes (2026-07-22)
+
 ### AC4: Cost per finding is derived only where both halves are present
 
 - **Given** a run with an elapsed time but no attributed artefacts, and a second run with both
@@ -73,3 +84,4 @@ kept on a good one.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-22 | claude | Repair round 1 - `current` was the newest row of the PROJECT-WIDE series whatever run wrote it, so a sprint that ran no mutation republished the previous sprint's cost and yield as its own, unlabelled, while the rows below were correctly prefixed `previous run`. AC1 and AC3 were both false on that path. The row is now joined to the run's own measured window, by the same guard `_sprint_goal` uses; AC5 added |

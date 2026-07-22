@@ -1766,5 +1766,197 @@ class WindowDeclarationTests(unittest.TestCase):
                 self.assertEqual(mut.main(["window", "status", "--root", str(root)]), 0)
 
 
+class WindowRecordContractTests(unittest.TestCase):
+    """ONE reader over BOTH spellings of the published record contract, and claims that a
+    reader can actually match.
+
+    Found by the independent review of RUN-01KY3MFX. The contract published in US0308 names
+    `.local/*window*.json` AND `.local/windows/*.json`; only the pre-commit hook honoured both,
+    while this module read one fixed filename. So a reviewer who wrote `windows/reviewer.json`
+    was told by `window status` that no window was open, and `window open` let a SECOND writer
+    declare one over the same tree - defeating the refusal whose own message says two declared
+    writers in one tree is the hazard the record exists to announce.
+
+    And the claims themselves were unmatchable: `run` builds its list from `select_files`, which
+    returns `root / f`, so any absolute `--root` wrote ABSOLUTE claims into a record whose reader
+    compares them against repo-relative `git diff --cached --name-only`. The window announced a
+    rewrite and the commit rewriting that exact file landed.
+    """
+
+    def _rec(self, root, rel: str, paths) -> None:
+        p = Path(root) / "sdlc-studio" / ".local" / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"owner": "the reviewer", "opened_at": "2026-07-22T10:00:00Z",
+                                 "paths": paths}), encoding="utf-8")
+
+    def test_a_record_under_windows_is_read_as_an_open_window(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            self._rec(root, "windows/reviewer.json", ["target.py"])
+            held = mut.read_window(root)
+            self.assertIsNotNone(held, "a windows/ record read as no window at all")
+            self.assertEqual(held["owner"], "the reviewer")
+
+    def test_a_review_window_json_is_read_as_an_open_window(self) -> None:
+        """The other spelling of the single-file form, which is what a reviewer writes by hand
+        and is exactly what the hook's own fixture uses."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            self._rec(root, "review-window.json", ["target.py"])
+            self.assertIsNotNone(mut.read_window(root))
+
+    def test_a_second_writer_is_refused_whatever_spelling_holds_the_first(self) -> None:
+        """The promise `open_window` makes in its own error message. It was true for one
+        spelling and false for the other two."""
+        mut = _load()
+        for rel in ("windows/reviewer.json", "review-window.json", "mutation-window.json"):
+            with self.subTest(record=rel), tempfile.TemporaryDirectory() as d:
+                root = _fixture(Path(d))
+                self._rec(root, rel, ["target.py"])
+                with self.assertRaises(ValueError) as ctx:
+                    mut.open_window(root, "second-writer", ["target.py"])
+                self.assertIn("the reviewer", str(ctx.exception))
+
+    def test_close_clears_the_record_it_actually_read(self) -> None:
+        """Unlinking a fixed filename would report a reviewer's own record closed while leaving
+        it on disk - a window reported shut with a writer still inside it."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            self._rec(root, "windows/reviewer.json", ["target.py"])
+            held = mut.close_window(root, owner="the reviewer")
+            self.assertIsNotNone(held)
+            self.assertFalse((Path(root) / "sdlc-studio" / ".local" / "windows"
+                              / "reviewer.json").exists())
+            self.assertIsNone(mut.read_window(root))
+
+    def test_no_record_in_either_spelling_still_means_no_window(self) -> None:
+        """The negative control: a discovery that found windows everywhere would satisfy every
+        assertion above and refuse every commit forever."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            (Path(root) / "sdlc-studio" / ".local" / "windows").mkdir(parents=True)
+            (Path(root) / "sdlc-studio" / ".local" / "mutation-report.json").write_text(
+                "{}", encoding="utf-8")
+            self.assertEqual(mut.window_records(root), [])
+            self.assertIsNone(mut.read_window(root))
+
+    def test_an_absolute_claim_is_normalised_to_repo_relative_at_open_time(self) -> None:
+        """The end-to-end shape the review reproduced: `--paths <abs>/target.py` printed
+        "Commits in this tree will be refused" and then matched nothing a commit staged."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            rec = mut.open_window(root, "the reviewer", [Path(root) / "target.py"])
+            self.assertEqual(rec["paths"], ["target.py"])
+            self.assertEqual(mut.read_window(root)["paths"], ["target.py"])
+
+    def test_a_run_s_own_window_records_repo_relative_claims(self) -> None:
+        """`run` is the caller that produced the absolute claims, via `select_files`."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            seen: list[list[str]] = []
+            real = mut._run_tests
+
+            def _peek(cmd, cwd):
+                w = mut.read_window(root)
+                if w:
+                    seen.append(list(w["paths"]))
+                return real(cmd, cwd)
+
+            with unittest.mock.patch.object(mut, "_run_tests", _peek):
+                mut.run_gate(root, [Path(root) / "target.py"],
+                             f"{sys.executable} -m unittest test_good", max_mutations=1)
+            self.assertTrue(seen, "no window was open while the run rewrote the tree")
+            for claim in seen[-1]:
+                self.assertFalse(Path(claim).is_absolute(),
+                                 f"an absolute claim cannot match a staged path: {claim}")
+
+    def test_a_claim_outside_the_root_is_left_verbatim(self) -> None:
+        """Not everything absolute is under this root, and inventing a relative spelling for a
+        path that is not here would be worse than leaving it plainly uninterpretable: the
+        readers treat an absolute claim as claiming the whole tree, which is the safe answer."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as other:
+            root = _fixture(Path(d))
+            elsewhere = str(Path(other) / "somewhere.py")
+            rec = mut.open_window(root, "the reviewer", [elsewhere])
+            self.assertEqual(rec["paths"], [elsewhere])
+
+
+class LedgerSummaryVocabularyTests(unittest.TestCase):
+    """`SUMMARY_VERDICTS` says "one list, so a new verdict cannot be countable in one writer and
+    absent in another". Both writers now derive from it; `append_ledger` used to hard-code its
+    own five counters and never mentioned `equivalent`, so the comment asserted something that
+    was already false."""
+
+    def test_every_summary_counter_is_present_in_a_run_s_entry(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            report = {"targets": ["target.py"], "target_hashes": {"target.py": "abc"},
+                      "git_rev": "0" * 40, "generated_at": "2026-07-22T00:00:00Z",
+                      "test_cmd": "true"}
+            records = [{"file": "target.py", "verdict": "killed"},
+                       {"file": "target.py", "verdict": "survived"},
+                       {"file": "target.py", "verdict": "error"},
+                       {"file": "target.py", "verdict": "unviable"}]
+            mut.append_ledger(root, report, records)
+            entry = json.loads(mut.ledger_path(root).read_text(encoding="utf-8"))["entries"][0]
+            for key in mut.SUMMARY_VERDICTS:
+                self.assertIn(key, entry["summary"], key)
+            self.assertEqual(entry["summary"]["killed"], 1)
+            self.assertEqual(entry["summary"]["survived"], 1)
+            self.assertEqual(entry["summary"]["errors"], 1)
+            self.assertEqual(entry["summary"]["unviable"], 1)
+
+    def test_the_two_writers_count_into_the_same_names(self) -> None:
+        """A register writes the other kind of entry. If the two used different counter names
+        the coverage lane would read one of them as all-zero."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            mut.register_mutant(root, "target.py", "a -> b", "test_good", "killed")
+            entry = json.loads(mut.ledger_path(root).read_text(encoding="utf-8"))["entries"][0]
+            for key in mut.SUMMARY_VERDICTS:
+                self.assertIn(key, entry["summary"], key)
+
+
+class RegisterRunAttributionRefusalTests(unittest.TestCase):
+    """`register --run` refuses a run the series does not hold. The refusal was reached by NO
+    test: replacing its condition with `if False:` left all 98 tests in this file green."""
+
+    def test_registering_against_an_unrecorded_run_is_refused(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            with self.assertRaises(ValueError) as ctx:
+                mut.register_mutant(root, "target.py", "a -> b", "test_good", "killed",
+                                    run="MUT-nobody-recorded-this")
+            self.assertIn("MUT-nobody-recorded-this", str(ctx.exception))
+            self.assertFalse(mut.ledger_path(root).exists(),
+                             "a refused registration must write nothing")
+
+    def test_a_run_the_series_does_hold_is_accepted(self) -> None:
+        """The positive control: a refusal that fired on everything would pass the test above
+        while making `--run` unusable."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            report = {"run_id": "MUT-real", "summary": {"applied": 1, "killed": 1,
+                                                        "survived": 0, "errors": 0,
+                                                        "unviable": 0, "truncated": 0},
+                      "targets": ["target.py"], "generated_at": "2026-07-22T00:00:00Z",
+                      "elapsed_seconds": 1.0, "test_cmd": "true"}
+            mut.append_series(root, report, 1.0)
+            out = mut.register_mutant(root, "target.py", "a -> b", "test_good", "killed",
+                                      run="MUT-real")
+            self.assertEqual(out["verdict"], "killed")
+
+
 if __name__ == "__main__":
     unittest.main()

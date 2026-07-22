@@ -1574,6 +1574,33 @@ class TheEstimateColumnIsTheForecastThatWasRecorded(InteractiveSprintFixture):
         self.assertEqual(res["batch"]["plan_estimate"], 400_000)
         self.assertEqual(res["batch"]["ratio"], 2.0)
 
+    def test_the_published_estimate_never_falls_back_to_the_rated_unit_sum(self) -> None:
+        """MINOR, RUN-01KY3MFX review: the writer read `plan_estimate or estimate or None`, and
+        the middle limb was DEAD code reading as a live fallback to the exact rated-unit sum
+        this class exists to have removed. It is dead because of an INVARIANT, so the invariant
+        is what is pinned here: the rated units are a subset of the forecast ones and no
+        estimate is negative, so the plan estimate is never the smaller of the two, and it is
+        absent only when nothing was forecast at all - which makes the rated sum 0 as well. Let
+        that invariant break and the removed limb would publish a 0-as-a-prediction again."""
+        import telemetry as tel
+        self._forecast("BG0001", "BG0002")
+        tel.record(str(self.root), {"id": "BG0001", "type": "bug", "tokens": 100_000,
+                                    "model": "m"})
+        b = retro.accuracy(str(self.root), "RETRO9002")["batch"]
+        self.assertGreater(b["plan_estimate"], b["estimate"],
+                           "the rated sum is the SMALLER one, so it can never stand in")
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        self.assertEqual(self._cells()["estimate"], "400,000")
+
+        self.setUp()                       # ...and with nothing forecast, both are absent
+        tel.record(str(self.root), {"id": "BG0001", "type": "bug", "tokens": 100_000,
+                                    "model": "m"})
+        b = retro.accuracy(str(self.root), "RETRO9002")["batch"]
+        self.assertIsNone(b["plan_estimate"])
+        self.assertFalse(b["estimate"], "so the fallback had nothing but a 0 to offer")
+        self._capture("accuracy", "--id", "RETRO9002", "--write")
+        self.assertEqual(self._cells()["estimate"], "-")
+
 
 class TheCaptureMeasuresTheMainThreadAndSaysSo(InteractiveSprintFixture):
     """BG0252: the capture is a MAIN-THREAD figure wearing a whole-run label.
@@ -1614,6 +1641,21 @@ class TheCaptureMeasuresTheMainThreadAndSaysSo(InteractiveSprintFixture):
         a claim about the run and was true only of its main thread."""
         cap = self._spent()
         self.assertNotIn("own spend", cap["basis"])
+
+    def test_the_prose_around_the_capture_does_not_claim_it_either(self) -> None:
+        """BG0252's Resolution said the old sentence was gone and a test asserted it never
+        comes back; the test only ever read the RUNTIME basis, so the same false claim sat
+        untouched in the source - `run_attributed_tokens` opened with "The tokens the open run
+        spent" and the comment above it said the reader "turns it into this run's own spend".
+        Prose an agent reads before touching the code is where the wrong model gets learned,
+        so it is pinned in the same terms as the string."""
+        import inspect
+        doc = inspect.getdoc(retro.run_attributed_tokens) or ""
+        self.assertNotIn("own spend", doc)
+        self.assertIn("AT LEAST", doc)
+        # ...and the comment above `harness_tokens`, which is what a reader meets first
+        self.assertNotIn("own spend", inspect.getsource(retro),
+                         "the phrase is the claim; it may not survive anywhere in the module")
 
     def test_a_supplied_delegated_total_is_added_and_named_as_supplied(self) -> None:
         self._session("s1.jsonl", {"input_tokens": 60_000})

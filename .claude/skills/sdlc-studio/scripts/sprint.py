@@ -208,10 +208,12 @@ def tokens_per_point(repo_root: Path | str | None = None) -> dict:
     3. THE SEED, named as a seed, with the fact that this project has measured no rate of its
        own carried beside it. A plan is never REFUSED over a token estimate.
 
-    A REFUSED record does not collapse into a silent seed. `measured_rate` refuses a rate whose
-    rows span more than one model, because a rate averaged over two models describes neither;
-    the reason travels on `refused` so the plan can say why the record was not used instead of
-    quoting the seed with nothing said.
+    A REFUSED record does not collapse into a silent anything. `measured_rate` refuses a rate
+    whose rows span more than one model, because a rate averaged over two models describes
+    neither. `refused` is carried on EVERY answer this returns, whichever source ended up
+    standing - the seed OR the per-unit evidence log - so the plan always says why the mandated
+    source was set aside. The evidence-log answer used to carry no `refused` key at all, which
+    dropped the reason entirely on the one path where a second source really did substitute.
 
     Fail-safe throughout: unreadable evidence yields the seed, never an exception - a project
     must be able to plan before it has measured anything.
@@ -254,8 +256,12 @@ def tokens_per_point(repo_root: Path | str | None = None) -> dict:
     seed["units"], seed["points"], seed["tokens"], seed["ids"] = len(ids), points, tokens, ids
     if len(ids) < RATE_MIN_UNITS or not points:
         return seed          # counted, named, and NOT yet trusted
-    return {"rate": int(round(tokens / points)), "source": "measured", "units": len(ids),
+    return {"rate": int(round(tokens / points)), "source": RATE_EVIDENCE, "units": len(ids),
             "points": points, "tokens": tokens, "ids": ids, "min_units": RATE_MIN_UNITS,
+            # The record's refusal travels even though the record is not what answered: this is
+            # the ONE path on which a second source genuinely stands in for the mandated one,
+            # so it is the path that most needs to say so.
+            "refused": vel["refused"],
             "basis": (f"measured from this project's evidence: {len(ids)} delivered unit(s), "
                       f"{points} point(s) forecast at plan time, {tokens:,} tokens actually "
                       f"spent (sdlc-studio/retros/evidence/)")}
@@ -366,9 +372,20 @@ def sample_class(retro_id: str | None, constants: dict | None,
     """Is this recorded sprint evidence about the estimator in force, or is it its own fit?
 
     Derived at READ time from two facts the row carries - which sprint it is, and which
-    constants produced its forecast - never from a label frozen when the row was written. A
+    ESTIMATOR produced its forecast - never from a label frozen when the row was written. A
     re-measurement that adds a sprint to the training set therefore reclassifies that sprint's
     row immediately, instead of leaving it quoted as validation for a model it helped fit.
+
+    WHICH ESTIMATOR, NEVER WHICH CALIBRATION OF IT. `stale-constants` means "forecast by a
+    DIFFERENT estimator", and an estimator's identity is the PARAMETERS it takes, not the
+    values they were measured at: the retired one took `base`/`tpc`, this one takes
+    `TOKENS_PER_POINT`. The value moves by design - the rate is re-measured from VELOCITY.md
+    on every plan - so comparing values instead would let a LATER sprint reclassify an EARLIER
+    row. Measured on this repo's own record, stamping the delivering model on three rows moved
+    the rate from the 25,000 seed to a measured 77,013, turned all 23 out-of-sample rows stale
+    in one read, emptied the whole-sprint excess to UNMEASURED and reverted the forecast band
+    to its default - with no recorded fact having changed. A row's class is a fact about the
+    plan that WROTE it, and nothing measured afterwards may reach back and alter it.
     """
     rid = (retro_id or "").strip().upper()
     if constants == SAMPLE_MIXED:
@@ -376,8 +393,7 @@ def sample_class(retro_id: str | None, constants: dict | None,
     if not isinstance(constants, dict) or not constants:
         return SAMPLE_NONE
     try:
-        same = all(int(constants.get(k, -1)) == v
-                   for k, v in forecast_constants(repo_root).items())
+        same = set(constants) == set(forecast_constants(repo_root))
     except (TypeError, ValueError):
         return SAMPLE_NONE
     # IN-SAMPLE (training error) requires BOTH that this sprint's actuals are in the current fit
@@ -593,13 +609,40 @@ FORECAST_EXCLUDES = (
 )
 
 
+def _whole_sprint_actual(row: dict) -> bool:
+    """Does this velocity row's Actual measure the WHOLE SPRINT, or only its units' build?
+
+    The record's own coverage rule (`retro._tokens_cover_points`) admits two honest shapes, and
+    only ONE of them is a whole-sprint figure:
+
+    * Measured == 0 with an Actual present: a sprint-level total read off the harness, which by
+      definition covers the sprint - the ceremony around the units included. This one qualifies.
+    * Measured == Units: the sum of the units' PER-UNIT telemetry. That is the BUILD, and the
+      review, the repair rounds and the orchestration around it are exactly what it leaves out.
+      Divided by a build forecast it measures the build's own error, not a whole-sprint excess.
+
+    Both shapes carry a rate, which is why `measured_rate` accepts both; only the first can be
+    published under a heading that says whole-sprint. This repo published RETRO0028 (Units 3 /
+    Measured 3) at 2.26x inside that span.
+    """
+    try:
+        import retro  # noqa: PLC0415 - deferred, as everywhere else in this module
+        if not retro._tokens_cover_points(row):   # noqa: SLF001 - ONE coverage rule, shared
+            return False
+    except Exception as exc:  # noqa: BLE001 - no record must never break planning
+        sdlc_md.debug("sprint._whole_sprint_actual", exc)
+        return False
+    return row.get("measured") == 0
+
+
 def whole_sprint_excess(repo_root: Path | str) -> dict:
     """How far a WHOLE sprint has run over the build forecast it was planned with - measured.
 
     Read off the velocity record: every OUT-OF-SAMPLE row carrying both a plan-time forecast
-    and a whole-sprint actual gives one observation of actual/forecast. In-sample rows are
-    excluded for the same reason `calibration` excludes them - a fit against its own training
-    data lands near 1.0x by construction.
+    and a whole-sprint actual gives one observation of actual/forecast. A row whose Actual is a
+    per-unit BUILD sum is not such a row and is excluded - see `_whole_sprint_actual`.
+    In-sample rows are excluded for the same reason `calibration` excludes them - a fit against
+    its own training data lands near 1.0x by construction.
 
     WHAT THIS NUMBER IS NOT, and the distinction is the whole point of reporting it honestly:
     it is NOT a measurement of proving cost. The excess over a build forecast is proving cost
@@ -619,6 +662,8 @@ def whole_sprint_excess(repo_root: Path | str) -> dict:
             continue
         if not isinstance(actual, (int, float)) or actual <= 0:
             continue
+        if not _whole_sprint_actual(r):
+            continue
         if sample_class(r.get("id"), r.get("constants"), root) != SAMPLE_OUT:
             continue
         obs.append({"id": r.get("id"), "forecast": int(est), "actual": int(actual),
@@ -630,9 +675,10 @@ def whole_sprint_excess(repo_root: Path | str) -> dict:
         "low": min(mults) if mults else None,
         "high": max(mults) if mults else None,
         "basis": "whole-sprint actual over the build forecast the plan quoted, on the "
-                 "out-of-sample rows of VELOCITY.md. NOT a measurement of proving cost: the "
-                 "excess is proving plus any under-estimate of the build, and the record "
-                 "carries no split between them",
+                 "out-of-sample rows of VELOCITY.md whose Actual covers the whole sprint "
+                 "rather than summing per-unit build telemetry. NOT a measurement of proving "
+                 "cost: the excess is proving plus any under-estimate of the build, and the "
+                 "record carries no split between them",
     }
 
 
@@ -2316,10 +2362,17 @@ def _render_rate_provenance(tf: dict) -> None:
     """Why THIS rate and not another one - printed with the rate, never three blocks away.
 
     A seed carries the one live test of itself; a refused record says which models refused it.
-    Both used to be silent, and a silent seed reads as a calibration."""
+    Both used to be silent, and a silent seed reads as a calibration.
+
+    The refusal prints whatever stood in place of the record, and NAMES what stood: on the
+    evidence-log path the seed did not stand at all, and saying it did would be a second false
+    statement stacked on the first."""
     if tf.get("rate_refused"):
+        instead = {RATE_EVIDENCE: "the per-unit evidence log stands instead",
+                   RATE_SEED: "the seed stands instead"}.get(
+                       tf["rate_source"], f"the {tf['rate_source']} rate stands instead")
         print(f"    the velocity record yields no usable rate - {tf['rate_refused']} "
-              f"Nothing is averaged across that boundary, so the seed stands instead")
+              f"Nothing is averaged across that boundary, so {instead}")
     if tf["rate_source"] != RATE_SEED:
         return
     print(f"    this project has measured no rate of its own yet: no VELOCITY.md row records "
@@ -4317,15 +4370,24 @@ def cmd_stop(args) -> int:
             "pending": len(out["pending"]), "stopped_at": sdlc_md.now_iso8601()}
     run_state.update(root, stop=stop)
     if out["pending"]:
-        _open_idle_gap(root, cause)      # the run is now WAITING, and the clock says so
+        # The run is now WAITING, and the clock says so. This gap opens at the same instant
+        # `close_run` below stamps `ended_at`, so it lies ENTIRELY OUTSIDE the measured window
+        # and must deduct nothing from it - `telemetry.elapsed_excluding_idle` clamps every gap
+        # to its intersection with the run rather than subtracting it whole. The wait is still
+        # recorded, because how long the operator loop takes is a real fact; it is simply not
+        # wall-clock the sprint ever held.
+        _open_idle_gap(root, cause)
     _render_stop_cost(out)
     run_state.close_run(root, run_state.STOPPED)
     el = run_elapsed(root)
     print(f"run stopped ({cause}): {stop['detail'] or 'no reason given'}; "
           f"{len(out['blocked'])} blocked, {len(out['unblocked'])} could have proceeded")
     if el["hours"] is not None:
+        outside = round(el["recorded_idle_hours"] - el["idle_hours"], 3)
         print(f"  elapsed {el['hours']}h working ({el['raw_hours']}h wall-clock less "
-              f"{el['idle_hours']}h recorded idle across {len(el['gaps'])} gap(s))")
+              f"{el['idle_hours']}h idle INSIDE it, from {len(el['gaps'])} recorded gap(s))"
+              + (f"; a further {outside}h of recorded idle falls outside the run and is "
+                 f"deducted from nothing" if outside > 0 else ""))
     return 0
 
 

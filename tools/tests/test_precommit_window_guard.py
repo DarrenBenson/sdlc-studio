@@ -26,6 +26,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -35,6 +36,38 @@ HOOK = REPO / ".githooks" / "pre-commit"
 
 PASS_SH = "#!/usr/bin/env bash\nexit 0\n"
 PASS_PY = "import sys\nsys.exit(0)\n"
+
+#: The fixture's stand-in for `gate.py`, running the REAL `window` lane and nothing else.
+#:
+#: It used to be PASS_PY, and that stub is what let the two halves of this feature contradict
+#: each other in the same commit: `gate.py --root .` carries a `window` lane of its own, the
+#: lane was BLOCKING on the record's EXISTENCE, and the hook runs it a few lines below this
+#: guard. One real run printed "No staged path is claimed by it, so this commit proceeds" AND
+#: "[FAIL] window: a rewrite window is OPEN" AND "Commit blocked." The AC2 test below could not
+#: see it, because the stub exited 0 before reaching the lane that decided the verdict its own
+#: name claims (L-0174: a test written to close a class, stubbed past the code that holds it).
+#:
+#: Only the window lane, because everything else the real gate reads (artefact indexes, a
+#: conformance surface, a docs tree) is absent from a fixture built to isolate this guard - and
+#: a lane failing for a missing index would refuse every commit here for the wrong reason.
+#: It also LOGS its verdict to a file, because the hook prints a passing gate's output nowhere -
+#: so stdout alone cannot tell "the lane ran and passed" from "the lane never ran", which is the
+#: exact confusion the stub created.
+GATE_WINDOW_LANE = """\
+import sys
+sys.path.insert(0, {scripts!r})
+import gate
+lane = gate.DEFAULT_CHECKS["window"](".")
+with open("sdlc-studio/.local/gate-window-lane.log", "a", encoding="utf-8") as fh:
+    fh.write(("FAIL " if lane["count"] else "ok ") + lane["detail"] + "\\n")
+if lane["count"]:
+    print("[FAIL] window: " + lane["detail"])
+    sys.exit(1)
+sys.exit(0)
+"""
+
+#: Where the stub above records that it ran.
+GATE_LANE_LOG = "sdlc-studio/.local/gate-window-lane.log"
 
 #: The hook's own branch marker for a commit that ran no unit suite. Asserting on it is
 #: how AC4's "lane selection unchanged" claim stays checkable rather than assumed.
@@ -91,8 +124,13 @@ class WindowGuardTests(unittest.TestCase):
                      "check_budgets.py", "check_neutrality.py", "gate_timing.py"):
             (root / "tools" / name).write_text(PASS_PY, encoding="utf-8")
         scripts = root / ".claude" / "skills" / "sdlc-studio" / "scripts"
-        for name in ("gate.py", "engagement_floor.py", "reconcile.py"):
+        for name in ("engagement_floor.py", "reconcile.py"):
             (scripts / name).write_text(PASS_PY, encoding="utf-8")
+        # NOT stubbed to pass: the real window lane, which is the other half of this feature
+        # and the half that contradicted the guard above.
+        (scripts / "gate.py").write_text(
+            GATE_WINDOW_LANE.format(scripts=str(REPO / ".claude" / "skills" / "sdlc-studio"
+                                                / "scripts")), encoding="utf-8")
         md = root / "node_modules" / ".bin" / "markdownlint"
         md.write_text(PASS_SH, encoding="utf-8")
         md.chmod(0o755)
@@ -276,6 +314,72 @@ class WindowGuardTests(unittest.TestCase):
             self.assertNotEqual(rc, 0, f"a glob claim matched nothing:\n{out}")
             self.assertIn(self.CLAIMED, out)
 
+    def test_the_gate_lane_does_not_contradict_the_guard_in_the_same_run(self) -> None:
+        """The finding, stated as the property. AC2 above proves the commit LANDS; this proves
+        the run contains no refusal at all - the shape observed was one run printing both
+        "No staged path is claimed by it, so this commit proceeds" and "[FAIL] window", with
+        the blocking half winning. Whatever refuses, the hook and the gate must agree."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            self._open_window(root)
+            rc, out = self._commit(root, self.UNCLAIMED, "notes, no-contradiction case\n")
+            self.assertEqual(rc, 0, f"a scoped commit was refused:\n{out}")
+            self.assertNotIn("[FAIL]", out, f"the gate lane refused what the guard allowed:\n{out}")
+            self.assertNotIn("Commit blocked", out, out)
+            self.assertIn("this commit proceeds", out)
+
+    def test_the_gate_lane_is_actually_reached_by_this_fixture(self) -> None:
+        """The control on the fixture itself. A gate stubbed past its window lane made the test
+        above unfalsifiable, so something has to prove the lane RUNS here - and the hook prints
+        a passing gate's output nowhere, which is why the lane logs its own verdict."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            self._open_window(root)
+            _, out = self._commit(root, self.UNCLAIMED, "notes, lane-reached case\n")
+            log = root / GATE_LANE_LOG
+            self.assertTrue(log.exists(),
+                            f"the real gate window lane never ran in this fixture:\n{out}")
+            verdict = log.read_text(encoding="utf-8")
+            self.assertTrue(verdict.startswith("ok "), verdict)
+            self.assertIn("OPEN", verdict, "the lane did not even see the window")
+
+    # -- the ways a record can defeat the matcher --------------------------------
+    def test_a_record_that_is_not_a_json_object_claims_the_whole_tree(self) -> None:
+        """The third fail-safe reading the record contract names, and the one that had no test:
+        a JSON array, string or number is a window record nobody can read. Mutating the hook's
+        non-object branch from [EVERYTHING] to [] survived the whole suite."""
+        for raw in ('["tools/thing.py"]', '"just a string"', "42", "null"):
+            with self.subTest(record=raw), tempfile.TemporaryDirectory() as d:
+                root = self._repo(Path(d))
+                self._open_window(root, raw=raw)
+                rc, out = self._commit(root, self.UNCLAIMED, "notes, non-object case\n")
+                self.assertNotEqual(rc, 0, f"a non-object record claimed nothing:\n{out}")
+                self.assertIn("unreadable", out.lower(), out)
+
+    def test_a_claim_the_matcher_cannot_interpret_claims_the_whole_tree(self) -> None:
+        """FAIL SAFE, not fail open. Every shape below was reproduced end to end against the
+        real hook and COMMITTED: `paths` holding objects, nested lists or numbers was str()-ed
+        into a pattern that matched nothing at all."""
+        for claim in ([{"path": "tools/thing.py"}], [["tools/thing.py"]], [0], [None]):
+            with self.subTest(claim=claim), tempfile.TemporaryDirectory() as d:
+                root = self._repo(Path(d))
+                self._open_window(root, paths=claim)
+                rc, out = self._commit(root, self.UNCLAIMED, "notes, bad-claim case\n")
+                self.assertNotEqual(rc, 0,
+                                    f"an uninterpretable claim waved the commit through:\n{out}")
+
+    def test_an_absolute_claim_claims_the_whole_tree(self) -> None:
+        """`git diff --cached --name-only` is repo-relative, so an absolute claim can never
+        equal a staged path. `window open --paths /abs/tools/thing.py` printed "Commits in this
+        tree will be refused until it is closed" and the commit rewriting that exact file
+        landed. Windows are normalised at open time now; a record already on disk is read here
+        as claiming everything."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            self._open_window(root, paths=[str(root / self.CLAIMED)])
+            rc, out = self._commit(root, self.UNCLAIMED, "notes, absolute-claim case\n")
+            self.assertNotEqual(rc, 0, f"an absolute claim matched nothing:\n{out}")
+
     def test_a_record_in_the_windows_directory_is_found_too(self) -> None:
         """Both spellings of the record contract are read: a single `*window*.json` file,
         and one file per window under `windows/`. A reader that found only one of them
@@ -361,6 +465,140 @@ class WindowRecordReaderTests(unittest.TestCase):
         claims = _guard_module()["claims"]
         self.assertFalse(claims("tools/thing.py", "README.md"))
         self.assertFalse(claims("tools/", "toolsmith.py"))
+
+    def _parse(self, raw: str):
+        """`parse` over a record written to disk, in ISOLATION from the rest of the hook.
+
+        The end-to-end cases in the class above cannot pin this reader on their own: the hook
+        also runs the gate's window lane, which refuses on the same records for its own reasons,
+        so a commit stays blocked even with this branch broken. Mutating the two readings below
+        SURVIVED every end-to-end test in this file and was killed only here."""
+        with tempfile.TemporaryDirectory() as d:
+            rec = Path(d) / "review-window.json"
+            rec.write_text(raw, encoding="utf-8")
+            return _guard_module()["parse"](rec)
+
+    def test_a_record_that_is_not_a_json_object_claims_everything(self) -> None:
+        """The record contract names three fail-safe readings "each with its own test"; this
+        was the one with none. A JSON array, string or number parses fine and is not a window
+        record, and reading it as claiming nothing is the fail-OPEN direction."""
+        for raw in ('["tools/thing.py"]', '"a string"', "42", "null"):
+            with self.subTest(record=raw):
+                owner, _, claimed, _ = self._parse(raw)
+                self.assertEqual(claimed, ["*"], raw)
+                self.assertIn("unreadable", owner, raw)
+
+    def test_a_claim_that_is_not_a_string_claims_everything(self) -> None:
+        """`paths` holding objects, nested lists, numbers or nulls. Each was str()-ed into a
+        pattern that could match nothing, and each COMMITTED against the real hook."""
+        for claim in ([{"path": "tools/thing.py"}], [["tools/thing.py"]], [0], [None],
+                      ["tools/thing.py", 0]):
+            with self.subTest(claim=claim):
+                _, _, claimed, _ = self._parse(json.dumps({"owner": "o", "paths": claim}))
+                self.assertEqual(claimed, ["*"], claim)
+
+    def test_a_record_of_plain_string_claims_is_left_alone(self) -> None:
+        """The negative control on both readings above: a well-formed record must keep its own
+        claims, or the guard refuses every commit in every tree and gets switched off."""
+        _, _, claimed, _ = self._parse(json.dumps(
+            {"owner": "o", "paths": ["tools/thing.py", "scripts/"]}))
+        self.assertEqual(claimed, ["tools/thing.py", "scripts/"])
+
+
+def _skill_module(name: str):
+    """A shipped skill script, imported by path."""
+    import importlib.util
+    scripts = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts"
+    if str(scripts) not in sys.path:
+        sys.path.insert(0, str(scripts))
+    spec = importlib.util.spec_from_file_location(f"{name}_for_window_contract",
+                                                  scripts / f"{name}.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+class OneRecordContractTests(unittest.TestCase):
+    """The record contract has one meaning, and three pieces of code implement it: this hook's
+    inline reader, `mutation`'s reader, and the gate's `window` lane.
+
+    The hook's reader cannot import the skill (it must work in a clone where the scripts are
+    absent or broken - a guard that cannot run is a guard that is not there), so the duplication
+    is deliberate. What is NOT acceptable is the duplication drifting: `mutation.read_window`
+    read one fixed filename while the hook read two spellings, so a record at
+    `.local/windows/reviewer.json` blocked commits, was reported "no rewrite window is open" by
+    `window status`, and let `window open` declare a SECOND writer over the same tree. These
+    tests are the mechanical agreement the one-contract claim rests on.
+    """
+
+    def _tree(self, root: Path, *rels: str) -> None:
+        for rel in rels:
+            p = root / "sdlc-studio" / ".local" / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(json.dumps({"owner": "o", "paths": ["tools/thing.py"]}),
+                         encoding="utf-8")
+
+    def test_both_readers_discover_the_same_records(self) -> None:
+        mutation = _skill_module("mutation")
+        hook_records = _guard_module()["records"]
+        cases = (
+            (),
+            ("mutation-window.json",),
+            ("review-window.json",),
+            ("windows/reviewer.json",),
+            ("mutation-window.json", "windows/reviewer.json", "review-window.json"),
+        )
+        for rels in cases:
+            with self.subTest(records=rels), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                (root / "sdlc-studio" / ".local").mkdir(parents=True)
+                self._tree(root, *rels)
+                # the hook reads records relative to the repo root it cd'd into
+                cwd = os.getcwd()
+                os.chdir(root)
+                try:
+                    from_hook = sorted(p.as_posix() for p in hook_records())
+                finally:
+                    os.chdir(cwd)
+                from_tool = sorted(
+                    Path(p).relative_to(root).as_posix() for p in mutation.window_records(root))
+                self.assertEqual(from_hook, from_tool)
+                self.assertEqual(len(from_tool), len(rels))
+
+    def test_both_matchers_agree_on_every_claim_shape(self) -> None:
+        """The hook's `claims` and the gate lane's `_window_claims` decide the same commits.
+        Every row below is a shape that was reproduced against the real hook."""
+        gate = _skill_module("gate")
+        claims = _guard_module()["claims"]
+        rows = (
+            ("tools/thing.py", "tools/thing.py"),
+            ("tools/thing.py", "README.md"),
+            ("./tools/thing.py", "tools/thing.py"),
+            ("tools/", "tools/nested/deep.py"),
+            ("tools", "toolsmith.py"),
+            ("tools/*.py", "tools/thing.py"),
+            ("/", "README.md"),
+            (".", "README.md"),
+            ("", "README.md"),
+            ("/abs/tools/thing.py", "tools/thing.py"),
+            ({"path": "tools/thing.py"}, "README.md"),
+            (["tools/thing.py"], "README.md"),
+            (0, "README.md"),
+            (None, "README.md"),
+        )
+        for claim, staged in rows:
+            with self.subTest(claim=claim, staged=staged):
+                self.assertEqual(bool(claims(claim, staged)),
+                                 bool(gate._window_claims(claim, staged)))
+
+    def test_the_matchers_are_not_agreeing_by_both_saying_yes(self) -> None:
+        """The control on the test above: two matchers that returned True for everything would
+        agree perfectly and guard nothing."""
+        gate = _skill_module("gate")
+        claims = _guard_module()["claims"]
+        for matcher in (claims, gate._window_claims):
+            self.assertFalse(matcher("tools/thing.py", "README.md"))
+            self.assertTrue(matcher("tools/thing.py", "tools/thing.py"))
 
 
 if __name__ == "__main__":
