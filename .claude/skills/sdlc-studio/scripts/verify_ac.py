@@ -386,6 +386,79 @@ def lint_verifier(expr: str) -> str | None:
     return None
 
 
+# A verifier that only reads prose. Kept beside the DSL verbs it names, so a new
+# text-reading verb cannot be added without meeting this list.
+_PROSE_VERBS = {"grep", "file"}
+#: Statuses at which a criterion is still being AUTHORED. Past these the story has
+#: shipped and a retrospective refusal helps nobody - it is the writing moment this
+#: guard exists to interrupt.
+_AUTHORING_STATUSES = {"draft", "ready"}
+
+
+def _verifier_targets(expr: str) -> list[str]:
+    """The paths a `grep`/`file` expression searches, as WRITTEN - never expanded.
+
+    Deliberately not `_expand_globs`, but NOT because expansion would change this
+    verdict - it would not. `_expand_globs` passes an unmatched glob through literally
+    rather than dropping it, so a `*.md` pattern reads as markdown whether it matches
+    anything or not, and substituting the expanding version leaves every case here
+    identical. That was checked by mutation rather than assumed: the swap survives, and
+    it survives because the two are equivalent for this question.
+
+    The reason is that expansion answers a different question. It resolves what exists on
+    THIS filesystem right now, and this guard judges what the AUTHOR WROTE. A criterion
+    whose glob happens to match no markdown today is the same self-confirming verifier
+    tomorrow when it does, so binding the verdict to the current working tree would make
+    it depend on where it ran. Keeping it textual also means the check needs no cwd and
+    touches no disk.
+    """
+    parts = expr.split(None, 1)
+    head = parts[0].lower() if parts else ""
+    tail = parts[1] if len(parts) > 1 else ""
+    if not tail:
+        return []
+    if head == "file":
+        return [tail.strip('"\'')]
+    if head == "grep":
+        try:
+            args = shlex.split(tail)
+        except ValueError:
+            return []  # malformed quoting is lint_verifier's business, not ours
+        return args[1:]  # the first token is the pattern
+    return []
+
+
+def lint_markdown_evidence(expr: str) -> str | None:
+    """REFUSAL: a `grep`/`file` verifier whose every target is markdown proves that
+    somebody wrote a sentence, not that the behaviour exists.
+
+    This is the only lint here that refuses rather than advises, because the class has
+    already shipped past a human review. US0310 declared four criteria about a guard's
+    behaviour and verified them with four `grep`s over the two reference documents the
+    same author was editing (`grep "window" reference-sprint.md` was one). All four
+    passed, none touched the guard, and the sprint published a verified count four
+    higher than its evidence supported. The verifier is self-confirming by construction:
+    the author writes the line and the search for it in one sitting, so it is true of
+    the line just written and silent about the code.
+
+    Note what is NOT refused. A criterion genuinely ABOUT documentation is legitimate
+    and says `manual`, which puts it in the manual count where a reader can weigh it,
+    rather than in the passing count where it is indistinguishable from a test. A mixed
+    expression that also searches a non-markdown path is left alone: it can discriminate,
+    and narrowing it further is a judgement this check has no basis to make.
+    """
+    head = (expr.split(None, 1)[0].lower() if expr.split() else "")
+    if head not in _PROSE_VERBS:
+        return None
+    targets = _verifier_targets(expr)
+    if not targets or not all(t.lower().endswith(".md") for t in targets):
+        return None
+    return ("this verifier only searches markdown, so it proves someone wrote a sentence, "
+            "not that the behaviour exists - the shape that passed four US0310 criteria "
+            "against prose asserting their opposite. Verify the behaviour (`pytest`/`shell`), "
+            "or say `manual` if the criterion really is about the document")
+
+
 def duplicate_verifiers(paths) -> list[dict]:
     """Verify commands that appear byte-identically under more than one AC.
 
@@ -1326,20 +1399,34 @@ def cmd_ts_check(args: argparse.Namespace) -> int:
 
 
 def cmd_lint(args: argparse.Namespace) -> int:
-    """Advisory: flag Verify lines that would fall through to `shell` but look like a
+    """Flag Verify lines that would fall through to `shell` but look like a
     mis-written runner invocation. Catches the AC↔test drift at author time
-    instead of discovering it 0/7 at verify time. Never fails the build."""
+    instead of discovering it 0/7 at verify time.
+
+    Advisory EXCEPT for the markdown-evidence refusal, which exits non-zero: that class
+    has already shipped four false passes past a human review, so an advisory it can be
+    walked past is what already failed. The refusal applies only while the story is still
+    being authored (Draft/Ready) - past that the criterion has shipped and refusing it
+    retrospectively blocks a lint run over history without helping anyone."""
     repo_root = resolve_root(args)
     paths = [Path(args.story)] if args.story else list(walk_stories(under_root(repo_root, args.dir)))
     flagged = 0
+    refused = 0
     for p in paths:
         if not p.exists():
             continue
-        for line in sdlc_md.read_text_safe(p).splitlines():
+        text = sdlc_md.read_text_safe(p)
+        status = (sdlc_md.extract_field(text, "Status") or "").strip().lower()
+        authoring = status in _AUTHORING_STATUSES
+        for line in text.splitlines():
             m = VERIFY_RE.match(line)
             if not m:
                 continue
             expr = m.group(2).strip()
+            markdown_only = lint_markdown_evidence(expr) if authoring else None
+            if markdown_only:
+                refused += 1
+                print(f"{p.name}: {expr!r}\n    -> REFUSED: {markdown_only}")
             reason = lint_verifier(expr)
             if reason:
                 flagged += 1
@@ -1356,6 +1443,11 @@ def cmd_lint(args: argparse.Namespace) -> int:
               f"    -> two ACs sharing a selector cannot both discriminate - a regression in "
               f"either fails both, and neither says which")
     print(f"verify-lint: {flagged} suspicious Verify line(s) (advisory)")
+    if refused:
+        print(f"verify-lint: {refused} markdown-only verifier(s) REFUSED on a story still "
+              f"being authored - each proves a sentence was written, not that the behaviour "
+              f"exists", file=sys.stderr)
+        return 1
     return 0
 
 

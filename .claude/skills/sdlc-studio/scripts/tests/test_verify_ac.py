@@ -5,6 +5,7 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import argparse
 import contextlib
 import importlib.util
 import io
@@ -2235,6 +2236,87 @@ class AcFingerprintTests(unittest.TestCase):
         a = verify_ac.ac_fingerprint(self.STORY)
         b = verify_ac.ac_fingerprint("### ACZ: unrelated\n- **Verify:** file X.md\n")
         self.assertNotEqual(a, b)
+
+
+#: The four verifiers US0310 ACTUALLY SHIPPED in commit e1bc477, recovered from git rather
+#: than invented for this test. All four passed. None of them touched the guard they claimed
+#: to verify, and the sprint published a verified count four higher than its evidence
+#: supported. They are the fixture because a guard is validated with the bug it defends
+#: against (LL0010), and a hand-written approximation would be a guess about the shape.
+US0310_SHIPPED_VERIFIERS = [
+    'grep "review is a concurrent-writer window" .claude/skills/sdlc-studio/reference-sprint.md',
+    'grep "symlink" .claude/skills/sdlc-studio/reference-review.md',
+    'grep "green" .claude/skills/sdlc-studio/reference-review.md',
+    'grep "window" .claude/skills/sdlc-studio/reference-sprint.md',
+]
+
+
+class MarkdownEvidenceLintTests(unittest.TestCase):
+    """BG0264: a verifier that only reads prose proves a sentence was written."""
+
+    def test_every_verifier_us0310_shipped_is_refused(self) -> None:
+        # The whole point of the guard: these four are exactly what got through.
+        for expr in US0310_SHIPPED_VERIFIERS:
+            with self.subTest(expr=expr):
+                self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr))
+
+    def test_file_verb_on_markdown_is_refused(self) -> None:
+        self.assertIsNotNone(
+            verify_ac.lint_markdown_evidence("file .claude/skills/sdlc-studio/reference-cr.md"))
+
+    def test_a_behavioural_verifier_is_untouched(self) -> None:
+        for expr in ("pytest scripts/tests/test_x.py::test_y",
+                     "shell scripts/gate.py --check",
+                     "manual the operator confirms the banner renders",
+                     "grep 'def lint_markdown_evidence' scripts/verify_ac.py"):
+            with self.subTest(expr=expr):
+                self.assertIsNone(verify_ac.lint_markdown_evidence(expr))
+
+    def test_a_mixed_target_list_is_not_refused(self) -> None:
+        # It can discriminate - one target is code - so narrowing it further is a
+        # judgement this check has no basis to make.
+        self.assertIsNone(verify_ac.lint_markdown_evidence(
+            "grep 'refuses' reference-sprint.md scripts/sprint.py"))
+
+    def test_a_glob_that_matches_no_file_here_is_still_refused(self) -> None:
+        # The verdict is about what the author WROTE, not about what exists on this
+        # filesystem, so it must not depend on where the lint runs. This does NOT pin
+        # the textual-vs-expanded choice: `_expand_globs` passes an unmatched glob
+        # through literally, so swapping it in leaves every case identical and the
+        # mutant survives as equivalent. Pinning that would need a behavioural
+        # difference, and there is none.
+        self.assertIsNotNone(verify_ac.lint_markdown_evidence("grep 'x' docs/**/*.md"))
+
+    def test_uppercase_extension_is_refused(self) -> None:
+        self.assertIsNotNone(verify_ac.lint_markdown_evidence("grep 'x' README.MD"))
+
+    def test_lint_exits_non_zero_on_a_draft_story_and_zero_once_done(self) -> None:
+        root = FixtureRoot()
+        try:
+            story = root.tmp / "sdlc-studio" / "stories" / "US0003-prose.md"
+            body = (
+                "# US0003: a criterion about a guard\n\n"
+                "> **Status:** {status}\n\n"
+                "## Acceptance Criteria\n\n"
+                "### AC1: the guard refuses\n\n"
+                "- **Verify:** grep \"the guard refuses\" reference-sprint.md\n"
+            )
+            args = argparse.Namespace(root=str(root.tmp), dir="sdlc-studio/stories",
+                                      story=str(story), repo_root=None)
+
+            story.write_text(body.format(status="Draft"))
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                draft_rc = verify_ac.cmd_lint(args)
+
+            # Past authoring the criterion has shipped; refusing it retrospectively would
+            # block a lint over history without helping anyone.
+            story.write_text(body.format(status="Done"))
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                done_rc = verify_ac.cmd_lint(args)
+
+            self.assertEqual((draft_rc, done_rc), (1, 0))
+        finally:
+            root.cleanup()
 
 
 if __name__ == "__main__":
