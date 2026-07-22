@@ -19,6 +19,17 @@ The interaction with the grooming lesson makes it worse. `refine apply` mints st
 
 Note what is NOT being asked for: a design-rung rate nobody has measured. Inventing a multiplier would be the same false precision the estimator work exists to remove.
 
+**OBSERVED AT RUN-01KY5EJX's CLOSE, which is the run this CR was filed during.** The predicted
+failure happened exactly as AC3 describes. `retro.py accuracy --tokens-from-harness --write`
+published `RETRO0067 ... 2,502,024 tokens ... 834,008 tokens/point` to VELOCITY.md. The
+denominator is 3, because `_delivered_points` counts only TERMINAL units and a design rung
+terminates nothing by design - the whole output is acceptance criteria on Draft stories. The
+same row calls 38 units delivered, so it is internally inconsistent as well as wrong: two
+columns counting the same batch by different rules. The figure was caught by reading the row,
+not by any check, and it was one command away from being the number a future plan re-measured
+its rate against. The row now carries the token total with the rate deliberately blank and
+the reason in the notes column.
+
 ## Impact
 
 Any project that uses the design rung as intended, which is the rung this project's own lesson about skeleton stories tells operators to run first. Two consequences: capacity is planned against a build figure for a run that does no building, and the retro records a points-delivered figure of zero or near-zero against a real token spend, which is a wrong row in the file the planner re-measures its rate from.
