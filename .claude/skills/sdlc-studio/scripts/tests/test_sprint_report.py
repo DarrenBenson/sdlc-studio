@@ -397,6 +397,82 @@ class MutationBelongsToThisRunTests(ReportBase):
         self.assertIn("no mutation evidence", text)
         self.assertIn("no run state names this sprint", text)
 
+    def test_the_run_covering_this_sprint_beats_an_open_run_touching_one_unit(self) -> None:
+        """MAJOR, round 2: the LIVE record was tried first unconditionally, so a partial
+        one-unit intersection with whatever run happens to be open beat a full match in the
+        archive. An open run has no `ended_at`, so every later project-wide row then read as
+        this sprint's - the republishing defect the window was added to stop, returning
+        through its own fix."""
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        from lib import run_state
+        self._window("2026-07-01T08:00:00Z", "2026-07-01T10:00:00Z", ["US0001", "US0002"])
+        mine = self._run("2026-07-01T09:00:00Z", 300.0)
+        run_state.archive(self.root)
+        self._window("2026-07-20T08:00:00Z", None, ["US0001", "US0900"])   # re-touches ONE unit
+        self._run("2026-07-20T09:00:00Z", 55.0)                            # the LATER run's row
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertEqual(rep["mutation"]["current"]["run_id"], mine)
+        text = sr.render(rep)
+        self.assertIn("300.0s", text)
+        self.assertNotIn("55.0s, 10 applied", text)
+
+    def test_a_tie_on_coverage_keeps_the_live_record(self) -> None:
+        """Both records name every unit. The live one is the run being closed, and the report
+        is normally rendered from it before the close archives it."""
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        from lib import run_state
+        self._window("2026-07-01T08:00:00Z", "2026-07-01T10:00:00Z", ["US0001", "US0002"])
+        self._run("2026-07-01T09:00:00Z", 300.0)
+        run_state.archive(self.root)
+        self._window("2026-07-22T08:00:00Z", "2026-07-22T10:00:00Z", ["US0001", "US0002"])
+        rid = self._run("2026-07-22T09:00:00Z", 55.0)
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertEqual(rep["mutation"]["current"]["run_id"], rid)
+        self.assertIn("55.0s", sr.render(rep))
+
+    def test_an_unstamped_row_is_named_rather_than_reported_as_a_skipped_step(self) -> None:
+        """MINOR, round 2: a row with no `at` is dropped from both buckets, and the renderer
+        then said the step was skipped or killed before it could record anything. Neither is
+        true of a row that exists and carries counts."""
+        self._window("2026-07-22T08:00:00Z", "2026-07-22T10:00:00Z", ["US0001", "US0002"])
+        self._run(None, 71.0)
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertIsNone(rep["mutation"]["current"])
+        self.assertEqual(1, rep["mutation"]["unstamped"])
+        text = sr.render(rep)
+        self.assertIn("no timestamp", text)
+        self.assertEqual(1, text.count("no timestamp"))   # said once, not once per writer
+        self.assertNotIn("killed before it could record anything", text)
+
+    def test_an_unstamped_row_is_named_even_when_this_run_has_a_row_of_its_own(self) -> None:
+        """It is dropped from the trailing history too, so the drop is said out loud rather
+        than leaving the reader to count the rows they cannot see."""
+        self._window("2026-07-22T08:00:00Z", "2026-07-22T10:00:00Z", ["US0001", "US0002"])
+        self._run(None, 71.0)
+        self._run("2026-07-22T09:00:00Z", 612.5)
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertEqual(1, rep["mutation"]["unstamped"])
+        # ...and `attribution` stays None: this run HAS a row, so nothing went unattributed
+        self.assertIsNone(rep["mutation"]["attribution"])
+        text = sr.render(rep)
+        self.assertIn("612.5s", text)
+        self.assertIn("no timestamp", text)
+
+    def test_an_unreadable_archive_record_does_not_break_the_window(self) -> None:
+        """MINOR, round 2: `_run_window` wrapped `run_state.archived` in `except OSError`,
+        which is dead - `archived` documents and implements never-raising, skipping the record
+        it cannot read. The guard is gone; this pins the contract it was standing in for."""
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        from lib import run_state
+        d = run_state.archive_dir(self.root)
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "RUN-BROKEN.json").write_text("{not json", encoding="utf-8")
+        self._window("2026-07-22T08:00:00Z", "2026-07-22T10:00:00Z", ["US0001", "US0002"])
+        rid = self._run("2026-07-22T09:00:00Z", 88.0)
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertTrue(rep["ok"])
+        self.assertEqual(rep["mutation"]["current"]["run_id"], rid)
+
     def test_a_closed_run_is_found_in_the_archive(self) -> None:
         """The report is normally read AFTER the close, and the close archives the run. A
         window that only exists in the archive is still this sprint's window."""

@@ -127,8 +127,10 @@ def claims(pattern, staged):
     Uninterpretable claims fail SAFE. `git diff --cached --name-only` is always repo-relative,
     so an ABSOLUTE claim can never equal a staged path: `window open --paths <abs>/tools/x.py`
     announced a rewrite and then matched nothing, and the commit rewriting that file landed.
-    Windows are now normalised to repo-relative at open time; a record already on disk with an
-    absolute claim is read here as claiming everything."""
+    A TRAVERSING claim is the same failure by a relative spelling - `tools/../tools/x.py` names
+    exactly `tools/x.py` and matches nothing as a literal pattern, and that commit landed too.
+    Windows are normalised to repo-relative at open time; a record already on disk carrying
+    either spelling is read here as claiming everything."""
     if not isinstance(pattern, str):
         return True
     pat = pattern.strip()
@@ -139,6 +141,8 @@ def claims(pattern, staged):
         return True   # a claim on the repo root ("/", ".") is a claim on everything
     if pat.startswith("/"):
         return True   # absolute: not comparable with a repo-relative staged path
+    if pat == ".." or pat.startswith("../") or "/../" in pat or pat.endswith("/.."):
+        return True   # traversal: names a real file, matches nothing as a literal pattern
     if staged.startswith(pat + "/"):   # a directory claim covers everything beneath it
         return True
     return fnmatch.fnmatch(staged, pat)

@@ -1888,6 +1888,278 @@ class WindowRecordContractTests(unittest.TestCase):
             self.assertEqual(rec["paths"], [elsewhere])
 
 
+class WindowClaimNormalisationTests(unittest.TestCase):
+    """A claim a reader cannot match is a window that announced a rewrite and guarded nothing.
+
+    Found by the round-2 review of RUN-01KY3MFX. Round 1 normalised the ABSOLUTE spelling and
+    left a third case: `tools/../tools/x.py` is relative, so it was recorded verbatim, and
+    neither matcher normalises traversal - the claim matched NOTHING and the commit rewriting
+    that exact file landed. `--files` / `--paths` accept that spelling and `select_files` does
+    `root / f`, so the tool's own CLI reaches it.
+    """
+
+    def test_a_traversal_claim_is_normalised_at_open_time(self) -> None:
+        mut = _load()
+        for spelling in ("tools/../tools/x.py", "./tools/../tools/x.py"):
+            with self.subTest(claim=spelling), tempfile.TemporaryDirectory() as d:
+                root = _fixture(Path(d))
+                self.assertEqual(mut.window_claim(root, spelling), "tools/x.py")
+
+    def test_an_absolute_traversal_claim_is_normalised_too(self) -> None:
+        """The shape `select_files` produces: `root / f` over a relative path holding `..`."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            rec = mut.open_window(root, "the reviewer", [Path(root) / "tools/../tools/x.py"])
+            self.assertEqual(rec["paths"], ["tools/x.py"])
+
+    def test_a_relative_claim_that_escapes_the_root_claims_everything(self) -> None:
+        """The case that cannot be spelled repo-relative at all. Left verbatim it is a literal
+        pattern that matches nothing, which is the fail-OPEN direction this feature may never be
+        wrong in; unnormalisable therefore reads as the whole tree."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            for spelling in ("../elsewhere.py", "tools/../../elsewhere.py", ".."):
+                with self.subTest(claim=spelling):
+                    self.assertEqual(mut.window_claim(root, spelling), mut.WINDOW_EVERYTHING)
+
+    def test_a_plain_claim_is_left_matchable(self) -> None:
+        """The negative control on all three: a normaliser that returned `*` for everything
+        would satisfy the fail-safe cases above and freeze every tree it was opened in."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            self.assertEqual(mut.window_claim(root, "tools/x.py"), "tools/x.py")
+            self.assertEqual(mut.window_claim(root, "./tools/x.py"), "tools/x.py")
+            self.assertEqual(mut.window_claim(root, "tools/*.py"), "tools/*.py")
+
+
+class WindowRecordNormalisationTests(unittest.TestCase):
+    """ONE record-level normalisation, shared with the pre-commit hook's inline reader.
+
+    Round 2 of the same review: the two PATTERN matchers agreed, and the RECORD readings did
+    not. This reader DISCARDED `paths` whenever `owner` was falsy and passed un-stripped claims
+    on, so `{"paths": ["tools/x.py"]}` and `{"owner": "rev", "paths": ["  ", "tools/x.py"]}`
+    were read here as claiming the whole tree while the hook read them as claiming one file.
+    The hook runs the gate a few lines later, so the blocking half won: the contradiction round
+    1 was rejected for, re-created one field along. A malformed owner must not change which
+    paths are claimed.
+    """
+
+    def _read(self, root, payload: str) -> dict:
+        mut = _load()
+        p = mut.window_path(root)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(payload, encoding="utf-8")
+        return mut.read_window(root)
+
+    def test_a_record_with_no_owner_keeps_its_own_claims(self) -> None:
+        mut = _load()
+        for payload in ('{"paths": ["tools/x.py"]}', '{"owner": "", "paths": ["tools/x.py"]}',
+                        '{"owner": null, "paths": ["tools/x.py"]}'):
+            with self.subTest(record=payload), tempfile.TemporaryDirectory() as d:
+                root = _fixture(Path(d))
+                held = self._read(root, payload)
+                self.assertEqual(held["paths"], ["tools/x.py"], payload)
+                self.assertTrue(held["owner"], payload)
+                # unowned: nobody can prove whose it is, so anyone may clear it
+                self.assertTrue(held["unreadable"], payload)
+                self.assertIsNotNone(mut.close_window(root, owner="anybody"))
+
+    def test_a_blank_claim_is_dropped_not_read_as_everything(self) -> None:
+        """A blank string reaches a matcher that strips it to `""`, where empty means the repo
+        root - so one stray blank in a list turned a scoped window into a tree-wide freeze."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            held = self._read(root, '{"owner": "rev", "paths": ["  ", "tools/x.py", ""]}')
+            self.assertEqual(held["paths"], ["tools/x.py"])
+
+    def test_a_record_naming_nothing_matchable_claims_everything(self) -> None:
+        """The safe direction, unchanged: absent, empty, all-blank, not a list, or holding a
+        claim that is not a string."""
+        mut = _load()
+        for payload in ('{"owner": "rev"}', '{"owner": "rev", "paths": []}',
+                        '{"owner": "rev", "paths": ["  "]}',
+                        '{"owner": "rev", "paths": 7}',
+                        '{"owner": "rev", "paths": [{"path": "tools/x.py"}]}',
+                        '{"owner": "rev", "paths": ["tools/x.py", 0]}'):
+            with self.subTest(record=payload), tempfile.TemporaryDirectory() as d:
+                root = _fixture(Path(d))
+                held = self._read(root, payload)
+                self.assertEqual(held["paths"], [mut.WINDOW_EVERYTHING], payload)
+
+    def test_a_string_paths_field_naming_one_file_is_read_as_that_one_claim(self) -> None:
+        """The hook reads a bare string as a one-element list; so must this, or the two readers
+        disagree about a record neither of them considers malformed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            held = self._read(root, '{"owner": "rev", "paths": "tools/x.py"}')
+            self.assertEqual(held["paths"], ["tools/x.py"])
+
+
+class WindowCloseIsOwnerSelectedTests(unittest.TestCase):
+    """The reader was generalised to N windows; the closer stayed on first-by-sort.
+
+    All three shapes were reproduced: a holder could not close their own window when another
+    record sorted first, a bare `close` removed whichever sorted first (possibly a live
+    mutation run's), and `run`'s own `finally` RAISED, stranding the window it had just opened.
+    """
+
+    def _rec(self, root, rel: str, owner: str, paths=("a.py",)) -> None:
+        p = Path(root) / "sdlc-studio" / ".local" / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"owner": owner, "paths": list(paths)}), encoding="utf-8")
+
+    def test_a_holder_closes_their_own_window_whatever_sorts_first(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            self._rec(root, "aaa-window.json", "somebody else")
+            self._rec(root, "mutation-window.json", "the reviewer")
+            held = mut.close_window(root, owner="the reviewer")
+            self.assertEqual(held["owner"], "the reviewer")
+            self.assertFalse(mut.window_path(root).exists())
+            # ...and the other writer's record is untouched
+            left = [Path(p).name for p in mut.window_records(root)]
+            self.assertEqual(left, ["aaa-window.json"])
+
+    def test_closing_a_window_nobody_holds_by_that_name_is_refused(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            self._rec(root, "aaa-window.json", "somebody else")
+            with self.assertRaises(ValueError) as ctx:
+                mut.close_window(root, owner="the reviewer")
+            self.assertIn("somebody else", str(ctx.exception))
+            self.assertTrue(mut.window_records(root), "the refusal must leave the record")
+
+    def test_a_bare_close_refuses_to_pick_among_several(self) -> None:
+        """Removing whichever record sorted first is not a choice anyone made, and the one it
+        picks may be a live run's."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            self._rec(root, "aaa-window.json", "somebody else")
+            self._rec(root, "mutation-window.json", mut.WINDOW_OWNER_RUN)
+            with self.assertRaises(ValueError) as ctx:
+                mut.close_window(root)
+            self.assertIn(mut.WINDOW_OWNER_RUN, str(ctx.exception))
+            self.assertEqual(len(mut.window_records(root)), 2)
+
+    def test_a_bare_close_still_clears_the_only_window(self) -> None:
+        """The negative control: a closer that refused whenever it was given no owner would
+        leave a stale record nobody could clear."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            self._rec(root, "review-window.json", "the reviewer")
+            self.assertIsNotNone(mut.close_window(root))
+            self.assertEqual(mut.window_records(root), [])
+
+    def test_a_run_clears_its_own_window_and_never_raises_out_of_its_finally(self) -> None:
+        """The stranding shape: another record sorting before `mutation-window.json` made the
+        run's `finally` raise, so the run's own window outlived it and every later commit in
+        that tree was refused by a writer that had finished."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            real_open = mut.open_window
+
+            def _sneak(r, owner, paths, note=None):
+                rec = real_open(r, owner, paths, note=note)
+                self._rec(r, "aaa-window.json", "somebody else")
+                return rec
+
+            with unittest.mock.patch.object(mut, "open_window", _sneak):
+                mut.run_gate(root, [root / "target.py"],
+                             f"{sys.executable} -m unittest test_good", max_mutations=1,
+                             write_report=False)
+            left = [Path(p).name for p in mut.window_records(root)]
+            self.assertNotIn("mutation-window.json", left,
+                             "the run stranded the window it opened")
+            self.assertEqual(left, ["aaa-window.json"], "it cleared another writer's record")
+
+    def test_a_window_cleared_by_hand_mid_run_does_not_raise_out_of_the_finally(self) -> None:
+        """The branch owner-selection cannot reach, tested in isolation because a sibling guard
+        masks it: with the run's own record still on disk the close now always finds it. Clear
+        that record by hand mid-run while another writer holds one, and the close has nothing of
+        its own to clear - which must end the run with its report, not with an exception raised
+        from the restore path over mutants that were all restored anyway."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            real = mut._run_tests
+
+            def _sabotage(cmd, cwd):
+                own = mut.window_path(root)
+                if own.exists():
+                    own.unlink()
+                    self._rec(root, "aaa-window.json", "somebody else")
+                return real(cmd, cwd)
+
+            with unittest.mock.patch.object(mut, "_run_tests", _sabotage):
+                report = mut.run_gate(root, [root / "target.py"],
+                                      f"{sys.executable} -m unittest test_good",
+                                      max_mutations=1, write_report=False)
+            self.assertFalse(report["refused"], report["remedy"])
+            self.assertTrue(report["mutations"], "the run produced no verdict at all")
+
+
+class WindowOpenMessageTests(unittest.TestCase):
+    """The CLI must promise what the guard does.
+
+    `window open` printed "Commits in this tree will be refused until it is closed". That was
+    true while the gate lane blocked on the record's EXISTENCE; the guard is PATH-SCOPED now,
+    and a commit staging nothing the window claims proceeds. No test asserted the string, so
+    the message survived the behaviour it described. This drives the CLI and the lane over the
+    SAME window, so the message cannot drift from the verdict again.
+    """
+
+    def _repo(self, d) -> Path:
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (root / "tools").mkdir()
+        (root / "tools" / "x.py").write_text("VALUE = 1\n", encoding="utf-8")
+        (root / "README.md").write_text("notes\n", encoding="utf-8")
+        gitutil.git(["init", "-q"], cwd=root)
+        gitutil.git(["add", "-A"], cwd=root)
+        gitutil.git(["commit", "-qm", "fixture"], cwd=root)
+        return root
+
+    def _lane(self, root: Path) -> dict:
+        import importlib.util as _il
+        spec = _il.spec_from_file_location("gate", SCRIPT.parent / "gate.py")
+        mod = _il.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod.DEFAULT_CHECKS["window"](str(root))
+
+    def test_the_open_message_promises_only_what_the_guard_does(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = mut.main(["window", "open", "--root", str(root), "--owner", "the reviewer",
+                               "--paths", "tools/x.py"])
+            self.assertEqual(rc, 0)
+            msg = buf.getvalue()
+            self.assertNotIn("Commits in this tree will be refused", msg,
+                             "the message outlived the tree-wide freeze it described")
+            self.assertIn("tools/x.py", msg, "it must name what it claims")
+            self.assertIn("claim", msg.lower())
+            # ...and the message is TRUE of the guard: an unclaimed path proceeds
+            (root / "README.md").write_text("notes and more notes\n", encoding="utf-8")
+            gitutil.git(["add", "README.md"], cwd=root)
+            self.assertEqual(self._lane(root)["count"], 0,
+                             "the lane refuses a commit the message says proceeds")
+            # ...and a claimed one is refused, which is what the message now promises
+            (root / "tools" / "x.py").write_text("VALUE = 999\n", encoding="utf-8")
+            gitutil.git(["add", "tools/x.py"], cwd=root)
+            self.assertEqual(self._lane(root)["count"], 1,
+                             "the lane allows a commit the message says is refused")
+
+
 class LedgerSummaryVocabularyTests(unittest.TestCase):
     """`SUMMARY_VERDICTS` says "one list, so a new verdict cannot be countable in one writer and
     absent in another". Both writers now derive from it; `append_ledger` used to hard-code its

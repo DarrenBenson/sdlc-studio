@@ -94,9 +94,18 @@ The published contract (see US0308) names two spellings, and this module now hon
   `open_window` / `close_window` and the gate's `window` lane all go through it, and
   `close_window` unlinks the record it actually read rather than a fixed filename.
 - Claimed paths are normalised to repo-relative at OPEN time (`window_claim`), because the
-  readers compare them against repo-relative `git diff --cached --name-only`. A path outside
-  the root is left verbatim, where both readers treat it as uninterpretable and so claiming
-  the whole tree.
+  readers compare them against repo-relative `git diff --cached --name-only`. Traversal is
+  resolved (`tools/../tools/x.py` is recorded as `tools/x.py`); a path that resolves outside
+  the root cannot be spelled repo-relative and becomes the whole-tree claim; an absolute path
+  outside the root is left verbatim, where both readers treat it as uninterpretable and so
+  claiming the whole tree.
+- The RECORD is normalised in one place too, `mutation.window_claims`, and the hook implements
+  the same rule inline. `paths` absent, empty, all-blank, not a list, or holding anything that
+  is not a string reads as the whole tree; blank entries are dropped; a malformed `owner` does
+  not change which paths are claimed. A record naming no owner is UNOWNED - reported open with
+  its own claims, and clearable by anyone, since nobody can prove whose it is.
+- `close_window` is OWNER-SELECTED: it clears the record the named owner holds, whatever sorts
+  first, never another owner's, and refuses to pick among several when given no owner.
 
 ## Repair round (independent review of RUN-01KY3MFX)
 
@@ -117,6 +126,61 @@ Three findings, all reproduced first and all now pinned:
    `select_files` produces) wrote claims no reader could match: the window announced a rewrite
    and the commit rewriting that exact file landed. Fixed by `window_claim`.
 
+## Repair round 2 (independent review of the repair above)
+
+Round 1's repair created round 2's defects. Each was reproduced first, driven red before the
+fix, and mutation-checked afterwards.
+
+1. **The CLI's own message was made false by the repair.** `window open` printed "Commits in
+   this tree will be refused until it is closed", which was true while the lane blocked on the
+   record's existence and false the moment round 1 made it path-scoped: a scratch repo with a
+   window over `tools/x.py` and `README.md` staged printed that sentence and then passed the
+   gate. No test asserted the string. The message now states the scope it has, and
+   `test_mutation.WindowOpenMessageTests` drives the CLI and the lane over the same window, so
+   the message cannot drift from the verdict again.
+2. **The record-level readings still diverged.** The two claim MATCHERS were identical, which
+   is all the agreement test compared; `_read_window_record` DISCARDED `paths` whenever `owner`
+   was falsy and passed un-stripped claims on, so `{"paths": ["tools/x.py"]}` and
+   `{"owner": "rev", "paths": ["  ", "tools/x.py"]}` were read here as claiming the whole tree
+   while the hook read them as claiming one file - the hook proceeding and the gate refusing in
+   the same run, which is the shape round 1 was rejected for. `window_claims` is now the one
+   record-level normalisation, the hook implements the same rule, and
+   `OneRecordContractTests.test_both_readers_normalise_a_record_the_same_way` compares RECORDS
+   over 23 shapes rather than claim patterns.
+3. **A traversing claim failed OPEN.** `window_claim(root, "<abs>/tools/../tools/x.py")` gave
+   `tools/../tools/x.py`, a relative spelling round 1's absolute-path branch never saw, and
+   neither matcher normalises: against the real hook, that window with `tools/x.py` staged and
+   rewritten exited 0 and the commit landed. `--files` / `--paths` accept the spelling and
+   `select_files` builds `root / f`, so the tool's own CLI reaches it. Traversal is now
+   resolved at open time, and both matchers read a residual `..` as claiming everything.
+4. **`COVERING_VERDICTS` was documented as the definition of covering evidence and used
+   nowhere**; the gate summed `killed` + `survived` inline under a comment naming a `_covering`
+   that did not exist. The gate now reads its own `_COVERING_VERDICTS`, pinned against
+   `mutation.COVERING_VERDICTS` by test, as the provenance labels already were.
+5. **The reader was generalised to N windows and the writer and closer were not.** All three
+   were reproduced: a holder could not close their own window when another record sorted first,
+   a bare close removed whichever sorted first (possibly a live run's), and `run`'s
+   `finally: close_window(...)` RAISED and stranded the window it had just opened. `close_window`
+   is owner-selected now, and the run's close cannot raise out of its restore path.
+6. **The gate lane's `count` was `1` however many windows claimed a staged path**, so the
+   multi-writer case the reader was generalised to see could not be reported. It counts windows.
+
+Still unfixed, and named rather than implied:
+
+- A record carrying a traversing claim now freezes the whole tree until it is cleared. That is
+  the deliberate direction - fail safe, never fail open - and it costs a hand-written record
+  the scoped-staging promise the rest of this feature makes.
+- The two readers agree on which paths a record claims and on the open/closed verdict. The
+  owner LABEL they print for an unowned record differs in wording ("unknown" against "unknown
+  (the record names no owner)"); that is display, and nothing branches on it.
+- The end-to-end hook test for a traversing claim is MASKED by the gate lane, which refuses the
+  same record for its own reason. Removing the hook's traversal branch leaves that test green;
+  what kills it is the isolation test over the hook's own matcher. The same masking was the
+  round-1 finding about the non-object reading, and it is a property of the fixture, not of
+  this repair.
+- The Open Questions below are unchanged: nothing here settles whether other tree-writing
+  scripts must honour a window.
+
 ## Open Questions
 
 - CR0388 says the commit path "refuses **or** warns" and does not settle which. AC3 is
@@ -136,3 +200,4 @@ Three findings, all reproduced first and all now pinned:
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-22 | sdlc-studio | Repair round: gate lane made path-scoped, one reader over both record spellings, claims normalised at open time; 15 hand-applied mutants, all killed |
+| 2026-07-22 | sdlc-studio | Repair round 2: CLI message matched to the path-scoped guard, one record-level normalisation shared with the hook, traversing claims resolved and failing safe, `COVERING_VERDICTS` wired, `close_window` owner-selected, lane counts windows; 17 mutants applied, 16 killed, the one survivor a mis-targeted suite (killed by the mutation-side test) |

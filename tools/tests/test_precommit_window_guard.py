@@ -380,6 +380,45 @@ class WindowGuardTests(unittest.TestCase):
             rc, out = self._commit(root, self.UNCLAIMED, "notes, absolute-claim case\n")
             self.assertNotEqual(rc, 0, f"an absolute claim matched nothing:\n{out}")
 
+    def test_a_traversal_claim_still_covers_the_file_it_names(self) -> None:
+        """`tools/../tools/thing.py` names exactly the file it claims, is RELATIVE - so round
+        1's absolute-path normalisation never saw it - and neither matcher normalises traversal.
+        Reproduced against this hook: the guard printed "no staged path is claimed by it" and
+        the commit rewriting that very file landed. `--files` and `--paths` accept the spelling,
+        and `select_files` builds `root / f`, so the tool's own CLI reaches it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            self._open_window(root, paths=["tools/../tools/thing.py"])
+            rc, out = self._commit(root, self.CLAIMED, "VALUE = 999\n")
+            self.assertNotEqual(rc, 0, f"a traversal claim matched nothing:\n{out}")
+
+    def test_a_record_with_no_owner_does_not_freeze_the_tree(self) -> None:
+        """The round-2 contradiction, end to end. This guard read the record's claims and let a
+        commit staging something else proceed; the gate lane it runs a few lines later DISCARDED
+        the claims because `owner` was falsy and refused the same commit as claiming the whole
+        tree. One run, both verdicts, the blocking half winning - the exact shape round 1 was
+        rejected for. A malformed owner must not change which paths are claimed."""
+        for record in ('{"paths": ["tools/thing.py"]}',
+                       '{"owner": "", "paths": ["tools/thing.py"]}',
+                       '{"owner": null, "paths": ["tools/thing.py"]}',
+                       '{"owner": "rev", "paths": ["  ", "tools/thing.py"]}'):
+            with self.subTest(record=record), tempfile.TemporaryDirectory() as d:
+                root = self._repo(Path(d))
+                self._open_window(root, raw=record)
+                rc, out = self._commit(root, self.UNCLAIMED, "notes, malformed-owner case\n")
+                self.assertEqual(rc, 0, f"a scoped commit was refused:\n{out}")
+                self.assertNotIn("[FAIL]", out, f"the lane refused what the guard allowed:\n{out}")
+                self.assertIn("this commit proceeds", out)
+
+    def test_a_record_with_no_owner_still_refuses_the_path_it_claims(self) -> None:
+        """The control on the case above: keeping the claims must not lose the refusal."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            self._open_window(root, raw='{"paths": ["tools/thing.py"]}')
+            rc, out = self._commit(root, self.CLAIMED, "VALUE = 999\n")
+            self.assertNotEqual(rc, 0, f"an unowned window claimed nothing:\n{out}")
+            self.assertIn(self.CLAIMED, out)
+
     def test_a_record_in_the_windows_directory_is_found_too(self) -> None:
         """Both spellings of the record contract are read: a single `*window*.json` file,
         and one file per window under `windows/`. A reader that found only one of them
@@ -585,11 +624,85 @@ class OneRecordContractTests(unittest.TestCase):
             (["tools/thing.py"], "README.md"),
             (0, "README.md"),
             (None, "README.md"),
+            # traversal: normalised away at open time, and read as uninterpretable here, because
+            # a record already on disk can carry any spelling a hand wrote into it
+            ("tools/../tools/thing.py", "tools/thing.py"),
+            ("tools/../tools/thing.py", "README.md"),
+            ("..", "README.md"),
+            ("../elsewhere.py", "README.md"),
+            ("tools/..", "README.md"),
         )
         for claim, staged in rows:
             with self.subTest(claim=claim, staged=staged):
                 self.assertEqual(bool(claims(claim, staged)),
                                  bool(gate._window_claims(claim, staged)))
+
+    def test_both_matchers_fail_safe_on_a_traversal_claim(self) -> None:
+        """Agreement is not enough on its own: two matchers agreeing on False would agree
+        perfectly and wave through the commit rewriting the claimed file. The direction matters,
+        so it is asserted rather than left to the pairwise comparison above."""
+        gate = _skill_module("gate")
+        claims = _guard_module()["claims"]
+        for matcher in (claims, gate._window_claims):
+            self.assertTrue(matcher("tools/../tools/thing.py", "tools/thing.py"))
+            self.assertTrue(matcher("../elsewhere.py", "README.md"))
+
+    def test_both_readers_normalise_a_record_the_same_way(self) -> None:
+        """RECORD-level agreement, not just claim-pattern agreement. The two PATTERN matchers
+        were identical and the record readings were not: `mutation` discarded `paths` whenever
+        `owner` was falsy and kept blank claims, where this hook keeps the claims and drops the
+        blanks. So `{"paths": ["tools/thing.py"]}` let the hook proceed and made the gate lane
+        refuse the same commit, in the same run. Every row is a shape reproduced end to end."""
+        mutation = _skill_module("mutation")
+        parse = _guard_module()["parse"]
+        rows = (
+            '{"owner": "rev", "paths": ["tools/thing.py"]}',
+            '{"paths": ["tools/thing.py"]}',
+            '{"owner": "", "paths": ["tools/thing.py"]}',
+            '{"owner": null, "paths": ["tools/thing.py"]}',
+            '{"owner": "rev", "paths": ["  ", "tools/thing.py"]}',
+            '{"owner": "rev", "paths": ["tools/thing.py", ""]}',
+            '{"owner": "rev", "paths": []}',
+            '{"owner": "rev"}',
+            '{"owner": "rev", "paths": "tools/thing.py"}',
+            '{"owner": "rev", "paths": 7}',
+            '{"owner": "rev", "paths": [{"path": "tools/thing.py"}]}',
+            '{"owner": "rev", "paths": [["tools/thing.py"]]}',
+            '{"owner": "rev", "paths": [0]}',
+            '{"owner": "rev", "paths": [null]}',
+            '{"owner": "rev", "paths": ["tools/thing.py", 0]}',
+            '{"owner": "rev", "paths": ["/abs/tools/thing.py"]}',
+            '{"owner": "rev", "paths": ["tools/../tools/thing.py"]}',
+            '["tools/thing.py"]',
+            '"a string"',
+            "42",
+            "null",
+            '{"owner": "rev", "pat',
+            "",
+        )
+        for raw in rows:
+            with self.subTest(record=raw), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                rec = root / "sdlc-studio" / ".local" / "review-window.json"
+                rec.parent.mkdir(parents=True)
+                rec.write_text(raw, encoding="utf-8")
+                from_hook = parse(rec)[2]
+                from_tool = mutation.read_window(root)["paths"]
+                self.assertEqual(from_tool, from_hook, raw)
+
+    def test_the_record_readers_are_not_agreeing_by_both_claiming_everything(self) -> None:
+        """The control on the test above: two readers that answered `["*"]` to everything would
+        agree on every row and freeze every tree they were opened in."""
+        mutation = _skill_module("mutation")
+        parse = _guard_module()["parse"]
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rec = root / "sdlc-studio" / ".local" / "review-window.json"
+            rec.parent.mkdir(parents=True)
+            rec.write_text(json.dumps({"owner": "rev", "paths": ["tools/thing.py", "docs/"]}),
+                           encoding="utf-8")
+            self.assertEqual(parse(rec)[2], ["tools/thing.py", "docs/"])
+            self.assertEqual(mutation.read_window(root)["paths"], ["tools/thing.py", "docs/"])
 
     def test_the_matchers_are_not_agreeing_by_both_saying_yes(self) -> None:
         """The control on the test above: two matchers that returned True for everything would

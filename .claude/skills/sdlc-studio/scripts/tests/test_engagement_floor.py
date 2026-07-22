@@ -13,6 +13,8 @@ from __future__ import annotations
 import importlib.util
 import sys
 import subprocess
+import io
+import contextlib
 import tempfile
 import unittest
 from unittest import mock
@@ -1184,6 +1186,44 @@ class StagedIndexUnreadableTests(unittest.TestCase):
                                    side_effect=mod.subprocess.TimeoutExpired("git", 5)):
                 self.assertIsNone(mod._staged_paths(Path(d)),
                                   "a timeout is git failing to answer, not an empty index")
+
+    def test_the_LANE_refuses_an_unreadable_index_not_just_the_library(self) -> None:
+        """Found by round 2, and it is the whole user-visible half of this fix.
+
+        The three tests above stop at `_staged_paths`, `_pending_touched_by_id` and `detect`.
+        None of them enters `_cmd_check_pending`, which is what the pre-commit hook actually
+        runs and what prints the verdict a human reads. Mutating that renderer's guard to
+        `if False:` left all 3,891 tests green while the lane printed the original false clean
+        verbatim - so the fix for the false-clean finding was itself unpinned, and its
+        Resolution claimed it was mutation-proven.
+
+        A library test is not a lane test. This asserts the exit code AND the printed text,
+        because a silent refusal and a clean-looking refusal are the same to the reader."""
+        mod = _load()
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = mod._cmd_check_pending(
+                {"summary": {"staged_unreadable": True, "judged": 7, "staged_new": 0},
+                 "units": [], "mode": "enforce"})
+        printed = out.getvalue()
+        self.assertEqual(rc, 1, "an unreadable index must REFUSE, never exit 0")
+        self.assertIn("REFUSED", printed)
+        self.assertNotIn("no new violation", printed,
+                         "the false-clean sentence must not be what the reader sees")
+
+    def test_the_lane_still_reports_an_honest_clean_when_the_index_WAS_read(self) -> None:
+        """The negative control. Without it a renderer that refused unconditionally would pass
+        the test above while blocking every commit in the repository."""
+        mod = _load()
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = mod._cmd_check_pending(
+                {"summary": {"staged_unreadable": False, "judged": 7, "staged_new": 0},
+                 "units": [], "mode": "enforce"})
+        printed = out.getvalue()
+        self.assertEqual(rc, 0)
+        self.assertIn("no new violation", printed)
+        self.assertNotIn("REFUSED", printed)
 
     def test_detect_marks_the_run_unreadable_instead_of_reporting_no_violations(self) -> None:
         with tempfile.TemporaryDirectory() as d:

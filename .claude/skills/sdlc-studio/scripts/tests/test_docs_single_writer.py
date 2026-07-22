@@ -7,15 +7,30 @@ distinctive phrase; a reviewer replaced the documentation with prose asserting t
 OPPOSITE of every criterion and all four greps still passed, because each word survives
 inside its own denial. `grep` is exempt from the vacuity gate, so nothing flagged it.
 
-The shape used here is deliberately two-sided, and the positive half carries the weight:
+The shape used here has three parts, and none of them proves the documents MEAN the right
+thing. What each part actually establishes:
 
-  REQUIRED  a specific whole sentence, plus the facts that have to sit beside it (the
-            ceremony commits, the incident, the mechanism, the command). Negated prose
-            fails on this half alone, structurally - it cannot contain the asserted
-            sentence and assert the opposite at the same time.
-  FORBIDDEN a curated family of contradicting phrasings. This half is belt-and-braces.
-            It is a blocklist, not a semantic proof, and it is honest about that: a new
-            way of writing the same contradiction has to be added to it.
+  REQUIRED  a specific whole sentence is PRESENT, plus the facts that have to sit beside it
+            (the ceremony commits, the incident, the mechanism, the command). Presence, and
+            nothing more: `_requires` searches the whole normalised document, so a
+            contradiction written BESIDE the required sentence satisfies this half too. An
+            earlier version of this docstring claimed that negated prose fails here
+            structurally. That was FALSE, and false in the way this module exists to catch:
+            it holds only for a whole-document REPLACEMENT, which is not how documentation
+            rots. A reviewer appended four contradicting sentences to the shipped files and
+            every criterion stayed green.
+  POLARITY  every SENTENCE about one of the guarded properties is read for polarity, and one
+            asserting the opposite fails wherever in the file it sits. This is the half that
+            answers the appended contradiction, and the half a presence check cannot be. Its
+            reach is bounded and the bound is stated at POLARITY_AXES.
+  FORBIDDEN a curated family of contradicting phrasings. This half is belt-and-braces. It is
+            a blocklist, not a semantic proof, and it is honest about that: a new way of
+            writing the same contradiction has to be added to it.
+
+So: the statements are present, no sentence using the guarded vocabulary asserts their
+opposite, and no known contradicting phrasing appears. A contradiction written in words none
+of the axes select is still not caught, and no test here should be read as saying otherwise.
+AC2 has no axis: its mechanism is guarded by the blocklist alone.
 
 Both reference files are part of the shipped skill, so these checks run identically from
 an installed copy. Prose is normalised (emphasis and code markers dropped, whitespace
@@ -83,6 +98,72 @@ def _forbids(raw: str, pattern: str, why: str, ac: str) -> list[str]:
 
 
 # -----------------------------------------------------------------------------
+# Polarity: what may not be asserted BESIDE the required sentence
+# -----------------------------------------------------------------------------
+# `_requires` searches the whole document, so a required sentence and its contradiction can
+# sit in the same file and both match. The scan below is what carries the meaning: every
+# sentence about a guarded property is judged for POLARITY, so a contradiction fails wherever
+# it is added and whatever words it uses inside the topic vocabulary.
+#
+# THE BOUND, stated rather than implied. A sentence is SELECTED by topic vocabulary and JUDGED
+# by negation cues, both enumerated here. Three things therefore slip through: prose about a
+# guarded property that uses none of its topic words; a reversal carried by irony or by layout
+# rather than by a cue; and a negation sitting further from its verb than NEG_REACH. This is a
+# polarity scan over named topics, not a semantic proof, and it is only as wide as the axes.
+
+#: Words that flip an assertion, looked for in the run-up to the asserting word.
+NEG_CUES = re.compile(r"\b(not|never|no|nobody|none|nothing|neither|nor|cannot|can't|doesn't|"
+                      r"don't|isn't|won't|rarely|refus\w*|forbid\w*|banned)\b", re.I)
+
+#: How far back from the asserting word a negation is taken to reach. Long enough for the
+#: auxiliaries the docs actually use ("does not establish", "is NOT evidence"), short enough
+#: that an unrelated negation earlier in a long sentence does not launder the assertion.
+NEG_REACH = 40
+
+#: (ac, property, topic patterns ALL of which must match the sentence, asserting word,
+#: expected polarity). `negated` = every occurrence of the asserting word must carry a
+#: negation; `asserted` = none of them may.
+POLARITY_AXES = (
+    ("AC3", "what a green run shows",
+     (r"\b(green|clean|passing|passes|passed)\b",
+      r"\b(gate|suite|run|runs|test|tests|check)\b",
+      r"\b(tree|concurrent write|staged|staging|nothing but)\b"),
+     r"\b(establish\w*|mean\w*|prove\w*|proof|show\w*|evidence|guarantee\w*|impl(y|ies)|"
+     r"confirm\w*|tell\w*)\b", "negated"),
+    ("AC1", "whether a review needs a declared window",
+     (r"\bwindow\b", r"\breview\w*\b", r"\bdeclar\w*\b"),
+     r"\bdeclar\w*\b", "asserted"),
+    ("AC1", "what may be staged during the window",
+     (r"git add -A|\bstag(e|es|ed|ing)\b", r"\bwindow\b|\breview\w*\b"),
+     r"\b(may|can|fine|acceptable|allowed|permitted|normal|safe|okay|ok)\b", "negated"),
+    # Topic is the bare word here: the asserting list is specific enough on its own, and
+    # requiring a second guard word let "the declared window is optional" through.
+    ("AC4", "the force of the window guard",
+     (r"\bwindow\b",),
+     r"\b(advisory|optional|informational|suggestion|cosmetic|toothless)\b", "negated"),
+)
+
+
+def _polarity(docs: tuple[tuple[str, str], ...], ac: str) -> list[str]:
+    """One failure string per sentence asserting the opposite of a guarded property."""
+    bad: list[str] = []
+    for axis_ac, prop, topic, word, expect in POLARITY_AXES:
+        if axis_ac != ac:
+            continue
+        rx = re.compile(word, re.I)
+        for name, raw in docs:
+            for s in sentences(raw):
+                if not all(re.search(t, s, re.I) for t in topic):
+                    continue
+                for m in rx.finditer(s):
+                    negated = bool(NEG_CUES.search(s[max(0, m.start() - NEG_REACH):m.start()]))
+                    if (expect == "negated") != negated:
+                        bad.append(f"{ac}: {name} asserts the opposite of the rule on "
+                                   f"{prop} ({m.group(0)!r}): {s!r}")
+    return bad
+
+
+# -----------------------------------------------------------------------------
 # The CLI the prose points at (AC4's anti-drift half)
 # -----------------------------------------------------------------------------
 
@@ -128,8 +209,11 @@ def cited_commands(raw: str) -> list[tuple[str, list[str]]]:
 CEREMONY_TERMS = ("retro", "review anchor", "findings", "CHANGELOG")
 
 
-def check_ac1(sprint: str) -> list[str]:
-    """The single-writer rule covers review time, not only a build-time mutation run."""
+def check_ac1(sprint: str, review: str = "") -> list[str]:
+    """The single-writer rule covers review time, not only a build-time mutation run.
+
+    `review` is optional only so a fixture can be checked on its own; the shipped pair is
+    always passed both, because a contradiction is as damaging in either file."""
     ac = "AC1"
     claim = (r"an independent review is a concurrent-writer window too, "
              r"and it is the more dangerous of the two")
@@ -144,6 +228,7 @@ def check_ac1(sprint: str) -> list[str]:
                     "denies the window it is meant to state", ac)
     bad += _forbids(sprint, r"(is|are|was) (not|never) a concurrent-writer window",
                     "denies the window it is meant to state", ac)
+    bad += _polarity((("reference-sprint.md", sprint), ("reference-review.md", review)), ac)
     return bad
 
 
@@ -181,6 +266,7 @@ def check_ac3(sprint: str, review: str) -> list[str]:
                            f"{lead.strip()!r}")
         bad += _forbids(raw, r"\bdoes establish\b",
                         "asserts a gate establishes what the rule says it cannot", ac)
+    bad += _polarity((("reference-sprint.md", sprint), ("reference-review.md", review)), ac)
     return bad
 
 
@@ -204,13 +290,14 @@ def check_ac4(sprint: str, review: str, cli: tuple[set[str], set[str]] | None = 
                                f"tool does not accept")
         bad += _forbids(raw, r"no such thing as a[^.]*window|windows? (do|does) not exist",
                         "denies the guard the rule points at", ac)
+    bad += _polarity((("reference-sprint.md", sprint), ("reference-review.md", review)), ac)
     return bad
 
 
 def check_all(sprint: str, review: str,
               cli: tuple[set[str], set[str]] | None = None) -> dict[str, list[str]]:
     """Every criterion, keyed by AC id."""
-    return {"AC1": check_ac1(sprint),
+    return {"AC1": check_ac1(sprint, review),
             "AC2": check_ac2(sprint, review),
             "AC3": check_ac3(sprint, review),
             "AC4": check_ac4(sprint, review, cli)}
@@ -239,6 +326,18 @@ NEGATED_REVIEW = """**Single-writer during a review.** A green gate DOES establi
 concurrent write is staged, and the RUN-01KY321Q incident was caused by a stale
 hand-applied mutant; no symlink was involved, so a green suite is evidence the tree is
 clean.
+"""
+
+#: The shape documentation ACTUALLY rots into, and the one the first version of this module
+#: could not see: the correct prose is left exactly where it is and a contradiction is written
+#: BESIDE it. Verbatim from the review that rejected that version. Held as data, appended to
+#: the shipped files in memory only, never written to this tree (LL0039).
+APPENDED_CONTRADICTION = """
+
+The window guard is advisory only. While one is open you may stage anything you like, and
+`git add -A` remains the normal way to commit during a review. A gate run that comes back clean
+does mean the tree holds nothing but your own edits, so there is no need to check further.
+Nobody need declare a window for a review; only an automated rewrite loop should bother.
 """
 
 
@@ -305,6 +404,90 @@ class NegatedProseTests(unittest.TestCase):
         sprint, review = read_docs()
         invented = sprint.replace("window open --owner", "window open --holder")
         self.assertTrue(check_ac4(invented, review, self.cli))
+
+
+class AppendedContradictionTests(unittest.TestCase):
+    """RED against a contradiction added BESIDE the shipped prose, which is how documentation
+    rots: nothing is deleted, so every presence check still passes.
+
+    This class is the one the round-1 module lacked, and the reason its docstring's structural
+    claim was false. The polarity scan is what makes it red; the required half cannot be, by
+    construction, since the sentences it requires are all still there."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        sprint, review = read_docs()
+        cls.sprint = sprint + APPENDED_CONTRADICTION
+        cls.review = review + APPENDED_CONTRADICTION
+        cls.cli = window_cli()
+
+    def test_the_required_sentences_all_still_pass(self) -> None:
+        """The premise. Every required sentence survives untouched, so presence alone can
+        never see this edit - and a checker built only from presence reports all green."""
+        for needle in (r"an independent review is a concurrent-writer window too",
+                       r"a passing gate does not establish that no concurrent write is staged",
+                       r"mutation\.py window open --owner"):
+            self.assertEqual([], _requires(self.sprint, needle, "reference-sprint.md", "AC0"))
+
+    def test_the_contradiction_is_caught_on_every_criterion_it_denies(self) -> None:
+        failures = check_all(self.sprint, self.review, self.cli)
+        for ac in ("AC1", "AC3", "AC4"):
+            self.assertTrue(failures[ac], f"{ac} stayed green beside its own contradiction")
+        # AC2 is NOT asserted here: the appended text says nothing about the mechanism, so it
+        # is not contradicted, and claiming otherwise would be the same over-claim again.
+        self.assertEqual([], failures["AC2"])
+
+    def test_each_denied_criterion_is_red_in_the_file_the_contradiction_sits_in(self) -> None:
+        sprint, review = read_docs()
+        self.assertTrue(check_ac1(sprint + APPENDED_CONTRADICTION, review))
+        self.assertTrue(check_ac1(sprint, review + APPENDED_CONTRADICTION))
+        self.assertTrue(check_ac3(sprint + APPENDED_CONTRADICTION, review))
+        self.assertTrue(check_ac3(sprint, review + APPENDED_CONTRADICTION))
+        self.assertTrue(check_ac4(sprint + APPENDED_CONTRADICTION, review, self.cli))
+        self.assertTrue(check_ac4(sprint, review + APPENDED_CONTRADICTION, self.cli))
+
+    def test_a_rewording_of_the_same_contradiction_is_still_caught(self) -> None:
+        """The blocklist half cannot do this; the polarity scan is what makes it hold. None
+        of these phrasings appears in `_forbids`."""
+        for line in ("\n\nA suite that passes proves the tree is clean.\n",
+                     "\n\nDuring a review it is fine to stage everything at once.\n",
+                     "\n\nThe declared window is optional for a reviewer's hand-edits.\n"):
+            sprint, review = read_docs()
+            self.assertTrue([f for msgs in check_all(sprint + line, review).values()
+                             for f in msgs], f"not caught: {line.strip()!r}")
+
+    #: One contradiction per guarded property, phrased in words no `_forbids` pattern holds.
+    #: Keyed by the property name so an axis added without a probe fails the check below.
+    AXIS_PROBES = {
+        "what a green run shows":
+            "\n\nA suite that passes proves the tree is clean.\n",
+        "whether a review needs a declared window":
+            "\n\nNobody need declare a window for a review.\n",
+        "what may be staged during the window":
+            "\n\nDuring a review it is fine to stage everything at once.\n",
+        "the force of the window guard":
+            "\n\nThe declared window is optional.\n",
+    }
+
+    def test_every_axis_catches_a_contradiction_of_its_own_property(self) -> None:
+        """An axis nothing proves is an axis that can be deleted without a test noticing,
+        which is how the round-1 module ended up with a claim and no mechanism."""
+        sprint, review = read_docs()
+        self.assertEqual({prop for _, prop, *_ in POLARITY_AXES}, set(self.AXIS_PROBES),
+                         "every axis carries a probe, and every probe an axis")
+        for prop, line in self.AXIS_PROBES.items():
+            docs = (("reference-sprint.md", sprint + line), ("reference-review.md", review))
+            hits = [f for ac in ("AC1", "AC2", "AC3", "AC4")
+                    for f in _polarity(docs, ac) if prop in f]
+            self.assertTrue(hits, f"the {prop!r} axis caught nothing")
+
+    def test_the_scan_is_silent_on_the_shipped_files(self) -> None:
+        """The other half of a discrimination proof: red on the contradiction is worth
+        nothing without green on the prose it is meant to allow."""
+        sprint, review = read_docs()
+        docs = (("reference-sprint.md", sprint), ("reference-review.md", review))
+        for ac in ("AC1", "AC2", "AC3", "AC4"):
+            self.assertEqual([], _polarity(docs, ac))
 
 
 if __name__ == "__main__":

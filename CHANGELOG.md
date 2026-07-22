@@ -1191,6 +1191,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Repairs from RUN-01KY3MFX's SECOND review round, which rejected the first repair.** Five of
+  the eleven round-1 findings were genuinely closed; three had been over-claimed and three had
+  moved rather than gone. `window open` printed that commits would be refused when the guard had
+  just been made path-scoped. The gate and the hook agreed on claim PATTERNS - all the agreement
+  test compared - while diverging on record NORMALISATION, so a record with no owner made the
+  hook say proceed and the gate say fail in one run; both now share one record-level
+  normalisation and the test compares records. A `..` traversal claim matched nothing and so
+  failed open; traversal is now resolved at open time and an unresolvable claim claims the whole
+  tree. `close_window` picked the first record by sort order, so a holder could not close their
+  own window and a mutation run could strand itself; it is owner-selected. The sprint report
+  preferred the live run unconditionally, so a partial one-unit overlap beat a full archived
+  match; it now scores by coverage. The documentation checker claimed negated prose failed
+  structurally on its required half - false, since a contradiction added BESIDE the required
+  sentence passed; it now carries a per-sentence polarity scan, and what it still cannot detect
+  is written down rather than implied. The engagement floor's unreadable-index refusal was
+  reached by no test at all: the fix for the false-clean finding was itself an unpinned branch
+  reading as coverage, and its own Resolution called it mutation-proven.
+
 - **Repairs from RUN-01KY3MFX's closing review (three independent instances, all REJECT).** A
   velocity row's estimator class is now compared by the PARAMETERS it takes rather than the
   VALUES they were measured at, so re-measuring the rate no longer reclassifies history and empty

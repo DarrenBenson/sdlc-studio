@@ -404,6 +404,9 @@ def _inflight_path(root: Path) -> Path:
 # "closed".
 #: Owner recorded for this tool's own runs; a reviewer's window names the reviewer instead.
 WINDOW_OWNER_RUN = "mutation.py run"
+#: The claim that covers the whole tree. A record that does not say what it may rewrite has NOT
+#: said it may rewrite nothing, and neither has one whose `paths` no reader can interpret.
+WINDOW_EVERYTHING = "*"
 
 
 def window_dir(root: Path | str) -> Path:
@@ -440,15 +443,47 @@ def _clear_hint(owner: str) -> str:
     return f"mutation.py window close --owner {owner!r}"
 
 
+def window_claims(raw) -> list[str]:
+    """What a record's `paths` field CLAIMS, normalised to what a matcher may be handed.
+
+    The RECORD-level half of the one contract, and its one home here. The pre-commit hook
+    implements the same rule inline - it must run in a clone where these scripts are absent or
+    broken, so it cannot import them - and the two are pinned against each other by test.
+
+    They diverged once, and the divergence is why this exists: this module DISCARDED `paths`
+    whenever `owner` was falsy, and passed un-stripped claims to a matcher where a blank one
+    means the repo root. So `{"paths": ["tools/x.py"]}` was read here as claiming the whole
+    tree while the hook read it as claiming one file - and since the hook runs the gate a few
+    lines later, one commit was told both, with the blocking half winning. A malformed owner
+    must not change which paths are claimed.
+
+    `paths` absent, empty, all-blank, not a list, or holding anything that is not a string
+    reads as EVERYTHING: a claim nobody can interpret comes from a record saying a writer is
+    active, and the one direction this may never be wrong in is "harmless".
+    """
+    if isinstance(raw, str):
+        raw = [raw]
+    if not isinstance(raw, list):
+        return [WINDOW_EVERYTHING]
+    claimed: list[str] = []
+    for x in raw:
+        if not isinstance(x, str):
+            return [WINDOW_EVERYTHING]
+        if x.strip():
+            claimed.append(x.strip())
+    return claimed or [WINDOW_EVERYTHING]
+
+
 def _read_window_record(path: Path) -> dict:
     """One record, read. Never returns None: the caller has already found the file, and a file
     that exists is a window until somebody says otherwise."""
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(data, dict) or not data.get("owner"):
-            raise ValueError("window record is not an object naming an owner")
+        if not isinstance(data, dict):
+            raise ValueError("window record is not a JSON object")
     except (ValueError, OSError) as exc:
-        return {"owner": "unknown (the record is unreadable)", "paths": [],
+        return {"owner": "unknown (the record is unreadable)",
+                "paths": [WINDOW_EVERYTHING],
                 "opened_at": None, "note": None, "pid": None, "unreadable": True,
                 "record_path": str(path),
                 "detail": f"{path} exists but cannot be read ({exc}) - a process declared a "
@@ -457,8 +492,26 @@ def _read_window_record(path: Path) -> dict:
                 "clear_with": f"delete {path} once you have confirmed nothing is rewriting "
                               f"the tree"}
     data.setdefault("unreadable", False)
-    data.setdefault("paths", [])
-    data.setdefault("clear_with", _clear_hint(str(data.get("owner"))))
+    data["paths"] = window_claims(data.get("paths"))
+    owner = str(data.get("owner") or "").strip()
+    if not owner:
+        # A record naming no owner is still a record: it says a writer is active, and its
+        # `paths` say what they may rewrite. Discarding those claims because the OWNER field is
+        # malformed is what made this reader claim the whole tree over a record the hook read
+        # as claiming one file. It is UNOWNED - nobody can prove whose it is, so anyone may
+        # clear it - and its claims are its own.
+        data["owner"] = "unknown (the record names no owner)"
+        data["unreadable"] = True
+        data.setdefault(
+            "detail", f"{path} declares a rewrite window and names no owner, so there is "
+                      f"nobody to ask and nothing to wait for; it claims "
+                      f"{', '.join(data['paths'])} until somebody clears it")
+        if not str(data.get("clear_with") or "").strip():
+            data["clear_with"] = (f"delete {path} once you have confirmed nothing is rewriting "
+                                  f"the tree")
+    else:
+        data["owner"] = owner
+        data.setdefault("clear_with", _clear_hint(owner))
     data["record_path"] = str(path)
     return data
 
@@ -488,17 +541,33 @@ def window_claim(root: Path | str, path) -> str:
     file and then matched nothing a commit staged. Normalising at OPEN time is what keeps the
     two spellings from ever meeting: a path under the root becomes relative to it, and a path
     outside the root is left verbatim, where the reader treats it as uninterpretable and so
-    claims the whole tree rather than nothing."""
+    claims the whole tree rather than nothing.
+
+    TRAVERSAL is the third case, and it fails SAFE. `tools/../tools/x.py` names exactly
+    `tools/x.py`, is relative - so the absolute branch never sees it - and neither matcher
+    normalises, so the claim matched NOTHING and the commit rewriting that file landed.
+    `--files` / `--paths` accept the spelling and `select_files` builds `root / f`, so this
+    tool's own CLI reaches it. Traversal is therefore resolved here, and a claim that resolves
+    OUTSIDE the root cannot be spelled repo-relative at all: it becomes the whole-tree claim,
+    never a literal pattern that quietly matches nothing."""
+    import posixpath
     p = Path(path)
-    try:
-        if p.is_absolute():
-            return p.relative_to(Path(root).resolve()).as_posix()
-    except ValueError:
-        try:
-            return p.relative_to(Path(root).absolute()).as_posix()
-        except ValueError:
+    rel = None
+    if p.is_absolute():
+        for base in (Path(root).resolve(), Path(root).absolute()):
+            try:
+                rel = p.relative_to(base).as_posix()
+                break
+            except ValueError:
+                continue
+        if rel is None:
             return str(path)
-    return p.as_posix()
+    else:
+        rel = p.as_posix()
+    normalised = posixpath.normpath(rel)
+    if normalised == ".." or normalised.startswith("../"):
+        return WINDOW_EVERYTHING
+    return normalised
 
 
 def open_window(root: Path | str, owner: str, paths, note: str | None = None) -> dict:
@@ -532,27 +601,49 @@ def open_window(root: Path | str, owner: str, paths, note: str | None = None) ->
 
 
 def close_window(root: Path | str, owner: str | None = None) -> dict | None:
-    """Clear the open window and return what it held, or None when none was open.
+    """Clear the window `owner` holds and return what it held, or None when none was open.
 
-    With `owner`, a window held by somebody else is REFUSED: clearing another writer's claim
-    would leave them rewriting the tree with nothing saying so. An unreadable record can be
-    cleared by anyone, since nobody can prove whose it was."""
-    held = read_window(root)
-    if held is None:
+    OWNER-SELECTED, not first-by-sort. The reader was generalised to N records while this stayed
+    on `read_window`, and all three consequences were reproduced: a holder could not close their
+    own window when another record sorted first, a bare close removed whichever sorted first -
+    possibly a live run's - and `run`'s own `finally` raised, stranding the window it had just
+    opened over a tree nobody was writing to any more.
+
+    With `owner`, only that owner's record is cleared and another writer's is never touched:
+    clearing someone else's claim would leave them rewriting the tree with nothing saying so.
+    An unreadable record can be cleared by anyone, since nobody can prove whose it was. With no
+    `owner`, a single open window is cleared deliberately and several are refused by name -
+    "whichever sorted first" is not a choice anyone made."""
+    held = read_windows(root)
+    if not held:
         return None
-    if owner and not held.get("unreadable") and str(owner).strip() != held["owner"]:
+    holders = ", ".join(sorted(w["owner"] for w in held))
+    name = str(owner or "").strip()
+    if name:
+        mine = [w for w in held if not w.get("unreadable") and w["owner"] == name]
+        mine = mine or [w for w in held if w.get("unreadable")]
+        if not mine:
+            raise ValueError(
+                f"no rewrite window is held by {name} - the open one(s) are held by {holders}."
+                f" Refusing to clear another writer's claim: ask them to close it, or clear it "
+                f"deliberately with no --owner once you have confirmed nothing is rewriting "
+                f"the tree")
+        target = mine[0]
+    elif len(held) > 1:
         raise ValueError(
-            f"the open window is held by {held['owner']}, not {owner} - refusing to clear "
-            f"another writer's claim. Ask them to close it, or clear it deliberately with no "
-            f"--owner once you have confirmed nothing is rewriting the tree")
+            f"{len(held)} rewrite windows are open, held by {holders} - name whose to clear "
+            f"with --owner rather than removing whichever record happens to sort first, which "
+            f"may be a live run's")
+    else:
+        target = held[0]
     try:
         # the record this read, not a fixed filename: the contract has two spellings, and
         # unlinking the one this tool happens to write would leave a reviewer's own record open
         # while reporting it closed
-        Path(held.get("record_path") or window_path(root)).unlink()
+        Path(target.get("record_path") or window_path(root)).unlink()
     except FileNotFoundError:
         pass
-    return held
+    return target
 
 
 def _recover_stranded(root: Path) -> list[str]:
@@ -738,7 +829,12 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
                 verdict = {"pass": "survived", "fail": "killed", "error": "error"}[outcome]
                 records.append({**m, "verdict": verdict})
         finally:
-            close_window(root, owner=WINDOW_OWNER_RUN)
+            # Never raise out of the restore path. A window this run cannot find - cleared by
+            # hand mid-run, or replaced - would otherwise become the exception that buries the
+            # run's own result, and it did: another record sorting first made this close refuse
+            # and strand the very window it was clearing.
+            with contextlib.suppress(ValueError):
+                close_window(root, owner=WINDOW_OWNER_RUN)
     summary = {
         "applied": len(records),
         "killed": sum(1 for r in records if r["verdict"] == "killed"),
@@ -1561,9 +1657,15 @@ def cmd_window(args: argparse.Namespace) -> int:
         except ValueError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2
+        # What the guard DOES, not what it once did. This said "Commits in this tree will be
+        # refused until it is closed", which was true while the gate lane blocked on the
+        # record's existence and false the moment it became path-scoped: a commit staging
+        # nothing this window claims proceeds. A CLI that overstates its own guard teaches an
+        # author to route around it.
         print(f"mutation: rewrite window OPEN, held by {rec['owner']} over "
-              f"{len(rec['paths'])} path(s). Commits in this tree will be refused until it is "
-              f"closed: {rec['clear_with']}")
+              f"{len(rec['paths'])} path(s): {', '.join(rec['paths'])}. A commit staging a "
+              f"path it claims will be refused until it is closed; a commit staging anything "
+              f"else proceeds. Close it with: {rec['clear_with']}")
         return 0
     if args.window_cmd == "close":
         try:

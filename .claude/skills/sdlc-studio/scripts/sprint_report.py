@@ -93,9 +93,13 @@ def _run_window(root: Path, unit_ids: list[str]) -> tuple | None:
     """`(started_at, ended_at)` of the run that delivered THIS sprint, or None.
 
     Same guard as `_sprint_goal`: a run record counts only when its batch names this sprint's
-    units. The live record is tried first, then the archive, because a report is normally read
-    after the close and the close archives the run it describes. `ended_at` may be None - an
-    open run has a start and no end, and a row after its start still belongs to it."""
+    units. Where more than one does, the record covering MOST of them wins, live or archived
+    alike. Trying the live record first regardless was the same defect one level up: a run that
+    merely RE-TOUCHES one unit of an old sprint supplied that sprint's window, and an open run
+    has no end, so every later project-wide row read as this sprint's again. Ties keep the live
+    record, then the newest archived one, because a report is normally read after the close and
+    the close archives the run it describes. `ended_at` may be None - an open run has a start
+    and no end, and a row after its start still belongs to it."""
     want = {sdlc_md.norm_id(u) for u in unit_ids}
     records = []
     try:
@@ -104,19 +108,20 @@ def _run_window(root: Path, unit_ids: list[str]) -> tuple | None:
             records.append(live)
     except run_state.RunStateError:
         pass                      # the report stays renderable; the close gate owns that failure
-    try:
-        records.extend(reversed(run_state.archived(root)))
-    except OSError:
-        pass
+    # `archived` skips an unreadable record rather than raising, so there is nothing to catch.
+    records.extend(reversed(run_state.archived(root)))
+    best = None                   # (units covered, started_at, ended_at)
     for state in records:
         batch = {sdlc_md.norm_id(u) for u in (state.get("batch") or [])}
-        if not (batch & want):
+        cover = len(batch & want)
+        if not cover:
             continue
         start = telemetry._parse_iso(state.get("started_at"))  # noqa: SLF001 - ONE stamp reader
         if start is None:
             continue              # a run with no start bounds nothing
-        return start, telemetry._parse_iso(state.get("ended_at"))  # noqa: SLF001
-    return None
+        if best is None or cover > best[0]:
+            best = (cover, start, telemetry._parse_iso(state.get("ended_at")))  # noqa: SLF001
+    return (best[1], best[2]) if best else None
 
 
 #: Said when no run record can be joined to this sprint. The series is project-wide, so without
@@ -137,28 +142,34 @@ def _mutation_summary(root: Path, unit_ids: list[str]) -> dict:
     `current` is None when this run has no row of its own - the step was skipped, refused
     before it could write, or never run. That is NOT a run of zero survivors, and the renderer
     says so rather than printing counts of zero, which would read as a gate that looked and
-    found nothing."""
+    found nothing.
+
+    An UNSTAMPED row is a further case and is counted, not folded into those three: it exists and
+    carries counts, so saying the step was skipped or killed would be false. It cannot be
+    placed in or out of the window either, so it is named and left unattributed."""
     try:
         import mutation
         rows = mutation.series_rows(root)
     except Exception as exc:  # noqa: BLE001 - the report never fails on its evidence being absent
         print(f"note: mutation series unavailable ({type(exc).__name__}: {exc})", file=sys.stderr)
-        return {"current": None, "trailing": [], "attribution": None}
+        return {"current": None, "trailing": [], "attribution": None, "unstamped": 0}
     if not rows:
-        return {"current": None, "trailing": [], "attribution": None}
+        return {"current": None, "trailing": [], "attribution": None, "unstamped": 0}
     window = _run_window(root, unit_ids)
     if window is None:
         # Nothing can be claimed as this sprint's. The rows are still SHOWN, as the previous
         # runs they are, and the reason no `current` was picked is said out loud.
-        return {"current": None, "attribution": NO_ATTRIBUTION,
+        return {"current": None, "attribution": NO_ATTRIBUTION, "unstamped": 0,
                 "trailing": [_mutation_row(mutation, root, r)
                              for r in reversed(rows[-MUTATION_HISTORY:])]}
     start, end = window
     mine, before = [], []
+    unstamped = 0
     for r in rows:
         at = telemetry._parse_iso(r.get("at"))  # noqa: SLF001 - ONE stamp reader
         if at is None:
-            continue              # an unstamped row cannot be placed in or out of the window
+            unstamped += 1        # an unstamped row cannot be placed in or out of the window
+            continue
         if at < start:
             before.append(r)
         elif end is None or at <= end:
@@ -168,8 +179,14 @@ def _mutation_summary(root: Path, unit_ids: list[str]) -> dict:
     # second pass over the same diff) or in one before it. Both are prior runs of the gate,
     # which is the trend the history exists to show; only `current` is a claim about ownership.
     trailing = (before + mine[:-1]) if mine else before
+    # With no row of this run's own, an unstamped row is the REASON, and it is not the same
+    # reason as a step that never ran. Said here so the renderer never asserts a skip.
+    attribution = None
+    if not mine and unstamped:
+        attribution = (f"{unstamped} series row(s) carry no timestamp, so they cannot be placed "
+                       f"in or out of this run's window")
     return {"current": _mutation_row(mutation, root, mine[-1]) if mine else None,
-            "attribution": None,
+            "attribution": attribution, "unstamped": unstamped,
             "trailing": [_mutation_row(mutation, root, r)
                          for r in reversed(trailing[-MUTATION_HISTORY:])]}
 
@@ -285,6 +302,11 @@ def _mutation_lines(m: dict | None) -> list[str]:
                 else f", {prev['cost_per_finding_note']}")
         trailing.append(f"  previous run {prev['run_id']}: {prev['elapsed_s']}s, "
                         f"{prev['survived']} survived, yield {prev['yield']}{pper}.")
+    if (m or {}).get("unstamped") and (m or {}).get("current"):
+        # Named rather than dropped in silence. With no `current` the same fact is the
+        # attribution below, so it is said once either way.
+        trailing.append(f"  {m['unstamped']} series row(s) carry no timestamp, so they could "
+                        f"not be placed in this run's window.")
     if not m or not m.get("current"):
         why = (m or {}).get("attribution")
         return [(f"Mutation gate: no mutation evidence recorded for this run - {why}." if why

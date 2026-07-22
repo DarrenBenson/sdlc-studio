@@ -2550,6 +2550,27 @@ class RefusalTravelsWithEverySourceTests(unittest.TestCase):
                              "the seed did NOT stand: the evidence log did, and it says so")
             self.assertIn("per-unit evidence log stands instead", blob)
 
+    def test_the_refusal_names_the_seed_when_the_seed_is_what_stands(self) -> None:
+        """The OTHER half of the same sentence, and the reason the fallback default under it
+        is dead: only these two sources can be standing here. The velocity record is the one
+        that refused, so it is never also the one that stands (MINOR, round 2)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._refusing_record(root)          # ...and no evidence log at all
+            _pointed_cr(root, 1, 3)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = sp.main(["plan", "--crs", "Proposed", "--root", str(root),
+                              "--no-fetch", "--skip-personas"])
+            self.assertEqual(rc, 0)
+            blob = out.getvalue()
+            self.assertEqual(sp.tokens_per_point(root)["source"], sp.RATE_SEED,
+                             "the premise: the seed is what stood")
+            self.assertIn("velocity record yields no usable rate", blob)
+            self.assertIn("the seed stands instead", blob)
+            self.assertNotIn("per-unit evidence log stands instead", blob)
+
 
 class BatchHistoryTests(unittest.TestCase):
     """What sprints ACTUALLY cost is the plan's real input, so it must not silently drop the

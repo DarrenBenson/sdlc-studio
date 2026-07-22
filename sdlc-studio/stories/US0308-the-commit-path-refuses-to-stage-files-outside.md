@@ -94,11 +94,16 @@ either spelling, so a writer choosing one file or one file per window both work:
   glob. `/` and `.` claim the whole tree.
 - **Claims are repo-relative.** They are compared against `git diff --cached --name-only`,
   which is always repo-relative, so `mutation.open_window` normalises at open time.
-- Five readings fail SAFE, each with its own test: an unreadable or truncated record, a
+- Six readings fail SAFE, each with its own test: an unreadable or truncated record, a
   record that is not a JSON object, a record naming no paths, a claim that is not a string,
-  and an absolute claim are all read as an OPEN window claiming everything. A half-written
-  record must never read as "closed", and a claim nobody can interpret must never read as
-  "harmless".
+  an absolute claim, and a claim that traverses (`tools/../tools/x.py`, `../elsewhere.py`) are
+  all read as an OPEN window claiming everything. A half-written record must never read as
+  "closed", and a claim nobody can interpret must never read as "harmless".
+- A malformed `owner` does not change which paths are claimed: blank, null and absent owners
+  all keep the record's own claims, and blank claims are dropped rather than read as the repo
+  root. This reader and `mutation.window_claims` are pinned to normalise a record identically,
+  not merely to match claim patterns identically - the patterns agreed while the record
+  readings did not, and one commit was told both answers.
 - No record on disk means no window: the guard prints nothing and costs nothing (AC4).
 
 ## Repair round (independent review of RUN-01KY3MFX)
@@ -124,6 +129,35 @@ Three findings, all reproduced first and all now pinned:
    now pinned - at the READER level, in isolation, because the hook also runs the gate's window
    lane, which refuses the same records for its own reasons and masks the branch end to end.
 
+## Repair round 2 (independent review of the repair above)
+
+Two findings reach this reader. Both were reproduced first and driven red before the fix.
+
+1. **"Pinned against it by test" was true of the MATCHERS and false of the RECORDS.** The
+   agreement test compared claim patterns only. `mutation._read_window_record` discarded
+   `paths` whenever `owner` was falsy and kept blank claims, where this hook keeps the claims
+   and drops the blanks - so `{"paths": ["tools/thing.py"]}` let this guard proceed and made
+   the gate lane, which the hook runs a few lines later, refuse the same commit as claiming the
+   whole tree. `OneRecordContractTests.test_both_readers_normalise_a_record_the_same_way` now
+   compares the normalised RECORD over 23 shapes, with a control proving the two are not
+   agreeing by both claiming everything, and
+   `WindowGuardTests.test_a_record_with_no_owner_does_not_freeze_the_tree` drives the whole
+   contradiction through a real commit.
+2. **A traversing claim failed OPEN.** `tools/../tools/thing.py` names exactly the file it
+   claims, and this matcher read it as a literal pattern matching nothing: against the real
+   hook, the commit rewriting that file landed. It now reads as claiming everything, as an
+   absolute claim already did, and `mutation.window_claim` resolves traversal at open time so
+   the tool's own CLI cannot mint one.
+
+Still unfixed, and named:
+
+- The end-to-end case for finding 2 is MASKED: the fixture's gate stub runs the real window
+  lane, which refuses the same record for its own reason, so removing this hook's traversal
+  branch leaves `test_a_traversal_claim_still_covers_the_file_it_names` green. What kills that
+  mutant is `test_both_matchers_fail_safe_on_a_traversal_claim`, over this reader in isolation.
+  This is the same masking recorded as round-1 finding 3, and it applies to every branch of
+  this guard that the gate lane also covers.
+
 ## Open Questions
 
 - CR0388 does not say how the author declares their own change set. The title reads
@@ -147,3 +181,4 @@ Three findings, all reproduced first and all now pinned:
 | 2026-07-22 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-22 | sdlc-studio | Built red-first against the corrected mechanism; record contract recorded; 14 mutants applied, 4 findings from the survivors (three dead clauses removed, one fail-open claim shape fixed) |
 | 2026-07-22 | sdlc-studio | Repair round: uninterpretable and absolute claims fail safe, the non-object reading pinned, the fixture's gate stub replaced by the real window lane; 15 hand-applied mutants, all killed |
+| 2026-07-22 | sdlc-studio | Repair round 2: traversing claims fail safe, the two readers pinned at RECORD level over 23 shapes, the no-owner contradiction driven through a real commit; mutants on both matchers and both readers, all killed |

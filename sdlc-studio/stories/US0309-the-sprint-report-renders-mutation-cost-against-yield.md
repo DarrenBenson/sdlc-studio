@@ -84,4 +84,5 @@ kept on a good one.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-22 | claude | Repair round 2 - the round-1 window fix tried the LIVE run first unconditionally, so a partial one-unit intersection with whatever run happened to be open beat a full match in the archive, and an open run has no end, so the republishing defect returned through its own fix. The record covering MOST of this sprint's units now wins, live or archived, ties keeping the live one. Also: an unstamped series row is counted and named rather than rendered as a step that was skipped or killed, and the dead `except OSError` around `run_state.archived` is gone (`archived` never raises) |
 | 2026-07-22 | claude | Repair round 1 - `current` was the newest row of the PROJECT-WIDE series whatever run wrote it, so a sprint that ran no mutation republished the previous sprint's cost and yield as its own, unlabelled, while the rows below were correctly prefixed `previous run`. AC1 and AC3 were both false on that path. The row is now joined to the run's own measured window, by the same guard `_sprint_goal` uses; AC5 added |

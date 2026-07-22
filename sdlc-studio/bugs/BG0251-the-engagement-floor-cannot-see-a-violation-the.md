@@ -81,7 +81,21 @@ bug's own defect class committed inside this bug's own fix.
 `StagedIndexUnreadable` rather than letting any caller treat it as empty, and the lane REFUSES
 with a line saying plainly that it is reporting nothing rather than reporting no violations.
 
-Mutation-proven, and the first pass found a survivor worth recording: reverting the `OSError`
+CORRECTION, from round 2 of the closing review: the paragraph below originally ended by calling
+this fix mutation-proven. It was not. The three mutants stopped at `_staged_paths`,
+`_pending_touched_by_id` and `detect`, and NONE of them entered `_cmd_check_pending` - the lane
+the pre-commit hook actually runs and the only place the refusal becomes visible to a reader.
+Mutating that renderer's guard to `if False:` left all 3,891 tests green while the lane printed
+the original false clean verbatim. So the fix for the false-clean finding was itself an unpinned
+branch reading as coverage, and its Resolution asserted a property the code did not have - the
+defect class this whole batch exists to attack, committed by its author, in the repair for it.
+Now pinned at the LANE level: `test_the_LANE_refuses_an_unreadable_index_not_just_the_library`
+asserts the exit code AND the printed text (a silent refusal and a clean-looking one read the
+same), with a negative control that an index which WAS read still reports an honest clean. Three
+further mutants - the branch dead, the refusal exiting 0, the refusal printing nothing - all
+killed. A library test is not a lane test.
+
+Mutation-proven at the library level, and the first pass found a survivor worth recording: reverting the `OSError`
 branch to `[]` - the original defect exactly - left the suite green, because the non-git-directory
 test reaches the `returncode != 0` branch instead. The guard for a MISSING git binary was pinned
 by nothing while reading as covered. A direct test patching `subprocess.run` to raise, and to

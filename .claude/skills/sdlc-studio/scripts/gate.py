@@ -242,6 +242,12 @@ def _key_under(root: str, p) -> str:
 #: as a measurement - the exact confusion the marking exists to prevent.
 _PROVENANCE_MEASURED = "measured"
 _PROVENANCE_REGISTERED = "registered"
+#: The verdicts that are evidence ABOUT THE TESTS, and so count as mutation coverage of a file.
+#: `mutation.COVERING_VERDICTS` is the definition; this is the lane's copy of it, pinned against
+#: it by test like the provenance labels above. It used to be summed inline under a comment
+#: pointing at a `_covering` that did not exist, so the constant documenting the rule was used
+#: nowhere and a verdict added to it would never have reached this lane.
+_COVERING_VERDICTS = ("killed", "survived")
 
 
 def _entry_provenance(entry: dict) -> str:
@@ -306,9 +312,11 @@ def _mutation_coverage(root: str) -> dict:
                         "hash": e.get("hash"),
                         "survived": int(survived or 0) if isinstance(survived, (int, float))
                         else 0,
-                        # what the entry proves ABOUT THE TESTS. `equivalent` is excluded on
-                        # purpose - see `_covering` below.
-                        "covering": _n("killed") + _n("survived"),
+                        # what the entry proves ABOUT THE TESTS, from the one list that defines
+                        # it. `equivalent` is absent from that list on purpose: it asserts that
+                        # no test could have killed the mutant, which says nothing about what
+                        # the suite pins.
+                        "covering": sum(_n(v) for v in _COVERING_VERDICTS),
                         "equivalent": _n("equivalent")}
         except (ValueError, OSError, TypeError, AttributeError):
             pass          # a corrupt ledger claims no coverage; it never breaks the lane
@@ -597,45 +605,43 @@ def _window(root: str) -> dict:
     if not held:
         return {"count": 0, "blocking": True, "detail": "no rewrite window is open"}
     staged = _window_staged(root)
-    lines, claimed_any = [], False
+    lines, claiming = [], 0
     for win in held:
-        raw = win.get("paths")
-        if isinstance(raw, str):
-            raw = [raw]
-        if not isinstance(raw, list):
-            raw = []          # `paths` that is not a list names nothing this can match
-        # str() for DISPLAY only, never for matching: str()-ing a claim into a pattern is how
-        # an uninterpretable one came to match nothing and wave the commit through.
-        paths = ", ".join(str(x) for x in raw) or "(unstated paths)"
+        # The record's claims as `mutation.window_claims` normalised them - ONE reading, shared
+        # with the hook's inline reader and pinned against it by test, rather than a second
+        # derivation here. The two readings diverged once: a record naming no owner had its
+        # `paths` discarded upstream and was re-read here as claiming the whole tree, while the
+        # hook read the same record as claiming one file and let the commit proceed. What is
+        # DISPLAYED is what was MATCHED on, so a refusal can be checked on its face.
+        claims = win["paths"]
         if staged is None:
             hit = ["(the staged file list could not be read, so every path is treated "
                    "as claimed)"]
         else:
-            claims = raw or [_WINDOW_EVERYTHING]
             hit = [s for s in staged if any(_window_claims(c, s) for c in claims)]
-        note = (f"{win['owner']} has claimed {paths} since {win.get('opened_at')}")
+        note = (f"{win['owner']} has claimed {', '.join(claims)} since {win.get('opened_at')}")
         if win.get("unreadable"):
             note += f" ({win['detail']})"
         if not hit:
             lines.append(f"a rewrite window is OPEN - {note}; no staged path is claimed by it, "
                          f"so this gate does not refuse. Stage named paths, never `git add -A`")
             continue
-        claimed_any = True
+        # Counted per WINDOW, not as a boolean: the lane reads N records, and two writers
+        # claiming what this commit stages is worse news than one. A fixed 1 could not report
+        # the multi-writer case the reader was generalised to see.
+        claiming += 1
         lines.append(f"a rewrite window is OPEN and claims a STAGED path - {note}; staged: "
                      f"{', '.join(hit)}. A commit now stages whatever that process has left on "
                      f"disk. Wait for it, or clear it: {win['clear_with']}")
-    return {"count": 1 if claimed_any else 0, "blocking": True, "detail": "; ".join(lines)}
-
-
-#: A window that names no paths has not said it may rewrite nothing.
-_WINDOW_EVERYTHING = "*"
+    return {"count": claiming, "blocking": True, "detail": "; ".join(lines)}
 
 
 def _window_claims(pattern, staged: str) -> bool:
     """True when `pattern` covers the staged path. Kept identical in rule to the pre-commit
     hook's own matcher, and pinned against it by test: a claim this cannot INTERPRET (anything
-    that is not a string, or an absolute path outside this root) claims EVERYTHING, because the
-    record says a writer is active and a matcher that shrugged would report it as harmless."""
+    that is not a string, an absolute path, or one that traverses out of this root) claims
+    EVERYTHING, because the record says a writer is active and a matcher that shrugged would
+    report it as harmless."""
     import fnmatch
     if not isinstance(pattern, str):
         return True
@@ -647,6 +653,11 @@ def _window_claims(pattern, staged: str) -> bool:
         return True
     if pat.startswith("/"):
         return True          # absolute: not comparable with a repo-relative staged path
+    if pat == ".." or pat.startswith("../") or "/../" in pat or pat.endswith("/.."):
+        # traversal: `tools/../tools/x.py` names a real file and matches nothing as a literal
+        # pattern. Claims are normalised at open time; a record already on disk carrying this
+        # spelling is read as claiming the tree rather than as claiming nothing.
+        return True
     if staged.startswith(pat + "/"):
         return True
     return fnmatch.fnmatch(staged, pat)

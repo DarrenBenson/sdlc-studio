@@ -1772,6 +1772,17 @@ class MutationProvenanceTests(unittest.TestCase):
         self.assertEqual(gate._PROVENANCE_MEASURED, mod.PROVENANCE_MEASURED)
         self.assertEqual(gate._PROVENANCE_REGISTERED, mod.PROVENANCE_REGISTERED)
 
+    def test_the_lane_reads_the_same_covering_verdicts_the_ledger_defines(self) -> None:
+        """`COVERING_VERDICTS` is documented as THE definition of covering evidence and was
+        used nowhere: this lane summed `killed` + `survived` inline, under a comment pointing at
+        a `_covering` that did not exist. That is the single-source hazard the same commit fixed
+        for the summary counters, re-created 200 lines away - a verdict added to one list would
+        never reach the lane that reports coverage."""
+        mod = self._mutation_module()
+        self.assertEqual(gate._COVERING_VERDICTS, mod.COVERING_VERDICTS)
+        self.assertNotIn(mod.EQUIVALENT_VERDICT, gate._COVERING_VERDICTS,
+                         "an equivalent mutant proves nothing about the tests")
+
 
 class AdvisoryRegistryTests(unittest.TestCase):
     """Every lane that reads not-run (advisory) when its evidence is absent
@@ -2944,6 +2955,87 @@ class WindowLaneIsPathScopedTests(unittest.TestCase):
             lane = gate.DEFAULT_CHECKS["window"](str(root))
             self.assertEqual(lane["count"], 0, lane["detail"])
             self.assertEqual(lane["detail"], "no rewrite window is open")
+
+    def test_the_count_names_every_window_that_claims_a_staged_path(self) -> None:
+        """The lane was generalised to read N records and kept a count of `1 if claimed_any`,
+        so the multi-writer case it exists to read could not be reported: two windows over one
+        staged path counted the same as one."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            self._record(root, ["tools/thing.py"], name="a-window.json")
+            self._record(root, ["tools/thing.py"], name="b-window.json")
+            self._stage(root, "tools/thing.py", "VALUE = 999\n")
+            lane = gate.DEFAULT_CHECKS["window"](str(root))
+            self.assertEqual(lane["count"], 2, lane["detail"])
+
+    def test_only_the_windows_that_claim_a_staged_path_are_counted(self) -> None:
+        """The control on the count: an open window claiming nothing staged is REPORTED and not
+        counted, so the figure stays "how many writers claim what this commit stages"."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            self._record(root, ["tools/thing.py"], name="a-window.json")
+            self._record(root, ["docs/"], name="b-window.json")
+            self._stage(root, "tools/thing.py", "VALUE = 999\n")
+            lane = gate.DEFAULT_CHECKS["window"](str(root))
+            self.assertEqual(lane["count"], 1, lane["detail"])
+            self.assertIn("docs/", lane["detail"], "the unclaiming window is still reported")
+
+    def test_a_malformed_owner_does_not_change_which_paths_are_claimed(self) -> None:
+        """The round-2 finding. This lane read `{"paths": ["tools/thing.py"]}` as claiming the
+        WHOLE TREE - the reader discarded `paths` whenever `owner` was falsy - while the
+        pre-commit hook read it as claiming one file and let the commit proceed. The hook runs
+        this lane a few lines later, so the blocking half won: the same contradiction round 1
+        was rejected for, one field along."""
+        for record in ('{"paths": ["tools/thing.py"]}',
+                       '{"owner": "", "paths": ["tools/thing.py"]}',
+                       '{"owner": null, "paths": ["tools/thing.py"]}',
+                       '{"owner": "rev", "paths": ["  ", "tools/thing.py"]}'):
+            with self.subTest(record=record), tempfile.TemporaryDirectory() as t:
+                root = self._repo(t)
+                (root / "sdlc-studio" / ".local" / "review-window.json").write_text(
+                    record, encoding="utf-8")
+                self._stage(root, "README.md", "notes, malformed-owner case\n")
+                lane = gate.DEFAULT_CHECKS["window"](str(root))
+                self.assertEqual(lane["count"], 0, lane["detail"])
+                self.assertIn("tools/thing.py", lane["detail"],
+                              "the record's own claims must still be reported")
+
+    def test_a_malformed_owner_still_refuses_the_path_it_does_claim(self) -> None:
+        """The control on the case above: keeping the claims must not lose the refusal."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            (root / "sdlc-studio" / ".local" / "review-window.json").write_text(
+                '{"paths": ["tools/thing.py"]}', encoding="utf-8")
+            self._stage(root, "tools/thing.py", "VALUE = 999\n")
+            lane = gate.DEFAULT_CHECKS["window"](str(root))
+            self.assertEqual(lane["count"], 1, lane["detail"])
+
+    def test_the_detail_reports_the_claims_the_lane_actually_matched_on(self) -> None:
+        """The self-contradicting line the review read off the screen: the detail listed the
+        claims - blanks included - and then named a staged path that was not among them. It
+        printed the RAW field and matched on something else. A refusal a reader cannot check on
+        its face is a refusal they route around."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            (root / "sdlc-studio" / ".local" / "review-window.json").write_text(
+                '{"owner": "rev", "paths": ["  ", "tools/thing.py"]}', encoding="utf-8")
+            self._stage(root, "tools/thing.py", "VALUE = 999\n")
+            detail = gate.DEFAULT_CHECKS["window"](str(root))["detail"]
+            claimed = detail.split("has claimed ")[1].split(" since ")[0]
+            self.assertEqual(claimed, "tools/thing.py",
+                             f"the detail reported claims the lane did not match on: {detail}")
+
+    def test_a_traversal_claim_covers_the_file_it_names(self) -> None:
+        """`tools/../tools/thing.py` is relative, so round 1's absolute-path normalisation
+        never saw it, and neither matcher normalises traversal: the claim matched NOTHING and
+        the commit rewriting that exact file proceeded. Fail-open is the one direction this
+        feature may never be wrong in."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            self._record(root, ["tools/../tools/thing.py"])
+            self._stage(root, "tools/thing.py", "VALUE = 999\n")
+            lane = gate.DEFAULT_CHECKS["window"](str(root))
+            self.assertEqual(lane["count"], 1, lane["detail"])
 
 
 class EquivalentIsNotCoverageTests(unittest.TestCase):

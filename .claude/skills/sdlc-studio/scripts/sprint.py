@@ -382,9 +382,10 @@ def sample_class(retro_id: str | None, constants: dict | None,
     `TOKENS_PER_POINT`. The value moves by design - the rate is re-measured from VELOCITY.md
     on every plan - so comparing values instead would let a LATER sprint reclassify an EARLIER
     row. Measured on this repo's own record, stamping the delivering model on three rows moved
-    the rate from the 25,000 seed to a measured 77,013, turned all 23 out-of-sample rows stale
-    in one read, emptied the whole-sprint excess to UNMEASURED and reverted the forecast band
-    to its default - with no recorded fact having changed. A row's class is a fact about the
+    the rate from the 25,000 seed to a measured 77,013 and turned all 19 out-of-sample rows
+    stale in one read - 23 stale rows and no out-of-sample evidence left, counting the 4 already
+    stale - emptying the whole-sprint excess to UNMEASURED and reverting the forecast band to
+    its default, with no recorded fact having changed. A row's class is a fact about the
     plan that WROTE it, and nothing measured afterwards may reach back and alter it.
     """
     rid = (retro_id or "").strip().upper()
@@ -2366,11 +2367,16 @@ def _render_rate_provenance(tf: dict) -> None:
 
     The refusal prints whatever stood in place of the record, and NAMES what stood: on the
     evidence-log path the seed did not stand at all, and saying it did would be a second false
-    statement stacked on the first."""
+    statement stacked on the first.
+
+    Those two are the whole domain here, so the lookup is exhaustive rather than defaulting: the
+    velocity record is the source that refused, and `tokens_per_point` returns `refused: None` on
+    every answer the record itself supplies, so the record can never also be what stands. A
+    generic fallback sentence under that pair could not be reached, and unreachable prose is one
+    more claim nothing checks."""
     if tf.get("rate_refused"):
         instead = {RATE_EVIDENCE: "the per-unit evidence log stands instead",
-                   RATE_SEED: "the seed stands instead"}.get(
-                       tf["rate_source"], f"the {tf['rate_source']} rate stands instead")
+                   RATE_SEED: "the seed stands instead"}[tf["rate_source"]]
         print(f"    the velocity record yields no usable rate - {tf['rate_refused']} "
               f"Nothing is averaged across that boundary, so {instead}")
     if tf["rate_source"] != RATE_SEED:
