@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 32 |
+| Draft | 34 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **342** |
+| **Total** | **344** |
 
 ## All Stories
 
@@ -253,6 +253,8 @@
 | [US0340](US0340-a-process-audit-lens-pack-ships-alongside-test.md) | A process audit lens pack ships alongside test, with lenses drawn from failures this project actually produced | Draft | EP0115 | 2026-07-22 | 2026-07-22 |
 | [US0341](US0341-each-lens-names-its-mechanically-detectable-signature-and.md) | Each lens names its mechanically detectable signature, and where there is none it says so rather than implying a check that does not exist | Draft | EP0115 | 2026-07-22 | 2026-07-22 |
 | [US0342](US0342-every-lens-cites-the-incident-it-derives-from.md) | Every lens cites the incident it derives from, so a reader can weigh it against evidence rather than assertion | Draft | EP0115 | 2026-07-22 | 2026-07-22 |
+| [US0343](US0343-a-repair-answering-a-finding-in-the-same.md) | A repair answering a finding in the same class as a previous round must state whether the design is retained or changed, and a plan describing only a better instance is refused past the threshold | Draft | EP0106 | 2026-07-22 | 2026-07-22 |
+| [US0344](US0344-the-reviewer-brief-asks-whether-the-approach-itself.md) | The reviewer brief asks whether the approach itself is the defect, and a recorded decision to RETAIN the design is a first-class outcome | Draft | EP0106 | 2026-07-22 | 2026-07-22 |
 
 ## Archived Releases
 

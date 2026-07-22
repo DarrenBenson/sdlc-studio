@@ -8,13 +8,13 @@
 | --- | --- |
 | Proposed | 38 |
 | Approved | 0 |
-| In Progress | 9 |
+| In Progress | 10 |
 | Complete | 344 |
 | Rejected | 0 |
 | Deferred | 4 |
 | Superseded | 14 |
 | Blocked | 0 |
-| **Total** | **409** |
+| **Total** | **410** |
 
 ## All Changes
 
@@ -231,6 +231,7 @@
 | [CR-0407](CR0407-the-forecast-ignores-the-goal-rung-so-a.md) | The forecast ignores the goal rung, so a design run that writes no code is priced at the full build cost of the batch it grooms | Proposed | Medium | Improvement | 2026-07-22 | -- |
 | [CR-0408](CR0408-acting-on-a-plan-review-invalidates-every-verdict.md) | Acting on a plan review invalidates every verdict including the one that proposed the change, so improving a goal costs a full re-consult | Proposed | High | Improvement | 2026-07-22 | -- |
 | [CR-0409](CR0409-a-seat-is-briefed-by-hand-and-its.md) | A seat is briefed by hand and its verdict typed back through a shell argument, so the plan review's quality depends on the author it is meant to check | Proposed | Medium | Improvement | 2026-07-22 | -- |
+| [CR-0410](CR0410-a-repair-plan-can-be-attacked-and-still.md) | A repair plan can be attacked and still repeat the previous approach, so a class that has failed N rounds must force a design decision rather than a better instance | In Progress | High | Improvement | 2026-07-22 | EP0106 |
 
 ## Archived Releases
 
