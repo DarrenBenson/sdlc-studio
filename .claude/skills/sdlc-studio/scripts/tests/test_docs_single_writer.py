@@ -105,19 +105,33 @@ def _forbids(raw: str, pattern: str, why: str, ac: str) -> list[str]:
 # sentence about a guarded property is judged for POLARITY, so a contradiction fails wherever
 # it is added and whatever words it uses inside the topic vocabulary.
 #
-# THE BOUND, stated rather than implied. A sentence is SELECTED by topic vocabulary and JUDGED
-# by negation cues, both enumerated here. Three things therefore slip through: prose about a
-# guarded property that uses none of its topic words; a reversal carried by irony or by layout
-# rather than by a cue; and a negation sitting further from its verb than NEG_REACH. This is a
-# polarity scan over named topics, not a semantic proof, and it is only as wide as the axes.
+# THE BOUND, stated rather than implied, and CORRECTED after round 3 caught this comment
+# overstating it. A sentence is SELECTED by topic vocabulary and JUDGED by negation cues, both
+# enumerated here. Four things slip through, and the fourth was previously DENIED here:
+#   1. prose about a guarded property that uses none of its topic words;
+#   2. a reversal carried by irony or by layout rather than by a cue;
+#   3. a negation sitting further from its verb than NEG_REACH;
+#   4. an UNRELATED negation within NEG_REACH of the asserting word, which launders a direct
+#      contradiction. There is NO attachment check: any cue in the run-up counts. So
+#      "Nothing else matters: a green run proves the staged tree is clean" passes, because
+#      "Nothing" sits within reach of "proves" while modifying something else entirely.
+# It also OVER-fires in the same way: "A review must never proceed without a declared window"
+# is correct prose that this scan reports as asserting the opposite, because the cue attaches
+# to "proceed" rather than to the rule being stated.
+# This is a polarity scan over named topics, not a semantic proof. It raises the cost of
+# contradicting the docs; it does not make it impossible. Treat a green result as "no
+# contradiction in the shapes enumerated here", never as "the documentation is consistent".
 
 #: Words that flip an assertion, looked for in the run-up to the asserting word.
 NEG_CUES = re.compile(r"\b(not|never|no|nobody|none|nothing|neither|nor|cannot|can't|doesn't|"
                       r"don't|isn't|won't|rarely|refus\w*|forbid\w*|banned)\b", re.I)
 
 #: How far back from the asserting word a negation is taken to reach. Long enough for the
-#: auxiliaries the docs actually use ("does not establish", "is NOT evidence"), short enough
-#: that an unrelated negation earlier in a long sentence does not launder the assertion.
+#: auxiliaries the docs actually use ("does not establish", "is NOT evidence"). It does NOT
+#: establish that an unrelated negation cannot launder the assertion - this comment claimed it
+#: did, and round 3 disproved it with five natural sentences. Shortening the reach does not fix
+#: the class either, it only moves which sentences escape; an attachment check would, and is
+#: not implemented. See THE BOUND above, item 4.
 NEG_REACH = 40
 
 #: (ac, property, topic patterns ALL of which must match the sentence, asserting word,
@@ -360,6 +374,59 @@ class SingleWriterDocTests(unittest.TestCase):
 
     def test_both_files_cite_the_window_guard_as_the_tool_really_offers_it(self) -> None:
         self.assertEqual([], check_ac4(self.sprint, self.review, self.cli))
+
+
+class DisclosedLimitsAreRealTests(unittest.TestCase):
+    """The gaps THE BOUND admits, made executable.
+
+    Round 3 found the NEG_REACH comment asserting a property the scan does not have: that an
+    unrelated negation cannot launder an assertion. It can. The comment is now corrected, and
+    these tests exist so the correction cannot rot back into a claim - if someone later adds an
+    attachment check, these go RED and the prose must be updated with the code.
+
+    A disclosed limit that nothing exercises is just a sentence, and a sentence about code is
+    what eight consecutive closing reviews on this project have found wrong."""
+
+    #: Direct contradictions of a guarded property that the scan does NOT catch, each because an
+    #: unrelated negation sits within NEG_REACH of the asserting word (THE BOUND, item 4).
+    LAUNDERED = [
+        "Nothing else matters: a green run proves the staged tree is clean.",
+        "No two ways about it, a green gate shows the staged tree is clean.",
+        "Never skip the gate: a passing suite proves the staged tree is clean.",
+        "It is not unusual for the window guard to be advisory.",
+    ]
+
+    #: Correct prose the scan wrongly reports as asserting its opposite (THE BOUND, over-firing).
+    OVER_FIRED = [
+        "A review must never proceed without a declared window.",
+        "No review may run unless a window is declared first.",
+    ]
+
+    def test_the_laundering_gap_is_real_and_still_open(self) -> None:
+        sprint, review = read_docs()
+        for line in self.LAUNDERED:
+            with self.subTest(line=line):
+                self.assertEqual(
+                    check_all(sprint + "\n\n" + line, review), {"AC1": [], "AC2": [],
+                                                                 "AC3": [], "AC4": []},
+                    "if this now FAILS, the scan improved: update THE BOUND item 4 and this list")
+
+    def test_the_over_firing_is_real_and_still_open(self) -> None:
+        sprint, review = read_docs()
+        hits = 0
+        for line in self.OVER_FIRED:
+            res = check_all(sprint + "\n\n" + line, review)
+            hits += sum(len(v) for v in res.values())
+        self.assertGreater(hits, 0,
+                           "if this now finds nothing, the over-firing was fixed: update THE "
+                           "BOUND and this list rather than deleting the test")
+
+    def test_the_shipped_docs_are_still_clean(self) -> None:
+        """The control that keeps the two above honest: the gaps are real, and the scan is not
+        simply inert."""
+        sprint, review = read_docs()
+        self.assertEqual(check_all(sprint, review),
+                         {"AC1": [], "AC2": [], "AC3": [], "AC4": []})
 
 
 class NegatedProseTests(unittest.TestCase):

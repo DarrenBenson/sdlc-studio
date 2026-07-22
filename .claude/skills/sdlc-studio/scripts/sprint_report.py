@@ -93,8 +93,10 @@ def _run_window(root: Path, unit_ids: list[str]) -> tuple | None:
     """`(started_at, ended_at)` of the run that delivered THIS sprint, or None.
 
     Same guard as `_sprint_goal`: a run record counts only when its batch names this sprint's
-    units. Where more than one does, the record covering MOST of them wins, live or archived
-    alike. Trying the live record first regardless was the same defect one level up: a run that
+    units. Where more than one does, the CLOSEST record wins - most of this sprint's units
+    covered, then fewest units that are not this sprint's - live or archived alike. Overlap
+    alone was not enough: a superset batch ties an exact one, so a foreign run touching every
+    unit of this sprint took the window. Trying the live record first regardless was the same defect one level up: a run that
     merely RE-TOUCHES one unit of an old sprint supplied that sprint's window, and an open run
     has no end, so every later project-wide row read as this sprint's again. Ties keep the live
     record, then the newest archived one, because a report is normally read after the close and
@@ -110,7 +112,7 @@ def _run_window(root: Path, unit_ids: list[str]) -> tuple | None:
         pass                      # the report stays renderable; the close gate owns that failure
     # `archived` skips an unreadable record rather than raising, so there is nothing to catch.
     records.extend(reversed(run_state.archived(root)))
-    best = None                   # (units covered, started_at, ended_at)
+    best = None                   # ((cover, -extraneous), started_at, ended_at)
     for state in records:
         batch = {sdlc_md.norm_id(u) for u in (state.get("batch") or [])}
         cover = len(batch & want)
@@ -119,8 +121,16 @@ def _run_window(root: Path, unit_ids: list[str]) -> tuple | None:
         start = telemetry._parse_iso(state.get("started_at"))  # noqa: SLF001 - ONE stamp reader
         if start is None:
             continue              # a run with no start bounds nothing
-        if best is None or cover > best[0]:
-            best = (cover, start, telemetry._parse_iso(state.get("ended_at")))  # noqa: SLF001
+        # SCORE BY CLOSENESS, NOT OVERLAP. `cover` alone is bounded above by len(want), so ANY
+        # run whose batch is a SUPERSET of this sprint's units ties the run that actually
+        # delivered them - and with live tried first, an open run touching all of them took the
+        # window, which is the defect one round earlier. Worst for a one-unit sprint, where any
+        # run touching that unit ties. Breaking the tie on FEWEST extraneous units makes an
+        # exact batch beat a superset, and leaves the live-first rule to decide only a genuine
+        # tie on both terms.
+        score = (cover, -len(batch - want))
+        if best is None or score > best[0]:
+            best = (score, start, telemetry._parse_iso(state.get("ended_at")))  # noqa: SLF001
     return (best[1], best[2]) if best else None
 
 

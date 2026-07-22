@@ -2159,6 +2159,64 @@ class WindowOpenMessageTests(unittest.TestCase):
             self.assertEqual(self._lane(root)["count"], 1,
                              "the lane allows a commit the message says is refused")
 
+    def test_the_default_invocation_says_it_claims_the_whole_tree(self) -> None:
+        """Round 3 MAJOR 1. `--paths` defaults to empty and both readers normalise empty to
+        WINDOW_EVERYTHING, so the DOCUMENTED default opens a whole-tree window - while the
+        message printed "0 path(s)" and promised that anything else proceeds. That understates
+        the guard, which is the worse direction: an author told the window is narrow when it
+        claims everything concludes the guard is inert.
+
+        The test above passes on the broken code because it only ever opens `--paths tools/x.py`.
+        This drives the DEFAULT, and asserts the lane agrees with the sentence."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = mut.main(["window", "open", "--root", str(root), "--owner", "the reviewer"])
+            self.assertEqual(rc, 0)
+            msg = buf.getvalue()
+            self.assertIn("WHOLE TREE", msg, "an unscoped window must say what it really claims")
+            self.assertNotIn("anything\nelse proceeds", msg)
+            self.assertNotIn("else proceeds", msg,
+                             "nothing proceeds under a window claiming everything")
+            self.assertNotIn("0 path(s)", msg, "empty paths is EVERYTHING, never nothing")
+            # the lane must agree with the sentence: an unrelated staged path is still refused
+            (root / "README.md").write_text("notes and more notes\n", encoding="utf-8")
+            gitutil.git(["add", "README.md"], cwd=root)
+            self.assertEqual(self._lane(root)["count"], 1,
+                             "the message says every commit is refused; the lane must too")
+
+    def test_an_all_blank_paths_list_is_also_the_whole_tree(self) -> None:
+        """The sibling shape the reviewer reproduced: `--paths "   " "  "` printed
+        "2 path(s):    ,   " and promised anything else proceeds, while both readers normalise
+        all-blank to everything."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                mut.main(["window", "open", "--root", str(root), "--owner", "r",
+                          "--paths", "   ", "  "])
+            msg = buf.getvalue()
+            self.assertIn("WHOLE TREE", msg)
+            self.assertNotIn("2 path(s)", msg)
+
+    def test_a_scoped_window_still_says_what_it_scopes(self) -> None:
+        """Negative control. Without it, a message hard-coded to WHOLE TREE would pass the two
+        tests above while destroying the scoped case the feature exists for."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                mut.main(["window", "open", "--root", str(root), "--owner", "r",
+                          "--paths", "tools/x.py"])
+            msg = buf.getvalue()
+            self.assertNotIn("WHOLE TREE", msg)
+            self.assertIn("tools/x.py", msg)
+            self.assertIn("else proceeds", msg)
+
 
 class LedgerSummaryVocabularyTests(unittest.TestCase):
     """`SUMMARY_VERDICTS` says "one list, so a new verdict cannot be countable in one writer and

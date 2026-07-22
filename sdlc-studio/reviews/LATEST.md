@@ -2,7 +2,7 @@
 
 > Derived from **RUN-01KY3MFX** (2026-07-22). Supersedes the RETRO-0065 picture.
 > The run is BUILT, REVIEWED THREE TIMES and REPAIRED TWICE. RETRO0066 and its velocity row
-> are recorded. It is NOT closed: the round-3 REJECT is unrepaired and the sign-off is owed.
+> are recorded. It is NOT closed: round 3's repair is UNREVIEWED and the sign-off is owed.
 
 ## Where the pipeline is (2026-07-22)
 
@@ -55,19 +55,22 @@ tests kill them. Recorded as a property of the fixture in US0308.
 
 ## Evidence
 
-3,927 skill tests + 312 tool tests green. Drift 0, conformance 0 non-conformant, floor 0
+3,934 skill tests + 312 tool tests green. Drift 0, conformance 0 non-conformant, floor 0
 violations, no rewrite window open. ~220 hand-applied mutants across build and both repair
 rounds; 13 survived first time and every one drove a change rather than a re-run. Installed copy
 forward-ported and verified.
 
 ## Next steps
 
-- **Round 3 REJECTED and the ceiling is now EXHAUSTED** (`review.max_rounds` 3). Three MAJORs
-  stand unrepaired, each small and each precisely described in the review record: `window open`
-  still prints a message the guard contradicts for the default whole-tree window; the docs
-  checker's `NEG_REACH` comment claims an unrelated negation cannot launder an assertion, and it
-  can; `_run_window` still attributes a foreign run whose batch is a SUPERSET of this sprint's
-  units. Buying a fourth round is an operator decision.
+- **Round 3 REJECTED; its three MAJORs are now REPAIRED, and that repair is UNREVIEWED.**
+  `review.max_rounds` is 3 and the ceiling is spent, so nothing has attacked this last change.
+  `window open` now prints the NORMALISED claims and says plainly when a window claims the whole
+  tree (the default invocation did, while promising the opposite). The docs checker's `NEG_REACH`
+  comment claimed an unrelated negation cannot launder an assertion; it can, the comment now says
+  so, and the gap is pinned by tests that go RED if it is ever closed. `_run_window` scores run
+  records by CLOSENESS rather than overlap, so a superset batch no longer ties the exact one.
+  Each was mutation-proven; none has been independently reviewed. **Buying a fourth round, or
+  accepting the repair unreviewed, is an operator decision.**
 - **Sign-off is owed and is the operator's.** `sprint close --retro <id> --apply-signoff
   --principal "..."`. RFC0051 records why an agent cannot honestly supply it.
 - **Recorded at close:** RETRO0066, and a velocity row carrying the supplied delegated figure.

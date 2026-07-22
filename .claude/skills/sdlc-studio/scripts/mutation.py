@@ -1662,10 +1662,24 @@ def cmd_window(args: argparse.Namespace) -> int:
         # record's existence and false the moment it became path-scoped: a commit staging
         # nothing this window claims proceeds. A CLI that overstates its own guard teaches an
         # author to route around it.
-        print(f"mutation: rewrite window OPEN, held by {rec['owner']} over "
-              f"{len(rec['paths'])} path(s): {', '.join(rec['paths'])}. A commit staging a "
-              f"path it claims will be refused until it is closed; a commit staging anything "
-              f"else proceeds. Close it with: {rec['clear_with']}")
+        # PRINT THE NORMALISED CLAIMS, NOT THE RAW FIELD. `--paths` defaults to empty, and
+        # both readers normalise an empty or all-blank `paths` to WINDOW_EVERYTHING - "a record
+        # that does not say what it may rewrite has NOT said it may rewrite nothing". So the
+        # DEFAULT invocation opens a whole-tree window, and printing the raw list said "0
+        # path(s)" and then promised that anything else proceeds. That understated the guard,
+        # which is the worse direction: an author told the window is narrow when it claims
+        # everything believes the guard is inert. Two roundings of the same sentence were wrong
+        # before this one; the fix is to render what the MATCHER will be handed.
+        claims = window_claims(rec["paths"])
+        everything = claims == [WINDOW_EVERYTHING]
+        scope = ("the WHOLE TREE (no paths were named, which claims everything, not nothing)"
+                 if everything else f"{len(claims)} path(s): {', '.join(claims)}")
+        consequence = ("Every commit will be refused until it is closed."
+                       if everything else
+                       "A commit staging a path it claims will be refused until it is closed; "
+                       "a commit staging anything else proceeds.")
+        print(f"mutation: rewrite window OPEN, held by {rec['owner']} over {scope}. "
+              f"{consequence} Close it with: {rec['clear_with']}")
         return 0
     if args.window_cmd == "close":
         try:

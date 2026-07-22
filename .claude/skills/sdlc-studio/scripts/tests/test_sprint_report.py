@@ -397,6 +397,22 @@ class MutationBelongsToThisRunTests(ReportBase):
         self.assertIn("no mutation evidence", text)
         self.assertIn("no run state names this sprint", text)
 
+    def test_an_exact_batch_beats_an_open_SUPERSET_run(self) -> None:
+        """Round 3 MAJOR 3. `cover` is bounded above by len(want), so ANY run whose batch is a
+        SUPERSET of this sprint's units TIES the run that delivered them - and with live tried
+        first, the open superset took the window. Closeness breaks the tie: fewest units that
+        are not this sprint's."""
+        self._window("2026-07-01T08:00:00Z", "2026-07-01T10:00:00Z", ["US0001", "US0002"])
+        true_rid = self._run("2026-07-01T09:00:00Z", 300.0)
+        # a later, still-open run that touches BOTH units plus a great deal else
+        self._window("2026-07-20T08:00:00Z", None,
+                     ["US0001", "US0002"] + [f"US{n:04d}" for n in range(500, 540)])
+        self._run("2026-07-20T09:00:00Z", 55.0, survived=1)
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertEqual(rep["mutation"]["current"]["run_id"], true_rid,
+                         "a superset must not outrank the batch that IS this sprint")
+        self.assertIn("300.0s", sr.render(rep))
+
     def test_the_run_covering_this_sprint_beats_an_open_run_touching_one_unit(self) -> None:
         """MAJOR, round 2: the LIVE record was tried first unconditionally, so a partial
         one-unit intersection with whatever run happens to be open beat a full match in the
