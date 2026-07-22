@@ -11,18 +11,40 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** agent repairing a rejected sprint
+**I want** each finding answered by a written entry naming the change, the approach and what
+it might break, before I edit anything
+**So that** the approach is a thing that can be argued with, rather than a decision made
+inside the edit and visible only afterwards
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: a REJECT verdict yields a repair plan with one entry per finding
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** a recorded sprint-review verdict of REJECT carrying N findings
+- **When** the repair plan is created for it
+- **Then** the plan holds exactly N entries, each naming the finding it answers by id, and a
+  plan with fewer entries than the verdict has findings is refused rather than accepted as
+  partial - a silently unanswered finding is how a round's defects survive into the next
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::RepairPlanTests::test_a_plan_missing_an_entry_for_any_finding_is_refused
+
+### AC2: an entry that names no approach or no risk is refused before it is stored
+
+- **Given** a repair-plan entry carrying a change but no stated approach, and a second
+  carrying both but naming nothing it might break
+- **When** the plan is created
+- **Then** both are refused and nothing is written, because an entry without an approach is
+  a restatement of the finding and an entry without a risk is an assertion that the repair
+  is free - which is the belief every round from 3 to 10 of RUN-01KY3MFX held and lost
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::RepairPlanTests::test_an_entry_without_an_approach_or_a_risk_is_refused
+
+### AC3: a plan exists only for a verdict that actually rejected
+
+- **Given** a recorded verdict of APPROVE
+- **When** a repair plan is requested against it
+- **Then** it is refused and names the verdict it found, so a repair plan cannot be
+  manufactured to launder a change nobody rejected
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::RepairPlanTests::test_a_repair_plan_against_a_non_reject_verdict_is_refused
 
 ## Revision History
 

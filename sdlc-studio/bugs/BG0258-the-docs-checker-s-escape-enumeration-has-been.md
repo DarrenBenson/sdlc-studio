@@ -20,6 +20,51 @@ Five consecutive review rounds each found an escape the previous enumeration had
 
 Stop enumerating. Derive the disclosure from the mechanism: report, for a candidate sentence, WHICH axis selected it and WHY it was or was not judged, so a maintainer asking 'would this be caught' gets an answer from the code rather than from a list a human maintains. Failing that, generate the escape corpus rather than hand-writing it - the escapes found so far were each found by an adversary constructing a sentence, which is a search a fuzzer can do continuously. Whatever is chosen, the enumeration must stop being presented as a boundary; it has been a lower bound five times running.
 
+## Acceptance Criteria
+
+**What makes the fix complete.** A maintainer asking "would this sentence be caught" gets
+the mechanism's own answer - which axis selected it, or that none did; whether it carried
+an enumerated asserting word; which cue set its polarity - so the question THE BOUND has
+answered wrongly at three, four, five, six and seven is no longer answered by prose a
+human maintains. The enumeration stops being presented as a boundary, and the escape
+corpus is generated from the axes rather than typed by whoever last got caught out.
+
+**Not claimed**, stated so no later reader mistakes it: this does not make the scan
+complete. It makes its incompleteness derived. A contradiction written in words no axis
+selects is still not caught.
+
+Each criterion below carries its own verifier, because `verify_ac` executes only the first
+`Verify` line in an AC block and stacked ones are decorative.
+
+### AC1: the module explains its own verdict for a candidate sentence
+
+- **Given** a sentence handed to the module rather than to a maintainer
+- **When** the explanation is asked for
+- **Then** it names the axis that selected the sentence or reports that none did, whether
+  an enumerated asserting word was present, and which cue set the polarity - so the answer
+  comes from running the mechanism, not from reading a list beside it
+- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::EscapeExplanationTests::test_explain_names_the_selecting_axis_and_why_a_sentence_was_not_judged`
+
+### AC2: an unselected sentence is reported as unselected, never as clean
+
+- **Given** the Steps to Reproduce sentence, "A green gate proves the working copy is
+  uncontaminated", which matches some of an axis's topic groups and not all
+- **When** it is checked
+- **Then** it is reported as UNSELECTED, naming the topic group that failed to match,
+  instead of coming back indistinguishable from prose the scan judged and passed - today
+  the two are the same empty result, which is how five rounds each read a lower bound as
+  coverage
+- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::EscapeExplanationTests::test_a_partial_topic_sentence_is_reported_as_unselected_not_as_clean`
+
+### AC3: the escape corpus is generated, and every escape it finds is reported
+
+- **Given** the axes, their topic groups, their asserting words and their cue vocabulary
+- **When** the corpus is generated from them and run
+- **Then** every escape it finds is reported, so a new escape appears without a reviewer
+  having to invent the sentence - and the test fails if the corpus is a hand-written list,
+  because a hand-written list is the defect this bug names
+- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::GeneratedEscapeCorpusTests::test_the_corpus_is_generated_from_the_axes_and_every_escape_it_finds_is_reported`
+
 ## Revision History
 
 | Date | Author | Change |

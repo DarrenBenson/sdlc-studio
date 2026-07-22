@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py,.claude/skills/sdlc-studio/scripts/verify_ac.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py,.claude/skills/sdlc-studio/scripts/verify_ac.py,.claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py,.claude/skills/sdlc-studio/scripts/tests/test_conformance.py
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,6 +19,48 @@ Found when RUN-01KY3MFX ran the full AC verifier over the workspace, which had n
 ## Proposed Fix
 
 Make a stamp depend on the verifier RESOLVING, not only on the AC text being unchanged. The cheapest form: when conformance or the freshness check reads a green stamp, confirm the selector still selects at least one test, and treat a selector matching nothing as stale rather than green - the vacuity rule already exists for a live run, so this extends it to a recorded one. A periodic full re-run would also surface it, but only as often as somebody remembers, which is what allowed this. Re-pointing US0265 AC5 at `test_neutral_text_reports_no_violations` fixes THIS instance and is not the fix.
+
+## Acceptance Criteria
+
+### AC1: a recorded green whose selector no longer resolves reads stale, not green
+
+- The freshness judgement stops depending only on the AC text. A recorded pass whose
+  verifier names a pytest node or `-k` pattern that selects nothing is reported STALE,
+  with the AC id and the unresolvable selector named, so the reader is told which pointer
+  died rather than that the story "changed".
+- Both shapes are covered: a node address whose class or method no longer exists, and a
+  `-k` pattern that matches nothing while the file it names still collects. The second is
+  the shape that produced this bug and the one a file-exists check would pass.
+- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StampResolutionTests::test_a_recorded_green_whose_selector_selects_nothing_is_reported_stale`
+
+### AC2: conformance refuses to count a Done story verified on an unresolvable stamp
+
+- The `verified` stage of `conformance.py` reads the resolution result, so a Done story
+  whose AC carries `Verified: yes` against a selector that selects nothing is
+  non-conformant and appears in `missing` with a reason a reader can act on.
+- The existing remediation registry carries a hint for whatever finding kind this adds, so
+  the guard that derives its key set from the stage vocabulary stays green.
+- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::StampResolutionTests::test_a_done_story_stamped_against_a_selector_that_resolves_to_nothing_is_not_verified`
+
+### AC3: a resolving selector stays green, and the check collects rather than runs
+
+- Negative control: a stamped AC whose selector still selects at least one test is left
+  green and is not re-run. Without this the fix is indistinguishable from marking every
+  stamp stale, which would be the same defect with the sign flipped.
+- Resolution is decided by collection, not execution, so the check costs a collection pass
+  per distinct selector and executes no test body - it can therefore run beside the
+  freshness check rather than only in a full suite sweep, which is what let two days pass.
+- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StampResolutionTests::test_a_resolving_selector_stays_green_and_no_test_body_is_executed`
+
+### AC4: the condition is catchable from the command line, on a story, without a suite run
+
+- `verify_ac` exposes the check over a named story and exits non-zero when a stamped
+  verifier cannot resolve, printing the story, the AC and the selector. The condition then
+  has a routine that finds it, which is the gap this bug records.
+- The instance that produced this bug is repaired in the same change: US0265 AC5 is
+  re-pointed at `test_neutral_text_reports_no_violations`, which exists and passes. That
+  repair is stated as a completion item, not as the fix.
+- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StampResolutionTests::test_the_command_exits_non_zero_on_a_story_whose_stamped_verifier_cannot_resolve`
 
 ## Revision History
 

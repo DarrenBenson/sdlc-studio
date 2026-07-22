@@ -38,7 +38,7 @@ Add a path-suffix check to the lint: a `grep` or `file` verifier whose resolved 
 - **When** `lint_markdown_evidence` judges each, alongside a `pytest` verifier, a `manual`
   one, a `grep` over a Python file, and a mixed target list naming both markdown and code
 - **Then** all four originals are refused and none of the others is
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k "test_every_verifier_us0310_shipped_is_refused or test_a_behavioural_verifier_is_untouched or test_a_mixed_target_list_is_not_refused or test_file_verb_on_markdown_is_refused"
+- **Verify:** passed 2026-07-22, and nothing re-runs it: `pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k "test_every_verifier_us0310_shipped_is_refused or test_a_behavioural_verifier_is_untouched or test_a_mixed_target_list_is_not_refused or test_file_verb_on_markdown_is_refused"`
 - **Verified:** yes (2026-07-22)
 
 ### AC2: the refusal fails the command while authoring, and lifts once the story has shipped
@@ -47,7 +47,7 @@ Add a path-suffix check to the lint: a `grep` or `file` verifier whose resolved 
 - **When** `verify_ac lint` runs against it at `Draft`, then again at `Done`
 - **Then** the first exits non-zero and the second exits zero, so authoring is interrupted
   and a lint over shipped history still runs
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k "test_lint_exits_non_zero_on_a_draft_story_and_zero_once_done or test_uppercase_extension_is_refused"
+- **Verify:** passed 2026-07-22, and nothing re-runs it: `pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k "test_lint_exits_non_zero_on_a_draft_story_and_zero_once_done or test_uppercase_extension_is_refused"`
 - **Verified:** yes (2026-07-22)
 
 ## Resolution
@@ -63,6 +63,13 @@ one, SURVIVED and is equivalent: `_expand_globs` passes an unmatched glob throug
 falsified the docstring written beside it, which had justified the choice by a scenario the
 code rules out; the stated reason is corrected and the equivalence recorded rather than a
 test contrived to kill it. **No claim of mutation coverage is made for that line.**
+
+**On the two `Verified: yes` stamps above.** Both criteria were run and passed on
+2026-07-22 (`verify_ac run --story` against this file, 2/2). The stamps are a dated
+record, NOT a live guarantee: `walk_stories` yields only `US` records, so no routine
+sweep re-runs a bug's verifier and these will read green forever regardless of what
+happens to the tests they name. That is BG0256, open in this same batch, and this
+artefact is an instance of it rather than an exception to it.
 
 ## Revision History
 

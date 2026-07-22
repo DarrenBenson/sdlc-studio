@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 8 |
+| Open | 9 |
 | In Progress | 0 |
 | Fixed | 174 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **264** |
+| **Total** | **265** |
 
 ## All Bugs
 
@@ -231,6 +231,7 @@
 | [BG0262](BG0262-a-seat-that-says-the-goal-is-not.md) | A seat that says the goal is NOT achievable discharges the plan gate exactly as one that says it is - the verdict's content is never read | Open | High | 2026-07-22 | 2026-07-22 |
 | [BG0263](BG0263-the-goal-review-has-no-rounds-so-rewriting.md) | The goal review has no rounds, so rewriting a goal in response to a REJECT erases the fact that it was ever rejected | Open | Medium | 2026-07-22 | 2026-07-22 |
 | [BG0264](BG0264-verify-ac-lint-accepts-a-grep-or-file.md) | verify_ac lint accepts a grep or file verifier pointing at markdown, which is how four acceptance criteria passed on prose asserting the opposite of their own wording | Fixed | High | 2026-07-22 | 2026-07-22 |
+| [BG0265](BG0265-a-second-verify-line-under-one-acceptance-criterion.md) | A second Verify line under one acceptance criterion is silently dropped, so seven verifiers in this workspace have never run and four of them sit on Done stories | Open | High | 2026-07-22 | 2026-07-22 |
 
 ## Archived Releases
 

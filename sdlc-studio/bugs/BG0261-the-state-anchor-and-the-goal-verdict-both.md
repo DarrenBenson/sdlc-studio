@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/doc_freshness.py,.claude/skills/sdlc-studio/scripts/lib/run_state.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/doc_freshness.py,.claude/skills/sdlc-studio/scripts/lib/run_state.py,.claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py,.claude/skills/sdlc-studio/scripts/tests/test_run_state.py
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -29,6 +29,41 @@ This is the same class as BG0257 and the surviving MAJOR of nine consecutive clo
 ## Proposed Fix
 
 Three separate small changes, in value order. (1) `doc_freshness` gains two checks against state it can already read - a sign-off or closure LATEST.md claims is outstanding when `close_owed`/the index say otherwise, and a round count narrated in LATEST.md that the run ledger contradicts. (2) The goal-verdict note is cross-checked against len(`review_rounds)` at record time, in the manner of CR0394: do not restate the round count beside the ledger, derive it from the ledger or refuse a note that names a different one. (3) `record_review` refuses, or at minimum warns, when a round is recorded against a run that already carries `ended_at`, and stops accepting a reviewer-supplied round label that disagrees with the index it is stored at. Do not fix this by rewriting LATEST.md by hand: the document being wrong is the symptom, the absent check is the bug, and correcting the prose without the check is exactly the move this project keeps finding in its own reviews.
+
+## Acceptance Criteria
+
+The fix is complete when the two surfaces that carried the false claims are checked
+against the state that already contradicts them, and neither check can be satisfied by
+correcting the prose: `doc_freshness` reports a sign-off or closure LATEST.md calls
+outstanding once the index and `close_owed` say it landed, and reports a round count the
+document narrates that the run ledger contradicts; and the round ledger itself refuses
+to be contradicted at record time, so a verdict note naming a round count other than
+`len(review_rounds)`, a round recorded against a run already carrying `ended_at`, and a
+reviewer label disagreeing with the index it is stored at are each refused or reported
+rather than written silently. Both tests below fail today: the first because
+`doc_freshness` checks only version, test count, disclosure count and length, the second
+because nothing reads the ledger back at record time.
+
+### AC1: the freshness check compares the anchor's two load-bearing claims against state
+
+- **Given** a LATEST.md stating that a sign-off is owed and narrating three review
+  rounds, over a run whose index shows the batch Done, whose `close_owed` detect reports
+  none, and whose `review_rounds` holds six entries
+- **When** `doc_freshness` runs
+- **Then** it reports both the landed-but-claimed-owed sign-off and the round-count
+  divergence as findings, distinct from the line-count finding, and reports neither when
+  the document agrees with the state
+- **Verify:** red today, green when the checks land: `pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py::AnchorClaimsCheckedAgainstRunStateTests::test_a_landed_signoff_and_a_contradicted_round_count_are_both_reported`
+
+### AC2: the round ledger cannot be contradicted at the moment it is written
+
+- **Given** a run carrying six recorded rounds and an `ended_at`
+- **When** a goal-verdict note naming a different round count is recorded, a round is
+  recorded after `ended_at`, and a round is recorded with a reviewer label disagreeing
+  with its own index
+- **Then** each is refused or reported at that moment, and the round count a note carries
+  is derived from the ledger rather than restated beside it
+- **Verify:** red today, green when the ledger checks land: `pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::ReviewLedgerHonestyTests::test_a_note_round_or_label_contradicting_the_ledger_is_refused`
 
 ## Revision History
 

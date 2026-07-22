@@ -11,18 +11,37 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reviewer of record
+**I want** a plan verdict to name the exact findings it answered
+**So that** a verdict cannot be stretched over findings nobody reviewed it against, which is
+how `wsjf-inputs.json` once read as current judgement for weeks
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: a verdict carries a fingerprint of the finding set it answered
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** a plan review recorded against a set of findings
+- **When** the verdict is stored
+- **Then** it carries a fingerprint derived from those findings, following the precedent
+  `ac_fingerprint` already sets for pinning a story plan to its acceptance criteria
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::RepairPlanPinTests::test_a_verdict_stores_a_fingerprint_of_the_findings_it_answered
+
+### AC2: a later finding invalidates the verdict
+
+- **Given** a stored verdict, and a subsequent review round adding one finding
+- **When** the gate is asked whether the plan is reviewed
+- **Then** it answers no and names the finding the verdict does not cover, rather than
+  reporting the plan as approved because a verdict exists
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::RepairPlanPinTests::test_a_finding_added_after_the_verdict_invalidates_it
+
+### AC3: an unchanged finding set leaves the verdict standing
+
+- **Given** a stored verdict and a finding set re-read in a different order, with whitespace
+  differing
+- **When** the gate re-checks it
+- **Then** the verdict still holds, so the pin discriminates a changed question from a
+  re-serialised one and does not force a re-review on every read
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::RepairPlanPinTests::test_reordering_and_whitespace_do_not_invalidate_a_verdict
 
 ## Revision History
 

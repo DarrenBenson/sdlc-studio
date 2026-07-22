@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py,.claude/skills/sdlc-studio/scripts/templates/retro.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py,.claude/skills/sdlc-studio/templates/reviews/retro.md,.claude/skills/sdlc-studio/scripts/tests/test_retro.py
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,6 +19,45 @@ Hit live at RUN-01KY3MFX's close. The retro's Batch line was written as 'BG0247-
 ## Proposed Fix
 
 Cross-check the parsed batch against the retro's own declared unit count and REFUSE when they disagree, rather than expanding ranges - expansion invites a second ambiguity about what a range across two id families means. The count is already written in the header, so the check costs nothing. Whatever is chosen, a partially-parsed batch must never reach `record_velocity`: a wrong row in the file the planner re-measures from is worse than no row.
+
+## Acceptance Criteria
+
+### AC1: a batch the parser could not read in full never reaches the velocity record
+
+The fix is complete when all of the following hold, and each is pinned by a test that fails
+against the code as it stands today:
+
+- The parsed unit count is cross-checked against the count the retro already declares in its
+  own `Delivered: N / M` header, and a disagreement REFUSES the accuracy run, naming both
+  counts and the ids that did parse. The writer today reports on whatever ids it recognised
+  and says nothing about the rest.
+- The refusal happens BEFORE `record_velocity` writes: VELOCITY.md gains no row for that
+  retro, and any row already there is left exactly as it was. A partial denominator paired
+  with a whole-sprint numerator must never reach the file the planner re-measures its rate
+  from - that is the whole failure, and CR0391's fixed-term fit will read those same columns.
+- A retro whose Batch line parses completely is unaffected: it records its row as before, so
+  the check is a cross-check and not a new obstacle to a correct close.
+- The refusal is actionable: it says what to do (name the units individually) rather than
+  reporting a count mismatch and stopping.
+
+- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::TheBatchIsCrossCheckedAgainstItsDeclaredCount::test_a_range_batch_is_refused_naming_the_parsed_and_declared_counts`
+
+### AC2: the refusal writes nothing and disturbs nothing already written
+
+- **Given** a retro whose Batch line parses only part of its declared units, and a VELOCITY.md
+  already carrying rows
+- **When** the accuracy run is refused
+- **Then** no row is added for that retro and every existing row is byte-identical, because a
+  partial denominator paired with a whole-sprint numerator must never reach the file the
+  planner re-measures its rate from
+- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::TheBatchIsCrossCheckedAgainstItsDeclaredCount::test_a_refused_batch_writes_no_velocity_row_and_disturbs_no_existing_one`
+
+### AC3: a batch that parses completely still records, so the check is a cross-check and not a new obstacle
+
+- **Given** a retro whose Batch line names every unit individually and parses in full
+- **When** the accuracy run executes
+- **Then** its row is recorded as before
+- **Verify:** red today, green when the fix lands: `pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::TheBatchIsCrossCheckedAgainstItsDeclaredCount::test_a_fully_parsed_batch_still_records_its_row`
 
 ## Revision History
 
