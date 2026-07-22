@@ -4,6 +4,7 @@ File: sdlc-studio/stories/US0001-reconcile-census-autofix.md
 Status values: See reference-outputs.md
 Related: help/story.md, reference-story.md
 -->
+
 # US0001: Census-based reconcile with scoped auto-fix
 
 > **Status:** Done

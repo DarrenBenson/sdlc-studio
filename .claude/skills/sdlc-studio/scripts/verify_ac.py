@@ -78,6 +78,12 @@ class ACBlock:
     # Defaults to just after the Verify line, or just after the last bullet
     # of the AC block.
     insert_after: int | None = None
+    #: Verify expressions after the first in this block. The runner executes ONLY the
+    #: first, so these are read as ordinary bullets and never run. Captured rather than
+    #: discarded, so the fact can be reported instead of being invisible: six such
+    #: verifiers were found sitting unexecuted in one workspace, four of them on stories
+    #: already marked Done and two counted inside a published claim of verified criteria.
+    extra_verifiers: list[str] = field(default_factory=list)
 
 
 def ac_fingerprint(text: str) -> str:
@@ -153,10 +159,14 @@ def parse_story(text: str) -> list[ACBlock]:
             continue
 
         vm = VERIFY_RE.match(line)
-        if vm and current.verify_line is None:
-            current.verify_line = i
-            current.verifier = vm.group(2).strip()
-            current.insert_after = i
+        if vm:
+            if current.verify_line is None:
+                current.verify_line = i
+                current.verifier = vm.group(2).strip()
+                current.insert_after = i
+            else:
+                # Silently dropped before BG0265. Recorded now so a caller can say so.
+                current.extra_verifiers.append(vm.group(2).strip())
             continue
 
         rm = VERIFIED_RE.match(line)
@@ -555,6 +565,28 @@ def lint_markdown_evidence(expr: str, cwd=None) -> str | None:
             "not that the behaviour exists - the shape that passed four US0310 criteria "
             "against prose asserting their opposite. Verify the behaviour (`pytest`/`shell`), "
             "or say `manual` if the criterion really is about the document")
+
+
+def lint_stacked_verifiers(block: "ACBlock") -> str | None:
+    """REFUSAL: an AC block carrying more than one `Verify:` line.
+
+    `parse_story` executes the FIRST and reads the rest as ordinary bullets, so a second
+    verifier is not a second check - it is a sentence that looks like one. Seven sat in this
+    workspace having never run, four on stories at Done, and two of those were counted inside
+    a sprint's published claim of 84 criteria verified.
+
+    Refused rather than warned, for the same reason the pseudo-verify refusal is: the author
+    sees their verifier on disk and the report counts the criterion as verified, so nothing
+    downstream will ever contradict them. A criterion that genuinely needs two checks is two
+    criteria, and saying so at author time costs one heading.
+    """
+    if not block.extra_verifiers:
+        return None
+    n = len(block.extra_verifiers)
+    return (f"{n} further `Verify:` line(s) in this block will NEVER RUN - only the first is "
+            f"executed, and the rest parse as ordinary bullets. Dropped: "
+            f"{'; '.join(repr(v) for v in block.extra_verifiers)}. A criterion needing two "
+            f"checks is two criteria - split the block")
 
 
 def duplicate_verifiers(paths) -> list[dict]:
@@ -1516,6 +1548,11 @@ def cmd_lint(args: argparse.Namespace) -> int:
         text = sdlc_md.read_text_safe(p)
         status = (sdlc_md.extract_field(text, "Status") or "").strip().lower()
         authoring = status in _AUTHORING_STATUSES
+        for block in parse_story(text):
+            stacked = lint_stacked_verifiers(block) if authoring else None
+            if stacked:
+                refused += 1
+                print(f"{p.name} {block.ac_id}: REFUSED: {stacked}")
         for line in text.splitlines():
             m = VERIFY_RE.match(line)
             if not m:

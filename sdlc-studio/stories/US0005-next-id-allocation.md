@@ -4,6 +4,7 @@ File: sdlc-studio/stories/US0005-next-id-allocation.md
 Status values: See reference-outputs.md
 Related: help/story.md, reference-story.md
 -->
+
 # US0005: Deterministic next-ID allocation
 
 > **Status:** Done

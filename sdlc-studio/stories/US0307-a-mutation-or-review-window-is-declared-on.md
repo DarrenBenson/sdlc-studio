@@ -73,6 +73,14 @@ readers inside the skill.
   window claims a path this commit has staged, and passes when it does not, so a reviewer
   holding a window scopes staging rather than freezing the tree
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::WindowCheckTests::test_an_open_window_fails_the_gate_naming_owner_and_paths
+- **Verified:** yes (2026-07-22)
+
+### AC5: the window lane is path-scoped, not tree-wide
+
+- **Given** an open window declaring specific paths
+- **When** the gate lane evaluates a commit
+- **Then** it refuses only what the window claims, rather than freezing the tree - this
+  verifier sat in AC3 unexecuted and was counted inside the published 84 (BG0265)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::WindowLaneIsPathScopedTests
 - **Verified:** yes (2026-07-22)
 

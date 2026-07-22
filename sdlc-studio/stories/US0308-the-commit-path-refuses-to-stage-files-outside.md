@@ -56,6 +56,14 @@ weakened into "the suite went red".
   the tree for the duration of a review - and no other lane in the same run refuses it
   either, in particular the gate's own `window` lane
 - **Verify:** pytest tools/tests/test_precommit_window_guard.py::WindowGuardTests::test_staging_only_unclaimed_paths_proceeds_while_a_window_is_open
+- **Verified:** yes (2026-07-22)
+
+### AC5: the gate lane does not contradict the hook
+
+- **Given** a scoped staging that the hook permits
+- **When** the gate lane evaluates the same commit
+- **Then** the two agree rather than one refusing what the other allows - this verifier sat
+  in AC2 unexecuted and was counted inside the published 84 (BG0265)
 - **Verify:** pytest tools/tests/test_precommit_window_guard.py::WindowGuardTests::test_the_gate_lane_does_not_contradict_the_guard_in_the_same_run
 - **Verified:** yes (2026-07-22)
 

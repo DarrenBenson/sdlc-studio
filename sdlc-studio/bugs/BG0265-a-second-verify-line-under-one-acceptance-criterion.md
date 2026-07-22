@@ -1,6 +1,7 @@
 # BG0265: A second Verify line under one acceptance criterion is silently dropped, and every verifier it has silently dropped in this workspace sits on a Done story
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional - 3 new unit tests (StackedVerifierTests) plus a live-workspace census that goes red if any AC block stacks again; five hand-applied mutants all killed with `__pycache__` purged under python3 -B; the six previously-dead verifiers re-run and all passing
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py,.claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -45,6 +46,38 @@ Refuse a second `Verify:` line in one AC block, at author time, and say that a c
   US0308 AC2 in particular are re-run, because both were counted inside a published claim of
   84 verified criteria while their second verifier had never executed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StackedVerifierTests::test_no_ac_block_in_the_workspace_stacks_verifiers
+
+## Resolution
+
+`parse_story` now RECORDS a block's later `Verify:` lines in `extra_verifiers` instead of
+letting them parse as ordinary bullets, and `verify_ac lint` REFUSES them on a story still
+being authored, naming each dropped expression. Past Draft/Ready the refusal lifts, matching
+the markdown-evidence guard: the criterion has shipped, and refusing retrospectively blocks a
+lint over history without helping anyone.
+
+The six on disk are dispositioned by splitting, not deletion: US0015 AC1, US0022 AC2 (which
+held four, one per checker), US0307 AC3 and US0308 AC2 each gave their extra verifiers their
+own criteria. **The split had to be redone once**: the new headings were written `AC1b`, and
+`AC_HEADING_RE` accepts only `AC` followed by digits, so the parser ignored them entirely and the verifiers
+were still stacked - a fix that looked applied and was not, caught by re-running the census
+rather than by reading the diff.
+
+**AND THE SPLIT ITSELF INTRODUCED A DEFECT.** Promoting US0022 AC2's four verifiers removed
+all four including the one AC2 owned, leaving a criterion with NO check at all - the exact
+class this bug is about, created while repairing it. Caught by `verify_ac run` reporting
+`unspecified=1`, not by reading the change. AC2's own verifier is restored and the survivors
+renumbered.
+
+**What the re-run found, and it is not what the bug predicted.** All six previously-dead
+verifiers PASS. US0307 AC3 and US0308 AC2, both counted inside a sprint's published claim of
+84 criteria verified, assert behaviour that is genuinely present. So that claim was LUCKY
+rather than false: the evidence had never been gathered, and it happens to hold. Recorded
+plainly because the opposite result was the one being braced for, and a bug report that
+predicts a failure should say when the failure did not occur.
+
+Mutation: five applied, five killed - extras discarded, refusal disabled, refusal not naming
+the dropped expression, refusal applied past authoring, and the refusal not reaching the exit
+code.
 
 ## Revision History
 

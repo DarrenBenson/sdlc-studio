@@ -4,6 +4,7 @@ File: sdlc-studio/stories/US0002-verify-ac-gate.md
 Status values: See reference-outputs.md
 Related: help/story.md, reference-story.md
 -->
+
 # US0002: Executable AC verification with verify gate
 
 > **Status:** Done

@@ -30,8 +30,16 @@ Default tables), and a drift-guard test locks those tables to the YAML.
 - **When** `get(root, "coverage.unit")` runs, and `status.py gather` runs
 - **Then** the value resolves from the YAML (project overriding default), and `status` surfaces a config-derived default - a core script actually reads the single source, not a hard-coded literal
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py::LoadTests
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py::IntegrationTests::test_status_reads_config
 - **Verified:** yes (2026-06-20)
+
+### AC4: the loaded config is the one `status` actually reads
+
+- **Given** a config resolved by the loader
+- **When** `status` reads it end to end
+- **Then** the value it uses is the value the loader resolved, which AC1's unit-level check
+  cannot see - this verifier sat in AC1 unexecuted until BG0265 (see US0338 in that batch)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py::IntegrationTests::test_status_reads_config
+- **Verified:** yes (2026-07-22)
 
 ### AC2: No duplicate YAML fences in the reference doc
 

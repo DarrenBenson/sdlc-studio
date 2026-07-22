@@ -37,11 +37,36 @@ bulk-pattern note distinguishing an unadopted discipline from per-unit drift.
 - **Given** a workspace with findings
 - **When** each check runs in text mode
 - **Then** conformance/integrity/audit/reconcile print a `Guidance:` block with fix hints for the findings present
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::GuidanceTests
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_integrity.py::GuidanceTests
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit.py::GuidanceTests
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::GuidanceTests
 - **Verified:** yes (2026-06-20)
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::GuidanceTests
+
+### AC4: integrity prints Guidance in text mode
+
+- **Given** a integrity finding
+- **When** it is rendered in text mode
+- **Then** it carries its Guidance line, checked per checker rather than by one
+  selector standing for four - all four sat stacked in AC2 and never ran (BG0265)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_integrity.py::GuidanceTests
+- **Verified:** yes (2026-07-22)
+
+### AC5: audit prints Guidance in text mode
+
+- **Given** a audit finding
+- **When** it is rendered in text mode
+- **Then** it carries its Guidance line, checked per checker rather than by one
+  selector standing for four - all four sat stacked in AC2 and never ran (BG0265)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit.py::GuidanceTests
+- **Verified:** yes (2026-07-22)
+
+### AC6: reconcile prints Guidance in text mode
+
+- **Given** a reconcile finding
+- **When** it is rendered in text mode
+- **Then** it carries its Guidance line, checked per checker rather than by one
+  selector standing for four - all four sat stacked in AC2 and never ran (BG0265)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::GuidanceTests
+- **Verified:** yes (2026-07-22)
 
 ### AC3: conformance interprets bulk patterns
 

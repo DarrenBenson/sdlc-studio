@@ -4,6 +4,7 @@ File: sdlc-studio/stories/US0004-status-hint.md
 Status values: See reference-outputs.md
 Related: help/story.md, reference-story.md
 -->
+
 # US0004: Status dashboard and single-step hint
 
 > **Status:** Done

@@ -2491,5 +2491,64 @@ class MarkdownEvidenceLintTests(unittest.TestCase):
             root.cleanup()
 
 
+class StackedVerifierTests(unittest.TestCase):
+    """BG0265: only the FIRST Verify line in an AC block is executed."""
+
+    def test_a_second_verify_line_in_one_block_is_refused(self) -> None:
+        root = FixtureRoot()
+        try:
+            story = root.tmp / "sdlc-studio" / "stories" / "US0004-stacked.md"
+            body = (
+                "# US0004: a criterion with two checks\n\n"
+                "> **Status:** {status}\n\n"
+                "## Acceptance Criteria\n\n"
+                "### AC1: it does two things\n\n"
+                "- **Verify:** pytest a/b.py::C::t_one\n"
+                "- **Verify:** pytest a/b.py::C::t_two\n"
+            )
+            args = argparse.Namespace(root=str(root.tmp), dir="sdlc-studio/stories",
+                                      story=str(story), repo_root=None)
+            story.write_text(body.format(status="Draft"))
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+                rc = verify_ac.cmd_lint(args)
+            self.assertEqual(rc, 1)
+            # The refusal must NAME the dropped verifier, not merely count it - an author
+            # who cannot see which check was discarded cannot act on the message.
+            self.assertIn("t_two", buf.getvalue())
+            # Past authoring it has shipped; refusing retrospectively blocks a lint over
+            # history without helping anyone, exactly as the markdown-evidence guard does.
+            story.write_text(body.format(status="Done"))
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(verify_ac.cmd_lint(args), 0)
+        finally:
+            root.cleanup()
+
+    def test_the_parser_records_the_dropped_verifiers_rather_than_discarding_them(self) -> None:
+        blocks = verify_ac.parse_story(
+            "### AC1: x\n\n- **Verify:** pytest a::t1\n- **Verify:** pytest a::t2\n"
+            "- **Verify:** pytest a::t3\n")
+        self.assertEqual(blocks[0].verifier, "pytest a::t1")
+        self.assertEqual(blocks[0].extra_verifiers, ["pytest a::t2", "pytest a::t3"])
+
+    def test_no_ac_block_in_the_workspace_stacks_verifiers(self) -> None:
+        """The census, over the live tree. Seven verifiers sat here unexecuted - four on
+        stories at Done, two of them counted inside a published claim of 84 criteria
+        verified. This goes red again the moment another one is added."""
+        if not workspace.in_dev_repo():
+            self.skipTest("census applies to the dev repo's own workspace")
+        root = Path(__file__).resolve().parents[5]
+        offenders = []
+        for sub in ("stories", "bugs"):
+            d = root / "sdlc-studio" / sub
+            if not d.is_dir():
+                continue
+            for f in sorted(d.glob("*.md")):
+                for b in verify_ac.parse_story(sdlc_md.read_text_safe(f)):
+                    if b.extra_verifiers:
+                        offenders.append(f"{f.name} {b.ac_id} (+{len(b.extra_verifiers)})")
+        self.assertEqual(offenders, [], "AC blocks stacking verifiers that will never run")
+
+
 if __name__ == "__main__":
     unittest.main()
