@@ -75,7 +75,7 @@ forward-ported and verified.
   --principal "..."`. RFC0051 records why an agent cannot honestly supply it.
 - **Recorded at close:** RETRO0066, and a velocity row carrying the supplied delegated figure.
   `close_owed detect` reports none.
-- **Filed during the run:** BG0255, BG0256, CR0389, CR0390, CR0391, RFC0051, D0051-D0053.
+- **Filed during the run:** BG0255, BG0256, CR0389, CR0390, CR0391, CR0392, RFC0051, D0051-D0053.
 - **CR0319** is the 5.0.0 release cut, still outstanding.
 
 ## Lessons

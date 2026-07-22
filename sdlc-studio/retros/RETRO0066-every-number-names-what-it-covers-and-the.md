@@ -185,12 +185,12 @@ signs is itself worth noticing: the cost is spent, the number is not yet earned.
 | A Done story read `Verified: yes` for two days against a test that does not exist | BG0256 |
 | Nothing reports that the installed skill copy has drifted from the repo | CR0389 |
 | `sprint plan`'s batch-selection error does not show the value each flag takes | CR0390 |
-| Ten build-blocking ambiguities across five CRs, ruled before the build | D0052, D0053 |
-| The operator's sign-off delegation, and what it costs | D0051 |
-| Four prose-writing scripts still lack a non-shell filing path | KNOWN_PROSE_WRITER_GAPS (test-enforced) |
-| AC2 of the docs checker has no polarity axis and rests on a blocklist | stated in US0310 |
-| BG0252's delegated capture is not wired into `sprint close` | stated in BG0252 |
-| The message-only case of the engagement floor is not closed | stated in BG0251, test-held |
+| Ten build-blocking ambiguities across five CRs, ruled before the build | declined: ruled as decisions of record D0052 and D0053, not defects to file |
+| The operator's sign-off delegation, and what it costs | declined: recorded as decision D0051; the underlying gap is RFC0051 |
+| Four prose-writing scripts still lack a non-shell filing path | CR0392 |
+| AC2 of the docs checker has no polarity axis and rests on a blocklist | declined: disclosed in US0310 and in the module's stated bound; widening it untested is how this project manufactures its next MAJOR |
+| BG0252's delegated capture is not wired into `sprint close` | declined: stated as unfixed in BG0252's Resolution; the library and CLI exist, only the wiring is owed |
+| The message-only case of the engagement floor is not closed | declined: a pre-commit hook is not given the message it gates, and a test holds the limit rather than prose |
 
 ## Close loop (gated)
 

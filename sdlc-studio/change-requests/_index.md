@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 30 |
+| Proposed | 31 |
 | Approved | 0 |
 | In Progress | 10 |
 | Complete | 334 |
@@ -14,7 +14,7 @@
 | Deferred | 4 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **391** |
+| **Total** | **392** |
 
 ## All Changes
 
@@ -213,6 +213,7 @@
 | [CR-0389](CR0389-nothing-reports-that-the-installed-skill-copy-has.md) | Nothing reports that the installed skill copy has drifted from the repo, so the operator has to remember to ask | Proposed | Medium | Improvement | 2026-07-22 | -- |
 | [CR-0390](CR0390-sprint-plan-s-batch-selection-error-names-the.md) | sprint plan's batch-selection error names the flags but not that each one takes a status, costing two failed invocations to discover | Proposed | Low | Improvement | 2026-07-22 | -- |
 | [CR-0391](CR0391-the-token-forecast-has-no-fixed-cost-parameter.md) | The token forecast has no fixed-cost parameter, and two measured sprints say the fixed cost is roughly 300 times the marginal one | Proposed | High | Improvement | 2026-07-22 | -- |
+| [CR-0392](CR0392-four-prose-writing-scripts-still-pass-free-text.md) | Four prose-writing scripts still pass free text through a shell argument and lack the --fields-file path | Proposed | Medium | Improvement | 2026-07-22 | -- |
 
 ## Archived Releases
 
