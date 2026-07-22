@@ -1,6 +1,7 @@
 # CR-0391: The token forecast has no fixed-cost parameter, and two measured sprints say the fixed cost is roughly 300 times the marginal one
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0114
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

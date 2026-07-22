@@ -1,6 +1,6 @@
 # CR-0402: Gate a repair on a reviewed PLAN, so a round's findings are answered deliberately rather than fixed at speed
 
-> **Status:** Proposed
+> **Status:** Superseded
 > **Parent:** RFC0053
 > **Priority:** High
 > **Type:** Improvement

@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 44 |
+| Proposed | 38 |
 | Approved | 0 |
-| In Progress | 0 |
+| In Progress | 9 |
 | Complete | 344 |
 | Rejected | 0 |
 | Deferred | 4 |
-| Superseded | 13 |
+| Superseded | 14 |
 | Blocked | 0 |
-| **Total** | **405** |
+| **Total** | **409** |
 
 ## All Changes
 
@@ -212,21 +212,25 @@
 | [CR-0388](CR0388-committing-while-an-adversarial-reviewer-is-mutating-the.md) | Committing while an adversarial reviewer is mutating the tree can stage a mutant; nothing but the gate stands in the way | Complete | High | Improvement | 2026-07-21 | EP0103, EP0105 |
 | [CR-0389](CR0389-nothing-reports-that-the-installed-skill-copy-has.md) | Nothing reports that the installed skill copy has drifted from the repo, so the operator has to remember to ask | Proposed | Medium | Improvement | 2026-07-22 | -- |
 | [CR-0390](CR0390-sprint-plan-s-batch-selection-error-names-the.md) | sprint plan's batch-selection error names the flags but not that each one takes a status, costing two failed invocations to discover | Proposed | Low | Improvement | 2026-07-22 | -- |
-| [CR-0391](CR0391-the-token-forecast-has-no-fixed-cost-parameter.md) | The token forecast has no fixed-cost parameter, and two measured sprints say the fixed cost is roughly 300 times the marginal one | Proposed | High | Improvement | 2026-07-22 | -- |
+| [CR-0391](CR0391-the-token-forecast-has-no-fixed-cost-parameter.md) | The token forecast has no fixed-cost parameter, and two measured sprints say the fixed cost is roughly 300 times the marginal one | In Progress | High | Improvement | 2026-07-22 | EP0114 |
 | [CR-0392](CR0392-four-prose-writing-scripts-still-pass-free-text.md) | Four prose-writing scripts still pass free text through a shell argument and lack the --fields-file path | Proposed | Medium | Improvement | 2026-07-22 | -- |
-| [CR-0393](CR0393-the-closing-review-should-inventory-every-prose-claim.md) | The closing review should inventory every prose CLAIM against the diff as its FIRST pass, not discover them last | Proposed | High | Improvement | 2026-07-22 | -- |
-| [CR-0394](CR0394-a-message-describing-what-a-guard-will-do.md) | A message describing what a guard will do must be DERIVED from the guard, never restated beside it | Proposed | High | Improvement | 2026-07-22 | -- |
+| [CR-0393](CR0393-the-closing-review-should-inventory-every-prose-claim.md) | The closing review should inventory every prose CLAIM against the diff as its FIRST pass, not discover them last | In Progress | High | Improvement | 2026-07-22 | EP0109 |
+| [CR-0394](CR0394-a-message-describing-what-a-guard-will-do.md) | A message describing what a guard will do must be DERIVED from the guard, never restated beside it | In Progress | High | Improvement | 2026-07-22 | EP0107 |
 | [CR-0395](CR0395-verify-ac-has-no-way-to-scope-a.md) | verify_ac has no way to scope a run to a sprint's batch, so verifying 23 stories re-runs every AC in the workspace | Proposed | Medium | Improvement | 2026-07-22 | -- |
-| [CR-0396](CR0396-the-reviewer-brief-should-mandate-the-three-practices.md) | The reviewer brief should mandate the three practices that produced this sprint's best findings, rather than leaving them to whoever writes the brief | Proposed | High | Improvement | 2026-07-22 | -- |
+| [CR-0396](CR0396-the-reviewer-brief-should-mandate-the-three-practices.md) | The reviewer brief should mandate the three practices that produced this sprint's best findings, rather than leaving them to whoever writes the brief | In Progress | High | Improvement | 2026-07-22 | EP0108 |
 | [CR-0397](CR0397-a-review-round-is-one-agent-by-default.md) | A review round is one agent by default, so every round after the first is a serial bottleneck | Proposed | Medium | Improvement | 2026-07-22 | -- |
 | [CR-0398](CR0398-there-is-no-batch-size-heuristic-and-the.md) | There is no batch-size heuristic, and the measured fixed cost makes the obvious advice backwards | Proposed | Medium | Improvement | 2026-07-22 | -- |
 | [CR-0399](CR0399-the-finding-filer-refuses-an-unresolvable-affects-but.md) | The finding filer refuses an unresolvable Affects but will not say what the path probably was, and the same wrong prefix was typed six times in one session | Proposed | Medium | Improvement | 2026-07-22 | -- |
-| [CR-0400](CR0400-artifact-new-and-refine-apply-mint-an-artefact.md) | artifact new and refine apply mint an artefact with an unresolvable Affects without a word, while file_finding refuses the same path | Proposed | High | Improvement | 2026-07-22 | -- |
-| [CR-0401](CR0401-there-is-one-run-slot-and-opening-a.md) | There is one run slot, and opening a second sprint silently merges its batch into the run already open | Proposed | High | Improvement | 2026-07-22 | -- |
-| [CR-0402](CR0402-gate-a-repair-on-a-reviewed-plan-so.md) | Gate a repair on a reviewed PLAN, so a round's findings are answered deliberately rather than fixed at speed | Proposed | High | Improvement | 2026-07-22 | -- |
-| [CR-0403](CR0403-add-a-vibe-coding-lens-to-the-audit.md) | Add a vibe-coding lens to the audit: find where work was done without first establishing the contract it depends on | Proposed | High | Improvement | 2026-07-22 | -- |
-| [CR-0404](CR0404-let-a-reject-be-carried-forward-as-filed.md) | Let a REJECT be carried forward as filed findings, reusing the file-a-finding-or-waive idiom the review already mandates for legs | Proposed | High | Improvement | 2026-07-22 | -- |
-| [CR-0405](CR0405-changelog-entries-are-hand-edited-into-a-structured.md) | CHANGELOG entries are hand-edited into a structured file with no helper and no structural check, so a bad insert silently reparents existing entries | Proposed | Medium | Improvement | 2026-07-22 | -- |
+| [CR-0400](CR0400-artifact-new-and-refine-apply-mint-an-artefact.md) | artifact new and refine apply mint an artefact with an unresolvable Affects without a word, while file_finding refuses the same path | In Progress | High | Improvement | 2026-07-22 | EP0110 |
+| [CR-0401](CR0401-there-is-one-run-slot-and-opening-a.md) | There is one run slot, and opening a second sprint silently merges its batch into the run already open | In Progress | High | Improvement | 2026-07-22 | EP0111 |
+| [CR-0402](CR0402-gate-a-repair-on-a-reviewed-plan-so.md) | Gate a repair on a reviewed PLAN, so a round's findings are answered deliberately rather than fixed at speed | Superseded | High | Improvement | 2026-07-22 | -- |
+| [CR-0403](CR0403-add-a-vibe-coding-lens-to-the-audit.md) | Add a vibe-coding lens to the audit: find where work was done without first establishing the contract it depends on | In Progress | High | Improvement | 2026-07-22 | EP0115 |
+| [CR-0404](CR0404-let-a-reject-be-carried-forward-as-filed.md) | Let a REJECT be carried forward as filed findings, reusing the file-a-finding-or-waive idiom the review already mandates for legs | In Progress | High | Improvement | 2026-07-22 | EP0113 |
+| [CR-0405](CR0405-changelog-entries-are-hand-edited-into-a-structured.md) | CHANGELOG entries are hand-edited into a structured file with no helper and no structural check, so a bad insert silently reparents existing entries | In Progress | Medium | Improvement | 2026-07-22 | EP0112 |
+| [CR-0406](CR0406-an-artefact-whose-title-turns-out-to-be.md) | An artefact whose TITLE turns out to be false has no deterministic correction path, so the one field a reader sees first is the one field only a hand-edit can fix | Proposed | Medium | Improvement | 2026-07-22 | -- |
+| [CR-0407](CR0407-the-forecast-ignores-the-goal-rung-so-a.md) | The forecast ignores the goal rung, so a design run that writes no code is priced at the full build cost of the batch it grooms | Proposed | Medium | Improvement | 2026-07-22 | -- |
+| [CR-0408](CR0408-acting-on-a-plan-review-invalidates-every-verdict.md) | Acting on a plan review invalidates every verdict including the one that proposed the change, so improving a goal costs a full re-consult | Proposed | High | Improvement | 2026-07-22 | -- |
+| [CR-0409](CR0409-a-seat-is-briefed-by-hand-and-its.md) | A seat is briefed by hand and its verdict typed back through a shell argument, so the plan review's quality depends on the author it is meant to check | Proposed | Medium | Improvement | 2026-07-22 | -- |
 
 ## Archived Releases
 

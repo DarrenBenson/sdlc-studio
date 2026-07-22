@@ -1,10 +1,11 @@
 # CR-0396: The reviewer brief should mandate the three practices that produced this sprint's best findings, rather than leaving them to whoever writes the brief
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0108
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** S
-> **Affects:** .claude/skills/sdlc-studio/scripts/templates/reviewer-brief.md,.claude/skills/sdlc-studio/scripts/reference-review.md,.claude/skills/sdlc-studio/scripts/critic.py
+> **Affects:** .claude/skills/sdlc-studio/reference-review.md,.claude/skills/sdlc-studio/scripts/critic.py
 > **Date:** 2026-07-22
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

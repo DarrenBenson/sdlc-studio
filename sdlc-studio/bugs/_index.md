@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 5 |
+| Open | 8 |
 | In Progress | 0 |
 | Fixed | 173 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **260** |
+| **Total** | **263** |
 
 ## All Bugs
 
@@ -227,6 +227,9 @@
 | [BG0258](BG0258-the-docs-checker-s-escape-enumeration-has-been.md) | The docs-checker's escape enumeration has been wrong at three, four, five and six, because each repair enumerates instead of deriving | Open | Medium | 2026-07-22 | 2026-07-22 |
 | [BG0259](BG0259-the-window-message-s-reason-clause-is-a.md) | The window message's reason clause is a single static string, so an assertion on it pins a WORD and an inverted clause survives the whole suite | Open | Medium | 2026-07-22 | 2026-07-22 |
 | [BG0260](BG0260-round-10-s-three-findings-carried-forward-with.md) | Round 10's three findings, carried forward with a written repair plan instead of another unplanned fix | Open | Medium | 2026-07-22 | 2026-07-22 |
+| [BG0261](BG0261-the-state-anchor-and-the-goal-verdict-both.md) | The state anchor and the goal verdict both describe three review rounds when ten happened, and the freshness check that exists for exactly this only counts lines | Open | High | 2026-07-22 | 2026-07-22 |
+| [BG0262](BG0262-a-seat-that-says-the-goal-is-not.md) | A seat that says the goal is NOT achievable discharges the plan gate exactly as one that says it is - the verdict's content is never read | Open | High | 2026-07-22 | 2026-07-22 |
+| [BG0263](BG0263-the-goal-review-has-no-rounds-so-rewriting.md) | The goal review has no rounds, so rewriting a goal in response to a REJECT erases the fact that it was ever rejected | Open | Medium | 2026-07-22 | 2026-07-22 |
 
 ## Archived Releases
 

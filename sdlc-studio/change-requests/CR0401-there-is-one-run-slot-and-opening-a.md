@@ -1,6 +1,7 @@
 # CR-0401: There is one run slot, and opening a second sprint silently merges its batch into the run already open
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0111
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

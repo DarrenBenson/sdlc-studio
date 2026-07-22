@@ -1,6 +1,7 @@
 # CR-0393: The closing review should inventory every prose CLAIM against the diff as its FIRST pass, not discover them last
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0109
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
