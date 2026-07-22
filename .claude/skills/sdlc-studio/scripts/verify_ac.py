@@ -395,105 +395,14 @@ _PROSE_VERBS = {"grep", "file"}
 _AUTHORING_STATUSES = {"draft", "ready"}
 
 
-def _runner_files(directory: Path) -> list[Path]:
-    """The files the grep runner would actually READ under `directory`.
-
-    `rg --files` when rg is present, because that is precisely the set `rg -q` searches -
-    .gitignore honoured, hidden files skipped, symlinks not followed. Without rg the runner
-    is `grep -rqE`, which reads everything, so the fallback walks everything.
-
-    Sorted, and directories excluded either way. A non-file entry is not read by anything and
-    must not count as a non-markdown file, which would flip a prose directory to "mixed".
-    """
-    if shutil.which("rg"):
-        try:
-            cp = subprocess.run(["rg", "--files", str(directory)],
-                                capture_output=True, text=True, timeout=30)
-            if cp.returncode in (0, 1):
-                return sorted(Path(line) for line in cp.stdout.splitlines() if line.strip())
-        except (OSError, subprocess.SubprocessError):
-            pass  # fall through to the walk; never let the lint die on a tool
-    return sorted(f for f in directory.rglob("*") if f.is_file())
-
-
-def _verifier_reads(expr: str, cwd=None) -> list[str]:
-    """The FILES a `grep`/`file` expression actually reads, DERIVED from the command the
-    runner will execute rather than re-parsed here.
-
-    Three earlier versions of this restated the parse instead of deriving it, and each was
-    defeated by an expression the runner reads differently from the way the guard read it:
-    a directory glob, a flag counted as a target, and a bare directory. The last of those
-    escaped because the code asserted "grep without `-r` never reads a directory" - true of
-    grep, FALSE of this DSL, where `_build_command` always emits `rg -q` (recursive by
-    default) or `grep -rqE`. A rule restated beside the thing it describes is only correct
-    until the thing moves; this now asks `_build_command` itself, so the guard and the
-    runner cannot disagree about what a verifier searches.
-
-    Consequences that follow from the derivation rather than from a separate rule: globs are
-    expanded because `_build_command` expands them; a directory contributes the files
-    beneath it because both runners recurse; a leading flag becomes the PATTERN with the real
-    pattern demoted to a path, exactly as the runner treats it; and a path that does not
-    exist is DROPPED, because the runner does not read it.
-
-    That last rule was measured, not reasoned. The obvious argument - that a flag form
-    demotes a real pattern to a missing path and therefore fails loudly - is FALSE:
-    `rg -q -e -r -- x best-practices/` exits 0, printing `rg: x: No such file or directory`
-    to stderr while still matching inside the directory. So `grep -r "x" docs/` is a
-    working, silent, markdown-only verifier, and dropping the missing operand is what makes
-    the guard see it. Asserting the comfortable version of this without running it would
-    have shipped the same escape a third time.
-
-    Returns [] when nothing resolves, which the caller reads as "fall back to the tokens as
-    written" rather than as "reads no markdown" - a glob matching nothing today is the same
-    self-confirming verifier tomorrow when it matches, and the verdict must not depend on
-    the filesystem the lint happened to run on.
-    """
-    parts = expr.split(None, 1)
-    head = parts[0].lower() if parts else ""
-    tail = parts[1] if len(parts) > 1 else ""
-    if not tail:
-        return []
-    if head == "file":
-        return [tail.strip('"\'')]
-    if head != "grep":
-        return []
-    try:
-        kind, argv = _build_command(expr, cwd=cwd)
-    except ValueError:
-        return []  # a malformed expression is lint_verifier's business, not ours
-    if kind != "grep" or not isinstance(argv, list) or "--" not in argv:
-        return []
-    # Slicing from the `--` terminator itself instead of past it is an EQUIVALENT mutation:
-    # `--` is not a path that exists, so the `p.exists()` guard below drops it. Recorded
-    # rather than pinned, because the two forms cannot be told apart by any behaviour.
-    resolved: list[str] = []
-    for t in argv[argv.index("--") + 1:]:
-        p = Path(t) if Path(t).is_absolute() or cwd is None else Path(cwd) / t
-        if not p.exists():
-            continue  # the runner warns and carries on; an unread path proves nothing
-        if p.is_dir():
-            # The runner's WALK, not ours. Deriving the parse from `_build_command` and then
-            # walking the directory with `rglob` left the guard and the runner disagreeing
-            # in the other half: `rg` obeys .gitignore, skips hidden files and does not
-            # follow symlinks, so a single dotfile or symlinked `.py` made the guard call an
-            # all-prose directory "mixed" and allow it, while the verifier searched only
-            # markdown and passed. Verified as a working escape before this was written.
-            # Asking `rg --files` is the same derivation applied to the walk.
-            for f in _runner_files(p):
-                resolved.append(str(f))
-                # `.lower()` here is EQUIVALENT to omitting it, and the mutant survives:
-                # the verdict's own test lowercases, so dropping the fold changes only how
-                # far the walk runs, never the answer. Kept for the reader, recorded as
-                # uncovered rather than pinned by a test contrived to see a walk length.
-                if f.suffix.lower() != ".md":
-                    return resolved  # first non-markdown file settles it
-            continue
-        resolved.append(str(p))
-    return resolved
-
-
 def _verifier_targets(expr: str) -> list[str]:
-    """The paths a `grep`/`file` expression names, as WRITTEN. The floor reading."""
+    """The paths a `grep`/`file` expression names, using the DSL's OWN operand split.
+
+    `_build_command` does `pattern, *paths = args`, so operand 0 is the pattern whatever it
+    looks like and a leading flag becomes the pattern. Splitting flags out here would be a
+    second parse that disagrees with the runner, which is how one earlier version of this
+    guard was defeated. Used as the fallback when `_build_command` cannot parse.
+    """
     parts = expr.split(None, 1)
     head = parts[0].lower() if parts else ""
     tail = parts[1] if len(parts) > 1 else ""
@@ -506,10 +415,95 @@ def _verifier_targets(expr: str) -> list[str]:
             args = shlex.split(tail)
         except ValueError:
             return []
-        # The DSL's own split, matching `_build_command`: operand 0 is the pattern,
-        # whatever it looks like. A flag-aware split here would disagree with the runner.
         return args[1:]
     return []
+
+
+def _is_markdown(path) -> bool:
+    """The ONE place this project decides whether a path is markdown.
+
+    It was decided in two places - once while walking a directory and once while judging the
+    result - and the two disagreed on case, so a mutant dropping the walk's `.lower()` flipped
+    a real verdict while every test stayed green. Two implementations of one rule is the exact
+    defect this whole guard exists to catch, and it had taken up residence inside it.
+    """
+    return str(path).lower().endswith(".md")
+
+
+def _reads_a_non_markdown_file(targets: list[str], cwd) -> bool:
+    """Can we DEMONSTRATE that the grep runner reads at least one non-markdown file?
+
+    The burden is deliberately inverted, and this is the fifth version of this logic. Every
+    previous one tried to enumerate what the runner reads and was beaten by a case it had not
+    thought of: a directory glob, a flag as the pattern, a bare directory, hidden and
+    symlinked files, `rg --files` listing a file `rg` cannot open, and `rg --files` exiting 2
+    on one unreadable subdirectory. Enumeration has now failed five times, so it is no longer
+    the thing being trusted.
+
+    A verifier is treated as prose-only unless a non-markdown file it reads can be POINTED AT.
+    Every uncertainty therefore refuses rather than allows: rg missing, rg erroring, a file
+    listed but unreadable, a symlink `grep -r` will not follow. The cost of a false refusal is
+    one author writing `manual`; the cost of a false allowance is a criterion verified by a
+    sentence, which this project has already published four times.
+    """
+    for t in targets:
+        p = Path(t) if Path(t).is_absolute() or cwd is None else Path(cwd) / t
+        if not p.exists():
+            # EQUIVALENT to omitting this: a missing path is neither a file nor a directory,
+            # so the two checks below skip it anyway. Kept because it states the reason - the
+            # runner warns and carries on, so an unread operand proves nothing - and recorded
+            # as equivalent rather than claimed as covered.
+            continue
+        if p.is_file():
+            # A file named on the command line IS read, symlink or not, by both runners.
+            if not _is_markdown(p) and os.access(p, os.R_OK):
+                return True
+            continue
+        if not p.is_dir():
+            continue
+        for f in _runner_candidates(p):
+            if _is_markdown(f):
+                continue
+            if not os.access(f, os.R_OK):
+                continue  # listed, but the runner cannot open it - it reads nothing here
+            if f.is_symlink():
+                # NEITHER runner follows a symlink discovered during a walk: rg does not
+                # follow by default, and `grep -r` follows only paths named on the command
+                # line. An earlier draft excluded it only when rg was absent, which had the
+                # condition backwards and left the escape open with rg present.
+                continue
+            return True
+    return False
+
+
+def _runner_candidates(directory: Path):
+    """Files under `directory` that the runner MIGHT read. Deliberately over-inclusive in the
+    safe direction: every caller must still prove a candidate is readable and non-markdown.
+
+    `rg --files` when rg is present and succeeds. Note what that set is NOT: it is what rg
+    LISTS, not what rg can OPEN, and it exits 2 if any part of the tree errors. Both were
+    escapes. Here a failure yields the plain walk, and because the caller has to prove
+    readability anyway, an over-broad candidate set cannot create a false allowance.
+    """
+    if shutil.which("rg"):
+        # rg IS the runner here, and it skips hidden and ignored files. If `rg --files`
+        # cannot tell us what it would list - it exits 2 when any part of the tree errors,
+        # e.g. one unreadable subdirectory - then we know NOTHING, and falling back to a
+        # plain walk would silently reinstate exactly the hidden files rg refuses to read.
+        # That fallback was the escape. No candidates means no demonstration, which refuses.
+        try:
+            cp = subprocess.run(["rg", "--files", str(directory)],
+                                capture_output=True, text=True, timeout=30)
+            if cp.returncode == 0:
+                return sorted(Path(line) for line in cp.stdout.splitlines() if line.strip())
+        except (OSError, subprocess.SubprocessError):
+            pass
+        return []
+    # Without rg the runner is `grep -rqE`, which does read hidden and ignored files.
+    try:
+        return sorted(f for f in directory.rglob("*") if f.is_file())
+    except OSError:
+        return []
 
 
 def lint_markdown_evidence(expr: str, cwd=None) -> str | None:
@@ -547,10 +541,17 @@ def lint_markdown_evidence(expr: str, cwd=None) -> str | None:
     head = (expr.split(None, 1)[0].lower() if expr.split() else "")
     if head not in _PROSE_VERBS:
         return None
-    md = lambda ts: bool(ts) and all(t.lower().endswith(".md") for t in ts)
-    if not (md(_verifier_reads(expr, cwd)) or md(_verifier_targets(expr))):
+    targets = _verifier_targets(expr) if head == "grep" else [expr.split(None, 1)[1].strip('"\'')]
+    if head == "grep":
+        try:
+            kind, argv = _build_command(expr, cwd=cwd)
+            if kind == "grep" and isinstance(argv, list) and "--" in argv:
+                targets = argv[argv.index("--") + 1:]
+        except ValueError:
+            pass
+    if _reads_a_non_markdown_file(targets, cwd):
         return None
-    return ("this verifier only searches markdown, so it proves someone wrote a sentence, "
+    return ("this verifier reads nothing but prose, so it proves someone wrote a sentence, "
             "not that the behaviour exists - the shape that passed four US0310 criteria "
             "against prose asserting their opposite. Verify the behaviour (`pytest`/`shell`), "
             "or say `manual` if the criterion really is about the document")

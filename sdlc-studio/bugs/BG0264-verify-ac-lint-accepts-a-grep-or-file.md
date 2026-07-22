@@ -71,23 +71,21 @@ sweep re-runs a bug's verifier and these will read green forever regardless of w
 happens to the tests they name. That is BG0256, open in this same batch, and this
 artefact is an instance of it rather than an exception to it.
 
-**What this guard still does NOT close, after the round-1 repair.** Named here rather than
-left for the next reader to find, because the first version of this fix shipped believing it
-was complete.
+**What this guard still does NOT close, after round 4.** The residual list below has itself
+been wrong twice, so it is now written against the CURRENT design rather than the previous one.
 
-- A `shell`-prefixed grep bypasses it entirely. `shell` is the documented escape hatch and
-  narrowing it is a separate decision.
-- An expression whose resolved files are a MIX of markdown and code is allowed, by the same
-  all-or-nothing rule that keeps the guard from second-guessing a legitimate verifier.
-- The resolved reading depends on the filesystem the lint runs on. The written reading is
-  kept as a floor for exactly that reason, and a test pins a case that distinguishes them.
-  **Withdrawn from an earlier version of this list:** the claim that a directory is "dropped
-  without `-r`". That was false - `_build_command` always emits a recursive runner - and the
-  guard no longer behaves that way. It is named here rather than quietly deleted, because
-  this artefact asserted the deleted rule as shipped for one round after it was withdrawn.
-- The walk is derived from `rg --files` where rg is present, so it honours .gitignore, hidden
-  files and symlinks exactly as the runner does. Without rg the runner reads everything and
-  so does the fallback. A guard that walked differently from the runner was round 3's escape.
+- A `shell`-prefixed grep bypasses the guard entirely. `shell` is the documented escape hatch.
+- A verifier that reads one readable, non-symlinked, non-markdown file is allowed, however
+  little that file contributes to the search. The guard asks whether prose is ALL it reads.
+- The burden is inverted, so the guard errs towards REFUSING. A criterion whose target does not
+  exist yet is refused until it does. The cost is one author writing `manual`.
+
+**Withdrawn claims, named rather than deleted**, because this artefact asserted each as shipped
+for at least one round after it stopped being true: that a directory is dropped without `-r`
+(false, the DSL always recurses); that `rg --files` is what rg reads (it is what rg LISTS, and
+it exits 2 if any part of the tree errors); that the case-folding mutant was equivalent (it
+flipped a verdict); and that the walk fallback matched `grep -rqE` (it did not follow the
+symlink rule).
 
 ## Revision History
 
@@ -96,5 +94,6 @@ was complete.
 | 2026-07-22 | sdlc-studio | Filed |
 | 2026-07-22 | sdlc-studio | Fixed. Acceptance criteria added after the engagement floor refused the commit: two source files with an `Affects` field but no criterion is unplanned work, which is the floor's whole point and this run's own bar for a bug. |
 | 2026-07-22 | sdlc-studio | Round 2 REJECT repaired: a FOURTH escape (a bare directory) traced to a comment restating grep's semantics rather than deriving this DSL's, which always recurses. The guard now reads `_build_command`'s argv, so guard and runner share one parse. |
+| 2026-07-22 | sdlc-studio | Round 4 REJECT repaired, bought past the ceiling because round 3's repair had shipped unreviewed. THE DESIGN CHANGED: four versions had tried to ENUMERATE what the runner reads and each was beaten by a case it had not thought of, so the burden is now INVERTED - a prose verb is refused unless a readable, non-symlinked, non-markdown file it reads can be pointed at. Every uncertainty refuses. This closes all nine known forms and BG0266 for free. Two further defects of my own were corrected: the case rule was implemented TWICE and the two disagreed, so a mutant dropping one `.lower()` flipped a verdict while every test stayed green - and I had asserted that mutant was EQUIVALENT without running it, in the same commit that named that exact failure. |
 | 2026-07-22 | sdlc-studio | Round 3 REJECT repaired, and UNREVIEWED - `review.max_rounds` is 3 and the ceiling is spent. An EIGHTH escape, verified passing: the guard shared the runner's parse but not its WALK, so one hidden, gitignored or symlinked non-markdown file made an all-prose directory read as mixed and pass. The walk now derives from `rg --files`. A surviving mutant that flipped a nested all-markdown directory from refused to allowed is also closed; every directory fixture had been flat, so the tests and the mutant agreed by construction. |
 | 2026-07-22 | sdlc-studio | REPAIRED after the closing review REJECTED. The guard judged only the tokens as WRITTEN and was defeated three ways: a directory glob (`sdlc-studio/reviews/*`), a flag read as the pattern (`grep -c "x" a.md`), and a bare recursive directory. It now judges the files actually READ - flags split from the pattern, globs expanded, directories walked under `-r` and dropped without it - with the written tokens kept as a floor. The claim that the previously surviving mutant was EQUIVALENT was FALSE and is withdrawn; that mutant is now killed, along with four others. The repair plan itself was attacked before execution and REFUTED: the first proposed fix closed none of the three escapes. |

@@ -1,6 +1,7 @@
 # BG0266: The file verb over a directory is an always-passing prose verifier, and the markdown guard does not see it
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional - closed as a side-effect of BG0264's round-4 redesign rather than by a targeted fix: the inverted burden refuses a file verb over a prose directory because it demonstrates no non-markdown read. Pinned by test_verify_ac.MarkdownEvidenceLintTests::test_the_file_verb_is_refused_over_markdown_and_over_a_prose_directory, which asserts both the markdown-file and the prose-directory form
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py,.claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -25,6 +26,27 @@ Note the shape, which is this project's recurring one rather than a new species.
 ## Proposed Fix
 
 Treat a `file` verifier whose target is a DIRECTORY as prose evidence when the files the runner would read under it are all markdown, using the same `_runner_files` walk the grep path already uses. Consider refusing `file <directory>` outright regardless of contents: `test -e` on a directory is satisfied by the directory existing, which is not evidence of any behaviour, and no legitimate criterion is expressed that way. Whichever is chosen, the `file` verb needs its own tests against the markdown rule rather than inheriting the grep path's coverage - it has none today, which is why this survived four rounds of work on the same function.
+
+## Acceptance Criteria
+
+### AC1: a file verifier over a prose directory is refused, as one over a markdown file already was
+
+- **Given** `file <a markdown file>` and `file <a directory holding only markdown>`, the
+  refused form and its unrefused sibling
+- **When** the lint judges each on a story still being authored
+- **Then** both are refused, because neither demonstrates that the runner reads anything but
+  prose - and `test -e <dir>` passes the moment the directory exists, forever after
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MarkdownEvidenceLintTests::test_the_file_verb_is_refused_over_markdown_and_over_a_prose_directory
+
+## Resolution
+
+Closed as a consequence of BG0264's round-4 redesign rather than by a targeted rule. The guard
+no longer enumerates what a verifier reads and then asks whether it is all markdown; it refuses
+unless a readable, non-symlinked, non-markdown file the runner actually reads can be pointed
+at. A directory of prose demonstrates nothing under that question whichever verb names it, so
+the `file` verb needed no separate handling - which is the answer this bug's own Proposed Fix
+argued for when it observed that two verbs shared a rule and only one had ever been tested
+against it.
 
 ## Revision History
 

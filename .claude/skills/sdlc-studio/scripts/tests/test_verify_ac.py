@@ -2252,169 +2252,155 @@ US0310_SHIPPED_VERIFIERS = [
 
 
 class MarkdownEvidenceLintTests(unittest.TestCase):
-    """BG0264: a verifier that only reads prose proves a sentence was written."""
+    """BG0264: a verifier that only reads prose proves a sentence was written.
 
-    def test_every_verifier_us0310_shipped_is_refused(self) -> None:
-        # The whole point of the guard: these four are exactly what got through.
-        for expr in US0310_SHIPPED_VERIFIERS:
-            with self.subTest(expr=expr):
-                self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr))
+    Five versions of this guard were defeated in four review rounds, every one by trying to
+    ENUMERATE what the runner reads. The current design inverts the burden: a prose verb is
+    refused unless a non-markdown file it reads can be pointed at, so every uncertainty
+    refuses. These tests pin the escapes that were actually found, not invented ones.
+    """
 
-    def test_file_verb_on_markdown_is_refused(self) -> None:
-        self.assertIsNotNone(
-            verify_ac.lint_markdown_evidence("file .claude/skills/sdlc-studio/reference-cr.md"))
+    #: The four verifiers US0310 SHIPPED in e1bc477, recovered from git. All four passed,
+    #: none touched the guard they claimed to verify, and the sprint published a verified
+    #: count four higher than its evidence supported.
+    US0310_SHIPPED_VERIFIERS = [
+        'grep "review is a concurrent-writer window" .claude/skills/sdlc-studio/reference-sprint.md',
+        'grep "symlink" .claude/skills/sdlc-studio/reference-review.md',
+        'grep "green" .claude/skills/sdlc-studio/reference-review.md',
+        'grep "window" .claude/skills/sdlc-studio/reference-sprint.md',
+    ]
 
-    def test_a_behavioural_verifier_is_untouched(self) -> None:
-        for expr in ("pytest scripts/tests/test_x.py::test_y",
-                     "shell scripts/gate.py --check",
-                     "manual the operator confirms the banner renders",
-                     "grep 'def lint_markdown_evidence' scripts/verify_ac.py"):
-            with self.subTest(expr=expr):
-                self.assertIsNone(verify_ac.lint_markdown_evidence(expr))
-
-    def test_a_mixed_target_list_is_not_refused(self) -> None:
-        # It can discriminate - one target is code - so narrowing it further is a
-        # judgement this check has no basis to make.
-        self.assertIsNone(verify_ac.lint_markdown_evidence(
-            "grep 'refuses' reference-sprint.md scripts/sprint.py"))
-
-    #: The three expressions that defeated the first version of this guard, quoted exactly as
-    #: the reviewer and the plan-attacker wrote them. Each escaped for a different reason, so
-    #: a fix that closes one and not the others passes its own reasoning and fails the finding
-    #: - which is what the first repair plan proposed before it was refuted.
+    #: Every form found by review, quoted as the reviewer wrote it. Round 1: the tokens as
+    #: written. Round 2: a directory glob, a flag read as the pattern, a bare directory.
+    #: Round 3: hidden and symlinked files rg will not read. Round 4: rg --files listing a
+    #: file rg cannot open, and rg --files exiting 2 on one unreadable subdirectory.
     ESCAPES_FOUND_BY_REVIEW = [
-        # a directory glob: no `.md` in the written token, every file it reaches is markdown
         'grep "anything" sdlc-studio/reviews/*',
-        # a flag read as the pattern, so the real pattern was counted as a target
         'grep -c "window" .claude/skills/sdlc-studio/reference-sprint.md',
-        # an explicit -r directory
         'grep -r "x" .claude/skills/sdlc-studio/best-practices/',
-        # round 2: a BARE directory. `rg -q` recurses by default, so the earlier code's
-        # "grep without -r never reads a directory" was true of grep and false of this DSL.
         'grep "anything" sdlc-studio/reviews/',
-        # round 2: value-taking flags, where the VALUE occupies the pattern slot
         'grep -m 1 "x" .claude/skills/sdlc-studio/reference-cr.md',
         'grep --include x "y" .claude/skills/sdlc-studio/reference-rfc.md',
-        # the long spelling, which no test pinned when _GREP_RECURSIVE was a literal set
         'grep -R "x" .claude/skills/sdlc-studio/help/',
     ]
 
-    def test_every_expression_that_escaped_the_first_guard_is_refused(self) -> None:
-        # Resolved against the real repo root, which is where a lint run resolves them.
-        root = Path(__file__).resolve().parents[5]
+    @staticmethod
+    def _root() -> Path:
+        return Path(__file__).resolve().parents[5]
+
+    def test_every_verifier_us0310_shipped_is_refused(self) -> None:
+        for expr in self.US0310_SHIPPED_VERIFIERS:
+            with self.subTest(expr=expr):
+                self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, self._root()))
+
+    def test_every_escape_found_by_review_is_refused(self) -> None:
         for expr in self.ESCAPES_FOUND_BY_REVIEW:
             with self.subTest(expr=expr):
-                self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, root))
+                self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, self._root()))
 
-    def test_the_written_reading_matches_the_dsl_split_not_an_invented_one(self) -> None:
-        # Round 1 "fixed" the flag escape by inventing a flag-aware split here. That was a
-        # RESTATEMENT, and it disagreed with the runner: `_build_command` does
-        # `pattern, *paths = args`, so `-c` IS the pattern and `x` IS a path. The guard must
-        # agree with the runner and then handle the consequence (the bogus path does not
-        # exist, so it is dropped as unread), rather than parse the expression its own way.
-        self.assertEqual(verify_ac._verifier_targets('grep -c "x" a.md'), ["x", "a.md"])
-        _, argv = verify_ac._build_command('grep -c "x" a.md', cwd=".")
-        self.assertEqual(argv[argv.index("--") + 1:], ["x", "a.md"])
+    def test_a_behavioural_verifier_is_untouched(self) -> None:
+        root = self._root()
+        for expr in ("pytest scripts/tests/test_x.py::C::t",
+                     "shell scripts/gate.py --check",
+                     "manual the operator confirms the banner renders",
+                     'grep "x" .claude/skills/sdlc-studio/scripts/verify_ac.py',
+                     'grep "x" .claude/skills/sdlc-studio/scripts/'):
+            with self.subTest(expr=expr):
+                self.assertIsNone(verify_ac.lint_markdown_evidence(expr, root))
 
-    def test_a_directory_is_always_walked_because_this_dsl_always_recurses(self) -> None:
-        # The inverse of what round 1 asserted. `_build_command` emits `rg -q` (recursive by
-        # default) or `grep -rqE`, so "grep without -r never reads a directory" is true of
-        # grep and FALSE here. A bare directory reads everything beneath it either way.
-        root = Path(__file__).resolve().parent.parent  # scripts/
-        self.assertTrue(verify_ac._verifier_reads(f'grep "x" {root}'))
-        self.assertTrue(verify_ac._verifier_reads(f'grep -r "x" {root}'))
+    def test_the_file_verb_is_refused_over_markdown_and_over_a_prose_directory(self) -> None:
+        # BG0266: `file <dir>` runs `test -e`, which passes forever. The inverted burden
+        # closes it without a separate rule - a prose directory demonstrates nothing.
+        root = self._root()
+        self.assertIsNotNone(verify_ac.lint_markdown_evidence(
+            "file .claude/skills/sdlc-studio/reference-cr.md", root))
+        self.assertIsNotNone(verify_ac.lint_markdown_evidence(
+            "file .claude/skills/sdlc-studio/help/", root))
 
-    def test_the_written_reading_still_refuses_when_nothing_resolves(self) -> None:
-        # Why BOTH readings are kept. Here the target is a DIRECTORY that happens to be
-        # named `*.md`, and the grep is not recursive - so the resolved reading drops it
-        # and sees nothing, while the author plainly wrote a markdown-only verifier. Drop
-        # the written reading and this is allowed. Found by mutation: removing that half
-        # left every other test in this class green, so without this case the claim that
-        # both readings are load-bearing would be an assertion, not a measurement.
-        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_md_dir_"))
+    def test_a_hidden_symlinked_or_unreadable_decoy_does_not_license_a_prose_directory(self) -> None:
+        # Round 3 and round 4's escapes together. rg skips hidden files, follows no symlink
+        # found in a walk, and cannot open a file it lacks permission for - so none of these
+        # is evidence that the runner reads anything but prose.
+        outer = Path(tempfile.mkdtemp(prefix="verify_ac_decoys_"))
         try:
-            (tmp / "notes.md").mkdir()
-            expr = 'grep "x" notes.md'
-            self.assertEqual(verify_ac._verifier_reads(expr, tmp), [])
-            self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, tmp))
-        finally:
-            shutil.rmtree(tmp, ignore_errors=True)
-
-    def test_a_resolved_mix_of_markdown_and_code_is_allowed(self) -> None:
-        root = Path(__file__).resolve().parent.parent  # scripts/
-        self.assertIsNone(verify_ac.lint_markdown_evidence(
-            f'grep "x" {root}/verify_ac.py {root}/../SKILL.md'))
-
-    def test_a_missing_operand_is_dropped_because_the_runner_does_not_read_it(self) -> None:
-        # MEASURED, not reasoned. `rg -q -e -r -- x best-practices/` exits 0, warning
-        # `rg: x: No such file or directory` on stderr while matching inside the directory.
-        # So a flag form is NOT a loudly-broken verifier - it is a working, silent,
-        # markdown-only one, and dropping the unread operand is what lets the guard see it.
-        root = Path(__file__).resolve().parents[5]
-        reads = verify_ac._verifier_reads('grep -r "x" .claude/skills/sdlc-studio/help/', root)
-        self.assertTrue(reads)
-        self.assertNotIn("x", [Path(r).name for r in reads])
-
-    def test_the_guard_asks_build_command_rather_than_re_parsing(self) -> None:
-        # The rule that defeated three versions of this guard was a RESTATEMENT of how the
-        # runner parses a verifier. Pin the derivation: if _build_command's argv changes,
-        # the guard's view changes with it, because it reads that argv.
-        root = Path(__file__).resolve().parents[5]
-        expr = 'grep "anything" sdlc-studio/reviews/'
-        _, argv = verify_ac._build_command(expr, cwd=root)
-        self.assertEqual(argv[argv.index("--") + 1:], ["sdlc-studio/reviews/"])
-        self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, root))
-
-    def test_a_source_directory_is_allowed(self) -> None:
-        root = Path(__file__).resolve().parents[5]
-        self.assertIsNone(verify_ac.lint_markdown_evidence(
-            'grep "x" .claude/skills/sdlc-studio/scripts/', root))
-
-    def test_the_directory_walk_stops_at_the_first_non_markdown_file(self) -> None:
-        # Pins MINOR-5's fix. Removing the short-circuit does not change any VERDICT - the
-        # `all(...)` test sees the non-markdown file either way - so a verdict-based test
-        # cannot kill that mutant. What it changes is how much of the tree is walked, and
-        # `grep "x" .` made that O(repo) per verifier line. So the property pinned here is
-        # the walk, not the answer.
-        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_walk_"))
-        try:
-            (tmp / "a.md").write_text("x")
-            (tmp / "b.py").write_text("x")
-            for i in range(50):
-                (tmp / f"z{i:03d}.md").write_text("x")
-            reads = verify_ac._verifier_reads(f'grep "x" {tmp}')
-            self.assertLess(len(reads), 52, "the walk did not stop at the first non-markdown file")
-            self.assertTrue(any(r.endswith(".py") for r in reads))
-        finally:
-            shutil.rmtree(tmp, ignore_errors=True)
-
-    def test_a_hidden_or_symlinked_non_markdown_file_does_not_make_a_prose_dir_mixed(self) -> None:
-        # Round 3's escape, verified PASSING before it was fixed. `rg` skips hidden files and
-        # does not follow symlinks, so a directory of pure prose plus one dotfile or one
-        # symlinked .py was read by rglob as "mixed" and ALLOWED, while the verifier searched
-        # only markdown and passed. The guard must walk the way the runner walks.
-        outer = Path(tempfile.mkdtemp(prefix="verify_ac_walk_parity_"))
-        try:
-            # The symlink TARGET lives outside the searched directory - inside it, rg would
-            # read it legitimately and "mixed" would be the correct answer.
             (outer / "real.py").write_text("code\n")
-            tmp = outer / "docs"
-            tmp.mkdir()
-            (tmp / "note.md").write_text("the guard refuses\n")
-            (tmp / ".hidden.py").write_text("code\n")
+            docs = outer / "docs"
+            docs.mkdir()
+            (docs / "note.md").write_text("the guard refuses\n")
+            (docs / ".hidden.py").write_text("code\n")
+            locked = docs / "locked.py"
+            locked.write_text("code\n")
             try:
-                (tmp / "link.py").symlink_to(outer / "real.py")
+                (docs / "link.py").symlink_to(outer / "real.py")
+                locked.chmod(0o000)
             except OSError:
-                pass  # platform without symlink permission; the dotfile case still applies
-            self.assertIsNotNone(verify_ac.lint_markdown_evidence(f'grep "refuses" {tmp}', tmp))
+                pass
+            try:
+                self.assertIsNotNone(
+                    verify_ac.lint_markdown_evidence('grep "refuses" docs', outer))
+            finally:
+                try:
+                    locked.chmod(0o644)
+                except OSError:
+                    pass
         finally:
             shutil.rmtree(outer, ignore_errors=True)
 
+    def test_an_unreadable_subdirectory_refuses_rather_than_falling_back_to_a_plain_walk(self) -> None:
+        # Round 4 MAJOR-1. `rg --files` exits 2 when any part of the tree errors. Falling
+        # back to rglob then re-listed the hidden files rg refuses to read, reinstating the
+        # escape. No candidates must mean no demonstration, which refuses.
+        outer = Path(tempfile.mkdtemp(prefix="verify_ac_rgerr_"))
+        try:
+            docs = outer / "docs"
+            docs.mkdir()
+            (docs / "note.md").write_text("x\n")
+            (docs / ".hidden.py").write_text("code\n")
+            vault = docs / "vault"
+            vault.mkdir()
+            (vault / "a.md").write_text("x\n")
+            try:
+                vault.chmod(0o000)
+            except OSError:
+                self.skipTest("cannot make a directory unreadable here")
+            try:
+                self.assertIsNotNone(verify_ac.lint_markdown_evidence('grep "x" docs', outer))
+            finally:
+                vault.chmod(0o755)
+        finally:
+            shutil.rmtree(outer, ignore_errors=True)
+
+    def test_a_real_code_file_in_a_directory_licenses_it(self) -> None:
+        # The guard must not refuse everything. A readable, non-markdown, non-symlink file
+        # is the demonstration the design asks for.
+        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_mixed_"))
+        try:
+            (tmp / "note.md").write_text("x\n")
+            (tmp / "impl.py").write_text("code\n")
+            self.assertIsNone(verify_ac.lint_markdown_evidence(f'grep "x" {tmp}', tmp))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_one_predicate_decides_what_markdown_means(self) -> None:
+        # The case rule lived in two places and they disagreed, so a mutant dropping one
+        # `.lower()` flipped a verdict while every test stayed green. One predicate now.
+        for name in ("a.md", "A.MD", "x/y/Z.Md"):
+            with self.subTest(name=name):
+                self.assertTrue(verify_ac._is_markdown(name))
+        for name in ("a.py", "a.markdown", "README"):
+            with self.subTest(name=name):
+                self.assertFalse(verify_ac._is_markdown(name))
+
+    def test_an_uppercase_extension_directory_is_refused(self) -> None:
+        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_case_"))
+        try:
+            (tmp / "NOTE.MD").write_text("x\n")
+            (tmp / "b.MD").write_text("x\n")
+            self.assertIsNotNone(verify_ac.lint_markdown_evidence(f'grep "x" {tmp}', tmp))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
     def test_a_nested_all_markdown_directory_is_refused(self) -> None:
-        # MINOR-2: every directory fixture in this class was FLAT, so deleting the
-        # non-file filter from the walk changed no verdict and survived mutation while
-        # flipping a nested prose tree from REFUSED to ALLOWED. Fixtures that agree by
-        # construction is the defect a previous sprint shipped; this is the nested case.
         tmp = Path(tempfile.mkdtemp(prefix="verify_ac_nested_"))
         try:
             (tmp / "a.md").write_text("x\n")
@@ -2425,75 +2411,81 @@ class MarkdownEvidenceLintTests(unittest.TestCase):
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
-    def test_the_no_rg_fallback_walk_is_exercised_too(self) -> None:
-        # Without rg the runner is `grep -rqE`, which reads everything, so the fallback
-        # walks everything. That branch had NO coverage: deleting its non-file filter
-        # survived mutation purely because every test ran on a machine with rg.
-        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_norg_"))
+    def test_a_missing_operand_proves_nothing(self) -> None:
+        # MEASURED: `rg -q -e -r -- x help/` exits 0, warning about the missing path while
+        # matching inside the directory. A flag form is a working silent verifier, not a
+        # loudly broken one, so an unread operand must not license it.
+        root = self._root()
+        self.assertIsNotNone(verify_ac.lint_markdown_evidence(
+            'grep -r "x" .claude/skills/sdlc-studio/help/', root))
+
+    def test_the_written_split_matches_the_dsl_not_an_invented_one(self) -> None:
+        self.assertEqual(verify_ac._verifier_targets('grep -c "x" a.md'), ["x", "a.md"])
+        _, argv = verify_ac._build_command('grep -c "x" a.md', cwd=".")
+        self.assertEqual(argv[argv.index("--") + 1:], ["x", "a.md"])
+
+    def test_without_rg_a_symlinked_code_file_still_licenses_nothing(self) -> None:
+        # `rg --files` already omits symlinks, so the symlink rule only bites on the
+        # `grep -rqE` fallback - and no test covered that branch, so deleting the rule
+        # survived mutation. `grep -r` follows only paths named on the command line.
+        outer = Path(tempfile.mkdtemp(prefix="verify_ac_norg_link_"))
         try:
-            (tmp / "a.md").write_text("x\n")
-            (tmp / "sub").mkdir()
-            (tmp / "sub" / "b.md").write_text("x\n")
+            (outer / "real.py").write_text("code\n")
+            docs = outer / "docs"
+            docs.mkdir()
+            (docs / "note.md").write_text("the guard refuses\n")
+            try:
+                (docs / "link.py").symlink_to(outer / "real.py")
+            except OSError:
+                self.skipTest("cannot create a symlink here")
             real_which = verify_ac.shutil.which
             verify_ac.shutil.which = lambda n: None if n == "rg" else real_which(n)
             try:
-                files = verify_ac._runner_files(tmp)
-                self.assertTrue(files)
-                self.assertTrue(all(f.is_file() for f in files),
-                                "the fallback walk yielded a non-file entry")
                 self.assertIsNotNone(
-                    verify_ac.lint_markdown_evidence(f'grep "x" {tmp}', tmp))
+                    verify_ac.lint_markdown_evidence('grep "refuses" docs', outer))
             finally:
                 verify_ac.shutil.which = real_which
         finally:
-            shutil.rmtree(tmp, ignore_errors=True)
+            shutil.rmtree(outer, ignore_errors=True)
 
-    def test_an_uppercase_extension_on_a_RESOLVED_file_is_still_markdown(self) -> None:
-        # The existing uppercase test judges a WRITTEN token. Case-folding on a resolved
-        # directory entry is a separate code path, and dropping .lower() there survived.
-        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_case_"))
+    def test_without_rg_a_hidden_code_file_DOES_license_it(self) -> None:
+        # The counter-test, so the rule above cannot be satisfied by refusing everything:
+        # `grep -rqE` really does read hidden files, so one is a genuine demonstration.
+        outer = Path(tempfile.mkdtemp(prefix="verify_ac_norg_hidden_"))
         try:
-            (tmp / "NOTE.MD").write_text("x\n")
-            self.assertIsNotNone(verify_ac.lint_markdown_evidence(f'grep "x" {tmp}', tmp))
+            docs = outer / "docs"
+            docs.mkdir()
+            (docs / "note.md").write_text("x\n")
+            (docs / ".hidden.py").write_text("code\n")
+            real_which = verify_ac.shutil.which
+            verify_ac.shutil.which = lambda n: None if n == "rg" else real_which(n)
+            try:
+                self.assertIsNone(verify_ac.lint_markdown_evidence('grep "x" docs', outer))
+            finally:
+                verify_ac.shutil.which = real_which
         finally:
-            shutil.rmtree(tmp, ignore_errors=True)
-
-    def test_a_glob_that_matches_no_file_here_is_still_refused(self) -> None:
-        # The verdict is about what the author WROTE, not about what exists on this
-        # filesystem, so it must not depend on where the lint runs. This does NOT pin
-        # the textual-vs-expanded choice: `_expand_globs` passes an unmatched glob
-        # through literally, so swapping it in leaves every case identical and the
-        # mutant survives as equivalent. Pinning that would need a behavioural
-        # difference, and there is none.
-        self.assertIsNotNone(verify_ac.lint_markdown_evidence("grep 'x' docs/**/*.md"))
-
-    def test_uppercase_extension_is_refused(self) -> None:
-        self.assertIsNotNone(verify_ac.lint_markdown_evidence("grep 'x' README.MD"))
+            shutil.rmtree(outer, ignore_errors=True)
 
     def test_lint_exits_non_zero_on_a_draft_story_and_zero_once_done(self) -> None:
         root = FixtureRoot()
         try:
             story = root.tmp / "sdlc-studio" / "stories" / "US0003-prose.md"
+            (root.tmp / "notes.md").write_text("the guard refuses\n")
             body = (
                 "# US0003: a criterion about a guard\n\n"
                 "> **Status:** {status}\n\n"
                 "## Acceptance Criteria\n\n"
                 "### AC1: the guard refuses\n\n"
-                "- **Verify:** grep \"the guard refuses\" reference-sprint.md\n"
+                "- **Verify:** grep \"the guard refuses\" notes.md\n"
             )
             args = argparse.Namespace(root=str(root.tmp), dir="sdlc-studio/stories",
                                       story=str(story), repo_root=None)
-
             story.write_text(body.format(status="Draft"))
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                 draft_rc = verify_ac.cmd_lint(args)
-
-            # Past authoring the criterion has shipped; refusing it retrospectively would
-            # block a lint over history without helping anyone.
             story.write_text(body.format(status="Done"))
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                 done_rc = verify_ac.cmd_lint(args)
-
             self.assertEqual((draft_rc, done_rc), (1, 0))
         finally:
             root.cleanup()
