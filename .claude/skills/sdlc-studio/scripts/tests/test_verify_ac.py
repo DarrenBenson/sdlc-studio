@@ -2554,6 +2554,7 @@ class StampResolutionTests(unittest.TestCase):
     """BG0256: a stamp is evidence only while the thing it points at still exists."""
 
     TESTFILE = ".claude/skills/sdlc-studio/scripts/tests/test_critic.py"
+    SELF_FILE = ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py"
     LIVE = "test_neutral_text_reports_no_violations"
 
     def _story(self, tmp: Path, verifier: str, stamped: str = "yes") -> Path:
@@ -2593,11 +2594,14 @@ class StampResolutionTests(unittest.TestCase):
         try:
             f = self._story(tmp, f"pytest {self.TESTFILE} -k {self.LIVE}")
             self.assertEqual(verify_ac.unresolvable_stamps(f, root), [])
-            captured = {}
+            # No test BODY runs: every subprocess this check spawns is a --collect-only
+            # call. Clear the file cache first so a call is actually made to observe.
+            verify_ac._COLLECT_CACHE.clear()
+            calls = []
             real = verify_ac.subprocess.run
 
             def spy(cmd, *a, **kw):
-                captured["cmd"] = cmd
+                calls.append(cmd)
                 return real(cmd, *a, **kw)
 
             verify_ac.subprocess.run = spy
@@ -2606,7 +2610,9 @@ class StampResolutionTests(unittest.TestCase):
                     f"pytest {self.TESTFILE} -k {self.LIVE}", root), True)
             finally:
                 verify_ac.subprocess.run = real
-            self.assertIn("--collect-only", captured["cmd"])
+            self.assertTrue(calls, "no collection was performed")
+            for cmd in calls:
+                self.assertIn("--collect-only", cmd)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
@@ -2618,6 +2624,7 @@ class StampResolutionTests(unittest.TestCase):
         returned None for all three - but only by luck downstream (`which("manual")` misses,
         `rg` chokes on `--collect-only`), which meant the guard could be removed with every
         test green while the check started shelling out for verifiers it cannot answer."""
+        verify_ac._COLLECT_CACHE.clear()
         real = verify_ac.subprocess.run
         calls = []
         verify_ac.subprocess.run = lambda cmd, *a, **kw: calls.append(cmd)
@@ -2641,6 +2648,44 @@ class StampResolutionTests(unittest.TestCase):
             self.assertEqual(verify_ac.unresolvable_stamps(f, root), [])
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
+
+
+    def test_resolution_is_answered_in_process_against_a_cached_file_collection(self) -> None:
+        """The regression fix: one collection per FILE, not per AC. A node address, a class
+        prefix, and a -k boolean are all resolved against the same cached node list, so a
+        second selector into the same file spawns no further subprocess."""
+        root = Path(__file__).resolve().parents[5]
+        verify_ac._COLLECT_CACHE.clear()
+        tf = self.TESTFILE
+        # An exact node address that exists in this very file resolves True; its class prefix
+        # also resolves True; a bogus method under a real class resolves False.
+        me = "%s::StampResolutionTests::test_a_k_boolean_expression_resolves_without_pytests_engine" % self.SELF_FILE
+        self.assertIs(verify_ac.selector_resolves(f"pytest {me}", root), True)
+        self.assertIs(verify_ac.selector_resolves(
+            f"pytest {self.SELF_FILE}::StampResolutionTests", root), True)
+        self.assertIs(verify_ac.selector_resolves(
+            f"pytest {self.SELF_FILE}::StampResolutionTests::test_gone_forever", root), False)
+        calls = []
+        real = verify_ac.subprocess.run
+        verify_ac.subprocess.run = lambda *a, **k: (calls.append(a), real(*a, **k))[1]
+        try:
+            live = verify_ac.selector_resolves(f"pytest {tf} -k {self.LIVE}", root)
+            # second selector, same file - must hit the cache, no new subprocess
+            before = len(calls)
+            other = verify_ac.selector_resolves(f"pytest {tf} -k no_such_test_name_at_all", root)
+        finally:
+            verify_ac.subprocess.run = real
+        self.assertIs(live, True)
+        self.assertIs(other, False)
+        self.assertEqual(len(calls), before, "a repeated file target re-collected instead of using the cache")
+
+    def test_a_k_boolean_expression_resolves_without_pytests_engine(self) -> None:
+        nodes = ["t.py::test_alpha_one", "t.py::test_beta_two"]
+        self.assertTrue(verify_ac._k_selects("alpha", nodes))
+        self.assertTrue(verify_ac._k_selects("alpha or gamma", nodes))
+        self.assertFalse(verify_ac._k_selects("alpha and gamma", nodes))
+        self.assertTrue(verify_ac._k_selects("not gamma", nodes))
+        self.assertFalse(verify_ac._k_selects("gamma", nodes))
 
     def test_the_command_exits_non_zero_on_a_story_whose_stamped_verifier_cannot_resolve(self) -> None:
         root = Path(__file__).resolve().parents[5]

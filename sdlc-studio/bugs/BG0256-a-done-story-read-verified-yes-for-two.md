@@ -97,3 +97,4 @@ it cannot answer. The test now pins that no subprocess is spawned at all.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Filed |
+| 2026-07-22 | sdlc-studio | Fixed, then the fix's OWN regression fixed in the same wave: baking a per-AC `pytest --collect-only` into conformance turned an 8s gate into 81s across 306 stamped stories. The collection is now cached per test FILE and every selector - node address, class prefix, `-k` boolean - resolves in-process against the cached node list, so the workspace costs one collection per distinct file. Gate back to 15s, same verdicts. Caught by the gate-budget guard reporting +366pc, not by a test. |

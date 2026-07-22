@@ -1,0 +1,2 @@
+<!-- section: Fixed -->
+- **The stamp-resolution check collects each test file once, not once per criterion (BG0256).** Baking the per-criterion collection probe into conformance made it spawn `pytest --collect-only` for every stamped acceptance criterion across the workspace on every commit, turning an 8-second gate into 81. The collected node list is now cached per test file and every selector shape - exact node, class prefix, `-k` boolean - is resolved in-process against it.

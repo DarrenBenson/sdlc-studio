@@ -594,17 +594,46 @@ def lint_stacked_verifiers(block: "ACBlock") -> str | None:
 _COLLECTABLE = {"pytest"}
 
 
+#: Per-file collection cache, keyed by (resolved test file, cwd). Collecting a file imports
+#: it once; every selector into that file is then answered in-process. This is what keeps the
+#: check cheap enough to run on the whole workspace: without it, conformance spawned one
+#: `pytest --collect-only` per stamped AC - 306 of them - and turned an 8s gate into 81s.
+_COLLECT_CACHE: dict = {}
+
+
+def _collect_nodes(test_file: str, cwd=None) -> list[str] | None:
+    """Every node id `pytest` collects from `test_file`, or None if the file itself will not
+    collect (a syntax error, a missing import). Cached per (file, cwd)."""
+    key = (test_file, str(cwd) if cwd else None)
+    if key in _COLLECT_CACHE:
+        return _COLLECT_CACHE[key]
+    result: list[str] | None = None
+    try:
+        cp = subprocess.run(["pytest", "--collect-only", "-q", test_file],
+                            capture_output=True, text=True, timeout=120,
+                            cwd=str(cwd) if cwd else None)
+        if cp.returncode in (0, 5):
+            # -q collect lists one node id per line, then a blank line and a summary.
+            result = [ln.strip() for ln in cp.stdout.splitlines()
+                      if "::" in ln and not ln.startswith(" ")]
+    except (OSError, subprocess.SubprocessError):
+        result = None
+    _COLLECT_CACHE[key] = result
+    return result
+
+
 def selector_resolves(expr: str, cwd=None) -> bool | None:
     """Does this verifier's selector still select anything? None when unanswerable.
 
-    Resolution is decided by COLLECTION, not execution: `pytest --collect-only` answers
-    "would this select a test" for the cost of an import, runs no test body, and so can sit
-    beside the freshness check rather than only inside a full suite sweep. A sweep is what
-    let a stamp read green for two days against a test that did not exist.
+    Resolution is decided by COLLECTION, not execution, and the collected node list is CACHED
+    per test file, so the whole workspace costs one collection per distinct file rather than
+    one per stamped AC. A sweep is what let a stamp read green for two days against a test that
+    did not exist; a per-AC subprocess is what made checking for that unaffordable.
 
     Returns None - not False - for a verifier whose selector cannot be resolved this way
-    (`manual`, `grep`, `shell`, a runner that is absent). Unanswerable is not the same fact
-    as unresolvable, and reporting it as stale would mark every non-pytest stamp dead.
+    (`manual`, `grep`, `shell`, a runner that is absent, a file that will not collect).
+    Unanswerable is not the same fact as unresolvable, and reporting it as stale would mark
+    every non-pytest stamp dead.
     """
     head = (expr.split(None, 1)[0].lower() if expr.split() else "")
     if head not in _COLLECTABLE or _is_manual(expr):
@@ -615,23 +644,45 @@ def selector_resolves(expr: str, cwd=None) -> bool | None:
         kind, argv = _build_command(expr, cwd=cwd)
     except ValueError:
         return None
-    if not isinstance(argv, list):
+    if not isinstance(argv, list) or len(argv) < 2:
         return None
-    cmd = [argv[0], "--collect-only", "-q"] + argv[1:]
-    try:
-        cp = subprocess.run(cmd, capture_output=True, text=True, timeout=120,
-                            cwd=str(cwd) if cwd else None)
-    except (OSError, subprocess.SubprocessError):
+    # argv is `pytest -q <target> [-k pat]`. Split the file target from the -k filter.
+    target = next((a for a in argv[1:] if "::" in a or a.endswith(".py")), None)
+    if target is None:
         return None
-    # 0 = something was collected. 5 = collected nothing, which is exactly the shape that
-    # produced this bug: the file still imports, the `-k` pattern matches no test, and a
-    # file-exists check would have passed it. 4 = usage error, e.g. a node address whose
-    # class or method is gone.
-    if cp.returncode == 0:
-        return True
-    if cp.returncode in (4, 5):
-        return False
-    return None
+    test_file = target.split("::", 1)[0]
+    nodes = _collect_nodes(test_file, cwd)
+    if nodes is None:
+        return False  # the file itself does not collect - the node/pattern cannot resolve
+    # Node address: the exact id (or a prefix of it, for a class selecting its methods).
+    if "::" in target:
+        return any(n == target or n.startswith(target + "::") for n in nodes)
+    # -k pattern: pytest's -k is a boolean expression over substring matches of the node id.
+    kflag = argv.index("-k") if "-k" in argv else -1
+    if kflag != -1 and kflag + 1 < len(argv):
+        pat = argv[kflag + 1]
+        return _k_selects(pat, nodes)
+    # A bare file target with no filter selects whatever it collects.
+    return bool(nodes)
+
+
+def _k_selects(pattern: str, nodes: list[str]) -> bool:
+    """Does pytest's `-k <pattern>` match any node id? Supports the `and/or/not` and
+    parenthesised forms pytest accepts, over case-insensitive substring matches - enough to
+    answer "does this select anything" without importing pytest's own expression engine."""
+    import re as _re
+    tokens = _re.findall(r"\(|\)|\band\b|\bor\b|\bnot\b|[^\s()]+", pattern)
+    for node in nodes:
+        low = node.lower()
+        expr = " ".join(
+            tok if tok in ("and", "or", "not", "(", ")")
+            else str(tok.lower() in low) for tok in tokens)
+        try:
+            if eval(expr):  # noqa: S307 - operands are only True/False/and/or/not/parens
+                return True
+        except (SyntaxError, NameError):
+            return True  # an expression we cannot evaluate: assume it selects, never false-dead
+    return False
 
 
 def unresolvable_stamps(path: Path, cwd=None) -> list[dict]:
