@@ -31,8 +31,13 @@
 - **Then** it states the mode and the reason the alternative was or was not available: one unit, one coupled cluster, or a dependency chain with no width
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveryModeDeterminismTests::test_the_plan_states_the_mode_and_the_reason_for_the_alternative
 
+## Verification depth
+
+Node-addressed pytest ACs over `test_sprint.py`, red before the code (the offer, the test-file coupling and the determinism did not exist). Mutation-proven by hand (`__pycache__` purged, `python3 -B`): loosening the >=2 group threshold, dropping the Verify-derived files from coupling, inverting the record refusal, and removing the no-Affects safety branch were each caught by a node.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-23 | sdlc-studio | Built: delivery-mode offer + test-file coupling + determinism, tested, mutation-proven |

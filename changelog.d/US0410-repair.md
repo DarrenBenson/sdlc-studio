@@ -1,0 +1,2 @@
+<!-- section: Fixed -->
+- **`refine`'s SEEDED-Affects note no longer prints from the library (US0410 repair).** The note confirming a story's Affects was seeded from its parent was printed inside the `refine()` library call, so it leaked to the console under every passing test that refined a no-Affects story - 69 lines, which broke the green-suite noise ratchet. The note is now RETURNED (`result["seeded_notes"]`) and printed only by the CLI layer (`refine apply` / `refine add`), so the operator still sees it while the library stays silent.

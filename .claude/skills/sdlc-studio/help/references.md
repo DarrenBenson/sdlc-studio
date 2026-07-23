@@ -17,6 +17,7 @@ For detailed step-by-step workflows:
 - `reference-prd.md`, `reference-trd.md`, `reference-persona.md` - PRD, TRD, Persona workflows
 - `reference-epic.md`, `reference-story.md`, `reference-bug.md` - Epic, Story, Bug workflows
 - `reference-sprint.md` - Sprint (Goal-Driven Development) loop, Definition of Done, `--goal` / `--order`
+- `reference-delivery.md` - Sequential vs parallel delivery: when a batch decomposes into file-disjoint worktree groups
 - `reference-pvd.md` - Product Vision Document: the multi-repo product layer above the PRD (`pvd sync` / `pvd drift`)
 - `reference-skill-update.md` - Version check and in-place upgrade (`skill-update`)
 - `reference-project.md` - Project-level orchestration across all epics

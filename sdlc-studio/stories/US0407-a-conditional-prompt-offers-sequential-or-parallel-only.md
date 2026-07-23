@@ -38,8 +38,13 @@
 - **Then** parallel is not offered and the stated reason names the coupling
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveryModeOfferTests::test_an_all_coupled_batch_is_not_offered_parallel
 
+## Verification depth
+
+Node-addressed pytest ACs over `test_sprint.py`, red before the code (the offer, the test-file coupling and the determinism did not exist). Mutation-proven by hand (`__pycache__` purged, `python3 -B`): loosening the >=2 group threshold, dropping the Verify-derived files from coupling, inverting the record refusal, and removing the no-Affects safety branch were each caught by a node.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-23 | sdlc-studio | Built: delivery-mode offer + test-file coupling + determinism, tested, mutation-proven |

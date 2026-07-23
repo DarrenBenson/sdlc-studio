@@ -1710,6 +1710,107 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
             "ok": not ungroomed and not oversized}
 
 
+PARALLEL = "parallel"
+SEQUENTIAL = "sequential"
+
+
+def _unit_files(root: Path, text: str) -> list[str]:
+    """The normalised files a unit touches: its declared `Affects` AND the files its `Verify:`
+    lines name. Test files are almost never declared but are exactly where parallel worktree
+    builds collide, so the derived set is folded in - a shared test module couples two units as
+    surely as a shared source module does."""
+    declared = {_affect_key(root, p) for p in _affects_files(text)}
+    derived = {_affect_key(root, p) for p in verify_files(root, text)}
+    return sorted(declared | derived)
+
+
+def _full_partition(units: list[tuple[str, list[str]]]) -> list[list[str]]:
+    """Every unit assigned to a file-disjoint group, SINGLETONS INCLUDED (unlike the cluster
+    view, which drops units that share nothing). Union-find over the shared files; the result is
+    sorted so a given batch always partitions the same way."""
+    parent = {uid: uid for uid, _ in units}
+
+    def find(x: str) -> str:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    by_file: dict[str, list[str]] = {}
+    for uid, files in units:
+        for f in files:
+            by_file.setdefault(f, []).append(uid)
+    for uids in by_file.values():
+        for other in uids[1:]:
+            ra, rb = find(uids[0]), find(other)
+            if ra != rb:
+                parent[max(ra, rb)] = min(ra, rb)
+    groups: dict[str, list[str]] = {}
+    for uid, _ in units:
+        groups.setdefault(find(uid), []).append(uid)
+    return sorted((sorted(g) for g in groups.values()), key=lambda g: g[0])
+
+
+def delivery_mode_offer(repo_root: Path | str, batch: list[dict]) -> dict:
+    """Whether a batch may be built in PARALLEL isolated worktrees, or must go SEQUENTIALLY.
+
+    Parallel is offered ONLY when the batch genuinely decomposes into two or more file-disjoint
+    groups: two agents editing the same file in separate worktrees produce a merge conflict, and a
+    SHARED TEST FILE couples them exactly as a shared source file does (a real parallel build
+    learned this by colliding over a test module neither unit declared - so `_unit_files` counts
+    the Verify-derived files). A one-unit batch, a batch where every unit couples to another, or
+    any unit with no declared `Affects` (unknown blast radius) is delivered sequentially, and the
+    plan STATES the mode and why the alternative was or was not available. Deterministic: the same
+    batch and repo state always yield the same offer, so the choice is never a coin toss."""
+    root = Path(repo_root)
+    units: list[tuple[str, list[str]]] = []
+    undeclared: list[str] = []
+    for it in batch:
+        text = Path(it["path"]).read_text(encoding="utf-8")
+        uid = sdlc_md.norm_id(it["id"])
+        if not _affects_files(text):
+            undeclared.append(uid)
+        units.append((uid, _unit_files(root, text)))
+    all_ids = [u for u, _ in units]
+    modes = [SEQUENTIAL]
+    if len(units) <= 1:
+        groups = [[u] for u in all_ids]
+        reason = "a one-unit batch has nothing to parallelise; delivered sequentially"
+    elif undeclared:
+        groups = [sorted(all_ids)]
+        reason = (f"unit(s) {', '.join(sorted(undeclared))} declare no Affects, so their blast "
+                  f"radius is unknown; delivered sequentially rather than risk an undeclared "
+                  f"overlap")
+    else:
+        groups = _full_partition(units)
+        if len(groups) >= 2:
+            modes.append(PARALLEL)
+            reason = (f"the batch decomposes into {len(groups)} file-disjoint groups (test files "
+                      f"counted as coupling), so a PARALLEL worktree build is available alongside "
+                      f"the SEQUENTIAL one - either is safe")
+        else:
+            reason = ("every unit shares an affected file (source or test) with another, so the "
+                      "batch does not decompose; PARALLEL was withheld and it is delivered "
+                      "SEQUENTIALLY")
+    return {"modes": modes, "parallel_available": PARALLEL in modes,
+            "groups": groups, "reason": reason, "default_mode": SEQUENTIAL,
+            "undeclared_affects": sorted(undeclared)}
+
+
+def record_delivery_mode(offer: dict, mode: str) -> dict:
+    """Record the chosen delivery mode against an offer. REFUSES a mode the offer did not make
+    available (you cannot pick PARALLEL for a coupled batch), so a recorded choice is always one
+    the disjointness analysis actually permitted."""
+    if mode not in offer.get("modes", ()):
+        raise ValueError(
+            f"delivery mode {mode!r} is not available for this batch - offered: "
+            f"{', '.join(offer.get('modes') or [])}. {offer.get('reason', '')}")
+    out = {"mode": mode, "reason": offer.get("reason", "")}
+    if mode == PARALLEL:
+        out["groups"] = offer.get("groups") or []
+    return out
+
+
 def _batch_triage(root: Path, batch_ids: list[str]) -> dict:
     """The JUDGEMENT triage lenses (duplicate/subsumed, stale, orphaned-dependency) that touch a
     unit in this batch - surfaced in the plan the operator already reads. Reporting-only: a
@@ -2013,6 +2114,10 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         # project has recorded the `judgement` opt-out) - and it also carries the shared-file
         # clusters the declared dependency graph cannot see.
         "breakdown": breakdown(root, batch, skip_personas) if batch else None,
+        # SEQUENTIAL or PARALLEL: whether the batch decomposes into file-disjoint groups a
+        # parallel worktree build could take. Offered only when it genuinely does; the plan
+        # states the mode and why the alternative was or was not available.
+        "delivery_mode": delivery_mode_offer(root, batch) if batch else None,
         "seat_provenance": (_seat_provenance(root, batch)
                             if order == "wsjf" and not skip_personas else None),
         # How far this batch can actually get under its own gates. Recorded on every plan, so
@@ -2286,6 +2391,22 @@ def _render_waves(data: dict) -> None:
     else:
         for b in data["batch"]:
             print(f"  {b['id']} [{b['priority']}]")
+
+
+def _render_delivery_mode(data: dict) -> None:
+    """SEQUENTIAL or PARALLEL, and why the alternative was or was not available. When parallel is
+    on the table the operator picks; the plan names the file-disjoint groups a parallel build
+    would fan out to, so the choice is informed rather than a preference."""
+    dm = data.get("delivery_mode")
+    if not dm:
+        return
+    if dm.get("parallel_available"):
+        groups = dm.get("groups") or []
+        print(f"  delivery mode: SEQUENTIAL or PARALLEL (operator picks). {dm['reason']}")
+        print(f"    parallel would fan out to {len(groups)} worktree group(s): "
+              + "; ".join("[" + ", ".join(g) + "]" for g in groups))
+    else:
+        print(f"  delivery mode: SEQUENTIAL (parallel withheld). {dm['reason']}")
 
 
 def _render_clusters(data: dict) -> None:
@@ -2855,6 +2976,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_reachable_end_state(data)
     _render_seat_provenance(data)
     _render_waves(data)
+    _render_delivery_mode(data)
     _render_clusters(data)
     _render_affects_advisories(data)
     _render_triage(data)

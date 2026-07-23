@@ -6096,5 +6096,132 @@ class HelpAndRefusalNameTheSameRoutesTests(unittest.TestCase):
             {"close" if "close" in ln else "replan" for ln in route_lines})
 
 
+class _DeliveryModeFixture(unittest.TestCase):
+    """Shared batch builder for the EP0154 delivery-mode tests. Each story declares its own
+    Affects and a node-addressed Verify line, so the offer reads real files."""
+
+    def _story(self, root, num, affects, verify_file):
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"US{num:04d}-x.md").write_text(
+            f"# US{num:04d}: x\n\n> **Status:** Draft\n> **Points:** 2\n"
+            f"> **Affects:** {affects}\n\n## Acceptance Criteria\n\n"
+            f"### AC1\n- **Verify:** pytest {verify_file}::T::t\n", encoding="utf-8")
+        # the affected + verify files must resolve for _affect_key to key them by path
+        for p in [a.strip() for a in affects.split(",")] + [verify_file]:
+            fp = root / p
+            fp.parent.mkdir(parents=True, exist_ok=True)
+            if not fp.exists():
+                fp.write_text("# marker\n", encoding="utf-8")
+        return {"id": f"US{num:04d}", "path": str(d / f"US{num:04d}-x.md"), "points": 2}
+
+
+class DeliveryModeOfferTests(_DeliveryModeFixture):
+    """US0407: parallel is offered only for a genuinely file-disjoint batch, and the choice is
+    recorded against the offer that permitted it."""
+
+    def test_a_parallelisable_batch_offers_both_modes_and_records_the_choice(self):
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            batch = [self._story(root, 1, "src/a.py", "tests/test_a.py"),
+                     self._story(root, 2, "src/b.py", "tests/test_b.py")]
+            offer = s.delivery_mode_offer(root, batch)
+            self.assertEqual(offer["modes"], ["sequential", "parallel"])
+            self.assertTrue(offer["parallel_available"])
+            # a valid choice records; an unavailable one is refused, so a recorded mode is real
+            self.assertEqual(s.record_delivery_mode(offer, "parallel")["mode"], "parallel")
+            self.assertEqual(len(offer["groups"]), 2)
+
+    def test_a_one_unit_batch_is_sequential_and_says_why_parallel_was_withheld(self):
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            batch = [self._story(root, 1, "src/a.py", "tests/test_a.py")]
+            offer = s.delivery_mode_offer(root, batch)
+            self.assertEqual(offer["modes"], ["sequential"])
+            self.assertFalse(offer["parallel_available"])
+            self.assertIn("one-unit", offer["reason"])
+            with self.assertRaises(ValueError):
+                s.record_delivery_mode(offer, "parallel")
+
+    def test_a_unit_without_affects_withholds_parallel_even_if_the_rest_is_disjoint(self):
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            batch = [self._story(root, 1, "src/a.py", "tests/test_a.py")]
+            # a second story with NO Affects line - unknown blast radius
+            sd = root / "sdlc-studio" / "stories"
+            (sd / "US0002-x.md").write_text(
+                "# US0002: x\n\n> **Status:** Draft\n> **Points:** 2\n", encoding="utf-8")
+            batch.append({"id": "US0002", "path": str(sd / "US0002-x.md"), "points": 2})
+            offer = s.delivery_mode_offer(root, batch)
+            self.assertFalse(offer["parallel_available"])   # withheld despite src/a.py being disjoint
+            self.assertIn("US0002", offer["undeclared_affects"])
+            self.assertIn("no Affects", offer["reason"])
+
+    def test_an_all_coupled_batch_is_not_offered_parallel(self):
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # both units touch src/shared.py -> one coupled component
+            batch = [self._story(root, 1, "src/shared.py", "tests/test_a.py"),
+                     self._story(root, 2, "src/shared.py", "tests/test_b.py")]
+            offer = s.delivery_mode_offer(root, batch)
+            self.assertFalse(offer["parallel_available"])
+            self.assertEqual(len(offer["groups"]), 1)
+            self.assertIn("does not decompose", offer["reason"])
+
+
+class DeliveryModeTestFileCouplingTests(_DeliveryModeFixture):
+    """US0408: a shared TEST file couples two units even when their Affects are disjoint."""
+
+    def test_a_shared_test_file_counts_as_coupling(self):
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # disjoint source files, but the SAME test file in both Verify lines
+            batch = [self._story(root, 1, "src/a.py", "tests/test_shared.py"),
+                     self._story(root, 2, "src/b.py", "tests/test_shared.py")]
+            offer = s.delivery_mode_offer(root, batch)
+            self.assertFalse(offer["parallel_available"])
+
+    def test_a_test_file_only_overlap_denies_the_parallel_offer(self):
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            batch = [self._story(root, 1, "src/a.py", "tests/test_shared.py"),
+                     self._story(root, 2, "src/b.py", "tests/test_shared.py")]
+            offer = s.delivery_mode_offer(root, batch)
+            self.assertEqual(offer["groups"], [["US0001", "US0002"]])
+            self.assertEqual(offer["modes"], ["sequential"])
+
+
+class DeliveryModeDeterminismTests(_DeliveryModeFixture):
+    """US0409: the offer is deterministic and the plan states the mode and the alternative."""
+
+    def test_the_same_batch_offers_the_same_modes_every_time(self):
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            batch = [self._story(root, 1, "src/a.py", "tests/test_a.py"),
+                     self._story(root, 2, "src/b.py", "tests/test_b.py")]
+            a = s.delivery_mode_offer(root, batch)
+            b = s.delivery_mode_offer(root, batch)
+            self.assertEqual(a, b)
+
+    def test_the_plan_states_the_mode_and_the_reason_for_the_alternative(self):
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            batch = [self._story(root, 1, "src/a.py", "tests/test_a.py"),
+                     self._story(root, 2, "src/b.py", "tests/test_b.py")]
+            offer = s.delivery_mode_offer(root, batch)
+            # both modes named, and the reason states the alternative is on the table
+            self.assertIn("SEQUENTIAL", offer["reason"])
+            self.assertIn("PARALLEL", offer["reason"])
+            self.assertTrue(offer["reason"])
+
+
 if __name__ == "__main__":
     unittest.main()

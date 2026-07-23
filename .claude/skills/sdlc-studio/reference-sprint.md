@@ -409,6 +409,13 @@ that is declared Large, or touches five or more files, and that no story yet cit
 census read-only - ungroomed units, shared-file clusters, decomposition candidates - so a
 backlog can be groomed against exactly what the gate reads. It never blocks and never writes.
 
+**Delivery mode - sequential or parallel.** Every plan states whether the batch may be built in
+parallel worktrees, or must go sequentially, and why. Parallel is offered only when the batch
+partitions into two or more file-disjoint groups; a one-unit batch, an all-coupled batch, or a
+unit with no declared `Affects` is delivered sequentially. Test files count as coupling (a shared
+test module conflicts on merge exactly as a shared source module does). See
+[reference-delivery.md](reference-delivery.md) for the full contract.
+
 ## Authoring mode - greenfield, from a PRD
 
 The batch source can be a **PRD** instead of existing units: `sprint <prd.md>

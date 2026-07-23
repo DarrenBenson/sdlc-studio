@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 4 |
+| Open | 5 |
 | In Progress | 0 |
 | Fixed | 184 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **270** |
+| **Total** | **271** |
 
 ## All Bugs
 
@@ -237,6 +237,7 @@
 | [BG0268](BG0268-sprint-plan-leaves-a-stale-sprint-plan-json.md) | sprint plan leaves a stale sprint-plan.json and forecast record when a concurrent writer opens a run between the pre-check and open_run | Open | Low | 2026-07-23 | 2026-07-23 |
 | [BG0269](BG0269-the-scrub-site-sweep-s-worktrees-exclusion-matches.md) | The scrub-site sweep's worktrees exclusion matches any path component named worktrees, so it skips the ENTIRE tree when run from inside a worktree | Open | Medium | 2026-07-23 | 2026-07-23 |
 | [BG0270](BG0270-the-goal-review-gate-refuses-a-plan-when.md) | The goal-review gate refuses a plan when a seat says NOT ONE INCREMENT, conflating a truthful themed-batch observation with a blocking objection | Open | Medium | 2026-07-23 | 2026-07-23 |
+| [BG0271](BG0271-the-site-sweep-test-is-unrunnable-inside-a.md) | the site-sweep test is unrunnable inside a git worktree: an ancestor 'worktrees' path component makes SKIP_DIRS match every file, so sites={} and the pre-commit gate must be bypassed with --no-verify on parallel-worktree builds | Open | -- | 2026-07-23 | 2026-07-23 |
 
 ## Archived Releases
 

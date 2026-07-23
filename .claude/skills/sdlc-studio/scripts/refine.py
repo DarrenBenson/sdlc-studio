@@ -423,22 +423,27 @@ def _require_or_warn_affects(repo_root: Path | str, title: str, request_id: str)
 
 def _resolve_and_require_affects(repo_root: Path | str, request_id: str, parent_affects: str,
                                  stories: list[tuple[str, int, str | None]]
-                                 ) -> list[tuple[str, int, str | None]]:
+                                 ) -> tuple[list[tuple[str, int, str | None]], list[str]]:
     """Resolve every story's Affects against the parent BEFORE anything is minted (refine mints
     under one rollback guard, so a bad or absent Affects in the last story must refuse before the
     first write). Returns the breakdown with each story's Affects filled in - explicit, inherited
-    or seeded - so a minted story is plannable. A story left `absent` refuses (or, opted out,
-    warns) via `_require_or_warn_affects`; a seeded one notes the confirmation it owes."""
+    or seeded - so a minted story is plannable, plus the seeded-confirmation NOTES the caller owes
+    the operator. A story left `absent` refuses (or, opted out, warns) via `_require_or_warn_affects`.
+
+    The notes are RETURNED, not printed: this is a library function, and a green test suite that
+    calls it must stay silent (a note printed under 2000 passing tests trains everyone to skim
+    past diagnostics). The CLI layer (`cmd_apply` / `cmd_add`) prints them for the operator."""
     resolved: list[tuple[str, int, str | None]] = []
+    notes: list[str] = []
     for title, points, affects in stories:
         value, mode = resolve_story_affects(request_id, parent_affects, affects)
         if mode == "absent":
             _require_or_warn_affects(repo_root, title, request_id)   # refuse, or warn+mint lenient
         elif mode == "seeded":
-            print(f"note: story {title!r} was given no Affects, so it is SEEDED from "
-                  f"{request_id} ({value}) - confirm or narrow it while grooming.", file=sys.stderr)
+            notes.append(f"note: story {title!r} was given no Affects, so it is SEEDED from "
+                         f"{request_id} ({value}) - confirm or narrow it while grooming.")
         resolved.append((title, points, value))
-    return resolved
+    return resolved, notes
 
 
 # The status a request moves to once it is decomposed and being delivered via its children. It
@@ -502,7 +507,7 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
     # story that has none and nothing to seed from - all BEFORE anything is minted, so a refined
     # story is plannable the moment it exists (US0410) and refine never half-decomposes. Under the
     # recorded opt-out (`sprint.breakdown: judgement`) an absent Affects warns rather than refuses.
-    stories = _resolve_and_require_affects(root, request_id, _parent_affects(rpath), stories)
+    stories, seeded_notes = _resolve_and_require_affects(root, request_id, _parent_affects(rpath), stories)
     for title, _, affects in stories:
         # A declared `Affects` that resolves to nothing stops the WHOLE decomposition here,
         # before any epic or story is minted - refine mints under one rollback guard, so a bad
@@ -525,7 +530,8 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
     if dry_run:
         return {"request": rid, "epic": into_epic or "(dry-run)", "epic_size": _tshirt_for(total),
                 "stories": [t for t, _, _ in stories], "points": total,
-                "open_questions": open_questions, "consult": amigo_consult, "dry_run": True}
+                "open_questions": open_questions, "consult": amigo_consult, "dry_run": True,
+                "seeded_notes": seeded_notes}
 
     seed_criteria = (_request_criteria(rpath.read_text(encoding="utf-8"))
                      if seed_acs else None)
@@ -560,7 +566,7 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
     return {"request": rid, "epic": epic_id, "epic_size": _tshirt_for(total),
             "stories": story_ids, "points": total, "status": moved_to,
             "open_questions": open_questions, "consult": amigo_consult,
-            "dry_run": False}
+            "dry_run": False, "seeded_notes": seeded_notes}
 
 
 def refine_add(repo_root: Path | str, request_id: str, epic_title: str,
@@ -591,7 +597,7 @@ def refine_add(repo_root: Path | str, request_id: str, epic_title: str,
     # Same Affects-at-refine rule as `apply` (US0410): resolve each added story's Affects against
     # the parent and refuse one with none and nothing to seed from, before the further epic and its
     # stories are minted, not after.
-    stories = _resolve_and_require_affects(root, request_id, _parent_affects(rpath), stories)
+    stories, seeded_notes = _resolve_and_require_affects(root, request_id, _parent_affects(rpath), stories)
     for title, _, affects in stories:
         # Same up-front resolvable-Affects refusal as `apply`: a bad path in any added story
         # aborts before the further epic and its stories are minted, not after.
@@ -602,12 +608,13 @@ def refine_add(repo_root: Path | str, request_id: str, epic_title: str,
     if dry_run:
         return {"request": rid, "epic": "(dry-run)", "epic_size": _tshirt_for(total),
                 "stories": [t for t, _, _ in stories], "points": total,
-                "existing_epics": existing, "dry_run": True}
+                "existing_epics": existing, "dry_run": True, "seeded_notes": seeded_notes}
     epic_id, story_ids = _decompose(root, rid, rpath, epic_title, stories, total,
                                     existing_children=existing)
     return {"request": rid, "epic": epic_id, "epic_size": _tshirt_for(total),
             "stories": story_ids, "points": total, "existing_epics": existing,
-            "all_epics": [*existing, epic_id], "dry_run": False}
+            "all_epics": [*existing, epic_id], "dry_run": False,
+            "seeded_notes": seeded_notes}
 
 
 def _section(text: str, heading: str) -> str:
@@ -705,6 +712,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
     if args.format == "json":
         print(json.dumps(result, indent=2))
         return 0
+    for note in result.get("seeded_notes") or []:   # the confirmation each seeded story owes
+        print(note, file=sys.stderr)
     verb = "would refine" if result["dry_run"] else "refined"
     print(f"{verb} {result['request']} -> {result['epic']} ({result['epic_size']}, "
           f"{result['points']} pts) with {len(result['stories'])} story(ies): "
@@ -734,6 +743,8 @@ def cmd_add(args: argparse.Namespace) -> int:
     if args.format == "json":
         print(json.dumps(result, indent=2))
         return 0
+    for note in result.get("seeded_notes") or []:   # the confirmation each seeded story owes
+        print(note, file=sys.stderr)
     verb = "would add" if result["dry_run"] else "added"
     print(f"{verb} {result['epic']} ({result['epic_size']}, {result['points']} pts, "
           f"{len(result['stories'])} story(ies): {', '.join(result['stories'])}) to "
