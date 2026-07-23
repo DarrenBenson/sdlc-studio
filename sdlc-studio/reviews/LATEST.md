@@ -1,59 +1,63 @@
 # Reviews - LATEST (anchor)
 
-> **RUN-01KY5Y3W delivered all 43 units to Review.** Both closing adversarial waves APPROVED,
-> no MAJOR. RETRO0068 recorded. **Sign-off is owed and is the operator's** - the two-role gate
-> holds Done. Not yet closed at the close command until sign-off lands.
+> **RUN-01KY7W1F (Sprint 1 of the three-sprint run) delivered all 19 units to Review.** The
+> independent 3-reviewer adversarial panel found 7 defects (1 MAJOR), all fixed before sign-off;
+> goal-verdict = ACHIEVED. RETRO0069 recorded. **Sign-off is owed and is the operator's** - the
+> two-role gate (`review.two_role_after: 192`) holds Done. Not closed at the close command until
+> sign-off lands.
 
 ## Where the pipeline is (2026-07-23)
 
-The batch the design rung (RUN-01KY5EJX) groomed is BUILT: ten epics and thirteen bugs, every
-story at Review, every bug Fixed. The counterfactual bar is met and measured both ways - the
-story ACs read pass=0 fail=91 at grooming and pass=97 fail=0 manual=3 after delivery.
+Sprint 1 of a planned three-sprint run (~60 pts each) is BUILT and REVIEWED: 8 sprint-engine
+epics, 19 stories, every story at Review, every epic In Progress pending sign-off. Goal ACHIEVED.
 
-Goal: *all 43 units reach Review with every acceptance criterion proven by a test that fails
-without the code it guards, and every guard this batch ships is ENABLED in this project's own
-config - so nothing here can be delivered inert.*
+Sprint Goal: *stop eight sprint-engine tools being hand-driven - refine mints a plannable unit,
+the seat brief and goal review become reproducible and amendable, the forecast prices the rung,
+the delivery mode is a recorded choice, an artefact title has a deterministic correction, prose
+reaches every creation script without a shell, and the plan sees built-and-committed work - each
+independently verified, so sprints 2 and 3 run on instruments they can trust.*
 
 ## What shipped
 
-- **The review-loop guards this whole engagement was about:** the repair-plan gate (EP0106),
-  a guard's message derived from the guard (EP0107), the reviewer brief's three practices
-  (EP0108), claim inventory first (EP0109), carry-forward review policy (EP0113).
-- **Mint and measurement hygiene:** Affects validated at mint (EP0110), one run slot (EP0111),
-  CHANGELOG structure (EP0112), the forecast that prices the sprint not the build (EP0114), a
-  process audit lens (EP0115), and BG0256-BG0265.
+- **EP0130** - `sprint plan` flags built-not-closed and excludes it from the build forecast.
+- **EP0151** - the forecast prices the rung: a design run reads UNMEASURED, not the build rate.
+- **EP0150** - atomic three-surface artefact retitle (ULID-safe after review).
+- **EP0155** - refine mints a plannable, ungroomed-marked unit (Affects required or inherited).
+- **EP0154** - `sprint plan` offers sequential/parallel delivery; test files count as coupling.
+- **EP0146** - shell-safe `--fields-file` for critic/close_owed/sprint prose + hazard reporting.
+- **EP0152** - goal review distinguishes an amendment (carry-forward) from a material change.
+- **EP0153** - a deterministic seat brief, recorded with the verdicts; fields-file seats.
 
 ## How it was delivered
 
-Instrumentation first (BG0265, BG0256), then EP0106 and EP0113 by hand, then **nine worktree
-agents across two waves** delivered the file-disjoint clusters in parallel. The coupled core
-(critic.py, sprint.py hubs) was serial. One merge conflict, from excluding test files from the
-coupling analysis - now CR0411's AC3.
+The batch is sprint.py-coupled, so the core was built serially; two file-disjoint clusters
+(EP0155 refine, EP0150 retitle) ran as parallel worktree agents - exactly the sequential/parallel
+split EP0154 itself now detects. Each epic committed as a green unit through the full gate.
 
 ## The closing review
 
-Two independent adversarial waves, both APPROVE, no MAJOR. They verified the four-feature-per-
-file compositions (critic.py, sprint.py) compose without collision, mutation-attacked the
-guards themselves, and confirmed the ACs bind the lines they claim to guard rather than being
-change-detectors. Three MINORs filed: BG0267, BG0268, BG0269. The contrast with the design
-rung's four rejections is the run's headline: mutation-proving at build time front-loads the
-rigour rejection would otherwise discover.
+Three fresh-context adversarial reviewers over disjoint slices of the ~2137-line engine diff.
+7 defects found: 1 MAJOR (the design-rung forecast RELABELLED the marginal UNMEASURED but still
+priced it at the build rate - a selection-bias hole, the test asserted the label not the value),
+2 MEDIUM (retitle H1 missed ULID ids; refine's ungroomed marker failed MD022), 1 MEDIUM (an
+amendment naming a requesting seat that never reviewed the prior goal), 3 LOW. All 7 fixed with
+value-asserting tests. Sprint-review coverage recorded APPROVE (reviewer != author).
 
 ## Evidence
 
-4099 skill tests + 312 tool tests green on the composed tree. Drift 0, floor 0, gate green.
-~90 mutants across the batch, all killed or recorded equivalent with a reason.
+729 affected-suite tests green after the fixes; full gate green on every commit; drift 0. The
+engine dogfooded itself: the mint-time Affects gate, the engagement-floor Refs guard, and the
+noise ratchet (which caught 69 leaks two `--no-verify` merges had smuggled onto main) all fired.
 
 ## Next steps
 
-- **Sign-off is owed and is the operator's.** `sprint close --retro RETRO0068 --apply-signoff
+- **Sign-off is owed and is the operator's.** `sprint close --retro RETRO0069 --apply-signoff
   --principal "..."`. RFC0051 records why an agent cannot honestly supply it.
-- Follow-ups on the backlog: BG0267-BG0269, and CR0411 (the delivery-mode prompt).
-- **CR0319**, the 5.0.0 release cut, is now reachable: the batch it waited on (D0057) is
-  delivered, pending sign-off.
+- **Sprints 2 and 3** (~60 pts each) remain in the three-sprint run.
+- Follow-ups on the backlog: BG0271 (gate unrunnable in a worktree), BG0272-0274 (review findings).
 
 ## Lessons
 
-Count test files as coupling before fanning out. Mutation-prove at build time and the review
-converges. A guard that forces --no-verify trains the bypass it exists to prevent. Offer a
-parallel fan-out only when a real file-disjoint decomposition exists.
+Assert the value, not the label - a test that checks a tool named its state does not prove it
+reached it (the MAJOR). A `--no-verify` in one clone becomes another's red gate. A library
+function that prints leaks into every test that calls it - return the notes, print at the CLI.
