@@ -584,6 +584,14 @@ to go unattended. The appetite is that ceiling (Shape Up's fixed timebox: appeti
   measured enough of its own units the marginal rate falls back to a seed, and the plan says which
   it used. **Read the velocity history the plan prints** - `retro.py velocity` - to see the rate
   the next forecast will use and how past sprints actually landed against it.
+- **The `--goal` rungs cost differently, and only the build (`done`) rung carries a measured
+  rate.** A `design`, `plan` or `triage` run does not build the units it grooms, so its
+  per-point cost is not the build's. The forecast NAMES the rung it prices and reads UNMEASURED
+  for the marginal term on any rung other than `done`, rather than borrowing the build rate - a
+  design run that writes no code is not priced as a build. On the close side, a non-`done` rung
+  records its token actual but leaves tokens-per-point BLANK: a design rung terminates few units,
+  so dividing the whole-sprint tokens by those few points is the magnitude-wrong figure the file
+  the planner re-measures from must never carry.
 
 ## Rolling multi-sprint policy {#rolling}
 

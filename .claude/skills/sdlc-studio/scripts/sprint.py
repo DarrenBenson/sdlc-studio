@@ -196,6 +196,11 @@ RATE_VELOCITY = "velocity-record"
 RATE_EVIDENCE = "measured"
 #: No rate of this project's own: the shipped seed, quoted as a seed and never as a calibration.
 RATE_SEED = "seed"
+#: A rung other than `done` (design/plan/triage) has no per-rung rate measured on
+#: this project, so its marginal term reads UNMEASURED rather than borrowing the build
+#: (`done`) rate - a design run that writes no code must not be priced as a build
+#: The build rung is unaffected.
+RATE_UNMEASURED_RUNG = "unmeasured-rung"
 
 
 def _velocity_rate(repo_root: Path | str) -> dict:
@@ -1177,7 +1182,7 @@ def _fixed_term(repo_root: Path | str) -> dict:
             "reason": fit.get("reason") or ""}
 
 
-def _token_forecast(root: Path, batch: list[dict]) -> dict:
+def _token_forecast(root: Path, batch: list[dict], goal: str = "done") -> dict:
     """The batch's token cost: a FIXED per-sprint term plus SUM OF THE POINTS x a marginal rate.
 
     TWO TERMS, carried and shown separately. The per-point (marginal) term prices the BUILD, and
@@ -1221,6 +1226,16 @@ def _token_forecast(root: Path, batch: list[dict]) -> dict:
         rate_source = rate_info["source"]
         rate_basis = rate_info["basis"]
         fixed_applied = 0
+    # A rung other than `done` has no measured per-point rate on this project, so the marginal
+    # term reads UNMEASURED rather than borrowing the build rate. The build
+    # rung keeps whatever rate the fit/seed above resolved.
+    rung = (goal or "done")
+    rung_unmeasured = rung != "done"
+    if rung_unmeasured:
+        rate_source = RATE_UNMEASURED_RUNG
+        rate_basis = (f"the `{rung}` rung has no measured per-point rate on this project; the "
+                      f"marginal term reads UNMEASURED rather than borrowing the build (`done`) "
+                      f"rate, so a run that is not a build is not priced as one")
     per_unit: dict[str, int] = {}
     units: dict[str, dict] = {}
     unpriced: list[str] = []
@@ -1253,7 +1268,8 @@ def _token_forecast(root: Path, batch: list[dict]) -> dict:
             "fixed_sprints": fixed_info["n"], "fixed_min": fixed_info["min_apply"],
             "fixed_min_measure": fixed_info["min_measure"],
             "fixed_unmeasured": fixed_info["unmeasured"], "fixed_basis": fixed_info["reason"],
-            "scope": FORECAST_SCOPE, "excludes": list(FORECAST_EXCLUDES),
+            "rung": rung, "rung_unmeasured": rung_unmeasured,
+        "scope": FORECAST_SCOPE, "excludes": list(FORECAST_EXCLUDES),
             "whole_sprint_excess": whole_sprint_excess(root),
             "unpriced": unpriced, "history": batch_history(root),
             "constants": forecast_constants(root),
@@ -1909,7 +1925,7 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
                order: str = "priority", skip_personas: bool = False,
                epics: set[str] | None = None, queries: list[tuple[str, str]] | None = None,
                worklist: str | None = None, appetite_minutes: float | None = None,
-               appetite_units: int | None = None) -> dict:
+               appetite_units: int | None = None, goal: str = "done") -> dict:
     """The triage plan: the ordered batch, a count, and (for ordered modes) the dependency
     WAVES - the parallelisable levels operators otherwise hand-derive. The batch source is
     a single kind+status, composed `queries`, or a `worklist` file (ids one per line).
@@ -1940,7 +1956,7 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         # whether ANY in-batch dependency edge was declared - a flat single wave with no
         # edges is parallel because no one declared a `Depends on:`, not because none exist.
         deps_declared = any(deps[k] & set(deps) for k in deps)
-    forecast = _token_forecast(root, batch) if batch else None
+    forecast = _token_forecast(root, batch, goal=goal) if batch else None
     appetite = resolve_appetite(root, appetite_minutes, appetite_units)
     return {
         "generated_at": sdlc_md.now_iso8601(),
@@ -3958,7 +3974,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
     if rc is not None:
         return rc
     try:
-        data = build_plan(args.root, order=args.order,
+        data = build_plan(args.root, order=args.order, goal=getattr(args, 'goal', None) or 'done',
                           skip_personas=getattr(args, "skip_personas", False), epics=epics,
                           queries=queries or None, worklist=worklist,
                           appetite_minutes=getattr(args, "appetite_minutes", None),
@@ -4286,7 +4302,7 @@ def _regenerate_plan(root, policy: dict) -> dict:
     queries = [(q["kind"], q["status"]) for q in policy.get("queries") or []]
     epics = set(policy["epics"]) if policy.get("epics") else None
     cap = policy.get("capacity") or {}
-    return build_plan(root, order=policy.get("order", "priority"),
+    return build_plan(root, order=policy.get("order", "priority"), goal=policy.get("goal") or "done",
                       skip_personas=policy.get("skip_personas", False), epics=epics,
                       queries=queries or None,
                       appetite_minutes=cap.get("minutes") or None,

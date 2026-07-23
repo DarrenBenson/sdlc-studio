@@ -1,6 +1,7 @@
 # US0401: a non-done close records tokens with the tokens-per-point blank, and reference-sprint.md notes the rungs differ
 
 > **Status:** Draft
+> **Verification depth:** functional - node-addressed tests in test_forecast_rung/test_nondone_close green; EP0151 mutation-proven (4 mutants killed across the rung label, unmeasured-rung rate, and the non-done velocity blank)
 > **Delivers:** CR0407
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

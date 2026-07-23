@@ -649,6 +649,15 @@ def _elapsed_hours(root, unit_ids) -> tuple[float | None, str | None]:
     return (hours, "run-state") if hours else (None, None)
 
 
+def _run_rung(root) -> str:
+    """The rung the current run was driven to (`goal` on the run state), or `done` when unknown.
+    A run with no recorded rung is treated as a build so the honest build case is never blanked."""
+    try:
+        return run_state.read(root).get("goal") or "done"
+    except Exception:  # noqa: BLE001 - the rate write must never die on a missing run state
+        return "done"
+
+
 def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
              elapsed_hours: float | None = None) -> dict:
     """Estimate vs actual for every unit in the retro's batch - IN POINTS, and in tokens.
@@ -888,7 +897,14 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
             # "no --tokens" (preserve what is recorded) and "--tokens 0" (clear it).
             "sprint_tokens_supplied": sprint_tokens_supplied,
             "delivered_points": delivered_points,
-            "sprint_tokens_per_point": _rate(sprint_tokens, delivered_points) if sprint_tokens else None,
+            # US0401 / CR0407: a run driven to a rung OTHER than `done` (a design/plan run)
+            # records its token actual but leaves the tokens-per-point BLANK - a non-build rung
+            # terminates few units, so tokens/terminal-points is the 834,008/pt garbage the
+            # design rung once published into the file the planner re-measures from. The rate is
+            # a build-rung measurement; only the `done` rung earns one.
+            "rung": _run_rung(root),
+            "sprint_tokens_per_point": (_rate(sprint_tokens, delivered_points)
+                                        if sprint_tokens and _run_rung(root) == "done" else None),
             # Velocity: PRIMARY = points/elapsed-hour (ceremony included, the planning
             # number); SECONDARY = points/worker-hour (runner time, tool-tuning). Both descriptive,
             # never a target, fed to no gate. None reads as UNMEASURED (interactive sprint).

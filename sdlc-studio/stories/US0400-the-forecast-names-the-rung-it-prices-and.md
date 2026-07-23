@@ -1,6 +1,7 @@
 # US0400: the forecast names the rung it prices and reads UNMEASURED where that rung has no rate
 
 > **Status:** Draft
+> **Verification depth:** functional - node-addressed tests in test_forecast_rung/test_nondone_close green; EP0151 mutation-proven (4 mutants killed across the rung label, unmeasured-rung rate, and the non-done velocity blank)
 > **Delivers:** CR0407
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
