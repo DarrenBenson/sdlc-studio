@@ -1,7 +1,7 @@
 # RFC-0036: Running several sprints unattended: a rolling policy, not a queue of frozen plans
 
-> **Status:** Draft
-> **Triage:** DELIVERED - D1 rolling policy shipped as CR0320/EP0076, D2 lane partitioning is the by-design Deferred CR0321; nothing left to explore, Accepted and closed
+> **Status:** Accepted
+> **Triage:** DELIVERED/Accepted at operator instruction 2026-07-23: both decisions Resolved - D1 rolling policy shipped as CR0320/EP0076, D2 decided as a separate follow-up now refined as CR0321/EP0118. The design exploration is complete; EP0118 tracks the residual lane-partitioning implementation. Accepted forced past the derive-from-children rule, which ties an RFC's design-acceptance to its implementation shipping and conflates the two; the operator authorised the close
 > **Decomposed-into:** CR0320, CR0321
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/loop_guard.py
 > **Date:** 2026-07-14

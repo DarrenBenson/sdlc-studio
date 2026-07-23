@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 4 |
+| Draft | 3 |
 | In Review | 0 |
-| Accepted | 45 |
+| Accepted | 46 |
 | Superseded | 1 |
 | Withdrawn | 3 |
 | **Total** | **53** |
@@ -52,7 +52,7 @@
 | [RFC-0033](RFC0033-one-weakness-hunt-one-name-reconcile-review-generate.md) | One weakness-hunt, one name: reconcile review generate, the adversarial audit, and the audit collision | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0034](RFC0034-sprint-sizing-velocity-and-estimate-calibration-close-the.md) | Sprint sizing, velocity and estimate calibration: close the estimate -> deliver -> recalibrate loop (D1 and D5 superseded by RFC-0038 - points, not tokens, are canonical; D2-D4 remain live) | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0035](RFC0035-the-sprint-report-what-a-sprint-delivered-what.md) | The sprint report: what a sprint delivered, what it cost, and whether the model choice was right | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
-| [RFC-0036](RFC0036-running-several-sprints-unattended-a-rolling-policy-not.md) | Running several sprints unattended: a rolling policy, not a queue of frozen plans | Medium | Draft | sdlc-studio | 2026-07-14 | -- |
+| [RFC-0036](RFC0036-running-several-sprints-unattended-a-rolling-policy-not.md) | Running several sprints unattended: a rolling policy, not a queue of frozen plans | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0037](RFC0037-backlog-triage-as-a-first-class-ceremony-keep.md) | Backlog triage as a first-class ceremony: keep the backlog clean and actionable BEFORE planning | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0038](RFC0038-simplify-to-fibonacci-story-points-and-real-wsjf.md) | Simplify to Fibonacci story points and real WSJF, and test it by blind re-estimation of past sprints | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0039](RFC0039-the-discovery-track-issue-refine-and-triage-a.md) | The discovery track: Issue, refine and triage - a discovery backlog feeding delivery, worked in parallel | P2 | Accepted | sdlc-studio | 2026-07-15 | -- |
