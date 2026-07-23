@@ -38,8 +38,17 @@
 - **Then** it says so plainly and points at the close path instead of a build
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_built_not_closed.py::BuiltNotClosed::test_all_built_batch_points_at_close
 
+## Verification depth
+
+All three ACs are node-addressed pytest verifiers over `test_built_not_closed.py` and were red
+before the code (the predicate, the exclusion and the all-built flag did not exist). Mutation-proven
+by hand (`__pycache__` purged, `python3 -B`): dropping the failed/stale guard, loosening the
+all-built flag to fire on a mixed batch, and removing the `continue` that skips pricing were each
+caught by a node.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-23 | sdlc-studio | Built: predicate + forecast exclusion + all-built close-pointer, tested, mutation-proven |

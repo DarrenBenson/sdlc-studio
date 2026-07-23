@@ -1182,6 +1182,38 @@ def _fixed_term(repo_root: Path | str) -> dict:
             "reason": fit.get("reason") or ""}
 
 
+#: Statuses at which a unit is CLOSED, so it cannot be "built but not closed". Mirrors
+#: integrity.TERMINAL, inlined so the forecast carries no heavy import.
+_CLOSED_STATUSES = {
+    "Done", "Complete", "Superseded", "Won't Implement", "Won't Fix",
+    "Deferred", "Rejected", "Withdrawn", "Closed", "Fixed", "Verified",
+}
+
+
+def _verifiers_all_green(root: Path, uid: str) -> bool:
+    """True if the unit's executable ACs all pass in the verify-report: verified > 0, no failures,
+    no stale. The deterministic 'already built' signal. Mirrors the audit close-candidate
+    predicate, kept local so the forecast has no audit import. A manual-only / AC-less unit
+    records verified == 0 and never matches."""
+    report = sdlc_md.read_json(root / "sdlc-studio" / ".local" / "verify-report.json", {})
+    stories = report.get("stories", {})
+    items = stories.items() if isinstance(stories, dict) else []
+    for stem, entry in items:
+        if sdlc_md.norm_id(stem.split("-")[0]) == sdlc_md.norm_id(uid):
+            return entry.get("verified", 0) > 0 and not entry.get("failed", 0) and not entry.get("stale", 0)
+    return False
+
+
+def _built_not_closed(root: Path, uid: str, text: str) -> bool:
+    """A non-terminal unit whose executable ACs ALL pass is BUILT but not CLOSED: it should be
+    pointed at the close path, not priced as new work in the build forecast. An unverified,
+    failing or stale unit is ordinary unbuilt work and is priced normally."""
+    status = (sdlc_md.extract_field(text, "Status") or "").strip()
+    if status in _CLOSED_STATUSES:
+        return False
+    return _verifiers_all_green(root, uid)
+
+
 def _token_forecast(root: Path, batch: list[dict], goal: str = "done") -> dict:
     """The batch's token cost: a FIXED per-sprint term plus SUM OF THE POINTS x a marginal rate.
 
@@ -1239,11 +1271,17 @@ def _token_forecast(root: Path, batch: list[dict], goal: str = "done") -> dict:
     per_unit: dict[str, int] = {}
     units: dict[str, dict] = {}
     unpriced: list[str] = []
+    built_not_closed: list[str] = []
     total_points = 0
     gate = effort_gate(root)   # the compulsion in force for this whole plan
     for it in batch:
         text = Path(it["path"]).read_text(encoding="utf-8")
         uid = sdlc_md.norm_id(it["id"])
+        if _built_not_closed(root, uid, text):
+            # Green verifiers, not yet closed: a close-candidate, not work to build. Kept out of
+            # the total so a delivered-but-open unit does not inflate the build forecast.
+            built_not_closed.append(uid)
+            continue
         points = it.get("points")
         if points is None:  # priority/manual order never stamped one - read it here
             points = sdlc_md.read_points(text)
@@ -1269,6 +1307,9 @@ def _token_forecast(root: Path, batch: list[dict], goal: str = "done") -> dict:
             "fixed_min_measure": fixed_info["min_measure"],
             "fixed_unmeasured": fixed_info["unmeasured"], "fixed_basis": fixed_info["reason"],
             "rung": rung, "rung_unmeasured": rung_unmeasured,
+            # Units already built (green verifiers) but not yet closed: a close, not a build.
+            "built_not_closed": built_not_closed,
+            "all_built": bool(built_not_closed and not per_unit and not unpriced),
         "scope": FORECAST_SCOPE, "excludes": list(FORECAST_EXCLUDES),
             "whole_sprint_excess": whole_sprint_excess(root),
             "unpriced": unpriced, "history": batch_history(root),
@@ -2622,8 +2663,23 @@ def _render_token_forecast(data: dict) -> None:
     ITS RATE AND WHERE THAT RATE CAME FROM - a bare number would read as a fact, when it is a
     measurement multiplied by an estimate."""
     tf = data.get("token_forecast")
-    if not tf or not tf.get("tokens"):
+    if not tf:
         return
+    built = tf.get("built_not_closed") or []
+    if tf.get("all_built"):
+        # AC3: every unit is a close-candidate. Say so plainly and point at the close path
+        # instead of pricing a build that has already happened.
+        print(f"  every unit in this batch is BUILT-NOT-CLOSED ({', '.join(built)}): its "
+              f"executable ACs already pass. This is a CLOSE, not a build - run `sprint close` "
+              f"(or transition each unit to Done), not a build plan.")
+        return
+    if not tf.get("tokens"):
+        return
+    if built:
+        # AC1: some units are already built; they are flagged and excluded from the build
+        # forecast so a delivered-but-open unit is not priced as new work.
+        print(f"  excluded from the build forecast (BUILT-NOT-CLOSED, close them): "
+              f"{', '.join(built)}")
     hist = tf.get("history") or []
     if hist:
         shown = hist[-4:]
