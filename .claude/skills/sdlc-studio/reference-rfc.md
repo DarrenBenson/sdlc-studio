@@ -113,6 +113,21 @@ Use when the Open Decisions are resolved.
 - **Withdrawn** – not pursued. Set status, record why in the Decision section.
 Update the index either way.
 
+## What `refine` produces {#refine-output}
+
+An RFC is a refinable request too: `refine apply` decomposes an RFC (or one of its
+spawned CRs) into an epic and stories. What it mints is a **plannable-but-ungroomed**
+unit. Plannable now: every minted story carries an `Affects`, so `sprint plan` can
+size it and check it for collisions - a story given none of its own is SEEDED from the
+request's `Affects` (marked for confirmation) when the request declares one, asks to
+inherit explicitly with `title|points|inherit`, or is refused when there is nothing to
+inherit and none supplied. Ungroomed still: its acceptance criteria are an explicit
+grooming placeholder, not authored content, and `conformance` counts the ungroomed
+ones so the debt is visible rather than met at plan time. Author each story's real ACs
+and `Verify` line while grooming. **Opt-out:** a project that records
+`sprint.breakdown: judgement` in `sdlc-studio/.config.yaml` warns about a story minted
+with no `Affects` instead of refusing it. See `reference-cr.md#refine-output`.
+
 ## Reconcile
 
 `reconcile --scope rfcs` (or a full reconcile) audits the RFC index against the

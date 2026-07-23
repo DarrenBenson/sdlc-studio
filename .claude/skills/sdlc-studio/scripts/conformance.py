@@ -61,6 +61,16 @@ def _real(value: str | None) -> bool:
     return re.sub(r"[\s.,;:!?*_`>~\-]+", "", residue) != ""
 
 
+def story_is_ungroomed(text: str) -> bool:
+    """True when a story's Acceptance Criteria are the refine grooming placeholder rather than
+    authored content (the marker `refine` writes in place of real ACs, `sdlc_md.UNGROOMED_AC_TOKEN`).
+
+    The count of these is what makes a refined backlog's outstanding grooming machine-visible: an
+    operator sees how much a batch still owes before planning it, instead of meeting a full-batch
+    refusal at plan time."""
+    return sdlc_md.UNGROOMED_AC_TOKEN in text
+
+
 def carry_forward_covers(root, review, findings) -> bool:
     """EP0113: under the carry-forward policy a sprint-level REJECT does not block the close,
     provided every finding is filed or explicitly waived. Returns True when the REJECT is
@@ -84,6 +94,11 @@ def _ac_signals(text: str) -> tuple[bool, bool, list[str]]:
     for line in text.splitlines():
         if line.startswith("## "):
             in_ac = "acceptance criteria" in line.lower()
+            continue
+        # The refine ungroomed-AC marker is an explicit placeholder, not authored content: it
+        # must not read as a specified criterion. Skip it, so an ungroomed refined story stays
+        # unspecified (and `story_is_ungroomed` counts it) rather than looking groomed.
+        if in_ac and sdlc_md.UNGROOMED_AC_TOKEN in line:
             continue
         hm = sdlc_md.AC_HEADING_RE.match(line)
         bm_ac = sdlc_md.AC_BULLET_RE.match(line)
@@ -286,6 +301,9 @@ def detect_conformance(repo_root: Path | str) -> dict:
             "stages": stages,
             "exempt": exempt,
             "conformant": conformant,
+            # Machine-visible grooming debt: a refined story whose ACs are still the placeholder
+            # marker, so an operator can count how much a refined backlog owes before planning it.
+            "ungroomed": story_is_ungroomed(text),
             "missing": missing,
             "missing_global": missing_global,
             "downgraded": dod_downgrades if status == "Done" else [],
@@ -300,6 +318,7 @@ def detect_conformance(repo_root: Path | str) -> dict:
     total = len(units)
     exempt_n = sum(1 for u in units if u["exempt"])
     nonconformant = sum(1 for u in units if not u["conformant"])
+    ungroomed_n = sum(1 for u in units if u["ungroomed"])
     return {
         "generated_at": sdlc_md.now_iso8601(),
         "units": units,
@@ -308,6 +327,9 @@ def detect_conformance(repo_root: Path | str) -> dict:
         "globals": globals_,
         "summary": {"total": total, "conformant": ok,
                     "nonconformant": nonconformant, "exempt": exempt_n,
+                    # The refined backlog's outstanding grooming, countable rather than met at
+                    # plan time: how many stories still carry the ungroomed-AC placeholder.
+                    "ungroomed": ungroomed_n,
                     "global_failures": len(globals_)},
     }
 
@@ -369,6 +391,9 @@ def cmd_check(args: argparse.Namespace) -> int:
         extra = f", {s['exempt']} exempt (pre-adoption)" if s.get("exempt") else ""
         print(f"conformance: {s['conformant']}/{s['total']} conformant, {s['nonconformant']} not{extra}"
               " (story-scoped: a bug/CR tranche relies on the critic + gate)")
+        if s.get("ungroomed"):
+            print(f"  {s['ungroomed']} story(ies) still carry the refine ungroomed-AC placeholder "
+                  "- groom them (author real ACs and a Verify line) before planning to Done")
         # Repo-wide failures first, once each, with the count of units they would otherwise
         # have been charged to - so the operator sees "one doc gap", not "118 broken units".
         for g in result.get("globals", []):

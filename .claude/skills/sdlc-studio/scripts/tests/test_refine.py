@@ -43,6 +43,12 @@ import loader  # noqa: E402 - the canonical way to import a script under test
 import workspace  # noqa: E402 - the dev-repo-only skip authority
 from lib import sdlc_md  # noqa: E402
 
+try:
+    import yaml as _yaml  # noqa: F401 - the recorded opt-out is unreadable without PyYAML
+    HAVE_YAML = True
+except ImportError:  # pragma: no cover
+    HAVE_YAML = False
+
 refine = loader.load_script("refine")
 
 _ATX_RE = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
@@ -87,11 +93,15 @@ def _write(path: Path, text: str) -> None:
 
 def _cr(root: Path, cid: str, criteria: list[str]) -> None:
     """A refinable CR carrying its own `- [ ]` acceptance criteria, so a multi-story
-    breakdown carries them to the epic (`_seed_epic_criteria`)."""
+    breakdown carries them to the epic (`_seed_epic_criteria`). It declares a resolvable
+    `Affects` (and drops the file on disk), so a story minted with no Affects of its own is
+    SEEDED from the request (US0410) rather than refused."""
     body = "".join(f"- [ ] {c}\n" for c in criteria)
+    (root / "src").mkdir(parents=True, exist_ok=True)
+    (root / "src" / f"{cid}.py").write_text("", encoding="utf-8")
     _write(root / "sdlc-studio" / "change-requests" / f"{cid}-x.md",
            f"# CR-{cid[2:]}: {cid}\n\n> **Status:** Approved\n> **Priority:** P1\n"
-           f"> **Type:** Improvement\n> **Size:** L\n\n## Summary\n\ns\n\n"
+           f"> **Type:** Improvement\n> **Size:** L\n> **Affects:** src/{cid}.py\n\n## Summary\n\ns\n\n"
            f"## Acceptance Criteria\n\n{body}\n## Impact\n\ni\n")
 
 
@@ -381,7 +391,7 @@ class AffectsValidatedAtMintTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _cr(root, "CR0001", ["the request is satisfied"])
-            (root / "src").mkdir()
+            (root / "src").mkdir(exist_ok=True)   # _cr already created src for its own Affects
             (root / "src" / "real.py").write_text("", encoding="utf-8")
             cr_before = (root / "sdlc-studio" / "change-requests"
                          / "CR0001-x.md").read_text(encoding="utf-8")
@@ -401,6 +411,104 @@ class AffectsValidatedAtMintTests(unittest.TestCase):
             self.assertEqual(minted, [])
             self.assertEqual((root / "sdlc-studio" / "change-requests"
                               / "CR0001-x.md").read_text(encoding="utf-8"), cr_before)
+
+
+def _cr_no_affects(root: Path, cid: str = "CR0001") -> None:
+    """A refinable CR that declares NO Affects - so a story minted with none of its own has
+    nothing to seed from, the case US0410 refuses (or, opted out, warns)."""
+    _write(root / "sdlc-studio" / "change-requests" / f"{cid}-x.md",
+           f"# CR-{cid[2:]}: {cid}\n\n> **Status:** Approved\n> **Priority:** P1\n"
+           f"> **Type:** Improvement\n> **Size:** L\n\n## Summary\n\ns\n\n## Impact\n\ni\n")
+
+
+class AffectsRequiredAtRefineTests(unittest.TestCase):
+    """US0410: refine requires OR inherits an Affects per story, so a minted story is plannable
+    the moment it exists rather than a grooming task that reads as ready work."""
+
+    def _stories(self, root: Path) -> list[Path]:
+        d = root / "sdlc-studio" / "stories"
+        return [p for p in d.glob("US*.md")] if d.exists() else []
+
+    def test_a_story_with_no_affects_is_refused_naming_the_fix(self) -> None:
+        # No Affects on the story AND none on the request to seed from: refused before any mint,
+        # naming the story and how to supply an Affects (the grooming-refusal idiom).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr_no_affects(root)
+            with self.assertRaises(ValueError) as cm:
+                refine.refine(root, "CR0001", "The epic", [("A story", 3, None)],
+                              skip_personas=True)
+            msg = str(cm.exception)
+            self.assertIn("A story", msg)          # names the offending story
+            self.assertIn("Affects", msg)          # ... and what is missing
+            self.assertIn("inherit", msg)          # ... and how to supply it
+            # nothing minted: no epic, no story, the CR stays undecomposed
+            self.assertEqual(self._stories(root), [])
+            self.assertFalse(any((root / "sdlc-studio" / "epics").glob("EP*.md"))
+                             if (root / "sdlc-studio" / "epics").exists() else False)
+            self.assertEqual(sdlc_md.decomposed_ids(
+                sdlc_md.find_by_id(root, "CR0001")[0].read_text(encoding="utf-8")), [])
+
+    def test_a_story_inherits_the_parent_affects_and_is_plannable(self) -> None:
+        # A request naming three files; a story asks to inherit them. The minted story carries the
+        # parent-derived Affects and the planner does not refuse it as lacking one.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for name in ("a.py", "b.py", "c.py"):
+                (root / "src").mkdir(parents=True, exist_ok=True)
+                (root / "src" / name).write_text("", encoding="utf-8")
+            _write(root / "sdlc-studio" / "change-requests" / "CR0001-x.md",
+                   "# CR-0001: X\n\n> **Status:** Approved\n> **Priority:** P1\n"
+                   "> **Type:** Improvement\n> **Size:** L\n"
+                   "> **Affects:** src/a.py, src/b.py, src/c.py\n\n## Summary\n\ns\n\n## Impact\n\ni\n")
+            res = refine.refine(root, "CR0001", "The epic", [("Index it", 3, "inherit")],
+                                skip_personas=True)
+            story = sdlc_md.find_by_id(root, res["stories"][0])[0]
+            body = story.read_text(encoding="utf-8")
+            self.assertEqual(sdlc_md.affects_files(body),
+                             ["src/a.py", "src/b.py", "src/c.py"])  # derived from the parent
+            # plannable: the planner's own breakdown does not report it ungroomed for Affects
+            sprint = loader.load_script("sprint")
+            bd = sprint.breakdown(root, [{"id": res["stories"][0], "type": "story",
+                                          "path": str(story)}], skip_personas=True)
+            self.assertEqual(bd["ungroomed"], [], "planner refused a story refine called plannable")
+
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed - the recorded opt-out is unreadable")
+    def test_the_opt_out_warns_instead_of_refusing(self) -> None:
+        # A project that records `sprint.breakdown: judgement` keeps the old lenient behaviour:
+        # a no-Affects story is minted with a warning rather than refused.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr_no_affects(root)
+            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "sprint:\n  breakdown: judgement\n", encoding="utf-8")
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                res = refine.refine(root, "CR0001", "The epic", [("A story", 3, None)],
+                                    skip_personas=True)
+            self.assertEqual(len(res["stories"]), 1)          # minted, not refused
+            self.assertTrue(self._stories(root))
+            self.assertIn("no Affects", err.getvalue())       # ... but never quietly
+
+
+class UngroomedMarkerTests(unittest.TestCase):
+    """US0411: a story refine mints without seeded criteria carries an explicit ungroomed
+    grooming-placeholder marker in its AC block, not a bare `{{placeholder}}` reading as content."""
+
+    def test_a_refined_story_carries_an_ungroomed_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # A multi-story breakdown seeds no story-level criteria (the epic carries them), so
+            # every minted story is ungroomed and takes the marker.
+            _cr(root, "CR0001", ["the request is satisfied"])
+            res = refine.refine(root, "CR0001", "The epic",
+                                [("A", 2, None), ("B", 3, None)], skip_personas=True)
+            for sid in res["stories"]:
+                body = sdlc_md.find_by_id(root, sid)[0].read_text(encoding="utf-8")
+                ac = body[body.index("## Acceptance Criteria"):]
+                self.assertIn(sdlc_md.UNGROOMED_AC_TOKEN, ac)   # the explicit marker
+                self.assertNotIn("{{", ac)                      # no bare placeholder as content
 
 
 if __name__ == "__main__":

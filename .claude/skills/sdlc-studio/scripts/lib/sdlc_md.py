@@ -59,6 +59,18 @@ VERIFIED_RE = re.compile(
     re.IGNORECASE,
 )
 
+# The marker `refine` writes into an ungroomed story's Acceptance Criteria section in place of a
+# bare {{placeholder}} scaffold. It is an explicit, machine-detectable statement that these ACs
+# are a grooming stub rather than authored content, so a reader tells a groomed story from an
+# ungroomed one at a glance and `conformance` counts the ungroomed ones by the token - the debt
+# is visible on the backlog instead of being met at plan time. Kept here (not in either script)
+# so the writer (`refine`) and the counter (`conformance`) read the ONE token and cannot drift.
+UNGROOMED_AC_TOKEN = "Ungroomed - acceptance criteria are a grooming placeholder"
+UNGROOMED_AC_MARKER = (
+    f"> **{UNGROOMED_AC_TOKEN}** - author each criterion and its Verify check against this "
+    "story's slice while grooming, before it is planned to Done."
+)
+
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 

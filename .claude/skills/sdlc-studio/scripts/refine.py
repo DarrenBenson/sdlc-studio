@@ -174,6 +174,23 @@ def _seed_acs(story_path: Path, criteria: list[str]) -> None:
     sdlc_md.atomic_write(story_path, new)
 
 
+def _mark_ungroomed(story_path: Path) -> None:
+    """Replace an ungroomed minted story's `{{placeholder}}` AC scaffold with the explicit
+    grooming-placeholder marker (`sdlc_md.UNGROOMED_AC_MARKER`).
+
+    A story refine mints without seeded criteria (a multi-story breakdown, or `--no-seed-acs`)
+    used to carry a bare `### AC1: {{define}}` scaffold that reads as thin authored content. The
+    marker states plainly that the ACs are a grooming stub, so a reader tells a groomed story from
+    an ungroomed one at a glance and `conformance` counts the ungroomed ones by the token."""
+    text = story_path.read_text(encoding="utf-8")
+    section = "## Acceptance Criteria\n\n" + sdlc_md.UNGROOMED_AC_MARKER + "\n"
+    # callable replacement: the marker is a constant, but the idiom guards against a story slug or
+    # title landing a regex metacharacter in the replacement text.
+    new = re.sub(r"## Acceptance Criteria\n.*?(?=## Revision History)", lambda m: section,
+                 text, count=1, flags=re.S)
+    sdlc_md.atomic_write(story_path, new)
+
+
 def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
                stories: list[tuple[str, int, str | None]], total: int,
                existing_children: list[str],
@@ -211,6 +228,11 @@ def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
             # onto story one read as authored while being wrong.
             if idx == 0 and seed_criteria and len(stories) == 1:
                 _seed_acs(Path(s["path"]), seed_criteria)
+            else:
+                # No story-level criteria were seeded (a multi-story breakdown, or no request
+                # criteria to carry): label the AC block an ungroomed grooming placeholder rather
+                # than leaving the bare `{{placeholder}}` scaffold reading as content.
+                _mark_ungroomed(Path(s["path"]))
         if seed_criteria and len(stories) > 1:
             _seed_epic_criteria(epic_path, seed_criteria, rid)
         _insert_after_status(epic_path, f"> **Parent:** {rid}")
@@ -291,6 +313,8 @@ def _decompose_into(repo_root, rid: str, rpath: Path, epic_id: str,
             # several cannot be told apart, so the shared epic carries them.
             if idx == 0 and seed_criteria and len(stories) == 1:
                 _seed_acs(Path(s["path"]), seed_criteria)
+            else:
+                _mark_ungroomed(Path(s["path"]))   # ungroomed placeholder, not bare `{{...}}`
         if seed_criteria and len(stories) > 1:
             _seed_epic_criteria(epic_path, seed_criteria, rid)
         # Back-link: the shared epic names THIS request as a parent too (it already names the one
@@ -315,7 +339,9 @@ def _decompose_into(repo_root, rid: str, rpath: Path, epic_id: str,
 def parse_story_spec(spec: str) -> tuple[str, int, str | None]:
     """A `--story` value: `title|points` or `title|points|affects`. Returns (title, points,
     affects|None). Points are validated against the Fibonacci scale here, before anything is
-    minted, so a bad breakdown fails loud and empty."""
+    minted, so a bad breakdown fails loud and empty. The affects field may be a path list, the
+    `inherit` keyword (take the parent request's Affects), or `inherit:paths` (a narrowed
+    subset) - `resolve_story_affects` reads those at refine time against the parent."""
     parts = [p.strip() for p in spec.split("|")]
     if len(parts) < 2 or not parts[0]:
         raise ValueError(f"story spec {spec!r} must be 'title|points' (optional '|affects')")
@@ -323,6 +349,96 @@ def parse_story_spec(spec: str) -> tuple[str, int, str | None]:
     points = sdlc_md.check_points(parts[1])          # raises on an off-scale value
     affects = parts[2] if len(parts) > 2 and parts[2] else None
     return title, points, affects
+
+
+# The keyword a story spec uses to take (and optionally narrow) the parent request's Affects,
+# instead of naming its own files: `title|points|inherit` or `title|points|inherit:a.py, b.py`.
+INHERIT_TOKEN = "inherit"
+
+
+def _parent_affects(rpath: Path) -> str:
+    """The raw `Affects` value declared on the request being refined, or '' when it declares
+    none. The footprint a story inherits or is seeded from."""
+    return (sdlc_md.extract_field(rpath.read_text(encoding="utf-8"), "Affects") or "").strip()
+
+
+def resolve_story_affects(request_id: str, parent_affects: str,
+                          affects: str | None) -> tuple[str | None, str]:
+    """Resolve one story's Affects at refine time, returning (value, mode).
+
+    - an explicit path list is used verbatim (`explicit`);
+    - the `inherit` keyword takes the parent request's Affects (`inherited`); `inherit:paths`
+      narrows it to the named subset. A story cannot inherit from a request that declares no
+      Affects - that is refused here, before anything is minted, naming the request;
+    - no Affects at all is SEEDED from the parent when it has one (`seeded`, marked for
+      confirmation - a plannable-but-provisional footprint, never a silent unplannable unit);
+    - no Affects and nothing to seed from is `absent` - the caller then refuses or, under the
+      recorded opt-out, warns and mints it lenient.
+
+    So a minted story is plannable the moment it exists (the story title's 'requires OR
+    inherits'), and the only unplannable outcome - `absent` - is one the caller decides on."""
+    if affects is None:
+        return (parent_affects, "seeded") if parent_affects else (None, "absent")
+    a = affects.strip()
+    if a == INHERIT_TOKEN or a.lower().startswith(INHERIT_TOKEN + ":"):
+        subset = a[len(INHERIT_TOKEN) + 1:].strip() if ":" in a else ""
+        if subset:
+            return subset, "inherited"
+        if parent_affects:
+            return parent_affects, "inherited"
+        raise ValueError(
+            f"a story asked to inherit an Affects, but {request_id} declares none to inherit - "
+            f"give the story its own `Affects`, or declare one on {request_id} first.")
+    return affects, "explicit"
+
+
+def _require_or_warn_affects(repo_root: Path | str, title: str, request_id: str) -> None:
+    """A story minted with no Affects and none to seed from is UNPLANNABLE: `sprint plan` refuses
+    it. Refuse it here, before anything is minted, in the grooming-refusal idiom - naming the
+    story and how to supply an Affects. Under the recorded opt-out (`sprint.breakdown: judgement`)
+    this warns and mints instead, so a project that wants the old lenient behaviour keeps it; the
+    escape is the planner's own, read from the same config key, and omission is not an escape."""
+    import sprint   # local: the writer reads the planner's opt-out, not its weight
+    if sprint.breakdown_mode(repo_root) == "judgement":
+        print(f"warning: story {title!r} is minted with no Affects and {request_id} declares none "
+              f"to seed from - written anyway, because this project records "
+              f"`sprint.breakdown: judgement`. `sprint plan` cannot size it or check it for "
+              f"collisions.", file=sys.stderr)
+        return
+    raise ValueError(
+        f"story {title!r} names no Affects and {request_id} declares none to seed from - refused. "
+        f"Nothing was minted.\n"
+        f"  Why: a story with points but no Affects is a false promise of readiness - `sprint "
+        f"plan` refuses it (it cannot size the work nor see two units colliding on one file), so "
+        f"a refined backlog that reads as ready is a set of grooming tasks nobody can plan.\n"
+        f"  Supply ONE of:\n"
+        f"    - the story's own files: `title|points|path/to/file.py, path/to/other.py`\n"
+        f"    - `title|points|inherit` to take {request_id}'s Affects (or `inherit:subset` to "
+        f"narrow it) - once {request_id} declares one\n"
+        f"    - declare an `Affects` on {request_id}, and a story left without its own is SEEDED "
+        f"from it (marked for confirmation while grooming).\n"
+        f"  Opt out ONLY as a recorded decision: set `sprint.breakdown: judgement` in "
+        f"sdlc-studio/.config.yaml and this becomes a warning.")
+
+
+def _resolve_and_require_affects(repo_root: Path | str, request_id: str, parent_affects: str,
+                                 stories: list[tuple[str, int, str | None]]
+                                 ) -> list[tuple[str, int, str | None]]:
+    """Resolve every story's Affects against the parent BEFORE anything is minted (refine mints
+    under one rollback guard, so a bad or absent Affects in the last story must refuse before the
+    first write). Returns the breakdown with each story's Affects filled in - explicit, inherited
+    or seeded - so a minted story is plannable. A story left `absent` refuses (or, opted out,
+    warns) via `_require_or_warn_affects`; a seeded one notes the confirmation it owes."""
+    resolved: list[tuple[str, int, str | None]] = []
+    for title, points, affects in stories:
+        value, mode = resolve_story_affects(request_id, parent_affects, affects)
+        if mode == "absent":
+            _require_or_warn_affects(repo_root, title, request_id)   # refuse, or warn+mint lenient
+        elif mode == "seeded":
+            print(f"note: story {title!r} was given no Affects, so it is SEEDED from "
+                  f"{request_id} ({value}) - confirm or narrow it while grooming.", file=sys.stderr)
+        resolved.append((title, points, value))
+    return resolved
 
 
 # The status a request moves to once it is decomposed and being delivered via its children. It
@@ -380,8 +496,14 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
         _validate_into_target(root, into_epic)   # refuse a bad target BEFORE anything is minted
     else:
         sdlc_md.require_single_line("epic title", epic_title)
-    for title, _, affects in stories:
+    for title, _, _ in stories:
         sdlc_md.require_single_line("story title", title)
+    # Resolve every story's Affects against the parent (explicit / inherit / seed) and refuse a
+    # story that has none and nothing to seed from - all BEFORE anything is minted, so a refined
+    # story is plannable the moment it exists (US0410) and refine never half-decomposes. Under the
+    # recorded opt-out (`sprint.breakdown: judgement`) an absent Affects warns rather than refuses.
+    stories = _resolve_and_require_affects(root, request_id, _parent_affects(rpath), stories)
+    for title, _, affects in stories:
         # A declared `Affects` that resolves to nothing stops the WHOLE decomposition here,
         # before any epic or story is minted - refine mints under one rollback guard, so a bad
         # path in the last story must refuse before the first write, not undo it after. From the
@@ -464,8 +586,13 @@ def refine_add(repo_root: Path | str, request_id: str, epic_title: str,
     if not stories:
         raise ValueError("refine add needs at least one --story.")
     sdlc_md.require_single_line("epic title", epic_title)
-    for title, _, affects in stories:
+    for title, _, _ in stories:
         sdlc_md.require_single_line("story title", title)
+    # Same Affects-at-refine rule as `apply` (US0410): resolve each added story's Affects against
+    # the parent and refuse one with none and nothing to seed from, before the further epic and its
+    # stories are minted, not after.
+    stories = _resolve_and_require_affects(root, request_id, _parent_affects(rpath), stories)
+    for title, _, affects in stories:
         # Same up-front resolvable-Affects refusal as `apply`: a bad path in any added story
         # aborts before the further epic and its stories are minted, not after.
         if affects:
@@ -630,13 +757,16 @@ def build_parser() -> argparse.ArgumentParser:
                         "non-epic, or unknown target is refused with nothing minted")
     a.add_argument("--story", action="append", metavar="TITLE|POINTS[|AFFECTS]",
                    help="a story in the breakdown: 'title|points' or 'title|points|affects'. "
-                        "Repeatable. Points must be on the Fibonacci scale.")
+                        "Affects may be a path list, `inherit` (take the request's Affects), or "
+                        "`inherit:paths` (narrow it). A story left with no affects is seeded from "
+                        "the request when it has one, else refused. Repeatable; points on the "
+                        "Fibonacci scale.")
     a.add_argument("--question", action="append", metavar="TEXT",
                    help="an open question for the Three-Amigos consult, surfaced at apply time "
                         "and directed at the resolved seats (engineering-led). Repeatable.")
     a.add_argument("--no-seed-acs", action="store_false", dest="seed_acs", default=True,
-                   help="mint bare AC scaffolds instead of seeding from the request's "
-                        "acceptance criteria")
+                   help="label every story's ACs an ungroomed grooming placeholder instead of "
+                        "seeding them from the request's acceptance criteria")
     a.add_argument("--skip-personas", action="store_true",
                    help="force the generic path: resolve no amigo seats, no framing (byte-equivalent)")
     a.add_argument("--dry-run", action="store_true", help="validate and report; mint nothing")
@@ -651,7 +781,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="title for the new epic to append")
     ad.add_argument("--story", action="append", metavar="TITLE|POINTS[|AFFECTS]",
                     help="a story in the new epic: 'title|points' or 'title|points|affects'. "
-                         "Repeatable. Points must be on the Fibonacci scale.")
+                         "Affects may be a path list, `inherit`, or `inherit:paths`; a story left "
+                         "with none is seeded from the request when it has one, else refused. "
+                         "Repeatable; points on the Fibonacci scale.")
     ad.add_argument("--dry-run", action="store_true", help="validate and report; mint nothing")
     ad.add_argument("--root", default=".")
     sdlc_md.add_format_arg(ad)
