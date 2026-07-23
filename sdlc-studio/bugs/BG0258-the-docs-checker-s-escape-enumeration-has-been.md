@@ -1,6 +1,7 @@
 # BG0258: The docs-checker's escape enumeration has been wrong at three, four, five, six and seven, because each repair enumerates instead of deriving
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional - 3 new tests (EscapeExplanationTests x2, GeneratedEscapeCorpusTests x1) over explain_sentence and generate_escape_corpus, plus the full 28-test docs single-writer suite green; 5 hand-applied mutants killed under python3 -B with __pycache__ purged, the enumeration mutant (hardcoded corpus ignoring an added axis) among them
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py
@@ -65,8 +66,44 @@ Each criterion below carries its own verifier, because `verify_ac` executes only
   because a hand-written list is the defect this bug names
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::GeneratedEscapeCorpusTests::test_the_corpus_is_generated_from_the_axes_and_every_escape_it_finds_is_reported
 
+## Resolution
+
+Fixed in `test_docs_single_writer.py`, which is where the checker lives - the module IS the
+guard, not merely its tests.
+
+`explain_sentence(sentence)` runs selection, judgement and polarity over one sentence and
+returns the verdict per axis: whether it was SELECTED (every topic group matched) and, if not,
+which group missed; the enumerated ASSERTING word if present; the NEG_CUES word that set the
+polarity; and whether the result is a contradiction. `_polarity` is now expressed on top of it,
+so the guard the shipped docs are held to and the disclosure a maintainer reads share one parse
+and cannot drift - the property BG0264 established for its own guard.
+
+`generate_escape_corpus(axes)` derives the escape corpus from the axes' own literals rather than
+from a typed list. A base contradiction is built per axis, then perturbed by operators computed
+from the axis structure - knocking out each topic group (an unselected sentence) and wrapping the
+asserting word in underscore emphasis (which `normalise` keeps) - and each candidate is classified
+by the mechanism. Widening or adding an axis grows the corpus with no list here to edit, which is
+the AC3 bar and the death of the enumeration defect.
+
+THE BOUND's numbered items are kept only as the historical record of what was found by hand; the
+comment no longer presents them as a boundary. **Not made complete, made derived**: a
+contradiction written in words no axis selects is still not caught, and no test claims otherwise.
+
+Three tests, all node-addressed, each failing without the code:
+`EscapeExplanationTests::test_explain_names_the_selecting_axis_and_why_a_sentence_was_not_judged`
+(AC1), `EscapeExplanationTests::test_a_partial_topic_sentence_is_reported_as_unselected_not_as_clean`
+(AC2), `GeneratedEscapeCorpusTests::test_the_corpus_is_generated_from_the_axes_and_every_escape_it_finds_is_reported`
+(AC3). Full 28-test suite green.
+
+Mutation: five mutants hand-applied with `__pycache__` purged and the node run under `python3 -B`.
+All five killed. The enumeration mutant - `generate_escape_corpus` hardcoded to `POLARITY_AXES`,
+ignoring an added axis so the corpus is a fixed hand-list - is killed by the AC3 growth assertion,
+which is the exact defect this bug names. The other four: topic selection `all`->`any` (AC2), and
+nulling `asserting_word`, `polarity_cue` and `missing_topic` in the verdict (AC1, AC1, AC2).
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Filed |
+| 2026-07-23 | sdlc-studio | Fixed. Enumeration replaced by `explain_sentence` (disclosure by running) and `generate_escape_corpus` (corpus derived from the axes); `_polarity` re-expressed on the same parse. Three node-addressed tests, five mutants killed including the hardcoded-corpus enumeration defect. |

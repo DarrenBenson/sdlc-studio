@@ -105,15 +105,18 @@ def _forbids(raw: str, pattern: str, why: str, ac: str) -> list[str]:
 # sentence about a guarded property is judged for POLARITY, so a contradiction fails wherever
 # it is added and whatever words it uses inside the topic vocabulary.
 #
-# THE BOUND, stated rather than implied, and CORRECTED after round 3 caught this comment
-# overstating it TWICE - round 3 found a fourth escape it denied, round 4 a fifth it never named.
-# A sentence is SELECTED by topic vocabulary, JUDGED only if it also carries an enumerated
-# ASSERTING word, and its polarity read from negation cues. the escapes below are the ones KNOWN,
-# not the ones possible. THE COUNT HAS BEEN WRONG AT THREE, FOUR, FIVE, SIX AND SEVEN - five
-# consecutive rounds each found one the previous enumeration had DENIED, twice inside an item
-# that positively excluded the new case. Read it as a LOWER BOUND, never as coverage. BG0258
-# tracks replacing this enumeration with something derived from the mechanism, which is the
-# only way it stops being wrong:
+# THE MECHANISM, no longer a boundary. A sentence is SELECTED when EVERY topic group of an axis
+# matches it, JUDGED only if it also carries an enumerated ASSERTING word, and its polarity read
+# from negation cues in the run-up. The three questions - which axis selected it, whether an
+# asserting word was present, which cue set the polarity - are answered by RUNNING the mechanism
+# (`explain_sentence`), not by reading a list beside it, and the escape corpus is GENERATED from
+# the axes (`generate_escape_corpus`) rather than typed by whoever last got caught. That is the
+# BG0258 fix: the count below was wrong at THREE, FOUR, FIVE, SIX and SEVEN because a human was
+# maintaining a boundary that is emergent from three interacting lists, which is the one shape a
+# human cannot enumerate reliably. The numbered items are KEPT only as the historical record of
+# what was found by hand, each still exercised by a regression test above; they are NOT the
+# boundary. The boundary is whatever `explain_sentence` computes today, and it moves for free when
+# an axis moves. The known hand-found escapes, for the record:
 #   1. prose about a guarded property that uses none of its topic words;
 #   2. a reversal carried by irony or by layout rather than by a cue;
 #   3. a negation sitting further from its verb than NEG_REACH;
@@ -190,23 +193,122 @@ POLARITY_AXES = (
 )
 
 
+def explain_sentence(sentence: str, axes: tuple = POLARITY_AXES) -> list[dict]:
+    """Run selection, judgement and polarity over ONE sentence and report the verdict.
+
+    This is the disclosure BG0258 asks for: a maintainer asking "would this be caught"
+    gets the mechanism's own answer rather than reading a hand-maintained list beside the
+    code. Per axis it names whether the sentence was SELECTED (every topic group matched)
+    and, if not, which group missed; whether an enumerated ASSERTING word was present, and
+    which one; and which NEG_CUES word set the polarity. `_polarity` is expressed on top of
+    this, so guard and runner share one parse - the property BG0264 named for its own guard.
+    """
+    s = normalise(sentence)
+    out: list[dict] = []
+    for axis_ac, prop, topic, word, expect in axes:
+        missing = [t for t in topic if not re.search(t, s, re.I)]
+        selected = not missing
+        verdict = {
+            "ac": axis_ac, "prop": prop, "expect": expect,
+            "selected": selected,
+            "missing_topic": missing[0] if missing else None,
+            "asserting_word": None, "polarity_cue": None,
+            "judged": False, "contradiction": False, "occurrences": [],
+        }
+        if selected:
+            for m in re.compile(word, re.I).finditer(s):
+                cm = NEG_CUES.search(s[max(0, m.start() - NEG_REACH):m.start()])
+                negated = bool(cm)
+                verdict["occurrences"].append(
+                    {"word": m.group(0), "cue": cm.group(0) if cm else None,
+                     "negated": negated,
+                     "contradiction": (expect == "negated") != negated})
+            if verdict["occurrences"]:
+                first = verdict["occurrences"][0]
+                verdict["asserting_word"] = first["word"]
+                verdict["polarity_cue"] = first["cue"]
+                verdict["judged"] = True
+                verdict["contradiction"] = any(o["contradiction"]
+                                               for o in verdict["occurrences"])
+        out.append(verdict)
+    return out
+
+
 def _polarity(docs: tuple[tuple[str, str], ...], ac: str) -> list[str]:
-    """One failure string per sentence asserting the opposite of a guarded property."""
+    """One failure string per sentence asserting the opposite of a guarded property.
+
+    Derived from `explain_sentence` so there is exactly one place selection, judgement and
+    polarity are decided; the disclosure and the guard cannot drift apart."""
     bad: list[str] = []
-    for axis_ac, prop, topic, word, expect in POLARITY_AXES:
-        if axis_ac != ac:
-            continue
-        rx = re.compile(word, re.I)
-        for name, raw in docs:
-            for s in sentences(raw):
-                if not all(re.search(t, s, re.I) for t in topic):
+    for name, raw in docs:
+        for s in sentences(raw):
+            for v in explain_sentence(s):
+                if v["ac"] != ac or not v["judged"]:
                     continue
-                for m in rx.finditer(s):
-                    negated = bool(NEG_CUES.search(s[max(0, m.start() - NEG_REACH):m.start()]))
-                    if (expect == "negated") != negated:
+                for o in v["occurrences"]:
+                    if o["contradiction"]:
                         bad.append(f"{ac}: {name} asserts the opposite of the rule on "
-                                   f"{prop} ({m.group(0)!r}): {s!r}")
+                                   f"{v['prop']} ({o['word']!r}): {s!r}")
     return bad
+
+
+def _literals(pattern: str) -> list[str]:
+    """The plain-word alternatives a topic or asserting regex offers.
+
+    Derives an axis's vocabulary from the axis itself, so a sentence built from it uses the
+    real words the scan matches and NO second hand-written copy exists to drift. Strips `\\b`
+    anchors and a trailing `\\w*` / `\\w+`, and drops any alternative still carrying regex
+    metacharacters (a nested group like `impl(y|ies)`), which cannot be spoken as a word."""
+    m = re.search(r"\(([^()]*(?:\([^()]*\)[^()]*)*)\)", pattern)
+    body = m.group(1) if m else pattern
+    out: list[str] = []
+    for alt in body.split("|"):
+        tok = re.sub(r"\\w[*+]$", "", alt.replace(r"\b", "").strip())
+        if re.fullmatch(r"[a-z][a-z ]*", tok):
+            out.append(tok)
+    return out
+
+
+def _contradiction_sentence(topic_words: list[str], assert_word: str, expect: str) -> str:
+    """A sentence that CONTRADICTS an axis: it asserts what the rule says must be negated,
+    or negates what the rule says must be asserted. Built from the axis's own literals."""
+    subject = " ".join(topic_words)
+    if expect == "negated":
+        return f"A {subject} {assert_word} it plainly."
+    return f"A {subject} does not {assert_word} it plainly."
+
+
+def generate_escape_corpus(axes: tuple = POLARITY_AXES) -> list[dict]:
+    """Generate candidate contradictions from the axes and classify each by the mechanism.
+
+    BG0258 AC3: the escape corpus is DERIVED, not typed by whoever last got caught. For each
+    axis a base contradiction is built from its literals, then perturbed by operators computed
+    from the axis structure - knocking out each topic group in turn (an unselected sentence),
+    and wrapping the asserting word in underscore emphasis (which `normalise` keeps, so the
+    `\\b` anchor never fires). Each candidate is run through `explain_sentence` and marked an
+    ESCAPE when it contradicts the property in words yet is not judged a contradiction. Adding
+    or widening an axis grows the corpus with no list here to edit - the property AC3 tests."""
+    corpus: list[dict] = []
+    for ac, prop, topic, word, expect in axes:
+        topic_words = [lits[0] for lits in (_literals(t) for t in topic) if lits]
+        assert_lits = _literals(word)
+        if len(topic_words) != len(topic) or not assert_lits:
+            continue  # this axis's vocabulary cannot be spoken as a sentence; skip it
+        assert_word = assert_lits[0]
+        base = _contradiction_sentence(topic_words, assert_word, expect)
+        variants = [("base", base)]
+        for i in range(len(topic_words)):
+            knocked = list(topic_words)
+            knocked[i] = "matter"  # a filler no topic pattern matches -> group i is unselected
+            variants.append((f"topic-drop:{i}",
+                             _contradiction_sentence(knocked, assert_word, expect)))
+        variants.append(("underscore-wrap", base.replace(assert_word, f"_{assert_word}_", 1)))
+        for operator, sentence in variants:
+            v = next((x for x in explain_sentence(sentence) if x["prop"] == prop), None)
+            flagged = bool(v and v["contradiction"])
+            corpus.append({"ac": ac, "prop": prop, "operator": operator,
+                           "sentence": sentence, "escapes": not flagged})
+    return corpus
 
 
 # -----------------------------------------------------------------------------
@@ -666,6 +768,105 @@ class AppendedContradictionTests(unittest.TestCase):
         docs = (("reference-sprint.md", sprint), ("reference-review.md", review))
         for ac in ("AC1", "AC2", "AC3", "AC4"):
             self.assertEqual([], _polarity(docs, ac))
+
+
+class EscapeExplanationTests(unittest.TestCase):
+    """BG0258: the module explains its own verdict, so "would this be caught" is answered by
+    running the mechanism rather than by reading THE BOUND, which was wrong at three, four,
+    five, six and seven because a human maintained it."""
+
+    def _axis(self, sentence: str, prop: str) -> dict:
+        return next(v for v in explain_sentence(sentence) if v["prop"] == prop)
+
+    def test_explain_names_the_selecting_axis_and_why_a_sentence_was_not_judged(self) -> None:
+        prop = "what a green run shows"
+        # A judged contradiction: the axis is named, the asserting word is reported present,
+        # and the cue that set the polarity is reported (none here, so the assertion stands).
+        judged = self._axis("A green gate proves the staged tree is clean.", prop)
+        self.assertTrue(judged["selected"], "the axis that selected the sentence is named")
+        self.assertEqual("proves", judged["asserting_word"], "the asserting word is reported")
+        self.assertIsNone(judged["polarity_cue"], "no cue, so the polarity is an assertion")
+        self.assertTrue(judged["contradiction"])
+
+        # A SELECTED but not judged sentence: the mechanism reports WHY - no enumerated
+        # asserting word - instead of the empty result a maintained list could not explain.
+        not_judged = self._axis("A green gate certifies the staged tree is clean.", prop)
+        self.assertTrue(not_judged["selected"])
+        self.assertIsNone(not_judged["asserting_word"], "certifies is not an enumerated word")
+        self.assertFalse(not_judged["judged"], "so the sentence is not judged, and says so")
+
+        # A correctly negated sentence: the cue that set the polarity is named by the code.
+        negated = self._axis("A green gate does not prove the staged tree is clean.", prop)
+        self.assertEqual("not", negated["polarity_cue"], "the cue that set the polarity")
+        self.assertFalse(negated["contradiction"], "correctly negated, so no contradiction")
+
+    def test_a_partial_topic_sentence_is_reported_as_unselected_not_as_clean(self) -> None:
+        prop = "what a green run shows"
+        # The Steps-to-Reproduce sentence: it matches SOME of the axis's topic groups (green,
+        # gate) and not the object group, so it is never judged - and five rounds read that
+        # empty result as coverage. The mechanism now reports it as UNSELECTED and names the
+        # group that missed, which a judged-and-passed sentence never is.
+        partial = self._axis(
+            "A green gate proves the working copy is uncontaminated.", prop)
+        self.assertFalse(partial["selected"], "not all topic groups matched")
+        self.assertIsNotNone(partial["missing_topic"], "the missing group is named")
+        self.assertIn("tree", partial["missing_topic"],
+                      "the object group (tree|concurrent write|staged|...) is the one that missed")
+
+        # The discrimination: an unselected sentence and a clean, judged one are DIFFERENT
+        # here, where `check_all` returns the same empty result for both.
+        clean = self._axis("A green gate does not prove the staged tree is clean.", prop)
+        self.assertTrue(clean["selected"])
+        self.assertNotEqual(partial["selected"], clean["selected"])
+        sprint, review = read_docs()
+        self.assertEqual(
+            {"AC1": [], "AC2": [], "AC3": [], "AC4": []},
+            check_all(sprint + "\n\nA green gate proves the working copy is uncontaminated.",
+                      review),
+            "check_all cannot tell the unselected sentence from clean prose; explain_sentence can")
+
+
+class GeneratedEscapeCorpusTests(unittest.TestCase):
+    """BG0258 AC3: the escape corpus is GENERATED from the axes and every escape it finds is
+    reported, so a new escape appears without a reviewer inventing the sentence. The test fails
+    if the corpus is a hand-written list, because a hand-written list is the defect this bug
+    names."""
+
+    def test_the_corpus_is_generated_from_the_axes_and_every_escape_it_finds_is_reported(
+            self) -> None:
+        sprint, review = read_docs()
+        corpus = generate_escape_corpus()
+        self.assertTrue(corpus, "the generator produced no candidates")
+
+        # Every entry the generator classifies is corroborated by the RUNNER (`_polarity`),
+        # not merely by the function that generated it: an escape is absent from the runner's
+        # output for its axis, a caught one is present. Guard and disclosure share one parse.
+        for entry in corpus:
+            docs = (("reference-sprint.md", sprint + "\n\n" + entry["sentence"]),
+                    ("reference-review.md", review))
+            runner_hits = [f for f in _polarity(docs, entry["ac"]) if entry["prop"] in f]
+            self.assertEqual(entry["escapes"], not runner_hits,
+                             f"generator and runner disagree on {entry!r}")
+
+        # At least one genuine escape is reported without a human having invented the sentence.
+        self.assertTrue([e for e in corpus if e["escapes"]],
+                        "the corpus found no escape, so it proves nothing about the gaps")
+
+        # GENERATED, not hand-written: introduce a brand-new guarded property - an axis with
+        # its own vocabulary - and the corpus grows entries drawn from IT, with no list edited
+        # here. A hand-written corpus ignores the added axis and does not grow; this assertion
+        # is the mutation that kills the enumeration defect BG0258 names.
+        new_axis = ("AC9", "a fabricated guarded property",
+                    (r"\bwidget\b", r"\bframulator\b", r"\bsprocket\b"),
+                    r"\b(zorb\w*)\b", "negated")
+        base = {e["sentence"] for e in generate_escape_corpus()}
+        grown = {e["sentence"] for e in generate_escape_corpus(POLARITY_AXES + (new_axis,))}
+        added = grown - base
+        self.assertTrue(added, "adding an axis produced no new entry: the corpus is hand-written")
+        self.assertTrue(
+            any(w in s for s in added
+                for w in ("widget", "framulator", "sprocket", "zorb")),
+            "the new entries do not draw on the added axis's vocabulary: not derived from it")
 
 
 if __name__ == "__main__":
