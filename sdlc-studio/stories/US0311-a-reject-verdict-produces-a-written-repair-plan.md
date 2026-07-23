@@ -1,6 +1,6 @@
 # US0311: A REJECT verdict produces a written repair plan, one entry per finding, naming the change, the approach and what it might break
 
-> **Status:** Draft
+> **Status:** Review
 > **Verification depth:** functional - node-addressed tests in test_repair_plan.py / test_critic.py, all green; EP0106 mutation-proven (11 mutants across record_repair_plan, review, gate, pin, provenance, all killed)
 > **Depends on:** BG0265, BG0256
 > **Delivers:** RFC0053
@@ -29,6 +29,7 @@ inside the edit and visible only afterwards
   plan with fewer entries than the verdict has findings is refused rather than accepted as
   partial - a silently unanswered finding is how a round's defects survive into the next
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairPlanTests::test_a_plan_missing_an_entry_for_any_finding_is_refused
+- **Verified:** yes (2026-07-23)
 
 ### AC2: an entry that names no approach or no risk is refused before it is stored
 
@@ -39,6 +40,7 @@ inside the edit and visible only afterwards
   a restatement of the finding and an entry without a risk is an assertion that the repair
   is free - which is the belief every round from 3 to 10 of RUN-01KY3MFX held and lost
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairPlanTests::test_an_entry_without_an_approach_or_a_risk_is_refused
+- **Verified:** yes (2026-07-23)
 
 ### AC3: a plan exists only for a verdict that actually rejected
 
@@ -47,6 +49,7 @@ inside the edit and visible only afterwards
 - **Then** it is refused and names the verdict it found, so a repair plan cannot be
   manufactured to launder a change nobody rejected
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairPlanTests::test_a_repair_plan_against_a_non_reject_verdict_is_refused
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # US0326: sprint plan --write refuses a disjoint batch against an open run, exiting non-zero with run-state.json byte-identical
 
-> **Status:** Draft
+> **Status:** Review
 > **Depends on:** BG0265, BG0256
 > **Delivers:** CR0401
 > **Created:** 2026-07-22
@@ -28,6 +28,7 @@ holds one run slot at plan time rather than at a close whose verdict cannot be g
   `sdlc-studio/.local/run-state.json` are identical before and after, compared by
   digest rather than by field, so no partial write survives the refusal
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DisjointBatchIsRefusedTests::test_a_disjoint_plan_exits_non_zero_and_leaves_run_state_json_byte_identical
+- **Verified:** yes (2026-07-23)
 
 ### AC2: overlap decides it, and a genuine re-plan still accumulates with no new flag
 
@@ -37,6 +38,7 @@ holds one run slot at plan time rather than at a close whose verdict cannot be g
 - **Then** the first exits zero and leaves the accumulated union under the unchanged
   `run_id` and `started_at`, and the second is refused
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DisjointBatchIsRefusedTests::test_one_shared_unit_re_plans_and_zero_shared_units_refuses
+- **Verified:** yes (2026-07-23)
 
 ### AC3: the refused path mints nothing and archives nothing
 
@@ -46,6 +48,7 @@ holds one run slot at plan time rather than at a close whose verdict cannot be g
   still carries the id it had, so a refusal can never cost the operator the run it was
   protecting
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DisjointBatchIsRefusedTests::test_a_refused_plan_archives_nothing_and_mints_no_run_id
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

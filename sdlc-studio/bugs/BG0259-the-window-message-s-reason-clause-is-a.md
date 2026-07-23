@@ -1,6 +1,7 @@
 # BG0259: The window message's reason clause is a single static string, so an assertion on it pins a WORD and an inverted clause survives the whole suite
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional - node-addressed tests green, mutation-proven by the delivering worktree agent; merged and re-verified on the composed tree
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py,.claude/skills/sdlc-studio/scripts/tests/test_mutation.py

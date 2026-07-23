@@ -1,6 +1,7 @@
 # BG0260: Round 10's three findings, carried forward with a written repair plan instead of another unplanned fix
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional - node-addressed tests green, mutation-proven by the delivering worktree agent; merged and re-verified on the composed tree
 > **Depends on:** US0315
 > **Severity:** Medium
 > **Points:** 3

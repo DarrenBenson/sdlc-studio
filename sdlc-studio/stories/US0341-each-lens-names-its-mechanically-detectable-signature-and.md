@@ -1,6 +1,6 @@
 # US0341: Each lens names its mechanically detectable signature, and where there is none it says so rather than implying a check that does not exist
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0403
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -45,6 +45,7 @@ exist, which is the same honesty this story requires of the pack.
   `hunts` and `drawn_from`, so a lens shipped with the column blank is a parse the tests
   can see rather than a cell the parser silently drops
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_profiles.py::ProcessLensSignatureTests::test_every_process_lens_declares_a_signature_the_parser_carries
+- **Verified:** yes (2026-07-23)
 
 ### AC2: a lens with no mechanical signature says so, with its reason
 
@@ -54,6 +55,7 @@ exist, which is the same honesty this story requires of the pack.
   why the class resists a search, and the parse marks it as not mechanical - a blank cell,
   a dash or a hedged sentence is a failure of this criterion, not a way of passing it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_profiles.py::ProcessLensSignatureTests::test_a_lens_with_no_mechanical_signature_declares_it_and_gives_a_reason
+- **Verified:** yes (2026-07-23)
 
 ### AC3: a signature claiming to be mechanical names something that can be run
 
@@ -63,6 +65,7 @@ exist, which is the same honesty this story requires of the pack.
   names exists in the tree, so a signature cannot claim a command or a file that is not
   there
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_profiles.py::ProcessLensSignatureTests::test_every_mechanical_signature_names_a_detector_and_paths_that_exist
+- **Verified:** yes (2026-07-23)
 
 ### AC4: each mechanical signature is shown to fire on its own incident and not on a clean neighbour
 

@@ -1,6 +1,6 @@
 # US0315: The repair-plan gate is opt-in per project and OFF by default
 
-> **Status:** Draft
+> **Status:** Review
 > **Verification depth:** functional - node-addressed tests in test_repair_plan.py / test_critic.py, all green; EP0106 mutation-proven (11 mutants across record_repair_plan, review, gate, pin, provenance, all killed)
 > **Delivers:** RFC0053
 > **Created:** 2026-07-22
@@ -25,6 +25,7 @@
 - **Then** nothing is refused and no new artefact is required, so an upgrading project sees
   no behaviour change
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairPlanConfigTests::test_an_absent_config_leaves_the_close_unchanged
+- **Verified:** yes (2026-07-23)
 
 ### AC2: enabling it refuses an unplanned repair
 
@@ -33,6 +34,7 @@
 - **Then** it is refused, naming the key that enabled the gate so the operator can see what
   turned it on
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairPlanConfigTests::test_enabling_the_gate_refuses_an_unplanned_repair
+- **Verified:** yes (2026-07-23)
 
 ### AC3: the key the documentation names is the key the code reads
 
@@ -42,6 +44,7 @@
   documented spelling rather than restating it - BG0250 shipped a key four documents said
   was read and no code read, and a hand-copied constant in the test would reproduce it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairPlanConfigTests::test_the_documented_key_is_the_key_the_code_reads
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

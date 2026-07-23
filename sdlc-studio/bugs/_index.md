@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 6 |
+| Open | 3 |
 | In Progress | 0 |
-| Fixed | 178 |
+| Fixed | 184 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **266** |
+| **Total** | **269** |
 
 ## All Bugs
 
@@ -223,16 +223,19 @@
 | [BG0254](BG0254-the-token-forecast-prices-only-the-build-so.md) | The token forecast prices only the build, so it under-forecasts by roughly an order of magnitude on a project that spends most of its budget proving the build correct | Fixed | High | 2026-07-21 | 2026-07-21 |
 | [BG0255](BG0255-init-seeds-every-new-project-s-agents-md.md) | init seeds every new project's AGENTS.md with a literal {{PROJECT_NAME}} placeholder, because the filler matches lowercase and the template ships uppercase | Fixed | High | 2026-07-22 | 2026-07-22 |
 | [BG0256](BG0256-a-done-story-read-verified-yes-for-two.md) | A Done story read Verified yes for two days against a test that does not exist, because nothing rechecks a verifier's target after the stamp | Fixed | Medium | 2026-07-22 | 2026-07-22 |
-| [BG0257](BG0257-a-retro-s-batch-field-accepts-an-id.md) | A retro's Batch field accepts an id RANGE, silently reads 4 units instead of 33, and publishes a velocity row an order of magnitude wrong | Open | High | 2026-07-22 | 2026-07-22 |
+| [BG0257](BG0257-a-retro-s-batch-field-accepts-an-id.md) | A retro's Batch field accepts an id RANGE, silently reads 4 units instead of 33, and publishes a velocity row an order of magnitude wrong | Fixed | High | 2026-07-22 | 2026-07-22 |
 | [BG0258](BG0258-the-docs-checker-s-escape-enumeration-has-been.md) | The docs-checker's escape enumeration has been wrong at three, four, five and six, because each repair enumerates instead of deriving | Fixed | Medium | 2026-07-22 | 2026-07-22 |
-| [BG0259](BG0259-the-window-message-s-reason-clause-is-a.md) | The window message's reason clause is a single static string, so an assertion on it pins a WORD and an inverted clause survives the whole suite | Open | Medium | 2026-07-22 | 2026-07-22 |
-| [BG0260](BG0260-round-10-s-three-findings-carried-forward-with.md) | Round 10's three findings, carried forward with a written repair plan instead of another unplanned fix | Open | Medium | 2026-07-22 | 2026-07-22 |
-| [BG0261](BG0261-the-state-anchor-and-the-goal-verdict-both.md) | The state anchor and the goal verdict both describe three review rounds when ten happened, and the freshness check that exists for exactly this only counts lines | Open | High | 2026-07-22 | 2026-07-22 |
-| [BG0262](BG0262-a-seat-that-says-the-goal-is-not.md) | A seat that says the goal is NOT achievable discharges the plan gate exactly as one that says it is - the verdict's content is never read | Open | High | 2026-07-22 | 2026-07-22 |
-| [BG0263](BG0263-the-goal-review-has-no-rounds-so-rewriting.md) | The goal review has no rounds, so rewriting a goal in response to a REJECT erases the fact that it was ever rejected | Open | Medium | 2026-07-22 | 2026-07-22 |
+| [BG0259](BG0259-the-window-message-s-reason-clause-is-a.md) | The window message's reason clause is a single static string, so an assertion on it pins a WORD and an inverted clause survives the whole suite | Fixed | Medium | 2026-07-22 | 2026-07-22 |
+| [BG0260](BG0260-round-10-s-three-findings-carried-forward-with.md) | Round 10's three findings, carried forward with a written repair plan instead of another unplanned fix | Fixed | Medium | 2026-07-22 | 2026-07-22 |
+| [BG0261](BG0261-the-state-anchor-and-the-goal-verdict-both.md) | The state anchor and the goal verdict both describe three review rounds when ten happened, and the freshness check that exists for exactly this only counts lines | Fixed | High | 2026-07-22 | 2026-07-22 |
+| [BG0262](BG0262-a-seat-that-says-the-goal-is-not.md) | A seat that says the goal is NOT achievable discharges the plan gate exactly as one that says it is - the verdict's content is never read | Fixed | High | 2026-07-22 | 2026-07-22 |
+| [BG0263](BG0263-the-goal-review-has-no-rounds-so-rewriting.md) | The goal review has no rounds, so rewriting a goal in response to a REJECT erases the fact that it was ever rejected | Fixed | Medium | 2026-07-22 | 2026-07-22 |
 | [BG0264](BG0264-verify-ac-lint-accepts-a-grep-or-file.md) | verify_ac lint accepts a grep or file verifier pointing at markdown, which is how four acceptance criteria passed on prose asserting the opposite of their own wording | Fixed | High | 2026-07-22 | 2026-07-22 |
 | [BG0265](BG0265-a-second-verify-line-under-one-acceptance-criterion.md) | A second Verify line under one acceptance criterion is silently dropped, and every verifier it has silently dropped in this workspace sits on a Done story | Fixed | High | 2026-07-22 | 2026-07-22 |
 | [BG0266](BG0266-the-file-verb-over-a-directory-is-an.md) | The file verb over a directory is an always-passing prose verifier, and the markdown guard does not see it | Fixed | Medium | 2026-07-22 | 2026-07-22 |
+| [BG0267](BG0267-a-repair-plan-verdict-carrying-no-findings-hash.md) | A repair-plan verdict carrying no findings-hash token satisfies the pin check vacuously | Open | Low | 2026-07-23 | 2026-07-23 |
+| [BG0268](BG0268-sprint-plan-leaves-a-stale-sprint-plan-json.md) | sprint plan leaves a stale sprint-plan.json and forecast record when a concurrent writer opens a run between the pre-check and open_run | Open | Low | 2026-07-23 | 2026-07-23 |
+| [BG0269](BG0269-the-scrub-site-sweep-s-worktrees-exclusion-matches.md) | The scrub-site sweep's worktrees exclusion matches any path component named worktrees, so it skips the ENTIRE tree when run from inside a worktree | Open | Medium | 2026-07-23 | 2026-07-23 |
 
 ## Archived Releases
 

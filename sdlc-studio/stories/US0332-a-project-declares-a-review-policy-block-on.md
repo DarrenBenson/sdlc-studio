@@ -1,6 +1,6 @@
 # US0332: A project declares a review policy: block-on-REJECT, today's behaviour and the default, or carry-forward
 
-> **Status:** Draft
+> **Status:** Review
 > **Verification depth:** functional - node-addressed tests in test_critic/test_conformance/test_sprint, all green; carry_forward mutation-proven (7 mutants killed incl. a non-resolving ref)
 > **Depends on:** BG0265, BG0256
 > **Delivers:** CR0404
@@ -26,6 +26,7 @@ about the choice
 - **When** a REJECT is recorded
 - **Then** it blocks exactly as it does now, so an upgrading project sees no change
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ReviewPolicyTests::test_an_undeclared_policy_blocks_exactly_as_today
+- **Verified:** yes (2026-07-23)
 
 ### AC2: under carry-forward a REJECT no longer blocks the sprint
 
@@ -34,6 +35,7 @@ about the choice
 - **Then** it is not blocked by the verdict, and `sprint_covers_independently` accepts the
   sprint review as evidence despite the REJECT
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::ReviewPolicyTests::test_a_reject_under_carry_forward_does_not_block_the_close
+- **Verified:** yes (2026-07-23)
 
 ### AC3: an unrecognised policy value is refused, never defaulted
 
@@ -43,6 +45,7 @@ about the choice
   the default - a typo that quietly selects blocking is survivable, but one that quietly
   selects carry-forward ships a sprint nobody meant to ship
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ReviewPolicyTests::test_an_unrecognised_policy_is_refused_not_defaulted
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # US0323: One shared resolvable-Affects predicate serves file_finding, artifact new and refine apply, so a future writer cannot be added without it
 
-> **Status:** Draft
+> **Status:** Review
 > **Depends on:** BG0265, BG0256
 > **Delivers:** CR0400
 > **Created:** 2026-07-22
@@ -41,6 +41,7 @@ This story is the predicate and its reach. US0324 is what the writers do with th
 - **Then** all three accept exactly the same values and refuse exactly the same values, so no
   declared path exists that one command mints and another rejects
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_affects_resolvable.py::SharedPredicateTests::test_all_three_writers_agree_on_every_affects_shape
+- **Verified:** yes (2026-07-23)
 
 ### AC2: every writer reaches the predicate, so a writer that bypasses it is caught
 
@@ -50,6 +51,7 @@ This story is the predicate and its reach. US0324 is what the writers do with th
 - **Then** every one of them refuses, so an entry point that resolves paths by its own means, or
   does not check at all, fails this criterion rather than passing on the agreement of AC1
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_affects_resolvable.py::SharedPredicateTests::test_every_writer_routes_through_the_one_predicate
+- **Verified:** yes (2026-07-23)
 
 ### AC3: the predicate and the grooming gate cannot disagree about 'resolvable'
 
@@ -60,6 +62,7 @@ This story is the predicate and its reach. US0324 is what the writers do with th
 - **Then** they match on every row, so a unit accepted at mint is never refused at plan time for
   the field it was just checked on
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_affects_resolvable.py::SharedPredicateTests::test_the_predicate_and_the_grooming_gate_never_disagree
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

@@ -22,7 +22,7 @@
 - **When** the command runs
 - **Then** it exits non-zero on any violation with a stable rule id and fix hint, zero on a clean repo
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/audit_check.py check --root .
-- **Verified:** no (2026-07-22)
+- **Verified:** yes (2026-07-23)
 
 ### AC2: Each rule is a tested worked example
 

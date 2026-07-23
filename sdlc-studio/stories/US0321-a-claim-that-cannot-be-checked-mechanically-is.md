@@ -1,6 +1,6 @@
 # US0321: A claim that cannot be checked mechanically is reported UNVERIFIABLE rather than assumed true, so the reader sees how much prose rests on trust
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0393
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -25,6 +25,7 @@
   many claims rest on trust - a claim silently ruled TRUE because nothing contradicted it is
   the failure this pass exists to surface
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClaimInventoryTests::test_an_unverifiable_claim_is_counted_separately_from_true
+- **Verified:** yes (2026-07-23)
 
 ### AC2: a round of only unverifiable claims is not reported as a clean round
 
@@ -34,6 +35,7 @@
   rulings and no evidence is indistinguishable from one that looked and found nothing, and
   the two must not print the same
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClaimInventoryTests::test_an_all_unverifiable_pass_does_not_render_as_verified
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

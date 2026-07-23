@@ -1,6 +1,6 @@
 # US0339: The shipped seed's basis text states the condition under which a base term did worse, instead of claiming it flatly
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0391
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -34,6 +34,7 @@ it applies, and it is the sentence a future author would use to reject US0336.
   sprint ceremony, review rounds or close, instead of asserting unconditionally that fitting a
   base term does worse
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheSeedBasisNamesItsConditionTests::test_the_seed_basis_states_the_data_the_no_base_term_finding_was_measured_on
+- **Verified:** yes (2026-07-23)
 
 ### AC2: the qualification survives when the project HAS measured a rate of its own
 
@@ -44,6 +45,7 @@ it applies, and it is the sentence a future author would use to reject US0336.
   two basis strings are the SAME string only while no local rate exists - a criterion checked
   solely in the seed case is satisfied by the same fixture as AC1 and discriminates nothing
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheSeedBasisNamesItsConditionTests::test_the_qualification_survives_when_a_local_rate_replaces_the_seed
+- **Verified:** yes (2026-07-23)
 
 ### AC3: the reference document and the code do not disagree
 
@@ -52,6 +54,7 @@ it applies, and it is the sentence a future author would use to reject US0336.
 - **Then** the section states the condition under which that held, matching the code's basis,
   so the doc cannot be cited against the fixed term the same release ships
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::EstimatorBasisAgreesWithTheCodeTests::test_the_reference_no_base_term_account_carries_the_same_condition_as_the_code
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

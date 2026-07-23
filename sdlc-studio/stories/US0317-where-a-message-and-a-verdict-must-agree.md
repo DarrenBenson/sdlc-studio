@@ -1,6 +1,6 @@
 # US0317: Where a message and a verdict must agree, ONE test drives both over the same input battery and asserts they agree
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0394
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -41,6 +41,7 @@ it; BG0259 applies it to that clause.
   shapes it happens to pass, which is how the previous oracle came to agree with the
   matcher only on the families it had chosen
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::MessageVerdictAgreementTests::test_one_battery_drives_both_the_message_and_the_verdict
+- **Verified:** yes (2026-07-23)
 
 ### AC2: a derivation that keeps the pinned word but denies the verdict goes red
 
@@ -50,6 +51,7 @@ it; BG0259 applies it to that clause.
 - **Then** it FAILS, naming the input whose message and verdict disagree - the inversion
   measured in Context above passes today and must not after this story
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::MessageVerdictAgreementTests::test_an_inverted_derivation_fails_even_when_it_keeps_the_pinned_word
+- **Verified:** yes (2026-07-23)
 
 ### AC3: the testing guide states the pattern and names what it replaces
 
@@ -60,6 +62,7 @@ it; BG0259 applies it to that clause.
   message's text on its own, which passes for an input the text does not describe - and a
   version stating only the pattern without the counter-example fails
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_derivation_rule.py::AgreementPatternGuideTests::test_the_testing_guide_states_the_agreement_pattern_and_names_what_it_replaces
+- **Verified:** yes (2026-07-23)
 
 ## Open Questions
 

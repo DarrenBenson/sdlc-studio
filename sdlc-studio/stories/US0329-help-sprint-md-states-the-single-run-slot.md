@@ -1,6 +1,6 @@
 # US0329: help/sprint.md states the single run slot and what planning a second batch against an open run does
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0401
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -38,6 +38,7 @@ goal verdict cannot be given honestly
   re-planning it, spelled as the same commands, so an operator following either surface
   takes the same action
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::HelpAndRefusalNameTheSameRoutesTests::test_the_refusal_and_help_sprint_name_the_same_two_routes_and_spellings
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

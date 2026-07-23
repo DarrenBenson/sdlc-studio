@@ -1,6 +1,6 @@
 # US0314: A repair commit records which plan it executed, so a planned repair is distinguishable from an unplanned one
 
-> **Status:** Draft
+> **Status:** Review
 > **Verification depth:** functional - node-addressed tests in test_repair_plan.py / test_critic.py, all green; EP0106 mutation-proven (11 mutants across record_repair_plan, review, gate, pin, provenance, all killed)
 > **Delivers:** RFC0053
 > **Created:** 2026-07-22
@@ -26,6 +26,7 @@ the sprint from its artefacts
 - **Then** the round carries the plan id the repair executed, and the close can report which
   rounds were planned and which were not
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairProvenanceTests::test_a_recorded_repair_carries_the_plan_it_executed
+- **Verified:** yes (2026-07-23)
 
 ### AC2: an unplanned repair is recorded as unplanned, never as absent
 
@@ -35,6 +36,7 @@ the sprint from its artefacts
   empty - an absent field reads as missing data, and a reader cannot tell it apart from a
   planned repair whose id was dropped
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairProvenanceTests::test_an_unplanned_repair_is_recorded_as_unplanned_not_blank
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

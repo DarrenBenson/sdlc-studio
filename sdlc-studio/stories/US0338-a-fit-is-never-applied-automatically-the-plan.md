@@ -1,6 +1,6 @@
 # US0338: A fit is never applied automatically: the plan states how many sprints it rests on and refuses to publish a fitted fixed term below a stated minimum
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0391
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -35,6 +35,7 @@ it.
   candidate fit as NOT APPLIED, naming the minimum required and the count the project has - a
   total that moved the moment a second row landed fails this
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AFitIsNeverAppliedAutomaticallyTests::test_a_two_sprint_fit_is_reported_and_kept_out_of_the_total
+- **Verified:** yes (2026-07-23)
 
 ### AC2: no fixed term is ever quoted without the number of sprints behind it
 
@@ -43,6 +44,7 @@ it.
 - **Then** the sprint count the term was fitted from appears beside the figure, so no reader
   can take the number without its sample size
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AFitIsNeverAppliedAutomaticallyTests::test_every_quoted_fixed_term_states_the_sprint_count_behind_it
+- **Verified:** yes (2026-07-23)
 
 ### AC3: at or above the minimum the fit is applied, and the plan says so
 
@@ -51,6 +53,7 @@ it.
 - **Then** the fixed term enters the total and the plan states it was applied on that many
   sprints, so the refusal is a threshold the evidence can clear and not a permanent no
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AFitIsNeverAppliedAutomaticallyTests::test_a_fit_at_the_minimum_is_applied_and_names_its_sprint_count
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

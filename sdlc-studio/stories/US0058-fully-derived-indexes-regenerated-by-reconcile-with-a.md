@@ -29,7 +29,7 @@
 - **When** the CI guard runs
 - **Then** it fails, naming the offending row and the regeneration command
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/gate.py --only index-derived
-- **Verified:** no (2026-07-22)
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

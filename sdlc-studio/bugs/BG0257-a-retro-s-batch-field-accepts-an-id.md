@@ -1,6 +1,7 @@
 # BG0257: A retro's Batch field accepts an id RANGE, silently reads 4 units instead of 33, and publishes a velocity row an order of magnitude wrong
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional - node-addressed tests green, mutation-proven by the delivering worktree agent; merged and re-verified on the composed tree
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py,.claude/skills/sdlc-studio/templates/reviews/retro.md,.claude/skills/sdlc-studio/scripts/tests/test_retro.py

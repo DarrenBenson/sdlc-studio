@@ -1,6 +1,6 @@
 # US0331: The structural check joins the gate lane that already binds changelog fragments, and a hand-edit of Unreleased while changelog.d is live is made visibly wrong
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0405
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -40,6 +40,7 @@ what this commit is about to do rather than the state of the tree.
 - **Then** the `changelog-fragments` lane fails, its detail naming the structural fault, and the
   gate's set of check names is unchanged - no second changelog lane appears in the registry
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ChangelogStructureLaneTests::test_the_structural_fault_fails_the_existing_lane_under_its_existing_name
+- **Verified:** yes (2026-07-23)
 
 ### AC2: the lane runs at commit time for structure and at the cut for strays
 
@@ -50,6 +51,7 @@ what this commit is about to do rather than the state of the tree.
   - so the fault an author commits is caught when they commit it, and the standard gate still
   never nags about the normal between-releases state
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ChangelogStructureLaneTests::test_structure_binds_in_both_gates_while_strays_stay_release_only
+- **Verified:** yes (2026-07-23)
 
 ### AC3: a hand-edit of Unreleased while changelog.d is live fails the commit
 
@@ -59,6 +61,7 @@ what this commit is about to do rather than the state of the tree.
 - **Then** it fails, naming CHANGELOG.md and the `changelog.py` command that would have made the
   edit; the same staged edit accompanied by a fragment the commit consumes passes
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::HandEditedChangelogTests::test_a_staged_unreleased_edit_without_a_consumed_fragment_fails
+- **Verified:** yes (2026-07-23)
 
 ### AC4: edits outside Unreleased are not touched by the guard
 
@@ -68,6 +71,7 @@ what this commit is about to do rather than the state of the tree.
 - **Then** it passes, so cutting a release and correcting published history stay hand-editable
   and the guard cannot be dismissed as blanket obstruction
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::HandEditedChangelogTests::test_an_edit_outside_unreleased_is_not_refused
+- **Verified:** yes (2026-07-23)
 
 ## Open Questions
 

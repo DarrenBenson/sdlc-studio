@@ -1,6 +1,6 @@
 # US0316: The best-practice guide states the derivation rule and names its counter-example: an enumeration of spellings is a restatement wearing a function's clothes
 
-> **Status:** Draft
+> **Status:** Review
 > **Depends on:** BG0265, BG0256
 > **Delivers:** CR0394
 > **Created:** 2026-07-22
@@ -45,6 +45,7 @@ place, reached by a link rather than copied.
   beside the predicate is acceptable FAILS the check wherever it is appended - the state
   before this story, where the guide says nothing about it, fails on the required half
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_derivation_rule.py::DerivationRuleStatedTests::test_the_script_guide_states_the_rule_and_no_sentence_denies_it
+- **Verified:** yes (2026-07-23)
 
 ### AC2: the counter-example is named in both halves, and half of it fails
 
@@ -57,6 +58,7 @@ place, reached by a link rather than copied.
   and the probe alone gives an author no way to recognise the shape they are writing;
   only the guide carrying both passes
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_derivation_rule.py::CounterExampleTests::test_either_half_of_the_counter_example_alone_fails
+- **Verified:** yes (2026-07-23)
 
 ### AC3: the rule is stated once and pointed at, not copied into the second guide
 
@@ -66,6 +68,7 @@ place, reached by a link rather than copied.
   reaches it by a link whose anchor resolves in `script.md`, so a second copy cannot drift
   from the first - the rule applied to its own statement
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_derivation_rule.py::OneStatementTests::test_the_rule_is_stated_once_and_the_documentation_guide_links_to_it
+- **Verified:** yes (2026-07-23)
 
 ## Open Questions
 

@@ -1,6 +1,6 @@
 # US0340: A process audit lens pack ships alongside test, with lenses drawn from failures this project actually produced
 
-> **Status:** Draft
+> **Status:** Review
 > **Depends on:** BG0265, BG0256
 > **Delivers:** CR0403
 > **Created:** 2026-07-22
@@ -44,6 +44,7 @@ is the mechanical proxy for "not invented", and the closest one available.
   lens set, `profile_names()` includes it, and both catalogues list it - so no leg of the
   surface can ship without the others
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_profiles.py::ProcessProfileTests::test_the_process_profile_resolves_and_is_catalogued_wherever_profiles_are_listed
+- **Verified:** yes (2026-07-23)
 
 ### AC2: every lens is declarative in the same shape as its sibling packs
 
@@ -53,6 +54,7 @@ is the mechanical proxy for "not invented", and the closest one available.
   statement of what it hunts, and the pack's columns match the shipped `test` pack's, so a
   finder handed this pack gets the same fields as any other
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_profiles.py::ProcessProfileLensTests::test_every_process_lens_declares_a_question_and_what_it_hunts
+- **Verified:** yes (2026-07-23)
 
 ### AC3: the pack is panel-wired and hands the finder the file-or-decline discipline
 
@@ -62,6 +64,7 @@ is the mechanical proxy for "not invented", and the closest one available.
   opt out, and it carries the file-or-decline discipline verbatim, so a surviving candidate
   is either filed or declined with a reason rather than lost in the run report
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_profiles.py::ProcessProfileTests::test_the_process_pack_is_panel_wired_and_states_file_or_decline
+- **Verified:** yes (2026-07-23)
 
 ### AC4: a pack whose lens table is gone is refused, not reported clean
 
@@ -71,6 +74,7 @@ is the mechanical proxy for "not invented", and the closest one available.
   non-zero saying the pack declares no lens - an empty process audit must never read as a
   clean one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_profiles.py::ProcessProfileTests::test_a_lensless_process_pack_is_refused_rather_than_run
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

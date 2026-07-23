@@ -1,6 +1,6 @@
 # US0342: Every lens cites the incident it derives from, so a reader can weigh it against evidence rather than assertion
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0403
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -39,6 +39,7 @@ reading, not a lookup. AC3 owns that and is manual.
   `lessons/_index.md`, and the file that row names is present - so a lens appended without
   provenance, and a citation whose entry was later removed, both fail
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_profiles.py::ProcessLensProvenanceTests::test_every_process_lens_cites_a_lesson_that_resolves
+- **Verified:** yes (2026-07-23)
 
 ### AC2: provenance is citable outside this repo, so a project-local or artefact id is refused
 
@@ -48,6 +49,7 @@ reading, not a lookup. AC3 owns that and is manual.
 - **Then** the check fails naming that lens and that id, because a reader in a consuming
   project cannot open either - the pack may cite only ids the shipped registry carries
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_profiles.py::ProcessLensProvenanceTests::test_a_project_local_or_artefact_id_is_refused_as_provenance
+- **Verified:** yes (2026-07-23)
 
 ### AC3: each cited entry describes the incident that produced its lens
 

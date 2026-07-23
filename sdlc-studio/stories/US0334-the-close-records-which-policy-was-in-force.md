@@ -1,6 +1,6 @@
 # US0334: The close records which policy was in force and lists the findings carried, so a converged sprint is distinguishable from one that carried findings
 
-> **Status:** Draft
+> **Status:** Review
 > **Verification depth:** functional - node-addressed tests in test_critic/test_conformance/test_sprint, all green; carry_forward mutation-proven (7 mutants killed incl. a non-resolving ref)
 > **Delivers:** CR0404
 > **Created:** 2026-07-22
@@ -27,6 +27,7 @@ open, months later and without asking anyone
   opened, because a policy changed mid-run would otherwise be reported as the one that
   governed decisions it never governed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CarryForwardCloseTests::test_the_close_records_the_policy_resolved_at_close_time
+- **Verified:** yes (2026-07-23)
 
 ### AC2: the carried findings are listed, and an empty list is distinguishable from none
 
@@ -35,6 +36,7 @@ open, months later and without asking anyone
 - **Then** the first lists both by id and the second says plainly that nothing was carried,
   so a reader can tell a clean close from one whose list was dropped
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CarryForwardCloseTests::test_a_close_carrying_nothing_is_distinguishable_from_a_dropped_list
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # US0322: The claim pass runs BEFORE the logic review and reports separately, so a prose-only round is visibly a different kind of round
 
-> **Status:** Draft
+> **Status:** Review
 > **Depends on:** US0320
 > **Delivers:** CR0393
 > **Created:** 2026-07-22
@@ -27,6 +27,7 @@ RUN-01KY3MFX needed and could not make
 - **Then** the claim pass precedes the logic review, and a round recording logic findings
   with no claim pass run is reported incomplete rather than accepted
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::ClaimPassOrderTests::test_a_round_with_logic_findings_and_no_claim_pass_is_incomplete
+- **Verified:** yes (2026-07-23)
 
 ### AC2: the two kinds of finding are reported separately
 
@@ -35,6 +36,7 @@ RUN-01KY3MFX needed and could not make
 - **Then** the counts are reported apart, so a prose-only round is visibly a different kind
   of round, and a reader can see the code converged while the prose did not
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::ClaimPassOrderTests::test_prose_and_logic_findings_are_counted_separately
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # US0324: artifact new and refine apply refuse an unresolvable Affects before an id is allocated, minting nothing
 
-> **Status:** Draft
+> **Status:** Review
 > **Depends on:** US0323
 > **Delivers:** CR0400
 > **Created:** 2026-07-22
@@ -40,6 +40,7 @@ Uses the predicate US0323 builds. This story is only what the writers do with it
   next successful mint takes is the one the refused call would have taken - so a refusal costs
   no id from the sequence
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::AffectsValidatedAtMintTests::test_new_refuses_an_unresolvable_affects_and_allocates_no_id
+- **Verified:** yes (2026-07-23)
 
 ### AC2: a bad path in the last story of a batch mints nothing at all
 
@@ -50,6 +51,7 @@ Uses the predicate US0323 builds. This story is only what the writers do with it
   none of the three stories exists, and the request's `Decomposed-into` is unchanged - the run
   stops before the first write rather than rolling back after two
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::AffectsValidatedAtMintTests::test_apply_refuses_the_whole_batch_before_minting_the_epic
+- **Verified:** yes (2026-07-23)
 
 ### AC3: a path to a file the unit will create is still legitimate
 
@@ -59,6 +61,7 @@ Uses the predicate US0323 builds. This story is only what the writers do with it
 - **Then** both mint it and store the field verbatim, because the check refuses only when NO
   declared path resolves - the same rule the grooming gate already applies
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::AffectsValidatedAtMintTests::test_a_partly_unresolvable_affects_still_mints
+- **Verified:** yes (2026-07-23)
 
 ### AC4: the recorded grooming opt-out is honoured here too
 
@@ -69,6 +72,7 @@ Uses the predicate US0323 builds. This story is only what the writers do with it
   honoured at both ends and this check cannot become the one gate an opted-out project cannot
   escape
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::AffectsValidatedAtMintTests::test_the_recorded_opt_out_downgrades_the_refusal_to_a_warning
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

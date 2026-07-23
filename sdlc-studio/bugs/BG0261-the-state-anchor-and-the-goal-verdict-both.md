@@ -1,6 +1,7 @@
 # BG0261: The state anchor and the goal verdict both describe three review rounds when ten happened, and the freshness check that exists for exactly this only counts lines
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional - node-addressed tests green, mutation-proven by the delivering worktree agent; merged and re-verified on the composed tree
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/doc_freshness.py,.claude/skills/sdlc-studio/scripts/lib/run_state.py,.claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py,.claude/skills/sdlc-studio/scripts/tests/test_run_state.py

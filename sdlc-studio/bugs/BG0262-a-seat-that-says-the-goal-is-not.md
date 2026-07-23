@@ -1,6 +1,7 @@
 # BG0262: A seat that says the goal is NOT achievable discharges the plan gate exactly as one that says it is - the verdict's content is never read
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional - node-addressed tests green, mutation-proven by the delivering worktree agent; merged and re-verified on the composed tree
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py,.claude/skills/sdlc-studio/reference-sprint.md
@@ -27,6 +28,23 @@ This is the mirror image of CR0404. There, a REJECT blocks with no way to carry 
 ## Proposed Fix
 
 Give the verdict an effect. Parse `achievable` and `one_increment` against a small vocabulary rather than accepting free text - the same treatment status vocabularies already get - and refuse the plan when a seat says no, unless an override is recorded with a reason. Keep the free-text note. Do NOT settle for printing louder: a warning the operator can walk past is what exists now. If refusing is judged too strong, the minimum is that a negative verdict is stamped on the run state and quoted at the close, so the goal verdict can be judged against what the seats said before the work rather than after.
+
+## Acceptance Criteria
+
+### AC1: a negative goal verdict refuses the plan unless an override is recorded
+
+- **Given** a seat goal-review verdict that says the goal is NOT achievable
+- **When** `sprint plan --write` runs against it
+- **Then** it is refused rather than proceeding, unless `--override-goal-review "<reason>"` is
+  supplied and stamped on the run - so a negative verdict has an effect rather than discharging
+  the gate identically to a positive one
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::NegativeGoalVerdictHasAnEffectTests
+
+## Resolution
+
+`verdict_polarity` reads the seat verdicts, and a negative verdict refuses the plan-write path
+unless overridden with a recorded reason. Delivered in EP0114's cluster (RUN-01KY5Y3W),
+mutation-proven by the delivering agent and re-verified on the composed tree.
 
 ## Revision History
 

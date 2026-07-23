@@ -1,6 +1,7 @@
 # BG0263: The goal review has no rounds, so rewriting a goal in response to a REJECT erases the fact that it was ever rejected
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional - node-addressed tests green, mutation-proven by the delivering worktree agent; merged and re-verified on the composed tree
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py
@@ -25,6 +26,23 @@ The loss matters most for exactly the case that justifies the ceremony. A goal a
 ## Proposed Fix
 
 Make the record a list of rounds rather than a single object, keyed by the goal string each round judged. The gate keeps its current meaning - the LATEST round must match the goal being planned - so nothing about the wsjf-inputs staleness protection changes. Stamp the round count on the run state alongside `sprint_goal_review` so the close can say what the goal cost to agree.
+
+## Acceptance Criteria
+
+### AC1: the goal review accumulates rounds instead of overwriting
+
+- **Given** a goal reviewed, rejected, reworded, and reviewed again
+- **When** the second review is recorded
+- **Then** the record holds BOTH rounds (a list, not a single object), the gate reads the
+  latest, and the round count reaches the run state - so rewriting a rejected goal no longer
+  erases that it was rejected
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GoalReviewKeepsItsRoundsTests
+
+## Resolution
+
+Goal-review record is now a list of rounds; the gate reads the latest and the round count is
+stamped on the run state. Delivered in EP0111's cluster (RUN-01KY5Y3W), mutation-proven by the
+delivering agent and re-verified on the composed tree.
 
 ## Revision History
 

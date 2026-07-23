@@ -1,6 +1,6 @@
 # US0337: The fixed term is MEASURED from the project's own velocity record, and reads UNMEASURED rather than a default where fewer than two sprints carry a whole-sprint actual
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0391
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -36,6 +36,7 @@ first. That ordering is a constraint on the DATA this story reads, not on the fi
 - **Then** it is fitted from exactly those rows and the answer names the retro ids it rests
   on, so the figure is traceable to the rows that produced it rather than being asserted
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::TheFixedTermIsMeasuredFromTheRecordTests::test_the_fit_uses_the_whole_sprint_rows_and_names_them
+- **Verified:** yes (2026-07-23)
 
 ### AC2: fewer than two qualifying sprints reads UNMEASURED and supplies no figure
 
@@ -44,6 +45,7 @@ first. That ordering is a constraint on the DATA this story reads, not on the fi
 - **Then** the answer is UNMEASURED and carries no number at all - not the shipped seed, not
   zero, not a scaled default - and states how many qualifying sprints it found
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::TheFixedTermIsMeasuredFromTheRecordTests::test_fewer_than_two_qualifying_rows_reads_unmeasured_and_supplies_no_figure
+- **Verified:** yes (2026-07-23)
 
 ### AC3: a per-unit build sum does not count toward the two
 
@@ -54,6 +56,7 @@ first. That ordering is a constraint on the DATA this story reads, not on the fi
   with the reason: a build sum omits the ceremony the fixed term exists to price, so counting
   it would fit the fixed cost against data that never contained it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::TheFixedTermIsMeasuredFromTheRecordTests::test_a_per_unit_build_sum_row_does_not_count_toward_the_two
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # US0330: A structural check fails on subsection headings out of order, duplicated within one release, or empty - the shapes a bad hand-insert produces
 
-> **Status:** Draft
+> **Status:** Review
 > **Depends on:** BG0265, BG0256
 > **Delivers:** CR0405
 > **Created:** 2026-07-22
@@ -43,6 +43,7 @@ US0331 is where this check is bound into the gate.
 - **When** the structural check runs over the file
 - **Then** it fails, naming the release, the heading that is out of place and the order expected
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_changelog.py::StructureCheckTests::test_subsections_out_of_canonical_order_fail
+- **Verified:** yes (2026-07-23)
 
 ### AC2: a subsection repeated inside one release fails, naming both occurrences
 
@@ -52,6 +53,7 @@ US0331 is where this check is bound into the gate.
 - **Then** it fails, naming the release, the repeated heading and both line numbers, so the
   author is told where the reparenting happened rather than that something is wrong
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_changelog.py::StructureCheckTests::test_a_repeated_subsection_in_one_release_fails_naming_both_lines
+- **Verified:** yes (2026-07-23)
 
 ### AC3: an empty subsection fails, and a well-formed release passes
 
@@ -61,6 +63,7 @@ US0331 is where this check is bound into the gate.
 - **Then** the first fails naming the empty heading and the second passes, so the check
   discriminates rather than refusing any file it is pointed at
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_changelog.py::StructureCheckTests::test_an_empty_subsection_fails_and_a_well_formed_release_passes
+- **Verified:** yes (2026-07-23)
 
 ### AC4: the composer cannot produce a file its own check rejects
 
@@ -70,6 +73,7 @@ US0331 is where this check is bound into the gate.
 - **Then** the file still passes, so the ordering rule binds the deterministic writer as well as
   the hand-editor and the two cannot end up in a standoff
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_changelog.py::StructureCheckTests::test_compose_output_still_passes_the_structural_check
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

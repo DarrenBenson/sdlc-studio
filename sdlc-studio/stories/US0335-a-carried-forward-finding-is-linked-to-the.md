@@ -1,6 +1,6 @@
 # US0335: A carried-forward finding is linked to the units it was found against, so it cannot be lost when the sprint closes
 
-> **Status:** Draft
+> **Status:** Review
 > **Verification depth:** functional - node-addressed tests in test_critic/test_conformance/test_sprint, all green; carry_forward mutation-proven (7 mutants killed incl. a non-resolving ref)
 > **Depends on:** US0332
 > **Delivers:** CR0404
@@ -27,6 +27,7 @@ is closed
 - **Then** it carries both unit ids, and a finding naming none is refused rather than filed
   unattached
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::CarriedFindingLinkTests::test_a_carried_finding_naming_no_unit_is_refused
+- **Verified:** yes (2026-07-23)
 
 ### AC2: the link survives the close of the sprint that produced it
 
@@ -36,6 +37,7 @@ is closed
   failure mode the goal verdict already demonstrates, where a judgement outlives the state
   that explains it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::CarriedFindingLinkTests::test_a_carried_finding_still_resolves_after_its_sprint_closes
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

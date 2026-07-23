@@ -1,6 +1,6 @@
 # US0320: The reviewer brief directs a first pass enumerating every assertion in Resolutions, docstrings, comments and CHANGELOG entries, marked TRUE, FALSE or UNVERIFIABLE
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0393
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -26,6 +26,7 @@ the last thing I get to
   comments and CHANGELOG entries - all four named, since a pass that omits one exempts it,
   and a Resolution is the artefact no test can fail
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClaimInventoryTests::test_the_brief_names_all_four_prose_surfaces
+- **Verified:** yes (2026-07-23)
 
 ### AC2: every enumerated claim carries a ruling
 
@@ -34,6 +35,7 @@ the last thing I get to
 - **Then** it is refused and names the unruled claim, each ruling being TRUE, FALSE or
   UNVERIFIABLE
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClaimInventoryTests::test_a_claim_left_unruled_is_refused
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

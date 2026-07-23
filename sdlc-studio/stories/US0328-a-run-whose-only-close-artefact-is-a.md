@@ -1,6 +1,6 @@
 # US0328: A run whose only close artefact is a FAILED close attempt is open-and-protected, not absorbable
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0401
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -26,6 +26,7 @@ closing, which is the run most likely to be worked around
 - **Then** the plan is refused and the run's batch is exactly the batch it held before,
   so the mid-close run is covered by the guard rather than exempt from it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::FailedCloseAttemptIsProtectedTests::test_a_run_with_only_a_failed_close_attempt_refuses_a_disjoint_batch
+- **Verified:** yes (2026-07-23)
 
 ### AC2: protected is not finished, so a truly closed run is still replaced
 
@@ -36,6 +37,7 @@ closing, which is the run most likely to be worked around
   second is archived and replaced by a fresh run at exit zero, so `close_attempts` never
   becomes a close artefact and never silently discards a run
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::FailedCloseAttemptIsProtectedTests::test_close_attempts_protect_the_run_while_ended_at_still_replaces_it
+- **Verified:** yes (2026-07-23)
 
 ### AC3: the refusal says the run is mid-close and how much it left outstanding
 
@@ -45,6 +47,7 @@ closing, which is the run most likely to be worked around
   names the outstanding count it left, so the operator is pointed at finishing the close
   rather than at abandoning the run
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::FailedCloseAttemptIsProtectedTests::test_refusal_names_the_failed_close_attempt_and_its_outstanding_count
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # US0318: The shipped reviewer brief carries per-item repair verdicts, mutating the author's tests, and isolation re-testing, with the reason each exists beside it
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0396
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -26,6 +26,7 @@ is how all three were improvised mid-sprint rather than drawn from anything ship
   the code, and isolation re-testing of a surviving mutant, each paired with the reason it
   exists, and a brief missing any of the three is refused rather than issued
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ReviewerBriefTests::test_a_brief_missing_any_of_the_three_practices_is_refused
+- **Verified:** yes (2026-07-23)
 
 ### AC2: a surviving mutant is stated to be evidence about the harness, not the test
 
@@ -35,6 +36,7 @@ is how all three were improvised mid-sprint rather than drawn from anything ship
   because a sibling guard masked a survivor three separate times in one sprint and each time
   the truth appeared only when the branch was exercised alone
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ReviewerBriefTests::test_the_survivor_instruction_requires_isolation_before_a_conclusion
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

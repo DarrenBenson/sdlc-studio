@@ -1,6 +1,6 @@
 # US0319: A repair review is briefed with the previous round's findings enumerated and returns a CLOSED / OVER-CLAIMED / MOVED verdict per item
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0396
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -25,6 +25,7 @@ instead of one impression covering all of them
 - **Then** the brief lists every finding of the previous round individually, so the reviewer
   cannot answer in aggregate about a set they were never shown item by item
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairVerdictTests::test_a_repair_brief_enumerates_every_previous_finding
+- **Verified:** yes (2026-07-23)
 
 ### AC2: a repair verdict is refused unless every finding carries its own ruling
 
@@ -34,6 +35,7 @@ instead of one impression covering all of them
   OVER-CLAIMED or MOVED - three categories a general 'review the repair' answer would blur
   into one, which is what made this the most useful artefact of RUN-01KY3MFX
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairVerdictTests::test_a_verdict_leaving_a_finding_unruled_is_refused
+- **Verified:** yes (2026-07-23)
 
 ### AC3: MOVED is not counted as closed
 
@@ -42,6 +44,7 @@ instead of one impression covering all of them
 - **Then** the finding is reported as still open, because a defect that moved is a defect
   that survived - counting it closed is how a repair masks the defect beside it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairVerdictTests::test_a_moved_finding_is_not_counted_as_closed
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

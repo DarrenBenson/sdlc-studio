@@ -1,6 +1,6 @@
 # US0327: The refusal names the open run's id, outcome and batch size, and states both ways forward
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0401
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
@@ -26,6 +26,7 @@ which run is open and what may be done about it
 - **Then** the refusal text carries that run id, that outcome and the batch size six, so
   the operator identifies the run from the message alone
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::RefusalNamesTheOpenRunTests::test_refusal_states_the_open_run_id_outcome_and_batch_size
+- **Verified:** yes (2026-07-23)
 
 ### AC2: both ways forward are stated as commands, not as advice
 
@@ -34,6 +35,7 @@ which run is open and what may be done about it
 - **Then** it names both routes, closing the open run and deliberately re-planning it,
   each as a command that runs as printed, and it names no third route
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::RefusalNamesTheOpenRunTests::test_refusal_states_both_ways_forward_as_runnable_commands
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 
