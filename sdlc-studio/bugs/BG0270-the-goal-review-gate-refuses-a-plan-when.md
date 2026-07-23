@@ -24,6 +24,29 @@ Note the shape: two distinct seat answers were folded into one blocking predicat
 
 Split the two answers in `goal_review_status`. Build `objections` from `achievable == 'no'` alone - that is the answer that means a seat thinks the goal cannot be met. Report `one_increment == 'no'` separately as an advisory (e.g. `themed_batch` or `not_atomic`), printed in the plan so the operator sees the seats' framing, but NOT added to the refusal set. A themed batch endorsed by every seat must plan without an override; reserve the override for a real achievable-no a human chooses to overrule.
 
+## Acceptance Criteria
+
+### AC1: a one-increment `no` does not block a plan every seat finds achievable
+
+- **Given** a goal review where every seat answers achievable=yes and one_increment=no (a themed batch the seats endorse)
+- **When** `sprint plan --write` runs
+- **Then** the plan proceeds without an override, because no seat objected to achievability
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ThemedBatchNotAnObjectionTests::test_one_increment_no_alone_does_not_refuse_the_plan
+
+### AC2: an achievable `no` still blocks, unregressed
+
+- **Given** a goal review where any seat answers achievable=no
+- **When** `sprint plan --write` runs
+- **Then** the plan is still refused and still requires a recorded override
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ThemedBatchNotAnObjectionTests::test_an_achievable_no_still_refuses
+
+### AC3: the themed-batch observation is surfaced, not swallowed
+
+- **Given** seats answering one_increment=no on an otherwise achievable goal
+- **When** the plan renders its goal review
+- **Then** it reports the batch as THEMED (not one atomic increment) as advice the operator can read, so separating the two answers loses no information
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ThemedBatchNotAnObjectionTests::test_the_themed_batch_note_is_reported
+
 ## Revision History
 
 | Date | Author | Change |

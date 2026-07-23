@@ -17,10 +17,6 @@
 
 {{who this affects and what breaks}}
 
-## Acceptance Criteria
-
-- [ ] {{criterion}}
-
 ## Revision History
 
 | Date | Author | Change |
@@ -57,4 +53,10 @@ the recommended path is the one without the guard.
 - [ ] AC3: a warning, never a refusal
 - **Given** a legitimate near-duplicate (a genuinely distinct defect in the same file)
 - **Then** the mint still succeeds and the warning is advisory - the author decides
+- **Verify:** manual
+
+- [ ] AC4: authoring criteria onto a scaffolded artefact does not leave the placeholder behind
+- **Given** an artefact minted with the `- [ ] {{criterion}}` acceptance-criteria scaffold
+- **When** an author supplies the real criteria
+- **Then** the scaffold block is replaced rather than left beside the new one - today an appended section leaves the placeholder in place and `validate check` errors on it (hit twice while filing these very findings)
 - **Verify:** manual

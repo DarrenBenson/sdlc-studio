@@ -20,6 +20,22 @@ Found by the closing adversarial review of RUN-01KY5Y3W. `plan_reviewed` guards 
 
 Decide the untokened case deliberately in `plan_reviewed`: either treat a verdict with no findings-hash as NOT pinned (return ok False, matching US0313's intent that a verdict answers a specific finding set), or, if back-compat honouring is wanted, make that an explicit branch with its own test. Do not let it pass by the `m and` short-circuit.
 
+## Acceptance Criteria
+
+### AC1: an untokened plan-review verdict is decided deliberately, not by short-circuit
+
+- **Given** a plan-review APPROVE recorded with no `findings-hash=` token in its issues field
+- **When** `repair_plan.plan_reviewed` evaluates it
+- **Then** the untokened case takes an explicit branch with a stated decision, rather than passing because the match guard short-circuited
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::UntokenedVerdictPinTests::test_an_untokened_verdict_is_not_treated_as_pinned
+
+### AC2: a tokened verdict pinned to the current findings still passes, unregressed
+
+- **Given** a plan-review APPROVE carrying a `findings-hash=` token equal to the plan's current findings
+- **When** `plan_reviewed` evaluates it
+- **Then** it passes exactly as before, so the fix narrows only the untokened hole
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::UntokenedVerdictPinTests::test_a_correctly_pinned_verdict_still_passes
+
 ## Revision History
 
 | Date | Author | Change |

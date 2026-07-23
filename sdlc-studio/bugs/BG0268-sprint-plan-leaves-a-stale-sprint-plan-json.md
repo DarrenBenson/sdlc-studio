@@ -20,6 +20,22 @@ Found by the closing adversarial review of RUN-01KY5Y3W. US0326 gives `sprint pl
 
 Order the writes so the forecast record and sprint-plan.json are written only AFTER `open_run` returns successfully - `open_run` is the authority on whether the plan may proceed, so nothing a plan produces should be persisted before it says yes. Alternatively wrap the plan-write path in the same advisory lock `open_run` uses, so the pre-check and the open are one critical section.
 
+## Acceptance Criteria
+
+### AC1: a refused plan leaves no sibling artefacts behind
+
+- **Given** `open_run` refuses a disjoint batch after the pre-check passed
+- **When** `sprint plan --write` exits non-zero
+- **Then** no `sprint-plan.json` and no forecast record for the refused plan remain on disk, matching the byte-identical guarantee run-state.json already gives
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RefusedPlanLeavesNothingTests::test_a_refused_open_run_leaves_no_plan_json_or_forecast
+
+### AC2: a successful plan still writes both, unregressed
+
+- **Given** `open_run` accepts the batch
+- **When** `sprint plan --write` succeeds
+- **Then** `sprint-plan.json` and the forecast record are written exactly as before
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RefusedPlanLeavesNothingTests::test_a_successful_plan_still_writes_both
+
 ## Revision History
 
 | Date | Author | Change |

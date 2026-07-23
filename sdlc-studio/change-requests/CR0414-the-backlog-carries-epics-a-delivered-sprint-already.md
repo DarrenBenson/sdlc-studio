@@ -17,10 +17,6 @@
 
 {{who this affects and what breaks}}
 
-## Acceptance Criteria
-
-- [ ] {{criterion}}
-
 ## Revision History
 
 | Date | Author | Change |
