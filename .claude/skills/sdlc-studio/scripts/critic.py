@@ -803,6 +803,38 @@ def is_independent(verdict: dict | None) -> bool:
     return bool(author) and reviewer != author
 
 
+#: The explicit token for a repair that executed NO plan - the repair-plan gate is off, or a
+#: repair was made without one. Recorded so a reader can tell a planned repair from an
+#: unplanned one, and so an ABSENT field (which reads as missing data) is never mistaken for a
+#: planned repair whose id was dropped (US0314).
+REPAIR_UNPLANNED = "repair:unplanned"
+
+
+def repair_provenance(plan_id: str | None) -> str:
+    """The provenance token a repair records, for the `issues` field of its delivery verdict
+    or its review-round entry. A named plan yields `repair:plan=<id>`; the absence of one
+    yields REPAIR_UNPLANNED, explicitly, never the empty string - an empty field reads as
+    missing data and a reader cannot tell it apart from a planned repair whose id was lost."""
+    pid = " ".join(str(plan_id or "").split())
+    return f"repair:plan={pid}" if pid else REPAIR_UNPLANNED
+
+
+def repair_plan_of(issues: str | None) -> str | None:
+    """The plan id a recorded repair executed, or None when it was recorded unplanned. Reads
+    the token `repair_provenance` wrote. Distinguishes 'unplanned, on the record' (returns
+    None but REPAIR_UNPLANNED was present) from 'no provenance recorded at all'."""
+    import re as _re
+    m = _re.search(r"repair:plan=(\S+)", str(issues or ""))
+    return m.group(1) if m else None
+
+
+def is_planned_repair(issues: str | None) -> bool:
+    """True only when a repair recorded a named plan. An unplanned repair - even one honestly
+    marked REPAIR_UNPLANNED - is not a planned repair, and a repair with no provenance token
+    at all is not one either."""
+    return repair_plan_of(issues) is not None
+
+
 def is_pre_gate(verdict: dict | None) -> bool:
     """True for a unit closed BEFORE the independence gate, under the prior
     risk-scaled policy (which permitted light-tier self-review). Marked by the

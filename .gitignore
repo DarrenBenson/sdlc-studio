@@ -101,3 +101,6 @@ sdlc-studio/.local/
 # Named for clarity (already under .local/): the version-check cache is per-machine.
 version-check.json
 evals/.results/
+
+# Transient agent worktrees (parallel-delivery scratch) - never committed
+.claude/worktrees/

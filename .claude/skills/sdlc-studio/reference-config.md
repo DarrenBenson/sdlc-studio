@@ -170,6 +170,21 @@ review:
     - suggestion    # Consider addressing
 ```
 
+### The repair-plan gate {#repair-plan-gate}
+
+Makes a repair a planned, independently reviewed step (EP0106 / RFC0053) - the one loop step
+that otherwise has no review before execution, and where a round's repair seeds the next
+round's finding. OFF by default, so an upgrading project's close does not change.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| `review.repair_plan_gate` | `off` | `on` requires a REJECT to be answered by a written plan reviewed before any code |
+| `review.repair_design_threshold` | 2 | Failed rounds of one approach class before a repeat-class repair must CHANGE the design, not propose another instance |
+
+When on: a repair names the plan it executed; the plan lists one entry per finding (change,
+approach, what it might break); an independent pass reviews the plan; a verdict recorded after
+the repair does not count.
+
 ---
 
 ## Persona Staleness {#personas-staleness-days}

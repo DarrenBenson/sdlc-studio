@@ -53,6 +53,12 @@ review:
     - critical      # Must address before merge
     - important     # Should address
     - suggestion    # Consider addressing
+  # The repair-plan gate (EP0106 / RFC0053). OFF by default: an upgrading project's close does
+  # not change until it opts in. When on, a REJECT is answered by a written plan reviewed
+  # before any code. `repair_design_threshold` is the failed-round count past which a
+  # repeat-class repair must change the design rather than propose another instance.
+  repair_plan_gate: off
+  repair_design_threshold: 2
   # Requirements/spec documents (schema v3 only). A delivery diff that edits one of these
   # without a citing AC is an UNTRACED spec edit - the critic charter treats it as a blocking
   # finding: falsifying the source of truth is the worst propagation of a bad

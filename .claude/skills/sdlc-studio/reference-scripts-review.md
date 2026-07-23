@@ -17,6 +17,19 @@ own epic and should be split or re-scoped. Heuristic and read-only; false positi
 expected (the operator decides); never auto-edits. Run by the authoring loop's closing
 consistency pass.
 
+### `repair_plan.py`
+
+The repair-plan gate (EP0106 / RFC0053). The repair is the one loop step with no review
+before execution, and where a round's repair seeds the next round's finding. Opt-in via
+`review.repair_plan_gate`, OFF by default. `record_repair_plan` writes a plan for a REJECT -
+one entry per finding (the change, the approach, what it might break), refusing a partial plan,
+an entry with no approach or risk, or a plan against a non-REJECT verdict. `review_repair_plan`
+records an independent verdict (self-approval refused), pinned to the findings by fingerprint
+so a later finding invalidates it. `repair_gate(root, plan)` refuses an unplanned or
+after-the-fact repair when on. A repeat-class repair must declare the design retained or
+changed (`review.repair_design_threshold`). `brief` prints the reviewer questions the loop
+keeps failing; a repair records its plan via `critic.repair_provenance`.
+
 ### `plan_review.py`
 
 Plan-review gate (schema v3 only, dormant on v2). Before a story with spec-derived ACs is

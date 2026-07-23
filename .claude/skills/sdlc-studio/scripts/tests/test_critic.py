@@ -1359,6 +1359,40 @@ class NeutralBriefTests(unittest.TestCase):
                 mod.neutral_brief(root, "US0001", "qa-seat")), [])
 
 
+
+
+
+class RepairProvenanceTests(unittest.TestCase):
+    """US0314: a repair records which plan it executed."""
+
+    def _critic(self):
+        import importlib.util, sys
+        from pathlib import Path
+        spec = importlib.util.spec_from_file_location(
+            "critic", Path(__file__).resolve().parent.parent / "critic.py")
+        m = importlib.util.module_from_spec(spec)
+        sys.modules["critic"] = m
+        spec.loader.exec_module(m)
+        return m
+
+    def test_a_recorded_repair_carries_the_plan_it_executed(self) -> None:
+        c = self._critic()
+        issues = c.repair_provenance("RP0007")
+        self.assertEqual(c.repair_plan_of(issues), "RP0007")
+        self.assertTrue(c.is_planned_repair(issues))
+
+    def test_an_unplanned_repair_is_recorded_as_unplanned_not_blank(self) -> None:
+        c = self._critic()
+        token = c.repair_provenance(None)
+        # explicit, never the empty string - an absent field reads as missing data and
+        # cannot be told from a planned repair whose id was dropped.
+        self.assertNotEqual(token, "")
+        self.assertEqual(token, c.REPAIR_UNPLANNED)
+        self.assertIsNone(c.repair_plan_of(token))
+        self.assertFalse(c.is_planned_repair(token))
+        # and a verdict with NO provenance token at all is also not a planned repair
+        self.assertFalse(c.is_planned_repair("ac-hash=deadbeef"))
+
+
 if __name__ == "__main__":
     unittest.main()
-

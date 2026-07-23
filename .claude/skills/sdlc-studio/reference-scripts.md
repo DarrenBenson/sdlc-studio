@@ -159,6 +159,7 @@ lists every script with a one-line summary; open the linked page for the full en
 ### Audit, review & critic - [reference-scripts-review.md](reference-scripts-review.md)
 
 - `ac_scope.py` - Authoring lint (advisory): `check` flags a story whose acceptance criteria mention a
+- `repair_plan.py` - The repair-plan gate (EP0106 / RFC0053, opt-in via `review.repair_plan_gate`, off by default). A REJECT is answered by a written plan (one entry per finding: the change, the approach, what it might break), reviewed by an independent pass before any code, with the verdict pinned to the findings it answered. `brief` prints the reviewer questions; `gate --plan <id>` checks a repair may be recorded.
 - `plan_review.py` - Plan-review gate (schema v3 only, dormant on v2). Before a story with spec-derived ACs is
 - `spec_guard.py` - Spec-edit guard (schema v3 only, dormant on v2). A delivery must not silently falsify the
 - `constitution.py` - Project-constitution principle gate. Asserts the machine-checkable

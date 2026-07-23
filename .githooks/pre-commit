@@ -314,10 +314,14 @@ if [ -n "$md_cmd" ]; then
     -- $md_cmd '**/*.md' --ignore node_modules
   # The shipped payload lives under a dot-directory the glob above cannot see; lint it
   # explicitly with its own config (template/example rules relaxed, mechanics enforced).
+  # `.claude/worktrees/` holds transient agent worktrees (parallel-delivery scratch), which
+  # are never shipped payload and carry in-progress files - excluded so a builder's
+  # half-written markdown cannot block an unrelated commit in the main tree.
   run "markdown-payload" \
     "markdown mechanics of the SHIPPED skill payload (.claude/, invisible to the '**/*.md' glob)" \
     "auto-fix most with: npm run lint:fix" \
-    -- $md_cmd --config .claude/skills/sdlc-studio/.markdownlint.json '.claude/**/*.md'
+    -- $md_cmd --config .claude/skills/sdlc-studio/.markdownlint.json '.claude/**/*.md' \
+       --ignore '.claude/worktrees/**'
 else
   printf '  %sSKIP%s markdown - markdownlint not found. Run %snpm install%s to enable it locally.\n' "$Y" "$N" "$B" "$N"
   printf '       CI still enforces it, so a markdown-mechanics error can pass here and fail on push.\n'

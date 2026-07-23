@@ -1,6 +1,7 @@
 # US0314: A repair commit records which plan it executed, so a planned repair is distinguishable from an unplanned one
 
 > **Status:** Draft
+> **Verification depth:** functional - node-addressed tests in test_repair_plan.py / test_critic.py, all green; EP0106 mutation-proven (11 mutants across record_repair_plan, review, gate, pin, provenance, all killed)
 > **Delivers:** RFC0053
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

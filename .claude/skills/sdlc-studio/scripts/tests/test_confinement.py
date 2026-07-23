@@ -364,6 +364,7 @@ CONFINEMENT_ALLOWLIST: dict[str, str] = {
     "resume.py": "writes the resume record it owns",
     "review_prep.py": "writes the review-prep record it owns",
     "plan_review.py": "writes the plan-review record it owns",
+    "repair_plan.py": "writes the repair-plan record it owns under .local/repair-plans/",
     "plan.py": "moves plan files between the live and archived plan directories",
     "persona_gen.py": "writes the personas it generates",
     "persona_resolve.py": "writes the resolved persona record",

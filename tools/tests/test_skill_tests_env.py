@@ -228,7 +228,10 @@ class ScrubSiteSweepTests(unittest.TestCase):
     #: that clear only `GIT_DIR`/`GIT_WORK_TREE`/`GIT_INDEX_FILE` are exactly what the sweep
     #: must not skip past. A single mention is usually prose about one variable.
     THRESHOLD = 2
-    SKIP_DIRS = frozenset({".git", "node_modules", "__pycache__", ".local"})
+    # `worktrees` holds transient agent worktrees (parallel-delivery scratch): each carries a
+    # whole checkout copy, so walking them would flag every scrub site N times over and pin
+    # the sweep to a workspace that is never committed.
+    SKIP_DIRS = frozenset({".git", "node_modules", "__pycache__", ".local", "worktrees"})
 
     def _sites(self) -> dict[str, int]:
         """`{repo-relative path: how many repo-locating names it mentions}` for code files."""
