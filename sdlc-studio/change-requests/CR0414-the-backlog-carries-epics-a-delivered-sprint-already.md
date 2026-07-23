@@ -44,7 +44,7 @@ The gap is SEMANTIC overlap between a planned unit and delivered work, which no 
 signal in the workspace currently covers. This is the two-backlog model's blind spot: refine
 mints against the request, never against what has since shipped.
 
-## Impact
+## Impact of the wider class
 
 Every long-lived backlog. Here it would have wasted a 12-point epic in Sprint 2 had the overlap
 not been spotted by eye. The failure mode is silent and grows with backlog age: the older the

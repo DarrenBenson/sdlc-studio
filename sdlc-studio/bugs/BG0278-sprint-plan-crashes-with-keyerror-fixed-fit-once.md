@@ -24,9 +24,11 @@
 
 Hit opening Sprint 2. `sprint plan` exits with a traceback:
 
-    File ".../sprint.py", line 2713, in _render_rate_provenance
-      instead = {RATE_EVIDENCE: ..., RATE_SEED: ...}[tf["rate_source"]]
-    KeyError: 'fixed-fit'
+```text
+File ".../sprint.py", line 2713, in _render_rate_provenance
+  instead = {RATE_EVIDENCE: ..., RATE_SEED: ...}[tf["rate_source"]]
+KeyError: 'fixed-fit'
+```
 
 **Why it detonated now.** Closing Sprint 1 recorded the whole-sprint actual that finally gave the
 project enough rows to FIT the fixed per-sprint term. From that moment `_token_forecast` takes its

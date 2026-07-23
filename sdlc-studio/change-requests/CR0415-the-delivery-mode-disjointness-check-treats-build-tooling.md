@@ -43,7 +43,7 @@ conflicts and the wrong one for build-tooling.
 I held US0372 back for serial delivery by hand rather than trust the offer here. That judgement
 should not have to be remembered.
 
-## Impact
+## Impact of the coupling
 
 Any project using the parallel offer on a batch that includes its own tooling. The failure is not
 a merge conflict - it is a gate changing underneath concurrent work, so the damage shows up as

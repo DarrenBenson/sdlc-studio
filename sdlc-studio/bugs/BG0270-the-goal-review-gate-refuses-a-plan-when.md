@@ -31,7 +31,9 @@ three seats recorded `achievable = yes` and endorsed the batch; all three record
 `one_increment = no`, each spelling out WHY it is not an objection ("a themed clearance batch of
 independent fixes, which is the honest classification, not an objection"). The command replied:
 
-    3 seat(s) judged it NOT achievable (product, engineering, qa)
+```text
+3 seat(s) judged it NOT achievable (product, engineering, qa)
+```
 
 That sentence is FALSE. No seat judged it unachievable; every one judged the opposite. So the
 defect is not only that a themed batch is blocked - it is that the tool REPORTS the seats as
