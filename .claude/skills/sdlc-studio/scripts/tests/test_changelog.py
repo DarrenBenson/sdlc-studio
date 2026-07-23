@@ -6,6 +6,7 @@ malformed fragment is refused naming the file, a stray fragment fails a release
 changelog-empty documentation check.
 """
 import pathlib
+import re
 import sys
 import tempfile
 import unittest
@@ -161,6 +162,95 @@ class FragmentCoverageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = _repo(tmp, changelog_text=empty_changelog)
             self.assertTrue(dc._changelog_unreleased_empty(root))
+
+
+class StructureCheckTests(unittest.TestCase):
+    """US0330: a structural check over CHANGELOG.md's OWN [Unreleased] headings catches the
+    shapes a bad hand-insert produces - out of canonical order, repeated inside the release,
+    or empty - and passes a well-formed file. Scoped to [Unreleased]: released history is
+    frozen and hand-editable, so it is not policed."""
+
+    def _errs(self, tmp, changelog_text):
+        root = pathlib.Path(tmp)
+        (root / "CHANGELOG.md").write_text(changelog_text, encoding="utf-8")
+        return changelog.structure_errors(root)
+
+    def test_subsections_out_of_canonical_order_fail(self):
+        # Fixed above Added: the canonical order is Added(1) before Fixed(5), so Added is the
+        # heading out of place. The message names the release, the out-of-order heading and
+        # the expected order.
+        text = ("# Changelog\n\n## [Unreleased]\n\n"
+                "### Fixed\n\n- a fix\n\n"
+                "### Added\n\n- an addition\n\n"
+                "## [4.1.0] - 2026-07-14\n\n### Fixed\n\n- old\n")
+        with tempfile.TemporaryDirectory() as tmp:
+            errs = self._errs(tmp, text)
+            self.assertTrue(any("out of canonical order" in e for e in errs), errs)
+            joined = " ".join(errs)
+            self.assertIn("### Added", joined)          # the out-of-place heading
+            self.assertIn("### Fixed", joined)          # what it follows
+            self.assertIn("[Unreleased]", joined)       # the release named
+            self.assertIn("Added, Changed", joined)     # the expected order spelled out
+        # the same release with the headings the right way round is clean (the fault is the
+        # order, not the presence of two headings)
+        ok_text = ("# Changelog\n\n## [Unreleased]\n\n"
+                   "### Added\n\n- an addition\n\n"
+                   "### Fixed\n\n- a fix\n\n"
+                   "## [4.1.0] - 2026-07-14\n\n### Fixed\n\n- old\n")
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(self._errs(tmp, ok_text), [])
+
+    def test_a_repeated_subsection_in_one_release_fails_naming_both_lines(self):
+        # two `### Added` headings inside [Unreleased] - the exact incident shape, under which
+        # every entry after the second heading reads as belonging to it.
+        text = ("# Changelog\n\n## [Unreleased]\n\n"      # lines 1-3
+                "### Added\n\n- first entry\n\n"          # ### Added at line 5
+                "### Added\n\n- second entry\n\n"         # ### Added at line 9
+                "## [4.1.0] - 2026-07-14\n\n### Fixed\n\n- old\n")
+        with tempfile.TemporaryDirectory() as tmp:
+            errs = self._errs(tmp, text)
+            self.assertEqual(len(errs), 1, errs)         # ONLY the repeat, not a spurious order fault
+            self.assertIn("repeated", errs[0])
+            self.assertIn("5 and 9", errs[0])            # both occurrences, by file line number
+            self.assertIn("[Unreleased]", errs[0])
+
+    def test_an_empty_subsection_fails_and_a_well_formed_release_passes(self):
+        # a `### Added` heading carrying no entry before the next heading -> empty.
+        empty = ("# Changelog\n\n## [Unreleased]\n\n"
+                 "### Added\n\n"                          # no entry before the next heading
+                 "### Fixed\n\n- a fix\n\n"
+                 "## [4.1.0] - 2026-07-14\n\n### Fixed\n\n- old\n")
+        well_formed = ("# Changelog\n\n## [Unreleased]\n\n"
+                       "### Added\n\n- an addition\n\n"
+                       "### Fixed\n\n- a fix\n\n"
+                       "## [4.1.0] - 2026-07-14\n\n### Fixed\n\n- old\n")
+        with tempfile.TemporaryDirectory() as tmp:
+            errs = self._errs(tmp, empty)
+            self.assertTrue(any("empty" in e for e in errs), errs)
+            self.assertIn("### Added", " ".join(errs))
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(self._errs(tmp, well_formed), [])   # discriminates, never blanket-refuses
+
+    def test_compose_output_still_passes_the_structural_check(self):
+        # compose CREATES a missing heading; the ordering rule must bind the writer too, or
+        # compose and its own check end in a standoff. Two created sections exercise both
+        # directions: Security must land AFTER Fixed (kills a head-insert), Breaking must land
+        # BEFORE Added (kills an end-append).
+        base = ("# Changelog\n\n## [Unreleased]\n\n"
+                "### Added\n\n- existing added\n\n"
+                "### Fixed\n\n- existing fixed\n\n"
+                "## [4.1.0] - 2026-07-14\n\n- x\n")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _repo(tmp, changelog_text=base, fragments=[
+                ("a-security.md", "<!-- section: Security -->\n- **a security fix.**\n"),
+                ("b-breaking.md", "<!-- section: Breaking -->\n- **a breaking change.**\n")])
+            self.assertEqual(changelog.structure_errors(root), [])   # sound before compose
+            changelog.compose(root)
+            self.assertEqual(changelog.structure_errors(root), [])   # and still sound after
+            text = (root / "CHANGELOG.md").read_text(encoding="utf-8")
+            unreleased = text.split("## [4.1.0]")[0]
+            order = re.findall(r"^### ([A-Za-z]+)\s*$", unreleased, re.M)
+            self.assertEqual(order, ["Breaking", "Added", "Fixed", "Security"])
 
 
 if __name__ == "__main__":
