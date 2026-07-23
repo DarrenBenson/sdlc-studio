@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 3 |
+| Open | 4 |
 | In Progress | 0 |
 | Fixed | 184 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **269** |
+| **Total** | **270** |
 
 ## All Bugs
 
@@ -236,6 +236,7 @@
 | [BG0267](BG0267-a-repair-plan-verdict-carrying-no-findings-hash.md) | A repair-plan verdict carrying no findings-hash token satisfies the pin check vacuously | Open | Low | 2026-07-23 | 2026-07-23 |
 | [BG0268](BG0268-sprint-plan-leaves-a-stale-sprint-plan-json.md) | sprint plan leaves a stale sprint-plan.json and forecast record when a concurrent writer opens a run between the pre-check and open_run | Open | Low | 2026-07-23 | 2026-07-23 |
 | [BG0269](BG0269-the-scrub-site-sweep-s-worktrees-exclusion-matches.md) | The scrub-site sweep's worktrees exclusion matches any path component named worktrees, so it skips the ENTIRE tree when run from inside a worktree | Open | Medium | 2026-07-23 | 2026-07-23 |
+| [BG0270](BG0270-the-goal-review-gate-refuses-a-plan-when.md) | The goal-review gate refuses a plan when a seat says NOT ONE INCREMENT, conflating a truthful themed-batch observation with a blocking objection | Open | Medium | 2026-07-23 | 2026-07-23 |
 
 ## Archived Releases
 

@@ -1,0 +1,31 @@
+# BG0270: The goal-review gate refuses a plan when a seat says NOT ONE INCREMENT, conflating a truthful themed-batch observation with a blocking objection
+
+> **Status:** Open
+> **Severity:** Medium
+> **Points:** 3
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py
+> **Created:** 2026-07-23
+> **Created-by:** sdlc-studio file
+> **Raised-by:** sdlc-studio; agent; v1
+
+## Summary
+
+Hit live opening Sprint 1 of the three-sprint run. `goal_review_status` builds its `objections` list from `verdict_polarity(achievable) == 'no' OR verdict_polarity(one_increment) == 'no'` (sprint.py ~1840), and the plan refuses on any objection unless overridden. All three seats judged the goal ACHIEVABLE (yes) and endorsed the batch, but all three also answered ONE INCREMENT = no, because it is a themed tooling-hardening batch of eight independent fixes - which is a truthful classification, not a rejection. The gate treated the three honest 'no's as blocking objections and refused the plan.
+
+The conflation is the defect. `achievable = no` is a real objection: a seat saying the goal cannot be met should stop the plan (BG0262's whole point). `one_increment = no` is a DIFFERENT statement - it says the batch is not a single atomic increment, which is an INVEST ideal, not a gate. A themed batch (a tooling-hardening sprint, a bug-fix sweep, an audit-remediation batch) is a normal, valid sprint that legitimately is not one increment, and every seat here said so while endorsing the work. A gate that blocks it forces an override on every themed sprint, training the override the way BG0269's `SKIP_DIRS` trained --no-verify.
+
+Note the shape: two distinct seat answers were folded into one blocking predicate. The fix is to separate them - an achievable-no blocks, a one-increment-no is surfaced as advice (the seats' framing: call it a themed batch), not a refusal.
+
+## Steps to Reproduce
+
+1. Record a goal review where every seat answers achievable=yes and `one_increment`=no (a themed batch all seats endorse). 2. Run `sprint plan --write`. Observed: the plan refuses, reporting the seats 'judged it NOT achievable', because `one_increment`=no was counted as an objection. Expected: the plan proceeds (all seats find it achievable); the `one_increment`=no is surfaced as an advisory note that the batch is themed, not a blocking objection requiring an override.
+
+## Proposed Fix
+
+Split the two answers in `goal_review_status`. Build `objections` from `achievable == 'no'` alone - that is the answer that means a seat thinks the goal cannot be met. Report `one_increment == 'no'` separately as an advisory (e.g. `themed_batch` or `not_atomic`), printed in the plan so the operator sees the seats' framing, but NOT added to the refusal set. A themed batch endorsed by every seat must plan without an override; reserve the override for a real achievable-no a human chooses to overrule.
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-07-23 | sdlc-studio | Filed |
