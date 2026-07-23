@@ -578,6 +578,8 @@ class RefineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._cr(root)
+            (root / "src").mkdir(parents=True, exist_ok=True)
+            (root / "src" / "x.py").write_text("", encoding="utf-8")  # US0324: Affects must resolve
             res = refine.refine(root, "CR0001", "The epic",
                                 [("First", 3, None), ("Second", 5, "src/x.py")])
             self.assertEqual(res["points"], 8)
@@ -614,6 +616,8 @@ class RefineTests(unittest.TestCase):
             self._cr(root, "CR0002")
             lead = refine.refine(root, "CR0001", "Batch epic", [("A", 2, None)])
             epic = lead["epic"]
+            (root / "src").mkdir(parents=True, exist_ok=True)
+            (root / "src" / "y.py").write_text("", encoding="utf-8")  # US0324: Affects must resolve
             res = refine.refine(root, "CR0002", None, [("B", 3, "src/y.py")], into_epic=epic)
             self.assertEqual(res["epic"], epic)                 # no NEW epic minted
             self.assertEqual(sdlc_md.children_of(root, "CR0002"), [(epic, "epic")])

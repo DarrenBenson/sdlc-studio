@@ -86,6 +86,8 @@ def _file_cr(root: Path, *extra: str) -> tuple[int, str]:
 
 
 def _file_bug(root: Path, *extra: str) -> tuple[int, str]:
+    (root / "src").mkdir(parents=True, exist_ok=True)
+    (root / "src" / "thing.py").write_text("", encoding="utf-8")  # US0324: Affects must resolve
     return _run(ff.main, ["file", "--type", "bug", "--title", "a defect",
                           "--severity", "High", "--summary", "s", "--steps", "x", "--fix", "y",
                           "--affects", "src/thing.py", "--root", str(root), *extra])
