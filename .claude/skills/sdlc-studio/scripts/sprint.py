@@ -2741,8 +2741,11 @@ def cmd_goal_verdict(args: argparse.Namespace) -> int:
               "so there is nothing to judge (set one at plan time with --sprint-goal)",
               file=sys.stderr)
         return 2
-    run_state.update(args.root, sprint_goal_verdict={"verdict": args.verdict,
-                                                     "note": args.note})
+    try:
+        run_state.record_goal_verdict(args.root, args.verdict, args.note or "")
+    except run_state.ReviewLedgerError as exc:
+        print(f"goal-verdict refused: {exc}", file=sys.stderr)
+        return 2
     print(f"sprint goal verdict recorded: {args.verdict}"
           + (f" - {args.note}" if args.note else ""))
     return 0
@@ -2992,8 +2995,11 @@ def _resolve_retro(root, args, state) -> int | None:
     # Don't silently drop a --goal-verdict passed on the scaffold call: record it now so the
     # re-run reuses it (the goal-verdict block below runs only once the retro is supplied).
     if args.goal_verdict and args.note and not state.get("sprint_goal_verdict"):
-        run_state.update(root, sprint_goal_verdict={"verdict": args.goal_verdict,
-                                                    "note": args.note})
+        try:
+            run_state.record_goal_verdict(root, args.goal_verdict, args.note)
+        except run_state.ReviewLedgerError as exc:
+            print(f"close refused: {exc}", file=sys.stderr)
+            return 2
         print(f"close: goal-verdict recorded ({args.goal_verdict}) - reused on the re-run")
     verdict_hint = ("" if (args.goal_verdict or state.get("sprint_goal_verdict"))
                     else " --goal-verdict <achieved|partial|missed> --note \"...\"")
@@ -3661,8 +3667,11 @@ def cmd_close(args: argparse.Namespace) -> int:
             print("close refused: --goal-verdict needs --note - a bare verdict is an "
                   "assertion, not a review", file=sys.stderr)
             return 2
-        run_state.update(root, sprint_goal_verdict={"verdict": args.goal_verdict,
-                                                    "note": args.note})
+        try:
+            run_state.record_goal_verdict(root, args.goal_verdict, args.note)
+        except run_state.ReviewLedgerError as exc:
+            print(f"close refused: {exc}", file=sys.stderr)
+            return 2
         state = run_state.read(root)
         print(f"close: goal-verdict recorded ({args.goal_verdict})")
     elif state.get("sprint_goal_verdict"):
