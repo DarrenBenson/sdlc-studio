@@ -59,3 +59,4 @@ OR any target edited since the run", which is the old rule.
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-24 | sdlc-studio | Groomed: real ACs + Affects authored |
+| 2026-07-24 | sdlc-studio | Both files rewritten against `mutation.py` and `gate.py::_mutation_coverage`: the ledger, its content-hash key, the 200-entry bound and dropped total, measured against registered provenance, the covered / STALE / uncovered verdict, the degraded whole-report fallback, and the lane stated as advisory in both |

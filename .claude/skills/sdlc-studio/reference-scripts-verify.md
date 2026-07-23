@@ -150,13 +150,38 @@ counted, never silent).
 
 - `run --test CMD` with a surface: `--files a.py ...`, `--since REF` (git diff),
   or `--story USxxxx` (the story's epic/CR `Affects`); `--max-mutations N`
-  (default `quality.mutation_max`, else 25); writes
-  `sdlc-studio/.local/mutation-report.json`; exits non-zero on survivors/errors
+  (default `quality.mutation_max`, else 25); writes the latest-run report
+  `sdlc-studio/.local/mutation-report.json` and appends this run's per-target evidence to
+  the bounded ledger `sdlc-studio/.local/mutation-runs.json`; exits non-zero on
+  survivors/errors
+- `register --target F --mutant M --test T --verdict killed|survived|equivalent`: record a
+  mutant a builder applied BY HAND, so the per-unit practice (write a test, mutate the code
+  it pins, see RED, restore) leaves a trace in the same ledger. Nothing here re-runs
+  anything, so the entry is marked `registered` and read as a claim, never as a measured run
 - `prefilter --tests <paths>`: advisory list of test files with no recognisable
   assertion - the cheap static signal for which tests to mutate first
 
-The gate's `mutation` lane surfaces the report (advisory in v1; an absent report
-reads not-run, never PASS). User-facing help: `help/mutation.md`.
+**The ledger is one entry per mutated file**, carrying that file's content hash at run time,
+its provenance (`measured` from a run, `registered` from a hand-applied mutant) and the run's
+verdict tallies. A target is entered only when the test command returned a `killed` or
+`survived` verdict on it, so a refused run and a target beyond the cost ceiling record nothing.
+It is bounded at 200 entries, oldest out first, with a cumulative `dropped` count so the
+truncation is never silent; a repeated `register` accumulates into one entry, whose own mutant
+list is bounded at 100 while its tallies stay exact.
+
+**The gate's `mutation` lane is advisory in v1** - it reports and never changes the exit code.
+It reads the ledger, not the report, for coverage, judging each file of the changed surface
+(or, when git cannot name one, the files the ledger holds) against that file's content hash
+now: a matching `measured` entry is **covered**; a matching `registered` one is covered and
+named as a self-report, unless it carries only `equivalent`, which asserts no test could have
+killed the mutant and so proves nothing about the suite; an entry whose hash no longer matches
+is **stale** - that file was edited since its mutant ran; no entry at all is **uncovered**. The
+report's `target_hashes` is deliberately not read as coverage: it is written for every file
+named as a target before any verdict exists, so a refused run would report its targets covered.
+With nothing per-file to judge, the lane degrades to the whole-report checks - a target the
+report hashed and edited since, or a report git rev that is not HEAD, reads STALE, and an
+absent report reads not-run, never PASS. Survivor counts still come from the report, attributed
+to the rev that produced them. User-facing help: `help/mutation.md`.
 
 ### `reconcile.py` (read-only)
 
