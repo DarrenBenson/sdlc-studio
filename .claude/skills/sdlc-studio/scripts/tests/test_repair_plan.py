@@ -180,6 +180,58 @@ class RepairPlanPinTests(unittest.TestCase):
         self.assertNotEqual(a, c)
 
 
+class UntokenedVerdictPinTests(unittest.TestCase):
+    """BG0267: a plan verdict carrying NO findings-hash token was passing the pin check
+    vacuously, because `if m and m.group(1) != current` short-circuits on the missing match.
+
+    The untokened case is now decided deliberately: nothing pins the verdict to a finding set,
+    so it is NOT pinned and does not satisfy the gate. Unreachable through
+    `review_repair_plan` (which always writes the token), which is exactly the case a guard
+    exists for: a verdict recorded straight through `critic.record_verdict`, or hand-edited.
+    """
+
+    def setUp(self):
+        self.r = _Root()
+
+    def tearDown(self):
+        self.r.cleanup()
+
+    def _plan(self, findings=("F1",)):
+        return repair_plan.record_repair_plan(
+            self.r.tmp, "RP1", "REJECT", list(findings),
+            [_entry(f) for f in findings], "author-a")
+
+    def test_an_untokened_verdict_is_not_treated_as_pinned(self) -> None:
+        # AC1: an APPROVE recorded with an issues field that carries no `findings-hash=`.
+        self._plan()
+        critic.record_verdict(self.r.tmp, "RP1", "APPROVE", "reviewer-b", "author-a",
+                              "plan=RP1", phase="plan-review")
+        res = repair_plan.plan_reviewed(self.r.tmp, "RP1")
+        self.assertFalse(res["ok"], f"an untokened verdict was honoured: {res}")
+        # the REASON must name the missing pin, not some other refusal (independence, no
+        # APPROVE) - otherwise this would pass while the hole stayed open behind it
+        self.assertIn("findings-hash", res["reason"])
+        # and the gate built on it refuses the repair
+        _write_config(self.r.tmp, "on")
+        with self.assertRaises(ValueError) as cm:
+            repair_plan.repair_gate(self.r.tmp, "RP1")
+        self.assertIn("findings-hash", str(cm.exception))
+
+    def test_a_correctly_pinned_verdict_still_passes(self) -> None:
+        # AC2: the positive control - the fix narrows only the untokened hole. A blanket
+        # refusal would kill the shipped path and pass AC1 on its own.
+        plan = self._plan()
+        repair_plan.review_repair_plan(self.r.tmp, "RP1", "APPROVE", "reviewer-b", "author-a")
+        v = critic.verdict_for(self.r.tmp, "RP1", phase="plan-review")
+        import json
+        self.assertIn(f"findings-hash={json.loads(plan.read_text())['fingerprint']}",
+                      v["issues"])                       # pinned to THIS finding set
+        res = repair_plan.plan_reviewed(self.r.tmp, "RP1")
+        self.assertTrue(res["ok"], res["reason"])
+        _write_config(self.r.tmp, "on")
+        self.assertTrue(repair_plan.repair_gate(self.r.tmp, "RP1")["ok"])
+
+
 class RepairPlanConfigTests(unittest.TestCase):
     """US0315: the gate is opt-in per project and OFF by default."""
 

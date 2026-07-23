@@ -649,13 +649,34 @@ def _elapsed_hours(root, unit_ids) -> tuple[float | None, str | None]:
     return (hours, "run-state") if hours else (None, None)
 
 
-def _run_rung(root) -> str:
-    """The rung the current run was driven to (`goal` on the run state), or `done` when unknown.
-    A run with no recorded rung is treated as a build so the honest build case is never blanked."""
+def _run_rung(root, unit_ids) -> str:
+    """The rung the run that DELIVERED these units was driven to (`goal` on that run's record),
+    or `done` when no recorded run covers them.
+
+    Read from the run the retro BELONGS to, never from whatever run is open now. Reading the
+    live state unconditionally meant re-running the accuracy report for an older retro, after a
+    new run had opened and re-stamped the goal, re-attributed that new run's rung to the old
+    sprint - so a design sprint re-read under a build run published the very tokens-per-point
+    the non-done rung exists to withhold. The provenance comes from the run record itself: the
+    live state first, then the archive, newest first, taking the first whose batch COVERS this
+    retro's units. That is the same coverage rule the elapsed and token reads obey, applied to
+    a third quantity read off a run.
+
+    A run with no recorded rung, and a retro no recorded run covers, both read `done`, so the
+    honest build case is never blanked by a lookup that simply found nothing."""
+    records: list[dict] = []
     try:
-        return run_state.read(root).get("goal") or "done"
+        records.append(run_state.read(root))
     except Exception:  # noqa: BLE001 - the rate write must never die on a missing run state
-        return "done"
+        pass
+    try:
+        records.extend(reversed(run_state.archived(root)))   # newest closed run first
+    except Exception:  # noqa: BLE001 - an unreadable archive is not a reason to fail the close
+        pass
+    for rec in records:
+        if isinstance(rec, dict) and _run_covers(rec, unit_ids):
+            return rec.get("goal") or "done"
+    return "done"
 
 
 def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
@@ -848,6 +869,9 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
     else:
         elapsed, elapsed_source = _elapsed_hours(root, [u["id"] for u in units])
     worker_hours = _worker_hours(root, [u["id"] for u in units])
+    # The rung of the run these units were delivered by - resolved ONCE, from that run's own
+    # record, and used for both the reported rung and the rate it gates.
+    rung = _run_rung(root, [u["id"] for u in units])
     ppeh = round(delivered_points / elapsed, 2) if elapsed and delivered_points else None
     ppwh = round(delivered_points / worker_hours, 2) if worker_hours and delivered_points else None
     return {
@@ -902,9 +926,9 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
             # terminates few units, so tokens/terminal-points is the 834,008/pt garbage the
             # design rung once published into the file the planner re-measures from. The rate is
             # a build-rung measurement; only the `done` rung earns one.
-            "rung": _run_rung(root),
+            "rung": rung,
             "sprint_tokens_per_point": (_rate(sprint_tokens, delivered_points)
-                                        if sprint_tokens and _run_rung(root) == "done" else None),
+                                        if sprint_tokens and rung == "done" else None),
             # Velocity: PRIMARY = points/elapsed-hour (ceremony included, the planning
             # number); SECONDARY = points/worker-hour (runner time, tool-tuning). Both descriptive,
             # never a target, fed to no gate. None reads as UNMEASURED (interactive sprint).

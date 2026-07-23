@@ -154,7 +154,10 @@ unit, and the two halves are deliberate:
   when the CR declares one; a story with nothing to inherit and no `Affects` of its
   own is refused, naming what to supply - refine never mints a unit nobody can plan.
   A story spec can also ask to inherit explicitly: `title|points|inherit`, or
-  `title|points|inherit:a.py, b.py` to narrow the CR's footprint.
+  `title|points|inherit:a.py, b.py` to narrow the CR's footprint. The keyword is
+  case-insensitive, and the narrowed form NARROWS: every path it names must already be
+  in the CR's `Affects`, and a CR that declares none is refused either way. To give a
+  story files the CR does not name, declare them as the story's own `Affects`.
 - **Ungroomed still.** The acceptance criteria are an explicit grooming placeholder,
   not authored content - labelled as such so a reader tells a groomed story from an
   ungroomed one at a glance, and `conformance` counts the ungroomed ones (the debt is

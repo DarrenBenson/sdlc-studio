@@ -272,7 +272,16 @@ def plan_reviewed(root: Path | str, plan_id: str) -> dict:
                                        "(reviewer == author)"}
     m = re.search(r"findings-hash=([0-9a-f]+)", v.get("issues", "") or "")
     current = findings_fingerprint(plan.get("findings", []))
-    if m and m.group(1) != current:
+    if not m:
+        # DECIDED, not passed over: a verdict carrying no findings-hash is NOT pinned. It
+        # answers no stated finding set, so nothing can show it answered THIS one, and a
+        # check that accepts it is asserting an absence is a match. `review_repair_plan`
+        # always writes the token, so this is the hand-edited or directly-recorded verdict -
+        # precisely the case the pin exists for. Re-review the plan to re-pin it.
+        return {"ok": False, "reason": ("the plan verdict carries no findings-hash, so nothing "
+                                        "pins it to the findings it answered - re-review the "
+                                        "plan with `review_repair_plan` to pin it")}
+    if m.group(1) != current:
         return {"ok": False, "reason": ("the plan verdict answered a different finding set; a "
                                         "finding added or removed since invalidates it "
                                         "(US0313 AC2)")}
