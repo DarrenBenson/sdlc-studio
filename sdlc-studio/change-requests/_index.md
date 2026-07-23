@@ -8,13 +8,13 @@
 | --- | --- |
 | Proposed | 1 |
 | Approved | 0 |
-| In Progress | 39 |
+| In Progress | 40 |
 | Complete | 354 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 17 |
 | Blocked | 0 |
-| **Total** | **411** |
+| **Total** | **412** |
 
 ## All Changes
 
@@ -233,6 +233,7 @@
 | [CR-0409](CR0409-a-seat-is-briefed-by-hand-and-its.md) | A seat is briefed by hand and its verdict typed back through a shell argument, so the plan review's quality depends on the author it is meant to check | In Progress | Medium | Improvement | 2026-07-22 | EP0153 |
 | [CR-0410](CR0410-a-repair-plan-can-be-attacked-and-still.md) | A repair plan can be attacked and still repeat the previous approach, so a class that has failed N rounds must force a design decision rather than a better instance | Complete | High | Improvement | 2026-07-22 | EP0106 |
 | [CR-0411](CR0411-sprint-plan-should-offer-sequential-or-parallel-delivery.md) | sprint plan should offer sequential or parallel delivery at run start, and only offer parallel when the batch can actually be parallelised | In Progress | High | Feature | 2026-07-23 | EP0154 |
+| [CR-0412](CR0412-refine-mints-a-story-with-points-but-no.md) | refine mints a story with points but no Affects and placeholder acceptance criteria, so a refined backlog is unplannable until a separate grooming pass - refine should make its output actionable | In Progress | High | Improvement | 2026-07-23 | EP0155 |
 
 ## Archived Releases
 

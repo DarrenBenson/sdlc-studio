@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 65 |
+| Draft | 68 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **409** |
+| **Total** | **412** |
 
 ## All Stories
 
@@ -320,6 +320,9 @@
 | [US0407](US0407-a-conditional-prompt-offers-sequential-or-parallel-only.md) | a conditional prompt offers SEQUENTIAL or PARALLEL only when a genuine file-disjoint decomposition exists, and records the chosen mode | Draft | EP0154 | 2026-07-23 | 2026-07-23 |
 | [US0408](US0408-the-disjointness-check-counts-test-files-as-coupling.md) | the disjointness check counts test files as coupling | Draft | EP0154 | 2026-07-23 | 2026-07-23 |
 | [US0409](US0409-the-choice-is-deterministic-and-the-plan-states.md) | the choice is deterministic and the plan states the mode and why the alternative was or was not available | Draft | EP0154 | 2026-07-23 | 2026-07-23 |
+| [US0410](US0410-refine-requires-or-inherits-an-affects-per-story.md) | refine requires or inherits an Affects per story so a minted story is plannable, refusing or seeding-for-confirmation where none is given | Draft | EP0155 | 2026-07-23 | 2026-07-23 |
+| [US0411](US0411-a-refined-story-s-ac-block-is-labelled.md) | a refined story's AC block is labelled a grooming placeholder, not left as content, so the ungroomed count is machine-visible | Draft | EP0155 | 2026-07-23 | 2026-07-23 |
+| [US0412](US0412-reference-cr-md-and-reference-rfc-md-state.md) | reference-cr.md and reference-rfc.md state refine produces a plannable unit whose ACs still need grooming, opt-out per project | Draft | EP0155 | 2026-07-23 | 2026-07-23 |
 
 ## Archived Releases
 

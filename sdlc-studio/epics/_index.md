@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 39 |
+| Draft | 40 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 115 |
-| **Total** | **154** |
+| **Total** | **155** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -177,3 +177,4 @@
 | [EP0152](EP0152-an-amendable-goal-review.md) | An amendable goal review | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0153](EP0153-a-reproducible-seat-brief.md) | A reproducible seat brief | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0154](EP0154-sequential-or-parallel-delivery-chosen-at-run-start.md) | Sequential or parallel delivery, chosen at run start | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0155](EP0155-refine-mints-an-actionable-plannable-unit.md) | refine mints an actionable, plannable unit | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
