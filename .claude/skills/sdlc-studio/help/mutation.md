@@ -46,8 +46,13 @@ python3 <skill>/scripts/mutation.py prefilter --tests tests/test_*.py
    restores from that sidecar first (reported as `recovered`), so a stranded mutant is
    never read back as the original. An unreadable sidecar refuses the run and names the
    git restore path.
-4. Writes `sdlc-studio/.local/mutation-report.json`; the release gate's `mutation` lane
-   surfaces it (advisory in v1; absent report reads not-run, never PASS).
+4. Writes two files. `sdlc-studio/.local/mutation-report.json` is the **latest run** - every
+   mutant's verdict, the git rev and a content hash per target - and is last-write-wins, so a
+   per-unit run mid-sprint replaces the previous unit's.
+   `sdlc-studio/.local/mutation-runs.json` is the **ledger**, the durable per-target half the
+   gate lane reads as coverage (below). The gate's `mutation` lane surfaces both and is
+   advisory in v1: it never changes the exit code, and an absent report reads not-run,
+   never PASS.
 5. Names what the survivors were measured against: the report and the text output carry
    the test files the command statically resolves to (`selected_tests`; UNRESOLVED when
    no file, directory or module token parses - never a guessed empty set), and a
@@ -72,9 +77,60 @@ python3 <skill>/scripts/mutation.py prefilter --tests tests/test_*.py
   false-survive on non-Python files; Python string interiors are excluded automatically.
 - **error** - the runner itself broke on a mutant (missing command, timeout); never counted
   as a kill. (A red baseline does not reach this state - it refuses the whole run up front.)
-- The report records the **git rev** and a **content hash per target**; the gate's
-  mutation lane reports STALE on a rev change OR any target edited since the run -
-  a dirty tree cannot ride an old green report.
+- The report records the **git rev** and a **content hash per target**, but neither is
+  coverage: the hashes are written for every file *named* as a target, before any verdict
+  exists, so a refused run records one for a file no mutant ever reached. They are read as a
+  freshness stamp, and the rev attributes the survivor counts to the run that produced them.
+  Per-file evidence is the ledger's.
+
+## The ledger - what the gate lane reads
+
+`sdlc-studio/.local/mutation-runs.json` accumulates evidence **per target**, so coverage is
+judged file by file rather than from one whole-blob stamp that goes stale the moment any file
+is committed.
+
+- **One entry per target, keyed on that file's content hash at run time.** A later commit
+  touching other files leaves the entry readable, which is what lets per-unit runs gathered
+  during a build survive to the close.
+- **A target is entered only when the test command returned a `killed` or `survived` verdict
+  on it.** A target whose mutants were all unviable, all errored, or fell beyond the cost
+  ceiling is absent, and so is every target of a refused run - a refusal applies no mutant, so
+  no target has a verdict.
+- **Bounded at 200 entries**, oldest out first, with a cumulative `dropped` total in the file
+  and a note on the run's output, so truncation is counted rather than silent. Entries are one
+  per target, so the ledger grows with the number of distinct files ever mutated, not with the
+  number of runs. An unreadable ledger is replaced and says so (`reset`).
+- **`measured` against `registered`.** A `measured` entry is a run that applied the mutant and
+  observed the suite's answer. `mutation.py register --target F --mutant "..." --test "..."
+  --verdict killed|survived|equivalent` records a mutant a builder applied **by hand**, so the
+  per-unit practice (write a test, mutate the code it pins, see RED, restore) leaves a trace.
+  Nothing re-runs anything, so that entry is a self-report and is reported as a claim, never as
+  a measured run; a measured entry outranks a registered one on the same content. A run
+  supersedes only its own kind, so it never deletes a hand-registered claim about the same file.
+- Registrations accumulate into one entry per (target, content). That entry's `mutants` list is
+  bounded at 100 with a `dropped_mutants` count, while its `summary` tallies are never
+  truncated - what is dropped is the description, never the count.
+
+### The per-file verdict
+
+The lane judges the **changed surface** (mutatable non-test files with staged, unstaged or
+untracked changes) when git can name it, and otherwise the files the ledger itself holds,
+saying which of the two it read.
+
+| Ledger state for the file | Verdict |
+| --- | --- |
+| A `measured` entry whose hash matches the file now | **covered** |
+| No measured match, but a `registered` entry matches carrying `killed` or `survived` | **covered**, and named as a self-report |
+| A `registered` entry matches carrying only `equivalent` | **uncovered**, named EQUIVALENT-ONLY: it says no test could have killed the mutant, which is a statement about the mutant, not about the suite |
+| An entry exists, but no hash matches the file now (or none was recorded) | **STALE** |
+| No entry for the file | **uncovered** |
+
+Staleness is therefore per file: the file's bytes changed since the entry that covers it. A
+self-reported **survivor** is reported as a finding - the builder's own test did not catch the
+mutant they applied. With nothing in the ledger to judge, the lane degrades to the whole-report
+checks, where a target the report hashed and edited since, or a report git rev that is not the
+tree's HEAD, reads STALE. Either way the lane is advisory: it reports gaps and never refuses a
+close.
 
 ## Honest degrade
 

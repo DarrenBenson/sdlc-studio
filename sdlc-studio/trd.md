@@ -454,7 +454,8 @@ a half-written decomposition never certifies clean.
 | `telemetry.jsonl` | `telemetry.py` (via `artifact close`) | Append-only run/close events feeding the estimate-vs-actual report. `latest_actuals()` reads the last **non-null** value per field, so a bare close record after an instrumented one cannot erase the measurement. [HIGH] |
 | `verify-history.jsonl` | `verify_ac.py` | Append-only per-AC verification history. [HIGH] |
 | `verify-report.json` | `verify_ac.py` | Machine-readable AC verification report (per-AC pass/fail/manual). [HIGH] |
-| `mutation-report.json` | `mutation.py` | Per-mutant killed / survived / error / unviable, with the git rev and a content hash per target, so a dirty tree cannot ride an old green. [HIGH] |
+| `mutation-report.json` | `mutation.py` | The LATEST run: per-mutant killed / survived / error / unviable, with the git rev and a content hash per target. Last-write-wins, so it carries one run's survivors rather than accumulated evidence; its rev and hashes are read as a freshness stamp, and only when the ledger has nothing per-file to judge. [HIGH] |
+| `mutation-runs.json` | `mutation.py` | The bounded per-target ledger the gate's coverage lane reads: one entry per mutated file, carrying that file's content hash at run time and marked `measured` (a run) or `registered` (a mutant a builder applied by hand). A per-file hash survives commits to other files, which a whole-blob rev stamp does not. 200 entries, oldest out first, with a cumulative `dropped` count. [HIGH] |
 | `repo-map.json` | `repo_map.py` | Per-file symbols, imports, in-degree score; queried for `READ THESE FILES FIRST` lists. [HIGH] |
 
 One measurement artefact is deliberately **committed** rather than `.local/`:
@@ -559,8 +560,8 @@ however large the corpus grows. Agentic waves bound concurrency and the appetite
 breaker bounds an unattended run. Read-only scripts run in well under a second; the
 script suite runs 2,500+ tests in under a minute. The one deliberate exception is
 `mutation.py`, which re-runs the suite once per mutant and is measured in minutes -
-which is why its gate lane reads a stored report rather than executing, and reports
-STALE on a rev change or an edited target rather than passing.
+which is why its gate lane reads stored evidence rather than executing, and reports a
+file whose bytes changed since its mutant ran as STALE rather than passing.
 
 Distribution scales too, not just context: short-ULID identity (ADR-008) is what
 lets several uncoordinated writers - human and agent, on different machines and git
@@ -1067,6 +1068,7 @@ falls back to enforce.
 | 2026-06-20 | 2.0.0 | Brownfield extraction of TRD from skill source (Generate mode) |
 | 2026-07-06 | 4.0.0 | Refresh to the shipped script layer: corrected the write contract (§5 rule 5 - the script write surface is bounded and tested, not absent), component counts, state-file inventory, and test figures. The `doc-freshness` guard checks only `reviews/LATEST.md`, and only the facts it states there (version, the enumerated `N script tests` count, disclosure count) - it is advisory and does not pin this document's component counts, which is why they are now stated as growth-tolerant bands rather than exact figures |
 | 2026-07-14 | 4.1.0 | The v4 architecture: the gate tier (§3), the two id eras (§6), story-only executable verifiers (§6), the run/appetite and measurement state files (§6), the falsified cost model (§10), and five new ADRs - ADR-007 the engagement floor, ADR-008 ULID identity, ADR-009 the generated team, ADR-010 the learning loop, ADR-011 the breakdown gate. Corrected the component counts, the router's line figure (~195 was stale; it is ~260) and the test count |
+| 2026-07-24 | 4.1.0 | Spec-truth reconcile (mutation): added the `mutation-runs.json` per-target ledger to the state-file inventory and corrected the `mutation-report.json` row, which claimed a freshness guarantee the report now only provides as the ledger's fallback. Corrected the performance section's superseded whole-blob STALE rule. Findings table in US0385 |
 
 ---
 

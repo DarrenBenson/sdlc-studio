@@ -25,9 +25,16 @@ aspirational
 - **Then** each states that refine produces a PLANNABLE unit (Affects present) whose
   acceptance criteria still need grooming, and names the opt-out
 - **Verify:** manual - read the refine sections of reference-cr.md and reference-rfc.md and confirm each states the plannable-but-ungroomed contract and the opt-out
+- **Verified:** manual (2026-07-24)
+
+Evidence for the manual read: `reference-cr.md` "What `refine` produces" states the
+plannable-but-ungroomed contract under both halves and names the opt-out
+(`sprint.breakdown: judgement`); `reference-rfc.md`'s refine paragraph states the same
+contract and the same opt-out, and cross-links `reference-cr.md#refine-output`.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-24 | sdlc-studio | Back-annotated the manual AC's `Verified:` line, missing since the unit closed - the conformance lane's one non-conformant unit. The read was performed, not assumed |
