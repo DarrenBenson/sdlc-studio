@@ -1,7 +1,7 @@
 # EP0135: Surface the mutation window
 
 > **Status:** Draft
-> **Derived Point Total:** 3
+> **Derived Point Total:** 5
 > **Parent:** CR0374
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

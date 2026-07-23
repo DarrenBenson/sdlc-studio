@@ -1,7 +1,7 @@
 # EP0140: A shared root resolver and rule
 
 > **Status:** Draft
-> **Derived Point Total:** 8
+> **Derived Point Total:** 11
 > **Parent:** CR0383
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

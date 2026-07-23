@@ -50,6 +50,40 @@ Every long-lived backlog. Here it would have wasted a 12-point epic in Sprint 2 
 not been spotted by eye. The failure mode is silent and grows with backlog age: the older the
 skeleton, the likelier some later sprint satisfied it.
 
+## Second measured instance (found during Sprint 2 grooming)
+
+US0395 ("the scoped report merges rather than replaces") asks for behaviour that already ships:
+`verify_ac.write_report(..., merge=True)` is the default and merges prior entries, `cmd_run`
+passes `merge=not --fresh`, and `test_verify_ac.py::WriteReportMergeTests` already covers
+accumulate / update-in-place / `--fresh` rebuild. The story was re-scoped during grooming onto the
+parts genuinely absent (preserving out-of-scope freshness fields, a scoped-vs-unscoped equivalence
+proof, and a refusal for `--fresh` combined with a scope, which would blank every out-of-scope
+verdict).
+
+Two instances now, found by eye in one sitting - EP0125 against the shipped EP0146, and US0395
+against shipped `write_report`. Both were caught only because a human-directed grooming pass read
+the source first. Nothing in the pipeline would have stopped either reaching a build.
+
+## The wider class: a request's premise is never checked against the source
+
+Grooming Sprint 2 surfaced a second failure mode alongside "already delivered": a request whose
+stated FACT was never true, refined into sized work regardless.
+
+- **CR0348 / EP0123** asserts a lane lints "only changed markdown". It does not: both `npm run
+  lint:md` and the pre-commit `markdown` lane already glob the whole corpus. The real hole is a
+  config split - `**/*.md` cannot match a dot-directory, so `.claude/**` is linted only under the
+  laxer skill-local config with MD056/MD060 disabled, which is why an unescaped pipe in
+  `help/sprint.md` sat green. The epic was re-groomed against the real hole.
+- **US0392** (delivered last sprint) asserted telemetry.py takes note prose on the command line.
+  It has no narrative flag at all; its only match is a boolean. Corrected mid-delivery.
+- **US0382** asserts a root resolver must be built. `resolve_root` / `discover_root` /
+  `under_root` already exist and are correct - in `verify_ac.py`, with three importers. The story
+  is a promotion, not a build.
+
+Same root cause as the overlap case: `refine` mints from what the request ASSERTS, and nothing
+between the assertion and the build reads the source to check it. The cost is paid twice - once
+sizing fiction, once discovering it mid-sprint.
+
 ## Acceptance Criteria
 
 - [ ] AC1: plan-time overlap detection that does not depend on verifiers
@@ -66,4 +100,10 @@ skeleton, the likelier some later sprint satisfied it.
 - [ ] AC3: the blind spot is documented where the existing detector is
 - **Given** a reader of the built-not-closed behaviour
 - **Then** the docs state plainly that it reads the verify-report and therefore cannot see an ungroomed unit, naming this check as the complement
+- **Verify:** manual
+
+- [ ] AC4: a request's factual premise is checked against the source before it is sized
+- **Given** a request or story asserting a fact about the codebase ("only changed files are linted", "script X takes prose on the command line", "there is no shared resolver")
+- **When** it is refined or planned
+- **Then** the pipeline prompts for (or records) a source check of that claim, so a false premise is caught before it becomes sized work rather than mid-sprint
 - **Verify:** manual

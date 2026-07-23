@@ -1,7 +1,7 @@
 # EP0144: Installed-copy drift detection
 
 > **Status:** Draft
-> **Derived Point Total:** 5
+> **Derived Point Total:** 6
 > **Parent:** CR0389
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

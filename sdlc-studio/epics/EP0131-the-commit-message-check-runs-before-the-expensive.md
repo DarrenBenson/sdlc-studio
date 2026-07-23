@@ -1,7 +1,7 @@
 # EP0131: The commit-message check runs before the expensive lanes
 
 > **Status:** Draft
-> **Derived Point Total:** 3
+> **Derived Point Total:** 5
 > **Parent:** CR0367
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

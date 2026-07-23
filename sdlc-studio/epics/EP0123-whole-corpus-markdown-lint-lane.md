@@ -1,7 +1,7 @@
 # EP0123: Whole-corpus markdown lint lane
 
 > **Status:** Draft
-> **Derived Point Total:** 5
+> **Derived Point Total:** 6
 > **Parent:** CR0348
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

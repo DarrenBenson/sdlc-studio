@@ -1,7 +1,7 @@
 # EP0125: Prose reaches every creation script without a shell
 
 > **Status:** Draft
-> **Derived Point Total:** 10
+> **Derived Point Total:** 8
 > **Parent:** CR0351
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
