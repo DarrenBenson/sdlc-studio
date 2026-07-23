@@ -710,20 +710,134 @@ BLOCKING_ON_ERROR = {
     "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
     "lessons-summary", "lessons-validity", "handoff", "review-legs",
     "engagement-floor", "review-current", "close-owed", "window",
+    "changelog-fragments",
 }
 
+def _changelog(root: str) -> dict:
+    """The `changelog-fragments` lane in the STANDARD gate: CHANGELOG.md's own headings are
+    structurally sound, and `[Unreleased]` was not hand-edited while `changelog.d/` is live.
+
+    Both faults are COMMITTED, not tagged: a bad hand-insert reparents entries the moment it
+    lands, and waiting for a release cut would not catch it. So the lane binds here as well as
+    at the cut, where it gains the stray-fragment reading (`_changelog_fragments`). The stray
+    reading stays release-only - a fragment between releases is the normal state and the
+    standard gate must not nag about it."""
+    faults = _changelog_faults(root)
+    detail = ("; ".join(faults) if faults
+              else "CHANGELOG.md headings are sound and [Unreleased] is not hand-edited")
+    return {"count": len(faults), "blocking": True, "detail": detail}
+
+
 def _changelog_fragments(root: str) -> dict:
-    """Release-bound lane: a stray (uncomposed) changelog fragment fails the cut -
-    an entry silently missing from a release is the LL0004 hole fragments exist to
-    close. Runs only under --release; the standard gate never nags about fragments
-    (they are the normal between-releases state)."""
+    """The release form of the `changelog-fragments` lane: the standard changelog faults PLUS
+    no stray (uncomposed) fragment left at the cut - an entry silently missing from a release
+    is the LL0004 hole fragments exist to close."""
     import changelog
+    faults = _changelog_faults(root)
     strays = changelog.check(root)
-    detail = ("no stray fragments" if not strays else
-              f"{len(strays)} uncomposed fragment(s): "
-              + ", ".join(p.name for p in strays)
-              + " - run changelog.py compose before tagging")
-    return {"count": len(strays), "blocking": True, "detail": detail}
+    if strays:
+        faults = faults + [f"{len(strays)} uncomposed fragment(s): "
+                           + ", ".join(p.name for p in strays)
+                           + " - run changelog.py compose before tagging"]
+    detail = "; ".join(faults) if faults else "no stray fragments; CHANGELOG.md headings sound"
+    return {"count": len(faults), "blocking": True, "detail": detail}
+
+
+def _changelog_faults(root: str) -> list[str]:
+    """The commit-time changelog faults shared by both gate modes: structural faults in
+    CHANGELOG.md's own `[Unreleased]` headings, plus a hand-edit of `[Unreleased]` staged
+    with no fragment consumed in the same commit."""
+    import changelog
+    return list(changelog.structure_errors(root)) + _changelog_hand_edit_faults(root)
+
+
+def _changelog_hand_edit_faults(root: str) -> list[str]:
+    """A staged edit that ADDS content to CHANGELOG.md's `[Unreleased]` section, in a repo
+    using `changelog.d/` fragments, with no fragment consumed in the same commit - the hand-
+    edit path the deterministic writer (`changelog.py compose`) exists to replace.
+
+    Reads the STAGED state (index vs HEAD), as the rewrite-window lane reads staged paths: it
+    judges what this commit is about to do, not the working tree. Only ADDITIONS to
+    `[Unreleased]` count, so a release cut (which moves entries OUT of it) and any edit to an
+    already-released section, the file header, or the section rename a cut performs stay
+    hand-editable and are never refused. The escape hatch: the same edit is allowed when the
+    commit also consumes a fragment (a staged deletion under `changelog.d/`, which is what
+    compose does), so the sanctioned path is never blocked by its own writes."""
+    root_p = Path(root)
+    if not (root_p / "changelog.d").is_dir():
+        return []  # the project has not adopted fragments: there is nothing to police
+    head = _git_show(root, "HEAD:CHANGELOG.md")
+    index = _git_show(root, ":CHANGELOG.md")
+    if head is None or index is None:
+        return []  # no git, no HEAD, or the path is absent from one side: invent no fault
+    if not _unreleased_gained_content(head.splitlines(), index.splitlines()):
+        return []
+    if _staged_consumes_fragment(root):
+        return []  # compose ran in this commit: the edit is the machine's, not a hand-edit
+    return ["CHANGELOG.md [Unreleased] was hand-edited (content added) while changelog.d/ is "
+            "live and no fragment is consumed in this commit - write the entry as a "
+            "changelog.d/ fragment and run `changelog.py compose`, do not edit [Unreleased] "
+            "by hand"]
+
+
+def _git_show(root: str, spec: str) -> str | None:
+    """`git show <spec>` under `root`, or None when git cannot answer (no repo, no such
+    object). None is 'cannot tell', never 'empty': the caller invents no fault on it."""
+    import subprocess
+    try:
+        out = subprocess.run(["git", "-C", str(root), "show", spec],
+                             capture_output=True, text=True)
+    except OSError:
+        return None
+    return out.stdout if out.returncode == 0 else None
+
+
+def _unreleased_content_lines(lines: list[str]) -> list[str]:
+    """The non-blank, non-release-heading content lines under `## [Unreleased]` (subsection
+    headings and entries alike), by absolute file order. A `## ` release heading is a section
+    boundary, not content."""
+    import re
+    out, section = [], None
+    for ln in lines:
+        m = re.match(r"^## (.+?)[ \t]*$", ln)
+        if m:
+            section = m.group(1).strip()
+        if section != "[Unreleased]":
+            continue
+        s = ln.strip()
+        if not s or re.match(r"^## ", ln):
+            continue
+        out.append(s)
+    return out
+
+
+def _unreleased_gained_content(old_lines: list[str], new_lines: list[str]) -> bool:
+    """True when the staged `[Unreleased]` carries a content line the committed one did not -
+    an addition or an in-place edit. Set-difference by MULTISET, so a second `### Added` or a
+    duplicated bullet still reads as gained. Removal-only (a release cut moving entries down,
+    a deletion) leaves nothing gained, so those are not flagged."""
+    from collections import Counter
+    gained = Counter(_unreleased_content_lines(new_lines)) - Counter(_unreleased_content_lines(old_lines))
+    return bool(gained)
+
+
+def _staged_consumes_fragment(root: str) -> bool:
+    """True when this commit stages a DELETION under `changelog.d/` - the file-consuming half
+    of what `changelog.py compose` does, and the signal that an accompanying `[Unreleased]`
+    edit is the composer's write rather than a hand-edit."""
+    import subprocess
+    try:
+        out = subprocess.run(["git", "-C", str(root), "diff", "--cached", "--name-status"],
+                             capture_output=True, text=True)
+    except OSError:
+        return False
+    if out.returncode != 0:
+        return False
+    for ln in out.stdout.splitlines():
+        parts = ln.split("\t")
+        if len(parts) >= 2 and parts[0].startswith("D") and parts[-1].startswith("changelog.d/"):
+            return True
+    return False
 
 
 def _versions_strict(root: str) -> dict:
@@ -854,6 +968,9 @@ DEFAULT_CHECKS = {
     "window": _window,
     "hook-enabled": _hook_enabled,
     "batch-size": _batch_size,
+    # Structure + hand-edit are COMMITTED faults, so the changelog lane runs in the standard
+    # gate too; --release swaps in the superset that also refuses a stray fragment at the cut.
+    "changelog-fragments": _changelog,
 }
 
 
@@ -1249,7 +1366,10 @@ def run_gate(root: str = ".", only: list[str] | None = None,
         # included: a tag cut over a drifted version is a release nobody can identify later.
         registry["versions"] = _versions_strict
         bound.append("versions")
-        # ...and no changelog fragment may be left uncomposed at a cut
+        # ...and the changelog lane is UPGRADED from its standard structure/hand-edit form to
+        # the release superset that also refuses a stray uncomposed fragment at the cut. The
+        # structure/hand-edit half runs regardless (it is in DEFAULT_CHECKS); the DoD downgrade
+        # governs only the stray-fragment release criterion.
         if _dod_enforced(release_dod, "release.changelog"):
             registry["changelog-fragments"] = _changelog_fragments
             bound.append("changelog-fragments")

@@ -283,7 +283,7 @@ class GateRealWrapperTests(unittest.TestCase):
                          {"conformance", "reconcile", "index-derived", "validate", "constitution",
                           "integrity", "duplicate-id", "provenance", "doc-coverage", "engagement-floor",
                           "disclosure", "doc-freshness", "mutation", "window", "hook-enabled",
-                          "batch-size"})
+                          "batch-size", "changelog-fragments"})
 
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
@@ -292,7 +292,7 @@ class GateRealWrapperTests(unittest.TestCase):
         # dev-repo guard rather than repeating it (BG0237).
         r = self._report()
         self.assertIsInstance(r["ok"], bool)
-        self.assertEqual(len(r["checks"]), 16)
+        self.assertEqual(len(r["checks"]), 17)
         for c in r["checks"]:
             self.assertEqual(set(c), {"check", "count", "blocking", "status", "detail"})
 
@@ -3124,6 +3124,160 @@ class EquivalentIsNotCoverageTests(unittest.TestCase):
             self.assertGreaterEqual(after["count"], before["count"],
                                     f"before={before['detail']!r} after={after['detail']!r}")
             self.assertIn("no evidence", after["detail"])
+
+
+def _lane(report, name):
+    return next(c for c in report["checks"] if c["check"] == name)
+
+
+_SOUND_CHANGELOG = ("# Changelog\n\n## [Unreleased]\n\n### Added\n\n- an entry\n\n"
+                    "## [4.1.0] - 2026-07-14\n\n### Fixed\n\n- old\n")
+_REPEATED_HEADING = ("# Changelog\n\n## [Unreleased]\n\n### Added\n\n- first\n\n"
+                     "### Added\n\n- second\n\n## [4.1.0] - 2026-07-14\n\n### Fixed\n\n- old\n")
+
+
+class ChangelogStructureLaneTests(unittest.TestCase):
+    """US0331 AC1/AC2: the structural check joins the EXISTING `changelog-fragments` lane
+    (no second changelog lane appears), and it binds in BOTH gates because a structural fault
+    is committed, not tagged - while the stray-fragment reading stays release-only."""
+
+    def _repo(self, tmp, changelog_text, fragments=()):
+        root = Path(tmp)
+        (root / "CHANGELOG.md").write_text(changelog_text, encoding="utf-8")
+        d = root / "changelog.d"
+        d.mkdir(exist_ok=True)
+        for name, body in fragments:
+            (d / name).write_text(body, encoding="utf-8")
+        return root
+
+    def test_the_structural_fault_fails_the_existing_lane_under_its_existing_name(self):
+        # a repeated `### Added` inside [Unreleased], and no stray fragments: the release gate's
+        # changelog-fragments lane fails naming the fault, and no SECOND changelog lane exists.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._repo(tmp, _REPEATED_HEADING)  # changelog.d present but empty (no strays)
+            report = gate.run_gate(str(root), checks={}, release=True)
+            lane = _lane(report, "changelog-fragments")
+            self.assertEqual(lane["status"], "fail")
+            self.assertIn("repeated", lane["detail"])          # the structural fault named
+            self.assertIn("### Added", lane["detail"])
+            changelog_lanes = [c["check"] for c in report["checks"] if "changelog" in c["check"]]
+            self.assertEqual(changelog_lanes, ["changelog-fragments"])  # exactly one, same name
+        # the lane's name is wired into BOTH the standard registry and the release registry
+        self.assertIn("changelog-fragments", gate.DEFAULT_CHECKS)
+        self.assertIs(gate.DEFAULT_CHECKS["changelog-fragments"], gate._changelog)
+
+    def test_structure_binds_in_both_gates_while_strays_stay_release_only(self):
+        std_lane = {"changelog-fragments": gate.DEFAULT_CHECKS["changelog-fragments"]}
+        # (a) a structural fault with no strays fails BOTH the standard gate and the release gate
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._repo(tmp, _REPEATED_HEADING)
+            std = gate.run_gate(str(root), checks=std_lane)
+            self.assertFalse(std["ok"])
+            self.assertEqual(_lane(std, "changelog-fragments")["status"], "fail")
+            rel = gate.run_gate(str(root), checks={}, release=True)
+            self.assertEqual(_lane(rel, "changelog-fragments")["status"], "fail")
+        # (b) a stray fragment over a sound CHANGELOG passes the standard gate (no nagging about
+        # the normal between-releases state) but fails the release gate at the cut
+        frag = [("US0001.md", "<!-- section: Added -->\n- **a thing (US0001).**\n")]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._repo(tmp, _SOUND_CHANGELOG, fragments=frag)
+            std = gate.run_gate(str(root), checks=std_lane)
+            self.assertTrue(std["ok"])                                   # standard: silent on strays
+            self.assertEqual(_lane(std, "changelog-fragments")["status"], "pass")
+            rel = gate.run_gate(str(root), checks={}, release=True)
+            rel_lane = _lane(rel, "changelog-fragments")
+            self.assertEqual(rel_lane["status"], "fail")                 # release: refuses the stray
+            self.assertIn("US0001.md", rel_lane["detail"])
+
+
+class HandEditedChangelogTests(unittest.TestCase):
+    """US0331 AC3/AC4: a staged hand-edit of [Unreleased] while changelog.d/ is live fails
+    the commit, naming CHANGELOG.md and the changelog.py command; the same edit accompanied
+    by a consumed fragment passes, and an edit OUTSIDE [Unreleased] is never refused."""
+
+    BASE = ("# Changelog\n\n## [Unreleased]\n\n### Added\n\n- shipped thing\n\n"
+            "## [4.1.0] - 2026-07-14\n\n### Fixed\n\n- old\n")
+
+    def _repo(self, root, base=None, fragments=("US0001.md",)):
+        """Init a git repo committing BASE CHANGELOG and a live changelog.d/ with a fragment,
+        so HEAD is a clean baseline the staged diff is read against."""
+        gitutil.git(["init", "-q"], cwd=root)
+        (root / "CHANGELOG.md").write_text(base or self.BASE, encoding="utf-8")
+        d = root / "changelog.d"
+        d.mkdir(exist_ok=True)
+        for name in fragments:
+            (d / name).write_text("<!-- section: Added -->\n- **a thing.**\n", encoding="utf-8")
+        gitutil.git(["add", "-A"], cwd=root)
+        gitutil.git(["commit", "-qm", "base"], cwd=root)
+        return root
+
+    def test_a_staged_unreleased_edit_without_a_consumed_fragment_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            # two fragments live, so consuming one below still leaves changelog.d/ a directory
+            # (git removes a directory it empties) - the escape is exercised, not the adoption
+            # guard.
+            root = self._repo(Path(tmp), fragments=("US0001.md", "US0002.md"))
+            # hand-insert a bullet under [Unreleased] and stage ONLY CHANGELOG.md (no fragment
+            # consumed): exactly the RUN-01KY3MFX hand-edit.
+            edited = self.BASE.replace("- shipped thing\n",
+                                       "- shipped thing\n- **a hand-typed entry.**\n")
+            (root / "CHANGELOG.md").write_text(edited, encoding="utf-8")
+            gitutil.git(["add", "CHANGELOG.md"], cwd=root)
+            lane = gate._changelog(str(root))
+            self.assertEqual(lane["count"], 1, lane["detail"])
+            self.assertIn("CHANGELOG.md", lane["detail"])
+            self.assertIn("changelog.py", lane["detail"])   # the command that would have done it
+            # the SAME staged edit, but with a fragment consumed in the same commit, passes -
+            # changelog.d/ still exists (US0002.md remains), so this proves the fragment-consumed
+            # escape, not merely an absent fragment directory.
+            gitutil.git(["rm", "-q", "changelog.d/US0001.md"], cwd=root)
+            self.assertTrue((root / "changelog.d").is_dir())
+            passed = gate._changelog(str(root))
+            self.assertEqual(passed["count"], 0, passed["detail"])
+
+    def test_an_edit_outside_unreleased_is_not_refused(self):
+        # (a) an edit to an already-released section - correcting published history
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._repo(Path(tmp))
+            released = self.BASE.replace("- old\n", "- old\n- **a correction.**\n")
+            (root / "CHANGELOG.md").write_text(released, encoding="utf-8")
+            gitutil.git(["add", "CHANGELOG.md"], cwd=root)
+            self.assertEqual(gate._changelog(str(root))["count"], 0,
+                             gate._changelog(str(root))["detail"])
+        # (b) an edit to the file header
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._repo(Path(tmp))
+            header = self.BASE.replace("# Changelog\n", "# Changelog\n\nAll notable changes.\n")
+            (root / "CHANGELOG.md").write_text(header, encoding="utf-8")
+            gitutil.git(["add", "CHANGELOG.md"], cwd=root)
+            self.assertEqual(gate._changelog(str(root))["count"], 0,
+                             gate._changelog(str(root))["detail"])
+        # (c) the section rename a release cut performs: [Unreleased]'s entries move DOWN under a
+        # new version heading, and a fresh empty [Unreleased] is left. Nothing is ADDED to
+        # [Unreleased], so the cut is not a hand-edit.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._repo(Path(tmp))
+            cut = ("# Changelog\n\n## [4.2.0] - 2026-07-23\n\n### Added\n\n- shipped thing\n\n"
+                   "## [Unreleased]\n\n## [4.1.0] - 2026-07-14\n\n### Fixed\n\n- old\n")
+            (root / "CHANGELOG.md").write_text(cut, encoding="utf-8")
+            gitutil.git(["add", "CHANGELOG.md"], cwd=root)
+            self.assertEqual(gate._changelog(str(root))["count"], 0,
+                             gate._changelog(str(root))["detail"])
+
+    def test_a_project_not_using_fragments_is_not_policed(self):
+        # no changelog.d/ dir: the guard is silent - a project that never adopted fragments is
+        # not forced onto them (kills the drop-the-adoption-guard mutant).
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gitutil.git(["init", "-q"], cwd=root)
+            (root / "CHANGELOG.md").write_text(self.BASE, encoding="utf-8")
+            gitutil.git(["add", "-A"], cwd=root)
+            gitutil.git(["commit", "-qm", "base"], cwd=root)
+            edited = self.BASE.replace("- shipped thing\n",
+                                       "- shipped thing\n- **a hand-typed entry.**\n")
+            (root / "CHANGELOG.md").write_text(edited, encoding="utf-8")
+            gitutil.git(["add", "CHANGELOG.md"], cwd=root)
+            self.assertEqual(gate._changelog_hand_edit_faults(str(root)), [])
 
 
 if __name__ == "__main__":
