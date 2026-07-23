@@ -87,6 +87,16 @@ _REFUTE_RE = re.compile(r"\*\*Refute panel:\*\*(.*)", re.I)
 _THRESHOLD_RE = re.compile(r">=\s*(\d+)\s*of\s*(\d+)")
 _TABLE_DIVIDER_RE = re.compile(r"^\|[\s:|-]+\|$")
 
+#: Leading tokens a mechanical lens `signature` may open with - a detector a finder can
+#: actually run. A signature that opens with anything else is not mechanical, and the
+#: absent form opens with `manual` (below), which is deliberately not in this set.
+SIGNATURE_DETECTORS = ("python3",)
+#: The fixed leading token of a signature that declares no mechanical detector exists.
+#: A `signature` field parses as `mechanical=False` unless its first token is a detector,
+#: so a blank cell, a dash or a hedged sentence is not-mechanical too - but only this token
+#: is the *documented* way to say so, which the pack's own test holds it to.
+SIGNATURE_ABSENT = "manual"
+
 
 class UnknownProfile(ValueError):
     """A profile name no pack and no reference section declares."""
@@ -107,16 +117,33 @@ def _split_row(line: str) -> list[str]:
     return [c.strip() for c in line.strip().strip("|").split("|")]
 
 
+def _signature_is_mechanical(signature: str) -> bool:
+    """True when `signature`'s leading token is a documented detector a finder can run.
+
+    This is the single rule the parser uses to mark a lens `mechanical`. The absent form
+    (`manual - ...`) opens with `manual`, which is not a detector, so it parses as
+    not-mechanical; so does a blank cell, a bare dash or a hedged sentence. A pack that
+    wants the absence *declared* rather than merely detected holds itself to the `manual`
+    form in its own test - the parser only distinguishes a runnable detector from
+    everything else.
+    """
+    tokens = signature.split()
+    return bool(tokens) and tokens[0] in SIGNATURE_DETECTORS
+
+
 def _parse_lens_table(lines: list[str]) -> tuple[list[str], list[dict]]:
     """(column headers, lens rows) for the first markdown table in `lines`.
 
-    A lens row is `{name, question, hunts, drawn_from}`. Every cell after the first is
-    filled when the row has it and left empty otherwise, never dropped: a two-column
-    table (the project profile's artifact/lens shape) yields an empty `hunts`, and a
-    pack with no provenance column an empty `drawn_from`. `drawn_from` carries the
-    recorded failure modes a lens was drawn from, as lesson ids, for the packs that
-    cite them. Nothing here judges a row's content; a pack that must declare more is
-    held to it by its own test.
+    A lens row is `{name, question, hunts, drawn_from, signature, mechanical}`. Every cell
+    after the first is filled when the row has it and left empty otherwise, never dropped: a
+    two-column table (the project profile's artifact/lens shape) yields an empty `hunts`, and
+    a pack with no provenance column an empty `drawn_from`. `drawn_from` carries the recorded
+    failure modes a lens was drawn from, as lesson ids, for the packs that cite them.
+    `signature` is the fifth column, carrying the mechanical detector that finds the lens or
+    a declared absence; it is surfaced as its own field so a lens shipped with the column
+    blank is a parse a test can see rather than a cell dropped on the floor, and `mechanical`
+    records whether that signature names a detector a finder can run. Nothing here judges a
+    row's content; a pack that must declare more is held to it by its own test.
     """
     columns: list[str] = []
     lenses: list[dict] = []
@@ -136,10 +163,13 @@ def _parse_lens_table(lines: list[str]) -> tuple[list[str], list[dict]]:
             continue
         if not columns:  # a table without a divider row is not a lens table
             continue
+        signature = cells[4] if len(cells) > 4 else ""
         lenses.append({"name": cells[0],
                        "question": cells[1] if len(cells) > 1 else "",
                        "hunts": cells[2] if len(cells) > 2 else "",
-                       "drawn_from": cells[3] if len(cells) > 3 else ""})
+                       "drawn_from": cells[3] if len(cells) > 3 else "",
+                       "signature": signature,
+                       "mechanical": _signature_is_mechanical(signature)})
     return columns, lenses
 
 
