@@ -1,6 +1,7 @@
 # CR-0346: settle RFC0017 D1: how a Primary persona is selected when candidates compete
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0122
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S

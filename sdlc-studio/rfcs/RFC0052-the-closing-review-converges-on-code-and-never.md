@@ -1,6 +1,7 @@
 # RFC-0052: The closing review converges on code and never on prose, so a sprint can be unable to clear its own critiqued gate
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Triage:** DELIVERED - carry-forward (recommendation D) shipped as CR0404/EP0113, claim-inventory (C) as CR0393/EP0109, both RUN-01KY5Y3W; residual structural count-check is a minor follow-up if wanted
 > **Decomposed-into:** CR0404
 > **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py,.claude/skills/sdlc-studio/scripts/critic.py,.claude/skills/sdlc-studio/reference-review.md
 > **Date:** 2026-07-22

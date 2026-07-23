@@ -1,6 +1,7 @@
 # CR-0389: Nothing reports that the installed skill copy has drifted from the repo, so the operator has to remember to ask
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0144
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

@@ -1,6 +1,7 @@
 # RFC-0036: Running several sprints unattended: a rolling policy, not a queue of frozen plans
 
 > **Status:** Draft
+> **Triage:** DELIVERED - D1 rolling policy shipped as CR0320/EP0076, D2 lane partitioning is the by-design Deferred CR0321; nothing left to explore, Accepted and closed
 > **Decomposed-into:** CR0320, CR0321
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/loop_guard.py
 > **Date:** 2026-07-14

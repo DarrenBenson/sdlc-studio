@@ -1,6 +1,7 @@
 # CR-0321: Lane partitioning: allocate backlog lanes by shared-file cluster for multi-team delivery (RFC0036 follow-up)
 
-> **Status:** Deferred
+> **Status:** In Progress
+> **Decomposed-into:** EP0118
 > **Parent:** RFC0036
 > **Priority:** Low
 > **Type:** Feature

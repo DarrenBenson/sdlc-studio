@@ -1,6 +1,7 @@
 # CR-0372: an append-only review log has no correction path, so one mis-entry can strand a unit permanently
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0133
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

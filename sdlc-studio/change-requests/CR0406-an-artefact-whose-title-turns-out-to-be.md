@@ -1,6 +1,7 @@
 # CR-0406: An artefact whose TITLE turns out to be false has no deterministic correction path, so the one field a reader sees first is the one field only a hand-edit can fix
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0150
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

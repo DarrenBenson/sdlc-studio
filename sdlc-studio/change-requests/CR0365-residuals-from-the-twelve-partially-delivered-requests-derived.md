@@ -1,6 +1,7 @@
 # CR-0365: Residuals from the twelve partially-delivered requests derived Complete by CR0364
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0129
 > **Created:** 2026-07-19
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

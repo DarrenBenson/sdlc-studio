@@ -1,6 +1,7 @@
 # CR-0362: a retro finding fixed during the sprint has no honest disposition: the vocabulary is filed or declined
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0128
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

@@ -1,6 +1,7 @@
 # CR-0319: Cut 5.0.0: the release DoD for the sizing + two-backlog model (RFC0040 close-out)
 
-> **Status:** Deferred
+> **Status:** In Progress
+> **Decomposed-into:** EP0117
 > **Parent:** RFC0040
 > **Priority:** High
 > **Type:** process

@@ -1,6 +1,7 @@
 # CR-0368: conformance reports a unit missing critiqued without naming which half is unmet
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0132
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

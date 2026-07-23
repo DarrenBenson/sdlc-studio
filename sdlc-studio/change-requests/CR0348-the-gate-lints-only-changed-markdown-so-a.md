@@ -1,6 +1,7 @@
 # CR-0348: the gate lints only changed markdown, so a broken file stays green until something touches it
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0123
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

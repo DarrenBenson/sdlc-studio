@@ -1,6 +1,7 @@
 # CR-0399: The finding filer refuses an unresolvable Affects but will not say what the path probably was, and the same wrong prefix was typed six times in one session
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Triage:** Superseded by US0325/EP0110 (RUN-01KY5Y3W): file_finding.affects_suggestions/basename_matches added the closest-basename 'did you mean' to the unresolvable-Affects refusal, shared by artifact.py; all ACs met
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

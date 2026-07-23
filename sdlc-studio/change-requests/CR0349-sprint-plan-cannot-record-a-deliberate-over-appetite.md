@@ -1,6 +1,7 @@
 # CR-0349: sprint plan cannot record a deliberate over-appetite batch, only silently raise the ceiling
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0124
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

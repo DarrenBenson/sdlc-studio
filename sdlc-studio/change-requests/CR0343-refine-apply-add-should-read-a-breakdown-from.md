@@ -1,6 +1,7 @@
 # CR-0343: refine apply/add should read a breakdown from a file, not only repeated --story CLI args
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0120
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S

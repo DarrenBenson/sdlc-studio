@@ -1,6 +1,7 @@
 # CR-0356: reconcile never checks the index row's title, so a retitled artefact drifts silently and no script can fix it
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Triage:** Superseded by CR0406, the fuller retitle framing filed on the same BG0265 evidence; reconcile fields --apply already syncs the index title, only the census drift-kind remains and CR0406 subsumes it
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

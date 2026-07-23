@@ -1,6 +1,7 @@
 # CR-0386: The handoff line tells you to plan a worklist that has zero items in it
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0142
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S

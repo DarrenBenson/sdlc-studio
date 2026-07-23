@@ -1,6 +1,7 @@
 # CR-0408: Acting on a plan review invalidates every verdict including the one that proposed the change, so improving a goal costs a full re-consult
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0152
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** S

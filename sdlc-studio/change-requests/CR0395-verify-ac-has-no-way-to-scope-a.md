@@ -1,6 +1,7 @@
 # CR-0395: verify_ac has no way to scope a run to a sprint's batch, so verifying 23 stories re-runs every AC in the workspace
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0147
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

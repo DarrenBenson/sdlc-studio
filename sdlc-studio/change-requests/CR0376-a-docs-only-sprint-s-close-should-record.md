@@ -1,6 +1,7 @@
 # CR-0376: a docs-only sprint's close should record the mutation step as an explicit skip, not an error to work around
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0137
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

@@ -1,6 +1,7 @@
 # CR-0392: Four prose-writing scripts still pass free text through a shell argument and lack the --fields-file path
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0146
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

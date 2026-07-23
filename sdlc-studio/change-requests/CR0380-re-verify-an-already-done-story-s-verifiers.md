@@ -1,6 +1,7 @@
 # CR-0380: re-verify an already-Done story's verifiers, so a stale green is caught between closes not only at a manual sweep
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Triage:** Superseded by BG0256 (RUN-01KY5Y3W): selector_resolves (collection-only) + unresolvable_stamps + conformance dead-stamp refusal + verify_ac stamps deliver the stale-green catch repo-wide; only a transition-hook sliver remains
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
