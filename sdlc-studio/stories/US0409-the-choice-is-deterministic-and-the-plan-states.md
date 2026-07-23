@@ -1,6 +1,6 @@
 # US0409: the choice is deterministic and the plan states the mode and why the alternative was or was not available
 
-> **Status:** Review
+> **Status:** Done
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Delivers:** CR0411
 > **Created:** 2026-07-23
@@ -23,6 +23,7 @@
 - **When** the delivery mode is determined twice
 - **Then** the same modes are offered both times, computed from the shared-file clusters and dependency waves rather than from agent judgement
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveryModeDeterminismTests::test_the_same_batch_offers_the_same_modes_every_time
+- **Verified:** yes (2026-07-23)
 
 ### AC2: The plan states the mode and why the alternative was or was not available
 
@@ -30,6 +31,7 @@
 - **When** the plan is printed
 - **Then** it states the mode and the reason the alternative was or was not available: one unit, one coupled cluster, or a dependency chain with no width
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveryModeDeterminismTests::test_the_plan_states_the_mode_and_the_reason_for_the_alternative
+- **Verified:** yes (2026-07-23)
 
 ## Verification depth
 

@@ -1,6 +1,6 @@
 # CR-0411: sprint plan should offer sequential or parallel delivery at run start, and only offer parallel when the batch can actually be parallelised
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0154
 > **Priority:** High
 > **Type:** Feature

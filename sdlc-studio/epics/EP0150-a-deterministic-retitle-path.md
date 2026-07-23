@@ -1,6 +1,6 @@
 # EP0150: A deterministic retitle path
 
-> **Status:** In Progress
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0406
 > **Created:** 2026-07-23
@@ -14,8 +14,8 @@ Decomposed from CR0406. Delivers the work CR0406 requested.
 
 ## Story Breakdown
 
-- [ ] [US0398: an atomic retitle of the H1, the filename slug and the index row, refusing before any write if any cannot be updated](../stories/US0398-an-atomic-retitle-of-the-h1-the-filename.md)
-- [ ] [US0399: inbound references are rewritten or named via check_links, and the retitle is recorded on the artefact](../stories/US0399-inbound-references-are-rewritten-or-named-via-check.md)
+- [x] [US0398: an atomic retitle of the H1, the filename slug and the index row, refusing before any write if any cannot be updated](../stories/US0398-an-atomic-retitle-of-the-h1-the-filename.md)
+- [x] [US0399: inbound references are rewritten or named via check_links, and the retitle is recorded on the artefact](../stories/US0399-inbound-references-are-rewritten-or-named-via-check.md)
 
 ## Acceptance Criteria (Epic Level)
 

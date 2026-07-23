@@ -1,6 +1,6 @@
 # EP0154: Sequential or parallel delivery, chosen at run start
 
-> **Status:** In Progress
+> **Status:** Done
 > **Derived Point Total:** 9
 > **Parent:** CR0411
 > **Created:** 2026-07-23
@@ -14,9 +14,9 @@ Decomposed from CR0411. Delivers the work CR0411 requested.
 
 ## Story Breakdown
 
-- [ ] [US0407: a conditional prompt offers SEQUENTIAL or PARALLEL only when a genuine file-disjoint decomposition exists, and records the chosen mode](../stories/US0407-a-conditional-prompt-offers-sequential-or-parallel-only.md)
-- [ ] [US0408: the disjointness check counts test files as coupling](../stories/US0408-the-disjointness-check-counts-test-files-as-coupling.md)
-- [ ] [US0409: the choice is deterministic and the plan states the mode and why the alternative was or was not available](../stories/US0409-the-choice-is-deterministic-and-the-plan-states.md)
+- [x] [US0407: a conditional prompt offers SEQUENTIAL or PARALLEL only when a genuine file-disjoint decomposition exists, and records the chosen mode](../stories/US0407-a-conditional-prompt-offers-sequential-or-parallel-only.md)
+- [x] [US0408: the disjointness check counts test files as coupling](../stories/US0408-the-disjointness-check-counts-test-files-as-coupling.md)
+- [x] [US0409: the choice is deterministic and the plan states the mode and why the alternative was or was not available](../stories/US0409-the-choice-is-deterministic-and-the-plan-states.md)
 
 ## Acceptance Criteria (Epic Level)
 

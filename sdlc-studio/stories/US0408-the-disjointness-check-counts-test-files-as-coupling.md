@@ -1,6 +1,6 @@
 # US0408: the disjointness check counts test files as coupling
 
-> **Status:** Review
+> **Status:** Done
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Delivers:** CR0411
 > **Created:** 2026-07-23
@@ -23,6 +23,7 @@
 - **When** the delivery mode is determined
 - **Then** the shared test file couples the two units and the batch is not offered as parallel, where a source-only check would have called them disjoint
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveryModeTestFileCouplingTests::test_a_shared_test_file_counts_as_coupling
+- **Verified:** yes (2026-07-23)
 
 ### AC2: Test-file coupling collapses the parallel decomposition exactly as module coupling does
 
@@ -30,6 +31,7 @@
 - **When** the delivery mode is determined
 - **Then** the batch has no parallel form and parallel is withheld, exactly as a shared source module withholds it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveryModeTestFileCouplingTests::test_a_test_file_only_overlap_denies_the_parallel_offer
+- **Verified:** yes (2026-07-23)
 
 ## Verification depth
 

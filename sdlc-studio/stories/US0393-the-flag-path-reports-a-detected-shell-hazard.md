@@ -1,6 +1,6 @@
 # US0393: the flag path reports a detected shell hazard rather than silently altering the field
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0392
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** any of critic.py, close_owed.py, telemetry.py or sprint.py is run that way
 - **Then** it emits `file_finding.report_shell_hazards`' warning on stderr naming the affected field, rather than storing the altered value silently
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prose_writer_hazard.py::FlagPathHazardTests::test_each_writer_reports_a_hazard_on_stderr
+- **Verified:** yes (2026-07-23)
 
 ### AC2: the warning does not block the flag path
 
@@ -30,6 +31,7 @@
 - **When** the command runs
 - **Then** in the same run the warning is emitted AND the command exits 0 AND the field is written, so the report coexists with the write rather than becoming a new refusal that breaks existing callers
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prose_writer_hazard.py::FlagPathHazardTests::test_the_warning_is_emitted_yet_does_not_block_the_flag_path
+- **Verified:** yes (2026-07-23)
 
 ### AC3: the fields-file path raises no hazard warning
 
@@ -37,6 +39,7 @@
 - **When** the command runs
 - **Then** no shell-hazard warning is emitted, because the value never crossed a shell to be altered
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prose_writer_hazard.py::FlagPathHazardTests::test_fields_file_prose_raises_no_hazard_warning
+- **Verified:** yes (2026-07-23)
 
 ## Verification depth
 

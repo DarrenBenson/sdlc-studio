@@ -1,6 +1,6 @@
 # US0412: reference-cr.md and reference-rfc.md state refine produces a plannable unit whose ACs still need grooming, opt-out per project
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0412
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

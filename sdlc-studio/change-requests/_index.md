@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 1 |
 | Approved | 0 |
-| In Progress | 40 |
-| Complete | 354 |
+| In Progress | 32 |
+| Complete | 362 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 17 |
@@ -187,7 +187,7 @@
 | [CR-0363](CR0363-the-mutation-gate-should-report-the-coverage-its.md) | the mutation gate should report the coverage its test command actually reaches | Complete | High | Improvement | 2026-07-19 | EP0091 |
 | [CR-0364](CR0364-reconcile-should-derive-a-request-terminal-when-its.md) | reconcile should derive a request terminal when its children are all resolved - G2 is a gate with no counterpart | Complete | High | Improvement | 2026-07-19 | EP0087 |
 | [CR-0365](CR0365-residuals-from-the-twelve-partially-delivered-requests-derived.md) | Residuals from the twelve partially-delivered requests derived Complete by CR0364 | In Progress | Medium | Improvement | 2026-07-19 | EP0129 |
-| [CR-0366](CR0366-sprint-plan-should-see-work-that-is-already.md) | sprint plan should see work that is already built and committed | In Progress | Medium | Improvement | 2026-07-20 | EP0130 |
+| [CR-0366](CR0366-sprint-plan-should-see-work-that-is-already.md) | sprint plan should see work that is already built and committed | Complete | Medium | Improvement | 2026-07-20 | EP0130 |
 | [CR-0367](CR0367-the-commit-message-check-runs-after-the-full.md) | the commit-message check runs after the full test gate, so a subject-line defect costs a whole suite run | In Progress | Medium | Improvement | 2026-07-20 | EP0131 |
 | [CR-0368](CR0368-conformance-reports-a-unit-missing-critiqued-without-naming.md) | conformance reports a unit missing critiqued without naming which half is unmet | In Progress | Medium | Improvement | 2026-07-20 | EP0132 |
 | [CR-0369](CR0369-a-sprint-that-needs-an-operator-decision-should.md) | a sprint that needs an operator decision should ask a structured question, not stop in dense prose | Complete | High | Improvement | 2026-07-20 | EP0092 |
@@ -213,7 +213,7 @@
 | [CR-0389](CR0389-nothing-reports-that-the-installed-skill-copy-has.md) | Nothing reports that the installed skill copy has drifted from the repo, so the operator has to remember to ask | In Progress | Medium | Improvement | 2026-07-22 | EP0144 |
 | [CR-0390](CR0390-sprint-plan-s-batch-selection-error-names-the.md) | sprint plan's batch-selection error names the flags but not that each one takes a status, costing two failed invocations to discover | In Progress | Low | Improvement | 2026-07-22 | EP0145 |
 | [CR-0391](CR0391-the-token-forecast-has-no-fixed-cost-parameter.md) | The token forecast has no fixed-cost parameter, and two measured sprints say the fixed cost is roughly 300 times the marginal one | Complete | High | Improvement | 2026-07-22 | EP0114 |
-| [CR-0392](CR0392-four-prose-writing-scripts-still-pass-free-text.md) | Four prose-writing scripts still pass free text through a shell argument and lack the --fields-file path | In Progress | Medium | Improvement | 2026-07-22 | EP0146 |
+| [CR-0392](CR0392-four-prose-writing-scripts-still-pass-free-text.md) | Four prose-writing scripts still pass free text through a shell argument and lack the --fields-file path | Complete | Medium | Improvement | 2026-07-22 | EP0146 |
 | [CR-0393](CR0393-the-closing-review-should-inventory-every-prose-claim.md) | The closing review should inventory every prose CLAIM against the diff as its FIRST pass, not discover them last | Complete | High | Improvement | 2026-07-22 | EP0109 |
 | [CR-0394](CR0394-a-message-describing-what-a-guard-will-do.md) | A message describing what a guard will do must be DERIVED from the guard, never restated beside it | Complete | High | Improvement | 2026-07-22 | EP0107 |
 | [CR-0395](CR0395-verify-ac-has-no-way-to-scope-a.md) | verify_ac has no way to scope a run to a sprint's batch, so verifying 23 stories re-runs every AC in the workspace | In Progress | Medium | Improvement | 2026-07-22 | EP0147 |
@@ -227,13 +227,13 @@
 | [CR-0403](CR0403-add-a-vibe-coding-lens-to-the-audit.md) | Add a vibe-coding lens to the audit: find where work was done without first establishing the contract it depends on | Complete | High | Improvement | 2026-07-22 | EP0115 |
 | [CR-0404](CR0404-let-a-reject-be-carried-forward-as-filed.md) | Let a REJECT be carried forward as filed findings, reusing the file-a-finding-or-waive idiom the review already mandates for legs | Complete | High | Improvement | 2026-07-22 | EP0113 |
 | [CR-0405](CR0405-changelog-entries-are-hand-edited-into-a-structured.md) | CHANGELOG entries are hand-edited into a structured file with no helper and no structural check, so a bad insert silently reparents existing entries | Complete | Medium | Improvement | 2026-07-22 | EP0112 |
-| [CR-0406](CR0406-an-artefact-whose-title-turns-out-to-be.md) | An artefact whose TITLE turns out to be false has no deterministic correction path, so the one field a reader sees first is the one field only a hand-edit can fix | In Progress | Medium | Improvement | 2026-07-22 | EP0150 |
-| [CR-0407](CR0407-the-forecast-ignores-the-goal-rung-so-a.md) | The forecast ignores the goal rung, so a design run that writes no code is priced at the full build cost of the batch it grooms | In Progress | Medium | Improvement | 2026-07-22 | EP0151 |
-| [CR-0408](CR0408-acting-on-a-plan-review-invalidates-every-verdict.md) | Acting on a plan review invalidates every verdict including the one that proposed the change, so improving a goal costs a full re-consult | In Progress | High | Improvement | 2026-07-22 | EP0152 |
-| [CR-0409](CR0409-a-seat-is-briefed-by-hand-and-its.md) | A seat is briefed by hand and its verdict typed back through a shell argument, so the plan review's quality depends on the author it is meant to check | In Progress | Medium | Improvement | 2026-07-22 | EP0153 |
+| [CR-0406](CR0406-an-artefact-whose-title-turns-out-to-be.md) | An artefact whose TITLE turns out to be false has no deterministic correction path, so the one field a reader sees first is the one field only a hand-edit can fix | Complete | Medium | Improvement | 2026-07-22 | EP0150 |
+| [CR-0407](CR0407-the-forecast-ignores-the-goal-rung-so-a.md) | The forecast ignores the goal rung, so a design run that writes no code is priced at the full build cost of the batch it grooms | Complete | Medium | Improvement | 2026-07-22 | EP0151 |
+| [CR-0408](CR0408-acting-on-a-plan-review-invalidates-every-verdict.md) | Acting on a plan review invalidates every verdict including the one that proposed the change, so improving a goal costs a full re-consult | Complete | High | Improvement | 2026-07-22 | EP0152 |
+| [CR-0409](CR0409-a-seat-is-briefed-by-hand-and-its.md) | A seat is briefed by hand and its verdict typed back through a shell argument, so the plan review's quality depends on the author it is meant to check | Complete | Medium | Improvement | 2026-07-22 | EP0153 |
 | [CR-0410](CR0410-a-repair-plan-can-be-attacked-and-still.md) | A repair plan can be attacked and still repeat the previous approach, so a class that has failed N rounds must force a design decision rather than a better instance | Complete | High | Improvement | 2026-07-22 | EP0106 |
-| [CR-0411](CR0411-sprint-plan-should-offer-sequential-or-parallel-delivery.md) | sprint plan should offer sequential or parallel delivery at run start, and only offer parallel when the batch can actually be parallelised | In Progress | High | Feature | 2026-07-23 | EP0154 |
-| [CR-0412](CR0412-refine-mints-a-story-with-points-but-no.md) | refine mints a story with points but no Affects and placeholder acceptance criteria, so a refined backlog is unplannable until a separate grooming pass - refine should make its output actionable | In Progress | High | Improvement | 2026-07-23 | EP0155 |
+| [CR-0411](CR0411-sprint-plan-should-offer-sequential-or-parallel-delivery.md) | sprint plan should offer sequential or parallel delivery at run start, and only offer parallel when the batch can actually be parallelised | Complete | High | Feature | 2026-07-23 | EP0154 |
+| [CR-0412](CR0412-refine-mints-a-story-with-points-but-no.md) | refine mints a story with points but no Affects and placeholder acceptance criteria, so a refined backlog is unplannable until a separate grooming pass - refine should make its output actionable | Complete | High | Improvement | 2026-07-23 | EP0155 |
 
 ## Archived Releases
 

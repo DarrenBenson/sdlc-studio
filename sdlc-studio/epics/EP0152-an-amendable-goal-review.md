@@ -1,6 +1,6 @@
 # EP0152: An amendable goal review
 
-> **Status:** In Progress
+> **Status:** Done
 > **Derived Point Total:** 7
 > **Parent:** CR0408
 > **Created:** 2026-07-23
@@ -14,8 +14,8 @@ Decomposed from CR0408. Delivers the work CR0408 requested.
 
 ## Story Breakdown
 
-- [ ] [US0402: an amendment carries forward the seats it satisfies and re-consults only the rest, recording the prior wording and the requesting seat](../stories/US0402-an-amendment-carries-forward-the-seats-it-satisfies.md)
-- [ ] [US0403: a material change still invalidates every verdict, the distinction an operator declaration, recorded](../stories/US0403-a-material-change-still-invalidates-every-verdict-the.md)
+- [x] [US0402: an amendment carries forward the seats it satisfies and re-consults only the rest, recording the prior wording and the requesting seat](../stories/US0402-an-amendment-carries-forward-the-seats-it-satisfies.md)
+- [x] [US0403: a material change still invalidates every verdict, the distinction an operator declaration, recorded](../stories/US0403-a-material-change-still-invalidates-every-verdict-the.md)
 
 ## Acceptance Criteria (Epic Level)
 

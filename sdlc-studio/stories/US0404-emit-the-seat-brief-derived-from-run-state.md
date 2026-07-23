@@ -1,6 +1,6 @@
 # US0404: emit the seat brief derived from run state, worklist, planner output and lessons, naming the grooming state
 
-> **Status:** Review
+> **Status:** Done
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Delivers:** CR0409
 > **Created:** 2026-07-23
@@ -23,6 +23,7 @@
 - **When** the seat brief is emitted
 - **Then** it is composed from the run state, the worklist and the planner's output, and the same batch and goal produce the same brief every time
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeatBriefEmitTests::test_the_brief_is_derived_deterministically_from_the_batch
+- **Verified:** yes (2026-07-23)
 
 ### AC2: The brief names the batch's grooming state
 
@@ -30,6 +31,7 @@
 - **When** the brief is emitted
 - **Then** it names the placeholder acceptance criteria, the shared-file clusters and the reachable end state, the context the first live review turned on
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeatBriefEmitTests::test_the_brief_names_placeholder_acs_shared_clusters_and_end_state
+- **Verified:** yes (2026-07-23)
 
 ### AC3: The brief draws the project's relevant failure modes from the lessons registry
 
@@ -37,6 +39,7 @@
 - **When** the brief is emitted
 - **Then** it includes the project's own relevant failure modes drawn from the registry, not a generic checklist
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeatBriefEmitTests::test_the_brief_draws_failure_modes_from_the_lessons_registry
+- **Verified:** yes (2026-07-23)
 
 ## Verification depth
 

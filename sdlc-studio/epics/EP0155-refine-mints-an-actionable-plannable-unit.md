@@ -1,6 +1,6 @@
 # EP0155: refine mints an actionable, plannable unit
 
-> **Status:** In Progress
+> **Status:** Done
 > **Derived Point Total:** 10
 > **Parent:** CR0412
 > **Created:** 2026-07-23
@@ -14,9 +14,9 @@ Decomposed from CR0412. Delivers the work CR0412 requested.
 
 ## Story Breakdown
 
-- [ ] [US0410: refine requires or inherits an Affects per story so a minted story is plannable, refusing or seeding-for-confirmation where none is given](../stories/US0410-refine-requires-or-inherits-an-affects-per-story.md)
-- [ ] [US0411: a refined story's AC block is labelled a grooming placeholder, not left as content, so the ungroomed count is machine-visible](../stories/US0411-a-refined-story-s-ac-block-is-labelled.md)
-- [ ] [US0412: reference-cr.md and reference-rfc.md state refine produces a plannable unit whose ACs still need grooming, opt-out per project](../stories/US0412-reference-cr-md-and-reference-rfc-md-state.md)
+- [x] [US0410: refine requires or inherits an Affects per story so a minted story is plannable, refusing or seeding-for-confirmation where none is given](../stories/US0410-refine-requires-or-inherits-an-affects-per-story.md)
+- [x] [US0411: a refined story's AC block is labelled a grooming placeholder, not left as content, so the ungroomed count is machine-visible](../stories/US0411-a-refined-story-s-ac-block-is-labelled.md)
+- [x] [US0412: reference-cr.md and reference-rfc.md state refine produces a plannable unit whose ACs still need grooming, opt-out per project](../stories/US0412-reference-cr-md-and-reference-rfc-md-state.md)
 
 ## Acceptance Criteria (Epic Level)
 

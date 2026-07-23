@@ -1,6 +1,6 @@
 # US0400: the forecast names the rung it prices and reads UNMEASURED where that rung has no rate
 
-> **Status:** Review
+> **Status:** Done
 > **Verification depth:** functional - node-addressed tests in test_forecast_rung/test_nondone_close green; EP0151 mutation-proven (4 mutants killed across the rung label, unmeasured-rung rate, and the non-done velocity blank)
 > **Delivers:** CR0407
 > **Created:** 2026-07-23
@@ -24,6 +24,7 @@
 - **When** the token forecast is built for that batch
 - **Then** the forecast record names the `design` rung it priced, so a design run is never silently presented under the build rung's number
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_forecast_rung.py::ForecastNamesItsRung::test_design_rung_forecast_labels_the_rung
+- **Verified:** yes (2026-07-23)
 
 ### AC2: an unmeasured rung reads UNMEASURED rather than borrowing the build rate
 
@@ -31,6 +32,7 @@
 - **When** the token forecast is built
 - **Then** the rate for that rung reads UNMEASURED instead of substituting the build (`done`) rate, the same refusal the cross-model rate check already makes
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_forecast_rung.py::ForecastNamesItsRung::test_unmeasured_rung_rate_reads_unmeasured
+- **Verified:** yes (2026-07-23)
 
 ### AC3: the build rung is unaffected
 
@@ -38,6 +40,7 @@
 - **When** the token forecast is built
 - **Then** it still prices the batch at the measured build rate and names the `done` rung, so the honest build case is not regressed by the rung labelling
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_forecast_rung.py::ForecastNamesItsRung::test_build_rung_still_priced_and_named
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # US0398: an atomic retitle of the H1, the filename slug and the index row, refusing before any write if any cannot be updated
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0406
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** `artifact retitle --id <id> --title "New Title"` is run once
 - **Then** the H1 text, the file's slug (the file is renamed) and the index row's link text all read the new title, with no further command needed and no other field altered
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retitle.py::AtomicRetitleTests::test_h1_filename_and_index_row_all_change_in_one_call
+- **Verified:** yes (2026-07-23)
 
 ### AC2: a blocked surface aborts before any write, leaving all three untouched
 
@@ -30,6 +31,7 @@
 - **When** `artifact retitle` is run
 - **Then** it exits non-zero and writes nothing: the original filename, the H1 and the index row are byte-identical to before, and no rename has occurred
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retitle.py::AtomicRetitleTests::test_a_blocked_target_leaves_all_three_untouched
+- **Verified:** yes (2026-07-23)
 
 ### AC3: the refusal names the blocked surface and the corrective action
 
@@ -37,6 +39,7 @@
 - **When** it exits
 - **Then** stderr states which of the three surfaces could not be updated and what to do about it, in the manner the grooming refusal already sets, rather than a bare non-zero exit
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retitle.py::AtomicRetitleTests::test_refusal_names_the_blocked_surface_and_the_fix
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

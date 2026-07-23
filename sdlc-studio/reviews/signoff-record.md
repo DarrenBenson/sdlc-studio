@@ -158,3 +158,41 @@
 | US0342 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
 | US0343 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
 | US0344 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0371 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0391 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0392 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0393 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0398 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0399 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0400 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0401 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0402 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0403 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0404 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0405 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0406 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0407 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0408 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0409 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0410 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0411 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0412 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | - |
+| US0371 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0391 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0392 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0393 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0398 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0399 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0400 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0401 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0402 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0403 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0404 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0405 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0406 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0407 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0408 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0409 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0410 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0411 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0412 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |

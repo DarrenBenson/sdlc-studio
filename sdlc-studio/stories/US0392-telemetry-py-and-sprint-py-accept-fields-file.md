@@ -1,6 +1,6 @@
 # US0392: telemetry.py and sprint.py accept --fields-file and the registry is emptied of the four
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0392
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
@@ -29,6 +29,7 @@ for prose that does not exist.
 - **When** its `KNOWN_PROSE_WRITER_GAPS` entry is read
 - **Then** telemetry is recorded as safe-by-nature (a boolean flag, no free prose), not a deferred gap
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::ProseWriterSweepTests::test_the_four_cr0392_writers_are_now_safe
+- **Verified:** yes (2026-07-23)
 
 ### AC2: sprint.py consumes goal and note prose from a fields-file verbatim
 
@@ -36,6 +37,7 @@ for prose that does not exist.
 - **When** the sprint command consumes it via `--fields-file`
 - **Then** both fields are stored byte-for-byte with the backtick preserved
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SprintFieldsFileTests::test_fields_file_goal_and_note_are_stored_verbatim
+- **Verified:** yes (2026-07-23)
 
 ### AC3: the registry no longer defers any of the four writers
 
@@ -43,6 +45,7 @@ for prose that does not exist.
 - **When** the prose-writer sweep runs
 - **Then** the three prose writers appear in `SAFE_INPUT_WRITERS`, telemetry remains a named safe-by-nature gap, and none of the four is recorded as a `deferred` gap (leaving only the mutation.py exception beside telemetry)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::ProseWriterSweepTests::test_the_four_cr0392_writers_are_now_safe
+- **Verified:** yes (2026-07-23)
 
 ## Verification depth
 

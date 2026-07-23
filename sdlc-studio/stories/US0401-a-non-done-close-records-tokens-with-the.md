@@ -1,6 +1,6 @@
 # US0401: a non-done close records tokens with the tokens-per-point blank, and reference-sprint.md notes the rungs differ
 
-> **Status:** Review
+> **Status:** Done
 > **Verification depth:** functional - node-addressed tests in test_forecast_rung/test_nondone_close green; EP0151 mutation-proven (4 mutants killed across the rung label, unmeasured-rung rate, and the non-done velocity blank)
 > **Delivers:** CR0407
 > **Created:** 2026-07-23
@@ -24,6 +24,7 @@
 - **When** `accuracy --write` records the velocity row
 - **Then** the row carries the token actual with tokens-per-point blank (not tokens divided by the terminal-unit points), so a design-run row cannot be re-measured as a rate
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_nondone_close.py::NonDoneCloseLeavesRateBlank::test_design_rung_records_tokens_without_rate
+- **Verified:** yes (2026-07-23)
 
 ### AC2: a `done` rung close still computes the rate
 
@@ -31,6 +32,7 @@
 - **When** `accuracy --write` records the velocity row
 - **Then** tokens-per-point is computed and written as before, so the build rung's measurement is not lost
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_nondone_close.py::NonDoneCloseLeavesRateBlank::test_done_rung_still_computes_rate
+- **Verified:** yes (2026-07-23)
 
 ### AC3: reference-sprint.md states the rungs cost differently
 

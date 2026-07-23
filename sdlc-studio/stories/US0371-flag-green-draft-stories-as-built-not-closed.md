@@ -1,6 +1,6 @@
 # US0371: flag green Draft stories as built-not-closed, forecast the unverified as new, point an all-built batch at the close path
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0366
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** sprint plan selects a batch containing it
 - **Then** the plan flags it as built-not-closed and excludes it from the build forecast rather than pricing it as new work
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_built_not_closed.py::BuiltNotClosed::test_green_draft_flagged_not_forecast_as_new
+- **Verified:** yes (2026-07-23)
 
 ### AC2: the flag does not fire on unverified stories
 
@@ -30,6 +31,7 @@
 - **When** sprint plan runs
 - **Then** it is forecast as ordinary unbuilt work and is not flagged built-not-closed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_built_not_closed.py::BuiltNotClosed::test_unverified_draft_forecast_as_new
+- **Verified:** yes (2026-07-23)
 
 ### AC3: an all-built batch is pointed at the close path
 
@@ -37,6 +39,7 @@
 - **When** sprint plan runs
 - **Then** it says so plainly and points at the close path instead of a build
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_built_not_closed.py::BuiltNotClosed::test_all_built_batch_points_at_close
+- **Verified:** yes (2026-07-23)
 
 ## Verification depth
 

@@ -1,6 +1,6 @@
 # US0407: a conditional prompt offers SEQUENTIAL or PARALLEL only when a genuine file-disjoint decomposition exists, and records the chosen mode
 
-> **Status:** Review
+> **Status:** Done
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/reference-delivery.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Delivers:** CR0411
 > **Created:** 2026-07-23
@@ -23,6 +23,7 @@
 - **When** sprint plan runs at run start
 - **Then** it offers SEQUENTIAL or PARALLEL and records the chosen mode on the run state
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveryModeOfferTests::test_a_parallelisable_batch_offers_both_modes_and_records_the_choice
+- **Verified:** yes (2026-07-23)
 
 ### AC2: A one-unit batch is delivered sequentially and says why parallel was withheld
 
@@ -30,6 +31,7 @@
 - **When** sprint plan runs
 - **Then** parallel is not offered, the run is sequential, and the output states parallel was withheld because there is only one unit
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveryModeOfferTests::test_a_one_unit_batch_is_sequential_and_says_why_parallel_was_withheld
+- **Verified:** yes (2026-07-23)
 
 ### AC3: An all-coupled batch is not offered parallel
 
@@ -37,6 +39,7 @@
 - **When** sprint plan runs
 - **Then** parallel is not offered and the stated reason names the coupling
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveryModeOfferTests::test_an_all_coupled_batch_is_not_offered_parallel
+- **Verified:** yes (2026-07-23)
 
 ## Verification depth
 

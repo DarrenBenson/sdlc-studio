@@ -1,6 +1,6 @@
 # US0405: the brief is recorded with the verdicts so a thin brief is visible
 
-> **Status:** Review
+> **Status:** Done
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Delivers:** CR0409
 > **Created:** 2026-07-23
@@ -23,6 +23,7 @@
 - **When** the seat verdicts are recorded
 - **Then** the brief is stored in the same round as the verdicts
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeatBriefRecordedTests::test_the_brief_is_stored_with_the_recorded_verdicts
+- **Verified:** yes (2026-07-23)
 
 ### AC2: The recorded brief is readable back with the round
 
@@ -30,6 +31,7 @@
 - **When** the round is read back
 - **Then** the brief is returned with it, so a thin verdict can be told from a thin brief
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeatBriefRecordedTests::test_the_recorded_brief_is_readable_back_with_the_round
+- **Verified:** yes (2026-07-23)
 
 ## Verification depth
 

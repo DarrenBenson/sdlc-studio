@@ -1,6 +1,6 @@
 # US0399: inbound references are rewritten or named via check_links, and the retitle is recorded on the artefact
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0406
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the retitle renames the target
 - **Then** every one of those inbound links is rewritten to the new slug, so the link resolution `check_links` runs reports no new break
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retitle_refs.py::InboundRefTests::test_inbound_links_are_rewritten_to_the_new_slug
+- **Verified:** yes (2026-07-23)
 
 ### AC2: an unrewritable reference blocks the rename and is named
 
@@ -30,6 +31,7 @@
 - **When** the retitle is run
 - **Then** it refuses (no rename occurs) and names the referencing files, rather than renaming the artefact and leaving the references dangling
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retitle_refs.py::InboundRefTests::test_an_unrewritable_reference_blocks_the_rename_and_is_named
+- **Verified:** yes (2026-07-23)
 
 ### AC3: the retitle is recorded on the artefact with the previous title
 
@@ -37,6 +39,7 @@
 - **When** it completes
 - **Then** a dated Revision History row is written recording the retitle and the previous title, via the same annotate/revision machinery, so the old title is legible on the artefact
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retitle_refs.py::RetitleRecordTests::test_a_revision_row_records_the_old_title
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

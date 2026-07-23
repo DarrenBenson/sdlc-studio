@@ -1,6 +1,6 @@
 # CR-0409: A seat is briefed by hand and its verdict typed back through a shell argument, so the plan review's quality depends on the author it is meant to check
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0153
 > **Priority:** Medium
 > **Type:** Improvement

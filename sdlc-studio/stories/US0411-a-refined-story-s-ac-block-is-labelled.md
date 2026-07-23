@@ -1,6 +1,6 @@
 # US0411: a refined story's AC block is labelled a grooming placeholder, not left as content, so the ungroomed count is machine-visible
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0412
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
@@ -25,6 +25,7 @@ ungroomed units mechanically
 - **Then** its acceptance-criteria block carries an explicit ungroomed marker rather than a
   bare double-brace placeholder that reads as real content
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::UngroomedMarkerTests::test_a_refined_story_carries_an_ungroomed_marker
+- **Verified:** yes (2026-07-23)
 
 ### AC2: the ungroomed count is machine-visible
 
@@ -33,6 +34,7 @@ ungroomed units mechanically
 - **Then** the ungroomed ones are counted by the marker, so an operator sees how much
   grooming a refined backlog still owes rather than discovering it at plan time
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::UngroomedMarkerTests::test_ungroomed_stories_are_counted_by_their_marker
+- **Verified:** yes (2026-07-23)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # US0406: goal-review record accepts a --fields-file so no seat prose crosses a shell
 
-> **Status:** Review
+> **Status:** Done
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Delivers:** CR0409
 > **Created:** 2026-07-23
@@ -23,6 +23,7 @@
 - **When** `goal-review record` is run with --fields-file and no --seat argument
 - **Then** the seats are recorded from the file
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GoalReviewFieldsFileTests::test_record_reads_seat_verdicts_from_a_fields_file
+- **Verified:** yes (2026-07-23)
 
 ### AC2: a note with shell metacharacters is stored verbatim
 
@@ -30,6 +31,7 @@
 - **When** the verdict is recorded through the fields file
 - **Then** the note is stored byte-for-byte, with no word deleted and no command substitution performed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GoalReviewFieldsFileTests::test_a_note_with_backticks_is_stored_verbatim
+- **Verified:** yes (2026-07-23)
 
 ## Verification depth
 

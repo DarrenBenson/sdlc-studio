@@ -1,6 +1,6 @@
 # CR-0412: refine mints a story with points but no Affects and placeholder acceptance criteria, so a refined backlog is unplannable until a separate grooming pass - refine should make its output actionable
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0155
 > **Priority:** High
 > **Type:** Improvement

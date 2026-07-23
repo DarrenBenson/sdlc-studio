@@ -1,6 +1,6 @@
 # CR-0407: The forecast ignores the goal rung, so a design run that writes no code is priced at the full build cost of the batch it grooms
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0151
 > **Priority:** Medium
 > **Type:** Improvement

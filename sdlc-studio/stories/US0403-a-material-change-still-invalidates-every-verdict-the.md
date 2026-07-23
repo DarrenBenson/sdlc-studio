@@ -1,6 +1,6 @@
 # US0403: a material change still invalidates every verdict, the distinction an operator declaration, recorded
 
-> **Status:** Review
+> **Status:** Done
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Delivers:** CR0408
 > **Created:** 2026-07-23
@@ -23,6 +23,7 @@
 - **When** the goal is changed to goal B and the operator declares the change material rather than an amendment
 - **Then** no verdict carries forward and every seat must review goal B, exactly as a plain new goal does today
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::MaterialGoalChangeTests::test_a_material_declaration_carries_no_verdict_forward
+- **Verified:** yes (2026-07-23)
 
 ### AC2: The amendment-versus-material call is recorded as the operator's declaration
 
@@ -30,6 +31,7 @@
 - **When** a goal change is recorded
 - **Then** the round stores whether the operator declared it an amendment or a material change, so the classification is an accountable declaration and not the tool's guess
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::MaterialGoalChangeTests::test_the_change_classification_is_recorded_as_an_operator_declaration
+- **Verified:** yes (2026-07-23)
 
 ## Verification depth
 

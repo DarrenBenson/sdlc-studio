@@ -1,6 +1,6 @@
 # EP0153: A reproducible seat brief
 
-> **Status:** In Progress
+> **Status:** Done
 > **Derived Point Total:** 9
 > **Parent:** CR0409
 > **Created:** 2026-07-23
@@ -14,9 +14,9 @@ Decomposed from CR0409. Delivers the work CR0409 requested.
 
 ## Story Breakdown
 
-- [ ] [US0404: emit the seat brief derived from run state, worklist, planner output and lessons, naming the grooming state](../stories/US0404-emit-the-seat-brief-derived-from-run-state.md)
-- [ ] [US0405: the brief is recorded with the verdicts so a thin brief is visible](../stories/US0405-the-brief-is-recorded-with-the-verdicts-so.md)
-- [ ] [US0406: goal-review record accepts a --fields-file so no seat prose crosses a shell](../stories/US0406-goal-review-record-accepts-a-fields-file-so.md)
+- [x] [US0404: emit the seat brief derived from run state, worklist, planner output and lessons, naming the grooming state](../stories/US0404-emit-the-seat-brief-derived-from-run-state.md)
+- [x] [US0405: the brief is recorded with the verdicts so a thin brief is visible](../stories/US0405-the-brief-is-recorded-with-the-verdicts-so.md)
+- [x] [US0406: goal-review record accepts a --fields-file so no seat prose crosses a shell](../stories/US0406-goal-review-record-accepts-a-fields-file-so.md)
 
 ## Acceptance Criteria (Epic Level)
 

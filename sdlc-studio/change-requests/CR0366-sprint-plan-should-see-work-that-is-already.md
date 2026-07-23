@@ -1,6 +1,6 @@
 # CR-0366: sprint plan should see work that is already built and committed
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0130
 > **Priority:** Medium
 > **Type:** Improvement

@@ -1,6 +1,6 @@
 # EP0146: Extend --fields-file to the remaining prose writers
 
-> **Status:** In Progress
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0392
 > **Created:** 2026-07-23
@@ -14,9 +14,9 @@ Decomposed from CR0392. Delivers the work CR0392 requested.
 
 ## Story Breakdown
 
-- [ ] [US0391: critic.py and close_owed.py accept --fields-file via the shared helper](../stories/US0391-critic-py-and-close-owed-py-accept-fields.md)
-- [ ] [US0392: telemetry.py and sprint.py accept --fields-file and the registry is emptied of the four](../stories/US0392-telemetry-py-and-sprint-py-accept-fields-file.md)
-- [ ] [US0393: the flag path reports a detected shell hazard rather than silently altering the field](../stories/US0393-the-flag-path-reports-a-detected-shell-hazard.md)
+- [x] [US0391: critic.py and close_owed.py accept --fields-file via the shared helper](../stories/US0391-critic-py-and-close-owed-py-accept-fields.md)
+- [x] [US0392: telemetry.py and sprint.py accept --fields-file and the registry is emptied of the four](../stories/US0392-telemetry-py-and-sprint-py-accept-fields-file.md)
+- [x] [US0393: the flag path reports a detected shell hazard rather than silently altering the field](../stories/US0393-the-flag-path-reports-a-detected-shell-hazard.md)
 
 ## Acceptance Criteria (Epic Level)
 
