@@ -7,28 +7,29 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Epic:** EP0145
 > **Points:** 1
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_batch_selection.py
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** agent or operator invoking sprint plan on the hottest path in the skill
+**I want** the batch-selection error to show a usable example value per selector
+**So that** the first retry after it is a working invocation rather than two more failed round-trips
 
 ## Acceptance Criteria
 
-### AC1: The batch-selection message shows a usable example value for each selector, so the first retry
+### AC1: the message shows a usable example value per selector
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** The batch-selection message shows a usable example value for each selector, so the first retry after it is a working invocation.
-- **Verify:** {{executable check}}
+- **Given** `sprint plan` invoked with no batch selected
+- **When** the batch-selection error prints
+- **Then** each status-taking selector appears with an example status value (such as `--bugs Open`), so copying the suggestion yields a working invocation
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_batch_selection.py::BatchSelectionError::test_message_shows_example_status_per_selector
 
-### AC2: The valid status values are discoverable from the failure itself rather than only from the help file
+### AC2: a valid status value is discoverable from the failure itself
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** The valid status values are discoverable from the failure itself rather than only from the help file.
-- **Verify:** {{executable check}}
+- **Given** the same no-batch invocation
+- **When** the batch-selection error prints
+- **Then** a valid status value is present in the message text, so it is discoverable from the failure rather than only from the help file
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_batch_selection.py::BatchSelectionError::test_valid_status_value_present_in_message
 
 ## Revision History
 

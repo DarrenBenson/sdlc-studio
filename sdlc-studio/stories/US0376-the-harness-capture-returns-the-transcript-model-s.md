@@ -7,28 +7,36 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Epic:** EP0134
 > **Points:** 3
+> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator running interactive sprints on more than one model
+**I want** the harness token capture to record which model spent the tokens and the close to write it to the velocity row
+**So that** the per-model rate machinery books each interactive sprint in the right (project, model) cell instead of an unrecorded-model bucket
 
 ## Acceptance Criteria
 
-### AC1: `harness_tokens` also returns the model(s) seen in the session transcript, mixed reported as mixed
+### AC1: the capture returns a single transcript model
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** `harness_tokens` also returns the model(s) seen in the session transcript, mixed reported as mixed
-- **Verify:** {{executable check}}
+- **Given** a session transcript whose usage records all name one model
+- **When** `harness_tokens` reads it
+- **Then** the result carries that model id alongside the token total
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::HarnessCaptureReportsModel::test_single_model_returned
 
-### AC2: the velocity row written by an interactive close carries that model in its Model cell, so
+### AC2: two models are reported as mixed
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** the velocity row written by an interactive close carries that model in its Model cell, so `measured_rate` books it in the right (project, model) cell
-- **Verify:** {{executable check}}
+- **Given** a session transcript whose usage records name two different models
+- **When** `harness_tokens` reads it
+- **Then** the result reports the model as `mixed` rather than picking one
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::HarnessCaptureReportsModel::test_two_models_report_mixed
+
+### AC3: the interactive close writes the model to the Model cell
+
+- **Given** an interactive close capturing tokens from a transcript on model M
+- **When** `accuracy --write` records the velocity row
+- **Then** the row's Model cell is M, so `measured_rate` books it in the (project, M) cell rather than the unrecorded-model cell
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::HarnessCaptureReportsModel::test_close_writes_model_to_velocity_row
 
 ## Revision History
 

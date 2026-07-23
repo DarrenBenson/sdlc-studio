@@ -7,35 +7,36 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Epic:** EP0130
 > **Points:** 5
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_built_not_closed.py
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator planning a sprint in a repo where work landed outside a run
+**I want** sprint plan to notice a Draft story whose executable ACs are already green
+**So that** the forecast is not inflated by pricing already-built work as new, and an all-built batch is pointed at the close path
 
 ## Acceptance Criteria
 
-### AC1: Given a Draft story whose executable ACs all pass, when sprint plan selects a batch containing it
+### AC1: a green Draft story is flagged built-not-closed, not forecast as new
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** Given a Draft story whose executable ACs all pass, when sprint plan selects a batch containing it, then the plan flags it as built-not-closed rather than forecasting it as new work
-- **Verify:** {{executable check}}
+- **Given** a Draft story whose executable ACs all pass
+- **When** sprint plan selects a batch containing it
+- **Then** the plan flags it as built-not-closed and excludes it from the build forecast rather than pricing it as new work
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_built_not_closed.py::BuiltNotClosed::test_green_draft_flagged_not_forecast_as_new
 
-### AC2: Given a Draft story with failing or unrun ACs, when sprint plan runs, then it is forecast as
+### AC2: the flag does not fire on unverified stories
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** Given a Draft story with failing or unrun ACs, when sprint plan runs, then it is forecast as ordinary unbuilt work (the flag does not fire on unverified stories)
-- **Verify:** {{executable check}}
+- **Given** a Draft story with failing or unrun ACs
+- **When** sprint plan runs
+- **Then** it is forecast as ordinary unbuilt work and is not flagged built-not-closed
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_built_not_closed.py::BuiltNotClosed::test_unverified_draft_forecast_as_new
 
-### AC3: Given a batch where every unit is built-not-closed, when sprint plan runs, then it says so plainly
+### AC3: an all-built batch is pointed at the close path
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** Given a batch where every unit is built-not-closed, when sprint plan runs, then it says so plainly and points at the close path instead of a build
-- **Verify:** {{executable check}}
+- **Given** a batch in which every unit is built-not-closed
+- **When** sprint plan runs
+- **Then** it says so plainly and points at the close path instead of a build
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_built_not_closed.py::BuiltNotClosed::test_all_built_batch_points_at_close
 
 ## Revision History
 

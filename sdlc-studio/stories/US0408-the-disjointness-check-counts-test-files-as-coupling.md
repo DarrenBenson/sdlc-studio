@@ -1,6 +1,7 @@
 # US0408: the disjointness check counts test files as coupling
 
 > **Status:** Draft
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Delivers:** CR0411
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
@@ -10,18 +11,25 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator deciding whether a batch can be parallelised
+**I want** the file-disjointness check that decides parallelisability to count test files as coupling, not only source
+**So that** two builders never fan out onto the same test file and collide on merge as this run's builders did
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: A shared test file counts as coupling for parallelisability
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** two units that touch different source modules but the same test file
+- **When** the delivery mode is determined
+- **Then** the shared test file couples the two units and the batch is not offered as parallel, where a source-only check would have called them disjoint
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveryModeTestFileCouplingTests::test_a_shared_test_file_counts_as_coupling
+
+### AC2: Test-file coupling collapses the parallel decomposition exactly as module coupling does
+
+- **Given** a batch whose only cross-unit file overlap is a shared test file
+- **When** the delivery mode is determined
+- **Then** the batch has no parallel form and parallel is withheld, exactly as a shared source module withholds it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveryModeTestFileCouplingTests::test_a_test_file_only_overlap_denies_the_parallel_offer
 
 ## Revision History
 
