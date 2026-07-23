@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 38 |
+| Proposed | 39 |
 | Approved | 0 |
 | In Progress | 10 |
 | Complete | 344 |
@@ -14,7 +14,7 @@
 | Deferred | 4 |
 | Superseded | 14 |
 | Blocked | 0 |
-| **Total** | **410** |
+| **Total** | **411** |
 
 ## All Changes
 
@@ -232,6 +232,7 @@
 | [CR-0408](CR0408-acting-on-a-plan-review-invalidates-every-verdict.md) | Acting on a plan review invalidates every verdict including the one that proposed the change, so improving a goal costs a full re-consult | Proposed | High | Improvement | 2026-07-22 | -- |
 | [CR-0409](CR0409-a-seat-is-briefed-by-hand-and-its.md) | A seat is briefed by hand and its verdict typed back through a shell argument, so the plan review's quality depends on the author it is meant to check | Proposed | Medium | Improvement | 2026-07-22 | -- |
 | [CR-0410](CR0410-a-repair-plan-can-be-attacked-and-still.md) | A repair plan can be attacked and still repeat the previous approach, so a class that has failed N rounds must force a design decision rather than a better instance | In Progress | High | Improvement | 2026-07-22 | EP0106 |
+| [CR-0411](CR0411-sprint-plan-should-offer-sequential-or-parallel-delivery.md) | sprint plan should offer sequential or parallel delivery at run start, and only offer parallel when the batch can actually be parallelised | Proposed | High | Feature | 2026-07-23 | -- |
 
 ## Archived Releases
 
