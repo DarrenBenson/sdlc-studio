@@ -495,12 +495,14 @@ def resolve_prose_fields(fields_file: str | None, flag_fields: dict,
     values are dropped before either path. Raises ValueError on a bad fields-file (unreadable, not a
     JSON object, or an unknown key), which the caller turns into a refusal."""
     flags = {k: v for k, v in flag_fields.items() if v is not None and v != ""}
+    # A FLAG value crossed a shell whether or not a --fields-file was also given, so it is hazard-
+    # checked either way. The file's OWN values never crossed a shell and are not checked. Check
+    # the writer's OWN prose keys, not just the finding filer's default HAZARD_FIELDS, or a
+    # `note`/`verdict` would go unchecked.
+    report_shell_hazards(flags, keys=allowed)
     if fields_file:
         from_file = load_fields_file(fields_file, allowed=allowed)
         return {**from_file, **flags}          # an explicit flag wins over the document
-    # Flag path only - a file path crossed no shell. Check the writer's OWN prose keys, not just
-    # the finding filer's default HAZARD_FIELDS, or a `note`/`verdict` would go unchecked.
-    report_shell_hazards(flags, keys=allowed)
     return flags
 
 

@@ -1344,7 +1344,10 @@ def cmd_revision(args: argparse.Namespace) -> int:
 # slug and the index row link/title cell at once, and inbound references cite the filename. The
 # `# <ID>: <title>` H1 - the id prefix and colon are the anchor kept verbatim, the tail is the
 # rewritten title. A retitle without this anchor has no H1 surface to update, which AC names.
-_H1_RETITLE_RE = re.compile(r"^(#[^\S\n]+[A-Za-z]+-?\d+:[^\S\n]*)(.+?)[^\S\n]*$", re.MULTILINE)
+# The id may be numeric or a v3/ULID crockford suffix: the ULID branch is tried first so a long
+# crockford suffix is not truncated to its leading digits by the numeric branch.
+_H1_RETITLE_RE = re.compile(
+    r"^(#[^\S\n]+[A-Za-z]+(?:-[0-9A-Za-z]{8,}|-?\d+):[^\S\n]*)(.+?)[^\S\n]*$", re.MULTILINE)
 
 
 class RetitleBlocked(ValueError):

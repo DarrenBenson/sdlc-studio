@@ -183,7 +183,11 @@ def _mark_ungroomed(story_path: Path) -> None:
     marker states plainly that the ACs are a grooming stub, so a reader tells a groomed story from
     an ungroomed one at a glance and `conformance` counts the ungroomed ones by the token."""
     text = story_path.read_text(encoding="utf-8")
-    section = "## Acceptance Criteria\n\n" + sdlc_md.UNGROOMED_AC_MARKER + "\n"
+    # Trailing BLANK line before the next heading: the wipe-to-Revision-History regex consumes the
+    # blank that preceded `## Revision History`, so a single `\n` here would glue the marker to the
+    # heading and fail markdownlint MD022 (blanks-around-headings). `_seed_acs` emits `\n\n` for
+    # the same reason.
+    section = "## Acceptance Criteria\n\n" + sdlc_md.UNGROOMED_AC_MARKER + "\n\n"
     # callable replacement: the marker is a constant, but the idiom guards against a story slug or
     # title landing a regex metacharacter in the replacement text.
     new = re.sub(r"## Acceptance Criteria\n.*?(?=## Revision History)", lambda m: section,

@@ -94,5 +94,21 @@ class FlagPathHazardTests(unittest.TestCase):
                              f"{name} warned on the fields-file path, which crossed no shell")
 
 
+class MixedPathHazardTests(unittest.TestCase):
+    """The closing review caught this: a --flag value crossed a shell even when a --fields-file was
+    also present, but the hazard check only ran on the flag-only branch."""
+
+    def test_a_flag_value_is_hazard_checked_even_alongside_a_fields_file(self):
+        ff = _load("file_finding")
+        d = Path(tempfile.mkdtemp(prefix="mixed_hazard_"))
+        (d / "f.json").write_text(json.dumps({"note": "safe file note"}))
+        buf = io.StringIO()
+        with contextlib.redirect_stderr(buf):
+            out = ff.resolve_prose_fields(str(d / "f.json"),
+                                          {"note": "run $(danger)"}, allowed=("note",))
+        self.assertEqual(out["note"], "run $(danger)")           # the flag wins over the file...
+        self.assertIn("metacharacters", buf.getvalue())          # ...and is still flagged
+
+
 if __name__ == "__main__":
     unittest.main()

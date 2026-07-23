@@ -1263,12 +1263,17 @@ def _token_forecast(root: Path, batch: list[dict], goal: str = "done") -> dict:
     # rung keeps whatever rate the fit/seed above resolved.
     rung = (goal or "done")
     rung_unmeasured = rung != "done"
+    # The marginal PER-POINT rate a non-`done` rung is priced at: NONE, because it has no measured
+    # rate on this project. It must not merely be RELABELLED - it must not be SPENT. So the marginal
+    # term drops out of the total, the per-unit costs and each unit's rate, and only a measured
+    # fixed term (if any) survives. A design run that writes no code is not priced as a build.
+    marginal_rate = None if rung_unmeasured else rate
     if rung_unmeasured:
         rate_source = RATE_UNMEASURED_RUNG
         rate_basis = (f"the `{rung}` rung has no measured per-point rate on this project; the "
                       f"marginal term reads UNMEASURED rather than borrowing the build (`done`) "
                       f"rate, so a run that is not a build is not priced as one")
-    per_unit: dict[str, int] = {}
+    per_unit: dict[str, int | None] = {}
     units: dict[str, dict] = {}
     unpriced: list[str] = []
     built_not_closed: list[str] = []
@@ -1289,13 +1294,17 @@ def _token_forecast(root: Path, batch: list[dict], goal: str = "done") -> dict:
             unpriced.append(uid)
             continue
         total_points += points
-        per_unit[uid] = points * rate
-        units[uid] = {"tokens": points * rate, "points": points, "rate": rate,
+        # UNMEASURED on a non-build rung (tokens=None), a real number on `done`.
+        cost = None if marginal_rate is None else points * marginal_rate
+        per_unit[uid] = cost
+        units[uid] = {"tokens": cost, "points": points, "rate": marginal_rate,
                       "rate_source": rate_source,
                       "estimator": estimator_of(root, text), "size_gate": gate}
-    return {"tokens": fixed_applied + total_points * rate, "points": total_points,
+    marginal_total = 0 if marginal_rate is None else total_points * marginal_rate
+    return {"tokens": fixed_applied + marginal_total, "points": total_points,
+            "marginal_unmeasured": rung_unmeasured,
             "per_unit": per_unit,
-            "units": units, "rate": rate, "rate_source": rate_source,
+            "units": units, "rate": marginal_rate, "rate_source": rate_source,
             "rate_units": rate_info["units"], "rate_basis": rate_basis,
             "rate_refused": rate_info.get("refused"),
             "rate_out_of_sample": calibration(root)["rows"],
@@ -2762,6 +2771,10 @@ def _render_fixed_term(tf: dict) -> None:
     minimum), and UNMEASURED (too few whole-sprint sprints to fit)."""
     if "fixed_applied" not in tf:   # a forecast dict from before the fixed term (or a fixture)
         return
+    if tf.get("marginal_unmeasured"):
+        # No per-point build term to break out on a non-build rung - the header line already said
+        # the marginal is UNMEASURED, and there is no rate to multiply.
+        return
     n = tf.get("fixed_sprints") or 0
     minimum = tf.get("fixed_min")
     point_subtotal = (tf.get("points") or 0) * (tf.get("rate") or 0)
@@ -2801,13 +2814,18 @@ def _render_token_forecast(data: dict) -> None:
               f"executable ACs already pass. This is a CLOSE, not a build - run `sprint close` "
               f"(or transition each unit to Done), not a build plan.")
         return
-    if not tf.get("tokens"):
-        return
     if built:
         # AC1: some units are already built; they are flagged and excluded from the build
-        # forecast so a delivered-but-open unit is not priced as new work.
+        # forecast so a delivered-but-open unit is not priced as new work. Printed BEFORE the
+        # tokens guard so a batch whose only unbuilt units are unpriced (tokens == 0) still shows
+        # its close-candidates rather than rendering nothing.
         print(f"  excluded from the build forecast (BUILT-NOT-CLOSED, close them): "
               f"{', '.join(built)}")
+    marginal_unmeasured = tf.get("marginal_unmeasured")
+    # Nothing to render only when there is genuinely nothing to say: no cost, no unmeasured
+    # marginal to name, and no unpriced units to surface.
+    if not tf.get("tokens") and not marginal_unmeasured and not tf.get("unpriced"):
+        return
     hist = tf.get("history") or []
     if hist:
         shown = hist[-4:]
@@ -2831,7 +2849,14 @@ def _render_token_forecast(data: dict) -> None:
     fc = cap.get("forecast") or {}
     band = (f" (plausible {fc['low']:,}-{fc['high']:,})"
             if fc.get("low") and fc.get("high") else "")
-    if tf.get("fixed_applied"):
+    if marginal_unmeasured:
+        # The marginal term is UNMEASURED on this rung, so there is no `points x rate` to print -
+        # naming a rate here would be the very borrowing the rung change exists to stop.
+        fixed_note = (f"a fixed per-sprint term = ~{tf['tokens']:,} tokens"
+                      if tf.get("fixed_applied") else "no priced build term")
+        print(f"  token forecast: marginal term UNMEASURED on the `{tf.get('rung')}` rung - "
+              f"{tf['points']} point(s) are NOT priced as a build; {fixed_note}")
+    elif tf.get("fixed_applied"):
         # TWO TERMS, never one product: the header names both and the lines below carry each.
         print(f"  token forecast: ~{tf['tokens']:,} tokens = a fixed per-sprint term plus "
               f"{tf['points']} point(s) x {tf['rate']:,} per point{band}")
@@ -3132,12 +3157,12 @@ def cmd_goal_verdict(args: argparse.Namespace) -> int:
     except ValueError as exc:
         print(f"goal-verdict refused: {exc}", file=sys.stderr)
         return 2
-    verdict, note = fields.get("verdict"), fields.get("note", "")
+    verdict, note = fields.get("verdict"), str(fields.get("note", "")).strip()
     if verdict not in ("achieved", "partial", "missed"):
         print("goal-verdict refused: --verdict (achieved|partial|missed) is required, via the "
               "flag or the --fields-file", file=sys.stderr)
         return 2
-    if not note:
+    if not note:                      # a whitespace-only note is no note - strip before testing
         print("goal-verdict refused: a note is required - a bare verdict is an assertion, not a "
               "review", file=sys.stderr)
         return 2
@@ -5011,6 +5036,16 @@ def cmd_goal_review(args) -> int:
                       "seat whose verdict carries forward to the reworded goal)", file=sys.stderr)
                 return 2
             fresh_roles = {str(s.get("seat") or "").strip() for s in seats}
+            prior_roles = {str(s.get("seat") or "").strip() for s in (prior.get("seats") or [])}
+            # The requesting seat must actually have a verdict on the prior goal, or the amendment
+            # carries nothing and the round would DECLARE a requesting seat that simultaneously
+            # needs a fresh verdict - a self-contradictory, dishonest trail. Refuse it.
+            if req not in prior_roles and req not in fresh_roles:
+                print(f"goal-review record refused: --requesting-seat {req!r} has no verdict on "
+                      f"{amend_from!r}, so there is nothing to carry forward - either it reviewed "
+                      f"the prior goal (an amendment) or supply its fresh --seat verdict on the "
+                      f"new goal", file=sys.stderr)
+                return 2
             for s in (prior.get("seats") or []):
                 if str(s.get("seat") or "").strip() == req and req not in fresh_roles:
                     carried.append({**s, "carried_from": amend_from})

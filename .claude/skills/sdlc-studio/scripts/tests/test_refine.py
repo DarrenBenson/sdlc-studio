@@ -510,6 +510,19 @@ class UngroomedMarkerTests(unittest.TestCase):
                 self.assertIn(sdlc_md.UNGROOMED_AC_TOKEN, ac)   # the explicit marker
                 self.assertNotIn("{{", ac)                      # no bare placeholder as content
 
+    def test_the_ungroomed_marker_keeps_a_blank_line_before_the_next_heading(self) -> None:
+        # The closing review caught this: the marker was glued to `## Revision History` (single
+        # newline), failing markdownlint MD022 on every ungroomed mint.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the request is satisfied"])
+            res = refine.refine(root, "CR0001", "The epic",
+                                [("A", 2, None), ("B", 3, None)], skip_personas=True)
+            for sid in res["stories"]:
+                body = sdlc_md.find_by_id(root, sid)[0].read_text(encoding="utf-8")
+                self.assertNotIn(sdlc_md.UNGROOMED_AC_MARKER + "\n## Revision History", body)
+                self.assertIn("\n\n## Revision History", body)   # a blank line precedes it
+
 
 if __name__ == "__main__":
     unittest.main()

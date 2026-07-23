@@ -52,6 +52,18 @@ class ForecastNamesItsRung(unittest.TestCase):
         self.assertNotIn(fc["rate_source"], (sprint.RATE_SEED, sprint.RATE_EVIDENCE,
                                              sprint.RATE_FIXED_FIT, sprint.RATE_VELOCITY))
 
+    def test_unmeasured_rung_does_not_PRICE_the_marginal_only_relabels_it(self) -> None:
+        # The defect the closing review caught: relabelling rate_source is not enough - the
+        # marginal must not be SPENT. A design rung must not produce the build-rate number.
+        d = self._root()
+        design = sprint._token_forecast(d, self._batch(d), goal="design")
+        done = sprint._token_forecast(d, self._batch(d), goal="done")
+        self.assertTrue(design["marginal_unmeasured"])
+        self.assertIsNone(design["rate"])                       # no per-point rate at all
+        self.assertNotEqual(design["tokens"], done["tokens"])   # NOT the build number
+        self.assertEqual(design["per_unit"]["US0001"], None)    # the unit is not priced
+        self.assertGreater(done["tokens"], 0)                   # the build case is unregressed
+
     def test_build_rung_still_priced_and_named(self) -> None:
         d = self._root()
         fc = sprint._token_forecast(d, self._batch(d), goal="done")

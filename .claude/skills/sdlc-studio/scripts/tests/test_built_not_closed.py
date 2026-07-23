@@ -79,5 +79,27 @@ class BuiltNotClosed(unittest.TestCase):
         self.assertEqual(fc["points"], 0)
 
 
+    def test_built_units_are_shown_even_when_the_priced_total_is_zero(self) -> None:
+        # The render defect the closing review caught: the tokens==0 guard ran before the
+        # built-not-closed print, so a batch whose only unbuilt units are unpriced rendered
+        # nothing and the close-candidate was invisible.
+        import contextlib, io
+        d = self._root()
+        s1 = self._story(d, 1)
+        # US0002 is genuinely unpriced: no Points in the file AND none in the batch dict, so the
+        # forecast reads the file and finds nothing to price.
+        (d / "sdlc-studio" / "stories" / "US0002-x.md").write_text(
+            "# US0002: x\n\n> **Status:** Draft\n> **Affects:** scripts/repo_map.py\n")
+        s2 = {"id": "US0002", "path": str(d / "sdlc-studio" / "stories" / "US0002-x.md")}
+        self._report(d, {"US0001-x": {"verified": 3, "failed": 0, "stale": 0}})
+        fc = sprint._token_forecast(d, [s1, s2], goal="done")
+        self.assertEqual(fc["tokens"], 0)
+        self.assertIn("US0001", fc["built_not_closed"])
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            sprint._render_token_forecast({"token_forecast": fc, "capacity": {}})
+        self.assertIn("US0001", buf.getvalue())      # the close-candidate is not swallowed
+
+
 if __name__ == "__main__":
     unittest.main()

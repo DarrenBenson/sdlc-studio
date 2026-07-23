@@ -6282,6 +6282,19 @@ class AmendGoalReviewTests(_GoalReviewFixture):
         status = s.goal_review_status(root, "goal B")
         self.assertEqual(status["needs_reconsult"], ["product", "qa"])   # engineering discharged
 
+    def test_an_amendment_whose_requesting_seat_never_reviewed_the_prior_goal_is_refused(self):
+        # The closing review caught this: a requesting seat with no prior verdict carries nothing,
+        # producing a round that declares a requesting seat AND flags it needs_reconsult.
+        s = _load()
+        root = self._project()
+        self._record(s, root, "--goal", "goal A", "--seat", "product|yes|shipped|yes")  # product only
+        rc, out = self._record(s, root, "--goal", "goal B", "--amend-from", "goal A",
+                               "--requesting-seat", "engineering")
+        self.assertEqual(rc, 2)
+        self.assertIn("nothing to carry", out.lower())
+        # and nothing was written for goal B
+        self.assertNotEqual(s.goal_review_rounds(s.goal_review(root))[-1]["goal"], "goal B")
+
 
 class MaterialGoalChangeTests(_GoalReviewFixture):
     """US0403: a material change carries no verdict forward and records the operator's call."""
@@ -6423,6 +6436,24 @@ class SprintFieldsFileTests(unittest.TestCase):
             self.assertEqual(rec["verdict"], "achieved")
             self.assertIn("`make check`", rec["note"])   # backtick survived
             self.assertIn("$(date)", rec["note"])         # command substitution stored verbatim
+
+    def test_a_whitespace_only_note_is_refused_like_an_empty_one(self):
+        # The closing review caught this: the emptiness check ran on the UNstripped note, so a
+        # whitespace-only note passed the "a bare verdict is an assertion" guard.
+        import contextlib, io
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(
+                {"schema": 1, "run_id": "R", "sprint_goal": "g", "batch": []}))
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                rc = s.main(["goal-verdict", "--verdict", "achieved", "--note", "   ",
+                             "--root", str(root)])
+            self.assertEqual(rc, 2)
+            self.assertNotIn("sprint_goal_verdict", json.loads(
+                (root / "sdlc-studio" / ".local" / "run-state.json").read_text()))
 
 
 if __name__ == "__main__":

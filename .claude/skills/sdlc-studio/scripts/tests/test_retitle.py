@@ -57,6 +57,24 @@ def _cr_index(crd: Path, title: str, disp: str = "CR-0001", fid: str = "CR0001",
     return idx
 
 
+class Ulidv3RetitleTests(unittest.TestCase):
+    """The closing review caught this: the H1 regex matched a numeric id only, so a v3/ULID-id
+    artefact was unretitleable with a misleading 'no H1' message."""
+
+    def test_a_ulid_v3_id_artefact_retitles(self):
+        root = Path(tempfile.mkdtemp())
+        crd = root / "sdlc-studio" / "change-requests"
+        old = "the old v3 title here"
+        _cr_file(crd, old, disp="CR-01KXRCYNAB", fid="CR-01KXRCYNAB")
+        _cr_index(crd, old, disp="CR-01KXRCYNAB", fid="CR-01KXRCYNAB")
+        new = "the corrected v3 title"
+        artifact.retitle(root, "CR-01KXRCYNAB", new)
+        new_slug = file_finding._slug(new)
+        moved = crd / f"CR-01KXRCYNAB-{new_slug}.md"
+        self.assertTrue(moved.exists())
+        self.assertIn(f"# CR-01KXRCYNAB: {new}", moved.read_text(encoding="utf-8"))
+
+
 class AtomicRetitleTests(unittest.TestCase):
     def test_h1_filename_and_index_row_all_change_in_one_call(self):
         """AC1: one `retitle` call rewrites the H1, renames the file to the new slug and
