@@ -1,57 +1,59 @@
 # Reviews - LATEST (anchor)
 
-> **RUN-01KY5Y3W is the live delivery run** over the 43 units the design rung
-> (RUN-01KY5EJX, closed partial, RETRO0067) groomed. Building in waves; not yet closed.
+> **RUN-01KY5Y3W delivered all 43 units to Review.** Both closing adversarial waves APPROVED,
+> no MAJOR. RETRO0068 recorded. **Sign-off is owed and is the operator's** - the two-role gate
+> holds Done. Not yet closed at the close command until sign-off lands.
 
 ## Where the pipeline is (2026-07-23)
 
-**26 of 43 units delivered to full fidelity** - code, node-addressed tests, and a
-per-guard mutation pass - and pushed. The remaining 17 are the sprint/critic/artefact
-coupled core, in flight as three file-disjoint parallel clusters.
+The batch the design rung (RUN-01KY5EJX) groomed is BUILT: ten epics and thirteen bugs, every
+story at Review, every bug Fixed. The counterfactual bar is met and measured both ways - the
+story ACs read pass=0 fail=91 at grooming and pass=97 fail=0 manual=3 after delivery.
 
-Goal: *all 43 units reach Review with every acceptance criterion proven by a test that
-fails without the code it guards, and every guard this batch ships is ENABLED in this
-project's own config - so nothing here can be delivered inert.*
+Goal: *all 43 units reach Review with every acceptance criterion proven by a test that fails
+without the code it guards, and every guard this batch ships is ENABLED in this project's own
+config - so nothing here can be delivered inert.*
 
-## What has shipped
+## What shipped
 
-- **Instrumentation first (BG0265, BG0256):** a stacked `Verify:` line is refused rather
-  than silently dropped; a stamped-green AC whose selector selects nothing reads STALE, by
-  collection not execution. Until these landed the run could not trust its own pass count.
-- **EP0106, the repair-plan gate** - the flagship. A REJECT yields a written plan (one entry
-  per finding: change, approach, risk), reviewed by an independent pass before any code,
-  pinned to the findings; a repeat-class repair must change the design past a threshold.
-  Opt-in, off by default. 21 tests, 11 mutants.
-- **EP0113, carry-forward** - a project may declare `review.policy: carry-forward`; a REJECT
-  then ships with its findings filed or waived, never by narrative downgrade.
-- **Six clusters via parallel worktrees** - EP0107 (derive a guard's message), EP0112
-  (CHANGELOG structure), EP0115 (process audit lens), BG0258, BG0259, BG0260, BG0261.
+- **The review-loop guards this whole engagement was about:** the repair-plan gate (EP0106),
+  a guard's message derived from the guard (EP0107), the reviewer brief's three practices
+  (EP0108), claim inventory first (EP0109), carry-forward review policy (EP0113).
+- **Mint and measurement hygiene:** Affects validated at mint (EP0110), one run slot (EP0111),
+  CHANGELOG structure (EP0112), the forecast that prices the sprint not the build (EP0114), a
+  process audit lens (EP0115), and BG0256-BG0265.
 
-## What the fan-out taught, filed as CR0411
+## How it was delivered
 
-The parallel delivery worked, and it exposed two real interactions, both fixed and one
-filed as an operator-requested feature: `.claude/worktrees/` was linted as shipped payload
-and swept as a scrub site (now excluded, gitignored); and one merge conflict came from a
-clustering that excluded TEST files from coupling. CR0411 asks that `sprint plan` offer
-sequential-or-parallel delivery at run start, only when a real file-disjoint decomposition
-exists, and count test files as coupling.
+Instrumentation first (BG0265, BG0256), then EP0106 and EP0113 by hand, then **nine worktree
+agents across two waves** delivered the file-disjoint clusters in parallel. The coupled core
+(critic.py, sprint.py hubs) was serial. One merge conflict, from excluding test files from the
+coupling analysis - now CR0411's AC3.
+
+## The closing review
+
+Two independent adversarial waves, both APPROVE, no MAJOR. They verified the four-feature-per-
+file compositions (critic.py, sprint.py) compose without collision, mutation-attacked the
+guards themselves, and confirmed the ACs bind the lines they claim to guard rather than being
+change-detectors. Three MINORs filed: BG0267, BG0268, BG0269. The contrast with the design
+rung's four rejections is the run's headline: mutation-proving at build time front-loads the
+rigour rejection would otherwise discover.
 
 ## Evidence
 
-4043 skill tests + 312 tool tests green on the last integrated tree. Drift 0, floor 0,
-gate green on every commit. Every delivered guard mutation-proven; equivalent survivors
-recorded with their reason, never hidden.
+4099 skill tests + 312 tool tests green on the composed tree. Drift 0, floor 0, gate green.
+~90 mutants across the batch, all killed or recorded equivalent with a reason.
 
 ## Next steps
 
-- The three in-flight clusters (EP0108+EP0109 critic; EP0111+EP0114 sprint; EP0110 artefact)
-  merge, then the batch's own closing review - in waves, per the plan's own guidance, never a
-  single review over the whole diff.
-- Transition the delivered units to Review, then the reviewer-of-record sign-off.
-- **CR0319** is the 5.0.0 release cut, held until the backlog is clear (D0057).
+- **Sign-off is owed and is the operator's.** `sprint close --retro RETRO0068 --apply-signoff
+  --principal "..."`. RFC0051 records why an agent cannot honestly supply it.
+- Follow-ups on the backlog: BG0267-BG0269, and CR0411 (the delivery-mode prompt).
+- **CR0319**, the 5.0.0 release cut, is now reachable: the batch it waited on (D0057) is
+  delivered, pending sign-off.
 
 ## Lessons
 
-Derive the whole behaviour, not the half you were looking at. A counterfactual bar needs a
-ledger beside it. Plan the repair, attack the plan, then execute. Count test files as
-coupling before fanning out.
+Count test files as coupling before fanning out. Mutation-prove at build time and the review
+converges. A guard that forces --no-verify trains the bypass it exists to prevent. Offer a
+parallel fan-out only when a real file-disjoint decomposition exists.

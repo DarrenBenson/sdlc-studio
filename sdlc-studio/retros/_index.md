@@ -77,3 +77,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0065](RETRO0065-this-project-can-plan-and-judge-a-sprint.md) | This project can plan and judge a sprint on its own recent measured evidence, and every guard reaches the code it claims to cover | 2026-07-21 | -- | -- |
 | [RETRO-0066](RETRO0066-every-number-names-what-it-covers-and-the.md) | Every number names what it covers, and the guards reach the code - a 100-point batch that its own review rejected twice | 2026-07-22 | -- | -- |
 | [RETRO-0067](RETRO0067-design-rung-38-units-groomed-and-the-guard.md) | Design rung: 38 units groomed, and the guard that took four rounds to stop restating itself | 2026-07-22 | -- | -- |
+| [RETRO-0068](RETRO0068-delivery-run-43-units-built-six-way-parallel.md) | Delivery run: 43 units built, six-way parallel fan-out, and the coupled core done by hand | 2026-07-23 | -- | -- |

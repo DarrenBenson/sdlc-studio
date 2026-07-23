@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0218: **A parallel fan-out is worth offering by default, but only when a real file-disjoint decomposition exists** - CR0411, the operator's...**
+- **L-0217: **A guard that forces --no-verify trains the bypass it exists to prevent.** A tree-walking test must anchor its exclusions to the repo...**
+- **L-0216: **Mutation-proving at build time is what let the delivery code pass review in two waves, not ten rounds.** The rigour the design rung...**
+- **L-0215: **Count test files as coupling before fanning out.** File-disjoint means disjoint including tests; two agents editing one test file...**
 - **L-0214: **Check whether the tool you are about to build already exists.** CR0405 asserted CHANGELOG had no helper; `changelog.py` had been there...**
 - **L-0213: **The plan gate belongs before the repair, and the evidence is now in this repo.** Round 1's plan was refuted in full.**
 - **L-0212: **A counterfactual bar cannot be checked by any run, so it needs a ledger beside it.** The goal asked whether criteria "would fail if the...**
