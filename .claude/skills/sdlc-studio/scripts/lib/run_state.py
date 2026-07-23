@@ -130,6 +130,54 @@ class RunStateError(RuntimeError):
     reading would let a close write a blank record over a real run's identity."""
 
 
+class DisjointBatchError(RuntimeError):
+    """A plan would fold a batch sharing NO unit into the run already open.
+
+    One project holds one run slot. An open run carries one Sprint Goal and one closing
+    verdict, so absorbing a second, unrelated batch produces a run whose goal describes a
+    fraction of it and whose verdict carries no information. An OVERLAPPING re-plan still
+    accumulates - a re-cut or a blocker sweep pulling work in shares units with the run it
+    extends - so only a batch disjoint from the open one is refused here.
+
+    Raised BEFORE anything is written, so `run-state.json` is byte-identical after the refusal:
+    the guard sits inside `open_run.apply`, ahead of every mutation, and `_mutate` writes only
+    the value `apply` returns. The message names the open run's id, outcome and batch size, both
+    ways forward as commands (close it, or deliberately re-plan it), and - when the run is
+    mid-close - that a close attempt already ran against it and what it left outstanding, so the
+    operator is pointed at finishing the close rather than working around the one run most likely
+    to be worked around."""
+
+    def __init__(self, run_id, outcome, batch_size, close_attempts=None,
+                 repo_root: Path | str = "."):
+        self.run_id = run_id
+        self.outcome = outcome
+        self.batch_size = batch_size
+        # The latest close attempt's outstanding count, or None when no close was attempted.
+        attempts = [a for a in (close_attempts or []) if isinstance(a, dict)]
+        self.close_attempts = attempts
+        self.outstanding = attempts[-1].get("outstanding") if attempts else None
+        root = str(repo_root)
+        lines = [
+            f"plan refused: run {run_id} is already open (outcome={outcome}, batch of "
+            f"{batch_size} unit(s)), and the batch just planned shares no unit with it. A "
+            f"project holds one run slot: a batch disjoint from the open run is NOT folded in, "
+            f"because the run carries one Sprint Goal and one closing verdict and a fused run "
+            f"can be judged against neither.",
+        ]
+        if self.outstanding is not None:
+            lines.append(
+                f"{run_id} is mid-close, not finished: a close attempt has already run against "
+                f"it and left {self.outstanding} item(s) outstanding. Finish that close rather "
+                f"than working around the run.")
+        lines.append("Two ways forward:")
+        lines.append("  close the open run, then plan this batch as its own run:")
+        lines.append(f"    sprint.py close --root {root}")
+        lines.append("  or re-plan the open run deliberately, folding this batch into it by "
+                     "planning a worklist that also names one of its units:")
+        lines.append(f"    sprint.py plan --worklist WORKLIST.txt --write --root {root}")
+        super().__init__("\n".join(lines))
+
+
 class ReviewLedgerError(ValueError):
     """A write would contradict the review ledger at the moment it is recorded: a goal-verdict
     note naming a round count the ledger does not carry, a round recorded against a run that has
@@ -408,10 +456,40 @@ def _mint_run_id(repo_root: Path | str, outgoing: dict | None = None) -> str:
 
 def _is_spent(state: dict) -> bool:
     """True when the run is finalised: a terminal outcome, or a close artefact recorded while
-    the outcome string still says `running`. A judged run is history regardless of the string."""
+    the outcome string still says `running`. A judged run is history regardless of the string.
+
+    `close_attempts` is deliberately NOT a close artefact (see `_CLOSE_ARTEFACTS`): a run whose
+    only close artefact is a FAILED close attempt is still `running`, so it stays open and
+    protected - the disjoint guard covers it rather than exempting it, which is the run most
+    likely to be worked around."""
     if state.get("outcome") != RUNNING or not state.get("run_id"):
         return True
     return any(state.get(k) for k in _CLOSE_ARTEFACTS)
+
+
+def _disjoint(state: dict, batch) -> bool:
+    """True when `batch` shares no unit with an OPEN run that already holds one. False for a
+    spent run (the next plan mints fresh), an empty incoming batch, and an open run with nothing
+    approved yet (there is nothing to be disjoint from). Ids are normalised on both sides so a
+    spelling difference is never read as disjointness."""
+    if batch is None or _is_spent(state):
+        return False
+    existing = {sdlc_md.norm_id(b) for b in (state.get("batch") or [])}
+    incoming = {sdlc_md.norm_id(b) for b in batch}
+    return bool(existing) and not (existing & incoming)
+
+
+def disjoint_refusal(repo_root: Path | str, batch) -> "DisjointBatchError | None":
+    """The refusal `open_run` would raise for planning `batch` against the open run, or None
+    when it would accept. PURE - reads the state, writes nothing - so a caller can refuse before
+    writing any sibling artefact (the sprint plan, the forecast log) that the refusal should not
+    leave behind. `open_run` enforces the same rule inside its lock; this only pre-empts it."""
+    state = read(repo_root)
+    if not _disjoint(state, batch):
+        return None
+    return DisjointBatchError(state.get("run_id"), state.get("outcome"),
+                              len({sdlc_md.norm_id(b) for b in (state.get("batch") or [])}),
+                              close_attempts=state.get("close_attempts"), repo_root=repo_root)
 
 
 def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = None) -> dict:
@@ -525,6 +603,11 @@ def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | 
     A FRESH run is stamped with the session's token baseline (see TOKEN_BASELINE). A re-plan
     is not: the baseline belongs to the moment the run started, and moving it forward mid-run
     would silently discount everything spent before the re-cut.
+
+    A DISJOINT batch against an OPEN run is REFUSED (`DisjointBatchError`), not fused: one
+    project holds one run slot, and a batch sharing no unit with the open run cannot join it
+    without stranding the run's goal verdict. The refusal is raised before any mutation, so the
+    state file is byte-identical afterwards. An overlapping re-plan is unaffected.
     """
     def apply(state: dict) -> dict:
         if _is_spent(state):
@@ -538,6 +621,15 @@ def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | 
             state = {**_blank(), "run_id": _mint_run_id(repo_root, state),
                      "started_at": sdlc_md.now_iso8601(),
                      TOKEN_BASELINE: _session_baseline(repo_root)}
+        elif _disjoint(state, batch):
+            # The run is OPEN (not spent) and this batch shares no unit with it: a second sprint
+            # the one run slot cannot hold. Refused here, ahead of every write - inside the lock,
+            # on the state just read - so nothing is minted, nothing is archived, and the state
+            # file is untouched. An overlapping re-plan falls through and accumulates below.
+            raise DisjointBatchError(
+                state.get("run_id"), state.get("outcome"),
+                len({sdlc_md.norm_id(b) for b in (state.get("batch") or [])}),
+                close_attempts=state.get("close_attempts"), repo_root=repo_root)
         if batch is not None:
             state["batch"] = _union(state.get("batch"), batch)
         if goal is not None:

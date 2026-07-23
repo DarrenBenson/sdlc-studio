@@ -199,11 +199,12 @@ class RunStateTests(unittest.TestCase):
 
     def test_a_clean_running_run_still_accumulates(self) -> None:
         """The guard is narrow: a genuinely-open run (no close artefact) still re-plans in
-        place and accumulates - BG0188 must not break the cumulative-batch invariant."""
+        place and accumulates - BG0188 must not break the cumulative-batch invariant. The re-cut
+        OVERLAPS the open batch (a disjoint one is refused by the one-run-slot guard, CR0401)."""
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
             first = run_state.open_run(root, batch=["US0001"], goal="done")
-            again = run_state.open_run(root, batch=["US0002"], goal="done")
+            again = run_state.open_run(root, batch=["US0001", "US0002"], goal="done")
             self.assertEqual(again["run_id"], first["run_id"])
             self.assertEqual(again["batch"], ["US0001", "US0002"])
 

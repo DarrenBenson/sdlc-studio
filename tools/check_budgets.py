@@ -40,9 +40,10 @@ ALLOWLIST = {
     "reference-decisions.md": 724,
     "reference-test-best-practices.md": 706,  # +assertion-integrity + mutation-check section (CR0131)
     "reference-config.md": 640,  # +repair-plan gate keys (EP0106): a new opt-in config surface
-    "reference-sprint.md": 625,  # +deferred operator decisions and the bounded close exit
-                                 # (CR0369/CR0371) - loop steps, not accretion; the file has a
-                                 # Reading Guide, so partial reads stay anchored
+    "reference-sprint.md": 640,  # +deferred operator decisions and the bounded close exit
+                                 # (CR0369/CR0371), +the fixed per-sprint forecast term (CR0391)
+                                 # - loop steps, not accretion; the file has a Reading Guide, so
+                                 # partial reads stay anchored
 }
 
 

@@ -88,6 +88,29 @@ next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
 | `--strict` | (with `plan`) refuse to plan when the index has drift (reconcile-before-plan) | off |
 | `--autonomous` | unattended mode: the deterministic guardrails (cap, repetition-breaker, completion oracle) enforce stop/stall instead of model discretion | off |
 
+## One run slot
+
+A project holds **exactly one run at a time**. What planning a second batch while a run is open
+does depends on whether it overlaps the open run:
+
+- A batch sharing **no unit** with the open run is **refused, not merged**. Folding an unrelated
+  batch into the open run would leave it with one Sprint Goal describing a fraction of the work and
+  a closing verdict that could not be given honestly, so `sprint plan --write` exits non-zero and
+  changes nothing.
+- An **overlapping re-plan** - a re-cut, or a blocker sweep pulling work in - **accumulates** into
+  the same run under its unchanged id and start time. This needs no flag; it is the normal way a
+  run's batch grows.
+
+When a disjoint batch is refused there are **two ways forward**, and the refusal prints them as
+runnable commands:
+
+- **close the open run**, then plan this batch as its own run: `sprint close`
+- **or re-plan the open run deliberately**, folding the batch in by planning a worklist that also
+  names one of its units: `sprint plan --worklist <file> --write`
+
+A run whose only close artefact is a **failed close attempt** is still open and protected, so it is
+covered by this refusal rather than absorbing the next batch silently.
+
 ## The breakdown gate
 
 `sprint plan` **refuses** a batch whose units are not groomed: every unit must declare

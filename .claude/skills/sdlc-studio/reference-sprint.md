@@ -356,6 +356,14 @@ otherwise refuses an unsized batch. With no seat inputs (or `--skip-personas`) t
 Priority alone. The seat consult is the isolated-subagent consult; the planner math is
 deterministic.
 
+Distinct from this ordering consult, `sprint plan` runs a **blocking Sprint Goal review**: seats
+judge whether the goal is achievable by this batch, what done means for it, and whether it reads as
+one increment. The verdict has an EFFECT, not merely a print - a seat that judges the goal NOT
+achievable (or not one increment) **refuses the plan**, and proceeding needs an explicit
+`--override-goal-review "<reason>"` stamped on the run. The rounds accumulate: a goal rewritten in
+answer to a rejection keeps the earlier round on the record, and the gate reads the latest, so the
+close can say how many rounds the goal took to agree.
+
 ### `--goal design` - establish the dependency graph
 
 Grooming a backlog Draft -> Ready is also where the **inter-story dependency graph** is
@@ -559,16 +567,23 @@ to go unattended. The appetite is that ceiling (Shape Up's fixed timebox: appeti
   ceiling would depend on the actor self-reporting the budget meant to constrain it. The
   plan reports a token forecast, labelled an estimate; the close repeats it. It never
   stops a run.
-- **The forecast is points times a MEASURED rate.** `forecast = sum(Points) x tokens-per-point`,
-  where the rate is derived from this project's own history - actual tokens over points
-  delivered, recorded in `retros/VELOCITY.md` and re-measured every sprint. Nothing hardcodes
-  it: a blind re-estimation of 21 delivered units scored points at r = +0.68 against measured
-  cost (r = +0.78 on units of 8 or below), where every computed signal tried before it managed
-  +0.03. A point is a stable unit of cost from 2 to 8 (about 25,000 tokens each) and breaks
-  above it, which is why a unit over 8 points is split rather than forecast. Until the project
-  has measured enough of its own units the rate falls back to a seed, and the plan says which it
-  used. **Read the velocity history the plan prints** - `retro.py velocity` - to see the rate the
-  next forecast will use and how past sprints actually landed against it.
+- **The forecast has two terms: a fixed per-sprint cost plus points times a marginal rate.**
+  `forecast = fixed + sum(Points) x tokens-per-point`. The marginal term prices the BUILD - the
+  rate is derived from this project's own history (actual tokens over points delivered, recorded
+  in `retros/VELOCITY.md`, re-measured every sprint). Nothing hardcodes it: a blind re-estimation
+  of 21 delivered units scored points at r = +0.68 against measured cost (r = +0.78 on units of 8
+  or below), where every computed signal tried before it managed +0.03. A point is a stable unit
+  of cost from 2 to 8 (about 25,000 tokens each) and breaks above it, which is why a unit over 8
+  points is split rather than forecast. The fixed term prices what a point cannot - the ceremony,
+  the review rounds and the close - and is MEASURED from the project's own whole-sprint actuals:
+  it reads UNMEASURED where fewer than two sprints carry one, and stays OUT of the total until a
+  stated minimum of sprints is reached, because a line drawn through two points is not
+  calibration. The earlier finding that a fitted base term did worse than none was measured on
+  per-unit actuals with no sprint ceremony, review rounds or close in the numerator: it holds for
+  the build, not for a whole sprint, whose fixed cost is a separate term. Until the project has
+  measured enough of its own units the marginal rate falls back to a seed, and the plan says which
+  it used. **Read the velocity history the plan prints** - `retro.py velocity` - to see the rate
+  the next forecast will use and how past sprints actually landed against it.
 
 ## Rolling multi-sprint policy {#rolling}
 

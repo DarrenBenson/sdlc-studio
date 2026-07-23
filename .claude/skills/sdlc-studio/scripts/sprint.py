@@ -131,16 +131,37 @@ DEFAULT_COST_OF_DELAY = COST_OF_DELAY["Medium"]
 # work actually cost. The seed below is the starting rate for a project with no evidence of its
 # own yet, and the plan always says which of the two it is quoting.
 POINTS_RATE_SEED = 25_000
+#: The condition the "no base term" finding was measured under. Stated, not asserted flatly:
+#: that a fitted base term did worse than none was TRUE OF PER-UNIT ACTUALS with no sprint
+#: ceremony, review rounds or close in the numerator - runner-era data about the BUILD. Applied
+#: to whole sprints the same claim is false by roughly 300 times, which is why the fixed
+#: per-sprint cost is now a term of its own. It travels with every forecast basis, seed or local,
+#: so the sentence a future author would cite to reject that term carries its own scope.
+NO_BASE_TERM_CONDITION = (
+    "the no-base-term result was measured on PER-UNIT ACTUALS with no sprint ceremony, review "
+    "rounds or close in the numerator, so it holds for the BUILD, not for a whole sprint - a "
+    "fitted base term did worse than none ON THAT DATA. A whole sprint's fixed cost is priced "
+    "by its own term")
 POINTS_RATE_SEED_BASIS = (
     "the shipped default from a blind re-estimation of 21 delivered units, recovered as filed "
     "and sized in modified Fibonacci by three independent estimators with no access to the "
     "outcomes; 19 had measured actuals. A point measured 22,370-27,396 tokens across the 2-, "
-    "3-, 5- and 8-point bands (~25,000, flat). No base term: fitting one does worse than not "
-    "fitting at all. Your project's own evidence replaces this the moment it has enough")
+    "3-, 5- and 8-point bands (~25,000, flat). " + NO_BASE_TERM_CONDITION + ". Your project's "
+    "own evidence replaces this the moment it has enough")
 #: Units of the project's OWN evidence before its measured rate replaces the seed. A rate
 #: re-fitted to one or two units is fitting noise - a fit to one or two sprints has burned this
 #: estimator before, and a wild single unit would drag the rate for the whole next sprint.
 RATE_MIN_UNITS = 5
+
+#: Whole-sprint rows before a FITTED fixed per-sprint term may enter a forecast TOTAL. The fit
+#: (retro.fixed_sprint_cost) MEASURES from two rows, but two points fit a straight line exactly,
+#: so a two-sprint fit is reported and kept OUT of the total until the record earns it - the same
+#: discipline RATE_MIN_UNITS is on the marginal side, on the axis that has burned this estimator
+#: twice. Below this the forecast prices the build only and names the candidate as NOT APPLIED.
+FIXED_MIN_SPRINTS = 3
+#: The marker a per-point rate carries when it is the MARGINAL half of an applied fixed-plus-
+#: marginal fit, rather than the measured build rate. The plan shows the fixed term beside it.
+RATE_FIXED_FIT = "fixed-fit"
 
 # ---------------------------------------------------------------------------
 # What the rate was measured FROM - so a ratio can never be quoted as evidence for a model
@@ -1127,17 +1148,53 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
                           skip_personas=skip_personas, epics=epics)
 
 
+def _fixed_term(repo_root: Path | str) -> dict:
+    """The project's FIXED per-sprint cost candidate, and whether it may enter a forecast total.
+
+    Wraps `retro.fixed_sprint_cost` (which MEASURES the fit from whole-sprint actuals) and adds
+    the planner's APPLICATION decision: the fit enters a total only at or above `FIXED_MIN_SPRINTS`
+    whole-sprint rows, because two points fit a straight line exactly and this estimator has been
+    burned twice refitting to one or two observations. Fail-safe: an unreadable record is
+    UNMEASURED, never an exception.
+    """
+    unmeasured = {"fixed": None, "marginal": None, "n": 0, "min_measure": None,
+                  "min_apply": FIXED_MIN_SPRINTS, "unmeasured": True, "applied": False,
+                  "sprints": [], "excluded": [],
+                  "reason": "UNMEASURED: this project's velocity record could not be read"}
+    try:
+        import retro  # noqa: PLC0415 - deferred, as everywhere else in this module
+        fit = retro.fixed_sprint_cost(repo_root)
+    except Exception as exc:  # noqa: BLE001 - no record must never break planning
+        sdlc_md.debug("sprint._fixed_term", exc)
+        return unmeasured
+    n = int(fit.get("n") or 0)
+    applied = (not fit.get("unmeasured") and n >= FIXED_MIN_SPRINTS
+               and bool(fit.get("fixed")) and bool(fit.get("marginal")))
+    return {"fixed": fit.get("fixed"), "marginal": fit.get("marginal"), "n": n,
+            "min_measure": fit.get("min"), "min_apply": FIXED_MIN_SPRINTS,
+            "unmeasured": bool(fit.get("unmeasured")), "applied": applied,
+            "sprints": fit.get("sprints") or [], "excluded": fit.get("excluded") or [],
+            "reason": fit.get("reason") or ""}
+
+
 def _token_forecast(root: Path, batch: list[dict]) -> dict:
-    """The batch's token cost: SUM OF THE POINTS x a MEASURED tokens-per-point rate.
+    """The batch's token cost: a FIXED per-sprint term plus SUM OF THE POINTS x a marginal rate.
 
-    A per-unit forecast, and for the first time an honest one: points predict measured cost at
-    r = +0.68 (+0.78 at 8 points and below), where every computed signal this project tried
-    failed - the one the forecast used to run on scored +0.03. A point is a stable unit of cost
-    across the whole legal range, because the gate refuses the range where it stops being one.
+    TWO TERMS, carried and shown separately. The per-point (marginal) term prices the BUILD, and
+    points predict measured cost at r = +0.68 (+0.78 at 8 points and below) where every computed
+    signal this project tried failed - the one the forecast used to run on scored +0.03. The
+    FIXED term prices what a point never could: the ceremony, the review rounds, the repairs and
+    the close, which two measured sprints showed dwarf the build at real batch sizes. The two are
+    never a single product - halving the batch does not halve the forecast, because the fixed term
+    is amortised over fewer points.
 
-    STRICTLY LINEAR IN POINTS. There is no base term, and adding one is a regression, not an
-    improvement: a least-squares fit produces an 8,043 base and lands 11/19 units in band
-    (9/19 leave-one-out) against 12/19 for the flat rate with no fitting at all.
+    THE FIXED TERM IS MEASURED, NEVER SEEDED, and never APPLIED on faith. `_fixed_term` fits it
+    from this project's own whole-sprint actuals and reports UNMEASURED where too few sprints carry
+    one; the fit enters the total only at or above `FIXED_MIN_SPRINTS` rows. Below that, or with no
+    fit at all, the total is the marginal term alone and the candidate is reported NOT APPLIED with
+    the count it rests on - a line through two points is not spent as though it were calibration.
+    When the fit IS applied its own marginal replaces the build rate, so the ceremony is priced
+    once, in the fixed term, and not a second time inside an amortised per-point rate.
 
     An ESTIMATE and never a gate: a script cannot observe real token spend (see telemetry.py), so
     a token ceiling would depend on the actor self-reporting the budget meant to constrain it.
@@ -1146,16 +1203,24 @@ def _token_forecast(root: Path, batch: list[dict]) -> dict:
     Each unit's record carries the POINTS it was priced from - which is what lets the NEXT plan
     measure the rate from this one's outcome - plus the ATTRIBUTION of the size call: WHO made it
     (`estimator`) and under what compulsion (`effort_gate`: the size gate's compulsion, whose key
-    name predates Points). Both are recorded at PLAN TIME, when the field was read, for the same
-    reason the number is: a size read off the artefact months later may have been revised with
-    hindsight, and a value revised after the outcome is not a prediction.
-
-    A unit with no points is NOT priced at some stand-in - it is named in `unpriced` and left out
-    of the total. Only the recorded grooming opt-out can produce one, and a batch that opted out
-    of being sized does not get a forecast that pretends otherwise.
+    name predates Points). A unit with no points is NOT priced at some stand-in - it is named in
+    `unpriced` and left out of the total.
     """
     rate_info = tokens_per_point(root)
-    rate = rate_info["rate"]
+    fixed_info = _fixed_term(root)
+    # When the fixed fit is APPLIED its own marginal is the per-point rate (the build term), so
+    # the ceremony is not priced twice. Otherwise the measured build rate stands and the fixed
+    # candidate is reported but kept out of the total.
+    if fixed_info["applied"]:
+        rate = fixed_info["marginal"]
+        rate_source = RATE_FIXED_FIT
+        rate_basis = fixed_info["reason"]
+        fixed_applied = int(fixed_info["fixed"])
+    else:
+        rate = rate_info["rate"]
+        rate_source = rate_info["source"]
+        rate_basis = rate_info["basis"]
+        fixed_applied = 0
     per_unit: dict[str, int] = {}
     units: dict[str, dict] = {}
     unpriced: list[str] = []
@@ -1173,22 +1238,31 @@ def _token_forecast(root: Path, batch: list[dict]) -> dict:
         total_points += points
         per_unit[uid] = points * rate
         units[uid] = {"tokens": points * rate, "points": points, "rate": rate,
-                      "rate_source": rate_info["source"],
+                      "rate_source": rate_source,
                       "estimator": estimator_of(root, text), "size_gate": gate}
-    return {"tokens": total_points * rate, "points": total_points, "per_unit": per_unit,
-            "units": units, "rate": rate, "rate_source": rate_info["source"],
-            "rate_units": rate_info["units"], "rate_basis": rate_info["basis"],
+    return {"tokens": fixed_applied + total_points * rate, "points": total_points,
+            "per_unit": per_unit,
+            "units": units, "rate": rate, "rate_source": rate_source,
+            "rate_units": rate_info["units"], "rate_basis": rate_basis,
             "rate_refused": rate_info.get("refused"),
             "rate_out_of_sample": calibration(root)["rows"],
+            # THE FIXED PER-SPRINT TERM, carried SEPARATELY so the total is fixed + points x rate
+            # and neither term can be recovered by dividing the other out.
+            "fixed_term": fixed_info["fixed"], "fixed_applied": fixed_info["applied"],
+            "fixed_in_total": fixed_applied, "fixed_marginal": fixed_info["marginal"],
+            "fixed_sprints": fixed_info["n"], "fixed_min": fixed_info["min_apply"],
+            "fixed_min_measure": fixed_info["min_measure"],
+            "fixed_unmeasured": fixed_info["unmeasured"], "fixed_basis": fixed_info["reason"],
             "scope": FORECAST_SCOPE, "excludes": list(FORECAST_EXCLUDES),
             "whole_sprint_excess": whole_sprint_excess(root),
             "unpriced": unpriced, "history": batch_history(root),
             "constants": forecast_constants(root),
-            "basis": "sum(points) x a tokens-per-point rate measured from the evidence (never "
-                     "fitted, and with no base term - fitting one does worse). Points predict "
-                     "measured cost at r = +0.68, and +0.78 at 8 points and below, which is the "
-                     "range the gate allows. An ESTIMATE, never a gate - a script cannot observe "
-                     "token spend"}
+            "basis": "a FIXED per-sprint term plus sum(points) x a marginal tokens-per-point "
+                     "rate. The marginal term prices the build (points predict measured cost at "
+                     "r = +0.68, +0.78 at 8 points and below, the range the gate allows); the "
+                     "fixed term prices the ceremony, review rounds and close a point cannot. "
+                     + NO_BASE_TERM_CONDITION + ". An ESTIMATE, never a gate - a script cannot "
+                     "observe token spend"}
 
 
 #: How a row's per-unit cost was arrived at. `measured` counts the units carrying PER-UNIT
@@ -1689,42 +1763,91 @@ def _norm_goal(goal: str | None) -> str:
     return " ".join(str(goal or "").split()).casefold()
 
 
+# A seat's `achievable` / `one_increment` answer, parsed against a small vocabulary rather than
+# accepted as free text. A PRESENCE test cannot tell "yes" from "no", so a seat that judged the
+# goal NOT achievable used to discharge the plan gate exactly as one that said it was: the verdict
+# was recorded and its CONTENT never read. The leading token decides, so a reasoned
+# "no - not at the stated appetite" reads as `no` and keeps its note.
+_VERDICT_YES = frozenset({"yes", "y", "true", "achievable", "ok", "agreed", "affirmative"})
+_VERDICT_NO = frozenset({"no", "n", "never", "false", "unachievable", "not", "negative"})
+
+
+def verdict_polarity(value: str | None) -> str:
+    """`yes`, `no` or `unclear` for a seat's achievable / one-increment answer."""
+    first = re.split(r"[\s,.;:|/-]+", str(value or "").strip().lower(), maxsplit=1)[0]
+    if first in _VERDICT_YES:
+        return "yes"
+    if first in _VERDICT_NO:
+        return "no"
+    return "unclear"
+
+
 def goal_review(repo_root: Path | str) -> dict:
     """The recorded seat review of the Sprint Goal, or `{}`. Read-only, fail-safe."""
     data = sdlc_md.read_json(Path(repo_root) / GOAL_REVIEW_REL, {})
     return data if isinstance(data, dict) else {}
 
 
+def goal_review_rounds(rec: dict) -> list[dict]:
+    """Every recorded goal-review ROUND, oldest first. The record is a list of rounds so a goal
+    rewritten in answer to a REJECT does not erase the fact that it was rejected - the sprint
+    review keeps `review_rounds` for exactly this, and the goal review is the same activity one
+    rung earlier. Reads the legacy single-object shape too (a record written before rounds
+    accumulated), so an existing file is not lost."""
+    if not isinstance(rec, dict):
+        return []
+    rounds = rec.get("rounds")
+    if isinstance(rounds, list):
+        return [r for r in rounds if isinstance(r, dict)]
+    if rec.get("seats") is not None or rec.get("goal") is not None:
+        return [rec]                # the legacy single-round shape
+    return []
+
+
 def goal_review_status(repo_root: Path | str, sprint_goal: str | None,
                        skip_personas: bool = False) -> dict:
-    """Has a seat reviewed THIS goal, and what did it say?
+    """Has a seat reviewed THIS goal, what did it say, and how many rounds did it take?
 
-    A review of a DIFFERENT goal does not count. The record carries the goal it reviewed, so a
-    file left behind by an earlier sprint cannot silently discharge the gate for a new one -
-    the failure mode `wsjf-inputs.json` already demonstrated, where scores from a closed era
-    read as current judgement for weeks.
+    A review of a DIFFERENT goal does not count, and the LATEST round is the one that must match
+    the goal being planned - so a stale file cannot discharge the gate (the `wsjf-inputs.json`
+    failure), and a goal rewritten in answer to a REJECT is judged on its final wording while the
+    earlier rounds stay on the record.
+
+    The verdict has an EFFECT: a seat that judged the goal NOT achievable (or not one increment)
+    is reported in `objections`, and the plan refuses on one unless an override is recorded. A
+    recorded verdict nobody can act on is not a review.
     """
     root = Path(repo_root)
     base = {"reviewed": False, "skipped": None, "seats": [], "goal": sprint_goal,
-            "available_seats": project_seats(root)}
+            "available_seats": project_seats(root), "rounds": 0,
+            "objected": False, "objections": []}
     if skip_personas:
         return {**base, "skipped": "--skip-personas",
                 "reason": "the goal went UNREVIEWED: --skip-personas is the recorded escape, "
                           "and no seat was consulted on this plan"}
     rec = goal_review(root)
-    seats = [s for s in (rec.get("seats") or []) if isinstance(s, dict)
+    rounds = goal_review_rounds(rec)
+    base["rounds"] = len(rounds)
+    latest = rounds[-1] if rounds else {}
+    seats = [s for s in (latest.get("seats") or []) if isinstance(s, dict)
              and all(str(s.get(f) or "").strip() for f in GOAL_REVIEW_FIELDS)]
-    if seats and _norm_goal(rec.get("goal")) == _norm_goal(sprint_goal):
+    if seats and _norm_goal(latest.get("goal")) == _norm_goal(sprint_goal):
+        objections = [{"seat": s.get("seat"), "achievable": s.get("achievable"),
+                       "one_increment": s.get("one_increment"), "note": s.get("note", "")}
+                      for s in seats
+                      if verdict_polarity(s.get("achievable")) == "no"
+                      or verdict_polarity(s.get("one_increment")) == "no"]
         return {**base, "reviewed": True, "seats": seats,
-                "reviewed_at": rec.get("reviewed_at"), "reason": None}
+                "reviewed_at": latest.get("reviewed_at"),
+                "objected": bool(objections), "objections": objections, "reason": None}
     if not base["available_seats"]:
         # The gate demands a review of seats that EXIST; this project has none of its own.
         return {**base, "reason": "this project declares no review seats of its own "
                                   "(sdlc-studio/personas/seats/), so no seat can review it"}
     if not seats:
         return {**base, "reason": "no seat verdict is recorded for any goal"}
-    return {**base, "reviewed_goal": rec.get("goal"),
-            "reason": f"the recorded review is of a different goal ({rec.get('goal')!r}), "
+    return {**base, "reviewed_goal": latest.get("goal"),
+            "reason": f"the recorded review is of a different goal ({latest.get('goal')!r}), "
                       f"so it says nothing about this one"}
 
 
@@ -2420,8 +2543,12 @@ def _render_forecast_scope(tf: dict) -> None:
     """What the forecast prices, what it excludes, and the measured excess over it.
 
     The point term prices the BUILD. Saying so is half the fix; the other half is a proving
-    term the operator can SEE, and it is read off the record rather than fitted to one sprint."""
-    if not tf.get("scope"):
+    term the operator can SEE, and it is read off the record rather than fitted to one sprint.
+
+    Silent once an explicit FIXED per-sprint term is APPLIED: the fixed term prices the ceremony
+    the whole-sprint multiple stood in for, and quoting both would price it twice and contradict
+    the total on screen."""
+    if not tf.get("scope") or tf.get("fixed_applied"):
         return
     print(f"    this prices the {tf['scope'].upper()} only. It excludes: "
           f"{'; '.join(tf['excludes'])}")
@@ -2440,6 +2567,37 @@ def _render_forecast_scope(tf: dict) -> None:
         print("    whole-sprint cost against the forecast: UNMEASURED - no out-of-sample row "
               "records both a plan-time forecast and a sprint actual, and no multiplier is "
               "assumed in place of one")
+
+
+def _render_fixed_term(tf: dict) -> None:
+    """The FIXED per-sprint term and the per-point term, on their OWN lines - never a single
+    product. Every quoted figure carries the sprint count it was fitted from, so no reader takes
+    the number without its sample size. Three states: APPLIED, a candidate NOT APPLIED (below the
+    minimum), and UNMEASURED (too few whole-sprint sprints to fit)."""
+    if "fixed_applied" not in tf:   # a forecast dict from before the fixed term (or a fixture)
+        return
+    n = tf.get("fixed_sprints") or 0
+    minimum = tf.get("fixed_min")
+    point_subtotal = (tf.get("points") or 0) * (tf.get("rate") or 0)
+    if tf.get("fixed_applied"):
+        print(f"    fixed per-sprint term: {tf['fixed_term']:,} tokens, APPLIED - fitted on "
+              f"{n} whole-sprint(s)")
+        print(f"    per-point (build) term: {tf['points']} point(s) x {tf['rate']:,} per point "
+              f"= {point_subtotal:,} tokens")
+    elif tf.get("fixed_unmeasured"):
+        need = tf.get("fixed_min_measure")
+        print(f"    fixed per-sprint term: UNMEASURED - {n} whole-sprint actual(s) recorded"
+              + (f" (a fit needs {need})" if need else "")
+              + "; no figure is supplied and the total prices the build only")
+        print(f"    per-point (build) term: {tf['points']} point(s) x {tf['rate']:,} per point "
+              f"= {point_subtotal:,} tokens")
+    else:
+        # A measured candidate held out of the total until the record earns it.
+        print(f"    fixed per-sprint term: {tf['fixed_term']:,} tokens fitted on {n} sprint(s), "
+              f"NOT APPLIED - a fit needs {minimum} sprint(s) and the project has {n}; the total "
+              f"prices the build only")
+        print(f"    per-point (build) term: {tf['points']} point(s) x {tf['rate']:,} per point "
+              f"= {point_subtotal:,} tokens")
 
 
 def _render_token_forecast(data: dict) -> None:
@@ -2472,8 +2630,14 @@ def _render_token_forecast(data: dict) -> None:
     fc = cap.get("forecast") or {}
     band = (f" (plausible {fc['low']:,}-{fc['high']:,})"
             if fc.get("low") and fc.get("high") else "")
-    print(f"  token forecast: ~{tf['tokens']:,} tokens = {tf['points']} point(s) x "
-          f"{tf['rate']:,} tokens per point{band}")
+    if tf.get("fixed_applied"):
+        # TWO TERMS, never one product: the header names both and the lines below carry each.
+        print(f"  token forecast: ~{tf['tokens']:,} tokens = a fixed per-sprint term plus "
+              f"{tf['points']} point(s) x {tf['rate']:,} per point{band}")
+    else:
+        print(f"  token forecast: ~{tf['tokens']:,} tokens = {tf['points']} point(s) x "
+              f"{tf['rate']:,} tokens per point{band}")
+    _render_fixed_term(tf)
     print(f"    rate ({tf['rate_source']}): {tf['rate_basis']}")
     _render_rate_provenance(tf)
     _render_forecast_scope(tf)
@@ -3868,6 +4032,33 @@ def cmd_plan(args: argparse.Namespace) -> int:
               f"{', '.join(review['available_seats'])}), or plan with --skip-personas to "
               f"record that it went unreviewed.", file=sys.stderr)
         return 2
+    # THE VERDICT HAS AN EFFECT. A seat that judged the goal NOT achievable (or not one
+    # increment) REFUSES the plan - the same weight the engagement floor and the review legs give
+    # a negative verdict - unless the operator records an explicit override with a reason. A
+    # warning the operator can walk past is what the presence-test gate already was; refusing, or
+    # a recorded override, is what makes the verdict decide something.
+    override = (getattr(args, "override_goal_review", None) or "").strip()
+    if sprint_goal and review.get("objected") and not override:
+        who = "; ".join(f"{o['seat']} (achievable={o['achievable']}, one increment="
+                        f"{o['one_increment']}"
+                        + (f", note: {o['note']}" if o.get("note") else "") + ")"
+                        for o in review["objections"])
+        print(f"plan refused: {len(review['objections'])} review seat(s) judged the Sprint Goal "
+              f"NOT achievable as stated: {who}. A negative verdict stops the plan. Answer the "
+              f"objection and re-record the seat review (a new round), or record a deliberate "
+              f"override with `--override-goal-review \"<reason>\"`. Nothing is written and no "
+              f"run is opened.", file=sys.stderr)
+        return 2
+    # THE ONE-RUN-SLOT GATE. A --write plan against an open run holding a DISJOINT batch is
+    # refused: a project holds one run slot, and folding an unrelated batch into the open run
+    # strands its goal verdict. Checked here, ahead of the forecast record and the sprint-plan
+    # write, so a refusal leaves no sibling artefact behind; `open_run` enforces the same rule
+    # inside its lock as the real gate. An overlapping re-plan is accepted, as before.
+    if getattr(args, "write", False):
+        refusal = run_state.disjoint_refusal(args.root, [u["id"] for u in data["batch"]])
+        if refusal is not None:
+            print(str(refusal), file=sys.stderr)
+            return 2
     # RECORD THE FORECAST. Here, unconditionally, because here is where the prediction is MADE.
     # Not under --write: a forecast that depends on a flag is one the next retro will find
     # missing, and it will then have to re-derive an "estimate" from the constants it is
@@ -3886,9 +4077,15 @@ def cmd_plan(args: argparse.Namespace) -> int:
         print(f"wrote sprint plan -> {out}")
         # ...and OPEN the run. The batch approved here is the run's batch, and until now a
         # run had no identity at all: no id, no start time, nowhere to record how it ended.
-        # The close (`handoff generate`) writes the outcome back to the same object.
-        state = run_state.open_run(args.root, batch=[u["id"] for u in data["batch"]],
-                                   goal=getattr(args, "goal", None), plan=str(out))
+        # The close (`handoff generate`) writes the outcome back to the same object. The
+        # disjoint refusal was pre-checked above; `open_run` re-checks inside its lock, so a
+        # race that opened a run between the two still refuses rather than fuses.
+        try:
+            state = run_state.open_run(args.root, batch=[u["id"] for u in data["batch"]],
+                                       goal=getattr(args, "goal", None), plan=str(out))
+        except run_state.DisjointBatchError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
         # Record the RESOLVED appetite and the token forecast - additive fields on the
         # run-state object, merged, never touching its schema. The appetite was resolved once,
         # from the sprint capacity (flag > appetite.* > capacity.*), and the plan has already
@@ -3906,6 +4103,13 @@ def cmd_plan(args: argparse.Namespace) -> int:
         # than against a reconstruction. Recorded whether reviewed or not: "unreviewed" is a
         # fact the close needs as much as a verdict is.
         extra["sprint_goal_review"] = data["goal_review"]
+        # A deliberate override of a negative verdict is stamped on the run with its reason, so
+        # the closing goal-verdict judges the outcome against what the seats objected to and the
+        # operator's reason for proceeding anyway - never a silent walk-past.
+        if override and data["goal_review"].get("objected"):
+            extra["goal_review_override"] = {
+                "reason": override, "objections": data["goal_review"]["objections"],
+                "at": sdlc_md.now_iso8601()}
         # ...and the constraint that was known at plan time, so the close cites it rather than
         # re-deriving it from a config that may have moved since.
         if data.get("reachable_end_state"):
@@ -4455,14 +4659,20 @@ def cmd_goal_review(args) -> int:
         if args.format == "json":
             print(json.dumps(rec, indent=2))
             return 0
-        if not rec:
+        rounds = goal_review_rounds(rec)
+        if not rounds:
             print("no goal review recorded - `sprint.py goal-review record --goal ... "
                   "--seat ...`")
             return 0
-        print(f"goal review ({rec.get('reviewed_at') or 'undated'}): \"{rec.get('goal')}\"")
-        for s in rec.get("seats") or []:
-            print(f"  {s.get('seat')}: achievable={s.get('achievable')}, one increment="
-                  f"{s.get('one_increment')}, done means \"{s.get('done_means')}\"")
+        # Every round, so a goal accepted first time is told from one rewritten after a REJECT.
+        for i, rnd in enumerate(rounds, 1):
+            tag = f"round {i} of {len(rounds)}" if len(rounds) > 1 else "reviewed"
+            print(f"goal review ({tag}, {rnd.get('reviewed_at') or 'undated'}): "
+                  f"\"{rnd.get('goal')}\"")
+            for s in rnd.get("seats") or []:
+                mark = " NOT ACHIEVABLE" if verdict_polarity(s.get("achievable")) == "no" else ""
+                print(f"  {s.get('seat')}: achievable={s.get('achievable')}{mark}, one increment="
+                      f"{s.get('one_increment')}, done means \"{s.get('done_means')}\"")
         return 0
     goal = (args.goal or "").strip()
     if not goal:
@@ -4480,9 +4690,20 @@ def cmd_goal_review(args) -> int:
         return 2
     path = root / GOAL_REVIEW_REL
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {"goal": goal, "reviewed_at": sdlc_md.now_iso8601(), "seats": seats}
-    sdlc_md.atomic_write(path, json.dumps(payload, indent=2) + "\n")
-    print(f"recorded {len(seats)} seat verdict(s) on \"{goal}\" -> {path}")
+    # APPEND a round rather than overwrite. A goal rewritten in answer to a REJECT must not erase
+    # the fact that it was rejected: rounds accumulate (as the sprint review's `review_rounds`
+    # does), and the plan gate reads the LATEST round, so nothing about the staleness protection
+    # changes. The round is keyed by the goal string each round judged.
+    rounds = goal_review_rounds(goal_review(root))
+    rounds.append({"goal": goal, "reviewed_at": sdlc_md.now_iso8601(), "seats": seats})
+    sdlc_md.atomic_write(path, json.dumps({"rounds": rounds}, indent=2) + "\n")
+    objected = [s["seat"] for s in seats
+                if verdict_polarity(s.get("achievable")) == "no"
+                or verdict_polarity(s.get("one_increment")) == "no"]
+    tail = (f" - {len(objected)} seat(s) judged it NOT achievable ({', '.join(objected)}); "
+            f"`sprint plan` will refuse it unless overridden" if objected else "")
+    print(f"recorded {len(seats)} seat verdict(s) on \"{goal}\" (round {len(rounds)}){tail} "
+          f"-> {path}")
     return 0
 
 
@@ -4661,6 +4882,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--skip-personas", action="store_true", dest="skip_personas",
                    help="ignore review-seat WSJF inputs; the Cost of Delay is then derived from "
                         "the declared Priority, which is what WSJF runs on by default")
+    p.add_argument("--override-goal-review", dest="override_goal_review", metavar="REASON",
+                   default=None,
+                   help="proceed past a seat verdict that judged the Sprint Goal NOT achievable, "
+                        "recording this reason on the run. Without it a negative verdict refuses "
+                        "the plan; the override is stamped so the close judges the outcome against "
+                        "what the seats objected to")
     p.add_argument("--cycles", type=int, default=None, metavar="N",
                    help="Opt in to a ROLLING policy of N sprint cycles. Records the standing "
                         "policy (goal, capacity, order, stop conditions) on the run; each "
