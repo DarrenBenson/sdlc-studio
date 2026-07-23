@@ -570,9 +570,14 @@ class RefineTests(unittest.TestCase):
     links the two-backlog gates verify."""
 
     def _cr(self, root: Path, cid: str = "CR0001", status: str = "Approved") -> None:
+        # Declares a resolvable Affects (file on disk), so a story minted with none of its own is
+        # SEEDED from the request (US0410) rather than refused.
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / f"{cid}.py").write_text("", encoding="utf-8")
         _write(root / "sdlc-studio" / "change-requests" / f"{cid}-x.md",
                f"# CR-{cid[2:]}: X\n\n> **Status:** {status}\n> **Priority:** P1\n"
-               f"> **Type:** Improvement\n> **Size:** L\n\n## Summary\n\ns\n\n## Impact\n\ni\n")
+               f"> **Type:** Improvement\n> **Size:** L\n> **Affects:** src/{cid}.py\n\n"
+               f"## Summary\n\ns\n\n## Impact\n\ni\n")
 
     def test_refine_creates_epic_and_stories_with_links(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -954,9 +959,12 @@ class SeedAcsTests(unittest.TestCase):
     re-typed by hand."""
 
     def _cr_with_acs(self, root: Path) -> None:
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / "CR0001.py").write_text("", encoding="utf-8")
         _write(root / "sdlc-studio" / "change-requests" / "CR0001-x.md",
                "# CR-0001: X\n\n> **Status:** Approved\n> **Priority:** P1\n"
-               "> **Type:** Improvement\n> **Size:** M\n\n## Summary\n\ns\n\n## Impact\n\ni\n\n"
+               "> **Type:** Improvement\n> **Size:** M\n> **Affects:** src/CR0001.py\n\n"
+               "## Summary\n\ns\n\n## Impact\n\ni\n\n"
                "## Acceptance Criteria\n\n"
                "- [ ] the first checkable criterion\n"
                "- [ ] the second criterion with detail\n")
@@ -998,7 +1006,10 @@ class SeedAcsTests(unittest.TestCase):
             for idx, (sid, _) in enumerate(sdlc_md.children_of(root, res["epic"])):
                 text = sdlc_md.find_by_id(root, sid)[0].read_text(encoding="utf-8")
                 with self.subTest(story=idx):
-                    self.assertIn("### AC1: {{define}}", text)
+                    # US0411: an ungroomed story carries the explicit grooming-placeholder marker,
+                    # not the bare `{{define}}` scaffold that read as thin content.
+                    self.assertIn(sdlc_md.UNGROOMED_AC_TOKEN, text)
+                    self.assertNotIn("{{define}}", text)
                     self.assertNotIn("the first checkable criterion", text)
                     self.assertNotIn("the second criterion with detail", text)
                     # the redistribute note existed only to excuse the mis-seeding
@@ -1063,9 +1074,12 @@ class SeedAcsTests(unittest.TestCase):
                           "failing gate, naming the remedy for the operator to act on next")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
+            (root / "src").mkdir(parents=True, exist_ok=True)
+            (root / "src" / "CR0001.py").write_text("", encoding="utf-8")
             _write(root / "sdlc-studio" / "change-requests" / "CR0001-x.md",
                    "# CR-0001: X\n\n> **Status:** Approved\n> **Priority:** P1\n"
-                   "> **Type:** Improvement\n> **Size:** M\n\n## Summary\n\ns\n\n## Impact\n\ni\n\n"
+                   "> **Type:** Improvement\n> **Size:** M\n> **Affects:** src/CR0001.py\n\n"
+                   "## Summary\n\ns\n\n## Impact\n\ni\n\n"
                    "## Acceptance Criteria\n\n"
                    f"- [ ] {long_criterion}\n")
             res = refine.refine(root, "CR0001", "The epic", [("Only story", 3, None)])
@@ -1093,9 +1107,12 @@ class SeedAcsTests(unittest.TestCase):
         # a \\1 must not crash the mint, C:\\temp must not become a TAB
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
+            (root / "src").mkdir(parents=True, exist_ok=True)
+            (root / "src" / "CR0001.py").write_text("", encoding="utf-8")
             _write(root / "sdlc-studio" / "change-requests" / "CR0001-x.md",
                    "# CR-0001: X\n\n> **Status:** Approved\n> **Priority:** P1\n"
-                   "> **Type:** Improvement\n> **Size:** M\n\n## Summary\n\ns\n\n## Impact\n\ni\n\n"
+                   "> **Type:** Improvement\n> **Size:** M\n> **Affects:** src/CR0001.py\n\n"
+                   "## Summary\n\ns\n\n## Impact\n\ni\n\n"
                    "## Acceptance Criteria\n\n"
                    "- [ ] the path C:\\temp\\out and the group \\1 survive verbatim\n")
             res = refine.refine(root, "CR0001", "The epic", [("Only story", 3, None)])
@@ -1106,9 +1123,12 @@ class SeedAcsTests(unittest.TestCase):
     def test_checked_criteria_are_not_seeded(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
+            (root / "src").mkdir(parents=True, exist_ok=True)
+            (root / "src" / "CR0001.py").write_text("", encoding="utf-8")
             _write(root / "sdlc-studio" / "change-requests" / "CR0001-x.md",
                    "# CR-0001: X\n\n> **Status:** Approved\n> **Priority:** P1\n"
-                   "> **Type:** Improvement\n> **Size:** M\n\n## Summary\n\ns\n\n## Impact\n\ni\n\n"
+                   "> **Type:** Improvement\n> **Size:** M\n> **Affects:** src/CR0001.py\n\n"
+                   "## Summary\n\ns\n\n## Impact\n\ni\n\n"
                    "## Acceptance Criteria\n\n"
                    "- [x] already delivered elsewhere\n"
                    "- [ ] the live criterion\n")
@@ -1124,24 +1144,34 @@ class SeedAcsTests(unittest.TestCase):
             res = refine.refine(root, "CR0001", "The epic", [("Only story", 3, None)])
             self.assertNotIn("redistribute", self._story_text(root, res).lower())
 
-    def test_seed_opt_out_restores_bare_scaffold(self) -> None:
+    def test_seed_opt_out_marks_ungroomed_instead_of_seeding(self) -> None:
+        # US0411: --no-seed-acs no longer leaves the bare `{{define}}` scaffold - it labels the
+        # AC block an explicit ungroomed grooming placeholder.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._cr_with_acs(root)
             res = refine.refine(root, "CR0001", "The epic", [("Only story", 3, None)],
                                 seed_acs=False)
             text = self._story_text(root, res)
-            self.assertIn("### AC1: {{define}}", text)
+            self.assertIn(sdlc_md.UNGROOMED_AC_TOKEN, text)
+            self.assertNotIn("{{define}}", text)
             self.assertNotIn("the first checkable criterion", text)
 
-    def test_request_without_acs_leaves_scaffold_untouched(self) -> None:
+    def test_request_without_acs_marks_the_story_ungroomed(self) -> None:
+        # US0411: a request with no criteria to seed leaves the story ungroomed - marked, not
+        # a bare `{{define}}` scaffold reading as content.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
+            (root / "src").mkdir(parents=True, exist_ok=True)
+            (root / "src" / "CR0001.py").write_text("", encoding="utf-8")
             _write(root / "sdlc-studio" / "change-requests" / "CR0001-x.md",
                    "# CR-0001: X\n\n> **Status:** Approved\n> **Priority:** P1\n"
-                   "> **Type:** Improvement\n> **Size:** M\n\n## Summary\n\ns\n\n## Impact\n\ni\n")
+                   "> **Type:** Improvement\n> **Size:** M\n> **Affects:** src/CR0001.py\n\n"
+                   "## Summary\n\ns\n\n## Impact\n\ni\n")
             res = refine.refine(root, "CR0001", "The epic", [("Only story", 3, None)])
-            self.assertIn("### AC1: {{define}}", self._story_text(root, res))
+            text = self._story_text(root, res)
+            self.assertIn(sdlc_md.UNGROOMED_AC_TOKEN, text)
+            self.assertNotIn("{{define}}", text)
 
 
 class RefineLinkedEpicsColumnTests(unittest.TestCase):
@@ -1161,9 +1191,12 @@ class RefineLinkedEpicsColumnTests(unittest.TestCase):
 
     def _cr(self, root: Path) -> Path:
         d = root / "sdlc-studio" / "change-requests"
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / "CR0001.py").write_text("", encoding="utf-8")
         _write(d / "CR0001-x.md",
                "# CR-0001: X\n\n> **Status:** Approved\n> **Priority:** P1\n"
-               "> **Type:** Improvement\n> **Size:** L\n\n## Summary\n\ns\n\n## Impact\n\ni\n")
+               "> **Type:** Improvement\n> **Size:** L\n> **Affects:** src/CR0001.py\n\n"
+               "## Summary\n\ns\n\n## Impact\n\ni\n")
         _write(d / "_index.md", self.CR_INDEX)
         return d / "_index.md"
 

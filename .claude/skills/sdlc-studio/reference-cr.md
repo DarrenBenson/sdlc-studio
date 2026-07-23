@@ -142,6 +142,31 @@ What would you like to do?
 
 ---
 
+## What `refine` produces {#refine-output}
+
+`refine apply` decomposes a CR into an epic and stories - the step that moves it
+from the Discovery backlog to Delivery. What it mints is a **plannable-but-ungroomed**
+unit, and the two halves are deliberate:
+
+- **Plannable now.** Every minted story carries an `Affects`, so `sprint plan` can
+  size it and check it for collisions the moment it exists. A story given no
+  `Affects` of its own is SEEDED from the CR's `Affects` (marked for confirmation)
+  when the CR declares one; a story with nothing to inherit and no `Affects` of its
+  own is refused, naming what to supply - refine never mints a unit nobody can plan.
+  A story spec can also ask to inherit explicitly: `title|points|inherit`, or
+  `title|points|inherit:a.py, b.py` to narrow the CR's footprint.
+- **Ungroomed still.** The acceptance criteria are an explicit grooming placeholder,
+  not authored content - labelled as such so a reader tells a groomed story from an
+  ungroomed one at a glance, and `conformance` counts the ungroomed ones (the debt is
+  visible on the backlog, not met at plan time). Author each story's real ACs and its
+  `Verify` line against its own slice while grooming; the story reaches Done only when
+  those pass.
+
+So a refined backlog is delivery work you can plan and sequence, with the grooming it
+still owes made explicit rather than hidden. **Opt-out:** a project that wants the old
+lenient behaviour records `sprint.breakdown: judgement` in `sdlc-studio/.config.yaml`;
+a story then minted with no `Affects` is warned about rather than refused.
+
 ## /sdlc-studio cr action - Step by Step {#cr-action-workflow}
 
 This is the key workflow that bridges from CR to the epic/story pipeline.

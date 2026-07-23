@@ -276,7 +276,8 @@ class CliTests(unittest.TestCase):
             # than charged to every unit; the gate adds it to `nonconformant` so that
             # reporting a failure differently never enforces less.
             self.assertEqual(set(data["summary"]),
-                             {"total", "conformant", "nonconformant", "exempt", "global_failures"})
+                             {"total", "conformant", "nonconformant", "exempt", "ungroomed",
+                              "global_failures"})
 
 
 try:
@@ -723,6 +724,40 @@ class CarriedFindingLinkTests(unittest.TestCase):
             self.assertEqual(cf.carried_finding_units(d, "BG9003"), ["US0007", "US0008"])
         finally:
             shutil.rmtree(d, ignore_errors=True)
+
+
+def _ungroomed_story(root, num) -> None:
+    """A refine-minted ungroomed story: its Acceptance Criteria are the placeholder marker
+    (`sdlc_md.UNGROOMED_AC_MARKER`) rather than authored criteria."""
+    marker = _load().sdlc_md.UNGROOMED_AC_MARKER
+    d = root / "sdlc-studio" / "stories"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"US{num:04d}-sample.md").write_text(
+        f"# US{num:04d}: sample\n\n> **Status:** Draft\n"
+        "> **Epic:** [EP0001: x](../epics/EP0001-x.md)\n\n"
+        f"## Acceptance Criteria\n\n{marker}\n", encoding="utf-8")
+
+
+class UngroomedMarkerTests(unittest.TestCase):
+    """US0411: the count of ungroomed stories is machine-visible - conformance counts them by the
+    marker, so an operator sees a refined backlog's grooming debt rather than meeting it at plan."""
+
+    def test_ungroomed_stories_are_counted_by_their_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # Deliberately UNEQUAL groomed (3) and ungroomed (2), so a count that measured the
+            # wrong set (the groomed ones) would read 3, not 2.
+            _story(root, 1)                 # groomed (real ACs)
+            _story(root, 2)                 # groomed
+            _story(root, 5)                 # groomed
+            _ungroomed_story(root, 3)       # ungroomed marker
+            _ungroomed_story(root, 4)       # ungroomed marker
+            result = _load().detect_conformance(root)
+            self.assertEqual(result["summary"]["ungroomed"], 2)
+            flagged = {u["id"] for u in result["units"] if u["ungroomed"]}
+            self.assertEqual(flagged, {"US0003", "US0004"})
+            # a groomed story is not miscounted, and the marker does not read as a specified AC
+            self.assertFalse(_units(root)["US0003"]["stages"]["specified"])
 
 
 if __name__ == "__main__":
