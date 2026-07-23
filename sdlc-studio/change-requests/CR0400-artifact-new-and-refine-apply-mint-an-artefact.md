@@ -1,6 +1,6 @@
 # CR-0400: artifact new and refine apply mint an artefact with an unresolvable Affects without a word, while file_finding refuses the same path
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0110
 > **Priority:** High
 > **Type:** Improvement

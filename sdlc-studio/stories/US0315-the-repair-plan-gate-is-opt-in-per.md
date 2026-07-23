@@ -1,6 +1,6 @@
 # US0315: The repair-plan gate is opt-in per project and OFF by default
 
-> **Status:** Review
+> **Status:** Done
 > **Verification depth:** functional - node-addressed tests in test_repair_plan.py / test_critic.py, all green; EP0106 mutation-proven (11 mutants across record_repair_plan, review, gate, pin, provenance, all killed)
 > **Delivers:** RFC0053
 > **Created:** 2026-07-22

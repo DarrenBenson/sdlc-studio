@@ -1,6 +1,6 @@
 # US0320: The reviewer brief directs a first pass enumerating every assertion in Resolutions, docstrings, comments and CHANGELOG entries, marked TRUE, FALSE or UNVERIFIABLE
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0393
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

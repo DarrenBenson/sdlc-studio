@@ -1,6 +1,6 @@
 # US0326: sprint plan --write refuses a disjoint batch against an open run, exiting non-zero with run-state.json byte-identical
 
-> **Status:** Review
+> **Status:** Done
 > **Depends on:** BG0265, BG0256
 > **Delivers:** CR0401
 > **Created:** 2026-07-22

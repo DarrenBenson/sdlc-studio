@@ -1,6 +1,6 @@
 # CR-0396: The reviewer brief should mandate the three practices that produced this sprint's best findings, rather than leaving them to whoever writes the brief
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0108
 > **Priority:** High
 > **Type:** Improvement

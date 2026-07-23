@@ -1,6 +1,6 @@
 # US0343: A repair answering a finding in the same class as a previous round must state whether the design is retained or changed, and a plan describing only a better instance is refused past the threshold
 
-> **Status:** Review
+> **Status:** Done
 > **Verification depth:** functional - node-addressed tests in test_repair_plan.py / test_critic.py, all green; EP0106 mutation-proven (11 mutants across record_repair_plan, review, gate, pin, provenance, all killed)
 > **Depends on:** BG0265, BG0256
 > **Delivers:** CR0410

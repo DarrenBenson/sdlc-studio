@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 10 |
+| Draft | 0 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 105 |
+| Done | 115 |
 | **Total** | **115** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -128,13 +128,13 @@
 | [EP0103](EP0103-a-declared-review-window-the-writers-can-see.md) | A declared review window the writers can see | Done | -- | -- | 2026-07-22 | 2026-07-22 |
 | [EP0104](EP0104-the-close-shows-what-the-mutation-gate-cost.md) | The close shows what the mutation gate cost against what it found | Done | -- | -- | 2026-07-22 | 2026-07-22 |
 | [EP0105](EP0105-the-single-writer-rule-is-written-down-for.md) | The single-writer rule is written down for review time, not only for build time | Done | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0106](EP0106-a-repair-is-planned-the-plan-is-attacked.md) | A repair is planned, the plan is attacked, and only then is it executed | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0107](EP0107-a-guard-s-sentence-is-computed-from-the.md) | A guard's sentence is computed from the guard, never restated beside it | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0108](EP0108-the-reviewer-brief-carries-the-three-practices-that.md) | The reviewer brief carries the three practices that found this project's real defects | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0109](EP0109-the-claim-inventory-is-the-review-s-first.md) | The claim inventory is the review's first pass, not its last | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0110](EP0110-affects-is-validated-at-mint-by-one-predicate.md) | Affects is validated at mint, by one predicate every writer shares | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0111](EP0111-one-run-slot-and-a-disjoint-batch-is.md) | One run slot, and a disjoint batch is refused rather than fused | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0112](EP0112-the-changelog-s-structure-is-checked-and-the.md) | The CHANGELOG's structure is checked, and the hand-edit path is made visibly wrong | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0113](EP0113-a-reject-can-be-carried-forward-as-filed.md) | A REJECT can be carried forward as filed findings, under a declared policy | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0114](EP0114-the-forecast-prices-the-sprint-not-just-the.md) | The forecast prices the sprint, not just the build | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0115](EP0115-a-process-lens-that-finds-work-done-before.md) | A process lens that finds work done before the contract it depends on | Draft | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0106](EP0106-a-repair-is-planned-the-plan-is-attacked.md) | A repair is planned, the plan is attacked, and only then is it executed | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0107](EP0107-a-guard-s-sentence-is-computed-from-the.md) | A guard's sentence is computed from the guard, never restated beside it | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0108](EP0108-the-reviewer-brief-carries-the-three-practices-that.md) | The reviewer brief carries the three practices that found this project's real defects | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0109](EP0109-the-claim-inventory-is-the-review-s-first.md) | The claim inventory is the review's first pass, not its last | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0110](EP0110-affects-is-validated-at-mint-by-one-predicate.md) | Affects is validated at mint, by one predicate every writer shares | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0111](EP0111-one-run-slot-and-a-disjoint-batch-is.md) | One run slot, and a disjoint batch is refused rather than fused | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0112](EP0112-the-changelog-s-structure-is-checked-and-the.md) | The CHANGELOG's structure is checked, and the hand-edit path is made visibly wrong | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0113](EP0113-a-reject-can-be-carried-forward-as-filed.md) | A REJECT can be carried forward as filed findings, under a declared policy | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0114](EP0114-the-forecast-prices-the-sprint-not-just-the.md) | The forecast prices the sprint, not just the build | Done | -- | -- | 2026-07-22 | 2026-07-22 |
+| [EP0115](EP0115-a-process-lens-that-finds-work-done-before.md) | A process lens that finds work done before the contract it depends on | Done | -- | -- | 2026-07-22 | 2026-07-22 |

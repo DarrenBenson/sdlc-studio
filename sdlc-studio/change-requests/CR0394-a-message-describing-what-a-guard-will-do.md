@@ -1,6 +1,6 @@
 # CR-0394: A message describing what a guard will do must be DERIVED from the guard, never restated beside it
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0107
 > **Priority:** High
 > **Type:** Improvement

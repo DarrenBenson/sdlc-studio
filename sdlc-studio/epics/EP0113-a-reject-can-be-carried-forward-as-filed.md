@@ -1,6 +1,6 @@
 # EP0113: A REJECT can be carried forward as filed findings, under a declared policy
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 13
 > **Parent:** CR0404
 > **Created:** 2026-07-22
@@ -14,10 +14,10 @@ Decomposed from CR0404. Delivers the work CR0404 requested.
 
 ## Story Breakdown
 
-- [ ] [US0332: A project declares a review policy: block-on-REJECT, today's behaviour and the default, or carry-forward](../stories/US0332-a-project-declares-a-review-policy-block-on.md)
-- [ ] [US0333: Under carry-forward every finding is FILED or explicitly waived with a reason; narrative downgrade is refused, as it already is for a missing review leg](../stories/US0333-under-carry-forward-every-finding-is-filed-or.md)
-- [ ] [US0334: The close records which policy was in force and lists the findings carried, so a converged sprint is distinguishable from one that carried findings](../stories/US0334-the-close-records-which-policy-was-in-force.md)
-- [ ] [US0335: A carried-forward finding is linked to the units it was found against, so it cannot be lost when the sprint closes](../stories/US0335-a-carried-forward-finding-is-linked-to-the.md)
+- [x] [US0332: A project declares a review policy: block-on-REJECT, today's behaviour and the default, or carry-forward](../stories/US0332-a-project-declares-a-review-policy-block-on.md)
+- [x] [US0333: Under carry-forward every finding is FILED or explicitly waived with a reason; narrative downgrade is refused, as it already is for a missing review leg](../stories/US0333-under-carry-forward-every-finding-is-filed-or.md)
+- [x] [US0334: The close records which policy was in force and lists the findings carried, so a converged sprint is distinguishable from one that carried findings](../stories/US0334-the-close-records-which-policy-was-in-force.md)
+- [x] [US0335: A carried-forward finding is linked to the units it was found against, so it cannot be lost when the sprint closes](../stories/US0335-a-carried-forward-finding-is-linked-to-the.md)
 
 ## Acceptance Criteria (Epic Level)
 

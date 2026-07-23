@@ -1,6 +1,6 @@
 # EP0115: A process lens that finds work done before the contract it depends on
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 10
 > **Parent:** CR0403
 > **Created:** 2026-07-22
@@ -14,9 +14,9 @@ Decomposed from CR0403. Delivers the work CR0403 requested.
 
 ## Story Breakdown
 
-- [ ] [US0340: A process audit lens pack ships alongside test, with lenses drawn from failures this project actually produced](../stories/US0340-a-process-audit-lens-pack-ships-alongside-test.md)
-- [ ] [US0341: Each lens names its mechanically detectable signature, and where there is none it says so rather than implying a check that does not exist](../stories/US0341-each-lens-names-its-mechanically-detectable-signature-and.md)
-- [ ] [US0342: Every lens cites the incident it derives from, so a reader can weigh it against evidence rather than assertion](../stories/US0342-every-lens-cites-the-incident-it-derives-from.md)
+- [x] [US0340: A process audit lens pack ships alongside test, with lenses drawn from failures this project actually produced](../stories/US0340-a-process-audit-lens-pack-ships-alongside-test.md)
+- [x] [US0341: Each lens names its mechanically detectable signature, and where there is none it says so rather than implying a check that does not exist](../stories/US0341-each-lens-names-its-mechanically-detectable-signature-and.md)
+- [x] [US0342: Every lens cites the incident it derives from, so a reader can weigh it against evidence rather than assertion](../stories/US0342-every-lens-cites-the-incident-it-derives-from.md)
 
 ## Acceptance Criteria (Epic Level)
 

@@ -124,3 +124,37 @@
 | US0308 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
 | US0309 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
 | US0310 | Darren Benson | - | claude (sprint author, RUN-01KY3MFX) | 2026-07-22 | - |
+| US0311 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0312 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0313 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0314 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0315 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0316 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0317 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0318 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0319 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0320 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0321 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0322 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0323 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0324 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0325 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0326 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0327 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0328 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0329 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0330 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0331 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0332 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0333 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0334 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0335 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0336 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0337 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0338 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0339 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0340 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0341 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0342 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0343 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |
+| US0344 | Darren Benson | - | sdlc-studio; agent; v1 | 2026-07-23 | - |

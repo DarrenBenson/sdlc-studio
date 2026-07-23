@@ -1,6 +1,6 @@
 # US0324: artifact new and refine apply refuse an unresolvable Affects before an id is allocated, minting nothing
 
-> **Status:** Review
+> **Status:** Done
 > **Depends on:** US0323
 > **Delivers:** CR0400
 > **Created:** 2026-07-22

@@ -1,6 +1,6 @@
 # EP0109: The claim inventory is the review's first pass, not its last
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0393
 > **Created:** 2026-07-22
@@ -14,9 +14,9 @@ Decomposed from CR0393. Delivers the work CR0393 requested.
 
 ## Story Breakdown
 
-- [ ] [US0320: The reviewer brief directs a first pass enumerating every assertion in Resolutions, docstrings, comments and CHANGELOG entries, marked TRUE, FALSE or UNVERIFIABLE](../stories/US0320-the-reviewer-brief-directs-a-first-pass-enumerating.md)
-- [ ] [US0321: A claim that cannot be checked mechanically is reported UNVERIFIABLE rather than assumed true, so the reader sees how much prose rests on trust](../stories/US0321-a-claim-that-cannot-be-checked-mechanically-is.md)
-- [ ] [US0322: The claim pass runs BEFORE the logic review and reports separately, so a prose-only round is visibly a different kind of round](../stories/US0322-the-claim-pass-runs-before-the-logic-review.md)
+- [x] [US0320: The reviewer brief directs a first pass enumerating every assertion in Resolutions, docstrings, comments and CHANGELOG entries, marked TRUE, FALSE or UNVERIFIABLE](../stories/US0320-the-reviewer-brief-directs-a-first-pass-enumerating.md)
+- [x] [US0321: A claim that cannot be checked mechanically is reported UNVERIFIABLE rather than assumed true, so the reader sees how much prose rests on trust](../stories/US0321-a-claim-that-cannot-be-checked-mechanically-is.md)
+- [x] [US0322: The claim pass runs BEFORE the logic review and reports separately, so a prose-only round is visibly a different kind of round](../stories/US0322-the-claim-pass-runs-before-the-logic-review.md)
 
 ## Acceptance Criteria (Epic Level)
 

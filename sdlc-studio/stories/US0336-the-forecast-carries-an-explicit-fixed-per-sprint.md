@@ -1,6 +1,6 @@
 # US0336: The forecast carries an explicit fixed per-sprint term alongside the per-point term, and the plan shows both rather than a single product
 
-> **Status:** Review
+> **Status:** Done
 > **Depends on:** BG0265, BG0256
 > **Delivers:** CR0391
 > **Created:** 2026-07-22

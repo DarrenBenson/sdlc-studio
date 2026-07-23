@@ -1,6 +1,6 @@
 # US0338: A fit is never applied automatically: the plan states how many sprints it rests on and refuses to publish a fitted fixed term below a stated minimum
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0391
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

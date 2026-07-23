@@ -1,6 +1,6 @@
 # US0319: A repair review is briefed with the previous round's findings enumerated and returns a CLOSED / OVER-CLAIMED / MOVED verdict per item
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0396
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

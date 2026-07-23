@@ -1,6 +1,6 @@
 # US0329: help/sprint.md states the single run slot and what planning a second batch against an open run does
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0401
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

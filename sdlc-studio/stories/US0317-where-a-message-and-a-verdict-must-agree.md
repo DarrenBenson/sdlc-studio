@@ -1,6 +1,6 @@
 # US0317: Where a message and a verdict must agree, ONE test drives both over the same input battery and asserts they agree
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0394
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

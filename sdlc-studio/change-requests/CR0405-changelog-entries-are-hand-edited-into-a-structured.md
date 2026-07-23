@@ -1,6 +1,6 @@
 # CR-0405: CHANGELOG entries are hand-edited into a structured file with no helper and no structural check, so a bad insert silently reparents existing entries
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0112
 > **Priority:** Medium
 > **Type:** Improvement

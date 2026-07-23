@@ -1,6 +1,6 @@
 # EP0111: One run slot, and a disjoint batch is refused rather than fused
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 12
 > **Parent:** CR0401
 > **Created:** 2026-07-22
@@ -14,10 +14,10 @@ Decomposed from CR0401. Delivers the work CR0401 requested.
 
 ## Story Breakdown
 
-- [ ] [US0326: sprint plan --write refuses a disjoint batch against an open run, exiting non-zero with run-state.json byte-identical](../stories/US0326-sprint-plan-write-refuses-a-disjoint-batch-against.md)
-- [ ] [US0327: The refusal names the open run's id, outcome and batch size, and states both ways forward](../stories/US0327-the-refusal-names-the-open-run-s-id.md)
-- [ ] [US0328: A run whose only close artefact is a FAILED close attempt is open-and-protected, not absorbable](../stories/US0328-a-run-whose-only-close-artefact-is-a.md)
-- [ ] [US0329: help/sprint.md states the single run slot and what planning a second batch against an open run does](../stories/US0329-help-sprint-md-states-the-single-run-slot.md)
+- [x] [US0326: sprint plan --write refuses a disjoint batch against an open run, exiting non-zero with run-state.json byte-identical](../stories/US0326-sprint-plan-write-refuses-a-disjoint-batch-against.md)
+- [x] [US0327: The refusal names the open run's id, outcome and batch size, and states both ways forward](../stories/US0327-the-refusal-names-the-open-run-s-id.md)
+- [x] [US0328: A run whose only close artefact is a FAILED close attempt is open-and-protected, not absorbable](../stories/US0328-a-run-whose-only-close-artefact-is-a.md)
+- [x] [US0329: help/sprint.md states the single run slot and what planning a second batch against an open run does](../stories/US0329-help-sprint-md-states-the-single-run-slot.md)
 
 ## Acceptance Criteria (Epic Level)
 

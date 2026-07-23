@@ -147,9 +147,9 @@ sprints fits noise.
 
 **0 of 44 unit(s) measured; 43 of 44 forecast at plan time.**
 
-**Sprint tokens/point: 347,190** (8,332,558 tokens over 24 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+**Sprint tokens/point: 68,300** (8,332,558 tokens over 122 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 
-**Velocity: 2.06 points/elapsed-hour** (24 points over 11.656h, run-state, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
+**Velocity: 10.47 points/elapsed-hour** (122 points over 11.656h, run-state, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 Unmeasured: US0311, US0312, US0313, US0314, US0315, US0316, US0317, US0318, US0319, US0320, US0321, US0322, US0323, US0324, US0325, US0326, US0327, US0328, US0329, US0330, US0331, US0332, US0333, US0334, US0335, US0336, US0337, US0338, US0339, US0340, US0341, US0342, US0343, US0344, BG0256, BG0257, BG0258, BG0259, BG0260, BG0261, BG0262, BG0263, BG0265. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.

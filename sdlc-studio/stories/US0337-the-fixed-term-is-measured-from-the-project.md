@@ -1,6 +1,6 @@
 # US0337: The fixed term is MEASURED from the project's own velocity record, and reads UNMEASURED rather than a default where fewer than two sprints carry a whole-sprint actual
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0391
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

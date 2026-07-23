@@ -1,6 +1,6 @@
 # US0341: Each lens names its mechanically detectable signature, and where there is none it says so rather than implying a check that does not exist
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0403
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

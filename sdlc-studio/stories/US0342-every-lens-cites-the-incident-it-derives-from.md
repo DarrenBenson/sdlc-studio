@@ -1,6 +1,6 @@
 # US0342: Every lens cites the incident it derives from, so a reader can weigh it against evidence rather than assertion
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0403
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

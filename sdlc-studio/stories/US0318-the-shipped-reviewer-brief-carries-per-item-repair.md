@@ -1,6 +1,6 @@
 # US0318: The shipped reviewer brief carries per-item repair verdicts, mutating the author's tests, and isolation re-testing, with the reason each exists beside it
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0396
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

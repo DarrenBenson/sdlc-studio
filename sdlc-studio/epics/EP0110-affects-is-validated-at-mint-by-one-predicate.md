@@ -1,6 +1,6 @@
 # EP0110: Affects is validated at mint, by one predicate every writer shares
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0400
 > **Created:** 2026-07-22
@@ -14,9 +14,9 @@ Decomposed from CR0400. Delivers the work CR0400 requested.
 
 ## Story Breakdown
 
-- [ ] [US0323: One shared resolvable-Affects predicate serves file_finding, artifact new and refine apply, so a future writer cannot be added without it](../stories/US0323-one-shared-resolvable-affects-predicate-serves-file-finding.md)
-- [ ] [US0324: artifact new and refine apply refuse an unresolvable Affects before an id is allocated, minting nothing](../stories/US0324-artifact-new-and-refine-apply-refuse-an-unresolvable.md)
-- [ ] [US0325: The refusal names the closest unique basename match where one exists, rather than sending the caller to look](../stories/US0325-the-refusal-names-the-closest-unique-basename-match.md)
+- [x] [US0323: One shared resolvable-Affects predicate serves file_finding, artifact new and refine apply, so a future writer cannot be added without it](../stories/US0323-one-shared-resolvable-affects-predicate-serves-file-finding.md)
+- [x] [US0324: artifact new and refine apply refuse an unresolvable Affects before an id is allocated, minting nothing](../stories/US0324-artifact-new-and-refine-apply-refuse-an-unresolvable.md)
+- [x] [US0325: The refusal names the closest unique basename match where one exists, rather than sending the caller to look](../stories/US0325-the-refusal-names-the-closest-unique-basename-match.md)
 
 ## Acceptance Criteria (Epic Level)
 

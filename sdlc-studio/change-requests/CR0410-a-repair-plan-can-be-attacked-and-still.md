@@ -1,6 +1,6 @@
 # CR-0410: A repair plan can be attacked and still repeat the previous approach, so a class that has failed N rounds must force a design decision rather than a better instance
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0106
 > **Priority:** High
 > **Type:** Improvement

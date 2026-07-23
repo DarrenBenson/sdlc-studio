@@ -1,6 +1,6 @@
 # US0330: A structural check fails on subsection headings out of order, duplicated within one release, or empty - the shapes a bad hand-insert produces
 
-> **Status:** Review
+> **Status:** Done
 > **Depends on:** BG0265, BG0256
 > **Delivers:** CR0405
 > **Created:** 2026-07-22

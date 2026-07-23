@@ -1,6 +1,6 @@
 # CR-0404: Let a REJECT be carried forward as filed findings, reusing the file-a-finding-or-waive idiom the review already mandates for legs
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0113
 > **Parent:** RFC0052
 > **Priority:** High

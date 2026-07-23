@@ -1,6 +1,6 @@
 # EP0107: A guard's sentence is computed from the guard, never restated beside it
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0394
 > **Created:** 2026-07-22
@@ -14,8 +14,8 @@ Decomposed from CR0394. Delivers the work CR0394 requested.
 
 ## Story Breakdown
 
-- [ ] [US0316: The best-practice guide states the derivation rule and names its counter-example: an enumeration of spellings is a restatement wearing a function's clothes](../stories/US0316-the-best-practice-guide-states-the-derivation-rule.md)
-- [ ] [US0317: Where a message and a verdict must agree, ONE test drives both over the same input battery and asserts they agree](../stories/US0317-where-a-message-and-a-verdict-must-agree.md)
+- [x] [US0316: The best-practice guide states the derivation rule and names its counter-example: an enumeration of spellings is a restatement wearing a function's clothes](../stories/US0316-the-best-practice-guide-states-the-derivation-rule.md)
+- [x] [US0317: Where a message and a verdict must agree, ONE test drives both over the same input battery and asserts they agree](../stories/US0317-where-a-message-and-a-verdict-must-agree.md)
 
 ## Acceptance Criteria (Epic Level)
 

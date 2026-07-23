@@ -1,6 +1,6 @@
 # US0311: A REJECT verdict produces a written repair plan, one entry per finding, naming the change, the approach and what it might break
 
-> **Status:** Review
+> **Status:** Done
 > **Verification depth:** functional - node-addressed tests in test_repair_plan.py / test_critic.py, all green; EP0106 mutation-proven (11 mutants across record_repair_plan, review, gate, pin, provenance, all killed)
 > **Depends on:** BG0265, BG0256
 > **Delivers:** RFC0053

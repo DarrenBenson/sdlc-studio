@@ -1,6 +1,6 @@
 # EP0114: The forecast prices the sprint, not just the build
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 11
 > **Parent:** CR0391
 > **Created:** 2026-07-22
@@ -14,10 +14,10 @@ Decomposed from CR0391. Delivers the work CR0391 requested.
 
 ## Story Breakdown
 
-- [ ] [US0336: The forecast carries an explicit fixed per-sprint term alongside the per-point term, and the plan shows both rather than a single product](../stories/US0336-the-forecast-carries-an-explicit-fixed-per-sprint.md)
-- [ ] [US0337: The fixed term is MEASURED from the project's own velocity record, and reads UNMEASURED rather than a default where fewer than two sprints carry a whole-sprint actual](../stories/US0337-the-fixed-term-is-measured-from-the-project.md)
-- [ ] [US0338: A fit is never applied automatically: the plan states how many sprints it rests on and refuses to publish a fitted fixed term below a stated minimum](../stories/US0338-a-fit-is-never-applied-automatically-the-plan.md)
-- [ ] [US0339: The shipped seed's basis text states the condition under which a base term did worse, instead of claiming it flatly](../stories/US0339-the-shipped-seed-s-basis-text-states-the.md)
+- [x] [US0336: The forecast carries an explicit fixed per-sprint term alongside the per-point term, and the plan shows both rather than a single product](../stories/US0336-the-forecast-carries-an-explicit-fixed-per-sprint.md)
+- [x] [US0337: The fixed term is MEASURED from the project's own velocity record, and reads UNMEASURED rather than a default where fewer than two sprints carry a whole-sprint actual](../stories/US0337-the-fixed-term-is-measured-from-the-project.md)
+- [x] [US0338: A fit is never applied automatically: the plan states how many sprints it rests on and refuses to publish a fitted fixed term below a stated minimum](../stories/US0338-a-fit-is-never-applied-automatically-the-plan.md)
+- [x] [US0339: The shipped seed's basis text states the condition under which a base term did worse, instead of claiming it flatly](../stories/US0339-the-shipped-seed-s-basis-text-states-the.md)
 
 ## Acceptance Criteria (Epic Level)
 

@@ -1,6 +1,6 @@
 # US0328: A run whose only close artefact is a FAILED close attempt is open-and-protected, not absorbable
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0401
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

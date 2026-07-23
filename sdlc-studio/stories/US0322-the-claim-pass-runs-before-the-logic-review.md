@@ -1,6 +1,6 @@
 # US0322: The claim pass runs BEFORE the logic review and reports separately, so a prose-only round is visibly a different kind of round
 
-> **Status:** Review
+> **Status:** Done
 > **Depends on:** US0320
 > **Delivers:** CR0393
 > **Created:** 2026-07-22

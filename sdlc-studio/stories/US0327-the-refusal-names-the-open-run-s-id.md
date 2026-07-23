@@ -1,6 +1,6 @@
 # US0327: The refusal names the open run's id, outcome and batch size, and states both ways forward
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0401
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

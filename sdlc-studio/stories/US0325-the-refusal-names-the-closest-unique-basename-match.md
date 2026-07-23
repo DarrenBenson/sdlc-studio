@@ -1,6 +1,6 @@
 # US0325: The refusal names the closest unique basename match where one exists, rather than sending the caller to look
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0400
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

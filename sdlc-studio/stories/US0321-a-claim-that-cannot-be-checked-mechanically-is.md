@@ -1,6 +1,6 @@
 # US0321: A claim that cannot be checked mechanically is reported UNVERIFIABLE rather than assumed true, so the reader sees how much prose rests on trust
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0393
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

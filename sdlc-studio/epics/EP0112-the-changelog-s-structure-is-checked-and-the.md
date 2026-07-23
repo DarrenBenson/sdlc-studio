@@ -1,6 +1,6 @@
 # EP0112: The CHANGELOG's structure is checked, and the hand-edit path is made visibly wrong
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0405
 > **Created:** 2026-07-22
@@ -14,8 +14,8 @@ Decomposed from CR0405. Delivers the work CR0405 requested.
 
 ## Story Breakdown
 
-- [ ] [US0330: A structural check fails on subsection headings out of order, duplicated within one release, or empty - the shapes a bad hand-insert produces](../stories/US0330-a-structural-check-fails-on-subsection-headings-out.md)
-- [ ] [US0331: The structural check joins the gate lane that already binds changelog fragments, and a hand-edit of Unreleased while changelog.d is live is made visibly wrong](../stories/US0331-the-structural-check-joins-the-gate-lane-that.md)
+- [x] [US0330: A structural check fails on subsection headings out of order, duplicated within one release, or empty - the shapes a bad hand-insert produces](../stories/US0330-a-structural-check-fails-on-subsection-headings-out.md)
+- [x] [US0331: The structural check joins the gate lane that already binds changelog fragments, and a hand-edit of Unreleased while changelog.d is live is made visibly wrong](../stories/US0331-the-structural-check-joins-the-gate-lane-that.md)
 
 ## Acceptance Criteria (Epic Level)
 

@@ -1,6 +1,6 @@
 # US0332: A project declares a review policy: block-on-REJECT, today's behaviour and the default, or carry-forward
 
-> **Status:** Review
+> **Status:** Done
 > **Verification depth:** functional - node-addressed tests in test_critic/test_conformance/test_sprint, all green; carry_forward mutation-proven (7 mutants killed incl. a non-resolving ref)
 > **Depends on:** BG0265, BG0256
 > **Delivers:** CR0404

@@ -1,6 +1,6 @@
 # EP0108: The reviewer brief carries the three practices that found this project's real defects
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 6
 > **Parent:** CR0396
 > **Created:** 2026-07-22
@@ -14,8 +14,8 @@ Decomposed from CR0396. Delivers the work CR0396 requested.
 
 ## Story Breakdown
 
-- [ ] [US0318: The shipped reviewer brief carries per-item repair verdicts, mutating the author's tests, and isolation re-testing, with the reason each exists beside it](../stories/US0318-the-shipped-reviewer-brief-carries-per-item-repair.md)
-- [ ] [US0319: A repair review is briefed with the previous round's findings enumerated and returns a CLOSED / OVER-CLAIMED / MOVED verdict per item](../stories/US0319-a-repair-review-is-briefed-with-the-previous.md)
+- [x] [US0318: The shipped reviewer brief carries per-item repair verdicts, mutating the author's tests, and isolation re-testing, with the reason each exists beside it](../stories/US0318-the-shipped-reviewer-brief-carries-per-item-repair.md)
+- [x] [US0319: A repair review is briefed with the previous round's findings enumerated and returns a CLOSED / OVER-CLAIMED / MOVED verdict per item](../stories/US0319-a-repair-review-is-briefed-with-the-previous.md)
 
 ## Acceptance Criteria (Epic Level)
 

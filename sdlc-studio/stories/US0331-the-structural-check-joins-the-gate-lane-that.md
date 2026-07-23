@@ -1,6 +1,6 @@
 # US0331: The structural check joins the gate lane that already binds changelog fragments, and a hand-edit of Unreleased while changelog.d is live is made visibly wrong
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0405
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

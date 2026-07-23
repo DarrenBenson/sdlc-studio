@@ -1,6 +1,6 @@
 # US0339: The shipped seed's basis text states the condition under which a base term did worse, instead of claiming it flatly
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0391
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new
