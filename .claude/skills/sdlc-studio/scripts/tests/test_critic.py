@@ -306,6 +306,7 @@ class SeatDriftWarningTests(unittest.TestCase):
 
 import contextlib  # noqa: E402
 import io  # noqa: E402
+import re  # noqa: E402
 
 
 def _workspace(root: Path) -> None:
@@ -1498,6 +1499,159 @@ class CarryForwardTests(unittest.TestCase):
                         cf.validate_carried(d, [{"ref": "", "waiver": bad}])
         finally:
             shutil.rmtree(d, ignore_errors=True)
+
+
+REFERENCE_REVIEW = Path(__file__).resolve().parents[2] / "reference-review.md"
+
+
+def _norm(text: str) -> str:
+    """Collapse whitespace so a phrase wrapped across doc/brief lines still matches."""
+    return " ".join(text.split())
+
+
+class ReviewerBriefTests(unittest.TestCase):
+    """US0318 (EP0108): the shipped reviewer brief carries the three standing practices, each
+    with its reason, and a brief missing any is refused; reference-review.md documents them."""
+
+    def _brief(self, mod, root: Path) -> str:
+        _workspace(root)
+        return mod.brief(root, "US0001", "qa")
+
+    def test_a_brief_missing_any_of_the_three_practices_is_refused(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            text = self._brief(mod, root)
+            # the shipped brief carries all three practices, each with its reason
+            self.assertEqual(mod.missing_practices(text), [])
+            mod.assert_brief_practices(text)  # does not raise
+            # strip each practice's instruction in turn: the guard names it missing and refuses
+            for name, instruction, _reason in mod._BRIEF_PRACTICES:
+                gutted = re.sub(instruction, "REDACTED", _norm(text), flags=re.I)
+                self.assertIn(name, mod.missing_practices(gutted))
+                with self.assertRaises(ValueError):
+                    mod.assert_brief_practices(gutted)
+            # a practice named WITHOUT its reason still counts as missing - the reason is the
+            # half a fresh reviewer drops first, so presence of the instruction alone is not enough
+            reasonless = ("On a REPAIR review, rule each previous finding CLOSED, OVER-CLAIMED "
+                          "or MOVED. Mutate the author's TESTS, not only the code. When a mutant "
+                          "SURVIVES, re-test its branch in ISOLATION before drawing any "
+                          "conclusion from it.")
+            self.assertEqual(len(mod.missing_practices(reasonless)), 3,
+                             "instructions with no reasons must all count as missing")
+            # reference-review.md documents all three, so the shipped doc and the code agree
+            doc = _norm(REFERENCE_REVIEW.read_text(encoding="utf-8"))
+            for token in ("CLOSED", "OVER-CLAIMED", "MOVED", "author's TESTS", "isolation"):
+                self.assertIn(token, doc)
+
+    def test_the_survivor_instruction_requires_isolation_before_a_conclusion(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            text = self._brief(mod, root)
+            self.assertNotIn("isolation re-test of a survivor", mod.missing_practices(text))
+            body = _norm(text)
+            # reorder so the conclusion is drawn BEFORE the isolation re-test: no longer carried
+            reordered = body.replace(
+                "re-test its branch in ISOLATION before drawing any conclusion from it",
+                "draw your conclusion first and then re-test its branch in ISOLATION")
+            self.assertIn("isolation re-test of a survivor", mod.missing_practices(reordered))
+            # the reason (a sibling guard masking the branch) is required, not just the word
+            self.assertIn("sibling guard", body)
+
+
+class RepairVerdictTests(unittest.TestCase):
+    """US0319 (EP0108): a repair review is briefed with each previous finding enumerated and
+    returns a CLOSED / OVER-CLAIMED / MOVED verdict per item; MOVED is not counted closed."""
+
+    def test_a_repair_brief_enumerates_every_previous_finding(self) -> None:
+        mod = _load()
+        findings = ["audit.py:88 grep verb takes no flag",
+                    "mutation.py reuses the cached pyc",
+                    "the brief leaks the round number",
+                    "the resolution claims mutation-proven"]
+        out = mod.enumerate_repair_findings(findings)
+        for f in findings:
+            self.assertIn(f, out)                       # every finding shown item by item
+        for i in range(1, len(findings) + 1):
+            self.assertIn(f"{i}.", out)                 # each enumerated as its own item
+        with self.assertRaises(ValueError):            # an empty prior set is refused
+            mod.enumerate_repair_findings([])
+
+    def test_a_verdict_leaving_a_finding_unruled_is_refused(self) -> None:
+        mod = _load()
+        findings = ["f1", "f2", "f3", "f4"]
+        rulings = {"f1": "CLOSED", "f2": "OVER-CLAIMED", "f3": "MOVED"}  # f4 unruled
+        with self.assertRaises(ValueError) as ctx:
+            mod.validate_repair_verdict(findings, rulings)
+        self.assertIn("f4", str(ctx.exception))         # the unruled finding is named
+        with self.assertRaises(ValueError):            # a ruling off the vocabulary is refused
+            mod.validate_repair_verdict(["f1"], {"f1": "fixed"})
+        self.assertTrue(mod.validate_repair_verdict(findings, {**rulings, "f4": "CLOSED"}))
+
+    def test_a_moved_finding_is_not_counted_as_closed(self) -> None:
+        mod = _load()
+        rulings = {"f1": "MOVED", "f2": "CLOSED", "f3": "OVER-CLAIMED"}
+        open_findings = mod.repair_open_findings(rulings)
+        self.assertIn("f1", open_findings)              # MOVED survived
+        self.assertIn("f3", open_findings)              # OVER-CLAIMED survived
+        self.assertNotIn("f2", open_findings)           # only CLOSED is closed
+
+
+class ClaimInventoryTests(unittest.TestCase):
+    """US0320/US0321 (EP0109): the brief directs a first pass over all four prose surfaces, and
+    each claim is ruled TRUE / FALSE / UNVERIFIABLE - unverifiable counted apart from true."""
+
+    def test_the_brief_names_all_four_prose_surfaces(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _workspace(root)
+            text = mod.brief(root, "US0001", "qa")
+            self.assertEqual(mod.missing_claim_surfaces(text), [])
+            mod.assert_brief_claim_pass(text)          # does not raise
+            # dropping any one surface exempts it - the guard names it and refuses
+            for surface in mod.CLAIM_SURFACES:
+                gutted = _norm(text).replace(surface, "SOMETHING")
+                self.assertIn(surface, mod.missing_claim_surfaces(gutted))
+                with self.assertRaises(ValueError):
+                    mod.assert_brief_claim_pass(gutted)
+            # reference-review.md names all four surfaces too
+            doc = _norm(REFERENCE_REVIEW.read_text(encoding="utf-8"))
+            for surface in mod.CLAIM_SURFACES:
+                self.assertIn(surface, doc)
+
+    def test_a_claim_left_unruled_is_refused(self) -> None:
+        mod = _load()
+        claims = ["c1", "c2", "c3", "c4", "c5", "c6"]
+        rulings = {"c1": "TRUE", "c2": "FALSE", "c3": "UNVERIFIABLE",
+                   "c4": "TRUE", "c5": "FALSE"}         # six claims, five rulings - c6 unruled
+        with self.assertRaises(ValueError) as ctx:
+            mod.validate_claim_inventory(claims, rulings)
+        self.assertIn("c6", str(ctx.exception))
+        with self.assertRaises(ValueError):            # a ruling off the vocabulary is refused
+            mod.validate_claim_inventory(["c1"], {"c1": "probably"})
+        self.assertTrue(mod.validate_claim_inventory(claims, {**rulings, "c6": "UNVERIFIABLE"}))
+
+    def test_an_unverifiable_claim_is_counted_separately_from_true(self) -> None:
+        mod = _load()
+        s = mod.summarise_claim_pass({"c1": "UNVERIFIABLE"})
+        self.assertEqual(s["unverifiable"], 1)
+        self.assertEqual(s["true"], 0)                  # not folded into TRUE
+        self.assertEqual(s["on_trust"], 1)              # reported as resting on trust
+        self.assertEqual(s["checked"], 0)
+        s2 = mod.summarise_claim_pass(["TRUE", "UNVERIFIABLE", "UNVERIFIABLE"])
+        self.assertEqual((s2["true"], s2["unverifiable"], s2["on_trust"]), (1, 2, 2))
+
+    def test_an_all_unverifiable_pass_does_not_render_as_verified(self) -> None:
+        mod = _load()
+        all_unv = {"c1": "UNVERIFIABLE", "c2": "UNVERIFIABLE"}
+        s = mod.summarise_claim_pass(all_unv)
+        self.assertFalse(s["verified"])                 # nothing settled
+        self.assertIn("NOT VERIFIED", mod.render_claim_pass(all_unv))
+        # a pass with even one settled claim reads differently - no NOT VERIFIED
+        self.assertNotIn("NOT VERIFIED", mod.render_claim_pass({"c1": "FALSE", "c2": "UNVERIFIABLE"}))
+        self.assertTrue(mod.summarise_claim_pass({"c1": "FALSE"})["verified"])
 
 
 if __name__ == "__main__":
