@@ -138,7 +138,7 @@ Each lens names its **signature** - the mechanical detector a finder runs before
 or a plain statement that none exists. A mechanical signature opens with a documented
 detector token (`python3`, a skill script run over the workspace) and names only paths on
 disk, so a cell cannot claim a command or a file that is not there; where no search singles
-the class out, the signature opens with `manual - ` and states why, which puts the absence
+the class out, the signature opens with `manual` - and states why, which puts the absence
 where a reader can weigh it rather than where it reads like a check and is not one. Three of
 the five are mechanical (a path resolved against the tree, a count against the census, a
 verifier that selected nothing); two are honestly manual (whether a repair was attacked

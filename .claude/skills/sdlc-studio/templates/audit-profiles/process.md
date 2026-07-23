@@ -24,7 +24,7 @@ lens, looped until-dry; then the shared refute panel and filer.
 Each lens names the **signature** that finds it - the mechanical detector a finder runs
 before reasoning, or a plain statement that none exists. A mechanical signature begins with a
 runnable detector token the pack documents and names only paths that are on disk; where no
-search can single the class out, the signature begins with `manual - ` and states why, so a
+search can single the class out, the signature begins with `manual` - and states why, so a
 reader can tell a detector from a hope. The documented detector token is `python3` (a skill
 script run over the workspace). Reasoning still runs behind every lens - a signature narrows
 where a finder looks, it does not replace the finder.

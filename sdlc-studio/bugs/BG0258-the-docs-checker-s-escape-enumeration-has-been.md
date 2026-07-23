@@ -1,7 +1,7 @@
 # BG0258: The docs-checker's escape enumeration has been wrong at three, four, five, six and seven, because each repair enumerates instead of deriving
 
 > **Status:** Fixed
-> **Verification depth:** functional - 3 new tests (EscapeExplanationTests x2, GeneratedEscapeCorpusTests x1) over explain_sentence and generate_escape_corpus, plus the full 28-test docs single-writer suite green; 5 hand-applied mutants killed under python3 -B with __pycache__ purged, the enumeration mutant (hardcoded corpus ignoring an added axis) among them
+> **Verification depth:** functional - 3 new tests (EscapeExplanationTests x2, GeneratedEscapeCorpusTests x1) over explain_sentence and generate_escape_corpus, plus the full 28-test docs single-writer suite green; 5 hand-applied mutants killed under python3 -B with **pycache** purged, the enumeration mutant (hardcoded corpus ignoring an added axis) among them
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py
