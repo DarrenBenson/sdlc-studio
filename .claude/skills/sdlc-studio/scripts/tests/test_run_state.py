@@ -404,5 +404,49 @@ class MalformedTranscriptTests(unittest.TestCase):
             self.assertIsNone(rec.get(run_state.TOKEN_BASELINE))
 
 
+class ReviewLedgerHonestyTests(unittest.TestCase):
+    """BG0261: the round ledger cannot be contradicted at the moment it is written - a
+    goal-verdict note naming a different round count, a round recorded after `ended_at`, and a
+    reviewer label disagreeing with its own index are each refused, not written silently."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = str(Path(self.tmp.name))
+        self.addCleanup(self.tmp.cleanup)
+        run_state.open_run(self.root, batch=["BG0001"], goal="ship it")
+        for _ in range(6):
+            run_state.record_review_round(self.root, "REJECT", units=["BG0001"])
+
+    def test_a_note_round_or_label_contradicting_the_ledger_is_refused(self):
+        self.assertEqual(run_state.review_round_count(self.root), 6)
+
+        # (label) a reviewer label naming a round other than its index (this is round 7) is refused
+        with self.assertRaises(run_state.ReviewLedgerError):
+            run_state.record_review_round(self.root, "REJECT", units=["BG0001"],
+                                          reviewer="round 3")
+        self.assertEqual(run_state.review_round_count(self.root), 6,
+                         "the contradicting round must not have been written")
+        # a label agreeing with its index (round 7) records
+        rec = run_state.record_review_round(self.root, "REJECT", units=["BG0001"],
+                                            reviewer="round 7")
+        self.assertEqual(rec["round"], 7)
+
+        # (note) a goal-verdict note naming a different round count is refused; the count is
+        # DERIVED from the ledger, not restated beside it
+        with self.assertRaises(run_state.ReviewLedgerError):
+            run_state.record_goal_verdict(self.root, "ACHIEVED",
+                                          note="three independent adversarial rounds converged")
+        gv = run_state.record_goal_verdict(self.root, "ACHIEVED", note="all rounds converged")
+        self.assertEqual(gv["rounds"], 7, "the round count must be derived from the ledger")
+
+        # (ended) a round recorded against a run that already ended is refused
+        run_state.close_run(self.root, run_state.GOAL_REACHED)
+        self.assertTrue(run_state.read(self.root).get("ended_at"))
+        with self.assertRaises(run_state.ReviewLedgerError):
+            run_state.record_review_round(self.root, "APPROVE", units=["BG0001"])
+        self.assertEqual(run_state.review_round_count(self.root), 7,
+                         "no round may be recorded after the run ended")
+
+
 if __name__ == "__main__":
     unittest.main()

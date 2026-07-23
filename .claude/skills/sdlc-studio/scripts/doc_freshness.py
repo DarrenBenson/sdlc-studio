@@ -49,6 +49,63 @@ def _true_disclosure_count(root: Path) -> int | None:
         return None
 
 
+# LATEST.md phrasings that assert a sign-off or closure is still OUTSTANDING. Kept to the words
+# that mean "not done yet" so the check never fires on a document reporting the opposite (a
+# sign-off that LANDED, a run that CLOSED). If none of these match, the anchor states no such
+# claim and this check stays silent - it only ever checks a fact the document actually makes.
+_SIGNOFF_OUTSTANDING = (
+    re.compile(r"sign-?off\b[^.\n]{0,40}?\b(?:owed|outstanding|pending|awaited|awaiting|"
+               r"not\s+landed|still\s+needed)\b", re.I),
+    re.compile(r"\b(?:owed|outstanding|pending|awaiting)\b[^.\n]{0,25}?sign-?off\b", re.I),
+    re.compile(r"\bnot\s+(?:yet\s+)?closed\b", re.I),
+    re.compile(r"\bunreviewed\b", re.I),
+)
+
+# A COUNT of review rounds the anchor narrates. The number leads, only review adjectives may sit
+# between it and the word, so an ordinal ("round 3", "one of the rounds") is not misread. Shared
+# in spirit with run_state's ledger check - both read a count off prose to compare with the data.
+_ROUND_COUNT_RE = re.compile(
+    r"\b(\d+|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+"
+    r"(?:(?:independent|adversarial|review|close|closing|full)\s+){0,3}rounds?\b", re.I)
+_WORD_NUMBERS = {"zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
+                 "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12}
+
+
+def _claims_signoff_outstanding(text: str) -> bool:
+    return any(p.search(text) for p in _SIGNOFF_OUTSTANDING)
+
+
+def _claimed_round_count(text: str) -> int | None:
+    m = _ROUND_COUNT_RE.search(text)
+    if not m:
+        return None
+    tok = m.group(1).lower()
+    return _WORD_NUMBERS.get(tok, None) if tok in _WORD_NUMBERS else int(tok)
+
+
+def _close_landed(root: Path, state: dict) -> bool:
+    """True when the run's own record says the close it describes has LANDED: the run carries an
+    `ended_at` (or a terminal outcome), and `close_owed` reports nothing still owed. Both are read
+    from state the anchor claims to summarise, so a LATEST.md still calling the sign-off owed is
+    contradicted by the very run it narrates. When a close is GENUINELY owed the anchor is right,
+    so this returns False and nothing is flagged."""
+    try:
+        from lib import run_state
+        ended = bool(state.get("ended_at")) or state.get("outcome") in run_state.CLOSED
+    except Exception:  # noqa: BLE001 - never crash the gate
+        ended = bool(state.get("ended_at"))
+    if not ended:
+        return False
+    try:
+        import close_owed
+        rep = close_owed.owed(root)
+        if rep.get("owed") or rep.get("velocity_owed"):
+            return False
+    except Exception:  # noqa: BLE001 - close_owed is advisory here; absence is not a landing claim
+        pass
+    return True
+
+
 def check(repo_root: Path | str = ".") -> dict:
     """Findings (all advisory). {findings, ok, applicable}. Applicable only on the skill repo with a
     LATEST.md present; only facts LATEST.md states are checked."""
@@ -85,6 +142,34 @@ def check(repo_root: Path | str = ".") -> dict:
         if td is not None and int(cd) != td:
             findings.append({"kind": "disclosure-drift",
                              "detail": f"LATEST.md says disclosure {cd}; actual is {td}"})
+    # the two load-bearing claims a resuming agent acts on - has the owed sign-off landed, and
+    # does the narrated round count match the run's ledger. Both compared against state the tool
+    # already holds; the document being wrong here sends a fresh context looking for a signature
+    # that arrived and re-reviewing a repair already judged.
+    try:
+        from lib import run_state
+        state = run_state.read(root)
+    except Exception:  # noqa: BLE001 - an unreadable run state must not crash the advisory gate
+        state = {}
+    # sign-off / closure the anchor calls outstanding, once the run says it landed
+    if _claims_signoff_outstanding(text) and _close_landed(root, state):
+        findings.append({"kind": "signoff-drift",
+                         "detail": ("LATEST.md still calls a sign-off or closure outstanding, but "
+                                    "the run carries an end and close_owed reports none owed - the "
+                                    "signature it says is owed has landed. A resuming agent will "
+                                    "hunt for an owed sign-off that arrived")})
+    # round count the anchor narrates, against the run's own review ledger
+    claimed = _claimed_round_count(text)
+    if claimed is not None:
+        try:
+            ledger = len(run_state.review_rounds(root))
+        except Exception:  # noqa: BLE001 - never crash the gate
+            ledger = 0
+        if ledger and claimed != ledger:
+            findings.append({"kind": "round-count-drift",
+                             "detail": (f"LATEST.md narrates {claimed} review round(s); the run "
+                                        f"ledger (review_rounds) holds {ledger} - claim the "
+                                        f"ledger's count, not a smaller number beside it")})
     # anchor-window ceiling: the anchor is re-read at every session start, so
     # it must stay a WINDOW (current state + one-line history), not a ledger
     # of full past-sprint paragraphs duplicating the retros

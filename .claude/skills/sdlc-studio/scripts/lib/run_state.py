@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 
 from . import sdlc_md
@@ -127,6 +128,58 @@ TRANSCRIPTS_ENV = "SDLC_STUDIO_TRANSCRIPTS"
 class RunStateError(RuntimeError):
     """The run state exists but cannot be read. Never degraded to "there is no run": that
     reading would let a close write a blank record over a real run's identity."""
+
+
+class ReviewLedgerError(ValueError):
+    """A write would contradict the review ledger at the moment it is recorded: a goal-verdict
+    note naming a round count the ledger does not carry, a round recorded against a run that has
+    already ended, or a reviewer label naming a round number other than the index it lands at.
+    Each is refused here rather than written, because the ledger is the thing later readers trust
+    to say how many rounds ran and when they stopped, and a note beside the data restating it
+    wrong is the exact drift BG0261 was filed for."""
+
+
+# Number words the ledger checks understand, so a note or reviewer label that spells a count out
+# ("three rounds") is read the same as one that writes the digit ("3 rounds").
+_WORD_NUMBERS = {"zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
+                 "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12}
+_NUM = r"(?:\d+|" + "|".join(_WORD_NUMBERS) + r")"
+
+# A COUNT of rounds ("three independent adversarial rounds", "5 rounds"): the number comes first
+# and only a bounded set of review adjectives may sit between it and the word. Kept tight on
+# purpose so an ordinal phrase ("one of the rounds", "round 3") is not misread as a count.
+_ROUND_COUNT_RE = re.compile(
+    r"\b(" + _NUM + r")\s+(?:(?:independent|adversarial|review|close|closing|full|more)\s+){0,3}"
+    r"rounds?\b", re.I)
+
+# An ORDINAL a reviewer label carries ("round 7"): the word comes first, then the number. This is
+# what a reviewer-supplied string uses to name which round it is, and it must agree with the index
+# the entry is stored at.
+_ROUND_ORDINAL_RE = re.compile(r"\bround\s+(" + _NUM + r")\b", re.I)
+
+
+def _as_int(token: str) -> int | None:
+    t = token.lower()
+    if t in _WORD_NUMBERS:
+        return _WORD_NUMBERS[t]
+    try:
+        return int(t)
+    except ValueError:
+        return None
+
+
+def stated_round_count(text: str | None) -> int | None:
+    """The round COUNT a note narrates, or None when it names none. `len(review_rounds)` is the
+    only honest source; this only exists to catch a note that restates a different one."""
+    m = _ROUND_COUNT_RE.search(text or "")
+    return _as_int(m.group(1)) if m else None
+
+
+def stated_round_ordinal(text: str | None) -> int | None:
+    """The round NUMBER a reviewer label names ("round 7" -> 7), or None. A label that names none
+    is fine - the index stands. A label naming a different one is the disagreement BG0261 found."""
+    m = _ROUND_ORDINAL_RE.search(text or "")
+    return _as_int(m.group(1)) if m else None
 
 
 def path(repo_root: Path | str) -> Path:
@@ -538,11 +591,30 @@ def record_review_round(repo_root: Path | str, verdict: str, units: list[str] | 
 
     `tokens` distinguishes an unmeasured round (None) from a measured zero, and both are
     preserved as given - see UNMEASURED. `repaired` is the file-and-line surface the round's
-    repair touched, which the NEXT round compares its findings against."""
-    if not read(repo_root).get("run_id"):
+    repair touched, which the NEXT round compares its findings against.
+
+    REFUSED, never written silently, when the write would contradict the ledger it is joining:
+    a round recorded against a run that already carries `ended_at` (a review accepted against a
+    run already closed - BG0261 found one recorded 33 minutes after the run ended), or a reviewer
+    label naming a round number other than the index this entry lands at (the tool's numbering and
+    the reviewer's must not disagree by one and nothing object)."""
+    current = read(repo_root)
+    if not current.get("run_id"):
         return None
+    index = len(review_rounds(repo_root)) + 1
+    if current.get("ended_at"):
+        raise ReviewLedgerError(
+            f"cannot record a review round against a run that already ended at "
+            f"{current['ended_at']!r} - the review would be accepted against a closed run and "
+            f"counted after the fact. Record the round before the run is closed, or reopen it")
+    label = stated_round_ordinal(reviewer)
+    if label is not None and label != index:
+        raise ReviewLedgerError(
+            f"reviewer label {reviewer!r} names round {label}, but this entry is stored at round "
+            f"{index} - the ledger's numbering and the reviewer's must not disagree. Drop the "
+            f"number from the label (the index is authoritative) or record it at the right round")
     entry = {
-        "round": len(review_rounds(repo_root)) + 1,
+        "round": index,
         "verdict": (verdict or "").upper(),
         "reviewer": reviewer,
         "units": [sdlc_md.norm_id(u) for u in (units or [])],
@@ -560,6 +632,27 @@ def record_review_round(repo_root: Path | str, verdict: str, units: list[str] | 
 
     _mutate(repo_root, apply)
     return entry
+
+
+def record_goal_verdict(repo_root: Path | str, verdict: str, note: str = "") -> dict:
+    """Record the closing review's Sprint Goal verdict beside the goal it judges.
+
+    The round count is DERIVED from the ledger and stamped on the record (`rounds`), never taken
+    from the prose. A note that narrates a DIFFERENT count is REFUSED, not silently written: the
+    verdict note is the sentence a fresh context reads to learn how many adversarial rounds ran,
+    and BG0261 found one saying 'three independent adversarial rounds' while six sat in the
+    `review_rounds` key beside it. Derive it from the ledger or do not restate it - the two must
+    not disagree. Returns the record written."""
+    ledger = review_round_count(repo_root)
+    stated = stated_round_count(note)
+    if stated is not None and stated != ledger:
+        raise ReviewLedgerError(
+            f"the goal-verdict note narrates {stated} round(s), but the ledger carries {ledger} "
+            f"(len(review_rounds)) - a note may not restate a round count the ledger contradicts. "
+            f"Drop the number (the derived `rounds` field carries it) or record the missing rounds")
+    record = {"verdict": verdict, "note": note, "rounds": ledger}
+    update(repo_root, sprint_goal_verdict=record)
+    return record
 
 
 def delegated_records(state: dict) -> list[dict]:
