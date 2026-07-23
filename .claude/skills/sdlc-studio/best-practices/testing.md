@@ -52,6 +52,17 @@ in/out, and unit-test the pure core, leaving the wrapper thin.
 Testing logic through its IO wrapper needs an order-of-magnitude more expensive
 fixture harness for no extra coverage of the logic itself.
 
+### 6. A message and its verdict are driven by one test
+
+**When** a printed sentence describes a verdict some other code decides (a guard's scope, a
+gate's lane), **write** ONE test that drives the message and the verdict from one shared
+battery of inputs and asserts they agree.
+
+Asserting the message's text on its own is the counter-example this replaces: a substring
+check passes for an input the sentence does not describe, so a clause reworded to deny the
+verdict beside it - while keeping the word the assertion pinned - stays green. Driving both
+over one battery fails on the input where they disagree, and names it.
+
 ## Mechanisation and its boundary
 
 Per the determinism doctrine ([LL0008](../lessons/_index.md)), heuristic 2 is

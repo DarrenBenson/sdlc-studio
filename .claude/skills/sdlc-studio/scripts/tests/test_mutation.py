@@ -10,6 +10,7 @@ import importlib.util
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -2106,6 +2107,108 @@ class WindowCloseIsOwnerSelectedTests(unittest.TestCase):
             self.assertTrue(report["mutations"], "the run produced no verdict at all")
 
 
+def _load_gate():
+    """The gate module, whose `_window_claims` is the lane's own per-path decision."""
+    spec = importlib.util.spec_from_file_location("gate", SCRIPT.parent / "gate.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+#: The quantifier a reason clause makes about the shared probes. It is the one part of the
+#: sentence that is CHECKABLE against the matcher: "every" asserts the claim matches all
+#: probes, "no" asserts it matches none. An inverted clause keeps the pinned word `glob` and
+#: flips this quantifier, which a bare `assertIn("glob", msg)` cannot see.
+_PROBE_QUANTIFIER = re.compile(r"matching (every|no) path the matcher probes")
+
+
+def message_verdict_disagreements(reason_fn, matcher_fn, claims, probes):
+    """One string per claim whose printed MESSAGE and the matcher's VERDICT disagree, both
+    driven over the SAME `probes`.
+
+    This is the pattern US0317 exists to make reusable: a sentence describing what a guard
+    decides is never asserted on its own text; the message and the verdict it describes are
+    driven from one battery and checked to agree. `reason_fn(claim, probes)` returns the scope
+    sentence the message will carry (None means the message says a narrow, N-path window);
+    `matcher_fn(claim, staged)` is the gate lane's own decision for one staged path. A failure
+    names the input, so a disagreement is never silent.
+    """
+    out = []
+    for claim in claims:
+        verdict = all(matcher_fn(claim, p) for p in probes)   # the lane refuses every path
+        reason = reason_fn(claim, probes)
+        says_whole_tree = reason is not None
+        if says_whole_tree != verdict:
+            out.append(f"{claim!r}: the message says whole-tree={says_whole_tree}, the "
+                       f"matcher says {verdict}")
+            continue
+        m = _PROBE_QUANTIFIER.search(reason or "")
+        if m and (m.group(1) == "every") != verdict:
+            out.append(f"{claim!r}: the reason clause claims the glob matches {m.group(1)!r} "
+                       f"path the matcher probes, but the lane refuses "
+                       f"{'every' if verdict else 'not every'} staged path")
+    return out
+
+
+class MessageVerdictAgreementTests(unittest.TestCase):
+    """US0317: where a message and a verdict must agree, ONE test drives BOTH over ONE input
+    battery and asserts they agree.
+
+    Asserting the message's text on its own is what let the `window open` reason clause be
+    wrong five times: a word survives inside a sentence that denies the verdict printed beside
+    it. `assertIn(EXPECTED_REASON[claim], msg)` pins `glob`, and a clause reworded from "a glob
+    matching every path" to "a glob matching no path" - a denial of the WHOLE TREE verdict on
+    the same line - keeps the word and stays green. Driving the message and the verdict over
+    one shared battery catches it.
+    """
+
+    #: One battery of claims, whole-tree and narrow shapes mixed, so a message hard-wired
+    #: either way disagrees with the matcher on some input.
+    CLAIMS = (".", "./", "/etc/hosts", "*", "**", "?*", "", "  ",
+              "tools/x.py", "src/app.py", "*.md", "a/b")
+
+    @classmethod
+    def setUpClass(cls):
+        cls.mut = _load()
+        cls.gate = _load_gate()
+
+    def test_one_battery_drives_both_the_message_and_the_verdict(self):
+        probes = self.mut.MATCHER_PROBE_BATTERY
+        fails = message_verdict_disagreements(
+            self.mut.everything_reason, self.gate._window_claims, self.CLAIMS, probes)
+        self.assertEqual([], fails, f"message and verdict disagree over the shipped code: {fails}")
+        # ONE battery, not two. The message-derivation PROBES the same tuple the matcher is
+        # asked over: prove it by moving the battery and watching the message verdict move in
+        # lockstep, so neither side can hold a private list it was tuned against.
+        self.assertIsNotNone(
+            self.mut.everything_reason("*.md", ("a.md", "b.md")),
+            "`*.md` matches every probe in THIS battery, so the message must call it whole-tree")
+        self.assertIsNone(
+            self.mut.everything_reason("*.md", ("a.py", "b.md")),
+            "`*.md` misses `a.py`, so over THIS battery the message must NOT call it whole-tree")
+
+    def test_an_inverted_derivation_fails_even_when_it_keeps_the_pinned_word(self):
+        probes = self.mut.MATCHER_PROBE_BATTERY
+        mut = self.mut
+
+        def inverted(claim, p):
+            """The derivation deliberately inverted: the sentence denies the verdict beside it
+            while retaining every word the current assertions pin."""
+            r = mut.everything_reason(claim, p)
+            if r and "glob matching every path" in r:
+                return r.replace("matching every path", "matching no path")
+            return r
+
+        self.assertIn("glob", inverted("*", probes),
+                      "the inversion must keep the pinned word, or it proves nothing")
+        fails = message_verdict_disagreements(
+            inverted, self.gate._window_claims, self.CLAIMS, probes)
+        self.assertTrue(fails, "an inverted clause that keeps the word `glob` slipped past the "
+                               "agreement check - the very failure US0317 exists to catch")
+        self.assertTrue(any(repr("*") in f for f in fails),
+                        f"the failure must NAME the input whose message and verdict disagree: {fails}")
+
+
 class WindowOpenMessageTests(unittest.TestCase):
     """The CLI must promise what the guard does.
 
@@ -2264,7 +2367,9 @@ class WindowOpenMessageTests(unittest.TestCase):
         # SINGLE unrelated path, which cannot distinguish "claims everything" from "happens to
         # match this one" - so `*.md` or `*/*` would have failed it falsely, and the shape list
         # had been chosen around exactly the families where the two agree by construction.
-        BATTERY = ("a", "a/b.py", "z/y/x/w.md", "README", "x.y", ".githooks/pre-commit")
+        # The battery is the module's ONE constant, read here and probed by `everything_reason`,
+        # so the message-derivation and the verdict cannot drift onto two different sets.
+        BATTERY = mut.MATCHER_PROBE_BATTERY
         for claim in ("", " ", "\t", ".", "./", "/abs/x.py", "..", "../x.py", "a/../b.py",
                       "*", "**", "***", "?*", "**/", "*.md", "*/*", "src/**/*.py",
                       "tools/x.py", "tools/", "a" * 5000, 7, None, True, ["x"], {"a": 1}):

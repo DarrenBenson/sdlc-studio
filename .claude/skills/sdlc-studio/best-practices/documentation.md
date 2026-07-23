@@ -149,6 +149,12 @@ in different ways. See the schema for details.
 - Verify links work after moving files
 - Prefer linking over duplicating content
 
+A sentence describing what a check will do is
+[derived from the check's own predicate, never restated beside it](script.md#derived-message) -
+the same failure applies to prose, where a rule about a behaviour is copied instead of pointing
+at the one authority for it. State the rule once and link to it; a second copy drifts from the
+first the moment either changes, and a reader has no way to tell which is now the truth.
+
 ## Versioning
 
 For versioned content:
