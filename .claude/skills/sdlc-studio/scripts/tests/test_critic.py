@@ -1654,5 +1654,47 @@ class ClaimInventoryTests(unittest.TestCase):
         self.assertTrue(mod.summarise_claim_pass({"c1": "FALSE"})["verified"])
 
 
+class CriticFieldsFileTests(unittest.TestCase):
+    """US0391: the sign-off note reaches the ledger through the shared fields-file loader, so
+    prose carrying shell metacharacters is stored verbatim (Python never runs it) rather than
+    swallowed by a shell."""
+
+    def _repo(self):
+        d = Path(tempfile.mkdtemp(prefix="critic_ff_"))
+        (d / "sdlc-studio" / "reviews").mkdir(parents=True)
+        return d
+
+    def _run(self, mod, argv):
+        import contextlib, io
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            rc = mod.main(argv)
+        return rc, buf.getvalue()
+
+    def test_fields_file_note_is_stored_verbatim_with_shell_metacharacters(self) -> None:
+        import json
+        mod = _load()
+        d = self._repo()
+        hazard = "run `git status` and $(whoami) - dangerous on the flag path"
+        (d / "fields.json").write_text(json.dumps({"note": hazard}))
+        rc, _ = self._run(mod, ["signoff", "--unit", "US0001", "--principal", "operator",
+                                "--author", "builder", "--fields-file", str(d / "fields.json"),
+                                "--root", str(d)])
+        self.assertEqual(rc, 0)
+        recorded = mod.signoff_path(d).read_text(encoding="utf-8")
+        self.assertIn("`git status`", recorded)     # backtick survived - not executed
+        self.assertIn("$(whoami)", recorded)          # command substitution stored verbatim
+
+    def test_unknown_field_is_refused_by_the_shared_loader(self) -> None:
+        import json
+        mod = _load()
+        d = self._repo()
+        (d / "bad.json").write_text(json.dumps({"nte": "typo key nobody reads"}))
+        rc, _ = self._run(mod, ["signoff", "--unit", "US0001", "--principal", "operator",
+                                "--author", "builder", "--fields-file", str(d / "bad.json"),
+                                "--root", str(d)])
+        self.assertEqual(rc, 2)                        # refused, not silently ignored
+
+
 if __name__ == "__main__":
     unittest.main()

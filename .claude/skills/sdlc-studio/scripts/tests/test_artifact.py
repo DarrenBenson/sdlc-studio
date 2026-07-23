@@ -1578,7 +1578,9 @@ class SharedHazardHelperTests(unittest.TestCase):
 
 #: The writers that HAVE the non-shell input path. Adding a writer here without the flag fails
 #: the sweep, and so does adding a prose writer to `scripts/` that appears in neither list.
-SAFE_INPUT_WRITERS = {"file_finding.py", "artifact.py"}
+SAFE_INPUT_WRITERS = {"file_finding.py", "artifact.py",
+                      # gained --fields-file (shared file_finding.resolve_prose_fields loader):
+                      "critic.py", "close_owed.py", "sprint.py"}
 
 #: The sibling prose writers the sweep found and could NOT reach in this batch, each with the
 #: reason. D0052 ruled the sweep WIDER than the two files CR0384 names, and these four carry the
@@ -1587,10 +1589,11 @@ SAFE_INPUT_WRITERS = {"file_finding.py", "artifact.py"}
 #: file scope in this batch, so the fix is a follow-up; this list is what makes that visible.
 #: Emptying an entry is the point: when a writer gains `--fields-file`, delete its line here.
 KNOWN_PROSE_WRITER_GAPS = {
-    "critic.py": "verdict prose on the command line; deferred - owned by another unit's scope",
-    "close_owed.py": "note prose on the command line; deferred - owned by another unit's scope",
-    "telemetry.py": "note prose on the command line; deferred - owned by another unit's scope",
-    "sprint.py": "goal/note prose on the command line; deferred - owned by another unit's scope",
+    "telemetry.py": "its only _PROSE_FLAGS match is `show --summary`, a store_true BOOLEAN, not "
+                    "free prose - it carries no shell hazard. The earlier 'note prose on the "
+                    "command line' reason was wrong: telemetry has no narrative flag. Recorded "
+                    "here as safe-by-nature (like mutation.py) rather than given a --fields-file "
+                    "for prose that does not exist.",
     "mutation.py": "its only free-prose flag is `window open --note`, a short operator label "
                    "written to transient .local state rather than into an artefact body, so it "
                    "is outside the filing hazard - recorded here rather than quietly dropped "
@@ -1650,6 +1653,19 @@ class ProseWriterSweepTests(unittest.TestCase):
             "these scripts take free prose on the command line with no non-shell input path "
             f"and no recorded reason: {unaccounted}. Give them `--fields-file` (see "
             "file_finding.load_fields_file), or record why not in KNOWN_PROSE_WRITER_GAPS")
+
+    def test_the_four_cr0392_writers_are_now_safe(self) -> None:
+        """US0392 AC3: none of the four deferred writers remains a DEFERRED gap. Three genuinely
+        took prose and gained `--fields-file` (now SAFE_INPUT_WRITERS); telemetry took no prose
+        (its `--summary` is a boolean) and is reclassified safe-by-nature, not deferred."""
+        for name in ("critic.py", "close_owed.py", "sprint.py"):
+            self.assertIn(name, SAFE_INPUT_WRITERS, f"{name} should have a non-shell input path")
+        # telemetry stays a named gap, but as safe-by-nature, NOT a deferred one
+        self.assertIn("telemetry.py", KNOWN_PROSE_WRITER_GAPS)
+        for name in ("critic.py", "close_owed.py", "sprint.py", "telemetry.py"):
+            reason = KNOWN_PROSE_WRITER_GAPS.get(name, "")
+            self.assertNotIn("deferred", reason,
+                             f"{name} is still recorded as a deferred gap; it should be resolved")
 
     def _options_of(self, name: str) -> set[str]:
         """Every flag the script's own PARSER accepts, subcommands included.

@@ -3117,13 +3117,29 @@ def cmd_goal_verdict(args: argparse.Namespace) -> int:
               "so there is nothing to judge (set one at plan time with --sprint-goal)",
               file=sys.stderr)
         return 2
+    import file_finding  # noqa: PLC0415 - the shared prose-fields loader, as elsewhere
     try:
-        run_state.record_goal_verdict(args.root, args.verdict, args.note or "")
+        fields = file_finding.resolve_prose_fields(
+            getattr(args, "fields_file", None),
+            {"verdict": args.verdict, "note": args.note}, allowed=("verdict", "note"))
+    except ValueError as exc:
+        print(f"goal-verdict refused: {exc}", file=sys.stderr)
+        return 2
+    verdict, note = fields.get("verdict"), fields.get("note", "")
+    if verdict not in ("achieved", "partial", "missed"):
+        print("goal-verdict refused: --verdict (achieved|partial|missed) is required, via the "
+              "flag or the --fields-file", file=sys.stderr)
+        return 2
+    if not note:
+        print("goal-verdict refused: a note is required - a bare verdict is an assertion, not a "
+              "review", file=sys.stderr)
+        return 2
+    try:
+        run_state.record_goal_verdict(args.root, verdict, note)
     except run_state.ReviewLedgerError as exc:
         print(f"goal-verdict refused: {exc}", file=sys.stderr)
         return 2
-    print(f"sprint goal verdict recorded: {args.verdict}"
-          + (f" - {args.note}" if args.note else ""))
+    print(f"sprint goal verdict recorded: {verdict} - {note}")
     return 0
 
 
@@ -5183,10 +5199,16 @@ def build_parser() -> argparse.ArgumentParser:
     g = sub.add_parser("goal-verdict",
                        help="Record the closing review's judgement of the Sprint Goal "
                             "(achieved / partial / missed) on the run state.")
-    g.add_argument("--verdict", required=True, choices=("achieved", "partial", "missed"))
-    g.add_argument("--note", required=True,
+    g.add_argument("--verdict", default=None, choices=("achieved", "partial", "missed"),
+                   help="the Sprint Goal judgement (required, here or in --fields-file)")
+    g.add_argument("--note", default=None,
                    help="one line of judgement - why the verdict holds (required: a bare "
                         "verdict is an assertion, not a review)")
+    g.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
+                   help="read the verdict and its note from a JSON object "
+                        "({\"verdict\": \"...\", \"note\": \"...\"}) instead of the flags, so a "
+                        "rationale carrying shell metacharacters is stored verbatim rather than "
+                        "interpreted by the shell")
     g.add_argument("--root", default=".", help="Repo root (default: .)")
     g.set_defaults(func=cmd_goal_verdict)
 

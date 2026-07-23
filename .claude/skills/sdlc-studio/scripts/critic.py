@@ -1325,10 +1325,17 @@ def cmd_evidence(args: argparse.Namespace) -> int:
 
 
 def cmd_signoff(args: argparse.Namespace) -> int:
+    import file_finding  # noqa: PLC0415 - the shared prose-fields loader, as elsewhere
+    try:
+        fields = file_finding.resolve_prose_fields(
+            getattr(args, "fields_file", None), {"note": args.note}, allowed=("note",))
+    except ValueError as exc:
+        print(f"signoff refused: {exc}", file=sys.stderr)
+        return 2
     try:
         path = record_signoff(args.root, args.unit, args.principal, args.author,
                               delegate=args.delegate, boundary=args.boundary,
-                              note=args.note)
+                              note=fields.get("note", ""))
     except ValueError as exc:
         print(f"signoff refused: {exc}", file=sys.stderr)
         return 2
@@ -1444,6 +1451,10 @@ def build_parser() -> argparse.ArgumentParser:
     so.add_argument("--boundary", default=None,
                     help="the delegate's separate trust boundary (required with --delegate)")
     so.add_argument("--note", default="")
+    so.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
+                    help="read the sign-off note from a JSON object ({\"note\": \"...\"}) instead "
+                         "of --note, so prose carrying shell metacharacters is stored verbatim "
+                         "rather than interpreted by the shell")
     so.add_argument("--root", default=".")
     so.set_defaults(func=cmd_signoff)
     sr = sub.add_parser("sprint-review", help="Record one adversarial full-diff review covering "

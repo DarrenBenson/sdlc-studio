@@ -456,7 +456,14 @@ def cmd_detect(args: argparse.Namespace) -> int:
 
 
 def cmd_baseline(args: argparse.Namespace) -> int:
-    data = stamp_baseline(Path(args.root), date=args.date, note=args.note)
+    import file_finding  # noqa: PLC0415 - the shared prose-fields loader, as elsewhere
+    try:
+        fields = file_finding.resolve_prose_fields(
+            getattr(args, "fields_file", None), {"note": args.note}, allowed=("note",))
+    except ValueError as exc:
+        print(f"baseline refused: {exc}", file=sys.stderr)
+        return 2
+    data = stamp_baseline(Path(args.root), date=args.date, note=fields.get("note"))
     n = len(data["grandfathered"])
     print(f"baseline stamped ({data['stamped']}): grandfathered {n} unit(s) terminal at adoption. "
           f"Only later closes can owe a retro. Wrote {BASELINE_FILE}.")
@@ -473,6 +480,10 @@ def build_parser() -> argparse.ArgumentParser:
     b = sub.add_parser("baseline", help="Grandfather the set terminal at adoption; only later closes can owe.")
     b.add_argument("--date", help="Stamp date (default: today)")
     b.add_argument("--note", help="Override the baseline note")
+    b.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
+                   help="read the baseline note from a JSON object ({\"note\": \"...\"}) instead "
+                        "of --note, so prose carrying shell metacharacters is stored verbatim "
+                        "rather than interpreted by the shell")
     b.set_defaults(func=cmd_baseline)
     return p
 

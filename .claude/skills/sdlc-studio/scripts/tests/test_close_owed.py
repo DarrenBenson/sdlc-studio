@@ -582,5 +582,24 @@ class AVelocityRowIsPartOfTheClose(CloseOwedBase):
         self.assertEqual(report["velocity_owed"], [])
 
 
+class CloseOwedFieldsFileTests(unittest.TestCase):
+    """US0391: the baseline note reaches the file through the shared fields-file loader, so prose
+    carrying shell metacharacters is stored verbatim rather than swallowed by a shell."""
+
+    def test_fields_file_baseline_note_is_stored_verbatim(self) -> None:
+        import json
+        d = Path(tempfile.mkdtemp(prefix="close_owed_ff_"))
+        (d / "sdlc-studio").mkdir(parents=True)
+        hazard = "grandfathered before `git log` and $(date) were run"
+        (d / "fields.json").write_text(json.dumps({"note": hazard}))
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            rc = close_owed.main(["--root", str(d), "baseline",
+                                  "--fields-file", str(d / "fields.json")])
+        self.assertEqual(rc, 0)
+        data = json.loads((d / close_owed.BASELINE_FILE).read_text(encoding="utf-8"))
+        self.assertEqual(data["note"], hazard)        # byte-for-byte - it crossed no shell
+
+
 if __name__ == "__main__":
     unittest.main()

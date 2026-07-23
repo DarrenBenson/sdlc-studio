@@ -424,7 +424,7 @@ FIELDS_FILE_KEYS: tuple[str, ...] = (*COMMON_FIELDS_FILE_KEYS,
 HAZARD_FIELDS: tuple[str, ...] = ("title", "summary", "steps", "fix", "impact", "recommendation")
 
 
-def shell_hazards(fields: dict) -> list[tuple[str, str]]:
+def shell_hazards(fields: dict, keys: tuple[str, ...] | None = None) -> list[tuple[str, str]]:
     """(field, what was found) for every value bearing the marks of a shell that already ate it.
 
     Three shapes, each a known outcome of passing prose through a double-quoted shell argument:
@@ -432,10 +432,14 @@ def shell_hazards(fields: dict) -> list[tuple[str, str]]:
     `$(` (substitution the shell did not complete, or prose that would be substituted next time),
     and a TRAILING backslash (a line continuation that swallowed what followed).
 
+    `keys` names the prose fields to inspect - the finding filer's `HAZARD_FIELDS` by default, or a
+    caller's own prose keys (e.g. a sign-off `note`, a goal verdict) so a writer with a different
+    field name is not silently unchecked.
+
     Detection only. The value is reported, never rewritten: a field quietly repaired is a
     success the tool did not achieve, and the author is the only one who knows what was lost."""
     out: list[tuple[str, str]] = []
-    for key in HAZARD_FIELDS:
+    for key in (keys if keys is not None else HAZARD_FIELDS):
         val = fields.get(key)
         if not isinstance(val, str) or not val:
             continue
@@ -454,15 +458,16 @@ def shell_hazards(fields: dict) -> list[tuple[str, str]]:
 
 
 def report_shell_hazards(fields: dict, source: str = "the command line",
-                         stream=None) -> list[tuple[str, str]]:
+                         stream=None, keys: tuple[str, ...] | None = None) -> list[tuple[str, str]]:
     """Report, on stderr, every field arriving through a shell already mangled. Returns what it
-    found (empty when clean), so a caller can act on it.
+    found (empty when clean), so a caller can act on it. `keys` is passed through to
+    `shell_hazards` so a writer's own prose fields are checked, not only the filer's default set.
 
     ONE implementation, called by every creator that takes free prose on the command line. Two
     copies of a pattern list drift, and a drifted list is the silent half of this defect all over
     again. A report, not a refusal: refusing would lose the content the author has in hand, and
     the flag path is the compatible one. What must not happen is silence."""
-    found = shell_hazards(fields)
+    found = shell_hazards(fields, keys=keys)
     if not found:
         return []
     out = stream if stream is not None else sys.stderr
@@ -475,6 +480,28 @@ def report_shell_hazards(fields: dict, source: str = "the command line",
           "with the same field names. Nothing in it crosses a shell, so the text is stored "
           "exactly as written.", file=out)
     return found
+
+
+def resolve_prose_fields(fields_file: str | None, flag_fields: dict,
+                         allowed: tuple[str, ...]) -> dict:
+    """The ONE path a prose-taking writer (critic, close_owed, sprint, ...) uses to obtain its
+    free-text fields safely, so every writer routes through the same loader rather than a second
+    idiom that could drift.
+
+    With a `--fields-file`: read the JSON document (no value crossed a shell, so the text is stored
+    exactly as written) and let it supply the fields; an explicit flag still overrides its key. With
+    no fields-file: the flag values DID cross a shell, so any shell metacharacters they carry are a
+    swallowed command - report them (non-blocking, the flag path stays compatible). Empty/None flag
+    values are dropped before either path. Raises ValueError on a bad fields-file (unreadable, not a
+    JSON object, or an unknown key), which the caller turns into a refusal."""
+    flags = {k: v for k, v in flag_fields.items() if v is not None and v != ""}
+    if fields_file:
+        from_file = load_fields_file(fields_file, allowed=allowed)
+        return {**from_file, **flags}          # an explicit flag wins over the document
+    # Flag path only - a file path crossed no shell. Check the writer's OWN prose keys, not just
+    # the finding filer's default HAZARD_FIELDS, or a `note`/`verdict` would go unchecked.
+    report_shell_hazards(flags, keys=allowed)
+    return flags
 
 
 def load_fields_file(path: Path | str, allowed: tuple[str, ...] = FIELDS_FILE_KEYS) -> dict:

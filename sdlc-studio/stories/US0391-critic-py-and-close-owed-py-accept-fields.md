@@ -38,8 +38,13 @@
 - **Then** it is refused with `file_finding.load_fields_file`'s unknown-field error, proving the path goes through the one shared helper and not a re-implemented parser
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CriticFieldsFileTests::test_unknown_field_is_refused_by_the_shared_loader
 
+## Verification depth
+
+Node-addressed pytest ACs, red before the code. Mutation-proven by hand: dropping the flag-path hazard report and checking the filer's default HAZARD_FIELDS instead of the writer's own keys were each caught. Shell metacharacters (backtick, `$(`) are asserted to survive verbatim because Python never runs them.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-23 | sdlc-studio | Built: --fields-file via shared loader + flag-path hazard report, tested, mutation-proven |

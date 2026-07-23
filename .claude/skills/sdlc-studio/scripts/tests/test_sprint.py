@@ -6223,5 +6223,32 @@ class DeliveryModeDeterminismTests(_DeliveryModeFixture):
             self.assertTrue(offer["reason"])
 
 
+class SprintFieldsFileTests(unittest.TestCase):
+    """US0392 AC2: `goal-verdict` takes its verdict and note from a fields-file, so a rationale
+    carrying shell metacharacters is stored verbatim rather than interpreted by a shell."""
+
+    def test_fields_file_goal_and_note_are_stored_verbatim(self) -> None:
+        import contextlib, io, json
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(
+                {"schema": 1, "run_id": "RUN-X", "sprint_goal": "make the bar real",
+                 "outcome": "running", "batch": []}))
+            hazard = "held to `make check` and $(date) as the bar"
+            (root / "ff.json").write_text(json.dumps({"verdict": "achieved", "note": hazard}))
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                rc = s.main(["goal-verdict", "--fields-file", str(root / "ff.json"),
+                             "--root", str(root)])
+            self.assertEqual(rc, 0)
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            rec = state["sprint_goal_verdict"]
+            self.assertEqual(rec["verdict"], "achieved")
+            self.assertIn("`make check`", rec["note"])   # backtick survived
+            self.assertIn("$(date)", rec["note"])         # command substitution stored verbatim
+
+
 if __name__ == "__main__":
     unittest.main()
