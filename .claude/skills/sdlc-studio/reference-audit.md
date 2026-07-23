@@ -56,7 +56,7 @@ find  ──►  verify  ──►  merge  ──►  file
 
 ## Lens Profiles {#audit-profiles}
 
-A profile is a set of lenses. Five ship; projects can extend. Every one of them is
+A profile is a set of lenses. Six ship; projects can extend. Every one of them is
 wired to the same refute panel - the profile chooses the lenses, never whether a
 plausible-but-wrong finding gets filed.
 
@@ -67,6 +67,7 @@ plausible-but-wrong finding gets filed.
 | `repo` | `templates/audit-profiles/repo.md` | an existing repository, zero setup: architecture, code-quality, defensive-security | shared |
 | `code` | `templates/audit-profiles/code.md` | an implementation: correctness, security-smells, pattern-violations, ac-drift | shared |
 | `test` | `templates/audit-profiles/test.md` | the claims code makes about itself: can-it-fail, reaches-the-code, docstring-vs-assertion, incidentally-green | shared |
+| `process` | `templates/audit-profiles/process.md` | the way a delivery was produced: path-from-memory, count-by-hand, accepted-without-running, repair-without-plan, skipped-preflight | shared |
 
 Resolve one with `scripts/audit.py profile --name repo`, which reports the pack's lenses
 and its refute threshold; a name no profile declares is refused, naming the ones that
@@ -122,6 +123,34 @@ scope is **source and tests together**, because prose asserting a property the c
 sits in source at least as often as in a test file. Each lens cites the recorded failure
 modes it was drawn from (`lessons/_index.md`); read those entries into the finder's
 context, and give any lens appended later the same evidence.
+
+### Process profile {#audit-process-profile}
+
+The sibling to `test`: where `test` attacks the claims code makes about itself, `process`
+attacks the way the delivery was produced. The class is uniform - **work done before the
+contract it depends on was established** - and it is the failure this skill exists to
+prevent, so a delivery unaudited for it rests on the author's discipline alone. Packaged at
+`templates/audit-profiles/process.md`. Five lenses, each drawn from a recorded failure this
+project produced: path-from-memory, count-by-hand, accepted-without-running,
+repair-without-plan, skipped-preflight.
+
+Each lens names its **signature** - the mechanical detector a finder runs before reasoning,
+or a plain statement that none exists. A mechanical signature opens with a documented
+detector token (`python3`, a skill script run over the workspace) and names only paths on
+disk, so a cell cannot claim a command or a file that is not there; where no search singles
+the class out, the signature opens with `manual - ` and states why, which puts the absence
+where a reader can weigh it rather than where it reads like a check and is not one. Three of
+the five are mechanical (a path resolved against the tree, a count against the census, a
+verifier that selected nothing); two are honestly manual (whether a repair was attacked
+before it was written, and whether a cheaper form was looked for first, are readings of
+process, not states on disk). A declared detector cannot be shown to fire on its own incident
+by any test the pack ships - that is a manual run over a commit range, recorded in the run
+report.
+
+Each lens cites the recorded failure it was drawn from (`lessons/_index.md`); read those
+entries into the finder's context, and give any lens appended later the same evidence and its
+own signature. A lens the shipped registry cannot resolve is a dangling reference in every
+consuming project, so the pack cites only ids that ship.
 
 ### Extending {#audit-extend}
 
