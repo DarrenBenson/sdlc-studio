@@ -408,6 +408,37 @@ WINDOW_OWNER_RUN = "mutation.py run"
 #: said it may rewrite nothing, and neither has one whose `paths` no reader can interpret.
 WINDOW_EVERYTHING = "*"
 
+#: Unrelated paths the matcher probes to decide "claims everything" BY CONSTRUCTION rather than
+#: by a hand-picked list of spellings - the trap the first five versions of the reason fell
+#: into. A claim that matches EVERY probe refuses every commit. The battery must stay wide
+#: enough to separate a genuine whole-tree glob from one that only matches the character class
+#: it happens to sample: `9data.txt` (digit-leading) is here so `[a-zA-Z.]*`, which matches
+#: every letter-or-dot probe but no path beginning with a digit, is NOT read as everything - the
+#: CLI would otherwise print WHOLE TREE while the matcher lets `9data.txt` proceed. Shrinking
+#: this to fewer probes lets a prefix glob such as `a*` masquerade as the whole tree; the
+#: battery's width is load-bearing and pinned by test.
+WINDOW_PROBES = ("a", "a/b.py", "z/y/x/w.md", "README", "x.y", ".githooks/pre-commit", "9data.txt")
+
+
+def _probe_hits(pat: str) -> list[str]:
+    """The probes a normalised claim matches, in `WINDOW_PROBES` order. The evidence the reason
+    reports: it is what the MATCHER does with the claim, not a constant sentence, so the reason
+    varies with its input and an inverted clause names a different set."""
+    import fnmatch  # noqa: PLC0415 - local, as elsewhere in the matcher family
+    return [s for s in WINDOW_PROBES
+            if s.startswith(pat + "/") or fnmatch.fnmatch(s, pat)]
+
+
+def everything_glob_examples(candidates=("**", "***", "?*", "*", "*.", "a*")):
+    """Which candidate globs match EVERY probe, derived from `WINDOW_PROBES` rather than typed.
+
+    A comment or doc naming example whole-tree globs asks for this list instead of spelling one
+    by hand: an example that does not match every probe is filtered out, so `*.` (which matches
+    none of the probes and shipped in the reason's own comment for two rounds) cannot be
+    written, and neither can a prefix glob like `a*`. The rule the comment advocates, applied to
+    the comment."""
+    return tuple(c for c in candidates if len(_probe_hits(c.rstrip("/"))) == len(WINDOW_PROBES))
+
 
 def window_dir(root: Path | str) -> Path:
     """Where window records live, beside the in-flight sidecar."""
@@ -487,17 +518,26 @@ def everything_reason(claim) -> str | None:
     if pat == ".." or pat.startswith("../") or "/../" in pat or pat.endswith("/.."):
         return "it traverses out of the repository, so no literal pattern can match it"
     # ASK THE MATCHER'S QUESTION, DO NOT ENUMERATE SPELLINGS. Both matchers end in
-    # `fnmatch.fnmatch`, where a whole FAMILY of patterns matches every path - `**`, `***`,
-    # `?*`, `*.` and more. The previous version listed literal spellings and got `*` right only
-    # by accident, because `*` happened to be WINDOW_EVERYTHING sitting in the tuple. It never
-    # reasoned about globs at all, so `--paths '**'` printed "1 path(s) ... anything else
-    # proceeds" while every commit was refused. That was the FIFTH wrong version of this
-    # sentence, and the four before it were all enumerations too. Probing settles it by
+    # `fnmatch.fnmatch`, where a whole FAMILY of patterns matches every path. Example spellings
+    # are NOT typed here: `everything_glob_examples()` derives them from `WINDOW_PROBES`, so a
+    # spelling that does not match every probe cannot be listed (`*.` matched none and shipped in
+    # this very comment for two rounds). The previous version listed literal spellings and got
+    # `*` right only by accident, because `*` happened to be WINDOW_EVERYTHING sitting in the
+    # tuple. It never reasoned about globs at all, so `--paths '**'` printed "1 path(s) ...
+    # anything else proceeds" while every commit was refused. That was the FIFTH wrong version of
+    # this sentence, and the four before it were all enumerations too. Probing settles it by
     # construction: a claim that matches every one of these unrelated paths claims everything.
-    import fnmatch  # noqa: PLC0415 - local, as elsewhere in the matcher family
-    probes = ("a", "a/b.py", "z/y/x/w.md", "README", "x.y", ".githooks/pre-commit")
-    if all(s.startswith(pat + "/") or fnmatch.fnmatch(s, pat) for s in probes):
-        return "it is a glob matching every path the matcher probes"
+    #
+    # The reason REPORTS THE EVIDENCE, not a constant. It names the probes the matcher accepted,
+    # so the sentence varies with its input: an inverted clause that reports the opposite set
+    # names the wrong probes and a per-claim test catches it, where an `assertIn("glob", msg)`
+    # could not - the word survives its own denial. The whole-tree VERDICT is `len(hits) == len
+    # (WINDOW_PROBES)`, decided here and separately by `claims_everything`, never read off a word
+    # in the sentence. A claim matching every probe but not every path (`[a-zA-Z.]*` misses
+    # `9data.txt`) is therefore NOT everything, so the CLI stops claiming more than it probed.
+    hits = _probe_hits(pat)
+    if len(hits) == len(WINDOW_PROBES):
+        return "it is a glob and fnmatch accepts the matcher's probes [" + ", ".join(hits) + "]"
     return None
 
 

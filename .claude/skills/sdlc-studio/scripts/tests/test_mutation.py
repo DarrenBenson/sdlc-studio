@@ -2263,10 +2263,12 @@ class WindowOpenMessageTests(unittest.TestCase):
         # A BATTERY, not one path. Round 5: the previous oracle asked the matcher about a
         # SINGLE unrelated path, which cannot distinguish "claims everything" from "happens to
         # match this one" - so `*.md` or `*/*` would have failed it falsely, and the shape list
-        # had been chosen around exactly the families where the two agree by construction.
-        BATTERY = ("a", "a/b.py", "z/y/x/w.md", "README", "x.y", ".githooks/pre-commit")
+        # had been chosen around exactly the families where the two agree by construction. The
+        # battery is the module's own, so a shrunk `WINDOW_PROBES` is caught here too.
+        BATTERY = mut.WINDOW_PROBES
         for claim in ("", " ", "\t", ".", "./", "/abs/x.py", "..", "../x.py", "a/../b.py",
                       "*", "**", "***", "?*", "**/", "*.md", "*/*", "src/**/*.py",
+                      "a*", "[a-zA-Z.]*", "*.",
                       "tools/x.py", "tools/", "a" * 5000, 7, None, True, ["x"], {"a": 1}):
             with self.subTest(claim=claim):
                 mine = mut.claims_everything(claim)
@@ -2293,6 +2295,136 @@ class WindowOpenMessageTests(unittest.TestCase):
             self.assertNotIn("WHOLE TREE", msg)
             self.assertIn("tools/x.py", msg)
             self.assertIn("else proceeds", msg)
+
+    @staticmethod
+    def _actual_probe_hits(mut, claim: str) -> set:
+        """The probes `claim` really matches, recomputed here so the reason is checked against
+        the MATCHER rather than against another copy of itself."""
+        import fnmatch
+        pat = claim.strip()
+        if pat.startswith("./"):
+            pat = pat[2:]
+        pat = pat.rstrip("/")
+        return {s for s in mut.WINDOW_PROBES
+                if s.startswith(pat + "/") or fnmatch.fnmatch(s, pat)}
+
+    def test_the_reason_clause_reports_the_evidence_the_probe_produced(self) -> None:
+        """BG0259 AC1. Two claims decided by DIFFERENT branches must carry different evidence, so
+        the sentence varies with its input and cannot be satisfied by a constant. The glob branch
+        names the probes it matched; the dot branch names the root and borrows none of that."""
+        mut = _load()
+        dot = mut.everything_reason(".")
+        glob = mut.everything_reason("**")
+        self.assertIsNotNone(dot)
+        self.assertIsNotNone(glob)
+        self.assertNotEqual(dot, glob, "the reason must vary with the branch that decided it")
+        # the glob reason reports what the probe established: every probe it matched, named
+        hits = self._actual_probe_hits(mut, "**")
+        self.assertEqual(hits, set(mut.WINDOW_PROBES), "precondition: ** matches every probe")
+        for p in mut.WINDOW_PROBES:
+            self.assertIn(p, glob, f"the glob reason must name the probe {p!r} it matched")
+        # the dot branch reports its OWN evidence, not the glob's - a constant would share text
+        self.assertNotIn("a/b.py", dot)
+        self.assertNotIn("[", dot)
+
+    def test_an_inverted_reason_clause_fails_even_though_it_keeps_the_word_glob(self) -> None:
+        """BG0259 AC2, the whole of this bug. The glob branch rewritten to DENY the verdict
+        printed beside it - to report the probes it did NOT match - keeps the word `glob` the old
+        `assertIn("glob", msg)` pinned, and that assertion survived the inversion. This drives the
+        reason and the matcher over the SAME claim and asserts the reported probe set IS the
+        matched set, so a clause naming the opposite (or empty) set goes red while still saying
+        `glob`. Measured: with the branch inverted this test is RED; shipped, it is green."""
+        mut = _load()
+        import re
+        for claim in ("*", "**", "?*"):
+            with self.subTest(claim=claim):
+                reason = mut.everything_reason(claim)
+                self.assertIsNotNone(reason)
+                self.assertIn("glob", reason, "precondition: the reason names the glob branch")
+                inside = re.search(r"\[([^\]]*)\]", reason)
+                self.assertIsNotNone(inside, "the reason must enumerate the probes it reports")
+                named = {p for p in inside.group(1).split(", ") if p}
+                actual = self._actual_probe_hits(mut, claim)
+                self.assertEqual(
+                    named, actual,
+                    "the reason must report the probes the matcher ACCEPTED - an inverted clause "
+                    "names the opposite set and keeps the word 'glob'; a word check cannot see it")
+                self.assertEqual(actual, set(mut.WINDOW_PROBES),
+                                 f"{claim!r} is a whole-tree glob; every probe must be reported")
+
+    def test_a_claim_matching_every_probe_but_not_every_path_agrees_with_the_lane(self) -> None:
+        """BG0259 AC3. `[a-zA-Z.]*` matches every letter-or-dot probe, so before the fix the CLI
+        printed WHOLE TREE while `gate._window_claims("[a-zA-Z.]*", "9data.txt")` is False and that
+        commit proceeded - message and verdict contradicting each other on a real input. The fix
+        makes them agree: the probe battery includes a digit-leading path, so the claim is scoped,
+        not total, and the lane lets `9data.txt` through under a message that no longer overclaims."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                mut.main(["window", "open", "--root", str(root), "--owner", "r",
+                          "--paths", "[a-zA-Z.]*"])
+            msg = buf.getvalue()
+            (root / "9data.txt").write_text("digit-leading\n", encoding="utf-8")
+            gitutil.git(["add", "9data.txt"], cwd=root)
+            refused = self._lane(root)["count"]
+            # the CLI and the lane must AGREE on 9data.txt
+            if "WHOLE TREE" in msg:
+                self.assertEqual(refused, 1, "message claims the whole tree; the lane must refuse")
+            else:
+                self.assertEqual(refused, 0, "message scopes the window; the lane must let it pass")
+            # and specifically, after the fix, the claim is scoped and the commit proceeds
+            self.assertNotIn("WHOLE TREE", msg,
+                             "[a-zA-Z.]* matches every letter probe but not 9data.txt: not total")
+            self.assertEqual(refused, 0, "the lane must let a path the claim cannot match proceed")
+
+
+class EverythingReasonProbeTests(unittest.TestCase):
+    """The probe battery that decides "claims everything" is derived, wide, and load-bearing.
+
+    Two properties nothing exercised before BG0260: the comment's example globs must come from
+    the battery (so a wrong spelling like `*.` cannot be typed into it), and the battery must be
+    wide enough that a prefix glob is not read as the whole tree (so it cannot be shrunk to one
+    redundant probe)."""
+
+    def test_the_glob_examples_are_derived_from_the_probe_battery(self) -> None:
+        """BG0260 AC3. mutation.py's comment listed `*.` among patterns matching every path,
+        while `fnmatch` matches it against none of the six probes. Examples now come from
+        `everything_glob_examples`, which filters candidates by the battery, so a spelling that
+        does not match every probe cannot be offered."""
+        mut = _load()
+        import fnmatch
+        examples = mut.everything_glob_examples()
+        self.assertTrue(examples, "at least one glob family matches every probe")
+        for g in examples:
+            pat = g.rstrip("/")
+            for p in mut.WINDOW_PROBES:
+                self.assertTrue(
+                    p.startswith(pat + "/") or fnmatch.fnmatch(p, pat),
+                    f"{g!r} was offered as a whole-tree glob but misses the probe {p!r}")
+        # the two spellings the comment got wrong, filtered out by construction
+        self.assertNotIn("*.", examples, "`*.` matches none of the probes; it is not everything")
+        self.assertNotIn("a*", examples, "a prefix glob matches only part of the tree")
+
+    def test_a_prefix_glob_is_not_announced_as_the_whole_tree(self) -> None:
+        """BG0260 AC4. `a*` matches only the paths under `a`, not the tree. A battery shrunk from
+        seven probes to one passed the whole suite, and a one-probe battery announces WHOLE TREE
+        for `a*` while the matcher refuses only paths under `a`. `claims_everything` reads the
+        module battery, so shrinking `WINDOW_PROBES` makes the assertion below go red."""
+        mut = _load()
+        import fnmatch
+        self.assertFalse(mut.claims_everything("a*"),
+                         "a* is a prefix glob, not the whole tree")
+        self.assertIsNone(mut.everything_reason("a*"))
+        # the width is what refuses a*: a one-probe battery WOULD call it everything
+        hit = lambda probes: all(s.startswith("a/") or fnmatch.fnmatch(s, "a*") for s in probes)
+        self.assertTrue(hit(mut.WINDOW_PROBES[:1]),
+                        "a one-probe battery would wrongly read a* as the whole tree")
+        self.assertFalse(hit(mut.WINDOW_PROBES),
+                         "the full battery has a probe a* cannot match, so it is refused")
+        self.assertGreater(len(mut.WINDOW_PROBES), 1,
+                           "the battery must stay wider than one probe or a* masquerades as total")
 
 
 class LedgerSummaryVocabularyTests(unittest.TestCase):

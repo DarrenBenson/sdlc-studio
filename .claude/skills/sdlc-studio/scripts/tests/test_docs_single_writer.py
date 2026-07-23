@@ -153,6 +153,12 @@ def _forbids(raw: str, pattern: str, why: str, ac: str) -> list[str]:
 #     "does _not_ prove" is flagged where "does *not* prove" is clean.
 #   - QUOTATION SCOPE: fenced blocks and blockquotes are read as prose, so documentation
 #     QUOTING a forbidden sentence as an example of what not to write is flagged.
+#
+# THE CLOSING DISCLAIMER, which item 6 points at and a round-9 rewrite of the over-fire
+# paragraph deleted, leaving item 6 citing a block that no longer existed: this is a polarity
+# scan over named topics, not a semantic proof, and it is only as wide as the axes. Treat a
+# green result as no contradiction in the shapes enumerated here, never as proof the
+# documentation is consistent.
 
 #: Words that flip an assertion, looked for in the run-up to the asserting word.
 NEG_CUES = re.compile(r"\b(not|never|no|nobody|none|nothing|neither|nor|cannot|can't|doesn't|"
@@ -188,6 +194,15 @@ POLARITY_AXES = (
      (r"\bwindow\b",),
      r"\b(advisory|optional|informational|suggestion|cosmetic|toothless)\b", "negated"),
 )
+
+
+def _the_bound(src: str) -> str:
+    """THE BOUND comment block, from its heading to the `NEG_CUES` definition that follows it.
+    Sliced so a cross-reference test reads the enumeration and its disclaimer, not the whole
+    module - the test docstrings below repeat these phrases and must not be mistaken for them."""
+    start = src.index("# THE BOUND")
+    end = src.index("NEG_CUES = re.compile", start)
+    return src[start:end]
 
 
 def _polarity(docs: tuple[tuple[str, str], ...], ac: str) -> list[str]:
@@ -487,9 +502,69 @@ class DisclosedLimitsAreRealTests(unittest.TestCase):
         "A reviewer needn't declare a window.",
     ]
 
+    #: Which THE BOUND item each fixture list above exercises, mapped so coverage is a value the
+    #: test COMPUTES rather than a sentence the docstring asserts. Items 1, 2 and 3 have no
+    #: fixture (the escape they name is not reproducible as a shipped-doc line): an earlier
+    #: docstring claimed item 8 was the sole escape without one, which was false and is the class
+    #: of defect this class exists to catch. `None` records an item deliberately uncovered.
+    BOUND_FIXTURES = {
+        1: None, 2: None, 3: None,
+        4: LAUNDERED, 5: NO_ASSERTING_WORD, 6: UNDERSCORE_EMPHASIS,
+        7: PARTIAL_TOPIC, 8: OUT_OF_VOCAB_DENIAL,
+    }
+
+    def test_which_bound_items_have_fixtures_is_derived_not_asserted(self) -> None:
+        """BG0260 F1. THE BOUND enumerates escapes 1..N; which of them carry a fixture here is
+        derived by enumerating `BOUND_FIXTURES` and comparing against the items THE BOUND names,
+        so a coverage claim cannot be wrong in prose while the fixtures say otherwise."""
+        src = Path(__file__).read_text(encoding="utf-8")
+        bound = _the_bound(src)
+        enumerated = {int(n) for n in re.findall(r"^#\s+(\d+)\.", bound, re.M)}
+        self.assertTrue(enumerated, "THE BOUND must enumerate its escapes")
+        # every mapped item is one THE BOUND actually names, and vice versa: no drift either way
+        self.assertEqual(set(self.BOUND_FIXTURES), enumerated,
+                         "the fixture map and THE BOUND's enumeration must cover the same items")
+        covered = {n for n, fx in self.BOUND_FIXTURES.items() if fx}
+        uncovered = enumerated - covered
+        self.assertEqual(
+            uncovered, {1, 2, 3},
+            "items 1, 2 and 3 have no fixture; the claim that item 8 was the only one was false")
+        # each mapped fixture must be a non-empty list this class actually defines
+        for item in covered:
+            self.assertTrue(self.BOUND_FIXTURES[item], f"item {item}'s fixture list is empty")
+        # the retired false claim must not creep back into prose - coverage is derived here.
+        # The needle is assembled so this guard does not itself plant the phrase it forbids.
+        needle = "only enumerated escape" + " with no fixture"
+        self.assertNotIn(needle, src,
+                         "coverage is computed by this test; do not re-assert it in a docstring")
+
+    def test_every_cross_reference_in_the_bound_resolves_within_this_module(self) -> None:
+        """BG0260 F2. Item 6 says "the closing disclaimer below"; a round-9 rewrite deleted that
+        disclaimer, so the cross-reference pointed at a block that no longer existed for two
+        rounds. Every "item N" reference must name an enumerated item, and the closing disclaimer
+        must exist below the reference that calls it 'below'."""
+        src = Path(__file__).read_text(encoding="utf-8")
+        bound = _the_bound(src)
+        enumerated = {int(n) for n in re.findall(r"^#\s+(\d+)\.", bound, re.M)}
+        for ref in re.findall(r"item (\d+)", bound):
+            self.assertIn(int(ref), enumerated,
+                          f"THE BOUND cites item {ref}, which it does not enumerate")
+        # flatten comment-continuation wraps so a phrase split across two `# ` lines still reads
+        flat = re.sub(r"\n#\s*", " ", bound)
+        # item 6's "closing disclaimer below" must resolve to a disclaimer that sits below it
+        self.assertIn("closing disclaimer below", flat,
+                      "item 6's cross-reference is the one this guards")
+        disclaimer = "polarity scan over named topics, not a semantic proof"
+        self.assertIn(disclaimer, flat, "the closing disclaimer item 6 points at is missing")
+        self.assertLess(
+            flat.index("closing disclaimer below"), flat.index(disclaimer),
+            "the disclaimer item 6 calls 'below' must actually sit below the reference to it")
+
     def test_the_out_of_vocabulary_cue_gap_is_real_and_still_open(self) -> None:
-        """Item 8, which was the only enumerated escape with no fixture - and this class
-        docstring says a disclosed limit that nothing exercises is just a sentence."""
+        """Item 8, a polarity cue outside NEG_CUES. Which enumerated escapes still lack a fixture
+        is derived by `test_which_bound_items_have_fixtures_is_derived_not_asserted`, not claimed
+        here: the earlier line naming item 8 as the sole escape without a fixture was false, since
+        items 1 to 3 lack one too."""
         sprint, review = read_docs()
         for line in self.OUT_OF_VOCAB_DENIAL:
             with self.subTest(line=line):
