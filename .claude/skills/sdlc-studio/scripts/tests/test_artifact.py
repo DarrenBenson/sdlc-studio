@@ -1684,5 +1684,81 @@ class ProseWriterSweepTests(unittest.TestCase):
                             "delete the entry rather than leaving a claim nothing checks")
 
 
+class AffectsValidatedAtMintTests(unittest.TestCase):
+    """US0324: `artifact new` refuses a declared `Affects` that resolves to nothing BEFORE an id
+    is allocated - minting nothing - while a path to a file the unit will CREATE stays legitimate,
+    and a recorded grooming opt-out downgrades the refusal to a warning."""
+
+    def _story_repo(self) -> tuple[Path, tempfile.TemporaryDirectory]:
+        td = tempfile.TemporaryDirectory()
+        repo = Path(td.name)
+        _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+        _epic(repo)
+        return repo, td
+
+    def test_new_refuses_an_unresolvable_affects_and_allocates_no_id(self) -> None:
+        repo, td = self._story_repo()
+        with td:
+            idx = repo / "sdlc-studio" / "stories" / "_index.md"
+            before = idx.read_text(encoding="utf-8")
+            with self.assertRaises(ValueError) as cm:
+                artifact.new(repo, "story", "wrong path",
+                             {"epic": "EP0001", "points": 3, "affects": "ghost/nope.py"})
+            self.assertIn("resolves to nothing", str(cm.exception))
+            # nothing written: no story file, the index byte-identical
+            stories = [p for p in (repo / "sdlc-studio" / "stories").glob("*.md")
+                       if p.name != "_index.md"]
+            self.assertEqual(stories, [])
+            self.assertEqual(idx.read_text(encoding="utf-8"), before)
+            # ... and no id burnt: the next SUCCESSFUL mint takes US0001, the refused call's id
+            ok = artifact.new(repo, "story", "real path",
+                              {"epic": "EP0001", "points": 3, "affects": "src/thing.py"})
+            self.assertEqual(ok["id"], "US0001")
+
+    def test_a_partly_unresolvable_affects_still_mints(self) -> None:
+        # One existing file + one the unit will CREATE is the ordinary case; the check refuses
+        # only when NO declared path resolves. Verified through artifact.new AND refine.apply.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo)
+            affects = "src/thing.py, src/not-written-yet.py"
+            r = artifact.new(repo, "story", "half new",
+                             {"epic": "EP0001", "points": 3, "affects": affects})
+            body = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertEqual(sdlc_md.affects_files(body),
+                             ["src/thing.py", "src/not-written-yet.py"])  # stored verbatim
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "sdlc-studio" / "change-requests").mkdir(parents=True)
+            (repo / "src").mkdir()
+            (repo / "src" / "thing.py").write_text("", encoding="utf-8")
+            (repo / "sdlc-studio" / "change-requests" / "CR0001-x.md").write_text(
+                "# CR-0001: t\n\n> **Status:** Approved\n> **Priority:** P1\n"
+                "> **Type:** Improvement\n> **Size:** L\n\n## Summary\n\ns\n\n## Impact\n\ni\n",
+                encoding="utf-8")
+            refine = __import__("refine")
+            res = refine.refine(repo, "CR0001", "E",
+                                [("S", 3, "src/thing.py, src/not-written-yet.py")],
+                                skip_personas=True)
+            story = sdlc_md.find_by_id(repo, res["stories"][0])[0]
+            self.assertEqual(sdlc_md.affects_files(story.read_text(encoding="utf-8")),
+                             ["src/thing.py", "src/not-written-yet.py"])
+
+    def test_the_recorded_opt_out_downgrades_the_refusal_to_a_warning(self) -> None:
+        import contextlib
+        import io
+        repo, td = self._story_repo()
+        with td:
+            (repo / "sdlc-studio" / ".config.yaml").write_text(
+                "sprint:\n  breakdown: judgement\n", encoding="utf-8")
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                r = artifact.new(repo, "story", "opted out",
+                                 {"epic": "EP0001", "points": 3, "affects": "ghost/nope.py"})
+            self.assertTrue(Path(r["path"]).exists())          # minted: the operator opted out
+            self.assertIn("resolves to nothing", err.getvalue())  # ... but never quietly
+
+
 if __name__ == "__main__":
     unittest.main()

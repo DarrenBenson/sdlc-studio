@@ -372,5 +372,36 @@ class RealMarkdownlintTests(unittest.TestCase):
             self.assertEqual(self._md024_from_markdownlint(bad), ["MD024"])
 
 
+class AffectsValidatedAtMintTests(unittest.TestCase):
+    """US0324: refine mints its epic and stories under one rollback guard, so a bad `Affects` in
+    the LAST story of a batch must refuse before the FIRST artefact exists - the run stops rather
+    than rolling back what it already wrote."""
+
+    def test_apply_refuses_the_whole_batch_before_minting_the_epic(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the request is satisfied"])
+            (root / "src").mkdir()
+            (root / "src" / "real.py").write_text("", encoding="utf-8")
+            cr_before = (root / "sdlc-studio" / "change-requests"
+                         / "CR0001-x.md").read_text(encoding="utf-8")
+            with self.assertRaises(ValueError) as cm:
+                refine.refine(root, "CR0001", "Batch epic",
+                              [("A", 2, None), ("B", 3, "src/real.py"),
+                               ("C", 2, "wrongdir/ghost.py")],  # only the third is unresolvable
+                              skip_personas=True)
+            msg = str(cm.exception)
+            self.assertIn("wrongdir/ghost.py", msg)            # names the offending path
+            self.assertIn("'C'", msg)                          # ... and the story that carried it
+            # the tree is untouched: no epic, none of the three stories, CR unchanged
+            self.assertFalse((root / "sdlc-studio" / "epics").exists()
+                             and any((root / "sdlc-studio" / "epics").glob("EP*.md")))
+            stories_dir = root / "sdlc-studio" / "stories"
+            minted = list(stories_dir.glob("US*.md")) if stories_dir.exists() else []
+            self.assertEqual(minted, [])
+            self.assertEqual((root / "sdlc-studio" / "change-requests"
+                              / "CR0001-x.md").read_text(encoding="utf-8"), cr_before)
+
+
 if __name__ == "__main__":
     unittest.main()

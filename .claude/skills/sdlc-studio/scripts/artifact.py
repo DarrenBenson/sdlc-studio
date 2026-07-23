@@ -672,6 +672,11 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     # SAME authority the filer uses, so the two creation paths cannot disagree about what a
     # CR/bug acceptance criterion means (nothing executes it - only a story's Verify line runs).
     file_finding.check_prose_acs(type_, f)
+    # A declared `Affects` that resolves to nothing is refused HERE, from the ONE seam every
+    # writer shares - so a story minted through `new` cannot carry a fictional footprint any more
+    # than a bug filed through the finding filer can. Refuses only when NO declared path resolves
+    # (a not-yet-created file alongside an existing one is legitimate); names the closest basename.
+    file_finding.check_affects_resolvable(root, f.get("affects"), type_)
     f["date"] = f.get("date") or date.today().isoformat()
     f["_root"] = str(root)   # so the renderer can read the project's enforcement (US0128)
     # A bug or a CR created here is a unit `sprint plan` will be asked to plan, and this is a
@@ -791,6 +796,10 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
         try:  # an injected line in item N aborts the batch here, before any id is reserved
             sdlc_md.check_creator_fields(it)
             file_finding.check_prose_acs(type_, it)  # ... as does a pseudo-`Verify:` criterion
+            # ... as does a declared `Affects` that resolves to nothing, from the shared seam -
+            # so a bad path in ANY item aborts the whole batch here, before an id is reserved.
+            file_finding.check_affects_resolvable(root, it.get("affects"), type_,
+                                                  label=str(it.get("title") or f"item {i}"))
             if groom_preview is not None:  # ... as does a bug/CR the planner would refuse to plan
                 file_finding.check_groomed(root, type_, groom_preview(
                     type_, "PREVIEW", str(it.get("title") or ""), today,

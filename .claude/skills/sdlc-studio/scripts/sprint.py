@@ -1516,7 +1516,8 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
         # stale rename - and every downstream consumer then treats a guess wearing a path as a
         # sized unit. A path to a file the unit will CREATE cannot resolve yet, so SOME unresolved
         # paths are legitimate; ALL of them is the error. Unresolvable paths are named either way.
-        unresolvable = [p for p in declared if _resolve(root, p) is None]
+        import file_finding  # noqa: PLC0415 - local: the ONE resolvable-Affects seam, shared with every writer
+        unresolvable = file_finding.unresolvable_affects(root, declared)
         points = _declared_size(text)
         # THE COLLISION ANALYSIS SEES BOTH; THE GROOMING GATE BELOW SEES ONLY `declared`.
         # Test files are almost never declared, so the file parallel work most often shares
