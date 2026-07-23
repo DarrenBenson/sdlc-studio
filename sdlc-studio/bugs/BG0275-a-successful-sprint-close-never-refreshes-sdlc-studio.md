@@ -55,3 +55,4 @@ states something false, in the one file the doctrine points every new context at
 - **Given** a close where sign-off is genuinely still owed
 - **Then** the anchor says so, and where it is not owed it says that instead - the reader never has to diff the anchor against the run state to learn which is true
 - **Verify:** manual
+| 2026-07-24 | sdlc-studio | Fixed and mutation-proven |

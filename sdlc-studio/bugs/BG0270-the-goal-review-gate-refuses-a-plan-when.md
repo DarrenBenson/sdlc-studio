@@ -76,3 +76,4 @@ names only achievability while being triggered by either field.
 - **When** the goal review is recorded and rendered
 - **Then** no output states that a seat judged the goal NOT achievable, because none did
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ThemedBatchNotAnObjectionTests::test_the_refusal_message_never_misreports_achievability
+| 2026-07-24 | sdlc-studio | Fixed and mutation-proven |

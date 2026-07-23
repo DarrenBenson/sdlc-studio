@@ -3885,7 +3885,12 @@ class CloseReportDisabledTests(_CloseReportBase):
             rc, out, err = self._close(mod, root)
             self.assertEqual(rc, 0, err)
             self.assertNotIn("Sprint report - RETRO0001", out)   # no page
-            self.assertIn("[6/6] reconcile", out)                # the chain still completed
+            # The chain still completed. Derived from the module, never a hardcoded index: the
+            # old `[6/6]` pinned a step COUNT, so adding a step failed a test about report
+            # rendering, which is not what it is meant to guard.
+            last = len(mod._CLOSE_CHAIN)
+            self.assertIn(f"[{last}/{last}] {mod._CLOSE_CHAIN[-1]}", out)
+            self.assertIn("reconcile: ok", out)
             self.assertIn("sign-off request", out.lower())       # the brief still printed
 
     def test_exit_code_is_the_same_as_with_rendering_on(self) -> None:
@@ -6454,6 +6459,98 @@ class SprintFieldsFileTests(unittest.TestCase):
             self.assertEqual(rc, 2)
             self.assertNotIn("sprint_goal_verdict", json.loads(
                 (root / "sdlc-studio" / ".local" / "run-state.json").read_text()))
+
+
+class ThemedBatchNotAnObjectionTests(_GoalReviewFixture):
+    """BG0270: `achievable=no` is an objection; `one_increment=no` is a classification. Folding
+    them into one blocking predicate refused every themed batch and misreported the seats."""
+
+    def _seats_all_achievable_but_themed(self, s, root):
+        return self._record(s, root, "--goal", "clear the backlog",
+                            "--seat", "product|yes|backlog at zero|no - a themed clearance batch",
+                            "--seat", "engineering|yes|gate green throughout|no - twelve groups",
+                            "--seat", "qa|yes|every AC red then green|no - themed")
+
+    def test_one_increment_no_alone_does_not_refuse_the_plan(self):
+        s = _load()
+        root = self._project()
+        self._seats_all_achievable_but_themed(s, root)
+        status = s.goal_review_status(root, "clear the backlog")
+        self.assertTrue(status["reviewed"])
+        self.assertFalse(status["objected"])        # nobody objected to achievability
+        self.assertEqual(status["objections"], [])
+        self.assertEqual(len(status["themed"]), 3)  # ...and the classification is kept
+
+    def test_an_achievable_no_still_refuses(self):
+        s = _load()
+        root = self._project()
+        self._record(s, root, "--goal", "boil the ocean",
+                     "--seat", "product|yes|shipped|yes",
+                     "--seat", "engineering|no - not at this appetite|shipped|yes")
+        status = s.goal_review_status(root, "boil the ocean")
+        self.assertTrue(status["objected"])          # a real objection still blocks
+        self.assertEqual([o["seat"] for o in status["objections"]], ["engineering"])
+
+    def test_the_themed_batch_note_is_reported(self):
+        import contextlib, io
+        s = _load()
+        root = self._project()
+        self._seats_all_achievable_but_themed(s, root)
+        status = s.goal_review_status(root, "clear the backlog")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            s._render_goal_review({"goal_review": status, "sprint_goal": "clear the backlog"})
+        self.assertIn("THEMED BATCH", buf.getvalue())   # the information is not lost
+
+    def test_the_refusal_message_never_misreports_achievability(self):
+        s = _load()
+        root = self._project()
+        _, out = self._seats_all_achievable_but_themed(s, root)
+        # the exact false sentence this bug produced, over seats that all said achievable=yes
+        self.assertNotIn("judged it NOT achievable", out)
+        self.assertIn("THEMED", out.upper())
+
+
+class ReviewAnchorRefreshTests(unittest.TestCase):
+    """BG0275: only the BLOCKED close path touched the review anchor, so a successful close left
+    the previous run's state standing - including a sign-off that had already landed."""
+
+    def _repo(self, anchor_text=None):
+        d = Path(tempfile.mkdtemp(prefix="anchor_"))
+        (d / "sdlc-studio" / "reviews").mkdir(parents=True)
+        if anchor_text is not None:
+            (d / "sdlc-studio" / "reviews" / "LATEST.md").write_text(anchor_text, encoding="utf-8")
+        return d
+
+    def test_a_successful_close_states_this_runs_outcome_not_the_previous_one(self):
+        s = _load()
+        stale = ("# Reviews - LATEST (anchor)\n\n"
+                 "> **RUN-OLD delivered 43 units.** Sign-off is owed and is the operator's.\n\n"
+                 "## Where the pipeline is\n\nnarrative that must survive\n")
+        d = self._repo(stale)
+        s.refresh_review_anchor(d, "RUN-NEW", "goal-reached", 19, signoff_owed=False)
+        text = (d / "sdlc-studio" / "reviews" / "LATEST.md").read_text(encoding="utf-8")
+        self.assertIn("RUN-NEW closed goal-reached", text)
+        self.assertIn("Sign-off is RECORDED", text)          # states that nothing is owed
+        self.assertIn("narrative that must survive", text)   # the prose is untouched
+
+    def test_the_block_is_replaced_in_place_not_appended_on_each_close(self):
+        s = _load()
+        d = self._repo("# Reviews - LATEST (anchor)\n\nprose\n")
+        s.refresh_review_anchor(d, "RUN-A", "goal-reached", 5, signoff_owed=True)
+        s.refresh_review_anchor(d, "RUN-B", "partial", 7, signoff_owed=False)
+        text = (d / "sdlc-studio" / "reviews" / "LATEST.md").read_text(encoding="utf-8")
+        self.assertEqual(text.count(s.ANCHOR_BEGIN), 1)      # one block, not two
+        self.assertIn("RUN-B closed partial", text)
+        self.assertNotIn("RUN-A", text)
+
+    def test_an_owed_signoff_is_named_and_a_recorded_one_is_stated_plainly(self):
+        s = _load()
+        owed = s.anchor_status_block("RUN-X", "goal-reached", 3, signoff_owed=True)
+        done = s.anchor_status_block("RUN-X", "goal-reached", 3, signoff_owed=False)
+        self.assertIn("OWED", owed)
+        self.assertIn("RECORDED", done)
+        self.assertNotEqual(owed, done)   # the reader never has to diff it against the run state
 
 
 class RateProvenanceExhaustiveTests(unittest.TestCase):

@@ -2000,11 +2000,20 @@ def goal_review_status(repo_root: Path | str, sprint_goal: str | None,
     seats = [s for s in (latest.get("seats") or []) if isinstance(s, dict)
              and all(str(s.get(f) or "").strip() for f in GOAL_REVIEW_FIELDS)]
     if seats and _norm_goal(latest.get("goal")) == _norm_goal(sprint_goal):
+        # TWO DIFFERENT ANSWERS, never one predicate. `achievable = no` is an OBJECTION: a seat
+        # saying the goal cannot be met by this batch must stop the plan. `one_increment = no` is
+        # a CLASSIFICATION: it says the batch is not one atomic increment, which a themed batch
+        # (a tooling sweep, a bug-fix clearance, an audit remediation) legitimately is not. Folding
+        # them into one blocking test refused every themed sprint and, worse, REPORTED those seats
+        # as having judged the goal unachievable when they had judged the opposite.
         objections = [{"seat": s.get("seat"), "achievable": s.get("achievable"),
                        "one_increment": s.get("one_increment"), "note": s.get("note", "")}
                       for s in seats
-                      if verdict_polarity(s.get("achievable")) == "no"
-                      or verdict_polarity(s.get("one_increment")) == "no"]
+                      if verdict_polarity(s.get("achievable")) == "no"]
+        themed = [{"seat": s.get("seat"), "one_increment": s.get("one_increment"),
+                   "note": s.get("note", "")}
+                  for s in seats
+                  if verdict_polarity(s.get("one_increment")) == "no"]
         reviewed_roles = {str(s.get("seat") or "").strip() for s in seats}
         needs_reconsult = sorted(r for r in base["available_seats"]
                                  if r not in reviewed_roles)
@@ -2014,6 +2023,9 @@ def goal_review_status(repo_root: Path | str, sprint_goal: str | None,
                 "amended_from": latest.get("amended_from"),
                 "requesting_seat": latest.get("requesting_seat"),
                 "needs_reconsult": needs_reconsult,
+                # `themed` is ADVICE the operator reads, never a gate: it is surfaced so that
+                # separating the two answers loses no information.
+                "themed": themed,
                 "objected": bool(objections), "objections": objections, "reason": None}
     if not base["available_seats"]:
         # The gate demands a review of seats that EXIST; this project has none of its own.
@@ -2347,6 +2359,13 @@ def _render_goal_review(data: dict) -> None:
             print(f"    {s.get('seat', '?')}: achievable={s.get('achievable')}, "
                   f"one increment={s.get('one_increment')}, done means "
                   f"\"{s.get('done_means')}\"")
+        themed = review.get("themed") or []
+        if themed and not review.get("objected"):
+            # Surfaced as ADVICE so separating it from achievability loses no information: the
+            # operator still learns the seats called this a themed batch.
+            print(f"    THEMED BATCH: {len(themed)} seat(s) judged this not one atomic increment "
+                  f"({', '.join(str(t.get('seat')) for t in themed)}) while finding the goal "
+                  f"achievable - a classification, not an objection; the plan is not refused")
         return
     print(f"  goal review: the Sprint Goal went UNREVIEWED - {review['reason']}")
 
@@ -3322,7 +3341,89 @@ def _only_blocked_derivable_drift(root, blocked) -> bool:
 # Chain order is the ceremony's order; cmd_close resolves each step through globals() at
 # call time so a test can patch one step without rebuilding the table.
 _CLOSE_CHAIN = ("retro-validate", "retro-extract", "lessons-summary",
-                "gate", "handoff", "reconcile")
+                "gate", "handoff", "reconcile", "review-anchor")
+
+#: The machine-maintained status block inside the review anchor. DELIMITED, because the anchor is
+#: a hand-written document a fresh context is told to read first: the close must refresh the facts
+#: without overwriting a word of the reading around them. Before this, only the blocked
+#: `--file-and-close` path touched the anchor, so a SUCCESSFUL close left the previous run's state
+#: standing - and an anchor that says a landed sign-off is still owed misleads the very reader the
+#: doctrine sends there.
+ANCHOR_BEGIN = "<!-- close-status:begin -->"
+ANCHOR_END = "<!-- close-status:end -->"
+
+
+def anchor_status_block(run_id: str, outcome: str, units: int, signoff_owed: bool) -> str:
+    """The status the close stamps on the anchor. It states what is owed, or states plainly that
+    nothing is - a reader must never have to diff this against the run state to learn which."""
+    owed = ("**Sign-off is OWED and is the operator's** - the two-role gate holds Done."
+            if signoff_owed else
+            "**Sign-off is RECORDED** - nothing is owed on this run.")
+    return (f"{ANCHOR_BEGIN}\n"
+            f"> **{run_id} closed {outcome}.** {units} unit(s) in the batch. {owed}\n"
+            f"> Stamped by `sprint close` - edit the prose below, not this block.\n"
+            f"{ANCHOR_END}")
+
+
+def refresh_review_anchor(repo_root: Path | str, run_id: str, outcome: str, units: int,
+                          signoff_owed: bool) -> str:
+    """Replace (or insert) the status block in `sdlc-studio/reviews/LATEST.md`. Returns the verb
+    for the close line. Never rewrites the narrative: an existing block is swapped in place, and
+    a missing one is inserted just after the H1."""
+    anchor = Path(repo_root) / "sdlc-studio" / "reviews" / "LATEST.md"
+    block = anchor_status_block(run_id, outcome, units, signoff_owed)
+    if not anchor.is_file():
+        anchor.parent.mkdir(parents=True, exist_ok=True)
+        sdlc_md.atomic_write(anchor, f"# Reviews - LATEST (anchor)\n\n{block}\n")
+        return "created"
+    text = anchor.read_text(encoding="utf-8")
+    if ANCHOR_BEGIN in text and ANCHOR_END in text:
+        start = text.index(ANCHOR_BEGIN)
+        end = text.index(ANCHOR_END) + len(ANCHOR_END)
+        sdlc_md.atomic_write(anchor, text[:start] + block + text[end:])
+        return "refreshed"
+    lines = text.splitlines()
+    at = next((i + 1 for i, ln in enumerate(lines) if ln.startswith("# ")), 0)
+    sdlc_md.atomic_write(anchor, "\n".join(lines[:at] + ["", block] + lines[at:]) + "\n")
+    return "inserted"
+
+
+def _signoff_owed(repo_root: Path | str, state: dict) -> bool:
+    """True while any unit in the batch has not reached a terminal status. Done is what the
+    sign-off buys, so a batch fully terminal is a batch whose sign-off landed."""
+    root = Path(repo_root)
+    for entry in (state or {}).get("batch") or []:
+        uid = entry.get("id") if isinstance(entry, dict) else entry
+        if not uid:
+            continue
+        hit = sdlc_md.find_by_id(root, str(uid))
+        if not hit:
+            return True
+        path, type_ = hit
+        status = sdlc_md.canonical_status(
+            sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status"),
+            sdlc_md.status_vocab(type_, root))
+        if not sdlc_md.is_terminal_status(type_, status or ""):
+            return True
+    return False
+
+
+def _close_review_anchor(root, retro, state):
+    """Refresh the review anchor so it states THIS run's outcome rather than the previous run's."""
+    try:
+        st = run_state.read(root) or state or {}
+    except Exception as exc:  # noqa: BLE001 - a close must not die on a state read
+        sdlc_md.debug("sprint._close_review_anchor", exc)
+        st = state or {}
+    run_id = st.get("run_id") or "(unknown run)"
+    outcome = st.get("outcome") or "closed"
+    units = len(st.get("batch") or [])
+    try:
+        verb = refresh_review_anchor(root, run_id, outcome, units, _signoff_owed(root, st))
+    except OSError as exc:
+        return False, f"the review anchor could not be written: {exc}", \
+               "check sdlc-studio/reviews/LATEST.md is writable, then re-run close"
+    return True, f"review anchor {verb}: {run_id} closed {outcome}", ""
 
 
 def _mutation_note(root) -> str:
@@ -5094,11 +5195,18 @@ def cmd_goal_review(args) -> int:
         rnd["brief"] = brief
     rounds.append(rnd)
     sdlc_md.atomic_write(path, json.dumps({"rounds": rounds}, indent=2) + "\n")
-    objected = [s["seat"] for s in seats
-                if verdict_polarity(s.get("achievable")) == "no"
-                or verdict_polarity(s.get("one_increment")) == "no"]
+    # Report each answer as the answer it actually is. Saying "judged it NOT achievable" over a
+    # seat that judged it achievable is a false statement about a recorded verdict, and it is the
+    # sentence the operator reads when deciding whether to override.
+    objected = [s["seat"] for s in seats if verdict_polarity(s.get("achievable")) == "no"]
+    themed_seats = [s["seat"] for s in seats
+                    if verdict_polarity(s.get("one_increment")) == "no"]
     tail = (f" - {len(objected)} seat(s) judged it NOT achievable ({', '.join(objected)}); "
             f"`sprint plan` will refuse it unless overridden" if objected else "")
+    if themed_seats and not objected:
+        tail += (f" - {len(themed_seats)} seat(s) classed it a THEMED batch, not one increment "
+                 f"({', '.join(themed_seats)}); that is advice, not an objection, and does not "
+                 f"refuse the plan")
     carried_note = (f", carried {carried[0]['seat']}'s verdict forward" if carried else "")
     print(f"recorded {len(seats)} seat verdict(s) on \"{goal}\" (round {len(rounds)})"
           f"{carried_note}{tail} -> {path}")
