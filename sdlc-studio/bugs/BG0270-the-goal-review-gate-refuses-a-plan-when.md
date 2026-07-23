@@ -24,6 +24,23 @@ Note the shape: two distinct seat answers were folded into one blocking predicat
 
 Split the two answers in `goal_review_status`. Build `objections` from `achievable == 'no'` alone - that is the answer that means a seat thinks the goal cannot be met. Report `one_increment == 'no'` separately as an advisory (e.g. `themed_batch` or `not_atomic`), printed in the plan so the operator sees the seats' framing, but NOT added to the refusal set. A themed batch endorsed by every seat must plan without an override; reserve the override for a real achievable-no a human chooses to overrule.
 
+## Second live occurrence (Sprint 2 opening, 2026-07-24)
+
+Reproduced opening Sprint 2, in the ordinary course of work rather than a contrived fixture. All
+three seats recorded `achievable = yes` and endorsed the batch; all three recorded
+`one_increment = no`, each spelling out WHY it is not an objection ("a themed clearance batch of
+independent fixes, which is the honest classification, not an objection"). The command replied:
+
+    3 seat(s) judged it NOT achievable (product, engineering, qa)
+
+That sentence is FALSE. No seat judged it unachievable; every one judged the opposite. So the
+defect is not only that a themed batch is blocked - it is that the tool REPORTS the seats as
+having said something they did not say, and that false sentence is what the operator reads when
+deciding whether to override.
+
+This raises the fix bar: separating the two answers must also correct the message, which today
+names only achievability while being triggered by either field.
+
 ## Acceptance Criteria
 
 ### AC1: a one-increment `no` does not block a plan every seat finds achievable
@@ -52,3 +69,10 @@ Split the two answers in `goal_review_status`. Build `objections` from `achievab
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Filed |
+
+### AC4: the refusal never reports a verdict the seats did not give
+
+- **Given** seats answering achievable=yes and one_increment=no
+- **When** the goal review is recorded and rendered
+- **Then** no output states that a seat judged the goal NOT achievable, because none did
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ThemedBatchNotAnObjectionTests::test_the_refusal_message_never_misreports_achievability

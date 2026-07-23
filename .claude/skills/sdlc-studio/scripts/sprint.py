@@ -2694,6 +2694,22 @@ def _render_cross_lessons(data: dict) -> None:
               f"full order, `lessons recall` to read one)")
 
 
+#: What stood in place of the refused velocity record, one sentence per rate source.
+#: EXHAUSTIVE BY TEST, never by argument. An earlier version was a two-key lookup whose docstring
+#: PROVED the domain closed; two later features each added a source to it - the fitted fixed term,
+#: and the rung-aware marginal - and each break surfaced as a KeyError at an operator's plan
+#: rather than in CI. Three of the five sources crashed before this was made total.
+#: `test_every_rate_source_is_handled` iterates the module's RATE_* constants, so the next source
+#: added fails a test instead of a sprint.
+_RATE_STOOD_INSTEAD = {
+    RATE_EVIDENCE: "the per-unit evidence log stands instead",
+    RATE_SEED: "the seed stands instead",
+    RATE_FIXED_FIT: "the fitted fixed-term marginal stands instead",
+    RATE_VELOCITY: "the velocity record's own surviving rate stands",
+    RATE_UNMEASURED_RUNG: "nothing stands: this rung prices no marginal at all",
+}
+
+
 def _render_rate_provenance(tf: dict) -> None:
     """Why THIS rate and not another one - printed with the rate, never three blocks away.
 
@@ -2710,8 +2726,10 @@ def _render_rate_provenance(tf: dict) -> None:
     generic fallback sentence under that pair could not be reached, and unreachable prose is one
     more claim nothing checks."""
     if tf.get("rate_refused"):
-        instead = {RATE_EVIDENCE: "the per-unit evidence log stands instead",
-                   RATE_SEED: "the seed stands instead"}[tf["rate_source"]]
+        instead = _RATE_STOOD_INSTEAD.get(
+            tf["rate_source"],
+            f"an unmapped rate source ({tf['rate_source']}) stands - its provenance sentence "
+            f"is missing, which is a defect in this renderer, not in the forecast")
         print(f"    the velocity record yields no usable rate - {tf['rate_refused']} "
               f"Nothing is averaged across that boundary, so {instead}")
     if tf["rate_source"] != RATE_SEED:

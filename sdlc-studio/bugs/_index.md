@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 9 |
+| Open | 11 |
 | In Progress | 0 |
 | Fixed | 184 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **276** |
+| **Total** | **278** |
 
 ## All Bugs
 
@@ -243,6 +243,8 @@
 | [BG0274](BG0274-artifact-retitle-write-phase-is-a-sequence-of.md) | artifact.retitle write phase is a sequence of independent writes with no rollback, so a fault mid-loop (e.g. an unreadable reference file) leaves the file renamed and index updated but inbound references half-rewritten | Open | -- | 2026-07-23 | 2026-07-23 |
 | [BG0275](BG0275-a-successful-sprint-close-never-refreshes-sdlc-studio.md) | a successful sprint close never refreshes sdlc-studio/reviews/LATEST.md, so the review anchor AGENTS.md orders every agent to re-anchor on still states the previous run's owed sign-off after that sign-off landed | Open | -- | 2026-07-23 | 2026-07-23 |
 | [BG0276](BG0276-conformance-reports-ungroomed-0-while-31-stories-carry.md) | conformance reports ungroomed=0 while 31 stories carry the bare {{define}} scaffold: US0411's machine-visible ungroomed count recognises only the new marker, so every story minted before it is invisible to the very count meant to surface them | Open | -- | 2026-07-24 | 2026-07-24 |
+| [BG0277](BG0277-the-seat-brief-is-circular-goal-review-brief.md) | the seat brief is circular: goal-review brief derives from the persisted sprint-plan.json, but the goal review it informs gates plan --write, so on a new sprint the brief silently describes the PREVIOUS batch | Open | -- | 2026-07-24 | 2026-07-24 |
+| [BG0278](BG0278-sprint-plan-crashes-with-keyerror-fixed-fit-once.md) | sprint plan CRASHES with KeyError fixed-fit once a project has enough measured sprints to apply the fixed-term fit: the fixed-fit branch overrides rate_source but leaves rate_refused set, breaking the exhaustive-lookup invariant _render_rate_provenance documents | Open | High | 2026-07-24 | 2026-07-24 |
 
 ## Archived Releases
 

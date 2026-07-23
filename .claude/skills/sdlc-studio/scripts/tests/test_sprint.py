@@ -6456,5 +6456,40 @@ class SprintFieldsFileTests(unittest.TestCase):
                 (root / "sdlc-studio" / ".local" / "run-state.json").read_text()))
 
 
+class RateProvenanceExhaustiveTests(unittest.TestCase):
+    """BG0278: the provenance lookup was two keys wide with a docstring proving the domain closed.
+    Two later features each added a source; three of five crashed at an operator's plan."""
+
+    def _render(self, s, source):
+        import contextlib, io
+        tf = {"rate_refused": "the record refused", "rate_source": source,
+              "rate_units": 0, "rate_out_of_sample": []}
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            s._render_rate_provenance(tf)
+        return buf.getvalue()
+
+    def test_a_fixed_fit_rate_source_with_a_refused_record_renders(self):
+        s = _load()
+        out = self._render(s, s.RATE_FIXED_FIT)          # this raised KeyError before the fix
+        self.assertIn("fitted fixed-term marginal", out)
+
+    def test_every_rate_source_is_handled(self):
+        # Enumerated FROM THE MODULE, not from a list kept beside it - a list would drift exactly
+        # the way the original two-key lookup did.
+        s = _load()
+        sources = sorted({v for k, v in vars(s).items()
+                          if k.startswith("RATE_") and isinstance(v, str)})
+        self.assertGreaterEqual(len(sources), 5, "the enumeration found nothing to judge")
+        for src in sources:
+            with self.subTest(rate_source=src):
+                self.assertIn(src, s._RATE_STOOD_INSTEAD,
+                              f"rate source {src!r} has no provenance sentence - add one to "
+                              f"_RATE_STOOD_INSTEAD rather than letting it reach an operator")
+                out = self._render(s, src)
+                self.assertTrue(out.strip(), f"{src} rendered nothing")
+                self.assertNotIn("unmapped rate source", out)
+
+
 if __name__ == "__main__":
     unittest.main()

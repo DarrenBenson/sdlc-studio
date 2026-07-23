@@ -233,11 +233,41 @@ class ScrubSiteSweepTests(unittest.TestCase):
     # the sweep to a workspace that is never committed.
     SKIP_DIRS = frozenset({".git", "node_modules", "__pycache__", ".local", "worktrees"})
 
+    @classmethod
+    def _skipped(cls, path: Path, root: Path) -> bool:
+        """True if `path` is excluded, judged RELATIVE TO `root`.
+
+        Anchoring matters: an exclusion name sitting in an ANCESTOR of the repo - which is exactly
+        what a `.claude/worktrees/agent-X/` checkout puts there - must not match, or every file in
+        the tree is skipped, the sweep reports zero sites, and a vacuous pass reads as a clean one.
+        That is what made this test unrunnable inside a worktree and trained `--no-verify`."""
+        try:
+            rel = path.relative_to(root)
+        except ValueError:
+            return True
+        return bool(cls.SKIP_DIRS & set(rel.parts))
+
+    def test_an_ancestor_worktrees_component_does_not_skip_the_tree(self) -> None:
+        """The exclusion is anchored to the repo, so a worktree checkout is sweepable."""
+        import tempfile
+        base = Path(tempfile.mkdtemp())
+        root = base / "worktrees" / "agent-x" / "repo"      # the shape a worktree gives REPO
+        (root / "tools").mkdir(parents=True)
+        inside = root / "tools" / "x.py"
+        inside.write_text("x\n", encoding="utf-8")
+        # anchored: the ancestor `worktrees` is outside the repo and must not match
+        self.assertFalse(ScrubSiteSweepTests._skipped(inside, root))
+        # ...while a genuine in-repo `worktrees` directory is still excluded
+        nested = root / "worktrees" / "y.py"
+        nested.parent.mkdir(parents=True)
+        nested.write_text("y\n", encoding="utf-8")
+        self.assertTrue(ScrubSiteSweepTests._skipped(nested, root))
+
     def _sites(self) -> dict[str, int]:
         """`{repo-relative path: how many repo-locating names it mentions}` for code files."""
         found: dict[str, int] = {}
         for path in sorted(REPO.rglob("*")):
-            if not path.is_file() or self.SKIP_DIRS & set(path.parts):
+            if not path.is_file() or self._skipped(path, REPO):
                 continue
             if path.suffix not in (".py", ".sh") and path.name != "pre-commit":
                 continue
