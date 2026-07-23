@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 import tempfile
+import shutil
 import unittest
 from pathlib import Path
 
@@ -1392,6 +1393,111 @@ class RepairProvenanceTests(unittest.TestCase):
         self.assertFalse(c.is_planned_repair(token))
         # and a verdict with NO provenance token at all is also not a planned repair
         self.assertFalse(c.is_planned_repair("ac-hash=deadbeef"))
+
+
+class ReviewPolicyTests(unittest.TestCase):
+    """US0332: a project declares a review policy: block-on-REJECT or carry-forward."""
+
+    def _cf(self):
+        import importlib.util, sys
+        from pathlib import Path
+        spec = importlib.util.spec_from_file_location(
+            "carry_forward", Path(__file__).resolve().parent.parent / "carry_forward.py")
+        m = importlib.util.module_from_spec(spec); sys.modules["carry_forward"] = m
+        spec.loader.exec_module(m); return m
+
+    def _root(self, policy=None):
+        d = Path(tempfile.mkdtemp(prefix="cf_policy_"))
+        (d / "sdlc-studio").mkdir(parents=True)
+        if policy is not None:
+            (d / "sdlc-studio" / ".config.yaml").write_text(f"review:\n  policy: {policy}\n")
+        return d
+
+    def test_an_undeclared_policy_blocks_exactly_as_today(self) -> None:
+        cf = self._cf()
+        d = self._root(None)
+        try:
+            self.assertEqual(cf.review_policy(d), "block")
+            self.assertFalse(cf.reject_carries_forward(d, []))
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
+
+    def test_an_unrecognised_policy_is_refused_not_defaulted(self) -> None:
+        cf = self._cf()
+        d = self._root("carryforward")  # a plausible typo
+        try:
+            with self.assertRaises(cf.PolicyError):
+                cf.review_policy(d)
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
+
+
+class CarryForwardTests(unittest.TestCase):
+    """US0333: under carry-forward every finding is FILED or explicitly WAIVED."""
+
+    def _cf(self):
+        import importlib.util, sys
+        from pathlib import Path
+        spec = importlib.util.spec_from_file_location(
+            "carry_forward", Path(__file__).resolve().parent.parent / "carry_forward.py")
+        m = importlib.util.module_from_spec(spec); sys.modules["carry_forward"] = m
+        spec.loader.exec_module(m); return m
+
+    def _root(self):
+        d = Path(tempfile.mkdtemp(prefix="cf_"))
+        (d / "sdlc-studio").mkdir(parents=True)
+        (d / "sdlc-studio" / ".config.yaml").write_text("review:\n  policy: carry-forward\n")
+        return d
+
+    def _file_bug(self, d, bid="BG9001"):
+        bugs = d / "sdlc-studio" / "bugs"; bugs.mkdir(parents=True, exist_ok=True)
+        (bugs / f"{bid}-carried.md").write_text(
+            f"# {bid}: a carried finding\n\n> **Status:** Open\n> **Found-against:** US0001\n")
+        return bid
+
+    def test_an_unfiled_finding_blocks_the_close_under_carry_forward(self) -> None:
+        cf = self._cf(); d = self._root()
+        try:
+            bid = self._file_bug(d)
+            # two filed, one neither filed nor waived
+            findings = [{"ref": bid, "units": ["US0001"]}, {"ref": "", "waiver": ""}]
+            with self.assertRaises(cf.PolicyError):
+                cf.reject_carries_forward(d, findings)
+            # all handled -> carries forward
+            self.assertTrue(cf.reject_carries_forward(
+                d, [{"ref": bid, "units": ["US0001"]}]))
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
+
+    def test_a_ref_that_resolves_to_no_artefact_is_refused(self) -> None:
+        # US0333 AC1: a carried finding must be a real filed artefact, not a sentence. A ref
+        # that resolves to nothing on disk is refused - without this a claimed-but-absent
+        # finding would pass as handled.
+        cf = self._cf(); d = self._root()
+        try:
+            with self.assertRaises(cf.PolicyError):
+                cf.validate_carried(d, [{"ref": "BG9999", "units": ["US0001"]}])
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
+
+    def test_a_waiver_without_a_reason_is_refused(self) -> None:
+        cf = self._cf(); d = self._root()
+        try:
+            with self.assertRaises(cf.PolicyError):
+                cf.validate_carried(d, [{"ref": "", "waiver": "   "}])
+            cf.validate_carried(d, [{"ref": "", "waiver": "out of scope, tracked in Q3"}])
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
+
+    def test_a_finding_cannot_be_resolved_by_narrative_downgrade(self) -> None:
+        cf = self._cf(); d = self._root()
+        try:
+            for bad in ("downgrade to optional", "just an observation really", "soften to a note"):
+                with self.subTest(bad=bad):
+                    with self.assertRaises(cf.PolicyError):
+                        cf.validate_carried(d, [{"ref": "", "waiver": bad}])
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
 
 
 if __name__ == "__main__":

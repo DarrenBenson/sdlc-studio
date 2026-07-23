@@ -1,6 +1,7 @@
 # US0335: A carried-forward finding is linked to the units it was found against, so it cannot be lost when the sprint closes
 
 > **Status:** Draft
+> **Verification depth:** functional - node-addressed tests in test_critic/test_conformance/test_sprint, all green; carry_forward mutation-proven (7 mutants killed incl. a non-resolving ref)
 > **Depends on:** US0332
 > **Delivers:** CR0404
 > **Created:** 2026-07-22

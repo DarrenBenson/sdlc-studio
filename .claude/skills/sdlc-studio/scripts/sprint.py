@@ -52,6 +52,23 @@ import lessons  # noqa: E402  (sibling - the still-valid lessons digest carried 
 import reconcile  # noqa: E402  (sibling - reconcile before plan)
 import telemetry  # noqa: E402  (sibling - the forecast log the plan records its prediction in)
 import blocker_sweep  # noqa: E402  (sibling - blocker sweep before plan)
+try:
+    import carry_forward  # noqa: E402  (EP0113 review policy)
+except ImportError:  # pragma: no cover
+    carry_forward = None
+
+def carry_forward_close_record(root, carried=None) -> dict:
+    """The carry-forward record a close writes (EP0113 / US0334): the policy in force and the
+    findings carried. The policy is resolved at CLOSE time, not when the run opened, because a
+    policy changed mid-run would otherwise be reported as the one that governed decisions it
+    never governed (US0334 AC1). An empty carried list is distinguishable from none: `carried`
+    is always a list (possibly empty), never absent, so a reader can tell a clean close from
+    one whose list was dropped (US0334 AC2)."""
+    policy = carry_forward.review_policy(root) if carry_forward else "block"
+    items = list(carried or [])
+    return {"policy": policy, "carried": items, "carried_count": len(items)}
+
+
 
 PRIORITY_FIELD = {"bug": "Severity", "cr": "Priority", "story": "Priority"}
 # One weight scale across types (documented in reference-sprint.md): bug Severity and

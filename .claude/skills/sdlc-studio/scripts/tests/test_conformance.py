@@ -8,6 +8,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 import tempfile
+import shutil
 import unittest
 from pathlib import Path
 
@@ -644,6 +645,84 @@ class StampResolutionTests(unittest.TestCase):
                                         dead_stamps=0)
         self.assertFalse(dead[0], "a green resting on a selector that selects nothing counted as verified")
         self.assertTrue(live[0], "a live stamp stopped counting as verified - the sign is flipped")
+
+
+class ReviewPolicyTests(unittest.TestCase):
+    """US0332 AC2: under carry-forward a REJECT does not block the close."""
+
+    def _mods(self):
+        import importlib.util, sys
+        from pathlib import Path
+        base = Path(__file__).resolve().parent.parent
+        for name in ("carry_forward", "critic", "conformance"):
+            spec = importlib.util.spec_from_file_location(name, base / f"{name}.py")
+            m = importlib.util.module_from_spec(spec); sys.modules[name] = m
+            spec.loader.exec_module(m)
+        return sys.modules["conformance"], sys.modules["critic"]
+
+    def _root(self, policy):
+        d = Path(tempfile.mkdtemp(prefix="cf_conf_"))
+        (d / "sdlc-studio").mkdir(parents=True)
+        (d / "sdlc-studio" / ".config.yaml").write_text(f"review:\n  policy: {policy}\n")
+        b = d / "sdlc-studio" / "bugs"; b.mkdir()
+        (b / "BG9001-x.md").write_text("# BG9001: c\n\n> **Status:** Open\n> **Found-against:** US0001\n")
+        return d
+
+    def test_a_reject_under_carry_forward_does_not_block_the_close(self) -> None:
+        conf, critic = self._mods()
+        review = {"verdict": "REJECT", "reviewer": "qa", "author": "dev"}
+        findings = [{"ref": "BG9001", "units": ["US0001"]}]
+        d_cf = self._root("carry-forward")
+        d_block = self._root("block")
+        try:
+            self.assertTrue(conf.carry_forward_covers(d_cf, review, findings))
+            # under block, the same REJECT does NOT carry - the close still blocks
+            self.assertFalse(conf.carry_forward_covers(d_block, review, findings))
+            # an APPROVE is not a carry-forward case at all
+            self.assertFalse(conf.carry_forward_covers(
+                d_cf, {"verdict": "APPROVE", "reviewer": "qa", "author": "dev"}, findings))
+        finally:
+            shutil.rmtree(d_cf, ignore_errors=True); shutil.rmtree(d_block, ignore_errors=True)
+
+
+class CarriedFindingLinkTests(unittest.TestCase):
+    """US0335: a carried finding names the units it was found against, and the link survives
+    the close of the sprint that produced it."""
+
+    def _cf(self):
+        import importlib.util, sys
+        from pathlib import Path
+        spec = importlib.util.spec_from_file_location(
+            "carry_forward", Path(__file__).resolve().parent.parent / "carry_forward.py")
+        m = importlib.util.module_from_spec(spec); sys.modules["carry_forward"] = m
+        spec.loader.exec_module(m); return m
+
+    def _root(self):
+        d = Path(tempfile.mkdtemp(prefix="cf_link_"))
+        (d / "sdlc-studio").mkdir(parents=True)
+        (d / "sdlc-studio" / ".config.yaml").write_text("review:\n  policy: carry-forward\n")
+        return d
+
+    def test_a_carried_finding_naming_no_unit_is_refused(self) -> None:
+        cf = self._cf(); d = self._root()
+        try:
+            b = d / "sdlc-studio" / "bugs"; b.mkdir(parents=True)
+            (b / "BG9002-x.md").write_text("# BG9002: c\n\n> **Status:** Open\n")  # no Found-against
+            with self.assertRaises(cf.PolicyError):
+                cf.validate_carried(d, [{"ref": "BG9002", "units": []}])
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
+
+    def test_a_carried_finding_still_resolves_after_its_sprint_closes(self) -> None:
+        cf = self._cf(); d = self._root()
+        try:
+            b = d / "sdlc-studio" / "bugs"; b.mkdir(parents=True)
+            # the finding names its units on its OWN file, so closing the run cannot strand it
+            (b / "BG9003-x.md").write_text(
+                "# BG9003: c\n\n> **Status:** Fixed\n> **Found-against:** US0007, US0008\n")
+            self.assertEqual(cf.carried_finding_units(d, "BG9003"), ["US0007", "US0008"])
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
 
 
 if __name__ == "__main__":

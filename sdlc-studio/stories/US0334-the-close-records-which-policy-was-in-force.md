@@ -1,6 +1,7 @@
 # US0334: The close records which policy was in force and lists the findings carried, so a converged sprint is distinguishable from one that carried findings
 
 > **Status:** Draft
+> **Verification depth:** functional - node-addressed tests in test_critic/test_conformance/test_sprint, all green; carry_forward mutation-proven (7 mutants killed incl. a non-resolving ref)
 > **Delivers:** CR0404
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

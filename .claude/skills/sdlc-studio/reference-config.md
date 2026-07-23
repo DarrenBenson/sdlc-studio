@@ -178,6 +178,7 @@ round's finding. OFF by default, so an upgrading project's close does not change
 
 | Setting | Default | Notes |
 | --- | --- | --- |
+| `review.policy` | `block` | `carry-forward` files a REJECT's findings and ships instead of holding until clean; every finding must be filed or explicitly waived |
 | `review.repair_plan_gate` | `off` | `on` requires a REJECT to be answered by a written plan reviewed before any code |
 | `review.repair_design_threshold` | 2 | Failed rounds of one approach class before a repeat-class repair must CHANGE the design, not propose another instance |
 

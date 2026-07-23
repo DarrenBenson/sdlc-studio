@@ -1,6 +1,7 @@
 # US0333: Under carry-forward every finding is FILED or explicitly waived with a reason; narrative downgrade is refused, as it already is for a missing review leg
 
 > **Status:** Draft
+> **Verification depth:** functional - node-addressed tests in test_critic/test_conformance/test_sprint, all green; carry_forward mutation-proven (7 mutants killed incl. a non-resolving ref)
 > **Delivers:** CR0404
 > **Created:** 2026-07-22
 > **Created-by:** sdlc-studio new

@@ -24,6 +24,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md, tiers  # noqa: E402
 import reconcile  # noqa: E402  (sibling scripts; scripts dir is on sys.path)
 import critic  # noqa: E402
+try:
+    import carry_forward  # noqa: E402  (EP0113 review policy)
+except ImportError:  # pragma: no cover
+    carry_forward = None
 import doc_coverage  # noqa: E402  (the `documented` stage)
 try:
     import verify_ac  # noqa: E402  (stamp resolution; a green on a dead pointer is not one)
@@ -55,6 +59,20 @@ def _real(value: str | None) -> bool:
     real - this keeps conformance consistent with validate, which flags that line)."""
     residue = _PLACEHOLDER.sub("", value or "")
     return re.sub(r"[\s.,;:!?*_`>~\-]+", "", residue) != ""
+
+
+def carry_forward_covers(root, review, findings) -> bool:
+    """EP0113: under the carry-forward policy a sprint-level REJECT does not block the close,
+    provided every finding is filed or explicitly waived. Returns True when the REJECT is
+    carried; raises carry_forward.PolicyError (via validate) when a finding is unhandled, so
+    the close learns WHY it still blocks. False (blocks) under the default block policy or when
+    carry_forward is unavailable."""
+    if carry_forward is None or not review:
+        return False
+    if (review.get("verdict") or "").upper() != critic.REJECT:
+        return False
+    return carry_forward.reject_carries_forward(root, findings)
+
 
 
 def _ac_signals(text: str) -> tuple[bool, bool, list[str]]:
