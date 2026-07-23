@@ -1266,6 +1266,17 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--date", help="override the Date cell (default: today)")
     r.add_argument("--root", default=".")
     r.set_defaults(func=cmd_revision)
+    rt = sub.add_parser("retitle", help="Atomically retitle an artefact across the H1, the "
+                                        "filename slug and the index row, rewriting inbound "
+                                        "references or refusing and naming them.")
+    rt.add_argument("--id", required=True, help="Artifact id, e.g. CR-0406 / BG0265")
+    rt.add_argument("--title", required=True, help="the new title (the H1 tail, the slug and the "
+                                                   "index row are all rewritten from it)")
+    rt.add_argument("--root", default=".")
+    rt.add_argument("--dry-run", action="store_true", dest="dry_run",
+                    help="validate all four surfaces and report; write nothing")
+    rt.add_argument("--format", choices=("text", "json"), default="text")
+    rt.set_defaults(func=cmd_retitle)
     sdlc_md.add_global_root(p)
     return p
 
@@ -1327,6 +1338,165 @@ def cmd_revision(args: argparse.Namespace) -> int:
                         encoding="utf-8")
         print(f"revision recorded: {rid} ({path.name})")
     return 1 if refused else 0
+
+
+# The one field with no deterministic writer until now: a title lives in the H1, the filename
+# slug and the index row link/title cell at once, and inbound references cite the filename. The
+# `# <ID>: <title>` H1 - the id prefix and colon are the anchor kept verbatim, the tail is the
+# rewritten title. A retitle without this anchor has no H1 surface to update, which AC names.
+_H1_RETITLE_RE = re.compile(r"^(#[^\S\n]+[A-Za-z]+-?\d+:[^\S\n]*)(.+?)[^\S\n]*$", re.MULTILINE)
+
+
+class RetitleBlocked(ValueError):
+    """A retitle refused because one of the four surfaces cannot be updated, naming which.
+
+    All-validate-then-write: raised BEFORE any surface is touched, so a blocked retitle leaves
+    the H1, the filename and the index row byte-identical (US0398 AC2). `surface` is one of
+    `h1` / `filename` / `index` / `references`, and the message states the fix (US0398 AC3)."""
+
+    def __init__(self, surface: str, message: str):
+        super().__init__(message)
+        self.surface = surface
+
+
+def _load_check_links(repo_root: Path | str):
+    """The check_links module (the link authority the retitle reuses to find inbound
+    references), located in the operated repo's `tools/` or this skill's own repo, or None.
+
+    check_links is a repo CI tool, not shipped runtime payload, so it is loaded by path rather
+    than imported - and its absence is a hard refusal, never a silent skip: a retitle that
+    could not see the inbound references would rename the file and leave them dangling, which
+    is the exact failure the reference handling exists to prevent."""
+    import importlib.util  # noqa: PLC0415 - local: only the retitle path needs it
+    candidates = [Path(repo_root) / "tools" / "check_links.py",
+                  Path(__file__).resolve().parents[4] / "tools" / "check_links.py"]
+    for cand in candidates:
+        if cand.exists():
+            spec = importlib.util.spec_from_file_location("check_links", cand)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            return mod
+    return None
+
+
+def retitle(repo_root: Path | str, artifact_id: str, new_title: str,
+            dry_run: bool = False) -> dict:
+    """Atomically retitle an artefact across all three title surfaces - the H1, the filename
+    slug and the index row - and rewrite every inbound reference, or refuse before any write
+    if any surface cannot be updated (all-validate-then-write).
+
+    The title is the last field with no deterministic writer: it lives in the H1, the filename
+    slug and the index row's link/title cell at once, and a correction means editing all three
+    by hand plus repairing every inbound link. This is that writer. It validates the four
+    surfaces (H1 present, destination slug free, index row present, no inbound reference in
+    immutable archived history) and only then writes - so a blocked retitle leaves every surface
+    byte-identical. On success it records the previous title in a dated Revision History row."""
+    root = Path(repo_root)
+    # Refuse an injected title (a line break, a forged metadata line) before any lookup or write,
+    # from the one choke point every creator shares - a retitle is no escape hatch from it.
+    sdlc_md.check_creator_fields({"title": new_title})
+    new_title = new_title.strip()
+    if not new_title:
+        raise ValueError("retitle needs a non-empty --title")
+    hit = sdlc_md.find_by_id(root, artifact_id)
+    if hit is None:
+        raise ValueError(f"no artifact found for id {artifact_id!r}")
+    path, type_ = hit
+    file_id = sdlc_md.extract_record_id(path.stem) or path.stem
+    text = path.read_text(encoding="utf-8")
+
+    # --- surface 1: the H1 ---
+    m = _H1_RETITLE_RE.search(text)
+    if m is None:
+        raise RetitleBlocked("h1",
+            f"{artifact_id}: no `# <ID>: <title>` H1 in {path.name} to rewrite - the title "
+            f"surface cannot be updated. Add the `# {file_id}: <title>` heading, then retitle. "
+            f"Nothing was written.")
+    old_title = m.group(2).strip()
+
+    # --- surface 2: the filename slug ---
+    new_slug = file_finding._slug(new_title)
+    new_name = f"{file_id}-{new_slug}.md"
+    dest = path.with_name(new_name)
+    if dest != path and dest.exists():
+        raise RetitleBlocked("filename",
+            f"{artifact_id}: the new title's slug collides with an existing file {new_name} - "
+            f"refusing to overwrite it. Choose a title whose first eight slug words differ, or "
+            f"resolve the collision first. Nothing was written.")
+
+    # --- surface 3: the index row (validated read-only; reconcile owns the write) ---
+    if not reconcile.retitle_index_row(root, type_, file_id, new_slug, new_title, dry_run=True):
+        rel = sdlc_md.ARTIFACT_TYPES[type_][0]
+        raise RetitleBlocked("index",
+            f"{artifact_id}: no index row in {rel}/_index.md to update - the index surface "
+            f"cannot be updated. Run `reconcile.py apply --scope {rel.split('/')[-1]}` to add "
+            f"the row first, then retitle. Nothing was written.")
+
+    # --- surface 4: inbound references (US0399) ---
+    cl = _load_check_links(root)
+    if cl is None:
+        raise RetitleBlocked("references",
+            f"{artifact_id}: cannot locate check_links (tools/check_links.py) to find inbound "
+            f"references - refusing rather than rename the file and risk leaving links dangling. "
+            f"Nothing was written.")
+    refs = cl.inbound_references(root, path.name)
+    unrewritable = [r for r in refs if r["immutable"]]
+    rewritable = [r for r in refs if not r["immutable"]]
+    if unrewritable:
+        named = ", ".join(sorted({r["rel"] for r in unrewritable}))
+        raise RetitleBlocked("references",
+            f"{artifact_id}: {len(unrewritable)} inbound reference(s) sit in immutable archived "
+            f"history and cannot be rewritten: {named}. Renaming would leave them dangling, so "
+            f"the retitle is refused. Retitle before archiving, or leave the title. Nothing was "
+            f"written.")
+
+    if dry_run:
+        return {"id": artifact_id, "type": type_, "path": str(path), "new_path": str(dest),
+                "old_title": old_title, "new_title": new_title, "renamed": dest != path,
+                "references": [r["rel"] for r in rewritable], "dry_run": True}
+
+    # --- ALL FOUR SURFACES VALIDATED - now write ---
+    new_text = _H1_RETITLE_RE.sub(lambda mm: mm.group(1) + new_title, text, count=1)
+    today = date.today().isoformat()
+    stamped, recorded = transition.append_revision_row(
+        new_text, today, sdlc_md.authorship_name(sdlc_md.authorship_value(None, root)),
+        f"Retitled: was {old_title!r}")
+    if recorded:
+        new_text = stamped
+    sdlc_md.atomic_write(dest, new_text)
+    if dest != path:
+        path.unlink()
+    reconcile.retitle_index_row(root, type_, file_id, new_slug, new_title, dry_run=False)
+    rewritten: list[str] = []
+    for r in rewritable:
+        rp = Path(r["path"])
+        body = rp.read_text(encoding="utf-8")
+        updated, n = cl.rewrite_inbound_links(body, path.name, new_name)
+        if n and updated != body:
+            sdlc_md.atomic_write(rp, updated)
+            rewritten.append(r["rel"])
+    return {"id": artifact_id, "type": type_, "path": str(dest),
+            "old_title": old_title, "new_title": new_title, "renamed": dest != path,
+            "revision_recorded": recorded, "references": sorted(set(rewritten)),
+            "dry_run": False}
+
+
+def cmd_retitle(args: argparse.Namespace) -> int:
+    try:
+        r = retitle(args.root, args.id, args.title, dry_run=args.dry_run)
+    except RetitleBlocked as exc:
+        print(f"retitle refused [{exc.surface}]: {exc}", file=sys.stderr)
+        return 1
+    if args.format == "json":
+        print(json.dumps(r, indent=2))
+        return 0
+    verb = "would retitle" if r.get("dry_run") else "retitled"
+    rename = f", renamed -> {Path(r['new_path' if r.get('dry_run') else 'path']).name}" \
+        if r["renamed"] else " (slug unchanged)"
+    refs = r.get("references") or []
+    print(f"{verb} {r['id']}: {r['old_title']!r} -> {r['new_title']!r}{rename}"
+          f"{f'; {len(refs)} inbound reference(s) rewritten' if refs else ''}")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:

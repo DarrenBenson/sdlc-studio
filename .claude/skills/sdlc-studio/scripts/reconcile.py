@@ -2128,6 +2128,74 @@ def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = 
     return {"drift": drift, "applied": len(drift) if (changed and not dry_run) else 0}
 
 
+# A row's self-link target, captured so a retitle can swap the filename slug in place:
+# `[ID](ID-old-slug.md)` becomes `[ID](ID-new-slug.md)`. Anchors are not carried by
+# index-row links, so a bare `.md)` boundary is enough.
+_RETITLE_LINK_RE = re.compile(r"(\]\()([^)\s]+\.md)(\))")
+
+
+def retitle_index_row(repo_root: Path | str, type_: str, file_id: str, new_slug: str,
+                      new_title: str, dry_run: bool = False) -> bool:
+    """Rewrite the index rows for `file_id`: the self-link target's filename to
+    `{file_id}-{new_slug}.md`, and the Title cell to `new_title`. Every data table that
+    carries the row is rewritten (a multi-view index lists an id once per view).
+
+    The one index-side writer a deterministic retitle uses - reconcile already owns the
+    index, so the title's third surface (the row) is synced from the same place status and
+    counts are, not by a bespoke hand-edit. Columns are located by each table's own header
+    (as `project_fields` does), so an off-schema table is skipped rather than clobbered.
+    Returns True iff at least one row was found: a caller validates the index surface exists
+    with `dry_run=True` (which writes nothing) BEFORE renaming the file, so a missing row
+    aborts the retitle before any surface is touched."""
+    root = Path(repo_root)
+    index_path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
+    if not index_path.exists():
+        return False
+    norm = _norm_id(file_id)
+    original = index_path.read_text(encoding="utf-8")
+    lines = original.splitlines()
+    cols: dict = {}
+    found = False
+    changed = False
+    for i, line in enumerate(lines):
+        cells = _table_cells(line)
+        if not cells:
+            continue
+        lowered = [c.strip().lower() for c in cells]
+        if "id" in lowered:  # header row - re-pin the columns for the table that follows
+            cols = {n: lowered.index(n) for n in ("id", "title") if n in lowered}
+            continue
+        if "id" not in cols or cols["id"] >= len(cells):
+            continue
+        m = sdlc_md.ID_SEARCH_RE.search(cells[cols["id"]])
+        if not m or _norm_id(m.group(0)) != norm:
+            continue
+        found = True
+        row_changed = False
+        for ci, cell in enumerate(cells):
+            def _swap(mm, _norm=norm):
+                tgt = mm.group(2)
+                rec = sdlc_md.extract_record_id(Path(tgt).stem)
+                if rec and _norm_id(rec) == _norm:
+                    prefix = tgt[: len(tgt) - len(Path(tgt).name)]
+                    return f"{mm.group(1)}{prefix}{file_id}-{new_slug}.md{mm.group(3)}"
+                return mm.group(0)
+            new_cell = _RETITLE_LINK_RE.sub(_swap, cell)
+            if new_cell != cell:
+                cells[ci] = new_cell
+                row_changed = True
+        if "title" in cols and cols["title"] < len(cells) and cells[cols["title"]] != new_title:
+            cells[cols["title"]] = new_title
+            row_changed = True
+        if row_changed:
+            lines[i] = _join_row(cells)
+            changed = True
+    if changed and not dry_run:
+        sdlc_md.atomic_write(index_path,
+                             "\n".join(lines) + ("\n" if original.endswith("\n") else ""))
+    return found
+
+
 def cmd_fields(args: argparse.Namespace) -> int:
     """Project file-owned index cells (title/points); --apply writes, default reports."""
     r = project_fields(args.root, args.type, dry_run=not args.apply)

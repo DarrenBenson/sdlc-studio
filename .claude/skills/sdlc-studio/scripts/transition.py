@@ -484,6 +484,39 @@ def annotate(repo_root: Path | str, artifact_id: str, field: str, value: str) ->
             "changed": new_text != text, "path": str(path)}
 
 
+_REVISION_HEAD_RE = re.compile(r"^##\s+Revision History\s*$", re.MULTILINE)
+
+
+def append_revision_row(text: str, date: str, author: str, note: str) -> tuple[str, bool]:
+    """`text` with one dated `| date | author | note |` row appended after the last row of
+    its `## Revision History` table, or `(text, False)` when there is no such section or the
+    section carries no table.
+
+    The shared revision-log writer the deterministic verbs use to leave an auditable trail of
+    a mechanical change (a retitle records the previous title through it), so the row shape and
+    the cell-escaping live in one place rather than being re-hand-rolled per caller. The three
+    cells go through `sdlc_md.join_row`, which escapes a literal pipe and refuses a line break,
+    so a note carrying either cannot forge a fourth column or a second row."""
+    m = _REVISION_HEAD_RE.search(text)
+    if not m:
+        return text, False
+    lines = text.splitlines()
+    head_ln = text[: m.start()].count("\n")
+    j = head_ln + 1
+    last_row = None
+    while j < len(lines):
+        s = lines[j].strip()
+        if s.startswith("|"):
+            last_row = j
+        elif s.startswith("## ") or (last_row is not None and s and not s.startswith("|")):
+            break
+        j += 1
+    if last_row is None:
+        return text, False
+    lines.insert(last_row + 1, sdlc_md.join_row([date, author, note]))
+    return "\n".join(lines) + ("\n" if text.endswith("\n") else ""), True
+
+
 def _triage_gate(root: Path, type_: str, text: str, from_canon: str | None,
                  target_canon: str | None, triaged_by: str | None) -> str | None:
     """Block reason when a v3 finding is leaving the `inbox` triage lane without a valid,
