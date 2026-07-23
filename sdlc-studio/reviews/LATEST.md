@@ -1,81 +1,57 @@
 # Reviews - LATEST (anchor)
 
-> Derived from **RUN-01KY5EJX** (2026-07-22), the design rung over 40 units / 111 points.
-> Closed `partial` with RETRO0067. **FOUR review rounds, four REJECTs.** Round 4 was bought
-> past the `max_rounds: 3` ceiling because round 3's repair had shipped unreviewed; round 4's
-> own repair is now the unreviewed one. Sign-off is the operator's.
+> **RUN-01KY5Y3W is the live delivery run** over the 43 units the design rung
+> (RUN-01KY5EJX, closed partial, RETRO0067) groomed. Building in waves; not yet closed.
 
-## Where the pipeline is (2026-07-22)
+## Where the pipeline is (2026-07-23)
 
-**The batch is groomed and ready to build.** EP0106-EP0115 plus eight bugs carry real
-acceptance criteria; the DELIVERY run over the same units is the next step.
+**26 of 43 units delivered to full fidelity** - code, node-addressed tests, and a
+per-guard mutation pass - and pushed. The remaining 17 are the sprint/critic/artefact
+coupled core, in flight as three file-disjoint parallel clusters.
 
-Goal: *every story's acceptance criteria would fail if the behaviour were absent, every bug
-states what makes its fix complete and tested, and any declared dependency records a logical
-constraint the file census cannot already derive.*
+Goal: *all 43 units reach Review with every acceptance criterion proven by a test that
+fails without the code it guards, and every guard this batch ships is ENABLED in this
+project's own config - so nothing here can be delivered inert.*
 
-The batch attacks the loop that cost the previous sprint ten review rounds: plan a repair
-before executing it (EP0106), derive a claim about a guard from the guard (EP0107), brief the
-reviewer with the practices that found defects (EP0108), inventory claims first not last
-(EP0109), validate `Affects` at mint (EP0110), stop a second sprint fusing into an open run
-(EP0111), check the CHANGELOG's structure (EP0112), carry a REJECT forward as filed findings
-(EP0113), price the sprint not the build (EP0114), hunt work done before its contract
-(EP0115).
+## What has shipped
+
+- **Instrumentation first (BG0265, BG0256):** a stacked `Verify:` line is refused rather
+  than silently dropped; a stamped-green AC whose selector selects nothing reads STALE, by
+  collection not execution. Until these landed the run could not trust its own pass count.
+- **EP0106, the repair-plan gate** - the flagship. A REJECT yields a written plan (one entry
+  per finding: change, approach, risk), reviewed by an independent pass before any code,
+  pinned to the findings; a repeat-class repair must change the design past a threshold.
+  Opt-in, off by default. 21 tests, 11 mutants.
+- **EP0113, carry-forward** - a project may declare `review.policy: carry-forward`; a REJECT
+  then ships with its findings filed or waived, never by narrative downgrade.
+- **Six clusters via parallel worktrees** - EP0107 (derive a guard's message), EP0112
+  (CHANGELOG structure), EP0115 (process audit lens), BG0258, BG0259, BG0260, BG0261.
+
+## What the fan-out taught, filed as CR0411
+
+The parallel delivery worked, and it exposed two real interactions, both fixed and one
+filed as an operator-requested feature: `.claude/worktrees/` was linted as shipped payload
+and swept as a scrub site (now excluded, gitignored); and one merge conflict came from a
+clustering that excluded TEST files from coupling. CR0411 asks that `sprint plan` offer
+sequential-or-parallel delivery at run start, only when a real file-disjoint decomposition
+exists, and count test files as coupling.
 
 ## Evidence
 
-3,955 skill tests and 312 tool tests green. Drift 0, validate 0 errors, floor 0 violations,
-no rewrite window open. **Red-now ledger: 94 criteria, pass=0, fail=91, manual=3** - nothing
-vacuously green at a rung where the behaviour is absent, which is the only proof a
-counterfactual bar admits. Two waves on five declared dependency edges, three of them between
-units with disjoint file sets.
-
-## What shipped as code
-
-**BG0264 and BG0266.** `verify_ac lint` refuses a verifier that only reads prose. FIVE
-versions were defeated across four rounds, every one by trying to ENUMERATE what the runner
-reads: tokens as written; an invented flag split; "grep without `-r` never reads a directory"
-(true of grep, false of this DSL); an `rglob` walk seeing hidden and symlinked files; and
-`rg --files`, which is what rg LISTS rather than what it can OPEN, and which exits 2 on one
-unreadable subdirectory. **The burden is now INVERTED**: refused unless a readable,
-non-symlinked, non-markdown file it actually reads can be pointed at, so every uncertainty
-refuses. That closes all nine known forms and BG0266 with them.
-
-## The reviews
-
-Four rounds, each finding something real, each finding the SAME CLASS: a rule restated
-beside the thing it describes rather than derived from it. Round 1 also found that
-normalising bug verifiers to a prose prefix had made all 21 unparseable while the commit
-claimed they passed. Round 3 found an eighth escape and a mutant that survived because every
-directory fixture was flat - fixtures agreeing by construction, unintentionally.
-
-**Round 1's repair plan was attacked before execution and REFUTED in full** - it closed none
-of the three escapes, and the attacker found two the review had missed. EP0106 is not built;
-its discipline was dogfooded anyway, and it saved three rounds.
-
-## Known holes, recorded not hidden
-
-- **Round 4's repair is unreviewed.** Four rounds have each found something real, so the prior
-  does not favour stopping. Buying a fifth or accepting it is the operator's decision.
-- **The case rule had been implemented twice** and the two disagreed; a mutant dropping one
-  `.lower()` flipped a verdict while every test stayed green. One `_is_markdown` predicate now.
-- **D0056:** the goal sets dependency QUALITY, not coverage. Declaring nothing satisfies it,
-  so the plan's shared-file warnings are expected.
-- **BG0265:** a second `Verify:` line per AC block is silently dropped; six such verifiers
-  have never run, all on Done stories, two inside a published claim of 84 criteria verified.
-- **BG0256:** no routine sweep runs a bug's verifier at all - `walk_stories` yields only `US`
-  records - so "story lint exit 0" says nothing about where these criteria were authored.
-- The kill list carried by the grooming commit, including CR0403's "drawn from real failures",
-  the batch's weakest leg with no criterion anywhere holding it.
+4043 skill tests + 312 tool tests green on the last integrated tree. Drift 0, floor 0,
+gate green on every commit. Every delivered guard mutation-proven; equivalent survivors
+recorded with their reason, never hidden.
 
 ## Next steps
 
-- **Sign-off is owed and is the operator's.** `sprint close --retro RETRO0067 --apply-signoff`.
-- Then the DELIVERY run over the same 40 units.
-- **CR0319** is the 5.0.0 release cut, still outstanding.
+- The three in-flight clusters (EP0108+EP0109 critic; EP0111+EP0114 sprint; EP0110 artefact)
+  merge, then the batch's own closing review - in waves, per the plan's own guidance, never a
+  single review over the whole diff.
+- Transition the delivered units to Review, then the reviewer-of-record sign-off.
+- **CR0319** is the 5.0.0 release cut, held until the backlog is clear (D0057).
 
 ## Lessons
 
 Derive the whole behaviour, not the half you were looking at. A counterfactual bar needs a
-ledger beside it. Plan the repair, attack the plan, then execute. Check whether the tool you
-are about to build already exists.
+ledger beside it. Plan the repair, attack the plan, then execute. Count test files as
+coupling before fanning out.
