@@ -25,3 +25,26 @@ Exclude worktrees by their path RELATIVE to REPO, not by a bare component name: 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Filed |
+
+## Additional evidence (merged from BG0271, superseded)
+
+Hit again during RUN-01KY7W1F by BOTH parallel worktree agents (EP0150 retitle, EP0155 refine):
+each had to commit with `--no-verify` because this test fails only when the gate runs from inside
+a worktree. `REPO = Path(__file__).resolve().parents[2]` resolves under
+`.claude/worktrees/agent-<id>/`, whose path carries a `worktrees` component; `SKIP_DIRS` then
+matches every file via `set(path.parts)`, the sweep sees zero sites, and the assertion fails on an
+empty set. The diff under test touches none of the swept files, so the failure is purely positional.
+
+**The consequence is the important part:** this defeats the un-skippable pre-commit gate for
+exactly the workflow EP0154 added (parallel worktree delivery). The two bypassed commits let 69
+leaked diagnostics reach main, so the first full-tree hook run afterwards failed on an INHERITED
+red noise ratchet. The more we parallelise, the more often the gate is bypassed.
+
+## Acceptance Criteria
+
+- [ ] AC1: the sweep is computed relative to REPO, so an ancestor `worktrees` path component
+  (a worktree checkout) no longer makes SKIP_DIRS match every file
+- **Given** the test is run with its file resolving under `.../worktrees/agent-X/tools/tests/`
+- **When** ScrubSiteSweepTests runs
+- **Then** it sees the real site files under REPO and passes, exactly as from the repo root
+- **Verify:** pytest tools/tests/test_skill_tests_env.py::ScrubSiteSweepTests

@@ -51,10 +51,12 @@ noise ratchet (which caught 69 leaks two `--no-verify` merges had smuggled onto 
 
 ## Next steps
 
-- **Sign-off is owed and is the operator's.** `sprint close --retro RETRO0069 --apply-signoff
-  --principal "..."`. RFC0051 records why an agent cannot honestly supply it.
+- **CLOSED AND SIGNED OFF.** The operator signed off all 19 units; they are Done, the 8 epics
+  derived Done and CR0366/0392/0407/0411/0412 derived Complete. Run outcome: goal-reached.
 - **Sprints 2 and 3** (~60 pts each) remain in the three-sprint run.
-- Follow-ups on the backlog: BG0271 (gate unrunnable in a worktree), BG0272-0274 (review findings).
+- Follow-ups on the backlog: BG0271 (gate unrunnable in a worktree), BG0272-0274 (review
+  findings), BG0275 (this anchor is not refreshed by a successful close - raised when the
+  stale line above misled the Sprint 2 re-anchor).
 
 ## Lessons
 

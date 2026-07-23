@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 3 |
 | Approved | 0 |
 | In Progress | 32 |
 | Complete | 362 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 17 |
 | Blocked | 0 |
-| **Total** | **412** |
+| **Total** | **414** |
 
 ## All Changes
 
@@ -234,6 +234,8 @@
 | [CR-0410](CR0410-a-repair-plan-can-be-attacked-and-still.md) | A repair plan can be attacked and still repeat the previous approach, so a class that has failed N rounds must force a design decision rather than a better instance | Complete | High | Improvement | 2026-07-22 | EP0106 |
 | [CR-0411](CR0411-sprint-plan-should-offer-sequential-or-parallel-delivery.md) | sprint plan should offer sequential or parallel delivery at run start, and only offer parallel when the batch can actually be parallelised | Complete | High | Feature | 2026-07-23 | EP0154 |
 | [CR-0412](CR0412-refine-mints-a-story-with-points-but-no.md) | refine mints a story with points but no Affects and placeholder acceptance criteria, so a refined backlog is unplannable until a separate grooming pass - refine should make its output actionable | Complete | High | Improvement | 2026-07-23 | EP0155 |
+| [CR-0413](CR0413-artifact-py-new-mints-without-any-duplicate-check.md) | artifact.py new mints without any duplicate check, so a defect already on the backlog is re-filed silently; file_finding.py file already computes duplicate_warnings and the two creators should share it | Proposed | Medium | Feature | 2026-07-24 | -- |
+| [CR-0414](CR0414-the-backlog-carries-epics-a-delivered-sprint-already.md) | the backlog carries epics a delivered sprint already satisfied and nothing detects it: EP0125's shared prose-helper stories were largely built as EP0146, but built-not-closed reads the verify-report so an ungroomed skeleton with no verifiers is invisible to it | Proposed | Medium | Feature | 2026-07-24 | -- |
 
 ## Archived Releases
 

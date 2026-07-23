@@ -1,6 +1,7 @@
 # BG0271: the site-sweep test is unrunnable inside a git worktree: an ancestor 'worktrees' path component makes SKIP_DIRS match every file, so sites={} and the pre-commit gate must be bypassed with --no-verify on parallel-worktree builds
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded-by:** BG0269
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

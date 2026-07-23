@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 8 |
+| Open | 9 |
 | In Progress | 0 |
 | Fixed | 184 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
-| Superseded | 0 |
-| **Total** | **274** |
+| Superseded | 1 |
+| **Total** | **276** |
 
 ## All Bugs
 
@@ -237,10 +237,12 @@
 | [BG0268](BG0268-sprint-plan-leaves-a-stale-sprint-plan-json.md) | sprint plan leaves a stale sprint-plan.json and forecast record when a concurrent writer opens a run between the pre-check and open_run | Open | Low | 2026-07-23 | 2026-07-23 |
 | [BG0269](BG0269-the-scrub-site-sweep-s-worktrees-exclusion-matches.md) | The scrub-site sweep's worktrees exclusion matches any path component named worktrees, so it skips the ENTIRE tree when run from inside a worktree | Open | Medium | 2026-07-23 | 2026-07-23 |
 | [BG0270](BG0270-the-goal-review-gate-refuses-a-plan-when.md) | The goal-review gate refuses a plan when a seat says NOT ONE INCREMENT, conflating a truthful themed-batch observation with a blocking objection | Open | Medium | 2026-07-23 | 2026-07-23 |
-| [BG0271](BG0271-the-site-sweep-test-is-unrunnable-inside-a.md) | the site-sweep test is unrunnable inside a git worktree: an ancestor 'worktrees' path component makes SKIP_DIRS match every file, so sites={} and the pre-commit gate must be bypassed with --no-verify on parallel-worktree builds | Open | -- | 2026-07-23 | 2026-07-23 |
+| [BG0271](BG0271-the-site-sweep-test-is-unrunnable-inside-a.md) | the site-sweep test is unrunnable inside a git worktree: an ancestor 'worktrees' path component makes SKIP_DIRS match every file, so sites={} and the pre-commit gate must be bypassed with --no-verify on parallel-worktree builds | Superseded | -- | 2026-07-23 | 2026-07-23 |
 | [BG0272](BG0272-retro-accuracy-misattributes-a-run-s-rung-run.md) | retro accuracy misattributes a run's rung: _run_rung reads the CURRENT run state, so re-running retro/sprint-report for an older retro after a new run opened reads the wrong goal rung | Open | -- | 2026-07-23 | 2026-07-23 |
 | [BG0273](BG0273-refine-resolve-story-affects-inherit-subset-bypasses-the.md) | refine resolve_story_affects inherit:subset bypasses the parent-declares-none refusal and never checks the subset is within the parent's Affects; bare 'inherit' is matched case-sensitively so INHERIT falls through to the explicit path | Open | -- | 2026-07-23 | 2026-07-23 |
 | [BG0274](BG0274-artifact-retitle-write-phase-is-a-sequence-of.md) | artifact.retitle write phase is a sequence of independent writes with no rollback, so a fault mid-loop (e.g. an unreadable reference file) leaves the file renamed and index updated but inbound references half-rewritten | Open | -- | 2026-07-23 | 2026-07-23 |
+| [BG0275](BG0275-a-successful-sprint-close-never-refreshes-sdlc-studio.md) | a successful sprint close never refreshes sdlc-studio/reviews/LATEST.md, so the review anchor AGENTS.md orders every agent to re-anchor on still states the previous run's owed sign-off after that sign-off landed | Open | -- | 2026-07-23 | 2026-07-23 |
+| [BG0276](BG0276-conformance-reports-ungroomed-0-while-31-stories-carry.md) | conformance reports ungroomed=0 while 31 stories carry the bare {{define}} scaffold: US0411's machine-visible ungroomed count recognises only the new marker, so every story minted before it is invisible to the very count meant to surface them | Open | -- | 2026-07-24 | 2026-07-24 |
 
 ## Archived Releases
 
