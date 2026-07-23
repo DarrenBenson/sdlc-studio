@@ -244,6 +244,139 @@ def check_groomed(repo_root: Path | str, type_: str, text: str) -> None:
         f"sdlc-studio/.config.yaml and this becomes a warning, at both ends.")
 
 
+# --- The one resolvable-Affects predicate (every writer's single seam) -----------------------
+#
+# A declared `Affects` naming only paths with nothing behind them is a fictional footprint: the
+# plan's collision analysis mis-groups the unit, the engagement floor under-reads it, and gate's
+# changed-surface pass reads it too - all while the command exits 0. `file_finding.file` refused
+# it already (through the grooming gate); `artifact new` and `refine apply` did not, so five of
+# 23 stories minted through one decomposition run carried a wrong `Affects`.
+#
+# This is the ONE seam the three writers and the grooming gate all resolve `Affects` through, so
+# a path one command mints is never one another refuses, and a fourth writer added later cannot
+# quietly resolve paths by its own means. `sprint.breakdown` reads `unresolvable_affects` too, so
+# the mint check and the plan gate cannot drift on what 'resolvable' means.
+#
+# It refuses ONLY when a path is declared AND none of the declared paths resolves. A path to a
+# file the unit will CREATE cannot resolve yet and is the ordinary case, so SOME unresolved paths
+# are legitimate; ALL of them is the error - exactly the rule the grooming gate already applies.
+#: Directory names never worth walking for a basename match (VCS internals, caches, worktree
+#: clones of the tree itself). Pruned so the suggestion lookup stays fast and free of noise.
+_SUGGEST_SKIP_DIRS = frozenset({".git", "node_modules", "__pycache__", ".mypy_cache",
+                                ".pytest_cache", ".local", ".venv", "venv", ".tox", "worktrees"})
+
+#: The types whose declared `Affects` is a sprint footprint the planner reads - a delivery unit
+#: (story/bug) or a request (cr). An RFC is excluded for the same reason the grooming gate excludes
+#: it: its `Affects` names the files that are the OUTPUT of the decision it settles, so they cannot
+#: resolve yet and refusing on them would be theatre. An epic or PRD carries no unit footprint here.
+_AFFECTS_CHECKED_TYPES = ("bug", "cr", "story")
+
+
+def declared_affects(value: str) -> list[str]:
+    """The file paths a raw `Affects` value declares, read by the ONE parser the planner uses
+    (`sdlc_md.affects_files`), so a value the planner cannot read as a path list (a bare word,
+    a prose phrase) yields nothing here too - it is no `Affects` at all, not a fictional one."""
+    return sdlc_md.affects_files(f"> **Affects:** {value or ''}")
+
+
+def unresolvable_affects(repo_root: Path | str, declared: list[str]) -> list[str]:
+    """The declared `Affects` paths with nothing behind them on disk - the single resolver seam.
+
+    Every writer (`file_finding.file`, `artifact new`/`batch`, `refine apply`) and the grooming
+    gate (`sprint.breakdown`) bottom out HERE, so 'resolvable' has exactly one definition. A path
+    resolves against the repo root OR the installed skill dir (`sdlc_md.resolve_affects`)."""
+    root = Path(repo_root)
+    return [p for p in declared if sdlc_md.resolve_affects(root, p) is None]
+
+
+def basename_matches(repo_root: Path | str, path: str) -> list[str]:
+    """Real files in the repo carrying the basename of an unresolvable `path`, as repo-relative
+    paths (sorted). The lookup behind the refusal's suggestion; empty when nothing carries the
+    basename. A wrong directory prefix is the measured hazard - the same wrong prefix was typed
+    six times in one session - so the basename is almost always right and the tool holds the
+    answer at the moment it refuses."""
+    import os  # noqa: PLC0415 - local: only the refusal path walks the tree
+    root = Path(repo_root)
+    base = os.path.basename(str(path).rstrip("/"))
+    if not base:
+        return []
+    out: list[str] = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in _SUGGEST_SKIP_DIRS]
+        if base in filenames:
+            out.append(os.path.relpath(os.path.join(dirpath, base), root))
+    return sorted(out)
+
+
+def affects_suggestions(repo_root: Path | str, unresolvable: list[str]) -> str:
+    """The 'did you mean' lines for a refusal, one per unresolvable path. A UNIQUE basename match
+    is named as the likely correction; SEVERAL are listed with a note that the tool cannot choose
+    between them; NONE says so plainly, so the author is never sent to a file the tool invented.
+
+    Built where the predicate lives so every writer's refusal carries the same suggestion. Help,
+    never a correction: nothing is rewritten on the author's behalf, and a guess is never an
+    answer."""
+    import os  # noqa: PLC0415 - local, as `basename_matches`
+    lines: list[str] = []
+    for p in unresolvable:
+        matches = basename_matches(repo_root, p)
+        base = os.path.basename(str(p).rstrip("/"))
+        if len(matches) == 1:
+            lines.append(f"    {p}: did you mean {matches[0]}?")
+        elif len(matches) > 1:
+            lines.append(f"    {p}: {base} exists at {', '.join(matches)} - cannot choose "
+                         f"between them, name the one you meant")
+        else:
+            lines.append(f"    {p}: no file named {base} found in the repo")
+    return "\n".join(lines)
+
+
+def check_affects_resolvable(repo_root: Path | str, affects_value: str,
+                             type_: str | None = None, label: str = "") -> None:
+    """Refuse - BEFORE an id is allocated or a byte written - a declared `Affects` that resolves
+    to nothing. The check EVERY writer runs (`file_finding.file`, `artifact new`/`batch`,
+    `refine apply`), from the same seam the grooming gate reads, so a path one command mints
+    another never refuses and a future writer added without it fails US0323's routing check.
+
+    Refuses only when a path is declared AND none resolves; an absent `Affects`, or one with at
+    least one resolving path (the file the unit will CREATE alongside an existing one), is
+    untouched - the ordinary case is unaffected. `type_`, when given, scopes the check to a unit
+    whose `Affects` is a sprint footprint (`_AFFECTS_CHECKED_TYPES`): an RFC's declared files are
+    the output of its decision, so it is skipped exactly as the grooming gate skips it. Honours
+    the recorded grooming opt-out (`sprint.breakdown: judgement`): a warning, not a refusal, so
+    this is never the one gate an opted-out project cannot escape. `label` names the unit in a
+    batch refusal (a story of a decomposition), so the message says WHICH one carried the bad
+    path."""
+    if type_ is not None and type_ not in _AFFECTS_CHECKED_TYPES:
+        return
+    declared = declared_affects(affects_value)
+    if not declared:
+        return
+    unresolvable = unresolvable_affects(repo_root, declared)
+    if len(unresolvable) != len(declared):
+        return  # at least one path resolves - a file the unit will CREATE is legitimate
+    where = f"{label}: " if label else ""
+    suggestions = affects_suggestions(repo_root, unresolvable)
+    import sprint  # noqa: PLC0415 - local: the writer reads the planner's opt-out, not its weight
+    if sprint.breakdown_mode(repo_root) == "judgement":
+        print(f"warning: {where}the declared Affects resolves to nothing "
+              f"({', '.join(unresolvable)}) - written anyway, because this project records "
+              f"`sprint.breakdown: judgement`.\n{suggestions}", file=sys.stderr)
+        return
+    raise ValueError(
+        f"{where}the declared Affects resolves to nothing - refused. Nothing was allocated, "
+        f"nothing was written.\n"
+        f"  No declared path exists on disk: {', '.join(unresolvable)}\n"
+        f"{suggestions}\n"
+        f"  Why: a fictional footprint mis-groups the unit in the plan's collision analysis, "
+        f"under-reads it in the engagement floor, and misreports it in gate's changed-surface "
+        f"pass - all while the command exits 0. A path to a file the unit will CREATE is fine; "
+        f"the check refuses only when NO declared path resolves.\n"
+        f"  Fix the directory prefix (the basename is usually right), or drop the wrong path. "
+        f"Opt out ONLY as a recorded decision: `sprint.breakdown: judgement` in "
+        f"sdlc-studio/.config.yaml makes this a warning.")
+
+
 def scan_prose_acs(text: str) -> list[tuple[int, str, str]]:
     """Every command-shaped pseudo-`Verify:` inside an artefact's Acceptance Criteria section, as
     (1-based line number, the line, the offending command). The read-only counterpart of
@@ -709,6 +842,9 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     root = Path(repo_root)
     today = fields.get("date") or date.today().isoformat()
     fields = {**fields, "date": today}
+    # ... and refuse a declared `Affects` that resolves to nothing, before an id is allocated,
+    # from the ONE seam every writer shares - naming the closest basename match where there is one.
+    check_affects_resolvable(root, fields.get("affects"), type_)
     # ... and refuse an attribution to a mutation run the series does not hold, before an id is
     # allocated: a finding stamped with an unresolvable run claims a provenance nobody can check.
     fields = check_mutation_run(root, fields)

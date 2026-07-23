@@ -29,6 +29,7 @@ except ImportError:  # invoked from inside scripts/
     from lib import sdlc_md
 
 import artifact
+import file_finding
 import persona_resolve
 
 
@@ -379,8 +380,14 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
         _validate_into_target(root, into_epic)   # refuse a bad target BEFORE anything is minted
     else:
         sdlc_md.require_single_line("epic title", epic_title)
-    for title, _, _ in stories:
+    for title, _, affects in stories:
         sdlc_md.require_single_line("story title", title)
+        # A declared `Affects` that resolves to nothing stops the WHOLE decomposition here,
+        # before any epic or story is minted - refine mints under one rollback guard, so a bad
+        # path in the last story must refuse before the first write, not undo it after. From the
+        # shared seam, so a story minted here answers to the same rule the finding filer does.
+        if affects:
+            file_finding.check_affects_resolvable(root, affects, "story", label=f"story {title!r}")
     if sdlc_md.extract_field(rpath.read_text(encoding="utf-8"), "Status") is None:
         raise ValueError(f"{request_id} has no `> **Status:**` line - cannot wire its "
                          f"`Decomposed-into:` link; fix the request first.")
@@ -457,8 +464,12 @@ def refine_add(repo_root: Path | str, request_id: str, epic_title: str,
     if not stories:
         raise ValueError("refine add needs at least one --story.")
     sdlc_md.require_single_line("epic title", epic_title)
-    for title, _, _ in stories:
+    for title, _, affects in stories:
         sdlc_md.require_single_line("story title", title)
+        # Same up-front resolvable-Affects refusal as `apply`: a bad path in any added story
+        # aborts before the further epic and its stories are minted, not after.
+        if affects:
+            file_finding.check_affects_resolvable(root, affects, "story", label=f"story {title!r}")
     rid = sdlc_md.extract_record_id(rpath.stem) or request_id
     total = sum(p for _, p, _ in stories)
     if dry_run:
