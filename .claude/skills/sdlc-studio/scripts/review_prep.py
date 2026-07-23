@@ -375,6 +375,49 @@ def _render_lens(digest: dict) -> None:
               f"order, `lessons.py recall` to read one)")
 
 
+# --- Review phase ordering: the claim pass runs before the logic review ----------------
+# The two phases of a review, in the order they run. The claim pass (prose assertions marked
+# TRUE / FALSE / UNVERIFIABLE) precedes the logic review, because the claims are the cheapest
+# thing in the diff to check and the likeliest to be wrong - reaching them last is the most
+# expensive order this project has paid for, in review rounds.
+REVIEW_PHASES = ("claim-pass", "logic-review")
+
+
+def review_phase_order() -> tuple[str, ...]:
+    """The review phases in run order - claim pass first, logic review second."""
+    return REVIEW_PHASES
+
+
+def assess_review_round(claim_pass_ran: bool, prose_findings=None,
+                        logic_findings=None) -> dict:
+    """A review round's outcome with the two finding kinds kept apart, so a prose-only round is
+    visibly a different kind of round from a logic round - convergence told from churn.
+
+    A round that records LOGIC findings with no claim pass run is INCOMPLETE, not accepted: the
+    cheap prose pass was skipped for the expensive logic one, which is the order in which a
+    false claim went unfound for several rounds. Prose and logic finding counts are reported
+    separately, never summed into one total.
+    """
+    prose = list(prose_findings or [])
+    logic = list(logic_findings or [])
+    complete = bool(claim_pass_ran) or not logic
+    if prose and not logic:
+        kind = "prose-only"
+    elif logic and not prose:
+        kind = "logic-only"
+    elif logic and prose:
+        kind = "mixed"
+    else:
+        kind = "clean"
+    return {
+        "claim_pass_ran": bool(claim_pass_ran),
+        "prose_findings": len(prose),
+        "logic_findings": len(logic),
+        "complete": complete,
+        "kind": kind,
+    }
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct the argparse parser for the prep subcommand."""
     p = argparse.ArgumentParser(

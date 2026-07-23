@@ -7,6 +7,7 @@
 - [Overview](#overview)
 - [When to Run a Unified Review](#when-to-run-a-unified-review)
 - [/sdlc-studio review - Step by Step](#review-workflow)
+- [The adversarial closing-review brief](#closing-review-brief)
 - [Quick Mode](#quick-mode)
 - [Focus Mode](#focus-mode)
 - [TSD Review Workflow (Detailed)](#tsd-review-workflow)
@@ -349,6 +350,53 @@ orientation; the dated `RV{NNNN}-unified-review-*.md` remains the record.
 ▶️ NEXT: /sdlc-studio test-automation generate
 ══════════════════════════════════════════════════════════
 ```
+
+---
+
+## The adversarial closing-review brief {#closing-review-brief}
+
+The unified review above keeps the four specification layers honest. The **closing review** of a
+sprint is a different pass: a fresh reviewer, who did not write the diff, tries to break it. That
+brief is assembled by `scripts/critic.py brief` so it never depends on whoever wrote it happening
+to remember what works. Two things it carries are standing instructions, because both were
+improvised mid-sprint - in RUN-01KY3MFX and the reviews before it - rather than drawn from
+anything shipped.
+
+### The claim inventory runs first
+
+Before reading a line of logic, the reviewer inventories every **assertion the diff's prose
+makes** and marks each one against the code. The pass covers all four prose surfaces -
+**Resolutions, docstrings, comments and CHANGELOG entries** - because a pass that omits one
+exempts it, and a Resolution is the one artefact no test can fail: it is written after the work,
+by the author, to justify what they just did.
+
+Each assertion is ruled **TRUE, FALSE or UNVERIFIABLE**. UNVERIFIABLE is its own category, never
+folded into TRUE: a claim no command can settle is reported as resting on trust, so the reader
+sees how much of the prose is unchecked. A round whose every ruling is UNVERIFIABLE is not a
+clean round - nothing was checked, and it must not read the same as one that looked and found
+nothing wrong. The claim pass runs **before** the logic review and its findings are reported
+apart, so a round that found only prose defects is visibly a different kind of round from one
+that found logic defects - convergence told from churn.
+
+### Three standing review practices
+
+Every closing brief carries these three, each paired with the reason it exists:
+
+- **Per-item repair verdicts.** On a repair review, rule each previous finding **CLOSED,
+  OVER-CLAIMED or MOVED** individually. A general "review the repair" answer blurs the three
+  into one impression; and MOVED is not CLOSED - a defect that moved survived, and counting it
+  closed is how a repair masks the defect beside it.
+- **Mutate the author's TESTS, not only the code.** A test whose shape list was drawn from the
+  families where two implementations agree by construction passes every mutant while proving
+  nothing. No amount of reading the code finds that - only mutating the test does.
+- **Isolation re-testing of a surviving mutant.** When a mutant survives, re-test its branch in
+  **isolation** before drawing any conclusion from it. A sibling guard masked a survivor three
+  separate times in one sprint, and each time the truth appeared only when the branch was
+  exercised alone - a survivor is evidence about the harness, not about the test.
+
+`critic.py` refuses to issue a brief missing any of the three practices, or a claim-inventory
+pass that omits one of the four prose surfaces, so the discipline holds by construction rather
+than by the author remembering it.
 
 ---
 

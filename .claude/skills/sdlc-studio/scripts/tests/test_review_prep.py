@@ -337,5 +337,33 @@ class CloseIndexRowTests(unittest.TestCase):
             self.assertIn("RV0042", state["reviews"])             # the close still happened
 
 
+class ClaimPassOrderTests(unittest.TestCase):
+    """US0322 (EP0109): the claim pass is ordered before the logic review, and the two kinds of
+    finding are reported separately so a prose-only round is visibly a different kind of round."""
+
+    def test_a_round_with_logic_findings_and_no_claim_pass_is_incomplete(self) -> None:
+        order = review_prep.review_phase_order()
+        self.assertLess(order.index("claim-pass"), order.index("logic-review"))
+        # logic findings recorded with no claim pass run: incomplete, not accepted
+        r = review_prep.assess_review_round(claim_pass_ran=False, logic_findings=["bug at x:1"])
+        self.assertFalse(r["complete"])
+        # the same round WITH the claim pass run first is complete
+        r2 = review_prep.assess_review_round(claim_pass_ran=True, logic_findings=["bug at x:1"])
+        self.assertTrue(r2["complete"])
+
+    def test_prose_and_logic_findings_are_counted_separately(self) -> None:
+        r = review_prep.assess_review_round(
+            claim_pass_ran=True, prose_findings=["false claim a", "false claim b"],
+            logic_findings=[])
+        self.assertEqual(r["prose_findings"], 2)
+        self.assertEqual(r["logic_findings"], 0)
+        self.assertEqual(r["kind"], "prose-only")       # a different kind of round
+        # a round carrying a logic defect is a different kind, counted apart
+        r2 = review_prep.assess_review_round(
+            claim_pass_ran=True, prose_findings=[], logic_findings=["real bug"])
+        self.assertEqual((r2["prose_findings"], r2["logic_findings"]), (0, 1))
+        self.assertNotEqual(r2["kind"], r["kind"])
+
+
 if __name__ == "__main__":
     unittest.main()

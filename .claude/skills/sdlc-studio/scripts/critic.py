@@ -911,6 +911,110 @@ ISSUES: <semicolon-separated findings with file:line evidence, or 'none'>
 BLOCKING: <the subset that must be fixed before Done, or 'none'>"""
 
 
+# --- Standing review-brief practices ---------------------------------------------------
+# The three practices that produced this project's highest-value findings, each a STANDING
+# instruction carried in every reviewer brief with the reason it exists beside it. All three
+# were improvised mid-sprint rather than drawn from anything shipped, so they depended on
+# whoever wrote the brief remembering them - the party the review exists to check. Woven into
+# every brief so they no longer do. `missing_practices` proves both halves are present: a
+# practice named without its reason is the half a fresh reviewer drops first.
+_REVIEW_PRACTICES_BLOCK = """--- STANDING REVIEW PRACTICES (each with the reason it exists) ---
+
+On a REPAIR review, rule each previous finding CLOSED, OVER-CLAIMED or MOVED - a general
+'review the repair' answer blurs the three into one impression, and a MOVED defect is one that
+survived, not one that closed.
+
+Mutate the author's TESTS, not only the code: a shape list drawn from the families where two
+implementations agree by construction passes every mutant while proving nothing, and reading
+the code never finds that.
+
+When a mutant SURVIVES, re-test its branch in ISOLATION before drawing any conclusion from it:
+a sibling guard masked a survivor three separate times in one sprint, and each time the truth
+appeared only when the branch was exercised alone - a survivor is evidence about the harness,
+not about the test."""
+
+# Each practice: (name, instruction-regex, reason-regex). Both must be present in a brief for
+# the practice to count as carried; the reason clause is the half worth keeping. Searched over
+# the whitespace-normalised brief, and `[^.]*` keeps each match inside one sentence so an
+# instruction in one place and a reason in another do not pair by accident.
+_BRIEF_PRACTICES = (
+    ("per-item repair verdict",
+     r"rule each previous finding[^.]*CLOSED[^.]*OVER-CLAIMED[^.]*MOVED",
+     r"blurs?[^.]*into one impression"),
+    ("mutate the author's tests",
+     r"mutate the author'?s TESTS[^.]*not only the code",
+     r"agree by construction"),
+    ("isolation re-test of a survivor",
+     r"re-test[^.]*in ISOLATION[^.]*before drawing any conclusion",
+     r"sibling guard[^.]*masked"),
+)
+
+# The four prose surfaces the claim-inventory first pass must cover. A pass that omits one
+# exempts it, and a Resolution is the artefact no test can fail - the cheapest thing in the
+# diff to check and the likeliest to be wrong.
+CLAIM_SURFACES = ("Resolutions", "docstrings", "comments", "CHANGELOG")
+_CLAIM_INVENTORY_BLOCK = """--- CLAIM INVENTORY (run this FIRST, before the logic review) ---
+
+Before reading the logic, enumerate every assertion the diff's prose makes across all four
+surfaces - Resolutions, docstrings, comments and CHANGELOG entries - and mark each TRUE, FALSE
+or UNVERIFIABLE against the code. A Resolution is the one artefact no test can fail, so it is
+the cheapest thing here to check and the likeliest to be wrong. A claim no command can settle
+is UNVERIFIABLE, reported as such and counted on trust, never assumed TRUE."""
+
+
+def _normalise_brief(text: str) -> str:
+    """Collapse whitespace so a practice or surface wrapped across brief lines still matches."""
+    return re.sub(r"\s+", " ", (text or "")).strip()
+
+
+def missing_practices(brief_text: str) -> list[str]:
+    """The standing review practices a brief fails to carry, by name. Empty means all three are
+    present with their reasons. A practice whose instruction is present but whose reason clause
+    is not still counts as missing - the reason is what survives into a fresh reviewer's head."""
+    body = _normalise_brief(brief_text)
+    absent = []
+    for name, instruction, reason in _BRIEF_PRACTICES:
+        if not (re.search(instruction, body, re.I) and re.search(reason, body, re.I)):
+            absent.append(name)
+    return absent
+
+
+def assert_brief_practices(brief_text: str) -> None:
+    """Refuse a brief missing any of the three standing practices, naming which. A brief that
+    omits one leaves it to whoever wrote the brief to remember, which is how all three were
+    improvised rather than shipped - so it is refused, never issued."""
+    absent = missing_practices(brief_text)
+    if absent:
+        raise ValueError(
+            "reviewer brief is missing standing practice(s): " + "; ".join(absent)
+            + " - each of per-item repair verdict, mutating the author's TESTS, and isolation "
+              "re-testing of a survivor is a standing instruction; a brief that omits one is "
+              "refused, not issued")
+
+
+def missing_claim_surfaces(brief_text: str) -> list[str]:
+    """The prose surfaces the claim-inventory pass fails to name, so removing one is detectable.
+    All four (Resolutions, docstrings, comments, CHANGELOG) must be named or the omitted one is
+    exempted from the pass."""
+    body = _normalise_brief(brief_text)
+    return [s for s in CLAIM_SURFACES if not re.search(re.escape(s), body, re.I)]
+
+
+def assert_brief_claim_pass(brief_text: str) -> None:
+    """Refuse a brief whose claim-inventory pass omits any of the four prose surfaces or the
+    TRUE/FALSE/UNVERIFIABLE vocabulary. A pass that omits a surface silently exempts it."""
+    absent = missing_claim_surfaces(brief_text)
+    if absent:
+        raise ValueError(f"claim-inventory pass omits prose surface(s): {', '.join(absent)} - "
+                         f"all four ({', '.join(CLAIM_SURFACES)}) must be enumerated or the "
+                         f"omitted one is exempt; refused")
+    body = _normalise_brief(brief_text)
+    for word in ("TRUE", "FALSE", "UNVERIFIABLE"):
+        if not re.search(rf"\b{word}\b", body):
+            raise ValueError(f"claim-inventory pass never names the {word} ruling - each claim "
+                             f"is marked TRUE, FALSE or UNVERIFIABLE; refused")
+
+
 def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> str:
     """The seat-review prompt, assembled deterministically.
 
@@ -959,6 +1063,10 @@ Acceptance criteria (canonical - judge against THESE, not a paraphrase):
 {acs}
 
 Review depth: {depth}
+
+{_CLAIM_INVENTORY_BLOCK}
+
+{_REVIEW_PRACTICES_BLOCK}
 
 {_RETURN_CONTRACT}"""
 
@@ -1034,6 +1142,116 @@ def parse_verdict_block(text: str) -> tuple[str, str]:
     if blocking and blocking.lower() != "none":
         issues = (issues + "; " if issues else "") + f"BLOCKING: {blocking}"
     return verdict, issues
+
+
+# --- Per-item repair verdict -----------------------------------------------------------
+# A repair review rules each previous finding individually, so an aggregate 'the repair is
+# fine' can never cover findings the reviewer was shown as a set but never item by item.
+REPAIR_RULINGS = ("CLOSED", "OVER-CLAIMED", "MOVED")
+
+
+def enumerate_repair_findings(prior_findings: list[str]) -> str:
+    """Render the previous round's findings as a per-item checklist for a repair review, each
+    demanding its own CLOSED / OVER-CLAIMED / MOVED ruling. Refuses an empty list - a repair
+    review with nothing to rule on is not a repair review, and an aggregate answer about a set
+    never shown item by item is exactly what enumerating them forbids."""
+    items = [str(f).strip() for f in (prior_findings or []) if str(f).strip()]
+    if not items:
+        raise ValueError("a repair review needs the previous round's findings to enumerate - "
+                         "with none listed the reviewer answers in aggregate; refused")
+    lines = ["--- PER-ITEM REPAIR VERDICT (rule EACH previous finding below) ---", "",
+             "Rule each of the previous round's findings individually as CLOSED, OVER-CLAIMED "
+             "or MOVED. A general 'the repair is fine' answer is not accepted - every finding "
+             "carries its own ruling, and MOVED means the defect survived, not that it closed.",
+             ""]
+    for i, finding in enumerate(items, 1):
+        lines.append(f"{i}. {finding}")
+        lines.append("   ruling: ( CLOSED | OVER-CLAIMED | MOVED )")
+    return "\n".join(lines)
+
+
+def validate_repair_verdict(prior_findings: list[str], rulings: dict) -> bool:
+    """Refuse a repair-round verdict unless EVERY previous finding carries a ruling in
+    {CLOSED, OVER-CLAIMED, MOVED}. Raises ValueError naming the first unruled finding, or a
+    ruling outside the vocabulary. An unruled finding is never resolved in the repair's favour -
+    that is the aggregate answer this exists to refuse."""
+    seen = {str(k): str(v).strip().upper() for k, v in (rulings or {}).items()}
+    for finding in prior_findings:
+        key = str(finding)
+        ruling = seen.get(key, "")
+        if not ruling:
+            raise ValueError(f"finding not ruled: {key!r} - each previous finding carries its "
+                             f"own CLOSED/OVER-CLAIMED/MOVED ruling; an unruled finding is "
+                             f"refused, never taken as closed")
+        if ruling not in REPAIR_RULINGS:
+            raise ValueError(f"finding {key!r} has ruling {ruling!r} outside {REPAIR_RULINGS}")
+    return True
+
+
+def repair_open_findings(rulings: dict) -> list[str]:
+    """The findings still OPEN after a repair round: everything not CLOSED. A MOVED defect
+    survived - it moved, it did not close - and an OVER-CLAIMED repair claimed more than it did;
+    counting either as closed is how a repair masks the defect beside it."""
+    return [str(f) for f, r in (rulings or {}).items() if str(r).strip().upper() != "CLOSED"]
+
+
+# --- Claim inventory (prose assertions ruled TRUE / FALSE / UNVERIFIABLE) ---------------
+# The first pass of a review: enumerate every assertion the diff's prose makes and rule each,
+# before the logic review. A claim silently ruled TRUE because nothing contradicted it is the
+# failure this surfaces, so UNVERIFIABLE is its own category and an absent ruling is refused.
+CLAIM_RULINGS = ("TRUE", "FALSE", "UNVERIFIABLE")
+
+
+def validate_claim_inventory(claims: list[str], rulings: dict) -> bool:
+    """Refuse a claim inventory unless every enumerated claim carries a ruling in
+    {TRUE, FALSE, UNVERIFIABLE}. Raises ValueError naming the first unruled claim, or a ruling
+    outside the vocabulary. An absent ruling is refused, never defaulted to TRUE."""
+    seen = {str(k): str(v).strip().upper() for k, v in (rulings or {}).items()}
+    for claim in claims:
+        key = str(claim)
+        ruling = seen.get(key, "")
+        if not ruling:
+            raise ValueError(f"claim not ruled: {key!r} - every enumerated assertion carries a "
+                             f"TRUE/FALSE/UNVERIFIABLE ruling; an unruled claim is refused, "
+                             f"never assumed true")
+        if ruling not in CLAIM_RULINGS:
+            raise ValueError(f"claim {key!r} has ruling {ruling!r} outside {CLAIM_RULINGS}")
+    return True
+
+
+def summarise_claim_pass(rulings) -> dict:
+    """The claim pass summarised. Counts per category, how many claims rest on TRUST
+    (UNVERIFIABLE), how many were actually CHECKED against the code (TRUE or FALSE), and whether
+    the pass is VERIFIED. A pass is verified only when at least one claim was settled; a pass
+    whose every ruling is UNVERIFIABLE checked nothing, and must not read the same as one that
+    looked and found nothing wrong. Accepts a rulings dict or a bare iterable of rulings."""
+    values = rulings.values() if isinstance(rulings, dict) else (rulings or [])
+    counts = {r: 0 for r in CLAIM_RULINGS}
+    for v in values:
+        u = str(v).strip().upper()
+        if u in counts:
+            counts[u] += 1
+    checked = counts["TRUE"] + counts["FALSE"]
+    on_trust = counts["UNVERIFIABLE"]
+    return {"true": counts["TRUE"], "false": counts["FALSE"],
+            "unverifiable": on_trust, "on_trust": on_trust,
+            "checked": checked, "total": checked + on_trust,
+            "verified": checked > 0}
+
+
+def render_claim_pass(rulings) -> str:
+    """One line describing the claim pass, in which a checked round and an all-on-trust round
+    read differently. An all-UNVERIFIABLE pass renders NOT VERIFIED - nothing was settled - so
+    it cannot be mistaken for a clean pass that looked and found nothing."""
+    s = summarise_claim_pass(rulings)
+    if s["total"] == 0:
+        return "claim pass: no assertions enumerated"
+    if not s["verified"]:
+        return (f"claim pass: NOT VERIFIED - all {s['total']} claim(s) UNVERIFIABLE, nothing "
+                f"settled against the code; this round checked nothing")
+    trust = f", {s['on_trust']} on trust (UNVERIFIABLE)" if s["on_trust"] else ""
+    return (f"claim pass: {s['checked']} of {s['total']} checked "
+            f"(TRUE {s['true']}, FALSE {s['false']}){trust}")
 
 
 def cmd_brief(args: argparse.Namespace) -> int:
