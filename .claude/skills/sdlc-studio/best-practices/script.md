@@ -151,6 +151,23 @@ Use a shared config module for project-wide settings. For bash, read from config
 | Data for parsing | JSON | stdout |
 | Reports | Markdown | file |
 
+## A guard's message is derived from the guard {#derived-message}
+
+A user-facing sentence about what a guard, gate or check will do is computed from the guard's
+own predicate, not written alongside it. A message maintained by hand drifts the moment the
+predicate moves, and then it misleads silently - about half the time in the dangerous
+direction, telling an operator a total guard is narrow so they route around it.
+
+The counter-example that impersonates a derivation: an enumeration of the spellings a matcher
+happens to treat one way is a restatement wearing a function's clothes. It agrees with the
+predicate only on the cases the author thought of, so a case they missed reads as the opposite
+of the truth. Probing the real predicate - asking the matcher its own question over a battery
+of inputs - is what makes the sentence a derivation rather than a second copy of the rule.
+
+The compile-time echo of this rule: where a message and the verdict it describes must agree,
+one test drives both over the same battery and asserts they agree (see
+[testing.md](testing.md), heuristic 6), rather than asserting the message's text on its own.
+
 ## Exit Codes
 
 | Code | Meaning |

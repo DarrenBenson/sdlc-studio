@@ -463,7 +463,16 @@ def claims_everything(claim) -> bool:
     return everything_reason(claim) is not None
 
 
-def everything_reason(claim) -> str | None:
+#: The ONE battery both the message and the verdict are driven over. `everything_reason`
+#: PROBES this tuple to derive the glob sentence, and the message/verdict agreement test runs
+#: the gate matcher over the SAME tuple to get the verdict. Two copies of this list is how the
+#: previous oracle came to agree with the matcher only on the shapes it had chosen - a claim
+#: probed over paths the matcher was never asked about proves nothing. There is now one home,
+#: and both sides read it.
+MATCHER_PROBE_BATTERY = ("a", "a/b.py", "z/y/x/w.md", "README", "x.y", ".githooks/pre-commit")
+
+
+def everything_reason(claim, probes=MATCHER_PROBE_BATTERY) -> str | None:
     """WHY this claim claims the whole tree, in words, or None when it does not.
 
     `claims_everything` is this function asked as a yes/no. It exists because a message that
@@ -471,6 +480,10 @@ def everything_reason(claim) -> str | None:
     check that a word appears, which passes for a claim the word does not describe, and a
     mutant deleting the other causes survives. Naming the ONE cause that applies makes the
     sentence vary with its input, which is what makes it checkable.
+
+    `probes` is the battery the glob branch is decided over. It defaults to the module's one
+    battery so the printed message and the gate lane's verdict are derived over the SAME
+    inputs; a test drives both over it to assert they agree.
     """
     if not isinstance(claim, str):
         return "it is not a path (the record cannot be interpreted)"
@@ -495,7 +508,6 @@ def everything_reason(claim) -> str | None:
     # sentence, and the four before it were all enumerations too. Probing settles it by
     # construction: a claim that matches every one of these unrelated paths claims everything.
     import fnmatch  # noqa: PLC0415 - local, as elsewhere in the matcher family
-    probes = ("a", "a/b.py", "z/y/x/w.md", "README", "x.y", ".githooks/pre-commit")
     if all(s.startswith(pat + "/") or fnmatch.fnmatch(s, pat) for s in probes):
         return "it is a glob matching every path the matcher probes"
     return None
