@@ -230,6 +230,90 @@ def check_body_links(workspace: Path, allow: set[str]) -> list[str]:
     return sorted(broken)
 
 
+def inbound_references(repo_root: Path | str, target_name: str,
+                       workspace: Path | str | None = None) -> list[dict]:
+    """Every markdown link across the SDLC workspace that resolves to the artefact file
+    `target_name` (a bare filename, e.g. `CR0001-foo.md`), for a retitle to rewrite or name.
+
+    Each item: {"path": abspath, "rel": path relative to the repo root, "line": 1-based,
+    "target": the link's `.md` target, "immutable": bool}. `immutable` marks a reference the
+    retitle must NOT rewrite - a row in an `archive/<release>/` sub-index, which archive.py
+    alone owns; the caller refuses the retitle and names it rather than leaving it dangling.
+
+    Two exclusions keep the scan to references a retitle is responsible for: the live
+    `_index.md` of a type (the retitle updates the target's own row through reconcile, not
+    here) and the target file itself. Fenced and inline-code links are ignored (they are
+    examples, not references), matching the body-link pass. Returns [] when the workspace
+    does not exist - a consuming repo need not have one."""
+    root = Path(repo_root)
+    ws = Path(workspace) if workspace else root / "sdlc-studio"
+    out: list[dict] = []
+    if not ws.is_dir():
+        return out
+    for path in sorted(ws.rglob("*.md")):
+        parts = path.relative_to(ws).parts
+        in_archive = "archive" in parts
+        if path.name == "_index.md" and not in_archive:
+            continue  # the live index is reconcile's domain (the retitle syncs it there)
+        if path.name == target_name:
+            continue  # the artefact itself
+        for i, line in enumerate(_without_code(path.read_text(encoding="utf-8")), 1):
+            for tgt in _LINK_RE.findall(line):
+                if Path(tgt).name == target_name:
+                    out.append({"path": str(path),
+                                "rel": path.relative_to(root).as_posix(),
+                                "line": i, "target": tgt, "immutable": in_archive})
+    return out
+
+
+_INBOUND_LINK_RE = re.compile(r"(\]\()([\w./-]+\.md)(#[\w-]+)?(\))")
+
+
+def rewrite_inbound_links(text: str, old_name: str, new_name: str) -> tuple[str, int]:
+    """`text` with every markdown link whose target basename is `old_name` repointed to
+    `new_name`, preserving each link's directory prefix and anchor. Returns (new_text, n)
+    where n counts the lines changed.
+
+    Fenced blocks and inline-code spans are left untouched, so an example link that quotes
+    the old filename survives a rename - the same code-blindness `inbound_references` uses to
+    find them, so the finder and the rewriter agree about which references are real."""
+    def _sub(seg: str) -> str:
+        def repl(m: re.Match) -> str:
+            inner = m.group(2)
+            if Path(inner).name != old_name:
+                return m.group(0)
+            prefix = inner[: len(inner) - len(old_name)]
+            return f"{m.group(1)}{prefix}{new_name}{m.group(3) or ''}{m.group(4)}"
+        return _INBOUND_LINK_RE.sub(repl, seg)
+
+    out: list[str] = []
+    in_fence = False
+    changed = 0
+    for line in text.splitlines():
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+            out.append(line)
+            continue
+        if in_fence:
+            out.append(line)
+            continue
+        # rewrite only the segments OUTSIDE inline code spans (odd `-split indices are code)
+        segs = line.split("`")
+        line_changed = False
+        for k in range(0, len(segs), 2):
+            new_seg = _sub(segs[k])
+            if new_seg != segs[k]:
+                segs[k] = new_seg
+                line_changed = True
+        out.append("`".join(segs))
+        if line_changed:
+            changed += 1
+    new_text = "\n".join(out)
+    if text.endswith("\n"):
+        new_text += "\n"
+    return new_text, changed
+
+
 def check_root_docs(repo_root: Path) -> list[str]:
     """File-existence for the repo-root docs' markdown links (README, AGENTS, CLAUDE, ...).
     These sit outside the skill tree, so the skill scan never saw them; a link is checked
