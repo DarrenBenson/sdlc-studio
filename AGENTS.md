@@ -74,7 +74,17 @@ working tree). To mirror the repo's skill tree into the installed copy
 ```bash
 bash tools/forward-port.sh          # show the itemised diff
 bash tools/forward-port.sh --yes    # apply (.local and __pycache__ untouched)
+bash tools/forward-port.sh --check  # exit non-zero if the copy has drifted
 ```
+
+`--check` is the drift gate. The installed copy is what every other project on
+this machine loads, so the window between a fix landing here and the mirror
+running is a window in which a fix believed shipped is in force nowhere. The
+check writes nothing, prints the itemised list and the count of differing files,
+and exits non-zero when that count is not zero. Two states are reported rather
+than failed: no installed copy at the target path, and a copy holding a
+`.local/forward-port.pin` marker - a machine that deliberately does not mirror
+is not held to a drift verdict.
 
 ## Soft Dependencies (runtime)
 
@@ -123,6 +133,14 @@ plain Python/bash command you can run directly. Do not skip the gate because
 | Skill tests | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` | every shipped skill-script unit test |
 | Tool tests | `python3 -m unittest discover -s tools/tests` | every repo-only `tools/` checker unit test (kept out of the shipped payload) |
 | Drift | `python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect` | index / status / count drift in the dogfooded `sdlc-studio/` workspace |
+
+One lane is deliberately **not** in the gate. `npm run lint:corpus`
+(`tools/lint_corpus.py`) lints every tracked markdown file under the strict root
+rule set - dot-directories included, which no `**/*.md` glob can reach - and
+attributes each finding against the latest tag, so the report says what the
+release introduced rather than reciting the backlog. It runs from a scheduled CI
+job and by hand before a release; the gate above is already over its time budget
+and a guard whose cost is paid on every commit gets switched off.
 
 Only `lint:md` (markdownlint) needs Node; the rest are stdlib Python or bash.
 `markdownlint-cli` is a devDependency, so `npm install` provides it at

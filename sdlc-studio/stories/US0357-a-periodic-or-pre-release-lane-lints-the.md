@@ -44,3 +44,4 @@
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-24 | sdlc-studio | Groomed: real ACs + Affects authored |
+| 2026-07-24 | sdlc-studio | Built TDD: `tools/lint_corpus.py` + `npm run lint:corpus` + scheduled `corpus` CI job; 3 ACs green, mutation-proven |
