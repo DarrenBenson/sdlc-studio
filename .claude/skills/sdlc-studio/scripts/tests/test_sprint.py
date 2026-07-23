@@ -3042,7 +3042,7 @@ class GoalConsultTests(unittest.TestCase):
             _bug(root, 1)
             _seats(root)
             _goal_review(root, "empty the sized backlog",
-                         seats=(("product", "no", "every bug Fixed and signed off", "yes"),))
+                         seats=(("product", "yes", "every bug Fixed and signed off", "yes"),))
             rc, out, err = self._plan(root, "--format", "json", "--order", "wsjf",
                                       "--sprint-goal", "empty the sized backlog")
             self.assertEqual(rc, 0, err)
@@ -3051,7 +3051,7 @@ class GoalConsultTests(unittest.TestCase):
             self.assertTrue(gr["reviewed"])
             seat = gr["seats"][0]
             self.assertEqual(seat["seat"], "product")
-            self.assertEqual(seat["achievable"], "no")
+            self.assertEqual(seat["achievable"], "yes")
             self.assertEqual(seat["done_means"], "every bug Fixed and signed off")
             self.assertEqual(seat["one_increment"], "yes")
             # alongside the WSJF components, never in place of them
@@ -3150,6 +3150,124 @@ class GoalConsultTests(unittest.TestCase):
             status = mod.goal_review_status(root, "empty the backlog")
             self.assertTrue(status["reviewed"])
             self.assertEqual(status["seats"][0]["done_means"], "every bug Fixed")
+
+
+class NegativeGoalVerdictHasAnEffectTests(unittest.TestCase):
+    """BG0262: a seat that judged the Sprint Goal NOT achievable used to discharge the plan gate
+    exactly as one that said it was - the verdict's CONTENT was never read. Now a negative verdict
+    refuses the plan unless an override with a reason is recorded."""
+
+    def _plan(self, root, *extra):
+        mod = _load()
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                unittest.mock.patch.object(sys, "stdin", io.StringIO("")):
+            rc = mod.main(["plan", "--bugs", "Open", "--no-fetch", "--root", str(root), *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_the_verdict_vocabulary_reads_no_from_a_reasoned_answer(self) -> None:
+        sp = _load()
+        self.assertEqual(sp.verdict_polarity("no - not at the stated appetite"), "no")
+        self.assertEqual(sp.verdict_polarity("yes"), "yes")
+        self.assertEqual(sp.verdict_polarity("never"), "no")
+        self.assertEqual(sp.verdict_polarity("maybe later"), "unclear")
+
+    def test_a_negative_verdict_refuses_the_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            _goal_review(root, "empty the sized backlog",
+                         seats=(("engineering", "no", "every bug Fixed", "no"),))
+            rc, out, err = self._plan(root, "--write", "--sprint-goal", "empty the sized backlog")
+            self.assertEqual(rc, 2, "a seat saying NOT achievable must stop the plan")
+            self.assertFalse((root / "sdlc-studio" / ".local" / "run-state.json").exists())
+            self.assertFalse((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
+            self.assertIn("NOT achievable", err)
+
+    def test_a_positive_verdict_still_proceeds(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            _goal_review(root, "empty the sized backlog")   # default seat: achievable=yes
+            rc, out, err = self._plan(root, "--write", "--sprint-goal", "empty the sized backlog")
+            self.assertEqual(rc, 0, err)
+            self.assertTrue((root / "sdlc-studio" / ".local" / "run-state.json").exists())
+
+    def test_an_override_lets_the_plan_proceed_and_records_the_reason(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            _goal_review(root, "empty the sized backlog",
+                         seats=(("engineering", "no", "every bug Fixed", "yes"),))
+            rc, out, err = self._plan(root, "--write", "--sprint-goal", "empty the sized backlog",
+                                      "--override-goal-review", "accepted the appetite risk")
+            self.assertEqual(rc, 0, err)
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            ovr = state["goal_review_override"]
+            self.assertEqual(ovr["reason"], "accepted the appetite risk")
+            self.assertEqual(ovr["objections"][0]["seat"], "engineering")
+
+
+class GoalReviewKeepsItsRoundsTests(unittest.TestCase):
+    """BG0263: the goal review had ONE record - a second review overwrote the first, so a goal
+    rewritten in answer to a REJECT read as a smooth first-time approval. Rounds now accumulate,
+    the gate reads the latest, and the round count reaches the run state."""
+
+    def _record(self, root, goal, seat):
+        mod = _load()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return mod.main(["goal-review", "record", "--root", str(root),
+                             "--goal", goal, "--seat", seat])
+
+    def _plan(self, root, *extra):
+        mod = _load()
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                unittest.mock.patch.object(sys, "stdin", io.StringIO("")):
+            rc = mod.main(["plan", "--bugs", "Open", "--no-fetch", "--root", str(root), *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_rounds_accumulate_rather_than_overwrite(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._record(root, "goal A", "engineering|no|every bug Fixed|no")
+            self._record(root, "goal B", "engineering|yes|every bug Fixed|yes")
+            rounds = sp.goal_review_rounds(sp.goal_review(root))
+            self.assertEqual(len(rounds), 2, "the rejection of goal A must survive the rewrite")
+            self.assertEqual(rounds[0]["goal"], "goal A")
+            self.assertEqual(rounds[0]["seats"][0]["achievable"], "no")
+            self.assertEqual(rounds[1]["goal"], "goal B")
+
+    def test_the_gate_reads_the_latest_round(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            self._record(root, "goal A", "engineering|no|every bug Fixed|no")
+            self._record(root, "goal B", "engineering|yes|every bug Fixed|yes")
+            # the LATEST round (goal B) discharges the gate; the earlier goal A no longer matches
+            rc_b, _, _ = self._plan(root, "--write", "--sprint-goal", "goal B")
+            self.assertEqual(rc_b, 0)
+            rc_a, _, err_a = self._plan(root, "--write", "--sprint-goal", "goal A")
+            self.assertEqual(rc_a, 2, "a goal that is not the latest round no longer discharges")
+            self.assertIn("different goal", err_a)
+
+    def test_the_round_count_reaches_the_run_state(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _seats(root)
+            self._record(root, "goal A", "engineering|no|every bug Fixed|no")
+            self._record(root, "the final goal", "engineering|yes|every bug Fixed|yes")
+            rc, out, err = self._plan(root, "--write", "--sprint-goal", "the final goal")
+            self.assertEqual(rc, 0, err)
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertEqual(state["sprint_goal_review"]["rounds"], 2,
+                             "the close must be able to say the goal took two rounds")
 
 
 class ReachableEndStateTests(unittest.TestCase):
@@ -5765,6 +5883,217 @@ class CarryForwardCloseTests(unittest.TestCase):
             self.assertIn("carried", none)
         finally:
             shutil.rmtree(d, ignore_errors=True)
+
+
+def _plan_text(root: Path) -> str:
+    """Run `plan` and return its stdout - the surface an operator reads."""
+    out, err = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        _load().main(["plan", "--crs", "Proposed", "--root", str(root),
+                      "--no-fetch", "--skip-personas"])
+    return out.getvalue()
+
+
+#: Three whole-sprint velocity rows (Measured 0, ceremony included), same model - at or above
+#: FIXED_MIN_SPRINTS, so the fitted fixed term may be APPLIED to a forecast total.
+_FIXED_ROWS_APPLIED = [
+    {"id": "RETRO0001", "units": 4, "measured": 0, "points": 18, "actual": 4_119_916,
+     "model": "claude-opus-4-8"},
+    {"id": "RETRO0002", "units": 33, "measured": 0, "points": 100, "actual": 5_194_538,
+     "model": "claude-opus-4-8"},
+    {"id": "RETRO0003", "units": 12, "measured": 0, "points": 50, "actual": 4_650_000,
+     "model": "claude-opus-4-8"},
+]
+#: Two whole-sprint rows - the fit is MEASURED but below the apply minimum (CR0391's own case).
+_FIXED_ROWS_CANDIDATE = _FIXED_ROWS_APPLIED[:2]
+
+
+class TheForecastCarriesAFixedTermTests(unittest.TestCase):
+    """US0336 / CR0391: the forecast carries an explicit FIXED per-sprint term beside the
+    marginal per-point term, and the plan shows BOTH rather than a single product. A small batch
+    is not priced as though the ceremony, review rounds and close were free."""
+
+    def _applied_root(self, d) -> Path:
+        root = Path(d)
+        _velocity(root, _FIXED_ROWS_APPLIED)
+        return root
+
+    def test_the_total_is_a_fixed_term_plus_points_times_the_marginal_rate(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._applied_root(d)
+            sp = _load()
+            _pointed_cr(root, 1, 5)
+            _pointed_cr(root, 2, 3)
+            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
+            self.assertTrue(fc["fixed_applied"])
+            self.assertGreater(fc["fixed_term"], 0)
+            self.assertGreater(fc["fixed_marginal"], 0)
+            self.assertEqual(fc["rate"], fc["fixed_marginal"],
+                             "the marginal half of the fit is the per-point rate")
+            self.assertEqual(fc["points"], 8)
+            self.assertEqual(fc["tokens"], fc["fixed_term"] + fc["points"] * fc["fixed_marginal"])
+            # neither term can be recovered by dividing the other out: total/points != marginal
+            self.assertNotEqual(fc["tokens"] // fc["points"], fc["rate"])
+
+    def test_the_rendered_forecast_shows_both_terms_and_not_one_product(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._applied_root(d)
+            _pointed_cr(root, 1, 5)
+            text = _plan_text(root)
+            self.assertIn("fixed per-sprint term", text)   # the fixed term, its own line
+            self.assertIn("per-point (build) term", text)  # the marginal term, its own line
+            self.assertIn("APPLIED", text)
+            # the fixed figure is quoted, not folded into a bare points-times-a-rate product
+            fixed_line = next(ln for ln in text.splitlines() if "fixed per-sprint term" in ln)
+            self.assertRegex(fixed_line, r"[0-9][0-9,]+")
+
+    def test_a_half_size_batch_costs_more_than_half_and_more_per_point(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._applied_root(d)
+            sp = _load()
+            _pointed_cr(root, 1, 8)
+            _pointed_cr(root, 2, 4)
+            cr1 = root / "sdlc-studio" / "change-requests" / "CR0001-x.md"
+            cr2 = root / "sdlc-studio" / "change-requests" / "CR0002-x.md"
+            big = sp._token_forecast(root, [{"id": "CR0001", "path": str(cr1), "points": 8}])
+            small = sp._token_forecast(root, [{"id": "CR0002", "path": str(cr2), "points": 4}])
+            self.assertTrue(big["fixed_applied"] and small["fixed_applied"])
+            self.assertGreater(small["tokens"], big["tokens"] / 2,
+                               "the fixed term is amortised over fewer points, so > half")
+            self.assertGreater(small["tokens"] / small["points"],
+                               big["tokens"] / big["points"],
+                               "and the smaller batch costs strictly more per point")
+
+
+class AFitIsNeverAppliedAutomaticallyTests(unittest.TestCase):
+    """US0338 / CR0391: a fit is never applied automatically. The plan states how many sprints it
+    rests on and refuses to spend a fit below FIXED_MIN_SPRINTS - a line through two points is not
+    calibration."""
+
+    def test_a_two_sprint_fit_is_reported_and_kept_out_of_the_total(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _velocity(root, _FIXED_ROWS_CANDIDATE)         # two whole-sprint rows
+            _pointed_cr(root, 1, 5)
+            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
+            self.assertFalse(fc["fixed_applied"])
+            self.assertIsNotNone(fc["fixed_term"], "the candidate fit is still reported")
+            self.assertEqual(fc["fixed_in_total"], 0, "and kept OUT of the total")
+            self.assertEqual(fc["tokens"], fc["points"] * fc["rate"],
+                             "the total prices the build only - it did not move when row 2 landed")
+            text = _plan_text(root)
+            self.assertIn("NOT APPLIED", text)
+            self.assertIn(str(sp.FIXED_MIN_SPRINTS), text)   # the minimum required
+            self.assertIn("2", text)                         # the count the project has
+
+    def test_every_quoted_fixed_term_states_the_sprint_count_behind_it(self) -> None:
+        sp = _load()
+        # candidate case: a figure is quoted, so its sample size (2) must sit beside it
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _velocity(root, _FIXED_ROWS_CANDIDATE)
+            _pointed_cr(root, 1, 5)
+            self.assertIn("fitted on 2 sprint", _plan_text(root))
+        # applied case: the figure is quoted, so its sample size (3) must sit beside it
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _velocity(root, _FIXED_ROWS_APPLIED)
+            _pointed_cr(root, 1, 5)
+            self.assertIn("fitted on 3 whole-sprint", _plan_text(root))
+
+    def test_a_fit_at_the_minimum_is_applied_and_names_its_sprint_count(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self.assertEqual(len(_FIXED_ROWS_APPLIED), sp.FIXED_MIN_SPRINTS,
+                             "the fixture sits exactly AT the apply minimum")
+            _velocity(root, _FIXED_ROWS_APPLIED)
+            _pointed_cr(root, 1, 5)
+            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
+            self.assertTrue(fc["fixed_applied"], "at the minimum the fit is applied")
+            self.assertEqual(fc["fixed_in_total"], fc["fixed_term"])
+            self.assertGreater(fc["tokens"], fc["points"] * fc["fixed_marginal"],
+                               "the fixed term entered the total")
+            text = _plan_text(root)
+            self.assertIn("APPLIED", text)
+            self.assertIn("3", text)                         # the sprint count behind it
+
+
+class TheSeedBasisNamesItsConditionTests(unittest.TestCase):
+    """US0339 / CR0391: the shipped seed's basis names the DATA the no-base-term finding was
+    measured on (per-unit actuals with no sprint ceremony), instead of asserting flatly that a
+    base term does worse - the sentence a future author would cite to reject the fixed term."""
+
+    CONDITION = "per-unit actuals with no sprint ceremony"
+
+    def test_the_seed_basis_states_the_data_the_no_base_term_finding_was_measured_on(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            sp = _load()
+            rate = sp.tokens_per_point(Path(d))       # no evidence -> the shipped seed
+            self.assertEqual(rate["source"], "seed")
+            self.assertIn(self.CONDITION, rate["basis"].lower(),
+                          "the seed basis names the data the no-base-term result was measured on")
+            # it no longer asserts the bare, unconditional claim
+            self.assertNotIn("no base term: fitting one does worse than not fitting at all",
+                             rate["basis"].lower())
+
+    def test_the_qualification_survives_when_a_local_rate_replaces_the_seed(self) -> None:
+        # A DIFFERENT fixture: this project has measured a rate of its own, so the forecast quotes
+        # that, not the seed. The condition must still travel with the figure - a criterion checked
+        # only in the seed case would be satisfied by AC1's fixture and discriminate nothing.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _velocity(root, _FIXED_ROWS_CANDIDATE)     # two whole-sprint rows -> a local rate
+            _pointed_cr(root, 1, 5)
+            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
+            self.assertNotEqual(fc["rate_source"], "seed",
+                                "the premise: a local rate has replaced the seed")
+            self.assertIn(self.CONDITION, fc["basis"].lower(),
+                          "the condition still travels with the figure when the seed is gone")
+
+
+class HelpAndRefusalNameTheSameRoutesTests(unittest.TestCase):
+    """US0329: help/sprint.md states the single run slot and the two ways past a refused disjoint
+    batch, spelled as the SAME two routes an operator sees in the refusal - so either surface leads
+    to the same action, and no third route is implied."""
+
+    HELP = SCRIPT.parent.parent / "help" / "sprint.md"
+
+    def _help(self) -> str:
+        return self.HELP.read_text(encoding="utf-8")
+
+    def test_the_help_states_the_slot_the_refusal_and_the_accumulating_replan(self) -> None:
+        # AC1's three facts, present and no fourth behaviour implied.
+        text = self._help().lower()
+        self.assertIn("one run", text)                       # a project holds one run at a time
+        self.assertTrue("refused, not merged" in text or "refused rather than merged" in text,
+                        "a disjoint batch is refused rather than merged")
+        self.assertIn("accumulat", text)                     # an overlapping re-plan accumulates
+
+    def test_the_refusal_and_help_sprint_name_the_same_two_routes_and_spellings(self) -> None:
+        sp = _load()
+        refusal = str(sp.run_state.DisjointBatchError("RUN-01TEST", "running", 6, repo_root="."))
+        refusal_cmds = [ln for ln in refusal.splitlines() if "sprint.py" in ln]
+        # the refusal names exactly two routes, as commands
+        self.assertEqual(len(refusal_cmds), 2)
+        self.assertTrue(any("close" in c for c in refusal_cmds))
+        self.assertTrue(any("plan" in c and "--write" in c for c in refusal_cmds))
+
+        # the help names the SAME two routes, spelled as the same commands, and no third
+        help_text = self._help()
+        slot = help_text.split("## One run slot", 1)[1].split("\n## ", 1)[0]
+        ways = slot.split("two ways forward", 1)[1]          # only the ways-forward list
+        route_lines = [ln for ln in ways.splitlines()
+                       if "`sprint close`" in ln or ("`sprint plan" in ln and "--write" in ln)]
+        self.assertEqual(len(route_lines), 2, "the help names exactly the two routes, no third")
+        self.assertTrue(any("close" in ln for ln in route_lines))
+        self.assertTrue(any("plan" in ln and "--write" in ln for ln in route_lines))
+        # the two surfaces agree on the two actions: close, and a --write re-plan
+        self.assertEqual(
+            {"close" if "close" in c else "replan" for c in refusal_cmds},
+            {"close" if "close" in ln else "replan" for ln in route_lines})
 
 
 if __name__ == "__main__":

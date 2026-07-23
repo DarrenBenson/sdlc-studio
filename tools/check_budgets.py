@@ -42,9 +42,10 @@ ALLOWLIST = {
     "reference-config.md": 640,  # +repair-plan gate keys (EP0106): a new opt-in config surface
     "reference-review.md": 648,  # +closing-review brief section (EP0108/EP0109): claim inventory
                                  # first pass and the three standing adversarial practices
-    "reference-sprint.md": 625,  # +deferred operator decisions and the bounded close exit
-                                 # (CR0369/CR0371) - loop steps, not accretion; the file has a
-                                 # Reading Guide, so partial reads stay anchored
+    "reference-sprint.md": 640,  # +deferred operator decisions and the bounded close exit
+                                 # (CR0369/CR0371), +the fixed per-sprint forecast term (CR0391)
+                                 # - loop steps, not accretion; the file has a Reading Guide, so
+                                 # partial reads stay anchored
 }
 
 

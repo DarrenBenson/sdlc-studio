@@ -70,7 +70,10 @@ class TokenBaselineTests(unittest.TestCase):
         self._meter(100_000)
         run_state.open_run(str(self.root), batch=["BG0001"], goal="g")
         self._meter(400_000)                       # the run spends while it is open
-        run_state.open_run(str(self.root), batch=["BG0002"])   # a mid-run re-cut
+        # A mid-run re-cut that KEEPS the open run's work and pulls one more unit in: an
+        # overlapping re-plan, which accumulates (a disjoint one is refused - see
+        # DisjointBatchIsRefusedTests).
+        run_state.open_run(str(self.root), batch=["BG0001", "BG0002"])
         self.assertEqual(self._baseline()["tokens"], 100_000,
                          "a re-plan must not discount what the run has already spent")
         self.assertEqual(run_state.read(str(self.root))["batch"], ["BG0001", "BG0002"])
@@ -446,6 +449,170 @@ class ReviewLedgerHonestyTests(unittest.TestCase):
             run_state.record_review_round(self.root, "APPROVE", units=["BG0001"])
         self.assertEqual(run_state.review_round_count(self.root), 7,
                          "no round may be recorded after the run ended")
+
+
+class DisjointBatchIsRefusedTests(unittest.TestCase):
+    """CR0401 / US0326: a `sprint plan --write` against an open run holding a DISJOINT batch is
+    refused, not fused. One project holds one run slot; folding a second, unrelated batch into
+    the open run strands its goal verdict. An OVERLAPPING re-plan still accumulates."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = str(Path(self.tmp.name))
+        (Path(self.root) / "sdlc-studio" / ".local").mkdir(parents=True)
+        self.addCleanup(self.tmp.cleanup)
+
+    def _open_six(self) -> dict:
+        return run_state.open_run(self.root, batch=[f"BG{n:04d}" for n in range(1, 7)],
+                                  goal="evacuate the homeserver")
+
+    def test_a_disjoint_plan_exits_non_zero_and_leaves_run_state_json_byte_identical(self) -> None:
+        self._open_six()
+        p = run_state.path(self.root)
+        before = p.read_bytes()
+        with self.assertRaises(run_state.DisjointBatchError):
+            run_state.open_run(self.root, batch=["US0100", "US0101"], goal="a second sprint")
+        self.assertEqual(p.read_bytes(), before,
+                         "a refused disjoint plan must leave run-state.json byte-identical")
+
+    def test_one_shared_unit_re_plans_and_zero_shared_units_refuses(self) -> None:
+        opened = self._open_six()
+        # one shared unit (BG0001) -> a genuine re-plan: accumulates, no new flag, same identity
+        replanned = run_state.open_run(self.root, batch=["BG0001", "US0200"])
+        self.assertEqual(replanned["run_id"], opened["run_id"])
+        self.assertEqual(replanned["started_at"], opened["started_at"])
+        self.assertIn("US0200", replanned["batch"])
+        self.assertEqual(len(replanned["batch"]), 7)          # six accumulated the one new unit
+        # zero shared units -> refused
+        with self.assertRaises(run_state.DisjointBatchError):
+            run_state.open_run(self.root, batch=["CR0400", "CR0401"])
+
+    def test_a_refused_plan_archives_nothing_and_mints_no_run_id(self) -> None:
+        opened = self._open_six()
+        with self.assertRaises(run_state.DisjointBatchError):
+            run_state.open_run(self.root, batch=["US0100"])
+        self.assertEqual(run_state.archived(self.root), [],
+                         "a refused plan must archive nothing")
+        self.assertEqual(run_state.read(self.root)["run_id"], opened["run_id"],
+                         "a refused plan must mint no new run id; the run keeps the one it had")
+
+    def test_disjoint_refusal_is_none_for_a_closed_run_so_a_fresh_plan_is_not_blocked(self) -> None:
+        # The guard is only against an OPEN run. Once a run is closed (spent), a fresh disjoint
+        # batch is a new run, not a refusal - `disjoint_refusal` must return None so the plan pre
+        # -check does not block the next sprint.
+        self._open_six()
+        run_state.close_run(self.root, run_state.GOAL_REACHED)
+        self.assertIsNone(run_state.disjoint_refusal(self.root, ["US0100"]),
+                          "a fresh plan after a run closed must not be refused as disjoint")
+
+
+class RefusalNamesTheOpenRunTests(unittest.TestCase):
+    """US0327: the refusal identifies the run standing in the way (id, outcome, batch size) and
+    states both ways forward as commands, not as advice - and names no third route."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = str(Path(self.tmp.name))
+        (Path(self.root) / "sdlc-studio" / ".local").mkdir(parents=True)
+        self.addCleanup(self.tmp.cleanup)
+
+    def _refusal(self) -> run_state.DisjointBatchError:
+        opened = run_state.open_run(self.root, batch=[f"BG{n:04d}" for n in range(1, 7)],
+                                    goal="g")
+        self.run_id = opened["run_id"]
+        with self.assertRaises(run_state.DisjointBatchError) as caught:
+            run_state.open_run(self.root, batch=["US0100"])
+        return caught.exception
+
+    def test_refusal_states_the_open_run_id_outcome_and_batch_size(self) -> None:
+        exc = self._refusal()
+        text = str(exc)
+        self.assertIn(self.run_id, text)                 # the run standing in the way, by id
+        self.assertIn(run_state.RUNNING, text)           # its outcome
+        self.assertIn("6", text)                         # its batch size
+        self.assertEqual(exc.run_id, self.run_id)
+        self.assertEqual(exc.outcome, run_state.RUNNING)
+        self.assertEqual(exc.batch_size, 6)
+
+    def test_refusal_states_both_ways_forward_as_runnable_commands(self) -> None:
+        text = str(self._refusal())
+        commands = [ln.strip() for ln in text.splitlines() if "sprint.py" in ln]
+        self.assertEqual(len(commands), 2,
+                         "exactly two ways forward are named, and no third route")
+        joined = "\n".join(commands)
+        self.assertIn("close", joined)                   # close the open run
+        self.assertTrue(any("plan" in c and "--write" in c for c in commands),
+                        "deliberately re-planning it, as a command that runs as printed")
+        # each is a command (starts with the tool), not prose advice
+        for c in commands:
+            self.assertTrue(c.startswith("sprint.py "), c)
+
+
+class FailedCloseAttemptIsProtectedTests(unittest.TestCase):
+    """CR0401 / US0328: a run whose ONLY close artefact is a FAILED close attempt is
+    open-and-protected, not absorbable - `close_attempts` is deliberately not in
+    `_CLOSE_ARTEFACTS`. Protected is not finished: a truly closed run (ended_at) is still
+    replaced."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = str(Path(self.tmp.name))
+        (Path(self.root) / "sdlc-studio" / ".local").mkdir(parents=True)
+        self.addCleanup(self.tmp.cleanup)
+
+    def _open_with_failed_close(self) -> dict:
+        opened = run_state.open_run(self.root, batch=[f"BG{n:04d}" for n in range(1, 7)],
+                                    goal="g")
+        # A recorded FAILED close attempt: nine items outstanding, and none of the true close
+        # artefacts. The run is still `running`.
+        run_state.update(self.root, close_attempts=[{"at": "2026-07-21T09:00:00Z",
+                                                     "outstanding": 9, "stages": ["gate"]}])
+        state = run_state.read(self.root)
+        self.assertIsNone(state.get("sprint_goal_verdict"))
+        self.assertIsNone(state.get("ended_at"))
+        self.assertIsNone(state.get("handoff"))
+        return opened
+
+    def test_a_run_with_only_a_failed_close_attempt_refuses_a_disjoint_batch(self) -> None:
+        opened = self._open_with_failed_close()
+        with self.assertRaises(run_state.DisjointBatchError):
+            run_state.open_run(self.root, batch=["US0100"])
+        state = run_state.read(self.root)
+        self.assertEqual(state["run_id"], opened["run_id"])
+        self.assertEqual(state["batch"], [f"BG{n:04d}" for n in range(1, 7)],
+                         "the mid-close run's batch is exactly what it held before")
+
+    def test_close_attempts_protect_the_run_while_ended_at_still_replaces_it(self) -> None:
+        # Run one: only a failed close attempt -> refused, everything intact.
+        opened = self._open_with_failed_close()
+        with self.assertRaises(run_state.DisjointBatchError) as caught:
+            run_state.open_run(self.root, batch=["US0100"])
+        self.assertEqual(caught.exception.run_id, opened["run_id"])
+        self.assertEqual(caught.exception.batch_size, 6)
+        self.assertEqual(caught.exception.outstanding, 9)
+        self.assertEqual(run_state.read(self.root)["close_attempts"][-1]["outstanding"], 9)
+        # Run two, a separate project, carries ended_at: it IS finished, so a disjoint plan
+        # archives and replaces it at exit zero.
+        other = tempfile.TemporaryDirectory()
+        self.addCleanup(other.cleanup)
+        oroot = str(Path(other.name))
+        (Path(oroot) / "sdlc-studio" / ".local").mkdir(parents=True)
+        first = run_state.open_run(oroot, batch=["BG0500"], goal="g")
+        run_state.close_run(oroot, run_state.GOAL_REACHED)         # sets ended_at
+        replaced = run_state.open_run(oroot, batch=["US0100"], goal="fresh")
+        self.assertNotEqual(replaced["run_id"], first["run_id"],
+                            "a truly closed run is replaced by a fresh run, never refused")
+        self.assertTrue(run_state.read_archived(oroot, first["run_id"]),
+                        "the finished run is archived, never silently discarded")
+
+    def test_refusal_names_the_failed_close_attempt_and_its_outstanding_count(self) -> None:
+        self._open_with_failed_close()
+        with self.assertRaises(run_state.DisjointBatchError) as caught:
+            run_state.open_run(self.root, batch=["US0100"])
+        text = str(caught.exception)
+        self.assertIn("close attempt", text.lower())
+        self.assertIn("9", text)                          # the outstanding count it left
+        self.assertIn("outstanding", text.lower())
 
 
 if __name__ == "__main__":

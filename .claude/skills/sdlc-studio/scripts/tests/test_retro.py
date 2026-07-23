@@ -2701,5 +2701,162 @@ class UnsourcedBaselineTests(unittest.TestCase):
             self.assertEqual(cap["tokens"], 800000)
 
 
+class TheFixedTermIsMeasuredFromTheRecordTests(unittest.TestCase):
+    """US0337 / CR0391: the fixed per-sprint cost is FITTED from this project's own whole-sprint
+    actuals, and reads UNMEASURED - with no figure - where fewer than two sprints carry one. A
+    per-unit build sum (Measured equals Units) omits the ceremony the fixed term exists to price,
+    so it does not count toward the two."""
+
+    _HEADER = (
+        "| Retro | Date | Units | Measured | Forecast | Points | Estimate (tokens, plan-time) | "
+        "Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Constants | "
+        "Sample | Model | Note | Source |\n"
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | "
+        "--- | --- | --- |\n")
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / "sdlc-studio" / "retros").mkdir(parents=True)
+        self.addCleanup(self.tmp.cleanup)
+
+    def _velocity(self, rows: list[dict]) -> None:
+        """Write VELOCITY.md. Each row: id, units, measured, points, actual."""
+        body = ""
+        for r in rows:
+            body += (f"| {r['id']} | 2026-07-22 | {r['units']} | {r['measured']} | "
+                     f"{r['units']} | {r['points']} | - | {r['actual']} | - | - | 0 | - | "
+                     f"- | - | claude-opus-4-8 | - | harness |\n")
+        (self.root / "sdlc-studio" / "retros" / "VELOCITY.md").write_text(
+            self._HEADER + body, encoding="utf-8")
+
+    def test_the_fit_uses_the_whole_sprint_rows_and_names_them(self) -> None:
+        # CR0391's own two data points: whole-sprint totals (Measured 0), ceremony included.
+        self._velocity([
+            {"id": "RETRO9600", "units": 4, "measured": 0, "points": 18, "actual": 4_119_916},
+            {"id": "RETRO9601", "units": 33, "measured": 0, "points": 100, "actual": 5_194_538},
+        ])
+        fit = retro.fixed_sprint_cost(str(self.root))
+        self.assertFalse(fit["unmeasured"])
+        self.assertEqual(fit["n"], 2)
+        self.assertEqual(sorted(fit["sprints"]), ["RETRO9600", "RETRO9601"])
+        # marginal ~13,105/pt, fixed ~3.88M/sprint - the fit the CR reported, not a seed.
+        self.assertAlmostEqual(fit["marginal"], 13_105, delta=5)
+        self.assertAlmostEqual(fit["fixed"], 3_884_026, delta=50)
+        self.assertIn("RETRO9600", fit["reason"])
+        self.assertIn("RETRO9601", fit["reason"])
+
+    def test_fewer_than_two_qualifying_rows_reads_unmeasured_and_supplies_no_figure(self) -> None:
+        self._velocity([
+            {"id": "RETRO9602", "units": 4, "measured": 0, "points": 18, "actual": 4_119_916},
+        ])
+        fit = retro.fixed_sprint_cost(str(self.root))
+        self.assertTrue(fit["unmeasured"])
+        self.assertIsNone(fit["fixed"])          # no seed, no zero, no default
+        self.assertIsNone(fit["marginal"])
+        self.assertEqual(fit["n"], 1)            # states how many it found
+        self.assertIn("1", fit["reason"])
+        self.assertIn("UNMEASURED", fit["reason"])
+        # it refuses on the COUNT (too few of the needed), not because a lone fit was degenerate
+        self.assertIn("needed to fit", fit["reason"])
+        # and with no rows at all it is still UNMEASURED, not a crash
+        (self.root / "sdlc-studio" / "retros" / "VELOCITY.md").unlink()
+        empty = retro.fixed_sprint_cost(str(self.root))
+        self.assertTrue(empty["unmeasured"])
+        self.assertEqual(empty["n"], 0)
+
+    def test_a_per_unit_build_sum_row_does_not_count_toward_the_two(self) -> None:
+        # One whole-sprint total (Measured 0) and one per-unit build sum (Measured equals Units).
+        self._velocity([
+            {"id": "RETRO9603", "units": 9, "measured": 0, "points": 30, "actual": 3_000_000},
+            {"id": "RETRO9604", "units": 5, "measured": 5, "points": 20, "actual": 500_000},
+        ])
+        fit = retro.fixed_sprint_cost(str(self.root))
+        self.assertTrue(fit["unmeasured"], "only one row qualifies, so the term is UNMEASURED")
+        self.assertEqual(fit["n"], 1)
+        excluded_ids = [e["id"] for e in fit["excluded"]]
+        self.assertIn("RETRO9604", excluded_ids)   # the build sum is named
+        reason = next(e["reason"] for e in fit["excluded"] if e["id"] == "RETRO9604")
+        self.assertIn("ceremony", reason.lower())  # ...with the reason it is excluded
+        self.assertIn("build sum", reason.lower())
+
+
+class TheBatchIsCrossCheckedAgainstItsDeclaredCount(unittest.TestCase):
+    """BG0257: a Batch field written as an id RANGE parses to fewer units than the retro
+    declares in its own `Delivered: N / M` header. The parser expands no ranges, so a partial
+    points denominator would pair with a whole-sprint token numerator and reach VELOCITY.md -
+    the one file the planner re-measures its rate from - wrong by orders of magnitude. The
+    mismatch is REFUSED before `record_velocity` writes."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / "sdlc-studio" / "retros").mkdir(parents=True)
+        (self.root / "sdlc-studio" / ".local").mkdir(parents=True)
+        self.addCleanup(self.tmp.cleanup)
+
+    def _retro(self, rid: str, batch: str, delivered: str) -> None:
+        (self.root / "sdlc-studio" / "retros" / f"{rid}-t.md").write_text(
+            f"# RETRO-{rid[5:]}: a sprint\n\n"
+            f"> **Date:** 2026-07-22\n"
+            f"> **Batch:** {batch}\n"
+            f"> **Delivered:** {delivered}   **Blocked:** 0\n\n"
+            f"## Delivered\n- did work\n## Actions raised\n"
+            f"| Finding | Disposition |\n| --- | --- |\n| none | declined: clean |\n",
+            encoding="utf-8")
+
+    def test_a_range_batch_is_refused_naming_the_parsed_and_declared_counts(self) -> None:
+        # Batch as a RANGE: the parser sees only the two endpoints, the header declares ten.
+        self._retro("RETRO9500", batch="BG0247-BG0256", delivered="10 / 10")
+        res = retro.accuracy(str(self.root), "RETRO9500")
+        self.assertFalse(res["batch_check"]["ok"])
+        self.assertEqual(res["batch_check"]["parsed"], 2)      # only the endpoints
+        self.assertEqual(res["batch_check"]["declared"], 10)
+        with self.assertRaises(retro.BatchCountMismatch) as caught:
+            retro.record_velocity(str(self.root), res)
+        text = str(caught.exception)
+        self.assertIn("2", text)                               # the parsed count
+        self.assertIn("10", text)                              # the declared count
+        self.assertIn("BG0247", text)                          # the ids that did parse
+        self.assertIn("individually", text.lower())            # actionable: what to do
+
+    def test_a_refused_batch_writes_no_velocity_row_and_disturbs_no_existing_one(self) -> None:
+        # A VELOCITY.md already carrying a good row from an earlier, well-formed sprint.
+        self._retro("RETRO9501", batch="BG0300, BG0301", delivered="2 / 2")
+        retro.record_velocity(str(self.root), retro.accuracy(str(self.root), "RETRO9501"))
+        vpath = retro.velocity_path(str(self.root))
+        before = vpath.read_bytes()
+        # Now the malformed range retro is refused: nothing added, nothing disturbed.
+        self._retro("RETRO9502", batch="BG0400-BG0410", delivered="11 / 11")
+        with self.assertRaises(retro.BatchCountMismatch):
+            retro.record_velocity(str(self.root), retro.accuracy(str(self.root), "RETRO9502"))
+        self.assertEqual(vpath.read_bytes(), before,
+                         "a refused batch must add no row and leave every existing one intact")
+        self.assertEqual([r["id"] for r in retro.velocity_history(str(self.root))],
+                         ["RETRO9501"])
+
+    def test_a_fully_parsed_batch_still_records_its_row(self) -> None:
+        # Every unit named individually: the count agrees, so the cross-check is transparent.
+        self._retro("RETRO9503", batch="BG0500, BG0501, BG0502", delivered="3 / 3")
+        res = retro.accuracy(str(self.root), "RETRO9503")
+        self.assertTrue(res["batch_check"]["ok"])
+        retro.record_velocity(str(self.root), res)
+        self.assertEqual([r["id"] for r in retro.velocity_history(str(self.root))],
+                         ["RETRO9503"])
+
+    def test_the_declared_count_is_the_total_not_the_delivered(self) -> None:
+        # 8 delivered of 10 total (2 blocked); the Batch names ALL 10 - the units the sprint set
+        # out to deliver - so the cross-check compares against M (10), not N (8), and records.
+        self._retro("RETRO9504", delivered="8 / 10", batch=", ".join(
+            f"BG{600 + i:04d}" for i in range(10)))
+        res = retro.accuracy(str(self.root), "RETRO9504")
+        self.assertEqual(res["batch_check"]["declared"], 10, "the declared count is M, the total")
+        self.assertEqual(res["batch_check"]["parsed"], 10)
+        self.assertTrue(res["batch_check"]["ok"])
+        retro.record_velocity(str(self.root), res)
+        self.assertEqual([r["id"] for r in retro.velocity_history(str(self.root))],
+                         ["RETRO9504"])
+
+
 if __name__ == "__main__":
     unittest.main()

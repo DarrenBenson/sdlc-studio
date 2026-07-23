@@ -946,5 +946,33 @@ class GeneratedEscapeCorpusTests(unittest.TestCase):
             "the new entries do not draw on the added axis's vocabulary: not derived from it")
 
 
+class EstimatorBasisAgreesWithTheCodeTests(unittest.TestCase):
+    """US0339 / CR0391: the reference document's account of why the estimator has no base term
+    must state the CONDITION under which that held (per-unit actuals with no sprint ceremony),
+    matching the code's own basis - so the doc cannot be cited against the fixed per-sprint term
+    the same release ships. A single-writer agreement check: the doc and the code's constant carry
+    the same qualification, and neither states the bare unconditional claim."""
+
+    CONDITION = "per-unit actuals with no sprint ceremony"
+
+    def _sprint_constant(self) -> str:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # scripts/ dir
+        import sprint  # noqa: PLC0415
+        return sprint.NO_BASE_TERM_CONDITION.lower()
+
+    def test_the_reference_no_base_term_account_carries_the_same_condition_as_the_code(self) -> None:
+        sprint_doc, _ = read_docs()
+        doc = normalise(sprint_doc).lower()
+        # the doc's account of the base term names the data it was measured on...
+        self.assertIn("base term", doc, "the doc must account for the base term at all")
+        self.assertIn(self.CONDITION, doc,
+                      "the reference must state the condition the no-base-term result held under")
+        # ...matching the code's basis (single writer: the two agree, not merely both present)
+        self.assertIn(self.CONDITION, self._sprint_constant(),
+                      "the code's basis carries the same condition the doc does")
+        # and it does not restate the bare, unconditional claim the fixed term contradicts
+        self.assertNotIn("base term does worse than not fitting one", doc)
+
+
 if __name__ == "__main__":
     unittest.main()

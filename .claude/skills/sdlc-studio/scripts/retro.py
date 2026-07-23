@@ -348,6 +348,52 @@ def validate(root, retro_id: str) -> dict:
 # `> **Batch:** BG0126, BG0127, CR0248` - the units the sprint set out to deliver.
 BATCH_RE = re.compile(r"(?m)^>?\s*\*\*Batch:\*\*\s*(.+)$")
 DATE_RE = re.compile(r"(?m)^>?\s*\*\*Date:\*\*\s*(.+?)\s*$")
+# `> **Delivered:** 5 / 5` - the retro's OWN declared unit count. The second number is the
+# total the sprint set out to deliver, which is what the Batch field enumerates.
+DELIVERED_RE = re.compile(r"(?m)^>?\s*\*\*Delivered:\*\*\s*(\d+)\s*/\s*(\d+)")
+
+
+class BatchCountMismatch(ValueError):
+    """The retro's Batch field parses to a different unit count than the retro itself declares
+    in its `Delivered: N / M` header. A range like `BG0247-BG0256` reads naturally but the
+    parser expands no ranges, so it matches only the bare endpoints and a whole-sprint token
+    numerator lands over a partial points denominator - a velocity row wrong by orders of
+    magnitude in the one file the planner re-measures its rate from. Refused BEFORE
+    `record_velocity` writes: a partial denominator must never reach the record, and CR0391's
+    fixed-term fit reads the same columns."""
+
+
+def declared_unit_count(text: str) -> int | None:
+    """The unit count the retro declares in its `Delivered: N / M` header (the total, M), or
+    None when the header is absent or still a `{{placeholder}}`. None means "nothing to
+    cross-check against" and never a mismatch: a retro predating the header is unaffected."""
+    m = DELIVERED_RE.search(PLACEHOLDER_RE.sub("", text))
+    return int(m.group(2)) if m else None
+
+
+def batch_count_check(text: str) -> dict:
+    """Cross-check the parsed Batch against the retro's own declared unit count.
+
+    `{"parsed", "declared", "parsed_ids", "ok"}`. `ok` is True when the counts agree, or when
+    the retro declares no count to check against (an older retro, or an unfilled header). A
+    disagreement is the range-in-the-Batch-field defect: the writer named its units as a range
+    the parser could not expand, so half the batch was silently dropped."""
+    parsed_ids = batch_ids(text)
+    declared = declared_unit_count(text)
+    parsed = len(parsed_ids)
+    ok = declared is None or parsed == declared
+    return {"parsed": parsed, "declared": declared, "parsed_ids": parsed_ids, "ok": ok}
+
+
+def _batch_mismatch_message(check: dict, retro_id: str) -> str:
+    """The actionable refusal: it says what to do (name the units individually), not merely
+    that a count disagreed."""
+    return (f"retro {retro_id}: the Batch field parses to {check['parsed']} unit(s) "
+            f"({', '.join(check['parsed_ids']) or 'none'}) but the retro declares "
+            f"{check['declared']} in its `Delivered: N / M` header. The parser expands no "
+            f"ranges, so a Batch written as a range (`BG0247-BG0256`) drops all but its "
+            f"endpoints, and a partial points denominator must never reach VELOCITY.md. Name "
+            f"the delivered units individually in the Batch field, then re-run.")
 
 # The generated block inside `## Estimate vs actual`. Markers, not a whole-section
 # rewrite: the section also carries the author's reading of the numbers, and a tool that
@@ -800,6 +846,10 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
         "id": retro_id,
         "path": str(path),
         "date": (m.group(1).strip() if (m := DATE_RE.search(text)) else ""),
+        # The Batch field cross-checked against the retro's own declared unit count. A
+        # disagreement is refused at the write path (cmd_accuracy) and, belt-and-braces, by
+        # record_velocity itself, so a partially-parsed batch never reaches VELOCITY.md.
+        "batch_check": batch_count_check(text),
         "units": units,
         "n_units": len(units),
         "n_measured": len(rated),
@@ -1507,6 +1557,95 @@ def measured_rate(root) -> dict:
     }
 
 
+#: Below this many qualifying whole-sprint rows the fixed per-sprint term is UNMEASURED: a fit
+#: to one point cannot separate a fixed cost from a marginal one at all, and there is nothing to
+#: fit. The APPLICATION threshold - how many rows before the fit may enter a forecast total - is
+#: higher and lives with the planner (a line through two points is exact and proves nothing).
+FIXED_MIN_QUALIFYING = 2
+
+
+def _fit_fixed_marginal(points: list[float], actuals: list[float]) -> "tuple[float, float] | None":
+    """Least-squares fit of `actual = fixed + marginal * points`, returning (fixed, marginal), or
+    None when the points do not vary (a vertical spread cannot separate the two terms)."""
+    n = len(points)
+    sx, sy = sum(points), sum(actuals)
+    sxx = sum(p * p for p in points)
+    sxy = sum(p * a for p, a in zip(points, actuals))
+    denom = n * sxx - sx * sx
+    if denom == 0:
+        return None
+    marginal = (n * sxy - sx * sy) / denom
+    fixed = (sy - marginal * sx) / n
+    return fixed, marginal
+
+
+def fixed_sprint_cost(root) -> dict:
+    """THE FIXED PER-SPRINT COST, MEASURED from this project's own whole-sprint actuals.
+
+    The token forecast prices the BUILD (points x a marginal rate). Two measured sprints showed
+    the model has no parameter at all for the rest - the ceremony, the review rounds, the repairs
+    and the close - and at real batch sizes that omission dwarfs the term the model does have.
+    This fits it: `actual = fixed + marginal x points` across the record's WHOLE-SPRINT rows.
+
+    A qualifying row carries recorded Points and a whole-sprint Actual - a sprint-level total that
+    INCLUDES the ceremony (Measured is 0: the Actual is the harness meter over the whole session,
+    not a per-unit build sum). A per-unit build sum (Measured equals Units) is EXCLUDED and named:
+    it omits the very ceremony the fixed term exists to price, so fitting against it would fit the
+    fixed cost to data that never contained it.
+
+    UNMEASURED, with no figure at all - not the seed, not zero, not a scaled default - when fewer
+    than `FIXED_MIN_QUALIFYING` rows qualify. It states how many it found, and the fit names the
+    retro ids it rests on, so the number is traceable to the rows that produced it. This measures;
+    whether a fit may be APPLIED to a forecast total is the planner's separate decision.
+
+    Read-only and fail-safe: an unreadable record yields UNMEASURED, never an exception.
+    """
+    try:
+        rows = velocity_history(root)
+    except Exception as exc:  # noqa: BLE001 - no record must never break a plan
+        sdlc_md.debug("retro.fixed_sprint_cost", exc)
+        rows = []
+    qualifying: list[dict] = []
+    excluded: list[dict] = []
+    for r in rows:
+        pts = r.get("points")
+        actual = r.get("actual_tokens")
+        if not pts or not isinstance(actual, (int, float)) or actual <= 0:
+            continue
+        measured, units = r.get("measured"), r.get("units")
+        if measured == 0:
+            qualifying.append(r)                     # whole-sprint total, ceremony included
+        elif isinstance(measured, (int, float)) and measured and measured == units:
+            excluded.append({"id": r.get("id"), "reason": (
+                "a per-unit build sum (Measured equals Units) omits the ceremony the fixed term "
+                "exists to price, so counting it would fit the fixed cost against data that never "
+                "contained it")})
+    n = len(qualifying)
+    base = {"fixed": None, "marginal": None, "sprints": [q.get("id") for q in qualifying],
+            "n": n, "min": FIXED_MIN_QUALIFYING, "excluded": excluded, "unmeasured": True}
+    if n < FIXED_MIN_QUALIFYING:
+        base["reason"] = (
+            f"UNMEASURED: {n} of the {FIXED_MIN_QUALIFYING} whole-sprint rows needed to fit a "
+            f"fixed per-sprint term were found in VELOCITY.md"
+            + (f", and {len(excluded)} per-unit build-sum row(s) were excluded (they omit the "
+               f"ceremony the term prices)" if excluded else "")
+            + ". No figure is supplied - not the seed, not zero, not a default")
+        return base
+    fit = _fit_fixed_marginal([float(q["points"]) for q in qualifying],
+                              [float(q["actual_tokens"]) for q in qualifying])
+    if fit is None:
+        base["reason"] = (f"UNMEASURED: the {n} qualifying whole-sprint rows all carry the same "
+                          f"point count, so a fixed term cannot be separated from a marginal one")
+        return base
+    fixed, marginal = fit
+    return {"fixed": int(round(fixed)), "marginal": int(round(marginal)),
+            "sprints": [q.get("id") for q in qualifying], "n": n, "min": FIXED_MIN_QUALIFYING,
+            "excluded": excluded, "unmeasured": False,
+            "reason": (f"fitted from {n} whole-sprint row(s) "
+                       f"({', '.join(q.get('id') or '?' for q in qualifying)}) as "
+                       f"actual = {int(round(fixed)):,} + {int(round(marginal)):,} x points")}
+
+
 def collate_rate(roots) -> dict:
     """THE CROSS-PROJECT TOKENS-PER-POINT RATE, per (PROJECT, MODEL) CELL. Never a pooled figure.
 
@@ -1672,7 +1811,15 @@ def record_velocity(root, res: dict) -> Path:
     The row records the plan-time estimate and the constants that produced it. The Sample cell
     is written for a human reading the file; the planner re-derives it at read time from those
     two facts, so a later refit reclassifies the row instead of leaving it quoted as validation
-    for a model it helped fit."""
+    for a model it helped fit.
+
+    REFUSED, never written, when the batch failed its own count cross-check: a partially-parsed
+    batch pairs a whole-sprint token numerator with a partial points denominator, and a row that
+    wrong in the file the planner re-measures from is worse than no row. The write path refuses
+    first; this is the second guard, so no future caller can reach the file around it."""
+    check = res.get("batch_check")
+    if isinstance(check, dict) and check.get("ok") is False:
+        raise BatchCountMismatch(_batch_mismatch_message(check, res.get("id", "?")))
     b = res["batch"]
     # `ratio` is already None for a mixed-model sprint (accuracy refuses to pool it), so the
     # history inherits the refusal rather than re-deciding it in a second place.
@@ -2164,6 +2311,15 @@ def cmd_accuracy(args) -> int:
             print(capture_note)
     if not res["ok"]:
         print(f"retro {args.id}: {res['errors'][0]}", file=sys.stderr)
+        return 1
+    # THE BATCH CROSS-CHECK. Before ANY write: a Batch field that parses to a different count
+    # than the retro's own `Delivered: N / M` header is refused, so neither the retro's accuracy
+    # block nor a VELOCITY.md row is written and nothing already recorded is disturbed. This is
+    # the range-in-the-Batch defect - the parser expands no ranges, so a partial denominator
+    # would otherwise reach the file the planner re-measures its rate from.
+    check = res.get("batch_check") or {}
+    if check.get("ok") is False:
+        print(_batch_mismatch_message(check, res["id"]), file=sys.stderr)
         return 1
     if args.write:
         write_accuracy(args.root, res)
