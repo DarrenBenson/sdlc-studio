@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 40 |
+| Draft | 32 |
 | Ready | 0 |
 | Approved | 0 |
-| In Progress | 0 |
+| In Progress | 8 |
 | Done | 115 |
 | **Total** | **155** |
 
@@ -152,7 +152,7 @@
 | [EP0127](EP0127-the-doc-freshness-refusal-aims-the-trim.md) | The doc-freshness refusal aims the trim | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0128](EP0128-a-retro-records-a-finding-fixed-in-sprint.md) | A retro records a finding fixed in-sprint | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0129](EP0129-residuals-from-the-cr0364-derived-requests.md) | Residuals from the CR0364-derived requests | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0130](EP0130-sprint-plan-sees-built-and-committed-work.md) | sprint plan sees built-and-committed work | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0130](EP0130-sprint-plan-sees-built-and-committed-work.md) | sprint plan sees built-and-committed work | In Progress | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0131](EP0131-the-commit-message-check-runs-before-the-expensive.md) | The commit-message check runs before the expensive lanes | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0132](EP0132-conformance-names-the-unmet-critiqued-half.md) | conformance names the unmet critiqued half | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0133](EP0133-a-correctable-review-log.md) | A correctable review log | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
@@ -168,13 +168,13 @@
 | [EP0143](EP0143-the-run-opened-line-distinguishes-the-sprint-goal.md) | The run-opened line distinguishes the Sprint Goal from the rung | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0144](EP0144-installed-copy-drift-detection.md) | Installed-copy drift detection | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0145](EP0145-the-batch-selection-error-shows-an-example-value.md) | The batch-selection error shows an example value | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0146](EP0146-extend-fields-file-to-the-remaining-prose-writers.md) | Extend --fields-file to the remaining prose writers | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0146](EP0146-extend-fields-file-to-the-remaining-prose-writers.md) | Extend --fields-file to the remaining prose writers | In Progress | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0147](EP0147-batch-scoped-ac-verification.md) | Batch-scoped AC verification | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0148](EP0148-review-round-robustness-guidance.md) | Review-round robustness guidance | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0149](EP0149-batch-size-trade-off-guidance.md) | Batch-size trade-off guidance | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0150](EP0150-a-deterministic-retitle-path.md) | A deterministic retitle path | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0151](EP0151-a-rung-aware-forecast-and-retro.md) | A rung-aware forecast and retro | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0152](EP0152-an-amendable-goal-review.md) | An amendable goal review | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0153](EP0153-a-reproducible-seat-brief.md) | A reproducible seat brief | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0154](EP0154-sequential-or-parallel-delivery-chosen-at-run-start.md) | Sequential or parallel delivery, chosen at run start | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0155](EP0155-refine-mints-an-actionable-plannable-unit.md) | refine mints an actionable, plannable unit | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0150](EP0150-a-deterministic-retitle-path.md) | A deterministic retitle path | In Progress | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0151](EP0151-a-rung-aware-forecast-and-retro.md) | A rung-aware forecast and retro | In Progress | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0152](EP0152-an-amendable-goal-review.md) | An amendable goal review | In Progress | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0153](EP0153-a-reproducible-seat-brief.md) | A reproducible seat brief | In Progress | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0154](EP0154-sequential-or-parallel-delivery-chosen-at-run-start.md) | Sequential or parallel delivery, chosen at run start | In Progress | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0155](EP0155-refine-mints-an-actionable-plannable-unit.md) | refine mints an actionable, plannable unit | In Progress | -- | -- | 2026-07-23 | 2026-07-23 |

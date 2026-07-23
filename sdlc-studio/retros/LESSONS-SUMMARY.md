@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0221: **A library function that prints leaks into every test that calls it.** refine's SEEDED note printed from the library; 69 leaks.**
+- **L-0220: **A `--no-verify` commit in a worktree defers the gate to whoever merges it.** Two agents' bypassed leaks became the first full-tree hook's...**
+- **L-0219: **A test that asserts a label, not the value, proves the tool named its state - not that it reached it.** US0400 relabelled the marginal...**
 - **L-0218: **A parallel fan-out is worth offering by default, but only when a real file-disjoint decomposition exists** - CR0411, the operator's...**
 - **L-0217: **A guard that forces --no-verify trains the bypass it exists to prevent.** A tree-walking test must anchor its exclusions to the repo...**
 - **L-0216: **Mutation-proving at build time is what let the delivery code pass review in two waves, not ten rounds.** The rigour the design rung...**

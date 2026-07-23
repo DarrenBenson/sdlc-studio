@@ -1,6 +1,6 @@
 # US0411: a refined story's AC block is labelled a grooming placeholder, not left as content, so the ungroomed count is machine-visible
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0412
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

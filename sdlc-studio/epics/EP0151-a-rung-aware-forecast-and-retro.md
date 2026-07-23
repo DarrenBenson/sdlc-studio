@@ -1,6 +1,6 @@
 # EP0151: A rung-aware forecast and retro
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Derived Point Total:** 5
 > **Parent:** CR0407
 > **Created:** 2026-07-23

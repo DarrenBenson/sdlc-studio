@@ -1,6 +1,6 @@
 # US0391: critic.py and close_owed.py accept --fields-file via the shared helper
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0392
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

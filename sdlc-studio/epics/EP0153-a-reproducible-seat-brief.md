@@ -1,6 +1,6 @@
 # EP0153: A reproducible seat brief
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Derived Point Total:** 9
 > **Parent:** CR0409
 > **Created:** 2026-07-23

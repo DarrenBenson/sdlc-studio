@@ -1,6 +1,6 @@
 # US0407: a conditional prompt offers SEQUENTIAL or PARALLEL only when a genuine file-disjoint decomposition exists, and records the chosen mode
 
-> **Status:** Draft
+> **Status:** Review
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/reference-delivery.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Delivers:** CR0411
 > **Created:** 2026-07-23

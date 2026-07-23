@@ -1,6 +1,6 @@
 # EP0154: Sequential or parallel delivery, chosen at run start
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Derived Point Total:** 9
 > **Parent:** CR0411
 > **Created:** 2026-07-23

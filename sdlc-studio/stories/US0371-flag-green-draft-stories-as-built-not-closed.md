@@ -1,6 +1,6 @@
 # US0371: flag green Draft stories as built-not-closed, forecast the unverified as new, point an all-built batch at the close path
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0366
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

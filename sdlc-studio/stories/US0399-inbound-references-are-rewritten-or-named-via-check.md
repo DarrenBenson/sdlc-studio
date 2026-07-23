@@ -1,6 +1,6 @@
 # US0399: inbound references are rewritten or named via check_links, and the retitle is recorded on the artefact
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0406
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

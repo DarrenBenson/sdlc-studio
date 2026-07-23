@@ -1,6 +1,6 @@
 # US0402: an amendment carries forward the seats it satisfies and re-consults only the rest, recording the prior wording and the requesting seat
 
-> **Status:** Draft
+> **Status:** Review
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Delivers:** CR0408
 > **Created:** 2026-07-23

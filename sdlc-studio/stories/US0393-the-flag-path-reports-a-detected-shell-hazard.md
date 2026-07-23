@@ -1,6 +1,6 @@
 # US0393: the flag path reports a detected shell hazard rather than silently altering the field
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0392
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

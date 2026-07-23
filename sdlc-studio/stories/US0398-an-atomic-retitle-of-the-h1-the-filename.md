@@ -1,6 +1,6 @@
 # US0398: an atomic retitle of the H1, the filename slug and the index row, refusing before any write if any cannot be updated
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0406
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

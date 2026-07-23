@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 68 |
+| Draft | 49 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 0 |
+| Review | 19 |
 | Done | 343 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -281,7 +281,7 @@
 | [US0368](US0368-extend-the-cr0340-test-relevant-set-to-every.md) | extend the CR0340 test-relevant set to every path a shipped test reads | Draft | EP0129 | 2026-07-23 | 2026-07-23 |
 | [US0369](US0369-correct-the-cr0304-trd-sentence-and-disposition-the.md) | correct the CR0304 TRD sentence and disposition the doc-drift residuals | Draft | EP0129 | 2026-07-23 | 2026-07-23 |
 | [US0370](US0370-record-the-ac-correction-cases-as-ac-defects.md) | record the AC-correction cases as AC defects | Draft | EP0129 | 2026-07-23 | 2026-07-23 |
-| [US0371](US0371-flag-green-draft-stories-as-built-not-closed.md) | flag green Draft stories as built-not-closed, forecast the unverified as new, point an all-built batch at the close path | Draft | EP0130 | 2026-07-23 | 2026-07-23 |
+| [US0371](US0371-flag-green-draft-stories-as-built-not-closed.md) | flag green Draft stories as built-not-closed, forecast the unverified as new, point an all-built batch at the close path | Review | EP0130 | 2026-07-23 | 2026-07-23 |
 | [US0372](US0372-validate-the-commit-message-rules-ahead-of-the.md) | validate the commit-message rules ahead of the test lanes, no lane lost or duplicated, order pinned | Draft | EP0131 | 2026-07-23 | 2026-07-23 |
 | [US0373](US0373-decompose-critiqued-into-its-named-halves-in-the.md) | decompose critiqued into its named halves in the report and correct the remedy line | Draft | EP0132 | 2026-07-23 | 2026-07-23 |
 | [US0374](US0374-critic-correct-supersedes-a-verdict-row-with-an.md) | critic correct supersedes a verdict row with an authorised reason, the author alone refused | Draft | EP0133 | 2026-07-23 | 2026-07-23 |
@@ -301,28 +301,28 @@
 | [US0388](US0388-a-forward-port-drift-check-exits-non-zero.md) | a forward-port drift check exits non-zero with a differing-file count, handling no copy and a pinned copy | Draft | EP0144 | 2026-07-23 | 2026-07-23 |
 | [US0389](US0389-surface-the-drift-in-the-status-hint-and.md) | surface the drift in the status hint and the close chain | Draft | EP0144 | 2026-07-23 | 2026-07-23 |
 | [US0390](US0390-the-batch-selection-message-shows-a-usable-example.md) | the batch-selection message shows a usable example value per selector, such as --bugs Open | Draft | EP0145 | 2026-07-23 | 2026-07-23 |
-| [US0391](US0391-critic-py-and-close-owed-py-accept-fields.md) | critic.py and close_owed.py accept --fields-file via the shared helper | Draft | EP0146 | 2026-07-23 | 2026-07-23 |
-| [US0392](US0392-telemetry-py-and-sprint-py-accept-fields-file.md) | telemetry.py and sprint.py accept --fields-file and the registry is emptied of the four | Draft | EP0146 | 2026-07-23 | 2026-07-23 |
-| [US0393](US0393-the-flag-path-reports-a-detected-shell-hazard.md) | the flag path reports a detected shell hazard rather than silently altering the field | Draft | EP0146 | 2026-07-23 | 2026-07-23 |
+| [US0391](US0391-critic-py-and-close-owed-py-accept-fields.md) | critic.py and close_owed.py accept --fields-file via the shared helper | Review | EP0146 | 2026-07-23 | 2026-07-23 |
+| [US0392](US0392-telemetry-py-and-sprint-py-accept-fields-file.md) | telemetry.py and sprint.py accept --fields-file and the registry is emptied of the four | Review | EP0146 | 2026-07-23 | 2026-07-23 |
+| [US0393](US0393-the-flag-path-reports-a-detected-shell-hazard.md) | the flag path reports a detected shell hazard rather than silently altering the field | Review | EP0146 | 2026-07-23 | 2026-07-23 |
 | [US0394](US0394-verify-ac-run-accepts-an-id-list-a.md) | verify_ac run accepts an id list, a worklist or the run-state batch | Draft | EP0147 | 2026-07-23 | 2026-07-23 |
 | [US0395](US0395-the-scoped-report-merges-rather-than-replaces-shared.md) | the scoped report merges rather than replaces, shared-story verdicts identical to the unscoped run | Draft | EP0147 | 2026-07-23 | 2026-07-23 |
 | [US0396](US0396-reference-review-md-and-reference-sprint-md-require.md) | reference-review.md and reference-sprint.md require at least two reviewers with distinct lenses including a claims lens, and record a single-reviewer round | Draft | EP0148 | 2026-07-23 | 2026-07-23 |
 | [US0397](US0397-reference-sprint-md-and-help-sprint-md-state.md) | reference-sprint.md and help/sprint.md state the fixed-cost-versus-review-convergence trade-off from the measured rows, prescribing no number | Draft | EP0149 | 2026-07-23 | 2026-07-23 |
-| [US0398](US0398-an-atomic-retitle-of-the-h1-the-filename.md) | an atomic retitle of the H1, the filename slug and the index row, refusing before any write if any cannot be updated | Draft | EP0150 | 2026-07-23 | 2026-07-23 |
-| [US0399](US0399-inbound-references-are-rewritten-or-named-via-check.md) | inbound references are rewritten or named via check_links, and the retitle is recorded on the artefact | Draft | EP0150 | 2026-07-23 | 2026-07-23 |
-| [US0400](US0400-the-forecast-names-the-rung-it-prices-and.md) | the forecast names the rung it prices and reads UNMEASURED where that rung has no rate | Draft | EP0151 | 2026-07-23 | 2026-07-23 |
-| [US0401](US0401-a-non-done-close-records-tokens-with-the.md) | a non-done close records tokens with the tokens-per-point blank, and reference-sprint.md notes the rungs differ | Draft | EP0151 | 2026-07-23 | 2026-07-23 |
-| [US0402](US0402-an-amendment-carries-forward-the-seats-it-satisfies.md) | an amendment carries forward the seats it satisfies and re-consults only the rest, recording the prior wording and the requesting seat | Draft | EP0152 | 2026-07-23 | 2026-07-23 |
-| [US0403](US0403-a-material-change-still-invalidates-every-verdict-the.md) | a material change still invalidates every verdict, the distinction an operator declaration, recorded | Draft | EP0152 | 2026-07-23 | 2026-07-23 |
-| [US0404](US0404-emit-the-seat-brief-derived-from-run-state.md) | emit the seat brief derived from run state, worklist, planner output and lessons, naming the grooming state | Draft | EP0153 | 2026-07-23 | 2026-07-23 |
-| [US0405](US0405-the-brief-is-recorded-with-the-verdicts-so.md) | the brief is recorded with the verdicts so a thin brief is visible | Draft | EP0153 | 2026-07-23 | 2026-07-23 |
-| [US0406](US0406-goal-review-record-accepts-a-fields-file-so.md) | goal-review record accepts a --fields-file so no seat prose crosses a shell | Draft | EP0153 | 2026-07-23 | 2026-07-23 |
-| [US0407](US0407-a-conditional-prompt-offers-sequential-or-parallel-only.md) | a conditional prompt offers SEQUENTIAL or PARALLEL only when a genuine file-disjoint decomposition exists, and records the chosen mode | Draft | EP0154 | 2026-07-23 | 2026-07-23 |
-| [US0408](US0408-the-disjointness-check-counts-test-files-as-coupling.md) | the disjointness check counts test files as coupling | Draft | EP0154 | 2026-07-23 | 2026-07-23 |
-| [US0409](US0409-the-choice-is-deterministic-and-the-plan-states.md) | the choice is deterministic and the plan states the mode and why the alternative was or was not available | Draft | EP0154 | 2026-07-23 | 2026-07-23 |
-| [US0410](US0410-refine-requires-or-inherits-an-affects-per-story.md) | refine requires or inherits an Affects per story so a minted story is plannable, refusing or seeding-for-confirmation where none is given | Draft | EP0155 | 2026-07-23 | 2026-07-23 |
-| [US0411](US0411-a-refined-story-s-ac-block-is-labelled.md) | a refined story's AC block is labelled a grooming placeholder, not left as content, so the ungroomed count is machine-visible | Draft | EP0155 | 2026-07-23 | 2026-07-23 |
-| [US0412](US0412-reference-cr-md-and-reference-rfc-md-state.md) | reference-cr.md and reference-rfc.md state refine produces a plannable unit whose ACs still need grooming, opt-out per project | Draft | EP0155 | 2026-07-23 | 2026-07-23 |
+| [US0398](US0398-an-atomic-retitle-of-the-h1-the-filename.md) | an atomic retitle of the H1, the filename slug and the index row, refusing before any write if any cannot be updated | Review | EP0150 | 2026-07-23 | 2026-07-23 |
+| [US0399](US0399-inbound-references-are-rewritten-or-named-via-check.md) | inbound references are rewritten or named via check_links, and the retitle is recorded on the artefact | Review | EP0150 | 2026-07-23 | 2026-07-23 |
+| [US0400](US0400-the-forecast-names-the-rung-it-prices-and.md) | the forecast names the rung it prices and reads UNMEASURED where that rung has no rate | Review | EP0151 | 2026-07-23 | 2026-07-23 |
+| [US0401](US0401-a-non-done-close-records-tokens-with-the.md) | a non-done close records tokens with the tokens-per-point blank, and reference-sprint.md notes the rungs differ | Review | EP0151 | 2026-07-23 | 2026-07-23 |
+| [US0402](US0402-an-amendment-carries-forward-the-seats-it-satisfies.md) | an amendment carries forward the seats it satisfies and re-consults only the rest, recording the prior wording and the requesting seat | Review | EP0152 | 2026-07-23 | 2026-07-23 |
+| [US0403](US0403-a-material-change-still-invalidates-every-verdict-the.md) | a material change still invalidates every verdict, the distinction an operator declaration, recorded | Review | EP0152 | 2026-07-23 | 2026-07-23 |
+| [US0404](US0404-emit-the-seat-brief-derived-from-run-state.md) | emit the seat brief derived from run state, worklist, planner output and lessons, naming the grooming state | Review | EP0153 | 2026-07-23 | 2026-07-23 |
+| [US0405](US0405-the-brief-is-recorded-with-the-verdicts-so.md) | the brief is recorded with the verdicts so a thin brief is visible | Review | EP0153 | 2026-07-23 | 2026-07-23 |
+| [US0406](US0406-goal-review-record-accepts-a-fields-file-so.md) | goal-review record accepts a --fields-file so no seat prose crosses a shell | Review | EP0153 | 2026-07-23 | 2026-07-23 |
+| [US0407](US0407-a-conditional-prompt-offers-sequential-or-parallel-only.md) | a conditional prompt offers SEQUENTIAL or PARALLEL only when a genuine file-disjoint decomposition exists, and records the chosen mode | Review | EP0154 | 2026-07-23 | 2026-07-23 |
+| [US0408](US0408-the-disjointness-check-counts-test-files-as-coupling.md) | the disjointness check counts test files as coupling | Review | EP0154 | 2026-07-23 | 2026-07-23 |
+| [US0409](US0409-the-choice-is-deterministic-and-the-plan-states.md) | the choice is deterministic and the plan states the mode and why the alternative was or was not available | Review | EP0154 | 2026-07-23 | 2026-07-23 |
+| [US0410](US0410-refine-requires-or-inherits-an-affects-per-story.md) | refine requires or inherits an Affects per story so a minted story is plannable, refusing or seeding-for-confirmation where none is given | Review | EP0155 | 2026-07-23 | 2026-07-23 |
+| [US0411](US0411-a-refined-story-s-ac-block-is-labelled.md) | a refined story's AC block is labelled a grooming placeholder, not left as content, so the ungroomed count is machine-visible | Review | EP0155 | 2026-07-23 | 2026-07-23 |
+| [US0412](US0412-reference-cr-md-and-reference-rfc-md-state.md) | reference-cr.md and reference-rfc.md state refine produces a plannable unit whose ACs still need grooming, opt-out per project | Review | EP0155 | 2026-07-23 | 2026-07-23 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # US0409: the choice is deterministic and the plan states the mode and why the alternative was or was not available
 
-> **Status:** Draft
+> **Status:** Review
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Delivers:** CR0411
 > **Created:** 2026-07-23

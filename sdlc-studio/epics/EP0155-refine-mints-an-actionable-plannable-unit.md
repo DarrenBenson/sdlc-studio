@@ -1,6 +1,6 @@
 # EP0155: refine mints an actionable, plannable unit
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Derived Point Total:** 10
 > **Parent:** CR0412
 > **Created:** 2026-07-23

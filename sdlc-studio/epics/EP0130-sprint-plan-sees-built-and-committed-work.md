@@ -1,6 +1,6 @@
 # EP0130: sprint plan sees built-and-committed work
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Derived Point Total:** 5
 > **Parent:** CR0366
 > **Created:** 2026-07-23

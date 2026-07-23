@@ -1,6 +1,6 @@
 # US0392: telemetry.py and sprint.py accept --fields-file and the registry is emptied of the four
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0392
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

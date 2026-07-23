@@ -1,6 +1,6 @@
 # US0405: the brief is recorded with the verdicts so a thin brief is visible
 
-> **Status:** Draft
+> **Status:** Review
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Delivers:** CR0409
 > **Created:** 2026-07-23

@@ -1,6 +1,6 @@
 # EP0152: An amendable goal review
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Derived Point Total:** 7
 > **Parent:** CR0408
 > **Created:** 2026-07-23

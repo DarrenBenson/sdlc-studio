@@ -1,6 +1,6 @@
 # EP0150: A deterministic retitle path
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Derived Point Total:** 8
 > **Parent:** CR0406
 > **Created:** 2026-07-23

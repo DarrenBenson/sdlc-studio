@@ -1,6 +1,6 @@
 # US0410: refine requires or inherits an Affects per story so a minted story is plannable, refusing or seeding-for-confirmation where none is given
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0412
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

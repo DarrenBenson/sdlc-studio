@@ -1,6 +1,6 @@
 # US0403: a material change still invalidates every verdict, the distinction an operator declaration, recorded
 
-> **Status:** Draft
+> **Status:** Review
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Delivers:** CR0408
 > **Created:** 2026-07-23

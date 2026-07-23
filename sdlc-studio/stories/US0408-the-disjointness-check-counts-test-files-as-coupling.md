@@ -1,6 +1,6 @@
 # US0408: the disjointness check counts test files as coupling
 
-> **Status:** Draft
+> **Status:** Review
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Delivers:** CR0411
 > **Created:** 2026-07-23

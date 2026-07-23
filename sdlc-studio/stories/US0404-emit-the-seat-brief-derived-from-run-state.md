@@ -1,6 +1,6 @@
 # US0404: emit the seat brief derived from run state, worklist, planner output and lessons, naming the grooming state
 
-> **Status:** Draft
+> **Status:** Review
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Delivers:** CR0409
 > **Created:** 2026-07-23
