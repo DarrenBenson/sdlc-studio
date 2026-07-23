@@ -1696,5 +1696,218 @@ class CriticFieldsFileTests(unittest.TestCase):
         self.assertEqual(rc, 2)                        # refused, not silently ignored
 
 
+class SupersedeTests(unittest.TestCase):
+    """US0374: a verdict row that records an event which did not happen is retired through
+    the tool - an appended supersession record naming the row, the reason and an authoriser
+    who is not the row's own author. The row itself is never deleted."""
+
+    def _row(self, mod, root: Path, unit: str) -> str:
+        prefix = f"| {unit} "
+        return next(ln for ln in mod.verdicts_path(root).read_text(encoding="utf-8").splitlines()
+                    if ln.startswith(prefix))
+
+    def test_supersession_records_reason_and_authoriser_and_leaves_the_row(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0276", "approve",
+                               reviewer="Darren Benson (operator)",
+                               author="sdlc-studio; agent; v1")
+            row = self._row(mod, root, "US0276")
+            date = mod.read_verdicts(root)[0]["date"]
+            reason = ("the operator was the reviewer of record, not the adversarial critic, "
+                      "so the pass this row states never ran")
+            mod.record_supersession(root, "US0276", date=date, reason=reason,
+                                    authorised_by="Darren Benson (operator)")
+            after = mod.verdicts_path(root).read_text(encoding="utf-8")
+            self.assertIn(row + "\n", after)     # byte-for-byte: corrected by addition
+            recs = mod.read_supersessions(root)
+            self.assertEqual(len(recs), 1)
+            rec = recs[0]
+            self.assertEqual(rec["unit"], "US0276")
+            self.assertEqual(rec["row_date"], date)
+            self.assertEqual(rec["row_verdict"], "APPROVE")
+            self.assertEqual(rec["row_reviewer"], "Darren Benson (operator)")
+            self.assertEqual(rec["row_author"], "sdlc-studio; agent; v1")
+            self.assertEqual(rec["reason"], reason)
+            self.assertEqual(rec["authorised_by"], "Darren Benson (operator)")
+            # a later verdict still lands inside the table, so the log stays one block
+            mod.record_verdict(root, "US0277", "approve", reviewer="critic-a", author="builder")
+            lines = mod.verdicts_path(root).read_text(encoding="utf-8").splitlines()
+            self.assertLess(lines.index(self._row(mod, root, "US0277")),
+                            lines.index(mod.SUPERSEDE_HEADING))
+            self.assertEqual(mod.verdict_for(root, "US0277")["verdict"], "APPROVE")
+
+    def test_row_author_alone_is_refused_as_the_authoriser(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0276", "approve",
+                               reviewer="Darren Benson (operator)",
+                               author="sdlc-studio; agent; v1")
+            date = mod.read_verdicts(root)[0]["date"]
+            before = mod.verdicts_path(root).read_text(encoding="utf-8")
+            for authoriser in ("sdlc-studio; agent; v1",     # the row's own author
+                               "SDLC-Studio; Agent; V1",     # ...however it is cased
+                               "",                           # nobody named at all
+                               "   "):
+                with self.assertRaises(ValueError):
+                    mod.record_supersession(root, "US0276", date=date, reason="wrong row",
+                                            authorised_by=authoriser)
+            self.assertEqual(mod.read_supersessions(root), [])
+            self.assertEqual(mod.verdicts_path(root).read_text(encoding="utf-8"), before)
+            self.assertFalse(mod.read_verdicts(root)[0]["superseded"])
+
+    def test_unmatched_row_refused_and_nothing_written(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0276", "approve", reviewer="critic-a",
+                               author="sdlc-studio; agent; v1")
+            date = mod.read_verdicts(root)[0]["date"]
+            before = mod.verdicts_path(root).read_text(encoding="utf-8")
+            with self.assertRaises(ValueError):     # no row for the unit at all
+                mod.record_supersession(root, "US9999", date=date, reason="no such row",
+                                        authorised_by="Darren Benson (operator)")
+            with self.assertRaises(ValueError):     # right unit, a date it never carried
+                mod.record_supersession(root, "US0276", date="2020-01-01",
+                                        reason="wrong date", authorised_by="Darren Benson")
+            self.assertEqual(mod.read_supersessions(root), [])
+            self.assertEqual(mod.verdicts_path(root).read_text(encoding="utf-8"), before)
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = mod.main(["supersede", "--unit", "US9999", "--date", date,
+                               "--reason", "no such row", "--authorised-by", "operator",
+                               "--root", str(root)])
+            self.assertEqual(rc, 2)
+            self.assertIn("US9999", err.getvalue())
+            self.assertEqual(mod.read_supersessions(root), [])
+
+    def test_ambiguous_row_refused_until_narrowed(self) -> None:
+        # Two rows for one unit on one date: retiring "the row" is undefined, so it is
+        # refused rather than resolved by guessing which one was meant.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0300", "reject", reviewer="critic-a", author="builder")
+            mod.record_verdict(root, "US0300", "approve", reviewer="critic-b", author="builder")
+            date = mod.read_verdicts(root)[0]["date"]
+            with self.assertRaises(ValueError):
+                mod.record_supersession(root, "US0300", date=date, reason="dup",
+                                        authorised_by="operator")
+            self.assertEqual(mod.read_supersessions(root), [])
+            mod.record_supersession(root, "US0300", date=date, reviewer="critic-b",
+                                    reason="the approve was filed against the wrong unit",
+                                    authorised_by="operator")
+            self.assertEqual(mod.read_supersessions(root)[0]["row_reviewer"], "critic-b")
+            self.assertEqual(mod.verdict_for(root, "US0300")["reviewer"], "critic-a")
+
+    def test_cli_correct_is_the_same_verb(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0276", "approve", reviewer="critic-a", author="builder")
+            date = mod.read_verdicts(root)[0]["date"]
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = mod.main(["correct", "--unit", "US0276", "--date", date,
+                               "--reason", "the pass it records never ran",
+                               "--authorised-by", "Darren Benson (operator)",
+                               "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertEqual(mod.read_supersessions(root)[0]["authorised_by"],
+                             "Darren Benson (operator)")
+            self.assertIsNone(mod.verdict_for(root, "US0276"))
+
+
+class SupersededGateTests(unittest.TestCase):
+    """US0375: a superseded row is retired for every gate that reads it, while staying
+    in the file and printing as superseded - the audit trail keeps the record that it
+    happened, and the gate stops acting on it."""
+
+    def test_superseded_reviewer_no_longer_blocks_the_principal(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0276", "approve",
+                               reviewer="Darren Benson (operator)",
+                               author="sdlc-studio; agent; v1")
+            date = mod.read_verdicts(root)[0]["date"]
+            # red-now: the mis-entered row makes the legitimate principal read as the
+            # authoring session's own reviewer, permanently stranding the unit
+            self.assertIn("darren benson (operator)",
+                          mod._session_reviewer_ids(root, "US0276"))
+            with self.assertRaises(ValueError):
+                mod.record_signoff(root, "US0276", principal="Darren Benson (operator)",
+                                   author="sdlc-studio; agent; v1")
+            mod.record_supersession(root, "US0276", date=date,
+                                    reason="records an adversarial pass that never ran",
+                                    authorised_by="Darren Benson (operator)")
+            self.assertNotIn("darren benson (operator)",
+                             mod._session_reviewer_ids(root, "US0276"))
+            mod.record_signoff(root, "US0276", principal="Darren Benson (operator)",
+                               author="sdlc-studio; agent; v1")
+            so = mod.signoff_for(root, "US0276")
+            self.assertEqual(so["principal"], "Darren Benson (operator)")
+            self.assertTrue(mod.is_independent_signoff(root, "US0276", so))
+
+    def test_verdict_for_skips_the_superseded_row_and_falls_back(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0300", "approve", reviewer="critic-a", author="builder")
+            mod.record_verdict(root, "US0300", "reject", reviewer="critic-b", author="builder",
+                               issues="found a hole")
+            date = mod.read_verdicts(root)[-1]["date"]
+            mod.record_supersession(root, "US0300", date=date, reviewer="critic-b",
+                                    reason="the reject was filed against the wrong unit",
+                                    authorised_by="Darren Benson (operator)")
+            live = mod.verdict_for(root, "US0300")
+            self.assertEqual(live["verdict"], "APPROVE")     # the earlier LIVE row
+            self.assertEqual(live["reviewer"], "critic-a")
+            # a unit whose only row is superseded has NO verdict - never a silent approval
+            mod.record_verdict(root, "US0301", "approve", reviewer="critic-a", author="builder")
+            mod.record_supersession(root, "US0301", date=date, reason="never ran",
+                                    authorised_by="Darren Benson (operator)")
+            self.assertIsNone(mod.verdict_for(root, "US0301"))
+
+    def test_superseded_row_stays_visible_and_flagged_in_show(self) -> None:
+        import json as _json
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0276", "approve", reviewer="critic-a", author="builder")
+            date = mod.read_verdicts(root)[0]["date"]
+            reason = "the adversarial pass it records never ran"
+            mod.record_supersession(root, "US0276", date=date, reason=reason,
+                                    authorised_by="Darren Benson (operator)")
+            mod.record_verdict(root, "US0277", "approve", reviewer="critic-a", author="builder")
+            rows = mod.read_verdicts(root)
+            self.assertEqual([r["unit"] for r in rows], ["US0276", "US0277"])  # nothing dropped
+            self.assertTrue(rows[0]["superseded"])
+            self.assertEqual(rows[0]["superseded_reason"], reason)
+            self.assertEqual(rows[0]["superseded_by"], "Darren Benson (operator)")
+            self.assertFalse(rows[1]["superseded"])          # the live row is not flagged
+            self.assertEqual(rows[1]["superseded_reason"], "")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                rc = mod.main(["show", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            text = out.getvalue()
+            self.assertIn("US0276", text)
+            self.assertIn(reason, text)
+            self.assertIn("Darren Benson (operator)", text)
+            self.assertEqual(len([ln for ln in text.splitlines() if "US0277" in ln]), 1)
+            self.assertNotIn(reason, [ln for ln in text.splitlines() if "US0277" in ln][0])
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                rc = mod.main(["show", "--format", "json", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            payload = _json.loads(out.getvalue())
+            self.assertEqual(len(payload), 2)
+            self.assertEqual(payload[0]["superseded_reason"], reason)
+            self.assertEqual(payload[0]["superseded_by"], "Darren Benson (operator)")
+            self.assertFalse(payload[1]["superseded"])
+
+
 if __name__ == "__main__":
     unittest.main()

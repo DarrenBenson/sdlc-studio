@@ -44,3 +44,4 @@
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-24 | sdlc-studio | Groomed: real ACs + Affects authored |
+| 2026-07-24 | sdlc-studio | Built: `supersede`/`correct` verb, appended record, author-alone and unmatched-row refusals; TDD red-first, mutation-proven |

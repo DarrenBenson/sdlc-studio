@@ -25,9 +25,11 @@ aspirational
 - **Then** each states that refine produces a PLANNABLE unit (Affects present) whose
   acceptance criteria still need grooming, and names the opt-out
 - **Verify:** manual - read the refine sections of reference-cr.md and reference-rfc.md and confirm each states the plannable-but-ungroomed contract and the opt-out
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-24 | sdlc-studio | Manual AC1 re-read and back-annotated: reference-cr.md states the plannable-but-ungroomed contract and its opt-out, reference-rfc.md likewise - the annotation was missed at the sprint close |
