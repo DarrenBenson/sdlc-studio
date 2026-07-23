@@ -31,8 +31,13 @@
 - **Then** the round stores whether the operator declared it an amendment or a material change, so the classification is an accountable declaration and not the tool's guess
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::MaterialGoalChangeTests::test_the_change_classification_is_recorded_as_an_operator_declaration
 
+## Verification depth
+
+Node-addressed pytest ACs over `test_sprint.py`, red before the code. Mutation-proven by hand: dropping the amendment carry-forward, letting a material change carry, inverting the needs-reconsult set, not storing the brief in the round, and ignoring the fields-file seats were each caught by a node.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-23 | sdlc-studio | Built and mutation-proven |

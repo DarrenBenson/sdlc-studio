@@ -364,6 +364,22 @@ achievable (or not one increment) **refuses the plan**, and proceeding needs an 
 answer to a rejection keeps the earlier round on the record, and the gate reads the latest, so the
 close can say how many rounds the goal took to agree.
 
+**Amend vs material.** When a goal is reworded at a seat's request, record the next round with
+`--amend-from "<prior goal>" --requesting-seat <role>`: the requesting seat's verdict CARRIES
+FORWARD to the amended goal (it asked for the change, so it is discharged), the round records the
+prior wording and the requesting seat, and the remaining seats are reported as needing a fresh
+verdict (`needs_reconsult`). A change too large to be an improvement is declared `--material`
+instead: nothing carries forward and every seat re-reviews. The amendment/material call cannot be
+made mechanically, so the operator declares it and the declaration is recorded on the round.
+
+**Seat brief.** `sprint.py goal-review brief` emits the context a seat is given before it judges -
+composed deterministically from the plan and run state: the batch, the grooming state the first
+live review turns on (placeholder ACs, shared-file clusters, the reachable end state), and this
+project's own failure modes from the lessons registry. Record it with the verdicts
+(`--brief "<text>"`) so a thin verdict can be told from a thin brief. Seat verdicts and their notes
+may be supplied through `--fields-file` (JSON), so a note quoting a command in backticks is stored
+verbatim rather than mangled by a shell.
+
 ### `--goal design` - establish the dependency graph
 
 Grooming a backlog Draft -> Ready is also where the **inter-story dependency graph** is

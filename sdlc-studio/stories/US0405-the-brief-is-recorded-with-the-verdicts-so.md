@@ -31,8 +31,13 @@
 - **Then** the brief is returned with it, so a thin verdict can be told from a thin brief
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeatBriefRecordedTests::test_the_recorded_brief_is_readable_back_with_the_round
 
+## Verification depth
+
+Node-addressed pytest ACs over `test_sprint.py`, red before the code. Mutation-proven by hand: dropping the amendment carry-forward, letting a material change carry, inverting the needs-reconsult set, not storing the brief in the round, and ignoring the fields-file seats were each caught by a node.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-23 | sdlc-studio | Built and mutation-proven |

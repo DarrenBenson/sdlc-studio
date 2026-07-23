@@ -42,7 +42,8 @@ ALLOWLIST = {
     "reference-config.md": 640,  # +repair-plan gate keys (EP0106): a new opt-in config surface
     "reference-review.md": 648,  # +closing-review brief section (EP0108/EP0109): claim inventory
                                  # first pass and the three standing adversarial practices
-    "reference-sprint.md": 700,  # +the EP0130/0146/0150-0155 sprint-engine behaviours documented
+    "reference-sprint.md": 720,  # +the EP0130/0146/0150-0155 sprint-engine behaviours documented,
+                                 # +the amend/material goal-review and seat-brief notes (EP0152/0153)
                                  # (Sprint 1 of the three-sprint run). FLAGGED for a structural
                                  # split: it is the largest reference and grows with the engine;
                                  # its Reading Guide anchors partial reads, so a split is safe.

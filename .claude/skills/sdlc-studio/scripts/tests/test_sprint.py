@@ -6223,6 +6223,181 @@ class DeliveryModeDeterminismTests(_DeliveryModeFixture):
             self.assertTrue(offer["reason"])
 
 
+class _GoalReviewFixture(unittest.TestCase):
+    """Shared setup for the goal-review tests: a project with its own review seats."""
+
+    def _project(self, roles=("product", "engineering", "qa")):
+        d = Path(tempfile.mkdtemp(prefix="goal_review_"))
+        seats = d / "sdlc-studio" / "personas" / "seats"
+        seats.mkdir(parents=True)
+        for r in roles:
+            (seats / f"{r}.md").write_text(f"<!-- role: {r} -->\n# {r}\n", encoding="utf-8")
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        return d
+
+    def _record(self, s, root, *argv):
+        import contextlib, io
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            rc = s.main(["goal-review", "record", "--root", str(root), *argv])
+        return rc, buf.getvalue()
+
+
+class AmendGoalReviewTests(_GoalReviewFixture):
+    """US0402: an amendment carries the requesting seat's verdict forward and records the trail."""
+
+    def _seed_goal_a(self, s, root):
+        return self._record(s, root, "--goal", "goal A",
+                            "--seat", "product|yes|shipped|yes",
+                            "--seat", "engineering|yes|shipped|yes",
+                            "--seat", "qa|yes|shipped|yes")
+
+    def test_amendment_carries_forward_the_satisfied_seats_verdict(self):
+        s = _load()
+        root = self._project()
+        self._seed_goal_a(s, root)
+        rc, _ = self._record(s, root, "--goal", "goal B", "--amend-from", "goal A",
+                             "--requesting-seat", "engineering")
+        self.assertEqual(rc, 0)
+        status = s.goal_review_status(root, "goal B")
+        self.assertTrue(status["reviewed"])                       # goal B is reviewed...
+        self.assertIn("engineering", {x["seat"] for x in status["seats"]})  # ...for engineering
+
+    def test_the_amend_round_records_prior_wording_and_requesting_seat(self):
+        s = _load()
+        root = self._project()
+        self._seed_goal_a(s, root)
+        self._record(s, root, "--goal", "goal B", "--amend-from", "goal A",
+                     "--requesting-seat", "engineering")
+        latest = s.goal_review_rounds(s.goal_review(root))[-1]
+        self.assertEqual(latest["amended_from"], "goal A")
+        self.assertEqual(latest["requesting_seat"], "engineering")
+
+    def test_seats_not_satisfied_by_the_amendment_still_need_reconsult(self):
+        s = _load()
+        root = self._project()
+        self._seed_goal_a(s, root)
+        self._record(s, root, "--goal", "goal B", "--amend-from", "goal A",
+                     "--requesting-seat", "engineering")
+        status = s.goal_review_status(root, "goal B")
+        self.assertEqual(status["needs_reconsult"], ["product", "qa"])   # engineering discharged
+
+
+class MaterialGoalChangeTests(_GoalReviewFixture):
+    """US0403: a material change carries no verdict forward and records the operator's call."""
+
+    def test_a_material_declaration_carries_no_verdict_forward(self):
+        s = _load()
+        root = self._project()
+        self._record(s, root, "--goal", "goal A", "--seat", "engineering|yes|shipped|yes")
+        self._record(s, root, "--goal", "goal B", "--amend-from", "goal A", "--material",
+                     "--seat", "product|yes|shipped|yes")
+        status = s.goal_review_status(root, "goal B")
+        roles = {x["seat"] for x in status["seats"]}
+        self.assertNotIn("engineering", roles)                    # nothing carried
+        self.assertIn("engineering", status["needs_reconsult"])   # must review goal B afresh
+
+    def test_the_change_classification_is_recorded_as_an_operator_declaration(self):
+        s = _load()
+        root = self._project()
+        self._record(s, root, "--goal", "goal A", "--seat", "engineering|yes|shipped|yes")
+        self._record(s, root, "--goal", "goal B", "--amend-from", "goal A", "--material",
+                     "--seat", "product|yes|shipped|yes")
+        self.assertEqual(s.goal_review_rounds(s.goal_review(root))[-1]["change_type"], "material")
+        # and the amendment case records the other declaration
+        self._record(s, root, "--goal", "goal C", "--amend-from", "goal B",
+                     "--requesting-seat", "product")
+        self.assertEqual(s.goal_review_rounds(s.goal_review(root))[-1]["change_type"], "amendment")
+
+
+class SeatBriefEmitTests(unittest.TestCase):
+    """US0404: the seat brief is composed deterministically and names the grooming state."""
+
+    def _planned(self):
+        d = Path(tempfile.mkdtemp(prefix="seat_brief_"))
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        plan = {"count": 3, "order": "priority",
+                "sprint_goal": "make the bar real",
+                "breakdown": {"ungroomed": [{"id": "US0001"}],
+                              "clusters": [{"units": ["US0002", "US0003"]}]},
+                "reachable_end_state": {"state": "Review", "basis": "two-role gate caps it"}}
+        (d / "sdlc-studio" / ".local" / "sprint-plan.json").write_text(json.dumps(plan))
+        (d / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(
+            {"schema": 1, "run_id": "R", "sprint_goal": "make the bar real", "batch": []}))
+        (d / "sdlc-studio" / ".local" / "lessons.md").write_text(
+            "## L-0001: a repair masks the defect beside it\n- **Rule:** re-check the neighbour\n")
+        return d
+
+    def test_the_brief_is_derived_deterministically_from_the_batch(self):
+        s = _load()
+        d = self._planned()
+        self.assertEqual(s.seat_brief(d), s.seat_brief(d))        # same batch -> same brief
+
+    def test_the_brief_names_placeholder_acs_shared_clusters_and_end_state(self):
+        s = _load()
+        brief = s.seat_brief(self._planned())
+        self.assertIn("US0001", brief)                            # placeholder-AC unit
+        self.assertIn("US0002, US0003", brief)                    # the shared-file cluster
+        self.assertIn("Review", brief)                            # reachable end state
+
+    def test_the_brief_draws_failure_modes_from_the_lessons_registry(self):
+        s = _load()
+        brief = s.seat_brief(self._planned())
+        self.assertIn("L-0001", brief)                            # this project's own lesson
+
+
+class SeatBriefRecordedTests(_GoalReviewFixture):
+    """US0405: the brief is stored in the same round as the verdicts and read back with it."""
+
+    def test_the_brief_is_stored_with_the_recorded_verdicts(self):
+        s = _load()
+        root = self._project()
+        self._record(s, root, "--goal", "goal A", "--seat", "engineering|yes|shipped|yes",
+                     "--brief", "the batch has one placeholder-AC unit")
+        latest = s.goal_review_rounds(s.goal_review(root))[-1]
+        self.assertEqual(latest["brief"], "the batch has one placeholder-AC unit")
+
+    def test_the_recorded_brief_is_readable_back_with_the_round(self):
+        s = _load()
+        root = self._project()
+        self._record(s, root, "--goal", "goal A", "--seat", "engineering|yes|shipped|yes",
+                     "--brief", "thin brief")
+        # a round with NO brief is distinguishable from a thin one
+        self._record(s, root, "--goal", "goal B", "--seat", "engineering|yes|shipped|yes")
+        rounds = s.goal_review_rounds(s.goal_review(root))
+        self.assertEqual(rounds[0].get("brief"), "thin brief")
+        self.assertIsNone(rounds[1].get("brief"))
+
+
+class GoalReviewFieldsFileTests(_GoalReviewFixture):
+    """US0406: goal-review record reads seats from a fields-file, so a note quoting a command in
+    backticks is stored verbatim rather than mangled by a shell."""
+
+    def test_record_reads_seat_verdicts_from_a_fields_file(self):
+        s = _load()
+        root = self._project()
+        (root / "f.json").write_text(json.dumps(
+            {"goal": "goal A", "seats": [{"seat": "engineering", "achievable": "yes",
+                                          "done_means": "shipped", "one_increment": "yes"}]}))
+        rc, _ = self._record(s, root, "--fields-file", str(root / "f.json"))
+        self.assertEqual(rc, 0)
+        latest = s.goal_review_rounds(s.goal_review(root))[-1]
+        self.assertIn("engineering", {x["seat"] for x in latest["seats"]})
+
+    def test_a_note_with_backticks_is_stored_verbatim(self):
+        s = _load()
+        root = self._project()
+        note = "held to `make check` and $(date) - no word deleted"
+        (root / "f.json").write_text(json.dumps(
+            {"goal": "goal A", "seats": [{"seat": "engineering", "achievable": "yes",
+                                          "done_means": "shipped", "one_increment": "yes",
+                                          "note": note}]}))
+        rc, _ = self._record(s, root, "--fields-file", str(root / "f.json"))
+        self.assertEqual(rc, 0)
+        stored = s.goal_review_rounds(s.goal_review(root))[-1]["seats"][0]["note"]
+        self.assertEqual(stored, note)                            # byte-for-byte
+
+
 class SprintFieldsFileTests(unittest.TestCase):
     """US0392 AC2: `goal-verdict` takes its verdict and note from a fields-file, so a rationale
     carrying shell metacharacters is stored verbatim rather than interpreted by a shell."""
