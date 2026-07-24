@@ -3370,6 +3370,30 @@ class DiffScopedLaneTests(unittest.TestCase):
             missing = Path(t) / "gone" / "deeper"
             self.assertIsNone(gate.changed_paths(str(missing)))
 
+    def test_a_clean_tree_judges_the_WHOLE_workspace_not_nothing(self) -> None:
+        """The regression the closing review caught: scoping was bound to DEFAULT_CHECKS, so
+        EVERY caller scoped - including the ones that run against a clean checkout by
+        construction (CI, deploy preflight, close preflight). git answers `[]` there, an empty
+        scope judged zero units, and the gate printed PASS over a broken artefact that the same
+        tree failed on before scoping existed. An empty diff is not an empty scope."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            # a story with a status outside the vocabulary - validate must catch it
+            (sd / "US0001-broken.md").write_text(
+                "# US0001: broken\n\n> **Status:** Bananas\n\n"
+                "## Acceptance Criteria\n\n### AC1: x\n- **Verify:** shell true\n",
+                encoding="utf-8")
+            gitutil.git(["init", "-q"], cwd=root)
+            gitutil.git(["add", "-A"], cwd=root)
+            gitutil.git(["commit", "-qm", "baseline"], cwd=root)   # tree now CLEAN
+
+            lane = gate.DEFAULT_CHECKS["validate"](str(root))
+            self.assertIn("no diff to scope to", lane["detail"])
+            self.assertTrue(lane["blocking"], lane["detail"])
+            self.assertGreaterEqual(lane["count"], 1, lane["detail"])
+
     def test_a_repo_wide_failure_still_blocks_a_scoped_run(self) -> None:
         """The rule that stops the scope becoming a hiding place: with the per-unit ledger
         narrowed to an empty diff, a repo-GLOBAL stage failure is still counted and still
@@ -3389,8 +3413,15 @@ class DiffScopedLaneTests(unittest.TestCase):
             gitutil.git(["init", "-q"], cwd=root)
             gitutil.git(["add", "-A"], cwd=root)
             gitutil.git(["commit", "-qm", "baseline"], cwd=root)
+            # A REAL diff that touches no story, so the run is genuinely SCOPED. Leaving the tree
+            # clean no longer scopes at all: an empty diff has nothing to narrow to, so the lane
+            # judges the whole workspace (a clean CI checkout was otherwise judging ZERO units and
+            # printing PASS over a broken artefact). Scoping needs a diff to be scoping.
+            (root / "unrelated.txt").write_text("touched\n", encoding="utf-8")
+            gitutil.git(["add", "-A"], cwd=root)
 
             lane = gate.DEFAULT_CHECKS["conformance"](str(root))
+            self.assertNotIn("no diff to scope to", lane["detail"])   # genuinely scoped
             self.assertEqual(lane["count"], 1, lane["detail"])
             self.assertTrue(lane["blocking"])
             self.assertIn("repo-wide", lane["detail"])

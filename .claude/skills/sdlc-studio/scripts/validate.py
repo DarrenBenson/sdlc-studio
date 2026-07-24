@@ -383,6 +383,14 @@ def changed_artifact_paths(repo_root: Path, types=None) -> set[Path] | None:
     names = gate.changed_paths(str(repo_root))
     if names is None:
         return None
+    if not names:
+        # AN EMPTY DIFF IS NOT AN EMPTY SCOPE. A clean checkout - CI, a deploy preflight, a close
+        # preflight - has nothing changed, so there is nothing to narrow TO; scoping there judged
+        # ZERO units and printed PASS over an unexamined workspace. Measured: a story committed
+        # with `Status: Bananas`, tree clean, `gate.py --root .` -> gate: PASS, where the same
+        # tree failed before scoping existed. Nothing to scope means judge everything, exactly as
+        # an unanswerable probe does.
+        return None
     bases = set()
     for type_ in (types or list(sdlc_md.ARTIFACT_TYPES)):
         rel, _prefix = sdlc_md.ARTIFACT_TYPES[type_]

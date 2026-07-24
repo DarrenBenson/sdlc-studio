@@ -221,6 +221,14 @@ def changed_story_ids(root: Path) -> set[str] | None:
     names = gate.changed_paths(str(root))
     if names is None:
         return None
+    if not names:
+        # AN EMPTY DIFF IS NOT AN EMPTY SCOPE. A clean checkout - CI, a deploy preflight, a close
+        # preflight - has nothing changed, so there is nothing to narrow TO; scoping there judged
+        # ZERO units and printed PASS over an unexamined workspace. Measured: a story committed
+        # with `Status: Bananas`, tree clean, `gate.py --root .` -> gate: PASS, where the same
+        # tree failed before scoping existed. Nothing to scope means judge everything, exactly as
+        # an unanswerable probe does.
+        return None
     rel, _prefix = sdlc_md.ARTIFACT_TYPES["story"]
     base = (Path(root) / rel).resolve()
     out: set[str] = set()
@@ -482,7 +490,7 @@ def scope_detail(result: dict) -> str:
         return ""
     s = result["summary"]
     if scope.get("degraded"):
-        return ("scope: the git changed-file probe could not answer, so the WHOLE workspace "
+        return ("scope: there was no diff to scope to (a clean tree, or the git probe could not answer), so the WHOLE workspace "
                 f"was judged ({s['judged']} unit(s))")
     out = f"scope: {s['judged']} of {s['total']} unit(s) judged (this diff)"
     untouched = scope.get("scoped_out_ids") or []

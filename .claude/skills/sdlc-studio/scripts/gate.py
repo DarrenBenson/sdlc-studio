@@ -110,7 +110,8 @@ def _validate(root: str, changed: bool = False) -> dict:
                        f"({_name_list(advisory_files)})")
         detail += " - `--release` judges the whole workspace"
     elif changed:
-        detail += " (the git changed-file probe could not answer, so the WHOLE workspace was judged)"
+        detail += (" (no diff to scope to - a clean tree, or the git probe could not answer"
+                   " - so the WHOLE workspace was judged)")
     return {"count": errors, "blocking": True, "detail": detail}
 
 
