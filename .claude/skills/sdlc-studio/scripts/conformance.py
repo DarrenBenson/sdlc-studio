@@ -158,14 +158,28 @@ def _ac_signals(text: str) -> tuple[bool, bool, list[str]]:
     return has_ac, has_verify, verified_states
 
 
+#: The named halves `critiqued` composes. Reporting the composite alone told an operator a
+#: gate was unmet without saying which of up to three independent conditions it wanted, so
+#: the answer was reachable only by reading this function. Each unmet half is named instead.
+HALF_VERDICT = "independent APPROVE verdict"
+HALF_EVIDENCE = "adversarial-pass evidence"
+HALF_SIGNOFF = "reviewer-of-record sign-off"
+
+
 def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
                  two_role_cutoff=None, critic_required=True, dead_stamps=0) -> tuple:
-    """The four Done-only conformance stages (verified, reconciled, critiqued, documented).
+    """The four Done-only conformance stages (verified, reconciled, critiqued, documented),
+    plus the list of `critiqued` halves left unmet.
 
     The critiqued stage composes its two halves independently, so a story DoD that
     downgrades ONE of them never disarms the other: the verdict half (independent
     APPROVE) applies while `critic_required`; the two-role half (evidence + an
     independent reviewer-of-record sign-off) applies for units past `two_role_cutoff`.
+
+    Every APPLICABLE half is evaluated, never short-circuited on the first failure, because
+    an operator told only the first of three owed conditions repairs one and meets the gate
+    again. Halves that do not apply to this unit are not reported unmet either: naming an
+    inapplicable condition is the same misdirection pointing the other way.
     """
     # A stamp is evidence only while the thing it points at still exists. `dead_stamps`
     # counts ACs recorded green whose verifier now selects NOTHING - a `-k` pattern matching
@@ -191,23 +205,34 @@ def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
     # Sprint coverage stands in ONLY when the unit has no per-unit verdict of its own: a recorded
     # per-unit REJECT is not papered over by a batch-level APPROVE.
     verdict_ok = per_unit_ok or (verdict is None and sprint_covers)
-    critiqued = verdict_ok if critic_required else True
+    verdict_half = verdict_ok if critic_required else True
     # The two-role half: with `review.two_role_after` set, a Done unit PAST the cutoff
     # additionally needs the adversarial pass recorded as EVIDENCE and an independent
     # reviewer-of-record SIGN-OFF (principal != author and not an authoring-session
     # subagent - re-checked here as the backstop to record_signoff's write-time
     # refusal). Forward-only: pre-cutoff units and projects without the config keep
     # today's behaviour byte-for-byte.
-    if critiqued and two_role_cutoff is not None:
-        rid_num = sdlc_md.id_number(rid)
-        if rid_num is not None and rid_num > two_role_cutoff:
-            signoff = critic.signoff_for(root, rid)
-            # The evidence half is satisfied by a per-unit adversarial pass OR a sprint-level
-            # review covering this unit; the independent reviewer-of-record sign-off is still
-            # required per unit (the sprint pass is evidence, not the principal's sign-off).
-            has_evidence = bool(critic.evidence_for(root, rid)) or sprint_covers
-            critiqued = has_evidence and critic.is_independent_signoff(root, rid, signoff)
-    return verified, reconciled, critiqued, doc_ok
+    rid_num = sdlc_md.id_number(rid)
+    two_role_applies = (two_role_cutoff is not None and rid_num is not None
+                        and rid_num > two_role_cutoff)
+    evidence_half = signoff_half = True
+    if two_role_applies:
+        # The evidence half is satisfied by a per-unit adversarial pass OR a sprint-level
+        # review covering this unit; the independent reviewer-of-record sign-off is still
+        # required per unit (the sprint pass is evidence, not the principal's sign-off).
+        evidence_half = bool(critic.evidence_for(root, rid)) or sprint_covers
+        signoff_half = critic.is_independent_signoff(root, rid, critic.signoff_for(root, rid))
+    # Conjunction of the same three conditions the short-circuiting form computed, so the
+    # verdict is unchanged; only the reporting gains detail.
+    critiqued = verdict_half and evidence_half and signoff_half
+    unmet = []
+    if critic_required and not verdict_half:
+        unmet.append(HALF_VERDICT)
+    if two_role_applies and not evidence_half:
+        unmet.append(HALF_EVIDENCE)
+    if two_role_applies and not signoff_half:
+        unmet.append(HALF_SIGNOFF)
+    return verified, reconciled, critiqued, doc_ok, unmet
 
 
 def changed_story_ids(root: Path) -> set[str] | None:
@@ -287,16 +312,22 @@ def detect_conformance(repo_root: Path | str, changed: bool = False) -> dict:
     drift_ids = {sdlc_md.norm_id(d["id"]) for d in _drift
                  if d.get("id") and d["kind"] in ("status-mismatch", "missing-row")}
     # Repo-global doc-coverage - the `documented` stage, like `reconciled`.
-    _doc_ok = doc_coverage.check(root)["ok"]
+    _doc = doc_coverage.check(root)
+    _doc_ok = _doc["ok"]
     # The stages whose failure is a property of the REPOSITORY, not of any one unit. Each is
     # reported once, with its own remedy, instead of being charged to every judged unit.
     globals_: list[dict] = []
     if not _doc_ok:
+        # NAME the undocumented items. The finding already carries them, so telling the
+        # operator to go and run `doc_coverage.py` to learn what this run had in hand was a
+        # source dive charged for information the check had already computed.
+        gaps = [f["name"] for f in _doc["findings"] if f["blocking"]]
         globals_.append({
             "stage": "documented",
-            "reason": "doc-coverage reports at least one undocumented item",
-            "remedy": "run `doc_coverage.py` to name the gap, then catalogue it "
-                      "(a single uncatalogued command fails this stage repo-wide)",
+            "reason": f"doc-coverage reports {len(gaps)} undocumented item(s): {_elide(gaps)}",
+            "remedy": "catalogue each named item (a command in `help/help.md`, a script in "
+                      "`reference-scripts*.md`); `doc_coverage.py --format json` gives the "
+                      "full detail per finding",
         })
     if _no_index:
         globals_.append({
@@ -315,6 +346,7 @@ def detect_conformance(repo_root: Path | str, changed: bool = False) -> dict:
         has_ac, has_verify, verified_states = _ac_signals(text)
         scoped_out = changed_ids is not None and sdlc_md.norm_id(rid) not in changed_ids
         verified = reconciled = critiqued = documented = promoted = None
+        critiqued_missing: list[str] = []
         if status == "Done" and scoped_out:
             # Outside the diff: judge only what is already computed or free to derive. The
             # repo-global stages MUST still be judged here - they are what a global failure is
@@ -324,7 +356,7 @@ def detect_conformance(repo_root: Path | str, changed: bool = False) -> dict:
             documented = _doc_ok
         elif status == "Done":
             dead = len(verify_ac.unresolvable_stamps(path, root)) if verify_ac else 0
-            verified, reconciled, critiqued, documented = _done_stages(
+            verified, reconciled, critiqued, documented, critiqued_missing = _done_stages(
                 root, rid, verified_states, _no_index, drift_ids, _doc_ok,
                 two_role_cutoff=two_role_cutoff, critic_required=critic_required,
                 dead_stamps=dead)
@@ -399,6 +431,9 @@ def detect_conformance(repo_root: Path | str, changed: bool = False) -> dict:
             # marker, so an operator can count how much a refined backlog owes before planning it.
             "ungroomed": story_is_ungroomed(text),
             "missing": missing,
+            # Which of `critiqued`'s halves are owed. Empty when the stage is satisfied, not
+            # required, or not judged - so a reader never has to infer it from the composite.
+            "critiqued_missing": critiqued_missing if "critiqued" in missing else [],
             "missing_global": missing_global,
             "downgraded": dod_downgrades if status == "Done" else [],
         })
@@ -474,6 +509,16 @@ def _bulk_missed(result: dict) -> list[str]:
     return sorted(k for k, c in tally.items() if judged >= 3 and c >= 0.8 * judged)
 
 
+def missing_detail(unit: dict) -> str:
+    """A unit's missing stages, with `critiqued` expanded to the halves it actually owes.
+
+    One line, every unmet half on it. `critiqued` alone reads as a single unmet condition
+    when it is up to three, and which one is owed decides what the operator does next."""
+    halves = unit.get("critiqued_missing") or []
+    return ", ".join(f"critiqued ({', '.join(halves)})" if m == "critiqued" and halves else m
+                     for m in unit["missing"])
+
+
 def _elide(ids: list[str], limit: int = 3) -> str:
     """First `limit` ids then a count of the rest: a lane line stays readable without hiding
     how many it did not print."""
@@ -526,7 +571,12 @@ def remedy_detail(result: dict) -> str:
                   "(pre-existing, forward-only), not a regression from this change")
     else:
         nature = "scattered per-unit gaps - check whether this change regressed them"
-    base = f"{n} non-conformant unit(s): {nature}. Remedies: {REMEDY_CUTOFF}; or {REMEDY_BACKFILL}"
+    # Same aiming rule as the CLI: the backfill lever is named only when the stage it clears
+    # is one of the stages actually missing, so the gate line cannot point at the wrong gate.
+    misses_verified = any("verified" in u["missing"] for u in result["units"]
+                          if not u["conformant"] and not u.get("scoped_out"))
+    remedies = REMEDY_CUTOFF + (f"; or {REMEDY_BACKFILL}" if misses_verified else "")
+    base = f"{n} non-conformant unit(s): {nature}. Remedies: {remedies}"
     return base + tail
 
 
@@ -564,7 +614,7 @@ def cmd_check(args: argparse.Namespace) -> int:
             if not u["conformant"]:
                 # An untouched unit is still NAMED, marked as what it is: reported, not judged.
                 mark = "ADVISORY (outside this diff) " if u.get("scoped_out") else ""
-                print(f"  {mark}{u['id']} ({u['status']}): missing {', '.join(u['missing'])}")
+                print(f"  {mark}{u['id']} ({u['status']}): missing {missing_detail(u)}")
                 if u.get("scoped_out"):
                     continue  # advisory faults do not steer this run's guidance
                 for m in u["missing"]:
@@ -579,8 +629,12 @@ def cmd_check(args: argparse.Namespace) -> int:
                 print(f"  note: most units miss {', '.join(bulk)} - likely an unadopted "
                       "discipline or template shape, not per-unit drift; adopt it or scope conformance.")
             # The two whole-batch levers, named so the operator need not already know them.
+            # The backfill lever clears the VERIFIED stage and nothing else, so it is offered
+            # only when a unit actually misses that stage. Printed under a missing-critiqued
+            # failure it aimed the operator at a gate that was already green.
             print(f"  remedy: {REMEDY_CUTOFF}")
-            print(f"  remedy: {REMEDY_BACKFILL}")
+            if "verified" in tally:
+                print(f"  remedy: {REMEDY_BACKFILL}")
     # A repo-wide failure is still a failure: attributing it once must not make it exit clean.
     return 1 if (result["summary"]["nonconformant"]
                  or result["summary"].get("global_failures")) else 0

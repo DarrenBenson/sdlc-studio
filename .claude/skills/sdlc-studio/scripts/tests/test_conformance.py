@@ -580,7 +580,12 @@ class GlobalAttributionTests(unittest.TestCase):
         (root / "sdlc-studio" / "stories" / "_index.md").write_text(
             "# Stories\n\n| ID | Title | Status |\n|---|---|---|\n" + "\n".join(rows) + "\n",
             encoding="utf-8")
-        mod.doc_coverage.check = lambda _r: {"ok": doc_ok}
+        # The stub returns the module's REAL contract, findings included - a stub narrower
+        # than the thing it stands in for tests a shape the caller never receives.
+        findings = [] if doc_ok else [{"kind": "command-uncatalogued", "name": "widget",
+                                       "blocking": True, "detail": "widget is uncatalogued"}]
+        mod.doc_coverage.check = lambda _r: {"ok": doc_ok, "findings": findings,
+                                             "applicable": True}
         return mod
 
     def test_global_failure_reported_once(self) -> None:
@@ -919,6 +924,200 @@ class DiffScopedConformanceTests(unittest.TestCase):
             self.assertNotIn("documented", u2["missing"])
             self.assertIs(u2["stages"]["reconciled"], False)   # the missing story index
             self.assertIn("reconciled", u2["missing_global"])
+
+
+@unittest.skipUnless(HAS_YAML, "review.two_role_after reads .config.yaml (needs PyYAML)")
+class CritiquedHalvesTests(unittest.TestCase):
+    """`critiqued` is one boolean over up to three independent halves. Reporting only the
+    composite name costs a source dive per occurrence, so every UNMET half is named."""
+
+    def _config(self, root: Path) -> None:
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "review:\n  two_role_after: US0100\n", encoding="utf-8")
+
+    def _report(self, root: Path) -> str:
+        mod = _load()
+        args = mod.build_parser().parse_args(["check", "--root", str(root)])
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            args.func(args)
+        return buf.getvalue()
+
+    def test_only_the_signoff_missing_names_the_signoff_not_the_composite(self) -> None:
+        """AC1. Verdict recorded, adversarial evidence recorded, sign-off absent: the ONE
+        unmet half is the one named. Asserting the sign-off phrase alone would pass on a
+        line naming all three, so the other two are asserted absent."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 101, status="Done")
+            _record_verdict(root, "US0101")
+            _critic_mod().record_evidence(root, "US0101", reviewer="qa-seat",
+                                          author="builder", findings="adversarial pass done")
+            mod = _load()
+            u = {x["id"]: x for x in mod.detect_conformance(root)["units"]}["US0101"]
+            self.assertEqual(u["critiqued_missing"], [mod.HALF_SIGNOFF])
+            out = self._report(root)
+            self.assertIn(mod.HALF_SIGNOFF, out)
+            self.assertNotIn(mod.HALF_VERDICT, out)
+            self.assertNotIn(mod.HALF_EVIDENCE, out)
+
+    def test_several_unmet_halves_are_all_named_in_one_line(self) -> None:
+        """AC2. Nothing recorded at all: all three halves are unmet and all three are named
+        on the unit's single line - not just the first the composition happened to reach."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 101, status="Done")
+            mod = _load()
+            u = {x["id"]: x for x in mod.detect_conformance(root)["units"]}["US0101"]
+            self.assertEqual(u["critiqued_missing"],
+                             [mod.HALF_VERDICT, mod.HALF_EVIDENCE, mod.HALF_SIGNOFF])
+            line = next(ln for ln in self._report(root).splitlines() if "US0101" in ln)
+            for half in (mod.HALF_VERDICT, mod.HALF_EVIDENCE, mod.HALF_SIGNOFF):
+                self.assertIn(half, line)
+
+    def test_a_satisfied_critiqued_stage_stays_conformant_and_names_nothing(self) -> None:
+        """AC3. The change is diagnostic detail, never a new refusal."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 101, status="Done")
+            _record_verdict(root, "US0101")
+            c = _critic_mod()
+            c.record_evidence(root, "US0101", reviewer="qa-seat", author="builder",
+                              findings="adversarial pass done")
+            c.record_signoff(root, "US0101", principal="Darren Benson (operator)",
+                             author="builder")
+            mod = _load()
+            u = {x["id"]: x for x in mod.detect_conformance(root)["units"]}["US0101"]
+            self.assertTrue(u["stages"]["critiqued"])
+            self.assertNotIn("critiqued", u["missing"])
+            self.assertEqual(u["critiqued_missing"], [])
+
+    def test_a_pre_cutoff_unit_names_only_the_verdict_half(self) -> None:
+        """The two-role halves do not APPLY below the cutoff, so they are not reported unmet -
+        an inapplicable half named as owed is the same misdirection in the other direction."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 99, status="Done")
+            mod = _load()
+            u = {x["id"]: x for x in mod.detect_conformance(root)["units"]}["US0099"]
+            self.assertEqual(u["critiqued_missing"], [mod.HALF_VERDICT])
+
+    def test_backfill_remedy_is_withheld_when_no_unit_misses_verified(self) -> None:
+        """CR0368's second half: `run verify_ac and back-annotate` is the remedy for the
+        VERIFIED stage. Printed under a missing-critiqued failure it sends the operator at
+        the wrong gate, which is what cost a source dive."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 101, status="Done", verified="yes")
+            mod = _load()
+            res = mod.detect_conformance(root)
+            u = {x["id"]: x for x in res["units"]}["US0101"]
+            self.assertNotIn("verified", u["missing"])
+            self.assertIn("critiqued", u["missing"])
+            self.assertNotIn(mod.REMEDY_BACKFILL, self._report(root))
+            self.assertNotIn(mod.REMEDY_BACKFILL, mod.remedy_detail(res))
+
+    def test_backfill_remedy_still_offered_when_a_unit_does_miss_verified(self) -> None:
+        """The other side of the same gate: withholding it always would delete a correct
+        remedy rather than aim it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 101, status="Done", verified="no")
+            mod = _load()
+            res = mod.detect_conformance(root)
+            self.assertIn("verified", {x["id"]: x for x in res["units"]}["US0101"]["missing"])
+            self.assertIn(mod.REMEDY_BACKFILL, self._report(root))
+            self.assertIn(mod.REMEDY_BACKFILL, mod.remedy_detail(res))
+
+
+class DocCoverageGapNamedTests(unittest.TestCase):
+    """CR0338 residual: the repo-wide doc-coverage finding told the operator to run
+    `doc_coverage.py` to learn what was undocumented - information this run already had in
+    hand. The finding names the items."""
+
+    def _skill(self, root: Path, commands: tuple[str, ...]) -> None:
+        sd = root / ".claude" / "skills" / "sdlc-studio"
+        (sd / "help").mkdir(parents=True, exist_ok=True)
+        (sd / "scripts").mkdir(parents=True, exist_ok=True)
+        rows = "\n".join(f"| `{c}` | a type |" for c in commands)
+        (sd / "SKILL.md").write_text(
+            f"# S\n\n## Type Reference\n\n| Type | What |\n| --- | --- |\n{rows}\n\n"
+            "## Full Reference\n", encoding="utf-8")
+        (sd / "help" / "help.md").write_text("# help\n", encoding="utf-8")
+        (sd / "reference-scripts.md").write_text("# scripts\n", encoding="utf-8")
+
+    def test_the_undocumented_items_are_named_not_merely_counted(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._skill(root, ("widget", "sprocket"))
+            _story(root, 1, status="Done")   # `documented` is a Done-only stage
+            g = next(x for x in _load().detect_conformance(root)["globals"]
+                     if x["stage"] == "documented")
+            for name in ("widget", "sprocket"):
+                self.assertIn(name, g["reason"])
+            self.assertIn("2 undocumented", g["reason"])
+            # The remedy must not send the operator off to rediscover what is already named.
+            self.assertNotIn("to name the gap", g["remedy"])
+
+
+class DocDriftResidualTests(unittest.TestCase):
+    """US0369 AC2: every residual CR0365's evidence sweep recorded carries a written
+    disposition. Silence is what let twelve requests derive Complete over unmet criteria,
+    so the check reads the SOURCE table rather than a hand-kept list - a residual added to
+    CR0365 later and left undispositioned fails here."""
+
+    REPO = Path(__file__).resolve().parents[5]
+    CR = REPO / "sdlc-studio" / "change-requests"
+    STORY = REPO / "sdlc-studio" / "stories"
+    VOCAB = ("corrected", "refiled", "declined")
+
+    def _rows(self, text: str, heading: str) -> list[list[str]]:
+        rows, inside = [], False
+        for line in text.splitlines():
+            if line.startswith("#"):
+                inside = line.strip().lstrip("# ").strip().lower() == heading.lower()
+                continue
+            if not (inside and line.startswith("|")):
+                continue
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if not cells or set("".join(cells)) <= set("- :"):
+                continue          # the separator row
+            rows.append(cells)
+        return rows[1:]           # drop the header
+
+    def _one(self, base: Path, prefix: str) -> Path:
+        hits = sorted(base.glob(f"{prefix}*.md"))
+        self.assertEqual(len(hits), 1, f"expected exactly one {prefix} file, got {hits}")
+        return hits[0]
+
+    def test_every_residual_is_corrected_or_declined_with_a_reason(self) -> None:
+        # This suite ships to consuming projects, which have no CR0365 of their own. Absent
+        # the source table there is nothing to check, and skipping says so rather than
+        # passing quietly; in THIS repo both files exist, so the check runs for real.
+        if not sorted(self.CR.glob("CR0365*.md")):
+            self.skipTest("no CR0365 in this workspace - the residual sweep is repo-specific")
+        source = self._rows(self._one(self.CR, "CR0365").read_text(encoding="utf-8"),
+                            "The residuals")
+        expected = {r[0] for r in source}
+        self.assertGreater(len(expected), 1, "CR0365's residual table did not parse")
+
+        text = self._one(self.STORY, "US0369").read_text(encoding="utf-8")
+        recorded = self._rows(text, "Residual disposition")
+        seen = {r[0] for r in recorded}
+        self.assertEqual(seen, expected,
+                         "a residual in CR0365 has no disposition row (or vice versa)")
+        for from_, disposition, reason in ((r[0], r[1], r[2]) for r in recorded):
+            self.assertIn(disposition.lower(), self.VOCAB,
+                          f"{from_}: '{disposition}' is not one of {self.VOCAB}")
+            # A disposition with no reason is silence wearing a label.
+            self.assertGreaterEqual(len(reason), 30, f"{from_}: reason too thin to be one")
 
 
 if __name__ == "__main__":
