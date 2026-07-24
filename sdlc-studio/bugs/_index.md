@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 8 |
+| Open | 10 |
 | In Progress | 0 |
 | Fixed | 194 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **285** |
+| **Total** | **287** |
 
 ## All Bugs
 
@@ -252,6 +252,8 @@
 | [BG0283](BG0283-the-inflight-mutation-guard-has-no-staleness-notion.md) | the inflight-mutation guard has no staleness notion, so an abandoned sidecar blocks every write in the repo indefinitely: a three-day-old file refused artifact and transition the moment the guard shipped | Open | -- | 2026-07-24 | 2026-07-24 |
 | [BG0284](BG0284-superseding-a-verdict-cannot-restore-independence-so-the.md) | superseding a verdict cannot restore independence, so the mis-attributed-reviewer case that motivated it still strands a unit: the tool cannot tell a mis-filing from an author retiring an inconvenient verdict, and needs a principal-authorised correction path | Open | High | 2026-07-24 | 2026-07-24 |
 | [BG0285](BG0285-sprint-close-without-apply-signoff-closes-the-run.md) | sprint close without --apply-signoff closes the run, and the sprint-level review that the sign-off needs cannot then be recorded against it, so the documented two-invocation close flow cannot be completed and no reopen path exists | Open | High | 2026-07-24 | 2026-07-24 |
+| [BG0286](BG0286-sprint-close-apply-signoff-fans-into-story-units.md) | sprint close --apply-signoff fans into story units only, leaving the batch's bugs Open while the close reports goal-reached | Open | High | 2026-07-24 | 2026-07-24 |
+| [BG0287](BG0287-the-review-current-lane-goes-stale-against-the.md) | the review-current lane goes stale against the close's own transitions, so it blocks the close step that would refresh the anchor | Open | Medium | 2026-07-24 | 2026-07-24 |
 
 ## Archived Releases
 

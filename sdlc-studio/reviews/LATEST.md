@@ -11,9 +11,17 @@
 
 ## Where the pipeline is (2026-07-24)
 
-Sprint 2 of three is CLOSED. The delivery backlog reached zero open units, which was the goal, so
-the v5 release cut has no known-open work behind it. Sprint 3 carries the ungroomed story
-skeletons, the frictions raised here, and EP0117 (the cut itself).
+Sprint 2 of three is CLOSED and SIGNED OFF. 18 stories Done, 10 bugs Fixed, 10 parent epics and
+10 change requests derived terminal from their children. The delivery backlog reached zero open
+units, which was the goal, so the v5 release cut has no known-open work behind it. Sprint 3
+carries the ungroomed story skeletons, the frictions raised here, and EP0117 (the cut itself).
+
+The close itself needed hand-work in three places, all filed: `--apply-signoff` fans into story
+units only and left the batch's 10 bugs Open while reporting goal-reached (BG0286); the review
+anchor goes stale against the close's own transitions, so the lane guarding currency blocks the
+step that would refresh it (BG0287, filed after hitting it three times in a row); and
+all-manual-AC stories are left non-conformant by the automated verify pass, since `verify_ac`
+will not annotate them. BG0285 records a fourth, with its diagnosis marked unconfirmed.
 
 ## What shipped
 
