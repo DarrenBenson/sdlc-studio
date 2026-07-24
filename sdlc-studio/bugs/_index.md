@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 14 |
+| Open | 15 |
 | In Progress | 0 |
 | Fixed | 194 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **291** |
+| **Total** | **292** |
 
 ## All Bugs
 
@@ -258,6 +258,7 @@
 | [BG0289](BG0289-give-the-5-scripts-with-no-root-surface.md) | give the 5 scripts with no --root surface one, and reconcile the census (BG0282 slice 3) | Open | Low | 2026-07-24 | 2026-07-24 |
 | [BG0290](BG0290-refine-s-ungroomed-placeholder-fails-validate-s-no.md) | refine's ungroomed placeholder fails validate's no-ac check, so refine produces a story that cannot be committed | Open | High | 2026-07-24 | 2026-07-24 |
 | [BG0291](BG0291-refine-s-seeded-acs-duplicate-their-own-label.md) | refine's seeded ACs duplicate their own label and restate the story title as the Then clause | Open | Medium | 2026-07-24 | 2026-07-24 |
+| [BG0292](BG0292-the-close-status-stamp-is-rung-blind-it.md) | the close-status stamp is rung-blind: it tells a design rung that sign-off is owed to reach Done, which was never that rung's target | Open | Medium | 2026-07-24 | 2026-07-24 |
 
 ## Archived Releases
 

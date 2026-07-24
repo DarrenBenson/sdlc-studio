@@ -109,3 +109,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: {{tokens}} · Duration: {{duration}} · Critic rejects: {{rejects}}
+
+## Handoff
+
+- [HO-0026](../handoffs/HO0026-every-remaining-backlog-story-carries-authored-acceptance-criteria.md) - 18 remaining item(s): 17 copilot-tail, 1 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
