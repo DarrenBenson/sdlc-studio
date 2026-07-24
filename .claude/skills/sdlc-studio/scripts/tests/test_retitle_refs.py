@@ -5,10 +5,13 @@ slug, or the retitle refuses and NAMES the references it cannot rewrite; and the
 recorded on the artefact with the previous title so the change is legible."""
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from datetime import date
 from pathlib import Path
 
@@ -139,6 +142,118 @@ class RetitleRecordTests(unittest.TestCase):
         self.assertEqual(len(added), 1)
         self.assertRegex(added[0].lower(), r"retitl")
         self.assertIn(date.today().isoformat(), added[0])
+
+
+class RetitleRollbackTests(unittest.TestCase):
+    """The write phase is atomic-or-rolled-back (BG0274).
+
+    `retitle` is documented as all-validate-then-write, but that guarantee held only on the
+    refusal path: past validation the writes were an unjournalled sequence, so a fault in the
+    inbound-rewrite loop left the file renamed, the index updated and the references half
+    rewritten - the exact split-surface state validate-first exists to prevent.
+    """
+
+    def _fixture(self, root: Path):
+        """A CR with an index row and TWO inbound references, so a fault on the second has a
+        first one to leave behind."""
+        crd = root / "sdlc-studio" / "change-requests"
+        old = "the title that must survive a failed rewrite"
+        old_slug = file_finding._slug(old)
+        target = _cr(crd, old)
+        idx = _cr_index(crd, old)
+        epd = root / "sdlc-studio" / "epics"
+        epd.mkdir(parents=True)
+        refs = []
+        for n, name in ((1, "first"), (2, "second")):
+            p = epd / f"EP000{n}-{name}.md"
+            p.write_text(
+                f"# EP000{n}: {name}\n\n> **Status:** Draft\n\n## Summary\n\n"
+                f"Delivered by [CR-0001](../change-requests/CR0001-{old_slug}.md).\n\n"
+                "## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n",
+                encoding="utf-8")
+            refs.append(p)
+        return target, idx, refs, old
+
+    def _failing_write(self, doomed: Path, also_fail_restore: Path | None = None):
+        """Stand in for a write that faults partway through the loop. `also_fail_restore` makes
+        the ROLLBACK of that path fail too, which is the only way to test the honest report of
+        a partial rollback."""
+        real_atomic = artifact.sdlc_md.atomic_write
+        real_bytes = Path.write_bytes
+
+        def atomic(p, text, *a, **kw):
+            if Path(p) == doomed:
+                raise OSError(f"simulated fault writing {p}")
+            return real_atomic(p, text, *a, **kw)
+
+        def write_bytes(self, data):  # noqa: ANN001 - patched onto Path
+            if also_fail_restore is not None and Path(self) == also_fail_restore:
+                raise OSError(f"simulated fault restoring {self}")
+            return real_bytes(self, data)
+
+        return atomic, write_bytes
+
+    @unittest.skipIf(check_links is None, "tools/check_links.py not present")
+    def test_a_fault_mid_write_leaves_every_surface_byte_identical(self):
+        """AC1: the file, its name, the index row and the already-rewritten reference all
+        go back exactly as they were."""
+        root = Path(tempfile.mkdtemp())
+        target, idx, refs, old = self._fixture(root)
+        before = {p: p.read_bytes() for p in (target, idx, *refs)}
+        new = "a corrected title that never lands"
+        dest = target.with_name(f"CR0001-{file_finding._slug(new)}.md")
+
+        atomic, _ = self._failing_write(refs[1])
+        with unittest.mock.patch.object(artifact.sdlc_md, "atomic_write", atomic):
+            with self.assertRaises(artifact.RetitleBlocked):
+                artifact.retitle(root, "CR-0001", new)
+
+        self.assertFalse(dest.exists(), "the destination file was left behind")
+        for p, b in before.items():
+            self.assertTrue(p.exists(), f"{p.name} was not restored")
+            self.assertEqual(p.read_bytes(), b, f"{p.name} differs from before the retitle")
+        # named explicitly: the rename, the index row and the FIRST reference are the three
+        # surfaces the unjournalled version left changed
+        self.assertIn(old, target.read_text(encoding="utf-8"))
+        self.assertIn(f"CR0001-{file_finding._slug(old)}.md", idx.read_text(encoding="utf-8"))
+        self.assertIn(f"CR0001-{file_finding._slug(old)}.md",
+                      refs[0].read_text(encoding="utf-8"))
+
+    @unittest.skipIf(check_links is None, "tools/check_links.py not present")
+    def test_the_fault_is_reported_and_the_cli_exits_non_zero(self):
+        """AC2: the caller is told which write failed and that the tree was put back."""
+        root = Path(tempfile.mkdtemp())
+        _target, _idx, refs, _old = self._fixture(root)
+        atomic, _ = self._failing_write(refs[1])
+        with unittest.mock.patch.object(artifact.sdlc_md, "atomic_write", atomic):
+            with self.assertRaises(artifact.RetitleBlocked) as ctx:
+                artifact.retitle(root, "CR-0001", "another title that never lands")
+            self.assertEqual(ctx.exception.surface, "write")
+            self.assertIn(str(refs[1]), str(ctx.exception))
+            self.assertIn("rolled back", str(ctx.exception).lower())
+            self.assertIsInstance(ctx.exception.__cause__, OSError)  # never swallowed
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+                rc = artifact.main(["retitle", "--id", "CR-0001", "--title",
+                                    "a third title that never lands", "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("rolled back", err.getvalue().lower())
+
+    @unittest.skipIf(check_links is None, "tools/check_links.py not present")
+    def test_a_failed_rollback_names_what_it_could_not_restore(self):
+        """AC3: a partial rollback reported as a clean one is worse than the fault itself."""
+        root = Path(tempfile.mkdtemp())
+        target, _idx, refs, _old = self._fixture(root)
+        atomic, write_bytes = self._failing_write(refs[1], also_fail_restore=refs[0])
+        with unittest.mock.patch.object(artifact.sdlc_md, "atomic_write", atomic), \
+                unittest.mock.patch.object(Path, "write_bytes", write_bytes):
+            with self.assertRaises(artifact.RetitleBlocked) as ctx:
+                artifact.retitle(root, "CR-0001", "a title whose rollback also fails")
+        msg = str(ctx.exception)
+        self.assertIn(str(refs[0]), msg)                 # names the surface left unrestored
+        self.assertIn("could not", msg.lower())
+        self.assertNotIn("nothing was written", msg.lower())
+        self.assertTrue(target.exists())
 
 
 if __name__ == "__main__":

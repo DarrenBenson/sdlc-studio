@@ -1382,6 +1382,44 @@ def _load_check_links(repo_root: Path | str):
     return None
 
 
+class _WriteJournal:
+    """The prior bytes of every file a multi-file write phase is about to touch, so a fault
+    partway through can put all of them back.
+
+    A file that did NOT exist is recorded as such and REMOVED on rollback: a created-then-
+    abandoned destination is drift too, and leaving it is how a failed rename ends up with two
+    copies of one artefact. `rollback` never raises - it returns the paths it could not
+    restore, so the caller reports a partial rollback honestly instead of a clean-sounding
+    lie on top of the original fault.
+    """
+
+    def __init__(self) -> None:
+        self._before: dict[Path, bytes | None] = {}
+
+    def capture(self, path: Path | str) -> None:
+        p = Path(path)
+        if p not in self._before:
+            try:
+                self._before[p] = p.read_bytes() if p.is_file() else None
+            except OSError:
+                # Unreadable before the phase starts: record nothing rather than a wrong
+                # "did not exist", which rollback would act on by deleting it.
+                sdlc_md.debug("artifact.retitle.journal", f"cannot capture {p}")
+
+    def rollback(self) -> list[str]:
+        unrestored: list[str] = []
+        for p, before in self._before.items():
+            try:
+                if before is None:
+                    if p.exists():
+                        p.unlink()
+                else:
+                    p.write_bytes(before)
+            except OSError:
+                unrestored.append(str(p))
+        return unrestored
+
+
 def retitle(repo_root: Path | str, artifact_id: str, new_title: str,
             dry_run: bool = False) -> dict:
     """Atomically retitle an artefact across all three title surfaces - the H1, the filename
@@ -1459,25 +1497,52 @@ def retitle(repo_root: Path | str, artifact_id: str, new_title: str,
                 "references": [r["rel"] for r in rewritable], "dry_run": True}
 
     # --- ALL FOUR SURFACES VALIDATED - now write ---
-    new_text = _H1_RETITLE_RE.sub(lambda mm: mm.group(1) + new_title, text, count=1)
-    today = date.today().isoformat()
-    stamped, recorded = transition.append_revision_row(
-        new_text, today, sdlc_md.authorship_name(sdlc_md.authorship_value(None, root)),
-        f"Retitled: was {old_title!r}")
-    if recorded:
-        new_text = stamped
-    sdlc_md.atomic_write(dest, new_text)
-    if dest != path:
-        path.unlink()
-    reconcile.retitle_index_row(root, type_, file_id, new_slug, new_title, dry_run=False)
-    rewritten: list[str] = []
+    # Validation buys a refusal that leaves every surface byte-identical; it buys nothing once
+    # the writing starts. The phase below is a SEQUENCE of independent writes - the destination
+    # file, the unlink of the old name, the index row, then one rewrite per inbound reference -
+    # and a fault partway through left the artefact renamed, the index updated and the
+    # references half rewritten, which is the split-surface state validate-first exists to
+    # prevent. So the phase journals the prior bytes of every file it will touch and puts them
+    # all back if any single write raises.
+    journal = _WriteJournal()
+    journal.capture(path)
+    journal.capture(dest)
+    journal.capture(root / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md")
     for r in rewritable:
-        rp = Path(r["path"])
-        body = rp.read_text(encoding="utf-8")
-        updated, n = cl.rewrite_inbound_links(body, path.name, new_name)
-        if n and updated != body:
-            sdlc_md.atomic_write(rp, updated)
-            rewritten.append(r["rel"])
+        journal.capture(Path(r["path"]))
+    rewritten: list[str] = []
+    try:
+        new_text = _H1_RETITLE_RE.sub(lambda mm: mm.group(1) + new_title, text, count=1)
+        today = date.today().isoformat()
+        stamped, recorded = transition.append_revision_row(
+            new_text, today, sdlc_md.authorship_name(sdlc_md.authorship_value(None, root)),
+            f"Retitled: was {old_title!r}")
+        if recorded:
+            new_text = stamped
+        sdlc_md.atomic_write(dest, new_text)
+        if dest != path:
+            path.unlink()
+        reconcile.retitle_index_row(root, type_, file_id, new_slug, new_title, dry_run=False)
+        for r in rewritable:
+            rp = Path(r["path"])
+            body = rp.read_text(encoding="utf-8")
+            updated, n = cl.rewrite_inbound_links(body, path.name, new_name)
+            if n and updated != body:
+                sdlc_md.atomic_write(rp, updated)
+                rewritten.append(r["rel"])
+    except Exception as exc:  # noqa: BLE001 - ANY fault must put the tree back, then report
+        unrestored = journal.rollback()
+        if unrestored:
+            # An honest partial report beats a clean-sounding lie: whoever repairs this needs
+            # to know which files are in an unknown state.
+            raise RetitleBlocked("write",
+                f"{artifact_id}: the write failed ({exc}) AND the rollback could not restore "
+                f"{', '.join(unrestored)} - those files are in an unknown state and must be "
+                f"repaired by hand (restore them from git), then retry.") from exc
+        raise RetitleBlocked("write",
+            f"{artifact_id}: the write failed ({exc}) - every surface has been rolled back to "
+            f"its state before the retitle, so nothing is half-renamed. Fix the cause and "
+            f"retry.") from exc
     return {"id": artifact_id, "type": type_, "path": str(dest),
             "old_title": old_title, "new_title": new_title, "renamed": dest != path,
             "revision_recorded": recorded, "references": sorted(set(rewritten)),
