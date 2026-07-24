@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0228: **Deciding a request is not the same as reducing the backlog.** Four rulings converted 9 discovery items into 17 delivery units.**
+- **L-0227: **A wrong diagnosis does not fail loudly - it produces a workaround that fails silently.** BG0290's first diagnosis was plausible, fitted...**
+- **L-0226: **A verifier that matches text already in the tree proves nothing, and reading it will not tell you.** Three of 41 passed here and a fourth...**
 - **L-0225: **Scoping a check to a diff disables it wherever there is no diff.** An empty changed-set is not an empty scope; a clean tree must judge...**
 - **L-0224: **Fixing an ordering defect can create its mirror image.** The BG0268 repair moved `open_run` first and invented the opposite leak.**
 - **L-0223: **An acceptance criterion can specify a vulnerability, and a passing test will then defend it.** US0375 asked for the sign-off gate to...**
