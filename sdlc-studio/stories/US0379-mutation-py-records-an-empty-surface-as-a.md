@@ -1,6 +1,6 @@
 # US0379: mutation.py records an empty surface as a first-class outcome and the gate lane reads it distinct from not-run and PASSes
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0376
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

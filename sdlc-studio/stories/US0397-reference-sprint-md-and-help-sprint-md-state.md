@@ -1,6 +1,6 @@
 # US0397: reference-sprint.md and help/sprint.md state the fixed-cost-versus-review-convergence trade-off from the measured rows, prescribing no number
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0398
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

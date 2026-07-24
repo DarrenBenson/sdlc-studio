@@ -1,6 +1,6 @@
 # US0376: the harness capture returns the transcript model(s), mixed as mixed, and the close writes it to the Model cell
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0373
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
