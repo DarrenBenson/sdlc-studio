@@ -1086,6 +1086,34 @@ def _retro_present(root: str, retro_id: str) -> dict:
             "detail": f"batch retro {retro_id} incomplete{suffix} - " + "; ".join(res["errors"])}
 
 
+def _only_close_status_block_differs(root: Path, path: Path) -> bool:
+    """True when the ONLY uncommitted change to `path` is inside the close's machine-maintained
+    status block.
+
+    The close stamps that block as its last act, so it is uncommitted BY CONSTRUCTION for the
+    rest of that close and for the operator's follow-up `--apply-signoff` invocation. Treating it
+    as "uncommitted review paperwork" made the close block its own second invocation with a
+    remedy - commit the paperwork - that the close itself had just created the need for. The
+    substantive anchor (everything a human wrote) is still held to the committed rule; only the
+    block the tool owns is exempt.
+    """
+    try:
+        import subprocess
+        rel = path.relative_to(root)
+        head = subprocess.run(["git", "show", f"HEAD:{rel}"], cwd=root,
+                              capture_output=True, text=True, timeout=10)
+        if head.returncode != 0:
+            return False                      # not in history at all - genuinely uncommitted
+        def _strip(text: str) -> str:
+            begin, end = "<!-- close-status:begin -->", "<!-- close-status:end -->"
+            if begin in text and end in text:
+                return text[:text.index(begin)] + text[text.index(end) + len(end):]
+            return text
+        return _strip(head.stdout) == _strip(path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001 - currency reporting must never break the gate
+        return False
+
+
 def _is_dirty(root: Path, path: Path) -> bool:
     """True when `path` has uncommitted working-tree or staged changes.
 
@@ -1138,6 +1166,12 @@ def _review_current(root: str) -> dict:
         return {"count": len(stale), "blocking": True,
                 "detail": (f"reviews/LATEST.md is stale - {len(stale)} artefact(s) changed since "
                            f"the last review ({_elide(sorted(stale))}); run `review` before closing")}
+    if uncommitted and _only_close_status_block_differs(rr, latest):
+        # The close's own stamp, and nothing else. Not uncommitted review work, so it does not
+        # block the close that wrote it (nor the operator's follow-up sign-off invocation).
+        return {"count": 0, "blocking": False,
+                "detail": "reviews/LATEST.md carries only the close's own status stamp "
+                          "uncommitted - commit it with the rest of the close paperwork"}
     if uncommitted:
         # Current in content, absent from history. Still blocking - an uncommitted close is
         # not a close - but the honest remedy is to commit, not to re-run the review.

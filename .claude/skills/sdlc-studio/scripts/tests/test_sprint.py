@@ -6570,6 +6570,16 @@ class CloseGateOrderingTests(unittest.TestCase):
         self.assertIn("NOT conformant after the transitions", out)
         self.assertIn("US0001", out)
 
+    def test_an_empty_scope_reports_NOTHING_not_the_whole_repo(self):
+        """A BUG-ONLY batch yields no story units, and a truthiness escape then reported every
+        non-conformant unit in the repo as though this close had caused it. `units=["US9999"]`
+        passes either way, so it never caught this - the empty list is the discriminating case."""
+        s = _load()
+        d = self._repo(verified=False)          # holds a genuinely non-conformant unit
+        self.assertTrue(s._post_transition_conformance(d, units=["US0001"]))   # control
+        self.assertEqual(s._post_transition_conformance(d, units=[]), [])
+        self.assertEqual(s._post_transition_conformance(d, units=None), [])
+
     def test_the_check_is_scoped_to_this_runs_units(self):
         # A close reports the state IT created, never the repo's pre-existing debt.
         s = _load()
@@ -6685,6 +6695,34 @@ class ReviewAnchorRefreshTests(unittest.TestCase):
         if anchor_text is not None:
             (d / "sdlc-studio" / "reviews" / "LATEST.md").write_text(anchor_text, encoding="utf-8")
         return d
+
+    def test_the_review_anchor_step_is_WIRED_INTO_the_close_chain(self):
+        """LANE test (LL0040). The tests above call refresh_review_anchor directly, so deleting
+        `review-anchor` from _CLOSE_CHAIN left the whole suite green - a mutation proved it. This
+        asserts the step is in the chain AND that a dispatchable handler exists for it."""
+        s = _load()
+        self.assertIn("review-anchor", s._CLOSE_CHAIN)
+        self.assertTrue(callable(getattr(s, "_close_review_anchor", None)),
+                        "the chain names a step with no handler to dispatch to")
+
+    def test_the_signoff_tail_restamps_the_anchor_as_RECORDED(self):
+        """The anchor must not say OWED on the close that records the sign-off. The chain stamps
+        at step 7 while units are still at Review, so the tail re-stamps once they are Done."""
+        import contextlib, io, json
+        s = _load()
+        d = Path(tempfile.mkdtemp(prefix="restamp_"))
+        (d / "sdlc-studio" / "reviews").mkdir(parents=True)
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        (d / "sdlc-studio" / "reviews" / "LATEST.md").write_text(
+            "# Reviews - LATEST (anchor)\n\nprose\n", encoding="utf-8")
+        state = {"run_id": "RUN-T", "batch": [], "handoff": "", "outcome": "goal-reached"}
+        (d / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(state))
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            s._apply_signoff_tail(d, state, units=[], retro_arg=None)
+        text = (d / "sdlc-studio" / "reviews" / "LATEST.md").read_text(encoding="utf-8")
+        self.assertIn("RUN-T", text)
+        self.assertIn("RECORDED", text)          # an empty batch owes nothing
+        self.assertNotIn("OWED", text)
 
     def test_a_successful_close_states_this_runs_outcome_not_the_previous_one(self):
         s = _load()

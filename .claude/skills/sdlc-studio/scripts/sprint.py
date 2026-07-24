@@ -3823,6 +3823,23 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
     # could print `gate: ok` and still leave the tree red - which is what happened, and the next
     # person to commit inherited a failure they did not cause and had to prove was not theirs.
     # Same defect class as the handoff refresh above: a step reporting a superseded state.
+    # RE-STAMP THE ANCHOR, now that the sign-offs are recorded and the units are Done. The chain
+    # stamped it at step 7 while every unit still sat at Review, so it necessarily said OWED - on
+    # the very close that was recording the sign-off. The RECORDED branch was unreachable from any
+    # close that actually applied one. Same defect class as the handoff refresh above: a step
+    # reporting a state a later step changes.
+    try:
+        st = run_state.read(root) or state or {}
+    except Exception as exc:  # noqa: BLE001 - never lose a completed sign-off to a state read
+        sdlc_md.debug("sprint._apply_signoff_tail", exc)
+        st = state or {}
+    try:
+        refresh_review_anchor(root, st.get("run_id") or "(unknown run)",
+                              st.get("outcome") or "closed", len(st.get("batch") or []),
+                              _signoff_owed(root, st))
+    except OSError as exc:
+        print(f"apply-signoff: the review anchor could not be re-stamped ({exc}) - it still "
+              f"says sign-off is owed", file=sys.stderr)
     _finalise_outcome(root, state)
     return 0
 
@@ -3839,7 +3856,13 @@ def _post_transition_conformance(root, units=None) -> list[str]:
     except Exception as exc:  # noqa: BLE001 - never lose a sign-off to a census error
         sdlc_md.debug("sprint._post_transition_conformance", exc)
         return []
-    scope = {sdlc_md.norm_id(u) for u in (units or [])}
+    # AN EMPTY SCOPE IS NOT "EVERYTHING". `_batch_story_units` is story-scoped, so a BUG-ONLY
+    # batch - the themed clearance shape this project runs constantly - yields no units, and a
+    # truthiness escape then reported every non-conformant unit in the repo as though this close
+    # had caused it. `_derive_parent_epics` guards the identical hazard a hundred lines above.
+    if not units:
+        return []
+    scope = {sdlc_md.norm_id(u) for u in units}
     out = []
     for unit in result.get("units", []):
         if unit.get("conformant") or unit.get("exempt"):
