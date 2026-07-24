@@ -1,6 +1,6 @@
 # US0356: remove the Decision-Override from RFC0017 once D1 closes
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0346
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

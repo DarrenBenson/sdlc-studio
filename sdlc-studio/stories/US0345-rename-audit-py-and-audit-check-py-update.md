@@ -1,6 +1,6 @@
 # US0345: rename audit.py and audit_check.py, update call sites in gate and sprint
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0254
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0352: test_xrepo.py primary path and update the TSD coverage note
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0337
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

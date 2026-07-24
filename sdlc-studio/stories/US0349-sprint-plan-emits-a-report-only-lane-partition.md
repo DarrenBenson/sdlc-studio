@@ -1,6 +1,6 @@
 # US0349: sprint plan emits a report-only lane partition from the Affects clusters
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0321
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

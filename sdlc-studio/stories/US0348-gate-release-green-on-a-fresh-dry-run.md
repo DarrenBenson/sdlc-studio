@@ -1,6 +1,6 @@
 # US0348: gate --release green on a fresh dry-run, cut the CHANGELOG 5.0.0 section, tag
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0319
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

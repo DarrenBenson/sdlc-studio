@@ -1,6 +1,6 @@
 # US0355: decide and document the Primary-selection method in reference-persona.md and fill the D1 row
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0346
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

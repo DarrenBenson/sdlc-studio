@@ -1,6 +1,6 @@
 # US0413: artifact.py new warns on a near-duplicate title before minting, naming the existing id
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0413
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

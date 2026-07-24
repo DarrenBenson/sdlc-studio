@@ -1,6 +1,6 @@
 # US0414: the duplicate check is advisory by default and refusable under --strict, with the escape recorded
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0413
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

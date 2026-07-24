@@ -1,6 +1,6 @@
 # US0347: version bump to 5.0.0 across authoritative files, check_versions --strict green
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0319
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

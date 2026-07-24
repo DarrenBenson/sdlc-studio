@@ -1,6 +1,6 @@
 # US0359: run_state records an over-appetite batch, keeping both the standing and the accepted appetite
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0349
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

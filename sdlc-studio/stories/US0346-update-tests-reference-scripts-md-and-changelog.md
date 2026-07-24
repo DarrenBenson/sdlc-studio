@@ -1,6 +1,6 @@
 # US0346: update tests, reference-scripts.md and CHANGELOG
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0254
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

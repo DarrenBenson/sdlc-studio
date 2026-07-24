@@ -1,6 +1,6 @@
 # US0368: extend the CR0340 test-relevant set to every path a shipped test reads
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0365
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

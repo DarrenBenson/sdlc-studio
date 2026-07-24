@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 28 |
 | Complete | 372 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 17 |
 | Blocked | 0 |
-| **Total** | **418** |
+| **Total** | **419** |
 
 ## All Changes
 
@@ -240,6 +240,7 @@
 | [CR-0416](CR0416-the-engagement-floor-cannot-see-work-for-a.md) | the engagement floor cannot see work for a unit the commit message never names: a git add -A that sweeps in a concurrently-edited unit attributes its files to whichever id the subject happens to carry | In Progress | Medium | Feature | 2026-07-24 | EP0156 |
 | [CR-0417](CR0417-a-writer-s-fields-file-allows-only-its.md) | a writer's --fields-file allows only its prose keys, so an invocation setting metadata must be split across a document and flags: lessons add takes --tags, --epic and --wave that its own fields-file refuses | In Progress | Medium | Feature | 2026-07-24 | EP0156 |
 | [CR-0418](CR0418-grooming-debt-can-only-be-cleared-by-unbatched.md) | grooming debt can only be cleared by unbatched hand-work outside any unit | In Progress | Medium | Feature | 2026-07-24 | EP0160 |
+| [CR-0419](CR0419-the-capacity-ceiling-is-stale-against-measured-velocity.md) | the capacity ceiling is stale against measured velocity, so every plan reports OVER BUDGET and the warning stops being read | Proposed | Medium | Feature | 2026-07-24 | -- |
 
 ## Archived Releases
 

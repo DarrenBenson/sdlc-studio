@@ -1,6 +1,6 @@
 # US0351: test_autosprint.py exercising the primary path
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0337
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

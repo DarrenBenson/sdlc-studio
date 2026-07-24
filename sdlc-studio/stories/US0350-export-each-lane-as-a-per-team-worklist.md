@@ -1,6 +1,6 @@
 # US0350: export each lane as a per-team worklist, assert collision-freedom, state the undeclared-file risk
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0321
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
