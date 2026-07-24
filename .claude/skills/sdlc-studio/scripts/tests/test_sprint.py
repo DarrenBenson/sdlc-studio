@@ -7312,5 +7312,42 @@ class StrategyScopedMutationTests(unittest.TestCase):
             self.assertEqual(sprint.strategy_mutation_targets(root, ["US0001"]), [])
 
 
+class PlanFindingDispositionTests(unittest.TestCase):
+    """The retro already enforces file-or-decline and silence is not an answer there. A plan
+    critic whose findings can be ignored is advice nobody has to take."""
+
+    def test_write_is_refused_while_a_finding_is_undispositioned(self) -> None:
+        """AC1."""
+        sprint = _load()
+        import critic
+        rep = critic.plan_critique(["US0001"],
+                                   {"scope": [{"title": "already in stdlib", "disposition": ""}]})
+        msg = sprint.plan_critic_refusal(rep)
+        self.assertIn("REFUSED", msg)
+        self.assertIn("already in stdlib", msg, "the finding must be named")
+        self.assertIn("Nothing was written", msg)
+
+    def test_a_decline_without_a_real_reason_is_refused(self) -> None:
+        """AC2. A decline whose reason is a placeholder records that someone clicked past it,
+        which is worse than no record because it looks like a decision."""
+        sprint = _load()
+        import critic
+        for disp in ("declined", "declined:", "declined: {{why}}", "   "):
+            with self.subTest(disposition=disp):
+                rep = critic.plan_critique(
+                    ["US0001"], {"scope": [{"title": "t", "disposition": disp}]})
+                self.assertIn("REFUSED", sprint.plan_critic_refusal(rep))
+
+    def test_a_real_disposition_lets_the_plan_proceed(self) -> None:
+        """The control: a gate that refuses everything is a gate nobody can satisfy."""
+        sprint = _load()
+        import critic
+        for disp in ("BG0123", "declined: the stdlib version does not handle the empty case"):
+            with self.subTest(disposition=disp):
+                rep = critic.plan_critique(
+                    ["US0001"], {"scope": [{"title": "t", "disposition": disp}]})
+                self.assertEqual(sprint.plan_critic_refusal(rep), "")
+
+
 if __name__ == "__main__":
     unittest.main()

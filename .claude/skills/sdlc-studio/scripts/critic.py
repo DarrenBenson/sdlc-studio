@@ -1759,3 +1759,115 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+# ---------------------------------------------------------------------------
+# The plan critic (D0061 / RFC0050 option B)
+# ---------------------------------------------------------------------------
+# Every adversarial surface in this project runs AFTER code exists: the per-unit critic judges a
+# diff, the close runs a full-diff refutation, and every critic subcommand is post-build. The
+# planner's own checks are mechanical - shared-file clusters, ordering, capacity, origin drift -
+# and none of them asks whether the batch is the RIGHT batch. So the cheapest finding available,
+# "this unit does not need to be built", could only be reached by building it.
+
+#: The three lenses, fixed. Named here so a lens that finds nothing is still REPORTED: a lens
+#: that is silent because it found nothing and one that never ran are indistinguishable
+#: otherwise, which is the reporting failure this project has already repaired once elsewhere.
+PLAN_LENSES = ("scope", "risk", "efficiency")
+
+#: What each lens is for, printed with its result so a reader knows what the silence covers.
+PLAN_LENS_SUBJECT = {
+    "scope": "does each unit need to exist, or is it already served by the codebase, the "
+             "stdlib, or an installed dependency",
+    "risk": "does the batch's declared proof strategy match what the units actually touch",
+    "efficiency": "would refactoring the code or tests this batch touches pay for itself "
+                  "WITHIN the sprint, so an accepted cost is chosen rather than absorbed",
+}
+
+
+def plan_intensity(unit_count: int) -> str:
+    """How hard the pass works, scaled to batch size.
+
+    The pass spends tokens BEFORE any value is delivered, on a sprint length that is already the
+    standing complaint - so a two-unit batch must not pay for a forty-unit review. The rule is
+    stated rather than emergent, so a reader can predict it and argue with it.
+    """
+    if unit_count <= 5:
+        return "lite"
+    if unit_count <= 20:
+        return "full"
+    return "ultra"
+
+
+#: How many units each intensity examines individually. Beyond it the pass still runs, but it
+#: says what it did not look at - a bounded pass that reports only what it found reads as
+#: complete coverage, and a silent cap is how a partial sweep is mistaken for a full one.
+PLAN_INTENSITY_CAP = {"lite": 5, "full": 20, "ultra": 40}
+
+
+def plan_critique(units: list[str], findings: dict[str, list[dict]] | None = None) -> dict:
+    """The plan-critic result over `units`.
+
+    `findings` is what the lenses actually found, supplied by the caller that ran them - this
+    function owns the SHAPE of the answer, never the judgement. A lens missing from `findings`
+    is reported as NOT RUN; a lens present with an empty list is reported as having found
+    nothing. Those are different facts and the difference is the whole point.
+    """
+    found = findings or {}
+    intensity = plan_intensity(len(units))
+    cap = PLAN_INTENSITY_CAP[intensity]
+    examined = sorted(units)[:cap]
+    lenses = {}
+    for lens in PLAN_LENSES:
+        if lens not in found:
+            lenses[lens] = {"ran": False, "findings": []}
+        else:
+            lenses[lens] = {"ran": True, "findings": list(found[lens])}
+    return {
+        "intensity": intensity,
+        "examined": examined,
+        "skipped": sorted(set(units) - set(examined)),
+        "lenses": lenses,
+        "findings": [f for lens in PLAN_LENSES for f in lenses[lens]["findings"]],
+    }
+
+
+def render_plan_critique(rep: dict) -> list[str]:
+    """The block the planner prints. States the cap it worked under and what that cap skipped."""
+    lines = [f"  plan critic: intensity {rep['intensity']}, {len(rep['examined'])} unit(s) "
+             f"examined individually"]
+    if rep["skipped"]:
+        shown = ", ".join(rep["skipped"][:8])
+        more = f" (+{len(rep['skipped']) - 8} more)" if len(rep["skipped"]) > 8 else ""
+        lines.append(f"  plan critic: NOT examined individually under this intensity: "
+                     f"{shown}{more}")
+    for lens in PLAN_LENSES:
+        st = rep["lenses"][lens]
+        if not st["ran"]:
+            lines.append(f"  plan critic [{lens}]: NOT RUN - {PLAN_LENS_SUBJECT[lens]}")
+        elif not st["findings"]:
+            lines.append(f"  plan critic [{lens}]: ran, found nothing - "
+                         f"{PLAN_LENS_SUBJECT[lens]}")
+        else:
+            lines.append(f"  plan critic [{lens}]: {len(st['findings'])} finding(s)")
+    return lines
+
+
+def undispositioned_plan_findings(rep: dict) -> list[dict]:
+    """Findings with no disposition, or a disposition that records nothing.
+
+    The retro already enforces file-or-decline and silence is not an answer; the plan critic is
+    held to the same bar. A decline whose reason is a placeholder records that someone clicked
+    past it, which is worse than no record because it looks like a decision.
+    """
+    out = []
+    for f in rep.get("findings") or []:
+        disp = (f.get("disposition") or "").strip()
+        if not disp:
+            out.append(f)
+            continue
+        if disp.lower().startswith("declined"):
+            reason = disp.split(":", 1)[1].strip() if ":" in disp else ""
+            if not reason or "{{" in reason:
+                out.append(f)
+    return out

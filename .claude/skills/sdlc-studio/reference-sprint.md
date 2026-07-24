@@ -432,6 +432,29 @@ unit with no declared `Affects` is delivered sequentially. Test files count as c
 test module conflicts on merge exactly as a shared source module does). See
 [reference-delivery.md](reference-delivery.md) for the full contract.
 
+## What the plan critic cannot see
+
+A bounded adversarial pass runs over the plan before `--write`, across three fixed lenses -
+scope, risk and efficiency. Two honest costs, stated here because neither is obvious from its
+output.
+
+**The critic has strictly LESS information than the builder will have.** It reads a batch of
+declarations; the builder reads the code. Its findings are therefore cheaper to act on and more
+speculative than a post-build critique, and a plan-time "this unit is unnecessary" is a
+hypothesis to check, not a verdict to apply. Treat a finding as a question the plan should be
+able to answer, not as an instruction.
+
+**The technique is adopted on its reasoning, not on a published rate.** The scope lens borrows
+its decision ladder from Ponytail (github.com/DietrichGebert/ponytail, MIT). Ponytail's reported
+gains are self-reported over 12 tasks on a single repository with no control methodology stated,
+so they are not evidence about this project and must never be cited as an established rate. Any
+claim about what the pass is worth here has to be re-measured here.
+
+The pass is intensity-scaled to batch size, because it spends tokens before any value is
+delivered. A capped pass NAMES what it did not examine: a bounded pass that reports only what it
+found reads as complete coverage, and a silent cap is how a partial sweep is mistaken for a
+full one.
+
 ## Authoring mode - greenfield, from a PRD
 
 The batch source can be a **PRD** instead of existing units: `sprint <prd.md>

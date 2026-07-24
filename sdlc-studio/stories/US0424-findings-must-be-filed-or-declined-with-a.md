@@ -1,6 +1,6 @@
 # US0424: findings must be filed or declined with a reason before --write proceeds; silence is refused
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** RFC0050
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** `--write` is attempted
 - **Then** it is REFUSED and names the undispositioned findings - the retro already enforces file-or-decline, and a plan critic whose findings can be ignored is advice nobody has to take
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanFindingDispositionTests::test_write_is_refused_while_a_finding_is_undispositioned
+- **Verified:** yes (2026-07-24)
 
 ### AC2: a decline needs a reason, not a marker
 
@@ -30,6 +31,7 @@
 - **When** the disposition is validated
 - **Then** it is refused - a decline whose reason is `{{why}}` records that someone clicked past it, which is worse than no record because it looks like a decision
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanFindingDispositionTests::test_a_decline_without_a_real_reason_is_refused
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

@@ -3604,6 +3604,24 @@ def _resolve_retro(root, args, state) -> int | None:
     return 1
 
 
+def plan_critic_refusal(rep: dict) -> str:
+    """The refusal `--write` gives while any plan-critic finding is undispositioned.
+
+    The retro already enforces file-or-decline, and silence is not an answer there either. A
+    plan critic whose findings can be ignored is advice nobody has to take, and the whole reason
+    for spending tokens before any value is delivered is that the findings change the plan.
+    """
+    import critic  # noqa: PLC0415
+    open_findings = critic.undispositioned_plan_findings(rep)
+    if not open_findings:
+        return ""
+    titles = ", ".join(f.get("title", "?") for f in open_findings[:6])
+    return (f"plan REFUSED: {len(open_findings)} plan-critic finding(s) are undispositioned "
+            f"({titles}). File each as an artefact or decline it WITH A REASON - a decline whose "
+            f"reason is a placeholder records that someone clicked past it, which is worse than "
+            f"no record because it looks like a decision. Nothing was written and no run opened.")
+
+
 def _print_test_strategy(args, data) -> None:
     """The plan-time strategy block, with the TSD's own staleness reported FIRST.
 

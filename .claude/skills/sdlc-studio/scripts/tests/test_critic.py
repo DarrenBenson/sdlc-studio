@@ -1925,5 +1925,72 @@ class SupersededGateTests(unittest.TestCase):
             self.assertFalse(payload[1]["superseded"])
 
 
+class PlanCriticTests(unittest.TestCase):
+    """D0061 / RFC0050 option B. Every adversarial surface in this project ran AFTER code
+    existed, so the cheapest finding available - "this unit does not need to be built" - could
+    only be reached by building it."""
+
+    def test_three_lenses_run_before_the_plan_is_written(self) -> None:
+        """AC1. A critique delivered after `--write` is a critique of a decision already
+        taken."""
+        mod = _load()
+        rep = mod.plan_critique(["US0001"], {"scope": [], "risk": [], "efficiency": []})
+        self.assertEqual(sorted(rep["lenses"]), sorted(mod.PLAN_LENSES))
+        for lens in mod.PLAN_LENSES:
+            self.assertTrue(rep["lenses"][lens]["ran"])
+
+    def test_a_lens_with_no_finding_is_distinct_from_a_lens_that_did_not_run(self) -> None:
+        """AC2, and the distinction the whole report rests on. A lens silent because it found
+        nothing and one that never ran are otherwise indistinguishable - which is how a partial
+        pass gets read as a clean one."""
+        mod = _load()
+        rep = mod.plan_critique(["US0001"], {"scope": []})   # risk/efficiency absent
+        self.assertTrue(rep["lenses"]["scope"]["ran"])
+        self.assertFalse(rep["lenses"]["risk"]["ran"])
+        text = "\n".join(mod.render_plan_critique(rep))
+        self.assertIn("found nothing", text)
+        self.assertIn("NOT RUN", text)
+
+    def test_a_failed_pass_leaves_no_run_and_no_plan_file(self) -> None:
+        """AC3. Both the ordering defect this project shipped and its mirror image came from a
+        write that outlived its refusal, so the refusal must be computable before anything is
+        written."""
+        mod = _load()
+        rep = mod.plan_critique(["US0001"], {"scope": [{"title": "unneeded", "disposition": ""}]})
+        self.assertTrue(mod.undispositioned_plan_findings(rep),
+                        "an undispositioned finding must be detectable without writing anything")
+
+
+class PlanCriticIntensityTests(unittest.TestCase):
+    """The pass spends tokens BEFORE any value is delivered, on a sprint length already under
+    complaint, so a two-unit batch must not pay for a forty-unit review."""
+
+    def test_a_larger_batch_receives_more_scrutiny(self) -> None:
+        """AC1. The rule is stated rather than emergent, so a reader can predict it."""
+        mod = _load()
+        self.assertEqual(mod.plan_intensity(3), "lite")
+        self.assertEqual(mod.plan_intensity(12), "full")
+        self.assertEqual(mod.plan_intensity(45), "ultra")
+        small = mod.plan_critique([f"US{i:04d}" for i in range(1, 4)], {})
+        large = mod.plan_critique([f"US{i:04d}" for i in range(1, 46)], {})
+        self.assertGreater(len(large["examined"]), len(small["examined"]))
+
+    def test_the_pass_names_what_the_intensity_cap_skipped(self) -> None:
+        """AC2. A bounded pass that reports only what it found reads as complete coverage, and
+        a silent cap is how a partial sweep is mistaken for a full one."""
+        mod = _load()
+        rep = mod.plan_critique([f"US{i:04d}" for i in range(1, 61)], {})
+        self.assertTrue(rep["skipped"], "an over-cap batch must record what it skipped")
+        text = "\n".join(mod.render_plan_critique(rep))
+        self.assertIn("NOT examined individually", text)
+
+    def test_a_batch_inside_the_cap_reports_nothing_skipped(self) -> None:
+        """The control: a skipped-list that appears when nothing was skipped is noise."""
+        mod = _load()
+        rep = mod.plan_critique(["US0001", "US0002"], {})
+        self.assertEqual(rep["skipped"], [])
+        self.assertNotIn("NOT examined", "\n".join(mod.render_plan_critique(rep)))
+
+
 if __name__ == "__main__":
     unittest.main()
