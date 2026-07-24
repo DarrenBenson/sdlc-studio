@@ -23,6 +23,7 @@
 - **When** a read-path entry point (`status`) is invoked in that root
 - **Then** it prints a loud warning on stderr naming the mutated file and the single-writer rule, then completes and exits 0 - a read is degraded evidence, not a blocked one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_inflight_guard.py::InflightGuardTests::test_read_path_warns_naming_the_mutated_file_and_still_exits_zero
+- **Verified:** yes (2026-07-24)
 
 ### AC2: a write-path entry point refuses and writes nothing
 
@@ -30,6 +31,7 @@
 - **When** `artifact new` and `transition set` are invoked in that root
 - **Then** each refuses with exit 2 naming the mutated file and how to clear the sidecar, and no artefact, id or status change is written - a write made against a mutated tool is a write nobody can trust afterwards
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_inflight_guard.py::InflightGuardTests::test_write_path_refuses_and_writes_nothing
+- **Verified:** yes (2026-07-24)
 
 ### AC3: the mutation run's own processes are exempt and a stale sidecar still recovers
 
@@ -37,6 +39,7 @@
 - **When** that process invokes any guarded entry point, and separately when a new `mutation.py` run starts against a sidecar stranded by a killed predecessor
 - **Then** the marked process is neither warned nor refused, and `_recover_stranded` restores the stranded original bytes and clears the sidecar exactly as it does today - the guard cannot block the one run whose job is to clean up after itself
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_inflight_guard.py::InflightGuardTests::test_own_run_is_exempt_and_a_stale_sidecar_still_recovers
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

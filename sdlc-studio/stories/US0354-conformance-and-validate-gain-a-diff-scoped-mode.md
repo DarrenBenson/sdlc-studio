@@ -31,6 +31,7 @@ lane, not just the noisy two - goes away
   `excluded_id_files` and `check_dor_dod` still run over the whole tree, and the
   untouched error is printed as an advisory line rather than counted in the exit code
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::DiffScopedCheckTests::test_untouched_error_is_advisory_while_global_sweeps_still_run
+- **Verified:** yes (2026-07-24)
 
 ### AC2: conformance judges only the touched units, and a repo-global stage still blocks
 
@@ -42,6 +43,7 @@ lane, not just the noisy two - goes away
   still fails the command - narrowing the per-unit scope must not disarm the
   repo-wide stages
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::DiffScopedConformanceTests::test_untouched_unit_is_advisory_but_a_global_stage_still_fails
+- **Verified:** yes (2026-07-24)
 
 ### AC3: the pre-commit gate scopes both lanes, the release gate stays whole-workspace
 
@@ -52,6 +54,7 @@ lane, not just the noisy two - goes away
   lanes failing over the whole workspace, from one code path with no second set of
   rules
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DiffScopedLaneTests::test_precommit_scopes_the_lanes_and_release_keeps_them_whole_workspace
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

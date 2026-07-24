@@ -17,12 +17,21 @@
 
 ## Acceptance Criteria
 
-### AC1: a superseded reviewer no longer disqualifies that person as principal
+### AC1: superseding a verdict does NOT restore independence
 
-- **Given** a `US0276` verdict row naming `Darren Benson (operator)` as reviewer, and a recorded supersession retiring that row
-- **When** `record_signoff` is called for `US0276` with `Darren Benson (operator)` as principal and `sdlc-studio; agent; v1` as author
-- **Then** `_session_reviewer_ids` no longer returns the superseded reviewer, the sign-off is written, and `is_independent_signoff` reads it as independent - the unit can reach a conformant Done
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SupersededGateTests::test_superseded_reviewer_no_longer_blocks_the_principal
+**Amended 2026-07-24.** As first written this criterion specified the opposite - that a superseded
+reviewer drops out of the session set - and the closing review reproduced a complete bypass of the
+two-role gate from it: an author blocked by a REJECT superseded it (the only guard being that the
+authoriser is not the row's own author, met by any other string), the reviewer then left the
+session set, and the author's own subagent was accepted as reviewer of record. A passing test
+defended the hole. The rule below is the corrected one; the mis-attribution case the original was
+reaching for is BG0284, and needs a principal-authorised path rather than a guess.
+
+- **Given** a verdict row naming `qa-seat` as reviewer of a unit authored by `builder`, and a recorded supersession retiring that row
+- **When** `record_signoff` is called with `qa-seat` as principal and `builder` as author
+- **Then** the verdict is retired for the critiqued gate (`verdict_for` returns None) but `_session_reviewer_ids` STILL returns `qa-seat`, so the sign-off is refused - a supersession retires a verdict, it cannot un-make the fact that someone reviewed
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SupersededGateTests::test_superseding_does_NOT_restore_independence
+- **Verified:** yes (2026-07-24)
 
 ### AC2: latest-row-wins skips a superseded verdict and falls back to the live one
 
@@ -30,6 +39,7 @@
 - **When** `verdict_for` is asked for that unit
 - **Then** it returns the earlier live APPROVE rather than the retired REJECT, and a unit whose only row is superseded reads as having no verdict rather than as approved
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SupersededGateTests::test_verdict_for_skips_the_superseded_row_and_falls_back
+- **Verified:** yes (2026-07-24)
 
 ### AC3: the superseded row stays visible and is marked, never dropped
 
@@ -37,6 +47,7 @@
 - **When** `read_verdicts` reads the log and `critic show` prints it, in both text and json form
 - **Then** the row is still returned and printed, flagged as superseded with its reason and authoriser, so a reader sees both that it was recorded and that it was retired
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SupersededGateTests::test_superseded_row_stays_visible_and_flagged_in_show
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

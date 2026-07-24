@@ -36,7 +36,6 @@
 - **Scoping a check to a diff disables it wherever there is no diff.** An empty changed-set is not an empty scope; a clean tree must judge everything, or CI silently judges nothing.
 
 ## Estimate vs actual
-## Estimate vs actual
 
 **Were the estimates any good?** The plan forecast a token cost per unit; telemetry recorded
 what each one actually cost. This section holds the comparison, so the question is asked every
@@ -119,3 +118,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: not-yet-captured (interactive; captured at close) · Duration: interactive session · Critic rejects: 0 unit-level; the sprint-level review returned 14 MAJOR/HIGH findings across five slices, all reproduced, 10 fixed in-sprint
+
+## Handoff
+
+- [HO-0024](../handoffs/HO0024-clear-the-delivery-backlog-to-zero-open-units.md) - 28 remaining item(s): 23 copilot-tail, 5 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

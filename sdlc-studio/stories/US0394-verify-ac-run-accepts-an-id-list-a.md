@@ -32,6 +32,7 @@ per story
   one process - and an id that resolves to no story file exits 2 naming the id,
   never a silent skip that a gate would read as green
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::IdListScopeTests::test_only_the_named_ids_run_and_an_unresolvable_id_exits_2
+- **Verified:** yes (2026-07-24)
 
 ### AC2: a worklist file is accepted as the batch source
 
@@ -42,6 +43,7 @@ per story
   and comment forms and de-duplicating a repeated id, matching the tranche-file
   shape the sprint planner already reads so one file drives both
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::WorklistScopeTests::test_bullets_comments_and_duplicates_resolve_to_the_named_stories
+- **Verified:** yes (2026-07-24)
 
 ### AC3: the open run state supplies the batch with no id typed by hand
 
@@ -51,6 +53,7 @@ per story
   open it exits 2 saying so rather than falling back to a whole-workspace run that
   would silently cost the nine minutes the flag exists to avoid
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RunStateScopeTests::test_batch_stories_run_and_no_open_run_exits_2
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

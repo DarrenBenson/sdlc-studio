@@ -39,6 +39,7 @@ measured that. Two things are missing: the post-damage fingerprints, and a numbe
 - **Then** it holds four entries, each carrying the text as stored, the text as written, and
   the token the shell removed, so the evidence is in the repository rather than in a run log
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_shell_hazard_rate.py::CorruptionCorpusTests::test_the_corpus_holds_the_four_real_corruptions_with_what_was_lost
+- **Verified:** yes (2026-07-24)
 
 ### AC2: the catch rate is asserted as a count, and the miss is named
 
@@ -50,6 +51,7 @@ measured that. Two things are missing: the post-damage fingerprints, and a numbe
   cannot catch is named in the assertion message as undetectable in principle - a token lost
   from the start of a sentence leaves grammatical text behind
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_shell_hazard_rate.py::MeasuredCatchRateTests::test_the_catch_count_over_the_corpus_is_asserted_as_a_number
+- **Verified:** yes (2026-07-24)
 
 ### AC3: no legitimate artefact field is flagged
 
@@ -59,6 +61,7 @@ measured that. Two things are missing: the post-damage fingerprints, and a numbe
 - **Then** it reports nothing, so the new fingerprints buy their catch rate without a false
   positive that would train a reader to ignore the warning
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_shell_hazard_rate.py::MeasuredCatchRateTests::test_no_legitimate_artefact_field_is_flagged
+- **Verified:** yes (2026-07-24)
 
 ## Notes
 

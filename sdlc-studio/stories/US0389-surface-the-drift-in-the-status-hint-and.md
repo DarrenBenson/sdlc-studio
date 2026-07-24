@@ -23,6 +23,7 @@
 - **When** `status.py hint` or `status.py pillars` runs
 - **Then** one advisory line names the number of differing files and the command that mirrors them, alongside the other advisories rather than in place of them
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::InstalledCopyDriftAdvisoryTests::test_the_hint_names_the_differing_file_count
+- **Verified:** yes (2026-07-24)
 
 ### AC2: A project without the check is silent, and the advisory never breaks the hint
 
@@ -30,6 +31,7 @@
 - **When** the hint runs
 - **Then** no advisory is printed, no exception escapes, and the rest of the hint is unchanged - the drift surface holds to the same rule as every other advisory here
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::InstalledCopyDriftAdvisoryTests::test_a_project_without_the_check_is_silent_and_never_raises
+- **Verified:** yes (2026-07-24)
 
 ### AC3: The close pre-flight names the drift as its own blocker
 
@@ -37,6 +39,7 @@
 - **When** `close_preflight` runs
 - **Then** the drift is one named blocker in the returned list, carrying the mirror command as its remedy, so the close reports it in the same single pass as every other unmet prerequisite
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ClosePreflightDriftTests::test_installed_copy_drift_is_a_named_blocker_with_the_mirror_remedy
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

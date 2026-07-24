@@ -23,6 +23,7 @@
 - **When** `tools/forward-port.sh --check --target <dir>` runs
 - **Then** it exits non-zero and prints the count of differing files as well as the itemised list, and it writes nothing to the target
 - **Verify:** pytest tools/tests/test_forward_port.py::DriftCheckTests::test_check_exits_non_zero_and_names_the_differing_file_count
+- **Verified:** yes (2026-07-24)
 
 ### AC2: An identical target is in sync, and local state is not drift
 
@@ -30,6 +31,7 @@
 - **When** the check runs
 - **Then** it exits zero and reports the copy as in sync, because the comparison honours the same exclusions the mirror does
 - **Verify:** pytest tools/tests/test_forward_port.py::DriftCheckTests::test_an_identical_target_is_in_sync_and_local_state_is_not_drift
+- **Verified:** yes (2026-07-24)
 
 ### AC3: No installed copy, or a pinned one, is reported rather than failed
 
@@ -37,6 +39,7 @@
 - **When** the check runs
 - **Then** it exits zero and says which of the two states it found, so a machine that deliberately does not mirror is not held to a drift verdict
 - **Verify:** pytest tools/tests/test_forward_port.py::DriftCheckTests::test_an_absent_or_pinned_copy_is_reported_and_does_not_fail
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

@@ -23,6 +23,7 @@
 - **When** the commit is attempted against the tracked hooks
 - **Then** the commit is refused with the same message and paste-ready trailers as today, and neither the skill-tests nor the tool-tests lane executed - git runs `pre-commit` before the message exists, so the expensive lanes sit behind the message check in `commit-msg`
 - **Verify:** pytest tools/tests/test_message_first_gate.py::MessageBeforeSuitesTests::test_a_refused_message_never_reaches_the_unit_suites
+- **Verified:** yes (2026-07-24)
 
 ### AC2: A valid message leaves the verdict and the coverage unchanged
 
@@ -30,6 +31,7 @@
 - **When** the commit runs
 - **Then** every lane that ran before the move still runs, exactly once across the hook pair, and a failure in any of them still blocks the commit - the move adds no refusal and removes no check
 - **Verify:** pytest tools/tests/test_message_first_gate.py::LaneInventoryTests::test_every_lane_runs_exactly_once_across_the_hook_pair
+- **Verified:** yes (2026-07-24)
 
 ### AC3: The order is pinned so it cannot silently revert
 
@@ -37,6 +39,7 @@
 - **When** the lane order is read from them
 - **Then** the commit-message check is invoked before the first expensive lane, and the timing and budget recording still wraps the suites wherever they now run
 - **Verify:** pytest tools/tests/test_precommit_lane_order.py::MessageCheckOrderTests::test_the_message_check_precedes_the_expensive_lanes
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

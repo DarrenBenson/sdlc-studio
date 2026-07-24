@@ -23,6 +23,7 @@
 - **When** `critic supersede` is run for that unit and row, with a reason and an `--authorised-by` who is not the row's author
 - **Then** an appended supersession record names the unit, the row it retires, the reason and the authoriser, and the verdict row itself is still present byte-for-byte in `critic-verdicts.md` - the log is corrected by addition, never by deletion
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SupersedeTests::test_supersession_records_reason_and_authoriser_and_leaves_the_row
+- **Verified:** yes (2026-07-24)
 
 ### AC2: the row's own author cannot supersede it alone
 
@@ -30,6 +31,7 @@
 - **When** a supersession is attempted with `--authorised-by` naming that same author, or with no authoriser at all
 - **Then** `record_supersession` refuses loudly and writes nothing, so the party who wrote the wrong row cannot quietly retire it on its own say-so
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SupersedeTests::test_row_author_alone_is_refused_as_the_authoriser
+- **Verified:** yes (2026-07-24)
 
 ### AC3: a supersession naming no real row is refused
 
@@ -37,6 +39,7 @@
 - **When** a supersession is attempted against either
 - **Then** it is refused naming what was not found, and no supersession record is written - a correction that points at nothing is a false erratum, and the CLI exits 2
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SupersedeTests::test_unmatched_row_refused_and_nothing_written
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

@@ -1,5 +1,10 @@
 # Reviews - LATEST (anchor)
 
+<!-- close-status:begin -->
+> **RUN-01KY8M6Q closed goal-reached.** 28 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> Stamped by `sprint close` - edit the prose below, not this block.
+<!-- close-status:end -->
+
 > **RUN-01KY8M6Q (Sprint 2 of the three-sprint run) delivered all 28 units, 89 points.** The
 > closing review found 14 MAJOR/HIGH defects across five slices, every one reproduced; ten were
 > repaired in-sprint and the residue is filed. Goal ACHIEVED. Sign-off applied by the operator.
@@ -34,7 +39,11 @@ test defending it. And an **artefact gate that passed everything**: diff scoping
 caller meant CI, deploy preflight and close preflight judged zero units on a clean tree, so a
 story committed with `Status: Bananas` gave `gate: PASS`.
 
-Both are closed and mutation-proven. The residue is BG0282-BG0284 and CR0413-CR0417.
+Both are closed and mutation-proven. The residue is BG0282-BG0285 and CR0413-CR0417.
+
+US0375 is the one to read. Its AC1 had *specified* the bypass, so the story, the test and the code
+all agreed with each other and were all wrong together. Closing it meant amending the acceptance
+criterion, not just the code - the record now states the inverted rule and says why it changed.
 
 ## Evidence
 

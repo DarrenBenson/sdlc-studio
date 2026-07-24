@@ -46,6 +46,7 @@ churn five callers for a filename; the divergence is recorded here instead.
 - **Then** the document is read from stdin and its fields are used, with a backticked value
   stored byte-for-byte
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prose_writer_hazard.py::StdinFieldsDocumentTests::test_a_fields_file_of_dash_reads_the_document_from_stdin
+- **Verified:** yes (2026-07-24)
 
 ### AC2: the sweep enumerates the prose spellings it currently cannot see
 
@@ -55,6 +56,7 @@ churn five callers for a filename; the divergence is recorded here instead.
 - **Then** all four are enumerated as prose writers, so a writer taking prose under a new flag
   name cannot pass the sweep by being unnamed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::ProseWriterSweepTests::test_the_sweep_enumerates_body_rationale_and_reason_spellings
+- **Verified:** yes (2026-07-24)
 
 ### AC3: the four remaining writers take the shared fields-file path
 
@@ -64,6 +66,7 @@ churn five callers for a filename; the divergence is recorded here instead.
   is listed in `SAFE_INPUT_WRITERS` rather than as a gap; the flag path still works and still
   reports a mangled field
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prose_writer_hazard.py::RemainingProseWriterTests::test_the_four_remaining_writers_take_a_fields_file
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

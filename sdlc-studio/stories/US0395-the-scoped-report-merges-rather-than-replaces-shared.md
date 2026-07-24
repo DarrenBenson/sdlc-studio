@@ -30,6 +30,7 @@ would have concluded
   fresh green from a carried-forward one and a scoped run cannot promote a stale
   verdict by touching its timestamp
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::ScopedReportMergeTests::test_out_of_scope_entries_including_verified_at_are_untouched
+- **Verified:** yes (2026-07-24)
 
 ### AC2: a scoped run and a whole-workspace run agree on every story they share
 
@@ -41,6 +42,7 @@ would have concluded
   ignoring the timestamps, and the two runs return the same exit code for that
   subset - the scope decides which stories are judged, never how one is judged
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::ScopedUnscopedEquivalenceTests::test_shared_story_entries_and_exit_are_identical_under_both_scopes
+- **Verified:** yes (2026-07-24)
 
 ### AC3: a rebuild combined with a scope is refused, not silently destructive
 
@@ -50,6 +52,7 @@ would have concluded
   discards every verdict outside the scope and naming the two ways forward (drop the
   scope, or drop `--fresh`) - the report is byte-identical afterwards
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::ScopedFreshRefusalTests::test_fresh_with_a_scope_exits_2_and_writes_nothing
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

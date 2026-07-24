@@ -23,6 +23,7 @@
 - **When** the census runs over that enumeration and is compared with the recorded classification
 - **Then** every enumerated script carries exactly one classification - anchored, unanchored, or a deliberate non-root surface with its reason stated - and a script present in the family but absent from the record fails the check, so a newly added script cannot join unclassified
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_root_census.py::RootCensusTests::test_every_root_declaring_script_is_classified_with_a_reason
+- **Verified:** yes (2026-07-24)
 
 ### AC2: next_id allocates against the real workspace when run from a subdirectory
 
@@ -30,6 +31,7 @@
 - **When** `next_id allocate --type story` is run there with no `--root`
 - **Then** it resolves upward to the real workspace and returns the next free id above the existing ones, rather than reading an empty tree and minting an id that already exists - the collision case is the reason this script goes first
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_next_id.py::RootAnchoringTests::test_allocation_from_a_subdirectory_sees_the_real_workspace
+- **Verified:** yes (2026-07-24)
 
 ### AC3: an unanchored script is either fixed or named by a filed follow-up
 
@@ -37,6 +39,7 @@
 - **When** the check evaluates each unanchored entry
 - **Then** it passes only where the script now resolves through the shared resolver, or the entry names a filed follow-up artefact that exists on disk, and it fails on an entry that is neither - silence is not a classification
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_root_census.py::RootCensusTests::test_an_unanchored_entry_needs_a_fix_or_a_filed_follow_up
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 
