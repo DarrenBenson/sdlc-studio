@@ -8,12 +8,16 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import json
 import re
 import sys
 import tempfile
 import pathlib
 import unittest
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the sibling helper
+import gitutil  # noqa: E402 - confined git for the fixture repos below
 
 SCRIPT_PATH = Path(__file__).resolve().parent.parent / "validate.py"
 _spec = importlib.util.spec_from_file_location("validate", SCRIPT_PATH)
@@ -1484,6 +1488,104 @@ class AcceptedRfcOpenDecisionTests(unittest.TestCase):
                     if v["rule"] == "accepted-open-decision"]
             self.assertTrue(hits)
             self.assertEqual(hits[0]["severity"], "warning")
+
+
+_BAD_STATUS_STORY = ("# Bad\n\n> **Status:** Bananas\n\n### AC1: x\n"
+                     "- **Verify:** file a.py\n")
+
+
+class DiffScopedCheckTests(unittest.TestCase):
+    """US0354 AC1: `check --changed` judges only the artefacts in the diff, while the repo-wide
+    sweeps (`excluded_id_files`, `check_dor_dod`) keep running over the whole tree. An untouched
+    error is PRINTED as advisory - a scope that swallowed it would be worse than a slow check.
+
+    Real git repos throughout: the behaviour under test is "what changed".
+    """
+
+    def _repo(self, t) -> Path:
+        root = Path(t)
+        _write(root, "sdlc-studio/stories/US0001-good.md", GOOD_STORY)
+        _write(root, "sdlc-studio/stories/US0002-bad.md", _BAD_STATUS_STORY)
+        # id-named, no artifact header: the whole-tree census must still report it
+        _write(root, "sdlc-studio/stories/US0009-notes.md", "plain notes\n")
+        gitutil.git(["init", "-q"], cwd=root)
+        gitutil.git(["add", "-A"], cwd=root)
+        gitutil.git(["commit", "-qm", "baseline"], cwd=root)
+        return root
+
+    def _json(self, root: Path, *extra: str):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = validate.main(["check", "--root", str(root), "--format", "json", *extra])
+        return rc, json.loads(buf.getvalue())
+
+    def _text(self, root: Path, *extra: str) -> str:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            validate.main(["check", "--root", str(root), *extra])
+        return buf.getvalue()
+
+    @staticmethod
+    def _facts(data: dict, name: str):
+        return sorted((v["rule"], v["severity"]) for v in data["violations"]
+                      if v["file"].endswith(name))
+
+    def test_untouched_error_is_advisory_while_global_sweeps_still_run(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            p = root / "sdlc-studio" / "stories" / "US0001-good.md"
+            p.write_text(GOOD_STORY + "\n<!-- edited -->\n", encoding="utf-8")
+
+            rc, data = self._json(root, "--changed")
+            self.assertEqual(rc, 0)                                # the diff is clean
+            self.assertEqual(data["summary"]["errors"], 0)
+            self.assertEqual(data["summary"]["advisory_errors"], 1)
+
+            bad = [v for v in data["violations"] if v["file"].endswith("US0002-bad.md")]
+            self.assertEqual([v["rule"] for v in bad if v["severity"] == "error"],
+                             ["status-vocab"])
+            # EVERY finding on the untouched file is marked, not just the counted ones ...
+            self.assertTrue(all(v["scoped_out"] for v in bad))
+            # ... and the severity is the FACT and does not move; only the counting does
+            self.assertEqual([v["severity"] for v in bad if v["rule"] == "status-vocab"],
+                             ["error"])
+
+            # the whole-tree census still ran over the untouched tree
+            self.assertTrue(any(v["rule"] == "not-an-artifact" for v in data["violations"]))
+
+            # the untouched error is PRINTED, marked advisory, not swallowed
+            out = self._text(root, "--changed")
+            self.assertIn("US0002-bad.md", out)
+            self.assertIn("ADVISORY", out)
+
+            # the scoped run and the full run AGREE on the file both judged ...
+            rc_full, full = self._json(root)
+            self.assertEqual(self._facts(data, "US0001-good.md"),
+                             self._facts(full, "US0001-good.md"))
+            # ... and the full run charges the untouched error, so the scope is what moved it
+            self.assertEqual(rc_full, 1)
+            self.assertEqual(full["summary"]["errors"], 1)
+
+            # the DoR/DoD sweep is NOT scoped away: an unresolvable check tag still fails
+            _write(root, "sdlc-studio/definition-of-ready.md",
+                   "- a criterion [check: no-such-check]\n")
+            rc2, data2 = self._json(root, "--changed")
+            self.assertEqual(rc2, 1)
+            self.assertTrue(any(v["rule"] == "unknown-check-id" for v in data2["violations"]))
+
+    def test_a_degraded_probe_judges_the_whole_workspace(self) -> None:
+        """No git, no diff: unknown must mean judge EVERYTHING. A scope derived from an
+        unanswered probe would be an empty scope wearing a green exit code."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)                                  # deliberately NOT a git repo
+            _write(root, "sdlc-studio/stories/US0001-good.md", GOOD_STORY)
+            _write(root, "sdlc-studio/stories/US0002-bad.md", _BAD_STATUS_STORY)
+            rc, data = self._json(root, "--changed")
+            self.assertEqual(rc, 1)
+            self.assertEqual(data["summary"]["errors"], 1)
+            self.assertEqual(data["summary"]["advisory_errors"], 0)
+            self.assertTrue(data["scope"]["degraded"])
+            self.assertFalse(any(v.get("scoped_out") for v in data["violations"]))
 
 
 if __name__ == "__main__":

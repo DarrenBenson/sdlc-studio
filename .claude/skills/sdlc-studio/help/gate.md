@@ -32,6 +32,42 @@ python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --skip constitution --format json
 Prints a consolidated report and exits non-zero only when a **blocking** check fails; a non-blocking
 failure is reported (`warn`) but does not fail the gate. No network, no CI/cloud assumption.
 
+## The commit is judged on what it changed
+
+The `conformance` and `validate` lanes run **diff-scoped** in the plain gate: they judge the
+artefacts this working tree touched (staged, unstaged or untracked), so a commit that changes
+nothing about a workspace's pre-existing backlog debt is not held hostage by it. A guard whose
+cost is paid on every commit gets switched off, and `--no-verify` disarms every lane rather than
+the noisy two.
+
+Three rules keep the narrowing honest, and each is worth more than the time it saves:
+
+- **It states its own scope.** Every scoped run prints the units it judged, the untouched ones
+  it reported as advisory, by id, and the stages it therefore did not judge. A verdict is only
+  readable next to what it did not examine.
+- **Nothing is dropped from the report.** An untouched error is still printed, marked
+  `ADVISORY`; only the count that decides the exit code narrows.
+- **A repo-wide failure still blocks.** The census, the index, the doc-coverage stage, the
+  DoR/DoD check tags and the id-named-file sweep all still run over everything. Narrowing the
+  per-unit ledger is not a way to hide a repository-wide fault.
+
+**A probe that cannot answer judges everything.** With no git, no commit to diff against, or a
+`--root` that is not the repository top level, the lane falls back to the **whole workspace**,
+says so in its detail, and takes the full cost. Unknown never means "nothing changed" - a scope
+built on an unanswered probe would be an empty scope wearing a green tick, which is worse than
+the slow check.
+
+`--release` restores both lanes to the whole workspace (see below): a commit is judged on what it
+changed, a tag on everything. The same function runs in both modes, so the two verdicts cannot
+drift into disagreeing about what conformance or validity means.
+
+The two scripts carry the same `--changed` flag for a run by hand:
+
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/conformance.py" check --changed
+python3 "$CLAUDE_SKILL_DIR/scripts/validate.py" check --changed
+```
+
 ## `--release`: the one command before a tag
 
 The pre-tag ritual is otherwise two commands - the gate, plus a separate verify run whose exit
@@ -41,7 +77,8 @@ code you have to remember not to discard. `--release` makes it one:
 python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --root . --release || exit 1   # do not tag on a red exit
 ```
 
-It adds a blocking `verify` lane to the standard gate:
+It restores the `conformance` and `validate` lanes to the **whole workspace** - the debt a
+pre-commit run reported as advisory is judged here - and adds a blocking `verify` lane:
 
 - **It executes.** Every story's `Verify:` expression is run *now*. It does not read the stored
   `verify-report.json`, because a merged report carries a story's last green forward until

@@ -5,12 +5,17 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import sys
 import tempfile
 import shutil
 import unittest
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the sibling helper
+import gitutil  # noqa: E402 - confined git for the fixture repos below
 
 SCRIPT = Path(__file__).resolve().parent.parent / "conformance.py"
 
@@ -277,7 +282,7 @@ class CliTests(unittest.TestCase):
             # reporting a failure differently never enforces less.
             self.assertEqual(set(data["summary"]),
                              {"total", "conformant", "nonconformant", "exempt", "ungroomed",
-                              "global_failures"})
+                              "global_failures", "judged", "advisory"})
 
 
 try:
@@ -806,6 +811,114 @@ class UngroomedMarkerTests(unittest.TestCase):
                 "- **Verify:** pytest tests/test_t.py::T::t\n", encoding="utf-8")
             result = _load().detect_conformance(root)
             self.assertEqual(result["summary"]["ungroomed"], 0)
+
+
+class DiffScopedConformanceTests(unittest.TestCase):
+    """US0354 AC2: `detect_conformance(..., changed=True)` judges only the units this working
+    tree touched. The narrowing is a REPORTING scope over the per-unit ledger only - a repo-global
+    stage (a missing story index, an uncatalogued command) must still be counted and still fail,
+    or the scoped mode becomes a way to hide one.
+
+    Every fixture below is a REAL git repo, because the behaviour under test is "what changed".
+    """
+
+    def _repo(self, t) -> Path:
+        """Two stories committed, no `stories/_index.md` - so the repo-global `reconciled`
+        stage fails for the Done unit while the per-unit ledger has its own separate fault."""
+        root = Path(t)
+        _story(root, 1, status="Ready")                   # will be touched: judged
+        _story(root, 2, status="Done", verify=False)      # untouched: advisory
+        gitutil.git(["init", "-q"], cwd=root)
+        gitutil.git(["add", "-A"], cwd=root)
+        gitutil.git(["commit", "-qm", "baseline"], cwd=root)
+        return root
+
+    def _touch(self, root: Path, num: int) -> None:
+        p = root / "sdlc-studio" / "stories" / f"US{num:04d}-sample.md"
+        p.write_text(p.read_text(encoding="utf-8") + "\n<!-- edited -->\n", encoding="utf-8")
+
+    def test_untouched_unit_is_advisory_but_a_global_stage_still_fails(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            self._touch(root, 1)
+            res = mod.detect_conformance(root, changed=True)
+            units = {u["id"]: u for u in res["units"]}
+
+            # The untouched unit is REPORTED - with its real per-unit fault named ...
+            self.assertTrue(units["US0002"]["scoped_out"])
+            self.assertIn("verifiable", units["US0002"]["missing"])
+            # ... and it is NOT charged to the count that decides the exit code.
+            self.assertEqual(res["summary"]["nonconformant"], 0)
+            self.assertEqual(res["summary"]["advisory"], 1)
+            self.assertEqual(res["summary"]["judged"], 1)
+
+            # The repo-global stage is STILL counted and STILL fails the command.
+            self.assertEqual(res["summary"]["global_failures"], 1)
+            self.assertEqual([g["stage"] for g in res["globals"]], ["reconciled"])
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = mod.main(["check", "--root", str(root), "--changed"])
+            self.assertEqual(rc, 1)                      # the global blocks a scoped run
+            out = buf.getvalue()
+            self.assertIn("US0002", out)                 # what it scoped, named
+            self.assertIn("REPO-WIDE reconciled", out)   # what still blocks, named
+
+            # The scoped run and the full run AGREE on the unit both judged.
+            full = mod.detect_conformance(root)
+            full_units = {u["id"]: u for u in full["units"]}
+            self.assertEqual(units["US0001"]["missing"], full_units["US0001"]["missing"])
+            self.assertEqual(units["US0001"]["stages"], full_units["US0001"]["stages"])
+            self.assertEqual(full["summary"]["global_failures"], 1)
+            # ... and the full run charges the untouched fault, so the scope is what moved it.
+            self.assertEqual(full["summary"]["nonconformant"], 1)
+
+            # Scoping never turns a REAL failure green: bring the same unit into the diff and
+            # the same fault is counted again, from the same code path.
+            self._touch(root, 2)
+            again = mod.detect_conformance(root, changed=True)
+            self.assertEqual(again["summary"]["nonconformant"], 1)
+            self.assertFalse({u["id"]: u for u in again["units"]}["US0002"]["scoped_out"])
+
+    def test_a_degraded_probe_falls_back_to_the_whole_workspace(self) -> None:
+        """The central risk, refused: with no git there is no diff, and a scope derived from an
+        unanswered probe is an EMPTY scope wearing a green tick. Unknown must mean judge
+        everything, and the report must say the probe degraded."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)                              # deliberately NOT a git repo
+            _story(root, 1, status="Ready")
+            _story(root, 2, status="Done", verify=False)
+            res = mod.detect_conformance(root, changed=True)
+            self.assertTrue(res["scope"]["degraded"])
+            self.assertEqual(res["summary"]["advisory"], 0)
+            self.assertEqual(res["summary"]["judged"], 2)
+            self.assertEqual(res["summary"]["nonconformant"], 1)
+            self.assertFalse(any(u["scoped_out"] for u in res["units"]))
+
+    def test_a_scoped_out_unit_never_claims_a_stage_it_did_not_judge(self) -> None:
+        """The expensive per-unit probes (stamp resolution, the critic ledger) are SKIPPED for a
+        unit outside the diff - so those stages must read `not judged`, never a pass."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            self._touch(root, 1)
+            res = mod.detect_conformance(root, changed=True)
+            u2 = {u["id"]: u for u in res["units"]}["US0002"]
+            for stage in mod.UNJUDGED_WHEN_SCOPED:
+                self.assertIsNone(u2["stages"][stage], stage)
+                self.assertNotIn(stage, u2["missing"])
+            self.assertEqual(sorted(res["scope"]["unjudged_stages"]),
+                             sorted(mod.UNJUDGED_WHEN_SCOPED))
+
+            # The other half: a stage that costs NOTHING to judge is still judged, on its real
+            # value. Skipping those would report `documented` as missing for every untouched
+            # Done unit - claiming a failure in a stage nobody examined - and would drop the
+            # repo-global finding that has to survive the narrowing.
+            self.assertIs(u2["stages"]["documented"], True)
+            self.assertNotIn("documented", u2["missing"])
+            self.assertIs(u2["stages"]["reconciled"], False)   # the missing story index
+            self.assertIn("reconciled", u2["missing_global"])
 
 
 if __name__ == "__main__":
