@@ -5,9 +5,10 @@
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
-> **RUN-01KYA8CF (Sprint 3a, the design rung) groomed all 18 units and proved a red-now bar of
-> pass=0 fail=41.** Goal verdict PARTIAL - the batch was delivered in full, but 13 stories
-> created mid-run by four operator rulings are still ungroomed.
+> **The backlog is fully groomed.** Sprint 3a groomed 18 units (red-now pass=0 fail=41,
+> verdict PARTIAL); Sprint 3a-bis groomed the 13 the operator's rulings created (pass=0
+> fail=30, verdict ACHIEVED). `conformance check` reports 0 ungroomed stories. Sprint 3b -
+> the delivery rung that empties the backlog - is next.
 
 ## Where the pipeline is (2026-07-24)
 
@@ -47,13 +48,23 @@ is absent is the only reliable detector, and it is free exactly once.
 **None outstanding.** Every RFC is Accepted with its D1 row closed. CR0355 is deliberately held
 at Proposed until the v5 launch, per its own instruction.
 
-## Next steps
+## Sprint 3b - the delivery rung
 
-- **Groom US0419-US0431** (13 stories, the decisions' output) before planning 3b, or plan 3b
-  knowing 13 of its 64 units are ungroomed.
-- **CR0419 first**: the capacity ceiling reads 1M tokens / 8 units against sprints running
-  6.7M-8.3M over 19-44 units, so every plan reports OVER BUDGET and the only instrument that
-  would catch a genuinely oversized sprint is a constant.
+**~64 units, ~160 points.** Operator decisions taken 2026-07-24 that shape it:
+
+- **v5 ships only when the backlog is empty** (operator). EP0117, the cut itself, is last.
+- **D0063** - "backlog empty" excludes units blocked on the release itself. CR0355 is marked
+  release-gated, breaking the circular block between it and the cut.
+- **D0064** - capacity re-derived from measured rows to 15M tokens / 64 units / 960 minutes,
+  closing CR0419. The instrument reports WITHIN BUDGET again rather than always OVER.
+- **Delivery mode: parallel worktree agents on file-disjoint lanes** (operator). Sprint 2 ran
+  this way; BG0280 and CR0415 are open against the failures it produced, and both are in scope.
+
+**Read first:**
+
+- **BG0293 blocks the v5 cut independently of the backlog.** `gate --release` did not finish
+  inside 10 minutes. It is the only run that may not rely on diff scoping, and US0348 AC1
+  requires it green.
 - **BG0290 blocks refining any accepted RFC** - the request carries no ACs to seed from, so
   validate's no-ac error fires on refine's own output.
 
