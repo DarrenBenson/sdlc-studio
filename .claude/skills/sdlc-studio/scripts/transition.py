@@ -206,7 +206,19 @@ _ATX_HEADING_RE = re.compile(r"^\s{0,3}#{1,6}\s")
 
 
 def _rfc_open_decisions(text: str) -> list[str]:
-    """The decision numbers still Open in an RFC's decision table.
+    """The decision numbers still Open in an RFC's decision table (rows only).
+
+    `_rfc_open_decisions_detail` is the same reading plus WHICH path produced it. A caller
+    that reports the rows to a human wants the detail form: the two paths differ in what a
+    row means, so a message that cannot say which one ran cannot be acted on correctly.
+    """
+    return _rfc_open_decisions_detail(text)[0]
+
+
+def _rfc_open_decisions_detail(text: str) -> tuple[list[str], bool]:
+    """The rows, and True when the FAIL-CLOSED fallback produced them.
+
+    The decision numbers still Open in an RFC's decision table.
 
     Rows are normally read only inside the decisions section: a `| D1 | ... | Open |` line in
     a Summary or an appendix is prose, not the register the accept step is about.
@@ -271,8 +283,8 @@ def _rfc_open_decisions(text: str) -> list[str]:
         # every row the fence hid - reported to the operator as the complete set.
         # The unstructured read drops both structural rules, so it is a superset of this one:
         # re-scanning unconditionally can only add rows, never lose them.
-        return _rfc_open_decisions_unstructured(text)
-    return open_rows
+        return _rfc_open_decisions_unstructured(text), True
+    return open_rows, False
 
 
 def _rfc_open_decisions_unstructured(text: str) -> list[str]:
@@ -321,7 +333,7 @@ def _rfc_accept_gate(text: str, target_canon: str | None) -> str | None:
     """
     if target_canon != "Accepted":
         return None
-    still_open = _rfc_open_decisions(text)
+    still_open, from_fallback = _rfc_open_decisions_detail(text)
     if not still_open:
         return None
     override = ""
@@ -331,9 +343,19 @@ def _rfc_accept_gate(text: str, target_canon: str | None) -> str | None:
             break
     if override:
         return None
+    # NAME the scan path. The fallback deliberately over-reports, and an operator who cannot
+    # tell a deliberate over-report from a real open decision does one of two things: edits
+    # valid markdown until the tool is satisfied, or stops believing the gate. The second is
+    # worse, and neither is the operator's fault when the message withholds what it knows.
+    source = (" This list came from the FAIL-CLOSED fallback: the document ends inside an "
+              "unterminated fence, which is valid CommonMark, so every unsettled row ANYWHERE "
+              "in the file was counted - fenced examples included. It trades a rare false "
+              "positive for the impossibility of a false negative (reference-rfc.md). If every "
+              "real decision is settled, close the fence or record the override."
+              if from_fallback else "")
     return (f"RFC carries {len(still_open)} Open decision(s): {', '.join(still_open)} - close "
             f"each row with what was decided, or record `> **Decision-Override:** <reason>` "
-            f"(--force does not bypass this: the skip must leave a reason in the file)")
+            f"(--force does not bypass this: the skip must leave a reason in the file)." + source)
 
 
 def _rfc_override_reason(text: str) -> str:
