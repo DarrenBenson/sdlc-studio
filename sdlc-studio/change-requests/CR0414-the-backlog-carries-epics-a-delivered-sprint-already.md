@@ -80,6 +80,13 @@ stated FACT was never true, refined into sized work regardless.
   `under_root` already exist and are correct - in `verify_ac.py`, with three importers. The story
   is a promotion, not a build.
 
+- **US0383** asserted "the 62 `--root` scripts", and the grooming pass that sized it estimated
+  "~20 unanchored, 10 of them writers". The delivery MEASURED the real corpus: 64 scripts declare
+  `--root`, 59 are unanchored, and 26 of those write. The story was sized against a number nobody
+  had counted, and the grooming pass that was supposed to check it produced a second wrong number
+  rather than a measurement. The remainder needed its own follow-up at 13 points - larger than the
+  whole story it was carved out of.
+
 Same root cause as the overlap case: `refine` mints from what the request ASSERTS, and nothing
 between the assertion and the build reads the source to check it. The cost is paid twice - once
 sizing fiction, once discovering it mid-sprint.

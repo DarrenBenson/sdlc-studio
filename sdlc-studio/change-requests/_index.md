@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 6 |
 | Approved | 0 |
 | In Progress | 32 |
 | Complete | 362 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 17 |
 | Blocked | 0 |
-| **Total** | **416** |
+| **Total** | **417** |
 
 ## All Changes
 
@@ -238,6 +238,7 @@
 | [CR-0414](CR0414-the-backlog-carries-epics-a-delivered-sprint-already.md) | the backlog carries epics a delivered sprint already satisfied and nothing detects it: EP0125's shared prose-helper stories were largely built as EP0146, but built-not-closed reads the verify-report so an ungroomed skeleton with no verifiers is invisible to it | Proposed | Medium | Feature | 2026-07-24 | -- |
 | [CR-0415](CR0415-the-delivery-mode-disjointness-check-treats-build-tooling.md) | the delivery-mode disjointness check treats build tooling as an ordinary file, so a unit that restructures the pre-commit hook or the gate reads as file-disjoint from every other unit - yet every parallel agent commits through it | Proposed | Medium | Feature | 2026-07-24 | -- |
 | [CR-0416](CR0416-the-engagement-floor-cannot-see-work-for-a.md) | the engagement floor cannot see work for a unit the commit message never names: a git add -A that sweeps in a concurrently-edited unit attributes its files to whichever id the subject happens to carry | Proposed | Medium | Feature | 2026-07-24 | -- |
+| [CR-0417](CR0417-a-writer-s-fields-file-allows-only-its.md) | a writer's --fields-file allows only its prose keys, so an invocation setting metadata must be split across a document and flags: lessons add takes --tags, --epic and --wave that its own fields-file refuses | Proposed | Medium | Feature | 2026-07-24 | -- |
 
 ## Archived Releases
 
