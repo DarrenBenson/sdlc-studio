@@ -418,8 +418,41 @@ def cmd_list(args: argparse.Namespace) -> int:
     return 0
 
 
+def resolve_prose(args: argparse.Namespace, keys: tuple[str, ...],
+                  required: tuple[str, ...] = ()) -> None:
+    """Resolve the subcommand's free-prose fields through the ONE shared loader and put them
+    back on `args`, so the rest of the command reads them exactly as before.
+
+    A lesson's body is the field most likely to quote a command, which is precisely what a
+    shell eats out of an argument. Raises ValueError when a required field is in neither the
+    document nor the flags."""
+    import file_finding  # noqa: PLC0415 - the shared prose-fields loader, as elsewhere
+    fields = file_finding.resolve_prose_fields(
+        getattr(args, "fields_file", None),
+        {k: getattr(args, k, None) for k in keys}, allowed=keys)
+    for key in keys:
+        setattr(args, key, fields.get(key))
+    missing = [k for k in required if not str(fields.get(k) or "").strip()]
+    if missing:
+        raise ValueError(f"no {'/'.join(missing)} - pass --{missing[0]}, or a "
+                         f"\"{missing[0]}\" key in the --fields-file document")
+
+
+def _add_fields_file_arg(sp: argparse.ArgumentParser, example: str) -> None:
+    """Declare the non-shell input path on a subparser, spelled the same way everywhere."""
+    sp.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
+                    help=f"read the prose from a JSON object ({example}) instead of the flags, "
+                         f"so text carrying shell metacharacters is stored verbatim rather than "
+                         f"interpreted by the shell; `-` reads the document from stdin")
+
+
 def cmd_add(args: argparse.Namespace) -> int:
     """Append a project-tier entry, or promote to the skill tier with --global."""
+    try:
+        resolve_prose(args, ("title", "body"), required=("title", "body"))
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     tags = [t.strip() for t in (args.tags or "").split(",") if t.strip()]
     if args.global_:
         try:
@@ -1002,6 +1035,11 @@ def cmd_revalidate(args: argparse.Namespace) -> int:
     ones no longer true, `--extend` the ones still true past their horizon, `--stamp` the ones
     carrying no horizon at all. Deterministic; the judgement stays the operator's, the record
     is mechanical - and the close gate reads that record."""
+    try:
+        resolve_prose(args, ("reason",))
+    except ValueError as exc:                             # pragma: no cover - nothing required
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     path = _project_file(args)
     if not path.is_file():
         if args.format == "json":
@@ -1258,8 +1296,11 @@ def build_parser() -> argparse.ArgumentParser:
     ls.set_defaults(func=cmd_list)
 
     ad = sub.add_parser("add", help="Add a lesson (project tier; --global promotes).")
-    ad.add_argument("--title", required=True, help="Short descriptive title")
-    ad.add_argument("--body", required=True, help="The lesson text")
+    ad.add_argument("--title", help="Short descriptive title (required unless the "
+                                    "--fields-file document carries one)")
+    ad.add_argument("--body", help="The lesson text (required unless the --fields-file "
+                                   "document carries one)")
+    _add_fields_file_arg(ad, "{\"title\": \"...\", \"body\": \"...\"}")
     ad.add_argument("--epic", help="Epic context, e.g. EP0004 (project tier)")
     ad.add_argument("--wave", type=int, help="Wave number (project tier)")
     ad.add_argument("--tags", help="Comma-separated tags")
@@ -1298,6 +1339,7 @@ def build_parser() -> argparse.ArgumentParser:
                      help="Give every open lesson that has no validity horizon one (the "
                           "backfill for a log written before horizons existed)")
     rv.add_argument("--reason", help="Reason recorded on the closed lesson(s)")
+    _add_fields_file_arg(rv, "{\"reason\": \"...\"}")
     rv.add_argument("--days", type=int,
                     help=f"Validity window in days for --extend/--stamp (default: "
                          f"{DEFAULT_VALIDITY_DAYS}, or the {VALIDITY_DAYS_KEY} config key)")

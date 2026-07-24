@@ -1580,7 +1580,9 @@ class SharedHazardHelperTests(unittest.TestCase):
 #: the sweep, and so does adding a prose writer to `scripts/` that appears in neither list.
 SAFE_INPUT_WRITERS = {"file_finding.py", "artifact.py",
                       # gained --fields-file (shared file_finding.resolve_prose_fields loader):
-                      "critic.py", "close_owed.py", "sprint.py"}
+                      "critic.py", "close_owed.py", "sprint.py",
+                      # ...and the four the six original flag spellings could not see at all:
+                      "decisions.py", "lessons.py", "ledger.py", "handoff.py"}
 
 #: The sibling prose writers the sweep found and could NOT reach in this batch, each with the
 #: reason. D0052 ruled the sweep WIDER than the two files CR0384 names, and these four carry the
@@ -1594,16 +1596,31 @@ KNOWN_PROSE_WRITER_GAPS = {
                     "command line' reason was wrong: telemetry has no narrative flag. Recorded "
                     "here as safe-by-nature (like mutation.py) rather than given a --fields-file "
                     "for prose that does not exist.",
-    "mutation.py": "its only free-prose flag is `window open --note`, a short operator label "
-                   "written to transient .local state rather than into an artefact body, so it "
-                   "is outside the filing hazard - recorded here rather than quietly dropped "
-                   "from the enumeration",
+    "mutation.py": "its free-prose flags are `window open --note` and `register --reason`, both "
+                   "written to transient .local state (the mutation ledger under "
+                   "sdlc-studio/.local/) rather than into an artefact body, so both are outside "
+                   "the filing hazard - recorded here rather than quietly dropped from the "
+                   "enumeration. `--reason` only became visible when the sweep widened past its "
+                   "first six flag spellings, which is the point of widening it",
 }
 
 #: A flag whose value is free prose an author writes - the shape that carries the hazard. An
 #: enum, a path or an id does not: a shell metacharacter in `--status Done` is a typo, not a
 #: swallowed command.
-_PROSE_FLAGS = ("--steps", "--fix", "--summary", "--impact", "--note", "--goal")
+_PROSE_FLAGS = ("--steps", "--fix", "--summary", "--impact", "--note", "--goal",
+                # the spellings the first six missed entirely: a writer taking prose under a
+                # name nobody enumerated is unaccounted, not safe
+                "--rationale", "--body", "--reason", "--title")
+
+#: The writers the six original spellings could not see, with the prose flag that hid them.
+#: Kept as data so the AC that widened the sweep asserts the parser really accepts each flag,
+#: rather than asserting that a tuple has grown.
+LATE_FOUND_PROSE_SPELLINGS = {
+    "decisions.py": ("--rationale",),
+    "lessons.py": ("--body", "--reason"),
+    "ledger.py": ("--rationale",),
+    "handoff.py": ("--title",),
+}
 
 
 def _parser_options(parser) -> set[str]:
@@ -1666,6 +1683,24 @@ class ProseWriterSweepTests(unittest.TestCase):
             reason = KNOWN_PROSE_WRITER_GAPS.get(name, "")
             self.assertNotIn("deferred", reason,
                              f"{name} is still recorded as a deferred gap; it should be resolved")
+
+    def test_the_sweep_enumerates_body_rationale_and_reason_spellings(self) -> None:
+        """US0361 AC2: the enumeration looked for six flag spellings, so four writers taking
+        free prose under other names were not a recorded gap - they were INVISIBLE to it. An
+        unaccounted writer is the state this whole sweep exists to refuse."""
+        writers = self._prose_writers()
+        missing = sorted(n for n in LATE_FOUND_PROSE_SPELLINGS if n not in writers)
+        self.assertEqual(missing, [], f"{missing} take free prose under a flag the sweep does "
+                                      f"not look for, so they are unaccounted rather than safe")
+        for name, flags in sorted(LATE_FOUND_PROSE_SPELLINGS.items()):
+            options = self._options_of(name)
+            for flag in flags:
+                # asked of the parser, so a spelling that is only MENTIONED cannot satisfy this
+                self.assertIn(flag, options, f"{name} does not accept {flag}")
+                self.assertIn(flag, _PROSE_FLAGS,
+                              f"{flag} is free prose on {name} but the sweep does not look "
+                              f"for it - a writer taking prose under a new flag name would "
+                              f"pass this sweep by being unnamed")
 
     def _options_of(self, name: str) -> set[str]:
         """Every flag the script's own PARSER accepts, subcommands included.
