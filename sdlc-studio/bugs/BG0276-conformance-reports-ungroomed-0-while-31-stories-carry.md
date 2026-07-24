@@ -64,3 +64,4 @@ weakens any gate or report built on that count.
 - **Then** it contains a legacy-scaffold story and a marker story with deliberately unequal counts, so a one-shape-only counter reads differently and fails
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::UngroomedMarkerTests
 | 2026-07-24 | sdlc-studio | Fixed and mutation-proven - reported count now matches the 16 on disk |
+| 2026-07-24 | sdlc-studio | Delivered in commit 6ae0c80e, whose subject names BG0276 only - a `git add -A` swept both units into one commit. Attribution recorded here rather than by rewriting pushed history (CR0416) |

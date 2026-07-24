@@ -60,3 +60,9 @@ the recommended path is the one without the guard.
 - **When** an author supplies the real criteria
 - **Then** the scaffold block is replaced rather than left beside the new one - today an appended section leaves the placeholder in place and `validate check` errors on it (hit twice while filing these very findings)
 - **Verify:** manual
+
+**Recurrence note.** Hit three times in one sitting - CR0414, CR0415 and CR0416 each gained a
+second `## Impact` because the template ships that heading and an appended detail section
+naturally wants one too. markdownlint MD024 caught each, after the fact. The scaffold's section
+names and the ones a detailed filing adds are the same names, which is why this is a trap rather
+than carelessness.

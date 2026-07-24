@@ -42,3 +42,4 @@ Order the writes so the forecast record and sprint-plan.json are written only AF
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Filed |
 | 2026-07-24 | sdlc-studio | Fixed and mutation-proven |
+| 2026-07-24 | sdlc-studio | Delivered in commit 6ae0c80e, whose subject names BG0276 only - a `git add -A` swept both units into one commit. Attribution recorded here rather than by rewriting pushed history (CR0416) |
