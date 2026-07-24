@@ -14,6 +14,7 @@
     "lint:budgets": "python3 tools/check_budgets.py",
     "lint:neutrality": "python3 tools/check_neutrality.py",
     "lint:action-pins": "bash tools/check_action_pins.sh",
+    "lint:corpus": "python3 tools/lint_corpus.py",
     "lint:fix": "markdownlint '**/*.md' --ignore node_modules --fix; markdownlint --config .claude/skills/sdlc-studio/.markdownlint.json '.claude/**/*.md' --fix",
     "test": "npm run test:skill && npm run test:tools",
     "test:skill": "bash tools/skill-tests.sh",

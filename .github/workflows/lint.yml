@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # The whole-corpus markdown lane is periodic and pre-release, never per-commit: the
+  # pre-commit gate already runs ~197s against a 120s budget, and a guard whose cost is
+  # paid on every commit gets switched off.
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
 
 # Least privilege: the jobs only check out and run linters/tests - nothing writes to the
 # repo, so the workflow token needs read only (BG0058). Without this the token defaults to
@@ -67,6 +73,34 @@ jobs:
         run: |
           python -m pip install --quiet bandit
           bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q
+
+  # The whole markdown corpus under the STRICT rule set - every tracked .md file,
+  # dot-directories included. The per-commit lanes cannot see inside `.claude/` with a
+  # `**/*.md` glob, so the payload is only ever linted under its own relaxed config; this
+  # job is where a rule that config switches off is still enforced. Findings are attributed
+  # against the latest tag, so the report says what the release introduced rather than
+  # reciting the whole backlog.
+  corpus:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          # Full history and tags: the baseline is a tag, and attribution needs to
+          # materialise it. A shallow clone would report every finding unattributed.
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Markdown corpus lint (strict rules, attributed)
+        run: npm run lint:corpus
 
   windows-smoke:
     runs-on: windows-latest
