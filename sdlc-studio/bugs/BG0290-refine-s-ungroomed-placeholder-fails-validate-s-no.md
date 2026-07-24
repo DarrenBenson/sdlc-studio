@@ -10,15 +10,27 @@
 
 ## Summary
 
-{{symptom}}
+`refine` marks an ungroomed story's acceptance criteria with a blockquote marker;
+`validate`'s `no-ac` check skips blockquotes, so it reports the story refine has just minted
+as having no acceptance criteria at all. Two guards in the same pre-commit gate hold two
+definitions of the same state, and the refine that creates the backlog cannot be committed.
 
 ## Steps to Reproduce
 
-{{steps}}
+```bash
+# an accepted RFC carries Design Options and no `- [ ]` criteria, so nothing seeds
+refine.py apply --request RFC0001 --epic-title "The epic" \
+  --story "First slice|2" --story "Second slice|3"
+validate.py check --file sdlc-studio/stories/US0001-first-slice.md
+# ERROR US0001: [no-ac] story has no acceptance criteria
+```
 
 ## Proposed Fix
 
-{{fix}}
+`validate` reads the ungroomed test from its owner (`conformance.story_is_ungroomed`)
+instead of holding a second copy: an explicitly-marked ungroomed story is a known pre-Ready
+state, not a malformed artefact. An AC section that is merely EMPTY declares nothing and
+stays the error it always was.
 
 ## Detail
 
@@ -71,6 +83,7 @@ reports success and the gate blames the artefact.
 - **When** `validate check` reads it
 - **Then** it is not a `no-ac` error - an explicitly-marked ungroomed story is a known pre-Ready state, not a malformed artefact; a story with an EMPTY section and no marker is still an error
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::UngroomedMarkerTests::test_the_ungroomed_marker_is_not_a_no_ac_error
+- **Verified:** yes (2026-07-24)
 
 ### AC2: the two guards read the same definition
 
@@ -78,9 +91,11 @@ reports success and the gate blames the artefact.
 - **When** both are asked about the same story text
 - **Then** neither can call a story ungroomed-and-fine while the other calls it malformed - the ungroomed test is imported from one place, not restated in two
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::UngroomedMarkerTests::test_validate_and_conformance_agree_on_every_shipped_story
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-24 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-24 | sdlc-studio | Fixed: `validate` delegates the ungroomed test to `conformance.story_is_ungroomed` rather than restating it; an empty AC section is still `no-ac`. Pinned by `UngroomedMarkerTests` in `test_validate.py`, including refine's real output and a delegation probe. |

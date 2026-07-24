@@ -17,7 +17,13 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the sibling helper
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # scripts/, for lib + siblings
 import gitutil  # noqa: E402 - confined git for the fixture repos below
+import loader  # noqa: E402 - the canonical way to import a script under test
+import workspace  # noqa: E402 - the dev-repo-only skip authority
+from lib import sdlc_md  # noqa: E402
+
+refine = loader.load_script("refine")   # BG0290: validate must accept what refine mints
 
 SCRIPT_PATH = Path(__file__).resolve().parent.parent / "validate.py"
 _spec = importlib.util.spec_from_file_location("validate", SCRIPT_PATH)
@@ -177,6 +183,104 @@ class ValidateFileTests(unittest.TestCase):
                        "# X\n\n> **Status:** Draft\n\n## Acceptance Criteria\n\n## Notes\n- something\n")
             rules = {v["rule"] for v in validate.validate_file(p, "story")}
             self.assertIn("no-ac", rules)
+
+
+class UngroomedMarkerTests(unittest.TestCase):
+    """BG0290: `refine` mints an ungroomed story whose AC section holds only the grooming
+    marker, `conformance` reads that as a legitimate pre-Ready state, and `validate` called
+    the same bytes `no-ac`. Both run in the same pre-commit gate, so the refine that created
+    the backlog could not be committed and there was no groom-before-commit path (the story
+    must exist to be groomed).
+
+    The marker is a blockquote and `_has_ac_section` skips blockquotes, which is why the split
+    looked like `--epic-title` versus `--into` and was neither: the real trigger is whether the
+    REQUEST carries `- [ ]` criteria to seed from. A CR does, an RFC does not, so refining any
+    accepted RFC produced uncommittable stories.
+    """
+
+    def _story(self, root: Path, ac_body: str, name: str = "US0900-x.md") -> Path:
+        return _write(root, f"sdlc-studio/stories/{name}",
+                      "# US0900: A refined story\n\n> **Status:** Draft\n> **Epic:** EP0001\n\n"
+                      "## User Story\n\n**As a** x\n**I want** y\n**So that** z\n\n"
+                      f"## Acceptance Criteria\n\n{ac_body}"
+                      "## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n")
+
+    def test_the_ungroomed_marker_is_not_a_no_ac_error(self) -> None:
+        # BG0290 AC1, both halves: the MARKED story is a known pre-Ready state; an AC section
+        # that is merely empty declares nothing and stays the error it always was.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            marked = self._story(root, sdlc_md.UNGROOMED_AC_MARKER + "\n\n")
+            rules = {v["rule"] for v in validate.validate_file(marked, "story")}
+            self.assertNotIn("no-ac", rules)
+            empty = self._story(root, "", name="US0901-x.md")
+            rules = {v["rule"] for v in validate.validate_file(empty, "story")}
+            self.assertIn("no-ac", rules)
+
+    def test_a_story_refine_just_minted_passes_validate(self) -> None:
+        """The end-to-end pin, on refine's real output rather than a copied marker: a
+        multi-story breakdown of a request with NO criteria to seed from is the shape that
+        blocked the commit."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "src").mkdir(parents=True, exist_ok=True)
+            (root / "src" / "a.py").write_text("", encoding="utf-8")
+            _write(root, "sdlc-studio/rfcs/RFC0001-x.md",
+                   "# RFC-0001: A design\n\n> **Status:** Accepted\n> **Affects:** src/a.py\n\n"
+                   "## Summary\n\ns\n\n## Design Options\n\no\n")
+            res = refine.refine(root, "RFC0001", "The epic",
+                                [("First slice", 2, None), ("Second slice", 3, None)],
+                                skip_personas=True)
+            for sid in res["stories"]:
+                spath = sdlc_md.find_by_id(root, sid)[0]
+                with self.subTest(story=sid):
+                    errs = [v for v in validate.validate_file(spath, "story")
+                            if v["severity"] == "error"]
+                    self.assertEqual(errs, [], f"refine minted a story validate refuses: {errs}")
+
+    def test_validate_and_conformance_agree_on_every_shipped_story(self) -> None:
+        """BG0290 AC2: one definition of ungroomed, read by both guards.
+
+        The corpus half alone would be vacuous the moment the backlog is fully groomed (it is,
+        today: 0 of 431 stories are ungroomed), so the canonical shapes are checked beside it -
+        and the delegation itself is proved by moving conformance's answer and watching
+        validate follow, which no restated copy of the rule could do.
+        """
+        import conformance  # the predicate's owner - validate must be reading THIS one
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cases = {"marker": self._story(root, sdlc_md.UNGROOMED_AC_MARKER + "\n\n"),
+                     "legacy scaffold": self._story(root, "### AC1: {{define}}\n\n",
+                                                    name="US0902-x.md"),
+                     "empty": self._story(root, "", name="US0903-x.md")}
+            for label, path in cases.items():
+                text = path.read_text(encoding="utf-8")
+                flagged = any(v["rule"] == "no-ac" for v in validate.validate_file(path, "story"))
+                with self.subTest(case=label):
+                    self.assertFalse(conformance.story_is_ungroomed(text) and flagged,
+                                     f"{label}: conformance says ungroomed, validate says no-ac")
+            # The delegation, not a coincidence of two agreeing implementations: with
+            # conformance's answer moved, validate's verdict on the EMPTY story moves with it.
+            empty = cases["empty"]
+            original = conformance.story_is_ungroomed
+            conformance.story_is_ungroomed = lambda text: True
+            try:
+                rules = {v["rule"] for v in validate.validate_file(empty, "story")}
+            finally:
+                conformance.story_is_ungroomed = original
+            self.assertNotIn("no-ac", rules,
+                             "validate holds its own copy of the ungroomed rule - two copies drift")
+        if not workspace.in_dev_repo():
+            self.skipTest(workspace.SKIP_REASON)   # the corpus half is dev-repo-only
+        stories = sorted((workspace.REPO / "sdlc-studio" / "stories").glob("US*.md"))
+        self.assertTrue(stories, "no shipped stories to check")
+        for path in stories:
+            text = path.read_text(encoding="utf-8")
+            if not conformance.story_is_ungroomed(text):
+                continue
+            flagged = [v for v in validate.validate_file(path, "story") if v["rule"] == "no-ac"]
+            self.assertEqual(flagged, [], f"{path.name}: ungroomed to conformance, malformed to "
+                                          f"validate - the two guards disagree")
 
 
 class ContradictedAffectsTests(unittest.TestCase):

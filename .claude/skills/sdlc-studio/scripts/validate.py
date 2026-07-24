@@ -60,6 +60,31 @@ def _has_ac_section(text: str) -> bool:
             return True
     return False
 
+
+def _is_ungroomed(text: str) -> bool:
+    """True when the story declares its ACs an explicit grooming placeholder - a known
+    pre-Ready state, not a malformed artefact.
+
+    THE PREDICATE IS CONFORMANCE'S, imported rather than restated. Both guards run in the same
+    pre-commit gate, and they held two definitions of the same state: `refine` writes the
+    ungroomed marker as a blockquote, `_has_ac_section` skips blockquotes, so the story refine
+    had just minted was reported as having no acceptance criteria at all and the commit that
+    created the backlog was refused. A second copy of the rule here would drift again; there is
+    one test and this reads it.
+
+    An empty AC section with no marker is untouched by this: nothing declares it ungroomed, so
+    it stays the `no-ac` error it always was.
+    """
+    try:
+        import conformance  # noqa: PLC0415 - local: conformance pulls reconcile/critic/verify_ac
+    except Exception as exc:  # noqa: BLE001 - validate must run from a partial install
+        sdlc_md.debug("validate.ungroomed", exc)
+        # Degraded, and deliberately the same TOKEN rather than a second rule: without the
+        # predicate's owner on the path, the marker's presence is all that can be read.
+        return sdlc_md.UNGROOMED_AC_TOKEN in text
+    return conformance.story_is_ungroomed(text)
+
+
 # Directory basename -> artifact type, for inferring a file's type from path.
 _DIR_TO_TYPE = {
     Path(rel).name: type_ for type_, (rel, _prefix) in sdlc_md.ARTIFACT_TYPES.items()
@@ -151,7 +176,8 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
             for line in text.splitlines()
             if sdlc_md.extract_ac_id(line)
         ]
-        if not ac_ids and not _has_ac_section(text) and not _ac_exempt(rec, repo_root):
+        if (not ac_ids and not _has_ac_section(text) and not _ac_exempt(rec, repo_root)
+                and not _is_ungroomed(text)):
             add("error", "no-ac",
                 "story has no acceptance criteria (`### ACn`, `- **ACn:**`, or a "
                 "populated `## Acceptance Criteria` section)")
