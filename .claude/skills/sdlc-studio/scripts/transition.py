@@ -1058,6 +1058,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    # A status change recorded through a mutated tool is a record nobody can trust
+    # afterwards, so the applied-mutant window is a refusal, not a warning.
+    refusal = sdlc_md.inflight_refusal(sdlc_md.resolve_root(args))
+    if refusal:
+        print(refusal, file=sys.stderr)
+        return 2
     return args.func(args)
 
 

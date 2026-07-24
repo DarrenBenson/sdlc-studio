@@ -3949,6 +3949,22 @@ def close_preflight(root, retro_id: str | None = None) -> dict:
                       if sdlc_md.remediation_lines("gate", [c["check"]])
                       else f"address the {c['check']} lane")
 
+    # A close that ships work while the installed copy still holds the previous version leaves
+    # every other project on the machine loading the old code. The verdict has ONE owner
+    # (status), so the close and the hint cannot disagree about whether the mirror is stale;
+    # a project with no drift check answers None and this is silent.
+    import status  # noqa: PLC0415 - deferred, like the other close-path siblings
+    try:
+        drift = status.installed_copy_drift(root)
+    except Exception as exc:  # noqa: BLE001 - a broken lane must not hide the other blockers
+        sdlc_md.debug("sprint.close_preflight.drift", exc)
+        drift = None
+    if drift:
+        block("installed-copy",
+              f"{drift['count']} file(s) differ between this repository's skill source and the "
+              f"installed copy - the work this close is signing off is in force nowhere else",
+              drift["remedy"])
+
     blockers.extend(_signoff_preflight(root, state))
     return {"ready": not blockers, "blockers": blockers}
 

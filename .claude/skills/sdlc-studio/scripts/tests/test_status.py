@@ -9,6 +9,7 @@ import importlib.util
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
@@ -493,6 +494,131 @@ class BacklogTriageAdvisoryTests(unittest.TestCase):
             self._bug(root, 1, "colour the output", "render green", "tools/a.py")
             self._bug(root, 2, "fix a crash", "divide by zero", "tools/b.py")
             self.assertIsNone(status.backlog_triage_advisory(root))
+
+
+REPO = Path(__file__).resolve().parents[5]
+_FORWARD_PORT = REPO / "tools" / "forward-port.sh"
+
+
+def _dev_repo_with_check(root: Path) -> Path:
+    """A tree carrying the repository's own drift check and a skill source of two files, so
+    the advisory is measured against the REAL check rather than a stub that agrees with the
+    parser by construction."""
+    (root / "tools").mkdir(parents=True)
+    import shutil
+    shutil.copy(_FORWARD_PORT, root / "tools" / "forward-port.sh")
+    skill = root / ".claude" / "skills" / "sdlc-studio"
+    (skill / "scripts").mkdir(parents=True)
+    (skill / "SKILL.md").write_text("# skill\n", encoding="utf-8")
+    (skill / "scripts" / "a.py").write_text("x = 1\n", encoding="utf-8")
+    return root
+
+
+def _installed_copy(home: Path) -> Path:
+    p = home / ".claude" / "skills" / "sdlc-studio"
+    (p / "scripts").mkdir(parents=True)
+    return p
+
+
+class InstalledCopyDriftAdvisoryTests(unittest.TestCase):
+    """The installed copy is what every other project on this machine loads, so a stale
+    mirror is a fix believed shipped that is in force nowhere. The drift check reports it;
+    this surfaces the report where an agent already looks."""
+
+    def setUp(self) -> None:
+        import shutil
+        if shutil.which("rsync") is None:            # the check's comparison engine
+            self.skipTest("rsync not on PATH")
+        if not _FORWARD_PORT.is_file():
+            self.skipTest("tools/forward-port.sh not present (consuming project)")
+
+    def _drift(self, root: Path, home: str, **kw):
+        """The verdict with HOME pointed at the fixture's installed copy - unpatched, the
+        check would compare against the real one on this machine and the count would be
+        whatever that happens to be."""
+        import os
+        with unittest.mock.patch.dict(os.environ, {"HOME": home}):
+            return status.installed_copy_drift(root, **kw)
+
+    def _run(self, cmd: str, root: Path, home: str) -> tuple[int, str, str]:
+        import io
+        import os
+        from contextlib import redirect_stderr, redirect_stdout
+        out, err = io.StringIO(), io.StringIO()
+        with unittest.mock.patch.dict(os.environ, {"HOME": home}):
+            with redirect_stdout(out), redirect_stderr(err):
+                rc = status.main([cmd, "--root", str(root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _hint(self, root: Path, home: str) -> tuple[int, str, str]:
+        return self._run("hint", root, home)
+
+    def test_the_hint_names_the_differing_file_count(self) -> None:
+        """AC1: the number of differing files, alongside the other advisories."""
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as h:
+            root = _dev_repo_with_check(Path(d))
+            target = _installed_copy(Path(h))
+            # THREE files differ and no more: one changed, two extra at the target. The
+            # matching `scripts/a.py` and the excluded caches are not drift.
+            target.joinpath("SKILL.md").write_text("# stale skill\n", encoding="utf-8")
+            target.joinpath("scripts", "a.py").write_text("x = 1\n", encoding="utf-8")
+            target.joinpath("stale-one.md").write_text("old\n", encoding="utf-8")
+            target.joinpath("stale-two.md").write_text("old\n", encoding="utf-8")
+
+            drift = self._drift(root, h)
+            self.assertEqual(drift["count"], 3, drift)
+
+            for cmd, beside in (("hint", "/sdlc-studio "), ("pillars", "Requirements:")):
+                rc, out, _err = self._run(cmd, root, h)
+                self.assertEqual(rc, 0)
+                advisory = [ln for ln in out.splitlines() if "installed copy" in ln]
+                self.assertEqual(len(advisory), 1, out)
+                self.assertIn("3 file(s)", advisory[0])
+                self.assertIn("forward-port.sh --yes", advisory[0])  # the command that mirrors
+                self.assertIn(beside, out)   # alongside the rest, never in place of it
+
+    def test_a_project_without_the_check_is_silent_and_never_raises(self) -> None:
+        """AC2: no check, no installed copy, a pinned copy, an erroring or slow check."""
+        with tempfile.TemporaryDirectory() as h:
+            with tempfile.TemporaryDirectory() as d:      # a consuming project: no check
+                self.assertIsNone(self._drift(Path(d), h))
+                # and nothing is EXECUTED on its behalf: the check's presence is what arms
+                # this surface, so a project without one costs a stat and no process.
+                import subprocess
+
+                def never(*a, **kw):
+                    raise AssertionError(f"a project with no drift check ran {a!r}")
+
+                with unittest.mock.patch.object(subprocess, "run", never):
+                    self.assertIsNone(self._drift(Path(d), h))
+            with tempfile.TemporaryDirectory() as d:      # check present, nothing installed
+                root = _dev_repo_with_check(Path(d))
+                self.assertIsNone(self._drift(root, h))
+                rc, out, _err = self._hint(root, h)       # HOME here holds no copy either
+                self.assertEqual(rc, 0)
+                self.assertNotIn("installed copy", out)
+            with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as ph:
+                root = _dev_repo_with_check(Path(d))      # a deliberately pinned copy
+                target = _installed_copy(Path(ph))
+                target.joinpath("SKILL.md").write_text("# stale skill\n", encoding="utf-8")
+                (target / ".local").mkdir()
+                (target / ".local" / "forward-port.pin").write_text("held\n", encoding="utf-8")
+                self.assertIsNone(self._drift(root, ph))
+            with tempfile.TemporaryDirectory() as d:      # a check that fails to answer
+                root = Path(d)
+                (root / "tools").mkdir()
+                (root / "tools" / "forward-port.sh").write_text(
+                    "#!/usr/bin/env bash\necho 'boom' >&2\nexit 2\n", encoding="utf-8")
+                self.assertIsNone(self._drift(root, h))
+                rc, out, _err = self._hint(root, h)
+                self.assertEqual(rc, 0)
+                self.assertNotIn("installed copy", out)
+            with tempfile.TemporaryDirectory() as d:      # a check that never returns
+                root = Path(d)
+                (root / "tools").mkdir()
+                (root / "tools" / "forward-port.sh").write_text(
+                    "#!/usr/bin/env bash\nsleep 30\n", encoding="utf-8")
+                self.assertIsNone(self._drift(root, h, timeout=0.5))
 
 
 if __name__ == "__main__":
