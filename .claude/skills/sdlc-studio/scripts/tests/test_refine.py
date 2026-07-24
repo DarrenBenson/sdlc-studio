@@ -492,6 +492,127 @@ class AffectsRequiredAtRefineTests(unittest.TestCase):
             self.assertIn("no Affects", err.getvalue())       # ... but never quietly
 
 
+class InheritSubsetTests(unittest.TestCase):
+    """BG0273: `inherit:subset` took three shortcuts the bare `inherit` did not.
+
+    It skipped the parent-declares-none refusal (a subset of nothing was accepted as an
+    inheritance), it never checked the named subset was WITHIN the parent's Affects (so
+    `inherit:` could ADD a path and call it a narrowing), and the bare keyword was compared
+    case-sensitively, so `INHERIT` fell through to the explicit path and minted a story whose
+    Affects was the literal word.
+    """
+
+    def _parent(self, root: Path, affects: str = "src/a.py, src/b.py, src/c.py") -> None:
+        for name in ("a.py", "b.py", "c.py"):
+            (root / "src").mkdir(parents=True, exist_ok=True)
+            (root / "src" / name).write_text("", encoding="utf-8")
+        _write(root / "sdlc-studio" / "change-requests" / "CR0001-x.md",
+               "# CR-0001: X\n\n> **Status:** Approved\n> **Priority:** P1\n"
+               "> **Type:** Improvement\n> **Size:** L\n"
+               f"> **Affects:** {affects}\n\n## Summary\n\ns\n\n## Impact\n\ni\n")
+
+    def test_inherit_subset_from_a_request_that_declares_none_is_refused(self) -> None:
+        # The parent-declares-none refusal is the bare keyword's; the narrowed form skipped it
+        # entirely and returned the subset as though it had been inherited from something.
+        with self.assertRaises(ValueError) as cm:
+            refine.resolve_story_affects("CR0001", "", "inherit:src/a.py")
+        msg = str(cm.exception)
+        self.assertIn("CR0001", msg)                 # names the request that declares none
+        self.assertIn("declares none", msg)
+        # ... and the same refusal reaches the mint path, before anything is written
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr_no_affects(root)
+            (root / "src").mkdir(parents=True, exist_ok=True)
+            (root / "src" / "a.py").write_text("", encoding="utf-8")
+            with self.assertRaises(ValueError):
+                refine.refine(root, "CR0001", "The epic", [("S", 3, "inherit:src/a.py")],
+                              skip_personas=True)
+            self.assertFalse(any((root / "sdlc-studio" / "stories").glob("US*.md"))
+                             if (root / "sdlc-studio" / "stories").exists() else False)
+
+    def test_a_subset_naming_a_path_outside_the_parent_is_refused(self) -> None:
+        # `inherit:` NARROWS. A path the parent never declared is an addition wearing the
+        # inheritance keyword - the story's footprint would claim a provenance it has not got.
+        with self.assertRaises(ValueError) as cm:
+            refine.resolve_story_affects("CR0001", "src/a.py, src/b.py",
+                                         "inherit:src/a.py, src/elsewhere.py")
+        msg = str(cm.exception)
+        self.assertIn("src/elsewhere.py", msg)       # the offending path, named
+        self.assertNotIn("src/a.py,", msg.split("is not")[0])   # not the one that was fine
+
+    def test_a_subset_the_affects_parser_cannot_read_as_a_path_is_refused(self) -> None:
+        # Containment is judged by the parser the planner uses, and prose is not a path in it.
+        # Admitting an unreadable token would narrow the parent to something the planner reads
+        # as no footprint at all - an unplannable story, which is what the Affects gate exists
+        # to prevent.
+        for token in ("everything", "the parser"):
+            with self.subTest(token=token):
+                with self.assertRaises(ValueError) as cm:
+                    refine.resolve_story_affects("CR0001", "src/a.py, src/b.py",
+                                                 f"inherit:{token}")
+                self.assertIn(token, str(cm.exception))
+        # a readable path in the same list does not launder the unreadable one beside it
+        with self.assertRaises(ValueError) as cm:
+            refine.resolve_story_affects("CR0001", "src/a.py", "inherit:src/a.py, everything")
+        self.assertIn("everything", str(cm.exception))
+        # ... and a backtick-wrapped spelling of a parent path is the SAME path, not an addition
+        value, mode = refine.resolve_story_affects("CR0001", "src/a.py, src/b.py",
+                                                   "`src/a.py`")
+        self.assertEqual((value, mode), ("`src/a.py`", "explicit"))
+        self.assertEqual(refine.resolve_story_affects("CR0001", "src/a.py, src/b.py",
+                                                      "inherit:`src/a.py`"),
+                         ("`src/a.py`", "inherited"))
+
+    def test_a_subset_within_the_parent_narrows_it(self) -> None:
+        # The positive control: a genuine narrowing still resolves, to the SUBSET (not the
+        # parent's whole footprint), and only the named files reach the minted story.
+        value, mode = refine.resolve_story_affects(
+            "CR0001", "src/a.py, src/b.py, src/c.py", "inherit:src/b.py")
+        self.assertEqual(value, "src/b.py")
+        self.assertEqual(mode, "inherited")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._parent(root)
+            res = refine.refine(root, "CR0001", "The epic",
+                                [("Narrow it", 3, "inherit:src/b.py, src/c.py")],
+                                skip_personas=True)
+            story = sdlc_md.find_by_id(root, res["stories"][0])[0]
+            self.assertEqual(sdlc_md.affects_files(story.read_text(encoding="utf-8")),
+                             ["src/b.py", "src/c.py"])
+
+    def test_the_inherit_keyword_is_matched_in_any_case(self) -> None:
+        # `INHERIT` is the same instruction typed differently. Case-sensitively matched, it
+        # fell through to the explicit path and the story's Affects became the word itself.
+        for spelling in ("INHERIT", "Inherit", "iNhErIt"):
+            with self.subTest(spelling=spelling):
+                value, mode = refine.resolve_story_affects(
+                    "CR0001", "src/a.py, src/b.py", spelling)
+                self.assertEqual(value, "src/a.py, src/b.py")
+                self.assertEqual(mode, "inherited")
+        # narrowed, in any case, and it still refuses a path outside the parent
+        value, mode = refine.resolve_story_affects("CR0001", "src/a.py, src/b.py",
+                                                   "INHERIT:src/a.py")
+        self.assertEqual((value, mode), ("src/a.py", "inherited"))
+        with self.assertRaises(ValueError):
+            refine.resolve_story_affects("CR0001", "src/a.py", "INHERIT:src/zzz.py")
+        # end to end: the minted story carries the parent's paths, never the keyword
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._parent(root)
+            res = refine.refine(root, "CR0001", "The epic", [("Index it", 3, "INHERIT")],
+                                skip_personas=True)
+            body = sdlc_md.find_by_id(root, res["stories"][0])[0].read_text(encoding="utf-8")
+            self.assertEqual(sdlc_md.affects_files(body),
+                             ["src/a.py", "src/b.py", "src/c.py"])
+            self.assertNotIn("INHERIT", body)
+
+    def test_a_path_beginning_with_the_keyword_is_still_an_explicit_path(self) -> None:
+        # The keyword match must not swallow a real path: `inheritance.py` is a file.
+        value, mode = refine.resolve_story_affects("CR0001", "src/a.py", "src/inheritance.py")
+        self.assertEqual((value, mode), ("src/inheritance.py", "explicit"))
+
+
 class UngroomedMarkerTests(unittest.TestCase):
     """US0411: a story refine mints without seeded criteria carries an explicit ungroomed
     grooming-placeholder marker in its AC block, not a bare `{{placeholder}}` reading as content."""

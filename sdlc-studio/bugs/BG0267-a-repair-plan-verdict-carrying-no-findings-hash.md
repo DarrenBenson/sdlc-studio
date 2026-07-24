@@ -41,3 +41,4 @@ Decide the untokened case deliberately in `plan_reviewed`: either treat a verdic
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Filed |
+| 2026-07-24 | sdlc-studio | Fixed: `plan_reviewed` takes an explicit untokened branch and refuses an unpinned verdict, naming the missing `findings-hash`. Both ACs verified by `UntokenedVerdictPinTests`; two mutants killed (restore the short-circuit; refuse every verdict). |

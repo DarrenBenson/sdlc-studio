@@ -366,6 +366,22 @@ def _parent_affects(rpath: Path) -> str:
     return (sdlc_md.extract_field(rpath.read_text(encoding="utf-8"), "Affects") or "").strip()
 
 
+def _outside_parent(parent_affects: str, subset: str) -> list[str]:
+    """The paths a narrowed `inherit:subset` names that the parent's `Affects` does not.
+
+    Both sides are read by the ONE Affects parser every writer uses, so a narrowing is checked
+    against exactly the paths the planner will later see, and a backtick-wrapped or
+    parenthesised spelling of the same path matches. A subset token that parser cannot read as
+    a path counts as outside too: it is not one of the parent's paths either."""
+    parent_paths = set(file_finding.declared_affects(parent_affects))
+    outside = []
+    for tok in [t.strip() for t in subset.split(",") if t.strip()]:
+        named = file_finding.declared_affects(tok)
+        if not named or named[0] not in parent_paths:
+            outside.append(tok)
+    return outside
+
+
 def resolve_story_affects(request_id: str, parent_affects: str,
                           affects: str | None) -> tuple[str | None, str]:
     """Resolve one story's Affects at refine time, returning (value, mode).
@@ -373,7 +389,12 @@ def resolve_story_affects(request_id: str, parent_affects: str,
     - an explicit path list is used verbatim (`explicit`);
     - the `inherit` keyword takes the parent request's Affects (`inherited`); `inherit:paths`
       narrows it to the named subset. A story cannot inherit from a request that declares no
-      Affects - that is refused here, before anything is minted, naming the request;
+      Affects - that is refused here, before anything is minted, naming the request - and the
+      narrowed form is held to the same rule plus one more: every path it names must already
+      be in the parent's Affects, because `inherit:` NARROWS. A subset that adds a path is an
+      explicit footprint wearing the inheritance keyword, and it claims a provenance the
+      parent never gave it. The keyword is matched case-insensitively, so `INHERIT` is the
+      instruction and not a story whose declared footprint is the literal word;
     - no Affects at all is SEEDED from the parent when it has one (`seeded`, marked for
       confirmation - a plannable-but-provisional footprint, never a silent unplannable unit);
     - no Affects and nothing to seed from is `absent` - the caller then refuses or, under the
@@ -384,15 +405,28 @@ def resolve_story_affects(request_id: str, parent_affects: str,
     if affects is None:
         return (parent_affects, "seeded") if parent_affects else (None, "absent")
     a = affects.strip()
-    if a == INHERIT_TOKEN or a.lower().startswith(INHERIT_TOKEN + ":"):
+    low = a.lower()
+    if low == INHERIT_TOKEN or low.startswith(INHERIT_TOKEN + ":"):
         subset = a[len(INHERIT_TOKEN) + 1:].strip() if ":" in a else ""
-        if subset:
-            return subset, "inherited"
-        if parent_affects:
+        # The parent-declares-none refusal comes FIRST and covers the narrowed form: a subset
+        # of nothing is not an inheritance, and taking the narrowed path early was how
+        # `inherit:` inherited from a request with nothing to inherit.
+        if not parent_affects:
+            raise ValueError(
+                f"a story asked to inherit an Affects, but {request_id} declares none to "
+                f"inherit - give the story its own `Affects`, or declare one on {request_id} "
+                f"first.")
+        if not subset:
             return parent_affects, "inherited"
-        raise ValueError(
-            f"a story asked to inherit an Affects, but {request_id} declares none to inherit - "
-            f"give the story its own `Affects`, or declare one on {request_id} first.")
+        outside = _outside_parent(parent_affects, subset)
+        if outside:
+            raise ValueError(
+                f"a story asked to inherit a NARROWED Affects, but {', '.join(outside)} "
+                f"is not in {request_id}'s Affects ({parent_affects}) - `inherit:` narrows the "
+                f"parent's footprint, so a path it never declared cannot come from it. Name "
+                f"those files as the story's own `Affects` instead, or add them to "
+                f"{request_id} first.")
+        return subset, "inherited"
     return affects, "explicit"
 
 
