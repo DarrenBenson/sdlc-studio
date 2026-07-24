@@ -151,6 +151,136 @@ def _verifiers_of(f: dict) -> list[str]:
     return out
 
 
+# A pipe the author escaped for markdown (`\|`) is deliberate; a bare one is the mistake.
+_BARE_PIPE_RE = re.compile(r"(?<!\\)\|")
+
+
+def check_pipe_acs(f: dict) -> list[str]:
+    """Warnings for each `--ac` carrying a bare pipe with no `--verify` at the same position.
+
+    `--ac` pairs with `--verify` POSITIONALLY. Writing the verifier inside the criterion instead,
+    as `criterion|pytest path::Node`, is a natural guess and several other tools take that shape -
+    and it used to be accepted in silence. The whole string then became prose: the
+    identifier-backticking pass rewrote the command into a code span, the pipe stayed embedded in
+    the criterion text, and the artefact shipped with no `Verify:` line the runner could ever see.
+    An AC that reads as groomed but carries no executable check is worse than one that is refused.
+
+    Advisory by design, and positional: a criterion whose position DOES carry a `--verify` is left
+    alone, so a correctly-paired pair is byte-identical to what it always was and no working path
+    changes. Returns the notes; the caller prints them (a library that prints leaks into every
+    caller)."""
+    acs = _list(f, "acs")
+    if not acs:
+        return []
+    supplied = len([v for v in (f.get("verify") or []) if str(v).strip()])
+    notes: list[str] = []
+    for i, a in enumerate(acs, 1):
+        if i <= supplied or not _BARE_PIPE_RE.search(str(a)):
+            continue
+        head = str(a).split("|", 1)[0].strip()
+        notes.append(
+            f"--ac[{i}] carries an unescaped '|' and no --verify was paired with it: "
+            f"{str(a)[:120]!r}. The verifier does not go inside the criterion - pass it as the "
+            f"{i}th --verify (`--ac {head!r} --verify 'pytest ...'`), or escape the pipe as '\\|' "
+            f"if it really is prose. Written as-is it becomes prose with no Verify line.")
+    return notes
+
+
+# What the duplicate check reads, and the bars it fires at. MEASURED against this repo's own
+# backlog (1356 artefacts): 34 candidate pairs, 63 artefacts with at least one candidate, and the
+# re-filing that motivated the check IS among them. A bar that fired on ordinary vocabulary would
+# be switched off within a week, so the numbers were checked before the thresholds were fixed.
+DUP_TYPES = ("epic", "story", "bug", "cr", "rfc", "issue")
+DUP_MIN_SHARED_TOKENS = 4     # two 3-word titles overlapping fully is coincidence, not a duplicate
+DUP_TITLE_SIM = 0.8           # titles alone: only a near-restatement counts
+DUP_SHARED_AFFECTS_SIM = 0.4  # ... and the bar drops when both also name the same file
+
+
+def _title_overlap(a: set[str], b: set[str]) -> float:
+    """The shorter title's distinctive words that reappear in the longer one (overlap coefficient).
+
+    Jaccard was tried first and MEASURED too weak for this job: the duplicate that motivated the
+    check - two bugs on one file, filed a day apart - scores 0.21, because one title is three times
+    the length of the other and the union swamps the intersection. Containment is the property a
+    re-filing actually has, and the same pair scores 0.44 under it."""
+    return len(a & b) / min(len(a), len(b)) if a and b else 0.0
+
+
+def duplicate_candidates(repo_root: Path | str, type_: str, title: str,
+                         fields: dict | None = None) -> list[dict]:
+    """Existing artefacts a new one with this title would probably duplicate.
+
+    Reads TERMINAL artefacts too. Re-filing something already fixed is the case that wastes the
+    most time - the author reads a closed bug's symptom nowhere, files it again, and the work is
+    done twice - so scoping this to the open backlog would miss the case that matters most.
+
+    Compared within one type: an epic and the CR it was decomposed from share a title BY DESIGN,
+    and recycling that structural pairing as a duplicate claim would bury the real ones.
+
+    Advisory only, and it must never break a mint: any failure (an unreadable artefact, a missing
+    sibling module) degrades to no candidate, exactly as the finding filer's own lens does."""
+    try:
+        import backlog_triage as bt
+        root = Path(repo_root)
+        if type_ not in DUP_TYPES:
+            return []
+        new_tokens = bt._tokens(title)
+        if not new_tokens:
+            return []
+        affects_line = f"> **Affects:** {(fields or {}).get('affects') or ''}"
+        new_affects = {a for a in (bt._affect_key(root, x)
+                                   for x in sdlc_md.affects_files(affects_line)) if a}
+        out: list[dict] = []
+        for p in sdlc_md.artifact_files(type_, root):
+            cid = sdlc_md.extract_record_id(p.stem)
+            if not cid:
+                continue
+            try:
+                text = p.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            other = bt._tokens(sdlc_md.extract_h1_title(text) or "")
+            if len(other & new_tokens) < DUP_MIN_SHARED_TOKENS:
+                continue
+            shared = sorted({a for a in (bt._affect_key(root, x)
+                                         for x in sdlc_md.affects_files(text)) if a} & new_affects)
+            score = _title_overlap(other, new_tokens)
+            if score < (DUP_SHARED_AFFECTS_SIM if shared else DUP_TITLE_SIM):
+                continue
+            status = (sdlc_md.extract_field(text, "Status") or "?").strip()
+            out.append({"id": cid, "type": type_, "status": status, "shared": shared,
+                        "similarity": round(score, 2),
+                        "title": sdlc_md.extract_h1_title(text) or ""})
+        return sorted(out, key=lambda c: (-c["similarity"], c["id"]))
+    except Exception as exc:  # noqa: BLE001 - a duplicate warning never fails a mint
+        sdlc_md.debug("artifact.duplicate_candidates", exc)
+        return []
+
+
+def duplicate_note(c: dict) -> str:
+    """One candidate as the line a reader acts on: the id, its status, and why it was raised."""
+    where = f", shares {', '.join(c['shared'])}" if c.get("shared") else ""
+    return (f"possible duplicate of {c['id']} [{c['status']}]: "
+            f"{int(c['similarity'] * 100)}% of the shorter title's words{where} - "
+            f"{c['title'][:100]}")
+
+
+class DuplicateRefused(ValueError):
+    """`--strict` met a duplicate candidate. Raised BEFORE any id is allocated or any file
+    written, so a refusal never leaves a half-minted artefact behind."""
+
+
+def _with_notes(result: dict, ac_warnings: list[str], dupes: list[dict]) -> dict:
+    """Attach a mint's advisory notes to its result. Carried on EVERY return path (including the
+    dry-run preview and the consolidation path), because a warning worth giving on one path is
+    worth giving on all of them - and the caller prints, so nothing is lost to a library print."""
+    if ac_warnings:
+        result["ac_warnings"] = ac_warnings
+    if dupes:
+        result["duplicate_warnings"] = dupes
+    return result
+
+
 def _story_acs(f: dict) -> str:
     """The Acceptance Criteria body. Supplied criteria render as real, id'd ACs; with none
     supplied the scaffold keeps its `{{placeholder}}` slots, which the validator reports as
@@ -641,14 +771,19 @@ def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None 
 
 
 def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = None,
-        dry_run: bool = False, consolidate: bool = True) -> dict:
+        dry_run: bool = False, consolidate: bool = True, strict: bool = False) -> dict:
     """Create one artefact. `consolidate` (default True) governs the v3 finding-noise controls: a
     Low-severity finding is normally folded into a themed consolidation CR and a session cap
     refuses a flood. A DELIBERATE decomposition unit (a bug minted by `triage`) is not agent
     finding-noise, so it passes `consolidate=False` to mint an individual bug regardless of
     severity - otherwise a Low-severity triaged bug would silently become a CR on a v3 project, and
     the caller (expecting a bug) would wire that CR as the Issue's child. Dormant on v2, where the
-    controls are off, so the flag only matters under schema v3."""
+    controls are off, so the flag only matters under schema v3.
+
+    `strict` (default False) turns the duplicate check from advisory into a refusal. Advisory is
+    the default deliberately: filing must never be blocked by a heuristic, or the heuristic becomes
+    a reason not to file. Under `strict` the refusal is raised before an id is allocated, so no
+    file and no index row survive it."""
     if type_ not in SPEC:
         raise ValueError(f"unknown type {type_!r} (expected one of {', '.join(SPEC)})")
     root = Path(repo_root)
@@ -698,6 +833,16 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
             raise ValueError(f"epic {f['epic']} not found - create it first, or fix the id")
         _target_of(f)      # refuse an unknown target / multi-line Verify BEFORE any write,
         _verifiers_of(f)   # so a bad field never half-creates an artefact
+    # A criterion carrying its verifier inside itself is warned by name here, positionally - it
+    # would otherwise be written out as prose with no Verify line anyone could run.
+    ac_warnings = check_pipe_acs(f)
+    # The cheapest triage lens, run BEFORE anything is minted: is this already on the record?
+    # Advisory by default; a refusal only under --strict, and raised here so nothing is written.
+    dupes = duplicate_candidates(root, type_, title, f)
+    if dupes and strict:
+        raise DuplicateRefused(
+            "--strict: " + "; ".join(duplicate_note(c) for c in dupes)
+            + " - nothing was minted. Re-run without --strict to file anyway.")
     # Serialise allocate -> collision-check -> write -> index-append against concurrent
     # writers, so two agents in one wave never mint the same id or clobber the index.
     with sdlc_md.allocation_lock(root):
@@ -720,19 +865,19 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
                                  "parent's child) - pass consolidate=False / raise severity, "
                                  "or drop --parent")
             if dry_run:
-                return {"id": None, "file_id": None, "path": None,
-                        "consolidated": True, "dry_run": True}
+                return _with_notes({"id": None, "file_id": None, "path": None,
+                                    "consolidated": True, "dry_run": True}, ac_warnings, dupes)
             res = triage_noise.consolidate_low_finding(root, type_, title, f, f["date"])
             res.setdefault("indexed", True)
-            return res
+            return _with_notes(res, ac_warnings, dupes)
         if dry_run:  # preview: write nothing, report what would happen
             idx_exists = _header_cells(root, type_) is not None
             would_create_index = (not idx_exists) and _index_template(type_).exists()
-            return {"id": disp, "file_id": file_id, "path": str(path),
-                    "indexed": idx_exists or would_create_index,
-                    "would_create_index": would_create_index,
-                    "epic_linked": (type_ == "story" and bool(f.get("epic"))) or None,
-                    "dry_run": True}
+            return _with_notes({"id": disp, "file_id": file_id, "path": str(path),
+                                "indexed": idx_exists or would_create_index,
+                                "would_create_index": would_create_index,
+                                "epic_linked": (type_ == "story" and bool(f.get("epic"))) or None,
+                                "dry_run": True}, ac_warnings, dupes)
         if consolidate and type_ in sdlc_md.FINDING_TYPES:
             triage_noise.enforce_session_cap(root)  # refuse the N+1th finding loudly (v3)
         f["_status"] = _create_status(type_, root)  # era-aware: findings file into inbox under v3
@@ -768,9 +913,9 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
             _existing = sdlc_md.decomposed_ids(_parent_path.read_text(encoding="utf-8"))
             if sdlc_md.norm_id(disp) not in _existing:
                 sdlc_md.write_decomposed(_parent_path, [*_existing, sdlc_md.norm_id(disp)])
-    return {"id": disp, "file_id": file_id, "path": str(path),
-            "indexed": indexed, "index_created": index_created,
-            "epic_linked": linked, "dry_run": False}
+    return _with_notes({"id": disp, "file_id": file_id, "path": str(path),
+                        "indexed": indexed, "index_created": index_created,
+                        "epic_linked": linked, "dry_run": False}, ac_warnings, dupes)
 
 
 def new_batch(repo_root: Path | str, type_: str, items: list[dict],
@@ -1059,10 +1204,21 @@ def cmd_new(args: argparse.Namespace) -> int:
         if args.type in META:
             r = meta_new(args.root, args.type, title, f, dry_run=args.dry_run)
         else:
-            r = new(args.root, args.type, title, f, dry_run=args.dry_run)
+            r = new(args.root, args.type, title, f, dry_run=args.dry_run,
+                    strict=getattr(args, "strict", False))
+    except DuplicateRefused as exc:
+        # A refusal is a message, not a traceback - and it names what to do next. Nothing was
+        # allocated or written, so there is no half-minted artefact to clean up.
+        print(f"refused: {exc}", file=sys.stderr)
+        return 2
     except conventions.ConventionsError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
+    for note in r.get("ac_warnings", []):
+        print(f"warning: {note}", file=sys.stderr)
+    for c in r.get("duplicate_warnings", []):
+        print(f"warning: {duplicate_note(c)} - merge, or confirm they are distinct",
+              file=sys.stderr)
     verb = "would create" if r.get("dry_run") else "created"
     if args.format == "json":
         print(json.dumps(r, indent=2))
@@ -1215,6 +1371,9 @@ def build_parser() -> argparse.ArgumentParser:
                         "implementation furniture, and `promote` is required before an "
                         "implementation status); or the full templates/core body")
     n.add_argument("--root", default=".")
+    n.add_argument("--strict", action="store_true",
+                   help="refuse the mint when the title looks like a duplicate of an existing "
+                        "artefact (default: report it and mint anyway)")
     n.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
     n.add_argument("--format", choices=("text", "json"), default="text")
     n.set_defaults(func=cmd_new)

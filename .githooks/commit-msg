@@ -122,6 +122,19 @@ if [ "$msg_rc" -ne 0 ]; then
   exit 1
 fi
 
+# The attribution advisory. A commit whose staged files fall under the `Affects` of a unit the
+# message never names is the shape of a mis-attribution - a `git add -A` sweeping in the unit
+# being written while the previous one's commit runs, which this project does constantly. The
+# script prints it and exits 0; it is REPORTED here rather than refused, because ownership is
+# inferred from a declaration and a gate that blocked on an inference gets switched off. A
+# passing message otherwise prints nothing, so anything left in msg_out IS the advisory.
+if [ "${msg_out:-}" != "" ]; then
+  {
+    printf '  %sattribution note%s (advisory - the commit is not blocked)\n' "$Y" "$N"
+    printf '%s\n' "$msg_out" | sed 's/^/    /'
+  } >&2
+fi
+
 # ---------------------------------------------------------------------------
 # 2. The unit suites, if pre-commit selected them.
 # ---------------------------------------------------------------------------

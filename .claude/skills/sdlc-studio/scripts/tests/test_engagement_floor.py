@@ -1243,5 +1243,147 @@ class StagedIndexUnreadableTests(unittest.TestCase):
             self.assertEqual(_load()._pending_touched_by_id(root), {})
 
 
+class UnnamedUnitAttributionTests(unittest.TestCase):
+    """US0417/CR0416: a `git add -A` run for one unit while the next was being written swept the
+    second unit's files into the first unit's commit. Nothing caught it and nothing could - the
+    commit-msg rule demands a `Refs:` trailer only when the SUBJECT names two ids, and this subject
+    named one; the floor attributes a commit's files to the ids the message declares, so the
+    swept-in unit read as delivered by nothing. The signal was available and unused: every file in
+    that commit already had an owning unit.
+
+    Reported, never refused. Ownership is read from a declaration, and a gate that blocked on an
+    inference gets switched off within a week.
+    """
+
+    def _repo(self) -> tuple[Path, tempfile.TemporaryDirectory]:
+        td = tempfile.TemporaryDirectory()
+        root = Path(td.name)
+        gitutil.git(["init", "-q", "."], cwd=root)
+        return root, td
+
+    SUBJECT = "fix(BG0276): the ungroomed count sees the legacy scaffold"
+
+    def test_a_file_owned_by_an_unnamed_unit_is_reported(self):
+        # The historical case, reconstructed: BG0276's commit stages BG0268's artefact too.
+        root, td = self._repo()
+        with td:
+            _write_unit(root, "bug", 276, status="Fixed", affects=["src/conformance.py"])
+            _write_unit(root, "bug", 268, status="Fixed", affects=["src/sprint.py"])
+            notes = _load().unnamed_unit_attribution(
+                root, self.SUBJECT,
+                staged=["sdlc-studio/bugs/BG0268-sample.md",
+                        "sdlc-studio/bugs/BG0276-sample.md"])
+            self.assertEqual([(n["id"], n["signal"]) for n in notes],
+                             [("BG0268", "named-file")])
+            self.assertIn("Refs: BG0268", notes[0]["note"])
+
+    def test_a_shared_or_unowned_file_does_not_refuse(self):
+        # AC2. A file several units declare, or none, is normal - and reporting it would be a
+        # claim about ownership that the declaration does not support.
+        root, td = self._repo()
+        with td:
+            _write_unit(root, "bug", 276, status="Fixed", affects=["src/sprint.py"])
+            _write_unit(root, "bug", 268, status="Fixed", affects=["src/sprint.py"])
+            self.assertEqual(
+                _load().unnamed_unit_attribution(
+                    root, self.SUBJECT, staged=["src/sprint.py", "src/nobody-declares-this.py"]),
+                [], "a file with two owners, and a file with none, are both ordinary")
+
+    def test_a_solely_declared_file_is_attributed_to_its_one_owner(self):
+        root, td = self._repo()
+        with td:
+            _write_unit(root, "bug", 276, status="Fixed", affects=["src/conformance.py"])
+            _write_unit(root, "bug", 268, status="Fixed", affects=["src/sprint.py"])
+            notes = _load().unnamed_unit_attribution(
+                root, self.SUBJECT, staged=["src/sprint.py"])
+            self.assertEqual([(n["id"], n["signal"]) for n in notes],
+                             [("BG0268", "declared-affects")])
+
+    def test_the_named_unit_is_not_reported_against_itself(self):
+        # The control that stops the check firing on every commit: the unit the message DOES name
+        # is precisely the one whose files are correctly attributed.
+        root, td = self._repo()
+        with td:
+            _write_unit(root, "bug", 276, status="Fixed", affects=["src/conformance.py"])
+            self.assertEqual(
+                _load().unnamed_unit_attribution(
+                    root, self.SUBJECT,
+                    staged=["src/conformance.py", "sdlc-studio/bugs/BG0276-sample.md"]), [])
+
+    def test_a_refs_trailer_states_the_attribution_and_silences_the_note(self):
+        # The remedy the note asks for actually works - otherwise the advisory is unactionable.
+        root, td = self._repo()
+        with td:
+            _write_unit(root, "bug", 276, status="Fixed", affects=["src/conformance.py"])
+            _write_unit(root, "bug", 268, status="Fixed", affects=["src/sprint.py"])
+            self.assertEqual(
+                _load().unnamed_unit_attribution(
+                    root, self.SUBJECT + "\n\nRefs: BG0268\n", staged=["src/sprint.py"]), [])
+
+    def test_a_unit_linked_to_the_named_one_is_not_reported(self):
+        # `feat(CR0371)` touching the stories that DELIVER CR0371 is the decomposition working as
+        # intended, not a mis-attribution. Measured: without this the lane fired on 67 of this
+        # repo's last 200 commits; with it, 27.
+        root, td = self._repo()
+        with td:
+            _write_unit(root, "cr", 371, status="Complete", affects=["src/sprint.py"])
+            p = _write_unit(root, "story", 282, status="Done", affects=["src/close.py"])
+            p.write_text(p.read_text(encoding="utf-8").replace(
+                "> **Status:** Done", "> **Status:** Done\n> **Delivers:** CR0371"),
+                encoding="utf-8")
+            self.assertEqual(
+                _load().unnamed_unit_attribution(
+                    root, "feat(CR0371): a blocked close gets a bounded exit",
+                    staged=["src/close.py", "sdlc-studio/stories/US0282-sample.md"]), [])
+
+    def test_a_message_naming_no_judged_unit_reports_nothing(self):
+        # A `docs:` / `chore:` / planning commit claims no attribution, so there is none to get
+        # wrong. Without this the lane fired on every close and every planning batch.
+        root, td = self._repo()
+        with td:
+            _write_unit(root, "bug", 268, status="Fixed", affects=["src/sprint.py"])
+            self.assertEqual(
+                _load().unnamed_unit_attribution(root, "docs: tidy the README",
+                                                 staged=["src/sprint.py"]), [])
+
+    def test_a_newly_created_artefact_is_a_filing_not_a_mis_attribution(self):
+        # The live lane reads MODIFICATIONS only. A planning commit that mints US0281 is filing
+        # it, not attributing its work elsewhere - and counting additions made the advisory fire
+        # on 92 of the last 200 commits.
+        root, td = self._repo()
+        with td:
+            _write_unit(root, "bug", 276, status="Fixed", affects=["src/conformance.py"])
+            _write_unit(root, "bug", 268, status="Fixed", affects=["src/sprint.py"])
+            (root / "src").mkdir(exist_ok=True)
+            (root / "src" / "conformance.py").write_text("x = 1\n", encoding="utf-8")
+            gitutil.git(["add", "-A"], cwd=root)
+            self.assertEqual(_load()._staged_modified_paths(root), [],
+                             "everything here is an ADDITION, so nothing is attributed")
+
+    def test_the_cli_reports_the_note_and_still_exits_zero(self):
+        # AC2 end to end: a warning, not a refusal - even under --strict, which is how the hook
+        # invokes it. The multi-id rule is the only thing that may refuse a commit.
+        root, td = self._repo()
+        with td:
+            _write_unit(root, "bug", 276, status="Fixed", affects=["src/conformance.py"])
+            _write_unit(root, "bug", 268, status="Fixed", affects=["src/sprint.py"])
+            (root / "src").mkdir(exist_ok=True)
+            (root / "src" / "sprint.py").write_text("x = 1\n", encoding="utf-8")
+            gitutil.git(["add", "-A"], cwd=root)
+            gitutil.git(["-c", "user.email=t@t", "-c", "user.name=t",
+                         "commit", "-q", "-m", "seed", "--no-verify"], cwd=root)
+            (root / "src" / "sprint.py").write_text("x = 2\n", encoding="utf-8")
+            gitutil.git(["add", "-A"], cwd=root)
+            msg = root / "MSG"
+            msg.write_text(self.SUBJECT + "\n", encoding="utf-8")
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = _load().main(["check-commit-msg", "--strict", str(msg),
+                                   "--root", str(root)])
+            self.assertEqual(rc, 0, err.getvalue())
+            self.assertIn("BG0268", err.getvalue())
+            self.assertIn("attribution", err.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()

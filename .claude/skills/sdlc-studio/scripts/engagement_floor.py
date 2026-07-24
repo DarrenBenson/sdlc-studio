@@ -281,6 +281,27 @@ def _staged_paths(root: Path) -> list[str] | None:
     return [ln.strip() for ln in out.stdout.splitlines() if ln.strip()]
 
 
+def _staged_modified_paths(root: Path) -> list[str] | None:
+    """Repo-relative paths this commit MODIFIES (`--diff-filter=M`), or None when git could not
+    be asked.
+
+    Modifications only, and that restriction is load-bearing. A planning commit MINTS a batch of
+    artefacts, and a freshly-created `US0281-....md` is that unit being FILED, not that unit's work
+    being attributed to somebody else. Measured over 200 commits of this repo's history, counting
+    additions made the attribution advisory fire on 92 of them - overwhelmingly on planning
+    commits - which is a check nobody would leave switched on."""
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(root), "-c", "core.quotepath=false", "diff", "--cached",
+             "--diff-filter=M", "--name-only"], capture_output=True, text=True,
+            timeout=_GIT_TIMEOUT)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if out.returncode != 0:
+        return None
+    return [ln.strip() for ln in out.stdout.splitlines() if ln.strip()]
+
+
 def _pending_touched_by_id(root: Path) -> dict[str, set[str]]:
     """{id: source files THIS commit is about to attribute to it}, read from the index.
 
@@ -633,6 +654,162 @@ def check_commit_message(message: str, *, strict: bool = False) -> tuple[int, st
     return (1 if strict else 0), warning
 
 
+def _repo_relative(root: Path, p: str) -> str:
+    """One file, one key, however the path was written.
+
+    A unit's `Affects` is routinely spelled from the skill directory (`scripts/x.py`) while git
+    reports the same file from the repo root (`.claude/skills/.../scripts/x.py`). Comparing the
+    raw strings would make almost every declaration unmatchable, so both sides are resolved
+    through the shared `Affects` resolver first - the same key the planner's clustering uses."""
+    r = sdlc_md.resolve_affects(root, p)
+    if r is not None:
+        try:
+            return str(Path(r).relative_to(root))
+        except ValueError:
+            return str(r)
+    return p.strip().lstrip("./")
+
+
+def affects_owners(repo_root: Path | str) -> dict[str, set[str]]:
+    """{repo-relative path -> the judged-type unit ids whose `Affects` declares it}.
+
+    Every file in a commit already has a candidate owner, because every unit declares what it
+    touches. The floor knew both halves and never put them together, which is how a `git add -A`
+    that swept in a concurrently-edited unit attributed that unit's work to whichever id the
+    subject happened to carry.
+
+    Every judged-type unit is read, whatever its status: the unit being swept in is by definition
+    still in flight, so scoping this to shipped units would miss exactly the case it exists for."""
+    owners: dict[str, set[str]] = {}
+    root = Path(repo_root)
+    for type_ in SHIPPED_STATUS:
+        for p in sdlc_md.artifact_files(type_, root):
+            rid = sdlc_md.extract_record_id(p.stem)
+            if not rid:
+                continue
+            norm = sdlc_md.norm_id(rid)
+            for f in _declared_file_tokens(sdlc_md.read_text_safe(p)):
+                owners.setdefault(_repo_relative(root, f), set()).add(norm)
+    return owners
+
+
+def _link_graph(repo_root: Path | str) -> dict[str, set[str]]:
+    """{normalised id -> the ids it is wired to}, over every artefact type, both directions.
+
+    A commit that names the request it delivers is NOT mis-attributing the stories underneath it:
+    a subject naming a change request, touching the stories that deliver it, is the decomposition
+    working as intended. So an id reachable from one the message names counts as named. Read from
+    the links the project already writes - `Parent`, `Decomposed-into`, `Delivers`, `Epic` -
+    never inferred."""
+    root = Path(repo_root)
+    graph: dict[str, set[str]] = {}
+    for type_ in sdlc_md.ARTIFACT_TYPES:
+        for p in sdlc_md.artifact_files(type_, root):
+            rid = sdlc_md.extract_record_id(p.stem)
+            if not rid:
+                continue
+            norm = sdlc_md.norm_id(rid)
+            text = sdlc_md.read_text_safe(p)
+            wiring = " ".join(v for v in (sdlc_md.extract_field(text, f)
+                                          for f in ("Delivers", "Epic")) if v)
+            for other in (*sdlc_md.parent_refs(text), *sdlc_md.decomposed_ids(text),
+                          *sdlc_md.ID_SEARCH_RE.findall(wiring)):
+                o = sdlc_md.norm_id(other)
+                graph.setdefault(norm, set()).add(o)
+                graph.setdefault(o, set()).add(norm)
+    return graph
+
+
+def _reachable(graph: dict[str, set[str]], seeds: set[str], hops: int = 2) -> set[str]:
+    """`seeds` plus everything within `hops` links of them. Two hops is what a story reaches its
+    request through (story -> epic -> CR); an unbounded closure would eventually name the whole
+    backlog and the check would report nothing ever again."""
+    seen = set(seeds)
+    frontier = set(seeds)
+    for _ in range(hops):
+        frontier = {n for s in frontier for n in graph.get(s, ())} - seen
+        if not frontier:
+            break
+        seen |= frontier
+    return seen
+
+
+def _path_owner(path: str) -> str | None:
+    """The judged unit a staged path belongs to BY NAME, or None.
+
+    The strongest ownership signal in the tree, and the one that does not degrade with backlog
+    age: a unit's own artefact file and its changelog fragment carry its id in the filename.
+    Nothing is inferred - `changelog.d/BG0268.md` is BG0268's, whatever the commit subject says."""
+    rid = sdlc_md.extract_record_id(Path(path).stem)
+    if not rid:
+        return None
+    norm = sdlc_md.norm_id(rid)
+    return norm if _JUDGED_ID_RE.fullmatch(norm) else None
+
+
+def unnamed_unit_attribution(repo_root: Path | str, message: str,
+                             staged: list[str] | None = None) -> list[dict]:
+    """Staged files belonging to a judged unit that this commit's message never names.
+
+    A commit whose files belong to one unit while its subject and `Refs:` trailers name a different
+    unit is the shape of a mis-attribution: the named unit is credited with work it did not do, and
+    the unnamed one reads as delivered by nothing. Two ownership signals, reported separately
+    because they are not equally strong:
+
+    * `named-file` - the path CARRIES the id (the unit's artefact, its changelog fragment). Nothing
+      is inferred, and it does not weaken as the backlog grows. This is what catches the case that
+      motivated the check: a `git add -A` running for one unit swept in the next unit's artefact
+      and changelog fragment, and the subject named only the first.
+    * `declared-affects` - the file is declared by exactly ONE judged unit. Inference, and it must
+      be unambiguous to count. A file several units declare, or none, is NOT reported: shared and
+      unowned files are the ordinary case, and a check that fired on them would be switched off
+      within a week. On a mature backlog the hot files carry a hundred owners each, so this signal
+      is deliberately quiet - it fires only where the declaration genuinely singles one unit out.
+
+    Reported, never refused, by either signal. Whether a swept-in file is really that unit's work
+    is the author's call, and the remedy is one `Refs:` line."""
+    root = Path(repo_root)
+    body = _strip_comments(message)
+    declared = {sdlc_md.norm_id(i) for i in sdlc_md.ID_SEARCH_RE.findall(_subject_line(message))}
+    declared |= _refs_ids(body)
+    if not any(_JUDGED_ID_RE.fullmatch(i) for i in declared):
+        # The message claims no judged unit at all - a `docs:`, `chore:` or planning commit. There
+        # is no attribution to get wrong, so there is nothing to report. Without this the lane
+        # fired on every close and every planning batch, which is how a check gets switched off.
+        return []
+    paths = _staged_modified_paths(root) if staged is None else staged
+    if not paths:
+        return []      # nothing staged, or git could not be asked: report nothing, claim nothing
+    named = _reachable(_link_graph(root), declared)
+    owners = affects_owners(root)
+    found: dict[str, dict[str, set[str]]] = {}
+    for f in paths:
+        if Path(f).name == "_index.md":
+            continue   # a registry every unit writes: it belongs to the workspace, not to a unit
+        rid = _path_owner(f)
+        why = "named-file"
+        if rid is None:
+            who = owners.get(_repo_relative(root, f))
+            if not who or len(who) != 1:
+                continue   # shared or unowned: normal, never a claim about who did the work
+            (rid,) = tuple(who)
+            why = "declared-affects"
+        if rid in named:
+            continue
+        found.setdefault(rid, {}).setdefault(why, set()).add(f)
+    out: list[dict] = []
+    for rid, by_why in sorted(found.items()):
+        files = sorted({f for fs in by_why.values() for f in fs})
+        why = "named-file" if "named-file" in by_why else "declared-affects"
+        how = ("carry its id in their own filenames" if why == "named-file"
+               else f"only {rid} declares in its Affects")
+        out.append({"id": rid, "signal": why, "files": files,
+                    "note": (f"this commit stages {', '.join(files)}, which {how}, but the "
+                             f"message never names {rid}. If that work is {rid}'s, add "
+                             f"`Refs: {rid}` so the attribution is stated rather than guessed.")})
+    return out
+
+
 def cmd_check_commit_msg(args: argparse.Namespace) -> int:
     """Read a commit message file (the argument git passes a commit-msg hook) and apply
     `check_commit_message`. Degrades honestly: an unreadable file is not the author's fault, so it
@@ -648,6 +825,14 @@ def cmd_check_commit_msg(args: argparse.Namespace) -> int:
         if code != 0:
             print("  (blocked by strict mode; commit with --no-verify to override, or add Refs:)",
                   file=sys.stderr)
+    # The attribution advisory is REPORTED, never returned as the exit code - not even under
+    # --strict. Ownership is inferred from a declared footprint, and a gate that refused on an
+    # inference would be switched off within a week; the multi-id rule above is the only refusal.
+    try:
+        for note in unnamed_unit_attribution(getattr(args, "root", ".") or ".", message):
+            print(f"engagement floor (attribution): {note['note']}", file=sys.stderr)
+    except Exception as exc:  # noqa: BLE001 - an advisory never blocks a commit
+        sdlc_md.debug("engagement_floor.unnamed_unit_attribution", exc)
     return code
 
 
@@ -743,6 +928,8 @@ def build_parser() -> argparse.ArgumentParser:
     m.add_argument("file", help="Path to the commit message file git passes the hook.")
     m.add_argument("--strict", action="store_true",
                    help="Block (exit 1) instead of warning - an explicit opt-in.")
+    m.add_argument("--root", default=".",
+                   help="Repo root, for the staged-file attribution advisory (default: .)")
     m.set_defaults(func=cmd_check_commit_msg)
     sdlc_md.add_global_root(parser)
     return parser

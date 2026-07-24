@@ -208,5 +208,75 @@ class MidMergeIsolationTests(unittest.TestCase):
                          "the hook must not block a commit while a merge is genuinely in progress")
 
 
+class UnnamedUnitAttributionTests(unittest.TestCase):
+    """US0417/CR0416, through the bash hook rather than the library: a commit whose staged files
+    belong to a unit the message never names gets an advisory NOTE and still lands. The refusal
+    path stays the multi-id rule's alone - ownership here is read from a declaration, and a gate
+    that blocked on an inference would be switched off within a week."""
+
+    SUBJECT = "fix(BG0276): the ungroomed count sees the legacy scaffold"
+
+    def _fixture(self, d: str, *, second_owner: bool = False) -> Path:
+        """A repo carrying two bugs and one staged MODIFICATION to a source file.
+
+        `second_owner` makes BG0276 declare the same file, so it has two owners - the ambiguous
+        case that must not be reported.
+        """
+        repo = Path(d)
+        clean = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull,
+                 "GIT_CONFIG_SYSTEM": os.devnull}
+        for name in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
+            clean.pop(name, None)
+        self._env = clean
+        subprocess.run(["git", "init", "-q"], cwd=repo, check=True, env=clean)
+        scripts = repo / ".claude" / "skills" / "sdlc-studio"
+        scripts.mkdir(parents=True)
+        (scripts / "scripts").symlink_to(
+            REPO / ".claude" / "skills" / "sdlc-studio" / "scripts")
+        bugs = repo / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True)
+        owned = "src/sprint.py" if second_owner else "src/conformance.py"
+        (bugs / "BG0276-sample.md").write_text(
+            f"# BG0276: sample\n\n> **Status:** Fixed\n> **Affects:** {owned}\n", encoding="utf-8")
+        (bugs / "BG0268-sample.md").write_text(
+            "# BG0268: sample\n\n> **Status:** Fixed\n> **Affects:** src/sprint.py\n",
+            encoding="utf-8")
+        (repo / "src").mkdir()
+        (repo / "src" / "sprint.py").write_text("x = 1\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=repo, check=True, env=clean)
+        subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q",
+                        "-m", "seed"], cwd=repo, check=True, env=clean)
+        # ... then MODIFY it, which is what the lane reads (an addition is a filing, not an
+        # attribution).
+        (repo / "src" / "sprint.py").write_text("x = 2\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=repo, check=True, env=clean)
+        return repo
+
+    def _hook(self, repo: Path, message: str):
+        msg = repo / "COMMIT_EDITMSG"
+        msg.write_text(message, encoding="utf-8")
+        return subprocess.run(["bash", str(HOOK), str(msg)], capture_output=True, text=True,
+                              env=self._env, cwd=str(repo))
+
+    def test_a_file_owned_by_an_unnamed_unit_is_reported(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._fixture(d)
+            r = self._hook(repo, self.SUBJECT + "\n")
+            out = r.stdout + r.stderr
+            self.assertEqual(r.returncode, 0, out)   # advisory: the commit is NOT blocked
+            self.assertIn("BG0268", out)
+            self.assertIn("Refs: BG0268", out)       # the remedy, ready to paste
+            self.assertIn("advisory", out)
+
+    def test_a_shared_or_unowned_file_does_not_refuse(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._fixture(d, second_owner=True)
+            r = self._hook(repo, self.SUBJECT + "\n")
+            out = r.stdout + r.stderr
+            self.assertEqual(r.returncode, 0, out)
+            self.assertNotIn("BG0268", out)          # two owners: no claim about whose work it is
+            self.assertEqual(out.strip(), "", out)   # ... and a clean run stays silent
+
+
 if __name__ == "__main__":
     unittest.main()

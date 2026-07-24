@@ -2882,5 +2882,99 @@ class DerivableRequestDriftTests(unittest.TestCase):
         payload = json.loads(buf.getvalue())
         self.assertNotIn("derivable_requests", payload["by_type"])
 
+class AlreadyDeliveredAdvisoryTests(unittest.TestCase):
+    """US0415: `built-not-closed` reads the verification report, so an UNGROOMED skeleton - which
+    carries no `Verify:` lines and therefore can never appear in that report - is invisible to the
+    one check built for "this is already done". That is the case that matters most: work minted
+    before it was groomed, satisfied by a later sprint, and never noticed. This lane reads titles
+    and declared footprints instead, so a skeleton is exactly as visible as a groomed unit."""
+
+    def _unit(self, root: Path, type_: str, cid: str, title: str, status: str,
+              affects: str = "src/prose.py", extra: str = "") -> None:
+        d = root / reconcile.sdlc_md.ARTIFACT_TYPES[type_][0]
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{cid}-x.md").write_text(
+            f"# {cid}: {title}\n\n> **Status:** {status}\n> **Affects:** {affects}\n{extra}\n"
+            "## Summary\n\ns\n", encoding="utf-8")
+
+    OPEN_TITLE = "prose reaches every creation script without a shell"
+    DONE_TITLE = ("prose reaches every creation script without a shell: a shared fields-file "
+                  "helper adopted across the prose writers")
+
+    def test_a_skeleton_a_delivered_unit_satisfies_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # The skeleton: no ACs at all, so no verifier could ever place it in the report the
+            # built-not-closed check reads. That is precisely why this lane exists.
+            self._unit(root, "epic", "EP0125", self.OPEN_TITLE, "Draft")
+            self._unit(root, "epic", "EP0146", self.DONE_TITLE, "Done")
+            notes = reconcile.already_delivered_advisory(root)
+            self.assertEqual([(n["id"], n["delivered"]) for n in notes], [("EP0125", "EP0146")])
+            self.assertEqual(notes[0]["shared"], ["src/prose.py"])
+            self.assertIn("EP0146", notes[0]["note"])
+
+    def test_a_shared_file_alone_is_not_reported(self) -> None:
+        # AC2, and the control that decides whether the lane is worth having: a shared `Affects`
+        # is ALREADY the planner's clustering signal, and recycling it as a duplicate claim would
+        # bury the real cases. Two units on one file doing different work is the ordinary case.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "epic", "EP0125", self.OPEN_TITLE, "Draft")
+            self._unit(root, "epic", "EP0146",
+                       "the velocity tail records a delivered sprint's measured points", "Done")
+            self.assertEqual(reconcile.already_delivered_advisory(root), [])
+
+    def test_matching_wording_on_different_files_is_not_reported(self) -> None:
+        # The other half of the same rule: wording alone is not enough either. Both signals, or
+        # nothing - otherwise the lane reports on vocabulary.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "epic", "EP0125", self.OPEN_TITLE, "Draft", affects="src/prose.py")
+            self._unit(root, "epic", "EP0146", self.DONE_TITLE, "Done", affects="src/other.py")
+            self.assertEqual(reconcile.already_delivered_advisory(root), [])
+
+    def test_an_open_unit_is_not_reported_against_another_open_one(self) -> None:
+        # The claim is "a DELIVERED sprint already satisfied this". Two open units overlapping is
+        # a planning question the backlog-triage duplicate lens already owns.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "epic", "EP0125", self.OPEN_TITLE, "Draft")
+            self._unit(root, "epic", "EP0146", self.DONE_TITLE, "Draft")
+            self.assertEqual(reconcile.already_delivered_advisory(root), [])
+
+    def test_a_unit_already_wired_to_the_delivered_one_is_not_reported(self) -> None:
+        # An epic and the request it was decomposed from share a title BY CONSTRUCTION. The
+        # cases worth reporting are the ones nobody has connected.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "epic", "EP0125", self.OPEN_TITLE, "Draft",
+                       extra="> **Parent:** CR0351\n")
+            self._unit(root, "cr", "CR0351", self.DONE_TITLE, "Complete",
+                       extra="> **Decomposed-into:** EP0125\n")
+            self.assertEqual(reconcile.already_delivered_advisory(root), [])
+
+    def test_the_lane_is_advisory_and_never_moves_the_exit_code(self) -> None:
+        # A judgement about meaning must never fail a gate. `detect` reports it and still exits 0.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "epic", "EP0125", self.OPEN_TITLE, "Draft")
+            self._unit(root, "epic", "EP0146", self.DONE_TITLE, "Done")
+            reconcile.apply_type("epic", root)     # make the index agree, so drift is genuinely 0
+            buf, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
+                rc = reconcile.main(["--root", str(root), "detect"])
+            self.assertEqual(rc, 0, buf.getvalue())
+            self.assertIn("advisory (already-delivered)", buf.getvalue())
+            self.assertIn("EP0146", buf.getvalue())
+
+    def test_an_unreadable_backlog_degrades_to_no_advisory(self) -> None:
+        # An advisory lane must never break detect. Nothing to report beats a traceback.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "epic", "EP0125", self.OPEN_TITLE, "Draft")
+            (root / "sdlc-studio" / "epics" / "EP0146-x.md").write_bytes(b"\xff\xfe not utf8")
+            self.assertEqual(reconcile.already_delivered_advisory(root), [])
+
+
 if __name__ == "__main__":
     unittest.main()

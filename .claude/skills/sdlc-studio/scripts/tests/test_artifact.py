@@ -1811,5 +1811,222 @@ class AffectsValidatedAtMintTests(unittest.TestCase):
             self.assertIn("resolves to nothing", err.getvalue())  # ... but never quietly
 
 
+class PipeInAcTests(unittest.TestCase):
+    """US0381: `--ac` pairs with `--verify` POSITIONALLY. A criterion written as
+    `criterion|pytest path::Node` used to be swallowed whole as prose - the command was rewritten
+    into a code span, the pipe stayed in the criterion text, and the artefact carried no Verify
+    line anyone could run. The guard names it; a correctly-paired pair is untouched."""
+
+    def _bug_repo(self) -> tuple[Path, tempfile.TemporaryDirectory]:
+        td = tempfile.TemporaryDirectory()
+        repo = Path(td.name)
+        _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+        return repo, td
+
+    def test_an_unescaped_pipe_without_a_paired_verify_is_warned_by_name(self) -> None:
+        repo, td = self._bug_repo()
+        with td:
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo)
+            r = artifact.new(repo, "story", "piped criterion", {
+                "epic": "EP0001", "points": 3, "affects": "src/thing.py",
+                "acs": ["the gate refuses|pytest tests/test_gate.py::GateTests::test_refuses"]})
+            notes = r.get("ac_warnings") or []
+            self.assertEqual(len(notes), 1, notes)
+            self.assertIn("--ac[1]", notes[0])          # named by position, not "somewhere"
+            self.assertIn("--verify", notes[0])         # ... and told what to do instead
+            # ... and the guard is advisory: the artefact still exists.
+            self.assertTrue(Path(r["path"]).exists())
+
+    def test_a_correctly_paired_ac_and_verify_is_byte_identical_and_silent(self) -> None:
+        # The negative control AND the no-regression proof: the same criterion with its verifier
+        # in the RIGHT place warns about nothing, and renders exactly as an unpiped pair does.
+        verifier = "pytest tests/test_gate.py::GateTests::test_refuses"
+        bodies = []
+        for criterion in ("the gate refuses|and then some", "the gate refuses and then some"):
+            with tempfile.TemporaryDirectory() as d:
+                repo = Path(d)
+                _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+                _epic(repo)
+                r = artifact.new(repo, "story", "paired", {
+                    "epic": "EP0001", "points": 3, "affects": "src/thing.py",
+                    "acs": [criterion], "verify": [verifier]})
+                self.assertEqual(r.get("ac_warnings"), None, r.get("ac_warnings"))
+                bodies.append(Path(r["path"]).read_text(encoding="utf-8"))
+        # The Verify line survives verbatim on the piped-criterion render too.
+        self.assertIn(f"**Verify:** {verifier}", bodies[0])
+
+    def test_an_escaped_pipe_is_left_alone(self) -> None:
+        # `\|` is how a pipe is written in markdown on purpose; flagging it would train the
+        # warning away. The negative case that stops the guard firing on everything.
+        repo, td = self._bug_repo()
+        with td:
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo)
+            r = artifact.new(repo, "story", "escaped pipe", {
+                "epic": "EP0001", "points": 3, "affects": "src/thing.py",
+                "acs": [r"the table cell reads a \| b"]})
+            self.assertEqual(r.get("ac_warnings"), None, r.get("ac_warnings"))
+
+    def test_the_cli_prints_the_warning_on_stderr(self) -> None:
+        import contextlib
+        import io
+        repo, td = self._bug_repo()
+        with td:
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = artifact.main([
+                    "new", "--type", "story", "--title", "piped", "--epic", "EP0001",
+                    "--points", "3", "--affects", "src/thing.py",
+                    "--ac", "the gate refuses|pytest tests/test_gate.py::T::test_x",
+                    "--root", str(repo)])
+            self.assertEqual(rc, 0)
+            self.assertIn("--ac[1]", err.getvalue())
+
+
+class DuplicateCheckTests(unittest.TestCase):
+    """US0413: `artifact new` - the creator this project tells agents to reach for - used to mint
+    with no duplicate check at all, so a defect already on the backlog was re-filed in silence."""
+
+    def _bug(self, repo: Path, cid: str, title: str, *, status: str = "Open",
+             affects: str = "src/thing.py") -> None:
+        d = repo / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{cid}-x.md").write_text(
+            f"# {cid}: {title}\n\n> **Status:** {status}\n> **Severity:** High\n"
+            f"> **Points:** 2\n> **Affects:** {affects}\n\n## Summary\n\ns\n\n"
+            "## Steps to Reproduce\n\ns\n\n## Proposed Fix\n\nf\n", encoding="utf-8")
+
+    def _repo(self) -> tuple[Path, tempfile.TemporaryDirectory]:
+        td = tempfile.TemporaryDirectory()
+        repo = Path(td.name)
+        _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+        return repo, td
+
+    # The pair that motivated the check, verbatim from this repo's own backlog.
+    EXISTING = ("The scrub-site sweep's worktrees exclusion matches any path component named "
+                "worktrees, so it skips the ENTIRE tree when run from inside a worktree")
+    REFILING = ("the site-sweep test is unrunnable inside a git worktree: an ancestor 'worktrees' "
+                "path component makes SKIP_DIRS match every file, so sites={} and the pre-commit "
+                "gate must be bypassed with --no-verify on parallel-worktree builds")
+
+    def test_a_near_duplicate_is_reported_with_the_existing_id(self) -> None:
+        repo, td = self._repo()
+        with td:
+            self._bug(repo, "BG0269", self.EXISTING)
+            r = artifact.new(repo, "bug", self.REFILING,
+                             {"severity": "High", "points": 2, "affects": "src/thing.py"})
+            dupes = r.get("duplicate_warnings") or []
+            self.assertEqual([c["id"] for c in dupes], ["BG0269"], dupes)
+            self.assertEqual(dupes[0]["shared"], ["src/thing.py"])
+            self.assertIn("BG0269", artifact.duplicate_note(dupes[0]))
+
+    def test_an_ordinary_new_title_is_not_flagged(self) -> None:
+        # The negative case, and the one that decides whether the check survives contact: a title
+        # sharing ordinary vocabulary with an existing artefact - same file, same words a backlog
+        # uses constantly - describes different work and must mint clean. A check that flagged
+        # this would be turned off within a week, and a test that only asserts "a duplicate is
+        # flagged" passes just as happily when the check flags everything.
+        repo, td = self._repo()
+        with td:
+            self._bug(repo, "BG0269", self.EXISTING)
+            r = artifact.new(repo, "bug",
+                             "the status dashboard prints stale velocity for a closed run",
+                             {"severity": "High", "points": 2, "affects": "src/thing.py"})
+            self.assertEqual(r.get("duplicate_warnings"), None, r.get("duplicate_warnings"))
+
+    def test_a_closed_artefact_still_counts_as_a_duplicate(self) -> None:
+        # Re-filing something already FIXED is the case that wastes the most time: the symptom is
+        # gone, so nothing on the open backlog mentions it. A check scoped to open artefacts -
+        # which is what the finding filer's own lens does - would miss exactly this.
+        repo, td = self._repo()
+        with td:
+            self._bug(repo, "BG0269", self.EXISTING, status="Fixed")
+            r = artifact.new(repo, "bug", self.REFILING,
+                             {"severity": "High", "points": 2, "affects": "src/thing.py"})
+            dupes = r.get("duplicate_warnings") or []
+            self.assertEqual([c["id"] for c in dupes], ["BG0269"], dupes)
+            self.assertEqual(dupes[0]["status"], "Fixed")   # ... and says so, so the reader knows
+
+    def test_a_different_type_is_not_compared(self) -> None:
+        # An epic and the CR it was decomposed from share a title BY DESIGN. Recycling that
+        # structural pairing as a duplicate claim would bury the real ones.
+        repo, td = self._repo()
+        with td:
+            _index(repo, "cr", "| ID | Title | Status | Priority | Type | Size | Date |")
+            (repo / "sdlc-studio" / "change-requests" / "CR0001-x.md").write_text(
+                f"# CR-0001: {self.EXISTING}\n\n> **Status:** Open\n> **Priority:** P1\n"
+                "> **Type:** Improvement\n> **Size:** M\n> **Affects:** src/thing.py\n\n"
+                "## Summary\n\ns\n\n## Impact\n\ni\n", encoding="utf-8")
+            r = artifact.new(repo, "bug", self.REFILING,
+                             {"severity": "High", "points": 2, "affects": "src/thing.py"})
+            self.assertEqual(r.get("duplicate_warnings"), None, r.get("duplicate_warnings"))
+
+
+class DuplicateStrictTests(unittest.TestCase):
+    """US0414: advisory by default - filing must never be blocked by a heuristic, or the heuristic
+    becomes a reason not to file - and refusable under `--strict`, where the refusal leaves NO file
+    and NO index row (a half-minted artefact is worse than no refusal)."""
+
+    def _repo(self) -> tuple[Path, tempfile.TemporaryDirectory]:
+        td = tempfile.TemporaryDirectory()
+        repo = Path(td.name)
+        _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+        DuplicateCheckTests._bug(DuplicateCheckTests(), repo, "BG0269",
+                                 DuplicateCheckTests.EXISTING)
+        return repo, td
+
+    FIELDS = {"severity": "High", "points": 2, "affects": "src/thing.py"}
+
+    def test_advisory_by_default_mints_and_reports(self) -> None:
+        repo, td = self._repo()
+        with td:
+            r = artifact.new(repo, "bug", DuplicateCheckTests.REFILING, dict(self.FIELDS))
+            self.assertTrue(Path(r["path"]).exists())        # minted anyway
+            self.assertEqual([c["id"] for c in r["duplicate_warnings"]], ["BG0269"])
+
+    def test_strict_refuses_and_writes_nothing(self) -> None:
+        repo, td = self._repo()
+        with td:
+            idx = repo / "sdlc-studio" / "bugs" / "_index.md"
+            before_index = idx.read_text(encoding="utf-8")
+            before_files = sorted(p.name for p in (repo / "sdlc-studio" / "bugs").glob("*.md"))
+            with self.assertRaises(artifact.DuplicateRefused) as cm:
+                artifact.new(repo, "bug", DuplicateCheckTests.REFILING, dict(self.FIELDS),
+                             strict=True)
+            self.assertIn("BG0269", str(cm.exception))
+            # NO file and NO index row - and no id burnt either: the next mint takes BG0270.
+            self.assertEqual(sorted(p.name for p in (repo / "sdlc-studio" / "bugs").glob("*.md")),
+                             before_files)
+            self.assertEqual(idx.read_text(encoding="utf-8"), before_index)
+            ok = artifact.new(repo, "bug", "an entirely unrelated dashboard regression",
+                              dict(self.FIELDS))
+            self.assertEqual(ok["id"], "BG0270")
+
+    def test_strict_does_not_refuse_a_clean_title(self) -> None:
+        # The negative control: --strict is not "refuse everything".
+        repo, td = self._repo()
+        with td:
+            r = artifact.new(repo, "bug", "the status dashboard prints stale velocity",
+                             dict(self.FIELDS), strict=True)
+            self.assertTrue(Path(r["path"]).exists())
+
+    def test_the_cli_strict_flag_exits_non_zero_and_names_the_id(self) -> None:
+        import contextlib
+        import io
+        repo, td = self._repo()
+        with td:
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = artifact.main(["new", "--type", "bug", "--title",
+                                    DuplicateCheckTests.REFILING, "--severity", "High",
+                                    "--points", "2", "--affects", "src/thing.py",
+                                    "--strict", "--root", str(repo)])
+            self.assertEqual(rc, 2)
+            self.assertIn("BG0269", err.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()
