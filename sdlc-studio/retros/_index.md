@@ -81,3 +81,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0069](RETRO0069-sprint-1-of-the-three-sprint-run-sprint.md) | Sprint 1 of the three-sprint run - sprint-engine upgrade (8 epics, 19 stories) | 2026-07-23 | -- | -- |
 | [RETRO-0070](RETRO0070-sprint-2-of-the-three-sprint-run-clear.md) | Sprint 2 of the three-sprint run - clear the delivery backlog (28 units, 89 points) | 2026-07-24 | -- | -- |
 | [RETRO-0071](RETRO0071-sprint-3a-design-rung-groom-the-backlog-to.md) | Sprint 3a design rung - groom the backlog to a provable red-now bar | 2026-07-24 | -- | -- |
+| [RETRO-0072](RETRO0072-sprint-3a-bis-groom-the-decisions-output-closing.md) | Sprint 3a-bis - groom the decisions' output, closing out 3a's partial verdict | 2026-07-24 | -- | -- |
