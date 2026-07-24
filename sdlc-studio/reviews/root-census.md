@@ -31,15 +31,30 @@ reverting all three moved it. Per-verb coverage is what the follow-up has to car
 
 | Classification | Scripts |
 | --- | --- |
-| anchored | 5 |
-| unanchored | 59 |
+| anchored | 10 |
+| unanchored | 54 |
 | non-root | 5 |
 | **total** | **69** |
 
-Of the 59 unanchored, 26 write and 33 only read; the writers are the fail-open half and
-should be repaired first. `next_id.py` was fixed ahead of the rest because it is the
-collision case: an allocator reading an empty tree hands back an id the real workspace
-already holds.
+The writers among the unanchored are the fail-open half and should be repaired first.
+`next_id.py` was fixed ahead of the rest because it is the collision case: an allocator
+reading an empty tree hands back an id the real workspace already holds.
+
+**Corrected after the closing review.** This block first recorded 5 anchored / 59
+unanchored. That was already false when written: a sibling change landed the resolver in
+five more scripts from a parallel branch that merged AFTER this record, and nothing
+re-measured. The guard could not catch it - it waives a row that RECORDS `unanchored`
+while MEASURING `anchored` as stale-not-false, and the summary rows here are never parsed,
+so the counts were unverified by construction.
+
+**A call site is not an anchor.** The measurement classifies a script by whether it calls
+the resolver, and the review found five scripts passing on a call made for the mutation
+guard while every verb still wrote through a bare `--root`. `artifact.py` - the creator
+this project mandates - minted into a stray `sdlc-studio/` beside the cwd when run from a
+subdirectory, with an id the real workspace already held, and exited 0. Those five now
+resolve once in `main()` and write the value back to `args`, so the classification is true
+of the writes and not only of the imports. The method still measures call sites, so it
+remains a lower bound: a future script can pass it the same way.
 
 ## Census
 

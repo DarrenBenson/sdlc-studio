@@ -1569,9 +1569,16 @@ def cmd_retitle(args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    # RESOLVE THE ROOT ONCE, AND WRITE IT BACK, so every verb below anchors on the same tree the
+    # guard just consulted. Resolving it only for the guard made the two disagree: the guard read
+    # the real project while each verb wrote through a bare `--root .`, so a run from a
+    # subdirectory minted into a stray `sdlc-studio/` beside the cwd - with an id the real
+    # workspace already held - and exited 0. A census that measured this script by its call sites
+    # then recorded it "anchored" while every write it makes was not.
+    args.root = str(sdlc_md.resolve_root(args))
     # Every verb here writes. A write made through a mutated tool is one nobody can trust
     # afterwards, so the applied-mutant window is a refusal, not a warning.
-    refusal = sdlc_md.inflight_refusal(sdlc_md.resolve_root(args))
+    refusal = sdlc_md.inflight_refusal(Path(args.root))
     if refusal:
         print(refusal, file=sys.stderr)
         return 2

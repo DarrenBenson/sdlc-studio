@@ -1058,6 +1058,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    # Resolve the root ONCE and write it back, so every verb below anchors on the same
+    # tree. Resolving it at only one call site let the two disagree - the resolved value
+    # guarded the run while each verb still wrote through a bare `--root .`, so a run
+    # from a subdirectory acted on a stray workspace beside the cwd and exited 0.
+    args.root = str(sdlc_md.resolve_root(args))
     # A status change recorded through a mutated tool is a record nobody can trust
     # afterwards, so the applied-mutant window is a refusal, not a warning.
     refusal = sdlc_md.inflight_refusal(sdlc_md.resolve_root(args))

@@ -600,18 +600,27 @@ def capacity_report(repo_root: Path | str, batch: list[dict], forecast: dict | N
     root = Path(repo_root)
     cap = capacity(root)
     cal = calibration(root)
-    tokens = int((forecast or {}).get("tokens") or 0)
+    # UNMEASURED IS NOT ZERO. A non-build rung prices no marginal term, so its forecast carries
+    # no spendable token figure. Reading that as 0 let the budget line print
+    # "tokens ~0/100,000 - within budget" four lines under a header saying the batch is NOT
+    # priced - the forecast asserting the label while its CONSUMER spent the value, which is the
+    # exact shape of the previous sprint's MAJOR. An unmeasured marginal is carried as None and
+    # the token half of the budget is reported unjudged rather than passed.
+    fc = forecast or {}
+    tokens_unmeasured = bool(fc.get("marginal_unmeasured")) and not fc.get("fixed_applied")
+    tokens = None if tokens_unmeasured else int(fc.get("tokens") or 0)
     units = len(batch)
     token_budget = cap["tokens"]
     unit_budget = appetite["units"]        # the number the run breaker will actually stop on
     minute_budget = appetite["minutes"]    # ditto
 
     over: list[str] = []
-    if token_budget and tokens > token_budget:
+    if token_budget and tokens is not None and tokens > token_budget:
         over.append("tokens")
     if unit_budget and units > unit_budget:
         over.append("units")
-    low, high = int(tokens * cal["low"]), int(tokens * cal["high"])
+    low, high = ((None, None) if tokens is None
+                 else (int(tokens * cal["low"]), int(tokens * cal["high"])))
     return {
         "budget": {"tokens": token_budget, "minutes": minute_budget, "units": unit_budget},
         "forecast": {"tokens": tokens, "low": low, "high": high},
@@ -1422,6 +1431,18 @@ def record_forecast(repo_root: Path | str, data: dict) -> dict:
     units = fc.get("units") or {}
     if not units:
         return {"recorded": [], "already": [], "path": None}
+    # A RUNG THAT PRICES NOTHING RECORDS NOTHING. On a non-build rung every unit's cost is None,
+    # and the recorder drops None fields - so a tokens-less row would be written, and
+    # `telemetry.forecasts` is FIRST-RECORD-WINS. That row would then win permanently over the
+    # real build forecast made later, and the retro would class the unit `unforecast` for ever,
+    # dropping it out of every estimate-versus-actual ratio. Recording nothing is honest: this
+    # rung made no prediction to judge.
+    if fc.get("marginal_unmeasured"):
+        return {"recorded": [], "already": [], "path": None,
+                "skipped": sorted(units),
+                "reason": f"the `{fc.get('rung')}` rung prices no marginal term, so it made no "
+                          f"per-unit prediction to record; a tokens-less row would win "
+                          f"first-record-wins over the real build forecast made later"}
     constants = fc.get("constants") or forecast_constants(repo_root)
     when = data.get("generated_at") or sdlc_md.now_iso8601()
     recs = [{"id": uid, "tokens": u["tokens"], "points": u["points"],
@@ -3389,21 +3410,36 @@ def refresh_review_anchor(repo_root: Path | str, run_id: str, outcome: str, unit
 
 
 def _signoff_owed(repo_root: Path | str, state: dict) -> bool:
-    """True while any unit in the batch has not reached a terminal status. Done is what the
-    sign-off buys, so a batch fully terminal is a batch whose sign-off landed."""
-    root = Path(repo_root)
-    for entry in (state or {}).get("batch") or []:
+    """True while any unit in the batch lacks a RECORDED reviewer-of-record sign-off.
+
+    DERIVED FROM THE SIGN-OFF LEDGER, never proxied by status. An earlier version asked whether
+    every unit was terminal and called that "signed off" - but the terminal set includes
+    `Won't Implement`, `Superseded`, `Won't Fix` and `Closed`, so a batch that was DROPPED read
+    as one that was approved, and the anchor then stamped "sign-off RECORDED" over work nobody
+    signed. The anchor is the file a fresh context is told to read first, so a false claim there
+    is the most expensive kind. `critic.signoff_for` is the authority and is used for exactly
+    this question elsewhere in the close.
+
+    Fail-safe towards OWED: an unreadable ledger reports the sign-off as outstanding, because
+    claiming one that cannot be evidenced is the worse error.
+    """
+    batch = (state or {}).get("batch") or []
+    if not batch:
+        return False          # nothing in the batch, so nothing is owed
+    try:
+        import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    except Exception as exc:  # noqa: BLE001
+        sdlc_md.debug("sprint._signoff_owed", exc)
+        return True
+    for entry in batch:
         uid = entry.get("id") if isinstance(entry, dict) else entry
         if not uid:
             continue
-        hit = sdlc_md.find_by_id(root, str(uid))
-        if not hit:
-            return True
-        path, type_ = hit
-        status = sdlc_md.canonical_status(
-            sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status"),
-            sdlc_md.status_vocab(type_, root))
-        if not sdlc_md.is_terminal_status(type_, status or ""):
+        try:
+            if not critic.signoff_for(repo_root, str(uid)):
+                return True
+        except Exception as exc:  # noqa: BLE001 - an unreadable ledger is not a sign-off
+            sdlc_md.debug("sprint._signoff_owed", exc)
             return True
     return False
 
@@ -4328,6 +4364,23 @@ def cmd_report(args: argparse.Namespace) -> int:
     return sprint_report.main(argv)
 
 
+def _abandon_open_run(root, state) -> None:
+    """Remove a run opened moments ago whose plan then failed to persist.
+
+    Not a close: nothing happened, so there is no outcome to record and no retro to owe. The
+    run object is deleted outright, leaving the workspace exactly as the plan found it. Silent
+    on failure - the caller is already reporting the real error, and a cleanup error must not
+    replace it with a less useful one."""
+    if not state:
+        return
+    try:
+        p = run_state.path(root)
+        if p.is_file():
+            p.unlink()
+    except OSError as exc:  # noqa: BLE001 - never mask the failure that brought us here
+        sdlc_md.debug("sprint._abandon_open_run", exc)
+
+
 def cmd_plan(args: argparse.Namespace) -> int:
     """Print the ordered batch the operator approves before a run."""
     # The standing policy is validated FIRST, before any selection, write or run-state
@@ -4506,8 +4559,21 @@ def cmd_plan(args: argparse.Namespace) -> int:
               f"will be UNFORECAST at retro time and can say nothing about the estimator - "
               f"the retro will NOT re-derive an estimate for it.", file=sys.stderr)
     if write:  # persist the sprint-plan artifact for review, now the run exists
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        # EVERY WRITE AFTER `open_run` IS GUARDED, and a failure TEARS THE RUN DOWN.
+        # Opening the run first is what lets a disjoint batch be refused before anything is
+        # persisted - but it also means a fault here would leave a LIVE run the old ordering
+        # could not create: no goal, no appetite, and the next plan of any other batch refused
+        # as disjoint against it. Fixing one ordering must not invent the opposite one, so the
+        # run is removed and the original failure re-raised rather than half-opened.
+        try:
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        except OSError as exc:
+            _abandon_open_run(args.root, state)
+            print(f"plan refused: the sprint plan could not be written ({exc}). The run that "
+                  f"had just been opened was removed, so nothing is left half-opened and the "
+                  f"next plan is not refused against it.", file=sys.stderr)
+            return 2
         print(f"wrote sprint plan -> {out}")
         # Record the RESOLVED appetite and the token forecast - additive fields on the
         # run-state object, merged, never touching its schema. The appetite was resolved once,

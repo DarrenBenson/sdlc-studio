@@ -1218,6 +1218,11 @@ def main(argv: list[str] | None = None) -> int:
     """Parse arguments and dispatch to the chosen subcommand."""
     parser = build_parser()
     args = parser.parse_args(argv)
+    # Resolve the root ONCE and write it back, so every verb below anchors on the same
+    # tree. Resolving it at only one call site let the two disagree - the resolved value
+    # guarded or advised on the real project while other verbs still read a bare
+    # `--root .`, so one invocation could report on two different trees.
+    args.root = str(sdlc_md.resolve_root(args))
     return args.func(args)
 
 
