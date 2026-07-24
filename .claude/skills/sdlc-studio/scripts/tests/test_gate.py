@@ -3280,5 +3280,127 @@ class HandEditedChangelogTests(unittest.TestCase):
             self.assertEqual(gate._changelog_hand_edit_faults(str(root)), [])
 
 
+class DiffScopedLaneTests(unittest.TestCase):
+    """US0354 AC3: the pre-commit gate scopes the `conformance` and `validate` lanes to the
+    diff; `--release` keeps them whole-workspace. One code path, one flag - the two modes are
+    the same function called with `changed` set differently, not a second set of rules.
+    """
+
+    def _repo(self, t) -> Path:
+        """One conformant, valid story that the commit TOUCHES, and one non-conformant,
+        invalid story committed and left alone - the pre-existing debt."""
+        root = Path(t)
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        (sd / "US0001-good.md").write_text(
+            "# US0001: good\n\n> **Status:** Ready\n"
+            "> **Epic:** [EP0001: x](../epics/EP0001-x.md)\n\n"
+            "## Acceptance Criteria\n\n### AC1: works\n- **Given** a thing\n"
+            "- **Verify:** shell true\n", encoding="utf-8")
+        (sd / "US0002-bad.md").write_text(
+            "# US0002: bad\n\n> **Status:** Bananas\n"
+            "> **Epic:** [EP0001: x](../epics/EP0001-x.md)\n\n"
+            "## Acceptance Criteria\n\n### AC1: works\n- **Given** a thing\n",
+            encoding="utf-8")
+        gitutil.git(["init", "-q"], cwd=root)
+        gitutil.git(["add", "-A"], cwd=root)
+        gitutil.git(["commit", "-qm", "baseline"], cwd=root)
+        (sd / "US0001-good.md").write_text(
+            (sd / "US0001-good.md").read_text(encoding="utf-8") + "\n<!-- edited -->\n",
+            encoding="utf-8")
+        return root
+
+    def test_precommit_scopes_the_lanes_and_release_keeps_them_whole_workspace(self) -> None:
+        lanes = {"conformance": gate.DEFAULT_CHECKS["conformance"],
+                 "validate": gate.DEFAULT_CHECKS["validate"]}
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+
+            plain = gate.run_gate(str(root), checks=dict(lanes))
+            for name in ("conformance", "validate"):
+                lane = _lane(plain, name)
+                self.assertEqual(lane["status"], "pass", lane["detail"])
+                self.assertEqual(lane["count"], 0)
+                # the debt is NAMED in the detail as advisory - never silently dropped
+                self.assertIn("advisory", lane["detail"].lower())
+                self.assertIn("US0002", lane["detail"])
+            self.assertTrue(plain["ok"])
+
+            rel = gate.run_gate(str(root), checks=dict(lanes), release=True)
+            for name in ("conformance", "validate"):
+                lane = _lane(rel, name)
+                self.assertEqual(lane["status"], "fail", lane["detail"])
+                self.assertEqual(lane["count"], 1)
+                self.assertNotIn("advisory", lane["detail"].lower())
+            self.assertFalse(rel["ok"])
+
+    def test_the_scoped_lanes_are_the_same_function_as_the_whole_workspace_ones(self) -> None:
+        """No second set of rules: the pre-commit binding is `changed=True` over the very
+        function `--release` calls with `changed=False`."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            self.assertEqual(gate._conformance(str(root), changed=True),
+                             gate.DEFAULT_CHECKS["conformance"](str(root)))
+            self.assertEqual(gate._validate(str(root), changed=True),
+                             gate.DEFAULT_CHECKS["validate"](str(root)))
+            self.assertEqual(gate._conformance(str(root))["count"], 1)   # whole-workspace default
+            self.assertEqual(gate._validate(str(root))["count"], 1)
+
+    def test_a_lane_a_caller_injected_is_not_swapped_by_release(self) -> None:
+        """The release swap targets the SHIPPED scoped lane by identity. A caller's own
+        `conformance` entry keeps running - the swap must not reach into an injected registry."""
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            r = gate.run_gate(str(root), checks={"conformance": _fake(0)}, release=True)
+            self.assertEqual(_lane(r, "conformance")["detail"], "0")
+
+    def test_changed_paths_returns_none_where_git_cannot_answer(self) -> None:
+        """The degradation contract the whole design rests on: unknown, never empty."""
+        with tempfile.TemporaryDirectory() as t:
+            self.assertIsNone(gate.changed_paths(t))          # not a repo at all
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            sub = root / "sdlc-studio"
+            self.assertIsNone(gate.changed_paths(str(sub)))   # not the repository top level
+            self.assertIn("sdlc-studio/stories/US0001-good.md", gate.changed_paths(str(root)))
+        # ... and when the probe RAISES rather than returning non-zero. A root that is not a
+        # directory makes the subprocess itself fail, which is the branch a caught exception
+        # covers: it must reach the same "unknown" answer, not an empty diff.
+        with tempfile.TemporaryDirectory() as t:
+            missing = Path(t) / "gone" / "deeper"
+            self.assertIsNone(gate.changed_paths(str(missing)))
+
+    def test_a_repo_wide_failure_still_blocks_a_scoped_run(self) -> None:
+        """The rule that stops the scope becoming a hiding place: with the per-unit ledger
+        narrowed to an empty diff, a repo-GLOBAL stage failure is still counted and still
+        fails the lane."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            # Done, fully conformant per-unit, and NO stories/_index.md -> the repo-global
+            # `reconciled` stage fails and nothing else does.
+            (sd / "US0001-done.md").write_text(
+                "# US0001: done\n\n> **Status:** Done\n"
+                "> **Epic:** [EP0001: x](../epics/EP0001-x.md)\n\n"
+                "## Acceptance Criteria\n\n### AC1: works\n- **Given** a thing\n"
+                "- **Verify:** shell true\n- **Verified:** manual (2026-01-01)\n",
+                encoding="utf-8")
+            gitutil.git(["init", "-q"], cwd=root)
+            gitutil.git(["add", "-A"], cwd=root)
+            gitutil.git(["commit", "-qm", "baseline"], cwd=root)
+
+            lane = gate.DEFAULT_CHECKS["conformance"](str(root))
+            self.assertEqual(lane["count"], 1, lane["detail"])
+            self.assertTrue(lane["blocking"])
+            self.assertIn("repo-wide", lane["detail"])
+            # and it is the GLOBAL that carries it - no unit was judged at all
+            import conformance
+            res = conformance.detect_conformance(root, changed=True)
+            self.assertEqual(res["summary"]["nonconformant"], 0)
+            self.assertEqual(res["summary"]["judged"], 0)
+            self.assertEqual(res["summary"]["global_failures"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

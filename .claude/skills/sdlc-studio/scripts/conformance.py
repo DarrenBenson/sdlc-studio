@@ -51,6 +51,15 @@ _PRE_GROOMED_STORY_STATUS = ("Proposed", "Draft")
 DONE_STAGES = ("verified", "reconciled", "critiqued", "documented", "promoted")
 STAGES = ALWAYS_STAGES + DONE_STAGES
 
+#: The stages a diff-scoped run does NOT judge for a unit outside the diff. Both need an
+#: expensive per-unit probe - `verified` resolves every recorded stamp against the test tree,
+#: `critiqued` walks the critic and sign-off ledgers - and together they are the bulk of a
+#: whole-workspace run's cost. A scoped-out unit records them as None ("not judged"), never as a
+#: pass: a stage nobody examined must not read as one that cleared. Every other stage is derived
+#: from the file's own text or from repo-wide facts already computed once, so it costs nothing
+#: to keep judging and stays reported for every unit.
+UNJUDGED_WHEN_SCOPED = ("verified", "critiqued")
+
 
 def _real(value: str | None) -> bool:
     """True when a line's fillable value has substance beyond a {{placeholder}}:
@@ -201,14 +210,47 @@ def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
     return verified, reconciled, critiqued, doc_ok
 
 
-def detect_conformance(repo_root: Path | str) -> dict:
+def changed_story_ids(root: Path) -> set[str] | None:
+    """Normalised ids of the story files this working tree has changed against HEAD.
+
+    None when the git probe cannot answer - UNKNOWN, never "none changed". The caller judges
+    the whole workspace on None, because a scope built from an unanswered probe would judge
+    nothing and print a clean count over an unexamined tree.
+    """
+    import gate  # the family's one git changed-file idiom; a second copy would drift from it
+    names = gate.changed_paths(str(root))
+    if names is None:
+        return None
+    rel, _prefix = sdlc_md.ARTIFACT_TYPES["story"]
+    base = (Path(root) / rel).resolve()
+    out: set[str] = set()
+    for name in names:
+        path = (Path(root) / name).resolve()
+        if path.parent != base or path.name == "_index.md":
+            continue
+        rid = sdlc_md.extract_record_id(path.stem)
+        if rid:
+            out.add(sdlc_md.norm_id(rid))
+    return out
+
+
+def detect_conformance(repo_root: Path | str, changed: bool = False) -> dict:
     """Per-story lifecycle conformance.
 
     Returns {"units": [{id, type, status, stages, conformant, missing}],
     "summary": {total, conformant, nonconformant}}. A story is conformant when
     every required stage for its status is present.
+
+    `changed` narrows the PER-UNIT ledger to the stories this working tree touched: a unit
+    outside the diff is still reported, with everything cheap about it still judged, but it is
+    not charged to the `nonconformant` count that decides the exit code. The narrowing stops
+    there. Repo-global stages are computed over the whole tree and still counted under
+    `global_failures`, so scoping cannot become a way to hide one, and a git probe that cannot
+    answer falls back to judging everything rather than to an empty scope.
     """
     root = Path(repo_root)
+    changed_ids = changed_story_ids(root) if changed else None
+    degraded = bool(changed) and changed_ids is None
     vocab = sdlc_md.status_vocab("story", root)
     # Adoption cutoff: a project that turns the gate on partway can set
     # `conformance.adopt_after: US0360` (or the bare `360`) in .config.yaml so units up
@@ -263,13 +305,22 @@ def detect_conformance(repo_root: Path | str) -> dict:
         status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab) or "Unknown"
         decomposed = sdlc_md.extract_field(text, "Epic") is not None
         has_ac, has_verify, verified_states = _ac_signals(text)
+        scoped_out = changed_ids is not None and sdlc_md.norm_id(rid) not in changed_ids
         verified = reconciled = critiqued = documented = promoted = None
-        if status == "Done":
+        if status == "Done" and scoped_out:
+            # Outside the diff: judge only what is already computed or free to derive. The
+            # repo-global stages MUST still be judged here - they are what a global failure is
+            # attributed from, and skipping them would make a scoped run drop the very
+            # repo-wide finding that has to survive the narrowing.
+            reconciled = (not _no_index) and sdlc_md.norm_id(rid) not in drift_ids
+            documented = _doc_ok
+        elif status == "Done":
             dead = len(verify_ac.unresolvable_stamps(path, root)) if verify_ac else 0
             verified, reconciled, critiqued, documented = _done_stages(
                 root, rid, verified_states, _no_index, drift_ids, _doc_ok,
                 two_role_cutoff=two_role_cutoff, critic_required=critic_required,
                 dead_stamps=dead)
+        if status == "Done":
             # The backstop to the transition gate. That gate guards the tool path; a
             # hand-edited `Status: Done` walks round it, and the story is then Done without
             # the sections the tier deferred. Same doubling the AC-verify gate already has
@@ -309,6 +360,11 @@ def detect_conformance(repo_root: Path | str) -> dict:
                                 and rid_num_ > two_role_cutoff)
             if not critic_required and not two_role_applies:
                 required.remove("critiqued")
+        if scoped_out:
+            # A stage this run did not examine cannot be required of the unit: requiring it
+            # would report an untouched unit as missing a stage nobody looked at, which is the
+            # mirror image of the failure the scope exists to avoid.
+            required = [s for s in required if s not in UNJUDGED_WHEN_SCOPED]
         rid_num = sdlc_md.id_number(rid)
         exempt = cutoff_num is not None and rid_num is not None and rid_num <= cutoff_num
         all_missing = [] if exempt else [s for s in required if not stages[s]]
@@ -320,13 +376,16 @@ def detect_conformance(repo_root: Path | str) -> dict:
         missing_global = [] if exempt else [s for s in all_missing if s in global_failed]
         missing = [s for s in all_missing if s not in global_failed]
         conformant = not missing
-        ok += int(conformant and not exempt)
+        ok += int(conformant and not exempt and not scoped_out)
         units.append({
             "id": rid,
             "type": "story",
             "status": status,
             "stages": stages,
             "exempt": exempt,
+            # Outside this run's diff: reported in full, but advisory - its faults are not
+            # charged to the count that decides the exit code. False on a whole-workspace run.
+            "scoped_out": scoped_out,
             "conformant": conformant,
             # Machine-visible grooming debt: a refined story whose ACs are still the placeholder
             # marker, so an operator can count how much a refined backlog owes before planning it.
@@ -344,7 +403,11 @@ def detect_conformance(repo_root: Path | str) -> dict:
                 if any(g["stage"] in u["missing_global"] for u in units)]
     total = len(units)
     exempt_n = sum(1 for u in units if u["exempt"])
-    nonconformant = sum(1 for u in units if not u["conformant"])
+    # Only a JUDGED unit's fault decides the exit code. A unit outside the diff is counted
+    # separately as `advisory` so the two numbers can never be confused for one another.
+    nonconformant = sum(1 for u in units if not u["conformant"] and not u["scoped_out"])
+    advisory_n = sum(1 for u in units if not u["conformant"] and u["scoped_out"])
+    judged_n = sum(1 for u in units if not u["scoped_out"])
     ungroomed_n = sum(1 for u in units if u["ungroomed"])
     return {
         "generated_at": sdlc_md.now_iso8601(),
@@ -352,8 +415,24 @@ def detect_conformance(repo_root: Path | str) -> dict:
         # Repo-wide failures, listed once. The gate counts these alongside per-unit
         # non-conformance, so attributing them once REPORTS better without enforcing less.
         "globals": globals_,
+        # What this run narrowed itself to, and what it therefore did not judge. Always
+        # present, so a reader never has to infer the scope from the numbers.
+        "scope": {
+            "changed": bool(changed),
+            "degraded": degraded,
+            "scoped_out_ids": [u["id"] for u in units if u["scoped_out"]],
+            # The debt this run carried without judging - the scoped-out units that actually
+            # have a fault, not every unit outside the diff. Same word, same meaning, as
+            # `summary.advisory`: a report that spent one term on two counts would mislead.
+            "advisory_ids": [u["id"] for u in units
+                             if u["scoped_out"] and not u["conformant"]],
+            "unjudged_stages": list(UNJUDGED_WHEN_SCOPED) if changed_ids is not None else [],
+        },
         "summary": {"total": total, "conformant": ok,
                     "nonconformant": nonconformant, "exempt": exempt_n,
+                    # The units this run actually judged, and the untouched ones it reported
+                    # without charging - a scoped PASS is readable only alongside these two.
+                    "judged": judged_n, "advisory": advisory_n,
                     # The refined backlog's outstanding grooming, countable rather than met at
                     # plan time: how many stories still carry the ungroomed-AC placeholder.
                     "ungroomed": ungroomed_n,
@@ -376,13 +455,44 @@ def _bulk_missed(result: dict) -> list[str]:
     discipline / template shape (forward-only debt), not per-unit regressions. Mirrors the
     note in cmd_check so the gate and the CLI agree."""
     s = result["summary"]
-    judged = s["total"] - s.get("exempt", 0)
+    # Over the units this run JUDGED, so a diff-scoped run's shape is read against its own
+    # denominator rather than against a whole workspace it did not examine.
+    judged = s.get("judged", s["total"]) - s.get("exempt", 0)
     tally: dict[str, int] = {}
     for u in result["units"]:
-        if not u["conformant"]:
+        if not u["conformant"] and not u.get("scoped_out"):
             for m in u["missing"]:
                 tally[m] = tally.get(m, 0) + 1
     return sorted(k for k, c in tally.items() if judged >= 3 and c >= 0.8 * judged)
+
+
+def _elide(ids: list[str], limit: int = 3) -> str:
+    """First `limit` ids then a count of the rest: a lane line stays readable without hiding
+    how many it did not print."""
+    return ", ".join(ids[:limit]) + (f", +{len(ids) - limit} more" if len(ids) > limit else "")
+
+
+def scope_detail(result: dict) -> str:
+    """What a diff-scoped run narrowed itself to, in one clause - empty on a whole-workspace
+    run. A scoped verdict is only readable next to what it did NOT judge, so this names the
+    denominator, the advisory units by id, the stages left unexamined, and the command that
+    judges everything. A degraded probe says so and judges the whole workspace anyway."""
+    scope = result.get("scope") or {}
+    if not scope.get("changed"):
+        return ""
+    s = result["summary"]
+    if scope.get("degraded"):
+        return ("scope: the git changed-file probe could not answer, so the WHOLE workspace "
+                f"was judged ({s['judged']} unit(s))")
+    out = f"scope: {s['judged']} of {s['total']} unit(s) judged (this diff)"
+    untouched = scope.get("scoped_out_ids") or []
+    ids = scope.get("advisory_ids") or []
+    if untouched:
+        out += f"; {len(untouched)} outside it not judged here"
+        if ids:
+            out += f", {len(ids)} of them carrying an advisory fault ({_elide(ids)})"
+        out += f"; {', '.join(scope.get('unjudged_stages') or [])} not judged for those"
+    return out + "; `--release` judges the whole workspace"
 
 
 def remedy_detail(result: dict) -> str:
@@ -396,8 +506,12 @@ def remedy_detail(result: dict) -> str:
     # misleading thing, which buried every genuine per-unit finding.
     gl = "; ".join(f"{g['stage']} (repo-wide): {g['reason']} - {g['remedy']}"
                    for g in result.get("globals", []))
+    # The scope rides on the PASSING line too: a green count over a narrowed run must say how
+    # narrow it was, or the narrowing becomes a silent way to report less than was checked.
+    sc = scope_detail(result)
+    tail = (f". Repo-wide: {gl}" if gl else "") + (f". {sc}" if sc else "")
     if not n:
-        return f"{n} non-conformant unit(s)" + (f". Repo-wide: {gl}" if gl else "")
+        return f"{n} non-conformant unit(s)" + tail
     bulk = _bulk_missed(result)
     if bulk:
         nature = (f"most miss {', '.join(bulk)} - likely unadopted-discipline debt "
@@ -405,12 +519,12 @@ def remedy_detail(result: dict) -> str:
     else:
         nature = "scattered per-unit gaps - check whether this change regressed them"
     base = f"{n} non-conformant unit(s): {nature}. Remedies: {REMEDY_CUTOFF}; or {REMEDY_BACKFILL}"
-    return base + (f". Repo-wide: {gl}" if gl else "")
+    return base + tail
 
 
 def cmd_check(args: argparse.Namespace) -> int:
     """Run the conformance check; exit non-zero if any unit is non-conformant."""
-    result = detect_conformance(args.root)
+    result = detect_conformance(sdlc_md.resolve_root(args), changed=getattr(args, "changed", False))
     if args.format == "json":
         print(json.dumps(result, indent=2))
     else:
@@ -418,6 +532,10 @@ def cmd_check(args: argparse.Namespace) -> int:
         extra = f", {s['exempt']} exempt (pre-adoption)" if s.get("exempt") else ""
         print(f"conformance: {s['conformant']}/{s['total']} conformant, {s['nonconformant']} not{extra}"
               " (story-scoped: a bug/CR tranche relies on the critic + gate)")
+        # What the run narrowed itself to, said before any verdict is read - never inferred.
+        sc = scope_detail(result)
+        if sc:
+            print(f"  {sc}")
         if s.get("ungroomed"):
             print(f"  {s['ungroomed']} story(ies) still carry the refine ungroomed-AC placeholder "
                   "- groom them (author real ACs and a Verify line) before planning to Done")
@@ -436,7 +554,11 @@ def cmd_check(args: argparse.Namespace) -> int:
         tally: dict[str, int] = {}
         for u in result["units"]:
             if not u["conformant"]:
-                print(f"  {u['id']} ({u['status']}): missing {', '.join(u['missing'])}")
+                # An untouched unit is still NAMED, marked as what it is: reported, not judged.
+                mark = "ADVISORY (outside this diff) " if u.get("scoped_out") else ""
+                print(f"  {mark}{u['id']} ({u['status']}): missing {', '.join(u['missing'])}")
+                if u.get("scoped_out"):
+                    continue  # advisory faults do not steer this run's guidance
                 for m in u["missing"]:
                     tally[m] = tally.get(m, 0) + 1
         hints = sdlc_md.remediation_lines("conformance", tally)
@@ -461,6 +583,11 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("check", help="Check each story passed the required lifecycle stages.")
     c.add_argument("--root", default=".", help="Repo root (default: .)")
+    c.add_argument("--changed", action="store_true",
+                   help="Judge only the stories this working tree touched (staged, unstaged or "
+                        "untracked). Untouched units are still reported, as advisory; the "
+                        "repo-wide stages still run and still fail. With no git answer the "
+                        "whole workspace is judged")
     c.add_argument("--format", choices=("text", "json"), default="text")
     c.set_defaults(func=cmd_check)
     sdlc_md.add_global_root(parser)

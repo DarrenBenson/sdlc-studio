@@ -372,9 +372,34 @@ def _ac_exempt(rec: str | None, repo_root: Path | None) -> bool:
     return cutoff_num is not None and rid_num is not None and rid_num <= cutoff_num
 
 
+def changed_artifact_paths(repo_root: Path, types=None) -> set[Path] | None:
+    """Resolved paths of the ARTEFACT files this working tree has changed against HEAD.
+
+    None when the git probe cannot answer - UNKNOWN, never "nothing changed". A caller reading
+    None as an empty diff would judge nothing and print a clean exit code over an unexamined
+    tree, so every caller degrades to the whole workspace instead.
+    """
+    import gate  # noqa: PLC0415 - the family's one git changed-file idiom, read not re-derived
+    names = gate.changed_paths(str(repo_root))
+    if names is None:
+        return None
+    bases = set()
+    for type_ in (types or list(sdlc_md.ARTIFACT_TYPES)):
+        rel, _prefix = sdlc_md.ARTIFACT_TYPES[type_]
+        bases.add((Path(repo_root) / rel).resolve())
+    out: set[Path] = set()
+    for name in names:
+        path = (Path(repo_root) / name).resolve()
+        if path.suffix != ".md" or path.name == "_index.md":
+            continue
+        if path.parent in bases:
+            out.add(path)
+    return out
+
+
 def collect_targets(args: argparse.Namespace) -> list[tuple[Path, str]]:
     """Resolve the (file, type) pairs to validate from the CLI args."""
-    repo_root = Path(args.root).resolve()
+    repo_root = sdlc_md.resolve_root(args)
     targets: list[tuple[Path, str]] = []
     if args.file:
         path = Path(args.file)
@@ -445,31 +470,66 @@ def check_dor_dod(root: Path) -> list[dict]:
 
 
 def cmd_check(args: argparse.Namespace) -> int:
-    """Validate the selected artifacts and report violations."""
+    """Validate the selected artifacts and report violations.
+
+    `--changed` narrows the PER-FILE lane to the artefacts in this working tree's diff. It
+    narrows nothing else: `excluded_id_files` and `check_dor_dod` still sweep the whole tree,
+    and an untouched file's error is still printed - marked advisory, and left out of the count
+    that decides the exit code. A scope that swallowed the finding would be worse than the slow
+    check it saves, so nothing here removes a line from the report.
+    """
     targets = collect_targets(args)
-    repo_root = Path(args.root).resolve()
+    repo_root = sdlc_md.resolve_root(args)
+    scope = None
+    if getattr(args, "changed", False) and not args.file:
+        scope = changed_artifact_paths(repo_root, [args.type] if args.type else None)
     violations: list[dict] = []
     for path, type_ in targets:
-        violations.extend(validate_file(path, type_, repo_root))
+        found = validate_file(path, type_, repo_root)
+        if scope is not None and path.resolve() not in scope:
+            for v in found:
+                v["scoped_out"] = True  # the severity is the fact; only the counting moves
+        violations.extend(found)
     if not args.file:  # whole-tree (or per-type) runs also sweep the excluded
         violations.extend(excluded_id_files(
             repo_root, [args.type] if args.type else None))
         violations.extend(check_dor_dod(repo_root))
 
-    errors = sum(1 for v in violations if v["severity"] == SEVERITY_ERROR)
-    warnings = sum(1 for v in violations if v["severity"] == SEVERITY_WARNING)
+    def _judged(v: dict) -> bool:
+        return not v.get("scoped_out")
+
+    errors = sum(1 for v in violations if v["severity"] == SEVERITY_ERROR and _judged(v))
+    advisory = sum(1 for v in violations if v["severity"] == SEVERITY_ERROR and not _judged(v))
+    warnings = sum(1 for v in violations if v["severity"] == SEVERITY_WARNING and _judged(v))
+    judged_n = sum(1 for p, _ in targets if scope is None or p.resolve() in scope)
+    scope_line = ""
+    if getattr(args, "changed", False) and not args.file:
+        scope_line = ("scope: the git changed-file probe could not answer, so the WHOLE "
+                      "workspace was judged" if scope is None else
+                      f"scope: {judged_n} of {len(targets)} artefact(s) judged (this diff); "
+                      f"{advisory} advisory error(s) outside it, still printed; the repo-wide "
+                      f"census and DoR/DoD sweeps ran over everything")
 
     if args.format == "json":
         print(json.dumps({
             "generated_at": sdlc_md.now_iso8601(),
             "checked": len(targets),
             "violations": violations,
-            "summary": {"errors": errors, "warnings": warnings},
+            "scope": {"changed": bool(getattr(args, "changed", False)) and not args.file,
+                      "degraded": bool(getattr(args, "changed", False))
+                      and not args.file and scope is None,
+                      "judged": judged_n},
+            "summary": {"errors": errors, "warnings": warnings,
+                        "advisory_errors": advisory},
         }, indent=2))
     else:
         for v in violations:
-            print(f"{v['severity'].upper():7} {v['file']}: [{v['rule']}] {v['message']}")
-        print(f"checked={len(targets)} errors={errors} warnings={warnings}")
+            mark = "ADVISORY" if not _judged(v) else v["severity"].upper()
+            print(f"{mark:8} {v['file']}: [{v['rule']}] {v['message']}")
+        if scope_line:
+            print(scope_line)
+        print(f"checked={len(targets)} errors={errors} warnings={warnings}"
+              + (f" advisory_errors={advisory}" if scope is not None else ""))
     return 1 if errors else 0
 
 
@@ -1118,6 +1178,11 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Limit to one artifact type (default: all)")
     c.add_argument("--file", help="Validate a single file (type inferred if --type omitted)")
     c.add_argument("--root", default=".", help="Repo root (default: .)")
+    c.add_argument("--changed", action="store_true",
+                   help="Judge only the artefacts this working tree touched (staged, unstaged "
+                        "or untracked). Untouched errors are still printed, as advisory; the "
+                        "whole-tree census and DoR/DoD sweeps still run and still fail. With no "
+                        "git answer the whole workspace is judged")
     c.add_argument("--format", choices=("text", "json"), default="text")
     c.set_defaults(func=cmd_check)
 

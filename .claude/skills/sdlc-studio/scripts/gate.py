@@ -23,12 +23,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 
 
-def _conformance(root: str) -> dict:
+def _conformance(root: str, changed: bool = False) -> dict:
     import conformance
-    result = conformance.detect_conformance(root)
+    result = conformance.detect_conformance(root, changed=changed)
     # A repo-global failure (one uncatalogued command, a missing index) is attributed ONCE
     # rather than charged to every judged unit - but it must still block, or improving the
-    # report would quietly weaken the gate. Count it as its own finding.
+    # report would quietly weaken the gate. Count it as its own finding. `changed` narrows the
+    # per-unit half ONLY: this sum keeps the repo-wide half at full strength, so scoping cannot
+    # become a way to pass a gate over a repo-wide failure.
     n = result["summary"]["nonconformant"] + result["summary"].get("global_failures", 0)
     # Name the remedies inline (the adopt_after cutoff + the verify_ac backfill) and flag
     # whether the shape reads as pre-existing forward-only debt vs a fresh regression, so a
@@ -74,15 +76,42 @@ def _index_derived(root: str) -> dict:
             "detail": "; ".join(issues) if issues else "indexes are derived output"}
 
 
-def _validate(root: str) -> dict:
+def _validate(root: str, changed: bool = False) -> dict:
+    """Structural validation over the artefact tree.
+
+    `changed` narrows what is JUDGED to the artefacts in this working tree's diff. Everything
+    is still checked and everything found is still counted somewhere: an untouched error lands
+    in the advisory tally and is named in the detail, so a scoped PASS states the debt it did
+    not judge instead of hiding it. A git probe that cannot answer judges the whole workspace.
+    """
     import validate
     rr = Path(root).resolve()
-    errors = 0
+    scope = validate.changed_artifact_paths(rr) if changed else None
+    errors = advisory = judged = untouched = 0
+    advisory_files: list[str] = []
     for type_ in sdlc_md.ARTIFACT_TYPES:
         for path in sdlc_md.artifact_files(type_, rr):
-            errors += sum(1 for v in validate.validate_file(path, type_, rr)
-                          if v["severity"] == "error")
-    return {"count": errors, "blocking": True, "detail": f"{errors} validation error(s)"}
+            n = sum(1 for v in validate.validate_file(path, type_, rr)
+                    if v["severity"] == "error")
+            if scope is not None and path.resolve() not in scope:
+                untouched += 1
+                advisory += n
+                if n:
+                    advisory_files.append(path.name)
+            else:
+                judged += 1
+                errors += n
+    detail = f"{errors} validation error(s)"
+    if scope is not None:
+        detail += (f" over {judged} changed artefact(s); "
+                   f"{untouched} outside the diff not judged here")
+        if advisory:
+            detail += (f", {advisory} of them carrying an advisory error "
+                       f"({_name_list(advisory_files)})")
+        detail += " - `--release` judges the whole workspace"
+    elif changed:
+        detail += " (the git changed-file probe could not answer, so the WHOLE workspace was judged)"
+    return {"count": errors, "blocking": True, "detail": detail}
 
 
 def _constitution(root: str) -> dict:
@@ -181,14 +210,18 @@ def _is_test_path(name: str) -> bool:
             or stem.endswith(".test") or stem.endswith(".spec"))
 
 
-def _mutation_changed_surface(root: str) -> list[str] | None:
-    """Repo-relative mutatable, non-test files with uncommitted changes - staged, unstaged or
-    untracked. That is the surface a pre-commit gate is actually about, and it needs no sprint
-    run and no sdlc-studio state, so the lane works in a consuming project too.
+def changed_paths(root: str) -> list[str] | None:
+    """Repo-relative paths this working tree has changed against HEAD - staged, unstaged or
+    untracked. The ONE git changed-file idiom the script family shares: every lane that scopes
+    itself to a diff reads it from here, because two idioms drift and then two lanes disagree
+    about what "changed" means.
 
-    Returns None when git cannot answer: no git, no commit to diff against, or a `root` that
-    is not the repository top level (git would then report paths relative to some other root).
-    The caller degrades to the ledger's own contents rather than inventing a surface.
+    Returns None when git cannot answer: no git, no commit to diff against, or a `root` that is
+    not the repository top level (git would then report paths relative to some other root).
+
+    None means UNKNOWN, never "nothing changed". Every caller must degrade to the FULL check,
+    because a scope derived from an unanswered probe is an empty scope wearing a green tick -
+    which is worse than the slow check the scope exists to avoid.
     """
     import subprocess
     rootp = Path(root)
@@ -209,12 +242,31 @@ def _mutation_changed_surface(root: str) -> list[str] | None:
             if proc.returncode != 0:
                 return None
             names.extend(proc.stdout.splitlines())
-    except Exception:  # noqa: BLE001 - a surface probe must never break the gate
+    except Exception:  # noqa: BLE001 - a changed-file probe must never break the gate
         return None
     out: list[str] = []
     for raw in names:
         name = raw.strip()
-        if not name or Path(name).suffix not in _MUTATABLE_SUFFIXES or _is_test_path(name):
+        if name and name not in out:
+            out.append(name)
+    return out
+
+
+def _mutation_changed_surface(root: str) -> list[str] | None:
+    """Repo-relative mutatable, non-test files with uncommitted changes. That is the surface a
+    pre-commit gate is actually about, and it needs no sprint run and no sdlc-studio state, so
+    the lane works in a consuming project too.
+
+    A filter over `changed_paths`, and it inherits that probe's None contract: the caller
+    degrades to the ledger's own contents rather than inventing a surface.
+    """
+    names = changed_paths(root)
+    if names is None:
+        return None
+    rootp = Path(root)
+    out: list[str] = []
+    for name in names:
+        if Path(name).suffix not in _MUTATABLE_SUFFIXES or _is_test_path(name):
             continue
         if (rootp / name).is_file() and name not in out:
             out.append(name)
@@ -951,11 +1003,28 @@ def _batch_size(root: str) -> dict:
             "detail": f"{measured} measured unit(s) within batch thresholds{tail}"}
 
 
+def _conformance_scoped(root: str) -> dict:
+    """The pre-commit binding of the conformance lane: judge the units this commit touches."""
+    return _conformance(root, changed=True)
+
+
+def _validate_scoped(root: str) -> dict:
+    """The pre-commit binding of the validate lane: judge the artefacts this commit touches."""
+    return _validate(root, changed=True)
+
+
+#: The two lanes the STANDARD gate scopes to the diff and `--release` restores to the whole
+#: workspace. One function per lane, called with `changed` set differently - not a second set of
+#: rules, so the scoped and the whole-workspace verdict can never come to disagree about what
+#: conformance or validity means. A commit is judged on what it changed; a tag is judged on
+#: everything, and the release lane says so by running exactly the same check unscoped.
+WHOLE_WORKSPACE_LANES = {"conformance": _conformance, "validate": _validate}
+
 DEFAULT_CHECKS = {
-    "conformance": _conformance,
+    "conformance": _conformance_scoped,
     "reconcile": _reconcile,
     "index-derived": _index_derived,
-    "validate": _validate,
+    "validate": _validate_scoped,
     "constitution": _constitution,
     "integrity": _integrity,
     "duplicate-id": _duplicate_id,
@@ -1354,7 +1423,14 @@ def run_gate(root: str = ".", only: list[str] | None = None,
     if require_close:  # push/release guard: no delivery unit may owe a close (bound, blocking)
         registry["close-owed"] = _close_owed
         bound.append("close-owed")
-    if release:  # pre-tag: the executing AC-verify lane joins the standard gate...
+    if release:  # pre-tag: the diff-scoped lanes go back to the WHOLE workspace...
+        # A commit is judged on what it changed; a TAG is judged on everything, so the debt a
+        # pre-commit run reported as advisory blocks here. Swapped by identity against the
+        # shipped scoped lane, so a caller's own injected entry of that name is left alone.
+        for _name, _whole in WHOLE_WORKSPACE_LANES.items():
+            if registry.get(_name) is DEFAULT_CHECKS.get(_name):
+                registry[_name] = _whole
+        # ...and the executing AC-verify lane joins the standard gate...
         registry["verify"] = (lambda r, _x=allow_external, _b=verify_batch:
                               _verify_acs(r, allow_external=_x, batch=_b))
         bound.append("verify")

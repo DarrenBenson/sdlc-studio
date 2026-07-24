@@ -59,3 +59,4 @@ lane, not just the noisy two - goes away
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-24 | sdlc-studio | Groomed: real ACs + Affects authored |
+| 2026-07-24 | sdlc-studio | Built: `--changed` on conformance + validate, gate lanes scoped, `--release` whole-workspace; 14 mutants killed |
