@@ -1384,6 +1384,104 @@ def apply_derivable_requests(repo_root: Path | str, dry_run: bool = False) -> di
     return {"synced": done, "unapplied": unapplied}
 
 
+# The already-delivered lane's bars. Titles alone are not enough and a shared file alone is not
+# enough: this lane reports only where BOTH signals are present, because a shared `Affects` is
+# already the planner's clustering signal and recycling it as a duplicate claim would bury the
+# real cases. MEASURED against this repo's own workspace before the numbers were fixed.
+DELIVERED_MIN_SHARED_TOKENS = 4
+DELIVERED_SIM = 0.4
+
+
+def _delivered_overlap(a: set[str], b: set[str]) -> float:
+    """The shorter title's distinctive words that reappear in the longer one.
+
+    Containment, not Jaccard. The overlap this lane hunts is usually written up twice at very
+    different lengths - a one-line skeleton against a delivered epic's full title - and a union
+    denominator scores that pair near zero however plainly the words match."""
+    return len(a & b) / min(len(a), len(b)) if a and b else 0.0
+
+
+def already_delivered_advisory(repo_root: Path | str) -> list[dict]:
+    """Non-terminal units whose work a TERMINAL unit appears to have already delivered.
+
+    THE BLIND SPOT THIS COMPLEMENTS. The `built-not-closed` check is deliberately mechanical: it
+    reads the verification report and fires only where a unit's executable acceptance criteria all
+    pass. An ungroomed skeleton carries no `Verify:` lines, so it can never appear in that report -
+    and the check built for "this is already done" is therefore structurally blind to the case that
+    matters most, work minted before it was groomed. This lane reads no verifier at all. It reads
+    titles and declared footprints, so a skeleton is exactly as visible to it as a groomed unit.
+
+    OVERLAP IS NOT FILE-SHARING. Two units touching one file and doing different work is the
+    ordinary case, and a shared `Affects` alone is already the planner's clustering signal. So a
+    candidate needs BOTH a shared file AND matching wording, and the report says which file is
+    shared and how strong the wording match is, rather than asserting a duplicate.
+
+    Advisory, never drift: it is a judgement call about meaning, and nothing mechanical can
+    settle it. It never changes an exit code and `apply` never acts on it.
+    """
+    try:
+        import backlog_triage as bt  # noqa: PLC0415 - lazy: only this lane needs it
+        root = Path(repo_root)
+        open_units: list[dict] = []
+        delivered: list[dict] = []
+        for type_ in bt.TRIAGE_TYPES:
+            vocab = sdlc_md.status_vocab(type_, root)
+            for p in sdlc_md.artifact_files(type_, root):
+                rid = sdlc_md.extract_record_id(p.stem)
+                if not rid:
+                    continue
+                text = sdlc_md.read_text_safe(p)
+                status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
+                if not status:
+                    continue
+                # Every id this unit is already WIRED to. A unit and the request it was
+                # decomposed from share a title by construction; reporting that pairing as
+                # overlap would bury the cases nobody has connected, which are the whole point.
+                wiring = " ".join(v for v in (sdlc_md.extract_field(text, f)
+                                              for f in ("Delivers", "Epic", "Supersedes")) if v)
+                linked = {_norm_id(x) for x in
+                          (*sdlc_md.parent_refs(text), *sdlc_md.decomposed_ids(text),
+                           *sdlc_md.ID_SEARCH_RE.findall(wiring))}
+                unit = {
+                    "id": rid, "type": type_, "status": status,
+                    "title": sdlc_md.extract_h1_title(text) or "",
+                    "tokens": bt._tokens(sdlc_md.extract_h1_title(text) or ""),
+                    "linked": linked,
+                    "affects": {a for a in (bt._affect_key(root, x)
+                                            for x in sdlc_md.affects_files(text)) if a},
+                }
+                (delivered if sdlc_md.is_terminal_status(type_, status)
+                 else open_units).append(unit)
+        out: list[dict] = []
+        for u in open_units:
+            if not u["affects"] or not u["tokens"]:
+                continue    # nothing structural to compare: the lane states what it reads
+            for d in delivered:
+                if _norm_id(d["id"]) in u["linked"] or _norm_id(u["id"]) in d["linked"]:
+                    continue    # already wired: their shared title is the decomposition, not a clash
+                shared = sorted(u["affects"] & d["affects"])
+                if not shared:
+                    continue
+                if len(u["tokens"] & d["tokens"]) < DELIVERED_MIN_SHARED_TOKENS:
+                    continue
+                score = _delivered_overlap(u["tokens"], d["tokens"])
+                if score < DELIVERED_SIM:
+                    continue
+                out.append({
+                    "id": u["id"], "type": u["type"], "status": u["status"],
+                    "delivered": d["id"], "delivered_status": d["status"],
+                    "shared": shared, "similarity": round(score, 2),
+                    "note": (f"{u['id']} ({u['status']}) may already be delivered by "
+                             f"{d['id']} ({d['status']}): {int(score * 100)}% of the shorter "
+                             f"title's words match and both declare {', '.join(shared)} - "
+                             f"triage before it is built"),
+                })
+        return sorted(out, key=lambda c: (-c["similarity"], c["id"], c["delivered"]))
+    except Exception as exc:  # noqa: BLE001 - an advisory lane must never break detect
+        sdlc_md.debug("reconcile.already_delivered_advisory", exc)
+        return []
+
+
 def era_divergence_advisory(repo_root: Path | str) -> str | None:
     """Warn when this clone's config and the workspace's ids tell different era stories: config
     says schema v2 (sequential ids) but v3 ULID-form ids exist - another user or machine is
@@ -1467,6 +1565,12 @@ def cmd_detect(args: argparse.Namespace) -> int:
     era_note = era_divergence_advisory(repo_root)
     if era_note:
         report["era_advisory"] = era_note
+    # Cross-type and read-only, so it runs on the full sweep like the other cross-type lanes.
+    # Advisory, never drift: "this was already built" is a judgement about meaning, and the exit
+    # code answers a mechanical question.
+    delivered_notes = already_delivered_advisory(repo_root) if args.scope is None else []
+    if delivered_notes:
+        report["already_delivered_advisory"] = delivered_notes
 
     if getattr(args, "blocker_sweep", False):
         # advisory lane: report stale-blocked / now-unblocked units. Never affects drift or the
@@ -1498,6 +1602,8 @@ def cmd_detect(args: argparse.Namespace) -> int:
             print(f"advisory (digest): {digest_note}")
         if era_note:
             print(f"advisory (era): {era_note}")
+        for n in delivered_notes:
+            print(f"advisory (already-delivered): {n['note']}")
         print(f"scope={report['scope']} drift_items={len(all_drift)} by_kind={by_kind}")
         hints = sdlc_md.remediation_lines("reconcile", by_kind)
         if hints:
