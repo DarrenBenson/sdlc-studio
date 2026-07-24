@@ -8,7 +8,7 @@ empty file with the right name passed it. A gate is only as good as the thing it
 can interrogate; this is that thing.
 
 Everything here is mechanical, because everything here CAN be. Parsing a `## Lessons`
-heading is parsing. Checking each finding is filed or declined is a set difference.
+heading is parsing. Checking each finding is filed, fixed or declined is a set difference.
 Judgement is reserved for what a lesson MEANS, never for whether the plumbing ran.
 
 Subcommands:
@@ -27,10 +27,14 @@ Subcommands:
             tokens-per-point rate derived from it - so the next plan can see how the estimator
             has actually performed rather than trusting a constant.
 
-The disposition rule. A finding is dispositioned when it is either filed as
-an artefact (`CR0123` / `BG0045`) or DECLINED WITH A REASON. Declining is a first-class
-answer and is equally green, so honesty costs exactly what noise costs and there is
-nothing to game. What does not pass is silence: a finding written down and left to rot.
+The disposition rule. A finding is dispositioned when it is filed as an artefact
+(`CR0123` / `BG0045`), recorded FIXED IN-SPRINT with the commit or unit that fixed it
+(`fixed-in: a1b2c3d`), or DECLINED WITH A REASON. All three are first-class answers and
+equally green, so honesty costs exactly what noise costs and there is nothing to game.
+The three are counted separately at close: a fix closes the finding now, a filing defers it
+to future work, a decline defers it to none - a sprint that repaired eleven findings must
+not read as having declined eleven. What does not pass is silence: a finding written down
+and left to rot.
 
 The measurement rule (the same rule, applied to numbers). A unit with no PER-UNIT telemetry
 record has its per-unit ratio reported UNMEASURED and excluded from every ratio - never skipped,
@@ -114,6 +118,14 @@ PLACEHOLDER_RE = re.compile(r"\{\{.*?\}\}")
 # exists to prevent. It is no cheaper to game than declining, which is already free.
 ARTEFACT_ID_RE = re.compile(r"\b((?:CR|BG|US|RFC|EP|LL)-?\d{4})\b", re.IGNORECASE)
 DECLINED_RE = re.compile(r"^\s*declined\s*:\s*(.+\S)\s*$", re.IGNORECASE)
+
+# The third disposition: a finding FIXED within the sprint, carrying the commit or unit that
+# fixed it. Filing and declining both defer the finding to future or no work; a fix closes it
+# now, and reads as neither. A sprint that repaired eleven findings and recorded them as declines
+# would read as having declined eleven - the opposite of what happened. The detail is a commit
+# sha (a 7-40 char hex) or an artefact id; a bare 'fixed' with no reference stays undecided, the
+# same silence-wearing-a-decision's-clothes rule the decline path already holds.
+FIXED_RE = re.compile(r"^\s*fixed(?:-in)?\s*:\s*(.+\S)\s*$", re.IGNORECASE)
 
 # A row in the `## Actions raised` table: | finding | disposition |
 ROW_RE = re.compile(r"^\s*\|(?!\s*[-:]+\s*\|)([^|]+)\|([^|]+)\|\s*$")
@@ -260,8 +272,9 @@ def dispositions_in(text: str) -> list[dict]:
     """Every row of `## Actions raised`, with its disposition classified.
 
     Returns one dict per finding: {finding, raw, state, detail}, where state is
-    'filed' (an artefact id), 'declined' (with a reason) or 'undecided' (anything
-    else - blank, a placeholder, or a bare 'declined' with no reason).
+    'filed' (an artefact id), 'fixed' (with the commit or unit that fixed it in-sprint),
+    'declined' (with a reason) or 'undecided' (anything else - blank, a placeholder, or a
+    bare 'declined'/'fixed' with no reference).
     """
     rows = []
     for line in sections(text).get("Actions raised", []):
@@ -282,6 +295,11 @@ def dispositions_in(text: str) -> list[dict]:
             state = "undecided"
         elif (d := DECLINED_RE.match(disp)) and not PLACEHOLDER_RE.search(d.group(1)):
             state, detail = "declined", d.group(1).strip()
+        # A `fixed-in:` prefix WINS over a bare artefact-id read, the same reason `declined:`
+        # does: a fix cites the commit or unit that closed it ("fixed-in: US0375"), and reading
+        # that id as a filing would report a closed finding as still-ticketed future work.
+        elif (fx := FIXED_RE.match(disp)) and not PLACEHOLDER_RE.search(fx.group(1)):
+            state, detail = "fixed", fx.group(1).strip()
         elif ARTEFACT_ID_RE.search(disp):
             state, detail = "filed", ARTEFACT_ID_RE.search(disp).group(1).upper()
         rows.append({"finding": finding, "raw": disp, "state": state, "detail": detail})
@@ -326,8 +344,9 @@ def validate(root, retro_id: str) -> dict:
     undecided = [r for r in rows if r["state"] == "undecided"]
     for r in undecided:
         errors.append(
-            f"finding not dispositioned: {r['finding'][:60]!r} - file it (BG/CR id) or "
-            f"decline it with a reason ('declined: <why>')")
+            f"finding not dispositioned: {r['finding'][:60]!r} - file it (BG/CR id), record it "
+            f"fixed in-sprint ('fixed-in: <sha or unit>'), or decline it with a reason "
+            f"('declined: <why>')")
 
     return {
         "ok": not errors,
@@ -337,6 +356,7 @@ def validate(root, retro_id: str) -> dict:
         "lessons": lessons_in(text),
         "findings": rows,
         "filed": [r["detail"] for r in rows if r["state"] == "filed"],
+        "fixed": [r["detail"] for r in rows if r["state"] == "fixed"],
         "declined": [r["finding"] for r in rows if r["state"] == "declined"],
     }
 
@@ -2561,7 +2581,8 @@ def cmd_validate(args) -> int:
         if res["ok"]:
             n_l, n_f = len(res["lessons"]), len(res["findings"])
             print(f"retro {res['id']}: ok - {n_l} lesson(s), {n_f} finding(s) all dispositioned "
-                  f"({len(res['filed'])} filed, {len(res['declined'])} declined)")
+                  f"({len(res['filed'])} filed, {len(res['fixed'])} fixed in-sprint, "
+                  f"{len(res['declined'])} declined)")
         else:
             print(f"retro {res['id']}: FAIL")
             for e in res["errors"]:
@@ -2583,14 +2604,22 @@ def cmd_dispose(args) -> int:
         print(f"retro {res['id']}: no findings recorded under '## Actions raised'")
         return 1
     for r in rows:
-        mark = {"filed": "filed   ", "declined": "declined", "undecided": "UNDECIDED"}[r["state"]]
+        mark = {"filed": "filed   ", "fixed": "fixed   ", "declined": "declined",
+                "undecided": "UNDECIDED"}[r["state"]]
         extra = f" -> {r['detail']}" if r["detail"] else ""
         print(f"  [{mark}] {r['finding'][:64]}{extra}")
     left = sum(1 for r in rows if r["state"] == "undecided")
-    print(f"\n{len(rows)} finding(s), {left} undecided")
+    n_filed = sum(1 for r in rows if r["state"] == "filed")
+    n_fixed = sum(1 for r in rows if r["state"] == "fixed")
+    n_declined = sum(1 for r in rows if r["state"] == "declined")
+    # The three dispositioned states are named separately: a sprint that repaired eleven
+    # findings must not read as having declined eleven.
+    print(f"\n{len(rows)} finding(s): {n_filed} filed, {n_fixed} fixed in-sprint, "
+          f"{n_declined} declined, {left} undecided")
     if left:
-        print("file each with scripts/file_finding.py, or decline it with a reason "
-              "('declined: <why>') - both are green, silence is not")
+        print("file each with scripts/file_finding.py, record it fixed in-sprint "
+              "('fixed-in: <sha or unit>'), or decline it with a reason "
+              "('declined: <why>') - all three are green, silence is not")
     return 1 if left else 0
 
 

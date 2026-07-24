@@ -11,32 +11,35 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator closing a sprint that repaired findings during delivery
+**I want** a third disposition that records a finding fixed in-sprint, distinct from filed and declined
+**So that** a sprint that fixed eleven findings does not read as having declined eleven
 
 ## Acceptance Criteria
 
 ### AC1: a third disposition records a finding fixed within the sprint, with the commit or unit that fixed it
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** a third disposition records a finding fixed within the sprint, with the commit or unit that fixed it
-- **Verify:** {{executable check}}
+- **Given** a retro Actions-raised row whose disposition is `fixed-in: <sha or unit>`
+- **When** the retro is validated
+- **Then** a third disposition records a finding fixed within the sprint, with the commit or unit that fixed it, and it is green
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::FixedInSprintIsAThirdDisposition::test_a_fixed_in_sha_is_dispositioned_as_fixed
+- **Verified:** yes (2026-07-24)
 
 ### AC2: the gate accepts it as dispositioned, distinctly from filed and from declined
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** a retro whose only finding is dispositioned `fixed-in: <sha>`
+- **When** the gate's retro leg validates it
 - **Then** the gate accepts it as dispositioned, distinctly from filed and from declined
-- **Verify:** {{executable check}}
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::FixedInSprintIsAThirdDisposition::test_fixed_is_distinct_from_filed_and_declined
+- **Verified:** yes (2026-07-24)
 
 ### AC3: the counts the close reports name the three states separately, so a sprint that repaired eleven
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** a retro whose findings span all three dispositioned states
+- **When** the close counts are reported
 - **Then** the counts the close reports name the three states separately, so a sprint that repaired eleven findings does not read as having declined eleven
-- **Verify:** {{executable check}}
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::FixedInSprintIsAThirdDisposition::test_the_close_counts_name_the_three_states_separately
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

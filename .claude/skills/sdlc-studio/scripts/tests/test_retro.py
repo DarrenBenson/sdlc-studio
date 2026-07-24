@@ -335,6 +335,79 @@ class AnExplicitDeclineBeatsAnIdInItsReason(RetroBase):
         self.assertEqual(row["state"], "undecided")
 
 
+class FixedInSprintIsAThirdDisposition(RetroBase):
+    """US0366 / CR0362: a finding FIXED within the sprint is dispositioned, distinctly from
+    filed and from declined. A fix closes the finding now; a filing defers it to future work; a
+    decline defers it to none. A sprint that repaired eleven findings must not read as having
+    declined eleven - so the three states are named separately in every count the close reports."""
+
+    def test_a_fixed_in_sha_is_dispositioned_as_fixed(self) -> None:
+        # AC1: records the commit that fixed it, and is green
+        rows = retro.dispositions_in(FULL.replace("| BG0125 |", "| fixed-in: a1b2c3d |"))
+        row = next(r for r in rows if r["finding"] == "the deploy was slow")
+        self.assertEqual(row["state"], "fixed")
+        self.assertEqual(row["detail"], "a1b2c3d")
+
+    def test_a_fixed_in_unit_records_the_unit(self) -> None:
+        # the commit-OR-unit that fixed it; a unit id in a fixed disposition is a fix, not a filing
+        rows = retro.dispositions_in(FULL.replace("| BG0125 |", "| fixed-in: US0375 |"))
+        row = next(r for r in rows if r["finding"] == "the deploy was slow")
+        self.assertEqual(row["state"], "fixed")
+        self.assertEqual(row["detail"], "US0375")
+
+    def test_fixed_is_distinct_from_filed_and_declined(self) -> None:
+        # AC2: the gate (via validate) accepts it, and it is NOT counted as filed or declined
+        self.write(FULL.replace("| BG0125 |", "| fixed-in: a1b2c3d |"))
+        res = self.validate()
+        self.assertTrue(res["ok"], res["errors"])
+        self.assertEqual(res["fixed"], ["a1b2c3d"])
+        self.assertEqual(res["filed"], [])                 # a fix is not a filing
+        # FULL's other row is a genuine decline; the fixed row is not folded into it
+        self.assertNotIn("the deploy was slow", res["declined"])
+
+    def test_a_bare_fixed_without_a_reference_is_undecided(self) -> None:
+        # 'fixed' alone is silence wearing a decision's clothes - the same rule as bare 'declined'
+        rows = retro.dispositions_in(FULL.replace("| BG0125 |", "| fixed |"))
+        row = next(r for r in rows if r["finding"] == "the deploy was slow")
+        self.assertEqual(row["state"], "undecided")
+
+    def test_a_fixed_placeholder_is_undecided(self) -> None:
+        rows = retro.dispositions_in(FULL.replace("| BG0125 |", "| fixed-in: {{sha}} |"))
+        row = next(r for r in rows if r["finding"] == "the deploy was slow")
+        self.assertEqual(row["state"], "undecided")
+
+    def test_the_close_counts_name_the_three_states_separately(self) -> None:
+        # AC3: a sprint that repaired findings does not read as having declined them. Build an
+        # Actions table with one of each dispositioned state and assert the tri-state counts.
+        table = ("## Actions raised\n| Finding | Disposition |\n| --- | --- |\n"
+                 "| a filed one | BG0125 |\n"
+                 "| a fixed one | fixed-in: a1b2c3d |\n"
+                 "| a fixed unit | fixed-in: US0375 |\n"
+                 "| a declined one | declined: not worth it |\n")
+        text = FULL.split("## Actions raised")[0] + table
+        self.write(text)
+        res = self.validate()
+        self.assertTrue(res["ok"], res["errors"])
+        self.assertEqual(len(res["filed"]), 1)
+        self.assertEqual(len(res["fixed"]), 2)
+        self.assertEqual(len(res["declined"]), 1)
+        # and the human-facing dispose output names all three, so a fixed sprint is not read declined
+        import contextlib
+        import io
+        buf = io.StringIO()
+
+        class _Args:
+            root = str(self.root)
+            id = "RETRO9999"
+            format = "text"
+        with contextlib.redirect_stdout(buf):
+            retro.cmd_dispose(_Args())
+        out = buf.getvalue()
+        self.assertIn("1 filed", out)
+        self.assertIn("2 fixed in-sprint", out)
+        self.assertIn("1 declined", out)
+
+
 
 # ---------------------------------------------------------------------------
 # Estimate vs actual: the loop only closes if an unmeasured unit says so.

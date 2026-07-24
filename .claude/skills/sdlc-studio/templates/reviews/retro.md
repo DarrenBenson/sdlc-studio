@@ -74,15 +74,17 @@ sprints fits noise.
 issues found?**
 
 This is the question that turns a retro into work. Every finding gets a disposition:
-**file it**, or **decline it with a reason**. Both are green. What does not pass is
-silence - a finding written down and left to rot.
+**file it** (a BG/CR id), **record it fixed in-sprint** (`fixed-in: <sha or unit>`), or
+**decline it with a reason**. All three are green. What does not pass is silence - a
+finding written down and left to rot. The three are counted separately at close: a sprint
+that repaired eleven findings reads as eleven fixed, not eleven declined.
 
 To say "nothing worth raising", say so in a row and give the reason. An empty table is
 not an answer.
 
 | Finding | Disposition |
 | --- | --- |
-| {{finding}} | {{BG0123 / CR0456 / declined: why not}} |
+| {{finding}} | {{BG0123 / CR0456 / fixed-in: a1b2c3d / declined: why not}} |
 
 <!-- file one with: scripts/file_finding.py · check with: scripts/retro.py dispose --id RETROxxxx -->
 

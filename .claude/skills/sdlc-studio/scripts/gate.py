@@ -1079,6 +1079,7 @@ def _retro_present(root: str, retro_id: str) -> dict:
         return {"count": 0, "blocking": blocking,
                 "detail": (f"batch retro {retro_id}: {n_l} lesson(s), {n_f} finding(s) all "
                            f"dispositioned ({len(res['filed'])} filed, "
+                           f"{len(res.get('fixed', []))} fixed in-sprint, "
                            f"{len(res['declined'])} declined)")}
     # Every error names its own remedy; surface them all rather than only the first, so one
     # close tells you everything it wants instead of a queue of one-at-a-time refusals.
