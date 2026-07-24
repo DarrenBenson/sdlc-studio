@@ -113,6 +113,11 @@ Every script in `scripts/`:
     path it had used, and exited 0 - so the report the Done gate reads was
     never where the gate looks. One resolver, not a path-joining idiom per
     script, is what keeps a writer and its reader agreeing where a file lives.
+    Swept by `tests/test_root_census.py`, which measures every script in the
+    directory and holds a recorded census to that measurement: a script may be
+    anchored, unanchored with a filed follow-up naming it, or a deliberate
+    non-root surface with its reason stated, and a newly added script with no
+    entry fails the sweep rather than joining unclassified.
 
 See `best-practices/script.md` for the shared style rules (shebang,
 error handling, CLI flags over config files, and the CLI argument grammar).
