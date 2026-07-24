@@ -120,6 +120,10 @@ benchmarks). Operators may opt out with `engagement_floor: judgement` in
      allocation - headless agents call the script. **Never hand-allocate ids or hand-author
      `_index.md`** - the file is truth, the index is derived. For many at once use
      `artifact.py batch` (one atomic pass).
+   - **Pass prose as a document, not as a shell argument:** every writer that takes free
+     text takes `--fields-file FIELDS.json` (or `-` to read it from stdin), because a
+     backtick in a flag value is run by the shell rather than stored - see the script
+     contract in `reference-scripts.md` for which writers and what the flag path still does.
    - **Fan out only over pre-wired scaffolds.** Delegated sub-agents fill **content**; the
      tool owns structure (ids, slugs, filenames, links, index).
    - **The index is derived:** run `reconcile` / `reconcile fields` / `validate` to sync;

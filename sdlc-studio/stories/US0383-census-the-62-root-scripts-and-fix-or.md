@@ -44,3 +44,4 @@
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-24 | sdlc-studio | Groomed: real ACs + Affects authored |
+| 2026-07-24 | sdlc-studio | Built: census record + measured sweep guard, `next_id` anchored, remainder filed as BG0282 |

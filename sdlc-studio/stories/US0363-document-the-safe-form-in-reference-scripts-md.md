@@ -56,3 +56,4 @@ link and budget guards apply to this change like any other.
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-24 | sdlc-studio | Groomed: real ACs + Affects authored |
+| 2026-07-24 | sdlc-studio | Built: script-contract rule 11 (loader, nine writers, stdin, flag path, measured detector limit) + one inherited line in the starter |

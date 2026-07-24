@@ -113,6 +113,32 @@ Every script in `scripts/`:
     path it had used, and exited 0 - so the report the Done gate reads was
     never where the gate looks. One resolver, not a path-joining idiom per
     script, is what keeps a writer and its reader agreeing where a file lives.
+    Swept by `tests/test_root_census.py`, which measures every script in the
+    directory and holds a recorded census to that measurement: a script may be
+    anchored, unanchored with a filed follow-up naming it, or a deliberate
+    non-root surface with its reason stated, and a newly added script with no
+    entry fails the sweep rather than joining unclassified.
+
+11. Takes free text as a DOCUMENT, never as a shell argument.
+    `file_finding.resolve_prose_fields` is the one loader, so every
+    prose-taking writer shares a path instead of growing its own:
+    `file_finding.py file`, `artifact.py new`, `critic.py signoff`,
+    `decisions.py add|promote|waive`, `handoff.py generate`,
+    `ledger.py record`, `lessons.py add|revalidate`,
+    `close_owed.py baseline` and `sprint.py goal-verdict|goal-review`.
+    Each takes `--fields-file FIELDS.json`, and `--fields-file -` reads the
+    document from stdin, so text already held in a pipe need not be spilled to
+    a temporary file to stay safe. Backticks and `$(` are command substitution
+    inside a shell argument, so on the flag path the prose is executed rather
+    than stored: one filing ran `git commit -a` against the live repository,
+    and another lost two commands with no message at all. The flags still work
+    and now report a field that arrives already mangled, but that report is
+    defence in depth rather than the fix. Measured against the recorded
+    corruptions it catches three of the four with no false positive over this
+    project's own artefact prose; the fourth is undetectable in principle,
+    because a token lost from the START of a sentence leaves grammatical text
+    behind and carries no mark to find. The document is the fix - it never
+    crosses a shell at all.
 
 See `best-practices/script.md` for the shared style rules (shebang,
 error handling, CLI flags over config files, and the CLI argument grammar).
@@ -133,12 +159,10 @@ lists every script with a one-line summary; open the linked page for the full en
 - `refine.py` - Decompose a request (RFC/CR) into an epic and stories, with the two-backlog links wired. `refine show --request <id>` surfaces the request's content and confirms it is refinable; `refine apply --request <id> --epic-title "..." --story "title|points[|affects]" ...` creates the epic (T-shirt sized from the point total, `Parent:` the request) and each story, writes the request's `Decomposed-into:`, rolls the epic's `Derived Point Total`, moves the request to its working status (In Progress / In Review), and surfaces `--question` items for a Three-Amigos consult. The automation of the hand-decomposition the two-backlog gates otherwise ask an operator to do, and the migration path for an upgrading project (an old childless CR becomes stories). Validates before minting: a non-request, an already-decomposed request, or an off-scale story point is refused and nothing is written.
 - `file_finding.py` - Deterministic Bug/CR/RFC filer for audit findings. Allocates a
   collision-free id, renders a structured artefact and appends the index row. **File a
-  finding with `--fields-file finding.json`, not with prose flags** - a JSON document is
-  read off disk, so no value crosses a shell. Backticks and `$(` are command substitution
-  inside a shell argument, so on the flag path reproduction steps are executed rather than
-  stored (a filing once ran `git commit -a` against the live repository, and another lost
-  two commands silently). The flags still work and now report a field that arrives already
-  mangled. `artifact.py new` takes the same `--fields-file`.
+  finding with `--fields-file finding.json`, not with prose flags**, and note that its
+  loader is the shared one every prose-taking writer uses - see rule 11 of the script
+  contract above for the full rule, the writers that take a document, and what the
+  flag path still does.
 - `persona_gen.py` - Deterministic floor of team/stakeholder generation: `stamp` marks a generated card provisional with a content hash, `classify` reports authored / generated-pristine / generated-edited (the never-clobber discriminator), `accept` clears provisional labels (batch-accept + persona review)
 - `next_id.py` - `allocate`: next free ID for a type (`--remote` also scans `origin/main`)
 - `ledger.py` - The append-only per-tranche decisions ledger. `record` appends a decision + rationale to `sdlc-studio/decisi...

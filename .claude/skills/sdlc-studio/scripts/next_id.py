@@ -157,9 +157,15 @@ def remote_ids(type_: str, repo_root: Path) -> tuple[list[int], bool]:
 
 
 def cmd_allocate(args: argparse.Namespace) -> int:
-    """Print the next free ID for a type."""
+    """Print the next free ID for a type.
+
+    The root comes from the shared resolver, never a bare `Path(args.root)`. This verb is why:
+    the family default `.` taken as the cwd made a run from a subdirectory scan an EMPTY tree
+    and hand back an id the workspace above it already holds - a collision minted by the one
+    tool whose whole job is to prevent them.
+    """
     type_ = args.type
-    repo_root = Path(args.root).resolve()
+    repo_root = sdlc_md.resolve_root(args)
     prefix = _spec(type_)[1]
     local = local_ids(type_, repo_root)
     local_max = max(local) if local else 0
@@ -200,7 +206,7 @@ def cmd_allocate(args: argparse.Namespace) -> int:
 def cmd_scan(args: argparse.Namespace) -> int:
     """List all IDs currently used for a type."""
     type_ = args.type
-    repo_root = Path(args.root).resolve()
+    repo_root = sdlc_md.resolve_root(args)
     prefix = _spec(type_)[1]
     local = local_ids(type_, repo_root)
     ids = [f"{prefix}{n:04d}" for n in local]
@@ -245,7 +251,7 @@ def detect_collisions(repo_root: Path | str) -> dict:
 
 def cmd_collisions(args: argparse.Namespace) -> int:
     """Report duplicate artifact IDs; exit non-zero if any are found."""
-    repo_root = Path(args.root).resolve()
+    repo_root = sdlc_md.resolve_root(args)
     result = detect_collisions(repo_root)
     if args.format == "json":
         print(json.dumps(result, indent=2))

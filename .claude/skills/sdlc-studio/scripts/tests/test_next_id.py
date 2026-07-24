@@ -196,5 +196,35 @@ class ArchiveUnionTests(unittest.TestCase):
             self.assertNotEqual(next_id.allocate_number("story", root, remote=False), 9)
             self.assertEqual(next_id.allocate_number("story", root, remote=False), 10)
 
+
+class RootAnchoringTests(unittest.TestCase):
+    """The allocator is the collision case for a bare `Path(args.root)`: run from a
+    subdirectory with no `--root`, it read an EMPTY tree and minted an id the workspace above
+    it already holds. It must resolve upward to the real workspace instead."""
+
+    def test_allocation_from_a_subdirectory_sees_the_real_workspace(self) -> None:
+        import io
+        import json
+        import os
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d).resolve()
+            _make_stories(root, [1, 383])
+            sub = root / ".claude" / "skills" / "sdlc-studio" / "scripts"
+            sub.mkdir(parents=True)
+            here = Path.cwd()
+            os.chdir(sub)
+            try:
+                buf = io.StringIO()
+                with redirect_stdout(buf):
+                    rc = next_id.main(["allocate", "--type", "story", "--format", "json"])
+            finally:
+                os.chdir(here)
+            self.assertEqual(rc, 0)
+            allocated = json.loads(buf.getvalue())
+            self.assertEqual(allocated["next_id"], "US0384")  # not US0001 off an empty cwd
+            self.assertEqual(allocated["local_max"], 383)
+
+
 if __name__ == "__main__":
     unittest.main()
