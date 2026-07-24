@@ -1,10 +1,11 @@
 # BG0288: anchor the 33 unanchored READER scripts to the discovered root (BG0282 slice 2)
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/, sdlc-studio/reviews/root-census.md
+> **Verification depth:** functional (same contract suite, readers half; the applicable set is measured from the family, never listed, so a script cannot escape by being forgotten)
 > **Severity:** Medium
 > **Points:** 5
 

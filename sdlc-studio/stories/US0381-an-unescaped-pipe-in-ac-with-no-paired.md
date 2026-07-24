@@ -1,6 +1,6 @@
 # US0381: an unescaped pipe in --ac with no paired --verify is warned or refused by name, correctly-paired output byte-identical
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0381
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

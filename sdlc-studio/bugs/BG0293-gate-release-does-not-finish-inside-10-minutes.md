@@ -1,10 +1,11 @@
 # BG0293: gate --release does not finish inside 10 minutes, so the one lane that judges the whole workspace cannot be run before a release
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
+> **Verification depth:** functional (release lane batching measured end to end: ~874s of pytest spawns to ~453s; mutation-proven by reverting the release-implies-batch wiring and watching the test die; absent-node and skip-is-not-a-pass cases covered)
 > **Severity:** High
 > **Points:** 5
 

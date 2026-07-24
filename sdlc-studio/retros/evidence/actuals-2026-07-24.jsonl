@@ -46,3 +46,24 @@
 {"id": "CR0385", "type": "cr", "project": "sdlc-studio"}
 {"id": "CR0389", "type": "cr", "project": "sdlc-studio"}
 {"id": "CR0395", "type": "cr", "project": "sdlc-studio"}
+{"id": "BG0281", "type": "bug", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "BG0282", "type": "bug", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "BG0288", "type": "bug", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "BG0289", "type": "bug", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "BG0290", "type": "bug", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "BG0291", "type": "bug", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "BG0293", "type": "bug", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "US0351", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "US0352", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "US0353", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "US0355", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "US0356", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "US0364", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "US0369", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "US0373", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "US0378", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "US0381", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "US0413", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "US0414", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "US0415", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "US0417", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}

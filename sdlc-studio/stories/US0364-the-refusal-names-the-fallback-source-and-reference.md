@@ -1,6 +1,6 @@
 # US0364: the refusal names the fallback source and reference-rfc.md documents the false-positive trade
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0357
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

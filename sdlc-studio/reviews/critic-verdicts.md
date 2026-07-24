@@ -414,3 +414,44 @@ One row has been removed since adoption.
 | BG0275 | APPROVE | adversarial-review-panel (5 fresh-context reviewers, disjoint slices) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
 | BG0276 | APPROVE | adversarial-review-panel (5 fresh-context reviewers, disjoint slices) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
 | BG0277 | APPROVE | adversarial-review-panel (5 fresh-context reviewers, disjoint slices) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0281 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0282 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0288 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0289 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0290 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0291 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0293 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0282 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0288 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0289 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0290 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0291 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0293 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0351 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0352 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0353 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0355 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0356 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0364 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0369 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0373 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0378 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0381 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0413 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0414 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0415 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0417 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0351 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0352 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0353 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0355 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0356 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0364 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0369 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0373 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0378 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0381 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0413 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0414 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0415 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0417 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 16 |
+| Open | 10 |
 | In Progress | 0 |
-| Fixed | 194 |
+| Fixed | 201 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **293** |
+| **Total** | **294** |
 
 ## All Bugs
 
@@ -247,19 +247,20 @@
 | [BG0278](BG0278-sprint-plan-crashes-with-keyerror-fixed-fit-once.md) | sprint plan CRASHES with KeyError fixed-fit once a project has enough measured sprints to apply the fixed-term fit: the fixed-fit branch overrides rate_source but leaves rate_refused set, breaking the exhaustive-lookup invariant _render_rate_provenance documents | Open | High | 2026-07-24 | 2026-07-24 |
 | [BG0279](BG0279-the-close-chain-runs-its-gate-before-apply.md) | the close chain runs its gate BEFORE --apply-signoff moves units to Done, so the green it reports is measured against a state the close then changes: a unit can pass at Review and be non-conformant the moment it becomes Done | Open | -- | 2026-07-24 | 2026-07-24 |
 | [BG0280](BG0280-parallel-agents-share-one-scratchpad-directory-so-a.md) | parallel agents share one scratchpad directory, so a commit-message file written by one can be overwritten by another between write and commit: a commit landed carrying a different agent's subject | Open | -- | 2026-07-24 | 2026-07-24 |
-| [BG0281](BG0281-a-conflicted-merge-cannot-be-committed-through-the.md) | a conflicted merge cannot be committed through the gate: the commit-msg hook tests invoke the hook with the OUTER repo as cwd, so they inherit its MERGE_HEAD, the hook correctly exits early, and five tool-tests fail for the duration of every merge | Open | High | 2026-07-24 | 2026-07-24 |
-| [BG0282](BG0282-59-scripts-still-resolve-root-bare-so-a.md) | 59 scripts still resolve --root bare, so a run from a subdirectory reads or writes the wrong tree | Open | Medium | 2026-07-24 | 2026-07-24 |
+| [BG0281](BG0281-a-conflicted-merge-cannot-be-committed-through-the.md) | a conflicted merge cannot be committed through the gate: the commit-msg hook tests invoke the hook with the OUTER repo as cwd, so they inherit its MERGE_HEAD, the hook correctly exits early, and five tool-tests fail for the duration of every merge | Fixed | High | 2026-07-24 | 2026-07-24 |
+| [BG0282](BG0282-59-scripts-still-resolve-root-bare-so-a.md) | 59 scripts still resolve --root bare, so a run from a subdirectory reads or writes the wrong tree | Fixed | Medium | 2026-07-24 | 2026-07-24 |
 | [BG0283](BG0283-the-inflight-mutation-guard-has-no-staleness-notion.md) | the inflight-mutation guard has no staleness notion, so an abandoned sidecar blocks every write in the repo indefinitely: a three-day-old file refused artifact and transition the moment the guard shipped | Open | -- | 2026-07-24 | 2026-07-24 |
 | [BG0284](BG0284-superseding-a-verdict-cannot-restore-independence-so-the.md) | superseding a verdict cannot restore independence, so the mis-attributed-reviewer case that motivated it still strands a unit: the tool cannot tell a mis-filing from an author retiring an inconvenient verdict, and needs a principal-authorised correction path | Open | High | 2026-07-24 | 2026-07-24 |
 | [BG0285](BG0285-sprint-close-without-apply-signoff-closes-the-run.md) | sprint close without --apply-signoff closes the run, and the sprint-level review that the sign-off needs cannot then be recorded against it, so the documented two-invocation close flow cannot be completed and no reopen path exists | Open | High | 2026-07-24 | 2026-07-24 |
 | [BG0286](BG0286-sprint-close-apply-signoff-fans-into-story-units.md) | sprint close --apply-signoff fans into story units only, leaving the batch's bugs Open while the close reports goal-reached | Open | High | 2026-07-24 | 2026-07-24 |
 | [BG0287](BG0287-the-review-current-lane-goes-stale-against-the.md) | the review-current lane goes stale against the close's own transitions, so it blocks the close step that would refresh the anchor | Open | Medium | 2026-07-24 | 2026-07-24 |
-| [BG0288](BG0288-anchor-the-33-unanchored-reader-scripts-to-the.md) | anchor the 33 unanchored READER scripts to the discovered root (BG0282 slice 2) | Open | Medium | 2026-07-24 | 2026-07-24 |
-| [BG0289](BG0289-give-the-5-scripts-with-no-root-surface.md) | give the 5 scripts with no --root surface one, and reconcile the census (BG0282 slice 3) | Open | Low | 2026-07-24 | 2026-07-24 |
-| [BG0290](BG0290-refine-s-ungroomed-placeholder-fails-validate-s-no.md) | refine's ungroomed placeholder fails validate's no-ac check, so refine produces a story that cannot be committed | Open | High | 2026-07-24 | 2026-07-24 |
-| [BG0291](BG0291-refine-s-seeded-acs-duplicate-their-own-label.md) | refine's seeded ACs duplicate their own label and restate the story title as the Then clause | Open | Medium | 2026-07-24 | 2026-07-24 |
+| [BG0288](BG0288-anchor-the-33-unanchored-reader-scripts-to-the.md) | anchor the 33 unanchored READER scripts to the discovered root (BG0282 slice 2) | Fixed | Medium | 2026-07-24 | 2026-07-24 |
+| [BG0289](BG0289-give-the-5-scripts-with-no-root-surface.md) | give the 5 scripts with no --root surface one, and reconcile the census (BG0282 slice 3) | Fixed | Low | 2026-07-24 | 2026-07-24 |
+| [BG0290](BG0290-refine-s-ungroomed-placeholder-fails-validate-s-no.md) | refine's ungroomed placeholder fails validate's no-ac check, so refine produces a story that cannot be committed | Fixed | High | 2026-07-24 | 2026-07-24 |
+| [BG0291](BG0291-refine-s-seeded-acs-duplicate-their-own-label.md) | refine's seeded ACs duplicate their own label and restate the story title as the Then clause | Fixed | Medium | 2026-07-24 | 2026-07-24 |
 | [BG0292](BG0292-the-close-status-stamp-is-rung-blind-it.md) | the close-status stamp is rung-blind: it tells a design rung that sign-off is owed to reach Done, which was never that rung's target | Open | Medium | 2026-07-24 | 2026-07-24 |
-| [BG0293](BG0293-gate-release-does-not-finish-inside-10-minutes.md) | gate --release does not finish inside 10 minutes, so the one lane that judges the whole workspace cannot be run before a release | Open | High | 2026-07-24 | 2026-07-24 |
+| [BG0293](BG0293-gate-release-does-not-finish-inside-10-minutes.md) | gate --release does not finish inside 10 minutes, so the one lane that judges the whole workspace cannot be run before a release | Fixed | High | 2026-07-24 | 2026-07-24 |
+| [BG0294](BG0294-duplicate-detection-now-has-two-implementations-with-different.md) | duplicate detection now has two implementations with different algorithms, so they can drift | Open | Medium | 2026-07-24 | 2026-07-24 |
 
 ## Archived Releases
 

@@ -1,10 +1,11 @@
 # BG0290: refine's ungroomed placeholder fails validate's no-ac check, so refine produces a story that cannot be committed
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py
+> **Verification depth:** functional (validate's no-ac check delegates to conformance.story_is_ungroomed; delegation proven by moving conformance's answer and watching validate follow, which no restated copy could do; red-first proven by reverting - all 3 tests fail)
 > **Severity:** High
 > **Points:** 3
 

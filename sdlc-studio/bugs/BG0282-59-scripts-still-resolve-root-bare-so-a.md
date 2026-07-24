@@ -1,6 +1,7 @@
 # BG0282: the 26 unanchored WRITER scripts resolve --root bare, so a run from a subdirectory writes the wrong tree (slice 1 of 3)
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (behavioural contract test drives each script's main() from a subdirectory of a fixture project and reads what it wrote; red-first proven by stashing the source - 59 subtest failures, the only 5 passing being the 5 already corrected before this sprint)
 > **Severity:** Medium
 > **Points:** 8
 > **Affects:** .claude/skills/sdlc-studio/scripts/, sdlc-studio/reviews/root-census.md

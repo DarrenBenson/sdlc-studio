@@ -1,10 +1,11 @@
 # BG0289: give the 5 scripts with no --root surface one, and reconcile the census (BG0282 slice 3)
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/, sdlc-studio/reviews/root-census.md
+> **Verification depth:** functional (census summary counts parsed and held to the measurement, stale-not-false waiver removed so a row fails whichever way it disagrees; the title's premise was tested and did not survive - none of the 5 should take a --root, recorded on the bug)
 > **Severity:** Low
 > **Points:** 2
 

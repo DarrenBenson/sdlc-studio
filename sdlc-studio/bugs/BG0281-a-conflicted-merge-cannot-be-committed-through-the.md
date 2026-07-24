@@ -1,6 +1,6 @@
 # BG0281: a conflicted merge cannot be committed through the gate: the commit-msg hook tests invoke the hook with the OUTER repo as cwd, so they inherit its MERGE_HEAD, the hook correctly exits early, and five tool-tests fail for the duration of every merge
 
-> **Status:** Open
+> **Status:** Fixed
 > **Verification depth:** functional (unit tests, mid-merge regression proven by running the refusal test with the outer repo carrying MERGE_HEAD)
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

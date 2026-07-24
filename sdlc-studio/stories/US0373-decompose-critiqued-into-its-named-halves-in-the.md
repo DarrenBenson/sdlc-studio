@@ -1,6 +1,6 @@
 # US0373: decompose critiqued into its named halves in the report and correct the remedy line
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0368
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0369: correct the CR0304 TRD sentence and disposition the doc-drift residuals
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0365
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

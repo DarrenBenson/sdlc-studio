@@ -1,6 +1,6 @@
 # US0417: the engagement floor attributes a git add -A commit to every unit it touched, not only those named
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0416
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

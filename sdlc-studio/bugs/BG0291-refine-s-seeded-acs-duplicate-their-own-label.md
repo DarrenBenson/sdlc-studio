@@ -1,10 +1,11 @@
 # BG0291: refine's seeded ACs duplicate their own label and restate the story title as the Then clause
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py
+> **Verification depth:** functional (label de-duplication, placeholder Then, and full transcription of a truncated criterion; 3 of 5 tests red before the change, the other 2 declared as characterisation in their docstrings)
 > **Severity:** Medium
 > **Points:** 2
 
