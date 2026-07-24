@@ -320,6 +320,116 @@ class EmptySurfaceIsFirstClassTests(unittest.TestCase):
             self.assertNotIn("nothing to mutate", passed["detail"])
 
 
+class SuggestCoveringCommandTests(unittest.TestCase):
+    """US0380 / CR0377: the run proposes a per-target covering command from its OWN reference
+    scan, so a run executed with the derived command produces zero out-of-selection warnings BY
+    CONSTRUCTION - the command lists exactly the files the warning scan looks for. The heuristic
+    caveat rides on the result, and the hand-supplied --test path is unchanged and the default."""
+
+    def _fix(self, d) -> Path:
+        root = Path(d)
+        (root / "sdlc-studio").mkdir()
+        (root / "target.py").write_text("def f(x):\n    return x > 0\n", encoding="utf-8")
+        (root / "test_a.py").write_text("import target\nassert target.f(1)\n", encoding="utf-8")
+        (root / "tests").mkdir()
+        (root / "tests" / "test_b.py").write_text("from target import f\n", encoding="utf-8")
+        (root / "test_unrelated.py").write_text("x = 1\n", encoding="utf-8")
+        return root
+
+    def test_suggests_the_referencing_tests_with_the_heuristic_caveat(self) -> None:
+        """AC1: the derived covering command per target is the referencing test files the scan
+        found, and the honest caveat that reference-scan coverage is a heuristic rides along."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fix(d)
+            sugg = mut.suggest_test_command(root, [root / "target.py"])
+            info = sugg["per_target"][str(root / "target.py")]
+            self.assertEqual(info["referencing_tests"], ["test_a.py", "tests/test_b.py"])
+            self.assertIn("test_a.py", info["command"])
+            self.assertIn("tests/test_b.py", info["command"])
+            self.assertNotIn("test_unrelated.py", info["command"])  # a non-referencing test
+            self.assertIn("heuristic", sugg["caveat"])
+
+    def test_a_run_with_the_derived_command_has_zero_out_of_selection_warnings(self) -> None:
+        """AC2: by construction - the derived command covers every referencing test, so the
+        manufactured-survivor warning cannot fire for the targets; a narrow command still does."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fix(d)
+            derived = mut.suggest_test_command(root, [root / "target.py"])["covering_command"]
+            # selection_warnings is computed even on a refused run, so this holds whether or not
+            # `pytest` is installed - it is a property of the SELECTION, not of the test outcome
+            r = mut.run_gate(root, [root / "target.py"], derived)
+            self.assertEqual(r["selection_warnings"], [], r["selection_warnings"])
+            # the control: a command selecting only one referencing test warns on the other
+            narrow = mut.run_gate(root, [root / "target.py"], "pytest test_a.py")
+            names = sorted(Path(w["test_file"]).name for w in narrow["selection_warnings"])
+            self.assertEqual(names, ["test_b.py"])
+
+    def test_an_uncovered_target_is_named_not_faked(self) -> None:
+        # a target no test references yields a null command and is flagged uncovered - an honest
+        # gap, never a fabricated covering command
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            (root / "orphan.py").write_text("def g():\n    return 1 > 0\n", encoding="utf-8")
+            sugg = mut.suggest_test_command(root, [root / "orphan.py"])
+            info = sugg["per_target"][str(root / "orphan.py")]
+            self.assertIsNone(info["command"])
+            self.assertTrue(info["uncovered"])
+            self.assertIsNone(sugg["covering_command"])
+
+    def test_the_cli_suggest_flag_prints_and_exits_zero_without_mutating(self) -> None:
+        import contextlib
+        import io
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fix(d)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = mut.main(["run", "--files", str(root / "target.py"),
+                               "--suggest-test", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            out = buf.getvalue()
+            self.assertIn("test_a.py", out)
+            self.assertIn("heuristic", out)
+            # mutating nothing: no report was written
+            self.assertFalse((root / "sdlc-studio" / ".local" / "mutation-report.json").exists())
+
+    def test_omitting_test_without_suggest_is_a_usage_error(self) -> None:
+        import contextlib
+        import io
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fix(d)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = mut.main(["run", "--files", str(root / "target.py"), "--root", str(root)])
+            self.assertEqual(rc, 2)
+            self.assertIn("--test is required", err.getvalue())
+
+    def test_the_hand_supplied_test_path_is_unchanged_and_default(self) -> None:
+        """AC3: --test alone runs the mutation gate exactly as before, mutating and reporting."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            r = mut.run_gate(root, [root / "target.py"],
+                             f"{sys.executable} -m unittest test_good")
+            self.assertFalse(r.get("empty_surface"))
+            self.assertGreater(r["summary"]["applied"], 0)      # mutants WERE applied
+            self.assertGreater(r["summary"]["killed"], 0)
+            # and the CLI --test path writes a report as ever
+            import contextlib
+            import io
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = mut.main(["run", "--files", str(root / "target.py"),
+                               "--test", f"{sys.executable} -m unittest test_good",
+                               "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertTrue((root / "sdlc-studio" / ".local" / "mutation-report.json").exists())
+
+
 class LaneTests(unittest.TestCase):
     def test_files_and_since_select_surface(self) -> None:
         mut = _load()

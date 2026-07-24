@@ -11,32 +11,35 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator pointing the mutation gate at a target
+**I want** a covering command derived from the run's own reference scan
+**So that** a run with it has zero out-of-selection warnings by construction
 
 ## Acceptance Criteria
 
 ### AC1: given targets and no --test, or a --suggest-test flag, the run prints the derived covering command
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** targets and either no --test or a --suggest-test flag
+- **When** the run resolves the covering command from its reference scan
 - **Then** given targets and no --test, or a --suggest-test flag, the run prints the derived covering command per target (the referencing test files its scan found), with the honest caveat that reference-scan coverage is a heuristic
-- **Verify:** {{executable check}}
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::SuggestCoveringCommandTests::test_suggests_the_referencing_tests_with_the_heuristic_caveat
+- **Verified:** yes (2026-07-24)
 
 ### AC2: a run executed with the derived command produces zero out-of-selection warnings for its targets, by
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** a run executed with the derived covering command
+- **When** its selection warnings are computed
 - **Then** a run executed with the derived command produces zero out-of-selection warnings for its targets, by construction
-- **Verify:** {{executable check}}
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::SuggestCoveringCommandTests::test_a_run_with_the_derived_command_has_zero_out_of_selection_warnings
+- **Verified:** yes (2026-07-24)
 
 ### AC3: the hand-supplied --test path is unchanged and remains the default
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** a run with a hand-supplied --test command
+- **When** the run executes
 - **Then** the hand-supplied --test path is unchanged and remains the default
-- **Verify:** {{executable check}}
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::SuggestCoveringCommandTests::test_the_hand_supplied_test_path_is_unchanged_and_default
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

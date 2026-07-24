@@ -1578,6 +1578,8 @@ def _selected_test_files(root: Path, test_cmd: str) -> list[Path] | None:
     warn on every test file in the repo."""
     import shlex
     root = Path(root)
+    if not test_cmd:                       # an empty surface can be recorded with no command
+        return None
     try:
         tokens = shlex.split(test_cmd)
     except ValueError:
@@ -1623,6 +1625,32 @@ def _selected_test_files(root: Path, test_cmd: str) -> list[Path] | None:
     return sorted(selected) if resolved else None
 
 
+def referencing_test_files(root: Path | str, targets) -> dict[str, list[Path]]:
+    """Per target stem, the test files whose text NAMES it - the reference scan.
+
+    The single scan `_selection_warnings` reads BACKWARD (which referencing tests a command
+    failed to select) and `suggest_test_command` reads FORWARD (which tests would cover a
+    target). One definition, so the covering command a run is told to use is built from exactly
+    the files whose absence would otherwise warn - which is what makes the zero-warning
+    guarantee hold BY CONSTRUCTION rather than by two scans agreeing.
+
+    Reference-scan coverage is a HEURISTIC: a test that names the target is not proof it
+    exercises it, and a test that exercises it via a re-export may not name it. Every consumer
+    states that caveat rather than reading this as a coverage oracle."""
+    root = Path(root)
+    stems = [Path(f).stem for f in targets]
+    hits: dict[str, list[Path]] = {s: [] for s in stems}
+    for tf in _candidate_test_files(root):
+        try:
+            text = tf.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for stem in stems:
+            if re.search(rf"\b{re.escape(stem)}\b", text):
+                hits[stem].append(tf)
+    return hits
+
+
 def _selection_warnings(root: Path, targets, selected: list[Path] | None) -> list[dict]:
     """The manufactured-survivor condition: a test file that references a target
     module but sits OUTSIDE the command's selection. Advisory only - a narrow run
@@ -1630,20 +1658,56 @@ def _selection_warnings(root: Path, targets, selected: list[Path] | None) -> lis
     if selected is None:
         return []
     sel = {p.resolve() for p in selected}
-    stems = [Path(f).stem for f in targets]
     warnings: list[dict] = []
-    for tf in _candidate_test_files(Path(root)):
-        if tf.resolve() in sel:
-            continue
-        try:
-            text = tf.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
-            continue
-        for stem in stems:
-            if re.search(rf"\b{re.escape(stem)}\b", text):
-                warnings.append({"test_file": str(tf), "references": stem})
-                break
+    refs = referencing_test_files(root, targets)
+    for stem, files in refs.items():
+        for tf in files:
+            if tf.resolve() in sel:
+                continue
+            warnings.append({"test_file": str(tf), "references": stem})
     return warnings
+
+
+REFERENCE_SCAN_CAVEAT = ("reference-scan coverage is a heuristic: a test that names the target "
+                         "is not proof it exercises it, only that it references it")
+
+
+def _rel(root: Path, p: Path) -> str:
+    try:
+        return str(p.resolve().relative_to(root.resolve()))
+    except ValueError:
+        return str(p)
+
+
+def suggest_test_command(root: Path | str, targets, runner: str = "pytest") -> dict:
+    """A per-target covering command derived from the reference scan.
+
+    For each target, the referencing test files its scan found, and a command that selects
+    exactly them (`<runner> <files>`). A run executed with the covering command produces zero
+    out-of-selection warnings for those targets BY CONSTRUCTION, because the command lists the
+    very files the warning scan looks for. A target no test references yields a null command and
+    is named as uncovered - an honest gap, never a fabricated pass. The heuristic caveat rides on
+    the result so no reader mistakes 'names it' for 'exercises it'."""
+    root = Path(root)
+    refs = referencing_test_files(root, targets)
+    per_target: dict[str, dict] = {}
+    combined: list[str] = []
+    for f in targets:
+        stem = Path(f).stem
+        rels = sorted({_rel(root, p) for p in refs.get(stem, [])})
+        per_target[str(Path(f))] = {
+            "referencing_tests": rels,
+            "command": (f"{runner} " + " ".join(rels)) if rels else None,
+            "uncovered": not rels,
+        }
+        combined.extend(rels)
+    combined = sorted(set(combined))
+    return {
+        "per_target": per_target,
+        "covering_command": (f"{runner} " + " ".join(combined)) if combined else None,
+        "runner": runner,
+        "caveat": REFERENCE_SCAN_CAVEAT,
+    }
 
 
 def _git_rev(root: Path) -> str | None:
@@ -1700,6 +1764,27 @@ def cmd_run(args: argparse.Namespace) -> int:
         else:
             print("mutation: nothing to mutate - the selected surface has no mutatable files "
                   "(recorded as an empty surface, not a pass and not a refusal)")
+        return 0
+    # Suggestion mode: print the per-target covering command from the reference scan and exit,
+    # mutating nothing. Triggered by --suggest-test, or by omitting --test (there is nothing to
+    # run, so the honest response is to propose one). --test alone is unchanged - the default.
+    if getattr(args, "suggest_test", False) or args.test is None:
+        if args.test is None and not getattr(args, "suggest_test", False):
+            print("error: --test is required unless --suggest-test is given (with --suggest-test, "
+                  "--test may be omitted to just print the covering command)", file=sys.stderr)
+            return 2
+        sugg = suggest_test_command(root, files, runner=getattr(args, "runner", "pytest"))
+        if args.format == "json":
+            print(json.dumps(sugg, indent=2))
+        else:
+            print(f"mutation: suggested covering command per target - {sugg['caveat']}")
+            for tgt, info in sugg["per_target"].items():
+                if info["command"]:
+                    print(f"  {tgt}: {info['command']}")
+                else:
+                    print(f"  {tgt}: (no referencing test found - UNCOVERED)")
+            if sugg["covering_command"]:
+                print(f"  all targets: {sugg['covering_command']}")
         return 0
     ceiling = args.max_mutations
     if ceiling is None:
@@ -1914,7 +1999,14 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--files", nargs="+", help="explicit target files")
     r.add_argument("--since", metavar="REF", help="target = files changed since this git ref")
     r.add_argument("--story", metavar="USxxxx", help="target = the story's CR/epic Affects")
-    r.add_argument("--test", required=True, help="test command run per mutation (shell)")
+    r.add_argument("--test", required=False, default=None,
+                   help="test command run per mutation (shell). Omit it with --suggest-test to "
+                        "print the reference-scan covering command instead of running")
+    r.add_argument("--suggest-test", action="store_true", dest="suggest_test",
+                   help="print the per-target covering command derived from the reference scan "
+                        "(the referencing test files found), then exit without mutating")
+    r.add_argument("--runner", default="pytest",
+                   help="runner prefix for the suggested covering command (default: pytest)")
     r.add_argument("--max-mutations", type=int, default=None,
                    help=f"cost ceiling (default quality.mutation_max, else {DEFAULT_MAX_MUTATIONS})")
     r.add_argument("--root", default=".")
