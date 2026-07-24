@@ -8,7 +8,7 @@ already exists rather than new instrumentation:
 
   quarantined units + failure signatures  <- .local/loop-state.json  (loop_guard)
   failing / unproven ACs                  <- .local/verify-report.json (verify_ac)
-  per-unit readiness issues               <- audit.audit_unit
+  per-unit readiness issues               <- readiness.audit_unit
   the lifecycle stage a unit stalled at   <- conformance.detect_conformance
   the approved batch and the run's shape  <- .local/run-state.json, .local/sprint-plan.json
   difficulty band (the suitability seed)  <- route.estimate
@@ -45,7 +45,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import run_state, sdlc_md  # noqa: E402
 import artifact  # noqa: E402  (the meta-artifact creator: id + index row)
-import audit  # noqa: E402  (per-unit readiness issues)
+import readiness  # noqa: E402  (per-unit readiness issues)
 import conformance  # noqa: E402  (the stage a unit stalled at)
 import critic  # noqa: E402  (delivery evidence: the recorded verdict)
 import decisions  # noqa: E402  (the project decisions log)
@@ -80,7 +80,7 @@ JUDGEMENT_ISSUES = ("weak-AC", "unmet-deps", "unresolved-deps", "cross-epic-ac",
 # The statuses that ASSERT the work was done. Terminal is not the same as delivered, and
 # the difference is the whole point of the document: `Won't Implement`, `Won't Fix`,
 # `Rejected`, `Withdrawn` and `Superseded` are all terminal and none of them is a delivery.
-# This is deliberately NOT `audit.MET` - that is a DEPENDENCY-SATISFACTION set (a superseded
+# This is deliberately NOT `readiness.MET` - that is a DEPENDENCY-SATISFACTION set (a superseded
 # dependency is satisfied; a superseded unit was not delivered), and borrowing it here
 # printed a success the run never achieved.
 DELIVERED_STATUSES = frozenset({"Done", "Complete", "Fixed", "Verified", "Accepted", "Closed"})
@@ -346,7 +346,7 @@ def _unit(root: Path, rid: str, ctx: dict) -> dict:
     # ...everything else is REMAINING - including a unit whose status says Done while its
     # evidence says otherwise. Its failing verifier is the pointer the next person needs.
     try:
-        unit_audit = audit.audit_unit(root, rec)
+        unit_audit = readiness.audit_unit(root, rec)
     except Exception as exc:  # noqa: BLE001 - a failing readiness lane must not lose the item
         sdlc_md.debug("handoff.audit_unit", exc)
         unit_audit = {"issues": []}

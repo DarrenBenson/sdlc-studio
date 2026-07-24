@@ -1922,7 +1922,7 @@ _AC_CHECKBOX_RE = re.compile(r"^\s*- \[[ xX]\] ")
 
 def count_acs(text: str) -> int:
     """Checkable AC items inside the Acceptance Criteria section (checkbox lines,
-    `### ACn` headings, or `**ACn**` bullets). The same recognition set audit.py's
+    `### ACn` headings, or `**ACn**` bullets). The same recognition set readiness.py's
     weak-AC check uses - shared so the routing estimator and the tranche
     audit count the same things."""
     count = 0

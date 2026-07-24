@@ -53,7 +53,7 @@ independent critic plus the gate - the check's output states this scoping.
    the audit + grooming.
 1. **Define the batch.** `scripts/sprint.py plan <query> --order <order>` returns the dependency-ordered,
    priority-sorted worklist (the triage plan).
-2. **Tranche audit (pre-flight).** `scripts/audit.py check <query|--ids>` grooms the batch for readiness *before* the
+2. **Tranche audit (pre-flight).** `scripts/readiness.py check <query|--ids>` grooms the batch for readiness *before* the
    triage STOP, so work never starts on a unit that would pass the downstream gates vacuously. Per unit it flags,
    deterministically, **weak-AC** (no checkable AC or the tautology placeholder), **unmet-deps** (a `Depends on`
    referent not yet delivered - a referent that sits in the SAME batch is the planner's waves doing their job and
@@ -709,7 +709,7 @@ in loop step 5; per-tier escape/escalation rates accumulate in telemetry
 | `scripts/gate.py --require-retro` | the sprint-close gate: retro present, lessons re-validated, summary current |
 | `scripts/gate.py --require-handoff` | the stopped-short gate: the handoff exists and a retro links it |
 | `scripts/handoff.py generate` | the run-close handoff: remaining work, per item, with its pointer and suitability tag |
-| `scripts/audit.py check` | tranche audit: weak-AC, unmet-deps, already-terminal, link-integrity |
+| `scripts/readiness.py check` | tranche audit: weak-AC, unmet-deps, already-terminal, link-integrity |
 | `scripts/integrity.py check` | referential integrity (required links + dangling refs) |
 | `scripts/conformance.py check` | the lifecycle-conformance gate (hard-fail; incl. reconciled + critiqued) |
 | `scripts/critic.py record` | the committed independent-critic verdict per unit (D3) |

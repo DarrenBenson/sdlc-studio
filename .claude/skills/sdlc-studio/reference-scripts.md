@@ -198,10 +198,10 @@ lists every script with a one-line summary; open the linked page for the full en
 - `plan_review.py` - Plan-review gate (schema v3 only, dormant on v2). Before a story with spec-derived ACs is
 - `spec_guard.py` - Spec-edit guard (schema v3 only, dormant on v2). A delivery must not silently falsify the
 - `constitution.py` - Project-constitution principle gate. Asserts the machine-checkable
-- `audit_check.py` - One CI-runnable command over the schema-v3 team-schema rules, emitting STABLE rule ids so the
+- `schema_check.py` - One CI-runnable command over the schema-v3 team-schema rules, emitting STABLE rule ids so the
 - `review_prep.py` - `prep`: deterministic inputs for the five-leg review (artifact staleness,
 - `disclosure.py` - Progressive-disclosure + Claude Code best-practice check, **advisory**. Flags reference-/
-- `audit.py` - Adversarial audit / tranche pre-flight. `check` grooms a batch for readiness - weak-AC, unmet-deps, already-...
+- `readiness.py` - Tranche pre-flight readiness (deterministic). `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity; `profile` resolves an audit lens pack for the adversarial `audit` command.
 - `critic.py` - The independent-critic verdict ledger. `record` writes a committed verdict to `sdlc-studio/reviews/critic-ve...
 - `persona_resolve.py` - Resolves the worker amigo for a delegated sub-agent, most-specific-first: a project-authored practitioner am...
 

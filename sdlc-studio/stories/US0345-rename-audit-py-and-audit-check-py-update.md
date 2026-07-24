@@ -23,6 +23,7 @@
 - **When** the shipped scripts directory is swept for the old module names
 - **Then** neither `audit.py` nor `audit_check.py` exists, and no shipped file imports or invokes either name - a rename that leaves a caller behind is a rename that has not happened
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_readiness.py::RenameTests::test_no_shipped_file_references_the_old_module_names
+- **Verified:** yes (2026-07-24)
 
 ### AC2: gate.py and sprint.py call the renamed modules
 
@@ -30,6 +31,7 @@
 - **When** each is invoked
 - **Then** it resolves `readiness` and `schema_check`, and the behaviour is byte-identical to the pre-rename output for the same input - a rename must change no verdict
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_readiness.py::RenameTests::test_gate_and_sprint_call_sites_resolve_and_behave_identically
+- **Verified:** yes (2026-07-24)
 
 ### AC3: the user-facing `audit` command is untouched
 
@@ -37,6 +39,7 @@
 - **When** `audit --profile repo` is run
 - **Then** it still resolves and runs - this rename is internal only, and the public surface must not move
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_readiness.py::RenameTests::test_the_public_audit_command_is_unchanged
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

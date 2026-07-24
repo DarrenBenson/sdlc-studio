@@ -72,7 +72,7 @@ def _subparsers(parser: argparse.ArgumentParser):
 
 
 transition = _load("transition", "transition.py")
-audit = _load("audit", "audit.py")
+audit = _load("readiness", "readiness.py")
 artifact = _load("artifact", "artifact.py")
 ledger = _load("ledger", "ledger.py")
 sdlc_md = transition.sdlc_md

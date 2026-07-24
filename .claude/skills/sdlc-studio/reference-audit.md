@@ -69,7 +69,7 @@ plausible-but-wrong finding gets filed.
 | `test` | `templates/audit-profiles/test.md` | the claims code makes about itself: can-it-fail, reaches-the-code, docstring-vs-assertion, incidentally-green | shared |
 | `process` | `templates/audit-profiles/process.md` | the way a delivery was produced: path-from-memory, count-by-hand, accepted-without-running, repair-without-plan, skipped-preflight | shared |
 
-Resolve one with `scripts/audit.py profile --name repo`, which reports the pack's lenses
+Resolve one with `scripts/readiness.py profile --name repo`, which reports the pack's lenses
 and its refute threshold; a name no profile declares is refused, naming the ones that
 exist, rather than running an empty lens set.
 

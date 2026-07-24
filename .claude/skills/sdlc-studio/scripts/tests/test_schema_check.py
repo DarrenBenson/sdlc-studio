@@ -19,7 +19,7 @@ def _load(name: str):
     return mod
 
 
-audit = _load("audit_check")
+audit = _load("schema_check")
 
 
 def _v3(root: Path) -> None:

@@ -2,7 +2,7 @@
 """SDLC Studio blocker sweep: find units whose blockers have cleared (read-only).
 
 The skill tracks what is blocked but never re-checks whether a blocker has cleared.
-`audit.py` flags the forward direction (`unmet-deps`); this is the inverse: a unit sits at
+`readiness.py` flags the forward direction (`unmet-deps`); this is the inverse: a unit sits at
 Status `Blocked`, carries a `Depends on:` field, or an epic `Blocked By` row long after the
 thing it waited on reached a terminal state, and nothing surfaces it as now-eligible.
 
