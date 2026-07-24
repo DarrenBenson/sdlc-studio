@@ -987,6 +987,148 @@ def jest_batch_cache(repo_root: Path, timeout: int) -> list[dict]:
     return _parse_jest_json(result.stdout)
 
 
+def _parse_junit_xml(text: str, scope: list[str]) -> dict[str, bool]:
+    """Flatten a pytest JUnit XML report into {node_id: passed}, keyed the way a Verify line
+    addresses a test: `path/to/test_x.py::Class::test_name`.
+
+    pytest's JUnit output carries NO `file` attribute - only a dotted `classname` such as
+    `.claude.skills.sdlc-studio.scripts.tests.test_status.CensusTests`, in which the directory
+    separators and the module boundary are indistinguishable. Reconstructing a path from that
+    alone is ambiguous, so it is not attempted: `scope` is the list of files the run was given,
+    each is converted to its dotted form once, and a testcase is attributed to the file whose
+    dotted form its classname matches. Anything unmatched is dropped rather than guessed, and a
+    dropped node simply falls through to its own subprocess.
+    """
+    import xml.etree.ElementTree as ET  # noqa: PLC0415 - stdlib, only needed in batch mode
+    try:
+        root = ET.fromstring(text)  # nosec B314 - our own pytest output, not external input
+    except ET.ParseError as exc:
+        sdlc_md.debug("_parse_junit_xml", exc)
+        return {}
+    dotted = {f[:-3].replace("/", "."): f for f in scope if f.endswith(".py")}
+    out: dict[str, bool] = {}
+    for case in root.iter("testcase"):
+        cname, name = case.get("classname") or "", case.get("name") or ""
+        if not cname or not name:
+            continue
+        # A skip is NOT a pass. A skipped verifier proves nothing, and reporting it green is
+        # the vacuous pass this whole layer exists to refuse.
+        ok = not any(case.find(t) is not None for t in ("failure", "error", "skipped"))
+        for dot, path in dotted.items():
+            if cname == dot:                       # module-level test function
+                out[f"{path}::{name}"] = ok
+            elif cname.startswith(dot + "."):      # class-based test
+                out[f"{path}::{cname[len(dot) + 1:]}::{name}"] = ok
+    return out
+
+
+def pytest_verifier_files(paths: list[Path]) -> list[str]:
+    """The distinct test FILES the `pytest` verifiers in `paths` name.
+
+    The batch run is scoped to exactly these, never to the repo root. A bare `pytest .` here
+    collects benchmark fixtures that fail at import, so an unscoped batch returns nothing and
+    every verifier falls back to its own subprocess - the slowness stays and the batch silently
+    does nothing. Scoping to the named files also keeps this project-agnostic: no test directory
+    is hardcoded, and a project whose tests live elsewhere batches just as well.
+    """
+    files: dict[str, None] = {}
+    for path in paths:
+        for block in parse_story(_read_body(path)):
+            head, _, tail = (block.verifier or "").strip().partition(" ")
+            if head.lower() != "pytest" or not tail:
+                continue
+            target = tail.strip()
+            if target.startswith("-") or " " in target:
+                continue
+            files.setdefault(target.split("::", 1)[0], None)
+    return list(files)
+
+
+def pytest_batch_collected(nodes: dict[str, bool]) -> set[str]:
+    """The test FILES the batch run actually collected, derived from the node ids it produced.
+
+    This is what lets an ABSENT node be judged without a subprocess. If a file collected and a
+    node in it is not in the cache, that node does not exist - which is exactly the verdict the
+    per-AC path reaches via pytest's exit code 4 (no collection), reported as VACUOUS rather
+    than as a plain failure because the remedy differs: re-point the Verify line, do not debug
+    code that did not break. If the file did NOT collect, nothing is known and the verifier must
+    still run for itself.
+    """
+    return {n.split("::", 1)[0] for n in nodes}
+
+
+def pytest_batch_cache(repo_root: Path, timeout: int,
+                       targets: list[str] | None = None) -> dict[str, bool]:
+    """Run pytest ONCE and return {node_id: passed}, so per-AC pytest verifiers resolve against
+    one result set instead of a cold process start each.
+
+    This is the release gate's cost. `--release` runs every acceptance criterion in the
+    workspace: 694 of the 1,223 Verify lines are pytest, and a bare pytest start costs ~1.26s
+    here before a single relevant assertion runs, so the spawns alone were ~15 minutes and the
+    gate could not be completed inside any usable timeout. Jest has had this treatment
+    since batch mode was added; pytest had not.
+
+    Empty on any failure, so every caller falls back to the authoritative per-AC subprocess -
+    a batch that silently resolved nothing would turn the release gate green by running nothing,
+    which is worse than the slowness it fixes.
+    """
+    import tempfile  # noqa: PLC0415 - only needed in batch mode
+    scope = [t for t in (targets or []) if (repo_root / t).is_file()]
+    if not scope:
+        return {}   # nothing to batch, or nothing that exists: fall back per-AC
+    with tempfile.TemporaryDirectory() as d:
+        report = Path(d) / "junit.xml"
+        try:
+            # `--continue-on-collection-errors` is load-bearing, not defensive. This repo's
+            # two suites (scripts/tests and tools/tests) are discovered SEPARATELY and cannot
+            # be collected in one pytest run: collecting them together raised 12 errors and
+            # pytest aborted with `Interrupted`, so the batch returned nothing and every
+            # verifier fell back to its own spawn - the fix silently doing nothing. With the
+            # flag, whatever collects is cached and the rest falls through per-AC, which is
+            # the honest degrade: uncached never means green, only unbatched.
+            subprocess.run(["pytest", "-q", "--tb=no", "--continue-on-collection-errors",
+                            f"--junit-xml={report}", *scope],
+                           cwd=str(repo_root), capture_output=True, text=True,
+                           timeout=timeout)  # nosec B603 B607
+        except (FileNotFoundError, OSError, subprocess.TimeoutExpired) as exc:
+            sdlc_md.debug("pytest_batch_cache", exc)
+            return {}
+        if not report.is_file():
+            return {}
+        return _parse_junit_xml(sdlc_md.read_text_safe(report), scope)
+
+
+def resolve_pytest_from_cache(verifier: str, nodes: dict[str, bool],
+                              collected: set[str] | None = None) -> VerifierResult | None:
+    """Resolve a `pytest <node>` verifier against one cached run.
+
+    None when the verb is not pytest, when the line carries flags rather than a bare node id, or
+    when the node is ABSENT from the cache - and that last case matters most. An unknown node is
+    exactly the deleted-target case the per-AC path reports as VACUOUS, so it must fall through
+    to the authoritative subprocess rather than be reported as a pass or a plain failure here.
+    """
+    head, _, tail = verifier.strip().partition(" ")
+    if head.lower() != "pytest" or not tail:
+        return None
+    target = tail.strip()
+    if target.startswith("-") or " " in target:
+        return None  # flags or multiple targets: let the subprocess own it
+    ok = nodes.get(target)
+    if ok is None:
+        # Absent from the cache. If its file COLLECTED, the node genuinely does not exist and
+        # the answer is known: vacuous, the same verdict the subprocess reaches on exit 4.
+        # If the file did not collect, nothing is known - fall through and let it run.
+        if collected and target.split("::", 1)[0] in collected:
+            return VerifierResult(
+                False, "pytest", 4, "",
+                f"no such test node: {target} - the batch collected its file and the node is "
+                f"not in it, so the verifier names a test that does not exist", 0,
+                vacuous=True)
+        return None
+    return VerifierResult(ok, "pytest", 0 if ok else 1, "",
+                          "" if ok else f"cached pytest failure for {target}", 0)
+
+
 def resolve_jest_from_cache(verifier: str, asserts: list[dict]) -> VerifierResult | None:
     """Resolve a `jest <pattern>` verifier against cached assertions, mirroring `jest -t`:
     pass iff >=1 assertion name contains the pattern and all matching pass. None when the verb is
@@ -1022,6 +1164,8 @@ def verify_story(
     timeout: int,
     repo_root: Path,
     jest_cache: list[dict] | None = None,
+    pytest_cache: dict[str, bool] | None = None,
+    pytest_collected: set[str] | None = None,
     allow_shell: bool = True,
     allow_external: bool = False,
     allow_fallback: bool = False,
@@ -1061,6 +1205,8 @@ def verify_story(
         result = None
         if jest_cache is not None:
             result = resolve_jest_from_cache(block.verifier, jest_cache)
+        if result is None and pytest_cache is not None:
+            result = resolve_pytest_from_cache(block.verifier, pytest_cache, pytest_collected)
         if result is None:
             result = run_verifier(block.verifier, timeout, repo_root,
                                   allow_shell=story_allow_shell, allow_fallback=allow_fallback)
@@ -1384,7 +1530,13 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     # with --batch, run jest once and resolve jest verifiers from the cached assertions
     # instead of a cold `jest -t` start per AC (a field sprint measured ~48 cold starts / 70s).
-    jest_cache = jest_batch_cache(repo_root, args.timeout) if getattr(args, "batch", False) else None
+    batch_on = getattr(args, "batch", False)
+    jest_cache = jest_batch_cache(repo_root, args.timeout) if batch_on else None
+    pytest_cache = (pytest_batch_cache(repo_root, args.timeout, pytest_verifier_files(paths))
+                    if batch_on else None)
+    pytest_collected = pytest_batch_collected(pytest_cache) if pytest_cache else None
+    if pytest_cache is not None:
+        print(f"batch: cached {len(pytest_cache)} pytest node(s) from one run", file=sys.stderr)
     if getattr(args, "batch", False):
         print(f"batch: cached {len(jest_cache)} jest assertion(s) from one run", file=sys.stderr)
 
@@ -1397,6 +1549,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             continue
         report = verify_story(
             p, args.dry_run, args.timeout, repo_root, jest_cache=jest_cache,
+            pytest_cache=pytest_cache, pytest_collected=pytest_collected,
             allow_shell=not getattr(args, "no_shell", False),
             allow_external=getattr(args, "allow_external", False),
             allow_fallback=getattr(args, "allow_shell_fallback", False),

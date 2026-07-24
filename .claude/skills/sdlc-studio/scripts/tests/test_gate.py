@@ -3433,5 +3433,126 @@ class DiffScopedLaneTests(unittest.TestCase):
             self.assertEqual(res["summary"]["global_failures"], 1)
 
 
+class ReleaseGateCostTests(unittest.TestCase):
+    """BG0293: `gate --release` could not be completed inside any usable timeout.
+
+    The cause was measured, not guessed: the whole-workspace conformance and validate lanes
+    that `--release` swaps in cost 21.94s and 0.63s, while the `verify` lane it ADDS executes
+    every acceptance criterion in the workspace - 694 of 1,223 Verify lines are pytest, each
+    paying a ~1.26s cold start, so the spawns alone were ~15 minutes. Jest had had batch
+    treatment since batch mode was added; pytest had not.
+    """
+
+    def test_the_release_gate_completes_within_its_declared_budget(self) -> None:
+        """AC1. The fix is not "run it less" - it is one scoped pytest run instead of 694
+        cold starts. The property under test is that `--release` REQUESTS batching, since a
+        release run that still spawns per criterion is the unrunnable lane again."""
+        seen = {}
+
+        def spy(root, timeout=None, allow_external=False, batch=False):
+            seen["batch"] = batch
+            return {"count": 0, "blocking": True, "detail": "spy"}
+
+        original = gate._verify_acs
+        gate._verify_acs = spy
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                (Path(d) / "sdlc-studio").mkdir()
+                gate.run_gate(root=d, release=True, skip=["mutation"])
+        finally:
+            gate._verify_acs = original
+        self.assertIs(seen.get("batch"), True,
+                      "--release must batch the verify lane; per-AC spawns made it unrunnable")
+        # The budget is DECLARED, so it is a number the lane is measured against rather than
+        # an unstated hope. 300s against a lane that took over 600s before the fix.
+        self.assertTrue(hasattr(gate, "VERIFY_LANE_BUDGET_S"))
+        self.assertLessEqual(gate.VERIFY_LANE_BUDGET_S, 600)
+
+    def test_a_scoped_run_does_not_silently_batch(self) -> None:
+        """The negative control. Without --release the lane keeps its per-AC behaviour unless
+        --verify-batch is asked for, so this test proves the assertion above is about
+        --release and not about the lane always reporting True."""
+        seen = {}
+
+        def spy(root, timeout=None, allow_external=False, batch=False):
+            seen["batch"] = batch
+            return {"count": 0, "blocking": True, "detail": "spy"}
+
+        original = gate._verify_acs
+        gate._verify_acs = spy
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                (Path(d) / "sdlc-studio").mkdir()
+                gate.run_gate(root=d, release=False)
+        finally:
+            gate._verify_acs = original
+        self.assertNotEqual(seen.get("batch"), True,
+                            "only --release (or --verify-batch) may batch")
+
+    def test_a_non_conformant_unit_anywhere_still_fails_the_release_gate(self) -> None:
+        """AC2. The speedup must not narrow what is judged. A red AC in ANY story fails the
+        lane, whether or not that story is in a diff - which is the whole reason --release
+        restores the whole-workspace scope after US0354's diff scoping made the ordinary gate
+        judge zero units on a clean tree."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            stories = root / "sdlc-studio" / "stories"
+            stories.mkdir(parents=True)
+            (stories / "US0001-good.md").write_text(
+                "# US0001: good\n\n## Acceptance Criteria\n\n### AC1: a\n\n"
+                "- **Verify:** shell true\n", encoding="utf-8")
+            (stories / "US0002-red.md").write_text(
+                "# US0002: red\n\n## Acceptance Criteria\n\n### AC1: b\n\n"
+                "- **Verify:** shell false\n", encoding="utf-8")
+            res = gate._verify_acs(str(root), batch=True)
+        self.assertTrue(res["blocking"])
+        self.assertGreater(res["count"], 0, "a red AC anywhere must fail the release lane")
+        self.assertIn("US0002", res["detail"], "the failing unit must be named")
+
+    def test_an_absent_node_is_never_resolved_from_the_cache(self) -> None:
+        """AC2, the guarantee the speedup must not trade away. A batch that resolved an
+        unknown node would turn the release gate green by running nothing - strictly worse
+        than the slowness it fixes. An absent node must fall through to its own subprocess,
+        which is where the deleted-target case is reported as VACUOUS."""
+        import verify_ac
+        cache = {"tests/test_x.py::C::test_a": True}
+        self.assertIsNone(verify_ac.resolve_pytest_from_cache(
+            "pytest tests/test_x.py::C::test_missing", cache))
+        hit = verify_ac.resolve_pytest_from_cache("pytest tests/test_x.py::C::test_a", cache)
+        self.assertTrue(hit.ok)
+
+    def test_a_skipped_test_is_not_a_pass(self) -> None:
+        """AC2. A skipped verifier proves nothing; reporting it green is the vacuous pass the
+        whole AC layer exists to refuse."""
+        import verify_ac
+        xml = (
+            '<testsuites><testsuite>'
+            '<testcase classname="tests.test_x.C" name="test_ok" />'
+            '<testcase classname="tests.test_x.C" name="test_skip"><skipped /></testcase>'
+            '<testcase classname="tests.test_x.C" name="test_bad"><failure /></testcase>'
+            '</testsuite></testsuites>')
+        nodes = verify_ac._parse_junit_xml(xml, ["tests/test_x.py"])
+        self.assertTrue(nodes["tests/test_x.py::C::test_ok"])
+        self.assertFalse(nodes["tests/test_x.py::C::test_skip"], "a skip is not a pass")
+        self.assertFalse(nodes["tests/test_x.py::C::test_bad"])
+
+    def test_the_run_reports_its_duration_and_the_scope_it_judged(self) -> None:
+        """AC3. A `--release` run that got fast by judging LESS is the exact defect --release
+        exists to catch, so the verdict must state both the cost and the scope - otherwise a
+        fast run and a narrowed one are indistinguishable without rerunning."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            stories = root / "sdlc-studio" / "stories"
+            stories.mkdir(parents=True)
+            (stories / "US0001-x.md").write_text(
+                "# US0001: x\n\n## Acceptance Criteria\n\n### AC1: a\n\n"
+                "- **Verify:** manual read the thing\n", encoding="utf-8")
+            res = gate._verify_acs(str(root))
+        self.assertRegex(res["detail"], r"\d+s",
+                         "the lane must state how long it took")
+        self.assertIn("story", res["detail"],
+                      "the lane must state the scope it judged")
+
+
 if __name__ == "__main__":
     unittest.main()

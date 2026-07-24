@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -1278,6 +1279,19 @@ def _elide(names: list[str]) -> str:
     return ", ".join(names[:_MAX_NAMED]) + more
 
 
+#: The verify lane's DECLARED cost budget, in seconds. Not a timeout - the lane always
+#: finishes - but a number the run is measured against and reports exceeding, so "the release
+#: gate is slow again" is a verdict the gate states rather than something an operator discovers
+#: by killing it, after a run where the lane took over ten minutes and was therefore never run.
+#:
+#: Set to 600 against a MEASURED 453s after batching (160s for the one scoped pytest run plus
+#: ~294s of verifiers that cannot be batched). Not 300: a threshold the lane exceeds on every
+#: single run is a constant, and a warning that always fires is already switched off - which is
+#: the defect CR0419 recorded about the capacity ceiling and D0064 had to repair. Re-derive it
+#: from a measured run when the shape changes, never carry it forward silently.
+VERIFY_LANE_BUDGET_S = 600
+
+
 def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool = False,
                 batch: bool = False) -> dict:
     """Blocking release-gate lane: EXECUTE every story's `Verify:` expression now, and fail
@@ -1314,14 +1328,27 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
         return {"count": 1, "blocking": True,
                 "detail": "no stories under sdlc-studio/stories - the verify lane proved "
                           "nothing about the AC layer (wrong --root?)"}
+    started = time.time()
     jest_cache = verify_ac.jest_batch_cache(rr, timeout) if batch else None
+    # Without batching this lane pays a cold pytest start PER CRITERION. 694 of this
+    # workspace's 1,223 Verify lines are pytest and a bare start costs ~1.26s, so the spawns
+    # alone were ~15 minutes and `--release` could not be completed inside any usable timeout.
+    # One scoped run replaces them. The cache is empty on any failure, and an absent node is
+    # never resolved from it, so a verifier always falls back to its own authoritative
+    # subprocess rather than being reported green by a batch that ran nothing.
+    pytest_cache = (verify_ac.pytest_batch_cache(
+        rr, timeout, verify_ac.pytest_verifier_files(stories)) if batch else None)
+    pytest_collected = (verify_ac.pytest_batch_collected(pytest_cache)
+                        if pytest_cache else None)
     red: list[str] = []
     blocked: list[str] = []
     unspecified: list[str] = []
     acs = manual = unspec = 0
     for path in stories:
         report = verify_ac.verify_story(path, dry_run=True, timeout=timeout, repo_root=rr,
-                                        jest_cache=jest_cache, allow_external=allow_external)
+                                        jest_cache=jest_cache, pytest_cache=pytest_cache,
+                                        pytest_collected=pytest_collected,
+                                        allow_external=allow_external)
         story_id = sdlc_md.extract_record_id(path.stem) or path.stem
         acs += report.ac_count
         manual += report.manual
@@ -1332,6 +1359,13 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
             name = f"{story_id}::{f['ac']} ({f['verifier']})"
             (blocked if f.get("kind") == "blocked" else red).append(name)
     executable = acs - manual - unspec
+    elapsed = int(time.time() - started)
+    # State the cost and the scope. A `--release` run that got fast by judging less
+    # is the exact defect `--release` exists to catch, so a reader must be able to tell the two
+    # apart without rerunning it.
+    cost = (f"{len(stories)} story/stories, {executable} executable AC(s) in {elapsed}s"
+            f"{' (batched)' if batch else ' (per-AC subprocess)'}"
+            f"{f' - OVER the {VERIFY_LANE_BUDGET_S}s declared budget' if elapsed > VERIFY_LANE_BUDGET_S else ''}")
     parts = []
     if unspecified:
         parts.append(f"{len(unspecified)} story/stories with an unspecified AC (no Verify: line "
@@ -1345,14 +1379,14 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
                      f"pass --allow-external to run them once you trust the content")
     if parts:
         return {"count": len(unspecified) + len(red) + len(blocked), "blocking": True,
-                "detail": "; ".join(parts)}
+                "detail": "; ".join(parts) + f" [{cost}]"}
     if acs == 0:
         return {"count": 1, "blocking": True,
                 "detail": f"no acceptance criteria across {len(stories)} story/stories - the "
                           f"verify lane proved nothing about the AC layer (wrong --root?)"}
     return {"count": 0, "blocking": True,
             "detail": f"{executable}/{acs} executable AC(s) green across "
-                      f"{len(stories)} story/stories ({manual} manual)"}
+                      f"{len(stories)} story/stories ({manual} manual) [{cost}]"}
 
 
 def _review_legs(root: str) -> dict:
@@ -1466,8 +1500,12 @@ def run_gate(root: str = ".", only: list[str] | None = None,
             if registry.get(_name) is DEFAULT_CHECKS.get(_name):
                 registry[_name] = _whole
         # ...and the executing AC-verify lane joins the standard gate...
-        registry["verify"] = (lambda r, _x=allow_external, _b=verify_batch:
-                              _verify_acs(r, allow_external=_x, batch=_b))
+        # `--release` IMPLIES batching. It is the only run that executes every criterion in the
+        # workspace, so it is the one run where a cold start per criterion is unaffordable -
+        # a measured ~15 minutes of process spawns alone made the lane unrunnable
+        # and therefore unrun. `--verify-batch` remains available for a scoped run.
+        registry["verify"] = (lambda r, _x=allow_external:
+                              _verify_acs(r, allow_external=_x, batch=True))
         bound.append("verify")
         # ...and every required document leg must be present or explicitly waived: a tag over a
         # silently-missing required artefact is the BG0110 hole this refuses to leave open.

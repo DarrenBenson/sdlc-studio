@@ -36,6 +36,20 @@ exactly why it exists: US0354's diff-scoped speedup made the ordinary gate judge
 a clean tree, and `--release` is the counterweight. So this is the one lane a release cannot
 skip, and it currently cannot be completed.
 
+**Cause, measured 2026-07-24 rather than assumed.** The first guess was the whole-workspace
+conformance and validate lanes that `--release` swaps in. Both were timed and neither is the
+cost: conformance 21.94s, validate 0.63s.
+
+The cost is the `verify` lane, which `--release` adds and refuses to let you deselect. It runs
+EVERY acceptance criterion's verifier across the workspace: 1,223 Verify lines, of which 694 are
+`pytest` and each spawns its own process. One bare pytest invocation on this repo costs 1.26s
+before running a single relevant assertion, so the spawns alone are ~875s - about 15 minutes -
+independent of how fast the tests themselves are.
+
+`verify_ac.py` already solves this for the other runner: `--batch` runs jest ONCE and resolves
+every jest verifier from the cached result. pytest has no equivalent, so it pays a full process
+start per criterion.
+
 Note what this does NOT show: the gate is not proven WRONG, only unrunnable within any usable
 timeout. Nothing here says a release would fail its lanes. But an unfinishable check is an
 unrun check, and the release cut (US0348) has an acceptance criterion that requires it green.
