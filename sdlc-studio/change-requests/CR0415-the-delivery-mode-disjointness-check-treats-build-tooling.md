@@ -66,3 +66,8 @@ unexplained lane failures in agents that did not touch anything related.
 - **Given** a reader of reference-delivery.md
 - **Then** it states that build tooling couples to the whole batch and why Affects is the wrong signal for it
 - **Verify:** manual
+
+**Confirmed by delivery.** US0372 delivered exactly this shape: it restructures the
+pre-commit hook, and every parallel agent in the same wave committed through that hook. It was
+held back for isolated delivery by hand, which is the judgement this change request asks the
+tool to make.
