@@ -138,6 +138,24 @@ python test.py
 - **Format:** `shfmt` for consistent indentation and style.
 - Both are single binaries with no runtime; wire them into `code check` and CI.
 
+## Resolving `--root`
+
+Every script in this family takes `--root`. Resolve it with
+`sdlc_md.resolve_root(args)`, and anchor any relative output on it with
+`sdlc_md.under_root(root, rel)`. Never `Path(args.root)` directly.
+
+- A root the caller NAMED is honoured verbatim - pointing a run at another
+  project is never second-guessed.
+- The default `.` means "work it out from here", so it is discovered upward to
+  the nearest directory holding an `sdlc-studio/` workspace. A cwd that already
+  is a root resolves to itself, so the common case is unchanged.
+- An ABSOLUTE output path is passed through untouched; only a relative one is
+  anchored.
+
+A bare `Path(args.root)` writes beside the cwd. A run from a subdirectory then
+produces a stray `sdlc-studio/.local` tree, prints the path it used, and exits
+0 - the output looks written and the gate that reads it never sees it.
+
 ## Configuration
 
 Use a shared config module for project-wide settings. For bash, read from config files or use environment variables.

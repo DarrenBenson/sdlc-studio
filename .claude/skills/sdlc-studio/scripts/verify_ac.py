@@ -1216,63 +1216,15 @@ def append_history(path: Path, stories: list[StoryReport], dry_run: bool) -> Non
 # -----------------------------------------------------------------------------
 
 
-def under_root(repo_root: Path, rel: str) -> Path:
-    """Resolve a --dir/--report value against the repo root when it is relative, so a run
-    from any cwd discovers stories and writes the report where the Done gate reads them
-    (root/sdlc-studio/.local/...). An absolute path the caller passed is honoured as-is.
-
-    Public, with `resolve_root` and `discover_root`, because sibling scripts anchor on the
-    same rule (repo_map.py imports them). One resolver, not a second path-joining idiom
-    per script, is what keeps a writer and its reader agreeing about where a file lives."""
-    p = Path(rel)
-    return p if p.is_absolute() else repo_root / p
-
-
-# A project root is a directory holding an `sdlc-studio/` workspace. The bare presence of a
-# directory by that name is not enough: the skill's own source sits at
-# `.claude/skills/sdlc-studio/`, so a marker-free check would stop at `.claude/skills` and
-# call it a project. Each marker below exists only in a real workspace.
-_ROOT_MARKERS = (
-    ".sdlc-studio.yaml",
-    "sdlc-studio/.config.yaml",
-    "sdlc-studio/stories",
-    "sdlc-studio/epics",
-    "sdlc-studio/bugs",
-    "sdlc-studio/change-requests",
-)
-
-
-def discover_root(start: Path | str) -> Path:
-    """The nearest directory at or above `start` that holds an sdlc-studio workspace.
-
-    Falls back to `start` when there is no project above it: with none in sight the cwd is
-    the honest answer, and walking to `/` would anchor the report somewhere unrelated.
-    """
-    start = Path(start).resolve()
-    for cand in (start, *start.parents):
-        if any((cand / m).exists() for m in _ROOT_MARKERS):
-            return cand
-    return start
-
-
-def resolve_root(args: argparse.Namespace) -> Path:
-    """The project root every path in this run anchors on.
-
-    A root the caller NAMED is honoured verbatim - pointing the run at another project
-    must never be second-guessed. The family default `.` is not a named root; it means
-    "work it out from here", so it is DISCOVERED upward instead of assumed to be the cwd.
-    Assuming it was the defect: a run from any subdirectory - the skill's own `scripts/`
-    above all - wrote verify-report.json and verify-history.jsonl into a stray
-    `sdlc-studio/.local` tree beside the cwd, then printed the path it had used and exited
-    0. The report the Done gate reads was never where the gate looks.
-
-    Discovery only ever widens `.`: a cwd that IS a project root resolves to itself, so
-    the common case is unchanged.
-    """
-    named = getattr(args, "root", None) or "."
-    if named != ".":
-        return Path(named).resolve()
-    return discover_root(Path.cwd())
+# The project-root resolver lives in `lib.sdlc_md` - ONE implementation the whole family shares.
+# These names stay here because `repo_map.py`, `lessons.py` and `loop_guard.py` already import
+# them from this module; they are aliases to the shared functions, never a second copy. A copy
+# would drift, and a drifted resolver is how a writer and its reader stop agreeing where a file
+# lives - the defect this resolver exists to prevent.
+under_root = sdlc_md.under_root
+discover_root = sdlc_md.discover_root
+resolve_root = sdlc_md.resolve_root
+_ROOT_MARKERS = sdlc_md.ROOT_MARKERS
 
 
 def cmd_run(args: argparse.Namespace) -> int:

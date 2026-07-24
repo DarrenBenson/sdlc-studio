@@ -92,6 +92,63 @@ def read_text_safe(path, default: str = "") -> str:
         return default
 
 
+# --- The project-root resolver -------------------------------------------------------------
+# THE one way a script turns `--root` into a path, and anchors a relative output on it. Every
+# script in this family takes `--root`, and a script that resolved it with a bare `Path(args.root)`
+# wrote its output beside the CWD instead of into the project: a run from a subdirectory produced
+# a stray `sdlc-studio/.local` tree, printed the path it had used, and exited 0, so the report the
+# Done gate reads was never where the gate looks. Promoted here from `verify_ac`, which now
+# delegates, because a second path-joining idiom per script is exactly how a writer and its reader
+# stop agreeing about where a file lives.
+
+#: A project root is a directory holding an `sdlc-studio/` workspace. The bare presence of a
+#: directory by that name is not enough: the skill's own source sits at
+#: `.claude/skills/sdlc-studio/`, so a marker-free check would stop at `.claude/skills` and call it
+#: a project. Each marker below exists only in a real workspace.
+ROOT_MARKERS = (
+    ".sdlc-studio.yaml",
+    "sdlc-studio/.config.yaml",
+    "sdlc-studio/stories",
+    "sdlc-studio/epics",
+    "sdlc-studio/bugs",
+    "sdlc-studio/change-requests",
+)
+
+
+def under_root(repo_root: Path, rel: str) -> Path:
+    """Anchor a caller-supplied output path on the resolved root when it is RELATIVE, so a run
+    from any cwd writes where the gate reads. An ABSOLUTE path is returned unchanged - the
+    caller's explicit destination is never rewritten."""
+    p = Path(rel)
+    return p if p.is_absolute() else repo_root / p
+
+
+def discover_root(start: Path | str) -> Path:
+    """The nearest directory at or above `start` holding an sdlc-studio workspace.
+
+    Falls back to `start` when there is no project above it: with none in sight the cwd is the
+    honest answer, and walking to `/` would anchor the output somewhere unrelated."""
+    start = Path(start).resolve()
+    for cand in (start, *start.parents):
+        if any((cand / m).exists() for m in ROOT_MARKERS):
+            return cand
+    return start
+
+
+def resolve_root(args) -> Path:
+    """The project root every path in this run anchors on.
+
+    A root the caller NAMED is honoured verbatim - pointing a run at another project must never
+    be second-guessed. The family default `.` is not a named root; it means "work it out from
+    here", so it is DISCOVERED upward rather than assumed to be the cwd. Discovery only ever
+    widens `.`: a cwd that IS a project root resolves to itself, so the common case is unchanged.
+    """
+    named = getattr(args, "root", None) or "."
+    if named != ".":
+        return Path(named).resolve()
+    return discover_root(Path.cwd())
+
+
 def now_iso8601() -> str:
     """Current UTC time as an ISO-8601 Z string (YYYY-MM-DDTHH:MM:SSZ)."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")

@@ -38,9 +38,21 @@
 - **Then** the `verify_ac` names resolve to the shared implementation rather than a second copy, so those importers keep working, and `reference-scripts.md` plus `best-practices/script.md` state the resolver as the single sanctioned way a script resolves `--root` and anchors a relative output path
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::RootResolverTests::test_verify_ac_names_delegate_and_the_rule_is_documented
 
+## Verification depth
+
+Node-addressed pytest ACs over `test_sdlc_md.py`, red before the code (AC3 was genuinely red - the
+documentation did not exist until it was written). Mutation-proven by hand: restoring a second copy
+of the resolver in `verify_ac`, and restoring the original cwd-assumption in `resolve_root`, were
+each caught. A third mutant - dropping the `is_absolute()` guard in `under_root` - SURVIVED and was
+verified EQUIVALENT rather than chased: `pathlib` already discards the left operand when the right
+is absolute (`Path('/a') / Path('/b') == Path('/b')`), so the guard is explicit documentation, not
+load-bearing logic. Delegation is asserted by object IDENTITY against the `sdlc_md` that `verify_ac`
+itself imported, plus a source check that no second `def` was left behind.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-24 | sdlc-studio | Groomed: real ACs + Affects authored |
+| 2026-07-24 | sdlc-studio | Built: resolver promoted to sdlc_md, verify_ac delegates, rule documented |

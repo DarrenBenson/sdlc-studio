@@ -899,5 +899,66 @@ class IdBoundaryTests(unittest.TestCase):
         self.assertIsNone(sdlc_md.id_number("BG-01JQK3F8"))
 
 
+class RootResolverTests(unittest.TestCase):
+    """US0382: ONE project-root resolver for the whole family. A script that resolved `--root`
+    with a bare `Path(args.root)` wrote its output beside the CWD - a stray sdlc-studio/.local
+    tree the Done gate never reads - then printed that path and exited 0."""
+
+    def _project(self):
+        d = Path(tempfile.mkdtemp(prefix="root_resolver_"))
+        (d / "sdlc-studio" / "stories").mkdir(parents=True)   # a real workspace marker
+        (d / "a" / "b").mkdir(parents=True)                   # two levels below the root
+        return d
+
+    def test_named_root_honoured_and_default_discovered_from_a_subdirectory(self):
+        import argparse, os
+        d = self._project()
+        # a NAMED root is verbatim, never second-guessed
+        named = sdlc_md.resolve_root(argparse.Namespace(root=str(d / "a")))
+        self.assertEqual(named, (d / "a").resolve())
+        # the default `.` DISCOVERS upward from a subdirectory that is not itself a root
+        cwd = os.getcwd()
+        try:
+            os.chdir(d / "a" / "b")
+            self.assertEqual(sdlc_md.resolve_root(argparse.Namespace(root=".")), d.resolve())
+        finally:
+            os.chdir(cwd)
+        # ...and with no project above it, the cwd is the honest answer - never `/`
+        lone = Path(tempfile.mkdtemp(prefix="no_project_"))
+        self.assertEqual(sdlc_md.discover_root(lone), lone.resolve())
+
+    def test_under_root_anchors_relative_and_passes_absolute_through(self):
+        root = Path("/tmp/some-project")
+        self.assertEqual(sdlc_md.under_root(root, "sdlc-studio/.local/r.json"),
+                         root / "sdlc-studio/.local/r.json")          # anchored
+        absolute = Path("/var/tmp/elsewhere.json")
+        self.assertEqual(sdlc_md.under_root(root, str(absolute)), absolute)  # untouched
+
+    def test_verify_ac_names_delegate_and_the_rule_is_documented(self):
+        import importlib.util
+        scripts = Path(__file__).resolve().parent.parent
+        spec = importlib.util.spec_from_file_location("verify_ac_sut", scripts / "verify_ac.py")
+        va = importlib.util.module_from_spec(spec)
+        sys.modules["verify_ac_sut"] = va
+        spec.loader.exec_module(va)
+        # IDENTITY against the sdlc_md verify_ac ITSELF imported - a second copy would behave
+        # identically today and drift tomorrow, which equality could never catch. (This test
+        # loads its own sdlc_md instance, so comparing to that one would fail on module identity
+        # rather than on delegation.)
+        self.assertIs(va.resolve_root, va.sdlc_md.resolve_root)
+        self.assertIs(va.discover_root, va.sdlc_md.discover_root)
+        self.assertIs(va.under_root, va.sdlc_md.under_root)
+        # ...and no second implementation was left behind in verify_ac to drift from it
+        src = (scripts / "verify_ac.py").read_text(encoding="utf-8")
+        for name in ("resolve_root", "discover_root", "under_root"):
+            self.assertNotIn(f"def {name}(", src,
+                             f"verify_ac still defines its own {name} - that is the copy")
+        # and the rule is stated where a script author will meet it
+        ref = (scripts.parent / "reference-scripts.md").read_text(encoding="utf-8")
+        bp = (scripts.parent / "best-practices" / "script.md").read_text(encoding="utf-8")
+        self.assertIn("resolve_root", ref)
+        self.assertIn("resolve_root", bp)
+
+
 if __name__ == "__main__":
     unittest.main()

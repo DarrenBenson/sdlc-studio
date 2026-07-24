@@ -103,6 +103,17 @@ Every script in `scripts/`:
    recorder subject id as `--unit` - so no verb needs a per-script `--help` probe
    (swept by `tests/test_cli_grammar.py`)
 
+10. Resolves `--root` through `sdlc_md.resolve_root(args)` and anchors any
+    relative output path with `sdlc_md.under_root(root, rel)` - never a bare
+    `Path(args.root)`. A NAMED root is honoured verbatim; the family default
+    `.` means "work it out from here" and is discovered upward to the nearest
+    directory holding an `sdlc-studio/` workspace. Assuming `.` was the cwd is
+    the defect this exists to prevent: a run from a subdirectory wrote its
+    output into a stray `sdlc-studio/.local` tree beside the cwd, printed the
+    path it had used, and exited 0 - so the report the Done gate reads was
+    never where the gate looks. One resolver, not a path-joining idiom per
+    script, is what keeps a writer and its reader agreeing where a file lives.
+
 See `best-practices/script.md` for the shared style rules (shebang,
 error handling, CLI flags over config files, and the CLI argument grammar).
 
