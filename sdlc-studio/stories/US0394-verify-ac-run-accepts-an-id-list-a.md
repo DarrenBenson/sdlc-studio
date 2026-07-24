@@ -58,3 +58,4 @@ per story
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-24 | sdlc-studio | Groomed: real ACs + Affects authored |
+| 2026-07-24 | sdlc-studio | Built: `--ids` / `--worklist` / `--from-run` batch scopes, all 3 ACs verified |
