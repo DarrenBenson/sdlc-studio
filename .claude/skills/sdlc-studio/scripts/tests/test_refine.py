@@ -613,6 +613,277 @@ class InheritSubsetTests(unittest.TestCase):
         self.assertEqual((value, mode), ("src/inheritance.py", "explicit"))
 
 
+class BreakdownFileTests(unittest.TestCase):
+    """US0353: `refine apply` and `refine add` take the whole breakdown as a JSON or YAML file.
+
+    A bulk refine was long fragile shell lines (one run: ~56 stories across 12 calls), where a
+    typo in a points value was found only at mint time and the breakdown could not be reviewed
+    or version-controlled as a unit before it ran. The file is validated WHOLE - every fault in
+    one refusal, nothing minted - which is the `--story` form's fail-empty discipline applied to
+    the input a bulk refine actually arrives as.
+    """
+
+    def _bd(self, root: Path, name: str, payload: str) -> Path:
+        p = root / name
+        p.write_text(payload, encoding="utf-8")
+        return p
+
+    def _cli(self, argv: list[str]) -> tuple[int, str]:
+        """(exit code, everything the command printed). Both streams are captured: a green
+        suite must be silent, and refine writes its seeded-Affects notes and its refusals to
+        stderr, so an uncaptured call leaks lines that read like failures on a passing run."""
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = refine.main(argv)
+        return rc, out.getvalue() + err.getvalue()
+
+    def _units(self, root: Path) -> list[tuple[str, str, str]]:
+        """(title, points, affects) of every minted story, in id order - the comparable
+        shape of a decomposition, free of the ids two runs cannot share."""
+        out = []
+        for p in sorted((root / "sdlc-studio" / "stories").glob("US*.md")):
+            text = p.read_text(encoding="utf-8")
+            out.append((sdlc_md.extract_h1_title(text).split(": ", 1)[1],
+                        sdlc_md.extract_field(text, "Points"),
+                        sdlc_md.extract_field(text, "Affects")))
+        return out
+
+    def test_a_breakdown_file_mints_the_same_units_as_repeated_story_flags(self) -> None:
+        with tempfile.TemporaryDirectory() as d1, tempfile.TemporaryDirectory() as d2:
+            flags_root, file_root = Path(d1), Path(d2)
+            for root in (flags_root, file_root):
+                _cr(root, "CR0001", ["the request is satisfied"])
+            rc, _ = self._cli(["apply", "--request", "CR0001", "--root", str(flags_root),
+                               "--epic-title", "The epic", "--skip-personas",
+                               "--story", "First|2|src/CR0001.py", "--story", "Second|3"])
+            self.assertEqual(rc, 0)
+            self._bd(file_root, "bd.json", json.dumps({
+                "epic-title": "The epic",
+                "stories": [{"title": "First", "points": 2, "affects": "src/CR0001.py"},
+                            {"title": "Second", "points": 3}]}))
+            rc, _ = self._cli(["apply", "--request", "CR0001", "--root", str(file_root),
+                               "--skip-personas", "--breakdown", str(file_root / "bd.json")])
+            self.assertEqual(rc, 0)
+            self.assertEqual(self._units(file_root), self._units(flags_root))
+            self.assertEqual(len(self._units(file_root)), 2)
+            # ... and the epic the two forms produce carries the same title and point total
+            for root in (flags_root, file_root):
+                epic = next((root / "sdlc-studio" / "epics").glob("EP*.md"))
+                self.assertIn("The epic", epic.read_text(encoding="utf-8"))
+
+    def test_an_invalid_breakdown_mints_nothing_and_names_every_fault(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the request is satisfied"])
+            bd = self._bd(root, "bd.json", json.dumps({
+                "epic-title": "The epic",
+                "stories": [{"title": "Fine", "points": 2},
+                            {"title": "Off scale", "points": 7},
+                            {"points": 3},
+                            {"title": "Typo", "points": 2, "pionts": 1}]}))
+            rc, msg = self._cli(["apply", "--request", "CR0001", "--root", str(root),
+                                 "--skip-personas", "--breakdown", str(bd)])
+            self.assertEqual(rc, 2)
+            self.assertIn("stories[1]", msg)      # the off-scale points
+            self.assertIn("stories[2]", msg)      # the missing title
+            self.assertIn("stories[3]", msg)      # the misspelled key
+            self.assertIn("3 fault(s)", msg)      # every fault in ONE refusal, not the first
+            # fail-empty: no epic, no story, the request still undecomposed
+            self.assertEqual(list((root / "sdlc-studio" / "stories").glob("US*.md")), [])
+            self.assertFalse((root / "sdlc-studio" / "epics").exists()
+                             and list((root / "sdlc-studio" / "epics").glob("EP*.md")))
+
+    def test_the_file_may_name_the_into_target(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the first request is satisfied"])
+            _cr(root, "CR0002", ["the second request is satisfied"])
+            epic = refine.refine(root, "CR0001", "Batch epic", [("A", 2, None)],
+                                 skip_personas=True)["epic"]
+            bd = self._bd(root, "bd.json", json.dumps(
+                {"into": epic, "stories": [{"title": "B", "points": 3}]}))
+            rc, _ = self._cli(["apply", "--request", "CR0002", "--root", str(root),
+                               "--skip-personas", "--breakdown", str(bd)])
+            self.assertEqual(rc, 0)
+            self.assertEqual([sid for sid, _ in sdlc_md.children_of(root, epic)],
+                             ["US0001", "US0002"])
+
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_yaml_and_json_forms_are_equivalent(self) -> None:
+        with tempfile.TemporaryDirectory() as d1, tempfile.TemporaryDirectory() as d2:
+            json_root, yaml_root = Path(d1), Path(d2)
+            for root in (json_root, yaml_root):
+                _cr(root, "CR0001", ["the request is satisfied"])
+            self._bd(json_root, "bd.json", json.dumps({
+                "epic-title": "The epic",
+                "stories": [{"title": "First", "points": 2, "affects": "src/CR0001.py"}]}))
+            self._bd(yaml_root, "bd.yaml",
+                     "epic-title: The epic\nstories:\n  - title: First\n    points: 2\n"
+                     "    affects: src/CR0001.py\n")
+            for root, name in ((json_root, "bd.json"), (yaml_root, "bd.yaml")):
+                rc, _ = self._cli(["apply", "--request", "CR0001", "--root", str(root),
+                                   "--skip-personas", "--breakdown", str(root / name)])
+                self.assertEqual(rc, 0)
+            self.assertEqual(self._units(yaml_root), self._units(json_root))
+
+    def test_breakdown_and_story_flags_together_are_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the request is satisfied"])
+            bd = self._bd(root, "bd.json", json.dumps(
+                {"epic-title": "The epic", "stories": [{"title": "First", "points": 2}]}))
+            rc, msg = self._cli(["apply", "--request", "CR0001", "--root", str(root),
+                                 "--skip-personas", "--breakdown", str(bd),
+                                 "--story", "Second|3"])
+            self.assertEqual(rc, 2)
+            self.assertIn("alternatives", msg)
+            self.assertEqual(list((root / "sdlc-studio" / "stories").glob("US*.md")), [])
+
+    def test_add_takes_a_breakdown_and_its_epic_title(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the request is satisfied"])
+            refine.refine(root, "CR0001", "First slice", [("A", 2, None)], skip_personas=True)
+            bd = self._bd(root, "bd.yaml" if HAVE_YAML else "bd.json",
+                          "epic-title: Second slice\nstories:\n  - title: B\n    points: 3\n"
+                          if HAVE_YAML else json.dumps(
+                              {"epic-title": "Second slice",
+                               "stories": [{"title": "B", "points": 3}]}))
+            rc, _ = self._cli(["add", "--request", "CR0001", "--root", str(root),
+                               "--breakdown", str(bd)])
+            self.assertEqual(rc, 0)
+            titles = [t for t, _, _ in self._units(root)]
+            self.assertEqual(titles, ["A", "B"])
+            epics = sorted(p.read_text(encoding="utf-8")
+                           for p in (root / "sdlc-studio" / "epics").glob("EP*.md"))
+            self.assertTrue(any("Second slice" in e for e in epics))
+
+    def test_add_refuses_a_breakdown_that_names_an_into_target(self) -> None:
+        # `add` mints a further epic and has no --into; a file carrying one describes a
+        # different command, so it is refused rather than quietly ignored.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the request is satisfied"])
+            refine.refine(root, "CR0001", "First slice", [("A", 2, None)], skip_personas=True)
+            bd = self._bd(root, "bd.json", json.dumps(
+                {"into": "EP0001", "stories": [{"title": "B", "points": 3}]}))
+            rc, msg = self._cli(["add", "--request", "CR0001", "--root", str(root),
+                                 "--breakdown", str(bd)])
+            self.assertEqual(rc, 2)
+            self.assertIn("no `into` target", msg)
+            self.assertEqual([t for t, _, _ in self._units(root)], ["A"])
+
+    def test_a_missing_or_unreadable_breakdown_is_named(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            with self.assertRaises(ValueError) as cm:
+                refine.load_breakdown(root / "absent.json")
+            self.assertIn("absent.json", str(cm.exception))
+            bad = self._bd(root, "bd.json", "{not json")
+            with self.assertRaises(ValueError) as cm:
+                refine.load_breakdown(bad)
+            self.assertIn("not valid JSON", str(cm.exception))
+            empty = self._bd(root, "empty.json", json.dumps({"epic-title": "x", "stories": []}))
+            with self.assertRaises(ValueError) as cm:
+                refine.load_breakdown(empty)
+            self.assertIn("stories", str(cm.exception))
+
+    def test_a_story_may_be_the_same_pipe_spec_the_flag_takes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bd = self._bd(root, "bd.json", json.dumps(
+                {"epic-title": "The epic", "stories": ["First|2|src/a.py", "Second|3"]}))
+            self.assertEqual(refine.load_breakdown(bd)["stories"],
+                             [("First", 2, "src/a.py"), ("Second", 3, None)])
+
+
+class SeededAcShapeTests(unittest.TestCase):
+    """BG0291: a seeded AC block used to carry three defects in four lines - the heading
+    repeated its own `ACn:` label (the seed prepends one to a source that already had it),
+    the `Then` was the heading restated (a criterion that states its own name asserts
+    nothing observable), and the whole thing read as authored while being a transcription.
+
+    Worse than the ungroomed marker it replaces: the marker is honestly empty and reads as
+    work owed, this looked groomed.
+    """
+
+    def _story_text(self, root: Path, res) -> str:
+        return sdlc_md.find_by_id(root, res["stories"][0])[0].read_text(encoding="utf-8")
+
+    def _seeded(self, root: Path, criteria: list[str]) -> str:
+        _cr(root, "CR0001", criteria)
+        res = refine.refine(root, "CR0001", "The epic", [("Only story", 3, None)],
+                            skip_personas=True)
+        return self._story_text(root, res)
+
+    def test_the_label_is_not_doubled(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            text = self._seeded(Path(d), ["AC1: plan-time overlap detection without verifiers",
+                                          "**AC2** - the second criterion"])
+            headings = [ln for ln in text.splitlines() if ln.startswith("### AC")]
+            self.assertEqual(headings,
+                             ["### AC1: plan-time overlap detection without verifiers",
+                              "### AC2: the second criterion"])
+            for h in headings:
+                with self.subTest(heading=h):
+                    self.assertEqual(len(re.findall(r"AC\d", h)), 1, "label repeated in heading")
+
+    def test_a_criterion_that_is_only_a_label_keeps_its_text(self) -> None:
+        # The strip must not empty a heading: `AC1:` alone is a poor criterion, but a heading
+        # with nothing after the label is a malformed artefact.
+        self.assertEqual(refine._strip_ac_label("AC1:"), "AC1:")
+        # ... and a mid-sentence mention is not a label at all
+        self.assertEqual(refine._strip_ac_label("the gate reports AC2: unresolved"),
+                         "the gate reports AC2: unresolved")
+
+    def test_the_then_clause_is_not_the_heading(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            text = self._seeded(Path(d), ["the batch gate refuses an ungroomed unit"])
+            ac = text[text.index("## Acceptance Criteria"):]
+            heading = next(ln for ln in ac.splitlines() if ln.startswith("### AC1:"))
+            then = next(ln for ln in ac.splitlines() if ln.startswith("- **Then**"))
+            self.assertNotIn(heading.split(": ", 1)[1], then)
+            self.assertIn("{{", then)     # a placeholder: work owed, not an assertion
+            self.assertIn("{{executable check}}", ac)   # the Verify stays the author's job
+
+    def test_a_truncated_criterion_is_still_transcribed_in_full(self) -> None:
+        """The Then carried the whole criterion, so making it a placeholder must not lose a
+        long one that the heading truncates."""
+        long_criterion = ("the planner reads the TSD and names the interface each unit touches "
+                          "so a reviewer can tell a described change from an asserted one, in "
+                          "one line per unit and without opening the diff")
+        with tempfile.TemporaryDirectory() as d:
+            text = self._seeded(Path(d), [long_criterion])
+            self.assertIn(long_criterion, text)
+            heading = next(ln for ln in text.splitlines() if ln.startswith("### AC1:"))
+            self.assertLess(len(heading), len(long_criterion))   # ... and still a short heading
+
+    def test_no_story_gets_a_siblings_criterion(self) -> None:
+        """3 criteria, 2 stories: no story may claim a criterion whose slice is undetermined.
+        The mapping is not derivable, so the marker is used instead of a guess and the epic
+        carries the list whole.
+
+        Characterisation, not a repair: the multi-story guard already held (BG0205) - the
+        defect BG0291 fixes is in the SINGLE-story seed's shape. Pinned because the bug names
+        it and because nothing else asserts the criteria are not merely dropped.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            criteria = ["the first criterion", "the second criterion", "the third criterion"]
+            _cr(root, "CR0001", criteria)
+            res = refine.refine(root, "CR0001", "The epic",
+                                [("First", 2, None), ("Second", 3, None)], skip_personas=True)
+            for sid in res["stories"]:
+                text = sdlc_md.find_by_id(root, sid)[0].read_text(encoding="utf-8")
+                with self.subTest(story=sid):
+                    self.assertIn(sdlc_md.UNGROOMED_AC_TOKEN, text)
+                    for c in criteria:
+                        self.assertNotIn(c, text)
+            epic = sdlc_md.find_by_id(root, res["epic"])[0].read_text(encoding="utf-8")
+            for c in criteria:      # not mis-assigned AND not lost
+                self.assertIn(f"- [ ] {c}", epic)
+
+
 class UngroomedMarkerTests(unittest.TestCase):
     """US0411: a story refine mints without seeded criteria carries an explicit ungroomed
     grooming-placeholder marker in its AC block, not a bare `{{placeholder}}` reading as content."""
