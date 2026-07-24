@@ -680,7 +680,7 @@ def _run_rung(root, unit_ids) -> str:
 
 
 def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
-             elapsed_hours: float | None = None) -> dict:
+             elapsed_hours: float | None = None, sprint_model: str | None = None) -> dict:
     """Estimate vs actual for every unit in the retro's batch - IN POINTS, and in tokens.
 
     `sprint_tokens` is the SPRINT-level actual token spend: the harness tracks the token
@@ -896,6 +896,11 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
         "constants": constants,
         "sample": _sample_of(retro_id, constants),
         "models": models,
+        # The model captured from the harness transcript for an INTERACTIVE close, which has no
+        # per-unit attempt telemetry to derive `models` from. The Model cell falls back to this
+        # only when the per-unit set is empty, so a runner sprint's measured per-unit models
+        # always win; a fan-out that leaves `models` populated is never overwritten by it.
+        "sprint_model": sprint_model,
         "mixed_models": mixed,
         "by_model": _by_model(rated),
         "batch": {
@@ -1355,6 +1360,10 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
                  f"`accuracy --delegated-tokens N --delegated-agent NAME`")
     return {"tokens": total, "measured_tokens": delta, "delegated_tokens": supplied,
             "delegated_records": len(delegated), "lower_bound": True,
+            # The model the transcript names for the counted usage, carried through from the
+            # capture so the interactive close can book the row in the (project, model) cell
+            # rather than the unrecorded-model one. `mixed` when the session spanned two.
+            "model": cap.get("model"),
             "source": cap["source"], "basis": basis}
 
 
@@ -1764,11 +1773,21 @@ def model_cell(res: dict) -> str:
     """The model a sprint's rated units were delivered by, as one history cell.
 
     `mixed` when more than one delivered it - and a mixed row records NO ratio, because a ratio
-    across two models is a statement about neither."""
+    across two models is a statement about neither.
+
+    For an INTERACTIVE sprint the per-unit `models` set is empty (there is no per-unit attempt
+    telemetry), so the model captured from the harness transcript (`sprint_model`) is used
+    instead - a single id, or `mixed` for a session that spanned two. The per-unit set wins
+    whenever it is present, so a runner sprint's measured models are never overwritten."""
     models = res.get("models") or []
     if len(models) > 1:
         return MODEL_MIXED
-    return models[0] if models else "-"
+    if models:
+        return models[0]
+    sprint_model = res.get("sprint_model")
+    if isinstance(sprint_model, str) and sprint_model.strip():
+        return sprint_model.strip()
+    return "-"
 
 
 def _note_cell(text) -> str:
@@ -2306,6 +2325,9 @@ def cmd_accuracy(args) -> int:
     # An explicit `--tokens N` is an operator's typed claim; the branches below overwrite this
     # with what they actually did.
     token_source = SOURCE_SUPPLIED if tokens is not None else None
+    # The model the harness capture attributes the spend to, for the interactive close. Set only
+    # by the capture branch below; None otherwise, so a runner sprint's per-unit models stand.
+    sprint_model = None
     if tokens is None and getattr(args, "tokens_from_harness", False):
         # The close's path: capture the harness-tracked total itself. An actual already on
         # the sprint's row is NEVER re-stamped from a (possibly different) session - the
@@ -2330,6 +2352,9 @@ def cmd_accuracy(args) -> int:
             cap = run_attributed_tokens(args.root, args.id)
             if cap["tokens"]:
                 tokens = cap["tokens"]
+                # The model that spent it, captured alongside the total, so the row books into
+                # the (project, model) cell rather than the unrecorded-model one.
+                sprint_model = cap.get("model")
                 # Part meter read, part reported claim: the row must say so, or a figure half
                 # of which nobody measured would be published under a machine read's provenance.
                 token_source = (SOURCE_HARNESS_SUPPLIED if cap.get("delegated_tokens")
@@ -2342,7 +2367,8 @@ def cmd_accuracy(args) -> int:
                                 f"session-wide total; supply a real figure with "
                                 f"`accuracy --tokens N` if you have one")
     res = accuracy(args.root, args.id, sprint_tokens=tokens,
-                   elapsed_hours=getattr(args, "elapsed_hours", None))
+                   elapsed_hours=getattr(args, "elapsed_hours", None),
+                   sprint_model=sprint_model)
     if token_source:
         res["token_source"] = token_source
     if capture_note:

@@ -14,7 +14,9 @@ the registry is injectable so the aggregation logic is testable without a full r
 from __future__ import annotations
 
 import argparse
+import ast
 import json
+import os
 import sys
 import time
 from datetime import datetime, timezone
@@ -1661,7 +1663,266 @@ def _split(v: str | None) -> list[str] | None:
     return [x.strip() for x in v.split(",") if x.strip()] if v else None
 
 
+# --- test-relevant set -------------------------------------------------------------
+# Which staged paths can change a test outcome, and therefore oblige the commit gate to
+# pay for the unit suites. The first version of this named three directories by hand -
+# scripts/, templates/, tools/ - and a hand enumeration is a lower bound: it is right
+# about what somebody thought of and silent about everything else. The suites here read
+# the hooks, the workflow file, `install.sh`, `package.json`, reference docs, help pages
+# and shipped artefacts, none of which were in it, so a commit touching one of those took
+# the docs-only fast path and skipped the very suite asserting over it.
+#
+# So the set is MEASURED from the suite sources rather than listed. Each test module is
+# parsed and every path expression anchored on the module's own location - `Path(__file__)
+# .resolve().parents[N] / "a" / "b"` and the names bound from it - is resolved to a
+# concrete repo path. Anchoring is what makes this precise: a bare `root / "sdlc-studio"`
+# inside a temporary-directory fixture names no repo file and is not counted, while
+# `_REPO / ".githooks" / "pre-commit"` is.
+#
+# Two honest limits. A path assembled entirely at run time (a name from an environment
+# variable, a glob result) is not visible to a source scan, so this is a measurement of
+# the suite sources, not of a run; and where the two differ the resolution is deliberately
+# over-inclusive - a directory used as a whole makes its whole subtree relevant. Both
+# errors run suites that were not needed. Neither skips one that was.
+TEST_SUITE_DIRS = (
+    ".claude/skills/sdlc-studio/scripts/tests",
+    "tools/tests",
+)
+
+# Fallback for a tree with no suites to measure (a consuming project installs the skill
+# without them). Never the answer where the suites exist - that is the defect above.
+LEGACY_TEST_RELEVANT = (
+    ".claude/skills/sdlc-studio/scripts",
+    ".claude/skills/sdlc-studio/templates",
+    "tools",
+)
+
+_PATH_CALLS = {"Path", "str", "fspath"}
+_PATH_PASSTHROUGH = {"resolve", "absolute", "expanduser"}
+
+
+def _anchored_path(node: ast.AST, env: dict, self_path: str):
+    """Resolve `node` to ("ABS", abspath) or ("STR", fragment), else None.
+
+    Only expressions rooted in `__file__` (directly, or through a name already bound to
+    such an expression) yield an ABS - that is the anchor that separates a real repo read
+    from a fixture path built under a temporary directory.
+    """
+    if isinstance(node, ast.Constant):
+        return ("STR", node.value) if isinstance(node.value, str) else None
+    if isinstance(node, ast.Name):
+        if node.id == "__file__":
+            return ("ABS", self_path)
+        hit = env.get(node.id)
+        return ("ABS", hit) if hit else None
+    if isinstance(node, ast.Call):
+        fn = node.func
+        if isinstance(fn, ast.Name) and fn.id in _PATH_CALLS and node.args:
+            return _anchored_path(node.args[0], env, self_path)
+        if isinstance(fn, ast.Attribute) and fn.attr in _PATH_PASSTHROUGH:
+            return _anchored_path(fn.value, env, self_path)
+        return None
+    if isinstance(node, ast.Attribute):
+        if node.attr == "parent":
+            base = _anchored_path(node.value, env, self_path)
+            if base and base[0] == "ABS":
+                return ("ABS", os.path.dirname(base[1]))
+        return None
+    if isinstance(node, ast.Subscript):
+        holder = node.value
+        if isinstance(holder, ast.Attribute) and holder.attr == "parents":
+            base = _anchored_path(holder.value, env, self_path)
+            idx = node.slice
+            if (base and base[0] == "ABS" and isinstance(idx, ast.Constant)
+                    and isinstance(idx.value, int) and 0 <= idx.value < 12):
+                out = base[1]
+                for _ in range(idx.value + 1):
+                    out = os.path.dirname(out)
+                return ("ABS", out)
+        return None
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
+        left = _anchored_path(node.left, env, self_path)
+        right = _anchored_path(node.right, env, self_path)
+        if not left or not right or right[0] != "STR":
+            return None
+        if left[0] == "ABS":
+            return ("ABS", os.path.normpath(os.path.join(left[1], right[1])))
+        return ("STR", left[1].rstrip("/") + "/" + right[1].lstrip("/"))
+    return None
+
+
+# Attribute methods that read the filesystem at their receiver. A path reaching one of
+# these is a path the test reads: `.read_text` / `.open` name a file, `.glob` / `.iterdir`
+# name a directory (so its whole subtree is relevant). This is what separates a read from a
+# path merely passed to a helper - `foo(SKILL, "x")` hands SKILL on without touching disk,
+# and counting that would drag the whole skill directory in and defeat the docs-only skip.
+_READ_METHODS = frozenset({
+    "read_text", "read_bytes", "open", "glob", "rglob", "iterdir", "walk",
+    "exists", "is_file", "is_dir", "stat", "lstat", "scandir", "samefile",
+})
+# Builtin / stdlib callables whose FIRST argument is a path they read.
+_READ_FUNCS = frozenset({"open", "listdir", "scandir", "walk"})
+
+
+def _read_targets(tree: ast.AST):
+    """Yield the AST node of every path expression the module reads on disk."""
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        fn = node.func
+        if isinstance(fn, ast.Attribute) and fn.attr in _READ_METHODS:
+            yield fn.value
+        elif isinstance(fn, ast.Name) and fn.id in _READ_FUNCS and node.args:
+            yield node.args[0]
+        elif (isinstance(fn, ast.Attribute) and fn.attr in _READ_FUNCS
+              and isinstance(fn.value, ast.Name) and fn.value.id == "os" and node.args):
+            yield node.args[0]
+
+
+def _module_read_paths(src: str, module_path: str, root: str) -> set[str]:
+    """Repo-relative paths the module at `module_path` reads, measured from its source.
+
+    Two kinds of evidence, chosen so the set is over-inclusive on files and precise on
+    directories - the direction that never skips a suite that was needed while not dragging
+    a whole tree in on a bare anchor:
+
+    * A maximal anchored expression resolving to a FILE - `SKILL_DIR / "reference-sprint.md"`,
+      or a name bound to it. A test that names a specific file is a test about that file,
+      whether it reads it directly or hands it to a helper.
+    * A DIRECTORY only where it is the receiver of a real read - a `.glob`, an `.iterdir`,
+      an `os.listdir`. A directory merely passed to a helper (`foo(SKILL_DIR, "x")`) touches
+      no disk here, and counting it would pull the whole skill tree in and delete the
+      docs-only fast path this measurement exists to keep honest.
+    """
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return set()
+    env: dict[str, str] = {}
+    # Three passes so a name bound from an earlier name resolves whatever the order.
+    for _ in range(3):
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                    and isinstance(node.targets[0], ast.Name)):
+                got = _anchored_path(node.value, env, module_path)
+                if got and got[0] == "ABS":
+                    env[node.targets[0].id] = got[1]
+
+    def _record(abs_path: str, want_dir: bool, out: set[str]) -> None:
+        if not abs_path.startswith(root + os.sep) or not os.path.exists(abs_path):
+            return
+        if want_dir and not os.path.isdir(abs_path):
+            return
+        if not want_dir and os.path.isdir(abs_path):
+            return   # a bare directory is only relevant at a read-site (below)
+        out.add(os.path.relpath(abs_path, root).replace(os.sep, "/"))
+
+    out: set[str] = set()
+    # Maximal anchored expressions: a node no anchored ancestor contains. The prefixes along
+    # the way (`_REPO`, `.claude`, `sdlc-studio`) are inner and excluded - counting them is
+    # what made every commit test-relevant.
+    inner: set[int] = set()
+    for node in ast.walk(tree):
+        if not _anchored_path(node, env, module_path):
+            continue
+        for child in ast.walk(node):
+            if child is not node:
+                inner.add(id(child))
+    for node in ast.walk(tree):
+        if id(node) in inner:
+            continue
+        got = _anchored_path(node, env, module_path)
+        if got and got[0] == "ABS":
+            _record(got[1], want_dir=False, out=out)
+    # Directory read-sites: the receiver of a glob / iterdir / listdir naming a directory.
+    for target in _read_targets(tree):
+        got = _anchored_path(target, env, module_path)
+        if got and got[0] == "ABS":
+            _record(got[1], want_dir=True, out=out)
+    return out
+
+
+def test_relevant_paths(root: str = ".") -> set[str]:
+    """The measured set of repo-relative paths the shipped suites read.
+
+    A directory in the set means its whole subtree; a file means that file.
+    """
+    root = os.path.abspath(root)
+    measured: set[str] = set()
+    scanned = False
+    for suite in TEST_SUITE_DIRS:
+        suite_dir = os.path.join(root, suite)
+        if not os.path.isdir(suite_dir):
+            continue
+        for name in sorted(os.listdir(suite_dir)):
+            if not name.endswith(".py"):
+                continue
+            module_path = os.path.join(suite_dir, name)
+            try:
+                with open(module_path, encoding="utf-8") as handle:
+                    src = handle.read()
+            except OSError:
+                continue
+            scanned = True
+            measured |= _module_read_paths(src, module_path, root)
+        # A suite directory is itself read by whatever discovers it.
+        measured.add(suite)
+    if not scanned:
+        return {p for p in LEGACY_TEST_RELEVANT if os.path.exists(os.path.join(root, p))}
+    # The suites import the scripts they exercise, and a template edit can change an
+    # assertion over the shipped payload. Those two are structural, not measurable from a
+    # path expression, so they are unioned in rather than replaced by the measurement.
+    measured |= {p for p in LEGACY_TEST_RELEVANT
+                 if os.path.exists(os.path.join(root, p))}
+    return {p for p in measured if p and not p.startswith("..")}
+
+
+def is_test_relevant(paths, root: str = ".") -> bool:
+    """True when any of `paths` (repo-relative) can change a test outcome."""
+    relevant = test_relevant_paths(root)
+    return any(_matches_relevant(p, relevant) for p in paths)
+
+
+def _matches_relevant(path: str, relevant: set[str]) -> bool:
+    # Strip a leading "./" as a PREFIX, never as a character class: `lstrip("./")` would
+    # eat the leading dot of `.githooks/pre-commit` and quietly match nothing.
+    candidate = path.strip().replace(os.sep, "/")
+    while candidate.startswith("./"):
+        candidate = candidate[2:]
+    candidate = candidate.lstrip("/")
+    if not candidate:
+        return False
+    return any(candidate == entry or candidate.startswith(entry.rstrip("/") + "/")
+               for entry in relevant)
+
+
+def cmd_test_relevant(args: argparse.Namespace) -> int:
+    paths = list(args.test_relevant or [])
+    asked = bool(paths)
+    if not paths and not sys.stdin.isatty():
+        paths = [line for line in sys.stdin.read().splitlines() if line.strip()]
+        asked = True   # an EMPTY pipe is an empty commit, not a request for the listing
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps({"set": sorted(test_relevant_paths(args.root)),
+                          "relevant": is_test_relevant(paths, args.root)}, indent=2))
+        return 0 if (not asked or is_test_relevant(paths, args.root)) else 1
+    if not asked:
+        for entry in sorted(test_relevant_paths(args.root)):
+            print(entry)
+        return 0
+    relevant = is_test_relevant(paths, args.root)
+    # A SENTINEL line, not just the exit code. A caller (the commit hook) must be able to tell
+    # a real answer from a stub that exits 0 for every argument - the pre-commit fixtures stub
+    # gate.py to `sys.exit(0)`, which without this would read as "everything is relevant". The
+    # hook keys on this line and falls back to its own coarse regex when it is absent.
+    print(f"test-relevant: {'yes' if relevant else 'no'}")
+    return 0 if relevant else 1
+# --- end test-relevant set ---------------------------------------------------------
+
+
 def cmd_gate(args: argparse.Namespace) -> int:
+    if getattr(args, "test_relevant", None) is not None:
+        return cmd_test_relevant(args)
     release = getattr(args, "release", False)
     report = run_gate(args.root, only=_split(args.only), skip=_split(args.skip),
                       require_retro=getattr(args, "require_retro", None), release=release,
@@ -1732,6 +1993,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--verify-batch", dest="verify_batch", action="store_true",
                    help="--release: run jest once and resolve jest verifiers from the cached "
                         "result, instead of a cold start per AC")
+    p.add_argument("--test-relevant", dest="test_relevant", nargs="*", metavar="PATH",
+                   help="Answer whether the given repo-relative paths (or the paths on "
+                        "stdin) can change a test outcome, and exit 0 when any can. The "
+                        "set is measured from what the shipped suites read, so a commit "
+                        "touching a doc a test asserts over is never taken for docs-only. "
+                        "With no paths and no stdin, print the measured set")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_gate)
     return p

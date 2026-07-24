@@ -974,5 +974,92 @@ class EstimatorBasisAgreesWithTheCodeTests(unittest.TestCase):
         self.assertNotIn("base term does worse than not fitting one", doc)
 
 
+class ReviewRoundLensesDocTests(unittest.TestCase):
+    """US0396: both review docs require a round of at least two reviewers on distinct lenses,
+    one of them the claims lens, whatever the diff size - and record a single-reviewer round."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.sprint, cls.review = read_docs()
+
+    def _norm(self, text: str) -> str:
+        # collapse newlines so a wrapped sentence reads as one line, and drop the markdown
+        # emphasis markers so a bolded word does not split a phrase match
+        return re.sub(r"\s+", " ", text.replace("*", "").replace("`", "")).lower()
+
+    def test_a_round_is_two_reviewers_on_distinct_lenses_whatever_the_diff(self) -> None:
+        # AC1, in the file that owns the closing-review brief.
+        r = self._norm(self.review)
+        self.assertIn("at least two reviewers", r)
+        self.assertIn("distinct lens", r)          # matches "distinct lens"/"distinct lenses"
+        self.assertIn("whatever the diff size", r,
+                      "diff size must not license dropping to a single reviewer")
+        self.assertIn("claims lens", r, "one lens is named as the claims lens")
+
+    def test_the_sprint_close_states_the_same_two_lens_round(self) -> None:
+        # AC1 mirrored where the sprint close is documented.
+        s = self._norm(self.sprint)
+        self.assertIn("at least two reviewers", s)
+        self.assertIn("claims lens", s)
+        self.assertIn("whatever the diff size", s)
+
+    def test_a_single_reviewer_round_is_recorded_as_such(self) -> None:
+        # AC2: both docs say a one-reviewer round is put on the record as one.
+        for name, doc in (("reference-review.md", self.review),
+                          ("reference-sprint.md", self.sprint)):
+            d = self._norm(doc)
+            self.assertIn("one reviewer", d, f"{name} must address the one-reviewer case")
+            self.assertTrue("review record says so" in d or "record says so" in d,
+                            f"{name} must say a single-reviewer round is recorded as such")
+
+    def test_a_diff_size_carveout_would_be_caught(self) -> None:
+        """Guard the guard: prose letting a small diff drop to one reviewer must fail AC1."""
+        carveout = self._norm(
+            "For a small diff one reviewer is enough and no claims lens is needed.")
+        self.assertNotIn("at least two reviewers", carveout)
+
+
+class BatchSizeTradeoffDocTests(unittest.TestCase):
+    """US0397: reference-sprint.md states the fixed-cost-versus-review-convergence trade-off
+    from this project's own measured rows, and prescribes NO batch-size number."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.sprint, _ = read_docs()
+
+    def _section(self) -> str:
+        # the paragraph that states the trade-off
+        s = re.sub(r"\s+", " ", self.sprint).lower()
+        marker = "batch size trades fixed cost against review convergence"
+        self.assertIn(marker, s, "the trade-off paragraph is missing from reference-sprint.md")
+        return s[s.index(marker):s.index(marker) + 1200]
+
+    def test_it_states_both_arms_of_the_trade_off(self) -> None:
+        # AC1: fixed cost falls per point as the batch grows; convergence cost rises with it.
+        sec = self._section()
+        self.assertIn("per point falls", sec)
+        self.assertIn("amortise", sec)
+        self.assertTrue("convergence cost rises" in sec or "cost rises" in sec)
+
+    def test_it_is_grounded_in_measured_rows_and_names_how_many_sprints(self) -> None:
+        # AC2: grounded in VELOCITY.md, and names the count of sprints it rests on.
+        sec = self._section()
+        self.assertIn("velocity.md", sec)
+        self.assertIn("measured", sec)
+        self.assertRegex(sec, r"(one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+"
+                              r"(?:build\s+)?sprints",
+                         "the trade-off must name how many measured sprints it rests on")
+
+    def test_it_prescribes_no_number(self) -> None:
+        # AC3: no batch-size number is prescribed, and the paucity is stated as the reason.
+        sec = self._section()
+        self.assertTrue("prescribes no" in sec or "names no optimum" in sec
+                        or "no batch-size number" in sec,
+                        "the guidance must explicitly prescribe no number")
+        self.assertIn("no defensible", sec)
+        # and it must not hand the reader a target dressed as advice
+        self.assertNotRegex(sec, r"aim for \d+|target of \d+|keep (?:the )?batch(?:es)? (?:to|at|under) \d+")
+
+
 if __name__ == "__main__":
     unittest.main()

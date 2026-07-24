@@ -125,6 +125,11 @@ UNMEASURED = None
 #: with `/` replaced by `-`), one JSONL file per session.
 TRANSCRIPTS_ENV = "SDLC_STUDIO_TRANSCRIPTS"
 
+#: The model marker for a session whose usage records name more than one model. Kept in step
+#: with `retro.MODEL_MIXED` (the same string) so a mixed harness capture and a mixed per-unit
+#: batch land in the same history cell and are excluded from the per-model rate the same way.
+SESSION_MODEL_MIXED = "mixed"
+
 
 class RunStateError(RuntimeError):
     """The run state exists but cannot be read. Never degraded to "there is no run": that
@@ -523,6 +528,12 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
         return {"tokens": None, "reason": f"no session transcript (*.jsonl) in {d}"}
     src = files[-1]
     total, seen = 0, False
+    #: The distinct models that spent the counted tokens. Collected only from the records that
+    #: carry usage - a record with no usage bought nothing, so its model must not colour the
+    #: attribution. One model reports as itself; more than one reports as SESSION_MODEL_MIXED,
+    #: never one picked from the set, so a sprint run across two models is booked to neither's
+    #: rate rather than the wrong one's.
+    models_seen: set[str] = set()
     try:
         with src.open(encoding="utf-8") as fh:
             for line in fh:
@@ -535,6 +546,9 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
                 if not isinstance(usage, dict):
                     continue
                 seen = True
+                model = (msg.get("model") if isinstance(msg, dict) else None) or rec.get("model")
+                if isinstance(model, str) and model.strip():
+                    models_seen.add(model.strip())
                 try:
                     total += sum(int(usage.get(k) or 0) for k in
                                  ("input_tokens", "output_tokens", "cache_creation_input_tokens"))
@@ -554,7 +568,13 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
         return {"tokens": None, "reason": f"transcript {src} unreadable ({type(exc).__name__}: {exc})"}
     if not seen or total <= 0:
         return {"tokens": None, "reason": f"transcript {src.name} carries no usage records"}
-    return {"tokens": total, "source": str(src),
+    if len(models_seen) == 1:
+        model = next(iter(models_seen))
+    elif len(models_seen) > 1:
+        model = SESSION_MODEL_MIXED
+    else:
+        model = None   # a transcript that named no model - the caller reports it unrecorded
+    return {"tokens": total, "source": str(src), "model": model,
             # MAIN THREAD ONLY, said here because here is where it is true: the transcript
             # carries no subagent (sidechain) usage record at all - measured, 6,624,813 tokens
             # of usage with ZERO from sidechains - so a session that delegated work spent more

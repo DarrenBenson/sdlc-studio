@@ -19,17 +19,19 @@
 
 ### AC1: The review guidance states a round is at least two reviewers with distinct lenses whatever the diff
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** the review guidance in reference-review.md and reference-sprint.md
+- **When** the round definition is read
 - **Then** The review guidance states a round is at least two reviewers with distinct lenses whatever the diff size, and names the claims lens as one.
-- **Verify:** {{executable check}}
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::ReviewRoundLensesDocTests::test_a_round_is_two_reviewers_on_distinct_lenses_whatever_the_diff .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::ReviewRoundLensesDocTests::test_the_sprint_close_states_the_same_two_lens_round
+- **Verified:** yes (2026-07-24)
 
 ### AC2: Where a round runs with one reviewer, the review record says so
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** the review guidance in both docs
+- **When** the single-reviewer case is read
 - **Then** Where a round runs with one reviewer, the review record says so.
-- **Verify:** {{executable check}}
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::ReviewRoundLensesDocTests::test_a_single_reviewer_round_is_recorded_as_such
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

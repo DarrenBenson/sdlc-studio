@@ -17,26 +17,29 @@
 
 ## Acceptance Criteria
 
-### AC1: AC1: a unit touching build tooling is never offered as parallel-safe
+### AC1: a unit touching build tooling is never offered as parallel-safe
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** AC1: a unit touching build tooling is never offered as parallel-safe
-- **Verify:** {{executable check}}
+- **Given** a file-disjoint batch where one unit touches build tooling
+- **When** the delivery-mode offer is computed
+- **Then** a unit touching build tooling is never offered as parallel-safe
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveryModeBuildToolingCouplingTests::test_a_unit_touching_build_tooling_is_never_parallel_safe
+- **Verified:** yes (2026-07-24)
 
-### AC2: AC2: the set of build-tooling paths is declared, not inferred by name
+### AC2: the set of build-tooling paths is declared, not inferred by name
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** AC2: the set of build-tooling paths is declared, not inferred by name
-- **Verify:** {{executable check}}
+- **Given** the build-tooling coupling rule
+- **When** a path's membership is decided
+- **Then** the set of build-tooling paths is declared, not inferred by name
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveryModeBuildToolingCouplingTests::test_the_build_tooling_set_is_declared_not_inferred_by_name
+- **Verified:** yes (2026-07-24)
 
-### AC3: AC3: the contract is documented where the mode is documented
+### AC3: the contract is documented where the mode is documented
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** AC3: the contract is documented where the mode is documented
-- **Verify:** {{executable check}}
+- **Given** the delivery-mode section of reference-sprint.md
+- **When** the build-tooling coupling is looked for there
+- **Then** the contract is documented where the mode is documented
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveryModeBuildToolingCouplingTests::test_the_contract_is_documented_where_the_mode_is
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

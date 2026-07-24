@@ -180,12 +180,48 @@ def check(repo_root: Path | str = ".") -> dict:
         ceiling = 80
     n_lines = len(text.splitlines())
     if n_lines > ceiling:
+        over = n_lines - ceiling
+        longest = _longest_sections(text)
+        where = ""
+        if longest:
+            named = "; ".join(f"'{title}' ({count} lines)" for title, count in longest)
+            where = f" The longest sections are {named} - trim there first."
         findings.append({"kind": "anchor-ledger",
-                         "detail": (f"LATEST.md is {n_lines} lines (> {ceiling}, "
-                                    f"docs.latest_max_lines) and is re-read every session "
-                                    f"start - move past-sprint paragraphs to their retros "
-                                    f"and keep one History line each")})
+                         "detail": (f"LATEST.md is {n_lines} lines, {over} over the "
+                                    f"{ceiling}-line ceiling (docs.latest_max_lines), and is "
+                                    f"re-read every session start - move past-sprint "
+                                    f"paragraphs to their retros and keep one History line "
+                                    f"each.{where}")})
     return {"findings": findings, "ok": not findings, "applicable": True}
+
+
+def _longest_sections(text: str, top: int = 3) -> list[tuple[str, int]]:
+    """The `top` longest markdown sections of `text`, each as (title, line count).
+
+    A section runs from one heading to the next at the same or a shallower level; its count
+    includes the heading line, so the counts sum back to the document and the refusal can
+    aim a trim rather than leave it to guesswork. Lines before the first heading are booked
+    against a synthetic 'preamble' so nothing is uncounted."""
+    lines = text.splitlines()
+    sections: list[tuple[str, int]] = []
+    title = "(preamble)"
+    count = 0
+    started = False
+    for line in lines:
+        m = re.match(r"^(#{1,6})\s+(.*\S)\s*$", line)
+        if m:
+            if started or count:
+                sections.append((title, count))
+            title = m.group(2).strip()
+            count = 1
+            started = True
+        else:
+            count += 1
+    if started or count:
+        sections.append((title, count))
+    # Ties broken by first appearance so the order is stable for a test to assert.
+    ranked = sorted(range(len(sections)), key=lambda i: (-sections[i][1], i))
+    return [sections[i] for i in ranked[:top]]
 
 
 def main(argv: list[str] | None = None) -> int:

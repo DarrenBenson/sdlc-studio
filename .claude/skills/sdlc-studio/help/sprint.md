@@ -168,6 +168,17 @@ stamps each unit with an advisory `tier`/`model` recommendation (difficulty-scor
 smaller model and hard ones on your bigger one. Map tiers to your own models in
 `routing.models`; see `reference-config.md#routing`.
 
+## How big should a batch be
+
+There is a trade-off, and no number is prescribed for it. The fixed per-sprint cost - the
+ceremony, the one close, the review setup - is spread over the batch's points, so its share
+per point falls as the batch grows. Review convergence cost pulls the other way: a bigger diff
+carries more surface and more findings, so it takes more rounds to converge. Both directions
+show in this project's own measured history (the eight build sprints in `retros/VELOCITY.md`
+that carry a measured tokens/pt), but the sample is small and noisy and the arms point opposite
+ways, so it fixes no optimum. Picking a batch-size number off this few measured sprints would
+invent a target the data cannot defend. Read `retro.py velocity` and decide per batch.
+
 ## Prerequisites
 
 - A batch to run (CRs/bugs/stories on disk, or a worklist file).
