@@ -9,26 +9,27 @@
 
 ## Where to pick up
 
-10 of 28 unit(s) remain (10 suit copilot-assisted completion, 0 need human judgement). Plan them straight back in:
-
-```bash
-python3 "$CLAUDE_SKILL_DIR/scripts/sprint.py" plan \
-  --worklist sdlc-studio/.local/handoff-worklist.txt --order wsjf
-```
-
-Each item below names the pointer to start from: the failing AC, the check it stalled at, the blocker that stopped it, or the file it was to touch.
+Every unit in the batch is terminal. There is no tail: close the run and plan the next batch normally.
 
 ## Appetite
 
 - **Declared:** wall-clock 240 min, units 8 unit(s)
-- **Spent:** 820.8 min, 18 unit(s) terminal
-- **Delivered:** 18 unit(s)
+- **Spent:** 838.6 min, 28 unit(s) terminal
+- **Delivered:** 28 unit(s)
 - **Token forecast:** ~6,040,798 tokens - a plan-time estimate, never a gate (a script cannot observe token spend)
 
-## Delivered (18)
+## Delivered (28)
 
 | Unit | Type | Status | Evidence |
 | --- | --- | --- | --- |
+| [BG0269](../../sdlc-studio/bugs/BG0269-the-scrub-site-sweep-s-worktrees-exclusion-matches.md) | bug | Fixed | critic APPROVE (adversarial-review-panel (5 fresh-context reviewers, disjoint slices)) |
+| [BG0270](../../sdlc-studio/bugs/BG0270-the-goal-review-gate-refuses-a-plan-when.md) | bug | Fixed | critic APPROVE (adversarial-review-panel (5 fresh-context reviewers, disjoint slices)) |
+| [BG0272](../../sdlc-studio/bugs/BG0272-retro-accuracy-misattributes-a-run-s-rung-run.md) | bug | Fixed | critic APPROVE (adversarial-review-panel (5 fresh-context reviewers, disjoint slices)) |
+| [BG0273](../../sdlc-studio/bugs/BG0273-refine-resolve-story-affects-inherit-subset-bypasses-the.md) | bug | Fixed | critic APPROVE (adversarial-review-panel (5 fresh-context reviewers, disjoint slices)) |
+| [BG0274](../../sdlc-studio/bugs/BG0274-artifact-retitle-write-phase-is-a-sequence-of.md) | bug | Fixed | critic APPROVE (adversarial-review-panel (5 fresh-context reviewers, disjoint slices)) |
+| [BG0275](../../sdlc-studio/bugs/BG0275-a-successful-sprint-close-never-refreshes-sdlc-studio.md) | bug | Fixed | critic APPROVE (adversarial-review-panel (5 fresh-context reviewers, disjoint slices)) |
+| [BG0276](../../sdlc-studio/bugs/BG0276-conformance-reports-ungroomed-0-while-31-stories-carry.md) | bug | Fixed | critic APPROVE (adversarial-review-panel (5 fresh-context reviewers, disjoint slices)) |
+| [BG0277](../../sdlc-studio/bugs/BG0277-the-seat-brief-is-circular-goal-review-brief.md) | bug | Fixed | critic APPROVE (adversarial-review-panel (5 fresh-context reviewers, disjoint slices)) |
 | [US0354](../../sdlc-studio/stories/US0354-conformance-and-validate-gain-a-diff-scoped-mode.md) | story | Done | 3/3 AC(s) verified |
 | [US0357](../../sdlc-studio/stories/US0357-a-periodic-or-pre-release-lane-lints-the.md) | story | Done | 3/3 AC(s) verified |
 | [US0358](../../sdlc-studio/stories/US0358-the-report-distinguishes-a-pre-existing-failure-from.md) | story | Done | 3/3 AC(s) verified |
@@ -47,74 +48,12 @@ Each item below names the pointer to start from: the failing AC, the check it st
 | [US0389](../../sdlc-studio/stories/US0389-surface-the-drift-in-the-status-hint-and.md) | story | Done | 3/3 AC(s) verified |
 | [US0394](../../sdlc-studio/stories/US0394-verify-ac-run-accepts-an-id-list-a.md) | story | Done | 3/3 AC(s) verified |
 | [US0395](../../sdlc-studio/stories/US0395-the-scoped-report-merges-rather-than-replaces-shared.md) | story | Done | 3/3 AC(s) verified |
+| [BG0267](../../sdlc-studio/bugs/BG0267-a-repair-plan-verdict-carrying-no-findings-hash.md) | bug | Fixed | critic APPROVE (adversarial-review-panel (5 fresh-context reviewers, disjoint slices)) |
+| [BG0268](../../sdlc-studio/bugs/BG0268-sprint-plan-leaves-a-stale-sprint-plan-json.md) | bug | Fixed | critic APPROVE (adversarial-review-panel (5 fresh-context reviewers, disjoint slices)) |
 
-## Remaining (10)
+## Remaining (0)
 
-### BG0269 (bug, Open) - copilot-tail
-
-- **file:** `tools/tests/test_skill_tests_env.py` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0269-the-scrub-site-sweep-s-worktrees-exclusion-matches.md` - the unit itself
-- **Suitability:** copilot-tail (confidence high) - seeded by difficulty:low
-
-### BG0270 (bug, Open) - copilot-tail
-
-- **file:** `.claude/skills/sdlc-studio/scripts/sprint.py` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0270-the-goal-review-gate-refuses-a-plan-when.md` - the unit itself
-- **Suitability:** copilot-tail (confidence high) - seeded by difficulty:medium
-
-### BG0272 (bug, Open) - copilot-tail
-
-- **file:** `.claude/skills/sdlc-studio/scripts/retro.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_nondone_close.py` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0272-retro-accuracy-misattributes-a-run-s-rung-run.md` - the unit itself
-- **Suitability:** copilot-tail (confidence high) - seeded by difficulty:medium
-
-### BG0273 (bug, Open) - copilot-tail
-
-- **file:** `.claude/skills/sdlc-studio/scripts/refine.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_refine.py` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0273-refine-resolve-story-affects-inherit-subset-bypasses-the.md` - the unit itself
-- **Suitability:** copilot-tail (confidence high) - seeded by difficulty:medium
-
-### BG0274 (bug, Open) - copilot-tail
-
-- **file:** `.claude/skills/sdlc-studio/scripts/artifact.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_retitle_refs.py` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0274-artifact-retitle-write-phase-is-a-sequence-of.md` - the unit itself
-- **Suitability:** copilot-tail (confidence high) - seeded by difficulty:medium
-
-### BG0275 (bug, Open) - copilot-tail
-
-- **file:** `.claude/skills/sdlc-studio/scripts/sprint.py` - declared Affects
-- **file:** `sdlc-studio/reviews/LATEST.md` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0275-a-successful-sprint-close-never-refreshes-sdlc-studio.md` - the unit itself
-- **Suitability:** copilot-tail (confidence high) - seeded by difficulty:medium
-
-### BG0276 (bug, Open) - copilot-tail
-
-- **file:** `.claude/skills/sdlc-studio/scripts/conformance.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/lib/sdlc_md.py` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0276-conformance-reports-ungroomed-0-while-31-stories-carry.md` - the unit itself
-- **Suitability:** copilot-tail (confidence high) - seeded by difficulty:medium
-
-### BG0277 (bug, Open) - copilot-tail
-
-- **file:** `.claude/skills/sdlc-studio/scripts/sprint.py` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0277-the-seat-brief-is-circular-goal-review-brief.md` - the unit itself
-- **Suitability:** copilot-tail (confidence high) - seeded by difficulty:medium
-
-### BG0267 (bug, Open) - copilot-tail
-
-- **file:** `.claude/skills/sdlc-studio/scripts/repair_plan.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0267-a-repair-plan-verdict-carrying-no-findings-hash.md` - the unit itself
-- **Suitability:** copilot-tail (confidence high) - seeded by difficulty:low
-
-### BG0268 (bug, Open) - copilot-tail
-
-- **file:** `.claude/skills/sdlc-studio/scripts/sprint.py` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0268-sprint-plan-leaves-a-stale-sprint-plan-json.md` - the unit itself
-- **Suitability:** copilot-tail (confidence high) - seeded by difficulty:medium
+_Nothing remains: every unit in the batch reached a terminal status._
 
 ## Open decisions
 
