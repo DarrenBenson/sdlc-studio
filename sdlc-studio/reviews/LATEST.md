@@ -1,7 +1,7 @@
 # Reviews - LATEST (anchor)
 
 <!-- close-status:begin -->
-> **RUN-01KYA8CF closed stopped.** 18 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> **RUN-01KYAG6X closed goal-reached.** 13 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 

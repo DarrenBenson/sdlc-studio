@@ -102,3 +102,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: {{tokens}} · Duration: {{duration}} · Critic rejects: {{rejects}}
+
+## Handoff
+
+- [HO-0027](../handoffs/HO0027-the-13-stories-the-operator-s-four-rulings.md) - 13 remaining item(s): 11 copilot-tail, 2 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
