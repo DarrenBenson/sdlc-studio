@@ -71,3 +71,4 @@ churn five callers for a filename; the divergence is recorded here instead.
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-24 | sdlc-studio | Groomed: real ACs + Affects authored |
+| 2026-07-24 | claude | Built - `--fields-file -` reads the document from stdin in the shared loader; the sweep widened past its six flag spellings; `decisions`, `lessons`, `ledger` and `handoff` take the shared fields-file path. 3 tests RED first, 8 hand-mutants all killed |

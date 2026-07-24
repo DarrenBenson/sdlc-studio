@@ -72,3 +72,4 @@ removed. The detector stays defence in depth - the fields-file path is the actua
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-24 | sdlc-studio | Groomed: real ACs + Affects authored |
+| 2026-07-24 | claude | Built - three post-damage fingerprints, the four corruptions recorded as a self-checking corpus, and the catch rate MEASURED at 3 of 4 with the miss named. Zero false positives over 1,668 artefact prose fields (856,277 characters). 2 tests RED first, 8 hand-mutants all killed |

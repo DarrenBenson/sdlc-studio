@@ -25,9 +25,11 @@ aspirational
 - **Then** each states that refine produces a PLANNABLE unit (Affects present) whose
   acceptance criteria still need grooming, and names the opt-out
 - **Verify:** manual - read the refine sections of reference-cr.md and reference-rfc.md and confirm each states the plannable-but-ungroomed contract and the opt-out
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-24 | claude | Manual AC back-annotated after reading both sections: `reference-cr.md#refine-output` and the refine paragraph in `reference-rfc.md` each state the plannable-but-ungroomed contract and name the `sprint.breakdown: judgement` opt-out. The story went Done at the last close with no `Verified` line, which held the repo-wide conformance gate red for every later commit |

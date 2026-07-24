@@ -420,17 +420,89 @@ COMMON_FIELDS_FILE_KEYS: tuple[str, ...] = (
 FIELDS_FILE_KEYS: tuple[str, ...] = (*COMMON_FIELDS_FILE_KEYS,
                                      "mutation_run", "mutation_target")
 
+#: The `--fields-file` spelling that means "read the document from stdin" - the family
+#: convention, so no writer grows its own.
+STDIN_FIELDS_FILE = "-"
+
 #: The prose fields a shell would have expanded. Checked for damage, never rewritten.
 HAZARD_FIELDS: tuple[str, ...] = ("title", "summary", "steps", "fix", "impact", "recommendation")
+
+# --- post-damage fingerprints -------------------------------------------------------------
+# The three shapes above all detect a metacharacter that SURVIVED. The corruptions actually
+# suffered are the opposite case: the substitution COMPLETED, so the backticks and everything
+# between them are gone and the text carries no metacharacter at all. What it does carry is the
+# HOLE - the spacing and punctuation that used to sit around the token. Three marks, each
+# measured against four recorded corruptions and against every prose field in this repository's
+# own artefacts (tests/test_shell_hazard_rate.py).
+
+#: An inline code span SURVIVED the shell, so it is intact text rather than a hole. It is
+#: replaced by one word character before the fingerprints run, or a quoted command line
+#: ("find . -name x") reads as a sentence with a hole in it.
+_CODE_SPAN = re.compile(r"`[^`]*`")
+#: A hole between two words: the shell substituted empty and the spaces that flanked the token
+#: closed up into one run.
+_COLLAPSED_SPACE = re.compile(r"(?<=\w)  +(?=\w)")
+#: A full stop or question mark only ends a clause when what follows is nothing, or a new
+#: sentence. Without this, a path (`diff .local/`) or an argument reads as sentence punctuation.
+_CLAUSE_END = r"(?:\s*$|\s+[A-Z\"'(\[])"
+#: The space that separated a word from the token the shell removed, now sitting against the
+#: punctuation that followed it.
+_SPACE_BEFORE_PUNCT = re.compile(rf"(?<=\w) +(?:[.?]{_CLAUSE_END}|[,;:]\s)")
+#: A preposition takes an object. One left against punctuation names WHAT went missing, so it
+#: is reported in place of the generic mark above. Prepositions only - a verb or a noun before
+#: punctuation is ordinary English.
+_PREPOSITIONS = ("of", "in", "to", "for", "with", "from", "under", "by", "at", "on", "into",
+                 "via", "against", "between", "about", "over", "after", "before", "during",
+                 "through", "per", "than")
+_DANGLING_PREPOSITION = re.compile(
+    rf"\b(?:{'|'.join(_PREPOSITIONS)}) +(?:[.?]{_CLAUSE_END}|[,;:]\s)", re.IGNORECASE)
+
+
+def _follows_a_flag(text: str, idx: int) -> bool:
+    """True when the token before `idx` is a command-line flag, so what follows it is that
+    flag's ARGUMENT rather than a sentence. `--root .` is a spelling, not a hole."""
+    start = max(text.rfind(" ", 0, idx), text.rfind("\n", 0, idx)) + 1
+    return text[start:idx].startswith("-")
+
+
+def substitution_fingerprints(value: str) -> list[str]:
+    """What was found in `value` bearing the marks of a command substitution that COMPLETED.
+
+    Empty when clean. Detection only, and one finding per mark: the point is to name the field
+    a reader should distrust, not to guess at the words that were removed.
+
+    The limit is measured rather than implied: over the four recorded corruptions these three
+    marks catch three. The fourth lost a backticked token from the START of a sentence, which
+    leaves grammatical text behind and is undetectable in principle - which is why the
+    fields-file path, not this, is the fix."""
+    text = _CODE_SPAN.sub("C", value)
+    found: list[str] = []
+    if _COLLAPSED_SPACE.search(text):
+        found.append("a collapsed double space - a completed command substitution leaves the "
+                     "spaces that flanked the token closed up against each other")
+    prep = [m for m in _DANGLING_PREPOSITION.finditer(text) if not _follows_a_flag(text, m.start())]
+    if prep:
+        found.append(f"a preposition left against punctuation ({prep[0].group(0).strip()!r}) - "
+                     "the words it governed are what a completed substitution removed")
+    # A dangling preposition ALSO matches the generic mark below; reporting both would say the
+    # same hole twice, so the specific finding wins over the span it already covers.
+    if any(not _follows_a_flag(text, m.start())
+           and not any(p.start() <= m.start() < p.end() for p in prep)
+           for m in _SPACE_BEFORE_PUNCT.finditer(text)):
+        found.append("a space before punctuation - what stood between the two is what a "
+                     "completed command substitution removed")
+    return found
 
 
 def shell_hazards(fields: dict, keys: tuple[str, ...] | None = None) -> list[tuple[str, str]]:
     """(field, what was found) for every value bearing the marks of a shell that already ate it.
 
-    Three shapes, each a known outcome of passing prose through a double-quoted shell argument:
-    an UNBALANCED backtick (the pair's other half, and everything between, is gone), a surviving
-    `$(` (substitution the shell did not complete, or prose that would be substituted next time),
-    and a TRAILING backslash (a line continuation that swallowed what followed).
+    Two halves. The SURVIVING metacharacter: an UNBALANCED backtick (the pair's other half, and
+    everything between, is gone), a surviving `$(` (substitution the shell did not complete, or
+    prose that would be substituted next time), and a TRAILING backslash (a line continuation
+    that swallowed what followed). Then the substitution that COMPLETED, leaving no
+    metacharacter at all and only the hole where the token was - see
+    `substitution_fingerprints`, whose measured limit is recorded with it.
 
     `keys` names the prose fields to inspect - the finding filer's `HAZARD_FIELDS` by default, or a
     caller's own prose keys (e.g. a sign-off `note`, a goal verdict) so a writer with a different
@@ -454,6 +526,7 @@ def shell_hazards(fields: dict, keys: tuple[str, ...] | None = None) -> list[tup
         if stripped.endswith("\\") and not stripped.endswith("\\\\"):
             out.append((key, "a trailing backslash - a line continuation swallows whatever "
                              "followed it"))
+        out.extend((key, what) for what in substitution_fingerprints(val))
     return out
 
 
@@ -472,8 +545,8 @@ def report_shell_hazards(fields: dict, source: str = "the command line",
         return []
     out = stream if stream is not None else sys.stderr
     print(f"warning: {len(found)} field(s) reached the filer through {source} carrying shell "
-          f"metacharacters - what is stored may already be missing what the shell removed:",
-          file=out)
+          f"metacharacters, or the marks of a substitution that already completed - what is "
+          f"stored may already be missing what the shell removed:", file=out)
     for key, what in found:
         print(f"  --{key}: {what}", file=out)
     print("  Fix: pass the finding as a JSON document instead - `--fields-file finding.json` "
@@ -512,12 +585,19 @@ def load_fields_file(path: Path | str, allowed: tuple[str, ...] = FIELDS_FILE_KE
     The whole point is that no value here has crossed a shell, so the text is stored exactly as
     written. Refuses an unreadable file, a document that is not an object, and any key outside
     `allowed` - a mistyped key that is silently ignored is the same silent-loss class the file
-    exists to end."""
-    p = Path(path)
+    exists to end.
+
+    A path of `-` reads the document from STDIN, so a document another process produced reaches
+    the writer without being spilled to a temporary file first. The file stays the documented
+    default - it can be re-run, committed as evidence and diffed - but a caller holding the text
+    in a pipe must not be pushed back onto the flag path, which is the path that loses it."""
+    p = "stdin" if str(path) == STDIN_FIELDS_FILE else Path(path)
     try:
-        data = json.loads(p.read_text(encoding="utf-8"))
+        raw = sys.stdin.read() if p == "stdin" else p.read_text(encoding="utf-8")
     except OSError as exc:
         raise ValueError(f"--fields-file {p} cannot be read: {exc}") from exc
+    try:
+        data = json.loads(raw)
     except ValueError as exc:
         raise ValueError(f"--fields-file {p} is not valid JSON: {exc}") from exc
     if not isinstance(data, dict):

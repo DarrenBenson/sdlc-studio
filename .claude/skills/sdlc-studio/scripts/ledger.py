@@ -68,9 +68,27 @@ def read_ledger(repo_root: Path | str, tranche: str) -> list[dict]:
     return rows
 
 
+#: The prose a ruling is made of; both are free text, so both belong in a document rather than
+#: in a shell argument, where a backtick is command substitution.
+PROSE_KEYS: tuple[str, ...] = ("decision", "rationale")
+
+
 def cmd_record(args: argparse.Namespace) -> int:
     """Append a ruling and report where it landed."""
-    path = append_decision(args.root, args.tranche, args.decision, args.rationale)
+    import file_finding  # noqa: PLC0415 - the shared prose-fields loader, as elsewhere
+    try:
+        fields = file_finding.resolve_prose_fields(
+            getattr(args, "fields_file", None),
+            {k: getattr(args, k, None) for k in PROSE_KEYS}, allowed=PROSE_KEYS)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if not str(fields.get("decision") or "").strip():
+        print("error: no decision - pass --decision, or a \"decision\" key in the "
+              "--fields-file document", file=sys.stderr)
+        return 2
+    path = append_decision(args.root, args.tranche, fields["decision"],
+                           fields.get("rationale", ""))
     print(f"recorded -> {path}")
     return 0
 
@@ -95,8 +113,13 @@ def build_parser() -> argparse.ArgumentParser:
     r = sub.add_parser("record", help="Append a ruling to the tranche ledger.")
     r.add_argument("--tranche", "--unit", dest="tranche", required=True,
                    help="Tranche/unit id (e.g. CR0020); --unit is the family-standard alias")
-    r.add_argument("--decision", required=True)
+    r.add_argument("--decision", help="required unless the --fields-file document carries one")
     r.add_argument("--rationale", default="")
+    r.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
+                   help="read the ruling from a JSON object ({\"decision\": \"...\", "
+                        "\"rationale\": \"...\"}) instead of the flags, so prose carrying shell "
+                        "metacharacters is stored verbatim rather than interpreted by the "
+                        "shell; `-` reads the document from stdin")
     r.add_argument("--root", default=".", help="Repo root (default: .)")
     r.set_defaults(func=cmd_record)
     s = sub.add_parser("show", help="Print the tranche ledger.")

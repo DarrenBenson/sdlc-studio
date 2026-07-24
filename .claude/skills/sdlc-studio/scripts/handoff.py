@@ -744,9 +744,21 @@ def refresh(repo_root: Path | str, handoff_id: str, batch: list[str] | None = No
 
 # --------------------------------------------------------------------------- CLI
 def cmd_generate(args: argparse.Namespace) -> int:
+    import file_finding  # noqa: PLC0415 - the shared prose-fields loader, as elsewhere
+    try:
+        fields = file_finding.resolve_prose_fields(
+            getattr(args, "fields_file", None), {"title": args.title}, allowed=("title",))
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    title = str(fields.get("title") or "").strip()
+    if not title:
+        print("error: no title - pass --title, or a \"title\" key in the --fields-file "
+              "document", file=sys.stderr)
+        return 2
     ids = sdlc_md.resolve_ids(args)
     try:
-        r = generate(args.root, args.title, batch=ids or None, outcome=args.outcome,
+        r = generate(args.root, title, batch=ids or None, outcome=args.outcome,
                      retro=args.retro, dry_run=args.dry_run)
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -792,7 +804,13 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="cmd", required=True)
     g = sub.add_parser("generate", help="Create the handoff artefact + the worklist "
                                         "the next sprint plan reads.")
-    g.add_argument("--title", required=True, help="what this run was")
+    g.add_argument("--title", help="what this run was (required unless the --fields-file "
+                                   "document carries a title)")
+    g.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
+                   help="read the title from a JSON object ({\"title\": \"...\"}) instead of "
+                        "--title, so prose carrying shell metacharacters is stored verbatim "
+                        "rather than interpreted by the shell; `-` reads the document from "
+                        "stdin")
     g.add_argument("--outcome", choices=run_state.CLOSED,
                    help="how the run ended; closes the run state")
     g.add_argument("--retro", metavar="RETROxxxx",

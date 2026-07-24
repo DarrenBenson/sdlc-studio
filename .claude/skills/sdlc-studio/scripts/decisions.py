@@ -207,15 +207,54 @@ def list_decisions(root: Path | str, status: str | None = None) -> list[dict]:
     return out
 
 
+#: The prose a ruling is made of. Both fields are free text an author writes, so both belong in
+#: the document rather than in a shell argument.
+PROSE_KEYS: tuple[str, ...] = ("decision", "rationale")
+
+
+def resolve_prose(args: argparse.Namespace, keys: tuple[str, ...] = PROSE_KEYS) -> dict:
+    """The ruling's prose, from the `--fields-file` document or the flags, through the ONE
+    shared loader. Raises ValueError when a required field is in neither."""
+    import file_finding  # noqa: PLC0415 - the shared prose-fields loader, as elsewhere
+    fields = file_finding.resolve_prose_fields(
+        getattr(args, "fields_file", None),
+        {k: getattr(args, k, None) for k in keys}, allowed=keys)
+    missing = [k for k in keys if not str(fields.get(k) or "").strip()]
+    if missing:
+        raise ValueError(f"no {'/'.join(missing)} - pass --{missing[0]}, or a "
+                         f"\"{missing[0]}\" key in the --fields-file document")
+    return fields
+
+
+def add_fields_file_arg(sp: argparse.ArgumentParser, keys: tuple[str, ...]) -> None:
+    """Declare the non-shell input path on a subparser, spelled the same way everywhere."""
+    sp.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
+                    help="read the ruling from a JSON object ({\"" + keys[0] + "\": \"...\"}) "
+                         "instead of the flags, so prose carrying shell metacharacters is "
+                         "stored verbatim rather than interpreted by the shell; `-` reads the "
+                         "document from stdin")
+
+
 def cmd_add(args: argparse.Namespace) -> int:
-    r = add(args.root, args.decision, args.rationale, args.status, args.supersedes or "")
+    try:
+        fields = resolve_prose(args)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    r = add(args.root, fields["decision"], fields["rationale"], args.status,
+            args.supersedes or "")
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"recorded {r['id']} ({r['status']}) on {r['date']}")
     return 0
 
 
 def cmd_promote(args: argparse.Namespace) -> int:
-    r = promote(args.root, args.source, args.decision, args.rationale)
+    try:
+        fields = resolve_prose(args)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    r = promote(args.root, args.source, fields["decision"], fields["rationale"])
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"promoted {args.source} -> {r['id']} ({r['date']})")
     return 0
@@ -229,7 +268,12 @@ def cmd_backfill(args: argparse.Namespace) -> int:
 
 def cmd_waive(args: argparse.Namespace) -> int:
     subject = f"leg:{args.leg}" if args.leg else args.subject
-    r = record_waiver(args.root, subject, args.rationale)
+    try:
+        fields = resolve_prose(args, ("rationale",))
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    r = record_waiver(args.root, subject, fields["rationale"])
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"waived {_norm_subject(subject)} -> {r['id']} ({r['date']})")
     return 0
@@ -252,8 +296,9 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Project decisions log.")
     sub = p.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("add", help="Append a decision (auto-numbered, dated).")
-    a.add_argument("--decision", required=True)
-    a.add_argument("--rationale", required=True)
+    a.add_argument("--decision", help="required unless the --fields-file document carries one")
+    a.add_argument("--rationale", help="required unless the --fields-file document carries one")
+    add_fields_file_arg(a, PROSE_KEYS)
     a.add_argument("--status", default="accepted", choices=("accepted", "superseded", "revisited"))
     a.add_argument("--supersedes", default="", help="the D-id this replaces, if any")
     a.add_argument("--root", default=".")
@@ -265,8 +310,9 @@ def build_parser() -> argparse.ArgumentParser:
     bf.set_defaults(func=cmd_backfill)
     pr = sub.add_parser("promote", help="Promote a resolved PRD open question into the log (back-linked).")
     pr.add_argument("--from", dest="source", required=True, help="the PRD open-question id, e.g. PRD-OQ3")
-    pr.add_argument("--decision", required=True)
-    pr.add_argument("--rationale", required=True)
+    pr.add_argument("--decision", help="required unless the --fields-file document carries one")
+    pr.add_argument("--rationale", help="required unless the --fields-file document carries one")
+    add_fields_file_arg(pr, PROSE_KEYS)
     pr.add_argument("--root", default=".")
     pr.add_argument("--format", choices=("text", "json"), default="text")
     pr.set_defaults(func=cmd_promote)
@@ -276,7 +322,9 @@ def build_parser() -> argparse.ArgumentParser:
     wv_what.add_argument("--leg", choices=DOC_LEGS,
                          help="the required document leg being waived (CODE is out of scope)")
     wv_what.add_argument("--subject", help="a general waiver subject, e.g. rule:engagement-floor")
-    wv.add_argument("--rationale", required=True, help="why it is out of scope for this project")
+    wv.add_argument("--rationale", help="why it is out of scope for this project (required "
+                                        "unless the --fields-file document carries one)")
+    add_fields_file_arg(wv, ("rationale",))
     wv.add_argument("--root", default=".")
     wv.add_argument("--format", choices=("text", "json"), default="text")
     wv.set_defaults(func=cmd_waive)
