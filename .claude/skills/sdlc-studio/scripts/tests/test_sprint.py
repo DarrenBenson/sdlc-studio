@@ -6831,5 +6831,122 @@ class ClosePreflightDriftTests(unittest.TestCase):
             self.assertIn("forward-port.sh --yes", named[0]["remedy"])
 
 
+class CloseStampRungTests(unittest.TestCase):
+    """The close's anchor stamp told a DESIGN rung that sign-off was owed to reach Done.
+
+    Nothing in that rung was going to Done: a design rung grooms stories, its units correctly
+    end at Ready, and their acceptance criteria are correctly RED - that is the bar it exists to
+    prove. The stamp lands in the one file every fresh session is ordered to read first, so a
+    false owed-action arrives exactly where there is no other context to correct it.
+    """
+
+    def test_a_design_rung_is_not_told_it_owes_a_done_signoff(self) -> None:
+        sprint = _load()
+        block = sprint.anchor_status_block("RUN-X", "stopped", 18, True, rung="design")
+        self.assertNotIn("two-role gate holds Done", block)
+        self.assertIn("design", block)
+        self.assertIn("no Done sign-off is owed", block)
+
+    def test_a_build_rung_still_states_the_owed_signoff(self) -> None:
+        """This fix must NARROW the claim, not remove it. A build rung past the two-role
+        cutoff still owes the operator a signature, and the stamp must still say so."""
+        sprint = _load()
+        block = sprint.anchor_status_block("RUN-Y", "goal-reached", 28, True, rung="done")
+        self.assertIn("**Sign-off is OWED and is the operator's**", block)
+        self.assertIn("two-role gate holds Done", block)
+        # and a build rung whose sign-off HAS landed says so rather than staying silent
+        done = sprint.anchor_status_block("RUN-Y", "goal-reached", 28, False, rung="done")
+        self.assertIn("**Sign-off is RECORDED**", done)
+
+    def test_the_default_is_the_build_rung(self) -> None:
+        """An omitted rung must behave as it always did. A caller that has not been updated
+        cannot be allowed to silently lose the owed-sign-off line."""
+        sprint = _load()
+        self.assertIn("two-role gate holds Done",
+                      sprint.anchor_status_block("RUN-Z", "goal-reached", 3, True))
+
+
+class ApplySignoffBatchCoverageTests(unittest.TestCase):
+    """`--apply-signoff` fans into story units only, and the assumption that made that safe -
+    that a bug or CR in a mixed batch is already terminal by the time the close runs - was
+    measured FALSE: a 28-unit batch closed `goal-reached` with its 10 bugs still Open while the
+    handoff the same close wrote said "10 remaining"."""
+
+    def _repo(self, d: str, units: dict[str, tuple[str, str]]) -> Path:
+        """units: {id: (kind_dir, status)} written as minimal artefacts."""
+        root = Path(d)
+        for uid, (kind_dir, status) in units.items():
+            folder = root / "sdlc-studio" / kind_dir
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / f"{uid}-x.md").write_text(
+                f"# {uid}: x\n\n> **Status:** {status}\n", encoding="utf-8")
+        return root
+
+    def test_bugs_in_the_batch_are_transitioned_or_named(self) -> None:
+        """AC1. A non-story batch unit that is not terminal must be NAMED with the status it
+        actually holds - measured from the artefact, never assumed."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, {
+                "BG0001": ("bugs", "Open"),        # not terminal -> must be named
+                "BG0002": ("bugs", "Fixed"),       # terminal -> must NOT be named
+                "US0001": ("stories", "Review"),   # story -> the fan-out reaches it
+            })
+            out = sprint._batch_unfanned_units(root, ["BG0001", "BG0002", "US0001"])
+        ids = [u[0] for u in out]
+        self.assertIn("BG0001", ids, "an Open bug in the batch must be named, not skipped")
+        self.assertNotIn("BG0002", ids, "a terminal bug is not outstanding")
+        self.assertNotIn("US0001", ids, "a story is reached by the fan-out itself")
+        self.assertEqual(out[0][2], "Open", "the status must be the one it actually holds")
+
+    def test_outcome_and_handoff_agree_on_the_delivered_count(self) -> None:
+        """AC2. The count the close reports and the count outstanding must be derivable from
+        one measurement, so a `goal-reached` cannot be read over a batch that is not done."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, {
+                "BG0001": ("bugs", "Open"), "BG0002": ("bugs", "Open"),
+                "US0001": ("stories", "Review"),
+            })
+            batch = ["BG0001", "BG0002", "US0001"]
+            unfanned = sprint._batch_unfanned_units(root, batch)
+            stories = sprint._batch_story_units(root, batch)
+        # 3 units: 1 the fan-out reaches, 2 it does not. No unit may fall in neither set
+        # unaccounted for - that gap is how 10 bugs went missing from a 28-unit close.
+        self.assertEqual(len(stories) + len(unfanned), len(batch),
+                         "every batch unit is either fanned into or reported outstanding")
+
+    def test_the_FANOUT_names_the_unfanned_units(self) -> None:
+        """The lane test, not the helper test. Mutating the CALL SITE - `unfanned = []` - left
+        every helper test green, because a function that returns the right answer to nobody
+        proves nothing. This drives `_apply_signoff` itself and reads what it printed."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, {
+                "BG0001": ("bugs", "Open"),
+                "US0001": ("stories", "Review"),
+            })
+            state = {"run_id": "RUN-T", "batch": ["BG0001", "US0001"], "outcome": "goal-reached"}
+            err, out = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
+                try:
+                    sprint._apply_signoff(str(root), state, principal="op",
+                                          author_default="author")
+                except Exception:  # noqa: BLE001 - the fixture lacks the close's machinery
+                    pass            # the assertion is on what it PRINTED before that
+        printed = err.getvalue() + out.getvalue()
+        self.assertIn("BG0001", printed,
+                      "an Open bug in the batch must be NAMED, not silently skipped")
+        self.assertIn("NOT reached", printed)
+
+    def test_an_unknown_id_is_not_silently_counted_as_delivered(self) -> None:
+        """A batch id with no artefact behind it must not read as terminal by default."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, {"US0001": ("stories", "Review")})
+            out = sprint._batch_unfanned_units(root, ["BG9999"])
+        self.assertEqual(out, [], "an id with no artefact is not claimed as an outstanding unit")
+
+
 if __name__ == "__main__":
     unittest.main()

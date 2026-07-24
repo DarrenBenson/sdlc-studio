@@ -3374,12 +3374,24 @@ ANCHOR_BEGIN = "<!-- close-status:begin -->"
 ANCHOR_END = "<!-- close-status:end -->"
 
 
-def anchor_status_block(run_id: str, outcome: str, units: int, signoff_owed: bool) -> str:
+def anchor_status_block(run_id: str, outcome: str, units: int, signoff_owed: bool,
+                        rung: str = "done") -> str:
     """The status the close stamps on the anchor. It states what is owed, or states plainly that
-    nothing is - a reader must never have to diff this against the run state to learn which."""
-    owed = ("**Sign-off is OWED and is the operator's** - the two-role gate holds Done."
-            if signoff_owed else
-            "**Sign-off is RECORDED** - nothing is owed on this run.")
+    nothing is - a reader must never have to diff this against the run state to learn which.
+
+    RUNG-AWARE, because Done is not every rung's terminal. A `design` rung grooms units and they
+    correctly end at Ready with RED acceptance criteria - that is the bar it exists to prove, and
+    its done-gate refusals are the gate working. Telling such a run that a sign-off is owed to
+    reach Done names an action for a state the run never targeted, in the one file every fresh
+    session is ordered to read first, where there is no other context to correct it.
+    """
+    if str(rung or "done").lower() != "done":
+        owed = (f"This was a `{rung}` rung, not a build - its units end at their own terminal "
+                f"and no Done sign-off is owed.")
+    else:
+        owed = ("**Sign-off is OWED and is the operator's** - the two-role gate holds Done."
+                if signoff_owed else
+                "**Sign-off is RECORDED** - nothing is owed on this run.")
     return (f"{ANCHOR_BEGIN}\n"
             f"> **{run_id} closed {outcome}.** {units} unit(s) in the batch. {owed}\n"
             f"> Stamped by `sprint close` - edit the prose below, not this block.\n"
@@ -3387,12 +3399,12 @@ def anchor_status_block(run_id: str, outcome: str, units: int, signoff_owed: boo
 
 
 def refresh_review_anchor(repo_root: Path | str, run_id: str, outcome: str, units: int,
-                          signoff_owed: bool) -> str:
+                          signoff_owed: bool, rung: str = "done") -> str:
     """Replace (or insert) the status block in `sdlc-studio/reviews/LATEST.md`. Returns the verb
     for the close line. Never rewrites the narrative: an existing block is swapped in place, and
     a missing one is inserted just after the H1."""
     anchor = Path(repo_root) / "sdlc-studio" / "reviews" / "LATEST.md"
-    block = anchor_status_block(run_id, outcome, units, signoff_owed)
+    block = anchor_status_block(run_id, outcome, units, signoff_owed, rung)
     if not anchor.is_file():
         anchor.parent.mkdir(parents=True, exist_ok=True)
         sdlc_md.atomic_write(anchor, f"# Reviews - LATEST (anchor)\n\n{block}\n")
@@ -3455,7 +3467,8 @@ def _close_review_anchor(root, retro, state):
     outcome = st.get("outcome") or "closed"
     units = len(st.get("batch") or [])
     try:
-        verb = refresh_review_anchor(root, run_id, outcome, units, _signoff_owed(root, st))
+        verb = refresh_review_anchor(root, run_id, outcome, units,
+                                     _signoff_owed(root, st), st.get("goal") or "done")
     except OSError as exc:
         return False, f"the review anchor could not be written: {exc}", \
                "check sdlc-studio/reviews/LATEST.md is writable, then re-run close"
@@ -3587,10 +3600,35 @@ def _resolve_retro(root, args, state) -> int | None:
     return 1
 
 
+def _batch_unfanned_units(root, batch) -> list[tuple[str, str, str]]:
+    """The batch units the sign-off fan-out does NOT reach, as (id, kind, status).
+
+    The fan-out is story-scoped because conformance is. The claim that made that safe - that a
+    bug or CR in a mixed batch is "already terminal by the time the close runs" - is not true and
+    was measured false: a 28-unit batch closed `goal-reached` with its 10 bugs still Open, while
+    the handoff the same close wrote said "10 remaining". The close's own artefacts contradicted
+    its own verdict, and the next sprint inherited ten units it believed undelivered.
+
+    So the assumption is replaced by a measurement. Every non-story batch unit is looked up and
+    reported with the status it actually holds; a terminal one is not listed. What the caller does
+    with that is its business - this function only refuses to guess.
+    """
+    out: list[tuple[str, str, str]] = []
+    for uid in batch:
+        hit = sdlc_md.find_by_id(Path(root), uid)
+        if not hit or hit[1] == "story":
+            continue
+        kind = hit[1]
+        status = sdlc_md.extract_field(sdlc_md.read_text_safe(Path(hit[0])), "Status") or ""
+        if not sdlc_md.is_terminal_status(kind, status):
+            out.append((sdlc_md.norm_id(uid), kind, status or "unknown"))
+    return out
+
+
 def _batch_story_units(root, batch) -> list[str]:
     """The story units in the batch, in batch order. Sign-off + Done transition is story-scoped
-    (conformance is), so a bug/CR in a mixed batch - already terminal by the time the close runs -
-    is not signed off here."""
+    (conformance is), so a bug/CR in a mixed batch is not signed off here - but it is COUNTED and
+    NAMED by `_batch_unfanned_units`, never assumed terminal."""
     out = []
     for uid in batch:
         hit = sdlc_md.find_by_id(Path(root), uid)
@@ -3664,8 +3702,18 @@ def _apply_signoff(root, state, principal: str | None, author_default: str | Non
         print(f"apply-signoff: {unit} signed off by {principal} -> Done")
     # the run's own units - the derivation must not reach epics this close never touched
     rc = _apply_signoff_tail(root, state, units=done + skipped, retro_arg=retro_arg)
+    unfanned = _batch_unfanned_units(root, state.get("batch") or [])
+    if unfanned:
+        # AC1: named, never silently skipped. AC2: the shortfall is stated in the same breath as
+        # the count, so an outcome of goal-reached cannot be read over a batch that is not done.
+        print(f"apply-signoff: {len(unfanned)} batch unit(s) NOT reached by the fan-out - it is "
+              f"story-scoped, and these are not terminal:", file=sys.stderr)
+        for uid, kind, status in unfanned:
+            print(f"  {uid} ({kind}) is {status} - transition it before the run is read as "
+                  f"delivered", file=sys.stderr)
     print(f"apply-signoff: {len(done)} transitioned Done, {len(signed)} newly signed, "
-          f"{len(skipped)} already complete")
+          f"{len(skipped)} already complete"
+          + (f", {len(unfanned)} NOT reached (see above)" if unfanned else ""))
     return rc
 
 
@@ -3836,7 +3884,7 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
     try:
         refresh_review_anchor(root, st.get("run_id") or "(unknown run)",
                               st.get("outcome") or "closed", len(st.get("batch") or []),
-                              _signoff_owed(root, st))
+                              _signoff_owed(root, st), st.get("goal") or "done")
     except OSError as exc:
         print(f"apply-signoff: the review anchor could not be re-stamped ({exc}) - it still "
               f"says sign-off is owed", file=sys.stderr)

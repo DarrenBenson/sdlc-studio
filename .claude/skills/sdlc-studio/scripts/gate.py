@@ -1132,6 +1132,64 @@ def _is_dirty(root: Path, path: Path) -> bool:
         return False
 
 
+#: Metadata fields the CLOSE itself writes onto a unit: the status transition, the AC
+#: back-annotation and the verification tier it gates on. A change confined to these is the
+#: close's own bookkeeping, not content a review would have judged differently.
+_CLOSE_OWNED_FIELDS = ("Status:", "Verified:", "Verification depth:", "Signed-off", "Critiqued")
+
+
+def _anchor_last_commit(root: Path, path: Path) -> str:
+    """The sha of the last commit touching `path`, or "" when unknown.
+
+    "" is the honest-degrade value and its callers treat it as "cannot tell", falling back to
+    reporting every newer artefact as stale. A carve-out that opened up when git was unreadable
+    would be a carve-out that opens up exactly when nothing can be checked.
+    """
+    import subprocess  # noqa: PLC0415 - as elsewhere in this module
+    try:
+        out = subprocess.run(["git", "log", "-1", "--format=%H", "--", str(path)],
+                             cwd=str(root), capture_output=True, text=True,
+                             timeout=10)  # nosec B603 B607
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return ""
+    return out.stdout.strip() if out.returncode == 0 else ""
+
+
+def _close_owned_change_only(root: Path, path: Path, since: str) -> bool:
+    """True when everything that changed in `path` since commit `since` is close bookkeeping.
+
+    The review-currency lane refuses when any artefact is newer than the anchor. But the close
+    chain TRANSITIONS the batch in its own steps 5-7 and refreshes the anchor in step 7, while
+    the gate is step 4 - so re-running the documented close flow fails on changes its own
+    previous run made, and the printed remedy is to re-run an adversarial review over a tree
+    whose only change is a set of status stamps. The honest remedy would be to touch the anchor,
+    which is precisely what the lane exists to stop being done casually.
+
+    So the question asked is not "did anything change" but "did anything a REVIEWER would judge
+    change". A status moving Review to Done is the close recording a verdict already reached; a
+    changed acceptance criterion is not. Anything this cannot read falls back to STALE, because
+    an unreadable diff is not evidence of innocence.
+    """
+    import subprocess  # noqa: PLC0415 - as elsewhere in this module
+    try:
+        proc = subprocess.run(["git", "diff", "--unified=0", since, "--", str(path)],
+                              cwd=str(root), capture_output=True, text=True,
+                              timeout=30)  # nosec B603 B607
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return False
+    if proc.returncode != 0:
+        return False
+    for line in proc.stdout.splitlines():
+        if not line.startswith(("+", "-")) or line.startswith(("+++", "---")):
+            continue
+        body = line[1:].strip().lstrip("> ").strip()
+        if not body:
+            continue
+        if not any(f in body for f in _CLOSE_OWNED_FIELDS):
+            return False
+    return True
+
+
 def _review_current(root: str) -> dict:
     """Blocking close-gate check: the unified-review anchor (reviews/LATEST.md) must be at least
     as new as every artefact. If any artefact changed since the last review, LATEST.md is stale
@@ -1164,9 +1222,28 @@ def _review_current(root: str) -> dict:
         if m and latest_dt and m > latest_dt:
             stale.append(key)
     if stale:
-        return {"count": len(stale), "blocking": True,
-                "detail": (f"reviews/LATEST.md is stale - {len(stale)} artefact(s) changed since "
-                           f"the last review ({_elide(sorted(stale))}); run `review` before closing")}
+        anchor_rev = _anchor_last_commit(rr, latest)
+        recs = review_prep.staleness(rr)
+        judged = ([k for k in stale
+                   if not _close_owned_change_only(
+                       rr, rr / (recs.get(k, {}).get("path") or k), anchor_rev)]
+                  if anchor_rev else stale)
+        bookkeeping = len(stale) - len(judged)
+        if judged:
+            note = (f" ({bookkeeping} further artefact(s) changed only in close bookkeeping and "
+                    f"are not counted)" if bookkeeping else "")
+            return {"count": len(judged), "blocking": True,
+                    "detail": (f"reviews/LATEST.md is stale - {len(judged)} artefact(s) changed "
+                               f"since the last review ({_elide(sorted(judged))}); run `review` "
+                               f"before closing{note}")}
+        if bookkeeping:
+            # The close's OWN transitions, and nothing a reviewer would judge. Reporting these
+            # as a stale review sends the operator to re-run an adversarial pass over a set of
+            # status stamps, and the only way out is to backdate the thing being measured.
+            return {"count": 0, "blocking": False,
+                    "detail": (f"reviews/LATEST.md is current - the {bookkeeping} artefact(s) "
+                               f"newer than it changed only in close bookkeeping (status, "
+                               f"verification), which is not review content")}
     if uncommitted and _only_close_status_block_differs(rr, latest):
         # The close's own stamp, and nothing else. Not uncommitted review work, so it does not
         # block the close that wrote it (nor the operator's follow-up sign-off invocation).

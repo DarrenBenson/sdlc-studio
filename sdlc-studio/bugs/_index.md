@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 10 |
+| Open | 7 |
 | In Progress | 0 |
-| Fixed | 201 |
+| Fixed | 204 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -252,13 +252,13 @@
 | [BG0283](BG0283-the-inflight-mutation-guard-has-no-staleness-notion.md) | the inflight-mutation guard has no staleness notion, so an abandoned sidecar blocks every write in the repo indefinitely: a three-day-old file refused artifact and transition the moment the guard shipped | Open | -- | 2026-07-24 | 2026-07-24 |
 | [BG0284](BG0284-superseding-a-verdict-cannot-restore-independence-so-the.md) | superseding a verdict cannot restore independence, so the mis-attributed-reviewer case that motivated it still strands a unit: the tool cannot tell a mis-filing from an author retiring an inconvenient verdict, and needs a principal-authorised correction path | Open | High | 2026-07-24 | 2026-07-24 |
 | [BG0285](BG0285-sprint-close-without-apply-signoff-closes-the-run.md) | sprint close without --apply-signoff closes the run, and the sprint-level review that the sign-off needs cannot then be recorded against it, so the documented two-invocation close flow cannot be completed and no reopen path exists | Open | High | 2026-07-24 | 2026-07-24 |
-| [BG0286](BG0286-sprint-close-apply-signoff-fans-into-story-units.md) | sprint close --apply-signoff fans into story units only, leaving the batch's bugs Open while the close reports goal-reached | Open | High | 2026-07-24 | 2026-07-24 |
-| [BG0287](BG0287-the-review-current-lane-goes-stale-against-the.md) | the review-current lane goes stale against the close's own transitions, so it blocks the close step that would refresh the anchor | Open | Medium | 2026-07-24 | 2026-07-24 |
+| [BG0286](BG0286-sprint-close-apply-signoff-fans-into-story-units.md) | sprint close --apply-signoff fans into story units only, leaving the batch's bugs Open while the close reports goal-reached | Fixed | High | 2026-07-24 | 2026-07-24 |
+| [BG0287](BG0287-the-review-current-lane-goes-stale-against-the.md) | the review-current lane goes stale against the close's own transitions, so it blocks the close step that would refresh the anchor | Fixed | Medium | 2026-07-24 | 2026-07-24 |
 | [BG0288](BG0288-anchor-the-33-unanchored-reader-scripts-to-the.md) | anchor the 33 unanchored READER scripts to the discovered root (BG0282 slice 2) | Fixed | Medium | 2026-07-24 | 2026-07-24 |
 | [BG0289](BG0289-give-the-5-scripts-with-no-root-surface.md) | give the 5 scripts with no --root surface one, and reconcile the census (BG0282 slice 3) | Fixed | Low | 2026-07-24 | 2026-07-24 |
 | [BG0290](BG0290-refine-s-ungroomed-placeholder-fails-validate-s-no.md) | refine's ungroomed placeholder fails validate's no-ac check, so refine produces a story that cannot be committed | Fixed | High | 2026-07-24 | 2026-07-24 |
 | [BG0291](BG0291-refine-s-seeded-acs-duplicate-their-own-label.md) | refine's seeded ACs duplicate their own label and restate the story title as the Then clause | Fixed | Medium | 2026-07-24 | 2026-07-24 |
-| [BG0292](BG0292-the-close-status-stamp-is-rung-blind-it.md) | the close-status stamp is rung-blind: it tells a design rung that sign-off is owed to reach Done, which was never that rung's target | Open | Medium | 2026-07-24 | 2026-07-24 |
+| [BG0292](BG0292-the-close-status-stamp-is-rung-blind-it.md) | the close-status stamp is rung-blind: it tells a design rung that sign-off is owed to reach Done, which was never that rung's target | Fixed | Medium | 2026-07-24 | 2026-07-24 |
 | [BG0293](BG0293-gate-release-does-not-finish-inside-10-minutes.md) | gate --release does not finish inside 10 minutes, so the one lane that judges the whole workspace cannot be run before a release | Fixed | High | 2026-07-24 | 2026-07-24 |
 | [BG0294](BG0294-duplicate-detection-now-has-two-implementations-with-different.md) | duplicate detection now has two implementations with different algorithms, so they can drift | Open | Medium | 2026-07-24 | 2026-07-24 |
 

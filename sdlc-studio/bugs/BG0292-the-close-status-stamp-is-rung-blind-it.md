@@ -1,10 +1,11 @@
 # BG0292: the close-status stamp is rung-blind: it tells a design rung that sign-off is owed to reach Done, which was never that rung's target
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Verification depth:** functional (anchor stamp is rung-aware; a build rung's owed-sign-off line is unchanged and an omitted rung still defaults to it, mutation-proven at the call site)
 > **Severity:** Medium
 > **Points:** 2
 
@@ -55,6 +56,7 @@ to orient someone who has no other context.
 - **When** the close stamps the review anchor
 - **Then** it does not claim sign-off is owed to reach Done - it names the rung's own terminal, and says the units are groomed rather than awaiting signature
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseStampRungTests::test_a_design_rung_is_not_told_it_owes_a_done_signoff
+- **Verified:** yes (2026-07-24)
 
 ### AC2: a build rung is unchanged
 
@@ -62,6 +64,7 @@ to orient someone who has no other context.
 - **When** the anchor is stamped
 - **Then** the owed-sign-off line is present exactly as today - this fix must narrow the claim, not remove it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseStampRungTests::test_a_build_rung_still_states_the_owed_signoff
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

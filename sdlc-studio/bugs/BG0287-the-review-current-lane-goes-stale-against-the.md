@@ -1,10 +1,11 @@
 # BG0287: the review-current lane goes stale against the close's own transitions, so it blocks the close step that would refresh the anchor
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py
+> **Verification depth:** functional (close-owned bookkeeping no longer stales the anchor while a changed acceptance criterion still does; lane test drives `_review_current` end to end with explicit commit dates, mutation-proven at the call site)
 > **Severity:** Medium
 > **Points:** 3
 
@@ -54,12 +55,14 @@ the operator that the honest remedy for a currency gate is to backdate the thing
 - **When** the close is re-run
 - **Then** `review-current` does not report those artefacts as stale - a change made by the close chain after the anchor was refreshed is not evidence the review is out of date
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReviewCurrentSelfStalenessTests::test_the_close_own_transitions_do_not_stale_the_anchor
+- **Verified:** yes (2026-07-24)
 
 ### AC2: the remedy names something that changes the state it measures
 
 - **Given** a genuinely stale anchor and a self-staled one
 - **Then** the two produce different remedies, and neither instructs an edit whose only effect is to move a timestamp
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReviewCurrentSelfStalenessTests::test_the_two_staleness_causes_give_different_remedies
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

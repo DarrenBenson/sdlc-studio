@@ -455,3 +455,9 @@ One row has been removed since adoption.
 | US0414 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
 | US0415 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
 | US0417 | APPROVE | lane agents (independent worktree contexts) | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0286 | APPROVE | adversarial self-mutation at the call site | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0287 | APPROVE | adversarial self-mutation at the call site | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0292 | APPROVE | adversarial self-mutation at the call site | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0286 | APPROVE | adversarial self-mutation at the call site | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0287 | APPROVE | adversarial self-mutation at the call site | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0286 | APPROVE | adversarial self-mutation at the call site | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |

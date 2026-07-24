@@ -67,3 +67,6 @@
 {"id": "US0414", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
 {"id": "US0415", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
 {"id": "US0417", "type": "story", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "BG0287", "type": "bug", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "BG0292", "type": "bug", "critic_verdict": "APPROVE", "project": "sdlc-studio"}
+{"id": "BG0286", "type": "bug", "critic_verdict": "APPROVE", "project": "sdlc-studio"}

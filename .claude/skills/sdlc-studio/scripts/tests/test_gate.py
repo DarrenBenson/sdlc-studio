@@ -5,6 +5,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import os
 import re
 import sys
 import tempfile
@@ -3552,6 +3553,133 @@ class ReleaseGateCostTests(unittest.TestCase):
                          "the lane must state how long it took")
         self.assertIn("story", res["detail"],
                       "the lane must state the scope it judged")
+
+
+class ReviewCurrentSelfStalenessTests(unittest.TestCase):
+    """The close chain transitions the batch in steps 5-7 and refreshes the anchor in step 7,
+    while the review-currency gate is step 4. So re-running the documented close flow failed on
+    changes its own previous run had made, and the printed remedy was to re-run an adversarial
+    review over a tree whose only change was a set of status stamps. The honest way out was to
+    touch the anchor - exactly what the lane exists to stop being done casually."""
+
+    def _repo(self, d: str):
+        root = Path(d)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True)
+        gitutil.git(["init", "-q"], cwd=root)
+        gitutil.git(["config", "user.email", "t@example.com"], cwd=root)
+        gitutil.git(["config", "user.name", "t"], cwd=root)
+        return root
+
+    def _commit(self, root: Path, msg: str, when: str | None = None) -> str:
+        """Commit with an EXPLICIT date when given. Git timestamps have one-second resolution,
+        so two commits made in the same second tie and nothing reads as newer than the anchor -
+        the fixture then passes for the wrong reason and proves nothing about staleness."""
+        prior = {k: os.environ.get(k) for k in ("GIT_COMMITTER_DATE", "GIT_AUTHOR_DATE")}
+        if when:
+            os.environ["GIT_COMMITTER_DATE"] = when
+            os.environ["GIT_AUTHOR_DATE"] = when
+        try:
+            gitutil.git(["add", "-A"], cwd=root)
+            gitutil.git(["commit", "-q", "-m", msg], cwd=root)
+            return gitutil.git(["rev-parse", "HEAD"], cwd=root).stdout.strip()
+        finally:
+            for k, v in prior.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+
+    def test_the_close_own_transitions_do_not_stale_the_anchor(self) -> None:
+        """AC1. A unit whose only change since the anchor is its Status line is the close
+        recording a verdict already reached, not content a reviewer would judge differently."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            story = root / "sdlc-studio" / "stories" / "US0001-x.md"
+            story.write_text("# US0001: x\n\n> **Status:** Review\n\nbody text\n",
+                             encoding="utf-8")
+            base = self._commit(root, "seed")
+            story.write_text("# US0001: x\n\n> **Status:** Done\n\nbody text\n",
+                             encoding="utf-8")
+            self._commit(root, "close: transition", "2026-06-01T00:00:00+00:00")
+            self.assertTrue(
+                gate._close_owned_change_only(root, story, base),
+                "a status-only transition is the close's own bookkeeping")
+
+    def test_a_real_content_change_still_stales_the_review(self) -> None:
+        """The negative control, and the one that matters most: this carve-out must not become
+        a hole through which an edited acceptance criterion reaches a close unreviewed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            story = root / "sdlc-studio" / "stories" / "US0002-y.md"
+            story.write_text("# US0002: y\n\n> **Status:** Review\n\n### AC1: old\n",
+                             encoding="utf-8")
+            base = self._commit(root, "seed")
+            story.write_text("# US0002: y\n\n> **Status:** Done\n\n### AC1: REWRITTEN\n",
+                             encoding="utf-8")
+            self._commit(root, "sneak an AC change in with the transition")
+            self.assertFalse(
+                gate._close_owned_change_only(root, story, base),
+                "a changed acceptance criterion is review content, whatever else moved with it")
+
+    def test_an_unreadable_diff_falls_back_to_stale(self) -> None:
+        """Honest degrade. A carve-out that opened up when git could not be read would open up
+        exactly when nothing can be checked."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            missing = root / "sdlc-studio" / "nope.md"
+            self.assertFalse(gate._close_owned_change_only(root, missing, "deadbeef"))
+            self.assertEqual(gate._anchor_last_commit(root, missing), "")
+
+    def test_the_LANE_does_not_block_on_a_close_only_transition(self) -> None:
+        """The lane test, not the helper test. Mutating the CALL SITE - dropping the carve-out
+        so `judged = stale` - left every helper test green, because a helper that returns the
+        right answer to nobody proves nothing. This drives `_review_current` itself."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            reviews = root / "sdlc-studio" / "reviews"
+            reviews.mkdir(parents=True, exist_ok=True)
+            (reviews / "LATEST.md").write_text("# Reviews - LATEST\n\nprose\n", encoding="utf-8")
+            story = root / "sdlc-studio" / "stories" / "US0001-x.md"
+            story.write_text("# US0001: x\n\n> **Status:** Review\n\nbody\n", encoding="utf-8")
+            self._commit(root, "seed with the anchor", "2026-01-01T00:00:00+00:00")
+            # ...then the close transitions the unit, AFTER the anchor's commit
+            story.write_text("# US0001: x\n\n> **Status:** Done\n\nbody\n", encoding="utf-8")
+            self._commit(root, "close: transition", "2026-06-01T00:00:00+00:00")
+            res = gate._review_current(str(root))
+        self.assertFalse(res["blocking"],
+                         "the close's own transition must not stale the anchor against itself")
+        self.assertIn("close bookkeeping", res["detail"])
+
+    def test_the_LANE_still_blocks_on_a_real_content_change(self) -> None:
+        """The paired lane control. Without this, the test above is satisfied by a lane that
+        never blocks at all."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            reviews = root / "sdlc-studio" / "reviews"
+            reviews.mkdir(parents=True, exist_ok=True)
+            (reviews / "LATEST.md").write_text("# Reviews - LATEST\n\nprose\n", encoding="utf-8")
+            story = root / "sdlc-studio" / "stories" / "US0001-x.md"
+            story.write_text("# US0001: x\n\n> **Status:** Review\n\n### AC1: old\n",
+                             encoding="utf-8")
+            self._commit(root, "seed with the anchor", "2026-01-01T00:00:00+00:00")
+            story.write_text("# US0001: x\n\n> **Status:** Review\n\n### AC1: REWRITTEN\n",
+                             encoding="utf-8")
+            self._commit(root, "edit an acceptance criterion", "2026-06-01T00:00:00+00:00")
+            res = gate._review_current(str(root))
+        self.assertTrue(res["blocking"], "an edited AC must still stale the review")
+
+    def test_the_two_staleness_causes_give_different_remedies(self) -> None:
+        """AC2. A genuinely stale anchor and a self-staled one must not print the same
+        instruction - and neither may tell the operator to edit the thing being measured."""
+        real = ("reviews/LATEST.md is stale - 3 artefact(s) changed since the last review "
+                "(US0001, US0002, US0003); run `review` before closing")
+        book = ("reviews/LATEST.md is current - the 3 artefact(s) newer than it changed only "
+                "in close bookkeeping (status, verification), which is not review content")
+        self.assertNotEqual(real, book)
+        self.assertIn("run `review`", real)
+        self.assertNotIn("run `review`", book,
+                         "self-staleness must not send the operator to re-review status stamps")
 
 
 if __name__ == "__main__":
