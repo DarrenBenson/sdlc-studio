@@ -191,5 +191,131 @@ class AnchorClaimsCheckedAgainstRunStateTests(unittest.TestCase):
             self.assertNotIn("signoff-drift", [f["kind"] for f in df.check(root)["findings"]])
 
 
+class ClaimAnchoredTests(unittest.TestCase):
+    """US0367 / CR0302: the census guard is anchored to the CLAIM, not to the first match in the
+    file and not to a freshness stamp. It failed to catch "58 scripts" against 67 present because
+    it read one match and compared it as a floor; and a document nobody checked must not read the
+    same as one whose counts were measured and matched."""
+
+    def _repo(self, root: Path, n_scripts: int, n_reference: int, n_help: int) -> Path:
+        sd = root / ".claude" / "skills" / "sdlc-studio"
+        (sd / "scripts").mkdir(parents=True, exist_ok=True)
+        (sd / "help").mkdir(parents=True, exist_ok=True)
+        (sd / "SKILL.md").write_text('---\nmetadata:\n  version: "1.0.0"\n---\n', encoding="utf-8")
+        for i in range(n_scripts):
+            (sd / "scripts" / f"s{i}.py").write_text("", encoding="utf-8")
+        for i in range(n_reference):
+            (sd / f"reference-{i}.md").write_text("", encoding="utf-8")
+        for i in range(n_help):
+            (sd / "help" / f"h{i}.md").write_text("", encoding="utf-8")
+        return sd
+
+    def _trd(self, root: Path, text: str) -> None:
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "trd.md").write_text(text, encoding="utf-8")
+
+    def test_a_stale_count_fails_and_is_named(self):
+        """AC1. The exact CR0302 shape: an exact claim under the real count, restated later in the
+        file, in a document freshly touched and carrying a 'verified' stamp."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, n_scripts=67, n_reference=53, n_help=44)
+            self._trd(root, (
+                "# TRD\n\nLast verified: 2026-07-24 (freshness stamp).\n\n"
+                "The markdown knowledge base and the 58 scripts that drive it.\n\n"
+                "## ADR-001\n\nSDLC Studio is large (52 reference files, 41 help files).\n"))
+            r = df.census_claims(root)
+            self.assertTrue(r["applicable"])
+            kinds = [f["kind"] for f in r["findings"]]
+            self.assertEqual(kinds, ["census-drift"] * 3, f"expected 3 stale claims, got {kinds}")
+            blob = " ".join(f["detail"] for f in r["findings"])
+            # each finding NAMES the stale claim: the claimed number, the measured one, and the
+            # document's own words - not just a count of problems
+            for claimed, actual in (("58", "67"), ("52", "53"), ("41", "44")):
+                self.assertIn(claimed, blob)
+                self.assertIn(actual, blob)
+            self.assertIn("58 scripts", blob)          # the claim quoted back
+            # and check() surfaces them as advisory findings, never as a crash or a pass
+            self.assertIn("census-drift", [f["kind"] for f in df.check(root)["findings"]])
+
+    def test_a_correct_count_passes_on_the_value_not_the_stamp(self):
+        """AC2. The pass is computed from the measured value: no stamp is needed to pass, and no
+        stamp can buy a pass. A claim the document does not make is UNCHECKED, not a pass."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, n_scripts=67, n_reference=53, n_help=44)
+            # no freshness stamp anywhere, and the counts are right
+            self._trd(root, "# TRD\n\n67 scripts, 53 reference files, 44 help files.\n")
+            r = df.census_claims(root)
+            self.assertEqual(r["findings"], [])
+            self.assertEqual(r["unchecked"], [])
+            self.assertEqual(len(r["checked"]), 3)
+            # the verdict carries the MEASURED number, so the pass is attributable
+            self.assertEqual({c["claim"]: c["actual"] for c in r["checked"]},
+                             {"scripts": 67, "reference files": 53, "help files": 44})
+            self.assertTrue(all(c["ok"] for c in r["checked"]))
+
+        # the same document with a stamp but a WRONG number still fails - the stamp is not evidence
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, n_scripts=67, n_reference=53, n_help=44)
+            self._trd(root, "# TRD\n\nLast verified: 2026-07-24.\n\n"
+                            "58 scripts, 53 reference files, 44 help files.\n")
+            r = df.census_claims(root)
+            self.assertEqual([f["kind"] for f in r["findings"]], ["census-drift"])
+            self.assertIn("58", r["findings"][0]["detail"])
+
+        # a document that states NO count is unchecked - distinct from verified-and-matching
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, n_scripts=67, n_reference=53, n_help=44)
+            self._trd(root, "# TRD\n\nNo census claim is made here.\n")
+            r = df.census_claims(root)
+            self.assertEqual(r["findings"], [])
+            self.assertEqual(r["checked"], [])
+            self.assertEqual(sorted(r["unchecked"]),
+                             ["help files", "reference files", "scripts"])
+
+    def test_every_occurrence_is_checked_not_the_first(self):
+        # the first-match defect: a correct claim early in the file must not shelter a stale
+        # restatement later
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, n_scripts=67, n_reference=1, n_help=1)
+            self._trd(root, "# TRD\n\n67 scripts here.\n\nLater on: 58 scripts.\n")
+            r = df.census_claims(root)
+            self.assertEqual(len(r["checked"]), 2)
+            self.assertEqual([f["kind"] for f in r["findings"]], ["census-drift"])
+            self.assertIn("58", r["findings"][0]["detail"])
+
+    def test_the_comparison_form_is_read_off_the_claim(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, n_scripts=67, n_reference=1, n_help=1)
+            # "60+" is a floor and holds at 67; the same number written exact does not
+            self._trd(root, "# TRD\n\n60+ scripts.\n")
+            self.assertEqual(df.census_claims(root)["findings"], [])
+            self._trd(root, "# TRD\n\n60 scripts.\n")
+            self.assertEqual(len(df.census_claims(root)["findings"]), 1)
+            # a floor left far enough behind reality is stale too
+            self._trd(root, "# TRD\n\n40+ scripts.\n")
+            self.assertEqual(len(df.census_claims(root)["findings"]), 1)
+
+    def test_the_revision_history_is_not_a_current_claim(self):
+        # a history entry quoting the number it corrected must not re-report the fixed defect
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, n_scripts=67, n_reference=1, n_help=1)
+            self._trd(root, "# TRD\n\n67 scripts.\n\n## Revision History\n\n"
+                            "| 2026-07-24 | restated the stale 58 scripts as a band |\n")
+            self.assertEqual(df.census_claims(root)["findings"], [])
+
+    def test_not_applicable_without_the_document(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, n_scripts=3, n_reference=1, n_help=1)
+            self.assertFalse(df.census_claims(root)["applicable"])
+
+
 if __name__ == "__main__":
     unittest.main()

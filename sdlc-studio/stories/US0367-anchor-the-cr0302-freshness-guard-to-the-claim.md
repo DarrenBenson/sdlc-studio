@@ -23,6 +23,7 @@
 - **When** the guard runs
 - **Then** it FAILS and names the stale claim - the guard is anchored to the claim itself, not to a file mtime, so a stale number cannot pass by being in a recently-touched file
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py::ClaimAnchoredTests::test_a_stale_count_fails_and_is_named
+- **Verified:** yes (2026-07-24)
 
 ### AC2: a correct count passes without a re-run of the whole sweep
 
@@ -30,6 +31,7 @@
 - **When** the guard runs
 - **Then** it passes, and the assertion is made against the measured value rather than against the presence of a freshness stamp
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py::ClaimAnchoredTests::test_a_correct_count_passes_on_the_value_not_the_stamp
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

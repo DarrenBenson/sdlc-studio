@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Advisory check: does `sdlc-studio/reviews/LATEST.md` still tell the truth?
+"""Advisory check: do the project's state documents still tell the truth?
 
-LATEST.md is the project's state anchor - read first after every reset. It drifts silently: it once
-claimed 606 tests (was 622), ~66 disclosure advisories (was 0), and a workstream "deferred" (was
-shipped), and nothing caught it. This check compares the facts LATEST.md *claims* against reality and flags the
-mismatches. Advisory (never blocks) and skill-only (no-op where there is no SKILL.md). It only checks
-a fact LATEST.md actually states - it never demands one.
+`sdlc-studio/reviews/LATEST.md` is the project's state anchor - read first after every reset. It
+drifts silently: it once claimed 606 tests (was 622), ~66 disclosure advisories (was 0), and a
+workstream "deferred" (was shipped), and nothing caught it. This check compares the facts LATEST.md
+*claims* against reality and flags the mismatches. The same treatment is given to the TRD's census
+counts, which rotted the same way. Advisory (never blocks) and skill-only (no-op where there is no
+SKILL.md). It only checks a fact a document actually states - it never demands one, and it reports
+the claims it could not find as UNCHECKED rather than counting them as green.
 """
 from __future__ import annotations
 
@@ -106,16 +108,113 @@ def _close_landed(root: Path, state: dict) -> bool:
     return True
 
 
+# --- claim-anchored census counts ---------------------------------------------------------------
+# The predecessor guard read the FIRST match of a count pattern anywhere in the document and
+# compared it as a floor, so an exact claim that had rotted upward ("58 scripts", 67 present)
+# satisfied `actual >= claimed` and the guard reported green on the very numbers it existed to
+# catch. Two rules replace that, and both are properties of the CLAIM rather than of the file:
+#
+#   * every occurrence of a claim is checked, not the first - a claim is a sentence, and each
+#     sentence that makes it is judged on its own, so a stale restatement cannot shelter behind a
+#     correct one earlier in the file;
+#   * the comparison form is read off the claim's own wording - "60+ scripts" is a floor, "58
+#     scripts" is an exact count - so a number written as exact is judged as exact.
+#
+# Nothing here consults a file mtime or a "last verified" stamp. The verdict is computed from the
+# measured value, so a stale number cannot pass by sitting in a recently-touched or freshly stamped
+# file, and a document nobody checked is not mistaken for one whose counts match: a claim the
+# document does not make is returned UNCHECKED, never counted as a pass.
+_CENSUS_MEASURES = {
+    "scripts": lambda sd: len(list((sd / "scripts").glob("*.py"))),
+    "reference files": lambda sd: len(list(sd.glob("reference-*.md"))),
+    "help files": lambda sd: len(list((sd / "help").glob("*.md"))),
+}
+_CENSUS_CLAIMS = {
+    "scripts": re.compile(r"(\d+)(\+?)\s+scripts\b", re.I),
+    "reference files": re.compile(r"(\d+)(\+?)\s+reference\s+files?\b", re.I),
+    "help files": re.compile(r"(\d+)(\+?)\s+help\s+files?\b", re.I),
+}
+# A floor claim ("60+") is honest while reality sits above it, but a floor left far enough behind
+# is as stale as a wrong exact number - it was the floor reading that let "58 scripts" pass at 67.
+# The band is stated here rather than left implicit so the finding can name the rule it applied.
+_FLOOR_STALE_RATIO = 1.25
+
+# A document's revision history NARRATES the claims it used to make, usually quoting the stale
+# number beside its correction. Those are not current assertions, so the census scan stops at the
+# history heading; scanning it would make every correction re-report the defect it fixed.
+_HISTORY_HEADING = re.compile(r"^#{1,3}\s+(?:Revision\s+History|Changelog)\s*$", re.I | re.M)
+
+
+def _current_body(text: str) -> str:
+    m = _HISTORY_HEADING.search(text)
+    return text[: m.start()] if m else text
+
+
+def _claim_quote(text: str, m: re.Match) -> str:
+    """The claim's own words - a bounded window around the match, so a finding names the sentence
+    that is wrong rather than a line number that moves the next time the file is edited."""
+    return " ".join(text[max(0, m.start() - 40): m.end() + 40].split())
+
+
+def census_claims(repo_root: Path | str = ".", doc: str = "sdlc-studio/trd.md") -> dict:
+    """Check every census count `doc` currently claims against the measured workspace.
+
+    Returns {checked, unchecked, findings, applicable, document}. `checked` carries one record per
+    occurrence, each holding the measured `actual` alongside the `claimed` value - the verdict is
+    derived from that number, which is what makes 'the counts match' distinguishable from 'nobody
+    looked'. `unchecked` names the claims the document does not make.
+    """
+    root = Path(repo_root)
+    skill_dir = _skill_dir(root)
+    path = root / doc
+    if not (skill_dir / "SKILL.md").exists() or not path.exists():
+        return {"checked": [], "unchecked": [], "findings": [], "applicable": False,
+                "document": doc}
+    body = _current_body(_read(path))
+    checked: list[dict] = []
+    unchecked: list[str] = []
+    findings: list[dict] = []
+    for name, pattern in _CENSUS_CLAIMS.items():
+        matches = list(pattern.finditer(body))
+        if not matches:
+            unchecked.append(name)
+            continue
+        actual = _CENSUS_MEASURES[name](skill_dir)
+        for m in matches:
+            claimed, is_floor = int(m.group(1)), m.group(2) == "+"
+            if is_floor:
+                ok = claimed <= actual < claimed * _FLOOR_STALE_RATIO
+                why = (f"a floor claim holds while the count sits in [{claimed}, "
+                       f"{claimed * _FLOOR_STALE_RATIO:g})")
+            else:
+                ok = claimed == actual
+                why = "an exact claim holds only on the exact count"
+            record = {"claim": name, "claimed": claimed, "actual": actual,
+                      "form": "floor" if is_floor else "exact", "ok": ok,
+                      "quote": _claim_quote(body, m)}
+            checked.append(record)
+            if not ok:
+                findings.append({
+                    "kind": "census-drift",
+                    "detail": (f"{doc} claims {claimed}{'+' if is_floor else ''} {name}; "
+                               f"{actual} counted in the workspace ({why}) - stale claim: "
+                               f"\"{record['quote']}\""),
+                })
+    return {"checked": checked, "unchecked": unchecked, "findings": findings,
+            "applicable": True, "document": doc}
+
+
 def check(repo_root: Path | str = ".") -> dict:
-    """Findings (all advisory). {findings, ok, applicable}. Applicable only on the skill repo with a
-    LATEST.md present; only facts LATEST.md states are checked."""
+    """Findings (all advisory). {findings, ok, applicable, census}. Applicable only on the skill
+    repo with a LATEST.md or a TRD present; only facts those documents state are checked."""
     root = Path(repo_root)
     skill_dir = _skill_dir(root)
     latest = root / "sdlc-studio" / "reviews" / "LATEST.md"
-    if not (skill_dir / "SKILL.md").exists() or not latest.exists():
-        return {"findings": [], "ok": True, "applicable": False}
-    text = _read(latest)
-    findings: list[dict] = []
+    census = census_claims(root)
+    if not (skill_dir / "SKILL.md").exists() or not (latest.exists() or census["applicable"]):
+        return {"findings": [], "ok": True, "applicable": False, "census": census}
+    findings: list[dict] = list(census["findings"])
+    text = _read(latest) if latest.exists() else ""
 
     def claim(pattern: str):
         m = re.search(pattern, text, re.I)
@@ -185,7 +284,7 @@ def check(repo_root: Path | str = ".") -> dict:
                                     f"docs.latest_max_lines) and is re-read every session "
                                     f"start - move past-sprint paragraphs to their retros "
                                     f"and keep one History line each")})
-    return {"findings": findings, "ok": not findings, "applicable": True}
+    return {"findings": findings, "ok": not findings, "applicable": True, "census": census}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -203,14 +302,23 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(r, indent=2))
         return 0  # advisory: report, never fail
     if not r["applicable"]:
-        print("doc-freshness: N/A (not the skill repo, or no LATEST.md)")
+        print("doc-freshness: N/A (not the skill repo, or no state documents)")
         return 0
     if r["ok"]:
-        print("doc-freshness: LATEST.md is fresh")
-        return 0
-    print(f"doc-freshness: {len(r['findings'])} stale claim(s) in LATEST.md:")
-    for f in r["findings"]:
-        print(f"  [{f['kind']}] {f['detail']}")
+        print("doc-freshness: state documents are fresh")
+    else:
+        print(f"doc-freshness: {len(r['findings'])} stale claim(s):")
+        for f in r["findings"]:
+            print(f"  [{f['kind']}] {f['detail']}")
+    # Say what was actually verified. A silent green cannot tell a document whose counts were
+    # measured and matched from one that states no count at all, and the two are different facts.
+    census = r.get("census") or {}
+    if census.get("applicable"):
+        passed = sum(1 for c in census["checked"] if c["ok"])
+        print(f"  census: {passed}/{len(census['checked'])} claim(s) in "
+              f"{census['document']} verified against the measured count"
+              + (f"; not stated (unchecked): {', '.join(census['unchecked'])}"
+                 if census["unchecked"] else ""))
     return 0  # advisory: report, never fail
 
 
