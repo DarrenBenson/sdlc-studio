@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0225: **Scoping a check to a diff disables it wherever there is no diff.** An empty changed-set is not an empty scope; a clean tree must judge...**
+- **L-0224: **Fixing an ordering defect can create its mirror image.** The BG0268 repair moved `open_run` first and invented the opposite leak.**
+- **L-0223: **An acceptance criterion can specify a vulnerability, and a passing test will then defend it.** US0375 asked for the sign-off gate to...**
+- **L-0222: My tests verify the piece I just wrote, not the system it lives in**
 - **L-0221: **A library function that prints leaks into every test that calls it.** refine's SEEDED note printed from the library; 69 leaks.**
 - **L-0220: **A `--no-verify` commit in a worktree defers the gate to whoever merges it.** Two agents' bypassed leaks became the first full-tree hook's...**
 - **L-0219: **A test that asserts a label, not the value, proves the tool named its state - not that it reached it.** US0400 relabelled the marginal...**

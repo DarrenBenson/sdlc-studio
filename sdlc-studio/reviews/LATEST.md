@@ -1,65 +1,54 @@
 # Reviews - LATEST (anchor)
 
-> **RUN-01KY7W1F (Sprint 1 of the three-sprint run) delivered all 19 units to Review.** The
-> independent 3-reviewer adversarial panel found 7 defects (1 MAJOR), all fixed before sign-off;
-> goal-verdict = ACHIEVED. RETRO0069 recorded. **Sign-off is owed and is the operator's** - the
-> two-role gate (`review.two_role_after: 192`) holds Done. Not closed at the close command until
-> sign-off lands.
+> **RUN-01KY8M6Q (Sprint 2 of the three-sprint run) delivered all 28 units, 89 points.** The
+> closing review found 14 MAJOR/HIGH defects across five slices, every one reproduced; ten were
+> repaired in-sprint and the residue is filed. Goal ACHIEVED. Sign-off applied by the operator.
 
-## Where the pipeline is (2026-07-23)
+## Where the pipeline is (2026-07-24)
 
-Sprint 1 of a planned three-sprint run (~60 pts each) is BUILT and REVIEWED: 8 sprint-engine
-epics, 19 stories, every story at Review, every epic In Progress pending sign-off. Goal ACHIEVED.
-
-Sprint Goal: *stop eight sprint-engine tools being hand-driven - refine mints a plannable unit,
-the seat brief and goal review become reproducible and amendable, the forecast prices the rung,
-the delivery mode is a recorded choice, an artefact title has a deterministic correction, prose
-reaches every creation script without a shell, and the plan sees built-and-committed work - each
-independently verified, so sprints 2 and 3 run on instruments they can trust.*
+Sprint 2 of three is CLOSED. The delivery backlog reached zero open units, which was the goal, so
+the v5 release cut has no known-open work behind it. Sprint 3 carries the ungroomed story
+skeletons, the frictions raised here, and EP0117 (the cut itself).
 
 ## What shipped
 
-- **EP0130** - `sprint plan` flags built-not-closed and excludes it from the build forecast.
-- **EP0151** - the forecast prices the rung: a design run reads UNMEASURED, not the build rate.
-- **EP0150** - atomic three-surface artefact retitle (ULID-safe after review).
-- **EP0155** - refine mints a plannable, ungroomed-marked unit (Affects required or inherited).
-- **EP0154** - `sprint plan` offers sequential/parallel delivery; test files count as coupling.
-- **EP0146** - shell-safe `--fields-file` for critic/close_owed/sprint prose + hazard reporting.
-- **EP0152** - goal review distinguishes an amendment (carry-forward) from a material change.
-- **EP0153** - a deterministic seat brief, recorded with the verdicts; fields-file seats.
-
-## How it was delivered
-
-The batch is sprint.py-coupled, so the core was built serially; two file-disjoint clusters
-(EP0155 refine, EP0150 retitle) ran as parallel worktree agents - exactly the sequential/parallel
-split EP0154 itself now detects. Each epic committed as a green unit through the full gate.
+- **The gate got faster and stayed honest.** Diff-scoped conformance and validate (19.55s to
+  0.73s, re-measured independently); the commit-message check now precedes the expensive suites,
+  so a message refusal costs 33s rather than 212s.
+- **Parallel delivery grew teeth.** The scrub sweep is anchored to the repo (it had been skipping
+  whole trees from a worktree - a vacuous pass); a conflicted merge is committable again; the
+  delivery contract names workspace isolation and build-tooling coupling.
+- **Measurement replaced assertion.** A root census measured 64 scripts declaring `--root` where
+  the story asserted 62 and grooming guessed 20 unanchored; the substitution detector reports a
+  measured 3-of-4 catch rate with the fourth named undetectable in principle.
+- **The close describes the state it leaves.** The anchor refreshes on a successful close and is
+  re-stamped once sign-offs land; the seat brief describes the batch it is given; a themed batch
+  is no longer reported as unachievable.
 
 ## The closing review
 
-Three fresh-context adversarial reviewers over disjoint slices of the ~2137-line engine diff.
-7 defects found: 1 MAJOR (the design-rung forecast RELABELLED the marginal UNMEASURED but still
-priced it at the build rate - a selection-bias hole, the test asserted the label not the value),
-2 MEDIUM (retitle H1 missed ULID ids; refine's ungroomed marker failed MD022), 1 MEDIUM (an
-amendment naming a requesting seat that never reviewed the prior goal), 3 LOW. All 7 fixed with
-value-asserting tests. Sprint-review coverage recorded APPROVE (reviewer != author).
+Five reviewers over disjoint slices. Two findings were severe. A complete **bypass of the
+two-role gate**: an author could supersede the verdict blocking them and sign off through their
+own subagent - and US0375's acceptance criterion had SPECIFIED that behaviour, with a passing
+test defending it. And an **artefact gate that passed everything**: diff scoping bound to every
+caller meant CI, deploy preflight and close preflight judged zero units on a clean tree, so a
+story committed with `Status: Bananas` gave `gate: PASS`.
+
+Both are closed and mutation-proven. The residue is BG0282-BG0284 and CR0413-CR0417.
 
 ## Evidence
 
-729 affected-suite tests green after the fixes; full gate green on every commit; drift 0. The
-engine dogfooded itself: the mint-time Affects gate, the engagement-floor Refs guard, and the
-noise ratchet (which caught 69 leaks two `--no-verify` merges had smuggled onto main) all fired.
+4241 skill tests + 353 tool tests green, every repo guard clean, drift 0, noise at baseline.
 
 ## Next steps
 
-- **CLOSED AND SIGNED OFF.** The operator signed off all 19 units; they are Done, the 8 epics
-  derived Done and CR0366/0392/0407/0411/0412 derived Complete. Run outcome: goal-reached.
-- **Sprints 2 and 3** (~60 pts each) remain in the three-sprint run.
-- Follow-ups on the backlog: BG0271 (gate unrunnable in a worktree), BG0272-0274 (review
-  findings), BG0275 (this anchor is not refreshed by a successful close - raised when the
-  stale line above misled the Sprint 2 re-anchor).
+- **Sprint 3**: the ungroomed skeletons (~77 pts), this sprint's frictions, then EP0117 - the
+  v5 cut itself.
+- **BG0284 is the one to read first**: closing the gate bypass left the mis-attributed-reviewer
+  case unsolved, and it needs a principal-authorised correction path.
 
 ## Lessons
 
-Assert the value, not the label - a test that checks a tool named its state does not prove it
-reached it (the MAJOR). A `--no-verify` in one clone becomes another's red gate. A library
-function that prints leaks into every test that calls it - return the notes, print at the CLI.
+An acceptance criterion can specify a vulnerability, and a passing test will then defend it.
+Fixing an ordering defect can create its mirror image. Scoping a check to a diff disables it
+wherever there is no diff.
