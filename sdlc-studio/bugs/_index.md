@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 7 |
+| Open | 2 |
 | In Progress | 0 |
-| Fixed | 204 |
+| Fixed | 209 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -244,14 +244,14 @@
 | [BG0275](BG0275-a-successful-sprint-close-never-refreshes-sdlc-studio.md) | a successful sprint close never refreshes sdlc-studio/reviews/LATEST.md, so the review anchor AGENTS.md orders every agent to re-anchor on still states the previous run's owed sign-off after that sign-off landed | Fixed | -- | 2026-07-23 | 2026-07-23 |
 | [BG0276](BG0276-conformance-reports-ungroomed-0-while-31-stories-carry.md) | conformance reports ungroomed=0 while 31 stories carry the bare {{define}} scaffold: US0411's machine-visible ungroomed count recognises only the new marker, so every story minted before it is invisible to the very count meant to surface them | Fixed | -- | 2026-07-24 | 2026-07-24 |
 | [BG0277](BG0277-the-seat-brief-is-circular-goal-review-brief.md) | the seat brief is circular: goal-review brief derives from the persisted sprint-plan.json, but the goal review it informs gates plan --write, so on a new sprint the brief silently describes the PREVIOUS batch | Fixed | -- | 2026-07-24 | 2026-07-24 |
-| [BG0278](BG0278-sprint-plan-crashes-with-keyerror-fixed-fit-once.md) | sprint plan CRASHES with KeyError fixed-fit once a project has enough measured sprints to apply the fixed-term fit: the fixed-fit branch overrides rate_source but leaves rate_refused set, breaking the exhaustive-lookup invariant _render_rate_provenance documents | Open | High | 2026-07-24 | 2026-07-24 |
-| [BG0279](BG0279-the-close-chain-runs-its-gate-before-apply.md) | the close chain runs its gate BEFORE --apply-signoff moves units to Done, so the green it reports is measured against a state the close then changes: a unit can pass at Review and be non-conformant the moment it becomes Done | Open | -- | 2026-07-24 | 2026-07-24 |
-| [BG0280](BG0280-parallel-agents-share-one-scratchpad-directory-so-a.md) | parallel agents share one scratchpad directory, so a commit-message file written by one can be overwritten by another between write and commit: a commit landed carrying a different agent's subject | Open | -- | 2026-07-24 | 2026-07-24 |
+| [BG0278](BG0278-sprint-plan-crashes-with-keyerror-fixed-fit-once.md) | sprint plan CRASHES with KeyError fixed-fit once a project has enough measured sprints to apply the fixed-term fit: the fixed-fit branch overrides rate_source but leaves rate_refused set, breaking the exhaustive-lookup invariant _render_rate_provenance documents | Fixed | High | 2026-07-24 | 2026-07-24 |
+| [BG0279](BG0279-the-close-chain-runs-its-gate-before-apply.md) | the close chain runs its gate BEFORE --apply-signoff moves units to Done, so the green it reports is measured against a state the close then changes: a unit can pass at Review and be non-conformant the moment it becomes Done | Fixed | -- | 2026-07-24 | 2026-07-24 |
+| [BG0280](BG0280-parallel-agents-share-one-scratchpad-directory-so-a.md) | parallel agents share one scratchpad directory, so a commit-message file written by one can be overwritten by another between write and commit: a commit landed carrying a different agent's subject | Fixed | -- | 2026-07-24 | 2026-07-24 |
 | [BG0281](BG0281-a-conflicted-merge-cannot-be-committed-through-the.md) | a conflicted merge cannot be committed through the gate: the commit-msg hook tests invoke the hook with the OUTER repo as cwd, so they inherit its MERGE_HEAD, the hook correctly exits early, and five tool-tests fail for the duration of every merge | Fixed | High | 2026-07-24 | 2026-07-24 |
 | [BG0282](BG0282-59-scripts-still-resolve-root-bare-so-a.md) | 59 scripts still resolve --root bare, so a run from a subdirectory reads or writes the wrong tree | Fixed | Medium | 2026-07-24 | 2026-07-24 |
-| [BG0283](BG0283-the-inflight-mutation-guard-has-no-staleness-notion.md) | the inflight-mutation guard has no staleness notion, so an abandoned sidecar blocks every write in the repo indefinitely: a three-day-old file refused artifact and transition the moment the guard shipped | Open | -- | 2026-07-24 | 2026-07-24 |
+| [BG0283](BG0283-the-inflight-mutation-guard-has-no-staleness-notion.md) | the inflight-mutation guard has no staleness notion, so an abandoned sidecar blocks every write in the repo indefinitely: a three-day-old file refused artifact and transition the moment the guard shipped | Fixed | -- | 2026-07-24 | 2026-07-24 |
 | [BG0284](BG0284-superseding-a-verdict-cannot-restore-independence-so-the.md) | superseding a verdict cannot restore independence, so the mis-attributed-reviewer case that motivated it still strands a unit: the tool cannot tell a mis-filing from an author retiring an inconvenient verdict, and needs a principal-authorised correction path | Open | High | 2026-07-24 | 2026-07-24 |
-| [BG0285](BG0285-sprint-close-without-apply-signoff-closes-the-run.md) | sprint close without --apply-signoff closes the run, and the sprint-level review that the sign-off needs cannot then be recorded against it, so the documented two-invocation close flow cannot be completed and no reopen path exists | Open | High | 2026-07-24 | 2026-07-24 |
+| [BG0285](BG0285-sprint-close-without-apply-signoff-closes-the-run.md) | sprint close without --apply-signoff closes the run, and the sprint-level review that the sign-off needs cannot then be recorded against it, so the documented two-invocation close flow cannot be completed and no reopen path exists | Fixed | High | 2026-07-24 | 2026-07-24 |
 | [BG0286](BG0286-sprint-close-apply-signoff-fans-into-story-units.md) | sprint close --apply-signoff fans into story units only, leaving the batch's bugs Open while the close reports goal-reached | Fixed | High | 2026-07-24 | 2026-07-24 |
 | [BG0287](BG0287-the-review-current-lane-goes-stale-against-the.md) | the review-current lane goes stale against the close's own transitions, so it blocks the close step that would refresh the anchor | Fixed | Medium | 2026-07-24 | 2026-07-24 |
 | [BG0288](BG0288-anchor-the-33-unanchored-reader-scripts-to-the.md) | anchor the 33 unanchored READER scripts to the discovered root (BG0282 slice 2) | Fixed | Medium | 2026-07-24 | 2026-07-24 |

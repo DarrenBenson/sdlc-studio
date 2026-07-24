@@ -74,6 +74,7 @@ CLOSED = tuple(o for o in OUTCOMES if o != RUNNING)
 # The fields this module owns. Anything else a caller writes is preserved verbatim - see
 # the module docstring: this list documents, it does not gate.
 FIELDS = ("schema", "run_id", "started_at", "ended_at", "outcome", "goal", "batch",
+          "reopened",
           "plan", "handoff", "review_rounds", "review_ceiling_overrides",
           "session_token_baseline", "delegated_tokens")
 
@@ -374,7 +375,10 @@ def _blank() -> dict:
     false fact in the one file the next reader trusts. An unopened run says so."""
     return {"schema": SCHEMA, "run_id": None, "started_at": None, "ended_at": None,
             "outcome": RUNNING, "goal": None, "batch": [], "plan": None, "handoff": None,
-            REVIEW_ROUNDS: [], CEILING_OVERRIDES: [], TOKEN_BASELINE: None, DELEGATED: []}
+            REVIEW_ROUNDS: [], CEILING_OVERRIDES: [], TOKEN_BASELINE: None, DELEGATED: [],
+            # Seeded empty like its siblings: `reopened` is part of the documented shape, and a
+            # field that only appears after a reopen would make every reader test for it.
+            "reopened": []}
 
 
 def _mutate(repo_root: Path | str, fn) -> dict:
@@ -831,6 +835,49 @@ def _check_outcome(outcome: str) -> None:
     if outcome not in OUTCOMES:
         raise ValueError(f"unknown run outcome {outcome!r} - expected one of "
                          f"{', '.join(OUTCOMES)}")
+
+
+def reopen_run(repo_root: Path | str, reason: str) -> dict:
+    """Reopen the closed run so evidence that belongs to it can still be recorded.
+
+    This exists because the close's own refusal named it and it did not exist. The documented
+    two-invocation flow is: close once to produce the sign-off brief, then close again with
+    `--apply-signoff`. But the first invocation SEALS the run, and the sprint-level review the
+    sign-off needs cannot be recorded against a sealed run - the refusal says so and offers
+    "or reopen it", a remedy with no implementation. The sequence the close documents therefore
+    could not be completed.
+
+    Deliberately NOT a general undo:
+
+    * The reason is mandatory and recorded on the state, so a reopen is always attributable.
+      A run that can be silently reopened is a run whose closure means nothing.
+    * The archived record written at close is left ALONE. It is the evidence of what was
+      claimed at that moment, and rewriting history to match a later correction is the
+      failure this whole project is built to refuse.
+    * The outcome and end time are cleared, so nothing reads a reopened run as still closed,
+      and `reopened` records that it happened.
+    """
+    if not (reason or "").strip():
+        raise ValueError("reopen needs a reason - an unattributable reopen makes every close "
+                         "provisional")
+
+    def apply(state: dict) -> dict:
+        state = state or _blank()
+        if not state.get("run_id"):
+            raise ValueError("no run to reopen")
+        if state.get("outcome") == RUNNING:
+            raise ValueError(f"{state['run_id']} is already open - nothing to reopen")
+        history = list(state.get("reopened") or [])
+        history.append({"at": sdlc_md.now_iso8601(),
+                        "from_outcome": state.get("outcome"),
+                        "was_ended_at": state.get("ended_at"),
+                        "reason": reason.strip()})
+        state["reopened"] = history
+        state["outcome"] = RUNNING
+        state["ended_at"] = None
+        return state
+
+    return _mutate(repo_root, apply)
 
 
 def close_run(repo_root: Path | str, outcome: str, handoff: str | None = None) -> dict:

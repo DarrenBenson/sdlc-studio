@@ -1,24 +1,27 @@
 # BG0285: sprint close without --apply-signoff closes the run, and the sprint-level review that the sign-off needs cannot then be recorded against it, so the documented two-invocation close flow cannot be completed and no reopen path exists
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py,.claude/skills/sdlc-studio/scripts/lib/run_state.py
+> **Verification depth:** functional (reopen_run implemented with a mandatory recorded reason, the archived close record proven untouched, and refusals covered for a missing reason and an already-open run)
 > **Severity:** High
 > **Points:** 3
 
 ## Summary
 
-{{symptom}}
+The close's first invocation seals the run, and the sprint-level review the follow-up `--apply-signoff` needs cannot be recorded against a sealed run. The refusal offered "or reopen it" - a remedy with no implementation - so the documented two-invocation close flow could not be completed.
 
 ## Steps to Reproduce
 
-{{steps}}
+1. `sprint close --retro RETROxxxx` (no `--apply-signoff`). The chain's handoff step closes the run.
+2. `critic sprint-review --units ...` to record the review the sign-off requires.
+3. It is refused: a review cannot be recorded against a run that already ended.
 
 ## Proposed Fix
 
-{{fix}}
+Implement the reopen the refusal already names: `run_state.reopen_run` plus a `sprint reopen` verb, with a mandatory recorded reason and the archived close record left untouched.
 
 ## Detail
 
@@ -63,12 +66,14 @@ no supported route forward - the ceremony deadlocks at exactly the step that cer
 - **When** the chain completes
 - **Then** the follow-up `--apply-signoff` invocation can still record the sprint-level review the sign-off requires - either because the run is not sealed until the sign-off lands, or because the review may be recorded against a run closed in this same close
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseDoesNotForecloseSignoffTests::test_the_review_can_still_be_recorded_after_the_brief_invocation
+- **Verified:** yes (2026-07-24)
 
 ### AC2: a refusal never names a remedy that does not exist
 
 - **Given** the review-after-close refusal
 - **Then** every remedy it names is a command that exists - a reopen verb is implemented, or the message stops offering one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseDoesNotForecloseSignoffTests::test_every_named_remedy_is_a_real_command
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

@@ -5134,6 +5134,29 @@ def _render_stop_cost(out: dict) -> None:
               file=sys.stderr)
 
 
+def cmd_reopen(args) -> int:
+    """Reopen a closed run so evidence belonging to it can still be recorded.
+
+    The close's own refusal for a late review named "or reopen it" while no reopen existed, so
+    the documented two-invocation close flow could not be completed once the first invocation
+    had sealed the run. This is the named remedy, made real.
+
+    The reason is mandatory and recorded, and the archived close record is left untouched: it is
+    the evidence of what was claimed at that moment, and rewriting it to match a later
+    correction is the failure this project exists to refuse.
+    """
+    root = args.root
+    try:
+        state = run_state.reopen_run(root, args.reason)
+    except ValueError as exc:
+        print(f"reopen refused: {exc}", file=sys.stderr)
+        return 2
+    print(f"reopened {state.get('run_id')} - outcome is `running` again and the end time is "
+          f"cleared. The archived close record is unchanged; the reason is recorded on the run.")
+    print(f"  reason: {args.reason}")
+    return 0
+
+
 def cmd_stop(args) -> int:
     """Stop the run - refused while any unit the pending questions do not block remains.
 
@@ -5780,6 +5803,17 @@ def build_parser() -> argparse.ArgumentParser:
     gr.add_argument("--format", choices=("text", "json"), default="text")
     gr.add_argument("--root", default=".", help="Repo root (default: .)")
     gr.set_defaults(func=cmd_goal_review)
+
+    ro = sub.add_parser(
+        "reopen",
+        help="Reopen a CLOSED run so evidence that belongs to it can still be recorded - the "
+             "sprint-level review a late sign-off needs, most often. A reason is mandatory and "
+             "is recorded on the run; the archived close record is never rewritten.")
+    ro.add_argument("--reason", required=True,
+                    help="why the run is being reopened - an unattributable reopen makes every "
+                         "close provisional")
+    ro.add_argument("--root", default=".", help="Repo root (default: .)")
+    ro.set_defaults(func=cmd_reopen)
 
     st = sub.add_parser(
         "stop",

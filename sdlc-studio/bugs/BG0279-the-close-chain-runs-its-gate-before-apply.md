@@ -1,10 +1,11 @@
 # BG0279: the close chain runs its gate BEFORE --apply-signoff moves units to Done, so the green it reports is measured against a state the close then changes: a unit can pass at Review and be non-conformant the moment it becomes Done
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py
+> **Verification depth:** functional (close gate evaluated after the Done transitions; CloseGateOrderingTests covers both the ordering and the red-tree report)
 > **Severity:** Medium
 > **Points:** 3
 
@@ -54,6 +55,7 @@ next, which is the most expensive way to learn it.
 - **When** the chain completes
 - **Then** the gate (or an equivalent conformance check) is evaluated AFTER the transitions, so a green close means the resulting tree is green
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseGateOrderingTests::test_the_gate_is_evaluated_after_the_done_transitions
+- **Verified:** yes (2026-07-24)
 
 ### AC2: a close that would leave the tree red says so rather than reporting green
 
@@ -61,6 +63,7 @@ next, which is the most expensive way to learn it.
 - **When** the close runs with `--apply-signoff`
 - **Then** it reports the failure and names the units, instead of printing a green gate from the pre-transition state
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseGateOrderingTests::test_a_close_that_would_leave_the_tree_red_reports_it
+- **Verified:** yes (2026-07-24)
 
 ## Verification depth
 

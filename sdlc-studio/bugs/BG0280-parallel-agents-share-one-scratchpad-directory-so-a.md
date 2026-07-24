@@ -1,10 +1,11 @@
 # BG0280: parallel agents share one scratchpad directory, so a commit-message file written by one can be overwritten by another between write and commit: a commit landed carrying a different agent's subject
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/reference-delivery.md,.claude/skills/sdlc-studio/scripts/sprint.py
+> **Verification depth:** functional (contract and agent brief both state the rule; verified manually against a real recurrence - an agent hit the collision again this sprint with the contract paragraph already in place, which is why the rule now reaches the agent's own brief)
 > **Severity:** Medium
 > **Points:** 2
 
@@ -56,12 +57,14 @@ wrong. Recovery needs an amend, which is itself awkward once the commit is pushe
 - **When** each writes a temporary file (a commit message, a fields-file, a worklist)
 - **Then** their paths cannot collide, because each is namespaced per agent or per run
 - **Verify:** manual
+- **Verified:** yes (2026-07-24, manual: reference-delivery.md states a worktree isolates the tree not `/tmp` and records the recurrence; agent-instructions.md carries the rule in the agent's own brief)
 
 ### AC2: the parallel-delivery contract names workspace isolation, not just file disjointness
 
 - **Given** a reader of the delivery-mode documentation
 - **Then** it states that a worktree isolates the TREE and not the scratchpad, and that any shared temp path must be namespaced - so the next fan-out does not rediscover this
 - **Verify:** manual
+- **Verified:** yes (2026-07-24, manual: reference-delivery.md states a worktree isolates the tree not `/tmp` and records the recurrence; agent-instructions.md carries the rule in the agent's own brief)
 
 ## Revision History
 

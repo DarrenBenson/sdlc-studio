@@ -190,17 +190,58 @@ def inflight_mutation(root: Path | str) -> dict | None:
     if not sidecar.exists():
         return None
     files: list[str] = []
+    readable = False
     try:
         data = json.loads(sidecar.read_text(encoding="utf-8"))
         if isinstance(data, dict):
             files = sorted(str(k) for k in data)
+            readable = True
     except (OSError, ValueError):
         files = []
-    return {"sidecar": sidecar, "files": files}
+    # `readable` separates "the sidecar says nothing is mutated" from "the sidecar cannot be
+    # read". Both give an empty file list and they mean opposite things: the first is a window
+    # that closed, the second is a window whose contents are unknown. Collapsing them is how a
+    # guard stops refusing exactly when it cannot tell.
+    return {"sidecar": sidecar, "files": files, "readable": readable}
 
 
 def _inflight_named(state: dict) -> str:
     return ", ".join(state["files"]) or f"(unreadable sidecar {state['sidecar']} - files unknown)"
+
+
+def inflight_age_note(state: dict) -> str:
+    """How old the in-flight claim is, as a phrase for the warning and the refusal.
+
+    A guard with no notion of age cannot distinguish a run that started ten seconds ago from an
+    abandoned sidecar left by a process killed days back - and the second case blocks every write
+    in the repo indefinitely while telling the operator to "wait for the run to finish". There is
+    no run. Stating the age does not decide anything, which is deliberate: the guard still
+    refuses, because a mutated tree is a mutated tree, but the reader can now tell which of the
+    two situations they are in without stat-ing the file themselves.
+    """
+    try:
+        mtime = Path(state["sidecar"]).stat().st_mtime
+    except OSError:
+        return ""
+    seconds = max(0, int(datetime.now(timezone.utc).timestamp() - mtime))
+    if seconds < 120:
+        return f" The claim is {seconds}s old, so a run is probably alive."
+    if seconds < 3600:
+        return (f" The claim is {seconds // 60}m old. If no run is alive it is ABANDONED - "
+                f"nothing will clear it on its own.")
+    hours = seconds // 3600
+    return (f" The claim is {hours}h old, which is far longer than any mutation run takes: "
+            f"treat it as ABANDONED unless you can point at a live process.")
+
+
+def inflight_touched_files(state: dict) -> list[str]:
+    """The files the sidecar says are actually mutated.
+
+    A sidecar recording NOTHING mutated is a window that closed without being cleaned up: there
+    is no mutated code to protect anyone from, so refusing every write on its account is a
+    refusal with no subject.
+    """
+    return [f for f in state.get("files") or [] if f]
 
 
 def inflight_warning(root: Path | str) -> str | None:
@@ -211,7 +252,8 @@ def inflight_warning(root: Path | str) -> str | None:
         return None
     return (f"WARNING: a mutation run has a mutant applied to {_inflight_named(state)} - "
             f"{_SINGLE_WRITER}, so this output may come from mutated code. Treat it as degraded "
-            f"evidence, and re-read once {state['sidecar']} is gone.")
+            f"evidence, and re-read once {state['sidecar']} is gone."
+            f"{inflight_age_note(state)}")
 
 
 def inflight_refusal(root: Path | str) -> str | None:
@@ -220,10 +262,17 @@ def inflight_refusal(root: Path | str) -> str | None:
     state = inflight_mutation(root)
     if state is None:
         return None
+    if state.get("readable") and not inflight_touched_files(state):
+        # A readable sidecar naming NO mutated file. There is no mutated code, so there is
+        # nothing to protect a write from - refusing here blocks the repo over a window that
+        # closed. An UNREADABLE sidecar is different and still refuses: its presence is the
+        # fact, and not being able to read it is not evidence of innocence.
+        return None
     return (f"refused: a mutation run has a mutant applied to {_inflight_named(state)} - "
             f"{_SINGLE_WRITER}, and a write made through mutated code is one nobody can trust "
             f"afterwards. Nothing was written. Wait for the run to finish, or - if no run is "
-            f"alive - restore the file(s) from git and delete {state['sidecar']}.")
+            f"alive - restore the file(s) from git and delete {state['sidecar']}."
+            f"{inflight_age_note(state)}")
 
 
 def now_iso8601() -> str:

@@ -6948,5 +6948,76 @@ class ApplySignoffBatchCoverageTests(unittest.TestCase):
         self.assertEqual(out, [], "an id with no artefact is not claimed as an outstanding unit")
 
 
+class CloseDoesNotForecloseSignoffTests(unittest.TestCase):
+    """`sprint close` without `--apply-signoff` SEALS the run, and the sprint-level review the
+    follow-up sign-off needs cannot be recorded against a sealed run. The refusal said so and
+    offered "or reopen it" - a remedy with no implementation - so the documented two-invocation
+    close flow could not be completed once the first invocation had run."""
+
+    def _closed(self, root: Path):
+        from lib import run_state
+        state = run_state.open_run(root, batch=["US0001"], goal="done")
+        run_state.close_run(root, "goal-reached", handoff="HO-0001")
+        self._run_id = state["run_id"]
+        return run_state
+
+    def test_the_review_can_still_be_recorded_after_the_brief_invocation(self) -> None:
+        """AC1. After the brief-producing close, the run can be reopened so the review the
+        sign-off requires can still be recorded against it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            rs = self._closed(root)
+            self.assertNotEqual(rs.read(root).get("outcome"), "running")
+            rs.reopen_run(root, "record the sprint-level review the sign-off needs")
+            state = rs.read(root)
+        self.assertEqual(state["outcome"], "running")
+        self.assertIsNone(state["ended_at"], "a reopened run must not still carry an end time")
+        self.assertEqual(state["reopened"][0]["reason"],
+                         "record the sprint-level review the sign-off needs")
+
+    def test_every_named_remedy_is_a_real_command(self) -> None:
+        """AC2. The refusal offers a reopen; a refusal that names a remedy which does not exist
+        is worse than one that names none, because it sends the reader looking."""
+        from lib import run_state
+        self.assertTrue(hasattr(run_state, "reopen_run"))
+        sprint = _load()
+        self.assertTrue(hasattr(sprint, "cmd_reopen"))
+
+    def test_a_reopen_without_a_reason_is_refused(self) -> None:
+        """A run that can be silently reopened is a run whose closure means nothing."""
+        from lib import run_state
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._closed(root)
+            with self.assertRaises(ValueError):
+                run_state.reopen_run(root, "   ")
+
+    def test_reopening_an_open_run_is_refused(self) -> None:
+        from lib import run_state
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            run_state.open_run(root, batch=["US0001"], goal="done")
+            with self.assertRaises(ValueError):
+                run_state.reopen_run(root, "no reason to")
+
+    def test_the_archived_close_record_is_not_rewritten(self) -> None:
+        """The archive is the evidence of what was claimed at the close. Rewriting it to match
+        a later correction is exactly the failure this project exists to refuse."""
+        from lib import run_state
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._closed(root)
+            archived_before = run_state.read_archived(root, self._run_id)
+            run_state.reopen_run(root, "late review")
+            archived_after = run_state.read_archived(root, self._run_id)
+        self.assertEqual(archived_before, archived_after,
+                         "reopening must not rewrite the archived close record")
+        self.assertEqual(archived_after.get("outcome"), "goal-reached")
+
+
 if __name__ == "__main__":
     unittest.main()

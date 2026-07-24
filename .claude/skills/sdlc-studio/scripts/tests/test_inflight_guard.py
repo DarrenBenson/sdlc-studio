@@ -18,6 +18,7 @@ import sys
 import tempfile
 import unittest
 import unittest.mock
+from datetime import datetime, timezone
 from pathlib import Path
 
 SCR = Path(__file__).resolve().parent.parent
@@ -157,6 +158,60 @@ class InflightGuardTests(unittest.TestCase):
             self.assertEqual(recovered, [str(mutated)])
             self.assertEqual(mutated.read_bytes(), original)
             self.assertFalse(sdlc_md.inflight_path(root).exists())
+
+
+class StaleSidecarTests(unittest.TestCase):
+    """The guard had no notion of AGE, so an abandoned sidecar - left by a process killed days
+    earlier - blocked every write in the repo indefinitely while telling the operator to "wait
+    for the run to finish". There was no run. And a sidecar recording NOTHING mutated refused
+    just as hard as one recording a live mutant, which is a refusal with no subject."""
+
+    def _root(self, d: str, payload):
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        sc = sdlc_md.inflight_path(root)
+        sc.write_text(payload if isinstance(payload, str) else json.dumps(payload),
+                      encoding="utf-8")
+        return root, sc
+
+    def test_the_refusal_states_how_old_the_claim_is(self) -> None:
+        """AC1. The age does not decide anything - the guard still refuses, because a mutated
+        tree is a mutated tree. It lets the reader tell a live run from an abandoned claim
+        without stat-ing the file themselves."""
+        with tempfile.TemporaryDirectory() as d:
+            root, sc = self._root(d, {"scripts/x.py": "YWJj"})
+            fresh = sdlc_md.inflight_refusal(root)
+            self.assertIn("old", fresh)
+            # ...and an ancient sidecar says ABANDONED rather than "wait for the run"
+            old = datetime.now(timezone.utc).timestamp() - 6 * 3600
+            os.utime(sc, (old, old))
+            aged = sdlc_md.inflight_refusal(root)
+        self.assertIn("ABANDONED", aged)
+        self.assertNotIn("ABANDONED", fresh, "a seconds-old claim is not abandoned")
+
+    def test_a_sidecar_with_nothing_actually_mutated_does_not_refuse(self) -> None:
+        """AC2. A readable sidecar naming no mutated file is a window that closed without being
+        cleaned up. There is no mutated code, so there is nothing to protect a write from."""
+        with tempfile.TemporaryDirectory() as d:
+            root, _ = self._root(d, {})
+            self.assertIsNone(sdlc_md.inflight_refusal(root))
+
+    def test_a_genuinely_mutated_file_still_refuses(self) -> None:
+        """AC3. The load-bearing control: this fix must NARROW the refusal, never remove it."""
+        with tempfile.TemporaryDirectory() as d:
+            root, _ = self._root(d, {"scripts/x.py": "YWJj"})
+            refusal = sdlc_md.inflight_refusal(root)
+        self.assertIsNotNone(refusal)
+        self.assertIn("scripts/x.py", refusal)
+
+    def test_an_UNREADABLE_sidecar_still_refuses(self) -> None:
+        """The case that must not be collapsed into the empty one. Both give an empty file
+        list and they mean opposite things: 'nothing is mutated' versus 'I cannot tell what is
+        mutated'. Not being able to read the record is not evidence of innocence."""
+        with tempfile.TemporaryDirectory() as d:
+            root, _ = self._root(d, "not json at all")
+            self.assertIsNotNone(sdlc_md.inflight_refusal(root),
+                                 "an unreadable sidecar must still refuse")
 
 
 if __name__ == "__main__":

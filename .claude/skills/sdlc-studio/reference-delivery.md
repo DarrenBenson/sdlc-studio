@@ -54,8 +54,12 @@ files IN THE REPOSITORY. Two things sit outside that check and bite anyway.
 
 **A shared temp directory.** Agents commonly write temporary files - a commit message, a
 fields-file, a worklist - and if they share one scratchpad path, one agent's file is overwritten
-by another between write and use. This has happened: a commit landed carrying a different agent's
-subject, because both wrote the same message path. Namespace any temp path per agent or per run,
+by another between write and use. This has happened TWICE, in consecutive sprints: a commit
+landed carrying a different agent's subject because both wrote the same message path, and in the
+next fan-out an agent watched a different lane's message appear in the file it was using and
+switched to a lane-unique name mid-run. The second time, this paragraph already existed - so
+stating the rule here is necessary and not sufficient. It has to reach the agent's own brief,
+which is why `templates/agent-instructions.md` carries it too. Namespace any temp path per agent or per run,
 or keep it inside the agent's own worktree. A worktree isolates the tree; it does not isolate
 `/tmp`.
 

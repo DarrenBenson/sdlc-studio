@@ -1,10 +1,11 @@
 # BG0283: the inflight-mutation guard has no staleness notion, so an abandoned sidecar blocks every write in the repo indefinitely: a three-day-old file refused artifact and transition the moment the guard shipped
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py,.claude/skills/sdlc-studio/scripts/mutation.py
+> **Verification depth:** functional (age note and empty-sidecar case, both mutation-proven at their call sites; the unreadable-sidecar control proves the refusal narrowed rather than weakened)
 > **Severity:** Medium
 > **Points:** 3
 
@@ -63,6 +64,7 @@ delete), and it lands on whoever writes next rather than on whoever abandoned th
 - **When** a writer refuses on it
 - **Then** the message states when the run started, so an operator can tell a live run from an abandoned one without inspecting the file
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_inflight_guard.py::StaleSidecarTests::test_the_refusal_states_how_old_the_claim_is
+- **Verified:** yes (2026-07-24)
 
 ### AC2: a sidecar whose files are all unmutated is recognised as spent, not live
 
@@ -70,6 +72,7 @@ delete), and it lands on whoever writes next rather than on whoever abandoned th
 - **When** a writer consults the guard
 - **Then** it does not refuse - nothing is mutated, so the single-writer rule has nothing to protect - and the spent sidecar is reported
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_inflight_guard.py::StaleSidecarTests::test_a_sidecar_with_nothing_actually_mutated_does_not_refuse
+- **Verified:** yes (2026-07-24)
 
 ### AC3: a genuinely live run still refuses, unregressed
 
@@ -77,6 +80,7 @@ delete), and it lands on whoever writes next rather than on whoever abandoned th
 - **When** a writer consults the guard
 - **Then** it refuses exactly as before - this must not become a way to write through a live mutation run
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_inflight_guard.py::StaleSidecarTests::test_a_genuinely_mutated_file_still_refuses
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

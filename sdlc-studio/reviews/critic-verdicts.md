@@ -461,3 +461,8 @@ One row has been removed since adoption.
 | BG0286 | APPROVE | adversarial self-mutation at the call site | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
 | BG0287 | APPROVE | adversarial self-mutation at the call site | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
 | BG0286 | APPROVE | adversarial self-mutation at the call site | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0278 | APPROVE | verified on the integrated tree | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0279 | APPROVE | verified on the integrated tree | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0280 | APPROVE | adversarial self-mutation at the call site | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0283 | APPROVE | adversarial self-mutation at the call site | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| BG0285 | APPROVE | adversarial self-mutation at the call site | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |

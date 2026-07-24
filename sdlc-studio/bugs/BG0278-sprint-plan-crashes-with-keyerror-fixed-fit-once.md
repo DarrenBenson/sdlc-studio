@@ -1,10 +1,11 @@
 # BG0278: sprint plan CRASHES with KeyError fixed-fit once a project has enough measured sprints to apply the fixed-term fit: the fixed-fit branch overrides rate_source but leaves rate_refused set, breaking the exhaustive-lookup invariant _render_rate_provenance documents
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py,.claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Verification depth:** functional (exhaustive rate-source map with a test that enumerates the module's own RATE_* constants, so a new source cannot be added without handling; 7 tests / 5 subtests green)
 > **Severity:** High
 > **Points:** 3
 
@@ -64,6 +65,7 @@ dies, leaving the operator with a half-reported plan and a live run.
 - **When** the plan renders its rate provenance
 - **Then** it prints what stood in place of the record and does not raise
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RateProvenanceExhaustiveTests::test_a_fixed_fit_rate_source_with_a_refused_record_renders
+- **Verified:** yes (2026-07-24)
 
 ### AC2: the lookup cannot silently gain a third unhandled member again
 
@@ -71,6 +73,7 @@ dies, leaving the operator with a half-reported plan and a live run.
 - **When** the provenance renderer is exercised across all of them with a refused record
 - **Then** each is handled explicitly, and a rate source with no mapping fails loudly at test time rather than at an operator's plan
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RateProvenanceExhaustiveTests::test_every_rate_source_is_handled
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

@@ -155,3 +155,7 @@ Fill these in. This is the part an agent cannot infer.
 - Don't use a library from memory - query current API docs first; training data is stale.
 - Don't mark a generated spec Done without tests. Generated specs are migration
   blueprints, not documentation, and never auto-promote to Done.
+- Don't write a temp file to a shared, generically-named path when other agents may be
+  running - a commit message, a fields-file, a worklist. Namespace it per agent or per run,
+  or keep it inside your own worktree. A worktree isolates the tree, not `/tmp`: this has
+  landed a commit carrying another agent's subject, in two consecutive sprints.
