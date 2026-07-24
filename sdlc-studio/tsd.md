@@ -221,8 +221,13 @@ review, not an automated build gate: no sweep enumerates the scripts and fails a
 a module that arrives without a test. A handful are exercised indirectly under a
 differently-named module rather than a dedicated one - `refine` and `triage` under the
 triage suites, `lib/run_state` under the loop-guard, handoff and sprint-report suites, and
-`lib/tiers` under the planning-tier and routing suites - and `autosprint` and `lib/xrepo`
-currently have no direct test. Rather than pin per-module test counts that are stale within
+`lib/tiers` under the planning-tier and routing suites. `autosprint` and `lib/xrepo` now
+each have one: `test_autosprint.py` drives the whole primary path through the alias (plan
+opens the run, the worked batch closes it), holds the close chain's stop-on-failure so a
+failed step cannot seal a run, and proves itself against a mutant applied to that loop
+control; `test_xrepo.py` resolves a referent in each of two trees and holds the resolver's
+three distinct states - resolved, unsearchable, genuinely missing - including that manifest
+order cannot change a verdict. Rather than pin per-module test counts that are stale within
 a sprint, the map below records what each tier is responsible for.
 
 | Tier | Representative modules | What the tests hold |

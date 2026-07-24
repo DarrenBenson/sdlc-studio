@@ -23,6 +23,7 @@
 - **When** `lib/xrepo` is driven through its primary path
 - **Then** the cross-repo operation completes and its effect is asserted on the resulting state of both trees
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_xrepo.py::PrimaryPathTests::test_the_primary_path_completes_across_two_trees
+- **Verified:** yes (2026-07-24)
 
 ### AC2: the TSD coverage note matches the measurement
 
@@ -30,7 +31,7 @@
 - **When** these suites land
 - **Then** no sentence still calls autosprint or lib/xrepo untested, and the note states what is now covered. Greping for the word `xrepo` would be vacuous - BG0162 already put it there; the check must bind the CLAIM that changed. It anchors on the exact phrase `currently have no direct test`, because the first attempt used a `[^.]*` regex that cannot cross the line break the sentence actually contains, and passed vacuously
 - **Verify:** shell grep -q 'currently have no direct test' sdlc-studio/tsd.md && exit 1 || exit 0
-- **Verified:** no (2026-07-24)
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 
