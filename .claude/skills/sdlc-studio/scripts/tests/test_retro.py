@@ -1118,6 +1118,60 @@ class HarnessTokenCapture(InteractiveSprintFixture):
                          "an absent --tokens is not an instruction to forget the actual")
 
 
+class HarnessCaptureReportsModel(InteractiveSprintFixture):
+    """US0376: the harness capture reports which model(s) the transcript names, mixed as mixed,
+    and the interactive close writes it to the velocity row's Model cell - so `measured_rate`
+    books the sprint in the (project, model) cell instead of the unrecorded-model bucket."""
+
+    def _session_models(self, name: str, *records: tuple[dict, str | None]) -> Path:
+        """A transcript whose usage records also carry a model. Each record is (usage, model)."""
+        p = self.transcripts / name
+        lines = ['{"type": "meta", "no_usage": true}']
+        for usage, model in records:
+            msg = {"usage": usage}
+            if model is not None:
+                msg["model"] = model
+            lines.append(json.dumps({"message": msg}))
+        p.write_text("".join(ln + "\n" for ln in lines), encoding="utf-8")
+        return p
+
+    def test_single_model_returned(self) -> None:
+        # AC1: all usage records name one model - the capture carries that id with the total.
+        self._session_models("s1.jsonl",
+                             ({"input_tokens": 100_000}, "claude-opus-4-8"),
+                             ({"output_tokens": 50_000}, "claude-opus-4-8"))
+        cap = retro.harness_tokens(str(self.root), transcripts_dir=self.transcripts)
+        self.assertEqual(cap["tokens"], 150_000)
+        self.assertEqual(cap["model"], "claude-opus-4-8")
+
+    def test_two_models_report_mixed(self) -> None:
+        # AC2: two different models in the usage records - reported as `mixed`, not one picked.
+        self._session_models("s1.jsonl",
+                             ({"input_tokens": 100_000}, "claude-opus-4-8"),
+                             ({"output_tokens": 50_000}, "claude-sonnet-4-5"))
+        cap = retro.harness_tokens(str(self.root), transcripts_dir=self.transcripts)
+        self.assertEqual(cap["model"], retro.MODEL_MIXED)
+        self.assertEqual(cap["model"], run_state.SESSION_MODEL_MIXED)
+
+    def test_close_writes_model_to_velocity_row(self) -> None:
+        # AC3: an interactive close on model M writes M to the Model cell, so measured_rate
+        # books it in the (project, M) cell rather than the unrecorded-model one.
+        self._session_models("s1.jsonl",
+                             ({"input_tokens": 60_000}, "claude-opus-4-8"))   # baseline meter
+        self._open_run()
+        with (self.transcripts / "s1.jsonl").open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"message": {"usage": {"input_tokens": 800_000},
+                                             "model": "claude-opus-4-8"}}) + "\n")
+        self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens-from-harness")
+        row = retro.velocity_history(str(self.root))[0]
+        self.assertEqual(row["model"], "claude-opus-4-8",
+                         "the interactive close must write the transcript model to the row")
+        rate = retro.measured_rate(str(self.root))
+        # the rate is booked under the captured model, not the unrecorded-model cell
+        self.assertEqual(rate["model"], "claude-opus-4-8")
+        self.assertNotIn(row["id"], rate.get("mixed_sprints", []))
+
+
 class TokenCaptureIsAttributedToTheRun(InteractiveSprintFixture):
     """BG0236: the harness meter is cumulative per SESSION, so a close that recorded the raw
     total booked every earlier sprint in that session to itself. Three consecutive closes

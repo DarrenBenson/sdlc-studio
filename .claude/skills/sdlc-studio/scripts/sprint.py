@@ -1754,6 +1754,43 @@ def _unit_files(root: Path, text: str) -> list[str]:
     return sorted(declared | derived)
 
 
+#: Build tooling and shared config: paths the whole batch's gate and build depend on, so a
+#: unit touching one is coupled to every other unit however file-disjoint its own edits look.
+#: Two worktrees editing DIFFERENT tools files still share the one gate that runs across both,
+#: and a shared-config change (the project config, the hooks) reshapes every worktree's build
+#: at once - a merge-clean split that is still not parallel-safe. The set is DECLARED here as
+#: explicit paths and directory prefixes, never inferred from a filename shape: a guess like
+#: "anything ending .yaml" or "anything with test in the name" is exactly the fragile naming
+#: rule this avoids. A trailing "/" declares a directory (its whole subtree); anything else is
+#: one exact repo-relative file.
+BUILD_TOOLING_PATHS: tuple[str, ...] = (
+    ".githooks/",                 # the commit gate every worktree runs
+    "tools/",                     # the CI guards the gate invokes
+    ".github/workflows/",         # the CI definition
+    "package.json",               # dependency and script manifest
+    "package-lock.json",
+    "install.sh",                 # the installer the payload ships through
+    "sdlc-studio/.config.yaml",   # the shared project config the gate reads
+    ".claude/skills/sdlc-studio/scripts/gate.py",   # the gate itself
+)
+
+
+def _build_tooling_hits(files: list[str]) -> list[str]:
+    """Which of `files` (repo-relative keys) fall in the declared build-tooling set."""
+    hits: list[str] = []
+    for f in files:
+        norm = re.sub(r"^\./", "", f.replace("\\", "/")).lstrip("/")
+        for decl in BUILD_TOOLING_PATHS:
+            if decl.endswith("/"):
+                if norm == decl.rstrip("/") or norm.startswith(decl):
+                    hits.append(f)
+                    break
+            elif norm == decl:
+                hits.append(f)
+                break
+    return sorted(set(hits))
+
+
 def _full_partition(units: list[tuple[str, list[str]]]) -> list[list[str]]:
     """Every unit assigned to a file-disjoint group, SINGLETONS INCLUDED (unlike the cluster
     view, which drops units that share nothing). Union-find over the shared files; the result is
@@ -1802,6 +1839,8 @@ def delivery_mode_offer(repo_root: Path | str, batch: list[dict]) -> dict:
             undeclared.append(uid)
         units.append((uid, _unit_files(root, text)))
     all_ids = [u for u, _ in units]
+    tooling = {uid: _build_tooling_hits(files) for uid, files in units}
+    coupled = sorted(uid for uid, hits in tooling.items() if hits)
     modes = [SEQUENTIAL]
     if len(units) <= 1:
         groups = [[u] for u in all_ids]
@@ -1811,6 +1850,12 @@ def delivery_mode_offer(repo_root: Path | str, batch: list[dict]) -> dict:
         reason = (f"unit(s) {', '.join(sorted(undeclared))} declare no Affects, so their blast "
                   f"radius is unknown; delivered sequentially rather than risk an undeclared "
                   f"overlap")
+    elif coupled:
+        named = "; ".join(f"{uid} touches {', '.join(tooling[uid])}" for uid in coupled)
+        groups = [sorted(all_ids)]
+        reason = (f"unit(s) {', '.join(coupled)} touch build tooling or shared config that the "
+                  f"whole batch's gate and build depend on ({named}); a parallel worktree build "
+                  f"cannot isolate that coupling, so the batch is delivered SEQUENTIALLY")
     else:
         groups = _full_partition(units)
         if len(groups) >= 2:
@@ -1824,7 +1869,8 @@ def delivery_mode_offer(repo_root: Path | str, batch: list[dict]) -> dict:
                       "SEQUENTIALLY")
     return {"modes": modes, "parallel_available": PARALLEL in modes,
             "groups": groups, "reason": reason, "default_mode": SEQUENTIAL,
-            "undeclared_affects": sorted(undeclared)}
+            "undeclared_affects": sorted(undeclared),
+            "build_tooling_coupled": coupled}
 
 
 def record_delivery_mode(offer: dict, mode: str) -> dict:

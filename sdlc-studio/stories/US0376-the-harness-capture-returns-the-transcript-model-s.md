@@ -23,6 +23,7 @@
 - **When** `harness_tokens` reads it
 - **Then** the result carries that model id alongside the token total
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::HarnessCaptureReportsModel::test_single_model_returned
+- **Verified:** yes (2026-07-24)
 
 ### AC2: two models are reported as mixed
 
@@ -30,6 +31,7 @@
 - **When** `harness_tokens` reads it
 - **Then** the result reports the model as `mixed` rather than picking one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::HarnessCaptureReportsModel::test_two_models_report_mixed
+- **Verified:** yes (2026-07-24)
 
 ### AC3: the interactive close writes the model to the Model cell
 
@@ -37,6 +39,7 @@
 - **When** `accuracy --write` records the velocity row
 - **Then** the row's Model cell is M, so `measured_rate` books it in the (project, M) cell rather than the unrecorded-model cell
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::HarnessCaptureReportsModel::test_close_writes_model_to_velocity_row
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

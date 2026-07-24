@@ -19,17 +19,19 @@
 
 ### AC1: the refusal states the overage explicitly, for example 2 lines over the 80-line ceiling
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** a LATEST.md two lines past the 80-line ceiling
+- **When** doc_freshness flags the anchor-ledger finding
 - **Then** the refusal states the overage explicitly, for example 2 lines over the 80-line ceiling
-- **Verify:** {{executable check}}
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py::AnchorWindowCeilingTests::test_overage_stated_explicitly
+- **Verified:** yes (2026-07-24)
 
 ### AC2: the message names the longest sections by line count so the trim can be aimed rather than guessed
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** a LATEST.md over the ceiling with sections of differing length
+- **When** doc_freshness flags the anchor-ledger finding
 - **Then** the message names the longest sections by line count so the trim can be aimed rather than guessed
-- **Verify:** {{executable check}}
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py::AnchorWindowCeilingTests::test_longest_sections_named_by_line_count
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

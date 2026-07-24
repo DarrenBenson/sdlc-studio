@@ -379,6 +379,12 @@ nothing wrong. The claim pass runs **before** the logic review and its findings 
 apart, so a round that found only prose defects is visibly a different kind of round from one
 that found logic defects - convergence told from churn.
 
+A round is **at least two reviewers, each on a distinct lens, whatever the diff size** - a small
+diff is no reason to drop to one, since the defects a lone pass leaves are the ones its lens does
+not point at. One lens is always the **claims lens** above; the other reads the logic (two logic
+reads only share a blind spot). Where a round runs with **one** reviewer anyway, the **review
+record says so** - a single-reviewer round is recorded as one, never read as a full round.
+
 ### Three standing review practices
 
 Every closing brief carries these three, each paired with the reason it exists:

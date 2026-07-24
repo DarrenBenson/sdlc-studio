@@ -183,7 +183,14 @@ independent critic plus the gate - the check's output states this scoping.
    record` warns when the reviewer names no declared seat - the persona lens
    drifting out of the loop must be visible, never silent. Verdicts are
    recorded per unit (`critic.py record`, author != reviewer), which is what the
-   conformance `critiqued` stage reads. **One full-diff pass is recorded once, as coverage:**
+   conformance `critiqued` stage reads. **A round is at least two reviewers on distinct
+   lenses, whatever the diff size, and one lens is always the claims lens** (the claim
+   inventory that rules each prose assertion TRUE, FALSE or UNVERIFIABLE) - a small diff is
+   not a licence to drop to a single pass, since the defects a lone reviewer misses are the
+   ones that reviewer's one lens does not point at. Where a round runs with **one** reviewer
+   anyway, the **review record says so**, so an under-covered round never reads as a full
+   one; the full contract is in [reference-review.md](reference-review.md#closing-review-brief).
+   **One full-diff pass is recorded once, as coverage:**
    `critic.py sprint-review` records ONE independent judgement over the batch and `critiqued` reads it
    as coverage (verdict + two-role evidence) for a covered unit with no individual verdict - never
    overriding a per-unit REJECT (repaired per unit), the reviewer-of-record **sign-off staying per
@@ -429,7 +436,12 @@ backlog can be groomed against exactly what the gate reads. It never blocks and 
 parallel worktrees, or must go sequentially, and why. Parallel is offered only when the batch
 partitions into two or more file-disjoint groups; a one-unit batch, an all-coupled batch, or a
 unit with no declared `Affects` is delivered sequentially. Test files count as coupling (a shared
-test module conflicts on merge exactly as a shared source module does). See
+test module conflicts on merge exactly as a shared source module does). Build tooling and shared
+config count as coupling too: a unit touching the commit hooks, the `tools/` guards, the gate,
+`package.json`, `install.sh`, the CI workflow or the shared project config is never offered as
+parallel-safe, because those are the surfaces the whole batch's gate and build depend on - two
+worktrees editing different tooling files still share the one gate that runs across both, so a
+merge-clean split is not a safe one. That set is declared, not guessed from a filename shape. See
 [reference-delivery.md](reference-delivery.md) for the full contract.
 
 ## What the plan critic cannot see
@@ -630,6 +642,19 @@ to go unattended. The appetite is that ceiling (Shape Up's fixed timebox: appeti
   measured enough of its own units the marginal rate falls back to a seed, and the plan says which
   it used. **Read the velocity history the plan prints** - `retro.py velocity` - to see the rate
   the next forecast will use and how past sprints actually landed against it.
+- **Batch size trades fixed cost against review convergence - and this project names no
+  optimum.** The fixed per-sprint term above is spread over the batch's points, so its share
+  PER POINT falls as the batch grows: a larger sprint amortises the one ceremony, the one
+  close and the review setup over more delivered points. Pulling the other way, review
+  convergence cost RISES with the batch: a bigger diff carries more surface, more claims to
+  inventory and more findings to repair, so it takes more rounds to converge. Both directions
+  are visible in this project's own measured history - the eight build sprints in
+  `retros/VELOCITY.md` that carry a measured tokens/pt - but that sample is small, noisy, and
+  the two arms pull opposite ways, so it fixes no optimum. The guidance therefore prescribes
+  NO batch-size number: with this few measured sprints there is no defensible one, and
+  inventing a target would repeat the mistake this project has twice had to undo - writing a
+  rate down as a constant until it hardened into an article of faith. Read `retro.py velocity`
+  and decide per batch.
 - **The `--goal` rungs cost differently, and only the build (`done`) rung carries a measured
   rate.** A `design`, `plan` or `triage` run does not build the units it grooms, so its
   per-point cost is not the build's. The forecast NAMES the rung it prices and reads UNMEASURED

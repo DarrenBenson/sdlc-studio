@@ -124,6 +124,44 @@ class AnchorWindowCeilingTests(unittest.TestCase):
             self.assertIn("80", f["detail"])          # ceiling named
             self.assertIn("retro", f["detail"].lower())  # remedy named
 
+    def test_overage_stated_explicitly(self):
+        """US0365 AC1: the refusal names how many lines OVER the ceiling, not only the two
+        raw numbers - a reader should not have to subtract to know the size of the trim."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _skill(root, "3.4.0", 5)
+            # 82 content lines under an 80 ceiling: exactly 2 over.
+            _latest(root, "# LATEST\n" + ("line\n" * 81))
+            r = df.check(root)
+            f = next(x for x in r["findings"] if x["kind"] == "anchor-ledger")
+            self.assertIn("2 over the 80-line ceiling", f["detail"],
+                          "the overage must be stated, e.g. '2 over the 80-line ceiling'")
+
+    def test_longest_sections_named_by_line_count(self):
+        """US0365 AC2: the message names the longest sections and their line counts so the
+        trim can be aimed rather than guessed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _skill(root, "3.4.0", 5)
+            body = (
+                "# LATEST\n"
+                "## Short\n" + ("s\n" * 4)
+                + "## Sprint history\n" + ("h\n" * 80)
+                + "## Extra\n" + ("e\n" * 40)
+                + "## Middle\n" + ("m\n" * 20)
+            )
+            _latest(root, body)
+            r = df.check(root)
+            f = next(x for x in r["findings"] if x["kind"] == "anchor-ledger")
+            # The biggest section is named with its count, ahead of the smaller ones.
+            self.assertIn("Sprint history", f["detail"])
+            self.assertRegex(f["detail"], r"Sprint history' \(\d+ lines\)")
+            self.assertLess(f["detail"].index("Sprint history"),
+                            f["detail"].index("Middle"),
+                            "sections must be named longest-first")
+            self.assertNotIn("Short", f["detail"],
+                             "only the longest few are named, not every heading")
+
     def test_under_ceiling_silent(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

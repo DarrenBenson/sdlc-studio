@@ -23,6 +23,7 @@
 - **When** the set is computed
 - **Then** it includes every path a shipped test actually reads - measured from the suites, not enumerated by hand, because an enumeration is a lower bound
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::TestRelevantSetTests::test_every_path_a_shipped_test_reads_is_in_the_set
+- **Verified:** yes (2026-07-24)
 
 ### AC2: a docs-only skip is refused when a test reads that doc
 
@@ -30,6 +31,7 @@
 - **When** the pre-commit gate decides whether to skip the suites
 - **Then** it does NOT skip - the docs-only fast path is exactly where a test reading a doc gets silently bypassed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::TestRelevantSetTests::test_a_doc_a_test_reads_defeats_the_docs_only_skip
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

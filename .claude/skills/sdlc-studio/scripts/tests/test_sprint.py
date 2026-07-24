@@ -6204,6 +6204,103 @@ class DeliveryModeTestFileCouplingTests(_DeliveryModeFixture):
             self.assertEqual(offer["modes"], ["sequential"])
 
 
+class HelpStatesBatchSizeTradeoffTests(unittest.TestCase):
+    """US0397: help/sprint.md states the fixed-cost-versus-review-convergence trade-off from
+    the measured rows and prescribes NO batch-size number."""
+
+    HELP = SCRIPT.parent.parent / "help" / "sprint.md"
+
+    def _norm(self) -> str:
+        import re as _re
+        return _re.sub(r"\s+", " ", self.HELP.read_text(encoding="utf-8")
+                       .replace("*", "").replace("`", "")).lower()
+
+    def test_it_states_the_trade_off_grounds_it_and_prescribes_no_number(self) -> None:
+        h = self._norm()
+        # AC1: both arms
+        self.assertIn("fixed", h)
+        self.assertIn("per point falls", h)
+        self.assertTrue("convergence cost pulls the other way" in h or "cost pulls the other" in h)
+        # AC2: grounded in the measured rows, count of sprints named
+        self.assertIn("velocity.md", h)
+        self.assertRegex(h, r"(one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+"
+                            r"(?:build\s+)?sprints")
+        # AC3: no number prescribed
+        self.assertTrue("no number is prescribed" in h or "fixes no optimum" in h)
+        self.assertNotRegex(h, r"aim for \d+|target of \d+|keep (?:the )?batch(?:es)? (?:to|at|under) \d+")
+
+
+class DeliveryModeBuildToolingCouplingTests(_DeliveryModeFixture):
+    """US0416: build tooling and shared config couple the batch, not as ordinary files.
+
+    Two units editing DIFFERENT tooling files still share the one gate that runs across every
+    worktree, so a merge-clean file split is not parallel-safe. The batch must go sequential
+    whenever any unit touches the DECLARED build-tooling set - never inferred from a name."""
+
+    def test_a_unit_touching_build_tooling_is_never_parallel_safe(self):
+        # AC1. src/a.py vs src/b.py are file-disjoint and would otherwise parallelise; the
+        # second unit touching tools/ collapses the offer to sequential.
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            batch = [self._story(root, 1, "src/a.py", "tests/test_a.py"),
+                     self._story(root, 2, "tools/check_links.py", "tests/test_b.py")]
+            offer = s.delivery_mode_offer(root, batch)
+            self.assertFalse(offer["parallel_available"])
+            self.assertEqual(offer["modes"], ["sequential"])
+            self.assertIn("US0002", offer["build_tooling_coupled"])
+            self.assertIn("build tooling", offer["reason"])
+            with self.assertRaises(ValueError):
+                s.record_delivery_mode(offer, "parallel")
+
+    def test_two_units_editing_different_tooling_files_still_do_not_parallelise(self):
+        # AC1. Distinct tooling files are still coupling: the gate spans both worktrees.
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            batch = [self._story(root, 1, "tools/check_links.py", "tests/test_a.py"),
+                     self._story(root, 2, "install.sh", "tests/test_b.py")]
+            offer = s.delivery_mode_offer(root, batch)
+            self.assertFalse(offer["parallel_available"])
+            self.assertEqual(sorted(offer["build_tooling_coupled"]), ["US0001", "US0002"])
+
+    def test_the_build_tooling_set_is_declared_not_inferred_by_name(self):
+        # AC2. The set is an explicit declared constant. A file whose NAME merely looks like
+        # config (a .yaml the set does not name) is NOT treated as tooling; a path the set
+        # DOES declare is - so membership is by declaration, not by a filename shape.
+        s = _load()
+        self.assertIsInstance(s.BUILD_TOOLING_PATHS, tuple)
+        self.assertIn("tools/", s.BUILD_TOOLING_PATHS)
+        self.assertIn("package.json", s.BUILD_TOOLING_PATHS)
+        # a lookalike name the declaration does not list is not tooling
+        self.assertEqual(s._build_tooling_hits(["src/app.config.yaml"]), [])
+        self.assertEqual(s._build_tooling_hits(["src/test_helpers.py"]), [])
+        # a declared directory covers its subtree; a declared file matches exactly
+        self.assertEqual(s._build_tooling_hits(["tools/tests/test_x.py"]),
+                         ["tools/tests/test_x.py"])
+        self.assertEqual(s._build_tooling_hits(["package.json"]), ["package.json"])
+
+    def test_an_ordinary_disjoint_batch_still_parallelises(self):
+        # Guard against over-reach: units touching only their own source/test files, none of
+        # them tooling, must still be offered parallel.
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            batch = [self._story(root, 1, "src/a.py", "tests/test_a.py"),
+                     self._story(root, 2, "src/b.py", "tests/test_b.py")]
+            offer = s.delivery_mode_offer(root, batch)
+            self.assertTrue(offer["parallel_available"])
+            self.assertEqual(offer["build_tooling_coupled"], [])
+
+    def test_the_contract_is_documented_where_the_mode_is(self):
+        # AC3. The build-tooling coupling is written where delivery mode is documented.
+        doc = (Path(__file__).resolve().parents[2] / "reference-sprint.md").read_text(
+            encoding="utf-8")
+        section = doc.split("Delivery mode", 1)[1].split("##", 1)[0]
+        self.assertIn("build tooling", section.lower())
+        self.assertIn("declared", section.lower())
+
+
 class DeliveryModeDeterminismTests(_DeliveryModeFixture):
     """US0409: the offer is deterministic and the plan states the mode and the alternative."""
 

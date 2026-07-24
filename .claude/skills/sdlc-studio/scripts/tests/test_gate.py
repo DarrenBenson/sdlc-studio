@@ -3682,5 +3682,95 @@ class ReviewCurrentSelfStalenessTests(unittest.TestCase):
                          "self-staleness must not send the operator to re-review status stamps")
 
 
+class TestRelevantSetTests(unittest.TestCase):
+    """US0368: the test-relevant set covers every path a shipped test reads.
+
+    The set decides whether a commit pays for the unit suites. Its first version named
+    three directories by hand, and a hand list is a lower bound - right about what somebody
+    thought of, silent about the rest. These tests hold the set to a measurement.
+    """
+
+    @staticmethod
+    def _suite_repo(tmp: Path, module_src: str) -> Path:
+        """A minimal tree with one shipped suite module, for measuring the measurement."""
+        suite = tmp / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"
+        suite.mkdir(parents=True)
+        (tmp / "docs").mkdir()
+        (tmp / "docs" / "read-by-a-test.md").write_text("# read\n", encoding="utf-8")
+        (tmp / "docs" / "read-by-nobody.md").write_text("# unread\n", encoding="utf-8")
+        (suite / "test_thing.py").write_text(module_src, encoding="utf-8")
+        return tmp
+
+    def test_every_path_a_shipped_test_reads_is_in_the_set(self) -> None:
+        """AC1. The set is measured from the suites, not enumerated.
+
+        Two halves. On a synthetic tree, a doc named only by a new suite module lands in
+        the set with nobody having listed it - which no hand enumeration can do. On the
+        real repo, paths the shipped suites demonstrably read are in it; every one of them
+        was outside the hand-written scripts/templates/tools set.
+        """
+        src = (
+            "from pathlib import Path\n"
+            "REPO = Path(__file__).resolve().parents[5]\n"
+            "DOC = REPO / 'docs' / 'read-by-a-test.md'\n"
+            "def test_doc():\n"
+            "    assert DOC.read_text()\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            root = self._suite_repo(Path(d), src)
+            measured = gate.test_relevant_paths(str(root))
+            self.assertIn("docs/read-by-a-test.md", measured,
+                          "a path a suite module reads must be measured into the set")
+            self.assertNotIn("docs/read-by-nobody.md", measured,
+                             "a doc no test reads must stay skippable - otherwise the "
+                             "fast path is not narrowed, it is deleted")
+
+        if not _in_dev_repo():
+            self.skipTest("no dev repo here, so there are no shipped suites to measure")
+        real = gate.test_relevant_paths(str(REPO))
+        # Each of these is read by a shipped suite and was outside the hand-written set.
+        for path in (".githooks/pre-commit",
+                     ".githooks/commit-msg",
+                     "install.sh",
+                     "package.json",
+                     ".github/workflows/lint.yml",
+                     ".claude/skills/sdlc-studio/help/help.md",
+                     ".claude/skills/sdlc-studio/reference-sprint.md",
+                     "sdlc-studio/reviews/root-census.md"):
+            self.assertTrue(gate._matches_relevant(path, real),
+                            f"{path} is read by a shipped suite but is not test-relevant")
+            self.assertFalse(gate._matches_relevant(path, set(gate.LEGACY_TEST_RELEVANT)),
+                             f"{path} is already in the hand-written set, so it proves "
+                             "nothing about measuring")
+
+    def test_a_doc_a_test_reads_defeats_the_docs_only_skip(self) -> None:
+        """AC2. The docs-only fast path is exactly where a test that reads a doc gets
+        bypassed, so a commit touching such a doc must not be taken for docs-only."""
+        src = (
+            "from pathlib import Path\n"
+            "REPO = Path(__file__).resolve().parents[5]\n"
+            "def test_doc():\n"
+            "    assert (REPO / 'docs' / 'read-by-a-test.md').read_text()\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._suite_repo(Path(d), src))
+            self.assertTrue(gate.is_test_relevant(["docs/read-by-a-test.md"], root),
+                            "a docs-only commit over a doc a test reads must NOT skip")
+            self.assertFalse(gate.is_test_relevant(["docs/read-by-nobody.md"], root),
+                             "a doc no test reads must still take the fast path")
+
+        if not _in_dev_repo():
+            self.skipTest("no dev repo here, so there is no hook to bind")
+        doc = ".claude/skills/sdlc-studio/reference-sprint.md"
+        self.assertTrue(gate.is_test_relevant([doc], str(REPO)),
+                        f"{doc} is asserted over by a shipped suite, so a commit touching "
+                        "only it must run the suites")
+        hook = REPO / ".githooks" / "pre-commit"
+        if hook.exists():
+            self.assertIn("--test-relevant", hook.read_text(encoding="utf-8"),
+                          "the hook must ask gate.py for the measured set; a regex of its "
+                          "own is the hand enumeration this story removed")
+
+
 if __name__ == "__main__":
     unittest.main()
