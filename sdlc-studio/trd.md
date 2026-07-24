@@ -29,7 +29,7 @@ deterministic Python layer that the host agent reads and runs.
 ### Scope
 
 Covered: the progressive-disclosure router architecture, the split between the
-markdown knowledge base and the Python script layer, the 58 scripts and their
+markdown knowledge base and the Python script layer, the 60+ scripts and their
 shared library, the data architecture (markdown artifacts plus JSON state, and the
 two id eras), the gate architecture, soft runtime dependencies, tool-neutral
 portability, and the architectural decisions (ADRs).
@@ -466,9 +466,11 @@ have earned a change - not a cache, and explicitly not an auto-recalibration inp
 
 ### Migrations
 
-The operator-facing surface is the `upgrade` type (`SKILL.md`'s type table points it
-at `reference-upgrade.md`); its walkthrough distinguishes the three things called
-"upgrade" (the skill self-update, a project's convention upgrade, and the schema
+The operator-facing types are `migrate` (review every artefact and upgrade where safe) and
+`skill-update` (the skill's own release); `SKILL.md`'s type table lists both and carries no
+`upgrade` row. `reference-upgrade.md` is reached from `SKILL.md`'s Progressive Loading Guide,
+under "Schema upgrade (project artifacts)", and its walkthrough distinguishes the three things
+called "upgrade" (the skill self-update, a project's convention upgrade, and the schema
 v2 -> v3 id migration). Contrary to an older claim that migration is doc-only, a
 tested script layer performs it: `project_upgrade.py` migrates a consuming project's
 artefacts to current conventions and, with `--apply`, performs only the safe
@@ -635,7 +637,7 @@ cannot observe token spend, so tokens warn while minutes and units stop a run. S
 **Status:** Accepted
 
 **Context:** A skill's entry file is loaded into the agent's context on every
-invocation. SDLC Studio is large (52 reference files, 41 help files, many
+invocation. SDLC Studio is large (50+ reference files, 40+ help files, many
 templates and best-practice guides - see the §3 component table). A monolithic skill file would spend a
 large, fixed token cost on every request regardless of the task.
 
@@ -1061,7 +1063,7 @@ falls back to enforce.
 
 ---
 
-## Changelog
+## Revision History
 
 | Date | Version | Changes |
 | --- | --- | --- |
@@ -1069,6 +1071,7 @@ falls back to enforce.
 | 2026-07-06 | 4.0.0 | Refresh to the shipped script layer: corrected the write contract (§5 rule 5 - the script write surface is bounded and tested, not absent), component counts, state-file inventory, and test figures. The `doc-freshness` guard checks only `reviews/LATEST.md`, and only the facts it states there (version, the enumerated `N script tests` count, disclosure count) - it is advisory and does not pin this document's component counts, which is why they are now stated as growth-tolerant bands rather than exact figures |
 | 2026-07-14 | 4.1.0 | The v4 architecture: the gate tier (§3), the two id eras (§6), story-only executable verifiers (§6), the run/appetite and measurement state files (§6), the falsified cost model (§10), and five new ADRs - ADR-007 the engagement floor, ADR-008 ULID identity, ADR-009 the generated team, ADR-010 the learning loop, ADR-011 the breakdown gate. Corrected the component counts, the router's line figure (~195 was stale; it is ~260) and the test count |
 | 2026-07-24 | 4.1.0 | Spec-truth reconcile (mutation): added the `mutation-runs.json` per-target ledger to the state-file inventory and corrected the `mutation-report.json` row, which claimed a freshness guarantee the report now only provides as the ledger's fallback. Corrected the performance section's superseded whole-blob STALE rule. Findings table in US0385 |
+| 2026-07-24 | 4.1.0 | Doc-drift residuals (CR0365). §6 Migrations claimed `SKILL.md`'s type table points an `upgrade` type at `reference-upgrade.md`; there is no such row, so the sentence now names the `migrate` and `skill-update` types it does carry and the Progressive Loading Guide row that actually reaches the file. The two remaining exact component counts (§1 "58 scripts", ADR-001 "52 reference files, 41 help files" - actual 69, 54 and 44) are restated as growth-tolerant bands, matching §3's existing convention. This section was headed `## Changelog`, which no tooling reads - `artifact.py revision` and `flow.py` both look for `## Revision History`, as tsd.md already uses - so it is renamed and the TRD's history becomes machine-readable. Dispositions for all twelve residuals in US0369 |
 
 ---
 

@@ -106,6 +106,28 @@ Use when the Open Decisions are resolved.
 > **Accepted is not terminal.** The RFC remains the living design home its CRs
 > reference. Don't delete or archive it.
 
+### The accept gate, and its one false positive
+
+Step 1 is enforced, not advisory: a transition to **Accepted** is refused while any decision
+row reads Open (or unresolved / undecided / TBD / pending). The sanctioned escape is a
+recorded `> **Decision-Override:** <reason>` line in the RFC header - `--force` does not
+bypass it, because a skip that leaves its reason in the file is auditable afterwards and a
+flag is not.
+
+The reader normally scans the Open Decisions section and ignores fenced blocks. When the
+document **ends inside an unterminated fence** it cannot trust its own structure, so it
+fails closed: it re-reads the whole file with both rules dropped, counting every unsettled
+row anywhere, fenced examples included.
+
+That is deliberate, and it has a cost worth stating plainly. An unclosed fence at end of
+document is *valid* CommonMark - a fence closes at end of file, so an appendix whose last
+block is never closed is well-formed and every parser accepts it. Such an RFC can therefore
+be refused over an EXAMPLE row while every real decision is settled. The trade is a rare
+false positive in exchange for the impossibility of a false negative, which is the failure
+the gate exists to catch. The refusal says when it took this path, so the message can be
+told from a genuine open decision; when it has, either close the fence or record the
+override.
+
 ## close
 
 - **Superseded** – a later RFC replaces it. Set status, point to the replacement in

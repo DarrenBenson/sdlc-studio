@@ -1,7 +1,6 @@
 # RFC-0017: Cooper goal-directed persona model (the canonical persona model)
 
 > **Status:** Accepted
-> **Decision-Override:** D1 (Primary selection when candidates compete) was never decided and cannot be reconstructed from this repo - the Decision section is silent on it and no shipped code implements a selection method. Recorded rather than invented; CR0346 tracks settling it, and this override is removed when D1 closes.
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-21
@@ -71,7 +70,8 @@ codebase (RFC0007). Two problems:
 | **Served** | Affected by the product without using it (a patient whose scan the tool reads) | End (welfare goals) |
 
 The **Primary** is the design target; the others bound and sharpen it. Primary selection when
-several candidates compete is an Open Decision (D1).
+several candidates compete is settled by D1: the goal-coverage sweep, with an operator pick as
+the tie-break once splitting the interface is ruled out.
 
 ### Goals: End + Experience
 
@@ -129,7 +129,7 @@ persona file as the bar, no research/evidence machinery, no identity compiler.
 
 | # | Decision | Options | Owner | Status |
 | --- | --- | --- | --- | --- |
-| D1 | Primary selection when candidates compete | Cooper's goal-coverage method / operator picks | Operator | Open |
+| D1 | Primary selection when candidates compete | Cooper's goal-coverage method / operator picks | Operator | Closed: Cooper's goal-coverage sweep is the method; an operator pick is the TIE-BREAK, not a rival method, and is reached only after splitting the interface is ruled out. Documented in `reference-persona.md` under `## Choosing the Primary`; recorded as D0065 |
 | D2 | Migration of existing personas | re-cast to the new schema / deprecate categories / keep both during transition | Operator | Closed: keep both during transition - no forced re-cast; the flat `personas.md` stays a documented legacy layout with its own light structural check, and WS4 is raised only as needed |
 | D3 | Goal depth for Customer / Served | same End + Experience / lighter End-only | Design | Closed: lighter End-only - Customer carries buyer goals, Served welfare goals; Experience Goals and Scenario are optional for both |
 | D4 | Well-formedness check strength | advisory `persona review` note / a `validate.py` rule that errors | Design | Closed: a `validate.py personas` rule, advisory by default (warns, exits 0, outside the hard gate); only two Primaries declaring one Interface errors |
@@ -185,3 +185,4 @@ well-formedness check, D4), WS4 (migration of existing personas, D2) - raise as 
 | 2026-06-21 | Darren Benson | Raised - Cooper goal-directed model: full cast, End + Experience goals; the deliverable is a well-formed persona file (no research/evidence apparatus, no identity compiler - personas are good input to an external authored-identity system, nothing more); resolves RFC0016 D1/D6 |
 | 2026-06-21 | Autosprint (RFC0017) | Accepted (Option A); WS1 delivered as CR0058 (Complete) |
 | 2026-07-19 | sdlc-studio | Decision rows closed with what shipped |
+| 2026-07-24 | sdlc-studio | D1 closed (goal-coverage sweep, operator pick as tie-break; D0065); the accept-gate override it had needed was removed with it |

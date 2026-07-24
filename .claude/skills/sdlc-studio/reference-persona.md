@@ -65,6 +65,35 @@ to a file, flags units serving nobody, and emits a coverage table (advisory).
 
 ---
 
+## Choosing the Primary {#choosing-the-primary}
+
+Two candidates often both look like the Primary. What settles it is **goal coverage** - read
+off the cast's own End goals, not off seniority, headcount or revenue.
+
+Take the candidates pairwise and ask: would an interface designed to satisfy this candidate's
+ordered End goals also satisfy the other's?
+
+- Fully satisfied by another candidate's design -> **Supplemental**.
+- Mostly satisfied, needing one or two additions -> **Secondary**.
+- Satisfied by **no** other candidate's design -> the **Primary**. It is the one who must be
+  served and cannot be served by a design aimed at anybody else.
+
+**Tie-break.** More than one survivor is Cooper's signal that there is more than one
+*interface*, not a close call to settle by preference. Split the interface first and declare
+which one each Primary is Primary FOR. Only where splitting is genuinely out of scope does the
+**operator pick**, and that pick is recorded as a decision naming the End goals the losing
+candidate now goes unserved on. An unrecorded pick gets re-argued at every scope debate.
+
+**This is not the one-Primary-per-interface rule.** That rule constrains the *outcome*: a cast
+may not leave two Primaries on one interface, and `validate personas` errors when it does. It
+says nothing about which candidate to elevate, so a cast can satisfy it having chosen the wrong
+Primary. Goal coverage does the choosing; the constraint only checks the answer.
+
+Nothing enforces the sweep - `persona generate` proposes cast roles but implements no selection
+method, so this is a rule the author applies, not a gate that catches a skipped one.
+
+---
+
 ## Archetype Personas {#archetypes}
 
 > These are **review-seat** seeds (consult roles that critique artefacts), not the

@@ -650,7 +650,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="status.py",
         description="Deterministic sdlc-studio pipeline status and hint.",
     )
-    sub = p.add_subparsers(dest="cmd", required=True)
+    sub = p.add_subparsers(dest="cmd")
 
     pi = sub.add_parser("pillars", help="Census of the four pillars.")
     pi.add_argument("--root", default=".", help="Repo root (default: .)")
@@ -681,6 +681,17 @@ def build_parser() -> argparse.ArgumentParser:
     tm.set_defaults(func=cmd_triage_metrics)
 
     sdlc_md.add_global_root(p)
+    # A bare `status.py` mirrors `/sdlc-studio status`, and every other read of this surface
+    # starts from the pillars dashboard, so the call has one obvious meaning. It answers it
+    # instead of exiting 2 on a usage error. An unknown VERB is still a usage error: the
+    # subparser choices are unchanged, so defaulting cannot swallow a typo.
+    #
+    # `format` is defaulted here rather than declared as a top-level `--format`: the flag is
+    # per-subcommand family-wide (`add_format_arg`, pinned by the CLI-grammar conformance
+    # test), and a top-level copy would be overwritten by the subparser's own default on
+    # `status.py --format json pillars` - a silently wrong answer. The cost is that the bare
+    # call cannot ask for json; `status.py pillars --format json` does.
+    p.set_defaults(func=cmd_pillars, format="text")
     return p
 
 
