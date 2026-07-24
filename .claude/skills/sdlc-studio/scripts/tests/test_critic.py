@@ -1992,5 +1992,80 @@ class PlanCriticIntensityTests(unittest.TestCase):
         self.assertNotIn("NOT examined", "\n".join(mod.render_plan_critique(rep)))
 
 
+class AcDefectTests(unittest.TestCase):
+    """US0370 / CR0365: an acceptance criterion CORRECTED during delivery is recorded as an AC
+    DEFECT, distinct from an ordinary revision. Counting it as a normal edit hides the most
+    expensive class of defect this project has found (US0375's AC specified the independence-gate
+    bypass, and a passing test defended it)."""
+
+    def _story(self, root: Path, rows: str) -> Path:
+        p = root / "US0375.md"
+        p.write_text(
+            "# US0375: the sign-off gate ignores a superseded row\n\n"
+            "## Acceptance Criteria\n\n### AC1\n\n- **Then** ...\n\n"
+            "## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
+            + rows, encoding="utf-8")
+        return p
+
+    def test_an_amended_criterion_is_recorded_as_an_ac_defect(self):
+        mod = _load()
+        # the amendment US0375 actually carried: the criterion was found wrong and corrected
+        self.assertEqual(
+            mod.classify_revision("AC1 corrected: it specified the wrong behaviour "
+                                  "(ignoring a superseded row is the gate bypass)"),
+            mod.AC_DEFECT)
+        # an explicit tag is honoured directly
+        self.assertEqual(mod.classify_revision("AC-DEFECT: amended criterion AC2"), mod.AC_DEFECT)
+        # an ordinary revision touching a criterion is NOT an AC defect
+        self.assertEqual(mod.classify_revision("Reworded AC1 for clarity"),
+                         mod.ORDINARY_REVISION)
+        self.assertEqual(mod.classify_revision("Added AC3 for the empty case"),
+                         mod.ORDINARY_REVISION)
+        self.assertEqual(mod.classify_revision("Created via `new` (deterministic)"),
+                         mod.ORDINARY_REVISION)
+        # a trivial correction is not the expensive class
+        self.assertEqual(mod.classify_revision("Corrected a typo in AC1"),
+                         mod.ORDINARY_REVISION)
+        # the two classes are distinct labels, so a caller cannot conflate them
+        self.assertNotEqual(mod.AC_DEFECT, mod.ORDINARY_REVISION)
+
+        # and the story-level reader separates the AC defect from the ordinary rows beside it
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            story = self._story(root, (
+                "| 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |\n"
+                "| 2026-07-23 | builder | Reworded AC1 for clarity |\n"
+                "| 2026-07-24 | builder | AC1 corrected: it specified the wrong behaviour, "
+                "amended the criterion |\n"))
+            defects = mod.ac_defects(story)
+            self.assertEqual(len(defects), 1)
+            self.assertEqual(defects[0]["class"], mod.AC_DEFECT)
+            self.assertEqual(defects[0]["author"], "builder")
+            self.assertIn("wrong behaviour", defects[0]["change"])
+            # the same via text is equivalent to the path
+            self.assertEqual(mod.ac_defects(story.read_text()), defects)
+
+    def test_a_story_with_no_amendment_has_no_ac_defect(self):
+        # an absence is a different fact from a negative result: no amendment != a defect found
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            story = self._story(root, "| 2026-07-23 | sdlc-studio | Created via `new` |\n")
+            self.assertEqual(mod.ac_defects(story), [])
+
+    def test_rows_outside_the_revision_history_are_ignored(self):
+        # a correction phrase in the body (not the history table) must not be counted
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "US0001.md"
+            p.write_text(
+                "# US0001\n\n## Acceptance Criteria\n\n"
+                "| Date | Author | Change |\n| --- | --- | --- |\n"
+                "| 2026-07-24 | x | AC1 corrected: specified the wrong behaviour |\n\n"
+                "## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
+                "| 2026-07-23 | sdlc | Created via `new` |\n", encoding="utf-8")
+            self.assertEqual(mod.ac_defects(p), [])
+
+
 if __name__ == "__main__":
     unittest.main()

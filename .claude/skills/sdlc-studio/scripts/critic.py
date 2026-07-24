@@ -678,6 +678,80 @@ def classify_finding(repo_root: Path | str, file: str | None = None,
             "reason": f"{target}:{line} lies outside round {last.get('round')}'s repair surface"}
 
 
+# An acceptance criterion CORRECTED during delivery is a spec defect, not an ordinary revision.
+# Counting it as a normal edit hides the most expensive class of defect this project has found: a
+# criterion that specified the WRONG behaviour, which a passing test then defends (US0375 asked the
+# sign-off gate to ignore a superseded row - that IS the independence-gate bypass, and the test
+# asserted it as a requirement). An absence and a negative result are different facts: a story with
+# no AC amendment is not the same as one whose criterion was found wrong and fixed, and folding the
+# amendment into the ordinary-revision count erases the distinction the retro then cannot recover.
+AC_DEFECT = "ac-defect"
+ORDINARY_REVISION = "revision"
+
+# A change is an AC DEFECT when it says a criterion was CORRECTED - not merely touched. Adding,
+# rewording, renumbering or clarifying a criterion is an ordinary revision; a criterion that stated
+# the wrong behaviour and was amended is a spec failure. Detection needs BOTH a reference to a
+# criterion AND a correction-of-wrong-spec verb, so "reworded AC1 for clarity" stays ordinary; an
+# explicit `AC-DEFECT` tag an author sets is honoured directly. A trivial correction (a typo) is
+# excluded even when it carries a correction verb, so the class stays the expensive one.
+_AC_REF = re.compile(r"\b(?:AC\s*\d+|acceptance\s+criteri|criterion|criteria)\b", re.I)
+_CORRECTION = re.compile(r"\b(?:correct(?:ed|s|ion)?|amend(?:ed|s|ment)?|wrong|incorrect|"
+                         r"mis-?specified|misstated|found\s+wrong|specified\s+the\s+wrong)\b", re.I)
+_CLARIFY_ONLY = re.compile(r"\b(?:typo|whitespace|formatting|grammar|spelling|reworded?\s+for\s+"
+                           r"clarity|clarif\w*\s+wording)\b", re.I)
+_AC_DEFECT_TAG = re.compile(r"\bAC[-\s]?DEFECT\b", re.I)
+_REV_HEADING = re.compile(r"^##\s+Revision History\s*$", re.M | re.I)
+
+
+def classify_revision(change: str) -> str:
+    """Classify one Revision History change line as an AC DEFECT or an ordinary revision.
+
+    An explicit `AC-DEFECT` tag is honoured directly. Otherwise the change is an AC defect only
+    when it both references a criterion and carries a correction-of-wrong-spec verb, and is not a
+    purely cosmetic correction (a typo). Everything else - a clarification, a new criterion, a
+    reorder - is an ordinary revision. The point is to keep a wrong-spec correction from being
+    counted as a normal edit."""
+    text = change or ""
+    if _AC_DEFECT_TAG.search(text):
+        return AC_DEFECT
+    if _AC_REF.search(text) and _CORRECTION.search(text) and not _CLARIFY_ONLY.search(text):
+        return AC_DEFECT
+    return ORDINARY_REVISION
+
+
+def ac_defects(source: str | Path) -> list[dict]:
+    """The AC-defect rows in a story's Revision History - each an amendment that corrected a wrong
+    criterion, classified apart from the ordinary revisions beside it.
+
+    `source` is a story's text or a path to it. Returns one record per AC-defect row, each with its
+    date, author and the change text, so a caller (a retro, a close count) can report the AC defects
+    a unit carried without re-deriving the rule. Rows outside the Revision History section are
+    ignored - only the history table records amendments."""
+    text = Path(source).read_text(encoding="utf-8") if isinstance(source, Path) else str(source)
+    m = _REV_HEADING.search(text)
+    body = text[m.end():] if m else text
+    out: list[dict] = []
+    for table in sdlc_md.iter_tables(body):
+        header = [h.lower() for h in (table["header"] or [])]
+        if "change" not in header:
+            continue
+        ci = header.index("change")
+        di = header.index("date") if "date" in header else 0
+        ai = header.index("author") if "author" in header else 1
+        for _lineno, cells in table["rows"]:
+            if len(cells) <= ci:
+                continue
+            change = cells[ci]
+            if classify_revision(change) == AC_DEFECT:
+                out.append({
+                    "date": cells[di] if di < len(cells) else "",
+                    "author": cells[ai] if ai < len(cells) else "",
+                    "change": change,
+                    "class": AC_DEFECT,
+                })
+    return out
+
+
 # What must never reach a reviewer's brief, because it predicts a conclusion rather than
 # describing the work: the prior verdict words, severity labels that pre-grade what will be
 # found, a round number (which says "others already rejected this"), and any sentence asserting

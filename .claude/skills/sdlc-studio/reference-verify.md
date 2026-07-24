@@ -322,6 +322,26 @@ reviewer's call, not the fingerprint's - which is one reason the critic pass is 
 separate gate. Reports written before the fingerprint existed carry none and still
 fall back to mtime, so its absence never silently passes a stale green.
 
+### A corrected criterion is an AC defect, not an ordinary revision {#verify-ac-defect}
+
+When an acceptance criterion is found to specify the **wrong behaviour** and is amended
+during delivery, that is a spec failure - not the same fact as an ordinary edit. It is the
+most expensive class of defect this project has found: a criterion that specified a
+vulnerability, which a passing test then defended (a sign-off gate asked to ignore a
+superseded row - which *is* the independence-gate bypass - had a test asserting it as a
+requirement). Counting the amendment as a normal revision erases the distinction, so the
+retro cannot later tell a unit that carried a wrong-spec correction from one that only had
+its wording clarified.
+
+So the two are classified apart. `critic.classify_revision` reads a Revision History change
+and returns `ac-defect` only when it both references a criterion and carries a
+correction-of-wrong-spec verb (or an explicit `AC-DEFECT` tag); adding, renumbering,
+rewording, or fixing a typo stays an ordinary `revision`. `critic.ac_defects(story)` returns
+the AC-defect rows a story's history holds, so a close count can name them separately. A
+story with no amendment carries no AC defect - an absence is not a negative result. Record a
+wrong-spec correction with an `AC-DEFECT:` prefix on its Revision History row so the class is
+unambiguous.
+
 ## Troubleshooting {#verify-trouble}
 
 **`kind: invalid, exit_code: 2`**: The verifier expression could not
