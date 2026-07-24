@@ -25,8 +25,39 @@ SPLIT 2026-07-24: at 13 points this was over the 8-point ceiling and `sprint pla
 
 Replace the bare Path(args.root) with `sdlc_md.resolve_root(args)`, and anchor every relative output path with `sdlc_md.under_root(root`, rel). Deliver in slices rather than one sweep: the 26 writers first, then the readers. Update sdlc-studio/reviews/root-census.md as each script moves to anchored - the census guard holds the record to the measurement, so the record cannot claim an anchor a script does not have.
 
+## Acceptance Criteria
+
+### AC1: every writer script anchors its root on the discovered project before it dispatches
+
+- **Given** a script that declares `--root` and can mutate a tree, run with the family default
+  from a subdirectory of a project
+- **When** its `main()` reaches the dispatch
+- **Then** the value the verb receives is the DISCOVERED project root, not the cwd - measured on
+  the namespace the run was handed, so a resolver call made for a guard cannot stand in for it
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_root_anchor_contract.RootAnchorContractTests.test_every_writer_script_anchors_its_root_before_dispatch
+- **Verified:** yes (2026-07-24)
+
+### AC2: a root the caller NAMED is still honoured verbatim
+
+- **Given** any script in the family run with an explicit `--root X`
+- **When** its `main()` anchors
+- **Then** `X` stands - discovery only ever widens the default `.`, so pointing a run at another
+  project is never second-guessed
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_root_anchor_contract.RootAnchorContractTests.test_a_named_root_is_honoured_verbatim_and_never_discovered_over
+- **Verified:** yes (2026-07-24)
+
+### AC3: the census records what the measurement says, both ways
+
+- **Given** the recorded census in `sdlc-studio/reviews/root-census.md`
+- **When** the guard re-measures the family
+- **Then** every row matches, and the summary counts match too - the block that was previously
+  "unverified by construction" is now parsed and held
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_root_census.RootCensusTests
+- **Verified:** yes (2026-07-24)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-24 | sdlc-studio | Filed |
+| 2026-07-24 | sdlc-studio | Acceptance criteria added at delivery; the writer slice fixed |

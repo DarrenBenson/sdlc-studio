@@ -32,6 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import doc_coverage  # noqa: E402  (reuse the enumerators the gate already trusts)
+from lib import sdlc_md  # noqa: E402
 
 # The process-spine category each command serves. Curated - the one editorial input - so the
 # disposition is reproducible and reviewable in one place. A command in the surface but absent
@@ -255,7 +256,6 @@ def cmd_run(args: argparse.Namespace) -> int:
     if args.write:
         out = Path(args.root) / "sdlc-studio" / "reviews" / "command-audit.md"
         out.parent.mkdir(parents=True, exist_ok=True)
-        from lib import sdlc_md
         sdlc_md.atomic_write(out, render_markdown(result))
         print(f"wrote {out}")
     if args.format == "json":
@@ -288,6 +288,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    # Resolve the root ONCE and write it back, so every verb below anchors on the tree the
+    # run belongs to. The family default `.` means "work it out from here", not "the cwd
+    # is the project": otherwise a run from a subdirectory acts on a stray tree and exits 0.
+    args.root = str(sdlc_md.resolve_root(args))
     return args.func(args)
 
 

@@ -194,6 +194,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--root", default=".")
     sdlc_md.add_format_arg(ap)
     args = ap.parse_args(argv)
+    # Resolve the root ONCE and write it back, so every verb below anchors on the tree the
+    # run belongs to. The family default `.` means "work it out from here", not "the cwd
+    # is the project": otherwise a run from a subdirectory acts on a stray tree and exits 0.
+    args.root = str(sdlc_md.resolve_root(args))
     r = check(args.root)
     if args.format == "json":
         print(json.dumps(r, indent=2))

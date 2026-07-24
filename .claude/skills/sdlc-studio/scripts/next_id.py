@@ -308,6 +308,10 @@ def main(argv: list[str] | None = None) -> int:
     """Parse arguments and dispatch to the chosen subcommand."""
     parser = build_parser()
     args = parser.parse_args(argv)
+    # Resolve the root ONCE and write it back, so every verb below anchors on the tree the
+    # run belongs to, not on the cwd the run happened to start in. Per-verb resolution is
+    # left in place; this makes the anchor true of a verb that forgets to ask.
+    args.root = str(sdlc_md.resolve_root(args))
     return args.func(args)
 
 

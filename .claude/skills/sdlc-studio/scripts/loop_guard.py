@@ -284,6 +284,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    # Resolve the root ONCE and write it back, so every verb below anchors on the tree the
+    # run belongs to, not on the cwd the run happened to start in. Per-verb resolution is
+    # left in place; this makes the anchor true of a verb that forgets to ask.
+    args.root = str(verify_ac.resolve_root(args))
     return args.func(args)
 
 
