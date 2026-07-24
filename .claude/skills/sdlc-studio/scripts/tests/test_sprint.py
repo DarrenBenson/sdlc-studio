@@ -9,6 +9,7 @@ import json
 import sys
 import tempfile
 import shutil
+import types
 import unittest
 import unittest.mock
 from pathlib import Path
@@ -7017,6 +7018,101 @@ class CloseDoesNotForecloseSignoffTests(unittest.TestCase):
         self.assertEqual(archived_before, archived_after,
                          "reopening must not rewrite the archived close record")
         self.assertEqual(archived_after.get("outcome"), "goal-reached")
+
+
+class GoalAwareBreakdownTests(unittest.TestCase):
+    """D0062: the breakdown gate distinguishes the rung it is gating. A design rung exists to
+    PRODUCE the grooming, so refusing it for the absence of what it produces is a circularity -
+    the debt could then only be cleared by unbatched hand-work, which is the ad-hoc work the
+    engagement floor exists to catch. Clearing it once cost 27 hand-edited artefacts."""
+
+    def _args(self, goal: str):
+        return types.SimpleNamespace(goal=goal, root=".")
+
+    def test_an_ungroomed_batch_is_still_refused_at_goal_done(self) -> None:
+        """AC1, and the one that must not weaken. D0062 NARROWS the gate; it does not remove
+        it. A build rung over ungroomed units is the false authority the gate abolished."""
+        sprint = _load()
+        self.assertTrue(sprint._ungroomed_blocks_at(self._args("done")))
+
+    def test_the_same_batch_is_accepted_at_goal_design(self) -> None:
+        """AC2."""
+        sprint = _load()
+        self.assertFalse(sprint._ungroomed_blocks_at(self._args("design")))
+
+    def test_the_size_and_affects_gates_bind_at_the_design_rung_too(self) -> None:
+        """AC3. The exemption is for ungroomed ACs ONLY. A design rung cannot forecast an
+        unsized unit either, and cannot place one whose collisions are invisible."""
+        sprint = _load()
+        self.assertTrue(sprint._oversized_blocks_at(self._args("design")))
+        self.assertTrue(sprint._oversized_blocks_at(self._args("done")))
+
+    def test_an_unknown_goal_blocks_like_a_build(self) -> None:
+        """Fail-safe: only the design rung is exempt, and only when it says so. An absent or
+        unrecognised goal must not become an accidental escape."""
+        sprint = _load()
+        for goal in (None, "", "DONE", "triage", "nonsense"):
+            with self.subTest(goal=goal):
+                self.assertTrue(sprint._ungroomed_blocks_at(self._args(goal)))
+
+
+def _ungroomed_marker() -> str:
+    """The shipped ungroomed marker, read from the module that defines it - never a copy. A
+    fixture carrying its own spelling would keep passing after the real token changed."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from lib import sdlc_md as _md
+    return _md.UNGROOMED_AC_TOKEN
+
+
+class GroomingReportTests(unittest.TestCase):
+    """The counterweight D0062 requires. Letting a design rung plan over an ungroomed batch is
+    only safe if the close then says what it produced - otherwise "this rung will groom them" is
+    a promise nobody checks."""
+
+    def _repo(self, d: str, stories: dict[str, str]) -> Path:
+        root = Path(d)
+        folder = root / "sdlc-studio" / "stories"
+        folder.mkdir(parents=True)
+        for uid, acs in stories.items():
+            (folder / f"{uid}-x.md").write_text(
+                f"# {uid}: x\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n{acs}\n",
+                encoding="utf-8")
+        return root
+
+    def test_the_close_reports_the_grooming_it_produced(self) -> None:
+        """AC1."""
+        sprint = _load()
+        real = "### AC1: a real one\n\n- **Given** x\n- **When** y\n- **Then** z\n- **Verify:** manual\n"
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, {"US0001": real, "US0002": _ungroomed_marker()})
+            rep = sprint.grooming_report(root, ["US0001", "US0002"])
+        self.assertEqual(rep["total"], 2)
+        self.assertEqual(rep["groomed"], 1)
+        self.assertEqual(rep["names"], ["US0002"])
+        line = sprint.render_grooming_report(rep)
+        self.assertIn("1/2 groomed", line)
+        self.assertIn("US0002", line)
+
+    def test_a_rung_that_groomed_nothing_is_reported_not_passed(self) -> None:
+        """AC2. Accepting an ungroomed batch and grooming none of it is exactly the abuse the
+        relaxation invites, so it must be the loudest thing the close says about the rung."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, {"US0001": _ungroomed_marker(),
+                                  "US0002": _ungroomed_marker()})
+            rep = sprint.grooming_report(root, ["US0001", "US0002"])
+        line = sprint.render_grooming_report(rep)
+        self.assertIn("NOTHING WAS GROOMED", line)
+        self.assertEqual(rep["groomed"], 0)
+
+    def test_a_fully_groomed_rung_says_none_outstanding(self) -> None:
+        sprint = _load()
+        real = "### AC1: a real one\n\n- **Given** x\n- **When** y\n- **Then** z\n- **Verify:** manual\n"
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, {"US0001": real})
+            line = sprint.render_grooming_report(sprint.grooming_report(root, ["US0001"]))
+        self.assertIn("none outstanding", line)
+        self.assertNotIn("NOTHING WAS GROOMED", line)
 
 
 if __name__ == "__main__":

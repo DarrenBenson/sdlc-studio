@@ -3472,6 +3472,9 @@ def _close_review_anchor(root, retro, state):
     except OSError as exc:
         return False, f"the review anchor could not be written: {exc}", \
                "check sdlc-studio/reviews/LATEST.md is writable, then re-run close"
+    if str(st.get("goal") or "").lower() == "design":
+        print(render_grooming_report(grooming_report(root, st.get("batch") or [])),
+              file=sys.stderr)
     return True, f"review anchor {verb}: {run_id} closed {outcome}", ""
 
 
@@ -3598,6 +3601,62 @@ def _resolve_retro(root, args, state) -> int | None:
     print(f"close: retro {disp} {verb} -> {_retro_path(root, disp)}")
     print(f"fill its sections, then re-run: sprint.py close --retro {disp}{verdict_hint}")
     return 1
+
+
+def _ungroomed_blocks_at(args) -> bool:
+    """Whether an ungroomed batch REFUSES the plan at this rung.
+
+    Only the design rung is exempt, and only when it says so: an absent, empty or unrecognised
+    goal blocks like a build. An escape that opens when the rung cannot be read is an escape
+    that opens by accident.
+    """
+    return str(getattr(args, "goal", "") or "").lower() != "design"
+
+
+def _oversized_blocks_at(args) -> bool:  # noqa: ARG001 - the rung is deliberately not consulted
+    """Whether an oversized or unplaceable unit refuses the plan. It does, at EVERY rung: a
+    design rung cannot forecast an unsized unit either, and cannot place one whose collisions
+    are invisible. Written as a function so the asymmetry with the ungroomed leg is stated
+    rather than implied by its absence."""
+    return True
+
+
+def grooming_report(root, batch: list[str]) -> dict:
+    """What a design rung actually groomed: {"total", "groomed", "ungroomed", "names"}.
+
+    The counterweight to the goal-aware breakdown gate. Letting a design rung plan over an
+    ungroomed batch is only safe if the close then says what it produced - otherwise "accepted
+    because this rung will groom them" is a promise nobody checks, and a rung that groomed
+    nothing closes exactly like one that groomed everything.
+    """
+    import conformance  # noqa: PLC0415 - one definition of ungroomed, never a second copy
+    names: list[str] = []
+    total = 0
+    for uid in batch or []:
+        hit = sdlc_md.find_by_id(Path(root), uid)
+        if not hit or hit[1] != "story":
+            continue
+        total += 1
+        if conformance.story_is_ungroomed(sdlc_md.read_text_safe(Path(hit[0]))):
+            names.append(sdlc_md.norm_id(uid))
+    return {"total": total, "groomed": total - len(names),
+            "ungroomed": len(names), "names": sorted(names)}
+
+
+def render_grooming_report(rep: dict) -> str:
+    """The close line. A rung that groomed NOTHING is stated as such rather than reported as an
+    ordinary close - accepting an ungroomed batch and grooming none of it is the abuse the
+    relaxation invites, so it must be the loudest thing the close says about the rung."""
+    if not rep["total"]:
+        return "grooming: no story units in this batch"
+    if rep["ungroomed"] and not rep["groomed"]:
+        return (f"grooming: NOTHING WAS GROOMED - all {rep['total']} unit(s) are as ungroomed as "
+                f"they were at plan time ({', '.join(rep['names'][:6])}). This rung was accepted "
+                f"over an ungroomed batch on the promise it would groom it.")
+    if rep["ungroomed"]:
+        return (f"grooming: {rep['groomed']}/{rep['total']} groomed, {rep['ungroomed']} still "
+                f"ungroomed ({', '.join(rep['names'][:6])})")
+    return f"grooming: {rep['groomed']}/{rep['total']} groomed, none outstanding"
 
 
 def _batch_unfanned_units(root, batch) -> list[tuple[str, str, str]]:
@@ -4529,13 +4588,31 @@ def cmd_plan(args: argparse.Namespace) -> int:
     # The two are reported TOGETHER but refused in one go: an operator fixing a backlog wants the
     # whole census, not one failure per re-run.
     bd = data.get("breakdown")
+    # The ungroomed leg is GOAL-AWARE; the size and Affects legs are not.
+    #
+    # A design rung exists to PRODUCE the grooming, so refusing it for the absence of what it
+    # produces is a circularity: the debt can then only be cleared by unbatched hand-work with
+    # no unit, no estimate and no review behind it - which is the ad-hoc work the engagement
+    # floor exists to catch. Clearing it once cost 27 hand-edited artefacts.
+    #
+    # What this deliberately does NOT relax: a unit nobody can size, and a unit that names no
+    # files, are unplannable at EVERY rung. The design rung cannot forecast an unsized unit
+    # either, and it cannot place a unit whose collisions are invisible. The counterweight that
+    # stops this becoming a blanket escape is on the close, which reports what the rung actually
+    # groomed.
+    ungroomed_blocks = bool(bd and bd["ungroomed"]) and _ungroomed_blocks_at(args)
     if bd and (bd["ungroomed"] or bd["oversized"]):
         if bd["blocking"]:
-            if bd["ungroomed"]:
+            if ungroomed_blocks:
                 _refuse_ungroomed(bd, data["count"], _selector_hint(args, queries, worklist))
-            if bd["oversized"]:
+            if bd["oversized"] and _oversized_blocks_at(args):
                 _refuse_oversized(bd, data["count"])
-            return 2
+            if ungroomed_blocks or bd["oversized"]:
+                return 2
+            if bd["ungroomed"]:
+                print(f"design rung: {len(bd['ungroomed'])} ungroomed unit(s) ACCEPTED - this "
+                      f"rung exists to groom them. The close reports what it actually produced.",
+                      file=sys.stderr)
         if bd["ungroomed"]:
             _report_ungroomed(bd, data["count"])
         if bd["oversized"]:

@@ -1,6 +1,6 @@
 # US0431: a design rung's close reports how many units it groomed, so an accepted-but-ungroomed batch cannot close silently
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0418
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the close runs
 - **Then** it states how many units were groomed and how many remain ungroomed - the counterweight D0062 requires, without which the gate's relaxation is a blanket escape
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GroomingReportTests::test_the_close_reports_the_grooming_it_produced
+- **Verified:** yes (2026-07-24)
 
 ### AC2: a design rung that groomed nothing cannot close silently
 
@@ -30,6 +31,7 @@
 - **When** the close runs
 - **Then** that is reported prominently rather than passing as an ordinary close - accepting an ungroomed batch and grooming none of it is exactly the abuse the relaxation invites
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GroomingReportTests::test_a_rung_that_groomed_nothing_is_reported_not_passed
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

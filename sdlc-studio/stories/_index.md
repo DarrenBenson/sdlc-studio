@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 12 |
-| Ready | 24 |
+| Ready | 22 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 14 |
+| Review | 16 |
 | Done | 380 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -340,8 +340,8 @@
 | [US0427](US0427-a-subagent-reviewer-of-record-in-its-own.md) | a subagent reviewer of record in its own context is accepted, and the row records that it was a delegated agent | Ready | EP0159 | 2026-07-24 | 2026-07-24 |
 | [US0428](US0428-the-sprint-report-and-the-close-output-disclose.md) | the sprint report and the close output DISCLOSE every delegated sign-off, naming the delegate | Ready | EP0159 | 2026-07-24 | 2026-07-24 |
 | [US0429](US0429-reference-review-md-states-plainly-that-a-disclosed.md) | reference-review.md states plainly that a disclosed sign-off is not an independent one, and what that costs | Ready | EP0159 | 2026-07-24 | 2026-07-24 |
-| [US0430](US0430-the-breakdown-gate-refuses-an-ungroomed-batch-at.md) | the breakdown gate refuses an ungroomed batch at --goal done and accepts it at --goal design | Ready | EP0160 | 2026-07-24 | 2026-07-24 |
-| [US0431](US0431-a-design-rung-s-close-reports-how-many.md) | a design rung's close reports how many units it groomed, so an accepted-but-ungroomed batch cannot close silently | Ready | EP0160 | 2026-07-24 | 2026-07-24 |
+| [US0430](US0430-the-breakdown-gate-refuses-an-ungroomed-batch-at.md) | the breakdown gate refuses an ungroomed batch at --goal done and accepts it at --goal design | Review | EP0160 | 2026-07-24 | 2026-07-24 |
+| [US0431](US0431-a-design-rung-s-close-reports-how-many.md) | a design rung's close reports how many units it groomed, so an accepted-but-ungroomed batch cannot close silently | Review | EP0160 | 2026-07-24 | 2026-07-24 |
 
 ## Archived Releases
 
