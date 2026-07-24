@@ -63,3 +63,4 @@ weakens any gate or report built on that count.
 - **Given** the test fixture
 - **Then** it contains a legacy-scaffold story and a marker story with deliberately unequal counts, so a one-shape-only counter reads differently and fails
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::UngroomedMarkerTests
+| 2026-07-24 | sdlc-studio | Fixed and mutation-proven - reported count now matches the 16 on disk |

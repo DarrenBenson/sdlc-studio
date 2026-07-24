@@ -61,14 +61,41 @@ def _real(value: str | None) -> bool:
     return re.sub(r"[\s.,;:!?*_`>~\-]+", "", residue) != ""
 
 
-def story_is_ungroomed(text: str) -> bool:
-    """True when a story's Acceptance Criteria are the refine grooming placeholder rather than
-    authored content (the marker `refine` writes in place of real ACs, `sdlc_md.UNGROOMED_AC_TOKEN`).
+def _ac_section(text: str) -> str:
+    """The body under the story's `## Acceptance Criteria` heading, or ''."""
+    out: list[str] = []
+    in_ac = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in_ac = "acceptance criteria" in line.lower()
+            continue
+        if in_ac:
+            out.append(line)
+    return "\n".join(out)
 
-    The count of these is what makes a refined backlog's outstanding grooming machine-visible: an
-    operator sees how much a batch still owes before planning it, instead of meeting a full-batch
-    refusal at plan time."""
-    return sdlc_md.UNGROOMED_AC_TOKEN in text
+
+def story_is_ungroomed(text: str) -> bool:
+    """True when a story's Acceptance Criteria are a grooming placeholder rather than authored
+    content.
+
+    TWO SHAPES, not one. `refine` writes an explicit marker (`sdlc_md.UNGROOMED_AC_TOKEN`) today,
+    but every story minted before that carries the bare `{{...}}` template scaffold instead. A
+    count that knew only the marker reported ZERO ungroomed while 31 such stories sat in this
+    workspace - confidently wrong in the safe direction, which is the failure mode this project
+    ranks worst. The legacy shape is an AC section carrying a placeholder and NO authored
+    criterion beside it; a groomed story that merely quotes `{{...}}` in its prose still has a
+    real criterion, so it is not caught here.
+
+    The count is what makes a refined backlog's outstanding grooming machine-visible: an operator
+    sees how much a batch still owes before planning it, instead of meeting a full-batch refusal
+    at plan time."""
+    if sdlc_md.UNGROOMED_AC_TOKEN in text:
+        return True
+    section = _ac_section(text)
+    if not _PLACEHOLDER.search(section):
+        return False
+    has_real_ac, _, _ = _ac_signals(text)
+    return not has_real_ac
 
 
 def carry_forward_covers(root, review, findings) -> bool:

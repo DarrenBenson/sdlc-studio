@@ -4421,10 +4421,26 @@ def cmd_plan(args: argparse.Namespace) -> int:
         if refusal is not None:
             print(str(refusal), file=sys.stderr)
             return 2
-    # RECORD THE FORECAST. Here, unconditionally, because here is where the prediction is MADE.
-    # Not under --write: a forecast that depends on a flag is one the next retro will find
-    # missing, and it will then have to re-derive an "estimate" from the constants it is
-    # supposed to be judging - which is not a prediction at all.
+    write = getattr(args, "write", False)
+    out = Path(args.root) / "sdlc-studio" / ".local" / "sprint-plan.json"
+    # OPEN THE RUN FIRST, before anything is persisted. `open_run` is the AUTHORITY on whether
+    # this plan may proceed, so nothing the plan produces is written until it has said yes. The
+    # earlier order wrote the forecast record and sprint-plan.json first, so a batch refused by
+    # `open_run` (a concurrent writer opening a run between the pre-check and here) left both
+    # behind on the losing side of the race - while run-state.json's own guarantee held. The
+    # sibling artefacts now match that guarantee: a refused plan leaves NO trace.
+    state = None
+    if write:
+        try:
+            state = run_state.open_run(args.root, batch=[u["id"] for u in data["batch"]],
+                                       goal=getattr(args, "goal", None), plan=str(out))
+        except run_state.DisjointBatchError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+    # RECORD THE FORECAST. Unconditional on --write, because here is where the prediction is
+    # MADE: a forecast that depended on a flag is one the next retro finds missing, and it would
+    # then re-derive an "estimate" from the constants it is supposed to be judging. Under
+    # --write it now runs AFTER open_run accepted the batch, so a refusal records nothing.
     try:
         data["forecast_record"] = record_forecast(args.root, data)
     except OSError as exc:
@@ -4432,22 +4448,10 @@ def cmd_plan(args: argparse.Namespace) -> int:
         print(f"warning: the plan's token forecast could NOT be recorded ({exc}). This batch "
               f"will be UNFORECAST at retro time and can say nothing about the estimator - "
               f"the retro will NOT re-derive an estimate for it.", file=sys.stderr)
-    if getattr(args, "write", False):  # persist the sprint-plan artifact for review
-        out = Path(args.root) / "sdlc-studio" / ".local" / "sprint-plan.json"
+    if write:  # persist the sprint-plan artifact for review, now the run exists
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(data, indent=2), encoding="utf-8")
         print(f"wrote sprint plan -> {out}")
-        # ...and OPEN the run. The batch approved here is the run's batch, and until now a
-        # run had no identity at all: no id, no start time, nowhere to record how it ended.
-        # The close (`handoff generate`) writes the outcome back to the same object. The
-        # disjoint refusal was pre-checked above; `open_run` re-checks inside its lock, so a
-        # race that opened a run between the two still refuses rather than fuses.
-        try:
-            state = run_state.open_run(args.root, batch=[u["id"] for u in data["batch"]],
-                                       goal=getattr(args, "goal", None), plan=str(out))
-        except run_state.DisjointBatchError as exc:
-            print(str(exc), file=sys.stderr)
-            return 2
         # Record the RESOLVED appetite and the token forecast - additive fields on the
         # run-state object, merged, never touching its schema. The appetite was resolved once,
         # from the sprint capacity (flag > appetite.* > capacity.*), and the plan has already

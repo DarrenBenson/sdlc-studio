@@ -738,6 +738,20 @@ def _ungroomed_story(root, num) -> None:
         f"## Acceptance Criteria\n\n{marker}\n", encoding="utf-8")
 
 
+def _legacy_skeleton_story(root, num) -> None:
+    """A story minted BEFORE the ungroomed marker existed: its Acceptance Criteria are the bare
+    `{{...}}` template scaffold. Every pre-existing refined story in a real workspace has this
+    shape, and it is the one the marker-only count could not see."""
+    d = root / "sdlc-studio" / "stories"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"US{num:04d}-sample.md").write_text(
+        f"# US{num:04d}: sample\n\n> **Status:** Draft\n"
+        "> **Epic:** [EP0001: x](../epics/EP0001-x.md)\n\n"
+        "## Acceptance Criteria\n\n### AC1: {{define}}\n\n"
+        "- **Given** {{context}}\n- **When** {{action}}\n- **Then** {{outcome}}\n"
+        "- **Verify:** {{executable check}}\n", encoding="utf-8")
+
+
 class UngroomedMarkerTests(unittest.TestCase):
     """US0411: the count of ungroomed stories is machine-visible - conformance counts them by the
     marker, so an operator sees a refined backlog's grooming debt rather than meeting it at plan."""
@@ -758,6 +772,40 @@ class UngroomedMarkerTests(unittest.TestCase):
             self.assertEqual(flagged, {"US0003", "US0004"})
             # a groomed story is not miscounted, and the marker does not read as a specified AC
             self.assertFalse(_units(root)["US0003"]["stages"]["specified"])
+
+    def test_the_legacy_placeholder_scaffold_is_counted_as_ungroomed_too(self) -> None:
+        """BG0276: the count knew only the marker, so it reported ZERO ungroomed while a real
+        workspace held 31 legacy-scaffold stories. Both shapes are the same debt."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # Three shapes, deliberately unequal, so a counter that sees only ONE reads a
+            # different number: 2 groomed, 3 marker, 1 legacy scaffold -> 4 ungroomed.
+            _story(root, 1)
+            _story(root, 2)
+            _ungroomed_story(root, 3)
+            _ungroomed_story(root, 4)
+            _ungroomed_story(root, 5)
+            _legacy_skeleton_story(root, 6)
+            result = _load().detect_conformance(root)
+            self.assertEqual(result["summary"]["ungroomed"], 4)
+            flagged = {u["id"] for u in result["units"] if u["ungroomed"]}
+            self.assertEqual(flagged, {"US0003", "US0004", "US0005", "US0006"})
+
+    def test_a_groomed_story_quoting_a_placeholder_is_not_counted(self) -> None:
+        """The precision half: a REAL criterion beside a quoted `{{...}}` is groomed. Without
+        this the fix would trade a false zero for a false alarm."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            dd = root / "sdlc-studio" / "stories"
+            dd.mkdir(parents=True, exist_ok=True)
+            (dd / "US0007-sample.md").write_text(
+                "# US0007: sample\n\n> **Status:** Draft\n"
+                "> **Epic:** [EP0001: x](../epics/EP0001-x.md)\n\n"
+                "## Acceptance Criteria\n\n### AC1: the template renders {{placeholder}} verbatim\n\n"
+                "- **Given** a template\n- **Then** it renders\n"
+                "- **Verify:** pytest tests/test_t.py::T::t\n", encoding="utf-8")
+            result = _load().detect_conformance(root)
+            self.assertEqual(result["summary"]["ungroomed"], 0)
 
 
 if __name__ == "__main__":

@@ -6511,6 +6511,56 @@ class ThemedBatchNotAnObjectionTests(_GoalReviewFixture):
         self.assertIn("THEMED", out.upper())
 
 
+class RefusedPlanLeavesNothingTests(unittest.TestCase):
+    """BG0268: the forecast record and sprint-plan.json were written BEFORE open_run, so a batch
+    open_run refused left both behind while run-state.json's own guarantee held."""
+
+    def _repo(self):
+        d = Path(tempfile.mkdtemp(prefix="refused_plan_"))
+        (d / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        (d / "src").mkdir()
+        (d / "src" / "a.py").write_text("# marker\n")
+        (d / "sdlc-studio" / "bugs" / "BG0001-x.md").write_text(
+            "# BG0001: x\n\n> **Status:** Open\n> **Severity:** High\n> **Points:** 2\n"
+            "> **Affects:** src/a.py\n", encoding="utf-8")
+        return d
+
+    def _plan(self, s, root, *argv):
+        import contextlib, io
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            rc = s.main(["plan", "--bugs", "Open", "--root", str(root), *argv])
+        return rc, buf.getvalue()
+
+    def test_a_refused_open_run_leaves_no_plan_json_or_forecast(self):
+        s = _load()
+        root = self._repo()
+        plan_json = root / "sdlc-studio" / ".local" / "sprint-plan.json"
+        real_open = s.run_state.open_run
+        try:
+            def _refuse(*a, **k):
+                raise s.run_state.DisjointBatchError("RUN-OTHER", "running", 3)
+            s.run_state.open_run = _refuse
+            rc, _ = self._plan(s, root, "--write")
+            self.assertEqual(rc, 2)
+        finally:
+            s.run_state.open_run = real_open
+        self.assertFalse(plan_json.exists(), "a refused plan left sprint-plan.json behind")
+        forecasts = root / "sdlc-studio" / ".local" / "forecasts.json"
+        if forecasts.exists():
+            self.assertNotIn("BG0001", forecasts.read_text(encoding="utf-8"),
+                             "a refused plan recorded a forecast for its batch")
+
+    def test_a_successful_plan_still_writes_both(self):
+        s = _load()
+        root = self._repo()
+        rc, _ = self._plan(s, root, "--write")
+        self.assertEqual(rc, 0)
+        self.assertTrue((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
+        self.assertTrue((root / "sdlc-studio" / ".local" / "run-state.json").exists())
+
+
 class SeatBriefFreshnessTests(unittest.TestCase):
     """BG0277: the brief derived from the PERSISTED plan, but the review it informs gates
     `plan --write` - so on a new sprint it silently described the previous batch."""
