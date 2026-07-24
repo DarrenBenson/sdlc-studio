@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Epic:** EP0122
 > **Points:** 2
+> **Affects:** .claude/skills/sdlc-studio/reference-persona.md, sdlc-studio/decisions.md
 
 ## User Story
 

@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 31 |
+| Draft | 37 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **412** |
+| **Total** | **418** |
 
 ## All Stories
 
@@ -323,6 +323,12 @@
 | [US0410](US0410-refine-requires-or-inherits-an-affects-per-story.md) | refine requires or inherits an Affects per story so a minted story is plannable, refusing or seeding-for-confirmation where none is given | Done | EP0155 | 2026-07-23 | 2026-07-23 |
 | [US0411](US0411-a-refined-story-s-ac-block-is-labelled.md) | a refined story's AC block is labelled a grooming placeholder, not left as content, so the ungroomed count is machine-visible | Done | EP0155 | 2026-07-23 | 2026-07-23 |
 | [US0412](US0412-reference-cr-md-and-reference-rfc-md-state.md) | reference-cr.md and reference-rfc.md state refine produces a plannable unit whose ACs still need grooming, opt-out per project | Done | EP0155 | 2026-07-23 | 2026-07-23 |
+| [US0413](US0413-artifact-py-new-warns-on-a-near-duplicate.md) | artifact.py new warns on a near-duplicate title before minting, naming the existing id | Draft | EP0156 | 2026-07-24 | 2026-07-24 |
+| [US0414](US0414-the-duplicate-check-is-advisory-by-default-and.md) | the duplicate check is advisory by default and refusable under --strict, with the escape recorded | Draft | EP0156 | 2026-07-24 | 2026-07-24 |
+| [US0415](US0415-a-lane-detects-an-epic-whose-stories-a.md) | a lane detects an epic whose stories a delivered sprint already satisfied and reports it as derivable | Draft | EP0156 | 2026-07-24 | 2026-07-24 |
+| [US0416](US0416-the-disjointness-check-treats-build-tooling-and-shared.md) | the disjointness check treats build tooling and shared config as coupling, not as ordinary files | Draft | EP0156 | 2026-07-24 | 2026-07-24 |
+| [US0417](US0417-the-engagement-floor-attributes-a-git-add-a.md) | the engagement floor attributes a git add -A commit to every unit it touched, not only those named | Draft | EP0156 | 2026-07-24 | 2026-07-24 |
+| [US0418](US0418-a-writer-s-fields-file-accepts-metadata-keys.md) | a writer's --fields-file accepts metadata keys as well as prose, so one invocation sets both | Draft | EP0156 | 2026-07-24 | 2026-07-24 |
 
 ## Archived Releases
 

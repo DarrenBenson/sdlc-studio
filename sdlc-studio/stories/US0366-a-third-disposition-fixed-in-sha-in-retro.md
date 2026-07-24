@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Epic:** EP0128
 > **Points:** 3
+> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/templates/retro-template.md, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
 
 ## User Story
 

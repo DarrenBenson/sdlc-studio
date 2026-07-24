@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Epic:** EP0129
 > **Points:** 3
+> **Affects:** .claude/skills/sdlc-studio/scripts/doc_freshness.py, .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py
 
 ## User Story
 

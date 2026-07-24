@@ -1,6 +1,7 @@
 # CR-0414: the backlog carries epics a delivered sprint already satisfied and nothing detects it: EP0125's shared prose-helper stories were largely built as EP0146, but built-not-closed reads the verify-report so an ungroomed skeleton with no verifiers is invisible to it
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0156
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

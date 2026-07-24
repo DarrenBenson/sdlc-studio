@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 10 |
+| Open | 14 |
 | In Progress | 0 |
 | Fixed | 194 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **287** |
+| **Total** | **291** |
 
 ## All Bugs
 
@@ -254,6 +254,10 @@
 | [BG0285](BG0285-sprint-close-without-apply-signoff-closes-the-run.md) | sprint close without --apply-signoff closes the run, and the sprint-level review that the sign-off needs cannot then be recorded against it, so the documented two-invocation close flow cannot be completed and no reopen path exists | Open | High | 2026-07-24 | 2026-07-24 |
 | [BG0286](BG0286-sprint-close-apply-signoff-fans-into-story-units.md) | sprint close --apply-signoff fans into story units only, leaving the batch's bugs Open while the close reports goal-reached | Open | High | 2026-07-24 | 2026-07-24 |
 | [BG0287](BG0287-the-review-current-lane-goes-stale-against-the.md) | the review-current lane goes stale against the close's own transitions, so it blocks the close step that would refresh the anchor | Open | Medium | 2026-07-24 | 2026-07-24 |
+| [BG0288](BG0288-anchor-the-33-unanchored-reader-scripts-to-the.md) | anchor the 33 unanchored READER scripts to the discovered root (BG0282 slice 2) | Open | Medium | 2026-07-24 | 2026-07-24 |
+| [BG0289](BG0289-give-the-5-scripts-with-no-root-surface.md) | give the 5 scripts with no --root surface one, and reconcile the census (BG0282 slice 3) | Open | Low | 2026-07-24 | 2026-07-24 |
+| [BG0290](BG0290-refine-s-ungroomed-placeholder-fails-validate-s-no.md) | refine's ungroomed placeholder fails validate's no-ac check, so refine produces a story that cannot be committed | Open | High | 2026-07-24 | 2026-07-24 |
+| [BG0291](BG0291-refine-s-seeded-acs-duplicate-their-own-label.md) | refine's seeded ACs duplicate their own label and restate the story title as the Then clause | Open | Medium | 2026-07-24 | 2026-07-24 |
 
 ## Archived Releases
 

@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Epic:** EP0116
 > **Points:** 2
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_audit.py, .claude/skills/sdlc-studio/reference-scripts.md, CHANGELOG.md
 
 ## User Story
 

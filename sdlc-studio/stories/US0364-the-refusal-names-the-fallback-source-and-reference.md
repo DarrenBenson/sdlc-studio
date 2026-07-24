@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Epic:** EP0126
 > **Points:** 2
+> **Affects:** .claude/skills/sdlc-studio/scripts/rfc.py, .claude/skills/sdlc-studio/reference-rfc.md
 
 ## User Story
 

@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Epic:** EP0122
 > **Points:** 1
+> **Affects:** sdlc-studio/rfcs/RFC0017-agent-persona-selection.md, sdlc-studio/decisions.md
 
 ## User Story
 

@@ -1,6 +1,7 @@
 # CR-0417: a writer's --fields-file allows only its prose keys, so an invocation setting metadata must be split across a document and flags: lessons add takes --tags, --epic and --wave that its own fields-file refuses
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0156
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

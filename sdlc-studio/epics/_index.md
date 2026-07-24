@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 22 |
+| Draft | 23 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 133 |
-| **Total** | **155** |
+| **Total** | **156** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -178,3 +178,4 @@
 | [EP0153](EP0153-a-reproducible-seat-brief.md) | A reproducible seat brief | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0154](EP0154-sequential-or-parallel-delivery-chosen-at-run-start.md) | Sequential or parallel delivery, chosen at run start | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0155](EP0155-refine-mints-an-actionable-plannable-unit.md) | refine mints an actionable, plannable unit | Done | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0156](EP0156-sprint-2-tooling-frictions-duplicate-minting-stale-epics.md) | Sprint 2 tooling frictions: duplicate minting, stale epics, lane coupling, attribution, writer keys | Draft | -- | -- | 2026-07-24 | 2026-07-24 |

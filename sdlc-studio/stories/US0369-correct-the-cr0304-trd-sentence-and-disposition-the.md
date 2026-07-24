@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Epic:** EP0129
 > **Points:** 3
+> **Affects:** sdlc-studio/trd.md
 
 ## User Story
 

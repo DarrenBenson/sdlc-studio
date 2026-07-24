@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Epic:** EP0117
 > **Points:** 2
+> **Affects:** .claude/skills/sdlc-studio/SKILL.md, package.json, CHANGELOG.md, tools/check_versions.py
 
 ## User Story
 

@@ -1,6 +1,7 @@
 # CR-0416: the engagement floor cannot see work for a unit the commit message never names: a git add -A that sweeps in a concurrently-edited unit attributes its files to whichever id the subject happens to carry
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0156
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

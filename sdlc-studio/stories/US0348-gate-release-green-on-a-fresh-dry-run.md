@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Epic:** EP0117
 > **Points:** 3
+> **Affects:** CHANGELOG.md, .claude/skills/sdlc-studio/scripts/gate.py
 
 ## User Story
 

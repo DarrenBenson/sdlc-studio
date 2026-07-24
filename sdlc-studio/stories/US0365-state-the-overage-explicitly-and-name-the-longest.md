@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Epic:** EP0127
 > **Points:** 2
+> **Affects:** .claude/skills/sdlc-studio/scripts/doc_freshness.py, tools/check_budgets.py
 
 ## User Story
 

@@ -7,6 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Epic:** EP0119
 > **Points:** 3
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_xrepo.py, .claude/skills/sdlc-studio/scripts/xrepo.py, sdlc-studio/tsd.md
 
 ## User Story
 
