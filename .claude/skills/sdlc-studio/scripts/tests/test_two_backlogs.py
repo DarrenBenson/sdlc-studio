@@ -981,7 +981,10 @@ class SeedAcsTests(unittest.TestCase):
             text = self._story_text(root, res)
             self.assertIn("### AC1: the first checkable criterion", text)
             self.assertIn("### AC2: the second criterion with detail", text)
-            self.assertIn("- **Then** the first checkable criterion", text)
+            # BG0291: the criterion is the HEADING, never also the Then - a Then that restates
+            # its own heading asserts nothing observable while reading as authored.
+            self.assertIn("- **Then** {{observable outcome}}", text)
+            self.assertNotIn("- **Then** the first checkable criterion", text)
             self.assertIn("{{executable check}}", text)    # Verify stays the author's job
             self.assertNotIn("### AC1: {{define}}", text)  # scaffold replaced
 

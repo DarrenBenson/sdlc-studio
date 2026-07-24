@@ -10,15 +10,27 @@
 
 ## Summary
 
-{{symptom}}
+A seeded AC block repeats its own `ACn:` label in the heading and restates that heading as
+the `Then`, so the criterion asserts nothing observable while reading as authored work.
 
 ## Steps to Reproduce
 
-{{steps}}
+Refine a request whose criteria are written to the story template, so each already opens
+with its own label:
+
+```bash
+# CR0001 carries `- [ ] AC1: plan-time overlap detection that does not depend on verifiers`
+refine.py apply --request CR0001 --into EP0156 --story "Overlap detection|3"
+# story:  ### AC1: AC1: plan-time overlap detection that does not depend on verifiers
+#         - **Then** AC1: plan-time overlap detection that does not depend on verifiers
+```
 
 ## Proposed Fix
 
-{{fix}}
+Strip a leading `ACn:` label from the criterion before the seed prepends its own, and leave
+the `Then` an explicit placeholder: the criterion is the heading, and a Then that restates
+the heading is the vacuous criterion the verify DSL exists to refuse. Where the heading has
+to truncate a long criterion, transcribe the full text under the block so nothing is lost.
 
 ## Detail
 
@@ -57,6 +69,7 @@ nothing downstream catches it - it is caught only by a human reading the story.
 - **When** refine seeds it onto a story
 - **Then** the heading reads `### AC1: <text>` with the label appearing exactly once
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::SeededAcShapeTests::test_the_label_is_not_doubled
+- **Verified:** yes (2026-07-24)
 
 ### AC2: a seeded Then is not the heading restated
 
@@ -64,6 +77,7 @@ nothing downstream catches it - it is caught only by a human reading the story.
 - **When** the story is written
 - **Then** the `Then` clause is either a placeholder or an outcome, never a copy of the heading - a criterion that states its own title asserts nothing
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::SeededAcShapeTests::test_the_then_clause_is_not_the_heading
+- **Verified:** yes (2026-07-24)
 
 ### AC3: a story is not seeded with a sibling's criterion
 
@@ -71,9 +85,11 @@ nothing downstream catches it - it is caught only by a human reading the story.
 - **When** refine seeds
 - **Then** no story receives a criterion that belongs to a different story's slice; where the mapping is not determinable the marker is used instead of a guess
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::SeededAcShapeTests::test_no_story_gets_a_siblings_criterion
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-24 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-24 | sdlc-studio | Fixed: `_strip_ac_label` removes a criterion's own label before the seed adds one, the `Then` is now `{{observable outcome}}`, and a truncated criterion is transcribed in full under its block. AC3 (no sibling's criterion) was already held by the multi-story guard and is now pinned. `SeededAcShapeTests` in `test_refine.py`. |

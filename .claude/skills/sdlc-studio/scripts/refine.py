@@ -67,6 +67,21 @@ def _ac_heading(criterion: str, limit: int = 100) -> str:
     return text
 
 
+#: A criterion that already opens with its own `AC1:` label (the shape a request written to the
+#: story template carries). The seed prepends `### ACn: `, so an unstripped label landed twice in
+#: one heading. Matches the bold and plain spellings and the usual separators; nothing else is
+#: touched, so a criterion that merely mentions AC2 mid-sentence keeps its text.
+_AC_LABEL_RE = re.compile(r"^\**\s*AC\s*\d+\**\s*[:.)\]-]\s+", re.I)
+
+
+def _strip_ac_label(criterion: str) -> str:
+    """A criterion with its leading `ACn:` label removed - the seed supplies the label itself.
+    A criterion that is ONLY a label keeps its text: stripping it to nothing would seed a
+    heading with no content at all."""
+    stripped = _AC_LABEL_RE.sub("", criterion, count=1).strip()
+    return stripped or criterion
+
+
 def _request_criteria(text: str) -> list[str]:
     """The request's own `- [ ]` acceptance criteria, in order."""
     return _CRITERION_RE.findall(_section(text, "Acceptance Criteria"))
@@ -147,10 +162,15 @@ def _seed_epic_criteria(epic_path: Path, criteria: list[str], rid: str | None = 
 
 def _seed_acs(story_path: Path, criteria: list[str]) -> None:
     """Replace the story's placeholder AC scaffold with one AC block per request
-    criterion: the criterion is the title and the Then; Given/When and the Verify
-    stay explicit placeholders - seeding TRANSCRIBES what the request already
-    states, it never fabricates executability (validate keeps flagging the
-    placeholders until the author fills them).
+    criterion: the criterion is the TITLE, and Given/When/Then and the Verify stay explicit
+    placeholders - seeding TRANSCRIBES what the request already states, it never fabricates
+    executability (validate keeps flagging the placeholders until the author fills them).
+
+    The Then used to be the criterion too, which made it the heading restated: a criterion
+    that states its own name asserts nothing observable, and it read as authored rather than
+    as work owed, so a groomer skimming the file saw filled-in criteria. Where the heading
+    could not carry the criterion whole (a long one is truncated to keep the heading inside
+    MD026/one line), the full text is transcribed under the block so the seed loses nothing.
 
     Called for a SINGLE-story breakdown only, where the story is the whole request. The
     multi-story case goes to `_seed_epic_criteria`; it used to come here too, with a
@@ -161,10 +181,14 @@ def _seed_acs(story_path: Path, criteria: list[str]) -> None:
     text = story_path.read_text(encoding="utf-8")
     blocks = []
     for i, criterion in enumerate(criteria, 1):
-        title = _ac_heading(criterion)
-        blocks.append(f"### AC{i}: {title}\n\n"
-                      f"- **Given** {{{{context}}}}\n- **When** {{{{action}}}}\n"
-                      f"- **Then** {criterion}\n- **Verify:** {{{{executable check}}}}\n")
+        body = _strip_ac_label(criterion)   # the seed supplies `ACn:` - the source must not
+        title = _ac_heading(body)
+        block = (f"### AC{i}: {title}\n\n"
+                 f"- **Given** {{{{context}}}}\n- **When** {{{{action}}}}\n"
+                 f"- **Then** {{{{observable outcome}}}}\n- **Verify:** {{{{executable check}}}}\n")
+        if title != body:
+            block += f"\n> Transcribed from the request: {body}\n"
+        blocks.append(block)
     seeded = "## Acceptance Criteria\n\n" + "\n".join(blocks) + "\n"
     # callable replacement: criterion text is DATA, never a regex template - a
     # criterion containing \1 or C:\temp must land verbatim, not crash the mint
@@ -338,6 +362,155 @@ def _decompose_into(repo_root, rid: str, rpath: Path, epic_id: str,
                 pass
         raise
     return epic_id, story_ids
+
+
+#: The keys a breakdown file may carry. Anything else is a fault, not a silent no-op: a
+#: misspelled `epic_titel` would otherwise mint an untitled epic (or none) and read as accepted.
+_BREAKDOWN_KEYS = {"epic-title", "epic_title", "into", "stories"}
+_BREAKDOWN_STORY_KEYS = {"title", "points", "affects"}
+
+
+def _parse_breakdown_text(text: str, path: Path) -> object:
+    """The raw structure in a breakdown file: JSON, or YAML when the suffix says so (or when
+    JSON cannot read it). YAML needs PyYAML, a soft dependency everywhere else in the skill, so
+    its absence is NAMED rather than surfacing as a parse error about the file."""
+    suffix = path.suffix.lower()
+    if suffix not in (".yaml", ".yml"):
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError as exc:
+            json_error = exc
+        if suffix == ".json":
+            raise ValueError(f"{path} is not valid JSON: {json_error}")
+    try:
+        import yaml  # noqa: PLC0415 - soft dependency, mirrors config.py
+    except ImportError:
+        raise ValueError(f"{path} needs a YAML parser (pip install pyyaml), or write the "
+                         f"breakdown as JSON") from None
+    try:
+        return yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        raise ValueError(f"{path} is not valid YAML: {exc}") from None
+
+
+def _breakdown_story(entry: object, idx: int, faults: list[str]) -> tuple[str, int, str | None] | None:
+    """One story entry from a breakdown file, or None with its faults recorded. A mapping
+    (`title`/`points`/`affects`) or the same `title|points|affects` string the `--story` flag
+    takes, so a breakdown can be pasted from a working command line."""
+    where = f"stories[{idx}]"
+    if isinstance(entry, str):
+        try:
+            return parse_story_spec(entry)
+        except ValueError as exc:
+            faults.append(f"{where}: {exc}")
+            return None
+    if not isinstance(entry, dict):
+        faults.append(f"{where} must be a mapping (title/points/affects) or a "
+                      f"'title|points|affects' string, not {type(entry).__name__}")
+        return None
+    unknown = sorted(set(entry) - _BREAKDOWN_STORY_KEYS)
+    if unknown:
+        faults.append(f"{where}: unknown key(s) {', '.join(unknown)} - allowed: "
+                      f"{', '.join(sorted(_BREAKDOWN_STORY_KEYS))}")
+    title = entry.get("title")
+    if not isinstance(title, str) or not title.strip():
+        faults.append(f"{where}: `title` is required and must be a non-empty string")
+        title = None
+    else:
+        try:
+            sdlc_md.require_single_line("story title", title)
+        except ValueError as exc:
+            faults.append(f"{where}: {exc}")
+            title = None
+    points = None
+    if "points" not in entry:
+        faults.append(f"{where}: `points` is required (Fibonacci scale)")
+    else:
+        try:
+            points = sdlc_md.check_points(entry["points"])
+        except ValueError as exc:
+            faults.append(f"{where}: {exc}")
+    affects = entry.get("affects")
+    if affects is not None and (not isinstance(affects, str) or not affects.strip()):
+        faults.append(f"{where}: `affects` must be a non-empty string when present")
+        affects = None
+    if title is None or points is None:
+        return None
+    return title, points, (affects.strip() if isinstance(affects, str) else None)
+
+
+def load_breakdown(path: Path | str) -> dict:
+    """Read a breakdown file and return `{"epic_title", "into", "stories"}`.
+
+    The whole file is checked before anything is returned, and EVERY fault is reported in one
+    refusal - the same fail-empty discipline the `--story` form already has, applied to the
+    input a bulk refine actually comes as. A breakdown that refuses story 9 after minting
+    stories 1-8 is the failure this exists to prevent, so nothing here writes.
+    """
+    p = Path(path)
+    try:
+        text = p.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ValueError(f"cannot read breakdown file {p}: {exc}") from None
+    data = _parse_breakdown_text(text, p)
+    if not isinstance(data, dict):
+        raise ValueError(f"{p}: a breakdown is a mapping with `stories` (and `epic-title` or "
+                         f"`into`), not {type(data).__name__}")
+    faults: list[str] = []
+    unknown = sorted(set(data) - _BREAKDOWN_KEYS)
+    if unknown:
+        faults.append(f"unknown key(s) {', '.join(unknown)} - allowed: "
+                      f"{', '.join(sorted(_BREAKDOWN_KEYS))}")
+    epic_title = data.get("epic-title", data.get("epic_title"))
+    if epic_title is not None:
+        if not isinstance(epic_title, str) or not epic_title.strip():
+            faults.append("`epic-title` must be a non-empty string")
+            epic_title = None
+        else:
+            try:
+                sdlc_md.require_single_line("epic title", epic_title)
+            except ValueError as exc:
+                faults.append(str(exc))
+                epic_title = None
+    into = data.get("into")
+    if into is not None and (not isinstance(into, str) or not into.strip()):
+        faults.append("`into` must be an epic id (EPxxxx)")
+        into = None
+    entries = data.get("stories")
+    stories: list[tuple[str, int, str | None]] = []
+    if not isinstance(entries, list) or not entries:
+        faults.append("`stories` is required and must be a non-empty list - an empty "
+                      "decomposition delivers nothing")
+    else:
+        for idx, entry in enumerate(entries):
+            parsed = _breakdown_story(entry, idx, faults)
+            if parsed:
+                stories.append(parsed)
+    if faults:
+        raise ValueError(f"breakdown file {p} has {len(faults)} fault(s); nothing minted:\n  - "
+                         + "\n  - ".join(faults))
+    return {"epic_title": epic_title.strip() if epic_title else None,
+            "into": into.strip() if into else None, "stories": stories}
+
+
+def breakdown_inputs(args: argparse.Namespace) -> tuple[list[tuple[str, int, str | None]],
+                                                        str | None, str | None]:
+    """The (stories, epic_title, into) a refine command was given, from `--breakdown` or from
+    repeated `--story` flags. The two forms are alternatives, not layers: mixing them leaves the
+    breakdown under review in the file disagreeing with the one that ran, so it is refused.
+    A flag given ALONGSIDE a breakdown file (`--epic-title`, `--into`) wins over the file's
+    value, which is the ordinary command-line precedence."""
+    story_flags = list(getattr(args, "story", None) or [])
+    epic_title = getattr(args, "epic_title", None)
+    into = getattr(args, "into_epic", None)
+    path = getattr(args, "breakdown", None)
+    if not path:
+        return [parse_story_spec(s) for s in story_flags], epic_title, into
+    if story_flags:
+        raise ValueError("--breakdown and --story are alternatives - pass the whole breakdown "
+                         "in the file, or all of it on the command line")
+    bd = load_breakdown(path)
+    return bd["stories"], epic_title or bd["epic_title"], into or bd["into"]
 
 
 def parse_story_spec(spec: str) -> tuple[str, int, str | None]:
@@ -629,6 +802,9 @@ def refine_add(repo_root: Path | str, request_id: str, epic_title: str,
                          f"epic; `refine add` appends a further one to an already-decomposed request.")
     if not stories:
         raise ValueError("refine add needs at least one --story.")
+    if not epic_title:
+        raise ValueError("refine add needs an epic title - `--epic-title` or an `epic-title` "
+                         "key in the `--breakdown` file.")
     sdlc_md.require_single_line("epic title", epic_title)
     for title, _, _ in stories:
         sdlc_md.require_single_line("story title", title)
@@ -738,12 +914,12 @@ def cmd_show(args: argparse.Namespace) -> int:
 
 def cmd_apply(args: argparse.Namespace) -> int:
     try:
-        stories = [parse_story_spec(s) for s in (args.story or [])]
-        result = refine(args.root, args.request, args.epic_title, stories,
+        stories, epic_title, into_epic = breakdown_inputs(args)
+        result = refine(args.root, args.request, epic_title, stories,
                         questions=args.question, dry_run=args.dry_run,
                         skip_personas=getattr(args, "skip_personas", False),
                         seed_acs=getattr(args, "seed_acs", True),
-                        into_epic=getattr(args, "into_epic", None))
+                        into_epic=into_epic)
     except (ValueError, FileNotFoundError, persona_resolve.RenderError) as exc:
         print(f"refine refused: {exc}", file=sys.stderr)
         return 2
@@ -773,8 +949,13 @@ def cmd_apply(args: argparse.Namespace) -> int:
 
 def cmd_add(args: argparse.Namespace) -> int:
     try:
-        stories = [parse_story_spec(s) for s in (args.story or [])]
-        result = refine_add(args.root, args.request, args.epic_title, stories, dry_run=args.dry_run)
+        stories, epic_title, into_epic = breakdown_inputs(args)
+        if into_epic:
+            # `add` APPENDS a further epic; it has no --into, so a breakdown carrying one is
+            # describing a different command. Refused rather than silently ignored.
+            raise ValueError("`refine add` mints a further epic and takes no `into` target - "
+                             "use `refine apply --into` to decompose into an existing epic")
+        result = refine_add(args.root, args.request, epic_title, stories, dry_run=args.dry_run)
     except (ValueError, FileNotFoundError) as exc:
         print(f"refine add refused: {exc}", file=sys.stderr)
         return 2
@@ -810,6 +991,12 @@ def build_parser() -> argparse.ArgumentParser:
                         "`inherit:paths` (narrow it). A story left with no affects is seeded from "
                         "the request when it has one, else refused. Repeatable; points on the "
                         "Fibonacci scale.")
+    a.add_argument("--breakdown", metavar="FILE",
+                   help="read the whole breakdown from a JSON or YAML file instead of repeated "
+                        "--story flags: `epic-title` (or `into`) and `stories` "
+                        "(title, points, affects). The file is validated WHOLE before anything "
+                        "is minted, so a bulk refine can be reviewed as data and re-run. "
+                        "Not combinable with --story")
     a.add_argument("--question", action="append", metavar="TEXT",
                    help="an open question for the Three-Amigos consult, surfaced at apply time "
                         "and directed at the resolved seats (engineering-led). Repeatable.")
@@ -826,13 +1013,18 @@ def build_parser() -> argparse.ArgumentParser:
     ad = sub.add_parser("add", help="Append a FURTHER epic + stories to an already-decomposed "
                                     "request (a later slice of a large request)")
     ad.add_argument("--request", required=True, help="the already-decomposed RFC/CR to add to")
-    ad.add_argument("--epic-title", dest="epic_title", required=True,
-                    help="title for the new epic to append")
+    ad.add_argument("--epic-title", dest="epic_title",
+                    help="title for the new epic to append (or an `epic-title` key in the "
+                         "--breakdown file)")
     ad.add_argument("--story", action="append", metavar="TITLE|POINTS[|AFFECTS]",
                     help="a story in the new epic: 'title|points' or 'title|points|affects'. "
                          "Affects may be a path list, `inherit`, or `inherit:paths`; a story left "
                          "with none is seeded from the request when it has one, else refused. "
                          "Repeatable; points on the Fibonacci scale.")
+    ad.add_argument("--breakdown", metavar="FILE",
+                    help="read the whole breakdown from a JSON or YAML file instead of repeated "
+                         "--story flags (same shape as `apply`, without `into`); validated "
+                         "whole before anything is minted. Not combinable with --story")
     ad.add_argument("--dry-run", action="store_true", help="validate and report; mint nothing")
     ad.add_argument("--root", default=".")
     sdlc_md.add_format_arg(ad)
