@@ -26,6 +26,7 @@ verify_ac = importlib.util.module_from_spec(_spec)
 sys.modules["verify_ac"] = verify_ac
 _spec.loader.exec_module(verify_ac)
 sdlc_md = verify_ac.sdlc_md  # shared parsing helpers, via the loaded module
+from lib import run_state  # noqa: E402 - reachable once verify_ac has put scripts/ on the path
 
 
 def _quiet_main(*args, **kwargs):
@@ -1201,6 +1202,262 @@ class WriteReportMergeTests(unittest.TestCase):
             verify_ac.write_report(p, [verify_ac.StoryReport(path="US0011-x.md", ac_count=1, verified=1)])
             verify_ac.write_report(p, [verify_ac.StoryReport(path="US0012-x.md", ac_count=1, verified=1)], merge=False)
             self.assertEqual(self._keys(p), {"US0012-x"})  # --fresh path drops the prior entry
+
+
+REPORT_REL = Path("sdlc-studio") / ".local" / "verify-report.json"
+HISTORY_REL = Path("sdlc-studio") / ".local" / "verify-history.jsonl"
+
+
+def _run_quiet(argv: list[str]) -> tuple[int, str, str]:
+    """(exit, stdout, stderr) with BOTH streams captured, so a scoping run's progress and
+    diagnostic lines are asserted on rather than leaked into the suite output."""
+    out, err = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        rc = verify_ac.main(argv)
+    return rc, out.getvalue(), err.getvalue()
+
+
+def _scope_workspace(root: Path) -> Path:
+    """Four stories - three passing, one failing - so a scope can be shown to exclude both a
+    passing story and the failing one that decides the exit code."""
+    (root / "scripts").mkdir(parents=True, exist_ok=True)
+    (root / "scripts" / "repo_map.py").write_text("# marker\n", encoding="utf-8")
+    d = root / "sdlc-studio" / "stories"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "US0001-login.md").write_text(PASSING_STORY, encoding="utf-8")
+    (d / "US0002-broken.md").write_text(FAILING_STORY, encoding="utf-8")
+    (d / "US0003-search.md").write_text(BULLET_STORY, encoding="utf-8")
+    (d / "US0004-extra.md").write_text(
+        PASSING_STORY.replace("US0001", "US0004"), encoding="utf-8")
+    return root
+
+
+class _ScopeCase(unittest.TestCase):
+    """Shared fixture: one workspace of four stories per test, plus report accessors."""
+
+    def setUp(self) -> None:
+        self._td = tempfile.TemporaryDirectory(prefix="verify_ac_scope_")
+        self.root = _scope_workspace(Path(self._td.name) / "proj")
+        self.report = self.root / REPORT_REL
+
+    def tearDown(self) -> None:
+        self._td.cleanup()
+
+    def _stories(self, report: Path | None = None) -> dict:
+        p = report or self.report
+        return json.loads(p.read_text(encoding="utf-8"))["stories"]
+
+    def _keys(self, report: Path | None = None) -> set:
+        return set(self._stories(report))
+
+
+class IdListScopeTests(_ScopeCase):
+    """US0394 AC1: `--ids` scopes the run to exactly the stories named."""
+
+    def test_only_the_named_ids_run_and_an_unresolvable_id_exits_2(self) -> None:
+        # comma-separated and case-insensitive: two of four stories judged and written,
+        # and the failing story left out of scope does not decide the exit code
+        rc, _, err = _run_quiet(["run", "--root", str(self.root), "--ids", "us0001,US0003"])
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(self._keys(), {"US0001-login", "US0003-search"})
+
+        # the repeated form names the same scope
+        self.report.unlink()
+        rc, _, err = _run_quiet(["run", "--root", str(self.root),
+                                 "--ids", "US0001", "--ids", "US0003"])
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(self._keys(), {"US0001-login", "US0003-search"})
+
+        # a scope that DOES hold the failing story fails - so the exit above is a verdict
+        # over the scope, not a constant
+        rc, _, err = _run_quiet(["run", "--root", str(self.root), "--ids", "US0002"])
+        self.assertEqual(rc, 1, err)
+
+        # an id resolving to no story file is an ERROR naming it, before anything is written
+        before = self.report.read_bytes()
+        rc, _, err = _run_quiet(["run", "--root", str(self.root), "--ids", "US0001,US9999"])
+        self.assertEqual(rc, 2)
+        self.assertIn("US9999", err)
+        self.assertEqual(self.report.read_bytes(), before,
+                         "a refused scope still rewrote the report")
+
+
+class WorklistScopeTests(_ScopeCase):
+    """US0394 AC2: a tranche file is a batch source, on the planner's own tolerances."""
+
+    def test_bullets_comments_and_duplicates_resolve_to_the_named_stories(self) -> None:
+        wl = self.root / "tranche.md"
+        wl.write_text(
+            "# tranche 1 - the approved batch\n"
+            "- US0001\n"
+            "* US0003\n"
+            "US0001\n"
+            "  # US0002 was cut from this tranche\n"
+            "- US0003\n", encoding="utf-8")
+        rc, _, err = _run_quiet(["run", "--root", str(self.root), "--worklist", str(wl)])
+        self.assertEqual(rc, 0, err)
+        # the commented id is not read as a member, and the bullet forms are
+        self.assertEqual(self._keys(), {"US0001-login", "US0003-search"})
+        # de-duplicated: each story was verified ONCE, not once per mention
+        lines = [json.loads(ln) for ln
+                 in (self.root / HISTORY_REL).read_text(encoding="utf-8").splitlines() if ln]
+        self.assertEqual([ln["story"] for ln in lines], ["US0001-login", "US0003-search"])
+
+
+class RunStateScopeTests(_ScopeCase):
+    """US0394 AC3: the open run's approved batch is the scope, and no run is a refusal."""
+
+    def test_batch_stories_run_and_no_open_run_exits_2(self) -> None:
+        run_state.open_run(self.root, batch=["US0001", "BG0007", "US0003"], goal="scope test")
+        rc, _, err = _run_quiet(["run", "--root", str(self.root), "--from-run"])
+        self.assertEqual(rc, 0, err)
+        # the story units of the batch, and no others - the bug id is not a story
+        self.assertEqual(self._keys(), {"US0001-login", "US0003-search"})
+
+        before = self.report.read_bytes()
+
+        # an OPEN run whose batch holds no story either - the fallback is the same nine
+        # minutes whichever way the scope comes out empty
+        run_state.path(self.root).unlink()
+        run_state.open_run(self.root, batch=["BG0007"], goal="bugs only")
+        rc, _, err = _run_quiet(["run", "--root", str(self.root), "--from-run"])
+        self.assertEqual(rc, 2, err)
+        self.assertEqual(self.report.read_bytes(), before,
+                         "an empty batch fell back to a whole-workspace run")
+
+        # with no run open there is no batch, and a whole-workspace fallback is exactly the
+        # cost the flag exists to avoid - so it refuses instead
+        run_state.path(self.root).unlink()
+        rc, _, err = _run_quiet(["run", "--root", str(self.root), "--from-run"])
+        self.assertEqual(rc, 2)
+        self.assertIn("no run", err.lower())
+        self.assertEqual(self.report.read_bytes(), before,
+                         "a refused --from-run fell back to a whole-workspace run")
+
+
+class ScopedReportMergeTests(_ScopeCase):
+    """US0395 AC1: a scoped run leaves every out-of-scope entry exactly as it found it."""
+
+    def test_out_of_scope_entries_including_verified_at_are_untouched(self) -> None:
+        rc, _, err = _run_quiet(["run", "--root", str(self.root)])
+        self.assertEqual(rc, 1, err)  # the whole workspace, including the failing story
+
+        # Stamp every entry with its OWN distinguishable freshness fields. Re-running inside
+        # the same second would otherwise produce an identical `verified_at`, and a run that
+        # re-stamped the whole merged report would pass unnoticed.
+        data = json.loads(self.report.read_text(encoding="utf-8"))
+        for key, entry in data["stories"].items():
+            entry["verified_at"] = "2020-01-01T00:00:00Z"
+            entry["ac_fingerprint"] = f"sentinel-{key}"
+        self.report.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        before = json.loads(self.report.read_text(encoding="utf-8"))["stories"]
+
+        rc, _, err = _run_quiet(["run", "--root", str(self.root), "--ids", "US0001,US0003"])
+        self.assertEqual(rc, 0, err)
+        after = self._stories()
+
+        self.assertEqual(set(after), set(before), "a scoped run dropped an entry")
+        for key in ("US0002-broken", "US0004-extra"):
+            self.assertEqual(after[key], before[key],
+                             f"the out-of-scope entry {key} was rewritten")
+            self.assertEqual(after[key]["verified_at"], "2020-01-01T00:00:00Z",
+                             f"{key} was re-stamped fresh without being verified")
+            self.assertEqual(after[key]["ac_fingerprint"], f"sentinel-{key}")
+        # and the in-scope entries DID move on, so the assertions above are not vacuous
+        for key in ("US0001-login", "US0003-search"):
+            self.assertNotEqual(after[key]["verified_at"], "2020-01-01T00:00:00Z",
+                                f"{key} was in scope but kept the stale stamp")
+            self.assertNotEqual(after[key]["ac_fingerprint"], f"sentinel-{key}")
+
+
+class ScopedUnscopedEquivalenceTests(unittest.TestCase):
+    """US0395 AC2: the scope decides WHICH stories are judged, never HOW one is judged."""
+
+    @staticmethod
+    def _timeless(entry: dict) -> dict:
+        """The entry with its two WALL-CLOCK fields dropped and everything else kept.
+
+        `verified_at` is when the run happened and `duration_ms` is how long a verifier
+        took; neither is part of the verdict, and both differ between two runs of identical
+        work. Every judgement field - the counts, the passed list, the failure records with
+        their exit codes and stderr, the flips, the fingerprint - is compared.
+        """
+        out = {k: v for k, v in entry.items() if k != "verified_at"}
+        out["failures"] = [{k: v for k, v in f.items() if k != "duration_ms"}
+                           for f in out.get("failures", [])]
+        return out
+
+    def test_shared_story_entries_and_exit_are_identical_under_both_scopes(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="verify_ac_equiv_") as d:
+            # three identical copies - each run must start from the same story state, since
+            # an apply run rewrites the Verified: lines it flips
+            wide = _scope_workspace(Path(d) / "wide")
+            narrow = _scope_workspace(Path(d) / "narrow")
+            passing = _scope_workspace(Path(d) / "passing")
+
+            rc_wide, _, err = _run_quiet(["run", "--root", str(wide)])
+            self.assertEqual(rc_wide, 1, err)
+            rc_narrow, _, err = _run_quiet(["run", "--root", str(narrow),
+                                            "--ids", "US0001,US0002"])
+            w = json.loads((wide / REPORT_REL).read_text(encoding="utf-8"))["stories"]
+            n = json.loads((narrow / REPORT_REL).read_text(encoding="utf-8"))["stories"]
+
+            self.assertEqual(set(n), {"US0001-login", "US0002-broken"})
+            for key in n:
+                self.assertEqual(self._timeless(n[key]), self._timeless(w[key]),
+                                 f"the scope changed how {key} was judged")
+
+            # the exit is the verdict over the stories in scope - derived from the values the
+            # wide run recorded for them, not from a status string
+            expected = 1 if any(w[k]["failed"] for k in n) else 0
+            self.assertEqual(rc_narrow, expected)
+
+            # a scope holding no failing story exits 0 while the wide run over the same
+            # workspace exits 1, so the equality above cannot be met by a constant
+            rc_pass, _, err = _run_quiet(["run", "--root", str(passing),
+                                          "--ids", "US0001,US0003"])
+            p = json.loads((passing / REPORT_REL).read_text(encoding="utf-8"))["stories"]
+            self.assertEqual(rc_pass, 0 if not any(w[k]["failed"] for k in p) else 1, err)
+            self.assertEqual(rc_pass, 0)
+            for key in p:
+                self.assertEqual(self._timeless(p[key]), self._timeless(w[key]),
+                                 f"the scope changed how {key} was judged")
+
+
+class ScopedFreshRefusalTests(_ScopeCase):
+    """US0395 AC3: a rebuild combined with a scope would blank every out-of-scope verdict."""
+
+    def test_fresh_with_a_scope_exits_2_and_writes_nothing(self) -> None:
+        rc, _, err = _run_quiet(["run", "--root", str(self.root)])
+        self.assertEqual(rc, 1, err)
+        # an entry only a rebuild can remove, so "the report is unchanged" has teeth and the
+        # unscoped --fresh below is proved still to rebuild
+        data = json.loads(self.report.read_text(encoding="utf-8"))
+        data["stories"]["US9999-retired"] = {"ac_count": 1, "verified": 1, "failed": 0,
+                                             "verified_at": "2020-01-01T00:00:00Z",
+                                             "ac_fingerprint": "sentinel-retired"}
+        self.report.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        before = self.report.read_bytes()
+
+        wl = self.root / "tranche.md"
+        wl.write_text("- US0001\n", encoding="utf-8")
+        run_state.open_run(self.root, batch=["US0001"], goal="scope test")
+
+        for scope in (["--ids", "US0001"], ["--worklist", str(wl)], ["--from-run"]):
+            rc, out, err = _run_quiet(["run", "--root", str(self.root), "--fresh", *scope])
+            self.assertEqual(rc, 2, f"{scope} + --fresh was not refused")
+            self.assertIn("--fresh", err)
+            self.assertIn(scope[0], err, "the refusal did not name the scope flag passed")
+            # both ways forward, named
+            self.assertIn("drop the scope", err.lower())
+            self.assertIn("drop --fresh", err.lower())
+            self.assertEqual(self.report.read_bytes(), before,
+                             f"{scope} + --fresh wrote the report anyway")
+
+        # the guard is scoped, not a blanket ban: an UNSCOPED --fresh still rebuilds
+        rc, _, err = _run_quiet(["run", "--root", str(self.root), "--fresh"])
+        self.assertEqual(rc, 1, err)
+        self.assertNotIn("US9999-retired", self._keys())
 
 
 class ScaffoldMatrixTests(unittest.TestCase):

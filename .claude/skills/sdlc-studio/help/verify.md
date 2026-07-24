@@ -27,6 +27,9 @@ with mechanical, repeatable verification against the live codebase.
 /sdlc-studio reconcile --verify                       # All stories, apply mode
 /sdlc-studio reconcile --verify --dry-run             # Preview, no writes
 /sdlc-studio reconcile --verify --story US0001        # Single story
+/sdlc-studio reconcile --verify --ids US0001,US0003   # Just these stories, one process
+/sdlc-studio reconcile --verify --worklist tranche.md # The ids a tranche file names
+/sdlc-studio reconcile --verify --from-run            # The open run's approved batch
 /sdlc-studio reconcile --verify --scope verify        # Reconcile scoped to verify
 /sdlc-studio reconcile --verify --timeout 300         # Raise per-verifier timeout
 /sdlc-studio reconcile --verify report                # Print the latest report
@@ -84,6 +87,28 @@ wrote sdlc-studio/.local/verify-report.json
 
 The `[APL]` prefix means apply mode; `[DRY]` means dry run.
 
+**Scoping the run to a batch.** A whole-workspace run re-executes every acceptance
+criterion in the project, which on a large workspace costs minutes the sprint did not
+need to spend. The selectors are mutually exclusive - one of `--story`, `--id`, `--ids`,
+`--worklist` or `--from-run`:
+
+```text
+--ids US0001,US0003     explicit list; repeatable (--ids US0001 --ids US0003)
+--worklist tranche.md   one id per line; bullets and `#` comments tolerated
+--from-run              the story units of the open run's approved batch
+```
+
+Every form runs in ONE process. An id that resolves to no story file is an error (exit 2)
+naming the id, never a skip a completion gate would read as green; `--from-run` with no run
+open refuses rather than falling back to the whole workspace. Non-story ids in a worklist or
+a run batch are dropped and reported. Scoped runs MERGE into the report, so out-of-scope
+verdicts (and their freshness fields) survive untouched, and a shared story gets the same
+verdict it would have got from the whole-workspace run.
+
+`--fresh` rebuilds the report from the run alone. Combined with a scope that would delete
+every verdict outside it, so the combination is refused (exit 2, nothing written): drop the
+scope to rebuild the whole report, or drop `--fresh` so the scoped run merges into it.
+
 ### report
 
 Prints the latest verification report in text or JSON. Reads
@@ -114,6 +139,11 @@ total: pass=7 fail=1 manual=0
 | --- | --- | --- |
 | `--dir <path>` | Stories directory | sdlc-studio/stories |
 | `--story <path>` | Single story file (overrides `--dir`) | none |
+| `--id <id>` | Single story by id, resolved under `--dir` | none |
+| `--ids <a,b>` | Scope to these story ids (comma-separated, repeatable) | none |
+| `--worklist <path>` | Scope to the ids a tranche file names | none |
+| `--from-run` | Scope to the open run's approved batch | false |
+| `--fresh` | Rebuild the report from this run only (refused with a scope) | false |
 | `--dry-run` | Do not modify story files | false |
 | `--timeout <n>` | Per-verifier timeout in seconds | 120 |
 | `--report <path>` | Report output path | sdlc-studio/.local/verify-report.json |

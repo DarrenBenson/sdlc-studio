@@ -50,7 +50,7 @@ from typing import Iterable
 from urllib.parse import urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import sdlc_md  # noqa: E402
+from lib import run_state, sdlc_md  # noqa: E402
 
 # -----------------------------------------------------------------------------
 # AC parsing (regexes live in the shared lib; aliased here for local use)
@@ -1227,11 +1227,117 @@ resolve_root = sdlc_md.resolve_root
 _ROOT_MARKERS = sdlc_md.ROOT_MARKERS
 
 
+def worklist_ids(path: Path | str) -> list[str]:
+    """The artifact ids a worklist/tranche file names, in file order, de-duplicated.
+
+    Deliberately the SAME tolerances as the sprint planner's tranche reader - markdown
+    bullets are stripped, a `#` comment or heading line is skipped, a repeated id is one
+    member - so one file can drive both and neither reads a batch the other cannot.
+    """
+    out: list[str] = []
+    # An unreadable worklist RAISES rather than degrading to an empty batch: the caller named
+    # this file, and reading it as empty would silently narrow the batch it approved.
+    text = Path(path).read_text(encoding="utf-8")  # bare-read-ok: an operator-named batch
+    # source, not an artefact body - a silent empty read would narrow the approved batch
+    for line in text.splitlines():
+        line = line.strip().lstrip("-*").strip()
+        if not line or line.startswith("#"):
+            continue
+        m = sdlc_md.ID_SEARCH_RE.search(line)
+        if m:
+            out.append(sdlc_md.norm_id(m.group(0)))
+    return list(dict.fromkeys(out))
+
+
+def scope_flag(args: argparse.Namespace) -> str:
+    """The batch-scope flag the caller passed, or "" for a whole-workspace run.
+
+    `--story`/`--id` are NOT scopes in this sense: they name one story and predate the
+    batch forms, which is why they are excluded here and left exactly as they were.
+    """
+    if getattr(args, "ids", None):
+        return "--ids"
+    if getattr(args, "worklist", None):
+        return "--worklist"
+    if getattr(args, "from_run", False):
+        return "--from-run"
+    return ""
+
+
+def _scope_ids(args: argparse.Namespace, repo_root: Path) -> tuple[list[str], str | None]:
+    """(normalised ids the scope names, refusal). The refusal is a message, not an
+    exception, so the caller returns exit 2 having written nothing."""
+    flag = scope_flag(args)
+    if flag == "--ids":
+        wanted: list[str] = []
+        for chunk in args.ids:
+            wanted += [tok for tok in re.split(r"[,\s]+", chunk) if tok]
+        return list(dict.fromkeys(sdlc_md.norm_id(w) for w in wanted)), None
+    if flag == "--worklist":
+        p = under_root(repo_root, args.worklist)
+        if not p.is_file():
+            return [], f"no worklist file at {p}"
+        return worklist_ids(p), None
+    if not run_state.is_open(repo_root):
+        return [], ("no run is open, so --from-run has no approved batch to scope to. Open "
+                    "one (`sprint plan --write`), or name the batch with --ids/--worklist")
+    return list(dict.fromkeys(
+        sdlc_md.norm_id(b) for b in (run_state.read(repo_root).get("batch") or []))), None
+
+
+def _scoped_paths(args: argparse.Namespace, repo_root: Path) -> tuple[list[Path], str | None]:
+    """Resolve a scope to story files under `--dir`, or a refusal message.
+
+    An id resolving to nothing REFUSES: a silent skip is read by the completion gate as
+    "that story had nothing to fail". A batch source that legitimately carries other unit
+    types (`--worklist`, `--from-run`) has its non-story ids dropped and SAID so; ids typed
+    by hand into `--ids` are taken literally, so a bug id there is an unresolved story.
+    """
+    flag = scope_flag(args)
+    ids, refusal = _scope_ids(args, repo_root)
+    if refusal:
+        return [], refusal
+    if flag != "--ids":
+        stories = [i for i in ids if i.startswith("US")]
+        skipped = len(ids) - len(stories)
+        if skipped:
+            print(f"{flag}: {skipped} non-story id(s) skipped - `run` verifies stories",
+                  file=sys.stderr)
+        ids = stories
+    by_id: dict[str, Path] = {}
+    for p in walk_stories(under_root(repo_root, args.dir)):
+        by_id.setdefault(sdlc_md.norm_id(sdlc_md.extract_record_id(p.stem) or ""), p)
+    missing = [i for i in ids if i not in by_id]
+    if missing:
+        return [], (f"{flag} names {len(missing)} id(s) with no story file under "
+                    f"{args.dir}: {', '.join(missing)}")
+    if not ids:
+        return [], (f"{flag} resolved to no stories - refusing to fall back to a "
+                    f"whole-workspace run, which is the cost a scope exists to avoid")
+    return [by_id[i] for i in ids], None
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     """Run verifiers across stories, update files, and write the report."""
     repo_root = resolve_root(args)
 
-    if args.story:
+    flag = scope_flag(args)
+    if flag and getattr(args, "fresh", False):
+        # A rebuild keeps only THIS run's entries. Scoped, that silently deletes every
+        # verdict outside the scope - including the freshness fields the completion gate
+        # reads - and the loss is invisible until a gate reports a green story unverified.
+        # Refused before any work, so the report on disk is byte-identical afterwards.
+        print(f"error: --fresh with {flag} would rebuild the report from the scope alone, "
+              f"discarding every verdict outside it. Drop the scope to rebuild the whole "
+              f"report, or drop --fresh so the scoped run merges into it.", file=sys.stderr)
+        return 2
+
+    if flag:
+        paths, refusal = _scoped_paths(args, repo_root)
+        if refusal:
+            print(f"error: {refusal}", file=sys.stderr)
+            return 2
+    elif args.story:
         paths = [Path(args.story)]
         if not paths[0].exists():
             # The natural first invocation passes a story ID here (the flag is named
@@ -1732,10 +1838,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     r = sub.add_parser("run", help="Run verifiers and update story files")
     r.add_argument("--dir", default="sdlc-studio/stories", help="Stories directory")
-    r.add_argument("--story", "--file", dest="story",
-                   help="Single story file - or a story ID (an id-shaped value that is "
-                        "not a real path resolves under --dir)")
-    r.add_argument("--id", help="Single story by id, e.g. US0001 (resolved under --dir)")
+    # One selector at a time. The batch forms below verify a sprint's units in ONE process
+    # instead of a whole-workspace run or one invocation per story.
+    sel = r.add_mutually_exclusive_group()
+    sel.add_argument("--story", "--file", dest="story",
+                     help="Single story file - or a story ID (an id-shaped value that is "
+                          "not a real path resolves under --dir)")
+    sel.add_argument("--id", help="Single story by id, e.g. US0001 (resolved under --dir)")
+    sel.add_argument("--ids", action="append", metavar="US0001,US0003",
+                     help="Scope the run to these story ids (comma-separated, repeatable, "
+                          "case-insensitive); an id with no story file is an error")
+    sel.add_argument("--worklist", metavar="PATH",
+                     help="Scope the run to the ids a worklist/tranche file names (markdown "
+                          "bullets and `#` comment lines tolerated, repeats de-duplicated)")
+    sel.add_argument("--from-run", dest="from_run", action="store_true",
+                     help="Scope the run to the story units of the open run's approved "
+                          "batch; refuses when no run is open")
     r.add_argument("--dry-run", action="store_true", help="Do not modify story files")
     r.add_argument("--fresh", action="store_true",
                    help="rebuild the report from this run only (default merges into it)")
