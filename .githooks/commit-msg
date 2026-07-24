@@ -1,90 +1,249 @@
 #!/usr/bin/env bash
-# SDLC Studio commit-msg gate (opt-in).
+# SDLC Studio commit-msg gate (opt-in). Two jobs, in this order:
 #
-# REFUSES a commit whose subject names more than one work-item id (US/BG/CR) without a
-# `Refs: <id>` trailer per owning id. Such a shared commit is skipped by the engagement
-# floor's git leg - it cannot attribute a file to one id among several - so an understated
-# `Affects` would go uncaught. The refusal is cheap to satisfy: the hook prints the exact
-# trailer lines to paste. The cost of enforcing is one retry; the cost of not enforcing is
-# an unattributable commit the floor cannot check.
+#   1. the commit-MESSAGE rules, checked in milliseconds;
+#   2. the expensive unit suites, deferred here from pre-commit.
+#
+# The order is the point. Git invokes pre-commit BEFORE the commit message exists, so no
+# arrangement of lanes inside that hook could put the message rules ahead of a 2.5-minute
+# test run: a one-line subject defect was refused only after the whole gate had been paid
+# for, and then paid for again on the retry. Two full suite runs for a fault knowable
+# before anything executed, which is what teaches an author to reach for --no-verify. The
+# suites therefore run here, behind the message check, and a refused message costs neither.
+#
+# 1. THE MESSAGE RULES. REFUSES a commit whose subject names more than one work-item id
+# (US/BG/CR) without a `Refs: <id>` trailer per owning id. Such a shared commit is skipped
+# by the engagement floor's git leg - it cannot attribute a file to one id among several -
+# so an understated `Affects` would go uncaught. The refusal is cheap to satisfy: the hook
+# prints the exact trailer lines to paste. The cost of enforcing is one retry; the cost of
+# not enforcing is an unattributable commit the floor cannot check.
 #
 # It used to print that reasoning and then exit 0, letting the commit land without the
 # trailer - a guard that named the hole it was leaving, and left it. Now the behaviour
 # matches the words.
 #
-# Opt-in: it runs only in a clone that has enabled the tracked hooks
-#   (bash tools/enable-hooks.sh -> core.hooksPath=.githooks). It is NEVER forced on a
-#   consuming project.
 # Deliberately allowed through:
 #   - a subject naming exactly ONE id (attribution is unambiguous - nothing to disambiguate)
 #   - a merge, revert, cherry-pick, rebase replay, fixup!/squash!/amend! - git wrote or
 #     replayed that message, the author cannot restructure it, and the work it records was
 #     gated on its original commit
-# Degrades honestly: with no python3, no script, or an unreadable message it exits 0 and
-#   never blocks a legitimate commit.
+# Degrades honestly: with no python3, no script, or an unreadable message the check is
+#   skipped and never blocks a legitimate commit.
+#
+# 2. THE UNIT SUITES. Run only when pre-commit selected them and left its handover record.
+# Every exemption above releases the MESSAGE check alone - a conflicted merge resolved by
+# hand still runs pre-commit, so it still pays for the suites exactly as it did before, and
+# a plain `git merge` (which runs this hook but not pre-commit) still pays for nothing.
+#
+# Opt-in: both jobs run only in a clone that has enabled the tracked hooks
+#   (bash tools/enable-hooks.sh -> core.hooksPath=.githooks). Never forced on a consuming
+#   project.
 # The one escape is the repo's usual one: git commit --no-verify. There is no second bypass.
 set -uo pipefail
 
 msg_file="${1:-}"
-[ -n "$msg_file" ] || exit 0
-[ -r "$msg_file" ] || exit 0
+# Absolute before anything changes directory. Git runs hooks from the top of the working
+# tree and may hand over a path relative to it, and this hook now cds to the repo root so
+# the suite lanes below resolve `tools/...` the same way pre-commit does.
+case "$msg_file" in "" | /*) ;; *) msg_file="$PWD/$msg_file" ;; esac
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 git_dir="$(git rev-parse --absolute-git-dir 2>/dev/null)" || exit 0
-script="$repo_root/.claude/skills/sdlc-studio/scripts/engagement_floor.py"
+cd "$repo_root" || exit 0
+skill=".claude/skills/sdlc-studio/scripts"
+script="$repo_root/$skill/engagement_floor.py"
 
-command -v python3 >/dev/null 2>&1 || exit 0
-[ -f "$script" ] || exit 0
+# Colour only when writing to a terminal.
+if [ -t 1 ]; then R=$'\033[31m'; G=$'\033[32m'; Y=$'\033[33m'; B=$'\033[1m'; N=$'\033[0m'; else R=; G=; Y=; B=; N=; fi
+
+# ---------------------------------------------------------------------------
+# 1. The commit-message rules.
+# ---------------------------------------------------------------------------
+check_message=1
+{ [ -n "$msg_file" ] && [ -r "$msg_file" ]; } || check_message=0
+command -v python3 >/dev/null 2>&1 || check_message=0
+[ -f "$script" ] || check_message=0
 
 # A machine-written or replayed message: git is mid-merge / mid-revert / mid-cherry-pick /
 # mid-rebase. Refusing here would break `git merge` and `git revert` on a subject that
 # happens to name several ids, and nobody could satisfy the refusal anyway.
 for marker in MERGE_HEAD REVERT_HEAD CHERRY_PICK_HEAD rebase-merge rebase-apply; do
-  [ -e "$git_dir/$marker" ] && exit 0
+  [ -e "$git_dir/$marker" ] && check_message=0
 done
 
-# The subject: the first line that is neither blank nor git scaffolding (`#`).
-subject="$(grep -m1 -v -e '^[[:space:]]*#' -e '^[[:space:]]*$' "$msg_file" || true)"
-case "$subject" in
-  # Same reasoning as the markers above, for the cases that carry no marker: a merge or
-  # revert message git generated, and an autosquash instruction whose final message is the
-  # target commit's (which was itself gated).
-  "Merge "*|"Revert "*|"fixup! "*|"squash! "*|"amend! "*) exit 0 ;;
-esac
-
-# The decision is the script's (single source of the id grammar). --strict makes it exit
-# non-zero on a finding; a parse/read failure inside it still exits 0, so a message the
-# script cannot understand never blocks.
-if out="$(python3 "$script" check-commit-msg --strict "$msg_file" 2>&1)"; then
-  exit 0
+if [ "$check_message" -eq 1 ]; then
+  # The subject: the first line that is neither blank nor git scaffolding (`#`).
+  subject="$(grep -m1 -v -e '^[[:space:]]*#' -e '^[[:space:]]*$' "$msg_file" || true)"
+  case "$subject" in
+    # Same reasoning as the markers above, for the cases that carry no marker: a merge or
+    # revert message git generated, and an autosquash instruction whose final message is
+    # the target commit's (which was itself gated).
+    "Merge "*|"Revert "*|"fixup! "*|"squash! "*|"amend! "*) check_message=0 ;;
+  esac
 fi
 
-if [ -t 2 ]; then R=$'\033[31m'; Y=$'\033[33m'; B=$'\033[1m'; N=$'\033[0m'; else R=; Y=; B=; N=; fi
+msg_rc=0
+if [ "$check_message" -eq 1 ]; then
+  # The decision is the script's (single source of the id grammar). --strict makes it exit
+  # non-zero on a finding; a parse/read failure inside it still exits 0, so a message the
+  # script cannot understand never blocks.
+  msg_out="$(python3 "$script" check-commit-msg --strict "$msg_file" 2>&1)" || msg_rc=1
+fi
 
-# Paste-ready trailers for the ids the subject names but no `Refs:` line covers. Ids are
-# normalised (CR-0257 -> CR0257) on both sides so a dashed spelling does not read as a gap.
-ids() { grep -oE '(US|BG|CR)-?[0-9]{4}' | tr -d '-' | sort -u; }
-named="$(printf '%s\n' "$subject" | ids)"
-covered="$(grep -iE '^[[:space:]]*Refs:' "$msg_file" | ids)"
-uncovered="$(comm -23 <(printf '%s\n' "$named") <(printf '%s\n' "$covered"))"
+if [ "$msg_rc" -ne 0 ]; then
+  # Paste-ready trailers for the ids the subject names but no `Refs:` line covers. Ids are
+  # normalised (CR-0257 -> CR0257) on both sides so a dashed spelling does not read as a gap.
+  ids() { grep -oE '(US|BG|CR)-?[0-9]{4}' | tr -d '-' | sort -u; }
+  named="$(printf '%s\n' "$subject" | ids)"
+  covered="$(grep -iE '^[[:space:]]*Refs:' "$msg_file" | ids)"
+  uncovered="$(comm -23 <(printf '%s\n' "$named") <(printf '%s\n' "$covered"))"
+  {
+    printf '%sCommit refused.%s %scommit-msg: multi-id subject with no Refs: trailer%s\n' \
+      "$R" "$N" "$B" "$N"
+    printf '  enforces: a subject naming two or more work-item ids carries a `Refs: <id>` trailer\n'
+    printf '            per owning id, so the engagement floor can attribute this commit files\n'
+    printf '            per id (a shared commit with no trailer is skipped, and an understated\n'
+    printf '            Affects then goes uncaught).\n'
+    printf '  %s- detail -%s\n' "$Y" "$N"
+    printf '%s\n' "$msg_out" | grep -v 'blocked by strict mode' | sed 's/^/    /'
+    printf '  %s-> fix:%s add these lines to the message body (after a blank line), then commit again:\n\n' \
+      "$B" "$N"
+    if [ -n "$uncovered" ]; then
+      printf '%s\n' "$uncovered" | sed 's/^/      Refs: /'
+    else
+      printf '      Refs: <id>   # one line per id the subject names\n'
+    fi
+    printf '\n  A subject naming a single id needs no trailer.\n'
+    printf '  The unit suites did NOT run: this refusal cost seconds, not a full gate.\n'
+    printf '  Genuine emergency only: %sgit commit --no-verify%s\n' "$B" "$N"
+  } >&2
+  # Left where it is: the retry runs pre-commit again, which rewrites the record from the
+  # index as it stands then.
+  exit 1
+fi
 
-{
-  printf '%sCommit refused.%s %scommit-msg: multi-id subject with no Refs: trailer%s\n' \
-    "$R" "$N" "$B" "$N"
-  printf '  enforces: a subject naming two or more work-item ids carries a `Refs: <id>` trailer\n'
-  printf '            per owning id, so the engagement floor can attribute this commit files\n'
-  printf '            per id (a shared commit with no trailer is skipped, and an understated\n'
-  printf '            Affects then goes uncaught).\n'
-  printf '  %s- detail -%s\n' "$Y" "$N"
-  printf '%s\n' "$out" | grep -v 'blocked by strict mode' | sed 's/^/    /'
-  printf '  %s-> fix:%s add these lines to the message body (after a blank line), then commit again:\n\n' \
-    "$B" "$N"
-  if [ -n "$uncovered" ]; then
-    printf '%s\n' "$uncovered" | sed 's/^/      Refs: /'
-  else
-    printf '      Refs: <id>   # one line per id the subject names\n'
+# ---------------------------------------------------------------------------
+# 2. The unit suites, if pre-commit selected them.
+# ---------------------------------------------------------------------------
+# The handover record, and the only thing that selects these lanes. Deliberately NOT an
+# exported environment latch: the tool-tests lane below runs this repo's own hook tests,
+# whose fixtures make real commits in their own throwaway repos, and a latch would be
+# inherited by every one of them - measured, and it silently reduced each fixture commit
+# to its cheap half. The record is per git directory instead, so a fixture repo's gate is
+# selected by its own pre-commit and this run cannot suppress it.
+handoff="$(git rev-parse --git-path sdlc-gate-suites 2>/dev/null || true)"
+[ -n "$handoff" ] || handoff="$git_dir/sdlc-gate-suites"
+[ -r "$handoff" ] || exit 0
+precommit_seconds="$(sed -n 's/^precommit_seconds=\([0-9][0-9]*\)$/\1/p' "$handoff" | tail -1)"
+# One-shot: read once, then gone. A record that outlived its commit would charge the next
+# commit-msg-only operation for a suite run nobody asked for.
+rm -f "$handoff" 2>/dev/null
+command -v python3 >/dev/null 2>&1 || exit 0
+
+fail=0
+
+# run KEY  "what it enforces"  "how to fix"  -- command...
+run() {
+  local key="$1" what="$2" fixhint="$3"; shift 3
+  [ "$1" = "--" ] && shift
+  local out
+  # Stashed for the caller on BOTH paths: the budget lane needs to know how many tests
+  # actually ran, which is only knowable from the output of a run that passed as well as
+  # one that failed.
+  if out="$("$@" 2>&1)"; then
+    last_run_out="$out"
+    printf '  %sok%s   %s\n' "$G" "$N" "$key"
+    return 0
   fi
-  printf '\n  A subject naming a single id needs no trailer.\n'
-  printf '  Genuine emergency only: %sgit commit --no-verify%s\n' "$B" "$N"
-} >&2
-exit 1
+  last_run_out="$out"
+  fail=1
+  printf '  %sFAIL%s %s%s%s\n' "$R" "$N" "$B" "$key" "$N"
+  printf '       enforces: %s\n' "$what"
+  if [ -n "$out" ]; then
+    printf '       %s─ details ─%s\n' "$Y" "$N"
+    printf '%s\n' "$out" | sed 's/^/         /'
+  fi
+  printf '       %s→ fix:%s %s\n\n' "$B" "$N" "$fixhint"
+}
+
+# Announce the cost before paying it: an unannounced long run exceeds common tool
+# timeouts, so the commit looks hung and gets killed or bypassed.
+for suite in skill-tests tool-tests; do
+  est="$(python3 tools/gate_timing.py estimate --suite "$suite" --warn-seconds 30 2>/dev/null)"
+  [ -n "$est" ] && printf '  %snote%s %s\n' "$Y" "$N" "$est"
+done
+
+# One run of the suite, held to two standards: every test passes, AND a passing run is
+# silent (an expected diagnostic from a bad-fixture test must be captured and asserted on,
+# not leaked to the console, or a real error hides in the noise). Both read the same run -
+# a guard paid for on every commit has to be cheap, or it gets disabled and guards nothing.
+t0=$SECONDS
+run "skill-tests" \
+  "every shipped skill script unit test passes, and a green run prints no stray diagnostics" \
+  "fix the code or the test named above; re-run: bash tools/skill-tests.sh" \
+  -- bash tools/skill-tests.sh "$skill"
+python3 tools/gate_timing.py record --suite skill-tests --seconds "$((SECONDS - t0))" 2>/dev/null
+suite_tests=$(printf '%s\n' "$last_run_out" | sed -n 's/^Ran \([0-9]*\) tests\{0,1\} in .*/\1/p' | tail -1)
+printf '%s\n' "$last_run_out" | grep -q '_FailedTest' && loader_error=1
+t0=$SECONDS
+# Scrubbed exactly as tools/skill-tests.sh scrubs its own suite, and for the same reason:
+# a hook invoked by `git commit -a` is handed GIT_INDEX_FILE pointing at the OUTER repo's
+# .git/index.lock, and any test that shells out to git then writes THIS repo's pending
+# commit instead of its own fixture's. That protection existed only for the skill suite;
+# this lane ran unscrubbed, and it takes just one tools/ test that builds a git fixture to
+# turn a commit into a clobbered index. Found by the adversarial review of RUN-01KY1WCR,
+# which reproduced the clobber on three victim repos.
+run "tool-tests" \
+  "every repo-only tools/ checker unit test passes" \
+  "fix the code or the test named in the failure above; re-run: python3 -m unittest discover -s tools/tests" \
+  -- /usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
+     -u GIT_INDEX_VERSION -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
+     -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
+     -u GIT_PREFIX python3 -m unittest discover -s tools/tests
+python3 tools/gate_timing.py record --suite tool-tests --seconds "$((SECONDS - t0))" 2>/dev/null
+tool_tests=$(printf '%s\n' "$last_run_out" | sed -n 's/^Ran \([0-9]*\) tests\{0,1\} in .*/\1/p' | tail -1)
+printf '%s\n' "$last_run_out" | grep -q '_FailedTest' && loader_error=1
+# Both lanes together are what a code commit pays for, so the scope check reads their sum.
+suite_tests=$(( ${suite_tests:-0} + ${tool_tests:-0} ))
+
+# What this commit actually cost, end to end, and how that sits against the declared budget
+# (RFC0048 D6). The total is pre-commit's share plus this hook's, so it still measures the
+# WHOLE gate: recording only the half that runs last would quietly redefine the series the
+# budget reads, in the direction that hides a ratchet.
+#
+# Only recorded when the unit suites actually ran, which is exactly when this block is
+# reached. Recording every commit put 9-14s docs-only and early-failed runs into the same
+# series, and because the budget reads the LATEST run rather than a median, one docs commit
+# made the next report say "-85% since" - the gate had not got faster, it had just not run.
+#
+# A BLOCKED commit is still recorded - the expensive lanes were paid for whatever the
+# verdict - which is why this sits before the exit, not after it.
+#
+# But "the lane was invoked" is not "the lane ran its scope" (BG0239). A commit where a
+# module failed to import took this branch too, recording 73s against a 99s baseline: a
+# broken suite reading as a 26% improvement, the same magnitude as the ratchet the lane
+# exists to expose, in the opposite direction. `scope` answers that from the test COUNT and
+# from whether any module failed to load - never from the duration, since judging duration
+# by duration history would have thrown away the genuine 196.7s -> 99s improvement as
+# implausible.
+total_seconds=$(( ${precommit_seconds:-0} + SECONDS ))
+scope_args="--suite total --tests ${suite_tests:-0}"
+[ "${loader_error:-0}" -eq 1 ] && scope_args="$scope_args --loader-error"
+# shellcheck disable=SC2086
+if scope_note="$(python3 tools/gate_timing.py scope $scope_args 2>/dev/null)"; then
+  python3 tools/gate_timing.py record --suite total --seconds "$total_seconds" 2>/dev/null
+  budget_line="$(python3 tools/gate_timing.py budget 2>/dev/null)"
+  [ -n "$budget_line" ] && printf '  %s%s%s\n' "$Y" "$budget_line" "$N"
+else
+  # Said out loud, never silent: a skipped recording that looks like a normal commit is how
+  # the series quietly stops meaning anything.
+  [ -n "$scope_note" ] && printf '  %s%s%s\n' "$Y" "$scope_note" "$N"
+fi
+
+if [ "$fail" -ne 0 ]; then
+  printf '\n%sCommit blocked.%s Fix the failures above (each lists how), then commit again.\n' "$R" "$N"
+  printf 'Genuine emergency only: %sgit commit --no-verify%s\n' "$B" "$N"
+  exit 1
+fi
+printf '%sgate green.%s\n' "$G" "$N"
+exit 0

@@ -80,9 +80,15 @@ class BudgetRecordingTests(unittest.TestCase):
         (root / ".claude" / "skills" / "sdlc-studio" / "scripts").mkdir(parents=True)
         (root / "node_modules" / ".bin").mkdir(parents=True)
 
-        hook = root / ".githooks" / "pre-commit"
-        hook.write_text(HOOK.read_text(encoding="utf-8"), encoding="utf-8")
-        hook.chmod(0o755)
+        # BOTH tracked hooks. The suites, the scope judgement and the total recording moved
+        # into `commit-msg` (US0372), because git runs `pre-commit` before the commit
+        # message exists; a fixture carrying only `pre-commit` would record nothing at all
+        # and every test here would pass for the wrong reason.
+        for name in ("pre-commit", "commit-msg"):
+            hook = root / ".githooks" / name
+            hook.write_text((REPO / ".githooks" / name).read_text(encoding="utf-8"),
+                            encoding="utf-8")
+            hook.chmod(0o755)
 
         for name in ("lint-style.sh", "check_action_pins.sh", "skill-tests.sh"):
             p = root / "tools" / name

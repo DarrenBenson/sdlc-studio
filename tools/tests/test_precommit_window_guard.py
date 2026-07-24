@@ -32,7 +32,8 @@ import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-HOOK = REPO / ".githooks" / "pre-commit"
+GITHOOKS = REPO / ".githooks"
+HOOK = GITHOOKS / "pre-commit"
 
 PASS_SH = "#!/usr/bin/env bash\nexit 0\n"
 PASS_PY = "import sys\nsys.exit(0)\n"
@@ -112,9 +113,13 @@ class WindowGuardTests(unittest.TestCase):
         (root / ".claude" / "skills" / "sdlc-studio" / "scripts").mkdir(parents=True)
         (root / "node_modules" / ".bin").mkdir(parents=True)
 
-        hook = root / ".githooks" / "pre-commit"
-        hook.write_text(HOOK.read_text(encoding="utf-8"), encoding="utf-8")
-        hook.chmod(0o755)
+        # BOTH tracked hooks: the unit suites and the final verdict line moved into
+        # `commit-msg` (US0372), so a fixture carrying only `pre-commit` would never reach
+        # the end of the gate this test asserts on.
+        for name in ("pre-commit", "commit-msg"):
+            hook = root / ".githooks" / name
+            hook.write_text((GITHOOKS / name).read_text(encoding="utf-8"), encoding="utf-8")
+            hook.chmod(0o755)
 
         for name in ("lint-style.sh", "check_action_pins.sh", "skill-tests.sh"):
             p = root / "tools" / name

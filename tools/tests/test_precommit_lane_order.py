@@ -13,7 +13,14 @@ for the suites. The suites must therefore be skipped when a cheaper lane has alr
 failed, and that skip must be NAMED: this hook's standing rule is that a guard which
 quietly does not run is indistinguishable from one that ran and passed.
 
-These tests read the shipped hook, so a change to it has to come here first.
+MESSAGE FIRST (US0372). The expensive lanes since moved OUT of `pre-commit` altogether,
+behind the commit-message check in `commit-msg`: git runs `pre-commit` before the message
+exists, so no ordering inside one hook could ever put the message rules first. The order
+is therefore pinned across the PAIR, and `MessageCheckOrderTests` holds it.
+
+These tests read the shipped hooks, so a change to either has to come here first. What
+they cannot show is that a lane ran at all - `tools/tests/test_message_first_gate.py`
+executes the pair over a real `git commit` for that.
 """
 from __future__ import annotations
 
@@ -21,55 +28,121 @@ import re
 import unittest
 from pathlib import Path
 
-HOOK = Path(__file__).resolve().parents[2] / ".githooks" / "pre-commit"
+GITHOOKS = Path(__file__).resolve().parents[2] / ".githooks"
+HOOK = GITHOOKS / "pre-commit"
+MSG_HOOK = GITHOOKS / "commit-msg"
 
 
-def _text() -> str:
-    return HOOK.read_text(encoding="utf-8")
+def _text(hook: Path = HOOK) -> str:
+    return hook.read_text(encoding="utf-8")
 
 
-def _lane_line(key: str) -> int:
-    """1-indexed line of the `run "<key>"` invocation."""
-    for i, line in enumerate(_text().splitlines(), 1):
-        if re.match(rf'^\s*run\s+"{re.escape(key)}"', line):
+def _line_matching(pattern: str, hook: Path) -> int:
+    """1-indexed line of the first line matching `pattern` in `hook`."""
+    for i, line in enumerate(_text(hook).splitlines(), 1):
+        if re.search(pattern, line):
             return i
-    raise AssertionError(f'no `run "{key}"` lane in the hook')
+    raise AssertionError(f"no line matching {pattern!r} in {hook.name}")
 
 
-def _lane_keys() -> list[str]:
-    return re.findall(r'^\s*run\s+"([^"]+)"', _text(), re.M)
+def _lane_line(key: str, hook: Path = HOOK) -> int:
+    """1-indexed line of the `run "<key>"` invocation."""
+    return _line_matching(rf'^\s*run\s+"{re.escape(key)}"', hook)
 
 
-#: Every lane the hook is expected to run. This is the anti-loss guard: a reorder that
-#: drops a lane would otherwise pass every ordering assertion below while silently
+def _lane_keys(hook: Path = HOOK) -> list[str]:
+    return re.findall(r'^\s*run\s+"([^"]+)"', _text(hook), re.M)
+
+
+#: Every lane each hook is expected to declare. This is the anti-loss guard: a reorder
+#: that drops a lane would otherwise pass every ordering assertion below while silently
 #: reducing coverage.
 #: `gate` is deliberately absent: it is an inline if/else block, not a `run "..."` lane.
 EXPECTED_LANES = {
     "style", "links", "skill-spec", "versions", "budgets", "neutrality", "action-pins",
-    "floor-pending", "skill-tests", "tool-tests", "markdown", "markdown-payload",
+    "floor-pending", "markdown", "markdown-payload",
 }
+
+#: The lanes that cost real wall-clock, and that therefore may not run until every cheap
+#: refusal - including the commit-message rules - has had its chance.
+EXPENSIVE_LANES = {"skill-tests", "tool-tests"}
 
 
 class LaneOrderTests(unittest.TestCase):
     def test_markdown_lanes_run_before_the_unit_suites(self) -> None:
-        suites = _lane_line("skill-tests")
+        # Across the pair: the cheap lanes live in `pre-commit`, which git runs first in
+        # its entirety, so every one of them precedes the suites in `commit-msg`.
         for cheap in ("markdown", "markdown-payload"):
-            self.assertLess(_lane_line(cheap), suites,
-                            f'the "{cheap}" lane must be invoked before "skill-tests" - a '
-                            "markdown error must not cost a full unit-suite run first")
+            self.assertIn(cheap, _lane_keys(HOOK),
+                          f'the "{cheap}" lane must stay in pre-commit, ahead of the suites - a '
+                          "markdown error must not cost a full unit-suite run first")
+        for suite in EXPENSIVE_LANES:
+            self.assertIn(suite, _lane_keys(MSG_HOOK))
 
     def test_the_cheap_static_guards_all_precede_the_suites(self) -> None:
-        suites = _lane_line("skill-tests")
         for cheap in ("style", "links", "budgets", "neutrality", "versions", "floor-pending"):
-            self.assertLess(_lane_line(cheap), suites)
+            self.assertIn(cheap, _lane_keys(HOOK))
+        self.assertEqual(EXPENSIVE_LANES & set(_lane_keys(HOOK)), set(),
+                         "an expensive lane is back in pre-commit, which runs before the "
+                         "commit message exists")
 
     def test_no_lane_is_lost_in_the_reorder(self) -> None:
-        # This story changes ORDER only. A dropped lane is a silent coverage cut.
-        self.assertEqual(set(_lane_keys()), EXPECTED_LANES)
+        # A dropped lane is a silent coverage cut.
+        self.assertEqual(set(_lane_keys(HOOK)), EXPECTED_LANES)
+        self.assertEqual(set(_lane_keys(MSG_HOOK)), EXPENSIVE_LANES)
 
     def test_every_lane_key_is_unique(self) -> None:
-        keys = _lane_keys()
+        keys = _lane_keys(HOOK) + _lane_keys(MSG_HOOK)
         self.assertEqual(len(keys), len(set(keys)), f"a lane is invoked twice: {keys}")
+
+
+class MessageCheckOrderTests(unittest.TestCase):
+    """AC3: the order is pinned so it cannot silently revert.
+
+    The saving is real only if the message verdict is reached before the first expensive
+    lane AND the refusal leaves before them. Both are read from the shipped hooks here;
+    `test_message_first_gate.py` proves the same two properties by execution.
+    """
+
+    def test_the_message_check_precedes_the_expensive_lanes(self) -> None:
+        check = _line_matching(r"python3 .*check-commit-msg", MSG_HOOK)
+        for lane in sorted(EXPENSIVE_LANES):
+            self.assertLess(check, _lane_line(lane, MSG_HOOK),
+                            f'the commit-message check must be invoked before "{lane}"')
+        # The refusal has to LEAVE before them; reaching the verdict and then running the
+        # suites anyway would report the defect early and still charge for it.
+        refusal_exit = _line_matching(r"^\s*exit 1\b", MSG_HOOK)
+        self.assertLess(check, refusal_exit)
+        for lane in sorted(EXPENSIVE_LANES):
+            self.assertLess(refusal_exit, _lane_line(lane, MSG_HOOK))
+        # ...and they are gone from the hook git runs before the message exists.
+        self.assertEqual(EXPENSIVE_LANES & set(_lane_keys(HOOK)), set())
+
+    def test_the_timing_and_budget_recording_moved_with_the_suites(self) -> None:
+        """The measurement has to wrap the lanes wherever they now run: an estimate before
+        them, a per-suite record, the scope judgement and the per-commit total after."""
+        msg = _text(MSG_HOOK)
+        for fragment in ("gate_timing.py estimate", "record --suite skill-tests",
+                         "record --suite tool-tests", "gate_timing.py scope",
+                         "record --suite total", "gate_timing.py budget"):
+            self.assertIn(fragment, msg, f"{fragment!r} did not move with the suites")
+        self.assertLess(_line_matching(r"gate_timing\.py estimate", MSG_HOOK),
+                        _lane_line("skill-tests", MSG_HOOK),
+                        "the cost must be announced before it is paid")
+
+    def test_the_message_hook_never_blocks_a_commit_on_its_own_timing(self) -> None:
+        # Same rule the pre-commit lanes are held to: an advisory measurement that can fail
+        # a commit is worse than no measurement.
+        for line in _text(MSG_HOOK).splitlines():
+            if "gate_timing.py" in line:
+                self.assertIn("2>/dev/null", line, f"unguarded timing call: {line.strip()}")
+
+    def test_pre_commit_hands_the_selection_over_rather_than_deciding_twice(self) -> None:
+        """The selection rule stays in ONE place. `pre-commit` sees the staged index and
+        decides; `commit-msg` obeys the record. A second copy of the grep in the message
+        hook would be a rule that could drift against the one the skip message describes."""
+        self.assertIn("test_relevant=", _text(HOOK))
+        self.assertNotIn("test_relevant=", _text(MSG_HOOK))
 
 
 class ShortCircuitTests(unittest.TestCase):
