@@ -343,6 +343,9 @@ def cmd_pillars(args: argparse.Namespace) -> int:
     tri = backlog_triage_advisory(Path(args.root))
     if tri:
         print(f"advisory: {tri}")
+    drift = installed_copy_drift_advisory(sdlc_md.resolve_root(args))
+    if drift:
+        print(f"advisory: {drift}")
     age = ageing_advisory(Path(args.root))
     if age:
         print(f"advisory: {age}")
@@ -450,6 +453,9 @@ def cmd_hint(args: argparse.Namespace) -> int:
         tri = backlog_triage_advisory(Path(args.root))
         if tri:
             print(f"advisory: {tri}")
+        drift = installed_copy_drift_advisory(sdlc_md.resolve_root(args))
+        if drift:
+            print(f"advisory: {drift}")
         for line in index_bloat_advisories(Path(args.root)):
             print(f"advisory: {line}")
     return 0
@@ -513,6 +519,60 @@ def backlog_triage_advisory(repo_root: Path | str) -> str | None:
     unread = f", {skipped} unreadable" if skipped else ""
     return (f"backlog triage: {len(findings)} item(s) - {parts}{tail}{unread} - "
             f"`backlog_triage.py check` for detail, resolve before planning")
+
+
+#: The repository's own installed-copy drift check, relative to the project root. Its PRESENCE
+#: is what arms this surface: a project that ships no such check - which is every consuming
+#: project - is silent here, and no verdict is invented on its behalf.
+DRIFT_CHECK = ("tools", "forward-port.sh")
+#: The one command that clears the drift, quoted as the remedy on both surfaces.
+DRIFT_REMEDY = "bash tools/forward-port.sh --yes"
+
+
+def installed_copy_drift(repo_root: Path | str, *, timeout: float = 30.0) -> dict | None:
+    """`{"count": n, "remedy": ...}` when the installed copy of the skill has drifted from
+    this repository's source, else None.
+
+    An installed copy is what every other project on the machine loads, so the window between
+    a fix landing in a repo and the mirror running is a window in which a fix believed shipped
+    is in force nowhere. The verdict is not computed here: it is delegated wholly to the
+    project's own drift check, which already knows what to exclude and which states (no copy,
+    a deliberately pinned one) are reported rather than failed. This reads its exit status and
+    its count.
+
+    Never raises and never guesses: no check, no shell, a timeout, or an answer carrying no
+    count all degrade to None, exactly as every other advisory here does.
+    """
+    import subprocess
+    root = Path(repo_root)
+    check = root.joinpath(*DRIFT_CHECK)
+    if not check.is_file():
+        return None
+    try:
+        proc = subprocess.run(["bash", str(check), "--check"], cwd=root,
+                              capture_output=True, text=True, timeout=timeout)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode == 0:
+        return None
+    import re
+    m = re.search(r"(\d+) file\(s\) differ", proc.stdout)
+    if not m:
+        # Non-zero for a reason that is not a drift verdict (a refused argument, an
+        # unresolvable target). Reporting a drift of unknown size would be a false alarm.
+        sdlc_md.debug("status.installed_copy_drift", f"no count in: {proc.stdout.strip()[:200]}")
+        return None
+    return {"count": int(m.group(1)), "remedy": DRIFT_REMEDY}
+
+
+def installed_copy_drift_advisory(repo_root: Path | str) -> str | None:
+    """One line naming how many files differ and the command that mirrors them."""
+    drift = installed_copy_drift(repo_root)
+    if not drift:
+        return None
+    return (f"the installed copy has drifted: {drift['count']} file(s) differ from this "
+            f"repository's skill source - every other project on this machine loads that copy, "
+            f"so a fix landed here is in force nowhere until it is mirrored: {drift['remedy']}")
 
 
 def index_bloat_advisories(repo_root: Path) -> list[str]:

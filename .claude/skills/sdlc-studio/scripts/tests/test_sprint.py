@@ -6686,5 +6686,46 @@ class RateProvenanceExhaustiveTests(unittest.TestCase):
                 self.assertNotIn("unmapped rate source", out)
 
 
+class ClosePreflightDriftTests(unittest.TestCase):
+    """US0389: a drifted installed copy is one named blocker in the same single pass.
+
+    Borrows the stubbed-gate fixture above (without inheriting its tests), so this asserts
+    what the pre-flight COMPOSES rather than re-testing the gate.
+    """
+
+    _mod = ClosePreflightTests._mod
+    _retro = ClosePreflightTests._retro
+
+    def setUp(self) -> None:
+        if shutil.which("rsync") is None:
+            self.skipTest("rsync not on PATH")
+        import test_status
+        if not test_status._FORWARD_PORT.is_file():
+            self.skipTest("tools/forward-port.sh not present (consuming project)")
+
+    def test_installed_copy_drift_is_a_named_blocker_with_the_mirror_remedy(self) -> None:
+        import os
+        import test_status
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as h:
+            root = Path(d)
+            mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
+                            evidence=("US0101",), signoffs=("US0101",))
+            rid = self._retro(root)
+            with unittest.mock.patch.dict(os.environ, {"HOME": h}):
+                # otherwise ready: without the drift this close has nothing outstanding
+                self.assertTrue(mod.close_preflight(root, rid)["ready"])
+                test_status._dev_repo_with_check(root)
+                target = test_status._installed_copy(Path(h))
+                target.joinpath("SKILL.md").write_text("# stale\n", encoding="utf-8")
+                target.joinpath("scripts", "a.py").write_text("x = 1\n", encoding="utf-8")
+                target.joinpath("stale-one.md").write_text("old\n", encoding="utf-8")
+                res = mod.close_preflight(root, rid)
+            self.assertFalse(res["ready"])
+            named = [b for b in res["blockers"] if b["stage"] == "installed-copy"]
+            self.assertEqual(len(named), 1, res["blockers"])
+            self.assertIn("2 file(s)", named[0]["detail"])           # the measured count
+            self.assertIn("forward-port.sh --yes", named[0]["remedy"])
+
+
 if __name__ == "__main__":
     unittest.main()
