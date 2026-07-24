@@ -513,6 +513,16 @@ def _mutation(root: str) -> dict:
     except (ValueError, OSError) as exc:
         return {"count": 1, "blocking": False, "detail": f"mutation-report unreadable: {exc}"}
     cov = _mutation_coverage_safe(root)
+    # An empty surface is a first-class outcome: the run found nothing to mutate. Read as
+    # 'nothing to mutate' - distinct from not-run (no report at all, handled above) and from a
+    # PASS (mutants applied and killed) - so a docs-only close is green with the reason on the
+    # record, never a silent clean sweep over zero mutants.
+    if data.get("empty_surface"):
+        return _with_coverage(
+            {"count": 0, "blocking": False,
+             "detail": "nothing to mutate - the surface has no mutatable files (empty surface, "
+                       "not a pass and not not-run) - advisory"},
+            cov)
     if not cov["known"]:
         # Nothing per-file to judge: fall back to the whole-report checks, which read the
         # report as a freshness stamp and never as coverage. A report about some other state

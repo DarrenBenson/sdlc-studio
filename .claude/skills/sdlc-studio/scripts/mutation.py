@@ -904,6 +904,13 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     run_id = _new_run_id()
     ceiling = max_mutations if max_mutations is not None else DEFAULT_MAX_MUTATIONS
     all_mutations, unchecked = enumerate_mutations(files, classes)
+    # An empty surface is a FIRST-CLASS outcome, not a refusal and not a pass. A surface with no
+    # mutatable sites (a docs-only change is the canonical case) has nothing to mutate, so no
+    # baseline is run and nothing is proven or disproven - an absence, not a negative result.
+    # Recorded honestly here so the gate lane can read 'nothing to mutate' rather than mistaking a
+    # zero-mutant run for a clean sweep. Distinct from `refused` (a red baseline judged nothing)
+    # and from a measured pass (mutants applied and killed).
+    empty_surface = not all_mutations
     to_apply, truncated = apply_budget(all_mutations, ceiling, changed)
     _install_restore_handlers()   # a kill mid-mutant must restore, never strand
     # A SIGKILLed previous run strands its mutant; reading THAT back as the original
@@ -915,7 +922,13 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     # Another declared writer in this tree makes this run the SECOND one, which is the hazard
     # itself: refuse before touching a byte, rather than interleaving two processes' rewrites.
     blocking = read_window(root)
-    if blocking is not None:
+    if empty_surface:
+        # Nothing to mutate: skip the baseline, the window and the loop entirely. A window a
+        # concurrent run holds is irrelevant to a run that touches no byte, so it does not block.
+        refused = False
+        baseline = "not-run"
+        blocking = None
+    elif blocking is not None:
         remedy = (f"a rewrite window is open, held by {blocking['owner']} over "
                   f"{', '.join(blocking.get('paths') or []) or '(unstated paths)'} - refusing to "
                   f"be the second process rewriting this tree. Wait for it, or clear it: "
@@ -935,7 +948,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
                           else "the test command errored on unmutated code: fix the command or "
                                "the environment, then re-run")
     records: list[dict] = []
-    if not refused:
+    if not refused and not empty_surface:
         sidecar = _inflight_path(root)
         # Declare the window BEFORE the first mutant lands and clear it after the last restore.
         # A concurrent `git add -A` is then told a writer is active instead of silently staging
@@ -1007,6 +1020,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
         "targets": [str(Path(f)) for f in files],
         "baseline": baseline,
         "refused": refused,
+        "empty_surface": empty_surface,
         "remedy": remedy,
         "blocked_by_window": blocking,
         "recovered": recovered,
@@ -1118,9 +1132,15 @@ def append_series(root: Path | str, report: dict, elapsed_s: float) -> dict:
     s = report.get("summary") or {}
     killed, survived = int(s.get("killed", 0)), int(s.get("survived", 0))
     refused = bool(report.get("refused"))
-    evidence = (not refused) and (killed + survived) > 0
+    # An empty surface carries no evidence, but for a different reason than a refusal or an
+    # all-errored run: there was nothing to mutate. Named as its own outcome so a summed series
+    # can tell a docs-only run from one whose mutants all failed to judge anything.
+    empty = bool(report.get("empty_surface"))
+    evidence = (not refused) and (not empty) and (killed + survived) > 0
     if refused:
         reason = f"run refused - baseline {report.get('baseline')}, no mutant was applied"
+    elif empty:
+        reason = "the selected surface has no mutatable sites - nothing to mutate"
     elif not evidence:
         reason = (f"{int(s.get('applied', 0))} mutant(s) applied and none returned a killed or "
                   f"survived verdict (unviable, errored or timed out) - nothing was judged")
@@ -1141,7 +1161,7 @@ def append_series(root: Path | str, report: dict, elapsed_s: float) -> dict:
         "unchecked": len(report.get("unchecked") or []),
         "elapsed_s": round(float(elapsed_s), 3),
         "evidence": evidence,
-        "outcome": "measured" if evidence else "no-evidence",
+        "outcome": ("nothing-to-mutate" if empty else "measured" if evidence else "no-evidence"),
         "no_evidence_reason": reason,
     }
     reset = _series_malformed(path)
@@ -1668,8 +1688,19 @@ def cmd_run(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     if not files:
-        print("no mutatable files in the selected surface", file=sys.stderr)
-        return 2
+        # A chosen surface (--since / --story / --strategy) that resolves to no mutatable file is
+        # an empty surface, not an error: there is nothing to mutate. Record it as a first-class
+        # outcome (exit 0) so a docs-only close reads 'nothing to mutate' on the gate, never a
+        # silent non-pass with no record. run_gate short-circuits an empty surface - no baseline,
+        # no mutant, no test run - and writes the honest report.
+        report = run_gate(root, [], args.test, changed=None,
+                          write_report=not getattr(args, "dry_run", False))
+        if args.format == "json":
+            print(json.dumps(report, indent=2))
+        else:
+            print("mutation: nothing to mutate - the selected surface has no mutatable files "
+                  "(recorded as an empty surface, not a pass and not a refusal)")
+        return 0
     ceiling = args.max_mutations
     if ceiling is None:
         import config  # sibling; soft default when no project override
@@ -1686,6 +1717,15 @@ def cmd_run(args: argparse.Namespace) -> int:
         # a silently rewritten history is a history nobody can trust
         print(f"  note: the mutation series at {ser['path']} was malformed and has been "
               f"replaced - this run's row is the only one it now holds")
+    if report.get("empty_surface"):
+        # A surface with no mutatable site (an explicit --files over a docstring/import-only
+        # module, say) is the honest empty outcome, not a pass: exit 0 with the reason named.
+        if args.format == "json":
+            print(json.dumps(report, indent=2))
+        else:
+            print("mutation: nothing to mutate - the selected surface has no mutatable sites "
+                  "(recorded as an empty surface, not a pass and not a refusal)")
+        return 0
     if report.get("refused"):
         # a red/broken baseline proves nothing: refuse loudly, name the remedy, exit non-zero -
         # NEVER a clean-looking zero over a report that judged nothing

@@ -11,25 +11,27 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator closing a docs-only change through the mutation gate
+**I want** an empty surface recorded as a first-class outcome, not a silent pass
+**So that** 'nothing to mutate' reads distinct from not-run and from a clean sweep
 
 ## Acceptance Criteria
 
 ### AC1: mutation.py run over a surface with no mutatable files can emit a report recording the empty
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** a mutation run over a surface with no mutatable sites (a docstring/import-only module)
+- **When** the run executes
 - **Then** mutation.py run over a surface with no mutatable files can emit a report recording the empty surface as the honest outcome (exit 0 under an explicit flag or a distinct recorded status), never a silent pass
-- **Verify:** {{executable check}}
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::EmptySurfaceIsFirstClassTests::test_run_over_a_no_site_surface_records_the_empty_surface
+- **Verified:** yes (2026-07-24)
 
 ### AC2: the gate's mutation lane reads that report as 'nothing to mutate' - distinct from not-run and from
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** a mutation report recording an empty surface
+- **When** the gate's mutation lane reads it
 - **Then** the gate's mutation lane reads that report as 'nothing to mutate' - distinct from not-run and from PASS - so a docs-only close is green with the reason on the record
-- **Verify:** {{executable check}}
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::EmptySurfaceIsFirstClassTests::test_the_gate_lane_reads_empty_surface_distinct_from_not_run_and_pass
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

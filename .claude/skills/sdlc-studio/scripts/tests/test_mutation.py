@@ -219,6 +219,107 @@ class BridgeTests(unittest.TestCase):
             self.assertIn("REFUSED", err.getvalue())
 
 
+class EmptySurfaceIsFirstClassTests(unittest.TestCase):
+    """US0379 / CR0376: a surface with no mutatable sites is a FIRST-CLASS outcome - not a refusal
+    (a red baseline) and not a pass (mutants killed). An absence and a negative result are
+    different facts, so the run records 'nothing to mutate' and the gate lane reads it distinct
+    from not-run and from PASS, letting a docs-only close be green with the reason on the record."""
+
+    def _gate(self):
+        import importlib.util as il
+        SCR = Path(__file__).resolve().parent.parent
+        spec = il.spec_from_file_location("gate", SCR / "gate.py")
+        mod = il.module_from_spec(spec)
+        sys.modules["gate"] = mod
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_run_over_a_no_site_surface_records_the_empty_surface(self) -> None:
+        """AC1: exit 0 with a distinct recorded status, never a silent pass and never the
+        red-baseline refusal. The test command must not even run - there is nothing to judge."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            # a docstring/import-only module has no mutatable site
+            (root / "nosites.py").write_text('"""docs only."""\nimport os\n', encoding="utf-8")
+            # 'false' would make a baseline red IF it were run - proving the baseline is skipped
+            r = mut.run_gate(root, [root / "nosites.py"], "false")
+            self.assertTrue(r["empty_surface"])
+            self.assertFalse(r["refused"])            # NOT the red-baseline refusal
+            self.assertEqual(r["baseline"], "not-run")  # the command was never run
+            self.assertEqual(r["summary"]["applied"], 0)
+            self.assertEqual(r["summary"]["enumerated"], 0)
+            # the series names its own outcome, apart from measured and no-evidence
+            self.assertEqual(r["series"]["row"]["outcome"], "nothing-to-mutate")
+            self.assertFalse(r["series"]["row"]["evidence"])
+
+    def test_a_no_site_surface_is_not_a_red_baseline_refusal(self) -> None:
+        # the two must be distinguishable in the record: an empty surface proved nothing because
+        # there was nothing to prove; a refusal proved nothing because the baseline was red
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            (root / "nosites.py").write_text("import os\n", encoding="utf-8")
+            empty = mut.run_gate(root, [root / "nosites.py"], f"{sys.executable} -m unittest test_good")
+            red = mut.run_gate(root, [root / "target.py"], "definitely-not-a-command-xyz")
+            self.assertTrue(empty["empty_surface"])
+            self.assertFalse(empty["refused"])
+            self.assertFalse(red.get("empty_surface"))
+            self.assertTrue(red["refused"])
+
+    def test_the_cli_records_an_empty_surface_and_exits_zero(self) -> None:
+        # a chosen surface that resolves to no mutatable file (a docs-only close) exits 0 with a
+        # written report, never a silent non-pass with no record
+        import contextlib
+        import io
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            (root / "nosites.py").write_text('"""docs."""\n', encoding="utf-8")
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = mut.main(["run", "--files", str(root / "nosites.py"),
+                               "--test", "false", "--root", str(root)])
+            self.assertEqual(rc, 0)                       # green, not the refusal's non-zero
+            self.assertIn("nothing to mutate", buf.getvalue())
+            report = json.loads((root / "sdlc-studio" / ".local" / "mutation-report.json")
+                                .read_text(encoding="utf-8"))
+            self.assertTrue(report["empty_surface"])      # a record exists
+
+    def test_the_gate_lane_reads_empty_surface_distinct_from_not_run_and_pass(self) -> None:
+        """AC2: 'nothing to mutate' is distinct from not-run (no report) and from a PASS."""
+        gate = self._gate()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rp = root / "sdlc-studio" / ".local" / "mutation-report.json"
+            rp.parent.mkdir(parents=True)
+
+            # not-run: no report at all
+            not_run = gate._mutation(str(root))
+            self.assertIn("not run", not_run["detail"])
+            self.assertEqual(not_run["count"], 1)
+
+            # empty surface: green, count 0, its own words
+            rp.write_text(json.dumps({"empty_surface": True, "refused": False, "summary": {},
+                                      "targets": [], "git_rev": None}), encoding="utf-8")
+            empty = gate._mutation(str(root))
+            self.assertEqual(empty["count"], 0)
+            self.assertFalse(empty["blocking"])
+            self.assertIn("nothing to mutate", empty["detail"])
+            self.assertNotIn("not run", empty["detail"])
+
+            # a genuine PASS reads differently again (mutants killed)
+            rp.write_text(json.dumps({"empty_surface": False, "refused": False,
+                                      "summary": {"applied": 3, "killed": 3, "survived": 0,
+                                                  "errors": 0, "enumerated": 3},
+                                      "targets": [], "git_rev": None}), encoding="utf-8")
+            passed = gate._mutation(str(root))
+            self.assertIn("killed", passed["detail"])
+            self.assertNotIn("nothing to mutate", passed["detail"])
+
+
 class LaneTests(unittest.TestCase):
     def test_files_and_since_select_surface(self) -> None:
         mut = _load()
