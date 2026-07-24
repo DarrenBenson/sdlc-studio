@@ -86,10 +86,17 @@ estimator:
 # Read it against BG0133: until a forecast is recorded at PLAN TIME, the token half of this
 # check is built on an estimator known to under-forecast by ~1.8x, so `within budget` currently
 # means less than it appears to.
+# Set 2026-07-24 (D0064) from the measured VELOCITY rows, not picked. The previous ceiling
+# (1M / 8 units / 240 min) predated every sprint in the record: the last four ran 44, 19, 28
+# and 18 units at 6.7M-8.3M tokens, so EVERY plan reported OVER BUDGET and the one instrument
+# meant to say "this batch does not fit" had become a constant (CR0419).
+# Basis: Sprint 2 measured 240k tokens/unit and 75.5k/point. Sprint 3b is ~64 units / ~160
+# points, which lands near 15M. Re-derive from retros/VELOCITY.md when the shape changes -
+# a ceiling nobody chose against evidence is how this got stale the first time.
 capacity:
-  tokens: 1000000
-  minutes: 240
-  units: 8
+  tokens: 15000000
+  minutes: 960
+  units: 64
 
 two_backlog:
   enforce: true  # this repo dogfoods the two-backlog workflow; keep the gates on
