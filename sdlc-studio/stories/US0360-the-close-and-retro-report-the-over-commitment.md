@@ -17,12 +17,19 @@
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: the close reports the over-commitment
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** a run recorded as over-appetite
+- **When** `sprint close` runs
+- **Then** its output states the batch was N units against a standing appetite of M, rather than reporting the raised ceiling as though it were the plan
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OverAppetiteReportTests::test_the_close_states_the_overage_not_the_raised_ceiling
+
+### AC2: the retro carries the overage so a later reader can find it
+
+- **Given** the same run's retro
+- **When** it is generated
+- **Then** it records the over-commitment and the decision to accept it - a retro asking why a run overran must find the trace, which is exactly what CR0349 reported missing
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::OverAppetiteReportTests::test_the_retro_records_the_overage_and_its_acceptance
 
 ## Revision History
 

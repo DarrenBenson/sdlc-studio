@@ -17,12 +17,12 @@
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: the Decision-Override is removed once D1 is closed
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** RFC0017 carrying a Decision-Override placed there while D1 was open
+- **When** D1 is closed
+- **Then** the override is removed and the RFC's decision section stands on the recorded ruling alone - an override outliving the gap it covered is a standing exemption nobody chose
+- **Verify:** shell grep -q 'Decision-Override' sdlc-studio/rfcs/RFC0017*.md && exit 1 || exit 0
 
 ## Revision History
 

@@ -17,14 +17,19 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done.
+### AC1: the check is advisory by default
 
-### AC1: {{criterion}}
+- **Given** a near-duplicate title and no `--strict`
+- **When** `new` is invoked
+- **Then** the artefact IS minted and the duplicate is reported - filing must never be blocked by a heuristic, or the heuristic becomes a reason not to file
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DuplicateStrictTests::test_advisory_by_default_mints_and_reports
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+### AC2: --strict refuses and mints nothing
+
+- **Given** the same title with `--strict`
+- **When** `new` is invoked
+- **Then** it exits non-zero and NO file and NO index row are written - a refusal that leaves a half-minted artefact is worse than no refusal
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DuplicateStrictTests::test_strict_refuses_and_writes_nothing
 
 ## Revision History
 

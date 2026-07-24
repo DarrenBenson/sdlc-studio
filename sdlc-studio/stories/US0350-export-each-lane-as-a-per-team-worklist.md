@@ -17,12 +17,26 @@
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: each lane exports as a worklist the planner accepts
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** a computed lane partition
+- **When** each lane is exported
+- **Then** each export is a worklist file `sprint plan --worklist` reads back, and re-planning from it reproduces that lane's units exactly
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneExportTests::test_each_lane_round_trips_through_the_worklist_reader
+
+### AC2: collision-freedom is asserted on the exports, not assumed from the computation
+
+- **Given** the exported worklists
+- **When** they are read back and their units' Affects are intersected pairwise
+- **Then** every pair is disjoint - the assertion is made against the artefacts handed to teams, not against the in-memory structure that produced them
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneExportTests::test_the_exports_themselves_are_pairwise_disjoint
+
+### AC3: the undeclared-file risk is stated where the lanes are handed over
+
+- **Given** an export intended for a separate team, agent or worktree
+- **When** a reader opens it
+- **Then** it states plainly that disjointness is only as good as the declared `Affects`, and that a unit touching an undeclared file can still collide - the guarantee's limit travels with the artefact
+- **Verify:** grep undeclared .claude/skills/sdlc-studio/reference-sprint.md
 
 ## Revision History
 

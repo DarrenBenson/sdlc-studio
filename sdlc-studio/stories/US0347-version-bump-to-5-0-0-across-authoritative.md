@@ -17,12 +17,20 @@
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: every authoritative file states 5.0.0
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** the version strings check_versions.py treats as authoritative
+- **When** `check_versions.py --strict` is run on a clean tree and its reported version is read
+- **Then** it exits 0 AND reports 5.0.0. Asserting only that the guard is green is vacuous: it was green at 4.1.0 and would be green at any consistent version, so the check must bind the VALUE, not the consistency
+- **Verify:** shell python3 tools/check_versions.py --strict | grep -q '5\.0\.0'
+- **Verified:** no (2026-07-24)
+
+### AC2: the bump is refused while any file disagrees
+
+- **Given** a tree where one authoritative file still reads the old version
+- **When** `check_versions.py --strict` is run
+- **Then** it exits non-zero and NAMES the disagreeing file, rather than reporting a generic mismatch
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/../../../../tools/tests/test_check_versions.py::StrictBumpTests::test_a_single_stale_file_is_named
 
 ## Revision History
 

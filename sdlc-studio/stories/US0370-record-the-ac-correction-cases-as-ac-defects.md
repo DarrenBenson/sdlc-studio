@@ -17,12 +17,12 @@
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: an AC corrected rather than met is recorded as an AC defect
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** a story whose acceptance criterion was found wrong and amended during delivery, as US0375's was
+- **When** the unit is closed
+- **Then** the amendment is recorded as an AC DEFECT distinct from an ordinary revision - a criterion that specified the wrong behaviour is a spec failure, and counting it as a normal edit hides the most expensive class of defect this project has found
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::AcDefectTests::test_an_amended_criterion_is_recorded_as_an_ac_defect
 
 ## Revision History
 

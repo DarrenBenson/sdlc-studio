@@ -17,12 +17,26 @@
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: run_state keeps BOTH the standing appetite and the accepted one
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** a batch of 32 units planned against a standing appetite of 8
+- **When** the plan is written with `--appetite-units 32`
+- **Then** run_state records both numbers - the standing appetite and the one accepted for this run - so the over-commitment survives the decision to accept it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::OverAppetiteTests::test_both_the_standing_and_accepted_appetite_are_recorded
+
+### AC2: raising the ceiling does not erase the overage
+
+- **Given** the same run
+- **When** the recorded plan is read back
+- **Then** it reports 32 against a standing 8, not 32/32 - the record must not say the batch fitted when it was made to fit
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::OverAppetiteTests::test_the_plan_does_not_read_as_fitting
+
+### AC3: a run within appetite records no overage
+
+- **Given** a batch inside the standing appetite
+- **When** the plan is written
+- **Then** no over-commitment is recorded - the field must distinguish an accepted overage from an ordinary run, or it means nothing
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::OverAppetiteTests::test_a_within_appetite_run_records_no_overage
 
 ## Revision History
 
