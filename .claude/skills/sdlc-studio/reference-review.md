@@ -8,6 +8,7 @@
 - [When to Run a Unified Review](#when-to-run-a-unified-review)
 - [/sdlc-studio review - Step by Step](#review-workflow)
 - [The adversarial closing-review brief](#closing-review-brief)
+- [Correcting the verdict log](#superseding-a-verdict)
 - [Quick Mode](#quick-mode)
 - [Focus Mode](#focus-mode)
 - [TSD Review Workflow (Detailed)](#tsd-review-workflow)
@@ -397,6 +398,57 @@ Every closing brief carries these three, each paired with the reason it exists:
 `critic.py` refuses to issue a brief missing any of the three practices, or a claim-inventory
 pass that omits one of the four prose surfaces, so the discipline holds by construction rather
 than by the author remembering it.
+
+---
+
+## Correcting the verdict log {#superseding-a-verdict}
+
+`sdlc-studio/reviews/critic-verdicts.md` is append-only, and its authority comes from nobody
+editing it. That is precisely why a row recording an event which did not happen - a reviewer
+mis-entered, a verdict filed against the wrong unit - must not simply be deleted. A deletion
+leaves nothing behind, so a later reader cannot tell a log that was never wrong from one that
+was quietly tidied.
+
+`critic.py supersede` (spelled `correct` if you prefer) retires such a row by adding to the log:
+
+```bash
+python3 scripts/critic.py supersede --unit US0276 --date 2026-07-20 \
+  --reason "the pass this row records never ran" \
+  --authorised-by "<the authorising principal>" \
+  [--reviewer <seat>] [--verdict APPROVE] [--phase delivery]
+```
+
+The row itself stays in the table, byte for byte. A `SUPERSEDED` record is appended below the
+table naming the unit, the retired row (its date, verdict, reviewer and author), the reason, the
+authoriser and the date of the correction. That record is prose rather than a table row because
+the parser reads every pipe-delimited line in the file, so an errata table would be read as a
+run of malformed verdicts; for the same reason the verdict row is never widened with an extra
+column. Later verdicts still land inside the table, which stays one contiguous block.
+
+Refusals, all loud, all writing nothing:
+
+- **No matching row, or more than one.** The row is identified by unit and date, narrowed with
+  `--reviewer` and `--verdict` when a unit carries several rows that day. A correction pointing
+  at nothing is a false erratum, and retiring an unspecified one of several is not a correction.
+  The CLI exits 2.
+- **The row's own author as the authoriser.** The party that wrote the wrong row cannot retire
+  it on its own say-so. The row's *reviewer* is not refused: a row naming the wrong reviewer is
+  the case this exists for, and the person wrongly named is usually the one who can rule that
+  the pass never ran.
+- **No reason, or no authoriser named at all.**
+
+### What a superseded row does to the gates
+
+Every reader treats a retired row as retired, and none of them drop it:
+
+| Reader | Behaviour |
+| --- | --- |
+| `verdict_for` | skips it and falls back to the latest live row; a unit whose only row is superseded has **no** verdict, which is not the same as an approval |
+| the sign-off gate | its reviewer no longer counts among the authoring session's own, so a principal wrongly recorded as a reviewer can sign off the unit |
+| `read_verdicts`, `critic show`, the sign-off brief | still return and print the row, flagged with its reason and authoriser |
+
+A correction is therefore auditable both ways: a later reader sees that the row was recorded,
+and that it was retired, on whose authority and why.
 
 ---
 

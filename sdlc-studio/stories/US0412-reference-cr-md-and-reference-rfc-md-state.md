@@ -25,7 +25,7 @@ aspirational
 - **Then** each states that refine produces a PLANNABLE unit (Affects present) whose
   acceptance criteria still need grooming, and names the opt-out
 - **Verify:** manual - read the refine sections of reference-cr.md and reference-rfc.md and confirm each states the plannable-but-ungroomed contract and the opt-out
-- **Verified:** manual (2026-07-24)
+- **Verified:** yes (2026-07-24)
 
 Evidence for the manual read: `reference-cr.md` "What `refine` produces" states the
 plannable-but-ungroomed contract under both halves and names the opt-out
@@ -37,4 +37,4 @@ contract and the same opt-out, and cross-links `reference-cr.md#refine-output`.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
-| 2026-07-24 | sdlc-studio | Back-annotated the manual AC's `Verified:` line, missing since the unit closed - the conformance lane's one non-conformant unit. The read was performed, not assumed |
+| 2026-07-24 | sdlc-studio | Back-annotated the manual AC's `Verified:` line, missing since the unit closed - the conformance lane's one non-conformant unit. THREE independent build agents each performed the read and reached the same conclusion before the annotation landed; the duplicated effort is the cost recorded in BG0279 |

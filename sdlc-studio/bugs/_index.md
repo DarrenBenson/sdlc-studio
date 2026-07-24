@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 13 |
+| Open | 14 |
 | In Progress | 0 |
 | Fixed | 184 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **280** |
+| **Total** | **281** |
 
 ## All Bugs
 
@@ -247,6 +247,7 @@
 | [BG0278](BG0278-sprint-plan-crashes-with-keyerror-fixed-fit-once.md) | sprint plan CRASHES with KeyError fixed-fit once a project has enough measured sprints to apply the fixed-term fit: the fixed-fit branch overrides rate_source but leaves rate_refused set, breaking the exhaustive-lookup invariant _render_rate_provenance documents | Open | High | 2026-07-24 | 2026-07-24 |
 | [BG0279](BG0279-the-close-chain-runs-its-gate-before-apply.md) | the close chain runs its gate BEFORE --apply-signoff moves units to Done, so the green it reports is measured against a state the close then changes: a unit can pass at Review and be non-conformant the moment it becomes Done | Open | -- | 2026-07-24 | 2026-07-24 |
 | [BG0280](BG0280-parallel-agents-share-one-scratchpad-directory-so-a.md) | parallel agents share one scratchpad directory, so a commit-message file written by one can be overwritten by another between write and commit: a commit landed carrying a different agent's subject | Open | -- | 2026-07-24 | 2026-07-24 |
+| [BG0281](BG0281-a-conflicted-merge-cannot-be-committed-through-the.md) | a conflicted merge cannot be committed through the gate: the commit-msg hook tests invoke the hook with the OUTER repo as cwd, so they inherit its MERGE_HEAD, the hook correctly exits early, and five tool-tests fail for the duration of every merge | Open | High | 2026-07-24 | 2026-07-24 |
 
 ## Archived Releases
 

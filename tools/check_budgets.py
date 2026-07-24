@@ -40,8 +40,10 @@ ALLOWLIST = {
     "reference-decisions.md": 724,
     "reference-test-best-practices.md": 706,  # +assertion-integrity + mutation-check section (CR0131)
     "reference-config.md": 640,  # +repair-plan gate keys (EP0106): a new opt-in config surface
-    "reference-review.md": 648,  # +closing-review brief section (EP0108/EP0109): claim inventory
-                                 # first pass and the three standing adversarial practices
+    "reference-review.md": 700,  # +closing-review brief section (EP0108/EP0109): claim inventory
+                                 # first pass and the three standing adversarial practices;
+                                 # +the verdict-log supersession section (EP0133/US0374/US0375):
+                                 # the correction path and what a retired row does to each gate
     "reference-sprint.md": 720,  # +the EP0130/0146/0150-0155 sprint-engine behaviours documented,
                                  # +the amend/material goal-review and seat-brief notes (EP0152/0153)
                                  # (Sprint 1 of the three-sprint run). FLAGGED for a structural

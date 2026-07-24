@@ -44,3 +44,4 @@
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-24 | sdlc-studio | Groomed: real ACs + Affects authored |
+| 2026-07-24 | sdlc-studio | Built: superseded rows skipped by `verdict_for` and the sign-off gate, still returned and flagged in `show`; TDD red-first, mutation-proven |
