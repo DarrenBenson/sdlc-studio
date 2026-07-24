@@ -68,3 +68,4 @@ wrong. Recovery needs an amend, which is itself awkward once the commit is pushe
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-24 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-24 | sdlc-studio | Fixed: the contract is stated in reference-delivery.md and the agent-prompt template, where a delegating agent meets it |

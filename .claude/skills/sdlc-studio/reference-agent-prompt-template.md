@@ -235,6 +235,19 @@ See `reference-sprint.md#model-tier-routing` for the full policy and escalation 
 | Exclusions | None | "DO NOT modify src/app/page.tsx" |
 | Tests | "Write tests" | "8 tests covering: success, failure, edge case X, edge case Y" |
 | Context | None | "READ THESE FILES FIRST: 1. client.ts for Zod pattern..." |
+| Temp files | A shared scratchpad path | "Write any temp file INSIDE your own worktree" - a shared path collides between parallel agents |
+
+### Parallel delegation: name the workspace, not only the files {#parallel-workspace}
+
+When several agents deliver one batch at once, tell each to keep its temporary files - a commit
+message, a fields-file, a worklist - inside its OWN worktree. A shared temp directory is not
+isolated by a worktree, and one agent's file is overwritten by another between write and use: a
+commit has landed carrying a different agent's subject this way. Namespace the path per agent, or
+keep it in the worktree.
+
+Say the same about the build tooling: an agent changing the pre-commit hook, the gate, or a guard
+the commit path runs is changing the machinery every other agent commits through, however disjoint
+its declared files look.
 
 ## Building the Prompt {#agentic-execution}
 

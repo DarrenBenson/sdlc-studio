@@ -47,6 +47,27 @@ cleanly. The merge step still counts test files as coupling: a group boundary dr
 them would let two groups share a test module and conflict at merge, which is the failure the
 coupling rule exists to prevent.
 
+## Worktree isolation is not workspace isolation
+
+A parallel build gives each agent its own git worktree, so the disjointness check above is about
+files IN THE REPOSITORY. Two things sit outside that check and bite anyway.
+
+**A shared temp directory.** Agents commonly write temporary files - a commit message, a
+fields-file, a worklist - and if they share one scratchpad path, one agent's file is overwritten
+by another between write and use. This has happened: a commit landed carrying a different agent's
+subject, because both wrote the same message path. Namespace any temp path per agent or per run,
+or keep it inside the agent's own worktree. A worktree isolates the tree; it does not isolate
+`/tmp`.
+
+**The build tooling itself.** A unit that changes the pre-commit hook, the gate, or a guard the
+commit path runs is coupled to every other unit in the batch, whatever its `Affects` says - every
+parallel agent commits through it. `Affects` answers "what does this edit", which is the right
+question for merge conflicts and the wrong one for shared machinery. Deliver such a unit on its
+own, or serially.
+
+Neither failure produces a merge conflict, which is the only outcome the file-disjointness check
+was built to predict. That is why they are stated here rather than left to it.
+
 ## See also
 
 - [reference-sprint.md](reference-sprint.md) - the sprint engine and `sprint plan`
