@@ -2613,5 +2613,70 @@ class RegisterRunAttributionRefusalTests(unittest.TestCase):
             self.assertEqual(out["verdict"], "killed")
 
 
+class StrategyScopedTests(unittest.TestCase):
+    """US0422: the plan-time strategy names which units are worth mutating, replacing the
+    blanket close-scoped sweep. The difference is not size - it is provenance. A sweep spends
+    its ceiling on whatever it reaches first; this spends it on units a stated strategy said
+    were worth mutating, decided in the open and checkable at the close."""
+
+    TSD = """# TSD
+
+## Test Levels
+
+### Unit Testing
+
+Covers `alpha.py`.
+
+### Mutation Testing (assertion integrity)
+
+Covers `gate.py`.
+
+## Next
+"""
+
+    def _repo(self, d: str) -> Path:
+        root = Path(d)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (root / "sdlc-studio" / "tsd.md").write_text(self.TSD, encoding="utf-8")
+        (root / "gate.py").write_text("x = 1\n", encoding="utf-8")
+        (root / "alpha.py").write_text("y = 2\n", encoding="utf-8")
+        for uid, aff in (("US0001", "gate.py"), ("US0002", "alpha.py")):
+            (root / "sdlc-studio" / "stories" / f"{uid}-x.md").write_text(
+                f"# {uid}: x\n\n> **Status:** Ready\n> **Affects:** {aff}\n", encoding="utf-8")
+        return root
+
+    def test_the_run_mutates_the_units_the_strategy_named(self) -> None:
+        """AC1."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            picked = mod.select_files(root, strategy=["US0001", "US0002"])
+        names = sorted(p.name for p in picked)
+        self.assertEqual(names, ["gate.py"],
+                         "only the unit whose band demanded mutation contributes its files")
+
+    def test_the_blanket_sweep_does_not_also_run(self) -> None:
+        """AC2. Two selection rules produce two answers to the same question, and the close
+        currently spends its ceiling on whichever it reaches first. Selecting a strategy
+        surface must therefore be exclusive of the diff sweep, not additive to it."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            picked = mod.select_files(root, strategy=["US0001"])
+            explicit = mod.select_files(root, files=["alpha.py"])
+        self.assertNotIn("alpha.py", [p.name for p in picked],
+                         "the strategy surface must not widen to the whole diff")
+        self.assertEqual([p.name for p in explicit], ["alpha.py"],
+                         "an explicit --files surface is unchanged by any of this")
+
+    def test_no_surface_at_all_is_still_refused(self) -> None:
+        """The control: adding a fourth way to choose a surface must not make it optional to
+        choose one. A run with no surface would mutate nothing and report a clean sweep."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError):
+                mod.select_files(Path(d))
+
+
 if __name__ == "__main__":
     unittest.main()

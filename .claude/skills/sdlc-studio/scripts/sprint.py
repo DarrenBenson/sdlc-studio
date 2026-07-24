@@ -3604,6 +3604,72 @@ def _resolve_retro(root, args, state) -> int | None:
     return 1
 
 
+def _print_test_strategy(args, data) -> None:
+    """The plan-time strategy block, with the TSD's own staleness reported FIRST.
+
+    Order matters: a reader who sees the areas before being told the document is rotted has
+    already believed them. Reviewing a batch against a stale TSD produces confident wrong
+    answers, which is the class EP0071 spent a sprint repairing.
+    """
+    root = getattr(args, "root", ".")
+    stale = tsd_staleness(root)
+    if stale.get("stale"):
+        print(f"  test strategy: the TSD is STALE - {stale['why']}. The areas below are derived "
+              f"from a document the code has moved past; re-read it before trusting them.",
+              file=sys.stderr)
+    elif not stale.get("known"):
+        print(f"  test strategy: TSD staleness UNKNOWN - {stale.get('why')}", file=sys.stderr)
+    for line in render_test_strategy(test_strategy(root, data.get("batch") or [])):
+        print(line, file=sys.stderr)
+
+
+def claimed_proof_gaps(root, batch: list[str]) -> list[str]:
+    """Units whose plan-time proof requirement is not matched by the evidence recorded for them.
+
+    A stated intent nobody checks at the end is a comment. The whole value of writing the proof
+    requirement at plan time is being measured against it at the close, so this is the half that
+    makes the other half worth having.
+
+    Only the `mutation` band is checkable mechanically today: mutation evidence is recorded per
+    file and can be looked up. A band nobody can check is not reported as a gap - claiming a
+    unit failed a bar that cannot be measured would be exactly the false precision this project
+    refuses.
+    """
+    demanded = set(strategy_mutation_targets(root, batch))
+    if not demanded:
+        return []
+    try:
+        import mutation  # noqa: PLC0415
+        ledger, _reset = mutation._load_ledger(mutation.ledger_path(Path(root)))
+    except Exception as exc:  # noqa: BLE001 - a close must not die on a ledger read
+        sdlc_md.debug("sprint.claimed_proof_gaps", exc)
+        return sorted(demanded)
+    mutated_files = {str(k) for k in (ledger.get("entries") or ledger or {})}
+    gaps = []
+    for uid in sorted(demanded):
+        hit = sdlc_md.find_by_id(Path(root), uid)
+        if not hit:
+            continue
+        affects = sdlc_md.extract_field(sdlc_md.read_text_safe(Path(hit[0])), "Affects") or ""
+        files = [f.strip() for f in re.split(r"[,\s]+", affects) if f.strip()]
+        if not any(any(f.endswith(mf) or mf.endswith(f) for mf in mutated_files) for f in files):
+            gaps.append(uid)
+    return gaps
+
+
+def strategy_mutation_targets(root, batch: list[str]) -> list[str]:
+    """The units whose risk band demands mutation evidence.
+
+    This is what replaces the blanket close-scoped sweep: a stated decision about which units
+    are worth mutating, made at plan time from the TSD, instead of a whole-sprint-diff sweep
+    that spends its ceiling on whatever it reaches first.
+    """
+    strat = test_strategy(root, batch)
+    if not strat.get("available"):
+        return []
+    return sorted(u for u, bands in strat["units"].items() if "mutation" in bands)
+
+
 def _ungroomed_blocks_at(args) -> bool:
     """Whether an ungroomed batch REFUSES the plan at this rung.
 
@@ -4641,6 +4707,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
             _report_ungroomed(bd, data["count"])
         if bd["oversized"]:
             _report_oversized(bd, data["count"])
+    _print_test_strategy(args, data)
     rc = _origin_drift_preflight(args, data)
     if rc is not None:
         return rc
@@ -5967,6 +6034,143 @@ def main(argv: list[str] | None = None) -> int:
     # is the project": otherwise a run from a subdirectory acts on a stray tree and exits 0.
     args.root = str(sdlc_md.resolve_root(args))
     return args.func(args)
+
+
+# ---------------------------------------------------------------------------
+# Test strategy at plan time (D0060 / RFC0049 option C)
+# ---------------------------------------------------------------------------
+# Planning decided WHAT to build and in what order and said nothing about HOW each unit would be
+# proved. The TSD and the test-specs were consulted by nothing at plan time, so proof strategy
+# was settled per unit, mid-build, by whoever held the keyboard - which is how this project has
+# repeatedly shipped a test that decorates code rather than pinning it, and caught it only by
+# mutating afterwards, where repair costs most.
+#
+# The areas are the TSD's own `### ` Test Levels, and the paths are the ones it names inside
+# them. Nothing is hardcoded here: add a level to the TSD, or a path to a level, and the next
+# plan reports it. A list baked into this file would be a second copy of the document, and the
+# two would drift - which is the failure EP0071 spent a sprint repairing.
+
+#: A risk band per level: what proof a unit touching it owes. `mutation` is the strongest,
+#: because a guard whose assertions do not bind is the failure this project keeps finding.
+TSD_PROOF_BAND = {
+    "Mutation Testing": "mutation",
+    "Security Testing": "adversarial",
+    "Unit Testing": "unit",
+    "Integration Testing": "integration",
+    "Static / Lint Testing": "lint",
+    "Eval Scenarios": "eval",
+    "End-to-End Testing": "e2e",
+    "Performance Testing": "performance",
+    "Coverage Targets": "unit",
+}
+
+
+def tsd_levels(root) -> dict[str, set[str]]:
+    """{level title: {paths it names}} read from the TSD's `## Test Levels` section.
+
+    Empty when the TSD is missing or has no such section - the caller reports that as a fact
+    rather than proceeding as though the batch touched nothing, because "no areas" and "no
+    document" are different answers and only one of them is safe.
+    """
+    text = sdlc_md.read_text_safe(Path(root) / "sdlc-studio" / "tsd.md")
+    if not text:
+        return {}
+    m = re.search(r"^## Test Levels(.*?)(?=^## )", text, re.S | re.M)
+    if not m:
+        return {}
+    out: dict[str, set[str]] = {}
+    for section in re.split(r"^### ", m.group(1), flags=re.M)[1:]:
+        title = section.splitlines()[0].strip()
+        paths = set(re.findall(r"`([\w./*-]+\.(?:py|sh|md|json|yaml))`", section))
+        out[title] = paths
+    return out
+
+
+def _band_for(title: str) -> str:
+    for key, band in TSD_PROOF_BAND.items():
+        if title.startswith(key):
+            return band
+    return "unit"
+
+
+def test_strategy(root, batch: list[str]) -> dict:
+    """The plan-time test strategy for a batch.
+
+    Returns the areas touched, the proof each unit owes, and the coverage the TSD demands that
+    the batch would not deliver. Every part is derived from the document at plan time - so a
+    risk area added to the TSD appears in the next plan with no change here.
+    """
+    levels = tsd_levels(root)
+    if not levels:
+        return {"available": False, "areas": [], "units": {}, "gaps": [],
+                "why": "no `## Test Levels` section in sdlc-studio/tsd.md - the strategy could "
+                       "not be derived, which is NOT the same as a batch that touches nothing"}
+    per_unit: dict[str, list[str]] = {}
+    touched: set[str] = set()
+    for uid in batch or []:
+        hit = sdlc_md.find_by_id(Path(root), uid)
+        if not hit:
+            continue
+        affects = sdlc_md.extract_field(sdlc_md.read_text_safe(Path(hit[0])), "Affects") or ""
+        files = [f.strip() for f in re.split(r"[,\s]+", affects) if f.strip()]
+        hits = sorted({title for title, paths in levels.items()
+                       if any(any(p in f or f.endswith(p) for p in paths) for f in files)})
+        per_unit[sdlc_md.norm_id(uid)] = [_band_for(t) for t in hits]
+        touched.update(hits)
+    gaps = sorted(t for t in levels if t not in touched and levels[t])
+    return {"available": True, "areas": sorted(touched), "units": per_unit, "gaps": gaps,
+            "why": ""}
+
+
+def render_test_strategy(strat: dict) -> list[str]:
+    """The plan block. A batch that touches NO risk area says so explicitly: an empty section is
+    indistinguishable from a lane that did not run, which is the reporting failure this project
+    has already had to repair once."""
+    if not strat.get("available"):
+        return [f"  test strategy: UNAVAILABLE - {strat.get('why')}"]
+    lines = []
+    if strat["areas"]:
+        lines.append(f"  test strategy: this batch touches {len(strat['areas'])} TSD risk "
+                     f"area(s): {', '.join(strat['areas'])}")
+    else:
+        lines.append("  test strategy: this batch touches NO TSD risk area - stated explicitly, "
+                     "because an empty section reads the same as a lane that did not run")
+    banded = {u: b for u, b in strat["units"].items() if b}
+    if banded:
+        lines.append(f"  proof required: " + "; ".join(
+            f"{u} -> {'+'.join(b)}" for u, b in sorted(banded.items())[:10]))
+    if strat["gaps"]:
+        lines.append(f"  coverage the TSD demands that this batch does NOT deliver: "
+                     f"{', '.join(strat['gaps'][:6])}")
+    return lines
+
+
+def tsd_staleness(root) -> dict:
+    """Whether the TSD predates the code it describes.
+
+    A strategy review against a rotted document produces confident wrong answers - the class
+    EP0071 spent a sprint repairing - so the comparison is made and REPORTED before the document
+    is used. The verdict is a comparison of commit times, not a freshness marker anyone can
+    write: a stamp asserts currency, it does not establish it.
+    """
+    import subprocess  # noqa: PLC0415
+    def _last(path: str) -> str:
+        try:
+            r = subprocess.run(["git", "log", "-1", "--format=%cI", "--", path],
+                               cwd=str(root), capture_output=True, text=True,
+                               timeout=10)  # nosec B603 B607
+        except (OSError, subprocess.SubprocessError):
+            return ""
+        return r.stdout.strip() if r.returncode == 0 else ""
+    tsd = _last("sdlc-studio/tsd.md")
+    code = _last(".claude/skills/sdlc-studio/scripts")
+    if not tsd or not code:
+        return {"known": False, "stale": False,
+                "why": "commit times unavailable - staleness unknown, which is not the same "
+                       "as fresh"}
+    return {"known": True, "stale": code > tsd, "tsd_at": tsd, "code_at": code,
+            "why": (f"the scripts changed at {code} and the TSD was last revised at {tsd}"
+                    if code > tsd else "")}
 
 
 if __name__ == "__main__":

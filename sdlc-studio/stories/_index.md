@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 12 |
-| Ready | 19 |
+| Ready | 15 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 19 |
+| Review | 23 |
 | Done | 380 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -329,10 +329,10 @@
 | [US0416](US0416-the-disjointness-check-treats-build-tooling-and-shared.md) | the disjointness check treats build tooling and shared config as coupling, not as ordinary files | Draft | EP0156 | 2026-07-24 | 2026-07-24 |
 | [US0417](US0417-the-engagement-floor-attributes-a-git-add-a.md) | the engagement floor attributes a git add -A commit to every unit it touched, not only those named | Review | EP0156 | 2026-07-24 | 2026-07-24 |
 | [US0418](US0418-a-writer-s-fields-file-accepts-metadata-keys.md) | a writer's --fields-file accepts metadata keys as well as prose, so one invocation sets both | Draft | EP0156 | 2026-07-24 | 2026-07-24 |
-| [US0419](US0419-the-planner-reads-the-tsd-and-names-the.md) | the planner reads the TSD and names the risk areas the batch touches | Ready | EP0157 | 2026-07-24 | 2026-07-24 |
-| [US0420](US0420-each-unit-carries-the-proof-its-risk-band.md) | each unit carries the proof its risk band requires, and coverage the TSD demands but the batch omits is flagged | Ready | EP0157 | 2026-07-24 | 2026-07-24 |
-| [US0421](US0421-the-review-reports-a-stale-tsd-rather-than.md) | the review reports a STALE TSD rather than reviewing against a wrong document | Ready | EP0157 | 2026-07-24 | 2026-07-24 |
-| [US0422](US0422-the-stated-strategy-names-the-units-worth-mutating.md) | the stated strategy names the units worth mutating, replacing the blanket close-scoped sweep | Ready | EP0157 | 2026-07-24 | 2026-07-24 |
+| [US0419](US0419-the-planner-reads-the-tsd-and-names-the.md) | the planner reads the TSD and names the risk areas the batch touches | Review | EP0157 | 2026-07-24 | 2026-07-24 |
+| [US0420](US0420-each-unit-carries-the-proof-its-risk-band.md) | each unit carries the proof its risk band requires, and coverage the TSD demands but the batch omits is flagged | Review | EP0157 | 2026-07-24 | 2026-07-24 |
+| [US0421](US0421-the-review-reports-a-stale-tsd-rather-than.md) | the review reports a STALE TSD rather than reviewing against a wrong document | Review | EP0157 | 2026-07-24 | 2026-07-24 |
+| [US0422](US0422-the-stated-strategy-names-the-units-worth-mutating.md) | the stated strategy names the units worth mutating, replacing the blanket close-scoped sweep | Review | EP0157 | 2026-07-24 | 2026-07-24 |
 | [US0423](US0423-a-plan-critic-pass-runs-before-write-across.md) | a plan-critic pass runs before --write across the scope, risk and efficiency lenses | Ready | EP0158 | 2026-07-24 | 2026-07-24 |
 | [US0424](US0424-findings-must-be-filed-or-declined-with-a.md) | findings must be filed or declined with a reason before --write proceeds; silence is refused | Ready | EP0158 | 2026-07-24 | 2026-07-24 |
 | [US0425](US0425-the-pass-is-intensity-scaled-to-batch-size.md) | the pass is intensity-scaled to batch size and records what the scaling skipped | Ready | EP0158 | 2026-07-24 | 2026-07-24 |

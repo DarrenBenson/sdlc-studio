@@ -1449,7 +1449,7 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
 
 
 def select_files(repo_root: Path | str, files=None, since: str | None = None,
-                 story: str | None = None) -> list[Path]:
+                 story: str | None = None, strategy: list[str] | None = None) -> list[Path]:
     """Resolve the target surface: explicit --files, `git diff --name-only <since>`,
     or a story's chain (story -> epic -> CR `Affects`, existing files only)."""
     root = Path(repo_root)
@@ -1470,7 +1470,32 @@ def select_files(repo_root: Path | str, files=None, since: str | None = None,
         return out
     if story:
         return _story_surface(root, story)
-    raise ValueError("select a surface: --files, --since REF, or --story USxxxx")
+    if strategy:
+        return _strategy_surface(root, strategy)
+    raise ValueError("select a surface: --files, --since REF, --story USxxxx, or "
+                     "--strategy (the units the plan-time test strategy named)")
+
+
+def _strategy_surface(root: Path, batch: list[str]) -> list[Path]:
+    """The files of the units whose plan-time risk band demanded mutation evidence.
+
+    This replaces the blanket close-scoped sweep over a whole sprint diff. The difference is
+    not size, it is provenance: a sweep spends its ceiling on whatever it reaches first, while
+    this spends it on units a stated strategy said were worth mutating - a decision made at
+    plan time, in the open, and checkable against what the close actually produced.
+    """
+    import sprint  # noqa: PLC0415 - the strategy has one definition, in the planner
+    out: list[Path] = []
+    for uid in sprint.strategy_mutation_targets(root, batch):
+        hit = sdlc_md.find_by_id(root, uid)
+        if not hit:
+            continue
+        affects = sdlc_md.extract_field(sdlc_md.read_text_safe(Path(hit[0])), "Affects") or ""
+        for name in re.split(r"[,\s]+", affects):
+            p = root / name.strip()
+            if name.strip() and p.suffix in PROFILES and p.exists() and p not in out:
+                out.append(p)
+    return out
 
 
 def _story_surface(root: Path, story_id: str) -> list[Path]:

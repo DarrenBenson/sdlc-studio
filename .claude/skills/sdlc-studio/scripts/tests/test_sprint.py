@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import importlib.util
+import inspect
 import io
 import json
 import sys
@@ -7146,6 +7147,169 @@ class DisclosureTests(unittest.TestCase):
             with contextlib.redirect_stderr(err):
                 sprint._disclose_delegated_signoffs(str(root))
         self.assertEqual(err.getvalue(), "")
+
+
+class TestStrategyTests(unittest.TestCase):
+    """D0060 / RFC0049 option C. Planning decided WHAT to build and said nothing about HOW each
+    unit would be proved, so proof strategy was settled mid-build by whoever held the keyboard -
+    which is how this project keeps shipping a test that decorates code rather than pinning it,
+    and catching it only by mutating afterwards."""
+
+    TSD = """# TSD
+
+## Test Levels
+
+### Unit Testing
+
+Covers `alpha.py` and `beta.py`.
+
+### Mutation Testing (assertion integrity)
+
+Covers `gate.py`.
+
+### Security Testing
+
+Covers `auth.py`.
+
+## Next Section
+"""
+
+    def _repo(self, d: str, units: dict[str, str], tsd: str | None = None) -> Path:
+        root = Path(d)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (root / "sdlc-studio" / "tsd.md").write_text(
+            self.TSD if tsd is None else tsd, encoding="utf-8")
+        for uid, affects in units.items():
+            (root / "sdlc-studio" / "stories" / f"{uid}-x.md").write_text(
+                f"# {uid}: x\n\n> **Status:** Ready\n> **Affects:** {affects}\n",
+                encoding="utf-8")
+        return root
+
+    def test_the_plan_names_the_tsd_risk_areas_the_batch_touches(self) -> None:
+        """AC1, resolved from the units' Affects against the document - not from the QA seat's
+        WSJF score, which is collapsed into an ordering number and discarded."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, {"US0001": "alpha.py", "US0002": "gate.py"})
+            strat = sprint.test_strategy(root, ["US0001", "US0002"])
+        self.assertIn("Unit Testing", strat["areas"])
+        self.assertIn("Mutation Testing (assertion integrity)", strat["areas"])
+        self.assertNotIn("Security Testing", strat["areas"], "an untouched area is not reported")
+
+    def test_no_risk_area_is_stated_explicitly_not_left_blank(self) -> None:
+        """AC2. An empty section is indistinguishable from a lane that did not run, which is
+        the reporting failure this project has already had to repair once."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, {"US0001": "docs/readme.md"})
+            lines = sprint.render_test_strategy(sprint.test_strategy(root, ["US0001"]))
+        self.assertTrue(any("touches NO TSD risk area" in ln for ln in lines))
+
+    def test_a_newly_added_risk_area_appears_without_a_code_change(self) -> None:
+        """AC3. The strategy is derived from the DOCUMENT at plan time. A list baked into the
+        planner would be a second copy of the TSD, and the two would drift - the failure EP0071
+        spent a sprint repairing."""
+        sprint = _load()
+        extended = self.TSD.replace("## Next Section",
+                                    "### Chaos Testing\n\nCovers `chaos.py`.\n\n## Next Section")
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, {"US0001": "chaos.py"}, tsd=extended)
+            strat = sprint.test_strategy(root, ["US0001"])
+        self.assertIn("Chaos Testing", strat["areas"])
+
+    def test_a_missing_tsd_is_unavailable_not_empty(self) -> None:
+        """'No areas' and 'no document' are different answers and only one of them is safe."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, {"US0001": "alpha.py"}, tsd="# TSD\n\nno levels here\n")
+            strat = sprint.test_strategy(root, ["US0001"])
+        self.assertFalse(strat["available"])
+        self.assertIn("NOT the same as a batch that touches nothing", strat["why"])
+
+
+class ProofRequirementTests(unittest.TestCase):
+    """AC set for US0420: each unit carries the proof its band requires, and coverage the TSD
+    demands but the batch omits is flagged."""
+
+    def test_each_unit_carries_the_proof_its_band_requires(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = TestStrategyTests()._repo(d, {"US0001": "gate.py", "US0002": "alpha.py"})
+            strat = sprint.test_strategy(root, ["US0001", "US0002"])
+        self.assertIn("mutation", strat["units"]["US0001"])
+        self.assertEqual(strat["units"]["US0002"], ["unit"])
+
+    def test_the_close_reports_a_claimed_proof_the_evidence_does_not_show(self) -> None:
+        """AC3. A stated intent nobody checks at the end is a comment - the whole value of
+        writing the proof requirement at plan time is being measured against it."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = TestStrategyTests()._repo(d, {"US0001": "gate.py", "US0002": "alpha.py"})
+            gaps = sprint.claimed_proof_gaps(root, ["US0001", "US0002"])
+        self.assertEqual(gaps, ["US0001"],
+                         "the unit whose band demanded mutation, with no mutation evidence")
+        self.assertNotIn("US0002", gaps,
+                         "a unit whose band demands no mutation cannot be in arrears for it")
+
+    def test_a_band_nobody_can_check_is_not_reported_as_a_gap(self) -> None:
+        """Claiming a unit failed a bar that cannot be measured is the false precision this
+        project refuses. Only the mutation band is mechanically checkable today."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = TestStrategyTests()._repo(d, {"US0001": "auth.py"})   # Security band
+            self.assertEqual(sprint.claimed_proof_gaps(root, ["US0001"]), [])
+
+    def test_demanded_coverage_the_batch_omits_is_flagged(self) -> None:
+        """A plan that silently omits demanded coverage cannot be found by reading the batch."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = TestStrategyTests()._repo(d, {"US0001": "alpha.py"})
+            strat = sprint.test_strategy(root, ["US0001"])
+        self.assertIn("Security Testing", strat["gaps"])
+        self.assertNotIn("Unit Testing", strat["gaps"], "a delivered area is not a gap")
+
+
+class StaleTsdTests(unittest.TestCase):
+    """A strategy review against a rotted document produces confident wrong answers."""
+
+    def test_a_current_tsd_passes_on_comparison_not_on_a_marker(self) -> None:
+        """The verdict is a comparison of commit times, never a freshness stamp anyone can
+        write: a stamp asserts currency, it does not establish it."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)   # not a git repo: staleness is UNKNOWN, not False
+            verdict = sprint.tsd_staleness(root)
+        self.assertFalse(verdict["known"])
+        self.assertIn("not the same as fresh", verdict["why"])
+
+    def test_a_stale_tsd_is_reported_before_it_is_used(self) -> None:
+        """Order matters: a reader who sees the areas before being told the document is rotted
+        has already believed them."""
+        sprint = _load()
+        src = inspect.getsource(sprint._print_test_strategy)
+        self.assertLess(src.index("tsd_staleness"), src.index("render_test_strategy"))
+
+
+class StrategyScopedMutationTests(unittest.TestCase):
+    """US0422: the stated strategy names which units are worth mutating, replacing the blanket
+    close-scoped sweep that spent its ceiling on whatever it reached first."""
+
+    def test_the_run_mutates_the_units_the_strategy_named(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = TestStrategyTests()._repo(d, {"US0001": "gate.py", "US0002": "alpha.py"})
+            targets = sprint.strategy_mutation_targets(root, ["US0001", "US0002"])
+        self.assertEqual(targets, ["US0001"],
+                         "only the unit whose band demands mutation is named")
+
+    def test_an_unavailable_strategy_names_nothing_rather_than_everything(self) -> None:
+        """Fail-safe direction: an underivable strategy must not silently promote the whole
+        batch to mutation, which would be the blanket sweep under a new name."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = TestStrategyTests()._repo(d, {"US0001": "gate.py"},
+                                             tsd="# TSD\n\nno levels\n")
+            self.assertEqual(sprint.strategy_mutation_targets(root, ["US0001"]), [])
 
 
 if __name__ == "__main__":
