@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 3 |
+| Draft | 0 |
 | In Review | 0 |
-| Accepted | 46 |
+| Accepted | 49 |
 | Superseded | 1 |
 | Withdrawn | 3 |
 | **Total** | **53** |
@@ -65,8 +65,8 @@
 | [RFC-0046](RFC0046-should-a-sprint-level-adversarial-full-diff-review.md) | Should a sprint-level adversarial full-diff review satisfy the per-unit critiqued gate for a large batch? | Medium | Accepted | sdlc-studio | 2026-07-17 | -- |
 | [RFC-0047](RFC0047-declare-the-workspace-artefact-schema-a-versioned-public.md) | Declare the workspace artefact schema a versioned public contract | High | Accepted | sdlc-studio | 2026-07-17 | -- |
 | [RFC-0048](RFC0048-make-the-test-suite-cost-effective-without-lowering.md) | Make the test suite cost-effective without lowering the floor: tier it by measured value, and review tests adversarially | Medium | Accepted | sdlc-studio | 2026-07-19 | -- |
-| [RFC-0049](RFC0049-a-test-strategy-set-at-sprint-planning-derived.md) | A test strategy set at sprint planning, derived from the TSD and the unit's risk band | High | Draft | sdlc-studio | 2026-07-21 | -- |
-| [RFC-0050](RFC0050-an-adversarial-pass-over-the-sprint-plan-and.md) | An adversarial pass over the sprint plan and test plan before the build starts | High | Draft | sdlc-studio | 2026-07-21 | -- |
-| [RFC-0051](RFC0051-an-operator-cannot-delegate-reviewer-of-record-sign.md) | An operator cannot delegate reviewer-of-record sign-off to an agent: the trust boundary the guard requires cannot exist inside the authoring session | High | Draft | sdlc-studio | 2026-07-22 | -- |
+| [RFC-0049](RFC0049-a-test-strategy-set-at-sprint-planning-derived.md) | A test strategy set at sprint planning, derived from the TSD and the unit's risk band | High | Accepted | sdlc-studio | 2026-07-21 | -- |
+| [RFC-0050](RFC0050-an-adversarial-pass-over-the-sprint-plan-and.md) | An adversarial pass over the sprint plan and test plan before the build starts | High | Accepted | sdlc-studio | 2026-07-21 | -- |
+| [RFC-0051](RFC0051-an-operator-cannot-delegate-reviewer-of-record-sign.md) | An operator cannot delegate reviewer-of-record sign-off to an agent: the trust boundary the guard requires cannot exist inside the authoring session | High | Accepted | sdlc-studio | 2026-07-22 | -- |
 | [RFC-0052](RFC0052-the-closing-review-converges-on-code-and-never.md) | The closing review converges on code and never on prose, so a sprint can be unable to clear its own critiqued gate | High | Superseded | sdlc-studio | 2026-07-22 | -- |
 | [RFC-0053](RFC0053-a-repair-should-be-planned-and-the-plan.md) | A repair should be planned and the PLAN adversarially reviewed, because the repair is the only step in the loop with no review before execution | High | Accepted | Darren Benson | 2026-07-22 | -- |

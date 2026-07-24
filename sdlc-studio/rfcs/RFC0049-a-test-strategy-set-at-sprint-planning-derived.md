@@ -1,6 +1,7 @@
 # RFC-0049: A test strategy set at sprint planning, derived from the TSD and the unit's risk band
 
-> **Status:** Draft
+> **Status:** Accepted
+> **Decomposed-into:** EP0157
 > **Size:** M
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py,.claude/skills/sdlc-studio/reference-sprint.md,.claude/skills/sdlc-studio/scripts/gate.py
 > **Date:** 2026-07-21
@@ -25,7 +26,13 @@ B first, and judge C on whether B's proof lines keep coming back the same. B is 
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Choose between: A: no change - proof strategy stays a build-time judgement by the implementing seat, with the close-scoped mutation sweep and the independent critic as the backstop. Cheapest; keeps the plan short. Accepts that the backstop has repeatedly been the only thing that caught a vacuous test, at the point where repair is most expensive., B: a per-unit proof line in the plan - each unit carries a one-line strategy (risk band + proof required + what would falsify it) written at plan time, gated at close by comparing what was claimed against what the evidence shows. Small, mechanical, testable. Does not require the TSD to be good. or C: a full test-strategy review at planning, as a QA-seat pass over the batch against the TSD - identifies risk areas the batch touches, names the proof each needs, and flags coverage the TSD demands that the batch would not deliver. Richest signal; adds a planning stage and depends on the TSD staying current, which is itself the thing EP0071 had to repair. | Open |
+| D1 | Choose between: A: no change - proof strategy stays a build-time judgement by the implementing seat, with the close-scoped mutation sweep and the independent critic as the backstop. Cheapest; keeps the plan short. Accepts that the backstop has repeatedly been the only thing that caught a vacuous test, at the point where repair is most expensive., B: a per-unit proof line in the plan - each unit carries a one-line strategy (risk band + proof required + what would falsify it) written at plan time, gated at close by comparing what was claimed against what the evidence shows. Small, mechanical, testable. Does not require the TSD to be good. or C: a full test-strategy review at planning, as a QA-seat pass over the batch against the TSD - identifies risk areas the batch touches, names the proof each needs, and flags coverage the TSD demands that the batch would not deliver. Richest signal; adds a planning stage and depends on the TSD staying current, which is itself the thing EP0071 had to repair. | CLOSED: **C** - full QA-seat test-strategy review at planning against the TSD, with a stale-TSD report. Ruled by the operator 2026-07-24, recorded as D0060, decomposed into EP0157. |
+
+## Decision
+
+**C** - recorded as [D0060](../decisions.md) on 2026-07-24 by Darren Benson (operator).
+
+A full QA-seat test-strategy review at planning, against the TSD. The review must report when the TSD it read is stale, rather than silently reviewing against a wrong document.
 
 ## Revision History
 

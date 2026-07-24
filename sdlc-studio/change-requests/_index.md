@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 2 |
+| Proposed | 1 |
 | Approved | 0 |
-| In Progress | 27 |
+| In Progress | 28 |
 | Complete | 372 |
 | Rejected | 0 |
 | Deferred | 0 |
@@ -239,7 +239,7 @@
 | [CR-0415](CR0415-the-delivery-mode-disjointness-check-treats-build-tooling.md) | the delivery-mode disjointness check treats build tooling as an ordinary file, so a unit that restructures the pre-commit hook or the gate reads as file-disjoint from every other unit - yet every parallel agent commits through it | In Progress | Medium | Feature | 2026-07-24 | EP0156 |
 | [CR-0416](CR0416-the-engagement-floor-cannot-see-work-for-a.md) | the engagement floor cannot see work for a unit the commit message never names: a git add -A that sweeps in a concurrently-edited unit attributes its files to whichever id the subject happens to carry | In Progress | Medium | Feature | 2026-07-24 | EP0156 |
 | [CR-0417](CR0417-a-writer-s-fields-file-allows-only-its.md) | a writer's --fields-file allows only its prose keys, so an invocation setting metadata must be split across a document and flags: lessons add takes --tags, --epic and --wave that its own fields-file refuses | In Progress | Medium | Feature | 2026-07-24 | EP0156 |
-| [CR-0418](CR0418-grooming-debt-can-only-be-cleared-by-unbatched.md) | grooming debt can only be cleared by unbatched hand-work outside any unit | Proposed | Medium | Feature | 2026-07-24 | -- |
+| [CR-0418](CR0418-grooming-debt-can-only-be-cleared-by-unbatched.md) | grooming debt can only be cleared by unbatched hand-work outside any unit | In Progress | Medium | Feature | 2026-07-24 | EP0160 |
 
 ## Archived Releases
 

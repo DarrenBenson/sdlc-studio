@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 37 |
+| Draft | 50 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **418** |
+| **Total** | **431** |
 
 ## All Stories
 
@@ -329,6 +329,19 @@
 | [US0416](US0416-the-disjointness-check-treats-build-tooling-and-shared.md) | the disjointness check treats build tooling and shared config as coupling, not as ordinary files | Draft | EP0156 | 2026-07-24 | 2026-07-24 |
 | [US0417](US0417-the-engagement-floor-attributes-a-git-add-a.md) | the engagement floor attributes a git add -A commit to every unit it touched, not only those named | Draft | EP0156 | 2026-07-24 | 2026-07-24 |
 | [US0418](US0418-a-writer-s-fields-file-accepts-metadata-keys.md) | a writer's --fields-file accepts metadata keys as well as prose, so one invocation sets both | Draft | EP0156 | 2026-07-24 | 2026-07-24 |
+| [US0419](US0419-the-planner-reads-the-tsd-and-names-the.md) | the planner reads the TSD and names the risk areas the batch touches | Draft | EP0157 | 2026-07-24 | 2026-07-24 |
+| [US0420](US0420-each-unit-carries-the-proof-its-risk-band.md) | each unit carries the proof its risk band requires, and coverage the TSD demands but the batch omits is flagged | Draft | EP0157 | 2026-07-24 | 2026-07-24 |
+| [US0421](US0421-the-review-reports-a-stale-tsd-rather-than.md) | the review reports a STALE TSD rather than reviewing against a wrong document | Draft | EP0157 | 2026-07-24 | 2026-07-24 |
+| [US0422](US0422-the-stated-strategy-names-the-units-worth-mutating.md) | the stated strategy names the units worth mutating, replacing the blanket close-scoped sweep | Draft | EP0157 | 2026-07-24 | 2026-07-24 |
+| [US0423](US0423-a-plan-critic-pass-runs-before-write-across.md) | a plan-critic pass runs before --write across the scope, risk and efficiency lenses | Draft | EP0158 | 2026-07-24 | 2026-07-24 |
+| [US0424](US0424-findings-must-be-filed-or-declined-with-a.md) | findings must be filed or declined with a reason before --write proceeds; silence is refused | Draft | EP0158 | 2026-07-24 | 2026-07-24 |
+| [US0425](US0425-the-pass-is-intensity-scaled-to-batch-size.md) | the pass is intensity-scaled to batch size and records what the scaling skipped | Draft | EP0158 | 2026-07-24 | 2026-07-24 |
+| [US0426](US0426-reference-sprint-md-states-the-plan-critic-has.md) | reference-sprint.md states the plan critic has less information than the builder, and that Ponytail's rate is not evidence here | Draft | EP0158 | 2026-07-24 | 2026-07-24 |
+| [US0427](US0427-a-subagent-reviewer-of-record-in-its-own.md) | a subagent reviewer of record in its own context is accepted, and the row records that it was a delegated agent | Draft | EP0159 | 2026-07-24 | 2026-07-24 |
+| [US0428](US0428-the-sprint-report-and-the-close-output-disclose.md) | the sprint report and the close output DISCLOSE every delegated sign-off, naming the delegate | Draft | EP0159 | 2026-07-24 | 2026-07-24 |
+| [US0429](US0429-reference-review-md-states-plainly-that-a-disclosed.md) | reference-review.md states plainly that a disclosed sign-off is not an independent one, and what that costs | Draft | EP0159 | 2026-07-24 | 2026-07-24 |
+| [US0430](US0430-the-breakdown-gate-refuses-an-ungroomed-batch-at.md) | the breakdown gate refuses an ungroomed batch at --goal done and accepts it at --goal design | Draft | EP0160 | 2026-07-24 | 2026-07-24 |
+| [US0431](US0431-a-design-rung-s-close-reports-how-many.md) | a design rung's close reports how many units it groomed, so an accepted-but-ungroomed batch cannot close silently | Draft | EP0160 | 2026-07-24 | 2026-07-24 |
 
 ## Archived Releases
 

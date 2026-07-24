@@ -1,6 +1,7 @@
 # RFC-0050: An adversarial pass over the sprint plan and test plan before the build starts
 
-> **Status:** Draft
+> **Status:** Accepted
+> **Decomposed-into:** EP0158
 > **Size:** L
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py,.claude/skills/sdlc-studio/scripts/critic.py,.claude/skills/sdlc-studio/reference-sprint.md
 > **Date:** 2026-07-21
@@ -25,7 +26,13 @@ B, gated behind RFC0048 option B landing first. The scope lens alone is the chea
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Choose between: A: no change - the plan stays mechanically checked, and scope, proof and efficiency findings continue to surface during the build or at the close. Costs nothing at plan time. Keeps paying the full build cost for work that a five-minute read would have cut, which is the most expensive place to learn it., B: one bounded plan-critic pass, three fixed lenses (scope / risk / efficiency), intensity-scaled to batch size, emitting findings the planner must dispose of before --write. Single stage, single artefact, reuses the retro's existing file-or-decline discipline. The three lenses stay coupled, so a batch needing only a scope check still pays for all three unless intensity handles it. or C: three separate seat-owned passes - Product Owner refutes scope, QA refutes the proof strategy, Engineering assesses refactoring - each recorded under its seat like the close-time critic. Richest signal and the cleanest audit trail. Three stages before any code is written, on the sprint length already under complaint. | Open |
+| D1 | Choose between: A: no change - the plan stays mechanically checked, and scope, proof and efficiency findings continue to surface during the build or at the close. Costs nothing at plan time. Keeps paying the full build cost for work that a five-minute read would have cut, which is the most expensive place to learn it., B: one bounded plan-critic pass, three fixed lenses (scope / risk / efficiency), intensity-scaled to batch size, emitting findings the planner must dispose of before --write. Single stage, single artefact, reuses the retro's existing file-or-decline discipline. The three lenses stay coupled, so a batch needing only a scope check still pays for all three unless intensity handles it. or C: three separate seat-owned passes - Product Owner refutes scope, QA refutes the proof strategy, Engineering assesses refactoring - each recorded under its seat like the close-time critic. Richest signal and the cleanest audit trail. Three stages before any code is written, on the sprint length already under complaint. | CLOSED: **B** - one bounded plan-critic pass before `--write`, three fixed lenses, intensity-scaled, findings filed or declined. Ruled by the operator 2026-07-24, recorded as D0061, decomposed into EP0158. |
+
+## Decision
+
+**B** - recorded as [D0061](../decisions.md) on 2026-07-24 by Darren Benson (operator).
+
+One bounded plan-critic pass before `--write`: three fixed lenses, intensity-scaled, findings disposed of under the retro's file-or-decline discipline.
 
 ## Revision History
 

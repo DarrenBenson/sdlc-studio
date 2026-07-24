@@ -47,9 +47,16 @@ Two guards hold different definitions of the same state. `conformance` says "ung
 is a legitimate status before the Definition-of-Ready bar"; `validate` says "no acceptance
 criteria, which is an error". Both are shipped, both run in the same gate, and they disagree.
 
-Note the asymmetry that hid this: the same command with `--into EP0156` seeded placeholder ACs
-with real `### ACn` headings, which validate accepts. So four of the six stories refined in this
-session passed and two failed, from the same tool in the same minute.
+Note the asymmetry that hid this, and the WRONG first diagnosis it produced. Four of the six
+stories refined in the same minute passed validate and two failed, so the split looked like
+`--into` (passes) versus `--epic-title` (fails), and the workaround chosen on that basis - mint
+the epic first, then refine `--into` it - did not work: the next 13 stories refined `--into`
+existing epics ALL failed the same way.
+
+The real trigger is whether the REQUEST has acceptance criteria to seed from. A CR carries an
+`## Acceptance Criteria` section, so its stories get seeded `### ACn` headings that validate
+accepts. An RFC carries Design Options and no ACs, so nothing seeds, the marker is left alone,
+and every story it produces is uncommittable. Refining any accepted RFC is therefore blocked.
 
 ## Impact
 

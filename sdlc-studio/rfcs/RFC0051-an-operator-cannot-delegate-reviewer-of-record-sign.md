@@ -1,6 +1,7 @@
 # RFC-0051: An operator cannot delegate reviewer-of-record sign-off to an agent: the trust boundary the guard requires cannot exist inside the authoring session
 
-> **Status:** Draft
+> **Status:** Accepted
+> **Decomposed-into:** EP0159
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py,.claude/skills/sdlc-studio/scripts/sprint.py,.claude/skills/sdlc-studio/reference-review.md
 > **Date:** 2026-07-22
 > **Created-by:** sdlc-studio file
@@ -25,7 +26,13 @@ A plus C, and treat B as the near-term stopgap. A is honest today and costs noth
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Choose between: A: accept the limit and make it explicit - an unattended run's best reachable state is reviewed-and-ready, sign-off is always deferred to a human, and the plan says so at plan time rather than the run discovering it at close, B: an asynchronous sign-off channel - the run notifies the operator out of band (email, Telegram, a queued prompt) and blocks or parks until a real human answers, so delegation is to the operator's future self rather than to an agent, C: a genuine external boundary - sign-off performed by a process the authoring session cannot brief or inspect, for example a CI job that reads only the committed evidence and applies fixed criteria, which is a real trust boundary rather than a differently-named subagent or D: a scoped, recorded, expiring delegation - the operator pre-authorises agent sign-off for one named run, the ledger records that the delegate was author-controlled, and the row is marked provisional until a human countersigns | Open |
+| D1 | Choose between: A: accept the limit and make it explicit - an unattended run's best reachable state is reviewed-and-ready, sign-off is always deferred to a human, and the plan says so at plan time rather than the run discovering it at close, B: an asynchronous sign-off channel - the run notifies the operator out of band (email, Telegram, a queued prompt) and blocks or parks until a real human answers, so delegation is to the operator's future self rather than to an agent, C: a genuine external boundary - sign-off performed by a process the authoring session cannot brief or inspect, for example a CI job that reads only the committed evidence and applies fixed criteria, which is a real trust boundary rather than a differently-named subagent or D: a scoped, recorded, expiring delegation - the operator pre-authorises agent sign-off for one named run, the ledger records that the delegate was author-controlled, and the row is marked provisional until a human countersigns | CLOSED: operator ruling, none of A-D as written - a subagent in its own context is FULLY AUTHORISED as reviewer of record and the delegation is DISCLOSED in the sprint report. Taken against this RFC's own argument, knowingly. Recorded as D0059, decomposed into EP0159. |
+
+## Decision
+
+**operator ruling, none of A-D as written** - recorded as [D0059](../decisions.md) on 2026-07-24 by Darren Benson (operator).
+
+A subagent running in its own context is FULLY AUTHORISED as reviewer of record, and the delegation is DISCLOSED in the sprint report. This is not option D: the sign-off is not provisional and needs no countersignature. It is taken against this RFC's own argument, knowingly - the operator's position is that a separate context is a sufficient boundary in practice, and that the honest answer to the residual risk is disclosure rather than prohibition. Recorded cost: the sign-off is disclosed, not independent, so the guard no longer proves the property its name claims and the audit trail's value rests on the disclosure being read. Option C, a CI job reading only committed evidence, remains the only genuinely external boundary and is not foreclosed.
 
 ## Revision History
 
