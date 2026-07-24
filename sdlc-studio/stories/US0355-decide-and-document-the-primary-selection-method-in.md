@@ -23,7 +23,7 @@
 - **When** a reader asks how the Primary is chosen when several candidates compete
 - **Then** the document carries a `## Choosing the Primary` section stating the method and its tie-break, distinguished from the one-Primary-per-interface constraint. Greping for `Primary` would be vacuous - that constraint already uses the word; the check must bind the section that does not yet exist
 - **Verify:** grep '## Choosing the Primary' .claude/skills/sdlc-studio/reference-persona.md
-- **Verified:** no (2026-07-24)
+- **Verified:** yes (2026-07-24)
 
 ### AC2: RFC0017's D1 row is closed with what was decided
 
@@ -31,6 +31,7 @@
 - **When** `validate` reads the RFC
 - **Then** the row is closed and the accepted-open-decision error does not fire - the row sat unnoticed because a 5-column table was unparseable by the first accept gate, so closing it must be verified by the gate, not by eye
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/validate.py check --root . 2>&1 | grep -q 'RFC0017.*accepted-open-decision' && exit 1 || exit 0
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 
