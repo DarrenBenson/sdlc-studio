@@ -621,5 +621,67 @@ class InstalledCopyDriftAdvisoryTests(unittest.TestCase):
                 self.assertIsNone(self._drift(root, h, timeout=0.5))
 
 
+class BareInvocationTests(unittest.TestCase):
+    """A bare `status.py` mirrors `/sdlc-studio status`, which every reader of this surface
+    starts from. It exited 2 with an argparse usage error, costing a retry per session."""
+
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
+        import contextlib
+        import io
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            try:
+                rc = status.main(argv)
+            except SystemExit as e:                      # argparse's usage exit
+                rc = e.code if isinstance(e.code, int) else 1
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_no_subcommand_prints_the_pillars_and_exits_zero(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, "Done")
+            bare = self._run(["--root", str(root)])
+            explicit = self._run(["pillars", "--root", str(root)])
+            self.assertEqual(bare[0], 0, f"bare status exited {bare[0]}: {bare[2]}")
+            # Byte-identical to the explicit verb: a default that prints something SIMILAR
+            # is a second dashboard to keep in step with the first.
+            self.assertEqual(bare[1], explicit[1])
+            self.assertIn("Requirements:", bare[1])
+
+    def test_the_bare_call_defaults_to_text_without_a_top_level_format_flag(self) -> None:
+        """`--format` stays per-subcommand (the family grammar rule), so the default is
+        supplied as a namespace default rather than a second top-level flag that the
+        subparser's own default would overwrite on `status.py --format json pillars`."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, "Done")
+            self.assertEqual(status.build_parser().parse_args(["--root", str(root)]).format,
+                             "text")
+            self.assertNotIn(
+                "--format",
+                [o for a in status.build_parser()._actions for o in a.option_strings],
+                "a top-level --format would be clobbered by the subparser default")
+
+    def test_explicit_subcommands_are_unchanged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, "Done")
+            for verb in ("pillars", "hint", "backlog"):
+                rc, out, _ = self._run([verb, "--root", str(root)])
+                self.assertEqual(rc, 0, verb)
+                self.assertTrue(out.strip(), verb)
+            # A flag that belongs to one verb still reaches it, and --root after the verb
+            # still wins - the two positions the global-root helper exists to keep working.
+            rc, out, _ = self._run(["backlog", "--root", str(root), "--type", "story"])
+            self.assertEqual(rc, 0)
+
+    def test_an_unknown_verb_is_still_a_usage_error(self) -> None:
+        # Defaulting must not swallow a typo: `status.py pillrs` printing the dashboard and
+        # exiting 0 would be worse than the error this story removes.
+        rc, _out, err = self._run(["pillrs"])
+        self.assertNotEqual(rc, 0)
+        self.assertIn("invalid choice", err)
+
+
 if __name__ == "__main__":
     unittest.main()
