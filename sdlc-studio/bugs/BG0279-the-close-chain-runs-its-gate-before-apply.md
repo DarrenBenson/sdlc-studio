@@ -62,8 +62,19 @@ next, which is the most expensive way to learn it.
 - **Then** it reports the failure and names the units, instead of printing a green gate from the pre-transition state
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseGateOrderingTests::test_a_close_that_would_leave_the_tree_red_reports_it
 
+## Verification depth
+
+Node-addressed pytest ACs over `test_sprint.py`, red before the code. Mutation-proven, and the
+mutation mattered: the first three tests called the helper DIRECTLY, so deleting the call from
+`_apply_signoff_tail` left them all green - a surviving mutant that proved the check was never
+wired into the lane. That is LL0040 ("a library test is not a lane test"), walked into by the
+author of the fix. A lane test driving the tail now kills it, and it immediately exposed a second
+defect: the tail returns early on reconcile drift, so the report was swallowed in exactly the
+messy closes that need it. It is now emitted above that early return, unconditionally.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-24 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-24 | sdlc-studio | Fixed and mutation-proven; a surviving mutant exposed the missing lane test |

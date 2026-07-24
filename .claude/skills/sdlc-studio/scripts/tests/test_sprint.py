@@ -6511,6 +6511,72 @@ class ThemedBatchNotAnObjectionTests(_GoalReviewFixture):
         self.assertIn("THEMED", out.upper())
 
 
+class CloseGateOrderingTests(unittest.TestCase):
+    """BG0279: the chain gates at step 4 while units sit at Review, then --apply-signoff moves
+    them to Done. Conformance requires evidence at Done that Review does not, so a close could
+    print `gate: ok` and leave the tree red for whoever committed next."""
+
+    def _repo(self, verified: bool):
+        d = Path(tempfile.mkdtemp(prefix="close_gate_"))
+        st = d / "sdlc-studio" / "stories"
+        st.mkdir(parents=True)
+        (d / "sdlc-studio" / "epics").mkdir(parents=True)
+        body = ("# US0001: a manual criterion\n\n> **Status:** Done\n> **Points:** 2\n"
+                "> **Epic:** [EP0001: e](../epics/EP0001-e.md)\n\n"
+                "## Acceptance Criteria\n\n### AC1: the doc states the rule\n\n"
+                "- **Given** a reader\n- **Then** it is stated\n- **Verify:** manual\n")
+        if verified:
+            body += "- **Verified:** yes (2026-07-24)\n"
+        (st / "US0001-x.md").write_text(body, encoding="utf-8")
+        return d
+
+    def test_the_gate_is_evaluated_after_the_done_transitions(self):
+        # The unit is Done and owes its Verified annotation: the post-transition check must SEE
+        # that, which the pre-transition gate structurally could not.
+        s = _load()
+        d = self._repo(verified=False)
+        found = s._post_transition_conformance(d, units=["US0001"])
+        self.assertTrue(found, "the post-transition check did not judge the Done state")
+        self.assertIn("US0001", found[0])
+        self.assertIn("verified", found[0])
+
+    def test_a_close_that_would_leave_the_tree_red_reports_it(self):
+        """The check reports what is ACTUALLY missing, not a blanket alarm.
+
+        A Done story owes `verified` AND `critiqued`. Annotating the manual AC clears exactly
+        `verified` and leaves `critiqued` outstanding - which is the honest answer, and proves
+        the check reads real per-unit state rather than flagging every Done unit."""
+        s = _load()
+        without = s._post_transition_conformance(self._repo(verified=False), units=["US0001"])
+        with_evidence = s._post_transition_conformance(self._repo(verified=True), units=["US0001"])
+        self.assertIn("verified", without[0])
+        self.assertNotIn("verified", with_evidence[0])   # the annotation cleared exactly that
+        self.assertIn("critiqued", with_evidence[0])     # ...and nothing it did not earn
+
+    def test_the_close_TAIL_actually_runs_the_check_not_just_the_helper(self):
+        """LANE test, not a library test (LL0040). The three tests above call the helper
+        directly, so deleting the call from `_apply_signoff_tail` would leave them all green -
+        a mutation proved exactly that. This one drives the tail and asserts the report reaches
+        stderr, which is the only thing that fixes the harm."""
+        import contextlib, io
+        s = _load()
+        d = self._repo(verified=False)
+        (d / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        state = {"run_id": "RUN-T", "batch": ["US0001"], "handoff": "", "outcome": "running"}
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(buf):
+            s._apply_signoff_tail(d, state, units=["US0001"], retro_arg=None)
+        out = buf.getvalue()
+        self.assertIn("NOT conformant after the transitions", out)
+        self.assertIn("US0001", out)
+
+    def test_the_check_is_scoped_to_this_runs_units(self):
+        # A close reports the state IT created, never the repo's pre-existing debt.
+        s = _load()
+        d = self._repo(verified=False)
+        self.assertEqual(s._post_transition_conformance(d, units=["US9999"]), [])
+
+
 class RefusedPlanLeavesNothingTests(unittest.TestCase):
     """BG0268: the forecast record and sprint-plan.json were written BEFORE open_run, so a batch
     open_run refused left both behind while run-state.json's own guarantee held."""

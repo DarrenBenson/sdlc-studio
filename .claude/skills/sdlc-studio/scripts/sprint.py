@@ -3758,6 +3758,17 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
         print("apply-signoff: velocity NOT recorded - no retro id on the run state or the "
               "command line; record it with `retro.py accuracy --id RETROxxxx --write`",
               file=sys.stderr)
+    unconformant = _post_transition_conformance(root, units)
+    if unconformant:
+        # REPORTED, never a refusal. The harm this fixes is SILENCE - the next committer
+        # inheriting a red gate they did not cause and having to prove it was not theirs. Naming
+        # it here, attributed to this close, ends that. Failing instead would strand a completed
+        # and signed-off delivery behind ceremony debt the sign-off did not depend on.
+        print(f"apply-signoff: the tree is NOT conformant after the transitions - "
+              f"{', '.join(unconformant)}. The close's earlier gate judged these at Review, "
+              f"where the evidence they now owe was not required. Clear them (`verify_ac` then "
+              f"back-annotate `- **Verified:**`) - otherwise the next commit inherits this.",
+              file=sys.stderr)
     rc, _ = _run_cli(reconcile.main, ["detect", "--root", str(root)])
     if rc != 0:
         # Same exemption as the close's reconcile step, and for the same reason: a derivable
@@ -3770,8 +3781,38 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
             return 1
         print(f"apply-signoff: {len(blocked)} request(s) awaiting another gate "
               f"({', '.join(d['id'] for d in blocked)}) - reported, not clearable by apply")
+    # THE GATE MUST JUDGE THE STATE THE CLOSE LEAVES BEHIND, not the one it started from. The
+    # chain runs `gate` at step 4, while every unit still sits at Review; this cascade then moves
+    # them to Done, and conformance requires evidence at Done that Review does not. So a close
+    # could print `gate: ok` and still leave the tree red - which is what happened, and the next
+    # person to commit inherited a failure they did not cause and had to prove was not theirs.
+    # Same defect class as the handoff refresh above: a step reporting a superseded state.
     _finalise_outcome(root, state)
     return 0
+
+
+def _post_transition_conformance(root, units=None) -> list[str]:
+    """The units this close left non-conformant, judged AFTER their Done transitions.
+
+    Scoped to THIS run's units: a close reports the state it created, never the whole repo's
+    pre-existing debt. Fail-safe - a conformance error must not lose a completed sign-off, so an
+    unreadable census reports nothing rather than raising."""
+    try:
+        import conformance  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+        result = conformance.detect_conformance(Path(root))
+    except Exception as exc:  # noqa: BLE001 - never lose a sign-off to a census error
+        sdlc_md.debug("sprint._post_transition_conformance", exc)
+        return []
+    scope = {sdlc_md.norm_id(u) for u in (units or [])}
+    out = []
+    for unit in result.get("units", []):
+        if unit.get("conformant") or unit.get("exempt"):
+            continue
+        uid = sdlc_md.norm_id(str(unit.get("id") or ""))
+        if scope and uid not in scope:
+            continue
+        out.append(f"{uid} (missing: {', '.join(unit.get('missing') or []) or 'unstated'})")
+    return sorted(out)
 
 
 def _finalise_outcome(root, state) -> None:
