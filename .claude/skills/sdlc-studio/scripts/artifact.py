@@ -1504,6 +1504,12 @@ def cmd_retitle(args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    # Every verb here writes. A write made through a mutated tool is one nobody can trust
+    # afterwards, so the applied-mutant window is a refusal, not a warning.
+    refusal = sdlc_md.inflight_refusal(sdlc_md.resolve_root(args))
+    if refusal:
+        print(refusal, file=sys.stderr)
+        return 2
     return args.func(args)
 
 

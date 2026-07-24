@@ -379,8 +379,26 @@ def _purge_bytecode(path: Path) -> None:
 def _inflight_path(root: Path) -> Path:
     """The on-disk sidecar holding the original bytes of the mutant currently applied.
     In-memory state (`_APPLIED`) dies with a SIGKILL; this file does not, so it is the
-    one restore source a killed run cannot corrupt."""
-    return Path(root) / "sdlc-studio" / ".local" / "mutation-inflight.json"
+    one restore source a killed run cannot corrupt. The path is `sdlc_md`'s, because the
+    entry-point guard reads the same file and a second spelling here is how a writer and
+    its readers stop agreeing about where the window is recorded."""
+    return sdlc_md.inflight_path(root)
+
+
+def _suite_env() -> dict:
+    """The environment this gate runs its suites under.
+
+    `PYTHONDONTWRITEBYTECODE` because a cached `.pyc` is keyed on (source mtime, source
+    size), so a same-length mutant written inside one mtime second would otherwise run the
+    ORIGINAL bytecode and be recorded as survived. Writing no cache leaves nothing for the
+    next mutant to inherit.
+
+    The exemption marker because the sidecar this run writes makes every skill entry point
+    warn or refuse, and the suites this run launches ARE that run. Anything descending from
+    here inherits it and is exempt; nothing else in the tree does.
+    """
+    import os  # noqa: PLC0415 - local, as elsewhere in this module
+    return {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", sdlc_md.MUTATION_RUN_ENV: "1"}
 
 
 # --- The rewrite window ----------------------------------------------------------------------
@@ -846,13 +864,12 @@ def _run_tests(test_cmd: str, cwd: Path) -> str:
     The command runs in its own session and the whole process GROUP is killed on
     timeout - a compound command's grandchildren must not outlive the gate.
 
-    `PYTHONDONTWRITEBYTECODE` is forced on: a cached `.pyc` is keyed on (source
-    mtime, source size), so a same-length mutant written inside one mtime second
-    would otherwise run the ORIGINAL bytecode and be recorded as survived. Writing
-    no cache leaves nothing for the next mutant to inherit."""
+    The environment is `_suite_env()`: no bytecode cache (a same-length mutant would
+    otherwise run the ORIGINAL bytecode and be recorded as survived) and the marker that
+    exempts this run's own descendants from the applied-mutant guard."""
     import os
     import signal
-    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+    env = _suite_env()
     proc = subprocess.Popen(test_cmd, shell=True, cwd=cwd, start_new_session=True, env=env,  # nosec B602 - operator-authored test command, same trust boundary as verify_ac's Verify lines
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
@@ -1886,6 +1903,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    import os  # noqa: PLC0415 - local, as elsewhere in this module
+    # This process IS the mutation run, so it carries the exemption marker its suites carry:
+    # a gate that refused to run because it had itself applied a mutant would be absurd, and
+    # every child it spawns needs the same exemption.
+    os.environ[sdlc_md.MUTATION_RUN_ENV] = "1"
     args = build_parser().parse_args(argv)
     return args.func(args)
 

@@ -628,6 +628,11 @@ def main(argv: list[str] | None = None) -> int:
     """Parse arguments and dispatch to the chosen subcommand."""
     parser = build_parser()
     args = parser.parse_args(argv)
+    # A read taken while a mutation run has a mutant applied is degraded evidence, not
+    # forbidden: say so loudly on stderr, then answer the question that was asked.
+    warning = sdlc_md.inflight_warning(sdlc_md.resolve_root(args))
+    if warning:
+        print(warning, file=sys.stderr)
     return args.func(args)
 
 

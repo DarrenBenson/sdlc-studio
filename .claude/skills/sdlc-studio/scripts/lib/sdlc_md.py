@@ -149,6 +149,83 @@ def resolve_root(args) -> Path:
     return discover_root(Path.cwd())
 
 
+# --- The applied-mutant guard --------------------------------------------------------------
+# A mutation evidence run rewrites live source one file at a time, for minutes at a stretch.
+# Any script invoked inside that window can execute a mutated sibling, misbehave, and hand the
+# mutant's wrong behaviour to whoever is reading the output as the tool's own. The in-flight
+# sidecar already marks the window exactly; this is the pair of readers that surface it. The
+# functions RETURN their message rather than printing it - a library that prints leaks the
+# text into every caller, including the ones capturing output for something else.
+
+#: The environment marker a mutation run sets on itself and on the environment it runs its
+#: suites under. The sidecar records only `{path: original-bytes}` and carries no owner, so
+#: the run's own processes are told apart by what they inherit, not by what the file says.
+MUTATION_RUN_ENV = "SDLC_STUDIO_MUTATION_RUN"
+
+#: What the guard says a mutated tree violates, in both messages and in the doctrine: one
+#: process rewrites a tree at a time.
+_SINGLE_WRITER = ("the single-writer rule says one process rewrites a tree at a time")
+
+
+def inflight_path(root: Path | str) -> Path:
+    """The sidecar holding the original bytes of the mutant currently applied in `root`.
+
+    The ONE spelling of that path: the writer (the mutation engine) and these readers must
+    never disagree about where the window is recorded.
+    """
+    return Path(root) / "sdlc-studio" / ".local" / "mutation-inflight.json"
+
+
+def inflight_mutation(root: Path | str) -> dict | None:
+    """`{"sidecar": Path, "files": [...]}` while a mutant is applied in `root`, else None.
+
+    None for a process carrying `MUTATION_RUN_ENV` - the mutation run applies the mutants and
+    must not be blocked from cleaning up after itself. A sidecar that exists but cannot be read
+    still reports the window: the file's PRESENCE is the fact, its contents only name the
+    casualties.
+    """
+    if os.environ.get(MUTATION_RUN_ENV):
+        return None
+    sidecar = inflight_path(root)
+    if not sidecar.exists():
+        return None
+    files: list[str] = []
+    try:
+        data = json.loads(sidecar.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            files = sorted(str(k) for k in data)
+    except (OSError, ValueError):
+        files = []
+    return {"sidecar": sidecar, "files": files}
+
+
+def _inflight_named(state: dict) -> str:
+    return ", ".join(state["files"]) or f"(unreadable sidecar {state['sidecar']} - files unknown)"
+
+
+def inflight_warning(root: Path | str) -> str | None:
+    """The read-path message: a read taken over a mutated tree is degraded evidence, not
+    forbidden. Returns None when no mutant is applied (or this is the run's own process)."""
+    state = inflight_mutation(root)
+    if state is None:
+        return None
+    return (f"WARNING: a mutation run has a mutant applied to {_inflight_named(state)} - "
+            f"{_SINGLE_WRITER}, so this output may come from mutated code. Treat it as degraded "
+            f"evidence, and re-read once {state['sidecar']} is gone.")
+
+
+def inflight_refusal(root: Path | str) -> str | None:
+    """The write-path message: a write made against a mutated tool is one nobody can trust
+    afterwards, so it is refused. Returns None when there is nothing to refuse."""
+    state = inflight_mutation(root)
+    if state is None:
+        return None
+    return (f"refused: a mutation run has a mutant applied to {_inflight_named(state)} - "
+            f"{_SINGLE_WRITER}, and a write made through mutated code is one nobody can trust "
+            f"afterwards. Nothing was written. Wait for the run to finish, or - if no run is "
+            f"alive - restore the file(s) from git and delete {state['sidecar']}.")
+
+
 def now_iso8601() -> str:
     """Current UTC time as an ISO-8601 Z string (YYYY-MM-DDTHH:MM:SSZ)."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
