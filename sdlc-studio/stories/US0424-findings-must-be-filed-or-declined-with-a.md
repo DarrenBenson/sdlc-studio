@@ -1,6 +1,6 @@
 # US0424: findings must be filed or declined with a reason before --write proceeds; silence is refused
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** RFC0050
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
@@ -17,14 +17,19 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done.
+### AC1: silence is refused
 
-### AC1: {{criterion}}
+- **Given** a plan critic pass that produced findings, none of them dispositioned
+- **When** `--write` is attempted
+- **Then** it is REFUSED and names the undispositioned findings - the retro already enforces file-or-decline, and a plan critic whose findings can be ignored is advice nobody has to take
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanFindingDispositionTests::test_write_is_refused_while_a_finding_is_undispositioned
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+### AC2: a decline needs a reason, not a marker
+
+- **Given** a finding declined with an empty or placeholder reason
+- **When** the disposition is validated
+- **Then** it is refused - a decline whose reason is `{{why}}` records that someone clicked past it, which is worse than no record because it looks like a decision
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanFindingDispositionTests::test_a_decline_without_a_real_reason_is_refused
 
 ## Revision History
 

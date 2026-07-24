@@ -1,6 +1,6 @@
 # US0422: the stated strategy names the units worth mutating, replacing the blanket close-scoped sweep
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** RFC0049
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
@@ -17,14 +17,19 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done.
+### AC1: the strategy names which units to mutate
 
-### AC1: {{criterion}}
+- **Given** a batch whose stated strategy marks a subset of units as needing mutation evidence
+- **When** the mutation run is scoped
+- **Then** it mutates those units and reports the ones it did not, so the selection is a stated decision rather than a budget accident
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::StrategyScopedTests::test_the_run_mutates_the_units_the_strategy_named
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+### AC2: the blanket close-scoped sweep is replaced, not supplemented
+
+- **Given** a close with a stated strategy present
+- **When** the close runs
+- **Then** the whole-sprint-diff sweep does not also run - two selection rules produce two answers about the same question, and the close currently spends its ceiling on whichever it reaches first
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::StrategyScopedTests::test_the_blanket_sweep_does_not_also_run
 
 ## Revision History
 

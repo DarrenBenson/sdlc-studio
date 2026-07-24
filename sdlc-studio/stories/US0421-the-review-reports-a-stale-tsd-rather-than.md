@@ -1,6 +1,6 @@
 # US0421: the review reports a STALE TSD rather than reviewing against a wrong document
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** RFC0049
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
@@ -17,14 +17,19 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done.
+### AC1: a stale TSD is reported, not reviewed against
 
-### AC1: {{criterion}}
+- **Given** a TSD whose last revision predates changes to the code it describes
+- **When** the strategy review runs
+- **Then** it reports the TSD as STALE and names what changed since - reviewing a batch against a wrong document produces confident wrong answers, which is the class EP0071 spent a sprint repairing
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::StaleTsdTests::test_a_stale_tsd_is_reported_before_it_is_used
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+### AC2: a current TSD passes on the measurement, not on a stamp
+
+- **Given** a TSD that is genuinely current
+- **When** the check runs
+- **Then** it passes, and the assertion is made against the comparison of document and code rather than against a freshness marker anyone can write
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::StaleTsdTests::test_a_current_tsd_passes_on_comparison_not_on_a_marker
 
 ## Revision History
 

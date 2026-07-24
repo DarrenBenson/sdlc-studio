@@ -1,6 +1,6 @@
 # US0427: a subagent reviewer of record in its own context is accepted, and the row records that it was a delegated agent
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** RFC0051
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
@@ -17,14 +17,26 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done.
+### AC1: a subagent reviewer of record in its own context is accepted
 
-### AC1: {{criterion}}
+- **Given** a sign-off whose reviewer of record is a subagent running in a separate context
+- **When** `record_signoff` is called
+- **Then** it is accepted and the row records that the reviewer was a DELEGATED AGENT - D0059 authorises this deliberately, and the record must carry what produced the verdict
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::DelegatedSignoffTests::test_a_subagent_in_its_own_context_is_accepted_and_marked
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+### AC2: the delegation is never silent
+
+- **Given** the same sign-off
+- **When** the verdict rows are read back
+- **Then** the delegated marker is present and cannot be omitted - the whole trade D0059 makes is disclosure in place of independence, so a delegated sign-off that reads as an ordinary one destroys the only thing the decision bought
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::DelegatedSignoffTests::test_a_delegated_signoff_cannot_be_recorded_unmarked
+
+### AC3: an author signing their own work is still refused
+
+- **Given** a sign-off whose principal is the unit's own author
+- **When** it is recorded
+- **Then** it is REFUSED - D0059 widens who may act as reviewer of record, and does not touch the self-approval guard
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::DelegatedSignoffTests::test_self_approval_is_still_refused
 
 ## Revision History
 

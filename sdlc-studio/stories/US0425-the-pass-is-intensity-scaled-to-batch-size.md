@@ -1,6 +1,6 @@
 # US0425: the pass is intensity-scaled to batch size and records what the scaling skipped
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** RFC0050
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
@@ -17,14 +17,19 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done.
+### AC1: the pass is intensity-scaled to batch size
 
-### AC1: {{criterion}}
+- **Given** a small batch and a large one
+- **When** the pass runs over each
+- **Then** the large batch receives more scrutiny than the small one, and the scaling rule is stated rather than emergent - the pass spends tokens before any value is delivered, on a sprint length already under complaint
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PlanCriticIntensityTests::test_a_larger_batch_receives_more_scrutiny
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+### AC2: what the scaling skipped is recorded
+
+- **Given** a batch whose intensity setting bounded the pass
+- **When** the pass finishes
+- **Then** it names what it did not examine - a bounded pass that reports only what it found reads as complete coverage, and a silent cap is how a partial sweep gets mistaken for a full one
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PlanCriticIntensityTests::test_the_pass_names_what_the_intensity_cap_skipped
 
 ## Revision History
 
