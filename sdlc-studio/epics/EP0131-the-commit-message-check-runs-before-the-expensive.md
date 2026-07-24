@@ -1,6 +1,6 @@
 # EP0131: The commit-message check runs before the expensive lanes
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0367
 > **Created:** 2026-07-23
@@ -14,7 +14,7 @@ Decomposed from CR0367. Delivers the work CR0367 requested.
 
 ## Story Breakdown
 
-- [ ] [US0372: validate the commit-message rules ahead of the test lanes, no lane lost or duplicated, order pinned](../stories/US0372-validate-the-commit-message-rules-ahead-of-the.md)
+- [x] [US0372: validate the commit-message rules ahead of the test lanes, no lane lost or duplicated, order pinned](../stories/US0372-validate-the-commit-message-rules-ahead-of-the.md)
 
 ## Revision History
 

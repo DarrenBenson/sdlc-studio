@@ -1,6 +1,6 @@
 # US0389: surface the drift in the status hint and the close chain
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0389
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

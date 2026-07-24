@@ -1,6 +1,6 @@
 # US0362: a command-substitution fingerprint detector with a recorded miss rate
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0351
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

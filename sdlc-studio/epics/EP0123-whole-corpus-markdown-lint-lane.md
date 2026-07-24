@@ -1,6 +1,6 @@
 # EP0123: Whole-corpus markdown lint lane
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 6
 > **Parent:** CR0348
 > **Created:** 2026-07-23
@@ -14,8 +14,8 @@ Decomposed from CR0348. Delivers the work CR0348 requested.
 
 ## Story Breakdown
 
-- [ ] [US0357: a periodic or pre-release lane lints the entire markdown corpus](../stories/US0357-a-periodic-or-pre-release-lane-lints-the.md)
-- [ ] [US0358: the report distinguishes a pre-existing failure from one the change introduced](../stories/US0358-the-report-distinguishes-a-pre-existing-failure-from.md)
+- [x] [US0357: a periodic or pre-release lane lints the entire markdown corpus](../stories/US0357-a-periodic-or-pre-release-lane-lints-the.md)
+- [x] [US0358: the report distinguishes a pre-existing failure from one the change introduced](../stories/US0358-the-report-distinguishes-a-pre-existing-failure-from.md)
 
 ## Acceptance Criteria (Epic Level)
 

@@ -1,6 +1,6 @@
 # CR-0383: Root anchoring is a per-script convention, not a shared one: 62 scripts declare --root and one discovers it
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0140
 > **Priority:** Medium
 > **Type:** Improvement

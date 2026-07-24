@@ -1,6 +1,6 @@
 # CR-0367: the commit-message check runs after the full test gate, so a subject-line defect costs a whole suite run
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0131
 > **Priority:** Medium
 > **Type:** Improvement

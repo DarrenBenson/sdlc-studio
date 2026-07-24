@@ -1,6 +1,6 @@
 # US0372: validate the commit-message rules ahead of the test lanes, no lane lost or duplicated, order pinned
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0367
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

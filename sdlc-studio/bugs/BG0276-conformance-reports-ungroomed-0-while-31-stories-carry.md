@@ -1,10 +1,11 @@
 # BG0276: conformance reports ungroomed=0 while 31 stories carry the bare {{define}} scaffold: US0411's machine-visible ungroomed count recognises only the new marker, so every story minted before it is invisible to the very count meant to surface them
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py,.claude/skills/sdlc-studio/scripts/lib/sdlc_md.py
+> **Verification depth:** functional (unit: conformance counts the bare {{define}} scaffold as ungroomed; the 31 real stories measured, not asserted)
 > **Severity:** Medium
 > **Points:** 3
 

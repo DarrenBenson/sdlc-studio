@@ -1,6 +1,6 @@
 # US0375: the sign-off gate ignores a superseded row while it stays visible
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0372
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

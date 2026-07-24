@@ -1,6 +1,6 @@
 # US0395: the scoped report merges rather than replaces, shared-story verdicts identical to the unscoped run
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0395
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

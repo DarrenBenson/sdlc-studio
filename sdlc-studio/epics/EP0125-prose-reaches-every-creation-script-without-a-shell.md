@@ -1,6 +1,6 @@
 # EP0125: Prose reaches every creation script without a shell
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0351
 > **Created:** 2026-07-23
@@ -14,9 +14,9 @@ Decomposed from CR0351. Delivers the work CR0351 requested.
 
 ## Story Breakdown
 
-- [ ] [US0361: a shared fields-file and stdin helper in sdlc_md.py, adopted across the remaining prose scripts](../stories/US0361-a-shared-fields-file-and-stdin-helper-in.md)
-- [ ] [US0362: a command-substitution fingerprint detector with a recorded miss rate](../stories/US0362-a-command-substitution-fingerprint-detector-with-a-recorded.md)
-- [ ] [US0363: document the safe form in reference-scripts.md and agent-instructions.md](../stories/US0363-document-the-safe-form-in-reference-scripts-md.md)
+- [x] [US0361: a shared fields-file and stdin helper in sdlc_md.py, adopted across the remaining prose scripts](../stories/US0361-a-shared-fields-file-and-stdin-helper-in.md)
+- [x] [US0362: a command-substitution fingerprint detector with a recorded miss rate](../stories/US0362-a-command-substitution-fingerprint-detector-with-a-recorded.md)
+- [x] [US0363: document the safe form in reference-scripts.md and agent-instructions.md](../stories/US0363-document-the-safe-form-in-reference-scripts-md.md)
 
 ## Acceptance Criteria (Epic Level)
 

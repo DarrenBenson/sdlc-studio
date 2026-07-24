@@ -1,10 +1,11 @@
 # BG0273: refine resolve_story_affects inherit:subset bypasses the parent-declares-none refusal and never checks the subset is within the parent's Affects; bare 'inherit' is matched case-sensitively so INHERIT falls through to the explicit path
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/refine.py,.claude/skills/sdlc-studio/scripts/tests/test_refine.py
+> **Verification depth:** functional (unit: inherit:subset is refused when the parent declares none, and the subset is checked to be within the parent's set)
 > **Severity:** Medium
 > **Points:** 3
 

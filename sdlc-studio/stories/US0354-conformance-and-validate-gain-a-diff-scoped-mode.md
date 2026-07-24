@@ -1,6 +1,6 @@
 # US0354: conformance and validate gain a diff-scoped mode over touched artefacts plus global census and link checks, release gate stays whole-workspace
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0344
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

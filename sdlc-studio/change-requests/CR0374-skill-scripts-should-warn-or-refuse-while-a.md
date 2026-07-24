@@ -1,6 +1,6 @@
 # CR-0374: skill scripts should warn or refuse while a mutation run's mutant may be on disk
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0135
 > **Priority:** Medium
 > **Type:** Improvement

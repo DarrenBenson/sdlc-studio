@@ -1,6 +1,7 @@
 # BG0270: The goal-review gate refuses a plan when a seat says NOT ONE INCREMENT, conflating a truthful themed-batch observation with a blocking objection
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (unit: a NOT ONE INCREMENT seat verdict is carried as a theme observation, not an achievability objection; the two are now separate fields)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py

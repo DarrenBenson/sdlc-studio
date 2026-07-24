@@ -1,6 +1,6 @@
 # US0385: reconcile trd.md and tsd.md and record the findings
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0385
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
@@ -38,6 +38,7 @@ Four entries describe the single-blob model only:
   key, and states the covered / stale / uncovered verdict in place of the whole-blob rule;
   the report keeps its own row, since it is still written and still carries the survivors
 - **Verify:** manual diff each of the four entries against mutation.py and gate.py, confirming no statement remains that only the report exists
+- **Verified:** yes (2026-07-24, manual: trd.md:457-458 now carry both the report row and a `mutation-runs.json` ledger row; no surviving claim that only the report exists)
 
 ### AC2: the pass records what was checked, not only what was changed
 
@@ -47,6 +48,7 @@ Four entries describe the single-blob model only:
   (correct, incomplete or false) and what was done, so a claim nobody examined is
   distinguishable from one examined and left alone
 - **Verify:** manual confirm the findings table exists, covers every mutation claim in both files, and carries a verdict per row including the unchanged ones
+- **Verified:** yes (2026-07-24, manual: 12-row findings table, verdict per row, 7 marked correct and left alone)
 
 ## Findings
 

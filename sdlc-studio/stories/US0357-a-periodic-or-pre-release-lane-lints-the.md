@@ -1,6 +1,6 @@
 # US0357: a periodic or pre-release lane lints the entire markdown corpus
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0348
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

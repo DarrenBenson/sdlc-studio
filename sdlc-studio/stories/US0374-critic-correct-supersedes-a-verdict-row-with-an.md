@@ -1,6 +1,6 @@
 # US0374: critic correct supersedes a verdict row with an authorised reason, the author alone refused
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0372
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

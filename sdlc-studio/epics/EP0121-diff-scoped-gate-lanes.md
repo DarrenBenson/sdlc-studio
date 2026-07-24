@@ -1,6 +1,6 @@
 # EP0121: Diff-scoped gate lanes
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0344
 > **Created:** 2026-07-23
@@ -14,7 +14,7 @@ Decomposed from CR0344. Delivers the work CR0344 requested.
 
 ## Story Breakdown
 
-- [ ] [US0354: conformance and validate gain a diff-scoped mode over touched artefacts plus global census and link checks, release gate stays whole-workspace](../stories/US0354-conformance-and-validate-gain-a-diff-scoped-mode.md)
+- [x] [US0354: conformance and validate gain a diff-scoped mode over touched artefacts plus global census and link checks, release gate stays whole-workspace](../stories/US0354-conformance-and-validate-gain-a-diff-scoped-mode.md)
 
 ## Revision History
 

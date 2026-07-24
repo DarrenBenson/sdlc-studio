@@ -1,6 +1,7 @@
 # BG0268: sprint plan leaves a stale sprint-plan.json and forecast record when a concurrent writer opens a run between the pre-check and open_run
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (unit: a fault after open_run abandons the run rather than leaving it live with no goal; both sides of the moved step covered after the repair created the mirror defect)
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py

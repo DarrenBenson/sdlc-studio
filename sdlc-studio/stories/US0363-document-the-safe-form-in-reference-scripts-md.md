@@ -1,6 +1,6 @@
 # US0363: document the safe form in reference-scripts.md and agent-instructions.md
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0351
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
@@ -36,6 +36,7 @@ and nothing else.
   field arriving already mangled, and states plainly that the detector is defence in depth with
   a known miss while the document is the actual fix
 - **Verify:** manual read reference-scripts.md and confirm each of those five statements is present and matches the shipped flags
+- **Verified:** yes (2026-07-24, manual: reference-scripts.md:129 states `--fields-file FIELDS.json` and `-` for stdin; :162 states a finding is filed with `--fields-file finding.json`, not prose flags)
 
 ### AC2: agent-instructions.md carries the line a consuming project inherits
 
@@ -44,6 +45,7 @@ and nothing else.
 - **Then** one line tells it to pass prose as a fields document rather than as a shell
   argument, and points at the catalogue entry for the detail
 - **Verify:** manual read templates/agent-instructions.md and confirm the line is present, is one line, and names the flag
+- **Verified:** yes (2026-07-24, manual: agent-instructions.md:124, one line, names `--fields-file` and the `-` stdin form)
 
 ## Notes
 

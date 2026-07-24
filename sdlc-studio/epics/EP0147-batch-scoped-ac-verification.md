@@ -1,6 +1,6 @@
 # EP0147: Batch-scoped AC verification
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 6
 > **Parent:** CR0395
 > **Created:** 2026-07-23
@@ -14,8 +14,8 @@ Decomposed from CR0395. Delivers the work CR0395 requested.
 
 ## Story Breakdown
 
-- [ ] [US0394: verify_ac run accepts an id list, a worklist or the run-state batch](../stories/US0394-verify-ac-run-accepts-an-id-list-a.md)
-- [ ] [US0395: the scoped report merges rather than replaces, shared-story verdicts identical to the unscoped run](../stories/US0395-the-scoped-report-merges-rather-than-replaces-shared.md)
+- [x] [US0394: verify_ac run accepts an id list, a worklist or the run-state batch](../stories/US0394-verify-ac-run-accepts-an-id-list-a.md)
+- [x] [US0395: the scoped report merges rather than replaces, shared-story verdicts identical to the unscoped run](../stories/US0395-the-scoped-report-merges-rather-than-replaces-shared.md)
 
 ## Acceptance Criteria (Epic Level)
 

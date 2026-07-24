@@ -1,6 +1,6 @@
 # US0394: verify_ac run accepts an id list, a worklist or the run-state batch
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0395
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

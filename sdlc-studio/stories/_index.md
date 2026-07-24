@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 49 |
+| Draft | 31 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 362 |
+| Done | 380 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -264,16 +264,16 @@
 | [US0351](US0351-test-autosprint-py-exercising-the-primary-path.md) | test_autosprint.py exercising the primary path | Draft | EP0119 | 2026-07-23 | 2026-07-23 |
 | [US0352](US0352-test-xrepo-py-primary-path-and-update-the.md) | test_xrepo.py primary path and update the TSD coverage note | Draft | EP0119 | 2026-07-23 | 2026-07-23 |
 | [US0353](US0353-refine-apply-and-add-accept-a-breakdown-file.md) | refine apply and add accept a --breakdown file, validated whole before minting, equivalent to the --story form | Draft | EP0120 | 2026-07-23 | 2026-07-23 |
-| [US0354](US0354-conformance-and-validate-gain-a-diff-scoped-mode.md) | conformance and validate gain a diff-scoped mode over touched artefacts plus global census and link checks, release gate stays whole-workspace | Draft | EP0121 | 2026-07-23 | 2026-07-23 |
+| [US0354](US0354-conformance-and-validate-gain-a-diff-scoped-mode.md) | conformance and validate gain a diff-scoped mode over touched artefacts plus global census and link checks, release gate stays whole-workspace | Done | EP0121 | 2026-07-23 | 2026-07-23 |
 | [US0355](US0355-decide-and-document-the-primary-selection-method-in.md) | decide and document the Primary-selection method in reference-persona.md and fill the D1 row | Draft | EP0122 | 2026-07-23 | 2026-07-23 |
 | [US0356](US0356-remove-the-decision-override-from-rfc0017-once-d1.md) | remove the Decision-Override from RFC0017 once D1 closes | Draft | EP0122 | 2026-07-23 | 2026-07-23 |
-| [US0357](US0357-a-periodic-or-pre-release-lane-lints-the.md) | a periodic or pre-release lane lints the entire markdown corpus | Draft | EP0123 | 2026-07-23 | 2026-07-23 |
-| [US0358](US0358-the-report-distinguishes-a-pre-existing-failure-from.md) | the report distinguishes a pre-existing failure from one the change introduced | Draft | EP0123 | 2026-07-23 | 2026-07-23 |
+| [US0357](US0357-a-periodic-or-pre-release-lane-lints-the.md) | a periodic or pre-release lane lints the entire markdown corpus | Done | EP0123 | 2026-07-23 | 2026-07-23 |
+| [US0358](US0358-the-report-distinguishes-a-pre-existing-failure-from.md) | the report distinguishes a pre-existing failure from one the change introduced | Done | EP0123 | 2026-07-23 | 2026-07-23 |
 | [US0359](US0359-run-state-records-an-over-appetite-batch-keeping.md) | run_state records an over-appetite batch, keeping both the standing and the accepted appetite | Draft | EP0124 | 2026-07-23 | 2026-07-23 |
 | [US0360](US0360-the-close-and-retro-report-the-over-commitment.md) | the close and retro report the over-commitment, not the raised ceiling | Draft | EP0124 | 2026-07-23 | 2026-07-23 |
-| [US0361](US0361-a-shared-fields-file-and-stdin-helper-in.md) | a shared fields-file and stdin helper in sdlc_md.py, adopted across the remaining prose scripts | Draft | EP0125 | 2026-07-23 | 2026-07-23 |
-| [US0362](US0362-a-command-substitution-fingerprint-detector-with-a-recorded.md) | a command-substitution fingerprint detector with a recorded miss rate | Draft | EP0125 | 2026-07-23 | 2026-07-23 |
-| [US0363](US0363-document-the-safe-form-in-reference-scripts-md.md) | document the safe form in reference-scripts.md and agent-instructions.md | Draft | EP0125 | 2026-07-23 | 2026-07-23 |
+| [US0361](US0361-a-shared-fields-file-and-stdin-helper-in.md) | a shared fields-file and stdin helper in sdlc_md.py, adopted across the remaining prose scripts | Done | EP0125 | 2026-07-23 | 2026-07-23 |
+| [US0362](US0362-a-command-substitution-fingerprint-detector-with-a-recorded.md) | a command-substitution fingerprint detector with a recorded miss rate | Done | EP0125 | 2026-07-23 | 2026-07-23 |
+| [US0363](US0363-document-the-safe-form-in-reference-scripts-md.md) | document the safe form in reference-scripts.md and agent-instructions.md | Done | EP0125 | 2026-07-23 | 2026-07-23 |
 | [US0364](US0364-the-refusal-names-the-fallback-source-and-reference.md) | the refusal names the fallback source and reference-rfc.md documents the false-positive trade | Draft | EP0126 | 2026-07-23 | 2026-07-23 |
 | [US0365](US0365-state-the-overage-explicitly-and-name-the-longest.md) | state the overage explicitly and name the longest sections by line count | Draft | EP0127 | 2026-07-23 | 2026-07-23 |
 | [US0366](US0366-a-third-disposition-fixed-in-sha-in-retro.md) | a third disposition (fixed-in sha) in retro.py, the gate, the template and the tri-state close counts | Draft | EP0128 | 2026-07-23 | 2026-07-23 |
@@ -282,30 +282,30 @@
 | [US0369](US0369-correct-the-cr0304-trd-sentence-and-disposition-the.md) | correct the CR0304 TRD sentence and disposition the doc-drift residuals | Draft | EP0129 | 2026-07-23 | 2026-07-23 |
 | [US0370](US0370-record-the-ac-correction-cases-as-ac-defects.md) | record the AC-correction cases as AC defects | Draft | EP0129 | 2026-07-23 | 2026-07-23 |
 | [US0371](US0371-flag-green-draft-stories-as-built-not-closed.md) | flag green Draft stories as built-not-closed, forecast the unverified as new, point an all-built batch at the close path | Done | EP0130 | 2026-07-23 | 2026-07-23 |
-| [US0372](US0372-validate-the-commit-message-rules-ahead-of-the.md) | validate the commit-message rules ahead of the test lanes, no lane lost or duplicated, order pinned | Draft | EP0131 | 2026-07-23 | 2026-07-23 |
+| [US0372](US0372-validate-the-commit-message-rules-ahead-of-the.md) | validate the commit-message rules ahead of the test lanes, no lane lost or duplicated, order pinned | Done | EP0131 | 2026-07-23 | 2026-07-23 |
 | [US0373](US0373-decompose-critiqued-into-its-named-halves-in-the.md) | decompose critiqued into its named halves in the report and correct the remedy line | Draft | EP0132 | 2026-07-23 | 2026-07-23 |
-| [US0374](US0374-critic-correct-supersedes-a-verdict-row-with-an.md) | critic correct supersedes a verdict row with an authorised reason, the author alone refused | Draft | EP0133 | 2026-07-23 | 2026-07-23 |
-| [US0375](US0375-the-sign-off-gate-ignores-a-superseded-row.md) | the sign-off gate ignores a superseded row while it stays visible | Draft | EP0133 | 2026-07-23 | 2026-07-23 |
+| [US0374](US0374-critic-correct-supersedes-a-verdict-row-with-an.md) | critic correct supersedes a verdict row with an authorised reason, the author alone refused | Done | EP0133 | 2026-07-23 | 2026-07-23 |
+| [US0375](US0375-the-sign-off-gate-ignores-a-superseded-row.md) | the sign-off gate ignores a superseded row while it stays visible | Done | EP0133 | 2026-07-23 | 2026-07-23 |
 | [US0376](US0376-the-harness-capture-returns-the-transcript-model-s.md) | the harness capture returns the transcript model(s), mixed as mixed, and the close writes it to the Model cell | Draft | EP0134 | 2026-07-23 | 2026-07-23 |
-| [US0377](US0377-skill-entry-points-warn-or-refuse-while-the.md) | skill entry points warn or refuse while the inflight sidecar exists, own processes exempt, a stale sidecar still recovers | Draft | EP0135 | 2026-07-23 | 2026-07-23 |
+| [US0377](US0377-skill-entry-points-warn-or-refuse-while-the.md) | skill entry points warn or refuse while the inflight sidecar exists, own processes exempt, a stale sidecar still recovers | Done | EP0135 | 2026-07-23 | 2026-07-23 |
 | [US0378](US0378-a-no-subcommand-status-prints-the-pillars-and.md) | a no-subcommand status prints the pillars and exits 0, explicit subcommands unchanged | Draft | EP0136 | 2026-07-23 | 2026-07-23 |
 | [US0379](US0379-mutation-py-records-an-empty-surface-as-a.md) | mutation.py records an empty surface as a first-class outcome and the gate lane reads it distinct from not-run and PASSes | Draft | EP0137 | 2026-07-23 | 2026-07-23 |
 | [US0380](US0380-the-mutation-run-proposes-a-per-target-covering.md) | the mutation run proposes a per-target covering command from its own reference scan, zero out-of-selection warnings by construction, a hand --test unchanged | Draft | EP0138 | 2026-07-23 | 2026-07-23 |
 | [US0381](US0381-an-unescaped-pipe-in-ac-with-no-paired.md) | an unescaped pipe in --ac with no paired --verify is warned or refused by name, correctly-paired output byte-identical | Draft | EP0139 | 2026-07-23 | 2026-07-23 |
-| [US0382](US0382-resolve-root-and-under-root-in-sdlc-md.md) | resolve_root and under_root in sdlc_md.py, documented in reference-scripts.md and best-practices/script.md, a cwd-not-root test | Draft | EP0140 | 2026-07-23 | 2026-07-23 |
-| [US0383](US0383-census-the-62-root-scripts-and-fix-or.md) | census the 62 --root scripts and fix or refile the unanchored writers, next_id first | Draft | EP0140 | 2026-07-23 | 2026-07-23 |
-| [US0384](US0384-rewrite-help-mutation-md-and-reference-scripts-verify.md) | rewrite help/mutation.md and reference-scripts-verify.md for the ledger, content-hash key, coverage verdict and advisory lane | Draft | EP0141 | 2026-07-23 | 2026-07-23 |
-| [US0385](US0385-reconcile-trd-md-and-tsd-md-and-record.md) | reconcile trd.md and tsd.md and record the findings | Draft | EP0141 | 2026-07-23 | 2026-07-23 |
+| [US0382](US0382-resolve-root-and-under-root-in-sdlc-md.md) | resolve_root and under_root in sdlc_md.py, documented in reference-scripts.md and best-practices/script.md, a cwd-not-root test | Done | EP0140 | 2026-07-23 | 2026-07-23 |
+| [US0383](US0383-census-the-62-root-scripts-and-fix-or.md) | census the 62 --root scripts and fix or refile the unanchored writers, next_id first | Done | EP0140 | 2026-07-23 | 2026-07-23 |
+| [US0384](US0384-rewrite-help-mutation-md-and-reference-scripts-verify.md) | rewrite help/mutation.md and reference-scripts-verify.md for the ledger, content-hash key, coverage verdict and advisory lane | Done | EP0141 | 2026-07-23 | 2026-07-23 |
+| [US0385](US0385-reconcile-trd-md-and-tsd-md-and-record.md) | reconcile trd.md and tsd.md and record the findings | Done | EP0141 | 2026-07-23 | 2026-07-23 |
 | [US0386](US0386-a-zero-remaining-handoff-states-nothing-carried-over.md) | a zero-remaining handoff states nothing carried over, non-zero unchanged, two-sided tests | Draft | EP0142 | 2026-07-23 | 2026-07-23 |
 | [US0387](US0387-the-confirmation-line-names-the-sprint-goal-and.md) | the confirmation line names the Sprint Goal and the --goal rung distinctly, a test drives both cases | Draft | EP0143 | 2026-07-23 | 2026-07-23 |
-| [US0388](US0388-a-forward-port-drift-check-exits-non-zero.md) | a forward-port drift check exits non-zero with a differing-file count, handling no copy and a pinned copy | Draft | EP0144 | 2026-07-23 | 2026-07-23 |
-| [US0389](US0389-surface-the-drift-in-the-status-hint-and.md) | surface the drift in the status hint and the close chain | Draft | EP0144 | 2026-07-23 | 2026-07-23 |
+| [US0388](US0388-a-forward-port-drift-check-exits-non-zero.md) | a forward-port drift check exits non-zero with a differing-file count, handling no copy and a pinned copy | Done | EP0144 | 2026-07-23 | 2026-07-23 |
+| [US0389](US0389-surface-the-drift-in-the-status-hint-and.md) | surface the drift in the status hint and the close chain | Done | EP0144 | 2026-07-23 | 2026-07-23 |
 | [US0390](US0390-the-batch-selection-message-shows-a-usable-example.md) | the batch-selection message shows a usable example value per selector, such as --bugs Open | Draft | EP0145 | 2026-07-23 | 2026-07-23 |
 | [US0391](US0391-critic-py-and-close-owed-py-accept-fields.md) | critic.py and close_owed.py accept --fields-file via the shared helper | Done | EP0146 | 2026-07-23 | 2026-07-23 |
 | [US0392](US0392-telemetry-py-and-sprint-py-accept-fields-file.md) | telemetry.py and sprint.py accept --fields-file and the registry is emptied of the four | Done | EP0146 | 2026-07-23 | 2026-07-23 |
 | [US0393](US0393-the-flag-path-reports-a-detected-shell-hazard.md) | the flag path reports a detected shell hazard rather than silently altering the field | Done | EP0146 | 2026-07-23 | 2026-07-23 |
-| [US0394](US0394-verify-ac-run-accepts-an-id-list-a.md) | verify_ac run accepts an id list, a worklist or the run-state batch | Draft | EP0147 | 2026-07-23 | 2026-07-23 |
-| [US0395](US0395-the-scoped-report-merges-rather-than-replaces-shared.md) | the scoped report merges rather than replaces, shared-story verdicts identical to the unscoped run | Draft | EP0147 | 2026-07-23 | 2026-07-23 |
+| [US0394](US0394-verify-ac-run-accepts-an-id-list-a.md) | verify_ac run accepts an id list, a worklist or the run-state batch | Done | EP0147 | 2026-07-23 | 2026-07-23 |
+| [US0395](US0395-the-scoped-report-merges-rather-than-replaces-shared.md) | the scoped report merges rather than replaces, shared-story verdicts identical to the unscoped run | Done | EP0147 | 2026-07-23 | 2026-07-23 |
 | [US0396](US0396-reference-review-md-and-reference-sprint-md-require.md) | reference-review.md and reference-sprint.md require at least two reviewers with distinct lenses including a claims lens, and record a single-reviewer round | Draft | EP0148 | 2026-07-23 | 2026-07-23 |
 | [US0397](US0397-reference-sprint-md-and-help-sprint-md-state.md) | reference-sprint.md and help/sprint.md state the fixed-cost-versus-review-convergence trade-off from the measured rows, prescribing no number | Draft | EP0149 | 2026-07-23 | 2026-07-23 |
 | [US0398](US0398-an-atomic-retitle-of-the-h1-the-filename.md) | an atomic retitle of the H1, the filename slug and the index row, refusing before any write if any cannot be updated | Done | EP0150 | 2026-07-23 | 2026-07-23 |

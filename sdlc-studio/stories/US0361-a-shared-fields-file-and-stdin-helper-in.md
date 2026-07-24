@@ -1,6 +1,6 @@
 # US0361: a shared fields-file and stdin helper in sdlc_md.py, adopted across the remaining prose scripts
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0351
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

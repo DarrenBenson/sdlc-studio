@@ -1,10 +1,11 @@
 # BG0277: the seat brief is circular: goal-review brief derives from the persisted sprint-plan.json, but the goal review it informs gates plan --write, so on a new sprint the brief silently describes the PREVIOUS batch
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py
+> **Verification depth:** functional (unit: the seat brief derives from the worklist it is given rather than the persisted plan, and a stale persisted plan is detected)
 > **Severity:** Medium
 > **Points:** 3
 

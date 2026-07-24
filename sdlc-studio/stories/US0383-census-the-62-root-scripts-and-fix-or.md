@@ -1,6 +1,6 @@
 # US0383: census the 62 --root scripts and fix or refile the unanchored writers, next_id first
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0383
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

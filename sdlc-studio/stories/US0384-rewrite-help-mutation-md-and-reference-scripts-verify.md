@@ -1,6 +1,6 @@
 # US0384: rewrite help/mutation.md and reference-scripts-verify.md for the ledger, content-hash key, coverage verdict and advisory lane
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0385
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
@@ -34,6 +34,7 @@ OR any target edited since the run", which is the old rule.
   200-entry bound and that truncation is counted as a dropped total rather than being silent,
   and distinguishes a measured entry from a registered self-report
 - **Verify:** manual read help/mutation.md against mutation.py `append_ledger` and `LEDGER_LIMIT`, confirming each of those four statements is present and correct
+- **Verified:** yes (2026-07-24, manual: help/mutation.md carries 8 ledger references against mutation.py:57-89 - LEDGER_LIMIT=200, oldest-first eviction, append_ledger's run-verdict mapping)
 
 ### AC2: reference-scripts-verify.md describes the coverage verdict and the fallback
 
@@ -44,6 +45,7 @@ OR any target edited since the run", which is the old rule.
   or none recorded means stale, no entry means uncovered - and states that with nothing in the
   ledger to judge the lane degrades to the whole-report checks
 - **Verify:** manual read reference-scripts-verify.md against gate.py `_mutation_coverage`, confirming the three verdicts and the degraded fallback are described
+- **Verified:** yes (2026-07-24, manual: reference-scripts-verify.md describes covered/stale/uncovered and the fallback, against gate.py:312 `_mutation_coverage` and :452 `_mutation_coverage_safe`)
 
 ### AC3: the lane is stated as advisory, and staleness is readable without opening gate.py
 
@@ -52,6 +54,7 @@ OR any target edited since the run", which is the old rule.
 - **Then** both answers are on the page: the file's content changed since the entry that
   covers it, and the lane never changes the exit code
 - **Verify:** manual confirm both files state the lane is advisory and define staleness per file, with no reference to reading the source
+- **Verified:** yes (2026-07-24, manual: both state the lane is advisory and key staleness on the per-file content hash)
 
 ## Revision History
 

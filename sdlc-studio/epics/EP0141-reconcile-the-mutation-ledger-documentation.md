@@ -1,6 +1,6 @@
 # EP0141: Reconcile the mutation-ledger documentation
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 4
 > **Parent:** CR0385
 > **Created:** 2026-07-23
@@ -14,8 +14,8 @@ Decomposed from CR0385. Delivers the work CR0385 requested.
 
 ## Story Breakdown
 
-- [ ] [US0384: rewrite help/mutation.md and reference-scripts-verify.md for the ledger, content-hash key, coverage verdict and advisory lane](../stories/US0384-rewrite-help-mutation-md-and-reference-scripts-verify.md)
-- [ ] [US0385: reconcile trd.md and tsd.md and record the findings](../stories/US0385-reconcile-trd-md-and-tsd-md-and-record.md)
+- [x] [US0384: rewrite help/mutation.md and reference-scripts-verify.md for the ledger, content-hash key, coverage verdict and advisory lane](../stories/US0384-rewrite-help-mutation-md-and-reference-scripts-verify.md)
+- [x] [US0385: reconcile trd.md and tsd.md and record the findings](../stories/US0385-reconcile-trd-md-and-tsd-md-and-record.md)
 
 ## Acceptance Criteria (Epic Level)
 

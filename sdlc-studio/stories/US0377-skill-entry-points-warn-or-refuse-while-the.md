@@ -1,6 +1,6 @@
 # US0377: skill entry points warn or refuse while the inflight sidecar exists, own processes exempt, a stale sidecar still recovers
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0374
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,7 @@
 # BG0267: A repair-plan verdict carrying no findings-hash token satisfies the pin check vacuously
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (unit: a verdict with no findings-hash token now fails the pin check instead of satisfying it vacuously; mutation-proven at the call site)
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/repair_plan.py,.claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py

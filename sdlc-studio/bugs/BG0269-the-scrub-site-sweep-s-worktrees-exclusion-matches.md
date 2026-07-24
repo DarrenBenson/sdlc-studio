@@ -1,6 +1,7 @@
 # BG0269: The scrub-site sweep's worktrees exclusion matches any path component named worktrees, so it skips the ENTIRE tree when run from inside a worktree
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (unit: the sweep is anchored to the repo root, so a path component named worktrees no longer skips the whole tree; the vacuous pass reproduced first)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** tools/tests/test_skill_tests_env.py

@@ -1,10 +1,11 @@
 # BG0275: a successful sprint close never refreshes sdlc-studio/reviews/LATEST.md, so the review anchor AGENTS.md orders every agent to re-anchor on still states the previous run's owed sign-off after that sign-off landed
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py,sdlc-studio/reviews/LATEST.md
+> **Verification depth:** functional (unit + lane: a successful close refreshes LATEST.md and re-stamps it once sign-offs land; deleting review-anchor from the close chain left 4,237 tests green, so the lane test was added)
 > **Severity:** Medium
 > **Points:** 3
 

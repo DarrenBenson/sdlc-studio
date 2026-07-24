@@ -1,6 +1,6 @@
 # US0358: the report distinguishes a pre-existing failure from one the change introduced
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0348
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

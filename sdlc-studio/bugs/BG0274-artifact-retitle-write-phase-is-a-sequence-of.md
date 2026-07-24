@@ -1,10 +1,11 @@
 # BG0274: artifact.retitle write phase is a sequence of independent writes with no rollback, so a fault mid-loop (e.g. an unreadable reference file) leaves the file renamed and index updated but inbound references half-rewritten
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_retitle_refs.py
+> **Verification depth:** functional (unit: a fault mid-retitle leaves the artefact unchanged; the partial-write path exercised with an unreadable member)
 > **Severity:** Medium
 > **Points:** 5
 

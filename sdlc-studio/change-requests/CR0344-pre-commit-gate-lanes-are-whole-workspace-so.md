@@ -1,6 +1,6 @@
 # CR-0344: Pre-commit gate lanes are whole-workspace, so pre-existing backlog debt blocks every unrelated commit
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0121
 > **Priority:** Low
 > **Type:** Improvement

@@ -1,6 +1,6 @@
 # CR-0351: prose reaches the scripts through a shell argument, so a backtick silently empties the field it was documenting
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0125
 > **Priority:** Medium
 > **Type:** Improvement

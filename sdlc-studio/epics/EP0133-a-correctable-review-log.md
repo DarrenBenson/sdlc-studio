@@ -1,6 +1,6 @@
 # EP0133: A correctable review log
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0372
 > **Created:** 2026-07-23
@@ -14,8 +14,8 @@ Decomposed from CR0372. Delivers the work CR0372 requested.
 
 ## Story Breakdown
 
-- [ ] [US0374: critic correct supersedes a verdict row with an authorised reason, the author alone refused](../stories/US0374-critic-correct-supersedes-a-verdict-row-with-an.md)
-- [ ] [US0375: the sign-off gate ignores a superseded row while it stays visible](../stories/US0375-the-sign-off-gate-ignores-a-superseded-row.md)
+- [x] [US0374: critic correct supersedes a verdict row with an authorised reason, the author alone refused](../stories/US0374-critic-correct-supersedes-a-verdict-row-with-an.md)
+- [x] [US0375: the sign-off gate ignores a superseded row while it stays visible](../stories/US0375-the-sign-off-gate-ignores-a-superseded-row.md)
 
 ## Acceptance Criteria (Epic Level)
 

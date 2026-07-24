@@ -1,6 +1,6 @@
 # EP0140: A shared root resolver and rule
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 11
 > **Parent:** CR0383
 > **Created:** 2026-07-23
@@ -14,8 +14,8 @@ Decomposed from CR0383. Delivers the work CR0383 requested.
 
 ## Story Breakdown
 
-- [ ] [US0382: resolve_root and under_root in sdlc_md.py, documented in reference-scripts.md and best-practices/script.md, a cwd-not-root test](../stories/US0382-resolve-root-and-under-root-in-sdlc-md.md)
-- [ ] [US0383: census the 62 --root scripts and fix or refile the unanchored writers, next_id first](../stories/US0383-census-the-62-root-scripts-and-fix-or.md)
+- [x] [US0382: resolve_root and under_root in sdlc_md.py, documented in reference-scripts.md and best-practices/script.md, a cwd-not-root test](../stories/US0382-resolve-root-and-under-root-in-sdlc-md.md)
+- [x] [US0383: census the 62 --root scripts and fix or refile the unanchored writers, next_id first](../stories/US0383-census-the-62-root-scripts-and-fix-or.md)
 
 ## Acceptance Criteria (Epic Level)
 

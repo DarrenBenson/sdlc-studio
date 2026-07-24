@@ -1,6 +1,6 @@
 # CR-0385: Document the mutation evidence ledger: four surfaces still describe only the single-blob report
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0141
 > **Priority:** Medium
 > **Type:** Improvement

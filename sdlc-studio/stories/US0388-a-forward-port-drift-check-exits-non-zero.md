@@ -1,6 +1,6 @@
 # US0388: a forward-port drift check exits non-zero with a differing-file count, handling no copy and a pinned copy
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0389
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

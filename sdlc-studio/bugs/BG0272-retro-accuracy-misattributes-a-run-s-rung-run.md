@@ -1,10 +1,11 @@
 # BG0272: retro accuracy misattributes a run's rung: _run_rung reads the CURRENT run state, so re-running retro/sprint-report for an older retro after a new run opened reads the wrong goal rung
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py,.claude/skills/sdlc-studio/scripts/tests/test_nondone_close.py
+> **Verification depth:** functional (unit: _run_rung reads the rung recorded on the run being reported, not the current run state; re-run attribution asserted on the value, not the label)
 > **Severity:** Medium
 > **Points:** 3
 

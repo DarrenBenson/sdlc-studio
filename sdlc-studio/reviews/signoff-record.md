@@ -196,3 +196,21 @@
 | US0410 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
 | US0411 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
 | US0412 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-23 | APPROVE - Sprint 1 sign-off, 8 engine epics reviewed by the independent 3-reviewer panel, 7 defects fixed |
+| US0354 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0357 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0358 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0361 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0362 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0363 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0372 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0374 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0375 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0377 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0382 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0383 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0384 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0385 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0388 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0389 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0394 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0395 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |

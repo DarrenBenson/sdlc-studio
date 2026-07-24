@@ -1,6 +1,6 @@
 # EP0144: Installed-copy drift detection
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 6
 > **Parent:** CR0389
 > **Created:** 2026-07-23
@@ -14,8 +14,8 @@ Decomposed from CR0389. Delivers the work CR0389 requested.
 
 ## Story Breakdown
 
-- [ ] [US0388: a forward-port drift check exits non-zero with a differing-file count, handling no copy and a pinned copy](../stories/US0388-a-forward-port-drift-check-exits-non-zero.md)
-- [ ] [US0389: surface the drift in the status hint and the close chain](../stories/US0389-surface-the-drift-in-the-status-hint-and.md)
+- [x] [US0388: a forward-port drift check exits non-zero with a differing-file count, handling no copy and a pinned copy](../stories/US0388-a-forward-port-drift-check-exits-non-zero.md)
+- [x] [US0389: surface the drift in the status hint and the close chain](../stories/US0389-surface-the-drift-in-the-status-hint-and.md)
 
 ## Acceptance Criteria (Epic Level)
 
