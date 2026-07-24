@@ -57,3 +57,4 @@ would have concluded
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-24 | sdlc-studio | Groomed: real ACs + Affects authored |
+| 2026-07-24 | sdlc-studio | Built: out-of-scope preservation + scoped/unscoped equivalence pinned, `--fresh` with a scope refused |

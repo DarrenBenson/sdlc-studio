@@ -102,7 +102,12 @@ Every form runs in ONE process. An id that resolves to no story file is an error
 naming the id, never a skip a completion gate would read as green; `--from-run` with no run
 open refuses rather than falling back to the whole workspace. Non-story ids in a worklist or
 a run batch are dropped and reported. Scoped runs MERGE into the report, so out-of-scope
-verdicts (and their freshness fields) survive untouched.
+verdicts (and their freshness fields) survive untouched, and a shared story gets the same
+verdict it would have got from the whole-workspace run.
+
+`--fresh` rebuilds the report from the run alone. Combined with a scope that would delete
+every verdict outside it, so the combination is refused (exit 2, nothing written): drop the
+scope to rebuild the whole report, or drop `--fresh` so the scoped run merges into it.
 
 ### report
 
@@ -138,6 +143,7 @@ total: pass=7 fail=1 manual=0
 | `--ids <a,b>` | Scope to these story ids (comma-separated, repeatable) | none |
 | `--worklist <path>` | Scope to the ids a tranche file names | none |
 | `--from-run` | Scope to the open run's approved batch | false |
+| `--fresh` | Rebuild the report from this run only (refused with a scope) | false |
 | `--dry-run` | Do not modify story files | false |
 | `--timeout <n>` | Per-verifier timeout in seconds | 120 |
 | `--report <path>` | Report output path | sdlc-studio/.local/verify-report.json |

@@ -1321,7 +1321,18 @@ def cmd_run(args: argparse.Namespace) -> int:
     """Run verifiers across stories, update files, and write the report."""
     repo_root = resolve_root(args)
 
-    if scope_flag(args):
+    flag = scope_flag(args)
+    if flag and getattr(args, "fresh", False):
+        # A rebuild keeps only THIS run's entries. Scoped, that silently deletes every
+        # verdict outside the scope - including the freshness fields the completion gate
+        # reads - and the loss is invisible until a gate reports a green story unverified.
+        # Refused before any work, so the report on disk is byte-identical afterwards.
+        print(f"error: --fresh with {flag} would rebuild the report from the scope alone, "
+              f"discarding every verdict outside it. Drop the scope to rebuild the whole "
+              f"report, or drop --fresh so the scoped run merges into it.", file=sys.stderr)
+        return 2
+
+    if flag:
         paths, refusal = _scoped_paths(args, repo_root)
         if refusal:
             print(f"error: {refusal}", file=sys.stderr)
