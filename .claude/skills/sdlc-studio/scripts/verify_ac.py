@@ -1322,7 +1322,15 @@ def cmd_run(args: argparse.Namespace) -> int:
     repo_root = resolve_root(args)
 
     flag = scope_flag(args)
-    if flag and getattr(args, "fresh", False):
+    # `--story` / `--id` narrow the run exactly as the newer scopes do, so they carry exactly the
+    # same hazard: a rebuild from a narrowed set deletes every verdict outside it. Excluding them
+    # left the data loss this refusal exists to prevent one flag away - measured: a whole-workspace
+    # report holding four stories, then `run --id US0001 --fresh`, exit 0, three verdicts gone
+    # including a FAILING one, so the completion gate saw no failure record.
+    narrowing = flag or ("--id" if getattr(args, "id", None)
+                         else "--story" if getattr(args, "story", None) else "")
+    if narrowing and getattr(args, "fresh", False):
+        flag = narrowing
         # A rebuild keeps only THIS run's entries. Scoped, that silently deletes every
         # verdict outside the scope - including the freshness fields the completion gate
         # reads - and the loss is invisible until a gate reports a green story unverified.

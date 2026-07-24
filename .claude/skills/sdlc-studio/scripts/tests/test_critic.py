@@ -1824,31 +1824,35 @@ class SupersededGateTests(unittest.TestCase):
     in the file and printing as superseded - the audit trail keeps the record that it
     happened, and the gate stops acting on it."""
 
-    def test_superseded_reviewer_no_longer_blocks_the_principal(self) -> None:
+    def test_superseding_does_NOT_restore_independence(self) -> None:
+        """A supersession retires a VERDICT; it cannot un-make the fact that someone reviewed.
+
+        This test asserted the opposite until the closing review reproduced a complete bypass of
+        the two-role gate from it: an author blocked by a REJECT superseded it - the only guard
+        being that the authoriser is not the row's own author, met by any other string - the
+        reviewer then dropped out of the session set, and the author's own subagent was accepted
+        as reviewer of record. Refused, superseded, accepted, measured end to end.
+
+        The incident that motivated supersession (a mis-filed row naming the operator as REVIEWER,
+        stranding the unit) is NOT solved by this and is tracked separately: the tool cannot tell
+        a mis-attribution from an author retiring an inconvenient verdict, so it must not guess.
+        """
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
-            mod.record_verdict(root, "US0276", "approve",
-                               reviewer="Darren Benson (operator)",
-                               author="sdlc-studio; agent; v1")
+            mod.record_verdict(root, "US0001", "reject",
+                               reviewer="qa-seat", author="builder")
             date = mod.read_verdicts(root)[0]["date"]
-            # red-now: the mis-entered row makes the legitimate principal read as the
-            # authoring session's own reviewer, permanently stranding the unit
-            self.assertIn("darren benson (operator)",
-                          mod._session_reviewer_ids(root, "US0276"))
             with self.assertRaises(ValueError):
-                mod.record_signoff(root, "US0276", principal="Darren Benson (operator)",
-                                   author="sdlc-studio; agent; v1")
-            mod.record_supersession(root, "US0276", date=date,
-                                    reason="records an adversarial pass that never ran",
-                                    authorised_by="Darren Benson (operator)")
-            self.assertNotIn("darren benson (operator)",
-                             mod._session_reviewer_ids(root, "US0276"))
-            mod.record_signoff(root, "US0276", principal="Darren Benson (operator)",
-                               author="sdlc-studio; agent; v1")
-            so = mod.signoff_for(root, "US0276")
-            self.assertEqual(so["principal"], "Darren Benson (operator)")
-            self.assertTrue(mod.is_independent_signoff(root, "US0276", so))
+                mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
+            mod.record_supersession(root, "US0001", date=date, reason="mis-filed",
+                                    authorised_by="qa-seat")
+            # the verdict is retired for the critiqued gate...
+            self.assertIsNone(mod.verdict_for(root, "US0001"))
+            # ...but independence is unchanged, so the gate still holds
+            self.assertIn("qa-seat", mod._session_reviewer_ids(root, "US0001"))
+            with self.assertRaises(ValueError):
+                mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
 
     def test_verdict_for_skips_the_superseded_row_and_falls_back(self) -> None:
         with tempfile.TemporaryDirectory() as d:

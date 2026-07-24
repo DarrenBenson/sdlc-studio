@@ -416,9 +416,14 @@ def _session_reviewer_ids(repo_root: Path | str, unit: str) -> set[str]:
     author's proxy), and is refused: the reviewer-of-record must differ from BOTH the author and
     the adversarial reviewer, per-unit or sprint-scope alike.
 
-    A SUPERSEDED verdict row contributes nothing: an authorised record says the review it names
-    never happened, so treating its reviewer as one of the author's own would strand the unit on
-    the strength of a fact that has been ruled untrue."""
+    A SUPERSEDED row STILL CONTRIBUTES. Superseding retires a VERDICT; it cannot un-make the
+    historical fact that the named reviewer acted on this unit, and independence is a question
+    about that fact. Excluding them opened a complete bypass of the two-role gate: an author
+    blocked by a REJECT could supersede it - the only mechanical guard being that the authoriser
+    is not the row's own author, satisfied by any other string - and the reviewer then dropped
+    out of this set, so the author's own subagent became eligible as reviewer of record. Measured
+    end to end: refused, superseded, accepted. A retired verdict does not restore independence,
+    so the correction path cannot be a route around the gate."""
     target = sdlc_md.norm_id(unit)
     ids: set[str] = set()
     for r in _read_rows(evidence_path(repo_root), _EVIDENCE_COLS):
@@ -426,7 +431,9 @@ def _session_reviewer_ids(repo_root: Path | str, unit: str) -> set[str]:
             ids.add(_id(r["reviewer"]))
     for phase in PHASES:  # BOTH verdict phases - a plan-review seat is still the author's spawn
         for v in read_verdicts(repo_root, phase):
-            if sdlc_md.norm_id(v["unit"]) == target and not v.get("superseded"):
+            # superseded rows included deliberately - see the docstring: independence is about
+            # who touched the unit, not about which verdict currently stands
+            if sdlc_md.norm_id(v["unit"]) == target:
                 ids.add(_id(v["reviewer"]))
     for sr in sprint_reviews(repo_root):  # a sprint-level review covering this unit
         if target in _covered_ids(sr):
