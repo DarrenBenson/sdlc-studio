@@ -10,7 +10,7 @@ its parser or its source says so, and it counts as anchored only when a `resolve
 site in it binds the shared implementation in `lib/sdlc_md.py`, checked by object identity.
 `tests/test_root_census.py` re-measures on every run and holds this record to the result, so
 a script added to the family with no row here fails the suite - it cannot join unclassified -
-and a row claiming an anchor the script does not have fails too.
+and a row that disagrees with the measurement in EITHER direction fails too.
 
 Three classifications, one per script:
 
@@ -19,113 +19,124 @@ Three classifications, one per script:
 - **unanchored** - takes the family default `.` as the cwd. A run from a subdirectory then
   reads an empty tree, or writes into a stray one beside the cwd, and exits 0. Every entry
   names the follow-up that tracks it; silence is not a classification.
-- **non-root** - deliberately has no project-root surface, with the reason stated.
+- **non-root** - deliberately has no project-root surface, with the reason stated. The reason
+  is itself held to the code: a row claiming no CLI must define no `main`, a row claiming a
+  `--help` stub must define one and dispatch to nothing, and a row naming a path option must
+  name one the script actually declares.
 
-The measured limit, stated rather than glossed: the unit is the SCRIPT, not the call site. A
-script counts as anchored once one call site binds the shared resolver, so one converted
-verb sitting beside two bare ones reads as anchored here. A mutation run confirmed it -
-reverting a single verb of `next_id.py` left the classification unchanged, and only
-reverting all three moved it. Per-verb coverage is what the follow-up has to carry.
+## What the measurement can and cannot see
 
-## Measured 2026-07-24
+The unit is the SCRIPT, not the call site. A script counts as anchored once one call site
+binds the shared resolver, so one converted verb sitting beside two bare ones would read as
+anchored here. A mutation run confirmed it - reverting a single verb of `next_id.py` left the
+classification unchanged, and only reverting all three moved it.
+
+**A call site is not an anchor**, and this census was wrong about that twice. The closing
+review found five scripts passing on a call made for the mutation guard while every verb still
+wrote through a bare `--root`: `artifact.py` - the creator this project mandates - minted into a
+stray `sdlc-studio/` beside the cwd when run from a subdirectory, with an id the real workspace
+already held, and exited 0.
+
+`tests/test_root_anchor_contract.py` is the answer to that, and it is the stronger instrument of
+the two. It calls each script's `main()` with a namespace it owns, from a subdirectory of a
+fixture project, and asserts on the value the DISPATCH receives rather than on the presence of a
+call. A resolver call made for a guard no longer stands in for an anchor. It also holds the other
+half of the contract: a root the caller NAMED is honoured verbatim, so anchoring only ever widens
+the default `.` and never retargets an explicit `--root X`.
+
+The census remains the coarser view, kept because it is the one that enumerates: it is how a
+script joins the family classified rather than silently.
+
+## Measured 2026-07-24 (after the anchoring sweep)
 
 | Classification | Scripts |
 | --- | --- |
-| anchored | 10 |
-| unanchored | 54 |
+| anchored | 63 |
+| unanchored | 1 |
 | non-root | 5 |
 | **total** | **69** |
 
-The writers among the unanchored are the fail-open half and should be repaired first.
-`next_id.py` was fixed ahead of the rest because it is the collision case: an allocator
-reading an empty tree hands back an id the real workspace already holds.
+These counts are now PARSED by the guard and held to the measurement. They were not before, which
+is how the block came to claim 5 anchored / 59 unanchored while the family measured otherwise: a
+sibling branch landed the resolver in five more scripts, nothing re-measured, and the guard waived
+every stale row as "stale, not false". Both holes are closed - the counts are checked, and a row
+that disagrees with the measurement fails whichever way it disagrees.
 
-**Corrected after the closing review.** This block first recorded 5 anchored / 59
-unanchored. That was already false when written: a sibling change landed the resolver in
-five more scripts from a parallel branch that merged AFTER this record, and nothing
-re-measured. The guard could not catch it - it waives a row that RECORDS `unanchored`
-while MEASURING `anchored` as stale-not-false, and the summary rows here are never parsed,
-so the counts were unverified by construction.
-
-**A call site is not an anchor.** The measurement classifies a script by whether it calls
-the resolver, and the review found five scripts passing on a call made for the mutation
-guard while every verb still wrote through a bare `--root`. `artifact.py` - the creator
-this project mandates - minted into a stray `sdlc-studio/` beside the cwd when run from a
-subdirectory, with an id the real workspace already held, and exited 0. Those five now
-resolve once in `main()` and write the value back to `args`, so the classification is true
-of the writes and not only of the imports. The method still measures call sites, so it
-remains a lower bound: a future script can pass it the same way.
+The one remaining `unanchored` row is `autosprint.py`, which has no `main` of its own: it
+re-exports `sprint.main` verbatim. It is anchored in behaviour - the contract suite calls it and
+it passes - but the census reads call sites in a script's own source and cannot see through a
+re-export.
 
 ## Census
 
 | Script | Classification | Reason or follow-up |
 | --- | --- | --- |
-| `ac_scope.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `archive.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `artifact.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `audit.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `audit_check.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `audit_cost.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `autosprint.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `backfill_authorship.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `backlog_triage.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `blocker_sweep.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `carry_forward.py` | non-root | library module with no CLI surface; its caller passes the resolved root |
-| `changelog.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `close_owed.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `command_audit.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `complexity.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `config.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `conformance.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `constitution.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `critic.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `decisions.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `deploy.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `digest.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `disclosure.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `doc_coverage.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `doc_freshness.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `engagement_floor.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `file_finding.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `flow.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `gate.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `github_sync.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `handoff.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `init.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `integrity.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `ledger.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `lessons.py` | anchored | resolves through `sdlc_md.resolve_root` |
-| `lite_profile.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `loop_guard.py` | anchored | resolves through `sdlc_md.resolve_root` |
-| `migrate.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `migrate_v3.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `mutation.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `next_id.py` | anchored | resolves through `sdlc_md.resolve_root` |
-| `persona_gen.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `persona_resolve.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `plan.py` | non-root | operates on the operator's `~/.claude/plans/` tree, which sits outside any project |
-| `plan_review.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `project_upgrade.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `provenance.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
+| `ac_scope.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `archive.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `artifact.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `audit.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `audit_check.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `audit_cost.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `autosprint.py` | unanchored | anchored in behaviour through `sprint.main`, which it re-exports verbatim; the measurement reads call sites in a script's OWN source and cannot see through a re-export, so it reads unanchored here. Measured and covered by BG0288 - the anchor-contract suite calls its `main` and it passes |
+| `backfill_authorship.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `backlog_triage.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `blocker_sweep.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `carry_forward.py` | non-root | library module with no CLI at all; its caller passes the resolved root |
+| `changelog.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `close_owed.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `command_audit.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `complexity.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `config.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `conformance.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `constitution.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `critic.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `decisions.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `deploy.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `digest.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `disclosure.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `doc_coverage.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `doc_freshness.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `engagement_floor.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `file_finding.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `flow.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `gate.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `github_sync.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `handoff.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `init.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `integrity.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `ledger.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `lessons.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `lite_profile.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `loop_guard.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `migrate.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `migrate_v3.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `mutation.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `next_id.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `persona_gen.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `persona_resolve.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `plan.py` | non-root | operates on the operator's `~/.claude/plans/` tree via `--plans-dir`, which sits outside any project |
+| `plan_review.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `project_upgrade.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `provenance.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `pvd.py` | non-root | operates on a `--master` and a `--target` repo, so no single project root applies |
-| `reconcile.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `refine.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `repair_plan.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `repo_map.py` | anchored | resolves through `sdlc_md.resolve_root` |
-| `resume.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `retro.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `review_prep.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `rfc.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `route.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `spec_guard.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `sprint.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `sprint_report.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `status.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `telemetry.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `transition.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `triage.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `triage_noise.py` | non-root | library module with no CLI surface; its caller passes the resolved root |
-| `triage_sampling.py` | non-root | library module with no CLI surface; its caller passes the resolved root |
-| `validate.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
-| `verify_ac.py` | anchored | resolves through `sdlc_md.resolve_root` |
-| `version_check.py` | unanchored | takes the default `.` as the cwd; tracked by BG0282 |
+| `reconcile.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `refine.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `repair_plan.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `repo_map.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `resume.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `retro.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `review_prep.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `rfc.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `route.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `spec_guard.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `sprint.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `sprint_report.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `status.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `telemetry.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `transition.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `triage.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `triage_noise.py` | non-root | library module whose only surface is a `--help` stub with no verbs behind it; its caller passes the resolved root |
+| `triage_sampling.py` | non-root | library module whose only surface is a `--help` stub with no verbs behind it; its caller passes the resolved root |
+| `validate.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `verify_ac.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `version_check.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |

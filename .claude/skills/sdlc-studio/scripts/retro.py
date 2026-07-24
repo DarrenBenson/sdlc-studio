@@ -2657,7 +2657,9 @@ def cmd_extract(args) -> int:
     return 0
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    # `argv` is a parameter like the rest of the family: a main that reads `sys.argv` directly
+    # cannot be driven by a caller or a test, which is how this one escaped the anchor contract.
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--root", default=".")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -2736,7 +2738,11 @@ def main() -> int:
                                 "target")
         p.set_defaults(func=fn)
 
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
+    # Resolve the root ONCE and write it back, so every verb below anchors on the tree the
+    # run belongs to. The family default `.` means "work it out from here", not "the cwd
+    # is the project": otherwise a run from a subdirectory acts on a stray tree and exits 0.
+    args.root = str(sdlc_md.resolve_root(args))
     return args.func(args)
 
 

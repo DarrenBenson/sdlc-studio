@@ -135,6 +135,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--root", default=".")
     p.add_argument("--format", choices=["text", "json"], default="text")
     args = p.parse_args(argv)
+    # Resolve the root ONCE and write it back, so every verb below anchors on the tree the
+    # run belongs to. The family default `.` means "work it out from here", not "the cwd
+    # is the project": otherwise a run from a subdirectory acts on a stray tree and exits 0.
+    args.root = str(sdlc_md.resolve_root(args))
     res = build(args.root)
     out = Path(args.root) / DIGEST_REL
     sdlc_md.atomic_write(out, json.dumps(res, indent=2))
