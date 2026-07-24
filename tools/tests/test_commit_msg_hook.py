@@ -20,15 +20,40 @@ HOOK = REPO / ".githooks" / "commit-msg"
 
 
 def _run(message: str, *, path: str | None = None, cwd: str | None = None,
-         env_extra: dict[str, str] | None = None):
+         env_extra: dict[str, str] | None = None, mid_operation: str | None = None):
+    """Run the commit-msg hook against `message` in a HERMETIC fixture repo.
+
+    The hook resolves its repo root and git dir from wherever it runs; run in the OUTER repo it
+    reads the outer repo's state, and while THAT repo is mid-merge (which happens whenever the
+    pre-commit suite runs during a merge commit) its in-progress-operation guard exits the hook
+    early and every refusal test passes vacuously, or - worse - fails because the refusal never
+    ran (BG0281). So each call builds its own throwaway git repo and runs the hook there.
+
+    The checker (`engagement_floor.py` and its `lib/`) is made present via a symlinked `scripts`
+    dir at the path the hook resolves, so the refusal actually executes - the isolation does not
+    make the test vacuous (AC2). `mid_operation` writes the named in-progress marker into the
+    FIXTURE's git dir, so the mid-merge behaviour is exercised deliberately rather than inherited.
+    """
     with tempfile.TemporaryDirectory() as d:
-        msg = Path(d) / "COMMIT_EDITMSG"
+        repo = Path(d)
+        clean = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull,
+                 "GIT_CONFIG_SYSTEM": os.devnull}
+        for name in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
+            clean.pop(name, None)
+        subprocess.run(["git", "init", "-q"], cwd=repo, check=True, env=clean)
+        scripts = repo / ".claude" / "skills" / "sdlc-studio"
+        scripts.mkdir(parents=True)
+        (scripts / "scripts").symlink_to(
+            REPO / ".claude" / "skills" / "sdlc-studio" / "scripts")
+        if mid_operation:
+            (repo / ".git" / mid_operation).write_text("x\n", encoding="utf-8")
+        msg = repo / "COMMIT_EDITMSG"
         msg.write_text(message, encoding="utf-8")
-        env = dict(os.environ)
+        env = dict(clean)
         env.update(env_extra or {})
         target = path if path is not None else str(msg)
         return subprocess.run(["bash", str(HOOK), target], capture_output=True,
-                              text=True, env=env, cwd=cwd)
+                              text=True, env=env, cwd=cwd if cwd is not None else str(repo))
 
 
 class CommitMsgGateTests(unittest.TestCase):
@@ -153,6 +178,34 @@ class NoSecondBypassTests(unittest.TestCase):
                 r = _run("feat(CR0257, CR0258): batch fix",
                          env_extra={"SDLC_ENGAGEMENT_STRICT": value})
                 self.assertNotEqual(r.returncode, 0, r.stdout + r.stderr)
+
+
+class MidMergeIsolationTests(unittest.TestCase):
+    """BG0281: a conflicted merge could not be committed through the gate, because these very
+    tests failed while the outer repo was mid-merge - they inherited its MERGE_HEAD and saw the
+    hook's correct early exit. The fixture is now hermetic, so the outer state cannot leak in."""
+
+    def test_the_refusal_still_fires_while_the_OUTER_repo_is_mid_merge(self):
+        # The regression proof: even if the outer repo carries MERGE_HEAD right now, a bare
+        # multi-id subject is still refused, because the hook reads the fixture's state.
+        r = _run("feat(CR0257, CR0258): batch fix")
+        self.assertNotEqual(r.returncode, 0,
+                            "the hook read the outer repo's merge state instead of the fixture's")
+        self.assertIn("Refs: CR0258", r.stdout + r.stderr)
+
+    def test_the_fixture_is_not_vacuous_the_checker_actually_ran(self):
+        # AC2: a passing trailered commit must be the CHECKER passing, not the checker being
+        # absent. The refusal test above already proves the checker fires; this proves the
+        # symlinked checker resolves (a bad symlink would make the hook exit 0 on a bare subject).
+        r = _run("feat(CR0257, CR0258): batch fix\n\nRefs: CR0257\nRefs: CR0258\n")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_a_marker_in_the_fixture_itself_exits_early_as_designed(self):
+        # AC3, the intended behaviour isolated: with the fixture ITSELF mid-merge, the hook
+        # exits 0 on a multi-id subject - so a real merge commit is never blocked by the gate.
+        r = _run("feat(CR0257, CR0258): merge two branches", mid_operation="MERGE_HEAD")
+        self.assertEqual(r.returncode, 0,
+                         "the hook must not block a commit while a merge is genuinely in progress")
 
 
 if __name__ == "__main__":

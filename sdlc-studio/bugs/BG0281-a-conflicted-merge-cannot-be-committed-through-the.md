@@ -84,3 +84,4 @@ defect.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-24 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-24 | sdlc-studio | Fixed and mutation-proven - proved by running the refusal test with the outer repo mid-merge |

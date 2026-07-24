@@ -124,6 +124,11 @@ SCRUB_SITES: dict[str, str] = {
         "pinned by test_every_hook_fixture_module_scrubs_the_same_variables",
     "tools/tests/test_skill_tests_env.py":
         "this file: REPO_LOCATING is the list every other copy is held to",
+    "tools/tests/test_commit_msg_hook.py":
+        "PARTIAL: clears only GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE when building the hermetic "
+        "fixture repo each hook run needs (BG0281). It is scrubbing its OWN child's environment "
+        "so the fixture is not steered at the outer repo, not protecting a shipped path, and it "
+        "never writes outside its temp dir. Widen it to REPO_LOCATING when touched.",
     ".claude/skills/sdlc-studio/scripts/tests/test_gitutil.py":
         "asserts the shipped helper's confinement behaviourally, against throwaway repos",
     ".claude/skills/sdlc-studio/scripts/tests/gitutil.py":
