@@ -690,6 +690,35 @@ ASCII art dashboard as shown above.
 
 ---
 
+## A disclosed sign-off is not an independent one
+
+A sign-off may be recorded by a delegate running in its own agent context. That is a deliberate
+decision, and this section states what it costs so nobody has to rediscover it.
+
+The two-role gate exists to make the reviewer of record independent of the author. An agent the
+authoring session can spawn is, by construction, under the author's control - so a delegated
+sign-off of that kind does NOT establish independence. It is accepted anyway, because the
+alternative is that unattended and long-running delivery cannot reach Done at all: the work
+stops at reviewed-and-ready however good it is.
+
+What is traded, and what replaces it:
+
+- **The guard no longer proves the property its name claims.** A `DELEGATED AGENT` sign-off is
+  evidence that a review happened, not evidence that it was independent.
+- **Disclosure replaces independence.** The marker is written into the sign-off chain itself,
+  not a note, so it cannot be omitted; the close prints it, and the sprint report names every
+  unit and delegate. The audit trail's value now rests on that disclosure being READ.
+- **A genuinely external delegate is not marked.** CI, another human, another session - those
+  are real boundaries and carry no marker, which is the only thing that lets a reader tell the
+  two apart.
+- **Self-approval is untouched.** The author may not sign their own work, directly or through a
+  delegate that is the author. Widening WHO may act as reviewer of record is not the same as
+  removing the rule that they may not be the author.
+
+The genuinely external boundary - a process the authoring session can neither brief nor inspect,
+reading only committed evidence against fixed criteria - remains the stronger option and is not
+foreclosed by this.
+
 ## See Also
 
 - `help/review.md` - Command quick reference

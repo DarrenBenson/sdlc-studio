@@ -442,6 +442,22 @@ def _session_reviewer_ids(repo_root: Path | str, unit: str) -> set[str]:
     return ids
 
 
+#: The marker a delegated sign-off carries when the delegate is under the authoring session's
+#: control. It is written into the CHAIN, not a note, because a note is optional and this is the
+#: entire consideration the disclosure trade is built on.
+DELEGATED_AGENT = "DELEGATED AGENT"
+
+
+def delegated_agent_signoffs(repo_root: Path | str) -> list[dict]:
+    """Every recorded sign-off whose chain carries the delegated-agent marker.
+
+    Read by the sprint report and the close so the disclosure reaches the operator at the
+    moment of the decision, rather than sitting in a log they would have to know to open.
+    """
+    rows = _read_rows(signoff_path(repo_root), _SIGNOFF_COLS)
+    return [r for r in rows if DELEGATED_AGENT in (r.get("chain") or "")]
+
+
 def record_signoff(repo_root: Path | str, unit: str, principal: str, author: str,
                    delegate: str | None = None, boundary: str | None = None,
                    note: str = "") -> Path:
@@ -468,21 +484,34 @@ def record_signoff(repo_root: Path | str, unit: str, principal: str, author: str
                              "CI, another human)")
         if _id(delegate) == _id(author):
             raise ValueError(f"delegate {delegate!r} is the author - refused")
-        if _id(delegate) in session_ids:
-            raise ValueError(
-                f"delegate {delegate!r} is an authoring-session subagent (it is a "
-                "recorded reviewer on this unit's evidence/verdict rows) - a delegate "
-                "the author controls hollows out the self-approval guard; refused")
-        chain = f"{principal} -> {delegate} (boundary: {boundary})"
+        # An authoring-session subagent used to be REFUSED here. The operator ruled otherwise:
+        # a subagent running in its own context is fully authorised as reviewer of record, and
+        # the honest answer to the residual risk is DISCLOSURE rather than prohibition.
+        #
+        # What that buys: unattended and long-running delivery can reach Done at all, which was
+        # impossible on any project with `two_role_after` set - the work stopped at
+        # reviewed-and-ready however good it was.
+        #
+        # What it costs, recorded here so nobody has to rediscover it: the sign-off is
+        # disclosed, not independent. The guard no longer proves the property its name claims,
+        # and the audit trail's value now rests on the disclosure being READ. That is why the
+        # marker is not optional and is written into the chain itself rather than a note - a
+        # delegated sign-off that reads as an ordinary one destroys the only thing the ruling
+        # bought.
+        marker = f" [{DELEGATED_AGENT}]" if _id(delegate) in session_ids else ""
+        chain = f"{principal} -> {delegate} (boundary: {boundary}){marker}"
         effective = delegate
     if _id(effective) == _id(author):
         raise ValueError(f"principal {effective!r} is the author - a self-sign-off "
                          "never clears the gate")
-    if _id(effective) in session_ids:
+    if _id(effective) in session_ids and delegate is None:
+        # Still refused on the DIRECT path: an author naming their own subagent as principal,
+        # with no delegation chain and no boundary, is a self-sign-off wearing another name.
+        # The delegated path above is the deliberate, disclosed route.
         raise ValueError(
             f"principal {effective!r} is an authoring-session subagent (a recorded "
             "reviewer on this unit) - the reviewer of record must sit outside the "
-            "author's control; refused")
+            "author's control, or be recorded as a disclosed delegation; refused")
     return _append_row(signoff_path(repo_root), _SIGNOFF_HEADER,
                        (sdlc_md.norm_id(unit), _clean(effective), _clean(chain),
                         _clean(author), sdlc_md.now_date(), _clean(note) or "-"))

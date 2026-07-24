@@ -502,5 +502,34 @@ class MutationBelongsToThisRunTests(ReportBase):
         self.assertEqual(rep["mutation"]["current"]["run_id"], rid)
 
 
+class DisclosureTests(unittest.TestCase):
+    """D0059 trades independence for DISCLOSURE, so the disclosure has to reach a reader who
+    does not already know to look for it."""
+
+    def test_every_delegated_signoff_is_named_with_its_delegate(self) -> None:
+        """AC1. A count alone is not enough - which unit, and which delegate, is what lets a
+        reader weigh the verdicts."""
+        rep = {"ok": True, "id": "RETRO0001", "date": "2026-07-24", "units": [],
+               "delivered_points": 0,
+               "delegated_signoffs": [
+                   {"unit": "US0001", "chain": "operator -> qa-seat (boundary: agent) "
+                                               "[DELEGATED AGENT]"},
+                   {"unit": "US0002", "chain": "operator -> qa-seat (boundary: agent) "
+                                               "[DELEGATED AGENT]"}]}
+        lines = sr._delegated_signoff_lines(rep)
+        joined = "\n".join(lines)
+        self.assertIn("2", joined, "the count must be stated")
+        self.assertIn("US0001", joined)
+        self.assertIn("US0002", joined)
+        self.assertIn("qa-seat", joined, "the delegate must be named")
+        self.assertIn("not by an independent reviewer", joined)
+
+    def test_a_sprint_with_no_delegated_signoffs_says_nothing(self) -> None:
+        """The negative control. A disclosure block that appears when there is nothing to
+        disclose trains the reader to skip it."""
+        self.assertEqual(
+            sr._delegated_signoff_lines({"ok": True, "delegated_signoffs": []}), [])
+
+
 if __name__ == "__main__":
     unittest.main()

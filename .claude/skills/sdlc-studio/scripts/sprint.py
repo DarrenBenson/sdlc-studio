@@ -3472,6 +3472,7 @@ def _close_review_anchor(root, retro, state):
     except OSError as exc:
         return False, f"the review anchor could not be written: {exc}", \
                "check sdlc-studio/reviews/LATEST.md is writable, then re-run close"
+    _disclose_delegated_signoffs(root)
     if str(st.get("goal") or "").lower() == "design":
         print(render_grooming_report(grooming_report(root, st.get("batch") or [])),
               file=sys.stderr)
@@ -3619,6 +3620,29 @@ def _oversized_blocks_at(args) -> bool:  # noqa: ARG001 - the rung is deliberate
     are invisible. Written as a function so the asymmetry with the ungroomed leg is stated
     rather than implied by its absence."""
     return True
+
+
+def _disclose_delegated_signoffs(root) -> None:
+    """Print the delegated-agent sign-offs at the CLOSE, not only in the sprint report.
+
+    The close is what the operator reads at the moment of the decision. A disclosure that only
+    reaches a report they would have to know to generate is a disclosure in name - and
+    disclosure is the entire consideration D0059 traded independence for.
+    """
+    try:
+        import critic  # noqa: PLC0415
+        rows = critic.delegated_agent_signoffs(root)
+    except Exception as exc:  # noqa: BLE001 - a close must never die on a log read
+        sdlc_md.debug("sprint._disclose_delegated_signoffs", exc)
+        return
+    if not rows:
+        return
+    print(f"close: {len(rows)} sign-off(s) on this run were made by an agent under the "
+          f"authoring session's control, NOT by an independent reviewer:", file=sys.stderr)
+    for r in rows[:12]:
+        print(f"  {r.get('unit', '?')} via {r.get('chain', '?')}", file=sys.stderr)
+    if len(rows) > 12:
+        print(f"  (+{len(rows) - 12} more)", file=sys.stderr)
 
 
 def grooming_report(root, batch: list[str]) -> dict:

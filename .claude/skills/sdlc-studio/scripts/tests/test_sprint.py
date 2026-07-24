@@ -7115,5 +7115,38 @@ class GroomingReportTests(unittest.TestCase):
         self.assertNotIn("NOTHING WAS GROOMED", line)
 
 
+class DisclosureTests(unittest.TestCase):
+    """AC2 of US0428: the close is what the operator reads at the moment of the decision, so
+    the disclosure has to appear there and not only in a report they must know to generate."""
+
+    def test_the_close_output_discloses_delegated_signoffs(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "reviews").mkdir(parents=True)
+            import critic
+            critic.record_verdict(root, "US0001", "approve", reviewer="qa-seat",
+                                  author="builder")
+            critic.record_signoff(root, "US0001", principal="operator", author="builder",
+                                  delegate="qa-seat", boundary="its own agent context")
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                sprint._disclose_delegated_signoffs(str(root))
+        printed = err.getvalue()
+        self.assertIn("US0001", printed)
+        self.assertIn("NOT by an independent reviewer", printed)
+
+    def test_a_close_with_no_delegated_signoffs_prints_nothing(self) -> None:
+        """The control: a disclosure that fires on every close is noise, and noise is skipped."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "reviews").mkdir(parents=True)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                sprint._disclose_delegated_signoffs(str(root))
+        self.assertEqual(err.getvalue(), "")
+
+
 if __name__ == "__main__":
     unittest.main()

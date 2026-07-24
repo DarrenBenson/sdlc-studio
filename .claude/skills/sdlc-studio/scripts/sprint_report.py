@@ -261,6 +261,7 @@ def report(root: Path, retro_id: str, *, sprint_tokens: int | None = None,
         "mutation": _mutation_summary(Path(root), unit_ids),
         "units": unit_ids,
         "delivered_points": b.get("delivered_points"),
+        "delegated_signoffs": _delegated_rows(root),
         "spend": _spend(root, unit_ids),
         "sprint_actual_tokens": b.get("sprint_actual_tokens"),
         "velocity": {
@@ -337,6 +338,35 @@ def _mutation_lines(m: dict | None) -> list[str]:
             f"yield {cur['yield']} filed artefact(s) ({filed}){per}.", *trailing]
 
 
+def _delegated_rows(root: Path) -> list[dict]:
+    """The delegated-agent sign-off rows, read from `critic` rather than re-derived. One
+    definition of "delegated" - a second spelling here is how a writer and its readers stop
+    agreeing about what was disclosed."""
+    try:
+        import critic  # noqa: PLC0415
+        return critic.delegated_agent_signoffs(root)
+    except Exception as exc:  # noqa: BLE001 - a report must not die on a log read
+        sdlc_md.debug("sprint_report._delegated_rows", exc)
+        return []
+
+
+def _delegated_signoff_lines(rep: dict) -> list[str]:
+    """The disclosure block. D0059 authorises a subagent in its own context to act as reviewer
+    of record and trades independence for DISCLOSURE - so the disclosure has to be somewhere a
+    reader meets without knowing to look for it. A count alone is not enough: which units, and
+    which delegate, is what lets a reader weigh the verdicts."""
+    rows = rep.get("delegated_signoffs") or []
+    if not rows:
+        return []
+    out = [f"Delegated sign-offs: {len(rows)} of this sprint's sign-offs were made by an agent "
+           f"under the authoring session's control, not by an independent reviewer."]
+    for r in rows[:12]:
+        out.append(f"  {r.get('unit', '?')} signed via {r.get('chain', '?')}")
+    if len(rows) > 12:
+        out.append(f"  (+{len(rows) - 12} more)")
+    return out
+
+
 def render(rep: dict) -> str:
     if not rep.get("ok"):
         return f"sprint report {rep['id']}: unavailable ({'; '.join(rep.get('errors', []))})"
@@ -348,6 +378,7 @@ def render(rep: dict) -> str:
                   if gv else "not judged (record with `sprint goal-verdict`)")
         lines.append(f"Sprint Goal: {rep['sprint_goal']} [{judged}]")
     lines.append(f"Delivered: {len(rep['units'])} unit(s), {rep['delivered_points']} points.")
+    lines.extend(_delegated_signoff_lines(rep))
     lines.append(_spend_line(rep["spend"], rep.get("sprint_actual_tokens")))
     if v["points_per_elapsed_hour"]:
         lines.append(f"Velocity: {v['points_per_elapsed_hour']} points/elapsed-hour "

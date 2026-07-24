@@ -577,38 +577,50 @@ class SignoffDelegateTests(unittest.TestCase):
                 mod.record_signoff(d, "US0001", principal="operator", author="builder",
                                    delegate="ci-reviewer")
 
-    def test_authoring_session_subagent_refused_as_delegate(self) -> None:
-        # The seat subagent that reviewed for this unit is the author's own spawn -
-        # naming it the delegate would hollow out the self-approval guard.
+    def test_authoring_session_subagent_is_accepted_as_a_DISCLOSED_delegate(self) -> None:
+        # AMENDED under D0059, deliberately. This asserted a REFUSAL - the seat subagent is the
+        # author's own spawn, so naming it the delegate hollowed out the self-approval guard.
+        # The operator ruled that such a delegate is fully authorised and the honest answer to
+        # the residual risk is DISCLOSURE rather than prohibition: unattended delivery could
+        # otherwise never reach Done. The sign-off is now accepted AND MARKED, and the marker
+        # is what this test pins - an unmarked row is the one outcome the ruling cannot
+        # tolerate. Independence is not restored by any of this and the docs say so.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
             mod.record_evidence(root, "US0001", reviewer="qa-seat", author="builder",
                                 findings="pass done")
-            with self.assertRaises(ValueError):
-                mod.record_signoff(root, "US0001", principal="operator", author="builder",
-                                   delegate="qa-seat", boundary="another session")
+            mod.record_signoff(root, "US0001", principal="operator", author="builder",
+                               delegate="qa-seat", boundary="another session")
+            row = mod.signoff_for(root, "US0001")
+        self.assertIn(mod.DELEGATED_AGENT, row["chain"])
 
-    def test_verdict_reviewer_refused_as_delegate(self) -> None:
+    def test_verdict_reviewer_is_accepted_as_a_DISCLOSED_delegate(self) -> None:
+        # AMENDED under D0059 - see the sibling test above for the reasoning and the cost.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
             mod.record_verdict(root, "US0001", "approve", reviewer="Sam seat", author="builder")
-            with self.assertRaises(ValueError):
-                mod.record_signoff(root, "US0001", principal="operator", author="builder",
-                                   delegate="Sam seat", boundary="another session")
+            mod.record_signoff(root, "US0001", principal="operator", author="builder",
+                               delegate="Sam seat", boundary="another session")
+            row = mod.signoff_for(root, "US0001")
+        self.assertIn(mod.DELEGATED_AGENT, row["chain"])
 
-    def test_plan_review_phase_reviewer_refused_as_delegate(self) -> None:
-        # The authoring-session set spans BOTH verdict phases: a subagent that only
-        # reviewed the unit's plan (plan-review phase) is still the author's spawn.
+    def test_plan_review_reviewer_is_accepted_as_a_DISCLOSED_delegate(self) -> None:
+        # AMENDED under D0059. The authoring-session set still spans BOTH verdict phases - a
+        # subagent that only reviewed the unit's PLAN is still the author's spawn - so what
+        # this now pins is that the marker is applied to that case too. If the phase were
+        # dropped from the session set, this delegate would be recorded as an ordinary
+        # independent sign-off, which is exactly the silent outcome the ruling forbids.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
             mod.record_verdict(root, "US0001", "approve", reviewer="plan-seat",
                                author="builder", phase="plan-review")
-            with self.assertRaises(ValueError):
-                mod.record_signoff(root, "US0001", principal="operator", author="builder",
-                                   delegate="plan-seat", boundary="another session")
+            mod.record_signoff(root, "US0001", principal="operator", author="builder",
+                               delegate="plan-seat", boundary="another session")
+            row = mod.signoff_for(root, "US0001")
+        self.assertIn(mod.DELEGATED_AGENT, row["chain"])
 
     def test_direct_principal_in_session_refused(self) -> None:
         # The write-time refusal covers the DIRECT path too, not only delegates:

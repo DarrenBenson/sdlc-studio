@@ -1,6 +1,6 @@
 # US0429: reference-review.md states plainly that a disclosed sign-off is not an independent one, and what that costs
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** RFC0051
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** a reader asks what a delegated sign-off proves
 - **Then** it carries a `## A disclosed sign-off is not an independent one` section stating that the guard no longer proves the property its name claims, and that the audit trail's value rests on the disclosure being read
 - **Verify:** grep '## A disclosed sign-off is not an independent one' .claude/skills/sdlc-studio/reference-review.md
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 

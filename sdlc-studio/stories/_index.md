@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 12 |
-| Ready | 22 |
+| Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 16 |
+| Review | 19 |
 | Done | 380 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -337,9 +337,9 @@
 | [US0424](US0424-findings-must-be-filed-or-declined-with-a.md) | findings must be filed or declined with a reason before --write proceeds; silence is refused | Ready | EP0158 | 2026-07-24 | 2026-07-24 |
 | [US0425](US0425-the-pass-is-intensity-scaled-to-batch-size.md) | the pass is intensity-scaled to batch size and records what the scaling skipped | Ready | EP0158 | 2026-07-24 | 2026-07-24 |
 | [US0426](US0426-reference-sprint-md-states-the-plan-critic-has.md) | reference-sprint.md states the plan critic has less information than the builder, and that Ponytail's rate is not evidence here | Ready | EP0158 | 2026-07-24 | 2026-07-24 |
-| [US0427](US0427-a-subagent-reviewer-of-record-in-its-own.md) | a subagent reviewer of record in its own context is accepted, and the row records that it was a delegated agent | Ready | EP0159 | 2026-07-24 | 2026-07-24 |
-| [US0428](US0428-the-sprint-report-and-the-close-output-disclose.md) | the sprint report and the close output DISCLOSE every delegated sign-off, naming the delegate | Ready | EP0159 | 2026-07-24 | 2026-07-24 |
-| [US0429](US0429-reference-review-md-states-plainly-that-a-disclosed.md) | reference-review.md states plainly that a disclosed sign-off is not an independent one, and what that costs | Ready | EP0159 | 2026-07-24 | 2026-07-24 |
+| [US0427](US0427-a-subagent-reviewer-of-record-in-its-own.md) | a subagent reviewer of record in its own context is accepted, and the row records that it was a delegated agent | Review | EP0159 | 2026-07-24 | 2026-07-24 |
+| [US0428](US0428-the-sprint-report-and-the-close-output-disclose.md) | the sprint report and the close output DISCLOSE every delegated sign-off, naming the delegate | Review | EP0159 | 2026-07-24 | 2026-07-24 |
+| [US0429](US0429-reference-review-md-states-plainly-that-a-disclosed.md) | reference-review.md states plainly that a disclosed sign-off is not an independent one, and what that costs | Review | EP0159 | 2026-07-24 | 2026-07-24 |
 | [US0430](US0430-the-breakdown-gate-refuses-an-ungroomed-batch-at.md) | the breakdown gate refuses an ungroomed batch at --goal done and accepts it at --goal design | Review | EP0160 | 2026-07-24 | 2026-07-24 |
 | [US0431](US0431-a-design-rung-s-close-reports-how-many.md) | a design rung's close reports how many units it groomed, so an accepted-but-ungroomed batch cannot close silently | Review | EP0160 | 2026-07-24 | 2026-07-24 |
 
