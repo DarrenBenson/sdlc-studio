@@ -336,8 +336,15 @@ class BoundaryCloseDownTests(unittest.TestCase):
             with _stubbed_close():
                 rc, out = _boundary(root, "--retro", rid, "--no-fetch")
             self.assertEqual(rc, 0, out)
-            self.assertIn("cycle 1 | close [1/6] retro-validate", out)
-            self.assertIn("cycle 1 | close [4/6] gate", out)
+            # Step indices derived from the chain, never hand-pinned: the old `[1/6]`/`[4/6]`
+            # meant adding a close step failed a test about per-cycle REPORTING, which is not
+            # what it guards. The property under test is that each step is attributed to its
+            # cycle, not how many steps there are.
+            chain = sprint._CLOSE_CHAIN
+            n = len(chain)
+            self.assertIn(f"cycle 1 | close [1/{n}] {chain[0]}", out)
+            gate_at = chain.index("gate") + 1
+            self.assertIn(f"cycle 1 | close [{gate_at}/{n}] gate", out)
 
 
 class BoundaryGateHaltTests(unittest.TestCase):

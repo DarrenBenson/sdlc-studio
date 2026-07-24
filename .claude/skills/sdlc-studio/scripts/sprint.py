@@ -5043,19 +5043,57 @@ def _compose_seat_brief(plan: dict, goal: str | None, digest: dict) -> str:
     return "\n".join(lines)
 
 
-def seat_brief(repo_root: Path | str) -> str:
+def _persisted_plan_is_stale(root: Path, plan: dict) -> str | None:
+    """Why the PERSISTED plan does not describe the batch about to be reviewed, or None.
+
+    The goal review GATES `plan --write`, so on a new sprint the persisted plan necessarily still
+    belongs to the previous run. Briefing a seat from it describes the wrong batch, silently - and
+    a confidently wrong brief is worse than an absent one."""
+    if not plan:
+        return "no plan has been written yet"
+    try:
+        state = run_state.read(root) or {}
+    except Exception as exc:  # noqa: BLE001 - a missing run state must not break the brief
+        sdlc_md.debug("sprint._persisted_plan_is_stale", exc)
+        return None
+    if state.get("outcome") and state["outcome"] != "running":
+        return (f"the persisted plan belongs to {state.get('run_id') or 'a run'}, which closed "
+                f"({state['outcome']})")
+    return None
+
+
+def seat_brief(repo_root: Path | str, worklist: str | None = None) -> str:
     """The context a review seat is GIVEN before it judges the Sprint Goal: what the batch is, the
     grooming state the first live review turned on (placeholder ACs, shared-file clusters, the
     reachable end state), and THIS project's own relevant failure modes from the lessons registry -
-    not a generic checklist. Derived deterministically from the persisted plan and run state."""
+    not a generic checklist.
+
+    Give it the batch it is to brief (`worklist`) and it composes from a DRY plan of exactly that
+    batch. Without one it falls back to the persisted plan, and REFUSES to render a stale one as
+    current - the goal review gates `plan --write`, so on a new sprint the persisted plan is the
+    previous sprint's by construction."""
     root = Path(repo_root)
+    digest = lessons.plan_digest(root)
+    if worklist:
+        plan = build_plan(root, worklist=worklist, skip_personas=True)
+        goal = plan.get("sprint_goal")
+        try:
+            goal = (run_state.read(root) or {}).get("sprint_goal") or goal
+        except Exception as exc:  # noqa: BLE001
+            sdlc_md.debug("sprint.seat_brief", exc)
+        return _compose_seat_brief(plan, goal, digest)
     plan = sdlc_md.read_json(_plan_path(root), {})
+    stale = _persisted_plan_is_stale(root, plan)
+    if stale:
+        return (f"NO CURRENT BATCH TO BRIEF: {stale}. Give the brief the batch it is to describe "
+                f"(`goal-review brief --worklist <file>`); the previous run's plan is not rendered "
+                f"here, because a brief describing the wrong batch cannot be told from a right one.")
     goal = plan.get("sprint_goal")
     try:
         goal = (run_state.read(root) or {}).get("sprint_goal") or goal
     except Exception as exc:  # noqa: BLE001 - a missing run state must not break the brief
         sdlc_md.debug("sprint.seat_brief", exc)
-    return _compose_seat_brief(plan, goal, lessons.plan_digest(root))
+    return _compose_seat_brief(plan, goal, digest)
 
 
 def _parse_seat_verdict(spec: str) -> dict:
@@ -5086,7 +5124,7 @@ def cmd_goal_review(args) -> int:
     """
     root = Path(args.root)
     if args.action == "brief":
-        print(seat_brief(root))
+        print(seat_brief(root, worklist=getattr(args, "brief_worklist", None)))
         return 0
     if args.action == "show":
         rec = goal_review(root)
@@ -5533,6 +5571,10 @@ def build_parser() -> argparse.ArgumentParser:
     gr.add_argument("--requesting-seat", dest="requesting_seat", default=None, metavar="ROLE",
                     help="the seat that asked for the reframe; its prior verdict carries forward "
                          "to the amended goal (with --amend-from)")
+    gr.add_argument("--brief-worklist", dest="brief_worklist", metavar="FILE",
+                    help="(brief) the batch the brief is to describe - one unit id per line. "
+                         "Without it the brief falls back to the persisted plan, which on a new "
+                         "sprint is the PREVIOUS run's by construction")
     gr.add_argument("--material", action="store_true",
                     help="declare the change MATERIAL, not an amendment: no verdict carries "
                          "forward and every seat must review the new goal (the operator's call, "

@@ -6511,6 +6511,54 @@ class ThemedBatchNotAnObjectionTests(_GoalReviewFixture):
         self.assertIn("THEMED", out.upper())
 
 
+class SeatBriefFreshnessTests(unittest.TestCase):
+    """BG0277: the brief derived from the PERSISTED plan, but the review it informs gates
+    `plan --write` - so on a new sprint it silently described the previous batch."""
+
+    def _repo(self, plan_count, outcome):
+        d = Path(tempfile.mkdtemp(prefix="brief_fresh_"))
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        (d / "sdlc-studio" / "stories").mkdir(parents=True)
+        (d / "scripts").mkdir()
+        (d / "scripts" / "m.py").write_text("# marker\n")
+        (d / "sdlc-studio" / ".local" / "sprint-plan.json").write_text(json.dumps(
+            {"count": plan_count, "order": "priority", "sprint_goal": "the OLD goal",
+             "breakdown": {"ungroomed": [{"id": "US9999"}], "clusters": []},
+             "reachable_end_state": {"state": "Review", "basis": "b"}}))
+        (d / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(
+            {"schema": 1, "run_id": "RUN-OLD", "sprint_goal": "the OLD goal",
+             "outcome": outcome, "batch": []}))
+        return d
+
+    def test_the_brief_describes_the_batch_it_is_given_not_the_persisted_plan(self):
+        s = _load()
+        d = self._repo(plan_count=19, outcome="goal-reached")
+        f = d / "sdlc-studio" / "stories" / "US0001-x.md"
+        f.write_text("# US0001: x\n\n> **Status:** Draft\n> **Points:** 2\n"
+                     "> **Affects:** scripts/m.py\n", encoding="utf-8")
+        wl = d / "wl.txt"
+        wl.write_text("US0001\n", encoding="utf-8")
+        brief = s.seat_brief(d, worklist=str(wl))
+        self.assertIn("1 unit(s)", brief)          # the batch it was GIVEN
+        self.assertNotIn("19 unit(s)", brief)      # not the persisted one
+        self.assertNotIn("US9999", brief)          # nor its grooming state
+
+    def test_a_stale_plan_is_named_not_rendered_as_current(self):
+        s = _load()
+        d = self._repo(plan_count=19, outcome="goal-reached")   # the run that plan belongs to CLOSED
+        brief = s.seat_brief(d)
+        self.assertIn("NO CURRENT BATCH TO BRIEF", brief)
+        self.assertIn("RUN-OLD", brief)
+        self.assertNotIn("19 unit(s)", brief)      # the wrong batch is never rendered
+
+    def test_a_live_run_still_briefs_from_its_own_plan(self):
+        s = _load()
+        d = self._repo(plan_count=19, outcome="running")        # unregressed happy path
+        brief = s.seat_brief(d)
+        self.assertIn("19 unit(s)", brief)
+        self.assertNotIn("NO CURRENT BATCH", brief)
+
+
 class ReviewAnchorRefreshTests(unittest.TestCase):
     """BG0275: only the BLOCKED close path touched the review anchor, so a successful close left
     the previous run's state standing - including a sign-off that had already landed."""
