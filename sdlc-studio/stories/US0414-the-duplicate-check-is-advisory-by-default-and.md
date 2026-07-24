@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator who wants the duplicate check to still be switched on next month
+**I want** it to report by default and refuse only when I ask
+**So that** filing is never blocked by a heuristic, and a refusal never leaves half an artefact behind
 
 ## Acceptance Criteria
 
@@ -23,6 +23,7 @@
 - **When** `new` is invoked
 - **Then** the artefact IS minted and the duplicate is reported - filing must never be blocked by a heuristic, or the heuristic becomes a reason not to file
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DuplicateStrictTests::test_advisory_by_default_mints_and_reports
+- **Verified:** yes (2026-07-24)
 
 ### AC2: --strict refuses and mints nothing
 
@@ -30,6 +31,7 @@
 - **When** `new` is invoked
 - **Then** it exits non-zero and NO file and NO index row are written - a refusal that leaves a half-minted artefact is worse than no refusal
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DuplicateStrictTests::test_strict_refuses_and_writes_nothing
+- **Verified:** yes (2026-07-24)
 
 ## Revision History
 
