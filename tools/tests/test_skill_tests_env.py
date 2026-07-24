@@ -36,6 +36,11 @@ REPO_LOCATING = (
 MUST_SURVIVE = ("GIT_AUTHOR_NAME", "GIT_COMMITTER_NAME",
                 "GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM")
 
+#: The tracked hooks, which carry no file extension and so cannot be found by suffix. Both
+#: are swept: the expensive lanes (and their scrub) live in `commit-msg` since US0372, and
+#: `pre-commit` still hands the selection over to it.
+HOOK_NAMES = ("pre-commit", "commit-msg")
+
 
 def _scrub_prelude() -> str:
     """The scrub as the script actually declares it, up to the first non-scrub statement.
@@ -114,13 +119,17 @@ class ScrubClearsTheCallersGitEnvironment(unittest.TestCase):
 SCRUB_SITES: dict[str, str] = {
     "tools/skill-tests.sh":
         "pinned by test_the_script_itself_still_scrubs_them",
-    ".githooks/pre-commit":
-        "pinned by test_the_hook_lane_scrubs_the_same_variables_as_the_script",
+    ".githooks/commit-msg":
+        "pinned by test_the_hook_lane_scrubs_the_same_variables_as_the_script. The tool-tests "
+        "lane moved here from .githooks/pre-commit (US0372) so it sits behind the "
+        "commit-message check; the scrub moved with it, unchanged.",
     "tools/tests/test_precommit_budget_recording.py":
         "pinned by test_the_hook_fixture_module_scrubs_the_same_variables",
     "tools/tests/test_precommit_window_guard.py":
         "pinned by test_every_hook_fixture_module_scrubs_the_same_variables",
     "tools/tests/test_precommit_floor_pending.py":
+        "pinned by test_every_hook_fixture_module_scrubs_the_same_variables",
+    "tools/tests/test_message_first_gate.py":
         "pinned by test_every_hook_fixture_module_scrubs_the_same_variables",
     "tools/tests/test_skill_tests_env.py":
         "this file: REPO_LOCATING is the list every other copy is held to",
@@ -157,17 +166,22 @@ class ScrubListsAgreeTests(unittest.TestCase):
     rather than the shipped script. So assert they all agree, by parsing each one from source.
     """
 
-    HOOK = REPO / ".githooks" / "pre-commit"
+    #: Whichever tracked hook carries the tool-tests lane. It moved from `pre-commit` to
+    #: `commit-msg` (US0372) so it sits behind the commit-message check, and a list pinned
+    #: to one filename would have gone quiet the moment it moved. Searched, not named.
+    HOOKS = (REPO / ".githooks" / "commit-msg", REPO / ".githooks" / "pre-commit")
     MODULE = REPO / "tools" / "tests" / "test_precommit_budget_recording.py"
     GITUTIL = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests" / "gitutil.py"
 
     def _hook_scrub_list(self) -> tuple[str, ...]:
-        """The `-u VAR` flags on the hook's tool-tests lane."""
+        """The `-u VAR` flags on the hook's tool-tests lane, wherever that lane now lives."""
         import re
-        text = self.HOOK.read_text(encoding="utf-8")
-        m = re.search(r"/usr/bin/env((?:\s*\\?\s*-u\s+\w+)+)", text)
-        self.assertIsNotNone(m, "no `/usr/bin/env -u ...` scrub found on a hook lane")
-        return tuple(re.findall(r"-u\s+(\w+)", m.group(1)))
+        for hook in self.HOOKS:
+            m = re.search(r"/usr/bin/env((?:\s*\\?\s*-u\s+\w+)+)",
+                          hook.read_text(encoding="utf-8"))
+            if m:
+                return tuple(re.findall(r"-u\s+(\w+)", m.group(1)))
+        self.fail("no `/usr/bin/env -u ...` scrub found on a lane in either tracked hook")
 
     def _named_tuple_in(self, path: Path, name: str) -> tuple[str, ...]:
         """The string tuple assigned to `name` in `path`, read from source rather than imported.
@@ -194,10 +208,18 @@ class ScrubListsAgreeTests(unittest.TestCase):
         """Every module that builds a throwaway repo and RUNS THE HOOK in it carries this
         list, so each is a place the scrub can drift. Found by globbing rather than by
         naming them: a fixture module added next week is caught by the sweep below only if
-        something here actually holds its copy to the list."""
-        modules = sorted((REPO / "tools" / "tests").glob("test_precommit_*.py"))
+        something here actually holds its copy to the list.
+
+        The glob is every `test_*.py`, not the `test_precommit_*.py` prefix it started as.
+        A module that runs the hook pair need not be named after `pre-commit` - the first
+        one that was not (`test_message_first_gate.py`) would have slipped straight past a
+        prefix, which is the drift this class exists to stop."""
+        modules = sorted((REPO / "tools" / "tests").glob("test_*.py"))
         self.assertGreaterEqual(len(modules), 2, "the hook fixture modules moved or vanished")
         for path in modules:
+            if path.name == Path(__file__).name:
+                continue     # this module holds REPO_LOCATING itself; it only NAMES the
+                             # per-fixture symbol, it does not declare one
             if "_GIT_ENV_VARS" not in path.read_text(encoding="utf-8"):
                 continue     # a module that never shells out to git needs no scrub list
             with self.subTest(module=path.name):
@@ -274,7 +296,10 @@ class ScrubSiteSweepTests(unittest.TestCase):
         for path in sorted(REPO.rglob("*")):
             if not path.is_file() or self._skipped(path, REPO):
                 continue
-            if path.suffix not in (".py", ".sh") and path.name != "pre-commit":
+            # Extension-less tracked hooks are named, not inferred: `commit-msg` now carries
+            # the scrub the tool-tests lane needs, and a selector keyed on `pre-commit`
+            # alone would have swept straight past it the moment the lane moved.
+            if path.suffix not in (".py", ".sh") and path.name not in HOOK_NAMES:
                 continue
             try:
                 text = path.read_text(encoding="utf-8")
@@ -288,8 +313,16 @@ class ScrubSiteSweepTests(unittest.TestCase):
     def test_the_sweep_still_finds_the_sites_it_exists_to_guard(self) -> None:
         """A sweep that stopped finding anything would pass over every copy in the tree."""
         sites = self._sites()
-        for known in ("tools/skill-tests.sh", ".githooks/pre-commit"):
+        for known in ("tools/skill-tests.sh", ".githooks/commit-msg"):
             self.assertIn(known, sites, f"the sweep no longer sees {known}")
+
+    def test_the_sweep_reaches_every_tracked_hook_not_just_the_one_it_was_written_for(self):
+        """The selector is extension-less, so each tracked hook has to be named. A hook the
+        sweep cannot see is a hook whose scrub list nothing pins, which is exactly how the
+        lane that caused the original finding came to be unpinned."""
+        tracked = {p.name for p in (REPO / ".githooks").iterdir() if p.is_file()}
+        self.assertTrue(tracked <= set(HOOK_NAMES),
+                        f"tracked hooks the sweep cannot see: {sorted(tracked - set(HOOK_NAMES))}")
 
     def test_every_scrub_site_is_registered(self) -> None:
         unregistered = sorted(set(self._sites()) - set(SCRUB_SITES))

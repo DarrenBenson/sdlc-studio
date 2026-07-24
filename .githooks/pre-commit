@@ -332,50 +332,44 @@ fi
 # so a template edit can break the suite). A pure README/CHANGELOG/reference/help commit
 # cannot, and paying ~2.5 minutes for it is how a guard gets bypassed.
 #
+# The suites no longer RUN here. Git invokes pre-commit before the commit message exists -
+# at this point $GIT_DIR/COMMIT_EDITMSG is absent, or still holds the PREVIOUS commit's
+# message, which is why the floor-pending lane above cannot read it either. So no ordering
+# of lanes inside this hook could ever put the commit-message rules ahead of a 2.5-minute
+# run, and a one-line subject defect was refused only after the whole gate had been paid
+# for, then paid for again on the retry. The lanes therefore live in the commit-msg hook,
+# behind the message check; this hook decides only whether they are SELECTED.
+#
+# The handover is a one-shot record in the git directory - per worktree, and never in the
+# working tree, because a gate that dirties the tree it is gating trains people to stage
+# past it. It is written or removed on EVERY path through this block, and commit-msg
+# removes it before running: a record that outlived its commit would charge the next
+# commit-msg-only operation (git merge runs commit-msg without pre-commit) for a suite run
+# nobody asked for.
+#
 # The skip is NAMED, never silent: a guard that quietly does not run is indistinguishable
 # from one that ran and passed, and that is precisely the state in which a real regression
 # ships. Two suites: shipped skill scripts, and the repo-only tools/ checkers.
+handoff="$(git rev-parse --git-path sdlc-gate-suites 2>/dev/null || true)"
+[ -n "$handoff" ] || handoff="$(git rev-parse --git-dir 2>/dev/null)/sdlc-gate-suites"
+rm -f "$handoff" 2>/dev/null
 test_relevant='^\.claude/skills/sdlc-studio/scripts/|^\.claude/skills/sdlc-studio/templates/|^tools/'
 if [ "$fail" -eq 0 ] && git diff --cached --name-only | grep -qE "$test_relevant"; then
-  # Announce the cost before paying it: an unannounced long run exceeds common tool
-  # timeouts, so the commit looks hung and gets killed or bypassed.
-  for suite in skill-tests tool-tests; do
-    est="$(python3 tools/gate_timing.py estimate --suite "$suite" --warn-seconds 30 2>/dev/null)"
-    [ -n "$est" ] && printf '  %snote%s %s\n' "$Y" "$N" "$est"
-  done
-  # One run of the suite, held to two standards: every test passes, AND a passing run is
-  # silent (an expected diagnostic from a bad-fixture test must be captured and asserted on,
-  # not leaked to the console, or a real error hides in the noise). Both read the same run -
-  # a guard paid for on every commit has to be cheap, or it gets disabled and guards nothing.
-  t0=$SECONDS
-  run "skill-tests" \
-    "every shipped skill script unit test passes, and a green run prints no stray diagnostics" \
-    "fix the code or the test named above; re-run: bash tools/skill-tests.sh" \
-    -- bash tools/skill-tests.sh "$skill"
-  python3 tools/gate_timing.py record --suite skill-tests --seconds "$((SECONDS - t0))" 2>/dev/null
-  suite_tests=$(printf '%s\n' "$last_run_out" | sed -n 's/^Ran \([0-9]*\) tests\{0,1\} in .*/\1/p' | tail -1)
-  printf '%s\n' "$last_run_out" | grep -q '_FailedTest' && loader_error=1
-  t0=$SECONDS
-  # Scrubbed exactly as tools/skill-tests.sh scrubs its own suite, and for the same reason:
-  # a hook invoked by `git commit -a` is handed GIT_INDEX_FILE pointing at the OUTER repo's
-  # .git/index.lock, and any test that shells out to git then writes THIS repo's pending
-  # commit instead of its own fixture's. That protection existed only for the skill suite;
-  # this lane ran unscrubbed, and it takes just one tools/ test that builds a git fixture to
-  # turn a commit into a clobbered index. Found by the adversarial review of RUN-01KY1WCR,
-  # which reproduced the clobber on three victim repos.
-  run "tool-tests" \
-    "every repo-only tools/ checker unit test passes" \
-    "fix the code or the test named in the failure above; re-run: python3 -m unittest discover -s tools/tests" \
-    -- /usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
-       -u GIT_INDEX_VERSION -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
-       -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
-       -u GIT_PREFIX python3 -m unittest discover -s tools/tests
-  python3 tools/gate_timing.py record --suite tool-tests --seconds "$((SECONDS - t0))" 2>/dev/null
-  tool_tests=$(printf '%s\n' "$last_run_out" | sed -n 's/^Ran \([0-9]*\) tests\{0,1\} in .*/\1/p' | tail -1)
-  printf '%s\n' "$last_run_out" | grep -q '_FailedTest' && loader_error=1
-  # Both lanes together are what a code commit pays for, so the scope check reads their sum.
-  suite_tests=$(( ${suite_tests:-0} + ${tool_tests:-0} ))
-  suites_ran=1
+  # This hook's share of the gate travels with the record, so the per-commit total the
+  # budget reads still covers BOTH hooks rather than only the half that runs last.
+  if printf 'precommit_seconds=%s\n' "$SECONDS" > "$handoff" 2>/dev/null; then
+    printf '  %snote%s unit suites selected - they run in the commit-msg hook, after the commit\n' "$Y" "$N"
+    printf '       message rules, so a message defect is refused in seconds instead of after them.\n'
+  else
+    # A handover that cannot be written means the suites will not run at all. Refused, not
+    # warned: an unrunnable expensive lane inside an otherwise green gate is the silent
+    # coverage loss every named skip in this hook exists to prevent.
+    fail=1
+    printf '  %sFAIL%s %ssuite-handover%s\n' "$R" "$N" "$B" "$N"
+    printf '       enforces: the unit suites run in the commit-msg hook, and this hook hands the\n'
+    printf '                 selection over in %s\n' "$handoff"
+    printf '       %s-> fix:%s make the git directory writable, then commit again.\n\n' "$B" "$N"
+  fi
 elif [ "$fail" -ne 0 ]; then
   printf '  %sSKIP%s unit suites - a cheaper lane already failed, so the commit is blocked either way.\n' "$Y" "$N"
   printf '       Fix the failure above and commit again; the suites run once the cheap guards are green.\n'
@@ -384,44 +378,18 @@ else
   printf '       Docs-only commit: style, links, budgets, markdown and the artefact gate still ran.\n'
 fi
 
-# What this commit actually cost, end to end, and how that sits against the declared budget
-# (RFC0048 D6).
-#
-# ONLY recorded when the unit suites actually ran. Recording every commit put 9-14s docs-only
-# and early-failed runs into the same series the budget reads, and because the budget reads the
-# LATEST run rather than a median, one docs commit made the next report say "-85% since" - the
-# gate had not got faster, it had just not run. A series mixing full and skipped runs makes real
-# drift unreadable, and it fails OPEN: alternate a docs commit with a code commit and the ratchet
-# is invisible forever.
-#
-# A BLOCKED commit is still recorded when the suites ran - the expensive lanes were paid for
-# whatever the verdict - which is why this sits before the exit, not after it.
-#
-# But "the lane was invoked" is not "the lane ran its scope" (BG0239). A commit where a module
-# failed to import took this branch too, recording 73s against a 99s baseline: a broken suite
-# reading as a 26% improvement, the same magnitude as the ratchet the lane exists to expose, in
-# the opposite direction. `scope` answers that from the test COUNT and from whether any module
-# failed to load - never from the duration, since judging duration by duration history would have
-# thrown away the genuine 196.7s -> 99s improvement as implausible.
-if [ "${suites_ran:-0}" -eq 1 ]; then
-  scope_args="--suite total --tests ${suite_tests:-0}"
-  [ "${loader_error:-0}" -eq 1 ] && scope_args="$scope_args --loader-error"
-  # shellcheck disable=SC2086
-  if scope_note="$(python3 tools/gate_timing.py scope $scope_args 2>/dev/null)"; then
-    python3 tools/gate_timing.py record --suite total --seconds "$SECONDS" 2>/dev/null
-    budget_line="$(python3 tools/gate_timing.py budget 2>/dev/null)"
-    [ -n "$budget_line" ] && printf '  %s%s%s\n' "$Y" "$budget_line" "$N"
-  else
-    # Said out loud, never silent: a skipped recording that looks like a normal commit is how
-    # the series quietly stops meaning anything.
-    [ -n "$scope_note" ] && printf '  %s%s%s\n' "$Y" "$scope_note" "$N"
-  fi
-fi
-
 if [ "$fail" -ne 0 ]; then
   printf '\n%sCommit blocked.%s Fix the failures above (each lists how), then commit again.\n' "$R" "$N"
   printf 'Genuine emergency only: %sgit commit --no-verify%s\n' "$B" "$N"
+  # A blocked commit never reaches commit-msg, so the handover must not survive it.
+  rm -f "$handoff" 2>/dev/null
   exit 1
 fi
-printf '%sgate green.%s\n' "$G" "$N"
+# Honest about what is still owed: "green" over a gate whose expensive half has not run yet
+# would read as a finished verdict.
+if [ -e "$handoff" ]; then
+  printf '%scheap lanes green.%s Commit-message rules next, then the unit suites.\n' "$G" "$N"
+else
+  printf '%sgate green.%s\n' "$G" "$N"
+fi
 exit 0

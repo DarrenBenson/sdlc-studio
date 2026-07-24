@@ -116,6 +116,15 @@ The hook prints the expected duration from its own recorded history before it st
 **skips** the unit suites entirely (saying so) for a commit touching no `scripts/`,
 `templates/`, or `tools/` file.
 
+**The gate spans two hooks, cheapest first.** `pre-commit` runs every cheap guard and
+decides whether the unit suites are needed; `commit-msg` checks the commit-message rules
+and only then runs the suites. Git invokes `pre-commit` before the commit message exists,
+so this is the only order in which a message defect can be refused before a 2.5-minute
+run rather than after it. What follows from that when reading a commit's output: the cheap
+lanes report first and end with `cheap lanes green.`, then the suites, the per-commit
+budget line and the final `gate green.` come from the second hook. A docs-only commit
+finishes in `pre-commit` and prints `gate green.` there.
+
 With npm: `npm run lint` (markdown + all guards) and `npm test` (the script suite).
 
 **Without npm (it is not always on PATH):** every check except markdownlint is a

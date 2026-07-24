@@ -44,3 +44,4 @@
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-24 | sdlc-studio | Groomed: real ACs + Affects authored |
+| 2026-07-24 | sdlc-studio | Built: suites and their timing moved into `commit-msg` behind the message check, `pre-commit` hands the selection over in a one-shot git-directory record. Measured refusal cost 212s -> 33s; 9 mutants killed, 1 of them (an unwritable handover passing quietly) found by the campaign. |

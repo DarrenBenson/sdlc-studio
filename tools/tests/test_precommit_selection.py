@@ -16,7 +16,13 @@ import subprocess
 import unittest
 from pathlib import Path
 
-HOOK = Path(__file__).resolve().parents[2] / ".githooks" / "pre-commit"
+GITHOOKS = Path(__file__).resolve().parents[2] / ".githooks"
+HOOK = GITHOOKS / "pre-commit"
+#: The suites themselves run in `commit-msg`, behind the message rules (US0372): git runs
+#: `pre-commit` before the commit message exists, so nothing inside it can check the
+#: message. `pre-commit` still owns the SELECTION rule tested here and hands its verdict
+#: over; the wiring tests below therefore read whichever hook now carries each half.
+MSG_HOOK = GITHOOKS / "commit-msg"
 
 
 def _pattern() -> str:
@@ -80,22 +86,24 @@ class SkipTests(unittest.TestCase):
 
 
 class WiringTests(unittest.TestCase):
-    """AC3: US0219's measurement must actually be called by the hook, not merely exist."""
+    """AC3: US0219's measurement must actually be called by the hook pair, not merely exist."""
 
     def test_hook_estimates_before_running(self) -> None:
-        self.assertIn("gate_timing.py estimate", HOOK.read_text(encoding="utf-8"))
+        self.assertIn("gate_timing.py estimate", MSG_HOOK.read_text(encoding="utf-8"))
 
     def test_hook_records_both_suites(self) -> None:
-        text = HOOK.read_text(encoding="utf-8")
+        text = MSG_HOOK.read_text(encoding="utf-8")
         self.assertIn("record --suite skill-tests", text)
         self.assertIn("record --suite tool-tests", text)
 
     def test_timing_never_blocks_the_commit(self) -> None:
         """Every gate_timing call must swallow its own failure: an advisory
         measurement that can fail a commit is worse than no measurement."""
-        for line in HOOK.read_text(encoding="utf-8").splitlines():
-            if "gate_timing.py" in line:
-                self.assertIn("2>/dev/null", line, f"unguarded timing call: {line.strip()}")
+        for hook in (HOOK, MSG_HOOK):
+            for line in hook.read_text(encoding="utf-8").splitlines():
+                if "gate_timing.py" in line:
+                    self.assertIn("2>/dev/null", line,
+                                  f"unguarded timing call in {hook.name}: {line.strip()}")
 
 
 if __name__ == "__main__":
