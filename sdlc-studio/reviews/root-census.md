@@ -74,8 +74,8 @@ re-export.
 | `ac_scope.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `archive.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `artifact.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
-| `audit.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
-| `audit_check.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `readiness.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `schema_check.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `audit_cost.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `autosprint.py` | unanchored | anchored in behaviour through `sprint.main`, which it re-exports verbatim; the measurement reads call sites in a script's OWN source and cannot see through a re-export, so it reads unanchored here. Measured and covered by BG0288 - the anchor-contract suite calls its `main` and it passes |
 | `backfill_authorship.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |

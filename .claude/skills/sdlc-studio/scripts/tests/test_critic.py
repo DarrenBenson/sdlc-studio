@@ -1264,7 +1264,7 @@ class RoundCostTests(unittest.TestCase):
 _PRIOR = """VERDICT: REJECT
 ISSUES: MAJOR - the sibling sweep is blind to its own directory. I ran
 `pytest tests/test_repo_hygiene.py -k sibling` and mutated the guard at
-scripts/audit.py:88; the killing test did not fail.
+scripts/readiness.py:88; the killing test did not fail.
 Also MINOR - the docstring overstates what the second clause pins.
 BLOCKING: yes
 """
@@ -1314,7 +1314,7 @@ class NeutralBriefTests(unittest.TestCase):
             text = mod.neutral_brief(root, "US0001", "qa-seat", prior=_PRIOR)
             # the factual re-execution demand survives...
             self.assertIn("tests/test_repo_hygiene.py", text)
-            self.assertIn("scripts/audit.py:88", text)
+            self.assertIn("scripts/readiness.py:88", text)
             # ...as a DEMAND, not a bare list of paths: probes with no instruction to re-run
             # them are decoration, and the re-execution is the half worth keeping
             self.assertRegex(text, r"(?i)re-execute")
@@ -1578,7 +1578,7 @@ class RepairVerdictTests(unittest.TestCase):
 
     def test_a_repair_brief_enumerates_every_previous_finding(self) -> None:
         mod = _load()
-        findings = ["audit.py:88 grep verb takes no flag",
+        findings = ["readiness.py:88 grep verb takes no flag",
                     "mutation.py reuses the cached pyc",
                     "the brief leaks the round number",
                     "the resolution claims mutation-proven"]

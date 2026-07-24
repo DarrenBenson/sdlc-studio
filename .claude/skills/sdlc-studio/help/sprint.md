@@ -125,7 +125,7 @@ same census read-only. Opt out only as a recorded decision: `sprint.breakdown: j
 ## What happens
 
 1. **Plan** - `sprint plan` selects + orders the batch, refusing an ungroomed one.
-2. **Tranche audit** - `audit.py check` grooms the batch for readiness (weak-AC,
+2. **Tranche audit** - `readiness.py check` grooms the batch for readiness (weak-AC,
    unmet-deps, already-terminal, link-integrity) before you approve it.
 3. **Triage STOP** - the groomed plan is shown; you approve, then it runs
    autonomously, re-pausing only on a material issue.

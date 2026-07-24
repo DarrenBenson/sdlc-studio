@@ -35,7 +35,7 @@ repo_map = _load("repo_map", "repo_map.py")
 verify_ac = _load("verify_ac", "verify_ac.py")
 conformance = _load("conformance", "conformance.py")
 reconcile = _load("reconcile", "reconcile.py")
-audit = _load("audit", "audit.py")
+audit = _load("readiness", "readiness.py")
 
 
 class TimeTests(unittest.TestCase):

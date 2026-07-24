@@ -1447,7 +1447,7 @@ def cmd_revision(args: argparse.Namespace) -> int:
     """Append one dated Revision History row per id - the deterministic
     close-out verb. A file without a Revision History section is refused
     loudly (never silently skipped); one refusal does not abort the batch."""
-    import audit
+    import readiness
     root = Path(args.root)
     today = args.date or date.today().isoformat()
     author = args.author or "sdlc"
@@ -1461,7 +1461,7 @@ def cmd_revision(args: argparse.Namespace) -> int:
         return 2
     refused = 0
     for rid in ids:
-        found = audit.find_artifact(root, rid)
+        found = readiness.find_artifact(root, rid)
         if found is None:
             print(f"error: {rid}: no artifact file found", file=sys.stderr)
             refused += 1

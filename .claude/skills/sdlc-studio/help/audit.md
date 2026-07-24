@@ -80,7 +80,7 @@ panel, so the choice never changes whether a plausible-but-wrong finding gets fi
 Resolve a pack before launching, and see its lenses and refute threshold:
 
 ```bash
-python3 "$CLAUDE_SKILL_DIR/scripts/audit.py" profile --name repo
+python3 "$CLAUDE_SKILL_DIR/scripts/readiness.py" profile --name repo
 ```
 
 A name no profile declares is refused, naming the ones that exist - an audit never runs an

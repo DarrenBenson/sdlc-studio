@@ -24,7 +24,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import loader  # noqa: E402
 
-audit = loader.load_script("audit")
+audit = loader.load_script("readiness")
 
 SKILL = Path(__file__).resolve().parent.parent.parent
 PACKS = SKILL / "templates" / "audit-profiles"
@@ -67,7 +67,7 @@ def _registry_lessons() -> dict[str, str]:
 
 
 def _run_cli(*argv: str) -> subprocess.CompletedProcess:
-    return subprocess.run([sys.executable, "-B", str(SKILL / "scripts" / "audit.py"), *argv],
+    return subprocess.run([sys.executable, "-B", str(SKILL / "scripts" / "readiness.py"), *argv],
                           capture_output=True, text=True)
 
 
@@ -295,7 +295,7 @@ def _catalogued(path: Path, heading: str) -> set[str]:
 class ProfileCommandOutputTests(unittest.TestCase):
     """`audit profile`'s own output branches (BG0212).
 
-    A full mutation enumeration over `audit.py` left six survivors inside `cmd_profile`:
+    A full mutation enumeration over `readiness.py` left six survivors inside `cmd_profile`:
     the list-versus-resolve split, the text-versus-JSON split, and the threshold line. The
     resolution logic beneath was well covered; nothing asserted what the COMMAND prints, so
     every print branch could be rewritten without a test noticing.

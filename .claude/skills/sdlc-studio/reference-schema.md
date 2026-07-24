@@ -23,7 +23,7 @@ Three rules govern the contract:
    the validator wins and the disagreement is a bug in this document. A drift guard
    (`scripts/tests/test_schema_contract.py`) fails the build if the vocabularies below
    diverge from what the code enforces, so the doc cannot rot silently.
-2. **Health judgements stay upstream.** `validate.py`, `audit.py` and `reconcile.py`
+2. **Health judgements stay upstream.** `validate.py`, `readiness.py` and `reconcile.py`
    define what a healthy workspace means. A consumer should run the skill's conformance
    tooling (or a future published descriptor), never re-implement those rules, because a
    re-implementation will drift from the definition it copied.

@@ -7,8 +7,8 @@ resolvable, per-type evidence present, raiser and triager distinct, indexes deri
 hand-edited), and id format valid. Any error-severity finding exits non-zero; a clean repo
 exits 0. The rules are era-gated (schema v3), so a v2 project reports nothing.
 
-    audit_check.py check                 # human summary, exit 1 on any violation
-    audit_check.py check --format json   # stable machine output for the crew linter
+    schema_check.py check                 # human summary, exit 1 on any violation
+    schema_check.py check --format json   # stable machine output for the crew linter
 """
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ def run(repo_root: Path | str) -> list[dict]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="audit_check.py", description="Run the team-schema audit rules.")
+    p = argparse.ArgumentParser(prog="schema_check.py", description="Run the team-schema audit rules.")
     p.add_argument("cmd", choices=["check"])
     p.add_argument("--root", default=".")
     p.add_argument("--format", choices=["text", "json"], default="text")

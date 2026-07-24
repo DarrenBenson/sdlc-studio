@@ -1,23 +1,25 @@
-"""Unit tests for audit.py - sprint tranche readiness (RED first)."""
+"""Unit tests for readiness.py - sprint tranche readiness (RED first)."""
 from __future__ import annotations
 
 import importlib.util
 import io
+import json
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
 
-SCRIPT = Path(__file__).resolve().parent.parent / "audit.py"
+SCRIPT = Path(__file__).resolve().parent.parent / "readiness.py"
 
 
 def _load():
-    spec = importlib.util.spec_from_file_location("audit", SCRIPT)
+    spec = importlib.util.spec_from_file_location("readiness", SCRIPT)
     assert spec and spec.loader
     mod = importlib.util.module_from_spec(spec)
-    sys.modules["audit"] = mod
+    sys.modules["readiness"] = mod
     spec.loader.exec_module(mod)
     return mod
 
@@ -716,7 +718,7 @@ class CheckSelectionModeTests(unittest.TestCase):
     def _run(self, *argv):
         import subprocess
         skill = Path(__file__).resolve().parent.parent
-        return subprocess.run([sys.executable, "-B", str(skill / "audit.py"), *argv],
+        return subprocess.run([sys.executable, "-B", str(skill / "readiness.py"), *argv],
                               capture_output=True, text=True)
 
     def test_neither_ids_nor_a_query_is_refused(self) -> None:
@@ -745,6 +747,138 @@ class CheckSelectionModeTests(unittest.TestCase):
             # The count is the anti-vacuity half: an emptied batch prints "0/0 ready, 0 not"
             # and would satisfy an assertion that only looked for the id.
             self.assertIn("tranche audit: 0/1 ready, 1 not", proc.stdout)
+
+
+SCRIPTS_DIR = SCRIPT.parent
+TESTS_DIR = Path(__file__).resolve().parent
+SKILL_DIR = SCRIPTS_DIR.parent
+
+# The old module identifiers this rename retired. A shipped file matching any of these
+# has a caller the rename left behind. Bare `"audit"` is deliberately NOT here: it is a
+# valid remediation-registry key (`sdlc_md.REMEDIATION["audit"]`) and a lens-profile name,
+# neither of which the rename touches - only module-name references move.
+_OLD_MODULE_PATTERNS = (
+    re.compile(r"\baudit\.py\b"),
+    re.compile(r"\baudit_check\b"),
+    re.compile(r"^\s*import audit\b", re.M),
+    re.compile(r"""_load\(\s*["']audit["']"""),
+    re.compile(r"""load_script\(\s*["']audit["']\s*\)"""),
+    re.compile(r"""sys\.modules\[\s*["']audit["']\s*\]"""),
+)
+
+
+# This detector file is the one shipped file that MUST name the retired modules: it defines
+# the patterns below and asserts the old files are gone. A linter does not lint its own rule
+# definitions, so it is excluded from the reference sweeps (its own imports are pinned by the
+# rest of this suite loading `readiness`/`schema_check`, never `audit`/`audit_check`).
+_DETECTOR = Path(__file__).name
+
+
+def _shipped_py_files():
+    for p in sorted(SCRIPTS_DIR.rglob("*.py")):
+        if "__pycache__" not in p.parts and p.name != _DETECTOR:
+            yield p
+
+
+def _load_schema_check():
+    spec = importlib.util.spec_from_file_location("schema_check", SCRIPTS_DIR / "schema_check.py")
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["schema_check"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+class RenameTests(unittest.TestCase):
+    """RFC0033 D1 / US0345: the deterministic scripts moved off the `audit` stem.
+
+    The `audit` verb belongs to the user-facing adversarial weakness-hunt; the two
+    deterministic scripts are renamed - `audit.py` -> `readiness.py`, `audit_check.py`
+    -> `schema_check.py` - and every caller moves with them.
+    """
+
+    def test_no_shipped_file_references_the_old_module_names(self):
+        self.assertTrue((SCRIPTS_DIR / "readiness.py").is_file(), "readiness.py must exist")
+        self.assertTrue((SCRIPTS_DIR / "schema_check.py").is_file(), "schema_check.py must exist")
+        self.assertFalse((SCRIPTS_DIR / "audit.py").exists(), "old audit.py must be gone")
+        self.assertFalse((SCRIPTS_DIR / "audit_check.py").exists(), "old audit_check.py must be gone")
+        offenders = []
+        for p in _shipped_py_files():
+            text = p.read_text(encoding="utf-8")
+            for pat in _OLD_MODULE_PATTERNS:
+                if pat.search(text):
+                    offenders.append(f"{p.relative_to(SKILL_DIR)}: /{pat.pattern}/")
+        self.assertEqual(offenders, [], "a rename that leaves a caller behind is a rename that "
+                         "has not happened:\n" + "\n".join(offenders))
+
+    def test_gate_and_sprint_call_sites_resolve_and_behave_identically(self):
+        # The tranche pre-flight (documented in the sprint flow) and the schema linter
+        # (the CI/gate step) both resolve under their new names and expose the API their
+        # importers use. NOTE: the in-repo Python importers are handoff.py and artifact.py;
+        # gate.py and sprint.py invoke the deterministic scripts as documented/CI steps, not
+        # as code imports (verified in the same sweep as the AC1 test above).
+        readiness = _load()
+        for attr in ("audit_unit", "find_artifact", "build_parser", "cmd_check"):
+            self.assertTrue(hasattr(readiness, attr), f"readiness.{attr} missing after rename")
+        schema_check = _load_schema_check()
+        for attr in ("run", "main", "RULE_IDS"):
+            self.assertTrue(hasattr(schema_check, attr), f"schema_check.{attr} missing after rename")
+        # the real importers reach for the new name, not the old one
+        for name in ("handoff.py", "artifact.py"):
+            src = (SCRIPTS_DIR / name).read_text(encoding="utf-8")
+            self.assertIn("readiness", src, f"{name} must reference the renamed module")
+            self.assertNotRegex(src, r"\bimport audit\b", f"{name} still imports the old module")
+        # A rename must change no verdict: the same input yields the same readiness result.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, status="Proposed", ac=TAUTOLOGY)   # a vacuous AC -> not ready
+            verdict = readiness.audit_unit(root, "CR0001")
+            self.assertFalse(verdict["ready"], "a tautology AC must still audit as not-ready")
+            self.assertIn("weak-AC", verdict["issues"])
+            _cr(root, 2, status="Proposed",
+                ac="- [ ] integrity.py exits 1 when an active story lacks its Epic link")
+            self.assertTrue(readiness.audit_unit(root, "CR0002")["ready"],
+                            "a checkable AC must still audit as ready")
+
+    def test_the_public_audit_command_is_unchanged(self):
+        # `audit --profile repo` runs the user-facing weakness-hunt; its engine (profile
+        # resolution) still lives in the renamed module and the public surface must not move.
+        proc = subprocess.run(
+            [sys.executable, "-B", str(SCRIPT), "profile", "--name", "repo", "--format", "json"],
+            capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, f"out={proc.stdout} err={proc.stderr}")
+        data = json.loads(proc.stdout)
+        self.assertEqual(data["name"], "repo")
+        self.assertTrue(data["lenses"], "the repo audit profile must still resolve its lenses")
+        # the command itself is still catalogued under the `audit` verb
+        help_help = (SKILL_DIR / "help" / "help.md").read_text(encoding="utf-8")
+        self.assertIn("/sdlc-studio audit", help_help)
+
+
+class RenameDocsTests(unittest.TestCase):
+    """US0346: the test suites and the scripts catalogue move with their subjects."""
+
+    def test_the_suites_are_renamed_and_green(self):
+        self.assertTrue((TESTS_DIR / "test_readiness.py").is_file())
+        self.assertTrue((TESTS_DIR / "test_schema_check.py").is_file())
+        self.assertFalse((TESTS_DIR / "test_audit.py").exists())
+        self.assertFalse((TESTS_DIR / "test_audit_check.py").exists())
+        # no test file references the old module names (this file included)
+        offenders = []
+        for p in sorted(TESTS_DIR.glob("test_*.py")):
+            if p.name == _DETECTOR:   # the detector names the old modules by design (see above)
+                continue
+            text = p.read_text(encoding="utf-8")
+            for pat in _OLD_MODULE_PATTERNS:
+                if pat.search(text):
+                    offenders.append(f"{p.name}: /{pat.pattern}/")
+        self.assertEqual(offenders, [], "\n".join(offenders))
+        # both suites import cleanly (their passing is enforced by the discovery run this
+        # test is part of); the catalogue lists the new names
+        self.assertTrue(_load_schema_check())
+        catalogue = (SKILL_DIR / "reference-scripts.md").read_text(encoding="utf-8")
+        self.assertIn("readiness.py", catalogue)
+        self.assertIn("schema_check.py", catalogue)
 
 
 if __name__ == "__main__":

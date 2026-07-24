@@ -76,7 +76,7 @@ existing detector (integrity/conformance/validate/reconcile). Advisory by defaul
 
 Full methodology: `reference-doctrine.md#constitution`.
 
-### `audit_check.py`
+### `schema_check.py`
 
 One CI-runnable command over the schema-v3 team-schema rules, emitting STABLE rule ids so the
 output is a reference implementation the wider crew audit linter can consume:
@@ -87,7 +87,7 @@ output is a reference implementation the wider crew audit linter can consume:
 Rules (all era-gated to schema v3, so a v2 project reports nothing): `authorship-structured`,
 `authorship-type`, `authorship-unresolved`, `evidence-present`, `duties-separated`,
 `id-format`, `index-derived`. These same rules are enforced in the blocking `gate` via
-`validate` and the `index-derived` check; `audit_check.py` is the focused, stable-id view.
+`validate` and the `index-derived` check; `schema_check.py` is the focused, stable-id view.
 
 ### `review_prep.py` (read-only, except `close`)
 
@@ -110,9 +110,9 @@ expose `--help`, templates use `{{placeholder}}`, SKILL.md has a When-to-Use sec
 (no-op for consuming repos). Wired into the gate as NON-BLOCKING; `--strict` opts into a non-zero exit.
 The token lever: a doc with no load-trigger and no index entry gets pulled in without discipline.
 
-### `audit.py`
+### `readiness.py`
 
-Adversarial audit / tranche pre-flight. `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity, **already-satisfied** (a Ready unit whose executable ACs all pass in the verify-report - a close-candidate, not work to build), **weak-verify** (a non-executable Verify line, reusing `verify_ac lint`) and **cross-epic-ac** (an AC owned by another epic, reusing `ac_scope`) - before the triage STOP, so work never starts on a unit that would pass the gates vacuously or be reverse-engineered at implement time.
+Tranche pre-flight readiness (deterministic). `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity, **already-satisfied** (a Ready unit whose executable ACs all pass in the verify-report - a close-candidate, not work to build), **weak-verify** (a non-executable Verify line, reusing `verify_ac lint`) and **cross-epic-ac** (an AC owned by another epic, reusing `ac_scope`) - before the triage STOP, so work never starts on a unit that would pass the gates vacuously or be reverse-engineered at implement time.
 
 `profile --name <name>` resolves an adversarial lens profile: the packs under
 `templates/audit-profiles/` (`skill`, `repo`, `code`) plus the reference-declared

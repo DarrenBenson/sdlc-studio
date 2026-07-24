@@ -64,8 +64,8 @@ class ConfinementTests(unittest.TestCase):
     def test_reconcile_detect_is_read_only(self) -> None:
         self._assert_read_only(["reconcile.py", "detect", "--scope", "stories"])
 
-    def test_audit_is_read_only(self) -> None:
-        self._assert_read_only(["audit.py", "check", "--stories", "Ready"])
+    def test_readiness_is_read_only(self) -> None:
+        self._assert_read_only(["readiness.py", "check", "--stories", "Ready"])
 
 
 class SideEffectConfinementTests(unittest.TestCase):
