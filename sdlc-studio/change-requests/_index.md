@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 2 |
+| Proposed | 3 |
 | Approved | 0 |
 | In Progress | 28 |
 | Complete | 372 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 17 |
 | Blocked | 0 |
-| **Total** | **419** |
+| **Total** | **420** |
 
 ## All Changes
 
@@ -241,6 +241,7 @@
 | [CR-0417](CR0417-a-writer-s-fields-file-allows-only-its.md) | a writer's --fields-file allows only its prose keys, so an invocation setting metadata must be split across a document and flags: lessons add takes --tags, --epic and --wave that its own fields-file refuses | In Progress | Medium | Feature | 2026-07-24 | EP0156 |
 | [CR-0418](CR0418-grooming-debt-can-only-be-cleared-by-unbatched.md) | grooming debt can only be cleared by unbatched hand-work outside any unit | In Progress | Medium | Feature | 2026-07-24 | EP0160 |
 | [CR-0419](CR0419-the-capacity-ceiling-is-stale-against-measured-velocity.md) | the capacity ceiling is stale against measured velocity, so every plan reports OVER BUDGET and the warning stops being read | Proposed | Medium | Feature | 2026-07-24 | -- |
+| [CR-0420](CR0420-the-pre-commit-gate-runs-5-minutes-and.md) | the pre-commit gate runs ~5 minutes and its budget advisory reports +200% over a stale baseline on every commit, so the signal has become noise rather than a bound anyone acts on | Proposed | Medium | Feature | 2026-07-25 | -- |
 
 ## Archived Releases
 

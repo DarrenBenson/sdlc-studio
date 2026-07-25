@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 3 |
 | In Progress | 0 |
 | Fixed | 210 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **294** |
+| **Total** | **296** |
 
 ## All Bugs
 
@@ -261,6 +261,8 @@
 | [BG0292](BG0292-the-close-status-stamp-is-rung-blind-it.md) | the close-status stamp is rung-blind: it tells a design rung that sign-off is owed to reach Done, which was never that rung's target | Fixed | Medium | 2026-07-24 | 2026-07-24 |
 | [BG0293](BG0293-gate-release-does-not-finish-inside-10-minutes.md) | gate --release does not finish inside 10 minutes, so the one lane that judges the whole workspace cannot be run before a release | Fixed | High | 2026-07-24 | 2026-07-24 |
 | [BG0294](BG0294-duplicate-detection-now-has-two-implementations-with-different.md) | duplicate detection now has two implementations with different algorithms, so they can drift | Open | Medium | 2026-07-24 | 2026-07-24 |
+| [BG0295](BG0295-changelog-py-compose-folds-every-pending-fragment-into.md) | changelog.py compose folds every pending fragment into [Unreleased] and deletes them, with no release gate or confirmation, so a mid-sprint compose prematurely consumes unrelated units' fragments | Open | Medium | 2026-07-25 | 2026-07-25 |
+| [BG0296](BG0296-mutation-py-run-since-finds-no-mutatable-sites.md) | mutation.py run --since finds no mutatable sites for a diff that only adds guard clauses, so a change made entirely of if-condition/raise guards cannot be mutation-verified through the diff surface | Open | Medium | 2026-07-25 | 2026-07-25 |
 
 ## Archived Releases
 
