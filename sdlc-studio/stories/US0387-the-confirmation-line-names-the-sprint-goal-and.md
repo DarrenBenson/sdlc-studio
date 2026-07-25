@@ -1,6 +1,6 @@
 # US0387: the confirmation line names the Sprint Goal and the --goal rung distinctly, a test drives both cases
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0387
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the run-opened confirmation line renders
 - **Then** it labels the Sprint Goal and the `--goal` ladder rung with distinct names, so neither can be read as the other
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_opened_line.py::RunOpenedLine::test_names_sprint_goal_and_rung_distinctly
+- **Verified:** yes (2026-07-25)
 
 ### AC2: a supplied Sprint Goal shows as set
 
@@ -30,6 +31,7 @@
 - **When** the confirmation line renders
 - **Then** the Sprint Goal is shown as set, not reported as unset under the rung field's name
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_opened_line.py::RunOpenedLine::test_supplied_sprint_goal_shown_as_set
+- **Verified:** yes (2026-07-25)
 
 ### AC3: an absent Sprint Goal is stated as unset
 
@@ -37,6 +39,7 @@
 - **When** the confirmation line renders
 - **Then** it states the Sprint Goal is unset, since the workflow requires one and never invents it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_opened_line.py::RunOpenedLine::test_absent_sprint_goal_stated
+- **Verified:** yes (2026-07-25)
 
 ### AC4: the two cases cannot render identically
 
@@ -44,6 +47,7 @@
 - **When** the two confirmation lines are compared
 - **Then** the text differs, so a regression cannot make the set and unset cases render the same
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_opened_line.py::RunOpenedLine::test_with_and_without_sprint_goal_differ
+- **Verified:** yes (2026-07-25)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # US0390: the batch-selection message shows a usable example value per selector, such as --bugs Open
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0390
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the batch-selection error prints
 - **Then** each status-taking selector appears with an example status value (such as `--bugs Open`), so copying the suggestion yields a working invocation
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_batch_selection.py::BatchSelectionError::test_message_shows_example_status_per_selector
+- **Verified:** yes (2026-07-25)
 
 ### AC2: a valid status value is discoverable from the failure itself
 
@@ -30,6 +31,7 @@
 - **When** the batch-selection error prints
 - **Then** a valid status value is present in the message text, so it is discoverable from the failure rather than only from the help file
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_batch_selection.py::BatchSelectionError::test_valid_status_value_present_in_message
+- **Verified:** yes (2026-07-25)
 
 ## Revision History
 

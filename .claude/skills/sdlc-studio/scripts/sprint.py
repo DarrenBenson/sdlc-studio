@@ -2326,6 +2326,41 @@ def pending_handoff(repo_root: Path | str) -> dict | None:
             "outcome": state.get("outcome")}
 
 
+def batch_selection_message() -> str:
+    """The no-batch-selected error on the plan's hottest path. Shows a USABLE example status per
+    status-taking selector (a valid value present in the text), so the first retry is a working
+    invocation rather than two more failed round-trips to the help file."""
+    return ("specify a batch: --bugs Open, --crs Proposed, --stories Ready (combinable, and a "
+            "status is optional), --worklist <file>, or --prd <file>")
+
+
+def run_opened_line(state: dict, appetite: dict) -> str:
+    """The run-opened confirmation. Names the Sprint Goal and the `--goal` LADDER RUNG with
+    DISTINCT labels, so a reader never reads `rung=done` as their Sprint Goal failing to take and
+    re-plan against an already-open run. The Sprint Goal is shown as set (quoted) or stated unset;
+    the rung is labelled `rung`, never the bare `goal=` that read as either."""
+    sprint_goal = (state.get("sprint_goal") or "").strip()
+    goal_field = f'sprint-goal="{sprint_goal}"' if sprint_goal else "sprint-goal=unset"
+    return (f"opened run {state['run_id']} (rung={state.get('goal') or 'unset'}, {goal_field}, "
+            f"appetite {appetite['minutes']:g}min/{appetite['units']}units)")
+
+
+def handoff_line(pending: dict) -> str:
+    """The one-line handoff notice the plan prints for the last run's tail. A ZERO-remaining
+    handoff states nothing carried over and offers no `--worklist`: a clean close should read as
+    good news, not a false action item sitting above the warnings that actually need reading. A
+    non-zero one is unchanged - it names the count and the worklist to plan them from."""
+    if int(pending.get("remaining") or 0) == 0:
+        return (f"handoff: the last run ({pending['outcome']}) left {pending['id']} with "
+                f"nothing carried over - its backlog is clear")
+    extra = ("" if pending["plannable"] == pending["remaining"]
+             else f" ({pending['plannable']} of them plannable; the rest have no "
+                  f"artefact file - see the handoff)")
+    return (f"handoff: the last run ({pending['outcome']}) left {pending['id']} with "
+            f"{pending['remaining']} remaining item(s){extra} - plan them with "
+            f"--worklist {pending['worklist']}")
+
+
 def build_authoring_plan(repo_root: Path | str, prd_path: str) -> dict:
     """The greenfield authoring plan: the batch source is a PRD, not existing units.
     The planner validates the PRD and signals **authoring mode**; the decomposition itself
@@ -3250,8 +3285,7 @@ def _plan_batch_source(args: argparse.Namespace) -> tuple[list, object, int | No
               "--bugs/--crs/--stories", file=sys.stderr)
         return queries, worklist, 2
     if not worklist and not queries:
-        print("specify a batch: --bugs/--crs/--stories (combinable), --worklist, or --prd",
-              file=sys.stderr)
+        print(batch_selection_message(), file=sys.stderr)
         return queries, worklist, 2
     return queries, worklist, None
 
@@ -4812,12 +4846,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     if pending and str(worklist or "") != pending["worklist"]:
-        extra = ("" if pending["plannable"] == pending["remaining"]
-                 else f" ({pending['plannable']} of them plannable; the rest have no "
-                      f"artefact file - see the handoff)")
-        print(f"handoff: the last run ({pending['outcome']}) left {pending['id']} with "
-              f"{pending['remaining']} remaining item(s){extra} - plan them with "
-              f"--worklist {pending['worklist']}", file=sys.stderr)
+        print(handoff_line(pending), file=sys.stderr)
     epics, rc = _validate_epic_scope(args, worklist, kinds)
     if rc is not None:
         return rc
@@ -5032,9 +5061,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
             extra["cycle"] = {"index": 1, "remaining": max(policy["cycles"] - 1, 0),
                               "policy_run_id": state["run_id"]}
         state = run_state.update(args.root, **extra)
-        print(f"opened run {state['run_id']} (goal={state['goal'] or 'unset'}, appetite "
-              f"{appetite['minutes']:g}min/{appetite['units']}units) "
-              f"-> {run_state.path(args.root)}")
+        print(f"{run_opened_line(state, appetite)} -> {run_state.path(args.root)}")
         if policy:
             _render_policy(policy)
     _render_plan(args, data, queries, worklist, epics)

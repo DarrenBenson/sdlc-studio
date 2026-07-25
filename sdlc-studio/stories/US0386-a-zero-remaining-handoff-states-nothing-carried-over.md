@@ -1,6 +1,6 @@
 # US0386: a zero-remaining handoff states nothing carried over, non-zero unchanged, two-sided tests
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0386
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** sprint plan prints the handoff line
 - **Then** it states that nothing carried over and offers no `--worklist` command
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff_line.py::HandoffLine::test_zero_remaining_states_nothing_carried_over
+- **Verified:** yes (2026-07-25)
 
 ### AC2: a non-zero handoff is unchanged
 
@@ -30,6 +31,7 @@
 - **When** sprint plan prints the handoff line
 - **Then** the existing line is unchanged, naming the count and the worklist path
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff_line.py::HandoffLine::test_nonzero_remaining_names_count_and_worklist
+- **Verified:** yes (2026-07-25)
 
 ### AC3: the boundary is pinned two-sided
 
@@ -37,6 +39,7 @@
 - **When** the tests run
 - **Then** both the zero-case suppression and the non-zero retention are asserted in one test, so a future change cannot make the zero case reappear or suppress the non-zero one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff_line.py::HandoffLine::test_boundary_pinned_both_sides
+- **Verified:** yes (2026-07-25)
 
 ## Revision History
 

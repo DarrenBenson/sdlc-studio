@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 4 |
+| Draft | 1 |
 | Ready | 2 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 44 |
+| Review | 47 |
 | Done | 380 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -296,11 +296,11 @@
 | [US0383](US0383-census-the-62-root-scripts-and-fix-or.md) | census the 62 --root scripts and fix or refile the unanchored writers, next_id first | Done | EP0140 | 2026-07-23 | 2026-07-23 |
 | [US0384](US0384-rewrite-help-mutation-md-and-reference-scripts-verify.md) | rewrite help/mutation.md and reference-scripts-verify.md for the ledger, content-hash key, coverage verdict and advisory lane | Done | EP0141 | 2026-07-23 | 2026-07-23 |
 | [US0385](US0385-reconcile-trd-md-and-tsd-md-and-record.md) | reconcile trd.md and tsd.md and record the findings | Done | EP0141 | 2026-07-23 | 2026-07-23 |
-| [US0386](US0386-a-zero-remaining-handoff-states-nothing-carried-over.md) | a zero-remaining handoff states nothing carried over, non-zero unchanged, two-sided tests | Draft | EP0142 | 2026-07-23 | 2026-07-23 |
-| [US0387](US0387-the-confirmation-line-names-the-sprint-goal-and.md) | the confirmation line names the Sprint Goal and the --goal rung distinctly, a test drives both cases | Draft | EP0143 | 2026-07-23 | 2026-07-23 |
+| [US0386](US0386-a-zero-remaining-handoff-states-nothing-carried-over.md) | a zero-remaining handoff states nothing carried over, non-zero unchanged, two-sided tests | Review | EP0142 | 2026-07-23 | 2026-07-23 |
+| [US0387](US0387-the-confirmation-line-names-the-sprint-goal-and.md) | the confirmation line names the Sprint Goal and the --goal rung distinctly, a test drives both cases | Review | EP0143 | 2026-07-23 | 2026-07-23 |
 | [US0388](US0388-a-forward-port-drift-check-exits-non-zero.md) | a forward-port drift check exits non-zero with a differing-file count, handling no copy and a pinned copy | Done | EP0144 | 2026-07-23 | 2026-07-23 |
 | [US0389](US0389-surface-the-drift-in-the-status-hint-and.md) | surface the drift in the status hint and the close chain | Done | EP0144 | 2026-07-23 | 2026-07-23 |
-| [US0390](US0390-the-batch-selection-message-shows-a-usable-example.md) | the batch-selection message shows a usable example value per selector, such as --bugs Open | Draft | EP0145 | 2026-07-23 | 2026-07-23 |
+| [US0390](US0390-the-batch-selection-message-shows-a-usable-example.md) | the batch-selection message shows a usable example value per selector, such as --bugs Open | Review | EP0145 | 2026-07-23 | 2026-07-23 |
 | [US0391](US0391-critic-py-and-close-owed-py-accept-fields.md) | critic.py and close_owed.py accept --fields-file via the shared helper | Done | EP0146 | 2026-07-23 | 2026-07-23 |
 | [US0392](US0392-telemetry-py-and-sprint-py-accept-fields-file.md) | telemetry.py and sprint.py accept --fields-file and the registry is emptied of the four | Done | EP0146 | 2026-07-23 | 2026-07-23 |
 | [US0393](US0393-the-flag-path-reports-a-detected-shell-hazard.md) | the flag path reports a detected shell hazard rather than silently altering the field | Done | EP0146 | 2026-07-23 | 2026-07-23 |
