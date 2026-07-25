@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 4 |
-| Ready | 6 |
+| Ready | 4 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 40 |
+| Review | 42 |
 | Done | 380 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -259,8 +259,8 @@
 | [US0346](US0346-update-tests-reference-scripts-md-and-changelog.md) | update tests, reference-scripts.md and CHANGELOG | Review | EP0116 | 2026-07-23 | 2026-07-23 |
 | [US0347](US0347-version-bump-to-5-0-0-across-authoritative.md) | version bump to 5.0.0 across authoritative files, check_versions --strict green | Ready | EP0117 | 2026-07-23 | 2026-07-23 |
 | [US0348](US0348-gate-release-green-on-a-fresh-dry-run.md) | gate --release green on a fresh dry-run, cut the CHANGELOG 5.0.0 section, tag | Ready | EP0117 | 2026-07-23 | 2026-07-23 |
-| [US0349](US0349-sprint-plan-emits-a-report-only-lane-partition.md) | sprint plan emits a report-only lane partition from the Affects clusters | Ready | EP0118 | 2026-07-23 | 2026-07-23 |
-| [US0350](US0350-export-each-lane-as-a-per-team-worklist.md) | export each lane as a per-team worklist, assert collision-freedom, state the undeclared-file risk | Ready | EP0118 | 2026-07-23 | 2026-07-23 |
+| [US0349](US0349-sprint-plan-emits-a-report-only-lane-partition.md) | sprint plan emits a report-only lane partition from the Affects clusters | Review | EP0118 | 2026-07-23 | 2026-07-23 |
+| [US0350](US0350-export-each-lane-as-a-per-team-worklist.md) | export each lane as a per-team worklist, assert collision-freedom, state the undeclared-file risk | Review | EP0118 | 2026-07-23 | 2026-07-23 |
 | [US0351](US0351-test-autosprint-py-exercising-the-primary-path.md) | test_autosprint.py exercising the primary path | Review | EP0119 | 2026-07-23 | 2026-07-23 |
 | [US0352](US0352-test-xrepo-py-primary-path-and-update-the.md) | test_xrepo.py primary path and update the TSD coverage note | Review | EP0119 | 2026-07-23 | 2026-07-23 |
 | [US0353](US0353-refine-apply-and-add-accept-a-breakdown-file.md) | refine apply and add accept a --breakdown file, validated whole before minting, equivalent to the --story form | Review | EP0120 | 2026-07-23 | 2026-07-23 |

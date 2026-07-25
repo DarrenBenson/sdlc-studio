@@ -6204,6 +6204,132 @@ class DeliveryModeTestFileCouplingTests(_DeliveryModeFixture):
             self.assertEqual(offer["modes"], ["sequential"])
 
 
+class LanePartitionTests(_DeliveryModeFixture):
+    """US0349: the plan emits a report-only file-disjoint lane partition, from the same
+    machinery the delivery-mode offer uses, and it changes no plan decision."""
+
+    def _no_affects(self, root, num):
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True, exist_ok=True)
+        (sd / f"US{num:04d}-x.md").write_text(
+            f"# US{num:04d}: x\n\n> **Status:** Draft\n> **Points:** 2\n", encoding="utf-8")
+        return {"id": f"US{num:04d}", "path": str(sd / f"US{num:04d}-x.md"), "points": 2}
+
+    def test_no_file_appears_in_two_lanes(self):
+        """AC1. Overlapping Affects merge into one lane; disjoint ones split - and no file is ever
+        shared across two lanes, computed from _unit_files (the same set the clusters use)."""
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # us1+us2 share src/shared.py (one lane); us3 is disjoint (its own lane)
+            batch = [self._story(root, 1, "src/shared.py", "tests/test_a.py"),
+                     self._story(root, 2, "src/shared.py", "tests/test_b.py"),
+                     self._story(root, 3, "src/c.py", "tests/test_c.py")]
+            part = s.lane_partition(root, batch)
+            lanes = part["lanes"]
+            # every file lives in at most one lane (shared WITHIN a lane is fine; across is not)
+            seen: dict[str, int] = {}
+            for i, lane in enumerate(lanes):
+                for uid in lane:
+                    for f in part["files_by_unit"][uid]:
+                        if f in seen:
+                            self.assertEqual(seen[f], i, f"{f} in lanes {seen[f]} and {i}")
+                        seen[f] = i
+            # the coupled pair is together, the disjoint one apart
+            lane_of = {uid: i for i, lane in enumerate(lanes) for uid in lane}
+            self.assertEqual(lane_of["US0001"], lane_of["US0002"])
+            self.assertNotEqual(lane_of["US0001"], lane_of["US0003"])
+
+    def test_the_partition_changes_nothing_else_in_the_plan(self):
+        """AC2. The partition is a view, not an input: computing it leaves the delivery-mode
+        decision (the batch, its groups, the offered modes) byte-identical."""
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            batch = [self._story(root, 1, "src/a.py", "tests/test_a.py"),
+                     self._story(root, 2, "src/b.py", "tests/test_b.py")]
+            offer_before = s.delivery_mode_offer(root, batch)
+            _ = s.lane_partition(root, batch)          # compute the report
+            offer_after = s.delivery_mode_offer(root, batch)
+            # the decision the offer records is unchanged by the report existing
+            self.assertEqual(offer_before, offer_after)
+            self.assertEqual(s.record_delivery_mode(offer_after, "parallel"),
+                             s.record_delivery_mode(offer_before, "parallel"))
+
+    def test_an_undeclared_unit_is_named_not_placed(self):
+        """AC3. A unit that declares no Affects is unplaceable and NAMED, never dropped into a
+        lane - an undeclared file is invisible to a collision check, so it cannot be assumed
+        safe to sit beside anything."""
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            batch = [self._story(root, 1, "src/a.py", "tests/test_a.py"),
+                     self._no_affects(root, 2)]
+            part = s.lane_partition(root, batch)
+            self.assertIn("US0002", part["unplaceable"])
+            placed = {uid for lane in part["lanes"] for uid in lane}
+            self.assertNotIn("US0002", placed)          # not silently placed
+            self.assertIn("US0001", placed)
+
+
+class LaneExportTests(_DeliveryModeFixture):
+    """US0350: each lane exports as a worklist the planner reads back; collision-freedom is
+    asserted on the exported artefacts, not the in-memory structure that produced them."""
+
+    def test_each_lane_round_trips_through_the_worklist_reader(self):
+        """AC1. Each export is a `sprint plan --worklist`-readable file, and re-reading it
+        reproduces exactly that lane's units."""
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            batch = [self._story(root, 1, "src/a.py", "tests/test_a.py"),
+                     self._story(root, 2, "src/b.py", "tests/test_b.py")]
+            out = root / "lanes"
+            res = s.export_lanes(root, batch, out)
+            part = s.lane_partition(root, batch)
+            self.assertEqual(len(res["lane_files"]), len(part["lanes"]))
+            for path, lane in zip(res["lane_files"], part["lanes"]):
+                units, _deps = s._worklist_units(root, path)
+                self.assertEqual([u["id"] for u in units], lane)
+
+    def test_the_exports_themselves_are_pairwise_disjoint(self):
+        """AC2. Read the exports back and intersect the units' Affects pairwise across lanes:
+        every pair is disjoint. The assertion is on the artefacts handed to teams."""
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            batch = [self._story(root, 1, "src/shared.py", "tests/test_a.py"),
+                     self._story(root, 2, "src/shared.py", "tests/test_b.py"),
+                     self._story(root, 3, "src/c.py", "tests/test_c.py")]
+            out = root / "lanes"
+            res = s.export_lanes(root, batch, out)
+            # files each exported lane actually touches, read back from disk
+            lane_files_sets = []
+            for path in res["lane_files"]:
+                units, _ = s._worklist_units(root, path)
+                fs: set[str] = set()
+                for u in units:
+                    fs |= set(s._unit_files(root, Path(u["path"]).read_text(encoding="utf-8")))
+                lane_files_sets.append(fs)
+            for i in range(len(lane_files_sets)):
+                for j in range(i + 1, len(lane_files_sets)):
+                    self.assertEqual(lane_files_sets[i] & lane_files_sets[j], set(),
+                                     f"lanes {i} and {j} share a file")
+
+    def test_the_undeclared_file_risk_is_stated_in_the_export(self):
+        """AC3 (function leg). The caveat travels with every export artefact, not just the doc:
+        disjointness is only as good as the declared Affects."""
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            batch = [self._story(root, 1, "src/a.py", "tests/test_a.py"),
+                     self._story(root, 2, "src/b.py", "tests/test_b.py")]
+            out = root / "lanes"
+            res = s.export_lanes(root, batch, out)
+            for path in res["lane_files"]:
+                self.assertIn("undeclared", Path(path).read_text(encoding="utf-8"))
+
+
 class HelpStatesBatchSizeTradeoffTests(unittest.TestCase):
     """US0397: help/sprint.md states the fixed-cost-versus-review-convergence trade-off from
     the measured rows and prescribes NO batch-size number."""

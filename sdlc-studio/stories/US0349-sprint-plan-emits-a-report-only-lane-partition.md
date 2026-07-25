@@ -1,6 +1,6 @@
 # US0349: sprint plan emits a report-only lane partition from the Affects clusters
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0321
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** sprint operator dividing a batch across teams or worktrees
+**I want** the plan to report a file-disjoint lane partition from the declared Affects
+**So that** I can see how the work splits without hand-deriving it, and know which units cannot be placed
 
 ## Acceptance Criteria
 
@@ -23,6 +23,7 @@
 - **When** `sprint plan` runs
 - **Then** it reports lanes such that no file appears in two lanes, computed from the existing Affects-derived clusters rather than a second implementation
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LanePartitionTests::test_no_file_appears_in_two_lanes
+- **Verified:** yes (2026-07-25)
 
 ### AC2: the partition is report-only and changes no plan decision
 
@@ -30,6 +31,7 @@
 - **When** the plan is produced with and without the partition computed
 - **Then** the approved batch, its ordering and its forecast are byte-identical - this slice reports, it does not allocate
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LanePartitionTests::test_the_partition_changes_nothing_else_in_the_plan
+- **Verified:** yes (2026-07-25)
 
 ### AC3: a unit with no declared Affects is named, not silently placed
 
@@ -37,6 +39,7 @@
 - **When** the partition is computed
 - **Then** that unit is reported as unplaceable and named, rather than being dropped or put in a lane by default - an undeclared file is invisible to a collision check, so it cannot be assumed safe
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LanePartitionTests::test_an_undeclared_unit_is_named_not_placed
+- **Verified:** yes (2026-07-25)
 
 ## Revision History
 

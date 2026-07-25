@@ -44,7 +44,7 @@ ALLOWLIST = {
                                  # first pass and the three standing adversarial practices;
                                  # +the verdict-log supersession section (EP0133/US0374/US0375):
                                  # the correction path and what a retired row does to each gate
-    "reference-sprint.md": 720,  # +the EP0130/0146/0150-0155 sprint-engine behaviours documented,
+    "reference-sprint.md": 724,  # +EP0130/0146/0150-0155 sprint-engine, +report-only lane partition/export
                                  # +the amend/material goal-review and seat-brief notes (EP0152/0153)
                                  # (Sprint 1 of the three-sprint run). FLAGGED for a structural
                                  # split: it is the largest reference and grows with the engine;

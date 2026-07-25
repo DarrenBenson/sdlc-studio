@@ -1887,6 +1887,66 @@ def record_delivery_mode(offer: dict, mode: str) -> dict:
     return out
 
 
+def lane_partition(repo_root: Path | str, batch: list[dict]) -> dict:
+    """A REPORT-ONLY file-disjoint partition of the batch into lanes, from the same
+    `_unit_files` / `_full_partition` machinery `delivery_mode_offer` uses - no second
+    implementation of disjointness. Unlike the delivery-mode offer, this reports the lanes for
+    EVERY batch (a coupled one still partitions - the coupling is why lanes merge), so an operator
+    can see how the work would split across teams or worktrees whatever mode is chosen.
+
+    A unit that declares no `Affects` is UNPLACEABLE and named, never placed: an undeclared file
+    is invisible to a collision check, so a lane holding it cannot be called disjoint. `_full_partition`
+    guarantees no file appears in two lanes. This changes no plan decision - it is a view over the
+    batch, not an input to selecting or ordering it."""
+    root = Path(repo_root)
+    placeable: list[tuple[str, list[str]]] = []
+    unplaceable: list[str] = []
+    files_by_unit: dict[str, list[str]] = {}
+    for it in batch:
+        text = Path(it["path"]).read_text(encoding="utf-8")
+        uid = sdlc_md.norm_id(it["id"])
+        if not _affects_files(text):
+            unplaceable.append(uid)
+            continue
+        files = _unit_files(root, text)
+        placeable.append((uid, files))
+        files_by_unit[uid] = files
+    lanes = _full_partition(placeable)
+    return {"lanes": lanes, "unplaceable": sorted(unplaceable),
+            "files_by_unit": files_by_unit}
+
+
+def _write_lane_worklists(lanes: list[list[str]], out_dir: Path | str) -> list[str]:
+    """Write each lane as a worklist file the planner reads back (`sprint plan --worklist`). The
+    undeclared-file caveat is stated in EVERY export, because the guarantee travels with the
+    artefact handed to a team: disjointness is only as good as the declared `Affects`, and a unit
+    touching a file it did not declare (an undeclared file) can still collide with another lane."""
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    lane_files: list[str] = []
+    for i, lane in enumerate(lanes, start=1):
+        p = out / f"lane-{i:02d}.worklist.txt"
+        header = [
+            f"# Lane {i} of {len(lanes)} - file-disjoint against the other lanes by declared"
+            " Affects.",
+            "# CAVEAT: disjointness is only as good as the declared Affects. A unit touching a"
+            " file it did not declare (an undeclared file) can still collide with another lane -"
+            " the guarantee does not cover what was never declared.",
+        ]
+        p.write_text("\n".join(header + list(lane)) + "\n", encoding="utf-8")
+        lane_files.append(str(p))
+    return lane_files
+
+
+def export_lanes(repo_root: Path | str, batch: list[dict], out_dir: Path | str) -> dict:
+    """Write each lane of `lane_partition` as a worklist file the planner reads back
+    (`sprint plan --worklist`), so a lane can be handed to a separate team, agent or worktree.
+    Returns `{lane_files, unplaceable}`; the caller writes nothing else."""
+    part = lane_partition(repo_root, batch)
+    return {"lane_files": _write_lane_worklists(part["lanes"], out_dir),
+            "unplaceable": part["unplaceable"]}
+
+
 def _batch_triage(root: Path, batch_ids: list[str]) -> dict:
     """The JUDGEMENT triage lenses (duplicate/subsumed, stale, orphaned-dependency) that touch a
     unit in this batch - surfaced in the plan the operator already reads. Reporting-only: a
@@ -2213,6 +2273,10 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         # parallel worktree build could take. Offered only when it genuinely does; the plan
         # states the mode and why the alternative was or was not available.
         "delivery_mode": delivery_mode_offer(root, batch) if batch else None,
+        # A report-only file-disjoint partition of the batch into lanes (US0349). Additive: it
+        # informs how the work would split across teams/worktrees, and feeds NO selection or
+        # ordering decision - delivery_mode above owns the parallel/sequential choice.
+        "lane_partition": lane_partition(root, batch) if batch else None,
         "seat_provenance": (_seat_provenance(root, batch)
                             if order == "wsjf" and not skip_personas else None),
         # How far this batch can actually get under its own gates. Recorded on every plan, so
@@ -2509,6 +2573,24 @@ def _render_delivery_mode(data: dict) -> None:
               + "; ".join("[" + ", ".join(g) + "]" for g in groups))
     else:
         print(f"  delivery mode: SEQUENTIAL (parallel withheld). {dm['reason']}")
+
+
+def _render_lane_partition(data: dict) -> None:
+    """The report-only file-disjoint lanes (US0349), for every batch. Additive - it drives no
+    plan decision; it shows how the batch would split across teams or worktrees, and names any
+    unit that could not be placed because it declared no Affects."""
+    lp = data.get("lane_partition")
+    if not lp:
+        return
+    lanes = lp.get("lanes") or []
+    print(f"  lane partition (report-only): {len(lanes)} file-disjoint lane(s) - "
+          "no file appears in two:")
+    for i, lane in enumerate(lanes, start=1):
+        print(f"    lane {i}: " + ", ".join(lane))
+    unplaceable = lp.get("unplaceable") or []
+    if unplaceable:
+        print("    unplaceable (declared no Affects, so cannot be proven disjoint - not placed): "
+              + ", ".join(unplaceable))
 
 
 def _render_clusters(data: dict) -> None:
@@ -3113,6 +3195,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_seat_provenance(data)
     _render_waves(data)
     _render_delivery_mode(data)
+    _render_lane_partition(data)
     _render_clusters(data)
     _render_affects_advisories(data)
     _render_triage(data)
@@ -4923,6 +5006,15 @@ def cmd_plan(args: argparse.Namespace) -> int:
         if policy:
             _render_policy(policy)
     _render_plan(args, data, queries, worklist, epics)
+    export_dir = getattr(args, "export_lanes", None)
+    if export_dir:
+        lp = data.get("lane_partition") or {"lanes": [], "unplaceable": []}
+        files = _write_lane_worklists(lp["lanes"], export_dir)
+        print(f"exported {len(files)} lane worklist(s) to {export_dir}: "
+              + ", ".join(Path(f).name for f in files))
+        if lp["unplaceable"]:
+            print("  not exported (declared no Affects, cannot be placed in a disjoint lane): "
+                  + ", ".join(lp["unplaceable"]))
     return 0
 
 
@@ -5846,6 +5938,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="tranche file: one unit id per line (bullets/comments tolerated); "
                         "a complete batch source, not combinable with status queries")
     p.add_argument("--prd", metavar="PATH", help="Greenfield authoring: bootstrap from a PRD")
+    p.add_argument("--export-lanes", dest="export_lanes", metavar="DIR",
+                   help="write the report-only lane partition as one worklist per lane into DIR "
+                        "(each `sprint plan --worklist`-readable, with the undeclared-file caveat)")
     p.add_argument("--epic", action="append", metavar="EPxxxx",
                    help="scope a story batch to one or more epics (repeatable; with --stories)")
     p.add_argument("--order", choices=("priority", "wsjf", "manual"), default="priority")

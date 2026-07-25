@@ -444,6 +444,14 @@ worktrees editing different tooling files still share the one gate that runs acr
 merge-clean split is not a safe one. That set is declared, not guessed from a filename shape. See
 [reference-delivery.md](reference-delivery.md) for the full contract.
 
+**Lane partition - report-only, and its limit travels with the export.** Every plan also emits a
+file-disjoint LANE PARTITION (the batch split so no file appears in two lanes, from the same
+`Affects`/Verify files the clusters use). It is REPORT-ONLY - it selects, orders and forecasts
+nothing, only showing how the work would divide across teams or worktrees; a unit that declares no
+`Affects` is **unplaceable** and named, never dropped into a lane. `sprint plan --export-lanes DIR`
+writes each lane as a `--worklist`-readable file, stating the caveat - disjointness is only as good
+as the declared `Affects`, and a unit touching an **undeclared** file can still collide.
+
 ## What the plan critic cannot see
 
 A bounded adversarial pass runs over the plan before `--write`, across three fixed lenses -
