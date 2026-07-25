@@ -410,10 +410,9 @@ than by the author remembering it.
 ## Correcting the verdict log {#superseding-a-verdict}
 
 `sdlc-studio/reviews/critic-verdicts.md` is append-only, and its authority comes from nobody
-editing it. That is precisely why a row recording an event which did not happen - a reviewer
-mis-entered, a verdict filed against the wrong unit - must not simply be deleted. A deletion
-leaves nothing behind, so a later reader cannot tell a log that was never wrong from one that
-was quietly tidied.
+editing it. So a row recording an event that did not happen - a mis-entered reviewer, a verdict
+filed against the wrong unit - is retired by addition, never deleted (a deletion leaves nothing to
+tell a log that was never wrong from one quietly tidied).
 
 `critic.py supersede` (spelled `correct` if you prefer) retires such a row by adding to the log:
 
@@ -421,15 +420,15 @@ was quietly tidied.
 python3 scripts/critic.py supersede --unit US0276 --date 2026-07-20 \
   --reason "the pass this row records never ran" \
   --authorised-by "<the authorising principal>" \
+  --boundary "<the separate trust boundary they acted in>" \
   [--reviewer <seat>] [--verdict APPROVE] [--phase delivery]
 ```
 
-The row itself stays in the table, byte for byte. A `SUPERSEDED` record is appended below the
-table naming the unit, the retired row (its date, verdict, reviewer and author), the reason, the
-authoriser and the date of the correction. That record is prose rather than a table row because
-the parser reads every pipe-delimited line in the file, so an errata table would be read as a
-run of malformed verdicts; for the same reason the verdict row is never widened with an extra
-column. Later verdicts still land inside the table, which stays one contiguous block.
+The row itself stays in the table, byte for byte. A `SUPERSEDED` record is appended below it naming
+the retired row (date, verdict, reviewer, author), the reason, the authoriser, the trust boundary
+and the correction date. It is prose, not a table row, because the parser reads every pipe-delimited
+line - an errata table would read as malformed verdicts, and for the same reason the verdict row is
+never widened. Later verdicts still land inside the table, which stays one contiguous block.
 
 Refusals, all loud, all writing nothing:
 
@@ -437,24 +436,27 @@ Refusals, all loud, all writing nothing:
   `--reviewer` and `--verdict` when a unit carries several rows that day. A correction pointing
   at nothing is a false erratum, and retiring an unspecified one of several is not a correction.
   The CLI exits 2.
-- **The row's own author as the authoriser.** The party that wrote the wrong row cannot retire
-  it on its own say-so. The row's *reviewer* is not refused: a row naming the wrong reviewer is
-  the case this exists for, and the person wrongly named is usually the one who can rule that
-  the pass never ran.
-- **No reason, or no authoriser named at all.**
+- **An authoriser the author controls.** Superseding can retire an independence attribution, so it
+  is held to the sign-off's rule: the row's *author* is refused, and so is any party that did
+  in-session review work on the unit (a reviewer on its evidence, or another verdict / sprint-review
+  row). The one exception is the row's own wrongly named reviewer, who did no other reviewing work -
+  the case this exists for, and the one who can rule the pass never ran.
+- **No boundary**, naming the separate trust boundary the authoriser acted in (operator console,
+  another human, CI), exactly as a delegated sign-off must - or **no reason, or no authoriser.**
 
 ### What a superseded row does to the gates
 
-Every reader treats a retired row as retired, and none of them drop it:
+Every reader treats a retired row as retired, none drop it:
 
 | Reader | Behaviour |
 | --- | --- |
-| `verdict_for` | skips it and falls back to the latest live row; a unit whose only row is superseded has **no** verdict, which is not the same as an approval |
-| the sign-off gate | its reviewer no longer counts among the authoring session's own, so a principal wrongly recorded as a reviewer can sign off the unit |
+| `verdict_for` | skips it, falls back to the latest live row; a unit whose only row is superseded has **no** verdict, not an approval |
+| the sign-off gate | the reviewer keeps counting **unless** the correction was principal-authorised (a separate boundary, an authoriser who did no other reviewing work). Only then does a wrongly named principal stop counting and become able to sign off. An author-reachable correction retires the verdict but not the fact that the reviewer acted, so it is never a route round the gate |
 | `read_verdicts`, `critic show`, the sign-off brief | still return and print the row, flagged with its reason and authoriser |
 
-A correction is therefore auditable both ways: a later reader sees that the row was recorded,
-and that it was retired, on whose authority and why.
+Retiring the *verdict* is not retiring the *attribution*: the first any independent principal may
+do, the second only one the author does not control - so a blocked author cannot launder its own
+seat out of the gate.
 
 ---
 

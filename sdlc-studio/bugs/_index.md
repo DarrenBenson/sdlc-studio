@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 2 |
+| Open | 1 |
 | In Progress | 0 |
-| Fixed | 209 |
+| Fixed | 210 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -250,7 +250,7 @@
 | [BG0281](BG0281-a-conflicted-merge-cannot-be-committed-through-the.md) | a conflicted merge cannot be committed through the gate: the commit-msg hook tests invoke the hook with the OUTER repo as cwd, so they inherit its MERGE_HEAD, the hook correctly exits early, and five tool-tests fail for the duration of every merge | Fixed | High | 2026-07-24 | 2026-07-24 |
 | [BG0282](BG0282-59-scripts-still-resolve-root-bare-so-a.md) | 59 scripts still resolve --root bare, so a run from a subdirectory reads or writes the wrong tree | Fixed | Medium | 2026-07-24 | 2026-07-24 |
 | [BG0283](BG0283-the-inflight-mutation-guard-has-no-staleness-notion.md) | the inflight-mutation guard has no staleness notion, so an abandoned sidecar blocks every write in the repo indefinitely: a three-day-old file refused artifact and transition the moment the guard shipped | Fixed | -- | 2026-07-24 | 2026-07-24 |
-| [BG0284](BG0284-superseding-a-verdict-cannot-restore-independence-so-the.md) | superseding a verdict cannot restore independence, so the mis-attributed-reviewer case that motivated it still strands a unit: the tool cannot tell a mis-filing from an author retiring an inconvenient verdict, and needs a principal-authorised correction path | Open | High | 2026-07-24 | 2026-07-24 |
+| [BG0284](BG0284-superseding-a-verdict-cannot-restore-independence-so-the.md) | superseding a verdict cannot restore independence, so the mis-attributed-reviewer case that motivated it still strands a unit: the tool cannot tell a mis-filing from an author retiring an inconvenient verdict, and needs a principal-authorised correction path | Fixed | High | 2026-07-24 | 2026-07-24 |
 | [BG0285](BG0285-sprint-close-without-apply-signoff-closes-the-run.md) | sprint close without --apply-signoff closes the run, and the sprint-level review that the sign-off needs cannot then be recorded against it, so the documented two-invocation close flow cannot be completed and no reopen path exists | Fixed | High | 2026-07-24 | 2026-07-24 |
 | [BG0286](BG0286-sprint-close-apply-signoff-fans-into-story-units.md) | sprint close --apply-signoff fans into story units only, leaving the batch's bugs Open while the close reports goal-reached | Fixed | High | 2026-07-24 | 2026-07-24 |
 | [BG0287](BG0287-the-review-current-lane-goes-stale-against-the.md) | the review-current lane goes stale against the close's own transitions, so it blocks the close step that would refresh the anchor | Fixed | Medium | 2026-07-24 | 2026-07-24 |

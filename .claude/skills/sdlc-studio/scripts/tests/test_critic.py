@@ -1730,7 +1730,8 @@ class SupersedeTests(unittest.TestCase):
             reason = ("the operator was the reviewer of record, not the adversarial critic, "
                       "so the pass this row states never ran")
             mod.record_supersession(root, "US0276", date=date, reason=reason,
-                                    authorised_by="Darren Benson (operator)")
+                                    authorised_by="Darren Benson (operator)",
+                                    boundary="operator console")
             after = mod.verdicts_path(root).read_text(encoding="utf-8")
             self.assertIn(row + "\n", after)     # byte-for-byte: corrected by addition
             recs = mod.read_supersessions(root)
@@ -1765,7 +1766,7 @@ class SupersedeTests(unittest.TestCase):
                                "   "):
                 with self.assertRaises(ValueError):
                     mod.record_supersession(root, "US0276", date=date, reason="wrong row",
-                                            authorised_by=authoriser)
+                                            authorised_by=authoriser, boundary="operator console")
             self.assertEqual(mod.read_supersessions(root), [])
             self.assertEqual(mod.verdicts_path(root).read_text(encoding="utf-8"), before)
             self.assertFalse(mod.read_verdicts(root)[0]["superseded"])
@@ -1780,17 +1781,19 @@ class SupersedeTests(unittest.TestCase):
             before = mod.verdicts_path(root).read_text(encoding="utf-8")
             with self.assertRaises(ValueError):     # no row for the unit at all
                 mod.record_supersession(root, "US9999", date=date, reason="no such row",
-                                        authorised_by="Darren Benson (operator)")
+                                        authorised_by="Darren Benson (operator)",
+                                        boundary="operator console")
             with self.assertRaises(ValueError):     # right unit, a date it never carried
                 mod.record_supersession(root, "US0276", date="2020-01-01",
-                                        reason="wrong date", authorised_by="Darren Benson")
+                                        reason="wrong date", authorised_by="Darren Benson",
+                                        boundary="operator console")
             self.assertEqual(mod.read_supersessions(root), [])
             self.assertEqual(mod.verdicts_path(root).read_text(encoding="utf-8"), before)
             err = io.StringIO()
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
                 rc = mod.main(["supersede", "--unit", "US9999", "--date", date,
                                "--reason", "no such row", "--authorised-by", "operator",
-                               "--root", str(root)])
+                               "--boundary", "operator console", "--root", str(root)])
             self.assertEqual(rc, 2)
             self.assertIn("US9999", err.getvalue())
             self.assertEqual(mod.read_supersessions(root), [])
@@ -1806,11 +1809,11 @@ class SupersedeTests(unittest.TestCase):
             date = mod.read_verdicts(root)[0]["date"]
             with self.assertRaises(ValueError):
                 mod.record_supersession(root, "US0300", date=date, reason="dup",
-                                        authorised_by="operator")
+                                        authorised_by="operator", boundary="operator console")
             self.assertEqual(mod.read_supersessions(root), [])
             mod.record_supersession(root, "US0300", date=date, reviewer="critic-b",
                                     reason="the approve was filed against the wrong unit",
-                                    authorised_by="operator")
+                                    authorised_by="operator", boundary="operator console")
             self.assertEqual(mod.read_supersessions(root)[0]["row_reviewer"], "critic-b")
             self.assertEqual(mod.verdict_for(root, "US0300")["reviewer"], "critic-a")
 
@@ -1824,6 +1827,7 @@ class SupersedeTests(unittest.TestCase):
                 rc = mod.main(["correct", "--unit", "US0276", "--date", date,
                                "--reason", "the pass it records never ran",
                                "--authorised-by", "Darren Benson (operator)",
+                               "--boundary", "operator console",
                                "--root", str(root)])
             self.assertEqual(rc, 0)
             self.assertEqual(mod.read_supersessions(root)[0]["authorised_by"],
@@ -1836,32 +1840,29 @@ class SupersededGateTests(unittest.TestCase):
     in the file and printing as superseded - the audit trail keeps the record that it
     happened, and the gate stops acting on it."""
 
-    def test_superseding_does_NOT_restore_independence(self) -> None:
-        """A supersession retires a VERDICT; it cannot un-make the fact that someone reviewed.
-
-        This test asserted the opposite until the closing review reproduced a complete bypass of
-        the two-role gate from it: an author blocked by a REJECT superseded it - the only guard
-        being that the authoriser is not the row's own author, met by any other string - the
-        reviewer then dropped out of the session set, and the author's own subagent was accepted
-        as reviewer of record. Refused, superseded, accepted, measured end to end.
-
-        The incident that motivated supersession (a mis-filed row naming the operator as REVIEWER,
-        stranding the unit) is NOT solved by this and is tracked separately: the tool cannot tell
-        a mis-attribution from an author retiring an inconvenient verdict, so it must not guess.
-        """
+    def test_an_author_superseding_its_own_seats_verdict_is_refused(self) -> None:
+        """A supersession retires a VERDICT; whether it retires the ATTRIBUTION turns on the
+        authoriser (see PrincipalAuthorisedSupersessionTests). The bypass this closes: an author
+        blocked by a REJECT superseded it - the only guard being that the authoriser was not the
+        row's own author, met by any other string - the reviewer dropped out of the session set,
+        and the author's own subagent was accepted as reviewer of record. Refused end to end now:
+        the seat that filed the blocking verdict also filed evidence, so it is not an independent
+        authoriser and the correction is refused before it can move the gate."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
+            mod.record_evidence(root, "US0001", reviewer="qa-seat", author="builder",
+                                findings="the defect the reject records")
             mod.record_verdict(root, "US0001", "reject",
                                reviewer="qa-seat", author="builder")
             date = mod.read_verdicts(root)[0]["date"]
             with self.assertRaises(ValueError):
                 mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
-            mod.record_supersession(root, "US0001", date=date, reason="mis-filed",
-                                    authorised_by="qa-seat")
-            # the verdict is retired for the critiqued gate...
-            self.assertIsNone(mod.verdict_for(root, "US0001"))
-            # ...but independence is unchanged, so the gate still holds
+            with self.assertRaises(ValueError):
+                mod.record_supersession(root, "US0001", date=date, reason="mis-filed",
+                                        authorised_by="qa-seat", boundary="same session")
+            # nothing retired: the verdict still stands and independence is unchanged
+            self.assertIsNotNone(mod.verdict_for(root, "US0001"))
             self.assertIn("qa-seat", mod._session_reviewer_ids(root, "US0001"))
             with self.assertRaises(ValueError):
                 mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
@@ -1876,14 +1877,16 @@ class SupersededGateTests(unittest.TestCase):
             date = mod.read_verdicts(root)[-1]["date"]
             mod.record_supersession(root, "US0300", date=date, reviewer="critic-b",
                                     reason="the reject was filed against the wrong unit",
-                                    authorised_by="Darren Benson (operator)")
+                                    authorised_by="Darren Benson (operator)",
+                                    boundary="operator console")
             live = mod.verdict_for(root, "US0300")
             self.assertEqual(live["verdict"], "APPROVE")     # the earlier LIVE row
             self.assertEqual(live["reviewer"], "critic-a")
             # a unit whose only row is superseded has NO verdict - never a silent approval
             mod.record_verdict(root, "US0301", "approve", reviewer="critic-a", author="builder")
             mod.record_supersession(root, "US0301", date=date, reason="never ran",
-                                    authorised_by="Darren Benson (operator)")
+                                    authorised_by="Darren Benson (operator)",
+                                    boundary="operator console")
             self.assertIsNone(mod.verdict_for(root, "US0301"))
 
     def test_superseded_row_stays_visible_and_flagged_in_show(self) -> None:
@@ -1895,7 +1898,8 @@ class SupersededGateTests(unittest.TestCase):
             date = mod.read_verdicts(root)[0]["date"]
             reason = "the adversarial pass it records never ran"
             mod.record_supersession(root, "US0276", date=date, reason=reason,
-                                    authorised_by="Darren Benson (operator)")
+                                    authorised_by="Darren Benson (operator)",
+                                    boundary="operator console")
             mod.record_verdict(root, "US0277", "approve", reviewer="critic-a", author="builder")
             rows = mod.read_verdicts(root)
             self.assertEqual([r["unit"] for r in rows], ["US0276", "US0277"])  # nothing dropped
@@ -1923,6 +1927,155 @@ class SupersededGateTests(unittest.TestCase):
             self.assertEqual(payload[0]["superseded_reason"], reason)
             self.assertEqual(payload[0]["superseded_by"], "Darren Benson (operator)")
             self.assertFalse(payload[1]["superseded"])
+
+
+class PrincipalAuthorisedSupersessionTests(unittest.TestCase):
+    """BG0284. Superseding retires a verdict; whether it also retires the ATTRIBUTION (so the
+    named reviewer stops counting toward independence) turns on WHO authorised it. The bypass
+    and the mis-attribution incident are mechanically identical in the verdict rows alone -
+    the recordable distinction is that a working session reviewer left an EVIDENCE row, while a
+    principal wrongly named on a verdict row did not, and authorised the correction from a
+    separate trust boundary. That distinction is what the guard tests."""
+
+    def test_an_authoring_session_authoriser_is_refused(self) -> None:
+        """AC1. A supersession authorised by a party who did in-session review work on the unit -
+        or by the row's own author - is refused, on the sign-off's own independence rule."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            # qa-seat runs the adversarial pass (evidence) and files a blocking REJECT.
+            mod.record_evidence(root, "US0001", reviewer="qa-seat", author="builder",
+                                findings="a hole in the batch fan-out")
+            mod.record_verdict(root, "US0001", "reject", reviewer="qa-seat", author="builder")
+            date = mod.read_verdicts(root)[0]["date"]
+            before = mod.verdicts_path(root).read_text(encoding="utf-8")
+            for authoriser in ("qa-seat",        # the author's own seat - it left evidence
+                               "QA-Seat",         # ...however cased
+                               "builder"):        # the row's own author
+                with self.assertRaises(ValueError) as cm:
+                    mod.record_supersession(root, "US0001", date=date, reason="inconvenient",
+                                            authorised_by=authoriser, boundary="same session")
+                self.assertTrue(
+                    "independen" in str(cm.exception).lower()
+                    or "author" in str(cm.exception).lower())
+            # nothing written: the verdict still stands and still blocks
+            self.assertEqual(mod.read_supersessions(root), [])
+            self.assertEqual(mod.verdicts_path(root).read_text(encoding="utf-8"), before)
+            self.assertIn("qa-seat", mod._session_reviewer_ids(root, "US0001"))
+
+    def test_a_principal_authorised_supersession_clears_the_strand(self) -> None:
+        """AC2. A verdict row wrongly names the operator as REVIEWER; the operator never reviewed
+        (no evidence row). That strands the unit - the operator reads as a session reviewer and so
+        cannot be its reviewer of record. A supersession the operator authorises from a separate,
+        recorded boundary retires the attribution, and the strand clears."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0001", "approve", reviewer="operator", author="builder")
+            date = mod.read_verdicts(root)[0]["date"]
+            # stranded: the operator reads as an authoring-session reviewer, cannot sign off
+            self.assertIn("operator", mod._session_reviewer_ids(root, "US0001"))
+            with self.assertRaises(ValueError):
+                mod.record_signoff(root, "US0001", principal="operator", author="builder")
+            mod.record_supersession(
+                root, "US0001", date=date,
+                reason="the operator was reviewer of record, not the adversarial critic; "
+                       "the pass this row states never ran",
+                authorised_by="operator", boundary="operator console")
+            # the attribution is retired for the gate: the strand is cleared...
+            self.assertNotIn("operator", mod._session_reviewer_ids(root, "US0001"))
+            # ...so the legitimate reviewer of record can now sign off
+            mod.record_signoff(root, "US0001", principal="operator", author="builder")
+            self.assertIsNotNone(mod.signoff_for(root, "US0001"))
+            # the boundary is recorded on the correction
+            self.assertEqual(mod.read_supersessions(root)[0]["boundary"], "operator console")
+
+    def test_no_author_only_sequence_clears_the_gate(self) -> None:
+        """AC3. On a unit the author built, with a genuine two-role review (evidence + verdict),
+        no supersession the author can author ALONE - itself or its own seat, any boundary string
+        it can assert - retires the reviewer from the gate. A blocking review leaves evidence, and
+        an evidence-row reviewer is refused as an authoriser however the boundary is dressed up."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_evidence(root, "US0001", reviewer="qa-seat", author="builder",
+                                findings="a real defect")
+            mod.record_verdict(root, "US0001", "reject", reviewer="qa-seat", author="builder")
+            date = mod.read_verdicts(root)[0]["date"]
+            for authoriser, boundary in (("builder", "console"),      # the author
+                                         ("qa-seat", "another session"),  # its seat (has evidence)
+                                         ("qa-seat", "CI")):           # relabel the boundary
+                with self.assertRaises(ValueError):
+                    mod.record_supersession(root, "US0001", date=date, reason="retire it",
+                                            authorised_by=authoriser, boundary=boundary)
+            self.assertEqual(mod.read_supersessions(root), [])
+            # the gate is unmoved and a self-sign-off stays refused
+            self.assertIn("qa-seat", mod._session_reviewer_ids(root, "US0001"))
+            with self.assertRaises(ValueError):
+                mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
+
+    def test_a_boundaryless_correction_is_refused(self) -> None:
+        """The boundary is mandatory - superseding is held to the sign-off's rule, and a
+        correction with no recorded trust boundary is a hand edit with extra steps."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0001", "approve", reviewer="operator", author="builder")
+            date = mod.read_verdicts(root)[0]["date"]
+            for boundary in ("", "   "):
+                with self.assertRaises(ValueError) as cm:
+                    mod.record_supersession(root, "US0001", date=date, reason="mis-filed",
+                                            authorised_by="operator", boundary=boundary)
+                self.assertIn("boundary", str(cm.exception).lower())
+            self.assertEqual(mod.read_supersessions(root), [])
+
+    def _forge(self, mod, root: Path, row: dict, authorised_by: str, boundary: str) -> None:
+        """Hand-append a supersession record straight to the log, bypassing record_supersession -
+        the walk-round-the-tool a read-time backstop exists to catch."""
+        fields = (f"unit={row['unit']} row-date={row['date']} "
+                  f"row-verdict={row['verdict'].upper()} row-reviewer={row['reviewer']} "
+                  f"row-author={row['author']} authorised-by={authorised_by} "
+                  f"boundary={boundary} reason=inconvenient recorded=2026-07-25")
+        path = mod.verdicts_path(root)
+        path.write_text(path.read_text(encoding="utf-8")
+                        + "\n" + mod.SUPERSEDE_HEADING + "\n\n" + mod._SUPERSEDE_PREFIX
+                        + fields + "\n", encoding="utf-8")
+
+    def test_a_hand_forged_worker_correction_does_not_clear_the_gate(self) -> None:
+        """Read-time backstop, worker leg: a hand-appended record authorised by an in-session
+        seat - even with a boundary claim - retires the VERDICT but not the attribution, so the
+        reviewer keeps counting and no self-sign-off clears the gate."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_evidence(root, "US0001", reviewer="qa-seat", author="builder",
+                                findings="a real defect")
+            mod.record_verdict(root, "US0001", "reject", reviewer="qa-seat", author="builder")
+            self._forge(mod, root, mod.read_verdicts(root)[0],
+                        authorised_by="qa-seat", boundary="another session")
+            self.assertTrue(mod.read_verdicts(root)[0]["superseded"])   # the forge parsed
+            self.assertIn("qa-seat", mod._session_reviewer_ids(root, "US0001"))
+            with self.assertRaises(ValueError):
+                mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
+
+    def test_a_hand_forged_boundaryless_correction_does_not_clear_the_gate(self) -> None:
+        """Read-time backstop, boundary leg: the authoriser here is independent (not the author,
+        not a worker), so ONLY the missing boundary stops it - a correction with no recorded trust
+        boundary retires the verdict but not the attribution, and the reviewer keeps counting. This
+        isolates the boundary check: an otherwise-clearing correction fails purely for want of a
+        recorded boundary (AC2 shows the same shape WITH a boundary does clear)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            # a verdict row wrongly names the operator; the operator did no other reviewing work
+            mod.record_verdict(root, "US0001", "approve", reviewer="operator", author="builder")
+            row = mod.read_verdicts(root)[0]
+            self._forge(mod, root, row, authorised_by="operator", boundary="")   # no boundary
+            self.assertTrue(mod.read_verdicts(root)[0]["superseded"])            # the forge parsed
+            # boundaryless: the attribution is NOT retired, so the operator keeps counting
+            self.assertIn("operator", mod._session_reviewer_ids(root, "US0001"))
+            with self.assertRaises(ValueError):
+                mod.record_signoff(root, "US0001", principal="operator", author="builder")
 
 
 class PlanCriticTests(unittest.TestCase):

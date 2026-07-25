@@ -190,9 +190,9 @@ _SUPERSEDE_INTRO = (
 #: Record fields, in write order. Also the parse boundary: a value runs to the next of these
 #: keys, so a reason containing punctuation (or a semicolon-separated agent id) stays whole.
 _SUPERSEDE_KEYS = ("unit", "row-date", "row-verdict", "row-reviewer", "row-author",
-                   "authorised-by", "reason", "recorded")
+                   "authorised-by", "boundary", "reason", "recorded")
 _SUPERSEDE_COLS = ("unit", "row_date", "row_verdict", "row_reviewer", "row_author",
-                   "authorised_by", "reason", "recorded")
+                   "authorised_by", "boundary", "reason", "recorded")
 _SUPERSEDE_PREFIX = "SUPERSEDED "
 
 
@@ -215,8 +215,8 @@ def _supersede_field(body: str, key: str) -> str:
 
 
 def read_supersessions(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
-    """Every supersession record in `phase`'s log, in order, as
-    {unit, row_date, row_verdict, row_reviewer, row_author, authorised_by, reason, recorded}."""
+    """Every supersession record in `phase`'s log, in order, as {unit, row_date, row_verdict,
+    row_reviewer, row_author, authorised_by, boundary, reason, recorded}."""
     path = verdicts_path(repo_root, phase)
     if not path.exists():
         return []
@@ -239,13 +239,14 @@ def _matches_supersession(row: dict, rec: dict) -> bool:
 
 
 def _annotate_superseded(rows: list[dict], records: list[dict]) -> list[dict]:
-    """Mark each row a supersession record retires. Every row carries the four keys, so a
-    reader never has to tell 'live' from 'field absent'."""
+    """Mark each row a supersession record retires. Every row carries the `superseded*` keys,
+    so a reader never has to tell 'live' from 'field absent'."""
     for row in rows:
         rec = next((r for r in records if _matches_supersession(row, r)), None)
         row["superseded"] = rec is not None
         row["superseded_reason"] = rec["reason"] if rec else ""
         row["superseded_by"] = rec["authorised_by"] if rec else ""
+        row["superseded_boundary"] = rec.get("boundary", "") if rec else ""
         row["superseded_at"] = rec["recorded"] if rec else ""
     return rows
 
@@ -255,8 +256,46 @@ def is_superseded(verdict: dict | None) -> bool:
     return bool(verdict) and bool(verdict.get("superseded"))
 
 
+def _adversarial_worker_ids(repo_root: Path | str, unit: str,
+                            exclude_row: dict | None = None) -> set[str]:
+    """Every reviewer id that did adversarial or review WORK on the unit in-session: the
+    reviewers on its evidence rows, and on its verdict and sprint-level-review rows OTHER than
+    the one under correction. A principal wrongly named on a single verdict row appears in NONE
+    of these - a reviewer of record signs off; they do not file evidence or a second verdict -
+    which is the recordable distinction between a mis-attribution and an author retiring a true
+    verdict. `exclude_row` is the verdict row a supersession is about: its own reviewer is not
+    counted FROM that row, so the party the correction concerns cannot veto their own correction;
+    a genuine seat that filed a blocking verdict also left an evidence row and so is still caught.
+    Superseded rows are read RAW here: independence is about who touched the unit, and this set is
+    what decides whether a supersession may retire that fact - it cannot depend on the answer."""
+    target = sdlc_md.norm_id(unit)
+    ids: set[str] = set()
+    for r in _read_rows(evidence_path(repo_root), _EVIDENCE_COLS):
+        if sdlc_md.norm_id(r["unit"]) == target:
+            ids.add(_id(r["reviewer"]))
+    for ph in PHASES:
+        for v in read_verdicts(repo_root, ph):
+            if sdlc_md.norm_id(v["unit"]) != target:
+                continue
+            if exclude_row is not None and _matches_row(v, exclude_row):
+                continue
+            ids.add(_id(v["reviewer"]))
+    for sr in sprint_reviews(repo_root):
+        if target in _covered_ids(sr):
+            ids.add(_id(sr["reviewer"]))
+    ids.discard("")
+    return ids
+
+
+def _matches_row(row: dict, other: dict) -> bool:
+    """Two verdict rows are the same row: same date, reviewer and verdict for one unit."""
+    return (row.get("date", "") == other.get("date", "")
+            and _id(row.get("reviewer", "")) == _id(other.get("reviewer", ""))
+            and (row.get("verdict", "") or "").upper() == (other.get("verdict", "") or "").upper())
+
+
 def record_supersession(repo_root: Path | str, unit: str, date: str, reason: str,
-                        authorised_by: str, reviewer: str | None = None,
+                        authorised_by: str, boundary: str, reviewer: str | None = None,
                         verdict: str | None = None, phase: str = "delivery") -> Path:
     """Retire one verdict row by appending a supersession record naming it.
 
@@ -265,10 +304,15 @@ def record_supersession(repo_root: Path | str, unit: str, date: str, reason: str
 
     - no row matches, or more than one does - a correction pointing at nothing (or at an
       unspecified one of several) is a false erratum;
-    - no authoriser, or an authoriser who is the row's own AUTHOR - the party that wrote the
-      wrong row cannot retire it on its own say-so. The row's REVIEWER is not refused: a row
-      that names the wrong reviewer is precisely the case this exists for, and the person
-      wrongly named is usually the one who can rule that the pass never ran;
+    - no authoriser, or no `boundary` (the separate trust boundary the authoriser acted in) -
+      superseding can retire an independence attribution, so it is held to the sign-off's own
+      rule: a correction with no recorded boundary is a hand edit with extra steps;
+    - an authoriser who is the row's own AUTHOR, or who did in-session review work on the unit
+      (a reviewer on its evidence, or on any other verdict / sprint-review row) - a party the
+      author controls cannot authorise retiring the review that blocks it. The row's own wrongly
+      named reviewer is NOT refused on that row alone: a row naming the wrong reviewer is exactly
+      the case this exists for, and the person wrongly named is the one who can rule the pass
+      never ran - provided they did no other reviewing work on the unit;
     - no reason.
     """
     if phase not in PHASES:
@@ -280,6 +324,10 @@ def record_supersession(repo_root: Path | str, unit: str, date: str, reason: str
         raise ValueError("a supersession needs --authorised-by naming who authorised it - "
                          "an unauthorised correction to an append-only log is a hand edit "
                          "with extra steps")
+    if not (boundary or "").strip():
+        raise ValueError("a supersession needs --boundary naming the separate trust boundary "
+                         "its authoriser acted in - superseding can retire an independence "
+                         "attribution, so it is held to the sign-off's own rule")
     target, want_date = sdlc_md.norm_id(unit), (date or "").strip()
     candidates = [v for v in read_verdicts(repo_root, phase)
                   if sdlc_md.norm_id(v["unit"]) == target and v["date"] == want_date]
@@ -304,13 +352,20 @@ def record_supersession(repo_root: Path | str, unit: str, date: str, reason: str
         raise ValueError(
             f"authoriser {authorised_by!r} is the row's own author - the party that wrote "
             f"the row cannot authorise retiring it; name an authoriser outside it")
+    if _id(authorised_by) in _adversarial_worker_ids(repo_root, unit, exclude_row=row):
+        raise ValueError(
+            f"authoriser {authorised_by!r} did in-session review work on {target} (a reviewer "
+            f"on its evidence or another verdict / sprint-review row) - a party the author "
+            f"controls cannot authorise retiring the review, on the sign-off's independence "
+            f"rule; name a principal in a separate trust boundary")
     path = verdicts_path(repo_root, phase)
     record = _SUPERSEDE_PREFIX + " ".join(
         f"{key}={value}" for key, value in zip(_SUPERSEDE_KEYS, (
             sdlc_md.norm_id(row["unit"]), row["date"], row["verdict"].upper(),
             _supersede_value(row["reviewer"], escape=False),
             _supersede_value(row["author"] or "-", escape=False),
-            _supersede_value(authorised_by), _supersede_value(reason), sdlc_md.now_date())))
+            _supersede_value(authorised_by), _supersede_value(boundary),
+            _supersede_value(reason), sdlc_md.now_date())))
     text = path.read_text(encoding="utf-8")
     with path.open("a", encoding="utf-8") as fh:  # append-only, below the table
         if SUPERSEDE_HEADING not in text:
@@ -410,20 +465,39 @@ def evidence_for(repo_root: Path | str, unit: str):
     return _latest_for(_read_rows(evidence_path(repo_root), _EVIDENCE_COLS), unit)
 
 
+def _is_principal_superseded(repo_root: Path | str, unit: str, row: dict) -> bool:
+    """True when a verdict row's attribution is retired by a PRINCIPAL-authorised supersession -
+    the only kind that stops the row's reviewer counting toward independence. This re-checks the
+    recorded supersession at READ time (record_supersession refuses at write time, but a
+    hand-appended record walks round the tool - the same backstop `is_independent_signoff` is):
+    the correction must name a boundary, its authoriser must not be the row's own author, and the
+    authoriser must not itself have done in-session review work on the unit (judged excluding this
+    row). An author-reachable or boundary-less correction retires the VERDICT but not the fact
+    that the named reviewer acted, so the gate keeps counting them."""
+    if not row.get("superseded"):
+        return False
+    if not (row.get("superseded_boundary") or "").strip():
+        return False
+    authoriser = _id(row.get("superseded_by", ""))
+    if not authoriser or authoriser == _id(row.get("author", "")):
+        return False
+    return authoriser not in _adversarial_worker_ids(repo_root, unit, exclude_row=row)
+
+
 def _session_reviewer_ids(repo_root: Path | str, unit: str) -> set[str]:
     """Every reviewer id recorded on the unit's evidence, verdict, and sprint-level-review rows.
     A delegate or principal drawn from this set is a reviewer signing off its own review (or the
     author's proxy), and is refused: the reviewer-of-record must differ from BOTH the author and
     the adversarial reviewer, per-unit or sprint-scope alike.
 
-    A SUPERSEDED row STILL CONTRIBUTES. Superseding retires a VERDICT; it cannot un-make the
-    historical fact that the named reviewer acted on this unit, and independence is a question
-    about that fact. Excluding them opened a complete bypass of the two-role gate: an author
-    blocked by a REJECT could supersede it - the only mechanical guard being that the authoriser
-    is not the row's own author, satisfied by any other string - and the reviewer then dropped
-    out of this set, so the author's own subagent became eligible as reviewer of record. Measured
-    end to end: refused, superseded, accepted. A retired verdict does not restore independence,
-    so the correction path cannot be a route around the gate."""
+    A superseded row STILL CONTRIBUTES unless the supersession was PRINCIPAL-authorised
+    (`_is_principal_superseded`). Superseding retires a VERDICT; it cannot un-make the historical
+    fact that the named reviewer acted - so an author-reachable correction leaves the reviewer
+    counting. That closes the bypass an unconditional exclusion opened (author supersedes the
+    REJECT blocking it, its seat drops out, its own subagent signs off - refused, superseded,
+    accepted, measured end to end). The one attribution that IS retired is a principal's
+    correction of a MIS-FILED row - a reviewer wrongly named who did no other reviewing work -
+    which is what un-strands the unit the incident stranded."""
     target = sdlc_md.norm_id(unit)
     ids: set[str] = set()
     for r in _read_rows(evidence_path(repo_root), _EVIDENCE_COLS):
@@ -431,10 +505,11 @@ def _session_reviewer_ids(repo_root: Path | str, unit: str) -> set[str]:
             ids.add(_id(r["reviewer"]))
     for phase in PHASES:  # BOTH verdict phases - a plan-review seat is still the author's spawn
         for v in read_verdicts(repo_root, phase):
-            # superseded rows included deliberately - see the docstring: independence is about
-            # who touched the unit, not about which verdict currently stands
-            if sdlc_md.norm_id(v["unit"]) == target:
-                ids.add(_id(v["reviewer"]))
+            if sdlc_md.norm_id(v["unit"]) != target:
+                continue
+            if _is_principal_superseded(repo_root, unit, v):
+                continue  # a principal-authorised correction retires the attribution too
+            ids.add(_id(v["reviewer"]))
     for sr in sprint_reviews(repo_root):  # a sprint-level review covering this unit
         if target in _covered_ids(sr):
             ids.add(_id(sr["reviewer"]))
@@ -1709,7 +1784,7 @@ def _superseded_suffix(verdict: dict) -> str:
 def cmd_supersede(args: argparse.Namespace) -> int:
     try:
         path = record_supersession(args.root, args.unit, args.date, args.reason,
-                                   args.authorised_by, reviewer=args.reviewer,
+                                   args.authorised_by, args.boundary, reviewer=args.reviewer,
                                    verdict=args.verdict, phase=args.phase)
     except (OSError, ValueError) as exc:
         print(f"supersede refused: {exc}", file=sys.stderr)
@@ -1805,7 +1880,11 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--date", required=True, help="the retired row's Date cell")
     sp.add_argument("--reason", required=True, help="why the row records something untrue")
     sp.add_argument("--authorised-by", dest="authorised_by", required=True,
-                    help="who authorised the correction - never the row's own author")
+                    help="who authorised the correction - a principal independent of the "
+                         "author, never the row's own author nor an in-session reviewer")
+    sp.add_argument("--boundary", required=True,
+                    help="the separate trust boundary the authoriser acted in (operator "
+                         "console, another human, CI) - held to the sign-off's own rule")
     sp.add_argument("--reviewer", default=None,
                     help="narrow the match when the unit has several rows that date")
     sp.add_argument("--verdict", default=None, help="narrow the match by the row's verdict")

@@ -1,6 +1,7 @@
 # BG0284: superseding a verdict cannot restore independence, so the mis-attributed-reviewer case that motivated it still strands a unit: the tool cannot tell a mis-filing from an author retiring an inconvenient verdict, and needs a principal-authorised correction path
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -10,15 +11,30 @@
 
 ## Summary
 
-{{symptom}}
+The emergency fix for the supersession bypass (a superseded row always counts toward
+independence) closed the bypass but re-stranded the mis-attribution it existed for: a verdict row
+wrongly naming a principal as reviewer can no longer be cleared, so that principal stays read as an
+authoring-session reviewer and cannot sign the unit off. The two cases - a mis-filing and an author
+retiring a true verdict - are identical in the verdict rows alone, so a principal-authorised
+correction path is needed that the author cannot walk.
 
 ## Steps to Reproduce
 
-{{steps}}
+1. A verdict row wrongly names the operator as REVIEWER (the operator never reviewed).
+2. The operator now reads as an authoring-session reviewer, so `record_signoff(principal=operator)`
+   is refused - the unit is stranded.
+3. There is no correction path: superseding no longer retires the attribution, and relaxing the
+   guard would reopen the bypass.
 
 ## Proposed Fix
 
-{{fix}}
+Distinguish the two cases on the recordable signal the bug names: a working session reviewer left
+an EVIDENCE row (or another verdict / sprint-review row); a principal wrongly named on one verdict
+row did not. Hold supersession to the sign-off's own rule - a mandatory `--boundary` and an
+authoriser who is neither the row's author nor an in-session worker on the unit. Only such a
+principal-authorised correction retires the attribution; every author-reachable one retires the
+verdict alone, so the gate is never a route round independence. Re-checked at read time
+(`_is_principal_superseded`) as a backstop against a hand-appended record.
 
 ## Detail
 
@@ -65,18 +81,21 @@ and is what the guard should test.
 - **When** it is recorded
 - **Then** it is refused, naming the independence rule - the correction path is held to the same trust boundary as the sign-off it can affect
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PrincipalAuthorisedSupersessionTests::test_an_authoring_session_authoriser_is_refused
+- **Verified:** yes (2026-07-25)
 
 ### AC2: a principal-authorised supersession does restore independence
 
 - **Given** a supersession authorised by a principal in a separate trust boundary, with that boundary recorded
 - **Then** the superseded row stops counting toward independence, so a mis-filed row no longer strands the unit
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PrincipalAuthorisedSupersessionTests::test_a_principal_authorised_supersession_clears_the_strand
+- **Verified:** yes (2026-07-25)
 
 ### AC3: the bypass stays closed
 
 - **Given** the author's own path
 - **Then** no sequence of supersessions available to the author alone clears the independence gate on a unit they authored
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PrincipalAuthorisedSupersessionTests::test_no_author_only_sequence_clears_the_gate
+- **Verified:** yes (2026-07-25)
 
 ## Revision History
 
