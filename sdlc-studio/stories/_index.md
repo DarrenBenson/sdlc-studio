@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 1 |
+| Draft | 0 |
 | Ready | 2 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 47 |
+| Review | 48 |
 | Done | 380 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -328,7 +328,7 @@
 | [US0415](US0415-a-lane-detects-an-epic-whose-stories-a.md) | a lane detects an epic whose stories a delivered sprint already satisfied and reports it as derivable | Review | EP0156 | 2026-07-24 | 2026-07-24 |
 | [US0416](US0416-the-disjointness-check-treats-build-tooling-and-shared.md) | the disjointness check treats build tooling and shared config as coupling, not as ordinary files | Review | EP0156 | 2026-07-24 | 2026-07-24 |
 | [US0417](US0417-the-engagement-floor-attributes-a-git-add-a.md) | the engagement floor attributes a git add -A commit to every unit it touched, not only those named | Review | EP0156 | 2026-07-24 | 2026-07-24 |
-| [US0418](US0418-a-writer-s-fields-file-accepts-metadata-keys.md) | a writer's --fields-file accepts metadata keys as well as prose, so one invocation sets both | Draft | EP0156 | 2026-07-24 | 2026-07-24 |
+| [US0418](US0418-a-writer-s-fields-file-accepts-metadata-keys.md) | a writer's --fields-file accepts metadata keys as well as prose, so one invocation sets both | Review | EP0156 | 2026-07-24 | 2026-07-24 |
 | [US0419](US0419-the-planner-reads-the-tsd-and-names-the.md) | the planner reads the TSD and names the risk areas the batch touches | Review | EP0157 | 2026-07-24 | 2026-07-24 |
 | [US0420](US0420-each-unit-carries-the-proof-its-risk-band.md) | each unit carries the proof its risk band requires, and coverage the TSD demands but the batch omits is flagged | Review | EP0157 | 2026-07-24 | 2026-07-24 |
 | [US0421](US0421-the-review-reports-a-stale-tsd-rather-than.md) | the review reports a STALE TSD rather than reviewing against a wrong document | Review | EP0157 | 2026-07-24 | 2026-07-24 |

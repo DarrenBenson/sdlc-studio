@@ -1275,5 +1275,59 @@ class ShellHazardReportTests(unittest.TestCase):
             self.assertEqual(err.getvalue(), "")
 
 
+class FieldsFileMetadataTests(unittest.TestCase):
+    """US0418 / CR0417: a writer's --fields-file accepts the metadata fields its CLI accepts, not
+    only its prose, so one document is the whole invocation - while the shell-hazard check still
+    covers only the prose fields (the ones a shell can mangle)."""
+
+    def _hazards_checked(self, monkeycalls: list, flags: dict, allowed, prose_keys):
+        """Run resolve_prose_fields with report_shell_hazards captured, returning the keys it
+        hazard-checked."""
+        captured = {}
+        real = ff.report_shell_hazards
+
+        def spy(fields, keys=None, **kw):
+            captured["keys"] = keys
+            return real(fields, keys=keys, **kw)
+
+        with unittest.mock.patch.object(ff, "report_shell_hazards", spy):
+            out = ff.resolve_prose_fields(None, flags, allowed, prose_keys=prose_keys)
+        return out, captured.get("keys")
+
+    def test_metadata_accepted_and_only_prose_hazard_checked(self) -> None:
+        """AC1. A fields-file supplying a prose field and a metadata field returns both, and the
+        hazard check covers only the prose keys."""
+        with tempfile.TemporaryDirectory() as d:
+            spec = Path(d) / "f.json"
+            spec.write_text(json.dumps({"body": "the lesson prose", "tags": "a,b"}),
+                            encoding="utf-8")
+            allowed = ("title", "body", "tags", "epic")
+            prose = ("title", "body")
+            out = ff.resolve_prose_fields(str(spec), {}, allowed, prose_keys=prose)
+            self.assertEqual(out["body"], "the lesson prose")
+            self.assertEqual(out["tags"], "a,b")           # metadata accepted from the document
+            # the hazard check runs over the prose subset, NOT the metadata keys
+            _out2, checked = self._hazards_checked([], {"body": "x", "tags": "y"}, allowed, prose)
+            self.assertEqual(tuple(checked), prose)
+
+    def test_an_unknown_key_is_still_refused(self) -> None:
+        """AC2. A key outside the full field set is refused by name; widening to metadata does not
+        become accept-anything."""
+        with tempfile.TemporaryDirectory() as d:
+            spec = Path(d) / "f.json"
+            spec.write_text(json.dumps({"body": "x", "nonsense": "y"}), encoding="utf-8")
+            with self.assertRaises(ValueError) as cm:
+                ff.resolve_prose_fields(str(spec), {}, ("title", "body", "tags"),
+                                        prose_keys=("title", "body"))
+            self.assertIn("nonsense", str(cm.exception))
+
+    def test_prose_only_caller_unchanged(self) -> None:
+        """AC3. A caller that passes no prose_keys hazard-checks the whole allowed set, exactly as
+        before - the back-compatible default preserves the narrower contract."""
+        allowed = ("title", "body")
+        _out, checked = self._hazards_checked([], {"title": "x", "body": "y"}, allowed, None)
+        self.assertEqual(tuple(checked), allowed)          # every allowed key checked when prose_keys is None
+
+
 if __name__ == "__main__":
     unittest.main()

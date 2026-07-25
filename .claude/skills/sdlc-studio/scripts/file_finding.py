@@ -556,7 +556,8 @@ def report_shell_hazards(fields: dict, source: str = "the command line",
 
 
 def resolve_prose_fields(fields_file: str | None, flag_fields: dict,
-                         allowed: tuple[str, ...]) -> dict:
+                         allowed: tuple[str, ...],
+                         prose_keys: tuple[str, ...] | None = None) -> dict:
     """The ONE path a prose-taking writer (critic, close_owed, sprint, ...) uses to obtain its
     free-text fields safely, so every writer routes through the same loader rather than a second
     idiom that could drift.
@@ -566,13 +567,21 @@ def resolve_prose_fields(fields_file: str | None, flag_fields: dict,
     no fields-file: the flag values DID cross a shell, so any shell metacharacters they carry are a
     swallowed command - report them (non-blocking, the flag path stays compatible). Empty/None flag
     values are dropped before either path. Raises ValueError on a bad fields-file (unreadable, not a
-    JSON object, or an unknown key), which the caller turns into a refusal."""
+    JSON object, or an unknown key), which the caller turns into a refusal.
+
+    `allowed` is every field the writer accepts - prose AND metadata - so one document can be the
+    whole invocation. `prose_keys` names the SUBSET a shell can mangle, and is the only subset the
+    hazard check covers; a metadata field (`tags`, `epic`, `points`) is accepted without being
+    hazard-checked, because it is not free text a shell rewrites. `prose_keys=None` means the whole
+    allowed set is prose - the back-compatible default, so a writer that passed only prose keys as
+    `allowed` is unchanged."""
+    prose = allowed if prose_keys is None else prose_keys
     flags = {k: v for k, v in flag_fields.items() if v is not None and v != ""}
     # A FLAG value crossed a shell whether or not a --fields-file was also given, so it is hazard-
     # checked either way. The file's OWN values never crossed a shell and are not checked. Check
-    # the writer's OWN prose keys, not just the finding filer's default HAZARD_FIELDS, or a
-    # `note`/`verdict` would go unchecked.
-    report_shell_hazards(flags, keys=allowed)
+    # the writer's PROSE keys, not the whole allowed set, or a metadata field a shell cannot mangle
+    # would be reported and a `note`/`verdict` prose field could go unchecked.
+    report_shell_hazards(flags, keys=prose)
     if fields_file:
         from_file = load_fields_file(fields_file, allowed=allowed)
         return {**from_file, **flags}          # an explicit flag wins over the document
