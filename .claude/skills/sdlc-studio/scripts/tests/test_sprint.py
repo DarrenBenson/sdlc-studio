@@ -6330,6 +6330,45 @@ class LaneExportTests(_DeliveryModeFixture):
                 self.assertIn("undeclared", Path(path).read_text(encoding="utf-8"))
 
 
+class OverAppetiteReportTests(unittest.TestCase):
+    """US0360: the close reports an accepted over-appetite batch as the over-commitment it was,
+    not as the raised ceiling."""
+
+    def test_the_close_states_the_overage_not_the_raised_ceiling(self) -> None:
+        """AC1. A close of a run recorded 32 units against a standing 8 states exactly that,
+        never 32/32."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, appetite={"units": 32, "minutes": 960, "standing_units": 8,
+                                         "standing_minutes": 240, "over_appetite": True})
+            _close_story(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                mod.main(["close", "--root", str(root)])       # scaffolds a retro and stops
+            text = out.getvalue()
+            self.assertIn("OVER APPETITE", text)
+            self.assertIn("32 units against a standing appetite of 8", text)
+            # the record must not read as though the batch fitted the ceiling it was given
+            self.assertNotIn("standing appetite of 32", text)
+
+    def test_a_within_appetite_close_reports_no_overage(self) -> None:
+        """The complement: a run inside its standing appetite prints no overage line, so the
+        line means something when it does appear."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, appetite={"units": 6, "minutes": 180, "standing_units": 8,
+                                         "standing_minutes": 240, "over_appetite": False})
+            _close_story(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                mod.main(["close", "--root", str(root)])
+            self.assertNotIn("OVER APPETITE", out.getvalue())
+
+
 class HelpStatesBatchSizeTradeoffTests(unittest.TestCase):
     """US0397: help/sprint.md states the fixed-cost-versus-review-convergence trade-off from
     the measured rows and prescribes NO batch-size number."""

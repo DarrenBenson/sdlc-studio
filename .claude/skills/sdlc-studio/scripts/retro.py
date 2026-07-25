@@ -166,6 +166,56 @@ def find_retro(root, retro_id: str) -> Path | None:
     return hits[0] if hits else None
 
 
+APPETITE_OVERAGE_HEADING = "## Appetite overage"
+
+
+def appetite_overage_note(root) -> str | None:
+    """The retro's record of an accepted over-appetite run - the over-commitment AND that it was
+    accepted - or None for an ordinary run. So a later reader asking why a run overran finds the
+    trace, rather than a retro that reads as though the batch fitted. Derived from the run
+    state's recorded standing/accepted appetite, never re-computed from a config that has moved."""
+    over = run_state.appetite_overage(root)
+    if not over:
+        return None
+    parts: list[str] = []
+    u, m = over["units"], over["minutes"]
+    if u["over"]:
+        parts.append(f"{u['accepted']} units against a standing appetite of {u['standing']}")
+    if m["over"]:
+        parts.append(f"{m['accepted']:g}min against a standing {m['standing']:g}min")
+    return (f"{APPETITE_OVERAGE_HEADING}\n\n"
+            f"This run was ACCEPTED over its standing appetite: " + "; ".join(parts) + ". The "
+            "ceiling was raised (`--appetite-units`/`--appetite-minutes`) to take the batch; the "
+            "run is reported against the standing appetite, not the raised ceiling, so the "
+            "over-commitment and the decision to accept it both stay on the record.\n")
+
+
+def record_overage_in_retro(root, retro_id_or_path) -> bool:
+    """Append the over-appetite trace to a retro document, once. Returns True iff written. A retro
+    for a run within appetite is left untouched. Idempotent: re-running a close never doubles the
+    section. Accepts a retro id or a path."""
+    note = appetite_overage_note(root)
+    if not note:
+        return False
+    p = (retro_id_or_path if isinstance(retro_id_or_path, Path)
+         else find_retro(root, str(retro_id_or_path)))
+    if not p or not Path(p).is_file():
+        return False
+    p = Path(p)
+    text = p.read_text(encoding="utf-8")
+    if APPETITE_OVERAGE_HEADING in text:
+        return False
+    # Insert before the Revision History if there is one, else append - the trace belongs in the
+    # body, not after the audit table.
+    marker = "## Revision History"
+    if marker in text:
+        text = text.replace(marker, note + "\n" + marker, 1)
+    else:
+        text = text.rstrip("\n") + "\n\n" + note
+    sdlc_md.atomic_write(p, text)
+    return True
+
+
 def sections(text: str) -> dict[str, list[str]]:
     """Map `## Heading` -> its body lines. Headings are matched on their exact text, so a
     renamed section reads as a MISSING section rather than silently passing - a retro

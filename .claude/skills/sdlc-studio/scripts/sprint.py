@@ -3668,7 +3668,7 @@ def _retro_path(root, rid: str):
     return None
 
 
-def _prefill_retro(path, batch, state) -> None:
+def _prefill_retro(root, path, batch, state) -> None:
     """Fill the scaffolded retro's objective front-matter (Batch/Goal) from run state - the
     close already holds them, so the author never re-transcribes what the run recorded. The
     narrative placeholders (Delivered, Lessons, ...) are left for the author to fill."""
@@ -3677,6 +3677,10 @@ def _prefill_retro(path, batch, state) -> None:
     text = text.replace("{{batch}}", ", ".join(batch) or "-")
     text = text.replace("{{goal}}", state.get("sprint_goal") or "-")
     sdlc_md.atomic_write(p, text)
+    # A run accepted over its standing appetite records the over-commitment in the retro, so a
+    # later reader asking why it overran finds the trace (US0360). No-op for a within-appetite run.
+    import retro  # noqa: PLC0415 - deferred, like the chain's other retro imports
+    retro.record_overage_in_retro(root, p)
 
 
 def _resolve_retro(root, args, state) -> int | None:
@@ -3714,7 +3718,7 @@ def _resolve_retro(root, args, state) -> int | None:
         title = sdlc_md.heading_title(
             state.get("sprint_goal") or state.get("run_id") or "sprint retro")
         res = artifact.meta_new(root, "retro", title)
-        _prefill_retro(res["path"], state.get("batch") or [], state)
+        _prefill_retro(root, res["path"], state.get("batch") or [], state)
         disp, verb = res["id"], f"scaffolded (indexed={res['indexed']})"
         run_state.update(root, scaffolded_retro=disp)
     # Don't silently drop a --goal-verdict passed on the scaffold call: record it now so the
@@ -4614,6 +4618,23 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
     return 0
 
 
+def appetite_overage_line(root: Path | str) -> str | None:
+    """One line stating an accepted over-appetite as the over-commitment it was - N units against a
+    standing appetite of M, on each axis actually raised - or None for an ordinary run. Read by the
+    close (US0360) and the retro, so the overage cannot be reported as the raised ceiling."""
+    over = run_state.appetite_overage(root)
+    if not over:
+        return None
+    parts: list[str] = []
+    u, m = over["units"], over["minutes"]
+    if u["over"]:
+        parts.append(f"{u['accepted']} units against a standing appetite of {u['standing']}")
+    if m["over"]:
+        parts.append(f"{m['accepted']:g}min against a standing {m['standing']:g}min")
+    return "OVER APPETITE - this batch was " + "; ".join(parts) + " (the ceiling was raised to "\
+           "accept it, and the run is reported against the standing appetite, not that ceiling)"
+
+
 def cmd_close(args: argparse.Namespace) -> int:
     """The sprint close ceremony as one deterministic, resumable chain."""
     root = args.root
@@ -4635,6 +4656,11 @@ def cmd_close(args: argparse.Namespace) -> int:
     trend = _record_close_attempt(root, pre)
     if trend:
         print(f"close: {trend}")
+    # An OVER-APPETITE batch is reported as the over-commitment it was, not as the raised ceiling
+    # (US0360). Placed above every refusal so a close that stops later still states it.
+    overage = appetite_overage_line(root)
+    if overage:
+        print(f"close: {overage}")
     # The close IS a stop: the decisions deferred while the batch ran are asked HERE,
     # together and structured - mechanically, not by a reference file hoping someone reads it.
     pending_dec = state.get("pending_decisions") or []
@@ -4967,7 +4993,13 @@ def cmd_plan(args: argparse.Namespace) -> int:
         # sized the batch against it; stamping it here is what makes `loop_guard budget` break
         # on the very number the operator was shown. 0 on an axis is unbounded, as before.
         resolved = data["capacity"]["appetite"]
-        appetite = {"minutes": resolved["minutes"], "units": resolved["units"]}
+        # Record the ACCEPTED appetite AND the STANDING one it was measured against (the sprint
+        # capacity), so an over-appetite batch accepted with --appetite-units does not read as
+        # though it fitted (US0359). The overage the close and retro report is derived from this.
+        std = capacity(args.root)
+        appetite = run_state.appetite_record(
+            accepted_units=resolved["units"], accepted_minutes=resolved["minutes"],
+            standing_units=std["units"], standing_minutes=std["minutes"])
         extra: dict = {"appetite": appetite}
         # Never erase a recorded goal on a mid-run re-cut: like open_run's rung goal,
         # an absent value preserves, only a stated one writes (run_state never-discard).

@@ -680,6 +680,51 @@ def update(repo_root: Path | str, **fields) -> dict:
     return _mutate(repo_root, apply)
 
 
+def appetite_record(*, accepted_units: int, accepted_minutes: float,
+                    standing_units: int, standing_minutes: float) -> dict:
+    """The run's appetite record: the ACCEPTED pair the breaker stops on, AND the STANDING one it
+    was measured against (the sprint capacity), with the overage flagged when the accepted exceeds
+    the standing on either axis. Pure - the plan folds this into its single atomic run-state write,
+    and `record_appetite` writes it directly. Keeps `units`/`minutes` as the accepted pair the
+    existing appetite readers (loop_guard, handoff) already use, so this is additive."""
+    acc_u, acc_m = int(accepted_units or 0), float(accepted_minutes or 0)
+    std_u, std_m = int(standing_units or 0), float(standing_minutes or 0)
+    return {
+        "units": acc_u, "minutes": acc_m,
+        "standing_units": std_u, "standing_minutes": std_m,
+        # over on EITHER axis is an overage: a batch that fits the clock but not the unit
+        # count was still accepted past its standing appetite, and the trace must say so.
+        "over_appetite": acc_u > std_u or acc_m > std_m,
+    }
+
+
+def record_appetite(repo_root: Path | str, *, accepted_units: int, accepted_minutes: float,
+                    standing_units: int, standing_minutes: float) -> dict:
+    """Write the run's appetite record (see `appetite_record`): the accepted appetite and the
+    standing one it was measured against, so the DECISION to accept an over-appetite batch survives
+    the decision itself - the record must never read as though the batch fitted when it was made to
+    fit by raising the ceiling."""
+    return update(repo_root, appetite=appetite_record(
+        accepted_units=accepted_units, accepted_minutes=accepted_minutes,
+        standing_units=standing_units, standing_minutes=standing_minutes))
+
+
+def appetite_overage(repo_root: Path | str) -> dict | None:
+    """The recorded over-appetite as `{units, minutes}` of `{accepted, standing}`, or None for an
+    ordinary run. None is the signal that DISTINGUISHES an accepted overage from a run that simply
+    fitted - without it the field would mean nothing (US0359 AC3). Only the axes actually over are
+    flagged `over`, so a reader sees WHICH ceiling was raised."""
+    ap = read(repo_root).get("appetite") or {}
+    if not ap.get("over_appetite"):
+        return None
+    acc_u, std_u = int(ap.get("units") or 0), int(ap.get("standing_units") or 0)
+    acc_m, std_m = float(ap.get("minutes") or 0), float(ap.get("standing_minutes") or 0)
+    return {
+        "units": {"accepted": acc_u, "standing": std_u, "over": acc_u > std_u},
+        "minutes": {"accepted": acc_m, "standing": std_m, "over": acc_m > std_m},
+    }
+
+
 def review_rounds(repo_root: Path | str) -> list[dict]:
     """Every recorded close-review round, in order. A malformed entry is skipped rather than
     raising: the rounds are a cost and convergence signal, and one bad record must not make

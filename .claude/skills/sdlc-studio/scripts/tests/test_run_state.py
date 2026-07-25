@@ -615,5 +615,57 @@ class FailedCloseAttemptIsProtectedTests(unittest.TestCase):
         self.assertIn("outstanding", text.lower())
 
 
+class OverAppetiteTests(unittest.TestCase):
+    """US0359 / CR0349: an over-appetite batch is recorded with BOTH the standing appetite and
+    the accepted one, so raising the ceiling to make a batch fit does not erase the overage."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        (self.root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
+    def test_both_the_standing_and_accepted_appetite_are_recorded(self) -> None:
+        """AC1. A batch of 32 accepted against a standing 8 records both numbers."""
+        run_state.record_appetite(self.root, accepted_units=32, accepted_minutes=960,
+                                  standing_units=8, standing_minutes=240)
+        ap = run_state.read(self.root)["appetite"]
+        self.assertEqual(ap["units"], 32)             # the accepted one the breaker stops on
+        self.assertEqual(ap["standing_units"], 8)     # the standing one it was measured against
+        self.assertTrue(ap["over_appetite"])
+
+    def test_the_plan_does_not_read_as_fitting(self) -> None:
+        """AC2. The read-back reports 32 against a standing 8, never 32/32 - the record must not
+        say the batch fitted when it was made to fit."""
+        run_state.record_appetite(self.root, accepted_units=32, accepted_minutes=960,
+                                  standing_units=8, standing_minutes=240)
+        over = run_state.appetite_overage(self.root)
+        self.assertIsNotNone(over)
+        self.assertEqual(over["units"]["accepted"], 32)
+        self.assertEqual(over["units"]["standing"], 8)
+        self.assertNotEqual(over["units"]["accepted"], over["units"]["standing"])
+        self.assertTrue(over["units"]["over"])
+
+    def test_a_within_appetite_run_records_no_overage(self) -> None:
+        """AC3. A batch inside the standing appetite records no overage - the field distinguishes
+        an accepted overage from an ordinary run, or it means nothing."""
+        run_state.record_appetite(self.root, accepted_units=6, accepted_minutes=180,
+                                  standing_units=8, standing_minutes=240)
+        self.assertFalse(run_state.read(self.root)["appetite"]["over_appetite"])
+        self.assertIsNone(run_state.appetite_overage(self.root))
+
+    def test_over_on_the_clock_alone_is_still_an_overage(self) -> None:
+        """The overage is per-axis: a batch that fits the unit count but not the minutes was still
+        accepted past its standing appetite, and only the axis over is flagged."""
+        run_state.record_appetite(self.root, accepted_units=6, accepted_minutes=960,
+                                  standing_units=8, standing_minutes=240)
+        over = run_state.appetite_overage(self.root)
+        self.assertIsNotNone(over)
+        self.assertTrue(over["minutes"]["over"])
+        self.assertFalse(over["units"]["over"])
+
+
 if __name__ == "__main__":
     unittest.main()

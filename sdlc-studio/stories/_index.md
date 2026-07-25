@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 4 |
-| Ready | 4 |
+| Ready | 2 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 42 |
+| Review | 44 |
 | Done | 380 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -269,8 +269,8 @@
 | [US0356](US0356-remove-the-decision-override-from-rfc0017-once-d1.md) | remove the Decision-Override from RFC0017 once D1 closes | Review | EP0122 | 2026-07-23 | 2026-07-23 |
 | [US0357](US0357-a-periodic-or-pre-release-lane-lints-the.md) | a periodic or pre-release lane lints the entire markdown corpus | Done | EP0123 | 2026-07-23 | 2026-07-23 |
 | [US0358](US0358-the-report-distinguishes-a-pre-existing-failure-from.md) | the report distinguishes a pre-existing failure from one the change introduced | Done | EP0123 | 2026-07-23 | 2026-07-23 |
-| [US0359](US0359-run-state-records-an-over-appetite-batch-keeping.md) | run_state records an over-appetite batch, keeping both the standing and the accepted appetite | Ready | EP0124 | 2026-07-23 | 2026-07-23 |
-| [US0360](US0360-the-close-and-retro-report-the-over-commitment.md) | the close and retro report the over-commitment, not the raised ceiling | Ready | EP0124 | 2026-07-23 | 2026-07-23 |
+| [US0359](US0359-run-state-records-an-over-appetite-batch-keeping.md) | run_state records an over-appetite batch, keeping both the standing and the accepted appetite | Review | EP0124 | 2026-07-23 | 2026-07-23 |
+| [US0360](US0360-the-close-and-retro-report-the-over-commitment.md) | the close and retro report the over-commitment, not the raised ceiling | Review | EP0124 | 2026-07-23 | 2026-07-23 |
 | [US0361](US0361-a-shared-fields-file-and-stdin-helper-in.md) | a shared fields-file and stdin helper in sdlc_md.py, adopted across the remaining prose scripts | Done | EP0125 | 2026-07-23 | 2026-07-23 |
 | [US0362](US0362-a-command-substitution-fingerprint-detector-with-a-recorded.md) | a command-substitution fingerprint detector with a recorded miss rate | Done | EP0125 | 2026-07-23 | 2026-07-23 |
 | [US0363](US0363-document-the-safe-form-in-reference-scripts-md.md) | document the safe form in reference-scripts.md and agent-instructions.md | Done | EP0125 | 2026-07-23 | 2026-07-23 |

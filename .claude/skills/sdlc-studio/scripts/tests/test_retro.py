@@ -2985,5 +2985,44 @@ class TheBatchIsCrossCheckedAgainstItsDeclaredCount(unittest.TestCase):
                          ["RETRO9504"])
 
 
+class OverAppetiteReportTests(RetroBase):
+    """US0360 / CR0349: the retro records an accepted over-appetite run, so a later reader asking
+    why it overran finds the over-commitment and the decision to accept it."""
+
+    def _run_state(self, appetite: dict) -> None:
+        p = self.root / "sdlc-studio" / ".local" / "run-state.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"schema": 1, "run_id": "RUN-T", "outcome": "running",
+                                 "appetite": appetite}), encoding="utf-8")
+
+    def test_the_retro_records_the_overage_and_its_acceptance(self) -> None:
+        """AC2. A retro for an over-appetite run gains the over-commitment AND the note that it
+        was accepted; the same call on a within-appetite run leaves the retro untouched."""
+        self.write("# RETRO9999: t\n\n## Delivered\n\n- x\n\n## Revision History\n\n"
+                   "| Date | Author | Change |\n| --- | --- | --- |\n")
+        self._run_state({"units": 32, "minutes": 960, "standing_units": 8,
+                         "standing_minutes": 240, "over_appetite": True})
+        wrote = retro.record_overage_in_retro(str(self.root), "RETRO9999")
+        self.assertTrue(wrote)
+        body = (self.root / "sdlc-studio" / "retros" / "RETRO9999-t.md").read_text(encoding="utf-8")
+        self.assertIn("32 units against a standing appetite of 8", body)   # the over-commitment
+        self.assertIn("ACCEPTED", body)                                    # the decision to accept
+        self.assertIn("--appetite-units", body)
+        # the trace sits in the body, before the audit table
+        self.assertLess(body.index("standing appetite of 8"), body.index("## Revision History"))
+        # idempotent: a re-run does not double the section
+        self.assertFalse(retro.record_overage_in_retro(str(self.root), "RETRO9999"))
+        self.assertEqual(body.count(retro.APPETITE_OVERAGE_HEADING),
+                         (self.root / "sdlc-studio" / "retros" / "RETRO9999-t.md")
+                         .read_text(encoding="utf-8").count(retro.APPETITE_OVERAGE_HEADING))
+
+    def test_a_within_appetite_run_leaves_the_retro_untouched(self) -> None:
+        self.write("# RETRO9999: t\n\n## Delivered\n\n- x\n")
+        self._run_state({"units": 6, "minutes": 180, "standing_units": 8,
+                         "standing_minutes": 240, "over_appetite": False})
+        self.assertFalse(retro.record_overage_in_retro(str(self.root), "RETRO9999"))
+        self.assertIsNone(retro.appetite_overage_note(str(self.root)))
+
+
 if __name__ == "__main__":
     unittest.main()

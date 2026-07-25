@@ -1,6 +1,6 @@
 # US0359: run_state records an over-appetite batch, keeping both the standing and the accepted appetite
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0349
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new
@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** sprint operator who accepts a batch over the standing appetite
+**I want** run_state to keep both the standing appetite and the accepted one
+**So that** the over-commitment survives the decision to accept it, and the run never reads as though the batch fitted
 
 ## Acceptance Criteria
 
@@ -23,6 +23,7 @@
 - **When** the plan is written with `--appetite-units 32`
 - **Then** run_state records both numbers - the standing appetite and the one accepted for this run - so the over-commitment survives the decision to accept it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::OverAppetiteTests::test_both_the_standing_and_accepted_appetite_are_recorded
+- **Verified:** yes (2026-07-25)
 
 ### AC2: raising the ceiling does not erase the overage
 
@@ -30,6 +31,7 @@
 - **When** the recorded plan is read back
 - **Then** it reports 32 against a standing 8, not 32/32 - the record must not say the batch fitted when it was made to fit
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::OverAppetiteTests::test_the_plan_does_not_read_as_fitting
+- **Verified:** yes (2026-07-25)
 
 ### AC3: a run within appetite records no overage
 
@@ -37,6 +39,7 @@
 - **When** the plan is written
 - **Then** no over-commitment is recorded - the field must distinguish an accepted overage from an ordinary run, or it means nothing
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::OverAppetiteTests::test_a_within_appetite_run_records_no_overage
+- **Verified:** yes (2026-07-25)
 
 ## Revision History
 
