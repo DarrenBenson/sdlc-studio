@@ -18,7 +18,7 @@ SDLC Studio is an open [Agent Skill](https://agentskills.io) - a plug-in for AI 
 
 **Who it is for:** product managers scoping work, engineers building it, QA proving it, eng leads keeping it honest - and non-technical founders who want a fully-equipped engineering team without running the process by hand.
 
-One install works in **Claude Code, OpenAI Codex, Gemini CLI, opencode, and GitHub Copilot**.
+One install works in **Claude Code, Cursor, OpenAI Codex, Gemini CLI, opencode, and GitHub Copilot**.
 
 ## Quick start
 
@@ -344,7 +344,7 @@ tests/           # generated test code (project root)
 <details>
 <summary>Which tools does it work in?</summary>
 
-Claude Code, OpenAI Codex, Gemini CLI, opencode, and GitHub Copilot - one install covers them. It is a standard Agent Skill (`SKILL.md` format).
+Claude Code, Cursor, OpenAI Codex, Gemini CLI, opencode, and GitHub Copilot - one install covers them (Cursor via the generic `agents` skills dir). It is a standard Agent Skill (`SKILL.md` format).
 
 </details>
 
@@ -415,7 +415,7 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 
 ## Under the hood
 
-- **Determinism in scripts, judgement in the model.** Standard-library-only Python helpers (census, status, validation, ID allocation, repo indexing, AC verification, the portable quality gate, deterministic artifact create/close, GitHub sync) with 1,000+ unit tests do the mechanical work.
+- **Determinism in scripts, judgement in the model.** Standard-library-only Python helpers (census, status, validation, ID allocation, repo indexing, AC verification, the portable quality gate, deterministic artifact create/close, GitHub sync) with 4,000+ unit tests do the mechanical work.
 - **Status that polices itself.** `reconcile` detects and fixes index drift from a file census; acceptance criteria can carry executable `Verify:` lines that `reconcile --verify` actually runs.
 - **Tests that prove they can fail.** The mutation-check gate injects declared faults into the changed surface and reports **killed vs survived** per mutation - a test that stays green over broken code is a finding, not a pass. Honest by construction: un-mutatable surfaces read un-checked, stale reports read STALE, truncated budgets are counted. Every unit close feeds a local, no-upload telemetry log (`telemetry show --summary`) so estimates calibrate against reality.
 - **Agentic execution.** `epic implement --agentic` runs safe waves of parallel implementation agents (Claude Code), with quality gates at every wave boundary and a lessons file that makes each wave smarter than the last.
