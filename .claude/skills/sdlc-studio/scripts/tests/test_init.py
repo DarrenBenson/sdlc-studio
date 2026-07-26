@@ -425,6 +425,26 @@ class GuidedInitTests(unittest.TestCase):
                 init.main(["guided", "--confirm", "--root", str(root)])   # personas done
             self.assertEqual(init.first_incomplete(init.read_onboarding(root)), "decompose")
 
+    def test_decompose_and_plan_stages_direct(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            init.start_onboarding(root)
+            self.assertIn("epic", init.stage_decompose(root)["directive"])
+            self.assertIn("sprint plan", init.stage_plan(root)["directive"])
+
+    def test_confirming_all_stages_completes_onboarding(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            init.start_onboarding(root, path="greenfield")
+            for _ in init.ONBOARDING_STAGES:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    init.main(["guided", "--confirm", "--root", str(root)])
+            self.assertIsNone(init.first_incomplete(init.read_onboarding(root)))
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                init.main(["guided", "--root", str(root)])
+            self.assertIn("complete", buf.getvalue())
+
     def test_an_unknown_stage_or_status_is_refused(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

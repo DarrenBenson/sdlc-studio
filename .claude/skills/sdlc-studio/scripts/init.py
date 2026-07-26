@@ -321,11 +321,24 @@ def stage_personas(root: Path | str) -> dict:
                          "generated seats): `persona generate --team`"}
 
 
-# Per-stage draft actions, keyed by stage name. Each drafts its artefact for the operator to
-# review; the operator confirms to advance. `decompose` and `plan` are agent-driven steps the
-# runner points at rather than seeds.
+def stage_decompose(root: Path | str) -> dict:
+    """The decompose stage: direct breaking the PRD into epics and stories. Agent-driven (no
+    artefact to seed) - the runner points at the step."""
+    return {"created": [], "skipped": [],
+            "directive": "break the PRD into epics and sized stories: `epic`, then `story`"}
+
+
+def stage_plan(root: Path | str) -> dict:
+    """The plan stage: direct the first sprint plan. The last stage - confirming it completes
+    onboarding, landing the operator exactly where delivery begins."""
+    return {"created": [], "skipped": [],
+            "directive": "plan your first sprint over the groomed backlog: `sprint plan`"}
+
+
+# Per-stage draft actions, keyed by stage name. Each drafts its artefact (or, for the agent-driven
+# steps, points the operator at the command); the operator confirms to advance.
 STAGE_ACTIONS = {"agents": stage_agents, "prd": stage_prd, "trd": stage_trd, "tsd": stage_tsd,
-                 "personas": stage_personas}
+                 "personas": stage_personas, "decompose": stage_decompose, "plan": stage_plan}
 
 
 def cmd_guided(args: argparse.Namespace) -> int:
