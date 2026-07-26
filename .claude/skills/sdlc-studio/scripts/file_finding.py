@@ -903,36 +903,26 @@ def append_index_row(repo_root: Path | str, type_: str, row_line: str) -> bool:
     return True
 
 
-def duplicate_candidates(repo_root: Path | str, title: str, fields: dict, *, sim: float = 0.5) -> list[dict]:
-    """Open artefacts a NEW finding substantially overlaps: a shared Affects file AND similar
-    wording (title + summary). The cheapest triage lens - a duplicate is cheapest to catch at
-    filing, where the author has the most context. It WARNS with the candidate named; it never
-    refuses, because a genuine near-miss is common and only the author can tell them apart. Empty
-    when the finding declares no Affects (nothing structural to compare) - it states what it reads.
+def duplicate_candidates(repo_root: Path | str, title: str, fields: dict) -> list[dict]:
+    """Existing artefacts a NEW finding would probably duplicate. The cheapest triage lens - a
+    duplicate is cheapest to catch at filing, where the author has the most context. It WARNS with
+    the candidate named; it never refuses, because a genuine near-miss is common and only the author
+    can tell them apart.
 
-    Reuses the backlog-triage overlap primitives, so the filing-time lens and the plan-time lens
-    agree by construction."""
-    # Advisory-only: it must NEVER break the filer. Any failure (a missing sibling, an unreadable
-    # or non-UTF-8 artefact anywhere in the backlog) degrades to "no warning", exactly as the two
-    # other consumers of the full-backlog scan (sprint._batch_triage, status advisory) do.
+    ONE detector, shared with `artifact.py new`: both entry points call
+    `artifact.duplicate_candidates`, so "is this a duplicate?" cannot be answered two ways. This
+    used to carry a SECOND implementation - a Jaccard scorer over the open backlog - that disagreed
+    with the mint-time one on real data (the pair that motivated the check scored 0.21 by Jaccard,
+    under the bar, and 0.44 by the containment scorer that survives). Keeping two in sync is exactly
+    what failed here, so the second is deleted rather than re-synced. A finding is checked against
+    every artefact type it could restate, terminal ones included (re-filing a fixed bug is the
+    costliest miss)."""
     try:
-        import backlog_triage as bt
+        import artifact  # noqa: PLC0415 - deferred: artifact imports file_finding, so this is lazy
         root = Path(repo_root)
-        affects_line = f"> **Affects:** {fields.get('affects') or ''}"
-        new_affects = {a for a in (bt._affect_key(root, a)
-                                   for a in sdlc_md.affects_files(affects_line)) if a}
-        if not new_affects:
-            return []
-        new_tokens = bt._tokens(title, str(fields.get("summary") or ""))
         out: list[dict] = []
-        for u in bt.load_backlog(root):
-            shared = u["affects"] & new_affects
-            if not shared:
-                continue
-            j = bt._jaccard(u["tokens"], new_tokens)
-            if j >= sim:
-                out.append({"id": u["id"], "type": u["type"], "shared": sorted(shared),
-                            "similarity": round(j, 2)})
+        for type_ in artifact.DUP_TYPES:
+            out.extend(artifact.duplicate_candidates(root, type_, title, fields))
         return sorted(out, key=lambda c: (-c["similarity"], c["id"]))
     except Exception as exc:  # noqa: BLE001 - a duplicate warning must never fail a filing
         sdlc_md.debug("file_finding.duplicate_candidates", exc)

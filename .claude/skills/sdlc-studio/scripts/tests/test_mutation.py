@@ -2889,5 +2889,67 @@ Covers `gate.py`.
                 mod.select_files(Path(d))
 
 
+class WorktreeScanExclusionTests(unittest.TestCase):
+    """BG0296 (repointed): the test-file scan descended into gitignored worktree copies
+    (.claude/worktrees/agent-*/), padding the covering command with dozens of stale duplicates.
+    The original filing blamed guard-clause blindness - disproved: the tool mutates guards fine
+    (invert-guard matches an `if ...:` line). The real defect is the gitignored-path scan, fixed
+    by filtering on .gitignore rather than on a path component named 'worktrees' (which would skip
+    the whole tree when run from inside a worktree)."""
+
+    def _repo(self, root: Path) -> None:
+        (root / "tests").mkdir(parents=True, exist_ok=True)
+        (root / "tests" / "test_real.py").write_text("def test_x():\n    assert True\n",
+                                                      encoding="utf-8")
+        # a gitignored worktree with a DUPLICATE copy of the test
+        wt = root / ".claude" / "worktrees" / "agent-deadbeef" / "tests"
+        wt.mkdir(parents=True, exist_ok=True)
+        (wt / "test_real.py").write_text("def test_x():\n    assert True\n", encoding="utf-8")
+        (root / ".gitignore").write_text(".claude/worktrees/\n", encoding="utf-8")
+        gitutil.git(["init", "-q"], root)
+        gitutil.git(["add", "tests/test_real.py", ".gitignore"], root)
+        gitutil.git(["commit", "-qm", "base"], root)
+
+    def test_gitignored_worktree_copies_are_excluded(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root)
+            found = mod._candidate_test_files(root)
+            names = {str(p.relative_to(root)) for p in found}
+            self.assertIn("tests/test_real.py", names)                # the real test survives
+            # no worktree copy is scanned
+            self.assertFalse(any("worktrees" in str(p) for p in found),
+                             f"a gitignored worktree copy leaked into the scan: {found}")
+
+    def test_a_real_tree_is_not_skipped_by_a_worktrees_ancestor(self) -> None:
+        """The scar-avoidance: filtering is by .gitignore, not by a component named 'worktrees', so
+        a project that legitimately lives under a path with 'worktrees' in it is not blanked."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            # the repo root itself sits under a 'worktrees' component, and its tests are TRACKED
+            root = Path(d) / "worktrees" / "myproject"
+            (root / "tests").mkdir(parents=True, exist_ok=True)
+            (root / "tests" / "test_real.py").write_text("def test_x():\n    assert True\n",
+                                                         encoding="utf-8")
+            gitutil.git(["init", "-q"], root)
+            gitutil.git(["add", "-A"], root)
+            gitutil.git(["commit", "-qm", "base"], root)
+            found = mod._candidate_test_files(root)
+            names = {str(p.relative_to(root)) for p in found}
+            self.assertIn("tests/test_real.py", names)   # NOT skipped despite the ancestor name
+
+    def test_scan_degrades_when_git_is_unavailable(self) -> None:
+        """_drop_ignored is best-effort: a non-repo directory returns its candidates unfiltered
+        rather than raising - the scan must never break on a git failure."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)          # no git repo here
+            (root / "tests").mkdir()
+            f = root / "tests" / "test_x.py"
+            f.write_text("def test_x():\n    assert True\n", encoding="utf-8")
+            self.assertEqual(mod._drop_ignored(root, [f]), [f])
+
+
 if __name__ == "__main__":
     unittest.main()

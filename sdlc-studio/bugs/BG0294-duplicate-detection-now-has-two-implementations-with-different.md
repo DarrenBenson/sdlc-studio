@@ -1,6 +1,7 @@
 # BG0294: duplicate detection now has two implementations with different algorithms, so they can drift
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -10,15 +11,22 @@
 
 ## Summary
 
-{{symptom}}
+The repo answered "is this a duplicate?" two ways: `file_finding.duplicate_candidates` used
+Jaccard over the open backlog, `artifact.duplicate_candidates` used containment over every
+artefact. They disagreed on real data - the pair that motivated the check scored 0.21 by Jaccard
+(missed) and 0.44 by containment (caught) - so which answer you got depended on the entry point.
 
 ## Steps to Reproduce
 
-{{steps}}
+1. File a near-duplicate through `artifact.py new` - it is reported (containment, 0.44).
+2. File the same through the finding filer, which used `file_finding.duplicate_candidates` - it is
+   NOT reported (Jaccard, 0.21, under the bar).
 
 ## Proposed Fix
 
-{{fix}}
+Delete the second (Jaccard) implementation. `file_finding.duplicate_candidates` now delegates to
+`artifact.duplicate_candidates` across the dup-types, so both entry points answer through the one
+containment detector that catches the motivating case, terminal artefacts included.
 
 ## Detail
 
@@ -55,6 +63,7 @@ tracking.
 - **When** each asks whether a title duplicates an existing artefact
 - **Then** both call ONE function - the second implementation is deleted, not kept in sync, because keeping two in sync is what has already failed twice here
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DuplicateSingleSourceTests::test_both_entry_points_call_one_implementation
+- **Verified:** yes (2026-07-26)
 
 ### AC2: the surviving algorithm catches the case that motivated it
 
@@ -62,6 +71,7 @@ tracking.
 - **When** the shared detector runs
 - **Then** it reports them - a consolidation that kept the weaker lens would close this bug while reintroducing the defect
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DuplicateSingleSourceTests::test_the_motivating_pair_is_still_caught
+- **Verified:** yes (2026-07-26)
 
 ### AC3: terminal artefacts stay in scope
 
@@ -69,6 +79,7 @@ tracking.
 - **When** the same title is filed through either entry point
 - **Then** it is reported - re-filing something already fixed wastes the most time, and the narrower scope must not win the merge
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DuplicateSingleSourceTests::test_a_terminal_artefact_is_in_scope_from_both_paths
+- **Verified:** yes (2026-07-26)
 
 ## Revision History
 

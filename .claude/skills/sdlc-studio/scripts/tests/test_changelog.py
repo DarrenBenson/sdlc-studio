@@ -5,6 +5,8 @@ malformed fragment is refused naming the file, a stray fragment fails a release
 (never silently dropped from a cut), and a fragment satisfies the
 changelog-empty documentation check.
 """
+import contextlib
+import io
 import pathlib
 import re
 import sys
@@ -51,7 +53,7 @@ class ComposeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = _repo(tmp, fragments=[("US0001.md", FRAG_ADDED),
                                          ("US0002.md", FRAG_CHANGED)])
-            r = changelog.compose(root)
+            r = changelog.compose(root, apply=True)
             self.assertEqual(r["composed"], 2)
             text = (root / "CHANGELOG.md").read_text(encoding="utf-8")
             unreleased = text.split("## [4.1.0]")[0]
@@ -72,7 +74,7 @@ class ComposeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = _repo(tmp, changelog_text=two_sections,
                          fragments=[("f.md", "<!-- section: Added -->\n- **the addition.**\n")])
-            changelog.compose(root)
+            changelog.compose(root, apply=True)
             text = (root / "CHANGELOG.md").read_text(encoding="utf-8")
             added_block = text.split("### Added", 1)[1].split("### Fixed", 1)[0]
             self.assertIn("- **the addition.**", added_block)
@@ -88,7 +90,7 @@ class ComposeTests(unittest.TestCase):
             root = _repo(tmp, fragments=[("a-good.md", FRAG_ADDED),
                                          ("z-bad.md", "no marker here\n")])
             with self.assertRaises(changelog.FragmentError):
-                changelog.compose(root)
+                changelog.compose(root, apply=True)
             self.assertEqual((root / "CHANGELOG.md").read_text(encoding="utf-8"), BASE)
             self.assertTrue((root / "changelog.d" / "a-good.md").exists())
             self.assertTrue((root / "changelog.d" / "z-bad.md").exists())
@@ -96,23 +98,23 @@ class ComposeTests(unittest.TestCase):
     def test_compose_is_idempotent(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = _repo(tmp, fragments=[("US0001.md", FRAG_ADDED)])
-            changelog.compose(root)
+            changelog.compose(root, apply=True)
             first = (root / "CHANGELOG.md").read_text(encoding="utf-8")
-            r2 = changelog.compose(root)
+            r2 = changelog.compose(root, apply=True)
             self.assertEqual(r2["composed"], 0)
             self.assertEqual((root / "CHANGELOG.md").read_text(encoding="utf-8"), first)
 
     def test_fragments_are_consumed(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = _repo(tmp, fragments=[("US0001.md", FRAG_ADDED)])
-            changelog.compose(root)
+            changelog.compose(root, apply=True)
             self.assertEqual(list((root / "changelog.d").glob("*.md")), [])
 
     def test_malformed_fragment_refused_naming_the_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = _repo(tmp, fragments=[("bad.md", "- entry with no section marker\n")])
             with self.assertRaises(changelog.FragmentError) as ctx:
-                changelog.compose(root)
+                changelog.compose(root, apply=True)
             self.assertIn("bad.md", str(ctx.exception))
             # nothing was written or consumed on refusal
             self.assertEqual((root / "CHANGELOG.md").read_text(encoding="utf-8"), BASE)
@@ -123,8 +125,54 @@ class ComposeTests(unittest.TestCase):
             root = _repo(tmp, fragments=[
                 ("odd.md", "<!-- section: Sparkles -->\n- glitter\n")])
             with self.assertRaises(changelog.FragmentError) as ctx:
-                changelog.compose(root)
+                changelog.compose(root, apply=True)
             self.assertIn("Sparkles", str(ctx.exception))
+
+
+class ComposeReleaseGateTests(unittest.TestCase):
+    """BG0295: compose is the RELEASE-time action, and folding CONSUMES the whole pending set. Run
+    out of habit while adding one fragment it destroyed 115 others, silently. So it is dry-run by
+    default and only consumes with --apply."""
+
+    def test_a_bare_compose_consumes_nothing(self):
+        """AC1. compose without --apply reports what it would fold and touches nothing - the
+        pending fragments and CHANGELOG both survive."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _repo(tmp, fragments=[("US0001.md", FRAG_ADDED), ("US0002.md", FRAG_CHANGED)])
+            before = (root / "CHANGELOG.md").read_text(encoding="utf-8")
+            r = changelog.compose(root)                    # no apply
+            self.assertFalse(r["applied"])
+            self.assertEqual(r["would_compose"], 2)
+            self.assertEqual(r["composed"], 0)
+            self.assertEqual((root / "CHANGELOG.md").read_text(encoding="utf-8"), before)
+            self.assertTrue((root / "changelog.d" / "US0001.md").exists())
+            self.assertTrue((root / "changelog.d" / "US0002.md").exists())
+
+    def test_apply_is_required_to_fold_and_consume(self):
+        """AC2. Only --apply folds and deletes; a bare run leaves the fragment for the apply run to
+        find, so the two forms are distinct and the destructive one is opt-in."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _repo(tmp, fragments=[("US0001.md", FRAG_ADDED)])
+            changelog.compose(root)                        # dry run
+            self.assertTrue((root / "changelog.d" / "US0001.md").exists())   # survived
+            r = changelog.compose(root, apply=True)
+            self.assertTrue(r["applied"])
+            self.assertEqual(r["composed"], 1)
+            self.assertFalse((root / "changelog.d" / "US0001.md").exists())  # now consumed
+            self.assertIn("New thing (US0001)",
+                          (root / "CHANGELOG.md").read_text(encoding="utf-8"))
+
+    def test_cli_defaults_to_dry_run(self):
+        """The CLI a habit reaches for consumes nothing without --apply, and says so."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _repo(tmp, fragments=[("US0001.md", FRAG_ADDED)])
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                rc = changelog.main(["compose", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertIn("would compose", out.getvalue())
+            self.assertIn("--apply", out.getvalue())
+            self.assertTrue((root / "changelog.d" / "US0001.md").exists())   # untouched
 
 
 class StrayFragmentTests(unittest.TestCase):
@@ -245,7 +293,7 @@ class StructureCheckTests(unittest.TestCase):
                 ("a-security.md", "<!-- section: Security -->\n- **a security fix.**\n"),
                 ("b-breaking.md", "<!-- section: Breaking -->\n- **a breaking change.**\n")])
             self.assertEqual(changelog.structure_errors(root), [])   # sound before compose
-            changelog.compose(root)
+            changelog.compose(root, apply=True)
             self.assertEqual(changelog.structure_errors(root), [])   # and still sound after
             text = (root / "CHANGELOG.md").read_text(encoding="utf-8")
             unreleased = text.split("## [4.1.0]")[0]

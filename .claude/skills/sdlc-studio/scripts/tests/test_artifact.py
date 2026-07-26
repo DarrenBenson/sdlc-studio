@@ -1965,6 +1965,78 @@ class DuplicateCheckTests(unittest.TestCase):
             self.assertEqual(r.get("duplicate_warnings"), None, r.get("duplicate_warnings"))
 
 
+class DuplicateSingleSourceTests(DuplicateCheckTests):
+    """BG0294: there were TWO duplicate detectors with different algorithms (Jaccard in
+    file_finding, containment in artifact), so the repo answered 'is this a duplicate?' two ways
+    depending on the entry point. One implementation now, reached from both."""
+
+    def test_both_entry_points_call_one_implementation(self) -> None:
+        """AC1. file_finding.duplicate_candidates routes through artifact.duplicate_candidates -
+        the second implementation is deleted, not kept in sync. Proven two ways: file_finding calls
+        artifact's function, and the two entry points agree on the same repo."""
+        import file_finding
+        repo, td = self._repo()
+        with td:
+            self._bug(repo, "BG0269", self.EXISTING)
+            # Patch the SAME module object file_finding's lazy `import artifact` resolves to
+            # (sys.modules["artifact"]), not this test module's own `artifact` global - under the
+            # full suite another loader may have replaced sys.modules["artifact"], leaving that
+            # global stale and the spy on the wrong object.
+            art = sys.modules["artifact"]
+            calls = []
+            real = art.duplicate_candidates
+
+            def spy(root, type_, title, fields=None):
+                calls.append(type_)
+                return real(root, type_, title, fields)
+
+            art.duplicate_candidates = spy
+            try:
+                ff_out = file_finding.duplicate_candidates(
+                    repo, self.REFILING, {"affects": "src/thing.py"})
+            finally:
+                art.duplicate_candidates = real
+            self.assertTrue(calls, "file_finding did not call artifact.duplicate_candidates")
+            self.assertIn("bug", calls)
+            # the two entry points agree: what file_finding surfaces for a bug is what the bug
+            # entry point surfaces
+            art_out = art.duplicate_candidates(repo, "bug", self.REFILING,
+                                               {"affects": "src/thing.py"})
+            self.assertEqual([c["id"] for c in ff_out], [c["id"] for c in art_out])
+            # the deleted second implementation's scorer is no longer referenced by file_finding
+            src = (Path(file_finding.__file__).read_text(encoding="utf-8"))
+            self.assertNotIn("_jaccard", src.split("def duplicate_candidates")[1]
+                             .split("\ndef ")[0])
+
+    def test_the_motivating_pair_is_still_caught(self) -> None:
+        """AC2. The motivating pair scores 0.21 by the deleted Jaccard scorer (under any sane bar)
+        and 0.44 by the surviving containment scorer - so BOTH entry points must now catch it,
+        where the Jaccard path would have missed the very duplicate it exists for."""
+        import file_finding
+        repo, td = self._repo()
+        with td:
+            self._bug(repo, "BG0269", self.EXISTING)
+            fields = {"affects": "src/thing.py"}
+            via_finding = file_finding.duplicate_candidates(repo, self.REFILING, fields)
+            via_mint = artifact.duplicate_candidates(repo, "bug", self.REFILING, fields)
+            self.assertIn("BG0269", [c["id"] for c in via_finding])
+            self.assertIn("BG0269", [c["id"] for c in via_mint])
+
+    def test_a_terminal_artefact_is_in_scope_from_both_paths(self) -> None:
+        """AC3. Re-filing something already fixed wastes the most time, so a CLOSED artefact with
+        the same title must still be reported - through BOTH entry points, since the narrower
+        open-only scope must not win the merge."""
+        import file_finding
+        repo, td = self._repo()
+        with td:
+            self._bug(repo, "BG0269", self.EXISTING, status="Fixed")   # terminal
+            fields = {"affects": "src/thing.py"}
+            via_finding = file_finding.duplicate_candidates(repo, self.REFILING, fields)
+            via_mint = artifact.duplicate_candidates(repo, "bug", self.REFILING, fields)
+            self.assertIn("BG0269", [c["id"] for c in via_finding])     # not dropped for being closed
+            self.assertIn("BG0269", [c["id"] for c in via_mint])
+
+
 class DuplicateStrictTests(unittest.TestCase):
     """US0414: advisory by default - filing must never be blocked by a heuristic, or the heuristic
     becomes a reason not to file - and refusable under `--strict`, where the refusal leaves NO file

@@ -75,18 +75,29 @@ def check(root) -> list[Path]:
     return _fragment_paths(Path(root))
 
 
-def compose(root) -> dict:
-    """Fold every fragment into `## [Unreleased]` and consume it.
+def compose(root, *, apply: bool = False) -> dict:
+    """Fold every fragment into `## [Unreleased]` and consume it - the RELEASE-time action.
 
-    All fragments are parsed BEFORE anything is written (a bad one refuses the
-    whole run - no partial compose). Entries land at the TOP of their section's
-    list; a missing section heading is created at the head of [Unreleased]
-    (most recently composed first - a hand-edit may reorder headings freely)."""
+    `apply=False` (the default) is a DRY RUN: it parses and validates every fragment (so a bad one
+    still refuses the run) and reports what WOULD be composed, but writes nothing and consumes
+    nothing. Folding is destructive - it rewrites [Unreleased] and DELETES every fragment - and it
+    consumes the WHOLE pending set, not the caller's one. Run out of habit while adding a single
+    fragment, that silently destroys every other unit's pending fragment. So the consuming form is
+    opt-in: only `apply=True`, which the release cut passes.
+
+    All fragments are parsed BEFORE anything is written (a bad one refuses the whole run - no
+    partial compose). Entries land at the TOP of their section's list; a missing section heading is
+    created at the head of [Unreleased] (most recently composed first - a hand-edit may reorder
+    headings freely)."""
     root = Path(root)
     frags = _fragment_paths(root)
     if not frags:
-        return {"composed": 0, "sections": []}
-    parsed = [(p, *_parse(p)) for p in frags]  # refuses before any write
+        return {"composed": 0, "would_compose": 0, "sections": [], "applied": apply}
+    parsed = [(p, *_parse(p)) for p in frags]  # refuses before any write, in dry-run too
+    if not apply:
+        # DRY RUN: report what a release cut would fold, touch nothing. The pending set survives.
+        return {"composed": 0, "would_compose": len(parsed), "applied": False,
+                "sections": sorted({s for _p, s, _e in parsed})}
     clog = root / "CHANGELOG.md"
     try:
         text = clog.read_text(encoding="utf-8")
@@ -114,7 +125,8 @@ def compose(root) -> dict:
     sdlc_md.atomic_write(clog, head + "## [Unreleased]" + unreleased + tail)
     for p, _s, _e in parsed:
         p.unlink()
-    return {"composed": len(parsed), "sections": sorted({s for _p, s, _e in parsed})}
+    return {"composed": len(parsed), "would_compose": len(parsed), "applied": True,
+            "sections": sorted({s for _p, s, _e in parsed})}
 
 
 def _create_section(unreleased: str, section: str, entry: str) -> str:
@@ -216,7 +228,12 @@ def main(argv=None) -> int:
         "under changelog.d/, compose them deterministically into [Unreleased].")
     sdlc_md.add_global_root(ap)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    c = sub.add_parser("compose", help="fold all fragments into CHANGELOG.md and consume them")
+    c = sub.add_parser("compose", help="RELEASE cut: fold all fragments into CHANGELOG.md and "
+                       "consume them. Dry-run by default (reports what it would fold, touches "
+                       "nothing); pass --apply to actually fold and delete the fragments")
+    c.add_argument("--apply", action="store_true",
+                   help="fold and CONSUME the fragments - the destructive release-cut action; "
+                        "without it, compose only reports what it would do")
     k = sub.add_parser("check", help="list stray (uncomposed) fragments; exit 1 if any")
     s = sub.add_parser("structure", help="check [Unreleased] headings are in order, "
                        "unrepeated and non-empty; exit 1 on a fault")
@@ -237,12 +254,17 @@ def main(argv=None) -> int:
         return 0
     if args.cmd == "compose":
         try:
-            r = compose(args.root)
+            r = compose(args.root, apply=args.apply)
         except FragmentError as exc:
             print(f"compose refused: {exc}", file=sys.stderr)
             return 2
-        print(f"composed {r['composed']} fragment(s)"
-              + (f" into {', '.join(r['sections'])}" if r["sections"] else " (none present)"))
+        into = f" into {', '.join(r['sections'])}" if r["sections"] else " (none present)"
+        if r["applied"]:
+            print(f"composed {r['composed']} fragment(s){into}")
+        else:
+            print(f"would compose {r['would_compose']} fragment(s){into} - re-run with --apply "
+                  "to fold and consume them (this is the release cut; without --apply nothing is "
+                  "written and no fragment is deleted)")
         return 0
     strays = check(args.root)
     if strays:

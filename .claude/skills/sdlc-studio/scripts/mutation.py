@@ -1558,14 +1558,36 @@ _TEST_FILE_PATTERNS = ("test_*.py", "*_test.py")
 _SKIP_DIRS = {".git", "__pycache__", "node_modules", ".local", ".venv", "venv"}
 
 
+def _drop_ignored(root: Path, paths: list[Path]) -> list[Path]:
+    """Remove git-IGNORED paths from a candidate set. The canonical case is a stale git worktree
+    under a gitignored dir (`.claude/worktrees/agent-*/`): its duplicate copies of every test are
+    not the repo's tests, and scanning them pads the covering command with dozens of worktree paths
+    and re-runs their (possibly stale) copies. Filtering on `.gitignore` rather than on a path
+    component named `worktrees` avoids the recorded scar where the component match skipped the whole
+    tree when the tool was run from INSIDE a worktree. One batched `git check-ignore`; on any git
+    failure it returns the paths unfiltered - best-effort, it must never break the scan."""
+    if not paths:
+        return paths
+    try:
+        rels = [str(p.relative_to(root)) if p.is_absolute() and str(p).startswith(str(root))
+                else str(p) for p in paths]
+        r = subprocess.run(["git", "-C", str(root), "check-ignore", "--stdin"],
+                           input="\n".join(rels), capture_output=True, text=True)
+        ignored = set(r.stdout.splitlines())
+        return [p for p, rel in zip(paths, rels) if rel not in ignored]
+    except Exception:  # noqa: BLE001 - no git, not a repo, anything: the scan degrades, never breaks
+        return paths
+
+
 def _candidate_test_files(root: Path) -> list[Path]:
-    """Every test-shaped file under root (skipping vendored/derived trees)."""
+    """Every test-shaped file under root (skipping vendored/derived trees and gitignored paths -
+    the latter is what keeps a stale worktree's duplicate tests out of the scan)."""
     out: set[Path] = set()
     for pat in _TEST_FILE_PATTERNS:
         for p in Path(root).rglob(pat):
             if not any(part in _SKIP_DIRS for part in p.parts):
                 out.add(p)
-    return sorted(out)
+    return sorted(_drop_ignored(Path(root), sorted(out)))
 
 
 def _selected_test_files(root: Path, test_cmd: str) -> list[Path] | None:
