@@ -1,6 +1,6 @@
 # US0434: the close correctness lanes are batch-scoped, or --file-and-close files named out-of-batch debt
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0421
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new

@@ -265,3 +265,7 @@
 | US0423 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
 | US0427 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
 | US0432 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0433 | Darren Benson (operator) | - | authoring-session | 2026-07-26 | - |
+| US0434 | Darren Benson (operator) | - | authoring-session | 2026-07-26 | - |
+| US0435 | Darren Benson (operator) | - | authoring-session | 2026-07-26 | - |
+| US0436 | Darren Benson (operator) | - | authoring-session | 2026-07-26 | - |

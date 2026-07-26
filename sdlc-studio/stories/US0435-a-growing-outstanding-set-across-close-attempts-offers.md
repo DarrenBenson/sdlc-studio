@@ -1,6 +1,6 @@
 # US0435: a growing outstanding set across close attempts offers the bounded exit, not just the diagnosis
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0421
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new

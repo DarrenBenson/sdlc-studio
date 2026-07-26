@@ -1,6 +1,6 @@
 # US0436: review-currency is judged by the review record, not the anchor commit time, so a passed lane cannot be re-broken by a correct-content edit
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0421
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new

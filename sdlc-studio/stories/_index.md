@@ -11,8 +11,8 @@
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 4 |
-| Done | 431 |
+| Review | 0 |
+| Done | 435 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -343,10 +343,10 @@
 | [US0430](US0430-the-breakdown-gate-refuses-an-ungroomed-batch-at.md) | the breakdown gate refuses an ungroomed batch at --goal done and accepts it at --goal design | Done | EP0160 | 2026-07-24 | 2026-07-24 |
 | [US0431](US0431-a-design-rung-s-close-reports-how-many.md) | a design rung's close reports how many units it groomed, so an accepted-but-ungroomed batch cannot close silently | Done | EP0160 | 2026-07-24 | 2026-07-24 |
 | [US0432](US0432-re-declare-gate-budget-against-the-317s-measured.md) | re-declare gate_budget against the ~317s measured peak so a normal commit is under budget and a regression still flags | Done | EP0161 | 2026-07-26 | 2026-07-26 |
-| [US0433](US0433-sprint-batch-drop-and-add-mutate-an-open.md) | sprint batch drop and add: mutate an open batch, drop releasing the done-gate and distinct from Deferred | Review | EP0162 | 2026-07-26 | 2026-07-26 |
-| [US0434](US0434-the-close-correctness-lanes-are-batch-scoped-or.md) | the close correctness lanes are batch-scoped, or --file-and-close files named out-of-batch debt | Review | EP0162 | 2026-07-26 | 2026-07-26 |
-| [US0435](US0435-a-growing-outstanding-set-across-close-attempts-offers.md) | a growing outstanding set across close attempts offers the bounded exit, not just the diagnosis | Review | EP0162 | 2026-07-26 | 2026-07-26 |
-| [US0436](US0436-review-currency-is-judged-by-the-review-record.md) | review-currency is judged by the review record, not the anchor commit time, so a passed lane cannot be re-broken by a correct-content edit | Review | EP0162 | 2026-07-26 | 2026-07-26 |
+| [US0433](US0433-sprint-batch-drop-and-add-mutate-an-open.md) | sprint batch drop and add: mutate an open batch, drop releasing the done-gate and distinct from Deferred | Done | EP0162 | 2026-07-26 | 2026-07-26 |
+| [US0434](US0434-the-close-correctness-lanes-are-batch-scoped-or.md) | the close correctness lanes are batch-scoped, or --file-and-close files named out-of-batch debt | Done | EP0162 | 2026-07-26 | 2026-07-26 |
+| [US0435](US0435-a-growing-outstanding-set-across-close-attempts-offers.md) | a growing outstanding set across close attempts offers the bounded exit, not just the diagnosis | Done | EP0162 | 2026-07-26 | 2026-07-26 |
+| [US0436](US0436-review-currency-is-judged-by-the-review-record.md) | review-currency is judged by the review record, not the anchor commit time, so a passed lane cannot be re-broken by a correct-content edit | Done | EP0162 | 2026-07-26 | 2026-07-26 |
 
 ## Archived Releases
 

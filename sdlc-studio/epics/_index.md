@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 0 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 161 |
+| Done | 162 |
 | **Total** | **162** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -184,4 +184,4 @@
 | [EP0159](EP0159-disclosed-delegated-sign-off-by-a-subagent-in.md) | Disclosed delegated sign-off by a subagent in its own context (RFC0051 D0059) | Done | -- | -- | 2026-07-24 | 2026-07-24 |
 | [EP0160](EP0160-the-breakdown-gate-becomes-goal-aware-cr0418-d0062.md) | The breakdown gate becomes goal-aware (CR0418 D0062) | Done | -- | -- | 2026-07-24 | 2026-07-24 |
 | [EP0161](EP0161-re-budget-the-pre-commit-gate-against-measured.md) | Re-budget the pre-commit gate against measured cost | Done | -- | -- | 2026-07-26 | 2026-07-26 |
-| [EP0162](EP0162-a-sprint-batch-is-mutable-and-the-close.md) | A sprint batch is mutable and the close converges honestly | Draft | -- | -- | 2026-07-26 | 2026-07-26 |
+| [EP0162](EP0162-a-sprint-batch-is-mutable-and-the-close.md) | A sprint batch is mutable and the close converges honestly | Done | -- | -- | 2026-07-26 | 2026-07-26 |

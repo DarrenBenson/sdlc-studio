@@ -1,6 +1,6 @@
 # US0433: sprint batch drop and add: mutate an open batch, drop releasing the done-gate and distinct from Deferred
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0421
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new
