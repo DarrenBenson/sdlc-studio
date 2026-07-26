@@ -132,6 +132,10 @@ two_backlog:
 # that actually ran the unit suites are recorded, or docs-only runs would flood the series with
 # 9-14s entries that make real drift unreadable.
 gate_budget:
-  seconds: 120
-  baseline_seconds: 99
-  baseline_date: 2026-07-21
+  # Re-declared 2026-07-26 against the measured ~317s peak (skill-tests ~198s + tool-tests ~78s +
+  # cheap lanes ~40s): the 120s ceiling was set when the suites were half the size and fired OVER
+  # on every commit, so the signal had become noise. The ceiling carries ~20% headroom over the
+  # measured peak, so a normal commit reads under budget while a genuine regression still flags.
+  seconds: 380
+  baseline_seconds: 317
+  baseline_date: 2026-07-26

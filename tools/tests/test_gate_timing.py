@@ -223,6 +223,47 @@ class BudgetLaneTests(unittest.TestCase):
 
 
 
+class GateBudgetRedeclaredTests(unittest.TestCase):
+    """US0432 / CR0420: the 120s ceiling was set when the suites were half the size, so every
+    commit reported OVER and the signal became noise. It is re-declared against the measured peak."""
+
+    def test_the_declared_budget_covers_the_measured_cost(self) -> None:
+        """AC1. The repo's declared budget now has headroom over a baseline that reflects the grown
+        suite - so a normal run reads under budget, not OVER. Guards against the ceiling silently
+        going stale again: a baseline back near the old ~99s would fail here."""
+        repo = Path(__file__).resolve().parents[2]
+        block = gt.budget_config(repo)
+        self.assertIsNotNone(block, "this repo declares no gate_budget")
+        seconds = float(block["seconds"])
+        baseline = float(block["baseline_seconds"])
+        self.assertGreaterEqual(seconds, baseline, "the ceiling must cover its own baseline")
+        # the baseline reflects the CURRENT suite, not the pre-growth ~99s that made it fire OVER
+        self.assertGreaterEqual(baseline, 250.0,
+                                "baseline is stale against the measured ~317s peak")
+
+    def test_a_regression_above_the_new_budget_still_flags(self) -> None:
+        """AC2. Re-budgeting must not silence the instrument: a run above the new ceiling still
+        reports OVER, with the drift since the new baseline, so a genuine regression is caught."""
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "gate_budget:\n  seconds: 380\n  baseline_seconds: 317\n"
+                "  baseline_date: 2026-07-26\n", encoding="utf-8")
+            gt.record(root, "total", 317.0)                  # a normal run: under the new ceiling
+            self.assertFalse(gt.budget_report(root)["over"])
+            gt.record(root, "total", 460.0)                  # a real regression: over it
+            rep = gt.budget_report(root)
+            self.assertTrue(rep["over"])
+            self.assertIn("2026-07-26", rep["detail"])       # drift is measured from the new baseline
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                gt.main(["--root", str(root), "budget"])
+            self.assertIn("OVER", out.getvalue())
+
+
 class ScopeTests(unittest.TestCase):
     """BG0239: a lane that was INVOKED is not a lane that RAN.
 

@@ -1,6 +1,6 @@
 # CR-0419: the capacity ceiling is stale against measured velocity, so every plan reports OVER BUDGET and the warning stops being read
 
-> **Status:** Proposed
+> **Status:** Superseded
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -58,14 +58,24 @@ appetite" and let the operator judge, instead of a binary over/under that is alw
 Recommend B now and A once there are enough rows to fit against, with C as the reporting shape
 either way.
 
+## Resolution
+
+Option B was taken: D0064 re-set `capacity` to `tokens: 15000000, minutes: 960, units: 64` by
+hand, as a recorded decision, against the four measured VELOCITY rows this CR cited. The acute
+symptom - every plan reporting OVER BUDGET on capacity - is resolved: a typical batch (18-44 units,
+6-8M tokens) now sits inside the ceiling. Option A (derive the ceiling from VELOCITY rather than
+carry a hand-set constant) is a self-maintaining refinement, deferred until there are enough rows
+to fit against and refilable then; it is not needed to close the acute issue this CR raised.
+
 ## Acceptance Criteria
 
-- [ ] The capacity ceiling is set from the measured VELOCITY rows, and the basis is recorded rather than assumed
-- [ ] A plan within the ceiling reports no over-budget warning, so the warning distinguishes the two cases
-- [ ] The decision between A, B and C is recorded in the decisions ledger before the change lands
+- [ ] The capacity ceiling is set from the measured VELOCITY rows, and the basis is recorded rather than assumed (Option A - DEFERRED, not needed for the acute fix)
+- [x] A plan within the ceiling reports no over-budget warning, so the warning distinguishes the two cases (D0064: a typical batch now sits within 64 units / 15M tokens)
+- [x] The decision between A, B and C is recorded in the decisions ledger before the change lands (D0064 records Option B)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-24 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-26 | sdlc-studio | Resolved via D0064 (Option B); Option A deferred |

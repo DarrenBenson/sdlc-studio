@@ -11,12 +11,12 @@
 | Ready | 2 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 48 |
+| Review | 49 |
 | Done | 380 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **431** |
+| **Total** | **432** |
 
 ## All Stories
 
@@ -342,6 +342,7 @@
 | [US0429](US0429-reference-review-md-states-plainly-that-a-disclosed.md) | reference-review.md states plainly that a disclosed sign-off is not an independent one, and what that costs | Review | EP0159 | 2026-07-24 | 2026-07-24 |
 | [US0430](US0430-the-breakdown-gate-refuses-an-ungroomed-batch-at.md) | the breakdown gate refuses an ungroomed batch at --goal done and accepts it at --goal design | Review | EP0160 | 2026-07-24 | 2026-07-24 |
 | [US0431](US0431-a-design-rung-s-close-reports-how-many.md) | a design rung's close reports how many units it groomed, so an accepted-but-ungroomed batch cannot close silently | Review | EP0160 | 2026-07-24 | 2026-07-24 |
+| [US0432](US0432-re-declare-gate-budget-against-the-317s-measured.md) | re-declare gate_budget against the ~317s measured peak so a normal commit is under budget and a regression still flags | Review | EP0161 | 2026-07-26 | 2026-07-26 |
 
 ## Archived Releases
 

@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 27 |
+| Draft | 28 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 133 |
-| **Total** | **160** |
+| **Total** | **161** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -183,3 +183,4 @@
 | [EP0158](EP0158-an-adversarial-pass-over-the-plan-before-write.md) | An adversarial pass over the plan before --write (RFC0050 D0061) | Draft | -- | -- | 2026-07-24 | 2026-07-24 |
 | [EP0159](EP0159-disclosed-delegated-sign-off-by-a-subagent-in.md) | Disclosed delegated sign-off by a subagent in its own context (RFC0051 D0059) | Draft | -- | -- | 2026-07-24 | 2026-07-24 |
 | [EP0160](EP0160-the-breakdown-gate-becomes-goal-aware-cr0418-d0062.md) | The breakdown gate becomes goal-aware (CR0418 D0062) | Draft | -- | -- | 2026-07-24 | 2026-07-24 |
+| [EP0161](EP0161-re-budget-the-pre-commit-gate-against-measured.md) | Re-budget the pre-commit gate against measured cost | Draft | -- | -- | 2026-07-26 | 2026-07-26 |
