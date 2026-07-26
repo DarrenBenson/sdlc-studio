@@ -1233,7 +1233,18 @@ def _review_current(root: str) -> dict:
     stale = []
     for key, rec in review_prep.staleness(rr).items():
         m = review_prep._parse_dt(rec.get("last_modified"))
-        if m and latest_dt and m > latest_dt:
+        stale_by_anchor = bool(m and latest_dt and m > latest_dt)
+        # Currency is a property of the review RECORD, not only the anchor file's commit time. A
+        # re-run review that re-stamped LATEST.md byte-identically kept its old commit time (git saw
+        # no change) and read stale, though review-state.json records the review as freshly run - the
+        # remedy printed ("run `review`") was the thing just done, and only a substantive edit to an
+        # already-correct anchor cleared it. An artefact is stale only when the anchor commit-time AND
+        # the review record BOTH say so: the record can make an already-reviewed artefact current, but
+        # never a genuinely-changed one (a change past the last review sets needs_review). An absent or
+        # unparseable record leaves needs_review True, so this falls back to the commit-time behaviour
+        # unchanged.
+        stale_by_record = bool(rec.get("needs_review", True))
+        if stale_by_anchor and stale_by_record:
             stale.append(key)
     if stale:
         anchor_rev = _anchor_last_commit(rr, latest)

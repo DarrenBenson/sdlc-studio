@@ -220,6 +220,8 @@ independent critic plus the gate - the check's output states this scoping.
    reconcile + review + retro: reconcile blocks on drift (the standard gate), `--require-review`
    fails unless `reviews/LATEST.md` is at least as new as every artefact (run `review` to refresh
    it - currency, not mere presence), and `--require-retro` carries the retro + lessons loop below.
+   Currency is a property of the review RECORD (`.local/review-state.json`, recording when `review` last ran), not the anchor's commit time: a review that re-stamped `LATEST.md` byte-identically is still current.
+   The invariant, so no lane clears only by editing already-correct content: a close never requires an edit that invalidates a lane it has already passed.
    A step that is only described is a step an agent under effort pressure skips - so nothing here is
    only described:
    1. **The retro exists.** The gate fails until the batch retro is in `sdlc-studio/retros/`. Create

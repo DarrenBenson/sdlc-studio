@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 1 |
+| Draft | 0 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 3 |
+| Review | 4 |
 | Done | 431 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -346,7 +346,7 @@
 | [US0433](US0433-sprint-batch-drop-and-add-mutate-an-open.md) | sprint batch drop and add: mutate an open batch, drop releasing the done-gate and distinct from Deferred | Review | EP0162 | 2026-07-26 | 2026-07-26 |
 | [US0434](US0434-the-close-correctness-lanes-are-batch-scoped-or.md) | the close correctness lanes are batch-scoped, or --file-and-close files named out-of-batch debt | Review | EP0162 | 2026-07-26 | 2026-07-26 |
 | [US0435](US0435-a-growing-outstanding-set-across-close-attempts-offers.md) | a growing outstanding set across close attempts offers the bounded exit, not just the diagnosis | Review | EP0162 | 2026-07-26 | 2026-07-26 |
-| [US0436](US0436-review-currency-is-judged-by-the-review-record.md) | review-currency is judged by the review record, not the anchor commit time, so a passed lane cannot be re-broken by a correct-content edit | Draft | EP0162 | 2026-07-26 | 2026-07-26 |
+| [US0436](US0436-review-currency-is-judged-by-the-review-record.md) | review-currency is judged by the review record, not the anchor commit time, so a passed lane cannot be re-broken by a correct-content edit | Review | EP0162 | 2026-07-26 | 2026-07-26 |
 
 ## Archived Releases
 

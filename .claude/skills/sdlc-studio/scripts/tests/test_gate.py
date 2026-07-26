@@ -2687,6 +2687,78 @@ class ReviewCurrentDirtyTests(unittest.TestCase):
             self.assertIn("current with all artefacts", lane["detail"])
 
 
+class ReviewCurrencyByRecordTests(unittest.TestCase):
+    """CR0421 US0436: review currency is a property of the review RECORD, not the anchor file's
+    commit time. A re-run review that re-stamped LATEST.md byte-identically kept its old commit
+    time (git saw no change) and read stale - only a substantive edit to an already-correct anchor
+    cleared it. review-state.json records that the review ran, so an artefact older than that record
+    is current even when the anchor's commit time is not."""
+
+    def _repo(self, tmp, *, last_reviewed: str | None) -> Path:
+        root = Path(tmp)
+        _git(root, "init", "-q")
+        _git(root, "config", "user.email", "t@t")
+        _git(root, "config", "user.name", "t")
+        stories = root / "sdlc-studio" / "stories"
+        stories.mkdir(parents=True)
+        reviews = root / "sdlc-studio" / "reviews"
+        reviews.mkdir(parents=True)
+        story = stories / "US0001-x.md"
+        latest = reviews / "LATEST.md"
+        story.write_text("# US0001: x\n\n> **Status:** Done\n", encoding="utf-8")
+        latest.write_text("# Reviews - LATEST\n\nanchor\n", encoding="utf-8")
+        _git(root, "add", "-A")
+        # Backdate the anchor's commit deterministically - git commit time is second-granularity,
+        # so two commits in the same test second collide and the anchor would not read as older.
+        old = dict(os.environ)
+        old_env = {"GIT_COMMITTER_DATE": "2020-01-01T00:00:00", "GIT_AUTHOR_DATE": "2020-01-01T00:00:00"}
+        try:
+            os.environ.update(old_env)
+            _git(root, "commit", "-qm", "base")
+        finally:
+            os.environ.clear()
+            os.environ.update(old)
+        # The artefact moves on AFTER the committed anchor: by commit time the anchor is stale.
+        story.write_text("# US0001: x\n\n> **Status:** Done\n\nchanged\n", encoding="utf-8")
+        _git(root, "add", "-A")
+        _git(root, "commit", "-qm", "artefact moves")
+        # The review record: written when `review` last ran. A far-future stamp means the review
+        # post-dates the artefact - current by the record, though the anchor commit is older.
+        if last_reviewed is not None:
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True, exist_ok=True)
+            (local / "review-state.json").write_text(
+                json.dumps({"artifacts": {"US0001": {"last_reviewed": last_reviewed}}}),
+                encoding="utf-8")
+        return root
+
+    def test_currency_is_judged_by_the_review_record(self) -> None:
+        # Anchor commit-time says stale; the record says the review post-dates the artefact.
+        root = self._repo(self.enterContext(tempfile.TemporaryDirectory()),
+                          last_reviewed="2999-01-01T00:00:00Z")
+        lane = gate._review_current(str(root))
+        self.assertEqual(lane["count"], 0, "the record makes it current")
+        self.assertIn("current", lane["detail"])
+
+    def test_without_a_record_it_falls_back_to_the_anchor_commit_time(self) -> None:
+        # No review-state.json: needs_review is True for the artefact, so the commit-time verdict
+        # stands and a genuinely newer artefact still reads stale - the fix cannot weaken the gate.
+        root = self._repo(self.enterContext(tempfile.TemporaryDirectory()), last_reviewed=None)
+        lane = gate._review_current(str(root))
+        self.assertGreater(lane["count"], 0, "no record -> commit-time behaviour, still stale")
+        self.assertIn("stale", lane["detail"])
+
+    def test_the_lane_and_the_currency_checker_agree(self) -> None:
+        import review_prep
+        root = self._repo(self.enterContext(tempfile.TemporaryDirectory()),
+                          last_reviewed="2999-01-01T00:00:00Z")
+        lane_current = gate._review_current(str(root))["count"] == 0
+        record_current = not review_prep.staleness(Path(root))["US0001"]["needs_review"]
+        self.assertTrue(lane_current)
+        self.assertEqual(lane_current, record_current,
+                         "the close lane and review_prep.staleness agree on identical state")
+
+
 class ReleaseVersionStrictLaneTests(ReleaseGateTests):
     """US0254 AC1: the pre-tag gate binds the strict version check as one exit code.
 

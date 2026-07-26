@@ -1,6 +1,6 @@
 # US0436: review-currency is judged by the review record, not the anchor commit time, so a passed lane cannot be re-broken by a correct-content edit
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0421
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new
@@ -26,6 +26,7 @@ and no lane can be cleared only by a substantive edit to an artefact whose conte
 - **When** the `review-current` close lane evaluates
 - **Then** it reads current from the review record and does not report the anchor as stale
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReviewCurrencyByRecordTests::test_currency_is_judged_by_the_review_record
+- **Verified:** yes (2026-07-26)
 
 ### AC2: the two currency checkers agree on identical state
 
@@ -34,6 +35,7 @@ and no lane can be cleared only by a substantive edit to an artefact whose conte
 - **Then** they return the same verdict - the close lane and the currency checker no longer give
   opposite answers on identical state
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReviewCurrencyByRecordTests::test_the_lane_and_the_currency_checker_agree
+- **Verified:** yes (2026-07-26)
 
 ### AC3: the invariant is stated in reference-sprint.md
 
@@ -42,6 +44,7 @@ and no lane can be cleared only by a substantive edit to an artefact whose conte
 - **Then** it states that a close never requires an edit that invalidates a lane it has already
   passed - currency is a property of the review record, not of a file's commit time
 - **Verify:** grep "never requires an edit that invalidates a lane" .claude/skills/sdlc-studio/reference-sprint.md
+- **Verified:** yes (2026-07-26)
 
 ## Revision History
 
