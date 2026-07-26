@@ -333,6 +333,17 @@ class DepsOrderTests(unittest.TestCase):
             self.assertEqual(rc, 2)
 
 
+def _tsd_with_levels(root: Path, *paths: str) -> None:
+    """A TSD whose `## Test Levels` names the given paths, so `test_strategy` runs its batch
+    loop instead of early-returning. Without a Test Levels section the loop never executes -
+    which is why the BG0299 crash slipped through every plan test until this one."""
+    body = "# Test Strategy\n\n## Test Levels\n\n### Unit\n\n"
+    body += "".join(f"Covers `{p}`.\n" for p in paths)
+    body += "\n## Traceability\n\nend.\n"
+    (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-studio" / "tsd.md").write_text(body, encoding="utf-8")
+
+
 class CliTests(unittest.TestCase):
     def test_plan_json(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -344,6 +355,27 @@ class CliTests(unittest.TestCase):
             data = mod.build_plan(root, "bug", "Open", "priority")
             self.assertIn("batch", data)
             self.assertEqual(data["count"], 1)
+
+    def test_plan_does_not_crash_when_the_tsd_has_test_levels(self) -> None:
+        # BG0299: cmd_plan builds data["batch"] as unit RECORDS (dicts), but _print_test_strategy
+        # handed them straight to test_strategy, whose contract is a list of ids - crashing every
+        # `sprint plan` in a project with a `## Test Levels` TSD, on both text and json output.
+        # The prior plan tests all passed because a TSD-less fixture makes test_strategy early-return
+        # before it iterates the batch. Seed the TSD so the batch loop actually runs.
+        for fmt in ("text", "json"):
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _bug(root, 1, severity="High")
+                _tsd_with_levels(root, "src/bg0001.py")
+                mod = _load()
+                with contextlib.redirect_stdout(io.StringIO()), \
+                        contextlib.redirect_stderr(io.StringIO()):
+                    rc = mod.main(["plan", "--bugs", "Open", "--root", str(root), "--format", fmt])
+                self.assertEqual(rc, 0, f"sprint plan crashed with a Test Levels TSD ({fmt})")
+                # And the batch loop it now reaches attributes the unit to the level naming its file.
+                strat = mod.test_strategy(root, ["BG0001"])
+                self.assertTrue(strat["available"])
+                self.assertIn("BG0001", strat["units"])
 
 
 class WsjfTests(unittest.TestCase):

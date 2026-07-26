@@ -3804,7 +3804,11 @@ def _print_test_strategy(args, data) -> None:
               file=sys.stderr)
     elif not stale.get("known"):
         print(f"  test strategy: TSD staleness UNKNOWN - {stale.get('why')}", file=sys.stderr)
-    for line in render_test_strategy(test_strategy(root, data.get("batch") or [])):
+    # data["batch"] is a list of unit RECORDS (dicts with id/priority/...); test_strategy's
+    # contract is a list of ids. Project to ids at the boundary - passing the records straight
+    # through hands a dict to norm_id and crashes every `sprint plan` with a non-empty batch.
+    batch_ids = [b["id"] if isinstance(b, dict) else b for b in (data.get("batch") or [])]
+    for line in render_test_strategy(test_strategy(root, batch_ids)):
         print(line, file=sys.stderr)
 
 
