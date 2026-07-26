@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 402 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **421** |
+| **Total** | **422** |
 
 ## All Changes
 
@@ -243,6 +243,7 @@
 | [CR-0419](CR0419-the-capacity-ceiling-is-stale-against-measured-velocity.md) | the capacity ceiling is stale against measured velocity, so every plan reports OVER BUDGET and the warning stops being read | Superseded | Medium | Feature | 2026-07-24 | -- |
 | [CR-0420](CR0420-the-pre-commit-gate-runs-5-minutes-and.md) | the pre-commit gate runs ~5 minutes and its budget advisory reports +200% over a stale baseline on every commit, so the signal has become noise rather than a bound anyone acts on | Complete | Medium | Feature | 2026-07-25 | EP0161 |
 | [CR-0421](CR0421-a-sprint-cannot-be-closed-and-moved-on.md) | a sprint cannot be closed and moved on from: the batch is immutable, and the close chases a moving target it diagnoses but cannot exit | Complete | High | Improvement | 2026-07-26 | EP0162 |
+| [CR-0422](CR0422-sprint-close-apply-signoff-derives-parent-epics-terminal.md) | sprint close --apply-signoff derives parent epics terminal but not the decomposed CRs above them, so an operator hand-transitions every delivered CR to Complete | Proposed | Medium | Feature | 2026-07-26 | -- |
 
 ## Archived Releases
 

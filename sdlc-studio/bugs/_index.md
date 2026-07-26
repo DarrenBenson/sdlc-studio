@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 0 |
+| Open | 2 |
 | In Progress | 0 |
 | Fixed | 216 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **299** |
+| **Total** | **301** |
 
 ## All Bugs
 
@@ -266,6 +266,8 @@
 | [BG0297](BG0297-the-two-duplicate-detection-entry-points-now-share.md) | the two duplicate-detection entry points now share an algorithm but not a scope: file_finding scans every artefact type while artifact new scans only the minted type, so a terminal cross-type duplicate warns on one path and not the other | Fixed | Low | 2026-07-26 | 2026-07-26 |
 | [BG0298](BG0298-resolve-prose-fields-takes-prose-keys-as-the.md) | resolve_prose_fields takes prose_keys as the checked set, so the hazard check defaults to the UNSAFE direction: a prose field a caller forgets to list in prose_keys is silently treated as metadata and never shell-hazard-checked | Fixed | Low | 2026-07-26 | 2026-07-26 |
 | [BG0299](BG0299-sprint-plan-crashes-with-typeerror-on-every-invocation.md) | sprint plan crashes with TypeError on every invocation - test_strategy is passed batch records where it expects ids | Fixed | High | 2026-07-26 | 2026-07-26 |
+| [BG0300](BG0300-manual-is-a-gate-bypass-token-a-story.md) | `manual` is a gate-bypass token: a story whose ACs are all manual reaches Done with the verify gate checking nothing | Open | High | 2026-07-26 | 2026-07-26 |
+| [BG0301](BG0301-shell-hazard-fingerprint-false-positives-on-aligned-code.md) | shell-hazard fingerprint false-positives on aligned code-block spacing: a two-space gap in a code excerpt reads as a collapsed command substitution | Open | Low | 2026-07-26 | 2026-07-26 |
 
 ## Archived Releases
 
