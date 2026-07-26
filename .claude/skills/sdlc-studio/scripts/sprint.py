@@ -4564,15 +4564,29 @@ def _record_close_attempt(root, pre: dict) -> str | None:
         word = "shrinking"
     elif n > prev:
         # A growing set means each attempt re-breaks a lane the last one cleared. Naming the
-        # divergence is not a way out - so once the set is growing, offer the bounded exit, or
-        # the only moves left are the ones the gate exists to stop: a forced false Done, or a
-        # grandfather bump. The offer is made ONLY when growing, never on a converging close,
-        # so it does not train an operator to reach for file-and-close on a close that is working.
+        # divergence is not a way out - so once the set is growing, name the exit, or the only
+        # moves left are the ones the gate exists to stop: a forced false Done, or a grandfather
+        # bump. But `--file-and-close` can only file DEFERRABLE (ceremony) blockers; it REFUSES a
+        # hard correctness lane. So the offer must be honest about which of the outstanding items
+        # it would actually file, or it dangles a dead-end for the moving-target case (all `gate`
+        # blockers) that most often triggers it. Made ONLY when growing, never on a converging
+        # close, so it does not train an operator to reach for the exit on a close that is working.
         word = "growing - the close is chasing a moving target, not converging"
-        return (f"outstanding set {prev} -> {n} ({word}). Bounded exit: rerun the close with "
-                f"`--file-and-close --retro <RETROxxxx>` to complete it with the {n} outstanding "
-                f"item(s) filed as linked follow-ups rather than fixed inline - honestly recorded "
-                f"as outstanding, not waived.")
+        deferrable = sum(1 for b in pre["blockers"]
+                         if b.get("stage") in _DEFERRABLE_CLOSE_STAGES)
+        head = f"outstanding set {prev} -> {n} ({word})."
+        if deferrable:
+            hard = n - deferrable
+            tail = (f" Bounded exit: rerun the close with `--file-and-close --retro <RETROxxxx>` to "
+                    f"file the {deferrable} deferrable item(s) as linked follow-ups")
+            tail += (f"; the remaining {hard} correctness blocker(s) must be cleared first - "
+                     f"file-and-close cannot file a red gate lane." if hard else
+                     " - honestly recorded as outstanding, not waived.")
+            return head + tail
+        return (head + f" Every outstanding item is a hard correctness blocker, which "
+                f"`--file-and-close` cannot file - clear the lane(s) named above. A growing set of "
+                f"correctness lanes is lanes re-breaking each other, the case the batch-scoped "
+                f"conformance and record-based review-currency checks exist to stop.")
     else:
         word = "unchanged"
     return f"outstanding set {prev} -> {n} ({word})"

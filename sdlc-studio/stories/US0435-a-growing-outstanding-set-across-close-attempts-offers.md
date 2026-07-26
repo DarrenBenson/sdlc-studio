@@ -18,22 +18,34 @@ the divergence and leaving me to force a false Done or grandfather same-day work
 
 ## Acceptance Criteria
 
-### AC1: a growing outstanding set offers the bounded exit
+### AC1: a growing set with deferrable debt offers the bounded exit
 
-- **Given** an open run whose previous close attempt recorded an outstanding count, and a current
-  attempt whose outstanding count is higher
+- **Given** an open run whose outstanding count rose across consecutive close attempts, with at
+  least one DEFERRABLE (ceremony) blocker among the outstanding items
 - **When** the close reports the attempt trend
-- **Then** it does not only print "growing - chasing a moving target"; it also names the bounded exit
-  (`--file-and-close --retro <id>`) as the way to close with the remaining work honestly filed
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseAttemptTrendTests::test_a_growing_outstanding_set_offers_the_bounded_exit
+- **Then** it does not only print "growing - chasing a moving target"; it names the bounded exit
+  (`--file-and-close --retro <id>`) as the way to file the deferrable item(s) as follow-ups, and
+  says plainly that any remaining hard correctness blocker(s) must be cleared first
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseAttemptTrendTests::test_a_growing_deferrable_set_offers_the_bounded_exit
 - **Verified:** yes (2026-07-26)
 
-### AC2: a shrinking or first-attempt set does not offer the exit
+### AC2: a growing set of only hard blockers is not sent to a dead end
+
+- **Given** a growing outstanding set whose items are ALL hard correctness blockers (which
+  `--file-and-close` refuses)
+- **When** the trend is reported
+- **Then** it does not dangle the file-and-close exit; it says the lanes must be cleared, naming that
+  a growing set of correctness lanes is what the batch-scoped conformance and record-based currency
+  checks exist to stop
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseAttemptTrendTests::test_a_growing_hard_set_is_told_to_clear_the_lanes_not_sent_to_a_dead_end
+- **Verified:** yes (2026-07-26)
+
+### AC3: a shrinking or first-attempt set makes no offer
 
 - **Given** a first close attempt, or one whose outstanding count fell since the previous attempt
 - **When** the trend is reported
-- **Then** no bounded-exit offer is made - the offer is reserved for genuine divergence, so it does not
-  train operators to reach for file-and-close on a converging close
+- **Then** no exit is named - reserved for genuine divergence, so it does not train operators to reach
+  for file-and-close on a converging close
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseAttemptTrendTests::test_a_converging_or_first_attempt_makes_no_offer
 - **Verified:** yes (2026-07-26)
 

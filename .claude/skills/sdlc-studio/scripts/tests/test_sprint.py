@@ -424,29 +424,56 @@ class BatchCliTests(unittest.TestCase):
 
 class CloseAttemptTrendTests(unittest.TestCase):
     """CR0421 US0435: once the outstanding set is GROWING across close attempts, the trend line
-    offers the bounded `--file-and-close` exit - not only the "chasing a moving target" diagnosis.
-    A first or converging attempt makes no such offer, so the exit is reserved for real divergence."""
+    names the way out - but HONESTLY. `--file-and-close` can only file deferrable (ceremony)
+    blockers; it refuses a hard correctness lane. So the offer names file-and-close only for the
+    deferrable items, and a set of only hard blockers is told to clear the lanes, not sent to a
+    dead-end. A first or converging attempt makes no offer at all."""
 
-    def _pre(self, n: int) -> dict:
-        return {"blockers": [{"stage": f"s{i}", "detail": "", "remedy": ""} for i in range(n)]}
+    def _pre(self, stages: list[str]) -> dict:
+        return {"blockers": [{"stage": s, "detail": "", "remedy": ""} for s in stages]}
 
-    def test_a_growing_outstanding_set_offers_the_bounded_exit(self) -> None:
+    def _grow(self, mod, root, first: dict, second: dict) -> str:
+        mod.run_state.open_run(root, batch=["US0001"], goal="g")
+        self.assertIsNone(mod._record_close_attempt(root, first), "first attempt: no trend")
+        return mod._record_close_attempt(root, second)
+
+    def test_a_growing_deferrable_set_offers_the_bounded_exit(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = str(Path(d))
             mod = _load()
-            mod.run_state.open_run(root, batch=["US0001"], goal="g")
-            self.assertIsNone(mod._record_close_attempt(root, self._pre(3)), "first attempt: no trend")
-            line = mod._record_close_attempt(root, self._pre(5))  # grew 3 -> 5
+            line = self._grow(mod, root, self._pre(["retro", "sign-off"]),
+                              self._pre(["retro", "sign-off", "goal-verdict"]))  # 2 -> 3, all deferrable
             self.assertIn("growing", line)
-            self.assertIn("--file-and-close", line, "a growing set names the bounded exit")
+            self.assertIn("--file-and-close", line, "deferrable growth names the bounded exit")
+
+    def test_a_growing_hard_set_is_told_to_clear_the_lanes_not_sent_to_a_dead_end(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = str(Path(d))
+            mod = _load()
+            line = self._grow(mod, root, self._pre(["gate", "gate"]),
+                              self._pre(["gate", "gate", "gate"]))  # 2 -> 3, all hard
+            self.assertIn("growing", line)
+            self.assertNotIn("Bounded exit", line,
+                             "an all-hard set is not offered an exit that would refuse it")
+            self.assertIn("clear the lane", line)
+
+    def test_a_mixed_growing_set_files_the_deferrable_and_names_the_hard(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = str(Path(d))
+            mod = _load()
+            line = self._grow(mod, root, self._pre(["gate", "retro"]),
+                              self._pre(["gate", "gate", "retro"]))  # 2 -> 3, mixed
+            self.assertIn("--file-and-close", line)
+            self.assertIn("must be cleared first", line, "the hard remainder is named, not filed")
 
     def test_a_converging_or_first_attempt_makes_no_offer(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = str(Path(d))
             mod = _load()
             mod.run_state.open_run(root, batch=["US0001"], goal="g")
-            self.assertIsNone(mod._record_close_attempt(root, self._pre(5)), "first attempt: no offer")
-            shrank = mod._record_close_attempt(root, self._pre(2))  # 5 -> 2
+            self.assertIsNone(mod._record_close_attempt(root, self._pre(["gate"] * 5)),
+                              "first attempt: no offer")
+            shrank = mod._record_close_attempt(root, self._pre(["gate"] * 2))  # 5 -> 2
             self.assertIn("shrinking", shrank)
             self.assertNotIn("--file-and-close", shrank, "a converging close makes no offer")
 
