@@ -1,7 +1,9 @@
 """Unit tests for init.py - the deterministic greenfield initialiser (CR0079)."""
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import sys
 import tempfile
 import unittest
@@ -328,6 +330,30 @@ class GuidedInitTests(unittest.TestCase):
             init.reset_onboarding(root)                               # reset -> all pending
             self.assertTrue(all(s["status"] == "pending"
                                 for s in init.read_onboarding(root)["stages"]))
+
+    def test_agents_stage_drafts_the_instructions(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            r = init.stage_agents(root)
+            self.assertIn("AGENTS.md", r["created"])
+            self.assertTrue((root / "AGENTS.md").is_file())
+            # idempotent: a second run leaves the (possibly edited) file untouched
+            r2 = init.stage_agents(root)
+            self.assertIn("AGENTS.md", r2["skipped"])
+            self.assertEqual(r2["created"], [])
+
+    def test_guided_confirm_and_skip_advance_the_runner(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            init.start_onboarding(root)
+            with contextlib.redirect_stdout(io.StringIO()):
+                init.main(["guided", "--confirm", "--root", str(root)])
+            self.assertEqual(init.stage_status(init.read_onboarding(root),
+                                                init.ONBOARDING_STAGES[0]), "done")
+            with contextlib.redirect_stdout(io.StringIO()):
+                init.main(["guided", "--skip", "--root", str(root)])
+            self.assertEqual(init.stage_status(init.read_onboarding(root),
+                                                init.ONBOARDING_STAGES[1]), "skipped")
 
     def test_an_unknown_stage_or_status_is_refused(self) -> None:
         with tempfile.TemporaryDirectory() as d:

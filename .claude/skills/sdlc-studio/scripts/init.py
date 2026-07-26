@@ -242,23 +242,65 @@ def reset_onboarding(root: Path | str) -> dict:
     return write_onboarding(root, {"path": classify_path(root), "stages": _fresh_stages()})
 
 
+def stage_agents(root: Path | str, force: bool = False) -> dict:
+    """The agents stage: draft the tool-neutral agent instructions (`AGENTS.md` + the `CLAUDE.md`
+    import) from the shipped starters, so every agent that touches the repo inherits the discipline.
+    Idempotent - an existing file is left for the operator to edit, never overwritten unless
+    `force`. Returns what was drafted vs left in place."""
+    root = Path(root)
+    fields = seed_fields(root, date.today().isoformat())
+    created, skipped = [], []
+    for src, dst in AGENT_FILES:
+        st = SKILL / "templates" / src
+        if not st.exists():
+            continue
+        p = root / dst
+        if p.exists() and not force:
+            skipped.append(dst)
+            continue
+        p.write_text(seed_text(st, fields), encoding="utf-8")
+        created.append(dst)
+    return {"created": created, "skipped": skipped}
+
+
+# Per-stage draft actions, keyed by stage name. Each drafts its artefact for the operator to
+# review; the operator confirms to advance. The later stage stories register their entries here.
+STAGE_ACTIONS = {"agents": stage_agents}
+
+
 def cmd_guided(args: argparse.Namespace) -> int:
     """The guided-onboarding stage runner: create or resume the checkpoint, classify the repo,
-    and show where the operator is and what is next. The per-stage draft-then-confirm actions
-    are delivered by the stage stories; this drives the sequence and the resume/skip/reset."""
+    draft the current stage's artefact for review, and advance only on `--confirm` (or record a
+    `--skip`). `--reset` restarts. The per-stage draft actions live in STAGE_ACTIONS."""
     root = Path(getattr(args, "root", "."))
     if getattr(args, "reset", False):
         reset_onboarding(root)
     state = start_onboarding(root)
     cur = first_incomplete(state)
+    drafted = None
+    if getattr(args, "confirm", False) and cur:
+        set_stage(root, cur, "done")
+    elif getattr(args, "skip", False) and cur:
+        set_stage(root, cur, "skipped")
+    elif cur and cur in STAGE_ACTIONS:
+        drafted = STAGE_ACTIONS[cur](root)     # draft the current stage for review (draft-then-confirm)
+    state = read_onboarding(root)
+    cur = first_incomplete(state)
     if getattr(args, "format", "text") == "json":
-        print(json.dumps({"path": state["path"], "stages": state["stages"], "current": cur}, indent=2))
+        print(json.dumps({"path": state["path"], "stages": state["stages"],
+                          "current": cur, "drafted": drafted}, indent=2))
         return 0
-    print(f"guided onboarding ({state['path']}) - resume point: {cur or 'complete - ready for your first sprint plan'}")
+    print(f"guided onboarding ({state['path']}) - resume point: "
+          f"{cur or 'complete - ready for your first sprint plan'}")
     marks = {"done": "x", "skipped": "-", "pending": " "}
     for s in state["stages"]:
         nxt = "  <- next" if s["name"] == cur else ""
         print(f"  [{marks[s['status']]}] {s['name']}{nxt}")
+    if drafted and (drafted.get("created") or drafted.get("skipped")):
+        for f in drafted.get("created", []):
+            print(f"  drafted {f} - review it, then `init guided --confirm` (or --skip)")
+        for f in drafted.get("skipped", []):
+            print(f"  {f} already present - review it, then `init guided --confirm`")
     return 0
 
 
@@ -423,6 +465,10 @@ def build_parser() -> argparse.ArgumentParser:
                             "PRD -> TRD -> TSD -> personas -> a first sprint plan), greenfield or "
                             "brownfield. Re-run to resume; --reset to restart.")
     g.add_argument("--root", default=".")
+    g.add_argument("--confirm", action="store_true",
+                   help="mark the current stage done and advance (after you have reviewed it)")
+    g.add_argument("--skip", action="store_true",
+                   help="record the current stage skipped and advance")
     g.add_argument("--reset", action="store_true",
                    help="restart onboarding - every stage back to pending")
     g.add_argument("--format", choices=("text", "json"), default="text")
