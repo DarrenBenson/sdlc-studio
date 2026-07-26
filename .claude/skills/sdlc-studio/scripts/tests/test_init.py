@@ -383,6 +383,29 @@ class GuidedInitTests(unittest.TestCase):
                 init.main(["guided", "--confirm", "--root", str(root)])
             self.assertEqual(init.first_incomplete(init.read_onboarding(root)), "trd")
 
+    def test_trd_and_tsd_stages_seed_and_direct(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            init.start_onboarding(root, path="brownfield")
+            rt = init.stage_trd(root)
+            self.assertIn("sdlc-studio/trd.md", rt["created"])
+            self.assertIn("PRD", rt["directive"])
+            self.assertTrue((root / "sdlc-studio" / "trd.md").is_file())
+            rs = init.stage_tsd(root)
+            self.assertIn("sdlc-studio/tsd.md", rs["created"])
+            self.assertIn("stack", rs["directive"])   # brownfield names the stack
+
+    def test_trd_tsd_advance_to_personas(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            init.start_onboarding(root, path="greenfield")
+            init.set_stage(root, "agents", "done")
+            init.set_stage(root, "prd", "done")
+            with contextlib.redirect_stdout(io.StringIO()):
+                init.main(["guided", "--confirm", "--root", str(root)])   # trd done
+                init.main(["guided", "--confirm", "--root", str(root)])   # tsd done
+            self.assertEqual(init.first_incomplete(init.read_onboarding(root)), "personas")
+
     def test_an_unknown_stage_or_status_is_refused(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

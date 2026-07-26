@@ -263,35 +263,57 @@ def stage_agents(root: Path | str, force: bool = False) -> dict:
     return {"created": created, "skipped": skipped}
 
 
-def stage_prd(root: Path | str) -> dict:
-    """The PRD stage - the fork. Seed the `prd.md` scaffold from the template (if absent) for the
-    agent to author, and DIRECT the path-appropriate method: a greenfield project is interviewed
-    (`prd create`), a brownfield one is drafted from its code (`prd generate`, validated downstream
-    by `code verify`). The classification lives on the onboarding state, so the operator never
-    chooses a command - the flow forks for them."""
+def _seed_singleton(root: Path | str, name: str) -> tuple[list[str], list[str]]:
+    """Seed `sdlc-studio/{name}.md` from the shipped template if absent (returned as `created`);
+    an existing one is left for the operator to edit (`skipped`). The shared draft mechanic for
+    the PRD/TRD/TSD stages."""
     root = Path(root)
+    tmpl = SKILL / "templates" / "core" / f"{name}.md"
+    dst = root / SDLC / f"{name}.md"
+    if not tmpl.exists():
+        return [], []
+    if dst.exists():
+        return [], [f"{SDLC}/{name}.md"]
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_text(seed_text(tmpl, seed_fields(root, date.today().isoformat())), encoding="utf-8")
+    return [f"{SDLC}/{name}.md"], []
+
+
+def stage_prd(root: Path | str) -> dict:
+    """The PRD stage - the fork. Seed the `prd.md` scaffold for the agent to author, and DIRECT the
+    path-appropriate method: a greenfield project is interviewed (`prd create`), a brownfield one is
+    drafted from its code (`prd generate`, validated downstream by `code verify`). The classification
+    lives on the onboarding state, so the operator never chooses a command - the flow forks for them."""
     state = read_onboarding(root) or start_onboarding(root)
     path = state["path"]
-    created, skipped = [], []
-    tmpl = SKILL / "templates" / "core" / "prd.md"
-    dst = root / SDLC / "prd.md"
-    if tmpl.exists():
-        if dst.exists():
-            skipped.append(f"{SDLC}/prd.md")
-        else:
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            dst.write_text(seed_text(tmpl, seed_fields(root, date.today().isoformat())),
-                           encoding="utf-8")
-            created.append(f"{SDLC}/prd.md")
+    created, skipped = _seed_singleton(root, "prd")
     directive = ("greenfield - interview to fill it: `prd create`" if path == "greenfield"
                  else "brownfield - draft it from your code: `prd generate` "
                       "(validated downstream by `code verify`)")
     return {"created": created, "skipped": skipped, "path": path, "directive": directive}
 
 
+def stage_trd(root: Path | str) -> dict:
+    """The TRD stage: seed the technical-design doc, generated from the PRD."""
+    created, skipped = _seed_singleton(root, "trd")
+    return {"created": created, "skipped": skipped,
+            "directive": "generate the technical design from your PRD: `trd generate`"}
+
+
+def stage_tsd(root: Path | str) -> dict:
+    """The TSD stage: seed the test-strategy doc, generated from the PRD (and, brownfield, the
+    detected stack). The test strategy the sprint plan later reads is created here, so a plan never
+    reads a document that does not exist."""
+    created, skipped = _seed_singleton(root, "tsd")
+    state = read_onboarding(root) or start_onboarding(root)
+    stack = " and detected stack" if state.get("path") == "brownfield" else ""
+    return {"created": created, "skipped": skipped,
+            "directive": f"generate the test strategy from your PRD{stack}: `tsd generate`"}
+
+
 # Per-stage draft actions, keyed by stage name. Each drafts its artefact for the operator to
-# review; the operator confirms to advance. The later stage stories register their entries here.
-STAGE_ACTIONS = {"agents": stage_agents, "prd": stage_prd}
+# review; the operator confirms to advance. The remaining stage stories register their entries here.
+STAGE_ACTIONS = {"agents": stage_agents, "prd": stage_prd, "trd": stage_trd, "tsd": stage_tsd}
 
 
 def cmd_guided(args: argparse.Namespace) -> int:
