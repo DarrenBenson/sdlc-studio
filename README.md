@@ -95,13 +95,13 @@ And a word from the team that builds it:
 
 ## Built for multi-team work
 
-v4 makes SDLC Studio **truly multi-team compatible - human teams and agent teams together**.
+SDLC Studio is **truly multi-team compatible - human teams and agent teams together**.
 Every new project mints **collision-free artifact ids** (ULIDs like `US-01JQK3F8` instead of
 sequential `US0001`), so several people and agents on different machines - with different git
 states - can file bugs, stories, and change requests concurrently and never mint a clashing id.
 No coordination, no renumber-on-merge.
 
-Around that identity sits the v4 quality floor: a mechanical **independence gate** (the author
+Around that identity sits the quality floor: a mechanical **independence gate** (the author
 of a change can never be its reviewer), **verification-depth tiers** (a bug cannot reach Fixed
 without recorded evidence of how it was verified), a **portable CI gate** (`gate.py`, runs the
 same checks anywhere), and reconciliation that keeps every index and epic checkbox in step with
@@ -165,18 +165,20 @@ You drive the whole lifecycle in plain language - the AI works out what you mean
 
 ## How it works
 
-Most AI coding jumps from a vague prompt straight to code, then drifts as the project grows. SDLC Studio adds the steps a real team uses, so the agent always has the context to stay on track. Each step writes a plain markdown file under `sdlc-studio/` in your project. You stay in control: review each file, then run the next step. Deterministic scripts do the mechanical checks; the model does the thinking.
+Most AI coding jumps from a vague prompt straight to code, then drifts as the project grows. SDLC Studio runs your work through five stages - **spec -> criteria -> plan -> review -> evidence** - and holds the agent to each. Two backlogs organise it: a **discovery** backlog of requests (change requests and RFCs) that become **delivery** work (epics, stories, bugs, each with acceptance criteria) only once `refine` sizes them; a sprint then plans, builds, verifies, and closes with an independent review. Each step writes a plain markdown file under `sdlc-studio/`; deterministic scripts do the mechanical checks, the model does the thinking, and you review and approve.
 
 ```mermaid
 flowchart TB
   A[New idea] -->|prd create| P[PRD]
   B[Existing code] -->|prd generate| P
-  P --> E[Epics] --> S[Stories + acceptance criteria]
-  S --> PL[Plan] --> C[Code] --> T[Tests] --> V[Verify against criteria]
-  V -. reconcile + review .-> S
+  P --> E[Epics] --> S
+  RQ[Request: CR / RFC - discovery backlog] -->|refine| S[Stories + bugs, acceptance criteria - delivery backlog]
+  S -->|sprint plan| BLD[Build under TDD] --> VF[Verify criteria]
+  VF -->|two-role review + sign-off| DN[Done]
+  VF -. reconcile keeps docs true .-> S
 ```
 
-Two ways in, one disciplined path through. The dotted line back is reconcile and review, keeping every document true to what was built.
+Two backlogs, one disciplined path through. A request is not work until `refine` decomposes it into sized units (the two-backlog rule). A story reaches Done only when its executable acceptance criteria pass **and** an independent reviewer - never the author - signs it off. The dotted line back is reconcile, keeping every document true to what was built.
 
 Run `/sdlc-studio status` any time for the at-a-glance dashboard:
 
@@ -377,7 +379,7 @@ Dani (Engineering), Sam (QA), and Lena (Product) - editable persona cards that b
 <details>
 <summary>How do I upgrade?</summary>
 
-Re-run the installer, or `/sdlc-studio skill-update`. It is a drop-in: no project migration, existing `sdlc-studio/` directories keep working. Everything an existing project needs - what v4 changes, the explicit numbering question and its three answers, upgrade steps, breaking-change honesty - lives in **[docs/existing-users.md](docs/existing-users.md)**.
+Re-run the installer, or `/sdlc-studio skill-update`. It is a drop-in: no project migration, existing `sdlc-studio/` directories keep working. Everything an existing project needs - what changed (including the two-backlog workflow), the explicit numbering question and its three answers, upgrade steps, breaking-change honesty - lives in **[docs/existing-users.md](docs/existing-users.md)** and, in full, at **[sdlc-studio.com](https://sdlc-studio.com)**.
 
 </details>
 
@@ -405,7 +407,7 @@ The difference is simple: spec-driven tools **align** the agent on intent; SDLC 
 
 A wave of AI tools is inventing new, AI-native ways to deliver software: fresh artifact formats, fresh ceremonies, fresh vocabularies for the model to follow. SDLC Studio does the opposite. Software engineering already worked out how to ship software that survives contact with reality - clear requirements, acceptance criteria, traceability from intent to code, change control, and a definition of done that means done. Teams quietly dropped those practices not because they were wrong, but because maintaining them by hand was expensive, so specifications went stale and the discipline lapsed. That economics has changed: an agent can author the requirements, keep them current, and prove the code against them, with acceptance criteria as a machine-checkable oracle and continuous reconciliation keeping every artifact true. The agent carries the cost of the ceremony, and the discipline stays.
 
-It is also built for where this is heading: small human teams directing larger agentic ones, trunk-based. As of v4 these foundations are the default for new projects (`schema_version: 3`) - distributed artifact identity so parallel agents never fight over sequential ids, atomic index writes, typed authorship with a separation-of-duties lint. An existing project is never auto-flipped; it upgrades explicitly via `project upgrade`.
+It is also built for where this is heading: small human teams directing larger agentic ones, trunk-based. These foundations are the default for new projects (`schema_version: 3`) - distributed artifact identity so parallel agents never fight over sequential ids, atomic index writes, typed authorship with a separation-of-duties lint, and the two-backlog workflow that separates a request from the sized work it becomes. An existing project is never auto-flipped; it upgrades explicitly via `project upgrade`.
 
 It also reframes the lifecycle as a loop-engineering problem already solved. An agent runs in a loop that cannot judge its own exit condition; the lifecycle has always been that loop - specify, build, validate against the specification, reconcile, repeat - with acceptance criteria as the test that closes it. This is the lineage Test-Driven -> Behaviour-Driven -> Eval-Driven -> Goal-Driven Development: you set the goal and the criteria, the agent drives the proven lifecycle to it.
 
@@ -432,9 +434,10 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 
 ## Documentation
 
+- **[sdlc-studio.com](https://sdlc-studio.com)** - the documentation home: getting started, an end-to-end walkthrough, the concept guides (the two-backlog model, sprint planning, two-role review, executable acceptance criteria), the FAQ, and the multi-harness install guide. The files below are the in-repo reference the skill loads at runtime.
 - [The white paper](docs/whitepaper.md) - the mill, described properly: the operating model, the measured evidence, governance, and adoption, for the engineering leader evaluating an agentic SDLC
 - [docs/why-sdlc-studio.md](docs/why-sdlc-studio.md) - the full value argument: thesis, evidence (field + benchmark), economics, and honest caveats
-- [docs/existing-users.md](docs/existing-users.md) - already running SDLC Studio? What v4 changes, the numbering question, upgrade steps
+- [docs/existing-users.md](docs/existing-users.md) - already running SDLC Studio? What changed (the two-backlog workflow, the numbering question), upgrade steps
 - [docs/INSTALL.md](docs/INSTALL.md) - full installer reference
 - `/sdlc-studio help` - the command catalogue (also [help/help.md](.claude/skills/sdlc-studio/help/help.md))
 - [Greenfield runbook](.claude/skills/sdlc-studio/help/getting-started.md) and [Brownfield runbook](.claude/skills/sdlc-studio/help/brownfield-runbook.md) - the step-by-step paths
@@ -445,6 +448,10 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 
 Dev instructions live in [AGENTS.md](AGENTS.md) (read natively by Codex, Copilot, Cursor, Gemini; Claude Code imports it via CLAUDE.md). Lint with `npm run lint`; test with `npm test`. Behavioural eval scenarios live in [evals/](evals/README.md). See [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Sponsor
+
+Proudly supported by **Anthropic** through the **Claude for Open Source** programme. Sponsorship supports the project's development; it is not an endorsement of any claim made here, and the benchmark evidence is published whichever way it points.
+
 ## Licence
 
-[MIT](LICENSE).
+[MIT](LICENSE). Runs entirely in your own repository - no account, no server, no data leaves your machine.
