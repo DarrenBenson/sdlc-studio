@@ -422,6 +422,35 @@ class BatchCliTests(unittest.TestCase):
             self.assertIn("added US0002", out)
 
 
+class CloseAttemptTrendTests(unittest.TestCase):
+    """CR0421 US0435: once the outstanding set is GROWING across close attempts, the trend line
+    offers the bounded `--file-and-close` exit - not only the "chasing a moving target" diagnosis.
+    A first or converging attempt makes no such offer, so the exit is reserved for real divergence."""
+
+    def _pre(self, n: int) -> dict:
+        return {"blockers": [{"stage": f"s{i}", "detail": "", "remedy": ""} for i in range(n)]}
+
+    def test_a_growing_outstanding_set_offers_the_bounded_exit(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = str(Path(d))
+            mod = _load()
+            mod.run_state.open_run(root, batch=["US0001"], goal="g")
+            self.assertIsNone(mod._record_close_attempt(root, self._pre(3)), "first attempt: no trend")
+            line = mod._record_close_attempt(root, self._pre(5))  # grew 3 -> 5
+            self.assertIn("growing", line)
+            self.assertIn("--file-and-close", line, "a growing set names the bounded exit")
+
+    def test_a_converging_or_first_attempt_makes_no_offer(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = str(Path(d))
+            mod = _load()
+            mod.run_state.open_run(root, batch=["US0001"], goal="g")
+            self.assertIsNone(mod._record_close_attempt(root, self._pre(5)), "first attempt: no offer")
+            shrank = mod._record_close_attempt(root, self._pre(2))  # 5 -> 2
+            self.assertIn("shrinking", shrank)
+            self.assertNotIn("--file-and-close", shrank, "a converging close makes no offer")
+
+
 class WsjfTests(unittest.TestCase):
     """--order wsjf ranks Cost of Delay (from Priority) against Points. No seat scores needed.
 

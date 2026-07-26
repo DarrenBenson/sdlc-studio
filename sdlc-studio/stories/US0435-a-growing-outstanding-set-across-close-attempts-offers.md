@@ -1,6 +1,6 @@
 # US0435: a growing outstanding set across close attempts offers the bounded exit, not just the diagnosis
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0421
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new
@@ -26,6 +26,7 @@ the divergence and leaving me to force a false Done or grandfather same-day work
 - **Then** it does not only print "growing - chasing a moving target"; it also names the bounded exit
   (`--file-and-close --retro <id>`) as the way to close with the remaining work honestly filed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseAttemptTrendTests::test_a_growing_outstanding_set_offers_the_bounded_exit
+- **Verified:** yes (2026-07-26)
 
 ### AC2: a shrinking or first-attempt set does not offer the exit
 
@@ -34,6 +35,7 @@ the divergence and leaving me to force a false Done or grandfather same-day work
 - **Then** no bounded-exit offer is made - the offer is reserved for genuine divergence, so it does not
   train operators to reach for file-and-close on a converging close
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseAttemptTrendTests::test_a_converging_or_first_attempt_makes_no_offer
+- **Verified:** yes (2026-07-26)
 
 ## Revision History
 

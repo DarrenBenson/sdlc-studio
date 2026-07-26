@@ -4563,7 +4563,16 @@ def _record_close_attempt(root, pre: dict) -> str | None:
     if n < prev:
         word = "shrinking"
     elif n > prev:
+        # A growing set means each attempt re-breaks a lane the last one cleared. Naming the
+        # divergence is not a way out - so once the set is growing, offer the bounded exit, or
+        # the only moves left are the ones the gate exists to stop: a forced false Done, or a
+        # grandfather bump. The offer is made ONLY when growing, never on a converging close,
+        # so it does not train an operator to reach for file-and-close on a close that is working.
         word = "growing - the close is chasing a moving target, not converging"
+        return (f"outstanding set {prev} -> {n} ({word}). Bounded exit: rerun the close with "
+                f"`--file-and-close --retro <RETROxxxx>` to complete it with the {n} outstanding "
+                f"item(s) filed as linked follow-ups rather than fixed inline - honestly recorded "
+                f"as outstanding, not waived.")
     else:
         word = "unchanged"
     return f"outstanding set {prev} -> {n} ({word})"
