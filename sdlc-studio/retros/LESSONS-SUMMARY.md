@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0233: **A `Verify:` line is not verified until it is run.** Three delivered units carried `Verify:` references to test nodes that did not exist...**
+- **L-0232: **A destructive default must be opt-in.** `changelog compose` folded and DELETED the whole pending fragment set by default; run out of...**
+- **L-0231: **Verify the premise before building the fix.** BG0296 was filed blaming the mutation tool for being blind to guard clauses; checking it...**
 - **L-0230: **A measurement instrument that always reads the same is off, whatever it says.** The capacity ceiling reported OVER BUDGET on every plan...**
 - **L-0229: **A pre-check is an enumeration, and an enumeration is a lower bound.** Testing the anchors before writing them reduced three vacuous...**
 - **L-0228: **Deciding a request is not the same as reducing the backlog.** Four rulings converted 9 discovery items into 17 delivery units.**

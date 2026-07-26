@@ -30,7 +30,7 @@
 - **Given** a tree where one authoritative file still reads the old version
 - **When** `check_versions.py --strict` is run
 - **Then** it exits non-zero and NAMES the disagreeing file, rather than reporting a generic mismatch
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/../../../../tools/tests/test_check_versions.py::StrictBumpTests::test_a_single_stale_file_is_named
+- **Verify:** pytest tools/tests/test_check_versions.py::StrictBumpTests::test_a_single_stale_file_is_named
 - **Verified:** yes (2026-07-26)
 
 ## Revision History

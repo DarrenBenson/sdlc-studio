@@ -46,8 +46,8 @@
 - **Given** the plan driven both with and without `--sprint-goal`
 - **When** the two confirmation lines are compared
 - **Then** the text differs, so a regression cannot make the set and unset cases render the same
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_opened_line.py::RunOpenedLine::test_with_and_without_sprint_goal_differ
-- **Verified:** yes (2026-07-25)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_opened_line.py::RunOpenedLine::test_the_two_cases_cannot_render_identically
+- **Verified:** yes (2026-07-26)
 
 ## Revision History
 

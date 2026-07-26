@@ -1,75 +1,48 @@
 # Reviews - LATEST (anchor)
 
 <!-- close-status:begin -->
-> **RUN-01KYAG6X closed goal-reached.** 13 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> **RUN-01KYAHY9 closing goal-reached.** The delivery backlog reached zero open units; the v5 cut is built and the sprint is being signed off to Done. **Sign-off is the operator's, ratified** - the two-role gate is satisfied by the delegated adversarial review (evidence) plus the operator's ratification (reviewer of record).
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
-> **The backlog is fully groomed.** Sprint 3a groomed 18 units (red-now pass=0 fail=41,
-> verdict PARTIAL); Sprint 3a-bis groomed the 13 the operator's rulings created (pass=0
-> fail=30, verdict ACHIEVED). `conformance check` reports 0 ungroomed stories. Sprint 3b -
-> the delivery rung that empties the backlog - is next.
+> **The delivery backlog is empty and v5 is cut (build).** Every remaining story is delivered and
+> signed off to Done; every bug is Fixed; the discovery CRs derive Complete at this close. The v5
+> release is CUT (version 5.0.0 across the four authoritative homes, CHANGELOG cut from 126
+> fragments, `release_cut.py` tag guard in place) but NOT yet TAGGED - the tag is the operator's
+> final act, gated on `gate --release` green recorded on the exact release commit.
 
-## Where the pipeline is (2026-07-24)
+## Where the pipeline is (2026-07-26)
 
-Sprint 2 is closed and signed off. Sprint 3a - the design rung - is closed with a **partial**
-verdict. Sprint 3b, the delivery rung that empties the backlog, is the next run.
+RUN-01KYAHY9 delivered the whole tail of the backlog plus the v5 cut. An independent, fresh-context
+adversarial review (RFC0051 / D0059 delegated model) probed the substantive work - the
+review-independence machinery, the lane partition, the over-appetite recording - APPROVEd with no
+MAJOR findings and no constructible independence bypass, and named four MINOR advisories. Two of
+the four were fixed in-sprint (BG0297 duplicate-detection scope, BG0298 fail-safe hazard
+direction); two were declined with reason. The operator ratified the close.
 
-The backlog stands at **~120 non-terminal artefacts**, which is higher than when Sprint 3a was
-planned. That is correct rather than a regression: four operator decisions converted RFC0049,
-RFC0050, RFC0051 and CR0418 from options into 17 units of real work.
+## What this run produced
 
-## What Sprint 3a produced
+- **The delivery backlog emptied**: 67 units delivered and signed off to Done (48 stories + a bug
+  cluster), including BG0284 (review-independence supersession), EP0118 (lane partition), EP0124
+  (over-appetite recording), and the plan-surface message renderers.
+- **Three dogfooding frictions filed and fixed** rather than worked around: BG0295 (compose
+  dry-run gate), BG0296 (mutation gitignored-worktree scan), CR0420/US0432 (gate-budget
+  re-declaration).
+- **The v5 cut**: `release_cut.py` (changelog cut from fragments + a tag guard that refuses a tag
+  unless the pre-tag gate was recorded green on the exact commit), version 5.0.0 everywhere,
+  `check_versions --strict` green.
 
-- **18 skeleton stories groomed** - 41 acceptance criteria with Given/When/Then and a
-  node-addressed Verify line, all 18 moved Draft to Ready.
-- **A red-now ledger: pass=0, fail=41, manual=0.** The behaviour is absent, so every verifier
-  can be run for nothing and the counterfactual bar is proved rather than asserted.
-- **Four decisions recorded** - D0059 (disclosed delegated sign-off), D0060 (test strategy at
-  planning), D0061 (adversarial plan review), D0062 (goal-aware breakdown gate) - each
-  decomposed into EP0157-EP0160.
-- **Grooming pre-work**: BG0282 split from 13 points into three units; `Affects` derived for 27
-  stories.
+## What the close caught
 
-## What the rung caught
+Three delivered units carried stale or unparseable `Verify:` references (US0347 a `../..` path
+pytest cannot parse, US0387 a wrong method name, US0427 a test class that never existed) - each
+read as delivered while verifying nothing. Repointed to the real tests. Lesson recorded: run
+`verify_ac` at delivery, not only at close.
 
-Three of 41 verifiers **passed against unbuilt behaviour**, and all three were the same defect:
-a check matching text already in the tree. `check_versions --strict` asserted consistency and
-was green at 4.1.0; `grep xrepo` matched a word BG0162 had already written; `grep Primary`
-matched the one-Primary-per-interface constraint while the story exists precisely because no
-selection method does. A fourth passed after being repaired - a `[^.]*` regex cannot cross the
-line break its target sentence contains.
+## Next
 
-None of these would have been found by reading them. Running every verifier while the behaviour
-is absent is the only reliable detector, and it is free exactly once.
-
-## Open decisions
-
-**None outstanding.** Every RFC is Accepted with its D1 row closed. CR0355 is deliberately held
-at Proposed until the v5 launch, per its own instruction.
-
-## Sprint 3b - the delivery rung
-
-**~64 units, ~160 points.** Operator decisions taken 2026-07-24 that shape it:
-
-- **v5 ships only when the backlog is empty** (operator). EP0117, the cut itself, is last.
-- **D0063** - "backlog empty" excludes units blocked on the release itself. CR0355 is marked
-  release-gated, breaking the circular block between it and the cut.
-- **D0064** - capacity re-derived from measured rows to 15M tokens / 64 units / 960 minutes,
-  closing CR0419. The instrument reports WITHIN BUDGET again rather than always OVER.
-- **Delivery mode: parallel worktree agents on file-disjoint lanes** (operator). Sprint 2 ran
-  this way; BG0280 and CR0415 are open against the failures it produced, and both are in scope.
-
-**Read first:**
-
-- **BG0293 blocks the v5 cut independently of the backlog.** `gate --release` did not finish
-  inside 10 minutes. It is the only run that may not rely on diff scoping, and US0348 AC1
-  requires it green.
-- **BG0290 blocks refining any accepted RFC** - the request carries no ACs to seed from, so
-  validate's no-ac error fires on refine's own output.
-
-## Lessons
-
-A verifier that matches text already in the tree proves nothing, and reading it will not tell
-you. A wrong diagnosis does not fail loudly - it produces a workaround that fails silently.
-Deciding a request is not the same as reducing the backlog.
+- The operator cuts the **v5 tag** on the release commit (`release_cut.py record-green` +
+  `tag-check`), after `gate --release` is green.
+- **Forward-port** the skill source to the installed copy (`tools/forward-port.sh --yes`).
+- **Plan the v5 documentation overhaul** (RFC): the two-backlog model (discovery vs delivery) and
+  sprint planning are the headline v5 changes to document.
