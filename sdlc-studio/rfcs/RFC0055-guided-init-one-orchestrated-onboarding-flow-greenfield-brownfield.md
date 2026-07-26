@@ -1,6 +1,7 @@
 # RFC-0055: Guided init: one orchestrated onboarding flow (greenfield + brownfield) from zero to first sprint plan - AGENTS.md, PRD, TRD, TSD, personas, best practice baked in
 
-> **Status:** Draft
+> **Status:** In Review
+> **Decomposed-into:** EP0163
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -43,12 +44,27 @@ Every new and returning user - the exact adoption risk the v5 site and docs exis
 | # | Decision | Status |
 | --- | --- | --- |
 | D1 | Orchestration shape | **DECIDED**: profile-gated full orchestrator (option C over A), resumable checklist (B) as fallback/progress surface |
-| D2 | Greenfield vs brownfield divergence: shared spine, split points (PRD source, TRD/TSD generation, persona risk signals) | Open - settle during refine |
+| D2 | Greenfield vs brownfield divergence | **DECIDED**: one shared spine; `init` auto-detects the path (empty/near-empty repo = greenfield, existing source = brownfield) and asks the user to confirm. Only the PRD stage forks - greenfield `prd create` (interview), brownfield `prd generate` (read the code, and note the downstream `code verify` test-validation). TRD/TSD are generated from the PRD (brownfield also from the detected stack); personas from the PRD + risk signals. Every other stage is identical. |
 | D3 | Auto-generate vs interview balance | **DECIDED**: draft-then-confirm (the tool drafts each artefact, the user edits/approves; interview only fills what cannot be inferred) |
 | D4 | Mandatory vs profile-gated artefacts | **DECIDED**: ALWAYS walk everything (AGENTS.md, PRD, TRD, TSD, personas) - the profile tunes rigour/depth within a step, never skips it |
-| D5 | Resumability + escape hatch: checkpoint/resume a long flow; drop to manual at any step without losing state | Open - settle during refine |
-| D6 | Relationship to RFC0019 (Accepted) + CR0077-0081: supersede, absorb, or extend | Open - settle during refine |
+| D5 | Resumability + escape hatch | **DECIDED**: a checkpoint at `sdlc-studio/.local/onboarding.json` records each stage and its status; re-running `init` resumes from the first incomplete stage. Nothing advances without the user's confirmation (draft-then-confirm IS the checkpoint). Any stage can be run manually / skipped - recorded as `skipped` on the checklist, never silently - and `--reset` restarts the flow. The `status`/`hint` surface shows onboarding progress until the first plan is reached. |
+| D6 | Relationship to RFC0019 (Accepted) + CR0077-0081 | **DECIDED**: RFC0055 ABSORBS them. The greenfield-init friction RFC0019 targets is subsumed by this orchestrator; on delivery, RFC0019 is marked Superseded-by RFC0055 and the CR0077-0081 intent is folded into the orchestrator's stages rather than built separately. |
 | D7 | v5-launch blocker or fast-follow | **DECIDED**: v5-launch BLOCKER - all-or-nothing for adoption; the tag waits for the full flow |
+
+## Delivery shape (for refine)
+
+Decompose into one epic, spine-first so the smallest complete path (greenfield to a first plan) lands and is testable before the whole flow exists:
+
+1. **Orchestrator skeleton + resumable checkpoint** - the `init` guided driver, the `onboarding.json` state model, greenfield/brownfield detection + confirm, the stage runner (draft-then-confirm, skip-to-manual, `--reset`).
+2. **AGENTS.md stage** - write/confirm `AGENTS.md` (+ the `CLAUDE.md` import) from the tool-neutral starter.
+3. **PRD stage** - the forking stage: greenfield `prd create`, brownfield `prd generate`; draft-then-confirm.
+4. **TRD and TSD stages** - both generated from the PRD (+ stack for brownfield), draft-then-confirm.
+5. **Personas stage** - `persona generate --team` from the PRD + risk signals, accept/edit.
+6. **Decompose to first plan** - epics/stories, landing the user at a ready `sprint plan`.
+7. **Progress surface** - the `status`/`hint` onboarding checklist + escape hatch.
+8. **Docs + supersession** - rewrite `help/init.md` and `reference-*` for the guided flow; mark RFC0019 Superseded.
+
+Each code story is TDD with executable ACs and a mutation-checked guard; closed through the two-role gate.
 
 ## Revision History
 

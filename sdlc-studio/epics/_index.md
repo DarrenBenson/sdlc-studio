@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 0 |
+| Draft | 1 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 162 |
-| **Total** | **162** |
+| **Total** | **163** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -185,3 +185,4 @@
 | [EP0160](EP0160-the-breakdown-gate-becomes-goal-aware-cr0418-d0062.md) | The breakdown gate becomes goal-aware (CR0418 D0062) | Done | -- | -- | 2026-07-24 | 2026-07-24 |
 | [EP0161](EP0161-re-budget-the-pre-commit-gate-against-measured.md) | Re-budget the pre-commit gate against measured cost | Done | -- | -- | 2026-07-26 | 2026-07-26 |
 | [EP0162](EP0162-a-sprint-batch-is-mutable-and-the-close.md) | A sprint batch is mutable and the close converges honestly | Done | -- | -- | 2026-07-26 | 2026-07-26 |
+| [EP0163](EP0163-guided-init-one-orchestrated-onboarding-flow-to-a.md) | Guided init: one orchestrated onboarding flow to a first sprint plan | Draft | -- | -- | 2026-07-26 | 2026-07-26 |
