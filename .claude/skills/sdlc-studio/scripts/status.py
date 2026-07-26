@@ -397,7 +397,25 @@ def compute_hint(data: dict, repo_root: Path) -> dict:
             "discovery": awaiting if awaiting is not None else discovery_awaiting(repo_root)}
 
 
+def _onboarding_hint(repo_root: Path) -> dict | None:
+    """If guided onboarding is under way, resuming it IS the next step - `init guided` walks the
+    operator through the remaining docs to a first plan, so it takes precedence over the pipeline
+    ladder below. A complete or absent onboarding returns None and the ordinary hint is used."""
+    import init  # noqa: PLC0415 - deferred sibling; keeps the import graph lazy for the hot path
+    state = init.read_onboarding(repo_root)
+    if not state:
+        return None
+    stage = init.first_incomplete(state)
+    if not stage:
+        return None
+    return {"next_command": "init guided",
+            "reason": f"guided onboarding in progress - next stage: {stage}"}
+
+
 def _compute_hint_rung(data: dict, repo_root: Path) -> dict:
+    onboarding = _onboarding_hint(repo_root)
+    if onboarding:
+        return onboarding
     req = data["requirements"]
     base = repo_root / "sdlc-studio"
     has_code = any((repo_root / d).exists() for d in ("src", "lib", "app", "cmd"))

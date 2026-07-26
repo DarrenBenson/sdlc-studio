@@ -22,6 +22,13 @@ status = importlib.util.module_from_spec(_spec)
 sys.modules["status"] = status
 _spec.loader.exec_module(status)
 
+_INIT_PATH = Path(__file__).resolve().parent.parent / "init.py"
+_ispec = importlib.util.spec_from_file_location("init", _INIT_PATH)
+assert _ispec and _ispec.loader
+init = importlib.util.module_from_spec(_ispec)
+sys.modules["init"] = init
+_ispec.loader.exec_module(init)
+
 
 def _story(root: Path, num: int, st: str) -> None:
     d = root / "sdlc-studio" / "stories"
@@ -102,6 +109,31 @@ class HintTests(unittest.TestCase):
             _story(root, 1, "Done")
             hint = status.compute_hint(status.gather(root), root)
             self.assertIn("story", hint["next_command"])
+
+
+class OnboardingHintTests(unittest.TestCase):
+    """US0443: while guided onboarding is in progress, the hint resumes it and names the next
+    stage, taking precedence over the ordinary pipeline ladder - so the operator is walked to a
+    first plan. A complete or absent onboarding falls through to the normal hint."""
+
+    def test_hint_resumes_guided_onboarding_while_in_progress(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            init.start_onboarding(root)  # every stage pending; first is `agents`
+            hint = status.compute_hint(status.gather(root), root)
+            self.assertEqual(hint["next_command"], "init guided")
+            self.assertIn("agents", hint["reason"])
+
+    def test_completed_or_absent_onboarding_falls_through(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # Absent: no onboarding state at all -> ordinary "no PRD" hint.
+            self.assertIn("prd", status.compute_hint(status.gather(root), root)["next_command"])
+            # Complete: every stage done/skipped -> the onboarding branch yields nothing.
+            init.start_onboarding(root)
+            for name in init.ONBOARDING_STAGES:
+                init.set_stage(root, name, "done")
+            self.assertIn("prd", status.compute_hint(status.gather(root), root)["next_command"])
 
 
 class VerifyLaneTests(unittest.TestCase):
