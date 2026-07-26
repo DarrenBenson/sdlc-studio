@@ -36,19 +36,19 @@ Every new and returning user - the exact adoption risk the v5 site and docs exis
 
 ## Recommendation
 
-Lean **C-over-A**: a full guided orchestrator (A) whose depth is profile-gated (C), with B's resumable checklist as the always-available fallback and progress surface. Decompose so the **spine ships first** (AGENTS.md → PRD → first plan, greenfield) and TRD/TSD/personas and the brownfield path land as subsequent, independently valuable slices - so value arrives before the whole wizard is built, and the abandonment risk is tested early on the smallest complete path. To be settled in the Open Decisions before refining.
+**A full guided orchestrator that always walks the whole spine, with profile tuning rigour rather than inclusion** (operator-decided 2026-07-26). `init` is one guided, resumable, draft-then-confirm flow that takes every user - greenfield or brownfield - through AGENTS.md → PRD → TRD → TSD → personas → epics/stories → a ready first `sprint plan`, and never skips an artefact. The profile (lite/standard/full) sets how deep each step goes, not whether it runs; B's resumable checklist is the always-available progress surface and escape hatch. This is a **v5-launch blocker**: the operator judges onboarding all-or-nothing for adoption, so the v5 tag waits for the full flow (both paths, every artefact). Internally it may still be built spine-first (greenfield AGENTS.md → PRD → first plan as the smallest complete slice, to de-risk abandonment early), but v5 does not launch until the whole flow is complete.
 
 ## Open Decisions
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Orchestration shape: full guided `init` (A), staged checklist (B), or profile-gated (C) - and the fallback | Open |
-| D2 | Greenfield vs brownfield divergence: how much of the spine is shared, and where do the two paths split (PRD source, TRD/TSD generation, persona risk signals)? | Open |
-| D3 | Auto-generate vs interview balance per artefact: what does the tool draft and ask the user to confirm, vs interview from scratch? Default to draft-then-confirm? | Open |
-| D4 | Mandatory vs profile-gated artefacts: are TRD, TSD and personas always walked, or only on standard/full profiles (lite skips to a fast first plan)? | Open |
-| D5 | Resumability + escape hatch: how is a long flow checkpointed and resumed, and how does a user drop to manual at any step without losing state? | Open |
-| D6 | Relationship to RFC0019 + CR0077-0081: does this supersede, absorb, or extend them? | Open |
-| D7 | Is this a v5-launch blocker (operator: "more work before launch"), or a fast-follow v5.1? Affects whether the v5 tag waits on it | Open |
+| D1 | Orchestration shape | **DECIDED**: profile-gated full orchestrator (option C over A), resumable checklist (B) as fallback/progress surface |
+| D2 | Greenfield vs brownfield divergence: shared spine, split points (PRD source, TRD/TSD generation, persona risk signals) | Open - settle during refine |
+| D3 | Auto-generate vs interview balance | **DECIDED**: draft-then-confirm (the tool drafts each artefact, the user edits/approves; interview only fills what cannot be inferred) |
+| D4 | Mandatory vs profile-gated artefacts | **DECIDED**: ALWAYS walk everything (AGENTS.md, PRD, TRD, TSD, personas) - the profile tunes rigour/depth within a step, never skips it |
+| D5 | Resumability + escape hatch: checkpoint/resume a long flow; drop to manual at any step without losing state | Open - settle during refine |
+| D6 | Relationship to RFC0019 (Accepted) + CR0077-0081: supersede, absorb, or extend | Open - settle during refine |
+| D7 | v5-launch blocker or fast-follow | **DECIDED**: v5-launch BLOCKER - all-or-nothing for adoption; the tag waits for the full flow |
 
 ## Revision History
 
