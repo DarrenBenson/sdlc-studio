@@ -4381,9 +4381,14 @@ def close_preflight(root, retro_id: str | None = None) -> dict:
         block("retro", "no retro named",
               "`sprint.py close` scaffolds one and stops, or pass --retro RETROxxxx")
 
-    # The gate block, which already reports all of its lanes at once.
+    # The gate block, which already reports all of its lanes at once. Conformance is scoped to
+    # THIS run's batch: on a clean tree the diff scope is empty, so the unscoped lane judges the
+    # whole workspace and an out-of-batch unit's debt - a different author, a different epic -
+    # blocks a fully delivered in-batch close. The batch is what this close owns.
+    batch_scope = {sdlc_md.norm_id(b) for b in (state.get("batch") or [])}
     try:
-        report = gate.run_gate(str(root), require_retro=retro_id, require_review=True)
+        report = gate.run_gate(str(root), require_retro=retro_id, require_review=True,
+                               conformance_scope=batch_scope)
     except Exception as exc:  # noqa: BLE001 - a broken lane must not hide the other blockers
         block("gate", f"gate could not run: {exc}", "run `gate.py` directly for detail")
     else:

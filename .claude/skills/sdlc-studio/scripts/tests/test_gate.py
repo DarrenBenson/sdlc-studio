@@ -575,6 +575,60 @@ class ConformanceRemedyTests(unittest.TestCase):
             self.assertNotIn("adopt_after", r["detail"])  # no remedy noise on a green check
 
 
+class BatchScopedConformanceTests(unittest.TestCase):
+    """CR0421 US0434: the close's conformance lane judges only the batch's units. On a clean
+    tree the diff scope is empty, so conformance judges the WHOLE workspace and out-of-batch
+    debt blocks an in-batch close. An explicit `scope_ids` (the run's batch) narrows the per-unit
+    ledger to exactly the units this close owns."""
+
+    def _repo(self, d, n: int) -> Path:
+        repo = Path(d)
+        sd = repo / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        for i in range(1, n + 1):
+            (sd / f"US{i:04d}-x.md").write_text(
+                f"# US{i:04d}: s\n\n> **Status:** Done\n"
+                "> **Epic:** [EP0001](../epics/EP0001-x.md)\n\n"
+                "## Acceptance Criteria\n\n### AC1: works\n- **Verify:** shell echo ok\n",
+                encoding="utf-8")
+        return repo
+
+    def test_close_conformance_lane_judges_only_the_batch(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, 3)  # US0001..US0003, all nonconformant
+            whole = gate._conformance(str(repo))
+            scoped = gate._conformance(str(repo), scope_ids={"US0001"})
+            self.assertGreaterEqual(whole["count"], 3, "whole workspace charges all three")
+            # Scoping to one batch unit drops the other two from the count - any repo-wide
+            # global failure stays in both, so the difference is exactly the units scoped out.
+            self.assertEqual(whole["count"] - scoped["count"], 2,
+                             "the two out-of-batch units are no longer charged")
+
+    def test_an_empty_batch_scope_charges_nothing_per_unit(self) -> None:
+        # A bug-only batch owns no story units: scoping to the empty set must not silently fall
+        # back to judging everything (the truthiness trap _post_transition_conformance guards).
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, 3)
+            whole = gate._conformance(str(repo))
+            scoped = gate._conformance(str(repo), scope_ids=set())
+            self.assertEqual(whole["count"] - scoped["count"], 3,
+                             "no story unit is in the batch, so none is charged")
+
+    def _conf_check(self, report) -> dict:
+        return next(c for c in report["checks"] if c["check"] == "conformance")
+
+    def test_run_gate_scopes_conformance_to_the_batch(self) -> None:
+        # The end-to-end wiring: run_gate(conformance_scope=...) must reach the conformance lane,
+        # so the close's gate run judges its batch and not the whole workspace.
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, 3)
+            whole = self._conf_check(gate.run_gate(str(repo), only=["conformance"]))
+            scoped = self._conf_check(gate.run_gate(
+                str(repo), only=["conformance"], conformance_scope={"US0001"}))
+            self.assertEqual(whole["count"] - scoped["count"], 2,
+                             "the batch scope reached the lane and dropped the two out-of-batch units")
+
+
 class GateExitContractTests(unittest.TestCase):
     def test_cmd_gate_maps_ok_to_exit_code(self) -> None:
         import argparse

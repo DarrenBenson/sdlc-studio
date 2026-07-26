@@ -26,9 +26,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 
 
-def _conformance(root: str, changed: bool = False) -> dict:
+def _conformance(root: str, changed: bool = False,
+                 scope_ids: "set[str] | None" = None) -> dict:
     import conformance
-    result = conformance.detect_conformance(root, changed=changed)
+    result = conformance.detect_conformance(root, changed=changed, scope_ids=scope_ids)
     # A repo-global failure (one uncatalogued command, a missing index) is attributed ONCE
     # rather than charged to every judged unit - but it must still block, or improving the
     # report would quietly weaken the gate. Count it as its own finding. `changed` narrows the
@@ -1526,7 +1527,8 @@ def run_gate(root: str = ".", only: list[str] | None = None,
              require_retro: str | None = None, release: bool = False,
              allow_external: bool = False, verify_batch: bool = False,
              require_lessons: bool = False, require_handoff: str | None = None,
-             require_review: bool = False, require_close: bool = False) -> dict:
+             require_review: bool = False, require_close: bool = False,
+             conformance_scope: "set[str] | None" = None) -> dict:
     """Run the selected checks and report. `ok` is False only when a BLOCKING check
     fails; a non-blocking failure is reported but does not fail the gate. `require_retro`
     is the SPRINT-CLOSE gate: it binds a blocking check that the named batch retro exists,
@@ -1614,6 +1616,18 @@ def run_gate(root: str = ".", only: list[str] | None = None,
             bound.append("changelog-fragments")
         else:
             downgraded.append("release.changelog")
+    # The sprint close scopes conformance to the BATCH it owns. On a clean tree the diff scope is
+    # empty, so the default lane judges the whole workspace and blocks an in-batch close on another
+    # author's out-of-batch debt. Applied AFTER the release swap - a TAG still judges
+    # everything - and bound only over the shipped scoped/whole lane, so a caller's injected entry
+    # of that name is left alone. Bound: the close cannot deselect the lane that proves its batch.
+    if conformance_scope is not None and not release:
+        _scope = {str(x) for x in conformance_scope}
+        if registry.get("conformance") in (DEFAULT_CHECKS.get("conformance"),
+                                            WHOLE_WORKSPACE_LANES.get("conformance")):
+            registry["conformance"] = lambda r, _s=_scope: _conformance(r, scope_ids=_s)
+            if "conformance" not in bound:
+                bound.append("conformance")
     # A wrong/typo'd --only/--skip (or a renamed check) must FAIL, not silently select
     # nothing and report a vacuous PASS - the false-assurance class LL0008 warns against.
     unknown = sorted({n for n in (list(only or []) + list(skip or [])) if n not in registry})

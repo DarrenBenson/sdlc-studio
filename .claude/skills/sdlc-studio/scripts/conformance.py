@@ -267,7 +267,8 @@ def changed_story_ids(root: Path) -> set[str] | None:
     return out
 
 
-def detect_conformance(repo_root: Path | str, changed: bool = False) -> dict:
+def detect_conformance(repo_root: Path | str, changed: bool = False,
+                       scope_ids: "set[str] | None" = None) -> dict:
     """Per-story lifecycle conformance.
 
     Returns {"units": [{id, type, status, stages, conformant, missing}],
@@ -284,6 +285,14 @@ def detect_conformance(repo_root: Path | str, changed: bool = False) -> dict:
     root = Path(repo_root)
     changed_ids = changed_story_ids(root) if changed else None
     degraded = bool(changed) and changed_ids is None
+    # An explicit batch scope (the sprint close passes the run's own units) narrows the per-unit
+    # ledger to exactly those ids, TAKING PRECEDENCE over the diff scope: a clean tree has no diff
+    # to narrow to, so the close needs the batch to say which units it OWNS rather than judging the
+    # whole workspace and blocking on a different author's debt. An EMPTY scope charges nothing
+    # per-unit - it is not "judge everything" (that is what an unanswerable probe means, above) -
+    # so a bug-only batch owns no story unit. The repo-global stages stay at full strength either
+    # way, so scoping can never hide a repo-wide failure.
+    narrow = ({sdlc_md.norm_id(x) for x in scope_ids} if scope_ids is not None else changed_ids)
     vocab = sdlc_md.status_vocab("story", root)
     # Adoption cutoff: a project that turns the gate on partway can set
     # `conformance.adopt_after: US0360` (or the bare `360`) in .config.yaml so units up
@@ -344,7 +353,7 @@ def detect_conformance(repo_root: Path | str, changed: bool = False) -> dict:
         status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab) or "Unknown"
         decomposed = sdlc_md.extract_field(text, "Epic") is not None
         has_ac, has_verify, verified_states = _ac_signals(text)
-        scoped_out = changed_ids is not None and sdlc_md.norm_id(rid) not in changed_ids
+        scoped_out = narrow is not None and sdlc_md.norm_id(rid) not in narrow
         verified = reconciled = critiqued = documented = promoted = None
         critiqued_missing: list[str] = []
         if status == "Done" and scoped_out:
@@ -469,7 +478,7 @@ def detect_conformance(repo_root: Path | str, changed: bool = False) -> dict:
             # `summary.advisory`: a report that spent one term on two counts would mislead.
             "advisory_ids": [u["id"] for u in units
                              if u["scoped_out"] and not u["conformant"]],
-            "unjudged_stages": list(UNJUDGED_WHEN_SCOPED) if changed_ids is not None else [],
+            "unjudged_stages": list(UNJUDGED_WHEN_SCOPED) if narrow is not None else [],
         },
         "summary": {"total": total, "conformant": ok,
                     "nonconformant": nonconformant, "exempt": exempt_n,
