@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 8 |
+| Draft | 7 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 0 |
+| Review | 1 |
 | Done | 435 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -347,7 +347,7 @@
 | [US0434](US0434-the-close-correctness-lanes-are-batch-scoped-or.md) | the close correctness lanes are batch-scoped, or --file-and-close files named out-of-batch debt | Done | EP0162 | 2026-07-26 | 2026-07-26 |
 | [US0435](US0435-a-growing-outstanding-set-across-close-attempts-offers.md) | a growing outstanding set across close attempts offers the bounded exit, not just the diagnosis | Done | EP0162 | 2026-07-26 | 2026-07-26 |
 | [US0436](US0436-review-currency-is-judged-by-the-review-record.md) | review-currency is judged by the review record, not the anchor commit time, so a passed lane cannot be re-broken by a correct-content edit | Done | EP0162 | 2026-07-26 | 2026-07-26 |
-| [US0437](US0437-guided-init-orchestrator-skeleton-resumable-onboarding-state-greenfield.md) | Guided init orchestrator skeleton: resumable onboarding state, greenfield/brownfield detection, and the draft-then-confirm stage runner | Draft | EP0163 | 2026-07-26 | 2026-07-26 |
+| [US0437](US0437-guided-init-orchestrator-skeleton-resumable-onboarding-state-greenfield.md) | Guided init orchestrator skeleton: resumable onboarding state, greenfield/brownfield detection, and the draft-then-confirm stage runner | Review | EP0163 | 2026-07-26 | 2026-07-26 |
 | [US0438](US0438-agents-md-stage-draft-and-confirm-the-agent.md) | AGENTS.md stage: draft and confirm the agent instructions from the tool-neutral starter | Draft | EP0163 | 2026-07-26 | 2026-07-26 |
 | [US0439](US0439-prd-stage-greenfield-prd-create-or-brownfield-prd.md) | PRD stage: greenfield prd create or brownfield prd generate, draft-then-confirm | Draft | EP0163 | 2026-07-26 | 2026-07-26 |
 | [US0440](US0440-trd-and-tsd-stages-generate-the-technical-and.md) | TRD and TSD stages: generate the technical and test-strategy docs from the PRD, draft-then-confirm | Draft | EP0163 | 2026-07-26 | 2026-07-26 |

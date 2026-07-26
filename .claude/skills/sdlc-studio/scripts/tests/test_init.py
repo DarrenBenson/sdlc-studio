@@ -288,5 +288,56 @@ class TailorRegistryTests(unittest.TestCase):
                 self.assertIn(s["level"], ("Story", "Sprint", "Release"))
 
 
+class GuidedInitTests(unittest.TestCase):
+    """RFC0055 / US0437: the guided-onboarding orchestrator skeleton - resumable state,
+    greenfield/brownfield classification, and the confirm/skip/reset stage runner. The stage
+    ACTIONS are later stories; this pins the machinery they plug into."""
+
+    def test_onboarding_state_resumes_from_first_incomplete_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            state = init.start_onboarding(root)
+            self.assertEqual(init.first_incomplete(state), init.ONBOARDING_STAGES[0])
+            # complete the first, skip the second -> resume points at the third (first pending)
+            init.set_stage(root, init.ONBOARDING_STAGES[0], "done")
+            init.set_stage(root, init.ONBOARDING_STAGES[1], "skipped")
+            resumed = init.read_onboarding(root)
+            self.assertEqual(init.first_incomplete(resumed), init.ONBOARDING_STAGES[2])
+            # persisted to the runtime-state dir, never restarting from the top
+            self.assertTrue((root / "sdlc-studio" / ".local" / "onboarding.json").is_file())
+            self.assertEqual(init.start_onboarding(root)["stages"][0]["status"], "done")
+
+    def test_classifies_greenfield_and_brownfield(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(init.classify_path(Path(d)), "greenfield")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "pyproject.toml").write_text("[project]\nname='x'\n", encoding="utf-8")
+            self.assertEqual(init.classify_path(root), "brownfield")
+
+    def test_stage_runner_confirm_skip_and_reset(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            init.start_onboarding(root)
+            init.set_stage(root, init.ONBOARDING_STAGES[0], "done")   # confirm advances
+            self.assertEqual(init.stage_status(init.read_onboarding(root),
+                                                init.ONBOARDING_STAGES[0]), "done")
+            init.set_stage(root, init.ONBOARDING_STAGES[1], "skipped")  # skip recorded, not dropped
+            self.assertEqual(init.stage_status(init.read_onboarding(root),
+                                                init.ONBOARDING_STAGES[1]), "skipped")
+            init.reset_onboarding(root)                               # reset -> all pending
+            self.assertTrue(all(s["status"] == "pending"
+                                for s in init.read_onboarding(root)["stages"]))
+
+    def test_an_unknown_stage_or_status_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            init.start_onboarding(root)
+            with self.assertRaises(ValueError):
+                init.set_stage(root, "not-a-stage", "done")
+            with self.assertRaises(ValueError):
+                init.set_stage(root, init.ONBOARDING_STAGES[0], "finished")
+
+
 if __name__ == "__main__":
     unittest.main()

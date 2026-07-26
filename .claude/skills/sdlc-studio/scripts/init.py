@@ -162,6 +162,106 @@ def seed_fields(root: Path | str, today: str) -> dict:
     return {"project_name": Path(root).resolve().name, "date": today, "last_updated": today}
 
 
+# ---- Guided onboarding: resumable state + stage runner ----
+# The spine every onboarding walks. D4: always all of them - the profile tunes each stage's
+# DEPTH, never whether it runs. This skeleton owns the resumable state, the greenfield/brownfield
+# classification, and the confirm/skip/reset machinery; the per-stage ACTIONS are later stories
+# that plug into this runner.
+ONBOARDING_STAGES = ["agents", "prd", "trd", "tsd", "personas", "decompose", "plan"]
+_ONBOARDING_REL = f"{SDLC}/.local/onboarding.json"
+_STAGE_STATUSES = ("pending", "done", "skipped")
+
+
+def onboarding_path(root: Path | str) -> Path:
+    return Path(root) / _ONBOARDING_REL
+
+
+def classify_path(root: Path | str) -> str:
+    """`greenfield` (empty/near-empty repo) or `brownfield` (existing source). Brownfield is
+    signalled by a recognised stack marker - the same DETECT set `init` already uses - so
+    'meets your code where it is' keys off real evidence, not a guess."""
+    return "brownfield" if detect_stack(Path(root)) else "greenfield"
+
+
+def read_onboarding(root: Path | str) -> dict | None:
+    p = onboarding_path(root)
+    if not p.is_file():
+        return None
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
+def write_onboarding(root: Path | str, state: dict) -> dict:
+    p = onboarding_path(root)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    sdlc_md.atomic_write(p, json.dumps(state, indent=2))
+    return state
+
+
+def _fresh_stages() -> list[dict]:
+    return [{"name": s, "status": "pending"} for s in ONBOARDING_STAGES]
+
+
+def start_onboarding(root: Path | str, path: str | None = None) -> dict:
+    """Create the onboarding state (classified path + every stage pending), or RETURN the
+    existing one unchanged - so re-running resumes rather than restarting. That idempotence is
+    the whole point of a checkpoint: a session can end mid-flow and pick up where it left off."""
+    existing = read_onboarding(root)
+    if existing:
+        return existing
+    return write_onboarding(root, {"path": path or classify_path(root), "stages": _fresh_stages()})
+
+
+def stage_status(state: dict, name: str) -> str | None:
+    return next((s["status"] for s in state.get("stages", []) if s["name"] == name), None)
+
+
+def first_incomplete(state: dict) -> str | None:
+    """The first stage still PENDING - what resume points at. Done and skipped are both handled
+    (a skip is a deliberate, recorded decision, not unfinished work), so neither is incomplete."""
+    return next((s["name"] for s in state.get("stages", []) if s["status"] == "pending"), None)
+
+
+def set_stage(root: Path | str, name: str, status: str) -> dict:
+    """Mark a stage `done` or `skipped` and persist. A skip is RECORDED, never silently dropped,
+    so the checklist always shows what was deliberately passed over. Refuses an unknown stage or
+    a status outside the vocabulary rather than writing a lie the next reader inherits."""
+    if name not in ONBOARDING_STAGES:
+        raise ValueError(f"unknown onboarding stage {name!r} (known: {', '.join(ONBOARDING_STAGES)})")
+    if status not in _STAGE_STATUSES:
+        raise ValueError(f"invalid stage status {status!r} (one of {', '.join(_STAGE_STATUSES)})")
+    state = read_onboarding(root) or start_onboarding(root)
+    for s in state["stages"]:
+        if s["name"] == name:
+            s["status"] = status
+    return write_onboarding(root, state)
+
+
+def reset_onboarding(root: Path | str) -> dict:
+    """Restart the flow: every stage back to pending, the path re-classified from the repo as it
+    is now."""
+    return write_onboarding(root, {"path": classify_path(root), "stages": _fresh_stages()})
+
+
+def cmd_guided(args: argparse.Namespace) -> int:
+    """The guided-onboarding stage runner: create or resume the checkpoint, classify the repo,
+    and show where the operator is and what is next. The per-stage draft-then-confirm actions
+    are delivered by the stage stories; this drives the sequence and the resume/skip/reset."""
+    root = Path(getattr(args, "root", "."))
+    if getattr(args, "reset", False):
+        reset_onboarding(root)
+    state = start_onboarding(root)
+    cur = first_incomplete(state)
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps({"path": state["path"], "stages": state["stages"], "current": cur}, indent=2))
+        return 0
+    print(f"guided onboarding ({state['path']}) - resume point: {cur or 'complete - ready for your first sprint plan'}")
+    marks = {"done": "x", "skipped": "-", "pending": " "}
+    for s in state["stages"]:
+        nxt = "  <- next" if s["name"] == cur else ""
+        print(f"  [{marks[s['status']]}] {s['name']}{nxt}")
+    return 0
+
+
 def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
          force: bool = False, dry_run: bool = False,
          accept_tailoring: bool = False) -> dict:
@@ -317,6 +417,17 @@ def build_parser() -> argparse.ArgumentParser:
                         "--detect); without this flag they are only offered")
     r.add_argument("--format", choices=("text", "json"), default="text")
     r.set_defaults(func=cmd_run)
+
+    g = sub.add_parser("guided",
+                       help="Guided onboarding: a resumable, stage-by-stage walk (AGENTS.md -> "
+                            "PRD -> TRD -> TSD -> personas -> a first sprint plan), greenfield or "
+                            "brownfield. Re-run to resume; --reset to restart.")
+    g.add_argument("--root", default=".")
+    g.add_argument("--reset", action="store_true",
+                   help="restart onboarding - every stage back to pending")
+    g.add_argument("--format", choices=("text", "json"), default="text")
+    g.set_defaults(func=cmd_guided)
+
     sdlc_md.add_global_root(p)
     return p
 
