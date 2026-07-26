@@ -2,6 +2,8 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0235: An "offer the exit" affordance must be honest about what the exit actually does: `--file-and-close` refuses hard correctness lanes, so...**
+- **L-0234: A batch-scoping or record-based "make-it-pass-here" gate change must be proven it cannot make a genuinely-broken close pass.**
 - **L-0233: **A `Verify:` line is not verified until it is run.** Three delivered units carried `Verify:` references to test nodes that did not exist...**
 - **L-0232: **A destructive default must be opt-in.** `changelog compose` folded and DELETED the whole pending fragment set by default; run out of...**
 - **L-0231: **Verify the premise before building the fix.** BG0296 was filed blaming the mutation tool for being blind to guard clauses; checking it...**

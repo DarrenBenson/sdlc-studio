@@ -1,48 +1,15 @@
 # Reviews - LATEST (anchor)
 
-<!-- close-status:begin -->
-> **RUN-01KYAHY9 closed goal-reached.** 66 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
-> Stamped by `sprint close` - edit the prose below, not this block.
-<!-- close-status:end -->
+> **CR0421 delivered (EP0162, US0433-US0436) - closing review [RV0017](RV0017-cr0421-delivery-closing-review-ep0162-four-units-one.md).**
+> One independent adversarial wave (fresh context, RFC0051/D0059): **APPROVE**, no MAJOR. MINOR-2 fixed in-sprint (e0529b51); three residual findings declined with reasons (RETRO0074). Reviewer-of-record sign-off is OWED and is the operator's - the two-role gate holds Done until it lands.
 
-> **The delivery backlog is empty and v5 is cut (build).** Every remaining story is delivered and
-> signed off to Done; every bug is Fixed; the discovery CRs derive Complete at this close. The v5
-> release is CUT (version 5.0.0 across the four authoritative homes, CHANGELOG cut from 126
-> fragments, `release_cut.py` tag guard in place) but NOT yet TAGGED - the tag is the operator's
-> final act, gated on `gate --release` green recorded on the exact release commit.
+## What shipped
 
-## Where the pipeline is (2026-07-26)
+- **US0433** - `sprint batch drop/add` mutate an open run's approved batch; drop releases the done-gate, distinct from Deferred.
+- **US0434** - the sprint close's conformance lane is scoped to its batch; out-of-batch debt no longer blocks an in-batch close; `--release` still judges everything.
+- **US0435** - a growing outstanding set names the way out honestly: file-and-close for deferrable items, "clear the lanes" for hard blockers.
+- **US0436** - review currency judged by the review RECORD, not the anchor's commit time; the byte-identical re-stamp trap is closed; the invariant is stated in `reference-sprint.md`.
 
-RUN-01KYAHY9 delivered the whole tail of the backlog plus the v5 cut. An independent, fresh-context
-adversarial review (RFC0051 / D0059 delegated model) probed the substantive work - the
-review-independence machinery, the lane partition, the over-appetite recording - APPROVEd with no
-MAJOR findings and no constructible independence bypass, and named four MINOR advisories. Two of
-the four were fixed in-sprint (BG0297 duplicate-detection scope, BG0298 fail-safe hazard
-direction); two were declined with reason. The operator ratified the close.
+## Currency
 
-## What this run produced
-
-- **The delivery backlog emptied**: 67 units delivered and signed off to Done (48 stories + a bug
-  cluster), including BG0284 (review-independence supersession), EP0118 (lane partition), EP0124
-  (over-appetite recording), and the plan-surface message renderers.
-- **Three dogfooding frictions filed and fixed** rather than worked around: BG0295 (compose
-  dry-run gate), BG0296 (mutation gitignored-worktree scan), CR0420/US0432 (gate-budget
-  re-declaration).
-- **The v5 cut**: `release_cut.py` (changelog cut from fragments + a tag guard that refuses a tag
-  unless the pre-tag gate was recorded green on the exact commit), version 5.0.0 everywhere,
-  `check_versions --strict` green.
-
-## What the close caught
-
-Three delivered units carried stale or unparseable `Verify:` references (US0347 a `../..` path
-pytest cannot parse, US0387 a wrong method name, US0427 a test class that never existed) - each
-read as delivered while verifying nothing. Repointed to the real tests. Lesson recorded: run
-`verify_ac` at delivery, not only at close.
-
-## Next
-
-- The operator cuts the **v5 tag** on the release commit (`release_cut.py record-green` +
-  `tag-check`), after `gate --release` is green.
-- **Forward-port** the skill source to the installed copy (`tools/forward-port.sh --yes`).
-- **Plan the v5 documentation overhaul** (RFC): the two-backlog model (discovery vs delivery) and
-  sprint planning are the headline v5 changes to document.
+This anchor is current with the batch as of the close. Currency is judged by the review record (`.local/review-state.json`), per US0436.
