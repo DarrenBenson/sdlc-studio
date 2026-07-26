@@ -4673,6 +4673,42 @@ def appetite_overage_line(root: Path | str) -> str | None:
            "accept it, and the run is reported against the standing appetite, not that ceiling)"
 
 
+def cmd_batch(args: argparse.Namespace) -> int:
+    """`sprint batch drop/add`: mutate an OPEN run's approved batch.
+
+    Drop removes a unit from the batch the done-gate reads (with a recorded reason) - distinct
+    from `Deferred`, a status on the WORK that leaves the unit in the batch and still blocks the
+    close. Add appends a unit under the same gates. Both are recorded in the run's `batch_changes`
+    so the delivered batch can be reconciled against the planned one.
+    """
+    root = Path(getattr(args, "root", "."))
+    action = args.action
+    if action == "drop" and not (getattr(args, "reason", None) or "").strip():
+        print("sprint batch drop: --reason is required - a drop is recorded, not silent",
+              file=sys.stderr)
+        return 2
+    try:
+        if action == "drop":
+            state = run_state.drop_from_batch(root, args.id, reason=args.reason)
+        else:
+            state = run_state.add_to_batch(root, args.id)
+    except run_state.RunStateError as exc:
+        print(f"sprint batch {action}: {exc}", file=sys.stderr)
+        return 1
+    change = (state.get("batch_changes") or [])[-1]
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps({"batch": state.get("batch") or [], "change": change}, indent=2))
+    elif action == "drop":
+        print(f"dropped {change['id']} from the batch (reason: {change['reason']}); "
+              f"batch is now {len(state.get('batch') or [])} unit(s). The done-gate no longer "
+              f"demands it - this is not Deferred, which would leave it gated.")
+    else:
+        note = " (already present)" if change.get("note") else ""
+        print(f"added {change['id']} to the batch{note}; batch is now "
+              f"{len(state.get('batch') or [])} unit(s), held to the same gates as the rest.")
+    return 0
+
+
 def cmd_close(args: argparse.Namespace) -> int:
     """The sprint close ceremony as one deterministic, resumable chain."""
     root = args.root
@@ -6244,6 +6280,20 @@ def build_parser() -> argparse.ArgumentParser:
     dc.add_argument("--format", choices=("text", "json"), default="text")
     dc.add_argument("--root", default=".", help="Repo root (default: .)")
     dc.set_defaults(func=cmd_decision)
+
+    bt = sub.add_parser(
+        "batch",
+        help="Mutate an OPEN run's approved batch: `drop <id> --reason` pulls a unit (the "
+             "done-gate and sign-off lanes stop demanding it) or `add <id>` puts one in under "
+             "the same gates. Drop judges THIS BATCH and is recorded - distinct from Deferred, a "
+             "status on the WORK that leaves the unit gated. Every change lands in batch_changes.")
+    bt.add_argument("action", choices=("drop", "add"))
+    bt.add_argument("id", help="the unit id, e.g. US0123")
+    bt.add_argument("--reason", default=None,
+                    help="(drop) why the unit is leaving this batch - recorded, and required")
+    bt.add_argument("--format", choices=("text", "json"), default="text")
+    bt.add_argument("--root", default=".", help="Repo root (default: .)")
+    bt.set_defaults(func=cmd_batch)
 
     sdlc_md.add_global_root(parser)
     return parser

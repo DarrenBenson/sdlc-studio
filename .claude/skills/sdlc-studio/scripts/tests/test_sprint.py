@@ -378,6 +378,50 @@ class CliTests(unittest.TestCase):
                 self.assertIn("BG0001", strat["units"])
 
 
+class BatchCliTests(unittest.TestCase):
+    """`sprint batch drop/add` at the CLI (CR0421 US0433) - the verb an operator reaches for
+    instead of hand-editing run-state.json."""
+
+    def _open(self, root, batch):
+        mod = _load()
+        mod.run_state.open_run(str(root), batch=batch, goal="g")
+        return mod
+
+    def _run(self, mod, argv):
+        buf, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
+            rc = mod.main(argv)
+        return rc, buf.getvalue(), err.getvalue()
+
+    def test_drop_removes_the_unit_and_records_the_reason(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._open(root, ["US0001", "US0002"])
+            rc, out, _ = self._run(mod, ["batch", "drop", "US0002",
+                                         "--reason", "not started", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertEqual(mod.run_state.read(str(root))["batch"], ["US0001"])
+            self.assertIn("dropped US0002", out)
+
+    def test_drop_without_a_reason_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._open(root, ["US0001"])
+            rc, _, err = self._run(mod, ["batch", "drop", "US0001", "--root", str(root)])
+            self.assertEqual(rc, 2)
+            self.assertIn("--reason is required", err)
+            self.assertEqual(mod.run_state.read(str(root))["batch"], ["US0001"], "not dropped")
+
+    def test_add_puts_the_unit_in_the_batch(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._open(root, ["US0001"])
+            rc, out, _ = self._run(mod, ["batch", "add", "US0002", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertEqual(mod.run_state.read(str(root))["batch"], ["US0001", "US0002"])
+            self.assertIn("added US0002", out)
+
+
 class WsjfTests(unittest.TestCase):
     """--order wsjf ranks Cost of Delay (from Priority) against Points. No seat scores needed.
 

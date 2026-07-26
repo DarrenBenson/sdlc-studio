@@ -667,5 +667,77 @@ class OverAppetiteTests(unittest.TestCase):
         self.assertFalse(over["units"]["over"])
 
 
+class BatchMutationTests(unittest.TestCase):
+    """`sprint batch drop/add` mutate an OPEN run's approved batch (CR0421 AC1-3).
+
+    The batch chosen on day one bound the close on day five: there was no verb to drop a unit or
+    add one, and `Deferred` (a status on the WORK) does not remove a unit from the batch the
+    done-gate reads. Drop judges THIS BATCH - it removes the id from `batch` and records the
+    change - which is the whole distinction from Deferred.
+    """
+
+    def setUp(self) -> None:
+        self._td = tempfile.TemporaryDirectory()
+        self.root = str(Path(self._td.name))
+
+    def tearDown(self) -> None:
+        self._td.cleanup()
+
+    def test_drop_removes_unit_and_records_the_change(self) -> None:
+        run_state.open_run(self.root, batch=["US0001", "US0002"], goal="g")
+        run_state.drop_from_batch(self.root, "US0002", reason="pulled - not started this sprint")
+        state = run_state.read(self.root)
+        self.assertEqual(state["batch"], ["US0001"], "the dropped unit is gone from the batch")
+        changes = state.get("batch_changes") or []
+        self.assertEqual(len(changes), 1)
+        self.assertEqual(changes[0]["action"], "drop")
+        self.assertEqual(changes[0]["id"], "US0002")
+        self.assertEqual(changes[0]["reason"], "pulled - not started this sprint")
+        self.assertTrue(changes[0]["at"], "the drop is timestamped")
+
+    def test_a_drop_needs_a_reason(self) -> None:
+        run_state.open_run(self.root, batch=["US0001"], goal="g")
+        with self.assertRaises(run_state.RunStateError):
+            run_state.drop_from_batch(self.root, "US0001", reason="  ")
+
+    def test_dropping_a_unit_not_in_the_batch_is_refused(self) -> None:
+        run_state.open_run(self.root, batch=["US0001"], goal="g")
+        with self.assertRaises(run_state.RunStateError):
+            run_state.drop_from_batch(self.root, "US0099", reason="typo")
+
+    def test_a_drop_needs_an_open_run(self) -> None:
+        # No run open: nothing to drop from, and a drop must not fabricate a run.
+        with self.assertRaises(run_state.RunStateError):
+            run_state.drop_from_batch(self.root, "US0001", reason="r")
+
+    def test_add_appends_to_open_batch_and_records_the_change(self) -> None:
+        run_state.open_run(self.root, batch=["US0001"], goal="g")
+        run_state.add_to_batch(self.root, "US0002")
+        state = run_state.read(self.root)
+        self.assertEqual(state["batch"], ["US0001", "US0002"], "the added unit joins the batch")
+        changes = state.get("batch_changes") or []
+        self.assertEqual([c["action"] for c in changes], ["add"])
+        self.assertEqual(changes[0]["id"], "US0002")
+        self.assertTrue(changes[0]["at"])
+
+    def test_adding_a_unit_already_in_the_batch_does_not_duplicate_it(self) -> None:
+        run_state.open_run(self.root, batch=["US0001"], goal="g")
+        run_state.add_to_batch(self.root, "US0001")
+        state = run_state.read(self.root)
+        self.assertEqual(state["batch"], ["US0001"], "no duplicate id")
+        self.assertEqual(len(state.get("batch_changes") or []), 1, "but the call is still recorded")
+
+    def test_drop_releases_the_done_gate_but_deferred_does_not(self) -> None:
+        # The done-gate reads `state["batch"]`. Deferring a unit changes its STATUS, not the batch,
+        # so it stays gated; dropping removes it from the batch the gate reads. This pins that only
+        # a drop mutates batch membership - the WORK-vs-BATCH distinction the CR turns on.
+        run_state.open_run(self.root, batch=["US0001", "US0002"], goal="g")
+        # "Deferring" US0001 is a status change elsewhere; the batch is unaffected by it.
+        run_state.drop_from_batch(self.root, "US0002", reason="out of scope for this batch")
+        batch = run_state.read(self.root)["batch"]
+        self.assertIn("US0001", batch, "the (would-be Deferred) unit is still in the gated batch")
+        self.assertNotIn("US0002", batch, "only the dropped unit left the gated batch")
+
+
 if __name__ == "__main__":
     unittest.main()

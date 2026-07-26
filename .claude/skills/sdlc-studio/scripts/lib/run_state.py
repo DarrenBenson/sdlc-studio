@@ -74,7 +74,7 @@ CLOSED = tuple(o for o in OUTCOMES if o != RUNNING)
 # The fields this module owns. Anything else a caller writes is preserved verbatim - see
 # the module docstring: this list documents, it does not gate.
 FIELDS = ("schema", "run_id", "started_at", "ended_at", "outcome", "goal", "batch",
-          "reopened",
+          "batch_changes", "reopened",
           "plan", "handoff", "review_rounds", "review_ceiling_overrides",
           "session_token_baseline", "delegated_tokens")
 
@@ -383,7 +383,10 @@ def _blank() -> dict:
             REVIEW_ROUNDS: [], CEILING_OVERRIDES: [], TOKEN_BASELINE: None, DELEGATED: [],
             # Seeded empty like its siblings: `reopened` is part of the documented shape, and a
             # field that only appears after a reopen would make every reader test for it.
-            "reopened": []}
+            "reopened": [],
+            # Likewise `batch_changes`: the drop/add ledger is part of the shape from the start, so
+            # a reader never has to test for its presence - it is [] until the batch is first mutated.
+            "batch_changes": []}
 
 
 def _mutate(repo_root: Path | str, fn) -> dict:
@@ -675,6 +678,63 @@ def update(repo_root: Path | str, **fields) -> dict:
     def apply(state: dict) -> dict:
         state = state or _blank()
         state.update(fields)
+        return state
+
+    return _mutate(repo_root, apply)
+
+
+def drop_from_batch(repo_root: Path | str, unit_id: str, reason: str) -> dict:
+    """Remove a unit from the OPEN run's approved batch and record the change.
+
+    Drop judges THIS BATCH: the unit leaves `batch`, so the done-gate and sign-off lanes - which
+    read `batch` - stop demanding it, while its own status is left untouched. That is the whole
+    distinction from `Deferred`, which judges the WORK: a Deferred unit keeps its place in the
+    batch and still blocks the close. Every drop is recorded in `batch_changes` (action, id,
+    reason, timestamp) so the batch a sprint DELIVERED can always be reconstructed against the
+    batch it was PLANNED with. A drop needs a reason - it is recorded, not silent - and an open
+    run to drop from; it never fabricates one."""
+    if not (reason or "").strip():
+        raise RunStateError("a batch drop needs a reason - it is recorded, not silent")
+    norm = sdlc_md.norm_id(unit_id)
+
+    def apply(state: dict) -> dict:
+        if (state or {}).get("outcome") != RUNNING:
+            raise RunStateError(
+                "no open run to drop from - `sprint batch drop` needs a running sprint")
+        batch = state.get("batch") or []
+        kept = [b for b in batch if sdlc_md.norm_id(b) != norm]
+        if len(kept) == len(batch):
+            raise RunStateError(f"{norm} is not in the open batch - nothing to drop")
+        state["batch"] = kept
+        state["batch_changes"] = list(state.get("batch_changes") or []) + [
+            {"action": "drop", "id": norm, "reason": reason.strip(), "at": sdlc_md.now_iso8601()}]
+        return state
+
+    return _mutate(repo_root, apply)
+
+
+def add_to_batch(repo_root: Path | str, unit_id: str) -> dict:
+    """Add a unit to the OPEN run's approved batch and record the change.
+
+    The added unit is then held to the same gates as the rest - the done-gate reads `batch`, so
+    appending to it IS subjecting the unit to the gate. Idempotent on the batch (an id already
+    present is not duplicated), but every call is recorded in `batch_changes` so the history stays
+    honest. Needs an open run to add to."""
+    norm = sdlc_md.norm_id(unit_id)
+
+    def apply(state: dict) -> dict:
+        if (state or {}).get("outcome") != RUNNING:
+            raise RunStateError(
+                "no open run to add to - `sprint batch add` needs a running sprint")
+        batch = [sdlc_md.norm_id(b) for b in (state.get("batch") or [])]
+        already = norm in batch
+        if not already:
+            batch.append(norm)
+        state["batch"] = batch
+        entry = {"action": "add", "id": norm, "at": sdlc_md.now_iso8601()}
+        if already:
+            entry["note"] = "already in batch"
+        state["batch_changes"] = list(state.get("batch_changes") or []) + [entry]
         return state
 
     return _mutate(repo_root, apply)
