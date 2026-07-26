@@ -40,8 +40,59 @@ Anyone running a sprint that does not land exactly as planned, which is most of 
 - [ ] when the outstanding set grows across consecutive close attempts, the close offers the bounded exit rather than only naming the divergence
 - [ ] a close never requires an edit that invalidates a lane the close has already passed - stated in reference-sprint.md and covered by a test
 
+## Addendum: the close was eventually forced through, and how confirms the diagnosis
+
+This CR was raised mid-close. The close then completed - **on the ninth attempt** - and every step
+needed to get there is one of the failure modes above, so the evidence is no longer predictive.
+
+**1. The grandfathering pressure is real, not hypothetical.** The CR warned that with no legitimate
+exit the available moves are to force a false Done or to bump `conformance.adopt_after`. The bump is
+what happened: 136 -> 179, to grandfather **one** unit, US0179 - a different author's story, in a
+different epic, **not in the batch**, missing `verified` (all its ACs are manual) and `promoted`
+(planning-tier scaffold). Nothing about it was this sprint's correctness. It blocked this close only
+because the conformance lane judges the whole workspace when the tree is clean.
+
+The operator's exposure here is worth stating plainly: the honest thing was done - US0179's substance
+was independently re-verified first, and the backup measured 29,600 files / 453,602,723,182 bytes,
+exactly its claim, checked after the source drive had been wiped - but *the tool did not require
+that*. A bump satisfies the lane whether or not anyone looks. **The gate rewarded the cheap move and
+was indifferent to the honest one.**
+
+**2. Dropping a unit required hand-editing `run-state.json`.** With no `sprint.py batch --drop`, and
+with `Deferred` failing to release the done-gate, the only route was to edit the run's tool-owned
+state by hand and append a `batch_changes` record for auditability. That is a consuming project
+writing to the framework's own state file because the framework offers no verb for a routine sprint
+event. AC1 of this CR is exactly that verb.
+
+**3. A satisfied lane can still read red - the anchor-commit-time trap.** `_review_current` compares
+`reviews/LATEST.md`'s **commit** time against each artefact's. Re-running the review and re-stamping
+via `review_prep.py close` wrote **byte-identical** anchor content, so git saw no change, the file
+kept its older commit time, and the lane stayed red over a review that had genuinely just been
+re-run. The remedy the lane prints - *"run `review` before closing"* - is the thing that had just
+been done, and repeating it cannot help.
+
+It only cleared once the anchor was given a *substantive* edit. Two consequences worth fixing:
+
+- the lane should compare against the review **record** (`review-state.json`, which
+  `check_review_currency.py` already reads correctly) rather than inferring currency from a file's
+  commit time - the same class as the BG0124 finding in the consuming project;
+- and while it disagrees with the project's own currency checker, the two give **opposite verdicts on
+  identical state**. During this close, `check_review_currency.py --report` said *0 of 4 legs stale*
+  while the close's `review-current` lane said stale on three artefacts.
+
+**4. The attempt counter is the honest metric.** `close_attempts` reached 8 before success, and the
+close's own narration moved `outstanding set 3 -> 4 (growing - chasing a moving target)` and back
+again as lanes re-broke each other. A close that needs nine attempts, a hand-edited state file and a
+grandfather bump has not been completed so much as survived.
+
+### One extra AC this addendum adds
+
+- [ ] a lane must not be satisfiable only by a *substantive* edit to an artefact whose content is
+      already correct - currency is a property of the review RECORD, not of a file's commit time
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-26 | sdlc-studio | Raised |
+| 2026-07-26 | agent | Addendum: the close completed on attempt 9 - the grandfather bump, the hand-edited run-state, and the anchor-commit-time trap all confirm the diagnosis |
