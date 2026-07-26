@@ -47,10 +47,21 @@ the gate); adopting it is a project choice.
 Per-unit CHANGELOG fragments (the towncrier pattern, stdlib). A unit's entry lives in
 `changelog.d/<unit>.md` (first line `<!-- section: Added -->`, then the entry), committed
 with the unit - no shared-file contention. `compose` folds all fragments into
-`## [Unreleased]` under their sections and consumes them (idempotent by consumption;
-all fragments validate before any write, so a malformed one refuses the whole run by
-name). `check` lists strays; the release gate's `changelog-fragments` lane fails a cut
-while any exist. Direct CHANGELOG editing remains valid for non-adopters.
+`## [Unreleased]` under their sections and consumes them - **dry-run by default** (it reports
+what it would fold and touches nothing), consuming only with `--apply` (a bare compose run out
+of habit must not delete the whole pending set). All fragments validate before any write, so a
+malformed one refuses the whole run by name. `check` lists strays; the release gate's
+`changelog-fragments` lane fails a cut while any exist. Direct CHANGELOG editing remains valid
+for non-adopters.
+
+### `release_cut.py`
+
+The release cut and tag guard. `changelog-cut --version X.Y.Z` composes the pending fragments
+(`compose --apply`) then moves that body under a new `## [X.Y.Z] - <date>` header, emptying
+`[Unreleased]` - the notes come from the per-unit fragments, never a hand-written section.
+`record-green --commit <sha>` stamps the commit the pre-tag gate passed on; `tag-check --commit
+<sha>` refuses unless that stamp names the same commit, so a tag can never assert a green that
+was measured on a different tree.
 
 ### `flow.py`
 

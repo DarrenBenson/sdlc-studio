@@ -82,3 +82,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0070](RETRO0070-sprint-2-of-the-three-sprint-run-clear.md) | Sprint 2 of the three-sprint run - clear the delivery backlog (28 units, 89 points) | 2026-07-24 | -- | -- |
 | [RETRO-0071](RETRO0071-sprint-3a-design-rung-groom-the-backlog-to.md) | Sprint 3a design rung - groom the backlog to a provable red-now bar | 2026-07-24 | -- | -- |
 | [RETRO-0072](RETRO0072-sprint-3a-bis-groom-the-decisions-output-closing.md) | Sprint 3a-bis - groom the decisions' output, closing out 3a's partial verdict | 2026-07-24 | -- | -- |
+| [RETRO-0073](RETRO0073-the-delivery-backlog-reaches-zero-open-units-every.md) | The delivery backlog reaches zero open units - every remaining story delivered and every bug fixed, with executable acceptance criteria passing - so v5 can be cut against a backlog that is empty except for the units the release itself gates | 2026-07-26 | -- | -- |

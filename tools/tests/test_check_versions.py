@@ -37,6 +37,32 @@ def _fixture(root: Path, pkg="2.0.0", yaml="2.0.0", skill="2.0.0",
         "# Changelog\n\n## [Unreleased]\n\n- x\n\n## [%s] - 2026-06-12\n" % changelog)
 
 
+class StrictBumpTests(unittest.TestCase):
+    """US0347 / EP0117: a version bump is refused while ANY authoritative file disagrees, and the
+    disagreeing file is NAMED so the fix is one edit, not a hunt."""
+
+    def test_a_single_stale_file_is_named(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            # every home at 5.0.0 except package.json, left stale at 4.1.0
+            _fixture(Path(d), pkg="4.1.0", yaml="5.0.0", skill="5.0.0",
+                     readme="5.0.0", changelog="5.0.0")
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = check_versions.main(["--root", d, "--strict"])
+            self.assertNotEqual(rc, 0)                        # refused
+            msg = err.getvalue()
+            self.assertIn("package.json", msg)                # the disagreeing file, by name
+            self.assertIn("4.1.0", msg)                       # ...and its stale value
+            self.assertIn("5.0.0", msg)                       # against the version the rest carry
+
+    def test_all_at_5_0_0_passes_strict(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            _fixture(Path(d), pkg="5.0.0", yaml="5.0.0", skill="5.0.0",
+                     readme="5.0.0", changelog="5.0.0")
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(check_versions.main(["--root", d, "--strict"]), 0)
+
+
 class VersionTests(unittest.TestCase):
     def setUp(self) -> None:
         # the checker prints its report to stdout and findings to stderr; tests assert on

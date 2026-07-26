@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 2 |
+| Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 49 |
+| Review | 51 |
 | Done | 380 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -257,8 +257,8 @@
 | [US0344](US0344-the-reviewer-brief-asks-whether-the-approach-itself.md) | The reviewer brief asks whether the approach itself is the defect, and a recorded decision to RETAIN the design is a first-class outcome | Done | EP0106 | 2026-07-22 | 2026-07-22 |
 | [US0345](US0345-rename-audit-py-and-audit-check-py-update.md) | rename audit.py and audit_check.py, update call sites in gate and sprint | Review | EP0116 | 2026-07-23 | 2026-07-23 |
 | [US0346](US0346-update-tests-reference-scripts-md-and-changelog.md) | update tests, reference-scripts.md and CHANGELOG | Review | EP0116 | 2026-07-23 | 2026-07-23 |
-| [US0347](US0347-version-bump-to-5-0-0-across-authoritative.md) | version bump to 5.0.0 across authoritative files, check_versions --strict green | Ready | EP0117 | 2026-07-23 | 2026-07-23 |
-| [US0348](US0348-gate-release-green-on-a-fresh-dry-run.md) | gate --release green on a fresh dry-run, cut the CHANGELOG 5.0.0 section, tag | Ready | EP0117 | 2026-07-23 | 2026-07-23 |
+| [US0347](US0347-version-bump-to-5-0-0-across-authoritative.md) | version bump to 5.0.0 across authoritative files, check_versions --strict green | Review | EP0117 | 2026-07-23 | 2026-07-23 |
+| [US0348](US0348-gate-release-green-on-a-fresh-dry-run.md) | gate --release green on a fresh dry-run, cut the CHANGELOG 5.0.0 section, tag | Review | EP0117 | 2026-07-23 | 2026-07-23 |
 | [US0349](US0349-sprint-plan-emits-a-report-only-lane-partition.md) | sprint plan emits a report-only lane partition from the Affects clusters | Review | EP0118 | 2026-07-23 | 2026-07-23 |
 | [US0350](US0350-export-each-lane-as-a-per-team-worklist.md) | export each lane as a per-team worklist, assert collision-freedom, state the undeclared-file risk | Review | EP0118 | 2026-07-23 | 2026-07-23 |
 | [US0351](US0351-test-autosprint-py-exercising-the-primary-path.md) | test_autosprint.py exercising the primary path | Review | EP0119 | 2026-07-23 | 2026-07-23 |

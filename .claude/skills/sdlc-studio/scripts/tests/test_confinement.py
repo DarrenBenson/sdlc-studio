@@ -358,6 +358,8 @@ CONFINEMENT_ALLOWLIST: dict[str, str] = {
     "lessons.py": "writes the lessons store it owns",
     "digest.py": "writes the digest it owns",
     "changelog.py": "writes the changelog it owns",
+    "release_cut.py": "writes the CHANGELOG section it cuts (via changelog.compose) and the "
+                      "release-gate green marker it owns under .local",
     "provenance.py": "writes the provenance record it owns",
     "close_owed.py": "writes the close-owed report it owns",
     "loop_guard.py": "writes the loop-guard state it owns",
