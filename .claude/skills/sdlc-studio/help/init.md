@@ -20,6 +20,39 @@ SDLC Studio is model-invoked - say it in plain language:
 
 Gather project context before starting SDLC workflow. Creates a configuration file with project-specific settings.
 
+## Guided onboarding - `init guided`
+
+New to SDLC Studio, or setting up a project from nothing? `init guided` is the one command that
+walks you the whole way - from an empty (or existing) repo to a ready first sprint plan - so you do
+not have to know the pipeline order or which document comes next.
+
+```bash
+/sdlc-studio init guided             # start, or resume where you left off
+/sdlc-studio init guided --confirm   # accept the drafted stage and advance
+/sdlc-studio init guided --skip      # skip the current stage (a recorded decision)
+/sdlc-studio init guided --reset     # start the walk again from the first stage
+```
+
+It runs one stage at a time and draws each in turn, so you review a draft and confirm before it
+moves on. The stages, in order:
+
+1. **agents** - seed the project agent-instructions (`AGENTS.md` + `CLAUDE.md`) so every tool reads
+   the same discipline.
+2. **prd** - the Product Requirements: created from a conversation on a greenfield repo, or generated
+   from the existing code on a brownfield one.
+3. **trd** - the Technical Requirements, generated from the PRD.
+4. **tsd** - the Test Strategy, generated from the PRD (and the detected stack on a brownfield repo)
+   so the sprint plan later has a strategy to read.
+5. **personas** - grow the engineering team from the PRD and its risk signals, to accept or edit.
+6. **decompose** - break the PRD into epics and sized stories.
+7. **plan** - the first sprint plan - onboarding ends exactly where delivery begins.
+
+It works on both **greenfield** (nothing yet - each document is authored with you) and **brownfield**
+(existing code - the stack is detected and the documents are generated from what is already there)
+projects; the path is classified for you at the first stage. Progress is checkpointed, so you can
+leave and come back - `status` and `hint` keep pointing you at `init guided` and name the next stage
+until you reach that first plan.
+
 ## Quick Reference
 
 ```bash

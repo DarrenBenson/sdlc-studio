@@ -1,8 +1,13 @@
 # RFC-0019: authoring autosprint - a guardrailed PRD to epics to stories loop (greenfield first-mile)
 
-> **Status:** Accepted
+> **Status:** Superseded
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
+
+**Superseded by RFC0055 (guided init).** This RFC's greenfield first-mile loop is realised and
+generalised to brownfield by the `init guided` orchestrator - a checkpointed, draft-then-confirm
+walk from an empty or existing repo through AGENTS.md, PRD, TRD, TSD, personas and decomposition to
+a first sprint plan. Kept for the design record; the live design is RFC0055.
 
 ## Summary
 

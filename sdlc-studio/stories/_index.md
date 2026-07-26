@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 1 |
+| Draft | 0 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 7 |
+| Review | 8 |
 | Done | 435 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -354,7 +354,7 @@
 | [US0441](US0441-personas-stage-persona-generate-team-from-the-prd.md) | Personas stage: persona generate --team from the PRD and risk signals, accept or edit | Review | EP0163 | 2026-07-26 | 2026-07-26 |
 | [US0442](US0442-decompose-to-the-first-sprint-plan-epics-and.md) | Decompose to the first sprint plan: epics and stories, landing the user at a ready plan | Review | EP0163 | 2026-07-26 | 2026-07-26 |
 | [US0443](US0443-onboarding-progress-surface-status-and-hint-show-the.md) | Onboarding progress surface: status and hint show the checklist and the next step until the first plan | Review | EP0163 | 2026-07-26 | 2026-07-26 |
-| [US0444](US0444-docs-and-supersession-rewrite-help-init-md-and.md) | Docs and supersession: rewrite help/init.md and reference for the guided flow, mark RFC0019 superseded | Draft | EP0163 | 2026-07-26 | 2026-07-26 |
+| [US0444](US0444-docs-and-supersession-rewrite-help-init-md-and.md) | Docs and supersession: rewrite help/init.md and reference for the guided flow, mark RFC0019 superseded | Review | EP0163 | 2026-07-26 | 2026-07-26 |
 
 ## Archived Releases
 
