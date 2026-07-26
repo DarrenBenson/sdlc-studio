@@ -1,6 +1,6 @@
 # EP0129: Residuals from the CR0364-derived requests
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 9
 > **Parent:** CR0365
 > **Created:** 2026-07-23
@@ -14,10 +14,10 @@ Decomposed from CR0365. Delivers the work CR0365 requested.
 
 ## Story Breakdown
 
-- [ ] [US0367: anchor the CR0302 freshness guard to the claim so it fails on the stale counts](../stories/US0367-anchor-the-cr0302-freshness-guard-to-the-claim.md)
-- [ ] [US0368: extend the CR0340 test-relevant set to every path a shipped test reads](../stories/US0368-extend-the-cr0340-test-relevant-set-to-every.md)
-- [ ] [US0369: correct the CR0304 TRD sentence and disposition the doc-drift residuals](../stories/US0369-correct-the-cr0304-trd-sentence-and-disposition-the.md)
-- [ ] [US0370: record the AC-correction cases as AC defects](../stories/US0370-record-the-ac-correction-cases-as-ac-defects.md)
+- [x] [US0367: anchor the CR0302 freshness guard to the claim so it fails on the stale counts](../stories/US0367-anchor-the-cr0302-freshness-guard-to-the-claim.md)
+- [x] [US0368: extend the CR0340 test-relevant set to every path a shipped test reads](../stories/US0368-extend-the-cr0340-test-relevant-set-to-every.md)
+- [x] [US0369: correct the CR0304 TRD sentence and disposition the doc-drift residuals](../stories/US0369-correct-the-cr0304-trd-sentence-and-disposition-the.md)
+- [x] [US0370: record the AC-correction cases as AC defects](../stories/US0370-record-the-ac-correction-cases-as-ac-defects.md)
 
 ## Acceptance Criteria (Epic Level)
 

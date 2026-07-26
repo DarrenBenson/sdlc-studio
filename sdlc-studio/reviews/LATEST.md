@@ -1,7 +1,7 @@
 # Reviews - LATEST (anchor)
 
 <!-- close-status:begin -->
-> **RUN-01KYAHY9 closing goal-reached.** The delivery backlog reached zero open units; the v5 cut is built and the sprint is being signed off to Done. **Sign-off is the operator's, ratified** - the two-role gate is satisfied by the delegated adversarial review (evidence) plus the operator's ratification (reviewer of record).
+> **RUN-01KYAHY9 closed goal-reached.** 66 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 

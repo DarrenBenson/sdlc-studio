@@ -1,6 +1,6 @@
 # EP0116: Free the audit stem (RFC0033 D1)
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0254
 > **Created:** 2026-07-23
@@ -14,8 +14,8 @@ Decomposed from CR0254. Delivers the work CR0254 requested.
 
 ## Story Breakdown
 
-- [ ] [US0345: rename audit.py and audit_check.py, update call sites in gate and sprint](../stories/US0345-rename-audit-py-and-audit-check-py-update.md)
-- [ ] [US0346: update tests, reference-scripts.md and CHANGELOG](../stories/US0346-update-tests-reference-scripts-md-and-changelog.md)
+- [x] [US0345: rename audit.py and audit_check.py, update call sites in gate and sprint](../stories/US0345-rename-audit-py-and-audit-check-py-update.md)
+- [x] [US0346: update tests, reference-scripts.md and CHANGELOG](../stories/US0346-update-tests-reference-scripts-md-and-changelog.md)
 
 ## Acceptance Criteria (Epic Level)
 

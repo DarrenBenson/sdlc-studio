@@ -1,6 +1,6 @@
 # US0370: record the AC-correction cases as AC defects
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0365
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

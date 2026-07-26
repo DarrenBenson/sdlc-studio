@@ -1,6 +1,6 @@
 # US0432: re-declare gate_budget against the ~317s measured peak so a normal commit is under budget and a regression still flags
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0420
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new

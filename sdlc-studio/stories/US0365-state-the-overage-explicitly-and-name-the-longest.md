@@ -1,6 +1,6 @@
 # US0365: state the overage explicitly and name the longest sections by line count
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0360
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

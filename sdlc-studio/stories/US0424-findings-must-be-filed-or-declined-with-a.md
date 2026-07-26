@@ -1,6 +1,6 @@
 # US0424: findings must be filed or declined with a reason before --write proceeds; silence is refused
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0050
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

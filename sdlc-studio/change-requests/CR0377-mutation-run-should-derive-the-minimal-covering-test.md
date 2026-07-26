@@ -1,6 +1,6 @@
 # CR-0377: mutation run should derive the minimal covering test command from its own reference scan
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0138
 > **Priority:** Medium
 > **Type:** Improvement

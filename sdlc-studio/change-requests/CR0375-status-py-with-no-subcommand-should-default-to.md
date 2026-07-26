@@ -1,6 +1,6 @@
 # CR-0375: status.py with no subcommand should default to the pillars dashboard instead of erroring
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0136
 > **Priority:** Low
 > **Type:** Improvement

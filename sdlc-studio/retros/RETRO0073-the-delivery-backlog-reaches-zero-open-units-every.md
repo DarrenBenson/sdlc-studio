@@ -3,12 +3,12 @@
 > **Date:** 2026-07-26
 > **Batch:** US0356, US0370, US0378, US0390, BG0281, BG0278, BG0285, BG0286, BG0290, BG0280, BG0291, BG0292, US0346, US0347, US0355, US0360, US0364, US0365, US0368, US0381, US0386, US0387, US0396, US0397, US0414, US0426, US0429, BG0279, BG0283, BG0287, US0345, US0348, US0349, US0350, US0351, US0352, US0359, US0366, US0367, US0369, US0373, US0376, US0379, US0413, US0415, US0416, US0417, US0418, US0421, US0422, US0424, US0425, US0428, US0430, US0431, BG0284, BG0293, BG0289, BG0288, US0353, US0380, US0419, US0420, US0423, US0427, BG0282
 > **Goal:** The delivery backlog reaches zero open units - every remaining story delivered and every bug fixed, with executable acceptance criteria passing - so v5 can be cut against a backlog that is empty except for the units the release itself gates.
-> **Delivered:** 67 / 67   **Blocked:** 0
+> **Delivered:** 66 / 66   **Blocked:** 0
 
 ## Delivered
 
-- The whole delivery backlog reached zero open units: 67 units in this run (48 stories + the bug
-  cluster) plus the tail delivered live this session, all signed off to Done, and v5 cut.
+- The whole delivery backlog reached zero open units: 66 units in this run's batch (50 stories +
+  16 bugs) all signed off to Done, plus US0432 delivered live, and v5 cut.
 - BG0284 - the review-independence machinery: superseding retires a verdict, not the attribution;
   a principal-authorised correction (recorded boundary, non-worker authoriser) is what un-strands
   a mis-filing, and no author-alone sequence clears the gate.
@@ -158,7 +158,7 @@ sprints fits noise.
 
 **0 of 66 unit(s) measured; 66 of 66 forecast at plan time.**
 
-**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
+**Velocity: 4.99 points/elapsed-hour** (193 points over 38.649h, run-state, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 Unmeasured: US0356, US0370, US0378, US0390, BG0281, BG0278, BG0285, BG0286, BG0290, BG0280, BG0291, BG0292, US0346, US0347, US0355, US0360, US0364, US0365, US0368, US0381, US0386, US0387, US0396, US0397, US0414, US0426, US0429, BG0279, BG0283, BG0287, US0345, US0348, US0349, US0350, US0351, US0352, US0359, US0366, US0367, US0369, US0373, US0376, US0379, US0413, US0415, US0416, US0417, US0418, US0421, US0422, US0424, US0425, US0428, US0430, US0431, BG0284, BG0293, BG0289, BG0288, US0353, US0380, US0419, US0420, US0423, US0427, BG0282. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
@@ -214,3 +214,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: not-attributable (interactive, multi-session run - no per-run baseline delta) · Duration: interactive (UNMEASURED) · Critic rejects: 0 (the delegated adversarial review APPROVEd on the first round, with four MINOR advisories)
+
+## Handoff
+
+- [HO-0028](../handoffs/HO0028-the-delivery-backlog-reaches-zero-open-units-every.md) - 50 remaining item(s): 0 copilot-tail, 50 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

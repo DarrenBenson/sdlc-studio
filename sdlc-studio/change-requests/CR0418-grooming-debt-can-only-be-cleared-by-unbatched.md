@@ -1,6 +1,6 @@
 # CR-0418: grooming debt can only be cleared by unbatched hand-work outside any unit
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0160
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

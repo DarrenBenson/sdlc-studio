@@ -1,6 +1,6 @@
 # US0426: reference-sprint.md states the plan critic has less information than the builder, and that Ponytail's rate is not evidence here
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0050
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

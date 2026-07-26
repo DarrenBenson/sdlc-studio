@@ -1,6 +1,6 @@
 # EP0118: Collision-free lane partitioning (RFC0036)
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 6
 > **Parent:** CR0321
 > **Created:** 2026-07-23
@@ -14,8 +14,8 @@ Decomposed from CR0321. Delivers the work CR0321 requested.
 
 ## Story Breakdown
 
-- [ ] [US0349: sprint plan emits a report-only lane partition from the Affects clusters](../stories/US0349-sprint-plan-emits-a-report-only-lane-partition.md)
-- [ ] [US0350: export each lane as a per-team worklist, assert collision-freedom, state the undeclared-file risk](../stories/US0350-export-each-lane-as-a-per-team-worklist.md)
+- [x] [US0349: sprint plan emits a report-only lane partition from the Affects clusters](../stories/US0349-sprint-plan-emits-a-report-only-lane-partition.md)
+- [x] [US0350: export each lane as a per-team worklist, assert collision-freedom, state the undeclared-file risk](../stories/US0350-export-each-lane-as-a-per-team-worklist.md)
 
 ## Acceptance Criteria (Epic Level)
 

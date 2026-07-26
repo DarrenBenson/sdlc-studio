@@ -1,6 +1,6 @@
 # US0423: a plan-critic pass runs before --write across the scope, risk and efficiency lenses
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0050
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0422: the stated strategy names the units worth mutating, replacing the blanket close-scoped sweep
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0049
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

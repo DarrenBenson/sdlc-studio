@@ -1,6 +1,6 @@
 # EP0119: Close the autosprint and xrepo coverage gap
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 6
 > **Parent:** CR0337
 > **Created:** 2026-07-23
@@ -14,8 +14,8 @@ Decomposed from CR0337. Delivers the work CR0337 requested.
 
 ## Story Breakdown
 
-- [ ] [US0351: test_autosprint.py exercising the primary path](../stories/US0351-test-autosprint-py-exercising-the-primary-path.md)
-- [ ] [US0352: test_xrepo.py primary path and update the TSD coverage note](../stories/US0352-test-xrepo-py-primary-path-and-update-the.md)
+- [x] [US0351: test_autosprint.py exercising the primary path](../stories/US0351-test-autosprint-py-exercising-the-primary-path.md)
+- [x] [US0352: test_xrepo.py primary path and update the TSD coverage note](../stories/US0352-test-xrepo-py-primary-path-and-update-the.md)
 
 ## Acceptance Criteria (Epic Level)
 

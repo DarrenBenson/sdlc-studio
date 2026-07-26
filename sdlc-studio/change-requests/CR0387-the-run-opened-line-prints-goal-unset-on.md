@@ -1,6 +1,6 @@
 # CR-0387: The run-opened line prints goal=unset on the same command that just set the Sprint Goal
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0143
 > **Priority:** Low
 > **Type:** Improvement

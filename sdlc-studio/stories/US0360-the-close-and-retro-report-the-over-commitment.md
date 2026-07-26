@@ -1,6 +1,6 @@
 # US0360: the close and retro report the over-commitment, not the raised ceiling
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0349
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

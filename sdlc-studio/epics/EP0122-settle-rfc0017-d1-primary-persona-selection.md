@@ -1,6 +1,6 @@
 # EP0122: Settle RFC0017 D1: Primary persona selection
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 3
 > **Parent:** CR0346
 > **Created:** 2026-07-23
@@ -14,8 +14,8 @@ Decomposed from CR0346. Delivers the work CR0346 requested.
 
 ## Story Breakdown
 
-- [ ] [US0355: decide and document the Primary-selection method in reference-persona.md and fill the D1 row](../stories/US0355-decide-and-document-the-primary-selection-method-in.md)
-- [ ] [US0356: remove the Decision-Override from RFC0017 once D1 closes](../stories/US0356-remove-the-decision-override-from-rfc0017-once-d1.md)
+- [x] [US0355: decide and document the Primary-selection method in reference-persona.md and fill the D1 row](../stories/US0355-decide-and-document-the-primary-selection-method-in.md)
+- [x] [US0356: remove the Decision-Override from RFC0017 once D1 closes](../stories/US0356-remove-the-decision-override-from-rfc0017-once-d1.md)
 
 ## Acceptance Criteria (Epic Level)
 

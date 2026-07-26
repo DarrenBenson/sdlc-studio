@@ -1,6 +1,6 @@
 # US0425: the pass is intensity-scaled to batch size and records what the scaling skipped
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0050
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

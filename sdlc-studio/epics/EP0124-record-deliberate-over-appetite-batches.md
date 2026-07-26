@@ -1,6 +1,6 @@
 # EP0124: Record deliberate over-appetite batches
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0349
 > **Created:** 2026-07-23
@@ -14,8 +14,8 @@ Decomposed from CR0349. Delivers the work CR0349 requested.
 
 ## Story Breakdown
 
-- [ ] [US0359: run_state records an over-appetite batch, keeping both the standing and the accepted appetite](../stories/US0359-run-state-records-an-over-appetite-batch-keeping.md)
-- [ ] [US0360: the close and retro report the over-commitment, not the raised ceiling](../stories/US0360-the-close-and-retro-report-the-over-commitment.md)
+- [x] [US0359: run_state records an over-appetite batch, keeping both the standing and the accepted appetite](../stories/US0359-run-state-records-an-over-appetite-batch-keeping.md)
+- [x] [US0360: the close and retro report the over-commitment, not the raised ceiling](../stories/US0360-the-close-and-retro-report-the-over-commitment.md)
 
 ## Acceptance Criteria (Epic Level)
 

@@ -1,6 +1,6 @@
 # EP0117: Cut 5.0.0 (RFC0040 close-out)
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0319
 > **Created:** 2026-07-23
@@ -14,8 +14,8 @@ Decomposed from CR0319. Delivers the work CR0319 requested.
 
 ## Story Breakdown
 
-- [ ] [US0347: version bump to 5.0.0 across authoritative files, check_versions --strict green](../stories/US0347-version-bump-to-5-0-0-across-authoritative.md)
-- [ ] [US0348: gate --release green on a fresh dry-run, cut the CHANGELOG 5.0.0 section, tag](../stories/US0348-gate-release-green-on-a-fresh-dry-run.md)
+- [x] [US0347: version bump to 5.0.0 across authoritative files, check_versions --strict green](../stories/US0347-version-bump-to-5-0-0-across-authoritative.md)
+- [x] [US0348: gate --release green on a fresh dry-run, cut the CHANGELOG 5.0.0 section, tag](../stories/US0348-gate-release-green-on-a-fresh-dry-run.md)
 
 ## Acceptance Criteria (Epic Level)
 

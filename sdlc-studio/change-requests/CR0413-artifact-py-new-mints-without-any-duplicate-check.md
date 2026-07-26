@@ -1,6 +1,6 @@
 # CR-0413: artifact.py new mints without any duplicate check, so a defect already on the backlog is re-filed silently; file_finding.py file already computes duplicate_warnings and the two creators should share it
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0156
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

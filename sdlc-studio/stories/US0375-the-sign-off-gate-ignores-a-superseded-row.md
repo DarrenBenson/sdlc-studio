@@ -30,7 +30,7 @@ reaching for is BG0284, and needs a principal-authorised path rather than a gues
 - **Given** a verdict row naming `qa-seat` as reviewer of a unit authored by `builder`, and a recorded supersession retiring that row
 - **When** `record_signoff` is called with `qa-seat` as principal and `builder` as author
 - **Then** the verdict is retired for the critiqued gate (`verdict_for` returns None) but `_session_reviewer_ids` STILL returns `qa-seat`, so the sign-off is refused - a supersession retires a verdict, it cannot un-make the fact that someone reviewed
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SupersededGateTests::test_superseding_does_NOT_restore_independence
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SupersededGateTests::test_an_author_superseding_its_own_seats_verdict_is_refused
 - **Verified:** yes (2026-07-24)
 
 ### AC2: latest-row-wins skips a superseded verdict and falls back to the live one

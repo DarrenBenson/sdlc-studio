@@ -1,6 +1,6 @@
 # US0431: a design rung's close reports how many units it groomed, so an accepted-but-ungroomed batch cannot close silently
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0418
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

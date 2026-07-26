@@ -1,6 +1,6 @@
 # US0386: a zero-remaining handoff states nothing carried over, non-zero unchanged, two-sided tests
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0386
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

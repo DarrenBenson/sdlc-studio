@@ -1,6 +1,6 @@
 # US0390: the batch-selection message shows a usable example value per selector, such as --bugs Open
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0390
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

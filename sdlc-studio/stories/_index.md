@@ -11,8 +11,8 @@
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 51 |
-| Done | 380 |
+| Review | 0 |
+| Done | 431 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -255,59 +255,59 @@
 | [US0342](US0342-every-lens-cites-the-incident-it-derives-from.md) | Every lens cites the incident it derives from, so a reader can weigh it against evidence rather than assertion | Done | EP0115 | 2026-07-22 | 2026-07-22 |
 | [US0343](US0343-a-repair-answering-a-finding-in-the-same.md) | A repair answering a finding in the same class as a previous round must state whether the design is retained or changed, and a plan describing only a better instance is refused past the threshold | Done | EP0106 | 2026-07-22 | 2026-07-22 |
 | [US0344](US0344-the-reviewer-brief-asks-whether-the-approach-itself.md) | The reviewer brief asks whether the approach itself is the defect, and a recorded decision to RETAIN the design is a first-class outcome | Done | EP0106 | 2026-07-22 | 2026-07-22 |
-| [US0345](US0345-rename-audit-py-and-audit-check-py-update.md) | rename audit.py and audit_check.py, update call sites in gate and sprint | Review | EP0116 | 2026-07-23 | 2026-07-23 |
-| [US0346](US0346-update-tests-reference-scripts-md-and-changelog.md) | update tests, reference-scripts.md and CHANGELOG | Review | EP0116 | 2026-07-23 | 2026-07-23 |
-| [US0347](US0347-version-bump-to-5-0-0-across-authoritative.md) | version bump to 5.0.0 across authoritative files, check_versions --strict green | Review | EP0117 | 2026-07-23 | 2026-07-23 |
-| [US0348](US0348-gate-release-green-on-a-fresh-dry-run.md) | gate --release green on a fresh dry-run, cut the CHANGELOG 5.0.0 section, tag | Review | EP0117 | 2026-07-23 | 2026-07-23 |
-| [US0349](US0349-sprint-plan-emits-a-report-only-lane-partition.md) | sprint plan emits a report-only lane partition from the Affects clusters | Review | EP0118 | 2026-07-23 | 2026-07-23 |
-| [US0350](US0350-export-each-lane-as-a-per-team-worklist.md) | export each lane as a per-team worklist, assert collision-freedom, state the undeclared-file risk | Review | EP0118 | 2026-07-23 | 2026-07-23 |
-| [US0351](US0351-test-autosprint-py-exercising-the-primary-path.md) | test_autosprint.py exercising the primary path | Review | EP0119 | 2026-07-23 | 2026-07-23 |
-| [US0352](US0352-test-xrepo-py-primary-path-and-update-the.md) | test_xrepo.py primary path and update the TSD coverage note | Review | EP0119 | 2026-07-23 | 2026-07-23 |
-| [US0353](US0353-refine-apply-and-add-accept-a-breakdown-file.md) | refine apply and add accept a --breakdown file, validated whole before minting, equivalent to the --story form | Review | EP0120 | 2026-07-23 | 2026-07-23 |
+| [US0345](US0345-rename-audit-py-and-audit-check-py-update.md) | rename audit.py and audit_check.py, update call sites in gate and sprint | Done | EP0116 | 2026-07-23 | 2026-07-23 |
+| [US0346](US0346-update-tests-reference-scripts-md-and-changelog.md) | update tests, reference-scripts.md and CHANGELOG | Done | EP0116 | 2026-07-23 | 2026-07-23 |
+| [US0347](US0347-version-bump-to-5-0-0-across-authoritative.md) | version bump to 5.0.0 across authoritative files, check_versions --strict green | Done | EP0117 | 2026-07-23 | 2026-07-23 |
+| [US0348](US0348-gate-release-green-on-a-fresh-dry-run.md) | gate --release green on a fresh dry-run, cut the CHANGELOG 5.0.0 section, tag | Done | EP0117 | 2026-07-23 | 2026-07-23 |
+| [US0349](US0349-sprint-plan-emits-a-report-only-lane-partition.md) | sprint plan emits a report-only lane partition from the Affects clusters | Done | EP0118 | 2026-07-23 | 2026-07-23 |
+| [US0350](US0350-export-each-lane-as-a-per-team-worklist.md) | export each lane as a per-team worklist, assert collision-freedom, state the undeclared-file risk | Done | EP0118 | 2026-07-23 | 2026-07-23 |
+| [US0351](US0351-test-autosprint-py-exercising-the-primary-path.md) | test_autosprint.py exercising the primary path | Done | EP0119 | 2026-07-23 | 2026-07-23 |
+| [US0352](US0352-test-xrepo-py-primary-path-and-update-the.md) | test_xrepo.py primary path and update the TSD coverage note | Done | EP0119 | 2026-07-23 | 2026-07-23 |
+| [US0353](US0353-refine-apply-and-add-accept-a-breakdown-file.md) | refine apply and add accept a --breakdown file, validated whole before minting, equivalent to the --story form | Done | EP0120 | 2026-07-23 | 2026-07-23 |
 | [US0354](US0354-conformance-and-validate-gain-a-diff-scoped-mode.md) | conformance and validate gain a diff-scoped mode over touched artefacts plus global census and link checks, release gate stays whole-workspace | Done | EP0121 | 2026-07-23 | 2026-07-23 |
-| [US0355](US0355-decide-and-document-the-primary-selection-method-in.md) | decide and document the Primary-selection method in reference-persona.md and fill the D1 row | Review | EP0122 | 2026-07-23 | 2026-07-23 |
-| [US0356](US0356-remove-the-decision-override-from-rfc0017-once-d1.md) | remove the Decision-Override from RFC0017 once D1 closes | Review | EP0122 | 2026-07-23 | 2026-07-23 |
+| [US0355](US0355-decide-and-document-the-primary-selection-method-in.md) | decide and document the Primary-selection method in reference-persona.md and fill the D1 row | Done | EP0122 | 2026-07-23 | 2026-07-23 |
+| [US0356](US0356-remove-the-decision-override-from-rfc0017-once-d1.md) | remove the Decision-Override from RFC0017 once D1 closes | Done | EP0122 | 2026-07-23 | 2026-07-23 |
 | [US0357](US0357-a-periodic-or-pre-release-lane-lints-the.md) | a periodic or pre-release lane lints the entire markdown corpus | Done | EP0123 | 2026-07-23 | 2026-07-23 |
 | [US0358](US0358-the-report-distinguishes-a-pre-existing-failure-from.md) | the report distinguishes a pre-existing failure from one the change introduced | Done | EP0123 | 2026-07-23 | 2026-07-23 |
-| [US0359](US0359-run-state-records-an-over-appetite-batch-keeping.md) | run_state records an over-appetite batch, keeping both the standing and the accepted appetite | Review | EP0124 | 2026-07-23 | 2026-07-23 |
-| [US0360](US0360-the-close-and-retro-report-the-over-commitment.md) | the close and retro report the over-commitment, not the raised ceiling | Review | EP0124 | 2026-07-23 | 2026-07-23 |
+| [US0359](US0359-run-state-records-an-over-appetite-batch-keeping.md) | run_state records an over-appetite batch, keeping both the standing and the accepted appetite | Done | EP0124 | 2026-07-23 | 2026-07-23 |
+| [US0360](US0360-the-close-and-retro-report-the-over-commitment.md) | the close and retro report the over-commitment, not the raised ceiling | Done | EP0124 | 2026-07-23 | 2026-07-23 |
 | [US0361](US0361-a-shared-fields-file-and-stdin-helper-in.md) | a shared fields-file and stdin helper in sdlc_md.py, adopted across the remaining prose scripts | Done | EP0125 | 2026-07-23 | 2026-07-23 |
 | [US0362](US0362-a-command-substitution-fingerprint-detector-with-a-recorded.md) | a command-substitution fingerprint detector with a recorded miss rate | Done | EP0125 | 2026-07-23 | 2026-07-23 |
 | [US0363](US0363-document-the-safe-form-in-reference-scripts-md.md) | document the safe form in reference-scripts.md and agent-instructions.md | Done | EP0125 | 2026-07-23 | 2026-07-23 |
-| [US0364](US0364-the-refusal-names-the-fallback-source-and-reference.md) | the refusal names the fallback source and reference-rfc.md documents the false-positive trade | Review | EP0126 | 2026-07-23 | 2026-07-23 |
-| [US0365](US0365-state-the-overage-explicitly-and-name-the-longest.md) | state the overage explicitly and name the longest sections by line count | Review | EP0127 | 2026-07-23 | 2026-07-23 |
-| [US0366](US0366-a-third-disposition-fixed-in-sha-in-retro.md) | a third disposition (fixed-in sha) in retro.py, the gate, the template and the tri-state close counts | Review | EP0128 | 2026-07-23 | 2026-07-23 |
-| [US0367](US0367-anchor-the-cr0302-freshness-guard-to-the-claim.md) | anchor the CR0302 freshness guard to the claim so it fails on the stale counts | Review | EP0129 | 2026-07-23 | 2026-07-23 |
-| [US0368](US0368-extend-the-cr0340-test-relevant-set-to-every.md) | extend the CR0340 test-relevant set to every path a shipped test reads | Review | EP0129 | 2026-07-23 | 2026-07-23 |
-| [US0369](US0369-correct-the-cr0304-trd-sentence-and-disposition-the.md) | correct the CR0304 TRD sentence and disposition the doc-drift residuals | Review | EP0129 | 2026-07-23 | 2026-07-23 |
-| [US0370](US0370-record-the-ac-correction-cases-as-ac-defects.md) | record the AC-correction cases as AC defects | Review | EP0129 | 2026-07-23 | 2026-07-23 |
+| [US0364](US0364-the-refusal-names-the-fallback-source-and-reference.md) | the refusal names the fallback source and reference-rfc.md documents the false-positive trade | Done | EP0126 | 2026-07-23 | 2026-07-23 |
+| [US0365](US0365-state-the-overage-explicitly-and-name-the-longest.md) | state the overage explicitly and name the longest sections by line count | Done | EP0127 | 2026-07-23 | 2026-07-23 |
+| [US0366](US0366-a-third-disposition-fixed-in-sha-in-retro.md) | a third disposition (fixed-in sha) in retro.py, the gate, the template and the tri-state close counts | Done | EP0128 | 2026-07-23 | 2026-07-23 |
+| [US0367](US0367-anchor-the-cr0302-freshness-guard-to-the-claim.md) | anchor the CR0302 freshness guard to the claim so it fails on the stale counts | Done | EP0129 | 2026-07-23 | 2026-07-23 |
+| [US0368](US0368-extend-the-cr0340-test-relevant-set-to-every.md) | extend the CR0340 test-relevant set to every path a shipped test reads | Done | EP0129 | 2026-07-23 | 2026-07-23 |
+| [US0369](US0369-correct-the-cr0304-trd-sentence-and-disposition-the.md) | correct the CR0304 TRD sentence and disposition the doc-drift residuals | Done | EP0129 | 2026-07-23 | 2026-07-23 |
+| [US0370](US0370-record-the-ac-correction-cases-as-ac-defects.md) | record the AC-correction cases as AC defects | Done | EP0129 | 2026-07-23 | 2026-07-23 |
 | [US0371](US0371-flag-green-draft-stories-as-built-not-closed.md) | flag green Draft stories as built-not-closed, forecast the unverified as new, point an all-built batch at the close path | Done | EP0130 | 2026-07-23 | 2026-07-23 |
 | [US0372](US0372-validate-the-commit-message-rules-ahead-of-the.md) | validate the commit-message rules ahead of the test lanes, no lane lost or duplicated, order pinned | Done | EP0131 | 2026-07-23 | 2026-07-23 |
-| [US0373](US0373-decompose-critiqued-into-its-named-halves-in-the.md) | decompose critiqued into its named halves in the report and correct the remedy line | Review | EP0132 | 2026-07-23 | 2026-07-23 |
+| [US0373](US0373-decompose-critiqued-into-its-named-halves-in-the.md) | decompose critiqued into its named halves in the report and correct the remedy line | Done | EP0132 | 2026-07-23 | 2026-07-23 |
 | [US0374](US0374-critic-correct-supersedes-a-verdict-row-with-an.md) | critic correct supersedes a verdict row with an authorised reason, the author alone refused | Done | EP0133 | 2026-07-23 | 2026-07-23 |
 | [US0375](US0375-the-sign-off-gate-ignores-a-superseded-row.md) | the sign-off gate ignores a superseded row while it stays visible | Done | EP0133 | 2026-07-23 | 2026-07-23 |
-| [US0376](US0376-the-harness-capture-returns-the-transcript-model-s.md) | the harness capture returns the transcript model(s), mixed as mixed, and the close writes it to the Model cell | Review | EP0134 | 2026-07-23 | 2026-07-23 |
+| [US0376](US0376-the-harness-capture-returns-the-transcript-model-s.md) | the harness capture returns the transcript model(s), mixed as mixed, and the close writes it to the Model cell | Done | EP0134 | 2026-07-23 | 2026-07-23 |
 | [US0377](US0377-skill-entry-points-warn-or-refuse-while-the.md) | skill entry points warn or refuse while the inflight sidecar exists, own processes exempt, a stale sidecar still recovers | Done | EP0135 | 2026-07-23 | 2026-07-23 |
-| [US0378](US0378-a-no-subcommand-status-prints-the-pillars-and.md) | a no-subcommand status prints the pillars and exits 0, explicit subcommands unchanged | Review | EP0136 | 2026-07-23 | 2026-07-23 |
-| [US0379](US0379-mutation-py-records-an-empty-surface-as-a.md) | mutation.py records an empty surface as a first-class outcome and the gate lane reads it distinct from not-run and PASSes | Review | EP0137 | 2026-07-23 | 2026-07-23 |
-| [US0380](US0380-the-mutation-run-proposes-a-per-target-covering.md) | the mutation run proposes a per-target covering command from its own reference scan, zero out-of-selection warnings by construction, a hand --test unchanged | Review | EP0138 | 2026-07-23 | 2026-07-23 |
-| [US0381](US0381-an-unescaped-pipe-in-ac-with-no-paired.md) | an unescaped pipe in --ac with no paired --verify is warned or refused by name, correctly-paired output byte-identical | Review | EP0139 | 2026-07-23 | 2026-07-23 |
+| [US0378](US0378-a-no-subcommand-status-prints-the-pillars-and.md) | a no-subcommand status prints the pillars and exits 0, explicit subcommands unchanged | Done | EP0136 | 2026-07-23 | 2026-07-23 |
+| [US0379](US0379-mutation-py-records-an-empty-surface-as-a.md) | mutation.py records an empty surface as a first-class outcome and the gate lane reads it distinct from not-run and PASSes | Done | EP0137 | 2026-07-23 | 2026-07-23 |
+| [US0380](US0380-the-mutation-run-proposes-a-per-target-covering.md) | the mutation run proposes a per-target covering command from its own reference scan, zero out-of-selection warnings by construction, a hand --test unchanged | Done | EP0138 | 2026-07-23 | 2026-07-23 |
+| [US0381](US0381-an-unescaped-pipe-in-ac-with-no-paired.md) | an unescaped pipe in --ac with no paired --verify is warned or refused by name, correctly-paired output byte-identical | Done | EP0139 | 2026-07-23 | 2026-07-23 |
 | [US0382](US0382-resolve-root-and-under-root-in-sdlc-md.md) | resolve_root and under_root in sdlc_md.py, documented in reference-scripts.md and best-practices/script.md, a cwd-not-root test | Done | EP0140 | 2026-07-23 | 2026-07-23 |
 | [US0383](US0383-census-the-62-root-scripts-and-fix-or.md) | census the 62 --root scripts and fix or refile the unanchored writers, next_id first | Done | EP0140 | 2026-07-23 | 2026-07-23 |
 | [US0384](US0384-rewrite-help-mutation-md-and-reference-scripts-verify.md) | rewrite help/mutation.md and reference-scripts-verify.md for the ledger, content-hash key, coverage verdict and advisory lane | Done | EP0141 | 2026-07-23 | 2026-07-23 |
 | [US0385](US0385-reconcile-trd-md-and-tsd-md-and-record.md) | reconcile trd.md and tsd.md and record the findings | Done | EP0141 | 2026-07-23 | 2026-07-23 |
-| [US0386](US0386-a-zero-remaining-handoff-states-nothing-carried-over.md) | a zero-remaining handoff states nothing carried over, non-zero unchanged, two-sided tests | Review | EP0142 | 2026-07-23 | 2026-07-23 |
-| [US0387](US0387-the-confirmation-line-names-the-sprint-goal-and.md) | the confirmation line names the Sprint Goal and the --goal rung distinctly, a test drives both cases | Review | EP0143 | 2026-07-23 | 2026-07-23 |
+| [US0386](US0386-a-zero-remaining-handoff-states-nothing-carried-over.md) | a zero-remaining handoff states nothing carried over, non-zero unchanged, two-sided tests | Done | EP0142 | 2026-07-23 | 2026-07-23 |
+| [US0387](US0387-the-confirmation-line-names-the-sprint-goal-and.md) | the confirmation line names the Sprint Goal and the --goal rung distinctly, a test drives both cases | Done | EP0143 | 2026-07-23 | 2026-07-23 |
 | [US0388](US0388-a-forward-port-drift-check-exits-non-zero.md) | a forward-port drift check exits non-zero with a differing-file count, handling no copy and a pinned copy | Done | EP0144 | 2026-07-23 | 2026-07-23 |
 | [US0389](US0389-surface-the-drift-in-the-status-hint-and.md) | surface the drift in the status hint and the close chain | Done | EP0144 | 2026-07-23 | 2026-07-23 |
-| [US0390](US0390-the-batch-selection-message-shows-a-usable-example.md) | the batch-selection message shows a usable example value per selector, such as --bugs Open | Review | EP0145 | 2026-07-23 | 2026-07-23 |
+| [US0390](US0390-the-batch-selection-message-shows-a-usable-example.md) | the batch-selection message shows a usable example value per selector, such as --bugs Open | Done | EP0145 | 2026-07-23 | 2026-07-23 |
 | [US0391](US0391-critic-py-and-close-owed-py-accept-fields.md) | critic.py and close_owed.py accept --fields-file via the shared helper | Done | EP0146 | 2026-07-23 | 2026-07-23 |
 | [US0392](US0392-telemetry-py-and-sprint-py-accept-fields-file.md) | telemetry.py and sprint.py accept --fields-file and the registry is emptied of the four | Done | EP0146 | 2026-07-23 | 2026-07-23 |
 | [US0393](US0393-the-flag-path-reports-a-detected-shell-hazard.md) | the flag path reports a detected shell hazard rather than silently altering the field | Done | EP0146 | 2026-07-23 | 2026-07-23 |
 | [US0394](US0394-verify-ac-run-accepts-an-id-list-a.md) | verify_ac run accepts an id list, a worklist or the run-state batch | Done | EP0147 | 2026-07-23 | 2026-07-23 |
 | [US0395](US0395-the-scoped-report-merges-rather-than-replaces-shared.md) | the scoped report merges rather than replaces, shared-story verdicts identical to the unscoped run | Done | EP0147 | 2026-07-23 | 2026-07-23 |
-| [US0396](US0396-reference-review-md-and-reference-sprint-md-require.md) | reference-review.md and reference-sprint.md require at least two reviewers with distinct lenses including a claims lens, and record a single-reviewer round | Review | EP0148 | 2026-07-23 | 2026-07-23 |
-| [US0397](US0397-reference-sprint-md-and-help-sprint-md-state.md) | reference-sprint.md and help/sprint.md state the fixed-cost-versus-review-convergence trade-off from the measured rows, prescribing no number | Review | EP0149 | 2026-07-23 | 2026-07-23 |
+| [US0396](US0396-reference-review-md-and-reference-sprint-md-require.md) | reference-review.md and reference-sprint.md require at least two reviewers with distinct lenses including a claims lens, and record a single-reviewer round | Done | EP0148 | 2026-07-23 | 2026-07-23 |
+| [US0397](US0397-reference-sprint-md-and-help-sprint-md-state.md) | reference-sprint.md and help/sprint.md state the fixed-cost-versus-review-convergence trade-off from the measured rows, prescribing no number | Done | EP0149 | 2026-07-23 | 2026-07-23 |
 | [US0398](US0398-an-atomic-retitle-of-the-h1-the-filename.md) | an atomic retitle of the H1, the filename slug and the index row, refusing before any write if any cannot be updated | Done | EP0150 | 2026-07-23 | 2026-07-23 |
 | [US0399](US0399-inbound-references-are-rewritten-or-named-via-check.md) | inbound references are rewritten or named via check_links, and the retitle is recorded on the artefact | Done | EP0150 | 2026-07-23 | 2026-07-23 |
 | [US0400](US0400-the-forecast-names-the-rung-it-prices-and.md) | the forecast names the rung it prices and reads UNMEASURED where that rung has no rate | Done | EP0151 | 2026-07-23 | 2026-07-23 |
@@ -323,26 +323,26 @@
 | [US0410](US0410-refine-requires-or-inherits-an-affects-per-story.md) | refine requires or inherits an Affects per story so a minted story is plannable, refusing or seeding-for-confirmation where none is given | Done | EP0155 | 2026-07-23 | 2026-07-23 |
 | [US0411](US0411-a-refined-story-s-ac-block-is-labelled.md) | a refined story's AC block is labelled a grooming placeholder, not left as content, so the ungroomed count is machine-visible | Done | EP0155 | 2026-07-23 | 2026-07-23 |
 | [US0412](US0412-reference-cr-md-and-reference-rfc-md-state.md) | reference-cr.md and reference-rfc.md state refine produces a plannable unit whose ACs still need grooming, opt-out per project | Done | EP0155 | 2026-07-23 | 2026-07-23 |
-| [US0413](US0413-artifact-py-new-warns-on-a-near-duplicate.md) | artifact.py new warns on a near-duplicate title before minting, naming the existing id | Review | EP0156 | 2026-07-24 | 2026-07-24 |
-| [US0414](US0414-the-duplicate-check-is-advisory-by-default-and.md) | the duplicate check is advisory by default and refusable under --strict, with the escape recorded | Review | EP0156 | 2026-07-24 | 2026-07-24 |
-| [US0415](US0415-a-lane-detects-an-epic-whose-stories-a.md) | a lane detects an epic whose stories a delivered sprint already satisfied and reports it as derivable | Review | EP0156 | 2026-07-24 | 2026-07-24 |
-| [US0416](US0416-the-disjointness-check-treats-build-tooling-and-shared.md) | the disjointness check treats build tooling and shared config as coupling, not as ordinary files | Review | EP0156 | 2026-07-24 | 2026-07-24 |
-| [US0417](US0417-the-engagement-floor-attributes-a-git-add-a.md) | the engagement floor attributes a git add -A commit to every unit it touched, not only those named | Review | EP0156 | 2026-07-24 | 2026-07-24 |
-| [US0418](US0418-a-writer-s-fields-file-accepts-metadata-keys.md) | a writer's --fields-file accepts metadata keys as well as prose, so one invocation sets both | Review | EP0156 | 2026-07-24 | 2026-07-24 |
-| [US0419](US0419-the-planner-reads-the-tsd-and-names-the.md) | the planner reads the TSD and names the risk areas the batch touches | Review | EP0157 | 2026-07-24 | 2026-07-24 |
-| [US0420](US0420-each-unit-carries-the-proof-its-risk-band.md) | each unit carries the proof its risk band requires, and coverage the TSD demands but the batch omits is flagged | Review | EP0157 | 2026-07-24 | 2026-07-24 |
-| [US0421](US0421-the-review-reports-a-stale-tsd-rather-than.md) | the review reports a STALE TSD rather than reviewing against a wrong document | Review | EP0157 | 2026-07-24 | 2026-07-24 |
-| [US0422](US0422-the-stated-strategy-names-the-units-worth-mutating.md) | the stated strategy names the units worth mutating, replacing the blanket close-scoped sweep | Review | EP0157 | 2026-07-24 | 2026-07-24 |
-| [US0423](US0423-a-plan-critic-pass-runs-before-write-across.md) | a plan-critic pass runs before --write across the scope, risk and efficiency lenses | Review | EP0158 | 2026-07-24 | 2026-07-24 |
-| [US0424](US0424-findings-must-be-filed-or-declined-with-a.md) | findings must be filed or declined with a reason before --write proceeds; silence is refused | Review | EP0158 | 2026-07-24 | 2026-07-24 |
-| [US0425](US0425-the-pass-is-intensity-scaled-to-batch-size.md) | the pass is intensity-scaled to batch size and records what the scaling skipped | Review | EP0158 | 2026-07-24 | 2026-07-24 |
-| [US0426](US0426-reference-sprint-md-states-the-plan-critic-has.md) | reference-sprint.md states the plan critic has less information than the builder, and that Ponytail's rate is not evidence here | Review | EP0158 | 2026-07-24 | 2026-07-24 |
-| [US0427](US0427-a-subagent-reviewer-of-record-in-its-own.md) | a subagent reviewer of record in its own context is accepted, and the row records that it was a delegated agent | Review | EP0159 | 2026-07-24 | 2026-07-24 |
-| [US0428](US0428-the-sprint-report-and-the-close-output-disclose.md) | the sprint report and the close output DISCLOSE every delegated sign-off, naming the delegate | Review | EP0159 | 2026-07-24 | 2026-07-24 |
-| [US0429](US0429-reference-review-md-states-plainly-that-a-disclosed.md) | reference-review.md states plainly that a disclosed sign-off is not an independent one, and what that costs | Review | EP0159 | 2026-07-24 | 2026-07-24 |
-| [US0430](US0430-the-breakdown-gate-refuses-an-ungroomed-batch-at.md) | the breakdown gate refuses an ungroomed batch at --goal done and accepts it at --goal design | Review | EP0160 | 2026-07-24 | 2026-07-24 |
-| [US0431](US0431-a-design-rung-s-close-reports-how-many.md) | a design rung's close reports how many units it groomed, so an accepted-but-ungroomed batch cannot close silently | Review | EP0160 | 2026-07-24 | 2026-07-24 |
-| [US0432](US0432-re-declare-gate-budget-against-the-317s-measured.md) | re-declare gate_budget against the ~317s measured peak so a normal commit is under budget and a regression still flags | Review | EP0161 | 2026-07-26 | 2026-07-26 |
+| [US0413](US0413-artifact-py-new-warns-on-a-near-duplicate.md) | artifact.py new warns on a near-duplicate title before minting, naming the existing id | Done | EP0156 | 2026-07-24 | 2026-07-24 |
+| [US0414](US0414-the-duplicate-check-is-advisory-by-default-and.md) | the duplicate check is advisory by default and refusable under --strict, with the escape recorded | Done | EP0156 | 2026-07-24 | 2026-07-24 |
+| [US0415](US0415-a-lane-detects-an-epic-whose-stories-a.md) | a lane detects an epic whose stories a delivered sprint already satisfied and reports it as derivable | Done | EP0156 | 2026-07-24 | 2026-07-24 |
+| [US0416](US0416-the-disjointness-check-treats-build-tooling-and-shared.md) | the disjointness check treats build tooling and shared config as coupling, not as ordinary files | Done | EP0156 | 2026-07-24 | 2026-07-24 |
+| [US0417](US0417-the-engagement-floor-attributes-a-git-add-a.md) | the engagement floor attributes a git add -A commit to every unit it touched, not only those named | Done | EP0156 | 2026-07-24 | 2026-07-24 |
+| [US0418](US0418-a-writer-s-fields-file-accepts-metadata-keys.md) | a writer's --fields-file accepts metadata keys as well as prose, so one invocation sets both | Done | EP0156 | 2026-07-24 | 2026-07-24 |
+| [US0419](US0419-the-planner-reads-the-tsd-and-names-the.md) | the planner reads the TSD and names the risk areas the batch touches | Done | EP0157 | 2026-07-24 | 2026-07-24 |
+| [US0420](US0420-each-unit-carries-the-proof-its-risk-band.md) | each unit carries the proof its risk band requires, and coverage the TSD demands but the batch omits is flagged | Done | EP0157 | 2026-07-24 | 2026-07-24 |
+| [US0421](US0421-the-review-reports-a-stale-tsd-rather-than.md) | the review reports a STALE TSD rather than reviewing against a wrong document | Done | EP0157 | 2026-07-24 | 2026-07-24 |
+| [US0422](US0422-the-stated-strategy-names-the-units-worth-mutating.md) | the stated strategy names the units worth mutating, replacing the blanket close-scoped sweep | Done | EP0157 | 2026-07-24 | 2026-07-24 |
+| [US0423](US0423-a-plan-critic-pass-runs-before-write-across.md) | a plan-critic pass runs before --write across the scope, risk and efficiency lenses | Done | EP0158 | 2026-07-24 | 2026-07-24 |
+| [US0424](US0424-findings-must-be-filed-or-declined-with-a.md) | findings must be filed or declined with a reason before --write proceeds; silence is refused | Done | EP0158 | 2026-07-24 | 2026-07-24 |
+| [US0425](US0425-the-pass-is-intensity-scaled-to-batch-size.md) | the pass is intensity-scaled to batch size and records what the scaling skipped | Done | EP0158 | 2026-07-24 | 2026-07-24 |
+| [US0426](US0426-reference-sprint-md-states-the-plan-critic-has.md) | reference-sprint.md states the plan critic has less information than the builder, and that Ponytail's rate is not evidence here | Done | EP0158 | 2026-07-24 | 2026-07-24 |
+| [US0427](US0427-a-subagent-reviewer-of-record-in-its-own.md) | a subagent reviewer of record in its own context is accepted, and the row records that it was a delegated agent | Done | EP0159 | 2026-07-24 | 2026-07-24 |
+| [US0428](US0428-the-sprint-report-and-the-close-output-disclose.md) | the sprint report and the close output DISCLOSE every delegated sign-off, naming the delegate | Done | EP0159 | 2026-07-24 | 2026-07-24 |
+| [US0429](US0429-reference-review-md-states-plainly-that-a-disclosed.md) | reference-review.md states plainly that a disclosed sign-off is not an independent one, and what that costs | Done | EP0159 | 2026-07-24 | 2026-07-24 |
+| [US0430](US0430-the-breakdown-gate-refuses-an-ungroomed-batch-at.md) | the breakdown gate refuses an ungroomed batch at --goal done and accepts it at --goal design | Done | EP0160 | 2026-07-24 | 2026-07-24 |
+| [US0431](US0431-a-design-rung-s-close-reports-how-many.md) | a design rung's close reports how many units it groomed, so an accepted-but-ungroomed batch cannot close silently | Done | EP0160 | 2026-07-24 | 2026-07-24 |
+| [US0432](US0432-re-declare-gate-budget-against-the-317s-measured.md) | re-declare gate_budget against the ~317s measured peak so a normal commit is under budget and a regression still flags | Done | EP0161 | 2026-07-26 | 2026-07-26 |
 
 ## Archived Releases
 

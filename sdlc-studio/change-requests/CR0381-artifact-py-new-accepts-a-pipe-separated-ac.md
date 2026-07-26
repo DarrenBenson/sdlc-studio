@@ -1,6 +1,6 @@
 # CR-0381: artifact.py new accepts a pipe-separated --ac and emits a malformed AC without warning
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0139
 > **Priority:** Medium
 > **Type:** Improvement

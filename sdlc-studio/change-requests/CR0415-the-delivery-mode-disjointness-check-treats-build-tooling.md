@@ -1,6 +1,6 @@
 # CR-0415: the delivery-mode disjointness check treats build tooling as an ordinary file, so a unit that restructures the pre-commit hook or the gate reads as file-disjoint from every other unit - yet every parallel agent commits through it
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0156
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

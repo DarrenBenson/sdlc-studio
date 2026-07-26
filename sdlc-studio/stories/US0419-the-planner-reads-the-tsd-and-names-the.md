@@ -1,6 +1,6 @@
 # US0419: the planner reads the TSD and names the risk areas the batch touches
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0049
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

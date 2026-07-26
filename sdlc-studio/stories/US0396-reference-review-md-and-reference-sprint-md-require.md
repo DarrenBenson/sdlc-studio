@@ -1,6 +1,6 @@
 # US0396: reference-review.md and reference-sprint.md require at least two reviewers with distinct lenses including a claims lens, and record a single-reviewer round
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0397
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

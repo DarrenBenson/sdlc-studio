@@ -1,6 +1,6 @@
 # US0415: a lane detects an epic whose stories a delivered sprint already satisfied and reports it as derivable
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0414
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

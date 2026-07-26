@@ -1,6 +1,6 @@
 # CR-0373: the interactive token capture should record the delivering model so the velocity row lands in the right (project, model) cell
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0134
 > **Priority:** Medium
 > **Type:** Improvement

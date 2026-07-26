@@ -1,6 +1,6 @@
 # US0430: the breakdown gate refuses an ungroomed batch at --goal done and accepts it at --goal design
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0418
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

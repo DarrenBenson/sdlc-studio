@@ -1,6 +1,6 @@
 # EP0158: An adversarial pass over the plan before --write (RFC0050 D0061)
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 13
 > **Parent:** RFC0050
 > **Created:** 2026-07-24
@@ -14,10 +14,10 @@
 
 ## Story Breakdown
 
-- [ ] [US0423: a plan-critic pass runs before --write across the scope, risk and efficiency lenses](../stories/US0423-a-plan-critic-pass-runs-before-write-across.md)
-- [ ] [US0424: findings must be filed or declined with a reason before --write proceeds; silence is refused](../stories/US0424-findings-must-be-filed-or-declined-with-a.md)
-- [ ] [US0425: the pass is intensity-scaled to batch size and records what the scaling skipped](../stories/US0425-the-pass-is-intensity-scaled-to-batch-size.md)
-- [ ] [US0426: reference-sprint.md states the plan critic has less information than the builder, and that Ponytail's rate is not evidence here](../stories/US0426-reference-sprint-md-states-the-plan-critic-has.md)
+- [x] [US0423: a plan-critic pass runs before --write across the scope, risk and efficiency lenses](../stories/US0423-a-plan-critic-pass-runs-before-write-across.md)
+- [x] [US0424: findings must be filed or declined with a reason before --write proceeds; silence is refused](../stories/US0424-findings-must-be-filed-or-declined-with-a.md)
+- [x] [US0425: the pass is intensity-scaled to batch size and records what the scaling skipped](../stories/US0425-the-pass-is-intensity-scaled-to-batch-size.md)
+- [x] [US0426: reference-sprint.md states the plan critic has less information than the builder, and that Ponytail's rate is not evidence here](../stories/US0426-reference-sprint-md-states-the-plan-critic-has.md)
 
 ## Revision History
 

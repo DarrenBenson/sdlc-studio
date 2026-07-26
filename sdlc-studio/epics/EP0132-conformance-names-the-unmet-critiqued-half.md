@@ -1,6 +1,6 @@
 # EP0132: conformance names the unmet critiqued half
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 3
 > **Parent:** CR0368
 > **Created:** 2026-07-23
@@ -14,7 +14,7 @@ Decomposed from CR0368. Delivers the work CR0368 requested.
 
 ## Story Breakdown
 
-- [ ] [US0373: decompose critiqued into its named halves in the report and correct the remedy line](../stories/US0373-decompose-critiqued-into-its-named-halves-in-the.md)
+- [x] [US0373: decompose critiqued into its named halves in the report and correct the remedy line](../stories/US0373-decompose-critiqued-into-its-named-halves-in-the.md)
 
 ## Revision History
 

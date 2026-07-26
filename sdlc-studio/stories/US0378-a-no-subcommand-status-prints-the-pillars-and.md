@@ -1,6 +1,6 @@
 # US0378: a no-subcommand status prints the pillars and exits 0, explicit subcommands unchanged
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0375
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

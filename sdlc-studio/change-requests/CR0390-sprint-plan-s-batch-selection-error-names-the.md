@@ -1,6 +1,6 @@
 # CR-0390: sprint plan's batch-selection error names the flags but not that each one takes a status, costing two failed invocations to discover
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0145
 > **Priority:** Low
 > **Type:** Improvement

@@ -1,6 +1,6 @@
 # US0387: the confirmation line names the Sprint Goal and the --goal rung distinctly, a test drives both cases
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0387
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

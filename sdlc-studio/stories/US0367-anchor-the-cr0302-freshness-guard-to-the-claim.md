@@ -1,6 +1,6 @@
 # US0367: anchor the CR0302 freshness guard to the claim so it fails on the stale counts
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0365
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

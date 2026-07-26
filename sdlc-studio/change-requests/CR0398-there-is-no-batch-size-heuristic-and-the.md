@@ -1,6 +1,6 @@
 # CR-0398: There is no batch-size heuristic, and the measured fixed cost makes the obvious advice backwards
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0149
 > **Priority:** Medium
 > **Type:** Improvement

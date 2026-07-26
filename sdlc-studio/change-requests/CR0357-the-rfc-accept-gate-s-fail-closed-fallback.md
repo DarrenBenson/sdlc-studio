@@ -1,6 +1,6 @@
 # CR-0357: the RFC accept gate's fail-closed fallback can refuse a valid RFC, and says nothing about why
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0126
 > **Priority:** Low
 > **Type:** Improvement

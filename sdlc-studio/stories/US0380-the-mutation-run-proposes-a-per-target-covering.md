@@ -1,6 +1,6 @@
 # US0380: the mutation run proposes a per-target covering command from its own reference scan, zero out-of-selection warnings by construction, a hand --test unchanged
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0377
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

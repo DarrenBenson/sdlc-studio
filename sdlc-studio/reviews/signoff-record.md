@@ -214,3 +214,54 @@
 | US0389 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
 | US0394 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
 | US0395 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-24 | - |
+| US0356 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-26 | - |
+| US0370 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0378 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-26 | - |
+| US0390 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0346 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0347 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0355 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-26 | - |
+| US0360 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0364 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-26 | - |
+| US0365 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0368 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0381 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-26 | - |
+| US0386 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0387 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0396 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0397 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0414 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-26 | - |
+| US0426 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0429 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0345 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0348 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0349 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0350 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0351 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-26 | - |
+| US0352 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-26 | - |
+| US0359 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0366 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0367 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0369 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-26 | - |
+| US0373 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-26 | - |
+| US0376 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0379 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0413 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-26 | - |
+| US0415 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-26 | - |
+| US0416 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0417 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-26 | - |
+| US0418 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0421 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0422 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0424 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0425 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0428 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0430 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0431 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0353 | Darren Benson (operator) | - | Claude Opus 4.8 (sprint author) | 2026-07-26 | - |
+| US0380 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0419 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0420 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0423 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0427 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |
+| US0432 | Darren Benson (operator) | - | sdlc-studio; agent; v1 | 2026-07-26 | - |

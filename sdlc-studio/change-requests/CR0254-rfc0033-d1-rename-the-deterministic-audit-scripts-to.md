@@ -1,6 +1,6 @@
 # CR-0254: RFC0033 D1: rename the deterministic audit scripts to free the audit stem
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0116
 > **Size:** M
 > **Priority:** P2

@@ -1,6 +1,6 @@
 # EP0142: The handoff line does not ask you to plan nothing
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 2
 > **Parent:** CR0386
 > **Created:** 2026-07-23
@@ -14,7 +14,7 @@ Decomposed from CR0386. Delivers the work CR0386 requested.
 
 ## Story Breakdown
 
-- [ ] [US0386: a zero-remaining handoff states nothing carried over, non-zero unchanged, two-sided tests](../stories/US0386-a-zero-remaining-handoff-states-nothing-carried-over.md)
+- [x] [US0386: a zero-remaining handoff states nothing carried over, non-zero unchanged, two-sided tests](../stories/US0386-a-zero-remaining-handoff-states-nothing-carried-over.md)
 
 ## Revision History
 

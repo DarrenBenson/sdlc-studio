@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 28 |
+| Draft | 0 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 133 |
+| Done | 161 |
 | **Total** | **161** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -138,49 +138,49 @@
 | [EP0113](EP0113-a-reject-can-be-carried-forward-as-filed.md) | A REJECT can be carried forward as filed findings, under a declared policy | Done | -- | -- | 2026-07-22 | 2026-07-22 |
 | [EP0114](EP0114-the-forecast-prices-the-sprint-not-just-the.md) | The forecast prices the sprint, not just the build | Done | -- | -- | 2026-07-22 | 2026-07-22 |
 | [EP0115](EP0115-a-process-lens-that-finds-work-done-before.md) | A process lens that finds work done before the contract it depends on | Done | -- | -- | 2026-07-22 | 2026-07-22 |
-| [EP0116](EP0116-free-the-audit-stem-rfc0033-d1.md) | Free the audit stem (RFC0033 D1) | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0117](EP0117-cut-5-0-0-rfc0040-close-out.md) | Cut 5.0.0 (RFC0040 close-out) | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0118](EP0118-collision-free-lane-partitioning-rfc0036.md) | Collision-free lane partitioning (RFC0036) | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0119](EP0119-close-the-autosprint-and-xrepo-coverage-gap.md) | Close the autosprint and xrepo coverage gap | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0120](EP0120-refine-reads-a-breakdown-from-a-file.md) | refine reads a breakdown from a file | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0116](EP0116-free-the-audit-stem-rfc0033-d1.md) | Free the audit stem (RFC0033 D1) | Done | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0117](EP0117-cut-5-0-0-rfc0040-close-out.md) | Cut 5.0.0 (RFC0040 close-out) | Done | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0118](EP0118-collision-free-lane-partitioning-rfc0036.md) | Collision-free lane partitioning (RFC0036) | Done | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0119](EP0119-close-the-autosprint-and-xrepo-coverage-gap.md) | Close the autosprint and xrepo coverage gap | Done | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0120](EP0120-refine-reads-a-breakdown-from-a-file.md) | refine reads a breakdown from a file | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0121](EP0121-diff-scoped-gate-lanes.md) | Diff-scoped gate lanes | Done | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0122](EP0122-settle-rfc0017-d1-primary-persona-selection.md) | Settle RFC0017 D1: Primary persona selection | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0122](EP0122-settle-rfc0017-d1-primary-persona-selection.md) | Settle RFC0017 D1: Primary persona selection | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0123](EP0123-whole-corpus-markdown-lint-lane.md) | Whole-corpus markdown lint lane | Done | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0124](EP0124-record-deliberate-over-appetite-batches.md) | Record deliberate over-appetite batches | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0124](EP0124-record-deliberate-over-appetite-batches.md) | Record deliberate over-appetite batches | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0125](EP0125-prose-reaches-every-creation-script-without-a-shell.md) | Prose reaches every creation script without a shell | Done | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0126](EP0126-the-rfc-accept-refusal-names-its-fallback-provenance.md) | The RFC accept refusal names its fallback provenance | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0127](EP0127-the-doc-freshness-refusal-aims-the-trim.md) | The doc-freshness refusal aims the trim | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0128](EP0128-a-retro-records-a-finding-fixed-in-sprint.md) | A retro records a finding fixed in-sprint | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0129](EP0129-residuals-from-the-cr0364-derived-requests.md) | Residuals from the CR0364-derived requests | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0126](EP0126-the-rfc-accept-refusal-names-its-fallback-provenance.md) | The RFC accept refusal names its fallback provenance | Done | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0127](EP0127-the-doc-freshness-refusal-aims-the-trim.md) | The doc-freshness refusal aims the trim | Done | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0128](EP0128-a-retro-records-a-finding-fixed-in-sprint.md) | A retro records a finding fixed in-sprint | Done | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0129](EP0129-residuals-from-the-cr0364-derived-requests.md) | Residuals from the CR0364-derived requests | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0130](EP0130-sprint-plan-sees-built-and-committed-work.md) | sprint plan sees built-and-committed work | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0131](EP0131-the-commit-message-check-runs-before-the-expensive.md) | The commit-message check runs before the expensive lanes | Done | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0132](EP0132-conformance-names-the-unmet-critiqued-half.md) | conformance names the unmet critiqued half | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0132](EP0132-conformance-names-the-unmet-critiqued-half.md) | conformance names the unmet critiqued half | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0133](EP0133-a-correctable-review-log.md) | A correctable review log | Done | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0134](EP0134-the-model-on-the-interactive-velocity-row.md) | The model on the interactive velocity row | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0134](EP0134-the-model-on-the-interactive-velocity-row.md) | The model on the interactive velocity row | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0135](EP0135-surface-the-mutation-window.md) | Surface the mutation window | Done | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0136](EP0136-bare-status-defaults-to-the-pillars-dashboard.md) | Bare status defaults to the pillars dashboard | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0137](EP0137-a-docs-only-close-is-honestly-green.md) | A docs-only close is honestly green | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0138](EP0138-derive-the-covering-test-command.md) | Derive the covering test command | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0139](EP0139-refuse-a-piped-ac.md) | Refuse a piped --ac | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0136](EP0136-bare-status-defaults-to-the-pillars-dashboard.md) | Bare status defaults to the pillars dashboard | Done | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0137](EP0137-a-docs-only-close-is-honestly-green.md) | A docs-only close is honestly green | Done | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0138](EP0138-derive-the-covering-test-command.md) | Derive the covering test command | Done | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0139](EP0139-refuse-a-piped-ac.md) | Refuse a piped --ac | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0140](EP0140-a-shared-root-resolver-and-rule.md) | A shared root resolver and rule | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0141](EP0141-reconcile-the-mutation-ledger-documentation.md) | Reconcile the mutation-ledger documentation | Done | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0142](EP0142-the-handoff-line-does-not-ask-you-to.md) | The handoff line does not ask you to plan nothing | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0143](EP0143-the-run-opened-line-distinguishes-the-sprint-goal.md) | The run-opened line distinguishes the Sprint Goal from the rung | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0142](EP0142-the-handoff-line-does-not-ask-you-to.md) | The handoff line does not ask you to plan nothing | Done | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0143](EP0143-the-run-opened-line-distinguishes-the-sprint-goal.md) | The run-opened line distinguishes the Sprint Goal from the rung | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0144](EP0144-installed-copy-drift-detection.md) | Installed-copy drift detection | Done | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0145](EP0145-the-batch-selection-error-shows-an-example-value.md) | The batch-selection error shows an example value | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0145](EP0145-the-batch-selection-error-shows-an-example-value.md) | The batch-selection error shows an example value | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0146](EP0146-extend-fields-file-to-the-remaining-prose-writers.md) | Extend --fields-file to the remaining prose writers | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0147](EP0147-batch-scoped-ac-verification.md) | Batch-scoped AC verification | Done | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0148](EP0148-review-round-robustness-guidance.md) | Review-round robustness guidance | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0149](EP0149-batch-size-trade-off-guidance.md) | Batch-size trade-off guidance | Draft | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0148](EP0148-review-round-robustness-guidance.md) | Review-round robustness guidance | Done | -- | -- | 2026-07-23 | 2026-07-23 |
+| [EP0149](EP0149-batch-size-trade-off-guidance.md) | Batch-size trade-off guidance | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0150](EP0150-a-deterministic-retitle-path.md) | A deterministic retitle path | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0151](EP0151-a-rung-aware-forecast-and-retro.md) | A rung-aware forecast and retro | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0152](EP0152-an-amendable-goal-review.md) | An amendable goal review | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0153](EP0153-a-reproducible-seat-brief.md) | A reproducible seat brief | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0154](EP0154-sequential-or-parallel-delivery-chosen-at-run-start.md) | Sequential or parallel delivery, chosen at run start | Done | -- | -- | 2026-07-23 | 2026-07-23 |
 | [EP0155](EP0155-refine-mints-an-actionable-plannable-unit.md) | refine mints an actionable, plannable unit | Done | -- | -- | 2026-07-23 | 2026-07-23 |
-| [EP0156](EP0156-sprint-2-tooling-frictions-duplicate-minting-stale-epics.md) | Sprint 2 tooling frictions: duplicate minting, stale epics, lane coupling, attribution, writer keys | Draft | -- | -- | 2026-07-24 | 2026-07-24 |
-| [EP0157](EP0157-test-strategy-set-at-sprint-planning-reviewed-against.md) | Test strategy set at sprint planning, reviewed against the TSD (RFC0049 D0060) | Draft | -- | -- | 2026-07-24 | 2026-07-24 |
-| [EP0158](EP0158-an-adversarial-pass-over-the-plan-before-write.md) | An adversarial pass over the plan before --write (RFC0050 D0061) | Draft | -- | -- | 2026-07-24 | 2026-07-24 |
-| [EP0159](EP0159-disclosed-delegated-sign-off-by-a-subagent-in.md) | Disclosed delegated sign-off by a subagent in its own context (RFC0051 D0059) | Draft | -- | -- | 2026-07-24 | 2026-07-24 |
-| [EP0160](EP0160-the-breakdown-gate-becomes-goal-aware-cr0418-d0062.md) | The breakdown gate becomes goal-aware (CR0418 D0062) | Draft | -- | -- | 2026-07-24 | 2026-07-24 |
-| [EP0161](EP0161-re-budget-the-pre-commit-gate-against-measured.md) | Re-budget the pre-commit gate against measured cost | Draft | -- | -- | 2026-07-26 | 2026-07-26 |
+| [EP0156](EP0156-sprint-2-tooling-frictions-duplicate-minting-stale-epics.md) | Sprint 2 tooling frictions: duplicate minting, stale epics, lane coupling, attribution, writer keys | Done | -- | -- | 2026-07-24 | 2026-07-24 |
+| [EP0157](EP0157-test-strategy-set-at-sprint-planning-reviewed-against.md) | Test strategy set at sprint planning, reviewed against the TSD (RFC0049 D0060) | Done | -- | -- | 2026-07-24 | 2026-07-24 |
+| [EP0158](EP0158-an-adversarial-pass-over-the-plan-before-write.md) | An adversarial pass over the plan before --write (RFC0050 D0061) | Done | -- | -- | 2026-07-24 | 2026-07-24 |
+| [EP0159](EP0159-disclosed-delegated-sign-off-by-a-subagent-in.md) | Disclosed delegated sign-off by a subagent in its own context (RFC0051 D0059) | Done | -- | -- | 2026-07-24 | 2026-07-24 |
+| [EP0160](EP0160-the-breakdown-gate-becomes-goal-aware-cr0418-d0062.md) | The breakdown gate becomes goal-aware (CR0418 D0062) | Done | -- | -- | 2026-07-24 | 2026-07-24 |
+| [EP0161](EP0161-re-budget-the-pre-commit-gate-against-measured.md) | Re-budget the pre-commit gate against measured cost | Done | -- | -- | 2026-07-26 | 2026-07-26 |

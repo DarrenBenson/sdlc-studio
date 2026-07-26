@@ -1,6 +1,6 @@
 # US0429: reference-review.md states plainly that a disclosed sign-off is not an independent one, and what that costs
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0051
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

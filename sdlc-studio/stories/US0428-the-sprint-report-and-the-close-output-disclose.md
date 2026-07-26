@@ -1,6 +1,6 @@
 # US0428: the sprint report and the close output DISCLOSE every delegated sign-off, naming the delegate
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0051
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

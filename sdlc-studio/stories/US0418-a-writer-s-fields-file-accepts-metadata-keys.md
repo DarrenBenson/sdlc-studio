@@ -1,6 +1,6 @@
 # US0418: a writer's --fields-file accepts metadata keys as well as prose, so one invocation sets both
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0417
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

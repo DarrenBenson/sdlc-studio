@@ -1,6 +1,6 @@
 # US0353: refine apply and add accept a --breakdown file, validated whole before minting, equivalent to the --story form
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0343
 > **Created:** 2026-07-23
 > **Created-by:** sdlc-studio new

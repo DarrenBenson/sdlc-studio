@@ -1,6 +1,6 @@
 # CR-0397: A review round is one agent by default, so every round after the first is a serial bottleneck
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0148
 > **Priority:** Medium
 > **Type:** Improvement

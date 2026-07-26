@@ -1,6 +1,6 @@
 # EP0145: The batch-selection error shows an example value
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 1
 > **Parent:** CR0390
 > **Created:** 2026-07-23
@@ -14,7 +14,7 @@ Decomposed from CR0390. Delivers the work CR0390 requested.
 
 ## Story Breakdown
 
-- [ ] [US0390: the batch-selection message shows a usable example value per selector, such as --bugs Open](../stories/US0390-the-batch-selection-message-shows-a-usable-example.md)
+- [x] [US0390: the batch-selection message shows a usable example value per selector, such as --bugs Open](../stories/US0390-the-batch-selection-message-shows-a-usable-example.md)
 
 ## Revision History
 

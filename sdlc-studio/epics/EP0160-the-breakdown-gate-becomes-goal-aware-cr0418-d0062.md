@@ -1,6 +1,6 @@
 # EP0160: The breakdown gate becomes goal-aware (CR0418 D0062)
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 6
 > **Parent:** CR0418
 > **Created:** 2026-07-24
@@ -14,8 +14,8 @@
 
 ## Story Breakdown
 
-- [ ] [US0430: the breakdown gate refuses an ungroomed batch at --goal done and accepts it at --goal design](../stories/US0430-the-breakdown-gate-refuses-an-ungroomed-batch-at.md)
-- [ ] [US0431: a design rung's close reports how many units it groomed, so an accepted-but-ungroomed batch cannot close silently](../stories/US0431-a-design-rung-s-close-reports-how-many.md)
+- [x] [US0430: the breakdown gate refuses an ungroomed batch at --goal done and accepts it at --goal design](../stories/US0430-the-breakdown-gate-refuses-an-ungroomed-batch-at.md)
+- [x] [US0431: a design rung's close reports how many units it groomed, so an accepted-but-ungroomed batch cannot close silently](../stories/US0431-a-design-rung-s-close-reports-how-many.md)
 
 ## Acceptance Criteria (Epic Level)
 

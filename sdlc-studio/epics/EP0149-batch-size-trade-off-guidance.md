@@ -1,6 +1,6 @@
 # EP0149: Batch-size trade-off guidance
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 2
 > **Parent:** CR0398
 > **Created:** 2026-07-23
@@ -14,7 +14,7 @@ Decomposed from CR0398. Delivers the work CR0398 requested.
 
 ## Story Breakdown
 
-- [ ] [US0397: reference-sprint.md and help/sprint.md state the fixed-cost-versus-review-convergence trade-off from the measured rows, prescribing no number](../stories/US0397-reference-sprint-md-and-help-sprint-md-state.md)
+- [x] [US0397: reference-sprint.md and help/sprint.md state the fixed-cost-versus-review-convergence trade-off from the measured rows, prescribing no number](../stories/US0397-reference-sprint-md-and-help-sprint-md-state.md)
 
 ## Revision History
 

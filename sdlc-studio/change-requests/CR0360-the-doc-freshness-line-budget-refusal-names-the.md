@@ -1,6 +1,6 @@
 # CR-0360: the doc-freshness line-budget refusal names the count but not the gap, so trimming is guesswork
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0127
 > **Priority:** Low
 > **Type:** Improvement

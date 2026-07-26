@@ -1,6 +1,6 @@
 # US0416: the disjointness check treats build tooling and shared config as coupling, not as ordinary files
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0415
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

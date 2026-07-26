@@ -1,6 +1,6 @@
 # EP0156: Sprint 2 tooling frictions: duplicate minting, stale epics, lane coupling, attribution, writer keys
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0417
 > **Parent:** CR0416
 > **Parent:** CR0415
@@ -18,12 +18,12 @@ Decomposed from CR0413. Delivers the work CR0413 requested.
 
 ## Story Breakdown
 
-- [ ] [US0413: artifact.py new warns on a near-duplicate title before minting, naming the existing id](../stories/US0413-artifact-py-new-warns-on-a-near-duplicate.md)
-- [ ] [US0414: the duplicate check is advisory by default and refusable under --strict, with the escape recorded](../stories/US0414-the-duplicate-check-is-advisory-by-default-and.md)
-- [ ] [US0415: a lane detects an epic whose stories a delivered sprint already satisfied and reports it as derivable](../stories/US0415-a-lane-detects-an-epic-whose-stories-a.md)
-- [ ] [US0416: the disjointness check treats build tooling and shared config as coupling, not as ordinary files](../stories/US0416-the-disjointness-check-treats-build-tooling-and-shared.md)
-- [ ] [US0417: the engagement floor attributes a git add -A commit to every unit it touched, not only those named](../stories/US0417-the-engagement-floor-attributes-a-git-add-a.md)
-- [ ] [US0418: a writer's --fields-file accepts metadata keys as well as prose, so one invocation sets both](../stories/US0418-a-writer-s-fields-file-accepts-metadata-keys.md)
+- [x] [US0413: artifact.py new warns on a near-duplicate title before minting, naming the existing id](../stories/US0413-artifact-py-new-warns-on-a-near-duplicate.md)
+- [x] [US0414: the duplicate check is advisory by default and refusable under --strict, with the escape recorded](../stories/US0414-the-duplicate-check-is-advisory-by-default-and.md)
+- [x] [US0415: a lane detects an epic whose stories a delivered sprint already satisfied and reports it as derivable](../stories/US0415-a-lane-detects-an-epic-whose-stories-a.md)
+- [x] [US0416: the disjointness check treats build tooling and shared config as coupling, not as ordinary files](../stories/US0416-the-disjointness-check-treats-build-tooling-and-shared.md)
+- [x] [US0417: the engagement floor attributes a git add -A commit to every unit it touched, not only those named](../stories/US0417-the-engagement-floor-attributes-a-git-add-a.md)
+- [x] [US0418: a writer's --fields-file accepts metadata keys as well as prose, so one invocation sets both](../stories/US0418-a-writer-s-fields-file-accepts-metadata-keys.md)
 
 ## Acceptance Criteria (Epic Level)
 

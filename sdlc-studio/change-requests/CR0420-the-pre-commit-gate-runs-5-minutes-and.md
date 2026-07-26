@@ -1,6 +1,6 @@
 # CR-0420: the pre-commit gate runs ~5 minutes and its budget advisory reports +200% over a stale baseline on every commit, so the signal has become noise rather than a bound anyone acts on
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0161
 > **Created:** 2026-07-25
 > **Created-by:** sdlc-studio new

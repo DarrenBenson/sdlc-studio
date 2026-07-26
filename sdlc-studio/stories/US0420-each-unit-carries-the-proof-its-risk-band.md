@@ -1,6 +1,6 @@
 # US0420: each unit carries the proof its risk band requires, and coverage the TSD demands but the batch omits is flagged
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0049
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

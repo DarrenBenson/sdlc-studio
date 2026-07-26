@@ -1,6 +1,6 @@
 # CR-0337: Import/test coverage for autosprint and xrepo (BG0162 rider)
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0119
 > **Priority:** Low
 > **Type:** Improvement

@@ -1,6 +1,6 @@
 # US0421: the review reports a STALE TSD rather than reviewing against a wrong document
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0049
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new

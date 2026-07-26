@@ -1,6 +1,6 @@
 # US0427: a subagent reviewer of record in its own context is accepted, and the row records that it was a delegated agent
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0051
 > **Created:** 2026-07-24
 > **Created-by:** sdlc-studio new
