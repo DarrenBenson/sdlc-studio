@@ -557,7 +557,7 @@ def report_shell_hazards(fields: dict, source: str = "the command line",
 
 def resolve_prose_fields(fields_file: str | None, flag_fields: dict,
                          allowed: tuple[str, ...],
-                         prose_keys: tuple[str, ...] | None = None) -> dict:
+                         metadata_keys: tuple[str, ...] | None = None) -> dict:
     """The ONE path a prose-taking writer (critic, close_owed, sprint, ...) uses to obtain its
     free-text fields safely, so every writer routes through the same loader rather than a second
     idiom that could drift.
@@ -570,12 +570,15 @@ def resolve_prose_fields(fields_file: str | None, flag_fields: dict,
     JSON object, or an unknown key), which the caller turns into a refusal.
 
     `allowed` is every field the writer accepts - prose AND metadata - so one document can be the
-    whole invocation. `prose_keys` names the SUBSET a shell can mangle, and is the only subset the
-    hazard check covers; a metadata field (`tags`, `epic`, `points`) is accepted without being
-    hazard-checked, because it is not free text a shell rewrites. `prose_keys=None` means the whole
-    allowed set is prose - the back-compatible default, so a writer that passed only prose keys as
-    `allowed` is unchanged."""
-    prose = allowed if prose_keys is None else prose_keys
+    whole invocation. `metadata_keys` names the fields that are NOT free text (`tags`, `epic`,
+    `points`) and so need no shell-hazard check; EVERYTHING ELSE in `allowed` is treated as prose
+    and IS checked. The direction is deliberately fail-safe: a key nobody classified stays checked,
+    so a prose field a caller forgets to declare is never silently skipped (that unsafe default was
+    the `prose_keys` form this replaced). `metadata_keys=None` means the whole allowed set is prose
+    - the back-compatible default, so a writer that passed only prose keys as `allowed` is
+    unchanged."""
+    md = set(metadata_keys or ())
+    prose = tuple(k for k in allowed if k not in md)
     flags = {k: v for k, v in flag_fields.items() if v is not None and v != ""}
     # A FLAG value crossed a shell whether or not a --fields-file was also given, so it is hazard-
     # checked either way. The file's OWN values never crossed a shell and are not checked. Check
@@ -903,7 +906,8 @@ def append_index_row(repo_root: Path | str, type_: str, row_line: str) -> bool:
     return True
 
 
-def duplicate_candidates(repo_root: Path | str, title: str, fields: dict) -> list[dict]:
+def duplicate_candidates(repo_root: Path | str, title: str, fields: dict,
+                         type_: str | None = None) -> list[dict]:
     """Existing artefacts a NEW finding would probably duplicate. The cheapest triage lens - a
     duplicate is cheapest to catch at filing, where the author has the most context. It WARNS with
     the candidate named; it never refuses, because a genuine near-miss is common and only the author
@@ -914,15 +918,20 @@ def duplicate_candidates(repo_root: Path | str, title: str, fields: dict) -> lis
     used to carry a SECOND implementation - a Jaccard scorer over the open backlog - that disagreed
     with the mint-time one on real data (the pair that motivated the check scored 0.21 by Jaccard,
     under the bar, and 0.44 by the containment scorer that survives). Keeping two in sync is exactly
-    what failed here, so the second is deleted rather than re-synced. A finding is checked against
-    every artefact type it could restate, terminal ones included (re-filing a fixed bug is the
-    costliest miss)."""
+    what failed here, so the second is deleted rather than re-synced.
+
+    `type_` scopes the comparison to ONE artefact type, matching `artifact new <type>` exactly, so
+    the two entry points agree on SCOPE as well as algorithm - a bug is compared to bugs, not to
+    CRs (comparing across types is the structural-pairing noise the within-type check avoids). When
+    `type_` is None every dup-type is scanned (the type-agnostic caller). Terminal artefacts are in
+    scope either way - re-filing a fixed bug is the costliest miss."""
     try:
         import artifact  # noqa: PLC0415 - deferred: artifact imports file_finding, so this is lazy
         root = Path(repo_root)
+        types = (type_,) if type_ else artifact.DUP_TYPES
         out: list[dict] = []
-        for type_ in artifact.DUP_TYPES:
-            out.extend(artifact.duplicate_candidates(root, type_, title, fields))
+        for t in types:
+            out.extend(artifact.duplicate_candidates(root, t, title, fields))
         return sorted(out, key=lambda c: (-c["similarity"], c["id"]))
     except Exception as exc:  # noqa: BLE001 - a duplicate warning must never fail a filing
         sdlc_md.debug("file_finding.duplicate_candidates", exc)
@@ -974,7 +983,7 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
         parent = sdlc_md.norm_id(parent)
     # The cheapest triage lens, run BEFORE the id is minted: does this finding overlap an artefact
     # already open? A warning attached to the result, never a refusal.
-    warnings = duplicate_candidates(root, title, fields)
+    warnings = duplicate_candidates(root, title, fields, type_=type_)
     if dry_run:
         result = _file_finding_locked(root, type_, spec, title, fields, today, dry_run=True)
     else:

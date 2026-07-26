@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 0 |
 | In Progress | 0 |
-| Fixed | 213 |
+| Fixed | 215 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **296** |
+| **Total** | **298** |
 
 ## All Bugs
 
@@ -263,6 +263,8 @@
 | [BG0294](BG0294-duplicate-detection-now-has-two-implementations-with-different.md) | duplicate detection now has two implementations with different algorithms, so they can drift | Fixed | Medium | 2026-07-24 | 2026-07-24 |
 | [BG0295](BG0295-changelog-py-compose-folds-every-pending-fragment-into.md) | changelog.py compose folds every pending fragment into [Unreleased] and deletes them, with no release gate or confirmation, so a mid-sprint compose prematurely consumes unrelated units' fragments | Fixed | Medium | 2026-07-25 | 2026-07-25 |
 | [BG0296](BG0296-mutation-py-run-since-finds-no-mutatable-sites.md) | mutation.py run --since finds no mutatable sites for a diff that only adds guard clauses, so a change made entirely of if-condition/raise guards cannot be mutation-verified through the diff surface | Fixed | Medium | 2026-07-25 | 2026-07-25 |
+| [BG0297](BG0297-the-two-duplicate-detection-entry-points-now-share.md) | the two duplicate-detection entry points now share an algorithm but not a scope: file_finding scans every artefact type while artifact new scans only the minted type, so a terminal cross-type duplicate warns on one path and not the other | Fixed | Low | 2026-07-26 | 2026-07-26 |
+| [BG0298](BG0298-resolve-prose-fields-takes-prose-keys-as-the.md) | resolve_prose_fields takes prose_keys as the checked set, so the hazard check defaults to the UNSAFE direction: a prose field a caller forgets to list in prose_keys is silently treated as metadata and never shell-hazard-checked | Fixed | Low | 2026-07-26 | 2026-07-26 |
 
 ## Archived Releases
 

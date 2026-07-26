@@ -1280,7 +1280,7 @@ class FieldsFileMetadataTests(unittest.TestCase):
     only its prose, so one document is the whole invocation - while the shell-hazard check still
     covers only the prose fields (the ones a shell can mangle)."""
 
-    def _hazards_checked(self, monkeycalls: list, flags: dict, allowed, prose_keys):
+    def _hazards_checked(self, flags: dict, allowed, metadata_keys):
         """Run resolve_prose_fields with report_shell_hazards captured, returning the keys it
         hazard-checked."""
         captured = {}
@@ -1291,24 +1291,24 @@ class FieldsFileMetadataTests(unittest.TestCase):
             return real(fields, keys=keys, **kw)
 
         with unittest.mock.patch.object(ff, "report_shell_hazards", spy):
-            out = ff.resolve_prose_fields(None, flags, allowed, prose_keys=prose_keys)
-        return out, captured.get("keys")
+            ff.resolve_prose_fields(None, flags, allowed, metadata_keys=metadata_keys)
+        return captured.get("keys")
 
     def test_metadata_accepted_and_only_prose_hazard_checked(self) -> None:
         """AC1. A fields-file supplying a prose field and a metadata field returns both, and the
-        hazard check covers only the prose keys."""
+        hazard check covers the prose keys - everything not declared metadata."""
         with tempfile.TemporaryDirectory() as d:
             spec = Path(d) / "f.json"
             spec.write_text(json.dumps({"body": "the lesson prose", "tags": "a,b"}),
                             encoding="utf-8")
             allowed = ("title", "body", "tags", "epic")
-            prose = ("title", "body")
-            out = ff.resolve_prose_fields(str(spec), {}, allowed, prose_keys=prose)
+            metadata = ("tags", "epic")
+            out = ff.resolve_prose_fields(str(spec), {}, allowed, metadata_keys=metadata)
             self.assertEqual(out["body"], "the lesson prose")
             self.assertEqual(out["tags"], "a,b")           # metadata accepted from the document
-            # the hazard check runs over the prose subset, NOT the metadata keys
-            _out2, checked = self._hazards_checked([], {"body": "x", "tags": "y"}, allowed, prose)
-            self.assertEqual(tuple(checked), prose)
+            # the hazard check runs over the prose keys (allowed minus metadata), not the metadata
+            checked = self._hazards_checked({"body": "x", "tags": "y"}, allowed, metadata)
+            self.assertEqual(tuple(checked), ("title", "body"))
 
     def test_an_unknown_key_is_still_refused(self) -> None:
         """AC2. A key outside the full field set is refused by name; widening to metadata does not
@@ -1318,15 +1318,83 @@ class FieldsFileMetadataTests(unittest.TestCase):
             spec.write_text(json.dumps({"body": "x", "nonsense": "y"}), encoding="utf-8")
             with self.assertRaises(ValueError) as cm:
                 ff.resolve_prose_fields(str(spec), {}, ("title", "body", "tags"),
-                                        prose_keys=("title", "body"))
+                                        metadata_keys=("tags",))
             self.assertIn("nonsense", str(cm.exception))
 
     def test_prose_only_caller_unchanged(self) -> None:
-        """AC3. A caller that passes no prose_keys hazard-checks the whole allowed set, exactly as
-        before - the back-compatible default preserves the narrower contract."""
+        """AC3. A caller that passes no metadata_keys hazard-checks the whole allowed set, exactly
+        as before - the back-compatible default preserves the narrower contract."""
         allowed = ("title", "body")
-        _out, checked = self._hazards_checked([], {"title": "x", "body": "y"}, allowed, None)
-        self.assertEqual(tuple(checked), allowed)          # every allowed key checked when prose_keys is None
+        checked = self._hazards_checked({"title": "x", "body": "y"}, allowed, None)
+        self.assertEqual(tuple(checked), allowed)          # every allowed key checked when no metadata
+
+    def test_a_forgotten_prose_field_stays_checked(self) -> None:
+        """BG0298: the direction is fail-SAFE. A caller that declares only some metadata and
+        FORGETS that `summary` is prose must still have `summary` hazard-checked - a field nobody
+        classified defaults to checked, never to skipped."""
+        allowed = ("title", "summary", "tags")
+        # the caller declares tags as metadata but omits nothing about summary
+        checked = self._hazards_checked({"title": "x", "summary": "y", "tags": "z"},
+                                        allowed, ("tags",))
+        self.assertIn("summary", checked)                  # NOT silently skipped
+        self.assertIn("title", checked)
+        self.assertNotIn("tags", checked)                  # the one declared metadata is skipped
+
+
+class DuplicateScopeParityTests(unittest.TestCase):
+    """BG0297: the two duplicate-detection entry points must agree on SCOPE, not just algorithm.
+    Given a `type_`, the finding filer scopes to that one type - matching `artifact new <type>` -
+    so a bug is compared to bugs, not to a similarly-titled CR."""
+
+    EXISTING = ("The scrub-site sweep's worktrees exclusion matches any path component named "
+                "worktrees, so it skips the ENTIRE tree when run from inside a worktree")
+    REFILING = ("the site-sweep test is unrunnable inside a git worktree: an ancestor 'worktrees' "
+                "path component makes SKIP_DIRS match every file, so sites={} and the pre-commit "
+                "gate must be bypassed with --no-verify on parallel-worktree builds")
+
+    def _artefact(self, root: Path, rel: str, cid: str, title: str, meta: str) -> None:
+        d = root / "sdlc-studio" / rel
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{cid}-x.md").write_text(f"# {cid}: {title}\n\n{meta}\n> **Affects:** src/thing.py\n",
+                                       encoding="utf-8")
+
+    def test_both_entry_points_agree_on_a_terminal_same_type_duplicate(self) -> None:
+        import artifact
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            (root / "src").mkdir(exist_ok=True); (root / "src" / "thing.py").write_text("x\n")
+            # a TERMINAL (Fixed) bug that the new title restates
+            self._artefact(root, "bugs", "BG0269", self.EXISTING,
+                           "> **Status:** Fixed\n> **Severity:** High\n> **Points:** 2")
+            fields = {"affects": "src/thing.py"}
+            via_finding = ff.duplicate_candidates(root, self.REFILING, fields, type_="bug")
+            via_mint = artifact.duplicate_candidates(root, "bug", self.REFILING, fields)
+            self.assertEqual([c["id"] for c in via_finding], [c["id"] for c in via_mint])
+            self.assertIn("BG0269", [c["id"] for c in via_finding])   # terminal, still caught
+
+    def test_the_filer_no_longer_warns_across_types(self) -> None:
+        """The residual BG0297 closes: a bug filing scoped to bugs does NOT surface a
+        similarly-titled CR - comparing a bug to a CR is the structural-pairing noise the
+        within-type scope avoids, and the two entry points would otherwise disagree."""
+        import artifact
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "cr")
+            (root / "src").mkdir(exist_ok=True); (root / "src" / "thing.py").write_text("x\n")
+            # ONLY a CR carries the title; no bug does
+            self._artefact(root, "change-requests", "CR0100", self.EXISTING,
+                           "> **Status:** Complete\n> **Priority:** P1\n> **Type:** Feature\n"
+                           "> **Size:** M")
+            fields = {"affects": "src/thing.py"}
+            # filing a BUG scopes to bugs -> the CR is not surfaced (matches artifact new bug)
+            via_finding = ff.duplicate_candidates(root, self.REFILING, fields, type_="bug")
+            via_mint = artifact.duplicate_candidates(root, "bug", self.REFILING, fields)
+            self.assertEqual([c["id"] for c in via_finding], [c["id"] for c in via_mint])
+            self.assertNotIn("CR0100", [c["id"] for c in via_finding])
+            # the type-agnostic form (type_=None) still scans every type, so it DOES see the CR
+            any_type = ff.duplicate_candidates(root, self.REFILING, fields)
+            self.assertIn("CR0100", [c["id"] for c in any_type])
 
 
 if __name__ == "__main__":
