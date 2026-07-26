@@ -263,9 +263,35 @@ def stage_agents(root: Path | str, force: bool = False) -> dict:
     return {"created": created, "skipped": skipped}
 
 
+def stage_prd(root: Path | str) -> dict:
+    """The PRD stage - the fork. Seed the `prd.md` scaffold from the template (if absent) for the
+    agent to author, and DIRECT the path-appropriate method: a greenfield project is interviewed
+    (`prd create`), a brownfield one is drafted from its code (`prd generate`, validated downstream
+    by `code verify`). The classification lives on the onboarding state, so the operator never
+    chooses a command - the flow forks for them."""
+    root = Path(root)
+    state = read_onboarding(root) or start_onboarding(root)
+    path = state["path"]
+    created, skipped = [], []
+    tmpl = SKILL / "templates" / "core" / "prd.md"
+    dst = root / SDLC / "prd.md"
+    if tmpl.exists():
+        if dst.exists():
+            skipped.append(f"{SDLC}/prd.md")
+        else:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_text(seed_text(tmpl, seed_fields(root, date.today().isoformat())),
+                           encoding="utf-8")
+            created.append(f"{SDLC}/prd.md")
+    directive = ("greenfield - interview to fill it: `prd create`" if path == "greenfield"
+                 else "brownfield - draft it from your code: `prd generate` "
+                      "(validated downstream by `code verify`)")
+    return {"created": created, "skipped": skipped, "path": path, "directive": directive}
+
+
 # Per-stage draft actions, keyed by stage name. Each drafts its artefact for the operator to
 # review; the operator confirms to advance. The later stage stories register their entries here.
-STAGE_ACTIONS = {"agents": stage_agents}
+STAGE_ACTIONS = {"agents": stage_agents, "prd": stage_prd}
 
 
 def cmd_guided(args: argparse.Namespace) -> int:
@@ -296,11 +322,13 @@ def cmd_guided(args: argparse.Namespace) -> int:
     for s in state["stages"]:
         nxt = "  <- next" if s["name"] == cur else ""
         print(f"  [{marks[s['status']]}] {s['name']}{nxt}")
-    if drafted and (drafted.get("created") or drafted.get("skipped")):
+    if drafted:
         for f in drafted.get("created", []):
             print(f"  drafted {f} - review it, then `init guided --confirm` (or --skip)")
         for f in drafted.get("skipped", []):
             print(f"  {f} already present - review it, then `init guided --confirm`")
+        if drafted.get("directive"):
+            print(f"  next: {drafted['directive']}")
     return 0
 
 

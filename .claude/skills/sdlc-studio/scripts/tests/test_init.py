@@ -355,6 +355,34 @@ class GuidedInitTests(unittest.TestCase):
             self.assertEqual(init.stage_status(init.read_onboarding(root),
                                                 init.ONBOARDING_STAGES[1]), "skipped")
 
+    def test_prd_stage_forks_greenfield_and_brownfield(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            init.start_onboarding(root, path="greenfield")
+            r = init.stage_prd(root)
+            self.assertEqual(r["path"], "greenfield")
+            self.assertIn("prd create", r["directive"])
+            self.assertIn("sdlc-studio/prd.md", r["created"])
+            self.assertTrue((root / "sdlc-studio" / "prd.md").is_file())
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            init.start_onboarding(root, path="brownfield")
+            r = init.stage_prd(root)
+            self.assertEqual(r["path"], "brownfield")
+            self.assertIn("prd generate", r["directive"])
+
+    def test_prd_stage_is_reached_and_advances(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            init.start_onboarding(root, path="greenfield")
+            init.set_stage(root, "agents", "done")
+            with contextlib.redirect_stdout(io.StringIO()):
+                init.main(["guided", "--root", str(root)])
+            self.assertEqual(init.first_incomplete(init.read_onboarding(root)), "prd")
+            with contextlib.redirect_stdout(io.StringIO()):
+                init.main(["guided", "--confirm", "--root", str(root)])
+            self.assertEqual(init.first_incomplete(init.read_onboarding(root)), "trd")
+
     def test_an_unknown_stage_or_status_is_refused(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
