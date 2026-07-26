@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 0 |
+| Draft | 4 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **432** |
+| **Total** | **436** |
 
 ## All Stories
 
@@ -343,6 +343,10 @@
 | [US0430](US0430-the-breakdown-gate-refuses-an-ungroomed-batch-at.md) | the breakdown gate refuses an ungroomed batch at --goal done and accepts it at --goal design | Done | EP0160 | 2026-07-24 | 2026-07-24 |
 | [US0431](US0431-a-design-rung-s-close-reports-how-many.md) | a design rung's close reports how many units it groomed, so an accepted-but-ungroomed batch cannot close silently | Done | EP0160 | 2026-07-24 | 2026-07-24 |
 | [US0432](US0432-re-declare-gate-budget-against-the-317s-measured.md) | re-declare gate_budget against the ~317s measured peak so a normal commit is under budget and a regression still flags | Done | EP0161 | 2026-07-26 | 2026-07-26 |
+| [US0433](US0433-sprint-batch-drop-and-add-mutate-an-open.md) | sprint batch drop and add: mutate an open batch, drop releasing the done-gate and distinct from Deferred | Draft | EP0162 | 2026-07-26 | 2026-07-26 |
+| [US0434](US0434-the-close-correctness-lanes-are-batch-scoped-or.md) | the close correctness lanes are batch-scoped, or --file-and-close files named out-of-batch debt | Draft | EP0162 | 2026-07-26 | 2026-07-26 |
+| [US0435](US0435-a-growing-outstanding-set-across-close-attempts-offers.md) | a growing outstanding set across close attempts offers the bounded exit, not just the diagnosis | Draft | EP0162 | 2026-07-26 | 2026-07-26 |
+| [US0436](US0436-review-currency-is-judged-by-the-review-record.md) | review-currency is judged by the review record, not the anchor commit time, so a passed lane cannot be re-broken by a correct-content edit | Draft | EP0162 | 2026-07-26 | 2026-07-26 |
 
 ## Archived Releases
 

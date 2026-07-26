@@ -1,6 +1,7 @@
 # CR-0421: a sprint cannot be closed and moved on from: the batch is immutable, and the close chases a moving target it diagnoses but cannot exit
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0162
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
