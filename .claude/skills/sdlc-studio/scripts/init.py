@@ -311,9 +311,21 @@ def stage_tsd(root: Path | str) -> dict:
             "directive": f"generate the test strategy from your PRD{stack}: `tsd generate`"}
 
 
+def stage_personas(root: Path | str) -> dict:
+    """The personas stage: seed the personas doc and direct growing a project-specific team from
+    the PRD and risk signals (`persona generate --team`). The team that will both build and review
+    the work exists before the first sprint; the operator accepts or edits the generated seats."""
+    created, skipped = _seed_singleton(root, "personas")
+    return {"created": created, "skipped": skipped,
+            "directive": "grow your team from the PRD and risk signals (accept or edit the "
+                         "generated seats): `persona generate --team`"}
+
+
 # Per-stage draft actions, keyed by stage name. Each drafts its artefact for the operator to
-# review; the operator confirms to advance. The remaining stage stories register their entries here.
-STAGE_ACTIONS = {"agents": stage_agents, "prd": stage_prd, "trd": stage_trd, "tsd": stage_tsd}
+# review; the operator confirms to advance. `decompose` and `plan` are agent-driven steps the
+# runner points at rather than seeds.
+STAGE_ACTIONS = {"agents": stage_agents, "prd": stage_prd, "trd": stage_trd, "tsd": stage_tsd,
+                 "personas": stage_personas}
 
 
 def cmd_guided(args: argparse.Namespace) -> int:

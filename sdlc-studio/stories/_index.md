@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 4 |
+| Draft | 3 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 4 |
+| Review | 5 |
 | Done | 435 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -351,7 +351,7 @@
 | [US0438](US0438-agents-md-stage-draft-and-confirm-the-agent.md) | AGENTS.md stage: draft and confirm the agent instructions from the tool-neutral starter | Review | EP0163 | 2026-07-26 | 2026-07-26 |
 | [US0439](US0439-prd-stage-greenfield-prd-create-or-brownfield-prd.md) | PRD stage: greenfield prd create or brownfield prd generate, draft-then-confirm | Review | EP0163 | 2026-07-26 | 2026-07-26 |
 | [US0440](US0440-trd-and-tsd-stages-generate-the-technical-and.md) | TRD and TSD stages: generate the technical and test-strategy docs from the PRD, draft-then-confirm | Review | EP0163 | 2026-07-26 | 2026-07-26 |
-| [US0441](US0441-personas-stage-persona-generate-team-from-the-prd.md) | Personas stage: persona generate --team from the PRD and risk signals, accept or edit | Draft | EP0163 | 2026-07-26 | 2026-07-26 |
+| [US0441](US0441-personas-stage-persona-generate-team-from-the-prd.md) | Personas stage: persona generate --team from the PRD and risk signals, accept or edit | Review | EP0163 | 2026-07-26 | 2026-07-26 |
 | [US0442](US0442-decompose-to-the-first-sprint-plan-epics-and.md) | Decompose to the first sprint plan: epics and stories, landing the user at a ready plan | Draft | EP0163 | 2026-07-26 | 2026-07-26 |
 | [US0443](US0443-onboarding-progress-surface-status-and-hint-show-the.md) | Onboarding progress surface: status and hint show the checklist and the next step until the first plan | Draft | EP0163 | 2026-07-26 | 2026-07-26 |
 | [US0444](US0444-docs-and-supersession-rewrite-help-init-md-and.md) | Docs and supersession: rewrite help/init.md and reference for the guided flow, mark RFC0019 superseded | Draft | EP0163 | 2026-07-26 | 2026-07-26 |

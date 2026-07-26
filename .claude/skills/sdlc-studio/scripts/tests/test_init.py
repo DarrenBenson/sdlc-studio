@@ -406,6 +406,25 @@ class GuidedInitTests(unittest.TestCase):
                 init.main(["guided", "--confirm", "--root", str(root)])   # tsd done
             self.assertEqual(init.first_incomplete(init.read_onboarding(root)), "personas")
 
+    def test_personas_stage_seeds_and_directs(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            init.start_onboarding(root)
+            r = init.stage_personas(root)
+            self.assertIn("sdlc-studio/personas.md", r["created"])
+            self.assertIn("persona generate --team", r["directive"])
+            self.assertTrue((root / "sdlc-studio" / "personas.md").is_file())
+
+    def test_personas_stage_advances_to_decompose(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            init.start_onboarding(root, path="greenfield")
+            for st in ("agents", "prd", "trd", "tsd"):
+                init.set_stage(root, st, "done")
+            with contextlib.redirect_stdout(io.StringIO()):
+                init.main(["guided", "--confirm", "--root", str(root)])   # personas done
+            self.assertEqual(init.first_incomplete(init.read_onboarding(root)), "decompose")
+
     def test_an_unknown_stage_or_status_is_refused(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
