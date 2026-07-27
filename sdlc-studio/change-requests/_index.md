@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 2 |
+| Proposed | 1 |
 | Approved | 0 |
-| In Progress | 0 |
+| In Progress | 1 |
 | Complete | 404 |
 | Rejected | 0 |
 | Deferred | 0 |
@@ -244,7 +244,7 @@
 | [CR-0420](CR0420-the-pre-commit-gate-runs-5-minutes-and.md) | the pre-commit gate runs ~5 minutes and its budget advisory reports +200% over a stale baseline on every commit, so the signal has become noise rather than a bound anyone acts on | Complete | Medium | Feature | 2026-07-25 | EP0161 |
 | [CR-0421](CR0421-a-sprint-cannot-be-closed-and-moved-on.md) | a sprint cannot be closed and moved on from: the batch is immutable, and the close chases a moving target it diagnoses but cannot exit | Complete | High | Improvement | 2026-07-26 | EP0162 |
 | [CR-0422](CR0422-sprint-close-apply-signoff-derives-parent-epics-terminal.md) | sprint close --apply-signoff derives parent epics terminal but not the decomposed CRs above them, so an operator hand-transitions every delivered CR to Complete | Complete | Medium | Feature | 2026-07-26 | EP0164 |
-| [CR-0423](CR0423-transition-py-rejects-the-natural-positional-form-id.md) | transition.py rejects the natural positional form (ID Status); the first guess errors on argparse noise | Proposed | Medium | Improvement | 2026-07-27 | -- |
+| [CR-0423](CR0423-transition-py-rejects-the-natural-positional-form-id.md) | transition.py rejects the natural positional form (ID Status); the first guess errors on argparse noise | In Progress | Medium | Improvement | 2026-07-27 | EP0165 |
 | [CR-0424](CR0424-sprint-close-requires-an-rv-artifact-plus-review.md) | sprint close requires an RV artifact plus review_prep stamp even after critic sprint-review already recorded the APPROVE | Proposed | Low | Improvement | 2026-07-27 | -- |
 
 ## Archived Releases
