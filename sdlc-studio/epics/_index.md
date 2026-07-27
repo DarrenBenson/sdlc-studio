@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 2 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 165 |
-| **Total** | **166** |
+| **Total** | **167** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -189,3 +189,4 @@
 | [EP0164](EP0164-apply-signoff-derives-parent-requests-terminal-not-only.md) | apply-signoff derives parent requests terminal, not only epics | Done | -- | -- | 2026-07-27 | 2026-07-27 |
 | [EP0165](EP0165-transition-py-accepts-the-natural-positional-invocation.md) | transition.py accepts the natural positional invocation | Done | -- | -- | 2026-07-27 | 2026-07-27 |
 | [EP0166](EP0166-the-persona-layer-becomes-load-bearing-the-registry.md) | The persona layer becomes load-bearing: the registry is resolved by the path that mints work, and the PRD names it | Draft | -- | -- | 2026-07-27 | 2026-07-27 |
+| [EP0167](EP0167-derivable-spec-claims-are-checked-against-the-repo.md) | Derivable spec claims are checked against the repo, so the TRD and TSD cannot quietly stop being true | Draft | -- | -- | 2026-07-27 | 2026-07-27 |

@@ -22,6 +22,11 @@ A hard constraint falls out of that. Both `run-state.json` and `goal-review.json
 - **O3 Extend the rolling policy with per-cycle goals. Keep `--cycles N` and let each cycle carry its own goal and scope. Smallest change, but the plans still never exist as artefacts before they run, so nothing can be shown, reordered or cancelled, and the runner must be the actor who set the policy - the separation is not delivered.**
 - **O4 Decline. The rolling policy is the answer to unattended multi-sprint execution, and the planner/runner split is served by an operator telling an agent which units to plan. Costs nothing, leaves the handover ad hoc and leaves 'show me the next sprint' unanswerable.**
 
+> **PARKED for post-v5** (operator ruling D0068, 2026-07-27). Decisions D1 to D5 remain open and this RFC is
+> deliberately not decomposed into the v5 backlog: its five open decisions include a policy call - whether
+> planner and runner separation becomes an enforced gate - that should not be settled to meet a release date.
+> CR0441, the in-flight controls this design depends on, proceeds independently and is refined for v5.
+
 ## Recommendation
 
 O2. It is the only option that separates planning intent from batch resolution, which is what makes the recorded rot objection survivable: nothing is frozen except the goal and the scope rule, and those are exactly the parts a human judgement was applied to and should not be silently redone. It also makes the existing seat review of a goal portable - today a reviewed goal sits in gitignored local state and is re-reviewed per goal string, whereas a committed charter carries its review with it to whoever runs it.
@@ -43,3 +48,5 @@ Open decisions for the operator before decomposition: (D1) where a charter lives
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (operator-raised, RUN-01KYHVWK resume discussion) | Filed |
+| 2026-07-27 | Claude Fable 5 | Amended: the rot objection assumes a static current sprint; in-flight controls filed as CR0441; D5 added |
+| 2026-07-27 | Darren Benson (operator ruling) | Parked for post-v5 with D1-D5 open; CR0441 proceeds (D0068) |

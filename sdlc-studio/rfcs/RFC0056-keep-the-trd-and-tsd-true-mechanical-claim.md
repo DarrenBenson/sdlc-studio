@@ -1,6 +1,7 @@
 # RFC-0056: Keep the TRD and TSD true: mechanical claim-drift detection and a consumption path
 
-> **Status:** Draft
+> **Status:** In Review
+> **Decomposed-into:** EP0167
 > **Size:** M
 > **Affects:** sdlc-studio/trd.md, sdlc-studio/tsd.md, .claude/skills/sdlc-studio/scripts/doc_freshness.py, .claude/skills/sdlc-studio/scripts/gate.py
 > **Date:** 2026-07-27
@@ -26,7 +27,7 @@ Adopt O1 as the floor - it is the cheapest and covers every finding class the au
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Choose between: O1 Mechanical spec-claim drift detector: derivable claims in TRD/TSD (version strings, counts of commands/scripts/lanes, timing claims, enumerated surfaces) are checked against the repo at commit time, extending `doc_freshness` and the numeric-claim drift pattern. Catches the whole audited drift class for zero tokens; requires a convention marking which claims are derivable., O2 TSD as consumed contract: a gate lane derives (or at minimum existence-checks) the gate set from the gates the TSD declares, so a declared-but-not-running gate fails loud and the TSD becomes load-bearing for CI rather than descriptive., O3 Plan-cites-TRD: code plan requires naming the TRD section or ADR the implementation builds under, so architecture drift surfaces at planning time in the unit that causes it, not at the next audit. or O4 Status quo: keep periodic spec-truth refresh epics and audit lenses; accept drift between passes as the cost of keeping the documents cheap to write. | Open |
+| D1 | **O1 adopted as the floor** (operator ruling D0067, 2026-07-27): a mechanical spec-claim drift detector checks derivable TRD/TSD claims - version strings, counts, timings, enumerated surfaces - against the repo itself. O2 (TSD as consumed contract) and O3 (plan-cites-TRD) are NOT adopted and remain open as follow-ons. | Resolved |
 
 ## Revision History
 
