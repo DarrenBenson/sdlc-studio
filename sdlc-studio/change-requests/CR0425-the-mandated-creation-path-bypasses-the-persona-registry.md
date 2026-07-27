@@ -1,6 +1,8 @@
 # CR-0425: The mandated creation path bypasses the persona registry entirely: registry personas unconsulted since the day the layer
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-07-27)
+> **Decomposed-into:** EP0166
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
@@ -26,3 +28,9 @@ The 2026-07-16 fix made story create/generate resolve the registry first, but th
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d) | Raised |
+
+## Amigo Consult
+
+_Consulted 2026-07-27: Dani Okafor (engineering, lead), Lena Marsh (product), Sam Eriksson (qa). Settle before building._
+
+- Should a story naming the Negative persona (Trevor) be refused outright, or warned about as a design-target signal?

@@ -1,6 +1,7 @@
 # CR-0426: PRD Target Users still designates the legacy personas.md four, contradicting the Cooper registry's declared Primary
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0166
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

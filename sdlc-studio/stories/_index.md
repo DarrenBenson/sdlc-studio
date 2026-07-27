@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 0 |
+| Ready | 5 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **446** |
+| **Total** | **451** |
 
 ## All Stories
 
@@ -357,6 +357,11 @@
 | [US0444](US0444-docs-and-supersession-rewrite-help-init-md-and.md) | Docs and supersession: rewrite help/init.md and reference for the guided flow, mark RFC0019 superseded | Done | EP0163 | 2026-07-26 | 2026-07-26 |
 | [US0445](US0445-close-tail-derives-parent-crs-and-rfcs-terminal.md) | Close tail derives parent CRs and RFCs terminal when all their children are terminal | Done | EP0164 | 2026-07-27 | 2026-07-27 |
 | [US0446](US0446-accept-transition-set-id-status-positionally-or-name.md) | Accept transition set ID Status positionally, or name the exact fix in the error | Done | EP0165 | 2026-07-27 | 2026-07-27 |
+| [US0447](US0447-a-shared-reader-parses-the-design-persona-registry.md) | A shared reader parses the design-persona registry into Primary, Secondary and Negative with their card paths | Ready | EP0166 | 2026-07-27 | 2026-07-27 |
+| [US0448](US0448-artifact-py-resolves-persona-through-the-registry-the.md) | artifact.py resolves --persona through the registry: the declared Primary by default, a warning on an unregistered name, a refusal under strict | Ready | EP0166 | 2026-07-27 | 2026-07-27 |
+| [US0449](US0449-the-batch-and-refine-minting-paths-resolve-the.md) | The batch and refine minting paths resolve the persona the same way, so the commands that mint most stories are covered too | Ready | EP0166 | 2026-07-27 | 2026-07-27 |
+| [US0450](US0450-the-prd-target-users-section-names-the-registry.md) | The PRD Target Users section names the registry's Primary, Secondary and Negative personas and points at the registry | Ready | EP0166 | 2026-07-27 | 2026-07-27 |
+| [US0451](US0451-personas-md-is-labelled-a-legacy-appendix-whose.md) | personas.md is labelled a legacy appendix whose still-true content is folded into or pointed at the registry | Ready | EP0166 | 2026-07-27 | 2026-07-27 |
 
 ## Archived Releases
 

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 15 |
+| Proposed | 13 |
 | Approved | 0 |
-| In Progress | 0 |
+| In Progress | 2 |
 | Complete | 405 |
 | Rejected | 0 |
 | Deferred | 0 |
@@ -246,8 +246,8 @@
 | [CR-0422](CR0422-sprint-close-apply-signoff-derives-parent-epics-terminal.md) | sprint close --apply-signoff derives parent epics terminal but not the decomposed CRs above them, so an operator hand-transitions every delivered CR to Complete | Complete | Medium | Feature | 2026-07-26 | EP0164 |
 | [CR-0423](CR0423-transition-py-rejects-the-natural-positional-form-id.md) | transition.py rejects the natural positional form (ID Status); the first guess errors on argparse noise | Complete | Medium | Improvement | 2026-07-27 | EP0165 |
 | [CR-0424](CR0424-sprint-close-requires-an-rv-artifact-plus-review.md) | sprint close requires an RV artifact plus review_prep stamp even after critic sprint-review already recorded the APPROVE | Proposed | Low | Improvement | 2026-07-27 | -- |
-| [CR-0425](CR0425-the-mandated-creation-path-bypasses-the-persona-registry.md) | The mandated creation path bypasses the persona registry entirely: registry personas unconsulted since the day the layer | Proposed | High | Improvement | 2026-07-27 | -- |
-| [CR-0426](CR0426-prd-target-users-still-designates-the-legacy-personas.md) | PRD Target Users still designates the legacy personas.md four, contradicting the Cooper registry's declared Primary | Proposed | High | Improvement | 2026-07-27 | -- |
+| [CR-0425](CR0425-the-mandated-creation-path-bypasses-the-persona-registry.md) | The mandated creation path bypasses the persona registry entirely: registry personas unconsulted since the day the layer | In Progress | High | Improvement | 2026-07-27 | EP0166 |
+| [CR-0426](CR0426-prd-target-users-still-designates-the-legacy-personas.md) | PRD Target Users still designates the legacy personas.md four, contradicting the Cooper registry's declared Primary | In Progress | High | Improvement | 2026-07-27 | EP0166 |
 | [CR-0427](CR0427-availability-nfr-contradicted-by-its-own-acceptance-signal.md) | Availability NFR contradicted by its own acceptance signal: PRD says sync 'degrades gracefully', TSD proves it aborts wi | Proposed | Medium | Improvement | 2026-07-27 | -- |
 | [CR-0428](CR0428-tsd-asserts-every-script-has-a-dedicated-test.md) | TSD asserts 'every script has a dedicated test' twice while its own coverage map says the rule is unenforced, and both d | Proposed | Medium | Improvement | 2026-07-27 | -- |
 | [CR-0429](CR0429-adr-011-no-longer-states-the-breakdown-gate.md) | ADR-011 no longer states the breakdown gate's actual firing rule: the goal-aware design-rung exemption (D0062) shipped b | Proposed | Medium | Improvement | 2026-07-27 | -- |
