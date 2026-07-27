@@ -1,6 +1,6 @@
 # US0483: The falsified token-observation premise is replaced wherever the tracked tree asserts it
 
-> **Status:** Ready
+> **Status:** Won't Implement
 > **Delivers:** CR0446
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

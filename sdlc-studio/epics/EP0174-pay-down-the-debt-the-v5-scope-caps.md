@@ -16,7 +16,7 @@ Decomposed from CR0445. Delivers the work CR0445 requested.
 ## Story Breakdown
 
 - [ ] [US0482: The baselined duplicate Verify groups are split into discriminating selectors](../stories/US0482-the-baselined-duplicate-verify-groups-are-split-into.md)
-- [ ] [US0483: The falsified token-observation premise is replaced wherever the tracked tree asserts it](../stories/US0483-the-falsified-token-observation-premise-is-replaced-wherever.md)
+- [x] [US0483: The falsified token-observation premise is replaced wherever the tracked tree asserts it](../stories/US0483-the-falsified-token-observation-premise-is-replaced-wherever.md)
 
 ## Revision History
 

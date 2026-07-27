@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 43 |
+| Open | 45 |
 | In Progress | 0 |
 | Fixed | 218 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **344** |
+| **Total** | **346** |
 
 ## All Bugs
 
@@ -62,6 +62,8 @@
 | [BG0342](BG0342-all-four-artefact-indexes-assert-stale-last-updated.md) | All four artefact indexes assert stale Last Updated stamps that no writer maintains | Open | Low | 2026-07-27 | 2026-07-27 |
 | [BG0343](BG0343-file-finding-writes-affects-from-where-the-evidence.md) | file_finding writes Affects from where the evidence was found, not where the fix lands, and never includes a test file | Open | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0344](BG0344-the-shell-hazard-corpus-assertion-cannot-tell-quoting.md) | The shell-hazard corpus assertion cannot tell quoting from hazard, so evidence about shell defects must be degraded to commit | Open | Medium | 2026-07-27 | 2026-07-27 |
+| [BG0345](BG0345-us0480-and-us0461-specify-two-incompatible-ratchets-for.md) | US0480 and US0461 specify two incompatible ratchets for one concept, and neither can fail as written | Open | High | 2026-07-27 | 2026-07-27 |
+| [BG0346](BG0346-us0482-s-duplicate-selector-burn-down-is-scoped.md) | US0482's duplicate-selector burn-down is scoped to stories while the ratchet it serves covers stories and bugs | Open | Medium | 2026-07-27 | 2026-07-27 |
 
 ## Archived Releases
 

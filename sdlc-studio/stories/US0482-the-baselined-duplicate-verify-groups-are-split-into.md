@@ -1,6 +1,6 @@
 # US0482: The baselined duplicate Verify groups are split into discriminating selectors
 
-> **Status:** Ready
+> **Status:** Draft
 > **Delivers:** CR0445
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

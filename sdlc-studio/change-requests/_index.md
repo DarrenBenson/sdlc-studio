@@ -8,9 +8,9 @@
 | --- | --- |
 | Proposed | 0 |
 | Approved | 0 |
-| In Progress | 26 |
+| In Progress | 25 |
 | Complete | 405 |
-| Rejected | 0 |
+| Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
@@ -267,7 +267,7 @@
 | [CR-0443](CR0443-the-affects-and-verify-warning-family-is-advisory.md) | The Affects and Verify warning family is advisory at 398 instances, so a new one is invisible | In Progress | Medium | Improvement | 2026-07-27 | EP0173 |
 | [CR-0444](CR0444-sprint-plan-validates-the-batch-it-is-about.md) | sprint plan validates the batch it is about to plan, not only its index rows | In Progress | High | Improvement | 2026-07-27 | EP0173 |
 | [CR-0445](CR0445-burn-down-the-19-duplicate-verify-selector-groups.md) | Burn down the 19 duplicate Verify selector groups the ratchet baselines | In Progress | Medium | Improvement | 2026-07-27 | EP0174 |
-| [CR-0446](CR0446-replace-the-falsified-token-observation-premise-in-the.md) | Replace the falsified token-observation premise in the seven copies outside the TRD | In Progress | Medium | Improvement | 2026-07-27 | EP0174 |
+| [CR-0446](CR0446-replace-the-falsified-token-observation-premise-in-the.md) | Replace the falsified token-observation premise in the seven copies outside the TRD | Rejected | Medium | Improvement | 2026-07-27 | EP0174 |
 | [CR-0447](CR0447-reconcile-reports-a-supersession-only-one-side-records.md) | reconcile reports a supersession only one side records | In Progress | Medium | Improvement | 2026-07-27 | EP0175 |
 | [CR-0448](CR0448-command-audit-reports-a-flag-whose-destination-is.md) | command_audit reports a flag whose destination is never read - and is proven on verify_batch | In Progress | Medium | Improvement | 2026-07-27 | EP0175 |
 | [CR-0449](CR0449-the-progressive-loading-guide-s-path-cells-resolve.md) | The Progressive Loading Guide's path cells resolve | In Progress | Medium | Improvement | 2026-07-27 | EP0175 |

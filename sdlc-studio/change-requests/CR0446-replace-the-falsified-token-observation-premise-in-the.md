@@ -1,6 +1,6 @@
 # CR-0446: Replace the falsified token-observation premise in the seven copies outside the TRD
 
-> **Status:** In Progress
+> **Status:** Rejected
 > **Decomposed-into:** EP0174
 > **Priority:** Medium
 > **Type:** Improvement
