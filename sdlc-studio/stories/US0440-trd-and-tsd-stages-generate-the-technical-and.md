@@ -1,6 +1,6 @@
 # US0440: TRD and TSD stages: generate the technical and test-strategy docs from the PRD, draft-then-confirm
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0055
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new

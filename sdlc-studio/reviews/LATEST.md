@@ -1,5 +1,10 @@
 # Latest unified review
 
+<!-- close-status:begin -->
+> **RUN-01KYGD25 closed goal-reached.** 8 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> Stamped by `sprint close` - edit the prose below, not this block.
+<!-- close-status:end -->
+
 > **Anchor:** RV0018 - EP0163 guided init closing review (v5-launch), 2026-07-27
 
 The most recent unified review is **RV0018**: the EP0163 guided-init epic (US0437-444),

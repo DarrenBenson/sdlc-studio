@@ -269,3 +269,11 @@
 | US0434 | Darren Benson (operator) | - | authoring-session | 2026-07-26 | - |
 | US0435 | Darren Benson (operator) | - | authoring-session | 2026-07-26 | - |
 | US0436 | Darren Benson (operator) | - | authoring-session | 2026-07-26 | - |
+| US0437 | Darren Benson (operator) | - | sdlc-studio (guided-init author) | 2026-07-27 | - |
+| US0438 | Darren Benson (operator) | - | sdlc-studio (guided-init author) | 2026-07-27 | - |
+| US0439 | Darren Benson (operator) | - | sdlc-studio (guided-init author) | 2026-07-27 | - |
+| US0440 | Darren Benson (operator) | - | sdlc-studio (guided-init author) | 2026-07-27 | - |
+| US0441 | Darren Benson (operator) | - | sdlc-studio (guided-init author) | 2026-07-27 | - |
+| US0442 | Darren Benson (operator) | - | sdlc-studio (guided-init author) | 2026-07-27 | - |
+| US0443 | Darren Benson (operator) | - | sdlc-studio (guided-init author) | 2026-07-27 | - |
+| US0444 | Darren Benson (operator) | - | sdlc-studio (guided-init author) | 2026-07-27 | - |

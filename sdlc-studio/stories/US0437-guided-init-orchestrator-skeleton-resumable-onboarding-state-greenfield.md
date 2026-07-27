@@ -1,6 +1,6 @@
 # US0437: Guided init orchestrator skeleton: resumable onboarding state, greenfield/brownfield detection, and the draft-then-confirm stage runner
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0055
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new

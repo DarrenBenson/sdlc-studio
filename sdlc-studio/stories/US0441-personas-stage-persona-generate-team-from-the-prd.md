@@ -1,6 +1,6 @@
 # US0441: Personas stage: persona generate --team from the PRD and risk signals, accept or edit
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0055
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new

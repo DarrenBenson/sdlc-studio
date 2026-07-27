@@ -1,6 +1,6 @@
 # US0444: Docs and supersession: rewrite help/init.md and reference for the guided flow, mark RFC0019 superseded
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0055
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new

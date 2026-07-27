@@ -11,8 +11,8 @@
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 8 |
-| Done | 435 |
+| Review | 0 |
+| Done | 443 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -347,14 +347,14 @@
 | [US0434](US0434-the-close-correctness-lanes-are-batch-scoped-or.md) | the close correctness lanes are batch-scoped, or --file-and-close files named out-of-batch debt | Done | EP0162 | 2026-07-26 | 2026-07-26 |
 | [US0435](US0435-a-growing-outstanding-set-across-close-attempts-offers.md) | a growing outstanding set across close attempts offers the bounded exit, not just the diagnosis | Done | EP0162 | 2026-07-26 | 2026-07-26 |
 | [US0436](US0436-review-currency-is-judged-by-the-review-record.md) | review-currency is judged by the review record, not the anchor commit time, so a passed lane cannot be re-broken by a correct-content edit | Done | EP0162 | 2026-07-26 | 2026-07-26 |
-| [US0437](US0437-guided-init-orchestrator-skeleton-resumable-onboarding-state-greenfield.md) | Guided init orchestrator skeleton: resumable onboarding state, greenfield/brownfield detection, and the draft-then-confirm stage runner | Review | EP0163 | 2026-07-26 | 2026-07-26 |
-| [US0438](US0438-agents-md-stage-draft-and-confirm-the-agent.md) | AGENTS.md stage: draft and confirm the agent instructions from the tool-neutral starter | Review | EP0163 | 2026-07-26 | 2026-07-26 |
-| [US0439](US0439-prd-stage-greenfield-prd-create-or-brownfield-prd.md) | PRD stage: greenfield prd create or brownfield prd generate, draft-then-confirm | Review | EP0163 | 2026-07-26 | 2026-07-26 |
-| [US0440](US0440-trd-and-tsd-stages-generate-the-technical-and.md) | TRD and TSD stages: generate the technical and test-strategy docs from the PRD, draft-then-confirm | Review | EP0163 | 2026-07-26 | 2026-07-26 |
-| [US0441](US0441-personas-stage-persona-generate-team-from-the-prd.md) | Personas stage: persona generate --team from the PRD and risk signals, accept or edit | Review | EP0163 | 2026-07-26 | 2026-07-26 |
-| [US0442](US0442-decompose-to-the-first-sprint-plan-epics-and.md) | Decompose to the first sprint plan: epics and stories, landing the user at a ready plan | Review | EP0163 | 2026-07-26 | 2026-07-26 |
-| [US0443](US0443-onboarding-progress-surface-status-and-hint-show-the.md) | Onboarding progress surface: status and hint show the checklist and the next step until the first plan | Review | EP0163 | 2026-07-26 | 2026-07-26 |
-| [US0444](US0444-docs-and-supersession-rewrite-help-init-md-and.md) | Docs and supersession: rewrite help/init.md and reference for the guided flow, mark RFC0019 superseded | Review | EP0163 | 2026-07-26 | 2026-07-26 |
+| [US0437](US0437-guided-init-orchestrator-skeleton-resumable-onboarding-state-greenfield.md) | Guided init orchestrator skeleton: resumable onboarding state, greenfield/brownfield detection, and the draft-then-confirm stage runner | Done | EP0163 | 2026-07-26 | 2026-07-26 |
+| [US0438](US0438-agents-md-stage-draft-and-confirm-the-agent.md) | AGENTS.md stage: draft and confirm the agent instructions from the tool-neutral starter | Done | EP0163 | 2026-07-26 | 2026-07-26 |
+| [US0439](US0439-prd-stage-greenfield-prd-create-or-brownfield-prd.md) | PRD stage: greenfield prd create or brownfield prd generate, draft-then-confirm | Done | EP0163 | 2026-07-26 | 2026-07-26 |
+| [US0440](US0440-trd-and-tsd-stages-generate-the-technical-and.md) | TRD and TSD stages: generate the technical and test-strategy docs from the PRD, draft-then-confirm | Done | EP0163 | 2026-07-26 | 2026-07-26 |
+| [US0441](US0441-personas-stage-persona-generate-team-from-the-prd.md) | Personas stage: persona generate --team from the PRD and risk signals, accept or edit | Done | EP0163 | 2026-07-26 | 2026-07-26 |
+| [US0442](US0442-decompose-to-the-first-sprint-plan-epics-and.md) | Decompose to the first sprint plan: epics and stories, landing the user at a ready plan | Done | EP0163 | 2026-07-26 | 2026-07-26 |
+| [US0443](US0443-onboarding-progress-surface-status-and-hint-show-the.md) | Onboarding progress surface: status and hint show the checklist and the next step until the first plan | Done | EP0163 | 2026-07-26 | 2026-07-26 |
+| [US0444](US0444-docs-and-supersession-rewrite-help-init-md-and.md) | Docs and supersession: rewrite help/init.md and reference for the guided flow, mark RFC0019 superseded | Done | EP0163 | 2026-07-26 | 2026-07-26 |
 
 ## Archived Releases
 

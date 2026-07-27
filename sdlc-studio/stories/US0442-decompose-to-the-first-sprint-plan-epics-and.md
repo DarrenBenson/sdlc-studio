@@ -1,6 +1,6 @@
 # US0442: Decompose to the first sprint plan: epics and stories, landing the user at a ready plan
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0055
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new

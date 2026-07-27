@@ -1,6 +1,6 @@
 # US0443: Onboarding progress surface: status and hint show the checklist and the next step until the first plan
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0055
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new

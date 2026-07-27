@@ -1,6 +1,6 @@
 # US0438: AGENTS.md stage: draft and confirm the agent instructions from the tool-neutral starter
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0055
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new
