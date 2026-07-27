@@ -2,6 +2,8 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0239: A regression test for an exemption must assert the input trips the rule WITHOUT the exemption, in the test itself - or a benign fixture...**
+- **L-0238: Evidence is a PASSING verdict, not a marker's presence: a gate that accepts "any `**Verified:**` line" accepts a human recording failure.**
 - **L-0237: A directive assembled from a conditional (brownfield adds "detected stack") needs the NEGATIVE case pinned too - the mutation making it...**
 - **L-0236: A read on the orientation hot path (`status`/`hint`) must never crash on a hand-mangled runtime file: degrade to absent and self-heal.**
 - **L-0235: An "offer the exit" affordance must be honest about what the exit actually does: `--file-and-close` refuses hard correctness lanes, so...**

@@ -1,6 +1,6 @@
 # CR-0422: sprint close --apply-signoff derives parent epics terminal but not the decomposed CRs above them, so an operator hand-transitions every delivered CR to Complete
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0164
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0445: Close tail derives parent CRs and RFCs terminal when all their children are terminal
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0422
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

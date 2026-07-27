@@ -1,5 +1,10 @@
 # Latest unified review
 
+<!-- close-status:begin -->
+> **RUN-01KYH9QB closed goal-reached.** 3 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> Stamped by `sprint close` - edit the prose below, not this block.
+<!-- close-status:end -->
+
 > **Anchor:** RV0019 - gate-hardening sprint closing review (BG0300, BG0301, US0445), 2026-07-27
 
 The most recent unified review is **RV0019**: the gate-hardening sprint - the BG0300 manual-AC Done
