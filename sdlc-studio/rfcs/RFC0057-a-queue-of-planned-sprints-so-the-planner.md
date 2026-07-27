@@ -1,6 +1,7 @@
 # RFC-0057: A queue of planned sprints, so the planner and the runner can be different people
 
-> **Status:** Draft
+> **Status:** In Review
+> **Decomposed-into:** EP0176
 > **Size:** L
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/sprint.md
 > **Date:** 2026-07-27
@@ -22,10 +23,11 @@ A hard constraint falls out of that. Both `run-state.json` and `goal-review.json
 - **O3 Extend the rolling policy with per-cycle goals. Keep `--cycles N` and let each cycle carry its own goal and scope. Smallest change, but the plans still never exist as artefacts before they run, so nothing can be shown, reordered or cancelled, and the runner must be the actor who set the policy - the separation is not delivered.**
 - **O4 Decline. The rolling policy is the answer to unattended multi-sprint execution, and the planner/runner split is served by an operator telling an agent which units to plan. Costs nothing, leaves the handover ad hoc and leaves 'show me the next sprint' unanswerable.**
 
-> **PARKED for post-v5** (operator ruling D0068, 2026-07-27). Decisions D1 to D5 remain open and this RFC is
-> deliberately not decomposed into the v5 backlog: its five open decisions include a policy call - whether
-> planner and runner separation becomes an enforced gate - that should not be settled to meet a release date.
-> CR0441, the in-flight controls this design depends on, proceeds independently and is refined for v5.
+> **UNPARKED and accepted on O2** (operator rulings D0072, 2026-07-27, superseding the park in D0068). All five
+> decisions are ruled: a charter is an artefact under `sdlc-studio/sprints/` (D1); an empty scope at start stops
+> and reports (D2); planner and runner separation is recorded, never enforced, because the declared Primary
+> persona is a solo founder-engineer (D3); WSJF is recomputed at each `next` (D4); calling a sprint at a point is
+> an honest close whose descoped units return to the backlog (D5).
 
 ## Recommendation
 
@@ -41,7 +43,11 @@ Open decisions for the operator before decomposition: (D1) where a charter lives
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Choose between: O1 Queue frozen plans. Each queued sprint holds its resolved batch of unit ids, fixed at planning time. This is the literal reading of the request and the one the recorded design note already refutes: by the time sprint four runs, the bugs sprints one to three raised are absent from it and units it names may be delivered, deferred or superseded. Cheap to build, rots exactly as documented., O2 Queue charters, materialise the batch at start. A queued sprint records INTENT - the Sprint Goal, its recorded seat review, a scope rule (an epic, a status query, a worklist, a WSJF rank) and an appetite - but not a resolved id list. `sprint next` reads the head of the queue and plans it against the backlog AS IT IS AT THAT MOMENT, which is precisely the regeneration the rolling policy already does, just triggered by a queued charter rather than by a standing policy. The queue is committed, so a second person can read, reorder and run it. Preserves the rot argument in full while delivering separation, inspectability and CRUD., O3 Extend the rolling policy with per-cycle goals. Keep `--cycles N` and let each cycle carry its own goal and scope. Smallest change, but the plans still never exist as artefacts before they run, so nothing can be shown, reordered or cancelled, and the runner must be the actor who set the policy - the separation is not delivered. or O4 Decline. The rolling policy is the answer to unattended multi-sprint execution, and the planner/runner split is served by an operator telling an agent which units to plan. Costs nothing, leaves the handover ad hoc and leaves 'show me the next sprint' unanswerable. | Open |
+| D1 | **O2 adopted** - queue charters, materialise the batch at start. Storage: a `sdlc-studio/sprints/` artefact type with tool-allocated ids and an index (D0072). | Resolved |
+| D2 | An empty scope at materialisation **stops and reports**, leaving the queue intact (D0072). | Resolved |
+| D3 | Planner/runner separation is **recorded, not enforced** - the run logs reviewer and runner and reports when they match, never refusing (D0072). | Resolved |
+| D4 | WSJF is **recomputed at each `next`**, following from materialising late (D0072). | Resolved |
+| D5 | Calling a sprint at a point is an **honest close**; descoped units return to the backlog with a reason (D0072). | Resolved |
 
 ## Revision History
 
@@ -50,3 +56,4 @@ Open decisions for the operator before decomposition: (D1) where a charter lives
 | 2026-07-27 | Claude Fable 5 (operator-raised, RUN-01KYHVWK resume discussion) | Filed |
 | 2026-07-27 | Claude Fable 5 | Amended: the rot objection assumes a static current sprint; in-flight controls filed as CR0441; D5 added |
 | 2026-07-27 | Darren Benson (operator ruling) | Parked for post-v5 with D1-D5 open; CR0441 proceeds (D0068) |
+| 2026-07-27 | Darren Benson (operator ruling) | Unparked; O2 accepted and D1-D5 all resolved (D0072, supersedes D0068) |

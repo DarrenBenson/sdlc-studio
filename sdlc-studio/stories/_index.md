@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 40 |
+| Ready | 46 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **486** |
+| **Total** | **492** |
 
 ## All Stories
 
@@ -397,6 +397,12 @@
 | [US0484](US0484-reconcile-reports-a-supersession-only-one-side-of.md) | reconcile reports a supersession only one side of the pair records | Ready | EP0175 | 2026-07-27 | 2026-07-27 |
 | [US0485](US0485-command-audit-reports-a-flag-whose-argparse-destination.md) | command_audit reports a flag whose argparse destination no line ever reads | Ready | EP0175 | 2026-07-27 | 2026-07-27 |
 | [US0486](US0486-every-progressive-loading-guide-cell-that-presents-a.md) | Every Progressive Loading Guide cell that presents a path resolves | Ready | EP0175 | 2026-07-27 | 2026-07-27 |
+| [US0487](US0487-a-sprint-charter-is-a-first-class-artefact.md) | A sprint charter is a first-class artefact: goal, scope rule and appetite, with a tool-allocated id and an index row | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
+| [US0488](US0488-sprint-next-materialises-the-head-charter-against-the.md) | sprint next materialises the head charter against the backlog as it is at that moment, and stops when its scope resolves to nothing | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
+| [US0489](US0489-the-queue-is-inspectable-and-editable-show-the.md) | The queue is inspectable and editable: show the next charter with its goal and resolved contents, insert, cancel, clear and reorder | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
+| [US0490](US0490-a-charter-carries-its-own-goal-review-and.md) | A charter carries its own goal review, and the run records who reviewed the goal and who ran it without refusing when they match | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
+| [US0491](US0491-calling-a-sprint-at-a-point-is-an.md) | Calling a sprint at a point is an honest close: the unstarted remainder is descoped with a reason and returns to the backlog | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
+| [US0492](US0492-the-queue-lifecycle-is-documented-alongside-the-run.md) | The queue lifecycle is documented alongside the run lifecycle, with every invocation shown taken from the shipped parser | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
 
 ## Archived Releases
 

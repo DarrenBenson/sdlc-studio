@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
-| In Review | 1 |
+| Draft | 0 |
+| In Review | 2 |
 | Accepted | 49 |
 | Superseded | 3 |
 | Withdrawn | 3 |
@@ -73,4 +73,4 @@
 | [RFC-0054](RFC0054-a-major-documentation-overhaul-for-v5-lead-with.md) | a major documentation overhaul for v5 - lead with the two-backlog model (discovery vs delivery) and sprint planning, the changes that most reshape how the skill is used | High | Superseded | sdlc-studio | 2026-07-26 | -- |
 | [RFC-0055](RFC0055-guided-init-one-orchestrated-onboarding-flow-greenfield-brownfield.md) | Guided init: one orchestrated onboarding flow (greenfield + brownfield) from zero to first sprint plan - AGENTS.md, PRD, TRD, TSD, personas, best practice baked in | Medium | Accepted | sdlc-studio | 2026-07-26 | -- |
 | [RFC-0056](RFC0056-keep-the-trd-and-tsd-true-mechanical-claim.md) | Keep the TRD and TSD true: mechanical claim-drift detection and a consumption path | High | In Review | Claude Fable 5 | 2026-07-27 | -- |
-| [RFC-0057](RFC0057-a-queue-of-planned-sprints-so-the-planner.md) | A queue of planned sprints, so the planner and the runner can be different people | High | Draft | Claude Fable 5 (operator-raised, RUN-01KYHVWK resume discussion) | 2026-07-27 | -- |
+| [RFC-0057](RFC0057-a-queue-of-planned-sprints-so-the-planner.md) | A queue of planned sprints, so the planner and the runner can be different people | High | In Review | Claude Fable 5 (operator-raised, RUN-01KYHVWK resume discussion) | 2026-07-27 | -- |
