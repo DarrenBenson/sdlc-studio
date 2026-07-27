@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 41 |
+| Open | 43 |
 | In Progress | 0 |
 | Fixed | 218 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **342** |
+| **Total** | **344** |
 
 ## All Bugs
 
@@ -60,6 +60,8 @@
 | [BG0340](BG0340-lint-style-provenance-guard-s-hand-enumerated-globs.md) | lint-style provenance guard's hand-enumerated globs miss scripts/hooks/ (and narrow templates YAML to config*.yaml) | Open | Low | 2026-07-27 | 2026-07-27 |
 | [BG0341](BG0341-per-commit-markdownlint-lanes-cannot-see-tracked-github.md) | Per-commit markdownlint lanes cannot see tracked .github/ markdown; only the excluded weekly corpus job covers it | Open | Low | 2026-07-27 | 2026-07-27 |
 | [BG0342](BG0342-all-four-artefact-indexes-assert-stale-last-updated.md) | All four artefact indexes assert stale Last Updated stamps that no writer maintains | Open | Low | 2026-07-27 | 2026-07-27 |
+| [BG0343](BG0343-file-finding-writes-affects-from-where-the-evidence.md) | file_finding writes Affects from where the evidence was found, not where the fix lands, and never includes a test file | Open | Medium | 2026-07-27 | 2026-07-27 |
+| [BG0344](BG0344-the-shell-hazard-corpus-assertion-cannot-tell-quoting.md) | The shell-hazard corpus assertion cannot tell quoting from hazard, so evidence about shell defects must be degraded to commit | Open | Medium | 2026-07-27 | 2026-07-27 |
 
 ## Archived Releases
 

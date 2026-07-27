@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/github_sync.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/github_sync.py, .claude/skills/sdlc-studio/scripts/tests/test_github_sync.py
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 (adversarial audit wf_804ef18d); agent; skill v5.0.0
@@ -25,3 +25,4 @@ Make `gh_pr_list_merged` raise GhError on a gh failure like `gh_issue_list`, and
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d) | Filed |
+| 2026-07-27 | Claude Fable 5 | Affects corrected to the fix footprint incl. its test file (BG0343: the filer wrote the evidence location) |

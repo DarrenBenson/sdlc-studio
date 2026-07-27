@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 (adversarial audit wf_804ef18d); agent; skill v5.0.0
@@ -25,3 +25,4 @@ Port transition.py's fence rule into `parse_story`: record the fence character a
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d) | Filed |
+| 2026-07-27 | Claude Fable 5 | Affects corrected to the fix footprint incl. its test file (BG0343: the filer wrote the evidence location) |

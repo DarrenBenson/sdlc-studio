@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 17 |
+| Proposed | 18 |
 | Approved | 0 |
 | In Progress | 2 |
 | Complete | 405 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **442** |
+| **Total** | **443** |
 
 ## All Changes
 
@@ -264,6 +264,7 @@
 | [CR-0440](CR0440-an-open-sprint-run-is-invisible-to-status.md) | An open sprint run is invisible to status, the one command the doctrine names for session-start re-anchoring | Proposed | Medium | Improvement | 2026-07-27 | -- |
 | [CR-0441](CR0441-in-flight-sprint-controls-capacity-aware-swap-bulk.md) | In-flight sprint controls: capacity-aware swap, bulk add by epic, and a resizable appetite | Proposed | High | Improvement | 2026-07-27 | -- |
 | [CR-0442](CR0442-the-run-lifecycle-beyond-plan-and-close-is.md) | The run lifecycle beyond plan and close is undocumented: batch mutation, appetite and the rolling policy have no help page | Proposed | Medium | Improvement | 2026-07-27 | -- |
+| [CR-0443](CR0443-the-affects-and-verify-warning-family-is-advisory.md) | The Affects and Verify warning family is advisory at 398 instances, so a new one is invisible | Proposed | Medium | Improvement | 2026-07-27 | -- |
 
 ## Archived Releases
 

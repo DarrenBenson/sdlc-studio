@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 5
-> **Affects:** sdlc-studio/stories/US0187-refine-copies-the-request-s-acceptance-criteria-into.md
+> **Affects:** sdlc-studio/stories/US0187-refine-copies-the-request-s-acceptance-criteria-into.md, sdlc-studio/stories/US0212-fix-the-trd-section-6-migrations-paragraph-to.md, sdlc-studio/stories/US0013-tranche-audit-step.md, sdlc-studio/stories/US0022-checks-remediation-guidance.md, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 (adversarial audit wf_804ef18d); agent; skill v5.0.0
@@ -25,3 +25,4 @@ Repair the four stories (re-point or supersede the dead selectors with a revisio
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d) | Filed |
+| 2026-07-27 | Claude Fable 5 | Affects corrected to the fix footprint incl. its test file (BG0343: the filer wrote the evidence location) |

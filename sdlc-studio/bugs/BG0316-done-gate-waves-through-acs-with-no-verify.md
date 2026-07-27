@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 (adversarial audit wf_804ef18d); agent; skill v5.0.0
@@ -25,4 +25,5 @@ Make `_done_verify_gate` treat a verifier-less AC the way gate.py does - block t
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d) | Filed |
+| 2026-07-27 | Claude Fable 5 | Affects corrected to the fix footprint incl. its test file (BG0343: the filer wrote the evidence location) |
 | 2026-07-27 | Claude Fable 5 | Triaged vs BG0300 (already-delivered advisory): distinct - BG0300's fix blocks a bare manual AC; this bug is the adjacent gap that an AC with no Verify line at all is waved through, making omission cheaper than honest declaration. Stays Open. |
