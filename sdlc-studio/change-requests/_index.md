@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 12 |
+| Proposed | 15 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 405 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **435** |
+| **Total** | **438** |
 
 ## All Changes
 
@@ -257,6 +257,9 @@
 | [CR-0433](CR0433-non-discriminating-shared-verify-selectors-keep-landing-in.md) | Non-discriminating shared Verify selectors keep landing in Done stories after the advisory lint shipped; debt grew 17 to | Proposed | Medium | Improvement | 2026-07-27 | -- |
 | [CR-0434](CR0434-rfc0009-is-partially-superseded-by-rfc0038-complexity-based.md) | RFC0009 is partially superseded by RFC0038 (complexity-based estimation retired at r=0.03) but carries no supersession a | Proposed | Medium | Improvement | 2026-07-27 | -- |
 | [CR-0435](CR0435-a-finding-class-that-survives-two-audits-becomes.md) | A finding class that survives two audits becomes a deterministic detector | Proposed | High | Improvement | 2026-07-27 | -- |
+| [CR-0436](CR0436-epic-index-stories-and-deps-columns-are-dead.md) | Epic index Stories and Deps columns are dead for 156 of 165 epics and unchecked by reconcile | Proposed | Low | Improvement | 2026-07-27 | -- |
+| [CR-0437](CR0437-gate-py-verify-batch-is-a-dead-flag.md) | gate.py --verify-batch is a dead flag: run_gate accepts verify_batch and never reads it | Proposed | Low | Improvement | 2026-07-27 | -- |
+| [CR-0438](CR0438-done-stories-carry-unresolved-open-questions-with-no.md) | Done stories carry unresolved Open Questions with no gate requiring resolution before terminal status (14 stories) | Proposed | Low | Improvement | 2026-07-27 | -- |
 
 ## Archived Releases
 

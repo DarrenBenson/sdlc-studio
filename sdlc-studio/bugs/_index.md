@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 32 |
+| Open | 41 |
 | In Progress | 0 |
 | Fixed | 218 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **333** |
+| **Total** | **342** |
 
 ## All Bugs
 
@@ -51,6 +51,15 @@
 | [BG0331](BG0331-gate-py-s-reconcile-lane-enumerates-two-drift.md) | gate.py's reconcile lane enumerates two drift sources and exempts the five sweep-level detectors, re-creating the bug it | Open | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0332](BG0332-test-scope-pinned-to-a-58-script-inventory.md) | Test scope pinned to a 58-script inventory when the tier ships 70 | Open | Low | 2026-07-27 | 2026-07-27 |
 | [BG0333](BG0333-product-seat-calibrates-against-an-end-goal-maya.md) | Product seat calibrates against an End goal Maya's card does not contain | Open | Low | 2026-07-27 | 2026-07-27 |
+| [BG0334](BG0334-ep0163-init-stage-ac-verifiers-under-assert-their.md) | EP0163 init-stage AC verifiers under-assert their own ACs (US0442, US0438), and stage_agents silently skips a missing te | Open | Low | 2026-07-27 | 2026-07-27 |
+| [BG0335](BG0335-manual-acs-missing-evidence-fails-open-on-any.md) | _manual_acs_missing_evidence fails open on any exception, silently disarming the manual-evidence Done gate | Open | Medium | 2026-07-27 | 2026-07-27 |
+| [BG0336](BG0336-review-currency-close-bookkeeping-carve-out-is-direction.md) | Review-currency close-bookkeeping carve-out is direction-blind: any hand-edited Status flip, including to Done, is exemp | Open | Medium | 2026-07-27 | 2026-07-27 |
+| [BG0337](BG0337-jest-batch-cache-matches-patterns-by-literal-substring.md) | Jest batch cache matches patterns by literal substring where jest -t is a regex, so cached and authoritative verdicts ca | Open | Low | 2026-07-27 | 2026-07-27 |
+| [BG0338](BG0338-next-id-meta-nums-caps-meta-ids-at.md) | next_id._meta_nums caps meta ids at 4 digits, re-minting ids past 9999 - the widened sdlc_md.id_number fix was never por | Open | Low | 2026-07-27 | 2026-07-27 |
+| [BG0339](BG0339-check-neutrality-silently-reports-a-tracked-file-it.md) | check_neutrality silently reports a tracked file it could not read as clean, the exact silent-pass its own ls-files path | Open | Low | 2026-07-27 | 2026-07-27 |
+| [BG0340](BG0340-lint-style-provenance-guard-s-hand-enumerated-globs.md) | lint-style provenance guard's hand-enumerated globs miss scripts/hooks/ (and narrow templates YAML to config*.yaml) | Open | Low | 2026-07-27 | 2026-07-27 |
+| [BG0341](BG0341-per-commit-markdownlint-lanes-cannot-see-tracked-github.md) | Per-commit markdownlint lanes cannot see tracked .github/ markdown; only the excluded weekly corpus job covers it | Open | Low | 2026-07-27 | 2026-07-27 |
+| [BG0342](BG0342-all-four-artefact-indexes-assert-stale-last-updated.md) | All four artefact indexes assert stale Last Updated stamps that no writer maintains | Open | Low | 2026-07-27 | 2026-07-27 |
 
 ## Archived Releases
 
