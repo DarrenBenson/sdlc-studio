@@ -6,9 +6,15 @@ Related: help/init.md, reference-verify.md, reference-sprint.md, reference-scrip
 
 # Greenfield Runbook - From Empty Repo to Shipped
 
+> **The one-command path:** `init guided` walks a new repo through every stage below - agents, PRD,
+> TRD, TSD, personas, decomposition and a first sprint plan - drafting each artefact for you to
+> confirm, and resuming where you left off. Reach for it first; the manual step list here is the
+> under-the-hood detail of what it runs, for when you want to drive a single stage by hand.
+>
 > **Adopting an existing codebase instead?** This runbook is for a brand-new project.
 > For existing code, follow `help/brownfield-runbook.md` (extract a spec with `prd generate`,
-> then validate it against the running code).
+> then validate it against the running code). `init guided` also handles brownfield - it detects the
+> stack and forks each stage to the generate path.
 
 ## You can just ask
 

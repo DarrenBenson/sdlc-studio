@@ -6,6 +6,12 @@ Related: help/getting-started.md, reference-philosophy.md, help/prd.md, referenc
 
 # Brownfield Runbook - From Existing Code to a Validated Spec
 
+> **The one-command path:** `init guided` detects your stack, classifies the repo as brownfield, and
+> forks each stage to the reverse-engineer path (`prd generate`, `trd generate`, `tsd generate`) all
+> the way to a first sprint plan. The manual sequence below is what it runs, for when you want to
+> drive a stage by hand. The one rule either way: **do not trust a generated spec until its tests
+> pass against the existing code.**
+
 ## You can just ask
 
 SDLC Studio is model-invoked - say it in plain language:

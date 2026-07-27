@@ -63,8 +63,15 @@ options:
 
 ## Priority Logic
 
+**Guided onboarding pre-empts the ladder.** While an `init guided` walk is in progress, `hint`
+returns `init guided` and names the next onboarding stage, ahead of every row below - the guided
+flow drives the operator to a first plan, and the ordinary ladder only resumes once onboarding is
+complete or absent. Row 0 below records this; rows 1-17 are the ladder for a project past (or
+without) onboarding.
+
 | # | Condition | Suggested Action | Command |
 | --- | ----------- | ------------------ | --------- |
+| 0 | Guided onboarding in progress | Resume the guided walk (names the next stage) | `init guided` |
 | 1 | No PRD + existing code | Extract PRD from codebase | `prd generate` |
 | 2 | No PRD + no code | Create PRD interactively | `prd create` |
 | 3 | No TRD + existing code | Extract TRD from codebase | `trd generate` |

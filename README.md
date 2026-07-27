@@ -434,7 +434,7 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 
 ## Documentation
 
-- **[sdlc-studio.com](https://sdlc-studio.com)** - the documentation home: getting started, an end-to-end walkthrough, the concept guides (the two-backlog model, sprint planning, two-role review, executable acceptance criteria), the FAQ, and the multi-harness install guide. The files below are the in-repo reference the skill loads at runtime.
+- **[sdlc-studio.com](https://sdlc-studio.com)** - the documentation home: getting started with guided `init`, greenfield and brownfield worked walkthroughs, the specification layer (PRD, TRD, TSD and the multi-repo PVD), personas and the Three Amigos, the concept guides (two-backlog, sprint planning, two-role review, executable acceptance criteria), the FAQ, and the multi-harness install guide. The files below are the in-repo reference the skill loads at runtime.
 - [The white paper](docs/whitepaper.md) - the mill, described properly: the operating model, the measured evidence, governance, and adoption, for the engineering leader evaluating an agentic SDLC
 - [docs/why-sdlc-studio.md](docs/why-sdlc-studio.md) - the full value argument: thesis, evidence (field + benchmark), economics, and honest caveats
 - [docs/existing-users.md](docs/existing-users.md) - already running SDLC Studio? What changed (the two-backlog workflow, the numbering question), upgrade steps
