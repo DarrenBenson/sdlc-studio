@@ -8,3 +8,5 @@
 {"id": "US0444", "type": "story", "project": "sdlc-studio"}
 {"id": "EP0163", "type": "epic", "project": "sdlc-studio"}
 {"id": "RFC0055", "type": "rfc", "project": "sdlc-studio"}
+{"id": "RFC0054", "type": "rfc", "project": "sdlc-studio"}
+{"id": "CR0355", "type": "cr", "project": "sdlc-studio"}

@@ -1,6 +1,6 @@
 # CR-0355: HOLD UNTIL v5 LAUNCH - acknowledge the Claude for Open Source programme in the README
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Release-gated:** yes (D0063) - excluded from the backlog-empty precondition for v5, because its own instruction defers it past the launch
 > **Triage:** KEEP but PARKED: valid README acknowledgement, HOLD-UNTIL-v5 per the CR; carry on the 5.0.0 release checklist (CR0319/EP0117), do not refine into a sprint now
 > **Priority:** Low
@@ -10,6 +10,8 @@
 > **Date:** 2026-07-19
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
+
+**Delivered:** the Claude for Open Source acknowledgement shipped directly in the README `## Sponsor` section during the v5-launch README/site work, not via a decomposed story (this CR was release-gated and parked, so it was never refined into a sprint). Closed as delivered against that existing README content.
 
 ## Summary
 

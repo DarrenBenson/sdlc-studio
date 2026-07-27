@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 4 |
+| Proposed | 3 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 402 |
+| Complete | 403 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 18 |
@@ -176,7 +176,7 @@
 | [CR-0352](CR0352-migrate-apply-should-seed-a-missing-agents-md.md) | migrate --apply should seed a missing AGENTS.md rather than report it as a human task | Complete | High | Improvement | 2026-07-19 | EP0096 |
 | [CR-0353](CR0353-the-agent-instructions-hygiene-check-verifies-pointers-not.md) | the agent-instructions hygiene check verifies pointers, not that the working model is established | Complete | High | Improvement | 2026-07-19 | EP0097 |
 | [CR-0354](CR0354-the-review-seats-never-see-the-sprint-goal.md) | the review seats never see the Sprint Goal - they score WSJF and nothing reviews what the run is for | Complete | High | Improvement | 2026-07-19 | EP0098 |
-| [CR-0355](CR0355-hold-until-v5-launch-acknowledge-the-claude-for.md) | HOLD UNTIL v5 LAUNCH - acknowledge the Claude for Open Source programme in the README | Proposed | Low | Improvement | 2026-07-19 | -- |
+| [CR-0355](CR0355-hold-until-v5-launch-acknowledge-the-claude-for.md) | HOLD UNTIL v5 LAUNCH - acknowledge the Claude for Open Source programme in the README | Complete | Low | Improvement | 2026-07-19 | -- |
 | [CR-0356](CR0356-reconcile-never-checks-the-index-row-s-title.md) | reconcile never checks the index row's title, so a retitled artefact drifts silently and no script can fix it | Superseded | Medium | Improvement | 2026-07-19 | -- |
 | [CR-0357](CR0357-the-rfc-accept-gate-s-fail-closed-fallback.md) | the RFC accept gate's fail-closed fallback can refuse a valid RFC, and says nothing about why | Complete | Low | Improvement | 2026-07-19 | EP0126 |
 | [CR-0358](CR0358-the-close-review-is-an-unbounded-repair-loop.md) | the close review is an unbounded repair loop: no convergence check, no cost ceiling, and the author writes the reviewer's prompt | Complete | High | Improvement | 2026-07-19 | EP0085 |

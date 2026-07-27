@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 0 |
 | In Review | 0 |
 | Accepted | 49 |
-| Superseded | 2 |
+| Superseded | 3 |
 | Withdrawn | 3 |
 | **Total** | **55** |
 
@@ -70,5 +70,5 @@
 | [RFC-0051](RFC0051-an-operator-cannot-delegate-reviewer-of-record-sign.md) | An operator cannot delegate reviewer-of-record sign-off to an agent: the trust boundary the guard requires cannot exist inside the authoring session | High | Accepted | sdlc-studio | 2026-07-22 | -- |
 | [RFC-0052](RFC0052-the-closing-review-converges-on-code-and-never.md) | The closing review converges on code and never on prose, so a sprint can be unable to clear its own critiqued gate | High | Superseded | sdlc-studio | 2026-07-22 | -- |
 | [RFC-0053](RFC0053-a-repair-should-be-planned-and-the-plan.md) | A repair should be planned and the PLAN adversarially reviewed, because the repair is the only step in the loop with no review before execution | High | Accepted | Darren Benson | 2026-07-22 | -- |
-| [RFC-0054](RFC0054-a-major-documentation-overhaul-for-v5-lead-with.md) | a major documentation overhaul for v5 - lead with the two-backlog model (discovery vs delivery) and sprint planning, the changes that most reshape how the skill is used | High | Draft | sdlc-studio | 2026-07-26 | -- |
+| [RFC-0054](RFC0054-a-major-documentation-overhaul-for-v5-lead-with.md) | a major documentation overhaul for v5 - lead with the two-backlog model (discovery vs delivery) and sprint planning, the changes that most reshape how the skill is used | High | Superseded | sdlc-studio | 2026-07-26 | -- |
 | [RFC-0055](RFC0055-guided-init-one-orchestrated-onboarding-flow-greenfield-brownfield.md) | Guided init: one orchestrated onboarding flow (greenfield + brownfield) from zero to first sprint plan - AGENTS.md, PRD, TRD, TSD, personas, best practice baked in | Medium | Accepted | sdlc-studio | 2026-07-26 | -- |

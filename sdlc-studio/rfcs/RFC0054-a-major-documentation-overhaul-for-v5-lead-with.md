@@ -1,6 +1,6 @@
 # RFC-0054: a major documentation overhaul for v5 - lead with the two-backlog model (discovery vs delivery) and sprint planning, the changes that most reshape how the skill is used
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -12,6 +12,8 @@ v5 is a semver-major release and the documentation has grown by accretion, one r
 ## Design Options
 
 - **Option A** {{...}}
+
+**Superseded by the sdlc-studio.com website.** The v5 documentation overhaul this RFC planned (a narrative two-backlog + sprint-planning guide, lifecycle overview, front-door rewrite) was delivered instead as the standalone site at sdlc-studio.com under the site-only-docs decision: getting-started, the two-backlog and sprint-planning concept pages, an end-to-end walkthrough, a comparison table and a multi-harness page all live there, canonical, rather than in the repo. Kept for the design record; the live artefact is the website.
 
 ## Recommendation
 
