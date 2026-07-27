@@ -113,14 +113,43 @@ def _story_has_executable_acs(text: str) -> bool:
     return False
 
 
+def _manual_acs_missing_evidence(text: str) -> list[str]:
+    """Manual ACs are the ones the deterministic gate CANNOT evaluate - a human observes the
+    outcome. The gate cannot check the outcome, but it can require the EVIDENCE that a human did:
+    a `**Verified:**` marker on each manual AC. `verify_ac` never stamps a manual AC (it counts
+    and skips it), so this marker is only ever added deliberately - it cannot be auto-satisfied by
+    running the verifier. Returns the ids of manual ACs carrying no such marker."""
+    try:
+        import verify_ac  # noqa: PLC0415 - sibling; imports only sdlc_md, no cycle
+        blocks = verify_ac.parse_story(text)
+    except Exception:  # noqa: BLE001 - a parse hiccup must not mask the gate
+        return []
+    bare = []
+    for b in blocks:
+        toks = (b.verifier or "").strip().split(None, 1)
+        if toks and toks[0].lower() in ("manual", "manually") and b.verified_state is None:
+            bare.append(b.ac_id)
+    return bare
+
+
 def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
     """Definition-of-Done safety net on the hand-driven path. A story may not reach
     Done with executable ACs that are red or never run - the 0/7 a hand-driving agent shipped.
-    Returns a block reason, or None to allow. Manual-only / AC-less stories are never blocked;
-    a green report passes. The hard gate is the one deterministic fact - the verifier result;
-    critic semantic findings stay advisory (handled elsewhere)."""
+    Returns a block reason, or None to allow. A green report passes. The hard gate is the one
+    deterministic fact - the verifier result; critic semantic findings stay advisory (handled
+    elsewhere).
+
+    A manual AC is not exempt from all scrutiny: the gate cannot judge the OUTCOME a human must
+    observe, but it requires the EVIDENCE that a human did - a `**Verified:**` marker. Without it,
+    `manual` meant "nothing checks this", and the more irreversible the work the less it was gated.
+    This runs first, so an all-manual story is no longer waved through with nothing looked at."""
+    bare_manual = _manual_acs_missing_evidence(text)
+    if bare_manual:
+        return (f"manual acceptance criteria ({', '.join(bare_manual)}) reached Done with no "
+                f"recorded evidence a human verified them - add a `**Verified:**` marker (when "
+                f"observed, by whom) to each, or make the criterion executable")
     if not _story_has_executable_acs(text):
-        return None  # nothing executable to verify
+        return None  # nothing executable to verify; manual evidence (if any) is present
     # The story-level Definition of Done, when the project declares one, decides whether
     # this check enforces: a DoD whose story level does not tag `story.verify-ac` has
     # downgraded AC verification to human judgement (a visible edit to the document, and

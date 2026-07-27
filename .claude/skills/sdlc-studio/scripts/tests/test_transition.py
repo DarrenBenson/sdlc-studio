@@ -179,11 +179,23 @@ class DoneGateTests(unittest.TestCase):
             res = tr.transition(root, "US0001", "Done")
             self.assertEqual(res["to"], "Done")
 
-    def test_manual_only_story_not_blocked(self) -> None:
+    def test_bare_manual_ac_blocks_done(self) -> None:  # BG0300
+        # A manual AC with no `**Verified:**` marker means nothing looked at the deliverable.
+        # The gate must refuse Done and name the bare AC.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._story(root, "# US0001: s\n\n> **Status:** Ready\n\n### AC1\n- **Verify:** manual eyeball it\n")
-            res = tr.transition(root, "US0001", "Done")     # only manual ACs -> nothing to gate
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "US0001", "Done")
+            self.assertIn("AC1", str(cm.exception))
+
+    def test_manual_ac_with_evidence_passes(self) -> None:  # BG0300
+        # The same manual AC, now carrying recorded human evidence, is allowed through.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, "# US0001: s\n\n> **Status:** Ready\n\n### AC1\n"
+                              "- **Verify:** manual eyeball it\n- **Verified:** yes (2026-07-27)\n")
+            res = tr.transition(root, "US0001", "Done")
             self.assertEqual(res["to"], "Done")
 
     def test_force_overrides(self) -> None:
@@ -377,7 +389,8 @@ class StoryTargetParityTests(unittest.TestCase):
         sd.mkdir(parents=True)
         (sd / "US0001-x.md").write_text(
             "# US0001: s\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n"
-            f"### AC1\n- **Verify:** manual check\n- **Verification target:** {target}\n",
+            f"### AC1\n- **Verify:** manual check\n- **Verified:** yes (2026-07-27)\n"
+            f"- **Verification target:** {target}\n",
             encoding="utf-8")
         (sd / "_index.md").write_text(
             "# Stories\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"

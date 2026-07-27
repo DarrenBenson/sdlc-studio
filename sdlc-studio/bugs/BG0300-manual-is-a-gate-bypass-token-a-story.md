@@ -44,6 +44,25 @@ Returning None should also be distinguishable from passing at the call site: `No
 
 A reference implementation of the evidence check (plus the companion `Affects`-paths-exist check, and 27 tests over real corpus shapes) is in the downstream homelab repo at `utilities/sdlc/check_done_stories.py`, written against BG0144. It runs over a 141-Done-story corpus and finds 11 failures, so the rule is enforceable in practice, not just in principle.
 
+## Acceptance Criteria
+
+### AC1: a manual AC with no recorded evidence blocks Done
+
+- **Given** a story reaching Done whose acceptance criteria include a `Verify: manual` line with no
+  `**Verified:**` marker beneath it
+- **When** the transition to Done runs
+- **Then** the Done gate refuses it, naming the bare manual AC and asking for a `**Verified:**`
+  marker (when observed, by whom) - the bypass is closed without the gate pretending to evaluate a
+  manual criterion
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::DoneGateTests::test_bare_manual_ac_blocks_done
+
+### AC2: a manual AC carrying recorded evidence is allowed
+
+- **Given** a story whose manual ACs each carry a `**Verified:**` marker, and no executable AC is red
+- **When** the transition to Done runs
+- **Then** the gate allows it - the evidence that a human verified the criterion is present
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::DoneGateTests::test_manual_ac_with_evidence_passes
+
 ## Revision History
 
 | Date | Author | Change |

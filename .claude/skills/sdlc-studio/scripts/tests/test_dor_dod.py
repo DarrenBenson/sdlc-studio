@@ -263,7 +263,8 @@ class GateResolveTests(unittest.TestCase):
             story_dir.mkdir(parents=True)
             p = story_dir / "US0001-sample.md"
             text = ("# US0001: sample\n\n> **Status:** Review\n\n## Acceptance Criteria\n\n"
-                    "### AC1: works\n- **Verify:** manual check by the operator\n")
+                    "### AC1: works\n- **Verify:** manual check by the operator\n"
+                    "- **Verified:** yes (2026-07-27)\n")
             p.write_text(text, encoding="utf-8")
             _write_doc(root, "done", "# DoD\n\n## Story\n\n- [ ] human judged\n")
             err = io.StringIO()
