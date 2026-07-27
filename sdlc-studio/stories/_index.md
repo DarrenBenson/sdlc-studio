@@ -11,12 +11,12 @@
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 0 |
+| Review | 1 |
 | Done | 444 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **445** |
+| **Total** | **446** |
 
 ## All Stories
 
@@ -356,6 +356,7 @@
 | [US0443](US0443-onboarding-progress-surface-status-and-hint-show-the.md) | Onboarding progress surface: status and hint show the checklist and the next step until the first plan | Done | EP0163 | 2026-07-26 | 2026-07-26 |
 | [US0444](US0444-docs-and-supersession-rewrite-help-init-md-and.md) | Docs and supersession: rewrite help/init.md and reference for the guided flow, mark RFC0019 superseded | Done | EP0163 | 2026-07-26 | 2026-07-26 |
 | [US0445](US0445-close-tail-derives-parent-crs-and-rfcs-terminal.md) | Close tail derives parent CRs and RFCs terminal when all their children are terminal | Done | EP0164 | 2026-07-27 | 2026-07-27 |
+| [US0446](US0446-accept-transition-set-id-status-positionally-or-name.md) | Accept transition set ID Status positionally, or name the exact fix in the error | Review | EP0165 | 2026-07-27 | 2026-07-27 |
 
 ## Archived Releases
 

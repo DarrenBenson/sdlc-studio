@@ -923,9 +923,29 @@ def _static_depth_refusal(root, aid: str, depth_value: str, status: str) -> str 
 
 
 def cmd_set(args: argparse.Namespace) -> int:
+    # Natural positional form `set <ID> <STATUS>` maps onto --id/--status, so the obvious first
+    # attempt works. The flags still work; giving the SAME value both ways is refused rather than
+    # silently picking one.
+    idpos, statuspos = getattr(args, "idpos", None), getattr(args, "statuspos", None)
+    if idpos:
+        if args.id or getattr(args, "ids", None):
+            print("error: give the id EITHER positionally (`set <ID> <STATUS>`) OR via "
+                  "--id/--ids, not both", file=sys.stderr)
+            return 2
+        args.id = [idpos]
+    if statuspos:
+        if args.status:
+            print("error: give the status EITHER positionally (`set <ID> <STATUS>`) OR via "
+                  "--status, not both", file=sys.stderr)
+            return 2
+        args.status = statuspos
     ids = sdlc_md.resolve_ids(args)
     if not ids:
-        print("specify at least one id: --id (repeatable) or --ids as a comma list",
+        print("specify at least one id: `set <ID> <STATUS>` (positional), or --id (repeatable) / "
+              "--ids as a comma list", file=sys.stderr)
+        return 2
+    if not args.status:
+        print("specify the target status: `set <ID> <STATUS>` (positional), or --status",
               file=sys.stderr)
         return 2
     # One-call close (the three-verb ceremony was easy to half-do): --depth stamps
@@ -1057,10 +1077,18 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Transition an artifact's status + cascade.")
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("set", help="Set an artifact's status and sync index + epic breakdown.")
+    # The natural form `set <ID> <STATUS>` is accepted as well as the --id/--status flags, so the
+    # obvious first attempt works instead of erroring on argparse noise (they map onto the flags in
+    # cmd_set; mixing the two forms for the same value is refused there).
+    s.add_argument("idpos", nargs="?", metavar="ID",
+                   help="artifact id, positional - the natural form `set <ID> <STATUS>`")
+    s.add_argument("statuspos", nargs="?", metavar="STATUS",
+                   help="new status, positional - the natural form `set <ID> <STATUS>`")
     sdlc_md.add_ids_argument(s, help_="artifact id, e.g. CR0042 / US0023; repeat --id or pass "
                                       "--ids as a comma list for a same-target batch (each id is "
                                       "individually gated, one refusal never aborts the rest)")
-    s.add_argument("--status", required=True, help="New status (must be in the type vocabulary)")
+    s.add_argument("--status", help="New status (must be in the type vocabulary); or give it "
+                                    "positionally as `set <ID> <STATUS>`")
     s.add_argument("--root", default=".")
     s.add_argument("--iterations", help="run metric passed to the terminal-close telemetry event")
     s.add_argument("--wall-time-s", dest="wall_time_s", help="run metric for the telemetry event")

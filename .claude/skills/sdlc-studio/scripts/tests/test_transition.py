@@ -308,6 +308,41 @@ def _bug_repo(root: Path, depth: str | None, prod: bool = False) -> Path:
     return root
 
 
+class PositionalSetFormTests(unittest.TestCase):
+    """CR0423/US0446: `transition.py set <ID> <STATUS>` (the natural first attempt) is accepted,
+    mapping onto --id/--status; mixing the positional and flag form for one value is refused."""
+
+    def _repo_ready(self, root: Path) -> None:
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        (sd / "US0001-x.md").write_text(
+            "# US0001: s\n\n> **Status:** Draft\n\n## Acceptance Criteria\n\n"
+            "### AC1\n- **Verify:** manual eyeballed\n- **Verified:** yes (2026-07-27)\n",
+            encoding="utf-8")
+        (sd / "_index.md").write_text(
+            "# Stories\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0001](US0001-x.md) | s | Draft |\n", encoding="utf-8")
+
+    def test_positional_set_form_transitions(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo_ready(root)
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                rc = tr.main(["set", "US0001", "Review", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertIn("**Status:** Review", _read(root, "stories", "US0001-x.md"))
+
+    def test_positional_and_flag_conflict_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo_ready(root)
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = tr.main(["set", "US0001", "Review", "--status", "Done", "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("EITHER positionally", err.getvalue())
+
+
 class DepthTierGateTests(unittest.TestCase):
     """Verification-depth tiers are enforced on bug transitions, not decorative."""
 
