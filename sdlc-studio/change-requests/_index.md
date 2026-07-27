@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 25 |
 | Complete | 405 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **450** |
+| **Total** | **451** |
 
 ## All Changes
 
@@ -272,6 +272,7 @@
 | [CR-0448](CR0448-command-audit-reports-a-flag-whose-destination-is.md) | command_audit reports a flag whose destination is never read - and is proven on verify_batch | In Progress | Medium | Improvement | 2026-07-27 | EP0175 |
 | [CR-0449](CR0449-the-progressive-loading-guide-s-path-cells-resolve.md) | The Progressive Loading Guide's path cells resolve | In Progress | Medium | Improvement | 2026-07-27 | EP0175 |
 | [CR-0450](CR0450-a-delegated-agent-that-stalls-silently-is-indistinguishable.md) | A delegated agent that stalls silently is indistinguishable from a slow one, and the doctrine has no detection rule | Proposed | High | Improvement | 2026-07-27 | -- |
+| [CR-0451](CR0451-the-cost-of-using-sdlc-studio-is-dominated.md) | The cost of using sdlc-studio is dominated by the per-commit gate, not by the work - and that is an adoption blocker | Proposed | High | Improvement | 2026-07-27 | -- |
 
 ## Archived Releases
 
