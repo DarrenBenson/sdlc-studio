@@ -33,7 +33,45 @@ validate work), none of which wrote any of it, plus the operator as reviewer of 
 
 ## Findings
 
-<!-- filled from the three independent reviewers -->
+Three independent reviewers over disjoint slices of the delivery returned **REJECT** with 10 major
+and 9 minor findings. Five of the ten majors were in code the author wrote, not the delivery agents'.
+
+**Majors, all repaired in c4b1aaea:**
+
+1. `verify_ac.parse_story` - BG0305's fix was incomplete and the shell injection it exists to close
+   was STILL LIVE. CommonMark requires a closing fence carry nothing but spaces; a line carrying an
+   info string still released the block, so an illustrative Verify line beneath it became a live
+   verifier. Demonstrated end to end by the reviewer. The bug stood at Fixed carrying a comment
+   asserting the rule was CommonMark's.
+2. `transition._acs_missing_evidence` - a bare acceptance criterion still reached Done once any
+   `Verified:` marker was added, while the release lane counts it unspecified and refuses. The two
+   gates disagreed about the same file, which is the defect BG0316 names, and a new test pinned it.
+3. `gate._provenance` - ignored the blocking flag on provenance findings, so an unreadable artefact
+   never blocked despite BG0323 marking it blocking.
+4. `eval_run.cmd_report` - forbidden behaviours were absent from the ungraded sweep, so a scenario
+   printed "gate pass" having graded none of them.
+5. `sprint._drift_warning` - hardcoded one of two causes of an unverified drift check and offered a
+   remedy that does not clear the other.
+6-9. The author's placeholder baseline - `Path(None)` crashed past an OSError-only handler; the
+   cache leaked across repo roots and froze a failed read as empty; matching on artefact id waived
+   every future blank in a listed record; and both its tests SURVIVED the feature being patched out.
+6. `validate._check_placeholders` - still carried the naive fence toggle that the same commit had
+   replaced in `verify_ac.py`, three files away.
+
+**Repair.** Fence tracking is now one shared CommonMark implementation (`sdlc_md.fence_step`) called
+by both parsers, rather than two local rules that disagreed. The transition gate is reordered with a
+differential test asserting both lanes reach one verdict on one file. The baseline records the
+FINDING rather than the artefact, is keyed by resolved repo root, and its tests are mutation-proven:
+disabling the waiver kills two, and reverting to artefact-level matching kills the one written for it.
+
+**Residuals filed rather than absorbed:** BG0347 (31 terminal artefacts with unfilled scaffolds,
+12 of them bugs recording no symptom, steps or fix), BG0348 (the all-skipped hole survives for
+unittest, jest, vitest and go - unittest is this repository's own default runner), BG0349 (four
+modules still carry the naive fence toggle).
+
+**Minors cleared in the repair:** six CHANGELOG fragments written, and two documentation claims that
+BG0316 had falsified corrected - `reference-scripts-create.md` was telling consuming projects a gate
+could not refuse them, immediately before it did.
 
 ## Verdict
 
