@@ -14,3 +14,5 @@ unittest, jest, vitest and go), BG0349 (four modules still carry the naive fence
 process defects the run exposed are CR0450 (a delegated agent can stall silently), CR0451 (the
 per-commit gate costs four times the delivery it guards) and CR0452 (a reviewer mutation-testing in
 the live tree can silently revert the author's code).
+
+BG0350 (the pre-two-role critic debt, waived under D0074) was filed by this close itself and is covered by this record.
