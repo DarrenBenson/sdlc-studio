@@ -2495,7 +2495,9 @@ def _drift_warning(drift: dict, batch_paths: set) -> str | None:
         _cause = str(drift["unverified"])
         _fetch_failed = "fetch from origin" in _cause
         _remedy = ("restore the remote and re-run, or pass --no-fetch to compare against the last "
-                   "fetched state deliberately")
+                   "fetched state deliberately" if _fetch_failed else
+                   "the comparison itself failed, so --no-fetch will not clear it - repair the "
+                   "checkout or the ref and re-run")
         lines.append(f"origin drift UNVERIFIED: {_cause} - this is not evidence of no drift; "
                      f"this checkout may already be stale ({_remedy})")
     if drift.get("behind"):

@@ -3963,5 +3963,28 @@ class TestRelevantSetTests(unittest.TestCase):
                             "a globbed directory must stay relevant once deleted")
 
 
+class ProvenanceBlockingTests(unittest.TestCase):
+    """An UNREADABLE artefact is a hole in the census, not a missing stamp, so the checker marks it
+    blocking regardless of provenance.enforce. The lane consuming that verdict derived blocking
+    from `enforced` alone and dropped it. Reverting that survived every test in this file, so the
+    repair shipped unpinned - the vacuous-verifier defect one layer out."""
+
+    def _stub(self, enforced, findings):
+        import provenance
+        orig = provenance.check
+        provenance.check = lambda root: {"enforced": enforced, "findings": findings}
+        self.addCleanup(lambda: setattr(provenance, "check", orig))
+
+    def test_an_unreadable_artefact_blocks_even_when_not_enforced(self):
+        self._stub(False, [{"blocking": True, "id": "US0001", "reason": "unreadable"}])
+        self.assertTrue(gate._provenance(".")["blocking"],
+                        "a finding the checker marked blocking must block, whatever enforce says")
+
+    def test_an_unstamped_artefact_stays_advisory_when_not_enforced(self):
+        self._stub(False, [{"blocking": False, "id": "US0001", "reason": "unstamped"}])
+        self.assertFalse(gate._provenance(".")["blocking"],
+                         "the advisory class must not become blocking - that is the other error")
+
+
 if __name__ == "__main__":
     unittest.main()

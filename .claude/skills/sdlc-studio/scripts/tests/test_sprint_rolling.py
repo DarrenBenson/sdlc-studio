@@ -1021,5 +1021,23 @@ class ReviewFindingsTests(unittest.TestCase):
                 self.assertIn("RUN-GOOD", got, f"{name}: intact record lost")
 
 
+class DriftRemedyPerCauseTests(unittest.TestCase):
+    """`unverified` has two causes and they need different remedies: a failed FETCH is cleared by
+    --no-fetch, a failed COMPARE is not. Naming only the fetch remedy sends an operator to a flag
+    that cannot clear their case. No test asserted this message, which is how the repair was
+    silently reverted by an unrelated commit and still passed a fully green suite."""
+
+    def test_a_failed_fetch_offers_the_no_fetch_remedy(self):
+        w = sprint._drift_warning({"unverified": "git fetch from origin failed: boom"}, set())
+        self.assertIn("--no-fetch", w)
+
+    def test_a_failed_comparison_says_no_fetch_will_not_clear_it(self):
+        w = sprint._drift_warning(
+            {"unverified": "git counting commits against origin/main failed: boom"}, set())
+        self.assertIn("will not clear it", w,
+                      "a failed comparison must not be offered the fetch remedy - --no-fetch "
+                      "skips the fetch and fails identically")
+
+
 if __name__ == "__main__":
     unittest.main()

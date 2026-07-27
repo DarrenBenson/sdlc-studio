@@ -1835,5 +1835,42 @@ class PlaceholderBaselineTests(unittest.TestCase):
             validate._baseline_cache.clear()
             validate.validate_file(p, "story")   # no repo_root at all
 
+
+class PlaceholderFenceTests(unittest.TestCase):
+    """The body sweep tracked fences with the naive toggle the same commit replaced in the
+    acceptance-criteria parser. Restoring the toggle survived the whole 4,300-test suite, so the
+    repair was correct and unpinned. It fails in BOTH directions: a false positive inside the
+    fence, and a real placeholder MISSED after it."""
+
+    def _body(self, repo, body):
+        d = repo / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        p = d / "US9999-x.md"
+        p.write_text(f"# US9999: x\n\n> **Status:** Done\n\n## Summary\n\n{body}\n",
+                     encoding="utf-8")
+        return p
+
+    def _findings(self, path, repo):
+        validate._baseline_cache.clear()
+        return [f["message"] for f in validate.validate_file(path, "story", repo_root=repo)
+                if f.get("rule") == "placeholder"]
+
+    def test_a_placeholder_inside_a_fence_is_not_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            body = "```\nexample:\n```markdown\n{{not a real slot}}\n```\n"
+            self.assertEqual(self._findings(self._body(repo, body), repo), [],
+                             "sample text inside a fenced block is an illustration, not a slot")
+
+    def test_a_real_placeholder_after_the_fence_is_still_found(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            body = "```\nexample:\n```markdown\n{{illustration}}\n```\n\n{{a real blank}}\n"
+            found = self._findings(self._body(repo, body), repo)
+            self.assertTrue(any("a real blank" in f for f in found),
+                            "the naive toggle left the fence state inverted and MISSED this")
+            self.assertFalse(any("illustration" in f for f in found))
+
+
 if __name__ == "__main__":
     unittest.main()
