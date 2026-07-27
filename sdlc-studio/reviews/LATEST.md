@@ -1,17 +1,10 @@
 # Latest unified review
 
-<!-- close-status:begin -->
-> **RUN-01KYGD25 closed goal-reached.** 8 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
-> Stamped by `sprint close` - edit the prose below, not this block.
-<!-- close-status:end -->
+> **Anchor:** RV0019 - gate-hardening sprint closing review (BG0300, BG0301, US0445), 2026-07-27
 
-> **Anchor:** RV0018 - EP0163 guided init closing review (v5-launch), 2026-07-27
-
-The most recent unified review is **RV0018**: the EP0163 guided-init epic (US0437-444),
-independently reviewed **APPROVE** (no MAJOR), two fixable MINOR findings repaired and
-mutation-proven before sign-off, operator ratified as reviewer of record. See
-`reviews/RV0018-ep0163-guided-init-closing-unified-review-v5-launch.md` and
+The most recent unified review is **RV0019**: the gate-hardening sprint - the BG0300 manual-AC Done
+bypass, BG0301 shell-hazard false positives, and US0445/CR0422 close-tail request derivation.
+Independently reviewed **APPROVE after repair** (one MAJOR found, fixed and mutation-proven before
+sign-off), operator ratified as reviewer of record. See
+`reviews/RV0019-gate-hardening-sprint-closing-unified-review-bg0300-bg0301.md` and
 `reviews/sprint-review-record.md`.
-
-For volatile project state and orientation, see `reviews/LATEST.md`'s companion `sdlc-studio/reviews/`
-records and `/sdlc-studio status`.

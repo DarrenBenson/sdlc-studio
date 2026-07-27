@@ -1,6 +1,7 @@
 # BG0300: `manual` is a gate-bypass token: a story whose ACs are all manual reaches Done with the verify gate checking nothing
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new
 > **Provenance:** Raised downstream as homelab BG0144 from an independent Product review of US0151; confirmed in this repo's source

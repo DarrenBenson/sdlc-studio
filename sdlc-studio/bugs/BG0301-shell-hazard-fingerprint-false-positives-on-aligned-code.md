@@ -1,6 +1,7 @@
 # BG0301: shell-hazard fingerprint false-positives on aligned code-block spacing: a two-space gap in a code excerpt reads as a collapsed command substitution
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
