@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 3 |
-| Ready | 5 |
+| Draft | 0 |
+| Ready | 8 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -362,9 +362,9 @@
 | [US0449](US0449-the-batch-and-refine-minting-paths-resolve-the.md) | The batch and refine minting paths resolve the persona the same way, so the commands that mint most stories are covered too | Ready | EP0166 | 2026-07-27 | 2026-07-27 |
 | [US0450](US0450-the-prd-target-users-section-names-the-registry.md) | The PRD Target Users section names the registry's Primary, Secondary and Negative personas and points at the registry | Ready | EP0166 | 2026-07-27 | 2026-07-27 |
 | [US0451](US0451-personas-md-is-labelled-a-legacy-appendix-whose.md) | personas.md is labelled a legacy appendix whose still-true content is folded into or pointed at the registry | Ready | EP0166 | 2026-07-27 | 2026-07-27 |
-| [US0452](US0452-the-version-guard-reaches-every-authoritative-home-discovered.md) | The version guard reaches every authoritative home, discovered rather than hand-enumerated | Draft | EP0167 | 2026-07-27 | 2026-07-27 |
-| [US0453](US0453-countable-claims-in-the-trd-and-tsd-are.md) | Countable claims in the TRD and TSD are checked against a census of what the repo actually ships | Draft | EP0167 | 2026-07-27 | 2026-07-27 |
-| [US0454](US0454-timing-claims-are-checked-against-recorded-measurements-rather.md) | Timing claims are checked against recorded measurements rather than restated from memory | Draft | EP0167 | 2026-07-27 | 2026-07-27 |
+| [US0452](US0452-the-version-guard-reaches-every-authoritative-home-discovered.md) | The version guard reaches every authoritative home, discovered rather than hand-enumerated | Ready | EP0167 | 2026-07-27 | 2026-07-27 |
+| [US0453](US0453-countable-claims-in-the-trd-and-tsd-are.md) | Countable claims in the TRD and TSD are checked against a census of what the repo actually ships | Ready | EP0167 | 2026-07-27 | 2026-07-27 |
+| [US0454](US0454-timing-claims-are-checked-against-recorded-measurements-rather.md) | Timing claims are checked against recorded measurements rather than restated from memory | Ready | EP0167 | 2026-07-27 | 2026-07-27 |
 
 ## Archived Releases
 

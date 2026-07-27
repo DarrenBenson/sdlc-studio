@@ -1,6 +1,6 @@
 # US0454: Timing claims are checked against recorded measurements rather than restated from memory
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** RFC0056
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -11,16 +11,29 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader deciding whether to run the suite from what the TSD promises about it
+**I want** timing claims checked against what the gate actually recorded
+**So that** a claim like 'runs in under a minute' cannot outlive the measurement that once made it true
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done.
+### AC1: a timing claim contradicted by the recorded measurement fails
+
+- **Given** a timing claim in the TSD and a recorded measurement history showing a materially different duration
+- **When** the checker runs
+- **Then** it fails, naming the claim, the bound it asserts and the measured value that contradicts it
+- **Verify:** pytest tools/tests/test_check_spec_claims.py::TimingClaimTests::test_a_timing_claim_contradicted_by_measurement_fails
+
+### AC2: an absent measurement is unverifiable, never a pass
+
+- **Given** a timing claim for which no measurement has been recorded yet
+- **When** the checker runs
+- **Then** it reports the claim as unverifiable and says so plainly, rather than treating a missing measurement as agreement
+- **Verify:** pytest tools/tests/test_check_spec_claims.py::TimingClaimTests::test_absent_measurement_is_unverifiable_not_a_pass
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-27 | Claude Fable 5 | Groomed: user story and acceptance criteria authored against the slice |
