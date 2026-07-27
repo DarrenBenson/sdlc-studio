@@ -4122,17 +4122,40 @@ def _derive_parent_epics(root, units=None) -> list[str]:
     return moved
 
 
-def _derive_parent_requests(root) -> list[str]:
+def _derive_parent_requests(root, scope_ids=None) -> list[str]:
     """Transition a parent request (CR/RFC) whose children are ALL terminal to its successful
     terminal - the step the epic derivation leaves undone. `apply-signoff` derived the epics this
     run completed, but a CR/RFC ABOVE those epics was left non-terminal, so an operator had to
-    hand-transition every delivered request to Complete. Delegates to the reconcile
-    request-derivation, which asks the SAME predicate the terminal gate enforces (every child
-    resolved) and goes through `transition`, so the index row, any parent cascade and the telemetry
-    all happen exactly as a hand transition would. A request with any non-terminal child is refused
-    by that gate and left unchanged; returns the ids actually derived."""
+    hand-transition every delivered request to Complete.
+
+    Scoped to THIS run, like `_derive_parent_epics`: a request is derived only when one of its
+    children is a unit of this run (or an epic this close just derived). A request that was already
+    fully resolved before this run is left as ordinary drift for `reconcile` - a close must not
+    sweep and name in its own output requests it did not complete. `scope_ids=None` means unscoped
+    (every derivable request), for direct callers/tests; an explicit (possibly empty) scope filters.
+
+    Asks the SAME predicate the terminal gate enforces (every child resolved) and goes through
+    `transition`, so the index row, any parent cascade and the telemetry all happen exactly as a
+    hand transition would. A request with any non-terminal child is refused and left unchanged;
+    returns the ids actually derived."""
     import reconcile  # noqa: PLC0415
-    return reconcile.apply_derivable_requests(root).get("synced", [])
+    import transition  # noqa: PLC0415
+    root = Path(root)
+    scope = None if scope_ids is None else {sdlc_md.norm_id(x) for x in scope_ids}
+    done: list[str] = []
+    for d in reconcile.derivable_request_drift(root, explain=False):
+        if scope is not None:
+            kids = {sdlc_md.norm_id(c) for c, _ in sdlc_md.children_of(root, d["id"])}
+            if not (scope & kids):
+                continue  # not a request this run completed - leave it as ordinary drift
+        target = sdlc_md.default_terminal_status(d["type"])
+        try:
+            transition.transition(root, d["id"], target)
+            done.append(d["id"])
+        except (ValueError, FileNotFoundError) as exc:  # a refusal is information, not a crash
+            print(f"apply-signoff: {d['id']} not derived terminal ({str(exc).splitlines()[0]})",
+                  file=sys.stderr)
+    return done
 
 
 def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -> int:
@@ -4149,8 +4172,9 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
         print(f"apply-signoff: derived {', '.join(derived)} Done (all children terminal)")
     # A request ABOVE those epics reaches its terminal by derivation too - run it AFTER the epics,
     # so a CR/RFC whose last child was an epic just marked Done is now itself derivable and the
-    # close no longer leaves it for a manual `reconcile apply`.
-    derived_requests = _derive_parent_requests(root)
+    # close no longer leaves it for a manual `reconcile apply`. Scoped to this run's units plus the
+    # epics just derived, so the close never sweeps unrelated requests.
+    derived_requests = _derive_parent_requests(root, scope_ids=list(units or []) + derived)
     if derived_requests:
         print(f"apply-signoff: derived parent request(s) {', '.join(derived_requests)} terminal "
               f"(all children resolved)")

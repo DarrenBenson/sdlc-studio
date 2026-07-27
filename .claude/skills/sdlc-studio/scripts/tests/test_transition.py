@@ -189,6 +189,19 @@ class DoneGateTests(unittest.TestCase):
                 tr.transition(root, "US0001", "Done")
             self.assertIn("AC1", str(cm.exception))
 
+    def test_manual_ac_verified_no_or_stale_blocks_done(self) -> None:  # BG0300
+        # Only a PASSING verdict is evidence. `no` (human saw it fail) and `stale` (evidence out
+        # of date) must block, symmetric with a red/stale executable verifier - not be waved
+        # through as "a marker is present".
+        for state in ("no", "stale"):
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._story(root, "# US0001: s\n\n> **Status:** Ready\n\n### AC1\n"
+                                  f"- **Verify:** manual eyeball it\n- **Verified:** {state} (2026-07-27)\n")
+                with self.assertRaises(ValueError) as cm:
+                    tr.transition(root, "US0001", "Done")
+                self.assertIn("AC1", str(cm.exception))
+
     def test_manual_ac_with_evidence_passes(self) -> None:  # BG0300
         # The same manual AC, now carrying recorded human evidence, is allowed through.
         with tempfile.TemporaryDirectory() as d:

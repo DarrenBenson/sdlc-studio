@@ -7803,18 +7803,55 @@ class ApplySignoffRequestDerivationTests(unittest.TestCase):
             self.assertEqual(self._status(root, cid), "In Progress")
 
     def test_names_each_derived_request(self) -> None:  # AC3
+        # The request must be IN-SCOPE for this run: a story Done under EP0900, which the tail
+        # derives, which in turn makes CR0900 (EP0900's parent) derivable AND in scope.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            cid = _derivable_cr(root, epic_status="Done")
-            state = _close_state(root)
-            _signoffable_story(root)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0101-x.md").write_text(
+                "# US0101: s\n\n> **Status:** Done\n> **Epic:** EP0900\n\n"
+                "## Acceptance Criteria\n\n### AC1: works\n- **Verify:** shell true\n",
+                encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "# Stories\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [US0101](US0101-x.md) | s | Done |\n", encoding="utf-8")
+            ed = root / "sdlc-studio" / "epics"
+            ed.mkdir(parents=True)
+            (ed / "EP0900-x.md").write_text(
+                "# EP0900: e\n\n> **Status:** In Progress\n> **Parent:** CR0900\n\n"
+                "## Story Breakdown\n\n- [x] [US0101](../stories/US0101-x.md)\n", encoding="utf-8")
+            (ed / "_index.md").write_text(
+                "# Epics\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [EP0900](EP0900-x.md) | e | In Progress |\n", encoding="utf-8")
+            crd = root / "sdlc-studio" / "change-requests"
+            crd.mkdir(parents=True)
+            (crd / "CR0900-x.md").write_text(
+                "# CR-0900: c\n\n> **Status:** In Progress\n> **Priority:** Medium\n"
+                "> **Decomposed-into:** EP0900\n", encoding="utf-8")
+            (crd / "_index.md").write_text(
+                "# Change Requests\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [CR-0900](CR0900-x.md) | c | In Progress |\n", encoding="utf-8")
+            state = _close_state(root, batch=["US0101"])
             _close_retro(root)
             out = io.StringIO()
             mod = _load()
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
                 mod._apply_signoff_tail(root, state, units=["US0101"], retro_arg="RETRO0001")
-            self.assertIn(cid, out.getvalue())
+            self.assertIn("CR0900", out.getvalue())
             self.assertIn("derived parent request", out.getvalue())
+
+    def test_out_of_scope_request_is_not_derived(self) -> None:  # scoping repair
+        # A derivable CR whose children are none of THIS run's units is left as ordinary drift -
+        # the close must not sweep and name requests it did not complete.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cid = _derivable_cr(root, epic_status="Done")     # derivable, but unrelated to the run
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                derived = _load()._derive_parent_requests(root, scope_ids=["US9999"])
+            self.assertEqual(derived, [])
+            self.assertEqual(self._status(root, cid), "In Progress")
 
     def test_no_parent_request_is_safe(self) -> None:  # AC4
         with tempfile.TemporaryDirectory() as d:

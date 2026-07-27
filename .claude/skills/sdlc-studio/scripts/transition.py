@@ -127,7 +127,12 @@ def _manual_acs_missing_evidence(text: str) -> list[str]:
     bare = []
     for b in blocks:
         toks = (b.verifier or "").strip().split(None, 1)
-        if toks and toks[0].lower() in ("manual", "manually") and b.verified_state is None:
+        # Only a PASSING human verdict is evidence. `no` records the human saw it fail, `stale`
+        # that the evidence is out of date, and a missing marker that no one looked - all three are
+        # "not verified" and must block, symmetric with the executable path (which blocks a red or
+        # stale verifier result). Accepting any-marker-present would let one `Verified: no` line
+        # reopen exactly the bypass this closes.
+        if toks and toks[0].lower() in ("manual", "manually") and b.verified_state != "yes":
             bare.append(b.ac_id)
     return bare
 
@@ -140,14 +145,16 @@ def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
     elsewhere).
 
     A manual AC is not exempt from all scrutiny: the gate cannot judge the OUTCOME a human must
-    observe, but it requires the EVIDENCE that a human did - a `**Verified:**` marker. Without it,
-    `manual` meant "nothing checks this", and the more irreversible the work the less it was gated.
-    This runs first, so an all-manual story is no longer waved through with nothing looked at."""
+    observe, but it requires the EVIDENCE that a human did and it PASSED - a `**Verified:** yes`
+    marker. Without a passing verdict (`no`, `stale`, or nothing at all), `manual` meant "nothing
+    checks this", and the more irreversible the work the less it was gated. This runs first, so an
+    all-manual story is no longer waved through with nothing looked at."""
     bare_manual = _manual_acs_missing_evidence(text)
     if bare_manual:
         return (f"manual acceptance criteria ({', '.join(bare_manual)}) reached Done with no "
-                f"recorded evidence a human verified them - add a `**Verified:**` marker (when "
-                f"observed, by whom) to each, or make the criterion executable")
+                f"recorded PASSING verification - add a `**Verified:** yes` marker (when observed, "
+                f"by whom) to each, or make the criterion executable. A `no`/`stale` marker blocks "
+                f"like a red verifier does")
     if not _story_has_executable_acs(text):
         return None  # nothing executable to verify; manual evidence (if any) is present
     # The story-level Definition of Done, when the project declares one, decides whether
