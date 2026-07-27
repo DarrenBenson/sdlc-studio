@@ -152,3 +152,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 
 - Tokens: captured at close from the harness-tracked delta against this run's baseline · Duration: ~35 min of
   delivery fan-out across 8 lanes · Critic rejects: recorded with the review verdict
+
+## Handoff
+
+- [HO-0033](../handoffs/HO0033-every-gate-the-audit-showed-silently-standing-down.md) - 5 remaining item(s): 0 copilot-tail, 5 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

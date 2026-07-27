@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 4 |
 | Approved | 0 |
 | In Progress | 25 |
 | Complete | 405 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **452** |
+| **Total** | **453** |
 
 ## All Changes
 
@@ -274,6 +274,7 @@
 | [CR-0450](CR0450-a-delegated-agent-that-stalls-silently-is-indistinguishable.md) | A delegated agent that stalls silently is indistinguishable from a slow one, and the doctrine has no detection rule | Proposed | High | Improvement | 2026-07-27 | -- |
 | [CR-0451](CR0451-the-cost-of-using-sdlc-studio-is-dominated.md) | The cost of using sdlc-studio is dominated by the per-commit gate, not by the work - and that is an adoption blocker | Proposed | High | Improvement | 2026-07-27 | -- |
 | [CR-0452](CR0452-a-review-agent-mutation-testing-in-the-live.md) | A review agent mutation-testing in the live working tree can silently revert the author's code | Proposed | High | Improvement | 2026-07-27 | -- |
+| [CR-0453](CR0453-the-plan-time-test-strategy-governs-proof-per.md) | The plan-time test strategy governs proof per unit but not execution cost, and is printed rather than recorded | Proposed | High | Improvement | 2026-07-28 | -- |
 
 ## Archived Releases
 

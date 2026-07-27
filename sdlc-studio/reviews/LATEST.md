@@ -1,3 +1,8 @@
+
+<!-- close-status:begin -->
+> **RUN-01KYHVWK closed goal-reached.** 21 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> Stamped by `sprint close` - edit the prose below, not this block.
+<!-- close-status:end -->
 The most recent unified review is **RV0021**: RUN-01KYHVWK - 21 units delivering the 2026-07-27
 audit's high-severity and silent-success clusters, plus EP0166 making the persona registry
 load-bearing. Independently reviewed **twice, REJECT both times**, and approved only after the
