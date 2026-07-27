@@ -112,7 +112,7 @@ Review strategy against codebase and update.
 
 | Gate | Criteria | Blocking |
 | ------ | ---------- | ---------- |
-| Unit coverage | >=80% | Yes |
+| Unit coverage | >=90% | Yes |
 | Integration tests | 100% pass | Yes |
 | E2E critical path | 100% pass | Yes |
 | Performance | p95 < 500ms | Yes |

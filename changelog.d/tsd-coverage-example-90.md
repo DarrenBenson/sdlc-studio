@@ -1,0 +1,2 @@
+<!-- section: Fixed -->
+- **TSD help example matches the 90% coverage default.** `help/tsd.md`'s Quality Gates example showed unit coverage `>=80%`, contradicting the tool's own default (`config.coverage.unit` is 90, the template renders it, and `reference-tsd.md` sets and justifies 90% throughout). The example now reads `>=90%`, so a reader copying it lands on the recommended target rather than below it.
