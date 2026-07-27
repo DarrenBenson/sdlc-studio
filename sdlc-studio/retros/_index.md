@@ -86,3 +86,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0074](RETRO0074-cr0421-delivered-a-sprint-close-can-converge-batch.md) | CR0421 delivered - a sprint close can converge (batch mutable, correctness batch-scoped, currency by record) | 2026-07-26 | -- | -- |
 | [RETRO-0075](RETRO0075-ep0163-guided-init-one-command-from-zero-to.md) | EP0163 guided init - one command from zero to a first sprint plan | 2026-07-27 | -- | -- |
 | [RETRO-0076](RETRO0076-gate-hardening-sprint-manual-ac-bypass-shell-hazard.md) | Gate-hardening sprint - manual-AC bypass, shell-hazard FPs, request derivation | 2026-07-27 | -- | -- |
+| [RETRO-0077](RETRO0077-catch-up-accounting-for-units-closed-ad-hoc.md) | Catch-up accounting for units closed ad-hoc before v5 (BG0271, BG0294-0299, EP0161, US0432) | 2026-07-27 | -- | -- |
