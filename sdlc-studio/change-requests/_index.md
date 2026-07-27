@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 18 |
+| Proposed | 19 |
 | Approved | 0 |
 | In Progress | 2 |
 | Complete | 405 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **443** |
+| **Total** | **444** |
 
 ## All Changes
 
@@ -265,6 +265,7 @@
 | [CR-0441](CR0441-in-flight-sprint-controls-capacity-aware-swap-bulk.md) | In-flight sprint controls: capacity-aware swap, bulk add by epic, and a resizable appetite | Proposed | High | Improvement | 2026-07-27 | -- |
 | [CR-0442](CR0442-the-run-lifecycle-beyond-plan-and-close-is.md) | The run lifecycle beyond plan and close is undocumented: batch mutation, appetite and the rolling policy have no help page | Proposed | Medium | Improvement | 2026-07-27 | -- |
 | [CR-0443](CR0443-the-affects-and-verify-warning-family-is-advisory.md) | The Affects and Verify warning family is advisory at 398 instances, so a new one is invisible | Proposed | Medium | Improvement | 2026-07-27 | -- |
+| [CR-0444](CR0444-sprint-plan-validates-the-batch-it-is-about.md) | sprint plan validates the batch it is about to plan, not only its index rows | Proposed | High | Improvement | 2026-07-27 | -- |
 
 ## Archived Releases
 
