@@ -1,6 +1,7 @@
 # CR-0433: Non-discriminating shared Verify selectors keep landing in Done stories after the advisory lint shipped; debt grew 17 to
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0169
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

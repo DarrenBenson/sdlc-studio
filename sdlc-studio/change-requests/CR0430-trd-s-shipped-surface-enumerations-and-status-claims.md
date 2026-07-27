@@ -1,6 +1,7 @@
 # CR-0430: TRD's shipped-surface enumerations and status claims have drifted: command types 30/41, gate lanes 14/17, drift kinds 5/
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0168
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

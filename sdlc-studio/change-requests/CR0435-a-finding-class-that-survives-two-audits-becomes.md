@@ -1,6 +1,7 @@
 # CR-0435: A finding class that survives two audits becomes a deterministic detector
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0169
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

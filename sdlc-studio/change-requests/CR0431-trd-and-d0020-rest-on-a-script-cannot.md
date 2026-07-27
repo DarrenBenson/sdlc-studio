@@ -1,6 +1,7 @@
 # CR-0431: TRD and D0020 rest on 'a script cannot observe token spend', falsified by run_state.session_tokens
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0168
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

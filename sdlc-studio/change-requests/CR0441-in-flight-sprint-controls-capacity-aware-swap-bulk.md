@@ -1,6 +1,7 @@
 # CR-0441: In-flight sprint controls: capacity-aware swap, bulk add by epic, and a resizable appetite
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0171
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

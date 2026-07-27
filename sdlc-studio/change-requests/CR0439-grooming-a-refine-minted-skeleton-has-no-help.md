@@ -1,6 +1,7 @@
 # CR-0439: Grooming a refine-minted skeleton has no help page and no pointer to the AC shape, so each groom re-derives it
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0170
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

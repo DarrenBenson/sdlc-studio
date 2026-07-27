@@ -1,6 +1,7 @@
 # CR-0434: RFC0009 is partially superseded by RFC0038 (complexity-based estimation retired at r=0.03) but carries no supersession a
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0172
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

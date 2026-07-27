@@ -1,6 +1,7 @@
 # CR-0427: Availability NFR contradicted by its own acceptance signal: PRD says sync 'degrades gracefully', TSD proves it aborts wi
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0168
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

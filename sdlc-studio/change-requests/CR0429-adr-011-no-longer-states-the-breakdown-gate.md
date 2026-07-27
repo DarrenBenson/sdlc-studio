@@ -1,6 +1,7 @@
 # CR-0429: ADR-011 no longer states the breakdown gate's actual firing rule: the goal-aware design-rung exemption (D0062) shipped b
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0168
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

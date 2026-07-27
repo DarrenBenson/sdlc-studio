@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 8 |
+| Ready | 33 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **454** |
+| **Total** | **479** |
 
 ## All Stories
 
@@ -365,6 +365,31 @@
 | [US0452](US0452-the-version-guard-reaches-every-authoritative-home-discovered.md) | The version guard reaches every authoritative home, discovered rather than hand-enumerated | Ready | EP0167 | 2026-07-27 | 2026-07-27 |
 | [US0453](US0453-countable-claims-in-the-trd-and-tsd-are.md) | Countable claims in the TRD and TSD are checked against a census of what the repo actually ships | Ready | EP0167 | 2026-07-27 | 2026-07-27 |
 | [US0454](US0454-timing-claims-are-checked-against-recorded-measurements-rather.md) | Timing claims are checked against recorded measurements rather than restated from memory | Ready | EP0167 | 2026-07-27 | 2026-07-27 |
+| [US0455](US0455-one-availability-contract-the-prd-clause-the-tsd.md) | One availability contract: the PRD clause, the TSD NFR row and ADR-004 all state the fail-loud sync behaviour, and the branch taken is recorded as a decision | Ready | EP0168 | 2026-07-27 | 2026-07-27 |
+| [US0456](US0456-the-tsd-s-per-script-test-contract-stops.md) | The TSD's per-script test contract stops being prose: a sweep of scripts and scripts/lib derives the exception list, and the shipped document is held to it | Ready | EP0168 | 2026-07-27 | 2026-07-27 |
+| [US0457](US0457-adr-011-states-the-breakdown-gate-s-real.md) | ADR-011 states the breakdown gate's real firing rule, and carries a dated amendment marker so a reader of the block sees it | Ready | EP0168 | 2026-07-27 | 2026-07-27 |
+| [US0458](US0458-the-trd-s-shipped-surface-enumerations-are-derived.md) | The TRD's shipped-surface enumerations are derived from the code and the router, and the stale CR0132 caveat is refused by name | Ready | EP0168 | 2026-07-27 | 2026-07-27 |
+| [US0459](US0459-the-token-budget-premise-is-replaced-by-the.md) | The token-budget premise is replaced by the measured one everywhere it is asserted: transcript-measured, and a lower bound because delegated spend is supplied not measured | Ready | EP0168 | 2026-07-27 | 2026-07-27 |
+| [US0460](US0460-the-porting-doctrine-is-stated-in-one-direction.md) | The porting doctrine is stated in one direction across the TRD and personas.md: the repo is source, the installed copy is the derived mirror | Ready | EP0168 | 2026-07-27 | 2026-07-27 |
+| [US0461](US0461-verify-ac-lint-ratchet-refuses-a-duplicate-group.md) | verify_ac lint --ratchet refuses a duplicate group the baseline does not record with a reason, and the pinned pre-commit lane set gains it | Ready | EP0169 | 2026-07-27 | 2026-07-27 |
+| [US0462](US0462-a-filed-finding-records-the-lens-profile-and.md) | A filed finding records the lens, profile and a resolvable audit run, and the existing corpus is backfilled from its Raised-by stamps | Ready | EP0169 | 2026-07-27 | 2026-07-27 |
+| [US0463](US0463-readiness-py-detector-owed-flags-a-lens-filed.md) | readiness.py detector-owed flags a lens filed in two separate audit runs and files the sized unit that will build the check | Ready | EP0169 | 2026-07-27 | 2026-07-27 |
+| [US0464](US0464-every-lens-pack-on-disk-names-its-detector.md) | Every lens pack on disk names its detector or declares manual with a reason, the column is read by header name, and the detector set covers the runners this repo ships | Ready | EP0169 | 2026-07-27 | 2026-07-27 |
+| [US0465](US0465-no-artefact-reaches-a-terminal-status-carrying-unchecked.md) | No artefact reaches a terminal status carrying unchecked Open Questions, and the 16 that already did are swept | Ready | EP0169 | 2026-07-27 | 2026-07-27 |
+| [US0466](US0466-the-ungroomed-ac-marker-routes-to-the-shape.md) | The ungroomed AC marker routes to the shape and the verifier guidance, help/refine.md ships, and the help-page gap is a derived lane | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
+| [US0467](US0467-status-names-the-open-run-id-rung-sprint.md) | status names the open run - id, rung, Sprint Goal, batch and remaining - from the run state, with remaining derived from the same predicate the handoff uses | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
+| [US0468](US0468-help-sprint-md-documents-the-run-lifecycle-batch.md) | help/sprint.md documents the run lifecycle - batch mutation, stop, appetite and rolling - bound in invocation form to the shipped parser and the run record | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
+| [US0469](US0469-every-sprint-batch-change-reports-its-capacity-effect.md) | Every sprint batch change reports its capacity effect through the plan-time renderer: points and token forecast against capacity.tokens, unit count against the appetite | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
+| [US0470](US0470-sprint-batch-swap-trades-units-in-one-recorded.md) | sprint batch swap trades units in one recorded call, in the house id grammar, reporting whether the points balanced | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
+| [US0471](US0471-sprint-batch-add-epic-adds-an-epic-s.md) | sprint batch add-epic adds an epic's stories at a named status as one set, priced through the shared renderer | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
+| [US0472](US0472-the-appetite-can-be-resized-on-an-open.md) | The appetite can be resized on an open run with a recorded reason, and the standing capacity it is measured against survives the resize | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
+| [US0473](US0473-the-in-flight-sprint-controls-are-documented-as.md) | The in-flight sprint controls are documented as runnable invocations, with coverage derived from the parser and the reference section pinned structurally | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
+| [US0474](US0474-review-prep-derives-the-rv-record-and-stamps.md) | review_prep derives the RV record and stamps the covered units from one recorded sprint-review APPROVE, without touching operator prose | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
+| [US0475](US0475-the-sprint-close-derives-the-review-record-ahead.md) | The sprint close derives the review record ahead of the gate, and the review-current lane demonstrably clears on a git fixture | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
+| [US0476](US0476-rfc0009-records-its-partial-supersession-by-rfc0038-to.md) | RFC0009 records its partial supersession by RFC0038, to the RFC0034 convention, element by element | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
+| [US0477](US0477-reconcile-derives-the-epic-index-s-stories-and.md) | reconcile derives the epic index's Stories and Deps cells from the census and syncs them | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
+| [US0478](US0478-the-mint-path-writes-the-canonical-epic-row.md) | The mint path writes the canonical epic row, and the shipped template declares the same columns | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
+| [US0479](US0479-delete-gate-s-dead-verify-batch-flag-and.md) | Delete gate's dead --verify-batch flag and the documentation claiming it does something | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
 
 ## Archived Releases
 

@@ -1,6 +1,7 @@
 # CR-0428: TSD asserts 'every script has a dedicated test' twice while its own coverage map says the rule is unenforced, and both d
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0168
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

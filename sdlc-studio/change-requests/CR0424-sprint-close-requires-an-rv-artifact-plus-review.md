@@ -1,6 +1,7 @@
 # CR-0424: sprint close requires an RV artifact plus review_prep stamp even after critic sprint-review already recorded the APPROVE
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0171
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** M
