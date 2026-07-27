@@ -3067,5 +3067,42 @@ class StampResolutionTests(unittest.TestCase):
             shutil.rmtree(tmp, ignore_errors=True)
 
 
+
+
+class FenceInfoStringTests(unittest.TestCase):
+    """A closing fence may be followed only by spaces (CommonMark 4.5). Treating an info-string
+    line as a closer released the block early and turned the illustration beneath it into a LIVE
+    shell verifier - the same harm the four-backtick case had, by a different route."""
+
+    def _first_verifier(self, body):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "US9999-x.md"
+            p.write_text("# US9999: x\n\n## Acceptance Criteria\n\n### AC1: a\n\n" + body,
+                         encoding="utf-8")
+            blocks = verify_ac.parse_story(p.read_text(encoding="utf-8"))
+            return blocks[0].verifier if blocks else None
+
+    def test_an_info_string_line_does_not_close_a_fence(self):
+        v = self._first_verifier(
+            "```\nA story looks like this:\n```markdown\n"
+            "- **Verify:** shell echo INJECTED\n```\n")
+        self.assertIsNone(v, "an illustration inside a fenced block must never become a verifier")
+
+    def test_a_tilde_info_string_line_does_not_close_a_fence(self):
+        v = self._first_verifier(
+            "~~~\nexample:\n~~~text\n- **Verify:** shell echo INJECTED\n~~~\n")
+        self.assertIsNone(v)
+
+    def test_a_bare_closer_still_closes_so_a_real_verify_after_it_parses(self):
+        v = self._first_verifier(
+            "```\nillustration\n```\n- **Verify:** shell true\n")
+        self.assertEqual(v, "shell true",
+                         "the fix must not swallow a genuine Verify line after a real closer")
+
+    def test_a_closer_with_trailing_spaces_still_closes(self):
+        v = self._first_verifier("```\nx\n```   \n- **Verify:** shell true\n")
+        self.assertEqual(v, "shell true")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -295,9 +295,8 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
     # committed baseline and report as a warning; anything NOT in it errors, so the count can only
     # fall. Removing an id is one-way: the check errors on it from then on.
     _body_sev = SEVERITY_ERROR if _terminal else (_ac_sev if type_ == "story" else SEVERITY_WARNING)
-    if _terminal and _body_sev == SEVERITY_ERROR and _in_placeholder_baseline(path, repo_root):
-        _body_sev = SEVERITY_WARNING
-    _check_placeholders(text, add, ac_severity=_ac_sev, body_severity=_body_sev)
+    _waived = (lambda tok: _baselined(path, repo_root, tok)) if _terminal else (lambda tok: False)
+    _check_placeholders(text, add, ac_severity=_ac_sev, body_severity=_body_sev, baselined=_waived)
     return out
 
 
@@ -383,37 +382,41 @@ def _cr_has_evidence(text: str) -> bool:
 
 
 
-#: Artefacts that already carried an unfilled body scaffold when the sweep was widened.
+#: Findings that already existed when the body sweep was widened, as `ID:{{token}}` - the FINDING,
+#: never the artefact. Keying on the artefact blanketed every placeholder in a listed file for ever,
+#: so a NEW blank in an old record inherited the waiver.
 _PLACEHOLDER_BASELINE = "sdlc-studio/.placeholder-baseline.txt"
-_baseline_cache: set[str] | None = None
+#: Keyed by resolved repo root: a bare module global leaked one repo's baseline into the next, and
+#: cached a failed read as an empty set so the retry never happened.
+_baseline_cache: dict[str, set[str]] = {}
 
 
-def _in_placeholder_baseline(path, repo_root) -> bool:
-    """Is this artefact recorded as pre-existing body-placeholder debt?
+def _placeholder_baseline(repo_root) -> set[str]:
+    """The recorded pre-existing findings for this root, read once per root.
 
-    Read once per process from the committed baseline. A missing baseline file means an empty
-    set - every terminal placeholder errors - which is the safe direction: an absent baseline
-    can never quieten a finding.
+    A missing or unreadable baseline is an EMPTY set - every terminal placeholder then errors,
+    which is the safe direction: an absent baseline can never quieten a finding. A failed read is
+    not cached, so a transient failure is retried rather than frozen as "nothing is baselined".
     """
-    global _baseline_cache
-    if _baseline_cache is None:
-        _baseline_cache = set()
-        try:
-            src = (Path(repo_root) / _PLACEHOLDER_BASELINE).read_text(encoding="utf-8")
-        except OSError:
-            src = ""
-        _baseline_cache = {ln.strip() for ln in src.splitlines()
-                           if ln.strip() and not ln.startswith("#")}
-    aid = sdlc_md.artifact_id_from_path(Path(path)) if hasattr(sdlc_md, "artifact_id_from_path") else None
-    if aid is None:
-        import re as _re
-        m = _re.search(r"((?:BG|US|EP|CR|RFC)\d{4})", Path(path).name)
-        aid = m.group(1) if m else ""
-    return aid in _baseline_cache
+    key = str(Path(repo_root or ".").resolve())
+    if key in _baseline_cache:
+        return _baseline_cache[key]
+    try:
+        src = (Path(repo_root or ".") / _PLACEHOLDER_BASELINE).read_text(encoding="utf-8")
+    except (OSError, TypeError, ValueError):
+        return set()  # deliberately NOT cached
+    entries = {ln.strip() for ln in src.splitlines() if ln.strip() and not ln.startswith("#")}
+    _baseline_cache[key] = entries
+    return entries
 
+
+def _baselined(path, repo_root, token: str) -> bool:
+    """Is THIS placeholder token, in THIS artefact, recorded as pre-existing debt?"""
+    m = re.search(r"((?:BG|US|EP|CR|RFC)\d{4})", Path(path).name)
+    return bool(m) and f"{m.group(1)}:{token}" in _placeholder_baseline(repo_root)
 
 def _check_placeholders(text: str, add, ac_severity: str = SEVERITY_ERROR,
-                        body_severity: str | None = None) -> None:
+                        body_severity: str | None = None, baselined=None) -> None:
     """Flag an unresolved `{{...}}` slot left ANYWHERE outside a code fence - a metadata line, an
     acceptance-criteria structural line (AC heading, ACn / Given / When / Then / checkbox bullet,
     Verify), or any other body line. Flags only a line whose *value* is placeholder-ONLY, so prose
@@ -436,13 +439,12 @@ def _check_placeholders(text: str, add, ac_severity: str = SEVERITY_ERROR,
     specified/verifiable bar (unchanged) and by the AC-verify gate on Done; the transition to Ready
     is not itself blocked, so do not read this as gating it."""
     body_severity = body_severity or ac_severity
+    baselined = baselined or (lambda tok: False)
     in_ac = False
-    in_fence = False
+    _fence: tuple[str, int] | None = None
     for line in text.splitlines():
-        if _FENCE.match(line):
-            in_fence = not in_fence
-            continue
-        if in_fence:
+        _fence, _is_fence_line = sdlc_md.fence_step(line.strip(), _fence)
+        if _is_fence_line or _fence is not None:
             continue
         if line.startswith("## "):
             in_ac = "acceptance criteria" in line.lower()
@@ -458,8 +460,12 @@ def _check_placeholders(text: str, add, ac_severity: str = SEVERITY_ERROR,
                 add(ac_severity, "placeholder",
                     f"unresolved placeholder in acceptance criteria: {line.strip()}")
         elif _unfilled(_body_value(line)):
-            add(body_severity, "placeholder",
-                f"unresolved placeholder in body: {line.strip()}")
+            # The waiver is per TOKEN, so a new blank in an already-listed record still errors.
+            tok = _PLACEHOLDER.search(line)
+            sev = body_severity
+            if sev == SEVERITY_ERROR and tok and baselined(tok.group(0)):
+                sev = SEVERITY_WARNING
+            add(sev, "placeholder", f"unresolved placeholder in body: {line.strip()}")
 
 
 def _ac_exempt(rec: str | None, repo_root: Path | None) -> bool:

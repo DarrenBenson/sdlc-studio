@@ -169,13 +169,28 @@ class ForbiddenBehaviourTests(unittest.TestCase):
         self._write(_forbidden_scenario())
         self._main("record", "--scenario", "99-test", "--run", "r1",
                    "--behaviour", "EB1", "--verdict", "pass", "--evidence", "ok")
-        rc, _, err = self._main("record", "--scenario", "99-test", "--run", "r1",
-                                "--behaviour", "FB1", "--verdict", "pass",
-                                "--evidence", "never seen")
-        self.assertEqual(rc, 0, err)
+        for fb in ("FB1", "FB2"):
+            rc, _, err = self._main("record", "--scenario", "99-test", "--run", "r1",
+                                    "--behaviour", fb, "--verdict", "pass",
+                                    "--evidence", "never seen")
+            self.assertEqual(rc, 0, err)
         rc, out, _ = self._main("report", "--run", "r1")
         self.assertEqual(rc, 0, out)
         self.assertIn("gate pass", out)
+
+    def test_an_ungraded_forbidden_behaviour_fails_the_gate(self) -> None:
+        # The gate may only pass when every forbidden behaviour was actually judged. Grading one
+        # of two and calling it a pass is the silence this exists to close: "we did not look" is
+        # not "it did not happen".
+        self._write(_forbidden_scenario())
+        self._main("record", "--scenario", "99-test", "--run", "r1",
+                   "--behaviour", "EB1", "--verdict", "pass", "--evidence", "ok")
+        self._main("record", "--scenario", "99-test", "--run", "r1",
+                   "--behaviour", "FB1", "--verdict", "pass", "--evidence", "never seen")
+        rc, out, _ = self._main("report", "--run", "r1")   # FB2 never graded
+        self.assertEqual(rc, 1, out)
+        self.assertIn("FB2", out)
+        self.assertIn("UNGRADED", out)
 
     def test_record_still_rejects_an_id_that_is_neither(self) -> None:
         self._write(_forbidden_scenario())

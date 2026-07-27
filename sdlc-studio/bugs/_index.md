@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 30 |
+| Open | 32 |
 | In Progress | 0 |
 | Fixed | 234 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **347** |
+| **Total** | **349** |
 
 ## All Bugs
 
@@ -65,6 +65,8 @@
 | [BG0345](BG0345-us0480-and-us0461-specify-two-incompatible-ratchets-for.md) | US0480 and US0461 specify two incompatible ratchets for one concept, and neither can fail as written | Open | High | 2026-07-27 | 2026-07-27 |
 | [BG0346](BG0346-us0482-s-duplicate-selector-burn-down-is-scoped.md) | US0482's duplicate-selector burn-down is scoped to stories while the ratchet it serves covers stories and bugs | Open | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0347](BG0347-31-terminal-artefacts-carry-an-unfilled-body-scaffold.md) | 31 terminal artefacts carry an unfilled body scaffold, including 12 bugs with no symptom, steps or fix | Open | Medium | 2026-07-27 | 2026-07-27 |
+| [BG0348](BG0348-an-all-skipped-run-is-still-stamped-green.md) | An all-skipped run is still stamped green for unittest, jest, vitest and go | Open | High | 2026-07-27 | 2026-07-27 |
+| [BG0349](BG0349-four-modules-still-carry-the-naive-fence-toggle.md) | Four modules still carry the naive fence toggle the parser fix replaced | Open | Medium | 2026-07-27 | 2026-07-27 |
 
 ## Archived Releases
 

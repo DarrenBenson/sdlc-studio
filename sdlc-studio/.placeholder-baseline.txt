@@ -1,35 +1,65 @@
-# Terminal artefacts carrying an unfilled body scaffold when BG0304 widened the
-# placeholder sweep to the whole body. Recorded so the widened check blocks a NEW
-# instance without blocking on the backlog it revealed. Paid down by BG0347; an id
-# removed from this list can never come back, because the check then errors on it.
-BG0271
-BG0275
-BG0276
-BG0277
-BG0278
-BG0279
-BG0280
-BG0283
-BG0286
-BG0287
-BG0292
-BG0293
-CR0413
-CR0414
-CR0415
-CR0416
-CR0417
-CR0418
-CR0419
-EP0019
-EP0020
-EP0021
-EP0022
-EP0023
-EP0031
-EP0032
-EP0157
-EP0158
-EP0159
-EP0160
-RFC0054
+# Body-scaffold findings that already existed when the sweep was widened, as ID:{{token}}.
+# The FINDING is recorded, never the artefact: a new blank in a listed record still errors.
+# Paid down by BG0347. Removing a line is one-way - the check errors on it from then on.
+BG0271:{{fix}}
+BG0271:{{steps}}
+BG0271:{{symptom}}
+BG0275:{{fix}}
+BG0275:{{steps}}
+BG0275:{{symptom}}
+BG0276:{{fix}}
+BG0276:{{steps}}
+BG0276:{{symptom}}
+BG0277:{{fix}}
+BG0277:{{steps}}
+BG0277:{{symptom}}
+BG0278:{{fix}}
+BG0278:{{steps}}
+BG0278:{{symptom}}
+BG0279:{{fix}}
+BG0279:{{steps}}
+BG0279:{{symptom}}
+BG0280:{{fix}}
+BG0280:{{steps}}
+BG0280:{{symptom}}
+BG0283:{{fix}}
+BG0283:{{steps}}
+BG0283:{{symptom}}
+BG0286:{{fix}}
+BG0286:{{steps}}
+BG0286:{{symptom}}
+BG0287:{{fix}}
+BG0287:{{steps}}
+BG0287:{{symptom}}
+BG0292:{{fix}}
+BG0292:{{steps}}
+BG0292:{{symptom}}
+BG0293:{{fix}}
+BG0293:{{steps}}
+BG0293:{{symptom}}
+CR0413:{{what changes and why}}
+CR0413:{{who this affects and what breaks}}
+CR0414:{{what changes and why}}
+CR0414:{{who this affects and what breaks}}
+CR0415:{{what changes and why}}
+CR0415:{{who this affects and what breaks}}
+CR0416:{{what changes and why}}
+CR0416:{{who this affects and what breaks}}
+CR0417:{{what changes and why}}
+CR0417:{{who this affects and what breaks}}
+CR0418:{{what changes and why}}
+CR0418:{{who this affects and what breaks}}
+CR0419:{{what changes and why}}
+CR0419:{{who this affects and what breaks}}
+EP0019:{{what this epic groups}}
+EP0020:{{what this epic groups}}
+EP0021:{{what this epic groups}}
+EP0022:{{what this epic groups}}
+EP0023:{{what this epic groups}}
+EP0031:{{what this epic groups}}
+EP0032:{{what this epic groups}}
+EP0157:{{what this epic groups}}
+EP0158:{{what this epic groups}}
+EP0159:{{what this epic groups}}
+EP0160:{{what this epic groups}}
+RFC0054:{{...}}

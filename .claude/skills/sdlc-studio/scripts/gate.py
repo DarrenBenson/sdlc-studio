@@ -147,10 +147,18 @@ def _duplicate_id(root: str) -> dict:
 
 def _provenance(root: str) -> dict:
     import provenance
-    r = provenance.check(root)  # blocking only when provenance.enforce (the constitution pattern)
+    r = provenance.check(root)
     n = len(r["findings"])
-    return {"count": n, "blocking": r["enforced"],
-            "detail": f"{n} unstamped artifact(s) ({'enforced' if r['enforced'] else 'advisory'})"}
+    # `enforced` covers the ADVISORY class (an unstamped artefact). It does not cover a finding
+    # the checker itself marks blocking - an artefact it could not READ, which is a gap in the
+    # census rather than a missing stamp, and is blocking whatever the enforce setting says.
+    # Deriving from the findings keeps this lane and the checker on one answer.
+    unreadable = [f for f in r["findings"] if f.get("blocking")]
+    blocking = bool(r["enforced"] or unreadable)
+    detail = f"{n} unstamped artifact(s) ({'enforced' if r['enforced'] else 'advisory'})"
+    if unreadable:
+        detail += f"; {len(unreadable)} unreadable - the census could not see them"
+    return {"count": n, "blocking": blocking, "detail": detail}
 
 
 def _disclosure(root: str) -> dict:

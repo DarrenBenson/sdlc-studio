@@ -123,21 +123,11 @@ def parse_story(text: str) -> list[ACBlock]:
         # A fenced code block inside an AC is an ILLUSTRATION, not a directive: a
         # `- **Verify:**` line shown as an example inside ``` must never be picked up and
         # executed. Skip fenced contents (the fence does not end the current AC block).
-        # The rule is CommonMark's, not a toggle: a fence opens on 3+ of ` or ~ and closes
-        # only on the SAME character at that length or longer. A naive toggle counted the
-        # inner ```text of a ````markdown block as a closer, so the illustration below it
-        # became a LIVE shell verifier - the opposite of what this guard is for.
-        marker = "`" if stripped.startswith("```") else ("~" if stripped.startswith("~~~") else None)
-        if marker:
-            run = len(stripped) - len(stripped.lstrip(marker))
-            if fence is None:
-                fence = (marker, run)
-                continue
-            if marker == fence[0] and run >= fence[1]:
-                fence = None
-                continue
-            # a shorter or different fence inside an open one is CONTENT
-        if fence is not None:
+        # One shared CommonMark tracker (sdlc_md.fence_step), never a local rule: two parsers
+        # with their own copy disagreed about where a block ended, and the disagreement put an
+        # illustrative Verify line outside the fence, where it became a LIVE shell verifier.
+        fence, is_fence_line = sdlc_md.fence_step(stripped, fence)
+        if is_fence_line or fence is not None:
             continue
 
         m = AC_HEADING_RE.match(line)

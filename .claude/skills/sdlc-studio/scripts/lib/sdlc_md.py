@@ -1249,6 +1249,37 @@ def artifact_files(type_: str, repo_root: Path) -> list[Path]:
     return [p for p, _ in iter_artifact_files(type_, repo_root)]
 
 
+
+def fence_step(stripped: str, fence: tuple[str, int] | None) -> tuple[tuple[str, int] | None, bool]:
+    """Advance a CommonMark fenced-block state machine by one already-stripped line.
+
+    Returns `(new_fence_state, is_fence_line)`. `fence` is None outside a block, else
+    `(marker_char, opening_run_length)`.
+
+    Two rules a naive toggle gets wrong, both of which have shipped as live defects here:
+
+    * A block closes only on the SAME marker character at the opening run length or LONGER, so
+      the inner ```text of a ````markdown block is content, not a closer.
+    * A closing fence "may be followed only by spaces" (CommonMark 4.5). A line carrying an info
+      string - ```markdown, ```python, ~~~text - therefore never closes; it is content inside an
+      open block. Treating it as a closer released the block early and turned the illustration
+      beneath it into live document content, which for the acceptance-criteria parser meant an
+      illustrative Verify line became an EXECUTED shell verifier.
+
+    An opener may carry an info string; only the closer may not. Callers that merely need to skip
+    fenced content should treat `is_fence_line` as "skip this line too".
+    """
+    marker = "`" if stripped.startswith("```") else ("~" if stripped.startswith("~~~") else None)
+    if marker is None:
+        return fence, False
+    run = len(stripped) - len(stripped.lstrip(marker))
+    if fence is None:
+        return (marker, run), True
+    if marker == fence[0] and run >= fence[1] and not stripped[run:].strip():
+        return None, True
+    # a shorter fence, a different character, or a run carrying an info string: all content
+    return fence, True
+
 def id_number(record_id: str) -> int | None:
     """Numeric part of a v2 sequential ID ('US0042' -> 42, 'CR-0007' -> 7). A v3 ULID id
     ('BG-01JQK3F8') has no sequential number - even one whose suffix ends in digits - so this

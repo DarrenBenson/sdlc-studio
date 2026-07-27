@@ -2488,10 +2488,18 @@ def _drift_warning(drift: dict, batch_paths: set) -> str | None:
     the checkout was really compared and is really level."""
     lines = []
     if drift.get("unverified"):
-        lines.append(f"origin drift UNVERIFIED: {drift['unverified']} - a failed fetch is not "
-                     f"evidence of no drift; this checkout may already be stale (restore the "
-                     f"remote and re-run, or pass --no-fetch to compare against the last "
-                     f"fetched state deliberately)")
+        # `unverified` has two causes and they need different remedies. A failed FETCH can be
+        # worked around with --no-fetch (compare against the last fetched state deliberately); a
+        # failed COMPARE cannot - --no-fetch would skip the fetch and still fail the same way.
+        # Naming only the fetch remedy sent an operator to a flag that does not clear their case.
+        _cause = str(drift["unverified"])
+        _fetch_failed = "fetch from origin" in _cause
+        _remedy = ("restore the remote and re-run, or pass --no-fetch to compare against the last "
+                   "fetched state deliberately" if _fetch_failed else
+                   "the comparison itself failed, so --no-fetch will not clear it - repair the "
+                   "checkout or the ref and re-run")
+        lines.append(f"origin drift UNVERIFIED: {_cause} - this is not evidence of no drift; "
+                     f"this checkout may already be stale ({_remedy})")
     if drift.get("behind"):
         overlap = sorted(p for p in drift["paths"] if p in batch_paths)
         msg = (f"origin drift: local is {drift['behind']} commit(s) behind "

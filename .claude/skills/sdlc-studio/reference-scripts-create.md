@@ -183,7 +183,9 @@ Deterministic status transition + cascade. `set --id <ID> --status <new>` sets `
 syncs the index row + summary counts (`reconcile.apply_type`), and ticks/unticks a story's
 checkbox in its epic's Story Breakdown; `index_synced` is the true post-state. **A story ->
 Done is gated on its AC-verify result** (red or never-run executable ACs refuse the
-transition; `--force` overrides; manual-only / AC-less and non-story types are never gated).
+transition; `--force` overrides; non-story types are never gated). A manual criterion must carry
+a passing `**Verified:**` marker, and a criterion with NO `Verify:` line at all is refused the same
+way - omitting a verifier buys no discount over declaring an honest manual one.
 **A story or epic -> In Progress / Review / Done is refused while it is missing the sections
 the full template carries** (`artifact.py promote --id <ID>`), on every entry to an
 implementation status and in dry-run too. The judgement is keyed on the sections rather than

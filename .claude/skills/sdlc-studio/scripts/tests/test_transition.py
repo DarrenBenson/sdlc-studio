@@ -1991,9 +1991,37 @@ class UnspecifiedAcDoneGateTests(unittest.TestCase):
         # PASSING human verdict is evidence somebody looked.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._story(root, "### AC1\n- Given x\n- **Verified:** yes (2026-07-27)\n")
+            self._story(root, "### AC1\n- Given x\n- **Verify:** manual a human checks x\n"
+                              "- **Verified:** yes (2026-07-27)\n")
             res = _quiet(tr.transition, root, "US0001", "Done")
             self.assertEqual(res["to"], "Done")
+
+    def test_a_bare_ac_is_not_rescued_by_a_verified_marker(self) -> None:
+        # The release lane counts an AC with no Verify line as unspecified whatever markers sit
+        # under it. If this gate exempted it, the two would disagree and Done would not survive
+        # to tag time.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, "### AC1\n- Given x\n- **Verified:** yes (2026-07-27)\n")
+            with self.assertRaises(tr.GateRefusal):
+                _quiet(tr.transition, root, "US0001", "Done")
+
+    def test_the_transition_gate_and_the_release_lane_agree(self) -> None:
+        # The differential the review asked for: one file, both lanes, same verdict.
+        import verify_ac
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, "### AC1\n- Given x\n- **Verified:** yes (2026-07-27)\n")
+            path = root / "sdlc-studio" / "stories" / "US0001-x.md"
+            blocked = False
+            try:
+                _quiet(tr.transition, root, "US0001", "Done")
+            except tr.GateRefusal:
+                blocked = True
+            report = verify_ac.verify_story(path, dry_run=True, timeout=10, repo_root=root)
+            self.assertTrue(blocked, "the transition gate let a bare AC through")
+            self.assertGreaterEqual(report.unspecified, 1,
+                                    "the release lane did not see it unspecified")
 
     def test_force_still_overrides(self) -> None:
         with tempfile.TemporaryDirectory() as d:

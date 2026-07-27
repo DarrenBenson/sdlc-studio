@@ -1751,41 +1751,89 @@ class DiffScopedCheckTests(unittest.TestCase):
 
 
 class PlaceholderBaselineTests(unittest.TestCase):
-    """BG0304's widened sweep revealed 31 already-terminal artefacts carrying an unfilled body
-    scaffold. They are baselined so the check blocks a NEW instance without blocking on the
-    backlog it revealed - but the baseline must never be able to quieten something new."""
+    """The widened body sweep records pre-existing findings so it does not block on the backlog it
+    revealed. Every case here must DIE if the waiver is removed or made unconditional - the first
+    version of these tests passed with the feature patched out, which is the defect this project
+    files under vacuous verifiers."""
 
-    def _story(self, repo, sid, body):
+    def _story(self, repo, sid, token="{{what changes and why}}", status="Done"):
         d = repo / "sdlc-studio" / "stories"
         d.mkdir(parents=True, exist_ok=True)
         p = d / f"{sid}-x.md"
-        p.write_text(f"# {sid}: x\n\n> **Status:** Done\n\n## Summary\n\n{body}\n", encoding="utf-8")
+        p.write_text(f"# {sid}: x\n\n> **Status:** {status}\n\n## Summary\n\n{token}\n",
+                     encoding="utf-8")
         return p
 
-    def test_a_terminal_artefact_not_in_the_baseline_still_errors(self):
+    def _sev(self, path, repo):
+        validate._baseline_cache.clear()
+        return [f["severity"] for f in validate.validate_file(path, "story", repo_root=repo)
+                if f.get("rule") == "placeholder"]
+
+    def _baseline(self, repo, *entries):
+        (repo / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (repo / "sdlc-studio" / ".placeholder-baseline.txt").write_text(
+            "\n".join(entries) + "\n", encoding="utf-8")
+
+    def test_a_baselined_finding_is_downgraded_to_a_warning(self):
+        """Dies if the waiver is removed: without it this is an error."""
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
-            (repo / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-            (repo / "sdlc-studio" / ".placeholder-baseline.txt").write_text("US9998\n", encoding="utf-8")
-            validate._baseline_cache = None
-            p = self._story(repo, "US9999", "{{what changes and why}}")
-            sev = [f["severity"] for f in validate.validate_file(p, "story", repo_root=repo)
-                   if f.get("rule") == "placeholder"]
+            self._baseline(repo, "US9999:{{what changes and why}}")
+            sev = self._sev(self._story(repo, "US9999"), repo)
+            self.assertEqual(sev, ["warning"],
+                             "a recorded pre-existing finding must not block; got %r" % sev)
+
+    def test_a_different_token_in_a_baselined_artefact_still_errors(self):
+        """The waiver is per FINDING. Dies if it is keyed on the artefact instead."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            self._baseline(repo, "US9999:{{what changes and why}}")
+            sev = self._sev(self._story(repo, "US9999", token="{{a brand new blank}}"), repo)
             self.assertIn("error", sev,
-                          "an artefact absent from the baseline must still error - otherwise the "
-                          "baseline quietens new debt, which is the opposite of a ratchet")
+                          "a NEW blank in an already-listed record must still error - otherwise "
+                          "listing an artefact waives it for ever")
+
+    def test_an_artefact_absent_from_the_baseline_errors(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            self._baseline(repo, "US9998:{{what changes and why}}")
+            self.assertIn("error", self._sev(self._story(repo, "US9999"), repo))
 
     def test_an_absent_baseline_file_quietens_nothing(self):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             (repo / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-            validate._baseline_cache = None
-            p = self._story(repo, "US9999", "{{what changes and why}}")
-            sev = [f["severity"] for f in validate.validate_file(p, "story", repo_root=repo)
-                   if f.get("rule") == "placeholder"]
-            self.assertIn("error", sev,
-                          "a missing baseline must read as an empty set, never as a blanket waiver")
+            self.assertIn("error", self._sev(self._story(repo, "US9999"), repo))
 
+    def test_one_root_s_baseline_does_not_leak_into_another(self):
+        """Dies if the cache is a bare module global keyed on nothing."""
+        with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
+            ra, rb = Path(a), Path(b)
+            self._baseline(ra, "US9999:{{what changes and why}}")
+            (rb / "sdlc-studio").mkdir(parents=True, exist_ok=True)   # no baseline at all
+            pa, pb = self._story(ra, "US9999"), self._story(rb, "US9999")
+            validate._baseline_cache.clear()
+            sa = [f["severity"] for f in validate.validate_file(pa, "story", repo_root=ra)
+                  if f.get("rule") == "placeholder"]
+            sb = [f["severity"] for f in validate.validate_file(pb, "story", repo_root=rb)
+                  if f.get("rule") == "placeholder"]   # same id, different root, no clear()
+            self.assertEqual(sa, ["warning"])
+            self.assertIn("error", sb, "the first root's baseline leaked into the second")
+
+    def test_a_non_terminal_artefact_is_unaffected_by_the_baseline(self):
+        """The waiver only applies where the body sweep errors, which is at terminal status."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            self._baseline(repo, "US9999:{{what changes and why}}")
+            sev = self._sev(self._story(repo, "US9999", status="Draft"), repo)
+            self.assertNotIn("error", sev)
+
+    def test_repo_root_none_does_not_crash_the_checker(self):
+        """Path(None) raised TypeError past an OSError-only handler."""
+        with tempfile.TemporaryDirectory() as d:
+            p = self._story(Path(d), "US9999")
+            validate._baseline_cache.clear()
+            validate.validate_file(p, "story")   # no repo_root at all
 
 if __name__ == "__main__":
     unittest.main()

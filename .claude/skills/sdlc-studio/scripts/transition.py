@@ -143,11 +143,16 @@ def _acs_missing_evidence(text: str) -> tuple[list[str], list[str]]:
         # "not verified" and must block, symmetric with the executable path (which blocks a red or
         # stale verifier result). Accepting any-marker-present would let one `Verified: no` line
         # reopen exactly the bypass this closes.
+        if not toks:
+            # A bare AC is UNSPECIFIED, and a `Verified:` marker does not make it specified. The
+            # release lane counts it unspecified regardless of any marker and refuses on it, so
+            # exempting it here made the two gates disagree about the same file - a story closed
+            # Done all sprint and failing only at tag time, which is the defect this closes.
+            bare_unspecified.append(b.ac_id)
+            continue
         if b.verified_state == "yes":
             continue
-        if not toks:
-            bare_unspecified.append(b.ac_id)
-        elif toks[0].lower() in ("manual", "manually"):
+        if toks[0].lower() in ("manual", "manually"):
             bare_manual.append(b.ac_id)
     return bare_manual, bare_unspecified
 
@@ -912,7 +917,10 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
     breakdown for a story. Returns {id, type, from, to, index_synced, epic}.
 
     A story moving to Done is gated on its AC-verify result: red or never-run
-    executable ACs block the transition unless `force=True`. Scoped to stories - CR/epic/bug
+    executable ACs block the transition unless `force=True`. A manual criterion needs a passing
+    `**Verified:**` marker, and a criterion carrying NO `Verify:` line is refused the same way -
+    the release lane counts it unspecified whatever markers sit beneath it, so exempting it here
+    would put the two gates on different answers. Scoped to stories - CR/epic/bug
     closures are unaffected. Manual-only / AC-less stories are never blocked.
 
     `pending_fields` is a DRY-RUN-ONLY preview of writes the caller performs BEFORE the real

@@ -141,7 +141,10 @@ def cmd_report(args: argparse.Namespace) -> int:
         behaviours = data.get(sid, {})
         sc = load_scenario(sid)
         expected = {eb["id"] for eb in sc.get("expected_behaviours", [])}
-        missing = sorted(expected - set(behaviours))
+        # A forbidden behaviour that was never graded is not absent - it is UNGRADED. Leaving the
+        # forbidden ids out of this sweep let a scenario print "gate pass" having judged nothing
+        # about the behaviours it forbade.
+        missing = sorted((expected | set(forbidden_behaviours(sc))) - set(behaviours))
         for bid, r in sorted(behaviours.items()):
             if r.get("forbidden"):
                 mark = "OBSERVED" if r["verdict"] == "fail" else "not-observed"
@@ -151,7 +154,11 @@ def cmd_report(args: argparse.Namespace) -> int:
                 blocking_failed += 1
             print(f"{sid} {bid} [{r['severity']}]: {mark} - {r['evidence']}")
         for bid in missing:  # an ungraded blocking behaviour cannot pass the gate
-            sev = next(eb["severity"] for eb in sc["expected_behaviours"] if eb["id"] == bid)
+            # A forbidden behaviour has no expected_behaviours row - it is defined by its absence -
+            # so fall back to blocking, which is what "nobody checked whether the forbidden thing
+            # happened" means. Reading only the expected rows raised StopIteration.
+            sev = next((eb["severity"] for eb in sc.get("expected_behaviours", [])
+                        if eb["id"] == bid), "blocking")
             print(f"{sid} {bid} [{sev}]: UNGRADED")
             if sev == "blocking":
                 blocking_failed += 1

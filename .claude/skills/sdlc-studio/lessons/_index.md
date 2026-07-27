@@ -60,6 +60,7 @@ and from per-project memory (project-specific facts).
 | [LL0045](LL0045-rule-each-repair-closed-over-claimed-or-moved-not-just-reviewed.md) | Rule each repair CLOSED, OVER-CLAIMED or MOVED, not just reviewed | review, process |
 | [LL0046](LL0046-the-antidote-s-own-author-vibe-coded-check-the-contract-before-acting-not-after-the-gate-refuses.md) | The antidote's own author vibe-coded: check the contract BEFORE acting, not after the gate refuses | process, discipline |
 | [LL0047](LL0047-a-verifier-the-staleness-sweep-cannot-resolve-is-one-whose-test-can-vanish-unnoticed.md) | A verifier the staleness sweep cannot resolve is one whose test can vanish unnoticed | verification, acceptance-criteria, tooling, staleness |
+| [LL0048](LL0048-pin-a-review-agent-s-diff-by-sha-never-by-the-most-recent-n-commits.md) | Pin a review agent's diff by sha, never by 'the most recent N commits' | review, agents, git, scoping |
 
 ## Notes
 
