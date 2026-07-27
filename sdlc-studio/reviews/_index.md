@@ -28,3 +28,4 @@ The volatile project-state pointer lives in `LATEST.md` (not a numbered review).
 | [RV-0015](RV0015-design-rung-closing-review-three-rounds-three-rejections.md) | Design-rung closing review: three rounds, three rejections, one class | 2026-07-22 |
 | [RV-0016](RV0016-delivery-run-closing-review-two-adversarial-waves-both.md) | Delivery-run closing review: two adversarial waves, both APPROVE | 2026-07-23 |
 | [RV-0017](RV0017-cr0421-delivery-closing-review-ep0162-four-units-one.md) | CR0421 delivery closing review - EP0162 four units, one adversarial wave, APPROVE (MINOR-2 fixed, three declined) | 2026-07-26 |
+| [RV-0018](RV0018-ep0163-guided-init-closing-unified-review-v5-launch.md) | EP0163 guided init - closing unified review (v5-launch) | 2026-07-27 |

@@ -2,6 +2,8 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0237: A directive assembled from a conditional (brownfield adds "detected stack") needs the NEGATIVE case pinned too - the mutation making it...**
+- **L-0236: A read on the orientation hot path (`status`/`hint`) must never crash on a hand-mangled runtime file: degrade to absent and self-heal.**
 - **L-0235: An "offer the exit" affordance must be honest about what the exit actually does: `--file-and-close` refuses hard correctness lanes, so...**
 - **L-0234: A batch-scoping or record-based "make-it-pass-here" gate change must be proven it cannot make a genuinely-broken close pass.**
 - **L-0233: **A `Verify:` line is not verified until it is run.** Three delivered units carried `Verify:` references to test nodes that did not exist...**

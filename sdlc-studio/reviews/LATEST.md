@@ -1,20 +1,12 @@
-# Reviews - LATEST (anchor)
+# Latest unified review
 
-<!-- close-status:begin -->
-> **RUN-01KYF92Y closed goal-reached.** 4 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
-> Stamped by `sprint close` - edit the prose below, not this block.
-<!-- close-status:end -->
+> **Anchor:** RV0018 - EP0163 guided init closing review (v5-launch), 2026-07-27
 
-> **CR0421 delivered (EP0162, US0433-US0436) - closing review [RV0017](RV0017-cr0421-delivery-closing-review-ep0162-four-units-one.md).**
-> One independent adversarial wave (fresh context, RFC0051/D0059): **APPROVE**, no MAJOR. MINOR-2 fixed in-sprint (e0529b51); three residual findings declined with reasons (RETRO0074). Reviewer-of-record sign-off is OWED and is the operator's - the two-role gate holds Done until it lands.
+The most recent unified review is **RV0018**: the EP0163 guided-init epic (US0437-444),
+independently reviewed **APPROVE** (no MAJOR), two fixable MINOR findings repaired and
+mutation-proven before sign-off, operator ratified as reviewer of record. See
+`reviews/RV0018-ep0163-guided-init-closing-unified-review-v5-launch.md` and
+`reviews/sprint-review-record.md`.
 
-## What shipped
-
-- **US0433** - `sprint batch drop/add` mutate an open run's approved batch; drop releases the done-gate, distinct from Deferred.
-- **US0434** - the sprint close's conformance lane is scoped to its batch; out-of-batch debt no longer blocks an in-batch close; `--release` still judges everything.
-- **US0435** - a growing outstanding set names the way out honestly: file-and-close for deferrable items, "clear the lanes" for hard blockers.
-- **US0436** - review currency judged by the review RECORD, not the anchor's commit time; the byte-identical re-stamp trap is closed; the invariant is stated in `reference-sprint.md`.
-
-## Currency
-
-This anchor is current with the batch as of the close. Currency is judged by the review record (`.local/review-state.json`), per US0436.
+For volatile project state and orientation, see `reviews/LATEST.md`'s companion `sdlc-studio/reviews/`
+records and `/sdlc-studio status`.
