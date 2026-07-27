@@ -30,7 +30,7 @@
 - **When** it states the operator-facing surface is the `upgrade` type per SKILL.md's table, with migrate.py/project_upgrade.py/migrate_v3.py as the scripts under it
 - **Then** The upgrade-vs-migrate type naming is reconciled with SKILL.md's type table
 - **Verify:** grep "operator-facing surface is the .upgrade. type" sdlc-studio/trd.md
-- **Verified:** yes (2026-07-17)
+- **Verified:** no (2026-07-27)
 
 ## Revision History
 

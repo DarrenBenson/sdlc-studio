@@ -30,7 +30,7 @@ problem still real" stays model-instructed (delegates to RFC0002 when built).
 - **When** `audit_unit` runs on each
 - **Then** the first is not ready (issue `weak-AC`) and the second is ready
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit.py::WeakAcTests::test_tautology_is_weak
-- **Verified:** yes (2026-06-20)
+- **Verified:** no (2026-07-27)
 
 ### AC2: Unmet-deps and already-terminal
 
@@ -38,7 +38,7 @@ problem still real" stays model-instructed (delegates to RFC0002 when built).
 - **When** the audit runs
 - **Then** the first flags `unmet-deps` and the second flags `already-terminal`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit.py::DepsTerminalTests::test_already_terminal
-- **Verified:** yes (2026-06-20)
+- **Verified:** no (2026-07-27)
 
 ### AC3: JSON readiness report + non-zero exit
 
@@ -46,7 +46,7 @@ problem still real" stays model-instructed (delegates to RFC0002 when built).
 - **When** `audit.py check --ids ... --format json` runs
 - **Then** it prints a `summary` and exits non-zero (a unit is not ready)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit.py::CliTests::test_batch_json_and_exit
-- **Verified:** yes (2026-06-20)
+- **Verified:** no (2026-07-27)
 
 ### AC4: Workflow step documented
 

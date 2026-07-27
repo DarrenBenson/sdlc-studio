@@ -38,7 +38,7 @@
 - **When** stories are minted
 - **Then** the bare scaffold behaviour is byte-identical to today
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_two_backlogs.py -k test_seed_opt_out_restores_bare_scaffold
-- **Verified:** yes (2026-07-16)
+- **Verified:** no (2026-07-27)
 
 ## Revision History
 

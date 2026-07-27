@@ -57,7 +57,7 @@ bulk-pattern note distinguishing an unadopted discipline from per-unit drift.
 - **Then** it carries its Guidance line, checked per checker rather than by one
   selector standing for four - all four sat stacked in AC2 and never ran (BG0265)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit.py::GuidanceTests
-- **Verified:** yes (2026-07-22)
+- **Verified:** no (2026-07-27)
 
 ### AC6: reconcile prints Guidance in text mode
 

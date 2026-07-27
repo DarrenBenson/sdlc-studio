@@ -1,0 +1,27 @@
+# BG0326: Remote-aware id allocation silently degrades to local-only when the git query fails, minting the collision it exists to
+
+> **Status:** Open
+> **Severity:** Medium
+> **Points:** 3
+> **Affects:** .claude/skills/sdlc-studio/scripts/next_id.py
+> **Created:** 2026-07-27
+> **Created-by:** sdlc-studio file
+> **Raised-by:** Claude Fable 5 (adversarial audit wf_804ef18d); agent; skill v5.0.0
+
+## Summary
+
+`remote_ids` returns ([], False) identically for 'no origin' (silence correct) and 'origin exists but the query failed' (git absent, timeout, unfetched ref), and `allocate_number` then quietly allocates from local ids only; artifact.py, the mandated creation path, surfaces nothing, and text-mode output prints only the bare id - so a failed remote read can re-issue an id origin already holds, the LL0002 cross-repo collision class, from the one tool whose job is preventing it.
+
+## Steps to Reproduce
+
+Evidence (`remote_ids()` lines 130-146; `allocate_number()` lines 102-112; `cmd_allocate` lines 176-202; consumed at artifact.py:729): Lines 143-146 collapse failure and absence into one value; lines 109-111 ignore availability silently; line 183's only warning path requires `remote_available` True; AGENTS.md sells 'id allocation is remote-aware'.
+
+## Proposed Fix
+
+Return a tri-state from `remote_ids` (no-origin / scanned / failed) and, when an origin exists but the scan failed, print a loud warning in every output mode and refuse allocation under a --strict flag used by sprint pre-flight.
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d) | Filed |

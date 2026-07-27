@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 11 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 405 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **424** |
+| **Total** | **434** |
 
 ## All Changes
 
@@ -246,6 +246,16 @@
 | [CR-0422](CR0422-sprint-close-apply-signoff-derives-parent-epics-terminal.md) | sprint close --apply-signoff derives parent epics terminal but not the decomposed CRs above them, so an operator hand-transitions every delivered CR to Complete | Complete | Medium | Feature | 2026-07-26 | EP0164 |
 | [CR-0423](CR0423-transition-py-rejects-the-natural-positional-form-id.md) | transition.py rejects the natural positional form (ID Status); the first guess errors on argparse noise | Complete | Medium | Improvement | 2026-07-27 | EP0165 |
 | [CR-0424](CR0424-sprint-close-requires-an-rv-artifact-plus-review.md) | sprint close requires an RV artifact plus review_prep stamp even after critic sprint-review already recorded the APPROVE | Proposed | Low | Improvement | 2026-07-27 | -- |
+| [CR-0425](CR0425-the-mandated-creation-path-bypasses-the-persona-registry.md) | The mandated creation path bypasses the persona registry entirely: registry personas unconsulted since the day the layer | Proposed | High | Improvement | 2026-07-27 | -- |
+| [CR-0426](CR0426-prd-target-users-still-designates-the-legacy-personas.md) | PRD Target Users still designates the legacy personas.md four, contradicting the Cooper registry's declared Primary | Proposed | High | Improvement | 2026-07-27 | -- |
+| [CR-0427](CR0427-availability-nfr-contradicted-by-its-own-acceptance-signal.md) | Availability NFR contradicted by its own acceptance signal: PRD says sync 'degrades gracefully', TSD proves it aborts wi | Proposed | Medium | Improvement | 2026-07-27 | -- |
+| [CR-0428](CR0428-tsd-asserts-every-script-has-a-dedicated-test.md) | TSD asserts 'every script has a dedicated test' twice while its own coverage map says the rule is unenforced, and both d | Proposed | Medium | Improvement | 2026-07-27 | -- |
+| [CR-0429](CR0429-adr-011-no-longer-states-the-breakdown-gate.md) | ADR-011 no longer states the breakdown gate's actual firing rule: the goal-aware design-rung exemption (D0062) shipped b | Proposed | Medium | Improvement | 2026-07-27 | -- |
+| [CR-0430](CR0430-trd-s-shipped-surface-enumerations-and-status-claims.md) | TRD's shipped-surface enumerations and status claims have drifted: command types 30/41, gate lanes 14/17, drift kinds 5/ | Proposed | Medium | Improvement | 2026-07-27 | -- |
+| [CR-0431](CR0431-trd-and-d0020-rest-on-a-script-cannot.md) | TRD and D0020 rest on 'a script cannot observe token spend', falsified by run_state.session_tokens | Proposed | Medium | Improvement | 2026-07-27 | -- |
+| [CR-0432](CR0432-trd-and-personas-md-both-document-the-inverted.md) | TRD and personas.md both document the inverted porting flow: installed copy as back-port source vs the shipped forward-p | Proposed | Medium | Improvement | 2026-07-27 | -- |
+| [CR-0433](CR0433-non-discriminating-shared-verify-selectors-keep-landing-in.md) | Non-discriminating shared Verify selectors keep landing in Done stories after the advisory lint shipped; debt grew 17 to | Proposed | Medium | Improvement | 2026-07-27 | -- |
+| [CR-0434](CR0434-rfc0009-is-partially-superseded-by-rfc0038-complexity-based.md) | RFC0009 is partially superseded by RFC0038 (complexity-based estimation retired at r=0.03) but carries no supersession a | Proposed | Medium | Improvement | 2026-07-27 | -- |
 
 ## Archived Releases
 
