@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 7 |
+| Draft | 10 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 165 |
-| **Total** | **172** |
+| **Total** | **175** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -195,3 +195,6 @@
 | [EP0170](EP0170-the-shipped-surface-is-the-documented-surface-grooming.md) | The shipped surface is the documented surface: grooming, the open run and the run lifecycle | Draft | -- | -- | 2026-07-27 | 2026-07-27 |
 | [EP0171](EP0171-in-flight-sprint-controls-and-a-close-review.md) | In-flight sprint controls and a close review derived from one recorded entry | Draft | -- | -- | 2026-07-27 | 2026-07-27 |
 | [EP0172](EP0172-dead-surfaces-the-supersession-record-the-epic-index.md) | Dead surfaces: the supersession record, the epic-index columns and the flag that does nothing | Draft | -- | -- | 2026-07-27 | 2026-07-27 |
+| [EP0173](EP0173-footprint-and-criterion-checks-bite-instead-of-accumulating.md) | Footprint and criterion checks bite instead of accumulating | Draft | -- | -- | 2026-07-27 | 2026-07-27 |
+| [EP0174](EP0174-pay-down-the-debt-the-v5-scope-caps.md) | Pay down the debt the v5 scope caps baselined | Draft | -- | -- | 2026-07-27 | 2026-07-27 |
+| [EP0175](EP0175-detectors-for-the-classes-the-audit-had-to.md) | Detectors for the classes the audit had to find by hand | Draft | -- | -- | 2026-07-27 | 2026-07-27 |

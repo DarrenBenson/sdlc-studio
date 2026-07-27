@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 33 |
+| Ready | 40 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **479** |
+| **Total** | **486** |
 
 ## All Stories
 
@@ -390,6 +390,13 @@
 | [US0477](US0477-reconcile-derives-the-epic-index-s-stories-and.md) | reconcile derives the epic index's Stories and Deps cells from the census and syncs them | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
 | [US0478](US0478-the-mint-path-writes-the-canonical-epic-row.md) | The mint path writes the canonical epic row, and the shipped template declares the same columns | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
 | [US0479](US0479-delete-gate-s-dead-verify-batch-flag-and.md) | Delete gate's dead --verify-batch flag and the documentation claiming it does something | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
+| [US0480](US0480-validate-ratchets-the-footprint-and-criterion-warnings-against.md) | validate ratchets the footprint and criterion warnings against a baseline derived from the corpus | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
+| [US0481](US0481-sprint-plan-validates-the-units-in-its-batch.md) | sprint plan validates the units in its batch, not only their index rows | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
+| [US0482](US0482-the-baselined-duplicate-verify-groups-are-split-into.md) | The baselined duplicate Verify groups are split into discriminating selectors | Ready | EP0174 | 2026-07-27 | 2026-07-27 |
+| [US0483](US0483-the-falsified-token-observation-premise-is-replaced-wherever.md) | The falsified token-observation premise is replaced wherever the tracked tree asserts it | Ready | EP0174 | 2026-07-27 | 2026-07-27 |
+| [US0484](US0484-reconcile-reports-a-supersession-only-one-side-of.md) | reconcile reports a supersession only one side of the pair records | Ready | EP0175 | 2026-07-27 | 2026-07-27 |
+| [US0485](US0485-command-audit-reports-a-flag-whose-argparse-destination.md) | command_audit reports a flag whose argparse destination no line ever reads | Ready | EP0175 | 2026-07-27 | 2026-07-27 |
+| [US0486](US0486-every-progressive-loading-guide-cell-that-presents-a.md) | Every Progressive Loading Guide cell that presents a path resolves | Ready | EP0175 | 2026-07-27 | 2026-07-27 |
 
 ## Archived Releases
 

@@ -1,6 +1,7 @@
 # CR-0447: reconcile reports a supersession only one side records
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0175
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

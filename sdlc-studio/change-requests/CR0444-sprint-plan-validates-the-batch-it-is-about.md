@@ -1,6 +1,7 @@
 # CR-0444: sprint plan validates the batch it is about to plan, not only its index rows
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0173
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
