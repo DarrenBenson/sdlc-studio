@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0244: **The strongest evidence a fail-loud fix works is that it refuses its own repository.** Three did.**
+- **L-0243: **Put the evidence where the tooling actually reads it.** A `Verify:` line on a bug executes nothing - only a story's does.**
+- **L-0242: **Per-lane green is not suite green.** Parallel file-disjoint delivery removes file collisions, not semantic ones: a lane that changes a...**
+- **L-0241: **A widened check must not block on the backlog it reveals.** Widening the placeholder sweep was correct and immediately surfaced 31...**
 - **L-0240: Meeting the user where their fingers already are (the natural CLI form) removes a friction that a help string never fully fixes - accept...**
 - **L-0239: A regression test for an exemption must assert the input trips the rule WITHOUT the exemption, in the test itself - or a benign fixture...**
 - **L-0238: Evidence is a PASSING verdict, not a marker's presence: a gate that accepts "any `**Verified:**` line" accepts a human recording failure.**

@@ -88,3 +88,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0076](RETRO0076-gate-hardening-sprint-manual-ac-bypass-shell-hazard.md) | Gate-hardening sprint - manual-AC bypass, shell-hazard FPs, request derivation | 2026-07-27 | -- | -- |
 | [RETRO-0077](RETRO0077-catch-up-accounting-for-units-closed-ad-hoc.md) | Catch-up accounting for units closed ad-hoc before v5 (BG0271, BG0294-0299, EP0161, US0432) | 2026-07-27 | -- | -- |
 | [RETRO-0078](RETRO0078-transition-set-positional-form-us0446-cr0423.md) | transition set positional form (US0446, CR0423) | 2026-07-27 | -- | -- |
+| [RETRO-0079](RETRO0079-run-01kyhvwk-the-silent-success-sprint-21-units.md) | RUN-01KYHVWK: the silent-success sprint - 21 units, gates that now fail loud | 2026-07-27 | -- | -- |
