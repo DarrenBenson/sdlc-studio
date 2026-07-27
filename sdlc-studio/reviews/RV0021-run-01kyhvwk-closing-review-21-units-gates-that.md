@@ -75,7 +75,29 @@ could not refuse them, immediately before it did.
 
 ## Verdict
 
-<!-- pending: the three adversarial reviewers, then the operator as reviewer of record -->
+**APPROVE**, at the third asking.
+
+Two independent adversarial rounds both returned **REJECT**. Round one found 10 major and 9 minor
+findings over the delivery; round two ruled 9 of those 10 CLOSED by mutation and refused the tenth,
+because the repair had been silently reverted by a later unrelated commit - caught only by diffing
+the claim against HEAD rather than against the commit that made it. Round two also found that three
+repairs shipped with no regression coverage at all: reverting the provenance lane survived all 296
+gate tests, and restoring the naive fence toggle survived the entire 4,322-test suite.
+
+All of it is now closed. The reverted repair is restored, and the three unpinned ones carry
+regression tests that are mutation-checked in both directions: restoring each defect kills exactly
+its own tests, and all six pass with the code restored. Both suites green (4,624 and 370), gate
+green, drift zero, installed copy in sync, and every executable acceptance criterion on the five
+stories passes under `verify_ac`.
+
+The honest summary of this sprint is that its delivery was not trustworthy and its review was. The
+headline defect - a fenced illustration becoming a live shell verifier - was reported Fixed while it
+was still reproducible, and the author's own contribution to the repair was the weakest code in the
+batch, defended by two tests that survived the feature being deleted. Neither would have been caught
+by the suite, the gate, or the author. Both were caught by readers who did not write it.
+
+Signed off by Darren Benson as reviewer of record, 2026-07-27, after the independent rounds and
+their repairs.
 
 ## Revision History
 
