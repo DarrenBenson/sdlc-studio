@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 32 |
+| Open | 33 |
 | In Progress | 0 |
 | Fixed | 234 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **349** |
+| **Total** | **350** |
 
 ## All Bugs
 
@@ -67,6 +67,7 @@
 | [BG0347](BG0347-31-terminal-artefacts-carry-an-unfilled-body-scaffold.md) | 31 terminal artefacts carry an unfilled body scaffold, including 12 bugs with no symptom, steps or fix | Open | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0348](BG0348-an-all-skipped-run-is-still-stamped-green.md) | An all-skipped run is still stamped green for unittest, jest, vitest and go | Open | High | 2026-07-27 | 2026-07-27 |
 | [BG0349](BG0349-four-modules-still-carry-the-naive-fence-toggle.md) | Four modules still carry the naive fence toggle the parser fix replaced | Open | Medium | 2026-07-27 | 2026-07-27 |
+| [BG0350](BG0350-25-done-stories-carry-no-independent-critic-verdict.md) | 25 Done stories carry no independent critic verdict, waived rather than cleared | Open | Low | 2026-07-28 | 2026-07-28 |
 
 ## Archived Releases
 
