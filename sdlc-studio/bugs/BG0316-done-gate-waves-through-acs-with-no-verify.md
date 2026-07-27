@@ -25,3 +25,4 @@ Make `_done_verify_gate` treat a verifier-less AC the way gate.py does - block t
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d) | Filed |
+| 2026-07-27 | Claude Fable 5 | Triaged vs BG0300 (already-delivered advisory): distinct - BG0300's fix blocks a bare manual AC; this bug is the adjacent gap that an AC with no Verify line at all is waved through, making omission cheaper than honest declaration. Stays Open. |

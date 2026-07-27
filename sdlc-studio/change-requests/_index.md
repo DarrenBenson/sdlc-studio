@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 11 |
+| Proposed | 12 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 405 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **434** |
+| **Total** | **435** |
 
 ## All Changes
 
@@ -256,6 +256,7 @@
 | [CR-0432](CR0432-trd-and-personas-md-both-document-the-inverted.md) | TRD and personas.md both document the inverted porting flow: installed copy as back-port source vs the shipped forward-p | Proposed | Medium | Improvement | 2026-07-27 | -- |
 | [CR-0433](CR0433-non-discriminating-shared-verify-selectors-keep-landing-in.md) | Non-discriminating shared Verify selectors keep landing in Done stories after the advisory lint shipped; debt grew 17 to | Proposed | Medium | Improvement | 2026-07-27 | -- |
 | [CR-0434](CR0434-rfc0009-is-partially-superseded-by-rfc0038-complexity-based.md) | RFC0009 is partially superseded by RFC0038 (complexity-based estimation retired at r=0.03) but carries no supersession a | Proposed | Medium | Improvement | 2026-07-27 | -- |
+| [CR-0435](CR0435-a-finding-class-that-survives-two-audits-becomes.md) | A finding class that survives two audits becomes a deterministic detector | Proposed | High | Improvement | 2026-07-27 | -- |
 
 ## Archived Releases
 

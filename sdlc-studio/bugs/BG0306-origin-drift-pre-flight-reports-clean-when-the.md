@@ -25,3 +25,4 @@ Capture the fetch and rev-list results; on failure emit an 'origin unreachable -
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d) | Filed |
+| 2026-07-27 | Claude Fable 5 | Triaged vs US0099/US0231 (already-delivered advisory): distinct - those stories deliver fetch+compare and strict refusal on divergence; this bug is the fetch itself failing being reported clean, a path their ACs never cover. Stays Open. |
