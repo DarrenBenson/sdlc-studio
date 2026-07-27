@@ -7743,5 +7743,88 @@ class PlanFindingDispositionTests(unittest.TestCase):
                 self.assertEqual(sprint.plan_critic_refusal(rep), "")
 
 
+def _derivable_cr(root: Path, cr_num: int = 900, ep_num: int = 900,
+                  epic_status: str = "Done") -> str:
+    """A CR decomposed into one epic, wired both ways (`Decomposed-into` / `Parent`), the CR left
+    non-terminal. With the epic terminal the CR is derivable; otherwise it is not. Returns the CR
+    id. Minimal indexes so `transition` can sync the row it moves."""
+    crd = root / "sdlc-studio" / "change-requests"
+    crd.mkdir(parents=True, exist_ok=True)
+    cid = f"CR{cr_num:04d}"
+    (crd / f"{cid}-x.md").write_text(
+        f"# CR-{cr_num:04d}: c\n\n> **Status:** In Progress\n> **Priority:** Medium\n"
+        f"> **Decomposed-into:** EP{ep_num:04d}\n", encoding="utf-8")
+    (crd / "_index.md").write_text(
+        "# Change Requests\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+        f"| [CR-{cr_num:04d}]({cid}-x.md) | c | In Progress |\n", encoding="utf-8")
+    epd = root / "sdlc-studio" / "epics"
+    epd.mkdir(parents=True, exist_ok=True)
+    eid = f"EP{ep_num:04d}"
+    (epd / f"{eid}-x.md").write_text(
+        f"# {eid}: e\n\n> **Status:** {epic_status}\n> **Parent:** {cid}\n", encoding="utf-8")
+    (epd / "_index.md").write_text(
+        "# Epics\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+        f"| [{eid}]({eid}-x.md) | e | {epic_status} |\n", encoding="utf-8")
+    return cid
+
+
+class ApplySignoffRequestDerivationTests(unittest.TestCase):
+    """US0445 (CR0422): the close tail derives a parent CR/RFC terminal once its children are all
+    terminal, so a delivered request is not left for a manual `reconcile apply`."""
+
+    @staticmethod
+    def _status(root: Path, cid: str) -> str:
+        import sys as _sys
+        _sys.path.insert(0, str(SCRIPT.parent))
+        from lib import sdlc_md  # noqa: PLC0415
+        hit = sdlc_md.find_by_id(root, cid)
+        return sdlc_md.canonical_status(
+            sdlc_md.extract_field(hit[0].read_text(encoding="utf-8"), "Status"),
+            sdlc_md.status_vocab("cr", root))
+
+    def test_derives_parent_request_when_all_children_terminal(self) -> None:  # AC1
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cid = _derivable_cr(root, epic_status="Done")
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                derived = _load()._derive_parent_requests(root)
+            self.assertIn(cid, derived)
+            self.assertEqual(self._status(root, cid), "Complete")
+
+    def test_leaves_request_with_a_nonterminal_child(self) -> None:  # AC2
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cid = _derivable_cr(root, epic_status="In Progress")
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                derived = _load()._derive_parent_requests(root)
+            self.assertEqual(derived, [])
+            self.assertEqual(self._status(root, cid), "In Progress")
+
+    def test_names_each_derived_request(self) -> None:  # AC3
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cid = _derivable_cr(root, epic_status="Done")
+            state = _close_state(root)
+            _signoffable_story(root)
+            _close_retro(root)
+            out = io.StringIO()
+            mod = _load()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                mod._apply_signoff_tail(root, state, units=["US0101"], retro_arg="RETRO0001")
+            self.assertIn(cid, out.getvalue())
+            self.assertIn("derived parent request", out.getvalue())
+
+    def test_no_parent_request_is_safe(self) -> None:  # AC4
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1, status="Open")           # a batch with no parent request at all
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                derived = _load()._derive_parent_requests(root)
+            self.assertEqual(derived, [])
+
+
 if __name__ == "__main__":
     unittest.main()

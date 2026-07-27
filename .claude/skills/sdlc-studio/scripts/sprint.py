@@ -4122,6 +4122,19 @@ def _derive_parent_epics(root, units=None) -> list[str]:
     return moved
 
 
+def _derive_parent_requests(root) -> list[str]:
+    """Transition a parent request (CR/RFC) whose children are ALL terminal to its successful
+    terminal - the step the epic derivation leaves undone. `apply-signoff` derived the epics this
+    run completed, but a CR/RFC ABOVE those epics was left non-terminal, so an operator had to
+    hand-transition every delivered request to Complete. Delegates to the reconcile
+    request-derivation, which asks the SAME predicate the terminal gate enforces (every child
+    resolved) and goes through `transition`, so the index row, any parent cascade and the telemetry
+    all happen exactly as a hand transition would. A request with any non-terminal child is refused
+    by that gate and left unchanged; returns the ids actually derived."""
+    import reconcile  # noqa: PLC0415
+    return reconcile.apply_derivable_requests(root).get("synced", [])
+
+
 def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -> int:
     """The close tail (US0237): derive parent epics terminal, write the run's velocity row,
     and run a final reconcile. The per-unit cascade ticks each epic's breakdown checkbox but
@@ -4134,6 +4147,13 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
     derived = _derive_parent_epics(root, units)
     if derived:
         print(f"apply-signoff: derived {', '.join(derived)} Done (all children terminal)")
+    # A request ABOVE those epics reaches its terminal by derivation too - run it AFTER the epics,
+    # so a CR/RFC whose last child was an epic just marked Done is now itself derivable and the
+    # close no longer leaves it for a manual `reconcile apply`.
+    derived_requests = _derive_parent_requests(root)
+    if derived_requests:
+        print(f"apply-signoff: derived parent request(s) {', '.join(derived_requests)} terminal "
+              f"(all children resolved)")
     # The chain wrote the handoff one step BEFORE this cascade transitioned anything, so the
     # document and its worklist described units as remaining that the close then completed.
     # Re-render it here, against this run's own batch, so the tail reports the state the close
