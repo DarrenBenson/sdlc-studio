@@ -25,7 +25,6 @@
   precedence over the ordinary pipeline ladder - so the operator is walked to the first plan
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::OnboardingHintTests::test_hint_resumes_guided_onboarding_while_in_progress
 - **Verified:** yes (2026-07-27)
-- **Verified:** yes (2026-07-26)
 
 ### AC2: once onboarding is complete or absent, the normal ladder resumes
 
@@ -34,7 +33,6 @@
 - **Then** the onboarding branch yields nothing and the ordinary pipeline hint is used
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::OnboardingHintTests::test_completed_or_absent_onboarding_falls_through
 - **Verified:** yes (2026-07-27)
-- **Verified:** yes (2026-07-26)
 
 ## Revision History
 

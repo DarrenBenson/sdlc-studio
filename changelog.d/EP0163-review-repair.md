@@ -1,0 +1,2 @@
+<!-- section: Fixed -->
+- **Guided onboarding - robustness repairs from the closing review (EP0163).** `read_onboarding` treats a corrupt or shape-invalid checkpoint as absent instead of raising, so the read-only orientation path (`status`/`hint`) can never crash on a mangled `.local` file and `init guided` self-heals into a fresh checkpoint. The TSD stage's "detected stack" clause is now pinned to brownfield by a regression test (a greenfield directive must not claim a stack).

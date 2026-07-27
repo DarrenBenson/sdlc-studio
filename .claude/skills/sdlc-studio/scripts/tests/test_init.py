@@ -395,6 +395,31 @@ class GuidedInitTests(unittest.TestCase):
             self.assertIn("sdlc-studio/tsd.md", rs["created"])
             self.assertIn("stack", rs["directive"])   # brownfield names the stack
 
+    def test_tsd_directive_omits_stack_on_greenfield(self) -> None:
+        # US0440 AC1 scopes the "detected stack" clause to brownfield: a greenfield project has no
+        # stack to detect, so its directive must not claim one.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            init.start_onboarding(root, path="greenfield")
+            self.assertNotIn("stack", init.stage_tsd(root)["directive"])
+
+    def test_corrupt_or_shape_invalid_state_reads_as_absent(self) -> None:
+        # A hand-mangled `.local` checkpoint must never crash the read-only orientation path; it is
+        # treated as absent, so `cmd_guided` self-heals and `status`/`hint` fall through.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = init.onboarding_path(root)
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("{not valid json", encoding="utf-8")
+            self.assertIsNone(init.read_onboarding(root))
+            p.write_text('{"path": "greenfield"}', encoding="utf-8")  # no "stages" key
+            self.assertIsNone(init.read_onboarding(root))
+            # cmd_guided self-heals a corrupt file into a fresh, valid checkpoint.
+            p.write_text("{broken", encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                init.main(["guided", "--root", str(root)])
+            self.assertEqual(init.first_incomplete(init.read_onboarding(root)), "agents")
+
     def test_trd_tsd_advance_to_personas(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

@@ -184,10 +184,20 @@ def classify_path(root: Path | str) -> str:
 
 
 def read_onboarding(root: Path | str) -> dict | None:
+    """The checkpoint, or None when there is none. A corrupt or shape-invalid file is treated as
+    absent rather than raised: this is read on the hot orientation path (`status`/`hint`), and a
+    hand-mangled `.local` runtime file must never crash that read. `cmd_guided` then self-heals by
+    starting fresh (or the operator runs `--reset`)."""
     p = onboarding_path(root)
     if not p.is_file():
         return None
-    return json.loads(p.read_text(encoding="utf-8"))
+    try:
+        state = json.loads(p.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+    if not isinstance(state, dict) or not isinstance(state.get("stages"), list):
+        return None
+    return state
 
 
 def write_onboarding(root: Path | str, state: dict) -> dict:
