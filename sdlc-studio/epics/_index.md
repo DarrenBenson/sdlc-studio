@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 0 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 164 |
+| Done | 165 |
 | **Total** | **165** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -187,4 +187,4 @@
 | [EP0162](EP0162-a-sprint-batch-is-mutable-and-the-close.md) | A sprint batch is mutable and the close converges honestly | Done | -- | -- | 2026-07-26 | 2026-07-26 |
 | [EP0163](EP0163-guided-init-one-orchestrated-onboarding-flow-to-a.md) | Guided init: one orchestrated onboarding flow to a first sprint plan | Done | -- | -- | 2026-07-26 | 2026-07-26 |
 | [EP0164](EP0164-apply-signoff-derives-parent-requests-terminal-not-only.md) | apply-signoff derives parent requests terminal, not only epics | Done | -- | -- | 2026-07-27 | 2026-07-27 |
-| [EP0165](EP0165-transition-py-accepts-the-natural-positional-invocation.md) | transition.py accepts the natural positional invocation | Draft | -- | -- | 2026-07-27 | 2026-07-27 |
+| [EP0165](EP0165-transition-py-accepts-the-natural-positional-invocation.md) | transition.py accepts the natural positional invocation | Done | -- | -- | 2026-07-27 | 2026-07-27 |

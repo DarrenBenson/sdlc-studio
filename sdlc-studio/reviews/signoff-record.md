@@ -278,3 +278,4 @@
 | US0443 | Darren Benson (operator) | - | sdlc-studio (guided-init author) | 2026-07-27 | - |
 | US0444 | Darren Benson (operator) | - | sdlc-studio (guided-init author) | 2026-07-27 | - |
 | US0445 | Darren Benson (operator) | - | sdlc-studio (gate-hardening author) | 2026-07-27 | - |
+| US0446 | Darren Benson (operator) | - | sdlc-studio (CR0423 author) | 2026-07-27 | - |

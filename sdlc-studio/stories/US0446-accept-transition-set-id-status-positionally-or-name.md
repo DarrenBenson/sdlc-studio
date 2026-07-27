@@ -1,6 +1,6 @@
 # US0446: Accept transition set ID Status positionally, or name the exact fix in the error
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0423
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

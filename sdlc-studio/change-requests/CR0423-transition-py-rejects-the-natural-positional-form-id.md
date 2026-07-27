@@ -1,6 +1,6 @@
 # CR-0423: transition.py rejects the natural positional form (ID Status); the first guess errors on argparse noise
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0165
 > **Priority:** Medium
 > **Type:** Improvement

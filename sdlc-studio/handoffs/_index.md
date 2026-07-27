@@ -44,3 +44,4 @@ next `sprint plan --worklist` reads back.
 | [HO-0029](HO0029-deliver-cr0421-a-sprint-close-can-converge-batch.md) | Deliver CR0421: a sprint close can converge - batch mutable (drop/add), correctness batch-scoped, growing set offers the bounded exit, currency judged by the review record | 2026-07-26 |
 | [HO-0030](HO0030-ship-guided-onboarding-one-command-walks-a-new.md) | Ship guided onboarding: one command walks a new user from zero to a first sprint plan, greenfield and brownfield alike | 2026-07-27 |
 | [HO-0031](HO0031-harden-the-delivery-gates-and-finish-request-derivation.md) | Harden the delivery gates and finish request derivation: close the manual-AC Done bypass, stop shell-hazard false positives, and derive parent requests at close | 2026-07-27 |
+| [HO-0032](HO0032-accept-the-natural-positional-form-of-transition-set.md) | Accept the natural positional form of transition set so the obvious first attempt works | 2026-07-27 |

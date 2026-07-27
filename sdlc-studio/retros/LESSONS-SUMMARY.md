@@ -2,6 +2,7 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0240: Meeting the user where their fingers already are (the natural CLI form) removes a friction that a help string never fully fixes - accept...**
 - **L-0239: A regression test for an exemption must assert the input trips the rule WITHOUT the exemption, in the test itself - or a benign fixture...**
 - **L-0238: Evidence is a PASSING verdict, not a marker's presence: a gate that accepts "any `**Verified:**` line" accepts a human recording failure.**
 - **L-0237: A directive assembled from a conditional (brownfield adds "detected stack") needs the NEGATIVE case pinned too - the mutation making it...**

@@ -1,6 +1,6 @@
 # EP0165: transition.py accepts the natural positional invocation
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 2
 > **Parent:** CR0423
 > **Created:** 2026-07-27
@@ -14,7 +14,7 @@ Decomposed from CR0423. Delivers the work CR0423 requested.
 
 ## Story Breakdown
 
-- [ ] [US0446: Accept transition set ID Status positionally, or name the exact fix in the error](../stories/US0446-accept-transition-set-id-status-positionally-or-name.md)
+- [x] [US0446: Accept transition set ID Status positionally, or name the exact fix in the error](../stories/US0446-accept-transition-set-id-status-positionally-or-name.md)
 
 ## Revision History
 
