@@ -1,6 +1,7 @@
 # CR-0453: The plan-time test strategy governs proof per unit but not execution cost, and is printed rather than recorded
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0177
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

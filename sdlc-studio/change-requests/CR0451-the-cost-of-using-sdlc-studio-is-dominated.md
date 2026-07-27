@@ -1,6 +1,7 @@
 # CR-0451: The cost of using sdlc-studio is dominated by the per-commit gate, not by the work - and that is an adoption blocker
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0177
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** L
@@ -23,6 +24,8 @@ Who: every consuming project, and the product's core claim. sdlc-studio is adopt
 
 ## Acceptance Criteria
 
+- [ ] A full-suite run happens only at a BOUNDARY - push, release, and sprint close - never per commit. Everywhere else the gate runs what the change can reach.
+- [ ] The suite is skipped entirely when the test-relevant surface is unchanged since the last green run, judged by a content hash of that surface rather than per-commit file types, so consecutive paperwork commits and a re-run of a close pay nothing.
 - [ ] Test selection is by changed surface rather than binary: a commit runs the tests reachable from the files it touches, derived from the import graph the repo map already builds, not the whole suite.
 - [ ] The safety net is stated and enforced: the full suite still runs somewhere it cannot be skipped - a push or release lane - so selection trades per-commit latency for a later full run, never for less coverage.
 - [ ] A selected run reports what it EXCLUDED and why, so a developer can see the gate made a judgement rather than silently testing less; a file whose dependents cannot be resolved falls back to running everything, never to running nothing.
@@ -34,3 +37,4 @@ Who: every consuming project, and the product's core claim. sdlc-studio is adopt
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (measured over RUN-01KYHVWK, 30 commits) | Raised |
+| 2026-07-28 | Darren Benson (operator) | Two policy rules added: boundary-only full runs, and skip when the relevant surface is unchanged since the last green run |

@@ -1,6 +1,7 @@
 # CR-0452: A review agent mutation-testing in the live working tree can silently revert the author's code
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0177
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

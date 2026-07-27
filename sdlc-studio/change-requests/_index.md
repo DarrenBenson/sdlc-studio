@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 4 |
+| Proposed | 0 |
 | Approved | 0 |
-| In Progress | 25 |
+| In Progress | 31 |
 | Complete | 405 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **453** |
+| **Total** | **455** |
 
 ## All Changes
 
@@ -271,10 +271,12 @@
 | [CR-0447](CR0447-reconcile-reports-a-supersession-only-one-side-records.md) | reconcile reports a supersession only one side records | In Progress | Medium | Improvement | 2026-07-27 | EP0175 |
 | [CR-0448](CR0448-command-audit-reports-a-flag-whose-destination-is.md) | command_audit reports a flag whose destination is never read - and is proven on verify_batch | In Progress | Medium | Improvement | 2026-07-27 | EP0175 |
 | [CR-0449](CR0449-the-progressive-loading-guide-s-path-cells-resolve.md) | The Progressive Loading Guide's path cells resolve | In Progress | Medium | Improvement | 2026-07-27 | EP0175 |
-| [CR-0450](CR0450-a-delegated-agent-that-stalls-silently-is-indistinguishable.md) | A delegated agent that stalls silently is indistinguishable from a slow one, and the doctrine has no detection rule | Proposed | High | Improvement | 2026-07-27 | -- |
-| [CR-0451](CR0451-the-cost-of-using-sdlc-studio-is-dominated.md) | The cost of using sdlc-studio is dominated by the per-commit gate, not by the work - and that is an adoption blocker | Proposed | High | Improvement | 2026-07-27 | -- |
-| [CR-0452](CR0452-a-review-agent-mutation-testing-in-the-live.md) | A review agent mutation-testing in the live working tree can silently revert the author's code | Proposed | High | Improvement | 2026-07-27 | -- |
-| [CR-0453](CR0453-the-plan-time-test-strategy-governs-proof-per.md) | The plan-time test strategy governs proof per unit but not execution cost, and is printed rather than recorded | Proposed | High | Improvement | 2026-07-28 | -- |
+| [CR-0450](CR0450-a-delegated-agent-that-stalls-silently-is-indistinguishable.md) | A delegated agent that stalls silently is indistinguishable from a slow one, and the doctrine has no detection rule | In Progress | High | Improvement | 2026-07-27 | EP0177 |
+| [CR-0451](CR0451-the-cost-of-using-sdlc-studio-is-dominated.md) | The cost of using sdlc-studio is dominated by the per-commit gate, not by the work - and that is an adoption blocker | In Progress | High | Improvement | 2026-07-27 | EP0177 |
+| [CR-0452](CR0452-a-review-agent-mutation-testing-in-the-live.md) | A review agent mutation-testing in the live working tree can silently revert the author's code | In Progress | High | Improvement | 2026-07-27 | EP0177 |
+| [CR-0453](CR0453-the-plan-time-test-strategy-governs-proof-per.md) | The plan-time test strategy governs proof per unit but not execution cost, and is printed rather than recorded | In Progress | High | Improvement | 2026-07-28 | EP0177 |
+| [CR-0454](CR0454-the-sprint-close-invalidates-itself-its-own-output.md) | The sprint close invalidates itself: its own output makes the review stale and each retry pays a full suite | In Progress | High | Improvement | 2026-07-28 | EP0177 |
+| [CR-0455](CR0455-nothing-ever-asks-whether-a-test-still-earns.md) | Nothing ever asks whether a test still earns its place, so the suite only grows | In Progress | Medium | Improvement | 2026-07-28 | EP0177 |
 
 ## Archived Releases
 
