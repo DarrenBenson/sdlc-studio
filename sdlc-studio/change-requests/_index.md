@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 14 |
+| Proposed | 15 |
 | Approved | 0 |
 | In Progress | 2 |
 | Complete | 405 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **439** |
+| **Total** | **440** |
 
 ## All Changes
 
@@ -261,6 +261,7 @@
 | [CR-0437](CR0437-gate-py-verify-batch-is-a-dead-flag.md) | gate.py --verify-batch is a dead flag: run_gate accepts verify_batch and never reads it | Proposed | Low | Improvement | 2026-07-27 | -- |
 | [CR-0438](CR0438-done-stories-carry-unresolved-open-questions-with-no.md) | Done stories carry unresolved Open Questions with no gate requiring resolution before terminal status (14 stories) | Proposed | Low | Improvement | 2026-07-27 | -- |
 | [CR-0439](CR0439-grooming-a-refine-minted-skeleton-has-no-help.md) | Grooming a refine-minted skeleton has no help page and no pointer to the AC shape, so each groom re-derives it | Proposed | Medium | Improvement | 2026-07-27 | -- |
+| [CR-0440](CR0440-an-open-sprint-run-is-invisible-to-status.md) | An open sprint run is invisible to status, the one command the doctrine names for session-start re-anchoring | Proposed | Medium | Improvement | 2026-07-27 | -- |
 
 ## Archived Releases
 
