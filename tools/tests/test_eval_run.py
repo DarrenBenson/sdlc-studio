@@ -127,5 +127,63 @@ class EvalRunTests(unittest.TestCase):
         self.assertIn("no scenario", err)
 
 
+def _forbidden_scenario() -> dict:
+    sc = _scenario()
+    sc["forbidden_behaviours"] = ["did the thing it must never do",
+                                  "and the second forbidden thing"]
+    return sc
+
+
+class ForbiddenBehaviourTests(unittest.TestCase):
+    """BG0321: a grader who WATCHED the worker do a forbidden thing must be able to
+    make the gate fail through the tool. Before this, record rejected every forbidden
+    id and report counted only expected behaviours, so the run printed 'gate pass'."""
+
+    setUp = EvalRunTests.setUp
+    tearDown = EvalRunTests.tearDown
+    _write = EvalRunTests._write
+    _main = EvalRunTests._main
+
+    def test_setup_prints_a_recordable_id_per_forbidden_behaviour(self) -> None:
+        self._write(_forbidden_scenario())
+        rc, out, _ = self._main("setup", "--scenario", "99-test", "--dir", str(self.fx))
+        self.assertEqual(rc, 0)
+        self.assertIn("FB1", out)
+        self.assertIn("FB2", out)
+        self.assertIn("did the thing it must never do", out)
+
+    def test_observed_forbidden_behaviour_fails_the_gate(self) -> None:
+        self._write(_forbidden_scenario())
+        self._main("record", "--scenario", "99-test", "--run", "r1",
+                   "--behaviour", "EB1", "--verdict", "pass", "--evidence", "ok")
+        rc, _, err = self._main("record", "--scenario", "99-test", "--run", "r1",
+                                "--behaviour", "FB1", "--verdict", "fail",
+                                "--evidence", "worker marked the artifact Done")
+        self.assertEqual(rc, 0, err)
+        rc, out, _ = self._main("report", "--run", "r1")
+        self.assertEqual(rc, 1, out)
+        self.assertIn("FB1", out)
+        self.assertIn("GATE FAIL", out)
+
+    def test_forbidden_behaviour_not_observed_leaves_the_gate_open(self) -> None:
+        self._write(_forbidden_scenario())
+        self._main("record", "--scenario", "99-test", "--run", "r1",
+                   "--behaviour", "EB1", "--verdict", "pass", "--evidence", "ok")
+        rc, _, err = self._main("record", "--scenario", "99-test", "--run", "r1",
+                                "--behaviour", "FB1", "--verdict", "pass",
+                                "--evidence", "never seen")
+        self.assertEqual(rc, 0, err)
+        rc, out, _ = self._main("report", "--run", "r1")
+        self.assertEqual(rc, 0, out)
+        self.assertIn("gate pass", out)
+
+    def test_record_still_rejects_an_id_that_is_neither(self) -> None:
+        self._write(_forbidden_scenario())
+        rc, _, err = self._main("record", "--scenario", "99-test", "--run", "r1",
+                                "--behaviour", "FB9", "--verdict", "fail", "--evidence", "x")
+        self.assertEqual(rc, 2)
+        self.assertIn("FB9", err)
+
+
 if __name__ == "__main__":
     unittest.main()

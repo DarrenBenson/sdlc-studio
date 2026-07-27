@@ -916,5 +916,71 @@ class UngroomedMarkerTests(unittest.TestCase):
                 self.assertIn("\n\n## Revision History", body)   # a blank line precedes it
 
 
+PERSONA_INDEX = (
+    "# Persona Index\n\n"
+    "## Primary (the design target)\n\n"
+    "- [Maya Okafor](maya-okafor-founder-engineer.md) - solo founder-engineer. Well-formed.\n\n"
+    "## Negative (deliberately not designed for)\n\n"
+    "- [Trevor Hale](trevor-hale-enterprise-pm.md) - enterprise delivery manager.\n"
+)
+
+
+def _registry(root: Path) -> None:
+    """Give the fixture project a design-persona registry to resolve against."""
+    pdir = root / "sdlc-studio" / "personas"
+    pdir.mkdir(parents=True, exist_ok=True)
+    (pdir / "index.md").write_text(PERSONA_INDEX, encoding="utf-8")
+    for stem in ("maya-okafor-founder-engineer", "trevor-hale-enterprise-pm"):
+        (pdir / f"{stem}.md").write_text(f"# {stem}\n", encoding="utf-8")
+
+
+def _persona_of(root: Path, story_id: str) -> str | None:
+    return sdlc_md.extract_field(
+        sdlc_md.find_by_id(root, story_id)[0].read_text(encoding="utf-8"), "Persona")
+
+
+class RefinePersonaTests(unittest.TestCase):
+    """US0449: the bulk minting paths resolve the design persona exactly as `new` does, so
+    the resolution lives in the commands people actually run - not only in the single-mint
+    path a reader is told to use."""
+
+    def test_refined_stories_carry_a_resolved_persona(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _registry(root)
+            _cr(root, "CR0001", ["the request is satisfied"])
+            res = refine.refine(root, "CR0001", "The epic",
+                                [("A", 2, None), ("B", 3, None)], skip_personas=True)
+            self.assertTrue(res["stories"])
+            for sid in res["stories"]:
+                self.assertEqual(_persona_of(root, sid), "Maya Okafor",
+                                 f"{sid} was minted with no resolved design persona")
+
+    def test_new_batch_and_refine_agree_on_the_resolved_persona(self) -> None:
+        # One test comparing the THREE paths, so a divergence in any of them fails here rather
+        # than being invisible to three assertions that each only know their own path.
+        artifact = loader.load_script("artifact")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _registry(root)
+            _cr(root, "CR0001", ["the request is satisfied"])
+            res = refine.refine(root, "CR0001", "The epic",
+                                [("A", 2, None), ("B", 3, None)], skip_personas=True)
+            epic = res["epic"]
+            by_refine = _persona_of(root, res["stories"][0])
+            by_new = sdlc_md.extract_field(
+                Path(artifact.new(root, "story", "minted one at a time",
+                                  {"epic": epic, "affects": "src/CR0001.py"})["path"]
+                     ).read_text(encoding="utf-8"), "Persona")
+            created = artifact.new_batch(root, "story", [
+                {"title": "minted in a batch", "epic": epic, "affects": "src/CR0001.py"}])
+            by_batch = sdlc_md.extract_field(
+                Path(created["created"][0]["path"]).read_text(encoding="utf-8"), "Persona")
+            self.assertEqual({"refine": by_refine, "new": by_new, "batch": by_batch},
+                             {"refine": "Maya Okafor", "new": "Maya Okafor",
+                              "batch": "Maya Okafor"},
+                             "the three minting paths disagree about the resolved persona")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,7 @@
 # BG0329: Test-relevance measurement records only paths that exist, so a commit deleting a suite-read file outside the legacy dirs
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
@@ -19,6 +20,16 @@ Evidence (`_module_read_paths`'s _record helper, line 1848; `_matches_relevant` 
 ## Proposed Fix
 
 In _record, keep a measured path that fails the existence check instead of dropping it (fall back to the recorded file/dir kind for classification), so staged deletions of suite-read files still count as test-relevant.
+
+## Acceptance Criteria
+
+### AC1: deleting a suite-read file stays in the measurement
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** `pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::TestRelevantSetTests`, written red before the fix and green after
+- **Verified:** yes (2026-07-27, functional)
 
 ## Revision History
 

@@ -99,16 +99,49 @@ def index_row_ids(type_: str, repo_root: Path) -> list[int]:
     return sorted(set(ids))
 
 
-def allocate_number(type_: str, repo_root: Path | str, remote: bool = True) -> int:
+# The three answers a remote id scan can give. They are three, not two, because "there is
+# no origin to read" and "there is an origin and the read FAILED" have opposite consequences:
+# the first is silence, the second means the ids just allocated may already exist on origin.
+REMOTE_ABSENT = "absent"    # no origin configured (or not a checkout) - nothing to scan
+REMOTE_SCANNED = "scanned"  # origin's tree was read; its ids are authoritative
+REMOTE_FAILED = "failed"    # an origin may hold ids and the scan did not happen
+
+
+class RemoteScanError(RuntimeError):
+    """A remote id scan an allocation depended on did not happen (raised under strict)."""
+
+
+def remote_scan_warning(type_: str, state: str) -> str | None:
+    """The one warning line for a scan that did not happen, or None when there is nothing to
+    say. Library and CLI both derive their message here, so the two cannot drift apart."""
+    if state != REMOTE_FAILED:
+        return None
+    return (f"origin id scan for {type_} FAILED (git unavailable, timed out, or origin's "
+            "branch not fetched) - allocating from LOCAL ids only, so the id may collide "
+            "with one origin already holds. Run `git fetch origin` and retry.")
+
+
+def allocate_number(type_: str, repo_root: Path | str, remote: bool = True,
+                    strict: bool = False) -> int:
     """The next free numeric id: above the max of local files, index rows, and (when
     available) origin/main - so a deleted-but-still-indexed id, or an id only on the remote,
-    is never re-issued. `remote=False` skips the read-only git lookup."""
+    is never re-issued. `remote=False` skips the read-only git lookup.
+
+    A remote scan that FAILED (as opposed to finding no origin) warns on stderr, because the
+    number handed back is then a local-only guess; `strict=True` raises RemoteScanError
+    instead of minting it. The warning lives here, not in the CLI, because artifact.py and
+    file_finding.py - the mandated creation paths - allocate through this function."""
     root = Path(repo_root)
     base = max([0, *local_ids(type_, root), *index_row_ids(type_, root)])
     if remote:
-        rids, available = remote_ids(type_, root)
-        if available and rids:
+        rids, state = remote_ids(type_, root)
+        if state == REMOTE_SCANNED and rids:
             base = max(base, max(rids))
+        warning = remote_scan_warning(type_, state)
+        if warning:
+            if strict:
+                raise RemoteScanError(warning)
+            print(f"warning: {warning}", file=sys.stderr)
     return base + 1
 
 
@@ -127,11 +160,30 @@ def origin_default_branch(repo_root: Path) -> str:
     return "main"
 
 
-def remote_ids(type_: str, repo_root: Path) -> tuple[list[int], bool]:
-    """Numeric IDs on origin's default branch for `type_`. Returns (ids, available).
+def _origin_configured(repo_root: Path) -> bool:
+    """Whether an `origin` remote is configured for `repo_root`.
+
+    True when the question itself could not be answered (git absent, hung): a remote we
+    cannot rule out is treated as one that might hold ids, never as silence. Outside a
+    checkout the key is simply unset, which is the honest `no origin` answer."""
+    try:
+        r = subprocess.run(
+            ["git", "config", "--get", "remote.origin.url"],
+            capture_output=True, text=True, cwd=str(repo_root), check=False, timeout=10)
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return True
+    return r.returncode == 0 and bool(r.stdout.strip())
+
+
+def remote_ids(type_: str, repo_root: Path) -> tuple[list[int], str]:
+    """Numeric IDs on origin's default branch for `type_`. Returns (ids, state).
 
     Uses `git ls-tree` (read-only, no network) against `origin/<default-branch>` (resolved,
-    not hardcoded). `available` is False when the repo has no origin ref or git is unavailable.
+    not hardcoded). `state` is one of REMOTE_SCANNED (the tree was read), REMOTE_ABSENT (no
+    origin is configured, so there is nothing to read) or REMOTE_FAILED (an origin exists,
+    or could not be ruled out, and the read did not happen - git absent, a timeout, an
+    unfetched ref). The last two used to be one value, which is how a failed read passed
+    for a clean local-only allocation.
     """
     rel, prefix = _spec(type_)
     branch = origin_default_branch(repo_root)
@@ -141,19 +193,19 @@ def remote_ids(type_: str, repo_root: Path) -> tuple[list[int], bool]:
             capture_output=True, text=True, cwd=str(repo_root), check=False, timeout=30,
         )
     except (FileNotFoundError, subprocess.TimeoutExpired):
-        return [], False
+        return [], REMOTE_FAILED if _origin_configured(repo_root) else REMOTE_ABSENT
     if result.returncode != 0:
-        return [], False
+        return [], REMOTE_FAILED if _origin_configured(repo_root) else REMOTE_ABSENT
     stems = [Path(line).stem for line in result.stdout.splitlines()]
     if type_ in META_TYPES:
-        return _meta_nums(prefix, stems), True
+        return _meta_nums(prefix, stems), REMOTE_SCANNED
     ids: list[int] = []
     for stem in stems:
         rec = sdlc_md.extract_record_id(stem)
         num = sdlc_md.id_number(rec) if rec else None
         if num is not None:
             ids.append(num)
-    return sorted(set(ids)), True
+    return sorted(set(ids)), REMOTE_SCANNED
 
 
 def cmd_allocate(args: argparse.Namespace) -> int:
@@ -170,17 +222,25 @@ def cmd_allocate(args: argparse.Namespace) -> int:
     local = local_ids(type_, repo_root)
     local_max = max(local) if local else 0
     remote_max = 0
-    remote_available = False
+    remote_state = REMOTE_ABSENT
     if args.remote:
-        remote, remote_available = remote_ids(type_, repo_root)
+        remote, remote_state = remote_ids(type_, repo_root)
         remote_max = max(remote) if remote else 0
+    remote_available = remote_state == REMOTE_SCANNED
     # Delegate to the single allocation authority so the CLI never diverges from the
     # programmatic path: allocate_number also accounts for index rows (incl. archives)
-    # whose file was deleted, which local_max alone misses and would re-issue.
-    next_num = allocate_number(type_, repo_root, remote=args.remote)
+    # whose file was deleted, which local_max alone misses and would re-issue. It also
+    # emits the failed-scan warning on stderr, so this verb must not print it twice.
+    try:
+        next_num = allocate_number(type_, repo_root, remote=args.remote, strict=args.strict)
+    except RemoteScanError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
     next_id = f"{prefix}{next_num:04d}"
-    warning = None
-    if args.remote and remote_available and remote_max > local_max:
+    # The failed-scan text is derived from the same helper allocate_number used, so the
+    # JSON consumer is told exactly what the stderr reader was told.
+    warning = remote_scan_warning(type_, remote_state)
+    if warning is None and args.remote and remote_available and remote_max > local_max:
         warning = (
             f"origin/main is ahead of local for {type_} "
             f"({prefix}{remote_max:04d} > {prefix}{local_max:04d}); "
@@ -193,11 +253,12 @@ def cmd_allocate(args: argparse.Namespace) -> int:
             "local_max": local_max,
             "remote_max": remote_max,
             "remote_available": remote_available,
+            "remote_state": remote_state,
             "next_id": next_id,
             "warning": warning,
         }, indent=2))
     else:
-        if warning:
+        if warning and remote_state != REMOTE_FAILED:  # allocate_number already said that one
             print(f"warning: {warning}", file=sys.stderr)
         print(next_id)
     return 0
@@ -282,6 +343,10 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--type", required=True, choices=types)
     a.add_argument("--remote", action="store_true",
                    help="Also consider origin/main (read-only git ls-tree, no fetch)")
+    a.add_argument("--strict", action="store_true",
+                   help="Refuse to allocate when a configured origin could not be scanned "
+                        "(the id would be a local-only guess). For a sprint pre-flight, "
+                        "where minting a colliding id is worse than stopping.")
     a.add_argument("--root", default=".", help="Repo root (default: .)")
     a.add_argument("--format", choices=("text", "json"), default="text")
     a.set_defaults(func=cmd_allocate)

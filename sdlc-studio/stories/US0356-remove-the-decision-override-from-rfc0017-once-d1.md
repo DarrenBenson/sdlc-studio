@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader of RFC0017
+**I want** the Decision-Override removed now that D1 is closed
+**So that** an override does not outlive the gap it covered and become a standing exemption
 
 ## Acceptance Criteria
 

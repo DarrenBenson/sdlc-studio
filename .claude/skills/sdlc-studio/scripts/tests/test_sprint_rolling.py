@@ -18,6 +18,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import shutil as _shutil
 import subprocess as _sp
 import sys
 import tempfile
@@ -488,6 +489,67 @@ class BoundaryStrictDriftRefusalTests(unittest.TestCase):
             self.assertEqual(rc, 0, out)
             self.assertIn("origin drift", out)
             self.assertNotEqual(run_state.read(root)["run_id"], before)   # cycle 2 opened
+
+
+# --- BG0306: a failed fetch is not evidence of no drift ------------------------------
+
+def _unreachable_origin_repo(d) -> Path:
+    """A work repo whose origin is configured but gone (host down, credentials expired).
+    The stale remote-tracking ref still answers 'level', so a check that ignores the fetch
+    result reports clean on exactly the stale checkout the gate exists to refuse."""
+    origin = Path(d) / "origin.git"
+    _run(d, "init", "-q", "--bare", str(origin))
+    _run(origin, "symbolic-ref", "HEAD", "refs/heads/main")
+    work = Path(d) / "work"; work.mkdir()
+    _run(work, "init", "-q"); _run(work, "checkout", "-q", "-b", "main")
+    _run(work, "config", "user.email", "t@t"); _run(work, "config", "user.name", "t")
+    _run(work, "remote", "add", "origin", str(origin))
+    (work / "README.md").write_text("base\n", encoding="utf-8")
+    _run(work, "add", "-A"); _run(work, "commit", "-qm", "base")
+    _run(work, "push", "-q", "-u", "origin", "main")
+    _shutil.rmtree(origin)                     # the remote is now unreachable
+    return work
+
+
+class UnreachableOriginIsNotCleanTests(unittest.TestCase):
+    """BG0306: 'up to date' and 'could not ask the remote' are different answers."""
+
+    def test_a_failed_fetch_is_reported_unverified(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            work = _unreachable_origin_repo(d)
+            drift = sprint.origin_drift(work, do_fetch=True)
+            self.assertTrue(drift["remote"])
+            self.assertEqual(drift["behind"], 0)        # the stale ref says level ...
+            self.assertTrue(drift["unverified"], drift)  # ... and that answer is worthless
+            self.assertIsNotNone(sprint._drift_warning(drift, set()))
+
+    def test_a_suppressed_fetch_is_not_a_failed_one(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            work = _unreachable_origin_repo(d)
+            drift = sprint.origin_drift(work, do_fetch=False)   # --no-fetch: asked not to
+            self.assertIsNone(drift["unverified"], drift)
+            self.assertIsNone(sprint._drift_warning(drift, set()))
+
+    def test_strict_plan_refuses_when_the_fetch_failed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _unreachable_origin_repo(d)
+            _ws(root); _bug(root, 1)
+            rc, out = _capture(["plan", "--bugs", "Open", "--root", str(root), "--strict",
+                                "--sprint-goal", "ship the fixture batch"])
+            self.assertEqual(rc, 2, out)
+            self.assertIn("origin drift", out)
+
+    def test_strict_boundary_stops_when_the_fetch_failed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _unreachable_origin_repo(d)
+            rid = _ready_cycle(root)
+            before = run_state.read(root)["run_id"]
+            with _stubbed_close():
+                rc, out = _boundary(root, "--retro", rid, "--strict")
+            self.assertNotEqual(rc, 0, out)
+            self.assertNotIn("level with origin", out)
+            self.assertEqual(run_state.read(root)["run_id"], before)
+            self.assertEqual(run_state.read(root)["stop"]["cause"], "origin-drift")
 
 
 # --- US0232: regenerate from the live backlog ----------------------------------------

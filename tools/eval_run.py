@@ -10,7 +10,10 @@ was manual ceremony around them is now deterministic:
             relpath in a non-empty dir is overwritten - use a fresh scratch dir);
             a scenario without a spec degrades honestly: it prints the prose setup
             and exits 1 so the gap is visible
-    record  append one graded behaviour verdict (pass/fail + evidence) for a run
+    record  append one graded behaviour verdict (pass/fail + evidence) for a run.
+            Takes an expected-behaviour id (EB1) or a forbidden-behaviour id (FB1,
+            positional, printed by setup); on a forbidden id, fail means OBSERVED
+            and always blocks the gate
     report  summarise a run: exit 1 if any BLOCKING behaviour failed, else 0
 
 Results land in evals/.results/<run>.json (repo-only, like evals/ itself).
@@ -53,6 +56,23 @@ def build_fixture(scenario: dict, dest: Path) -> list[str]:
     return created
 
 
+def forbidden_behaviours(scenario: dict) -> dict[str, str]:
+    """A scenario's forbidden behaviours keyed by a recordable id (FB1..FBn).
+
+    Scenario files declare them as prose strings with no id and no severity, so the id
+    is positional and the severity is always blocking: a forbidden behaviour that was
+    OBSERVED is never advisory. A dict form carrying an explicit `id`/`description` is
+    honoured, so a scenario can name its own ids without a format migration.
+    """
+    out: dict[str, str] = {}
+    for i, fb in enumerate(scenario.get("forbidden_behaviours", []), start=1):
+        if isinstance(fb, dict):
+            out[str(fb.get("id") or f"FB{i}")] = str(fb.get("description", ""))
+        else:
+            out[f"FB{i}"] = str(fb)
+    return out
+
+
 def cmd_setup(args: argparse.Namespace) -> int:
     sc = load_scenario(args.scenario)
     dest = Path(args.dir)
@@ -69,8 +89,9 @@ def cmd_setup(args: argparse.Namespace) -> int:
     print("\n--- GRADE AGAINST (behaviour: severity) ---")
     for eb in sc.get("expected_behaviours", []):
         print(f"  {eb['id']} ({eb['severity']}): {eb['description']}")
-    for fb in sc.get("forbidden_behaviours", []):
-        print(f"  FORBIDDEN: {fb}")
+    for fid, text in forbidden_behaviours(sc).items():
+        print(f"  {fid} (FORBIDDEN, blocking): {text}"
+              f"  [record --behaviour {fid} --verdict fail if observed]")
     return 0
 
 
@@ -81,16 +102,24 @@ def _run_path(run: str) -> Path:
 def cmd_record(args: argparse.Namespace) -> int:
     sc = load_scenario(args.scenario)  # validates the scenario id
     known = {eb["id"]: eb["severity"] for eb in sc.get("expected_behaviours", [])}
-    if args.behaviour not in known:
+    forbidden = forbidden_behaviours(sc)
+    if args.behaviour in known:
+        severity, is_forbidden = known[args.behaviour], False
+    elif args.behaviour in forbidden:
+        # Observing a forbidden behaviour is what the gate exists to catch, so it is
+        # recorded as blocking whatever the scenario says elsewhere. --verdict fail
+        # means OBSERVED; pass means the grader watched for it and did not see it.
+        severity, is_forbidden = "blocking", True
+    else:
         print(f"error: {args.scenario} has no behaviour {args.behaviour} "
-              f"(known: {', '.join(known)})", file=sys.stderr)
+              f"(known: {', '.join([*known, *forbidden])})", file=sys.stderr)
         return 2
     RESULTS.mkdir(parents=True, exist_ok=True)
     path = _run_path(args.run)
     data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
     data.setdefault(args.scenario, {})[args.behaviour] = {
-        "verdict": args.verdict, "severity": known[args.behaviour],
-        "evidence": args.evidence}
+        "verdict": args.verdict, "severity": severity,
+        "forbidden": is_forbidden, "evidence": args.evidence}
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
     print(f"recorded {args.scenario}/{args.behaviour} = {args.verdict}")
     return 0
@@ -114,8 +143,11 @@ def cmd_report(args: argparse.Namespace) -> int:
         expected = {eb["id"] for eb in sc.get("expected_behaviours", [])}
         missing = sorted(expected - set(behaviours))
         for bid, r in sorted(behaviours.items()):
-            mark = "PASS" if r["verdict"] == "pass" else "FAIL"
-            if mark == "FAIL" and r["severity"] == "blocking":
+            if r.get("forbidden"):
+                mark = "OBSERVED" if r["verdict"] == "fail" else "not-observed"
+            else:
+                mark = "PASS" if r["verdict"] == "pass" else "FAIL"
+            if r["verdict"] == "fail" and r["severity"] == "blocking":
                 blocking_failed += 1
             print(f"{sid} {bid} [{r['severity']}]: {mark} - {r['evidence']}")
         for bid in missing:  # an ungraded blocking behaviour cannot pass the gate
@@ -138,8 +170,10 @@ def main(argv: list[str] | None = None) -> int:
     r = sub.add_parser("record", help="Record one graded behaviour verdict for a run.")
     r.add_argument("--scenario", required=True)
     r.add_argument("--run", required=True, help="Run label (e.g. the date)")
-    r.add_argument("--behaviour", required=True, help="e.g. EB1")
-    r.add_argument("--verdict", required=True, choices=("pass", "fail"))
+    r.add_argument("--behaviour", required=True,
+                   help="e.g. EB1, or a forbidden-behaviour id such as FB1")
+    r.add_argument("--verdict", required=True, choices=("pass", "fail"),
+                   help="on a forbidden behaviour, fail = observed (blocks the gate)")
     r.add_argument("--evidence", required=True, help="One line of evidence for the grade")
     r.set_defaults(func=cmd_record)
     g = sub.add_parser("report", help="Summarise a run; exit 1 on any blocking failure.")

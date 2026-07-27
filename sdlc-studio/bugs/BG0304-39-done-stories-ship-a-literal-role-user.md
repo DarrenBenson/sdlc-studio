@@ -1,6 +1,7 @@
 # BG0304: 39 Done stories ship a literal {{role}} user-story block that no gate can see
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py
@@ -19,6 +20,16 @@ Evidence (`_check_placeholders`, lines 371-384; scaffold minted by artifact.py l
 ## Proposed Fix
 
 Extend `_check_placeholders` to flag {{...}} anywhere in the body outside code fences (or at minimum in the User Story block), and backfill the 39 Done stories' role blocks in a mechanical sweep.
+
+## Acceptance Criteria
+
+### AC1: a placeholder in the user-story block is flagged
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** `pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderTests::test_user_story_block_placeholder_flagged`, written red before the fix and green after
+- **Verified:** yes (2026-07-27, functional)
 
 ## Revision History
 

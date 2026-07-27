@@ -35,7 +35,13 @@ conformance:
   # commit blocked. BLAST RADIUS, stated because a threshold is not a list: this exempts 228
   # units, not 23, including many already conformant. RESTORE TO 82 when CR0404 lands (a REJECT
   # carried forward as filed findings) or when a round returns APPROVE - whichever comes first.
-  adopt_after: 310
+  #
+  # RESTORED 310 -> 82 on 2026-07-27 (BG0302). Both restore conditions have now fired: CR0404 is
+  # Complete (2026-07-23) and RV0020 recorded an APPROVE ratified by the reviewer of record
+  # (2026-07-27). The raise outlived its own stated expiry by four days, exempting 228 units that
+  # were never in scope for it, so the restore is the whole point of naming a condition. The
+  # findings the re-armed gate reports are the real backlog it was hiding, not a regression.
+  adopt_after: 82
 
 review:
   # Two-role review gate (RFC0044/CR0323), forward-only from the sprint that built it:

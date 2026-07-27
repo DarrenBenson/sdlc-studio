@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** agent planning a parallel batch
+**I want** build tooling and shared config treated as coupling by the disjointness check
+**So that** a unit touching them is never offered as parallel-safe
 
 ## Acceptance Criteria
 

@@ -146,7 +146,12 @@ def gh_issue_edit(number: int, labels_add: list[str], labels_remove: list[str]) 
 
 
 def gh_pr_list_merged(since_ref: str | None) -> list[dict]:
-    """Return merged PRs, optionally only those merged after `since_ref`."""
+    """Return merged PRs, optionally only those merged after `since_ref`.
+
+    Raises GhError on a gh failure, for the same reason `gh_issue_list` does: an empty list
+    means "the range holds no merged PRs", and a caller that cannot tell that apart from
+    "the query never ran" reports a range it never read. Malformed JSON on a clean exit
+    still degrades to [] (a parse tolerance, not a failure)."""
     # Use --search to filter by merge date if given; otherwise list the last 100 merged
     args = [
         "pr", "list",
@@ -156,8 +161,7 @@ def gh_pr_list_merged(since_ref: str | None) -> list[dict]:
     ]
     result = gh(*args)
     if result.returncode != 0:
-        print(f"gh pr list failed: {result.stderr}", file=sys.stderr)
-        return []
+        raise GhError(f"gh pr list failed: {result.stderr.strip()}")
     prs = _loads(result.stdout, [])
     if since_ref:
         since = since_ref
@@ -615,7 +619,14 @@ def cmd_cascade(args: argparse.Namespace) -> int:
     """Find merged PRs whose bodies reference stories/CRs to cascade."""
     state = load_state(_state_path(args.root))
     since = args.since or state.get("last_cascade_ref")
-    prs = gh_pr_list_merged(since)
+    try:
+        prs = gh_pr_list_merged(since)
+    except GhError as exc:
+        # Not an empty range: nothing was read. Abort like `push`/`pull` do rather than
+        # print a clean "no merged PRs" over a query that never ran, and leave the
+        # watermark alone so the next run re-reads the same range.
+        print(f"cascade: aborted - {exc}", file=sys.stderr)
+        return 1
     if not prs:
         print("no merged PRs found in range")
         return 0

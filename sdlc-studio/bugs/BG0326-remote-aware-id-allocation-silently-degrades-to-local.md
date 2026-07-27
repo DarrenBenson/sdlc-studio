@@ -1,6 +1,7 @@
 # BG0326: Remote-aware id allocation silently degrades to local-only when the git query fails, minting the collision it exists to
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/next_id.py, .claude/skills/sdlc-studio/scripts/tests/test_next_id.py
@@ -19,6 +20,16 @@ Evidence (`remote_ids()` lines 130-146; `allocate_number()` lines 102-112; `cmd_
 ## Proposed Fix
 
 Return a tri-state from `remote_ids` (no-origin / scanned / failed) and, when an origin exists but the scan failed, print a loud warning in every output mode and refuse allocation under a --strict flag used by sprint pre-flight.
+
+## Acceptance Criteria
+
+### AC1: a failed remote scan is distinguished from no origin
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** `pytest .claude/skills/sdlc-studio/scripts/tests/test_next_id.py::RemoteScanHonestyTests::test_failed_scan_is_distinguished_from_no_origin`, written red before the fix and green after
+- **Verified:** yes (2026-07-27, functional)
 
 ## Revision History
 

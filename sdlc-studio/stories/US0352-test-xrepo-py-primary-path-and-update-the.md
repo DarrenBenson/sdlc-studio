@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer of the cross-repo helper
+**I want** test_xrepo.py to exercise the primary path, with the TSD coverage note updated
+**So that** the cross-repo operation's effect is asserted rather than assumed
 
 ## Acceptance Criteria
 

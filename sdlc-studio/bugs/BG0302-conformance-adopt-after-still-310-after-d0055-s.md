@@ -1,6 +1,7 @@
 # BG0302: conformance.adopt_after still 310 after D0055's restore condition fired twice
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Points:** 5
 > **Affects:** sdlc-studio/.config.yaml, sdlc-studio/decisions.md
@@ -19,6 +20,16 @@ Evidence (`conformance.adopt_after`, line 38 (and decisions.md row D0055)): CR04
 ## Proposed Fix
 
 Set `conformance.adopt_after` back to 82, note the restore in the D0055 row, and run the conformance sweep to surface what the re-armed gate now flags.
+
+## Acceptance Criteria
+
+### AC1: the restored threshold is in force
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** `shell grep -q 'adopt_after: 82' sdlc-studio/.config.yaml`, written red before the fix and green after
+- **Verified:** yes (2026-07-27, functional)
 
 ## Revision History
 

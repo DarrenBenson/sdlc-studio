@@ -1,6 +1,7 @@
 # BG0324: github_sync cascade conflates a gh failure with 'no merged PRs' and exits 0
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/github_sync.py, .claude/skills/sdlc-studio/scripts/tests/test_github_sync.py
@@ -19,6 +20,16 @@ Evidence (`gh_pr_list_merged` lines 156-160; `cmd_cascade` lines 618-620): Lines
 ## Proposed Fix
 
 Make `gh_pr_list_merged` raise GhError on a gh failure like `gh_issue_list`, and have `cmd_cascade` catch it and return non-zero so failure is never reported as an empty range.
+
+## Acceptance Criteria
+
+### AC1: a gh failure raises rather than reading as no PRs
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** `pytest .claude/skills/sdlc-studio/scripts/tests/test_github_sync.py::GhPrListMergedTests::test_gh_failure_raises_rather_than_reading_as_no_prs`, written red before the fix and green after
+- **Verified:** yes (2026-07-27, functional)
 
 ## Revision History
 

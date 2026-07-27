@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer of the sprint tooling
+**I want** test_autosprint.py to exercise the primary path end to end
+**So that** the autosprint loop has a test asserting its resulting state, not the absence of an exception
 
 ## Acceptance Criteria
 

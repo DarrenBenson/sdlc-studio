@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator delegating a sign-off
+**I want** a subagent reviewer of record in its own context accepted, with the row recording that it was a delegated agent
+**So that** the authorised delegation is usable and the record carries what produced the verdict
 
 ## Acceptance Criteria
 

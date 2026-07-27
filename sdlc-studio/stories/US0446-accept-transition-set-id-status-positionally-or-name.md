@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** agent using transition.py
+**I want** `set <ID> <STATUS>` accepted positionally, or the error to name the exact fix
+**So that** the obvious first attempt either works or tells me precisely what to type
 
 ## Acceptance Criteria
 

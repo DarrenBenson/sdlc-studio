@@ -1837,6 +1837,49 @@ class FencedVerifyTests(unittest.TestCase):
         blocks = verify_ac.parse_story(story)
         self.assertEqual(blocks[0].verifier, "shell true")
 
+    def test_inner_fence_inside_a_longer_fence_does_not_release_the_block(self) -> None:
+        # BG0305: a naive toggle closed on any leading ```, so the inner ```text opener of a
+        # ````markdown block ended the fence and the illustration below it became a LIVE
+        # shell verifier. CommonMark closes only on the same character at the opening length
+        # or longer.
+        story = (
+            "### AC1: real\n\n"
+            "````markdown\n"
+            "```text\n"
+            "- **Verify:** shell echo INJECTED; exit 1\n"
+            "```\n"
+            "````\n"
+        )
+        blocks = verify_ac.parse_story(story)
+        self.assertEqual(len(blocks), 1)
+        self.assertIsNone(blocks[0].verifier)
+        self.assertEqual(blocks[0].extra_verifiers, [])
+
+    def test_a_tilde_fence_is_not_closed_by_a_backtick_run(self) -> None:
+        story = (
+            "### AC1: real\n\n"
+            "~~~markdown\n"
+            "```\n"
+            "- **Verify:** shell echo INJECTED; exit 1\n"
+            "```\n"
+            "~~~\n"
+        )
+        blocks = verify_ac.parse_story(story)
+        self.assertIsNone(blocks[0].verifier)
+
+    def test_a_real_verify_after_the_long_fence_closes_still_parses(self) -> None:
+        story = (
+            "### AC1: real\n\n"
+            "````markdown\n"
+            "```text\n"
+            "- **Verify:** shell echo example\n"
+            "```\n"
+            "````\n\n"
+            "- **Verify:** shell true\n"
+        )
+        blocks = verify_ac.parse_story(story)
+        self.assertEqual(blocks[0].verifier, "shell true")
+
 
 class GrepVerbTests(unittest.TestCase):
     """The grep verb had zero coverage, which is why BG0125/BG0128 survived. These fail against
@@ -2120,6 +2163,62 @@ class UnresolvedPytestVerifierTests(unittest.TestCase):
             r = verify_ac.run_verifier("pytest test_present.py::test_here", 60, Path(d))
             self.assertTrue(r.ok)
             self.assertFalse(r.vacuous)
+
+
+class SkippedPytestVerifierTests(unittest.TestCase):
+    """BG0317 - a pytest run whose selected tests were ALL skipped exits 0 and prints
+    "1 skipped", which the no-tests-ran regex does not match. The default per-AC path stamped
+    such an AC green while the batch path, reading the SAME run out of JUnit XML, refused the
+    skip as not-a-pass. Identical inputs, opposite verdicts; the green one is the dangerous
+    one, because a skipped test proves exactly as much as a test that never ran."""
+
+    def _run(self, script: str):
+        return verify_ac.run_verifier(f"shell printf '%s\\n' {shlex_quote(script)}",
+                                      30, Path.cwd())
+
+    def test_an_all_skipped_run_is_not_a_pass(self):
+        r = self._run("1 skipped in 0.01s")
+        self.assertFalse(r.ok)
+        self.assertTrue(r.vacuous)
+        self.assertEqual(r.exit_code, 0)
+
+    def test_the_banner_summary_form_is_judged_too(self):
+        self.assertTrue(self._run("===== 1 skipped in 0.01s =====").vacuous)
+
+    def test_skips_beside_deselections_and_warnings_are_still_vacuous(self):
+        self.assertTrue(self._run("2 skipped, 91 deselected, 1 warning in 0.08s").vacuous)
+
+    def test_a_skip_beside_a_real_pass_is_still_a_pass(self):
+        r = self._run("3 passed, 1 skipped in 0.04s")
+        self.assertTrue(r.ok, "one test did run and pass - that is not vacuous")
+        self.assertFalse(r.vacuous)
+
+    def test_a_real_skipped_node_matches_the_batch_path_verdict(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "test_skipped.py").write_text(
+                "import pytest\n\n\n"
+                "@pytest.mark.skip(reason='not today')\n"
+                "def test_a():\n    assert True\n",
+                encoding="utf-8")
+            r = verify_ac.run_verifier("pytest test_skipped.py::test_a", 60, Path(d))
+        self.assertFalse(r.ok, "the JUnit batch path calls this not-a-pass; so must this one")
+        self.assertTrue(r.vacuous)
+        # The same run through the batch path, for the parity this bug was about.
+        xml = ('<testsuites><testsuite>'
+               '<testcase classname="test_skipped" name="test_a"><skipped /></testcase>'
+               '</testsuite></testsuites>')
+        nodes = verify_ac._parse_junit_xml(xml, ["test_skipped.py"])
+        self.assertFalse(nodes["test_skipped.py::test_a"])
+
+    def test_the_cached_verdict_does_not_call_a_skip_a_failure(self):
+        # The cache records pass/not-pass, so it cannot tell a skip from a red test. Saying
+        # "cached pytest failure" for a skipped node sends the reader to debug code that
+        # never ran.
+        r = verify_ac.resolve_pytest_from_cache("pytest tests/test_x.py::test_a",
+                                                {"tests/test_x.py::test_a": False})
+        self.assertFalse(r.ok)
+        self.assertIn("skipped", r.stderr)
+        self.assertNotRegex(r.stderr, r"cached pytest failure")
 
 
 def shlex_quote(s: str) -> str:

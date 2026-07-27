@@ -56,8 +56,8 @@ bulk-pattern note distinguishing an unadopted discipline from per-unit drift.
 - **When** it is rendered in text mode
 - **Then** it carries its Guidance line, checked per checker rather than by one
   selector standing for four - all four sat stacked in AC2 and never ran (BG0265)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit.py::GuidanceTests
-- **Verified:** no (2026-07-27)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_readiness.py::GuidanceTests
+- **Verified:** yes (2026-07-27)
 
 ### AC6: reconcile prints Guidance in text mode
 
@@ -86,3 +86,4 @@ check's `cmd_*` text branch; conformance bulk-pattern note.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (CR0025) | Decomposed from CR0025 (remediation) |
+| 2026-07-27 | BG0303 | AC5 named `tests/test_audit.py`, deleted by the US0345 rename, so the verifier resolved no node while the story sat Done. Re-pointed at `tests/test_readiness.py::GuidanceTests` - the same class, moved with the script |

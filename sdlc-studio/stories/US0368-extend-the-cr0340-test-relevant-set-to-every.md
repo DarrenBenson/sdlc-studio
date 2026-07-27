@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer of the test-relevant path set
+**I want** it to cover every path a shipped test reads, measured from the suites
+**So that** a hand-written enumeration cannot silently exempt what it forgot
 
 ## Acceptance Criteria
 

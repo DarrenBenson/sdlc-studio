@@ -113,18 +113,29 @@ def _story_has_executable_acs(text: str) -> bool:
     return False
 
 
-def _manual_acs_missing_evidence(text: str) -> list[str]:
-    """Manual ACs are the ones the deterministic gate CANNOT evaluate - a human observes the
+def _acs_missing_evidence(text: str) -> tuple[list[str], list[str]]:
+    """The ACs no deterministic verifier can speak for, split by WHY, and carrying no recorded
+    passing human verdict: (declared manual, no `Verify:` line at all).
+
+    Manual ACs are the ones the deterministic gate CANNOT evaluate - a human observes the
     outcome. The gate cannot check the outcome, but it can require the EVIDENCE that a human did:
-    a `**Verified:**` marker on each manual AC. `verify_ac` never stamps a manual AC (it counts
-    and skips it), so this marker is only ever added deliberately - it cannot be auto-satisfied by
-    running the verifier. Returns the ids of manual ACs carrying no such marker."""
+    a `**Verified:**` marker on each. `verify_ac` never stamps a manual AC (it counts and skips
+    it), so this marker is only ever added deliberately - it cannot be auto-satisfied by running
+    the verifier.
+
+    An AC with NO `Verify:` line is the same fact stated by omission, and it used to be the
+    cheaper one: it was waved through while the honestly-declared `manual` beside it was blocked,
+    so silence was the fastest route to Done. It is held to the same evidence, which also puts
+    this gate back in step with the release lane (`gate.py._verify_acs` already refuses an
+    unspecified AC and names it).
+    """
     try:
         import verify_ac  # noqa: PLC0415 - sibling; imports only sdlc_md, no cycle
         blocks = verify_ac.parse_story(text)
     except Exception:  # noqa: BLE001 - a parse hiccup must not mask the gate
-        return []
-    bare = []
+        return [], []
+    bare_manual: list[str] = []
+    bare_unspecified: list[str] = []
     for b in blocks:
         toks = (b.verifier or "").strip().split(None, 1)
         # Only a PASSING human verdict is evidence. `no` records the human saw it fail, `stale`
@@ -132,9 +143,13 @@ def _manual_acs_missing_evidence(text: str) -> list[str]:
         # "not verified" and must block, symmetric with the executable path (which blocks a red or
         # stale verifier result). Accepting any-marker-present would let one `Verified: no` line
         # reopen exactly the bypass this closes.
-        if toks and toks[0].lower() in ("manual", "manually") and b.verified_state != "yes":
-            bare.append(b.ac_id)
-    return bare
+        if b.verified_state == "yes":
+            continue
+        if not toks:
+            bare_unspecified.append(b.ac_id)
+        elif toks[0].lower() in ("manual", "manually"):
+            bare_manual.append(b.ac_id)
+    return bare_manual, bare_unspecified
 
 
 def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
@@ -148,13 +163,28 @@ def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
     observe, but it requires the EVIDENCE that a human did and it PASSED - a `**Verified:** yes`
     marker. Without a passing verdict (`no`, `stale`, or nothing at all), `manual` meant "nothing
     checks this", and the more irreversible the work the less it was gated. This runs first, so an
-    all-manual story is no longer waved through with nothing looked at."""
-    bare_manual = _manual_acs_missing_evidence(text)
+    all-manual story is no longer waved through with nothing looked at.
+
+    An AC carrying no `Verify:` line at all is held to the same evidence, for the same reason and
+    with no discount for saying nothing: waving it through made omission strictly cheaper than
+    honest declaration, and it disagreed with the release lane, which refuses an unspecified AC -
+    so a story closed Done all sprint failed only at tag time."""
+    bare_manual, bare_unspecified = _acs_missing_evidence(text)
+    # Both are reported in ONE refusal: fixing one and being refused for the other next attempt
+    # is the round-trip-per-gate cost the ladder above already avoids.
+    parts = []
     if bare_manual:
-        return (f"manual acceptance criteria ({', '.join(bare_manual)}) reached Done with no "
-                f"recorded PASSING verification - add a `**Verified:** yes` marker (when observed, "
-                f"by whom) to each, or make the criterion executable. A `no`/`stale` marker blocks "
-                f"like a red verifier does")
+        parts.append(f"manual acceptance criteria ({', '.join(bare_manual)}) reached Done with no "
+                     f"recorded PASSING verification - add a `**Verified:** yes` marker (when "
+                     f"observed, by whom) to each, or make the criterion executable. A "
+                     f"`no`/`stale` marker blocks like a red verifier does")
+    if bare_unspecified:
+        parts.append(f"acceptance criteria ({', '.join(bare_unspecified)}) carry no `Verify:` "
+                     f"line at all - an omitted verifier is not a passed one. Author one, or "
+                     f"declare `- **Verify:** manual <what a human checks>` and record a "
+                     f"`**Verified:** yes` marker; omission buys no discount over declaring it")
+    if parts:
+        return "; and ".join(parts)
     if not _story_has_executable_acs(text):
         return None  # nothing executable to verify; manual evidence (if any) is present
     # The story-level Definition of Done, when the project declares one, decides whether
@@ -768,6 +798,54 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
     return gate_warn
 
 
+def _force_bypassed(root, artifact_id, new_status, type_, path, text,
+                    target_canon, from_canon, triaged_by) -> list[str]:
+    """What `--force` actually waived on this transition, DERIVED by re-running the same ladder
+    with force off - never an enumerated list of "the forceable gates", which would silently
+    exempt whichever gate the list forgot.
+
+    Called only after the FORCED ladder has already passed, so any block found here is one force
+    is carrying: a gate that ignores force (tier, RFC-accept, plan-review) would have refused the
+    forced run too and there would be nothing to record."""
+    try:
+        _pre_write_gates(root, artifact_id, new_status, type_, path, text,
+                         target_canon, from_canon, False, True, triaged_by)
+    except GateRefusal as exc:
+        return exc.blocks
+    except ValueError:
+        # Not a gate verdict (an unreadable sibling, a config fault). The transition itself is
+        # unaffected, and inventing an override record from an error would be a claim of its own.
+        return []
+    return []
+
+
+#: The suffix the ladder appends to a forceable block. Stripped from the RECORD only - the
+#: reason is what is being recorded, and "Override with --force" inside a record of an
+#: override that already happened reads as an instruction rather than history.
+_FORCE_SUFFIX = ". Override with --force"
+
+
+def _record_force_override(text: str, blocks: list[str], artifact_id: str,
+                           new_status: str) -> tuple[str, dict]:
+    """Stamp the forced bypass onto the artefact text. Returns (new_text, record).
+
+    Two places, because neither alone is enough. The `Forced-override` field always lands (the
+    metadata block is anchored on the Status line this transition just wrote), so the record can
+    never be silently dropped; the Revision History row is append-only, so an earlier forced close
+    is not overwritten by a later one - but the section is optional, and a record that lands only
+    where a section happens to exist is the silent-stand-down class. The returned record says
+    which of the two took, so a caller reports what was written rather than what was attempted.
+    """
+    when = sdlc_md.now_date()
+    reasons = "; ".join(b.removesuffix(_FORCE_SUFFIX).strip() for b in blocks)
+    summary = f"{when}: --force waived {len(blocks)} gate(s) on {new_status} - {reasons}"
+    new_text = _upsert_field(text, "Forced-override", summary)
+    new_text, row = append_revision_row(
+        new_text, when, "transition set --force",
+        f"forced {artifact_id} -> {new_status}, waiving {len(blocks)} gate(s): {reasons}")
+    return new_text, {"bypassed": list(blocks), "field": True, "revision_row": row}
+
+
 def _triage_fields(root, type_, text, from_canon, triaged_by, triage_severity,
                    gate_warn, dry_run) -> tuple[dict, str | None]:
     """The Triaged-by / Triage-severity fields to stamp on a satisfied v3 triage exit, plus the
@@ -878,6 +956,16 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
               "warning": gate_warn}
     if dry_run:
         return result
+    if force:
+        # `--force` advertised the bypass as recorded and recorded nothing, so a forced close of
+        # a red-AC story was byte-indistinguishable from a verified one. A force that waived
+        # NOTHING is not an override and writes nothing - claiming one would be the same
+        # dishonesty pointing the other way.
+        bypassed = _force_bypassed(root, artifact_id, new_status, type_, path, text,
+                                   target_canon, from_canon, triaged_by)
+        if bypassed:
+            new_text, result["forced_override"] = _record_force_override(
+                new_text, bypassed, result["id"], new_status)
     return _post_write_sync_and_record(root, type_, path, new_text, result, current,
                                        new_status, vocab, gate_warn, metrics)
 
@@ -889,6 +977,13 @@ def _print_result(res: dict, dry_run: bool) -> None:
           + ("" if dry_run else f" (index synced={res['index_synced']}{extra})"))
     if res.get("warning"):
         print(f"  warning: {res['warning']}")
+    ov = res.get("forced_override")
+    if ov:
+        # A bypass nobody sees is the bypass that gets used. Named on the way past, as well as
+        # written to the artefact, so the operator reading the run output knows what force cost.
+        where = "artefact field" + (" + revision row" if ov.get("revision_row") else "")
+        print(f"  override: --force waived {len(ov['bypassed'])} gate(s), recorded ({where}): "
+              + "; ".join(b.removesuffix(_FORCE_SUFFIX).strip() for b in ov["bypassed"]))
 
 
 def _num(v):
@@ -976,6 +1071,12 @@ def cmd_set(args: argparse.Namespace) -> int:
         return 2
     results = []
     refused = 0
+    # The pre-writes this close performs BEFORE the gated transition, as the dry-run preview
+    # they must be judged against. `pending_fields` is ignored unless dry_run, so passing it
+    # on the real call is inert - and passing it on the user-facing --dry-run is what stops the
+    # preview judging an un-stamped file and refusing what the identical real command accepts.
+    pending = {"Verification depth": args.depth} if getattr(args, "depth", None) else None
+    pre_writes = bool(pending) or bool(reviewer)
     for aid in ids:
         try:
             if getattr(args, "depth", None):
@@ -986,6 +1087,15 @@ def cmd_set(args: argparse.Namespace) -> int:
                 reason = _static_depth_refusal(args.root, aid, args.depth, args.status)
                 if reason:
                     raise ValueError(f"pre-write: {reason}")
+            if pre_writes and not args.dry_run:
+                # The depth gate is not the only predictable refusal, and the others ran AFTER
+                # the stamp and the verdict row - so a refused close left a depth stamp and a
+                # persistent APPROVE for a close that never happened. Run the WHOLE ladder as a
+                # dry-run first, against the text the real run will see; a refusal raises here,
+                # before anything is written.
+                transition(args.root, aid, args.status, dry_run=True, force=args.force,
+                           triaged_by=args.triaged_by, triage_severity=args.triage_severity,
+                           pending_fields=pending)
             if getattr(args, "depth", None) and not args.dry_run:
                 annotate(args.root, aid, "Verification depth", args.depth)
             if reviewer and not args.dry_run:
@@ -999,7 +1109,8 @@ def cmd_set(args: argparse.Namespace) -> int:
                                          "critic_verdict": args.verdict}.items() if v is not None}
             res = transition(args.root, aid, args.status, dry_run=args.dry_run,
                              force=args.force, metrics=metrics,
-                             triaged_by=args.triaged_by, triage_severity=args.triage_severity)
+                             triaged_by=args.triaged_by, triage_severity=args.triage_severity,
+                             pending_fields=pending)
             results.append(res)
             if args.format != "json":
                 _print_result(res, args.dry_run)
@@ -1112,7 +1223,11 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--author", help="one-call close: the authoring seat the reviewer judged "
                                     "(reviewer != author enforced before any write)")
     s.add_argument("--force", action="store_true",
-                   help="bypass the story->Done AC-verify gate; recorded as an override")
+                   help="bypass the forceable close gates (story->Done AC-verify, bug depth, "
+                        "request-terminal). Every gate it actually waives is named in a "
+                        "`Forced-override` field on the artefact and in its Revision History; "
+                        "gates whose sanctioned skip is a recorded reason (RFC decisions, "
+                        "plan review) and the tier gate are NOT bypassed")
     s.add_argument("--triaged-by", dest="triaged_by",
                    help="v3 triage: the triaging seat as `Name; type; version` (type is "
                         "human|persona|agent); required and recorded on an inbox->triaged "

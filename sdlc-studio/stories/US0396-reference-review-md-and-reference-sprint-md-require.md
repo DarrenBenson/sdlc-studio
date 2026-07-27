@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader of the review guidance
+**I want** a round defined as at least two reviewers with distinct lenses, including a claims lens
+**So that** a single-reviewer round is recorded as the exception it is
 
 ## Acceptance Criteria
 

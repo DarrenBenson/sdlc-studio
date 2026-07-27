@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader of the sprint guidance
+**I want** the fixed-cost-versus-review-convergence trade-off stated from the measured rows
+**So that** batch size is chosen against evidence, with no number prescribed
 
 ## Acceptance Criteria
 

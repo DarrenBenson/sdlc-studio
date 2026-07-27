@@ -9,8 +9,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 SCRIPT = Path(__file__).resolve().parent.parent / "readiness.py"
 
@@ -498,6 +499,66 @@ class CliTests(unittest.TestCase):
                 rc = mod.main(["check", "--ids", "CR0001,CR0002", "--root", str(root), "--format", "json"])
             self.assertEqual(rc, 1)  # a not-ready unit -> non-zero
             self.assertIn("summary", buf.getvalue())
+
+
+class CrossCheckUnavailableTests(unittest.TestCase):
+    """BG0325: a readiness check that CRASHED must never read as a check that passed.
+
+    `ac_scope.check` is repo-wide, so one exception erased the cross-epic finding for
+    every unit in the batch - including a blocking one that would have flipped a unit to
+    not-ready and the exit code to 1. The gate then printed a verdict it never computed.
+    """
+
+    def _batch(self, root):
+        _cr(root, 1)  # otherwise ready: nothing but the cross-epic check can fail it
+
+    def test_crashing_cross_check_is_reported_not_swallowed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._batch(root)
+            mod = _load()
+            err = io.StringIO()
+            with mock.patch.object(mod.ac_scope, "check",
+                                   side_effect=RuntimeError("ac_scope exploded")):
+                with redirect_stderr(err):
+                    res = mod.audit_batch(root, ["CR0001"])
+            self.assertTrue(res["uncomputed"], "the crashed check must be named in the report")
+            self.assertIn("cross-epic-ac", " ".join(res["uncomputed"]))
+            self.assertIn("ac_scope exploded", " ".join(res["uncomputed"]))
+            self.assertEqual(res["summary"]["uncomputed"], 1)
+            self.assertIn("ac_scope exploded", err.getvalue())
+
+    def test_healthy_batch_reports_nothing_uncomputed(self) -> None:
+        # The negative control: the honest field must not be permanently populated.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._batch(root)
+            res = _load().audit_batch(root, ["CR0001"])
+            self.assertEqual(res["uncomputed"], [])
+            self.assertEqual(res["summary"]["uncomputed"], 0)
+
+    def test_cli_exits_non_zero_and_does_not_print_a_clean_total(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._batch(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with mock.patch.object(mod.ac_scope, "check",
+                                   side_effect=RuntimeError("ac_scope exploded")):
+                with redirect_stdout(out), redirect_stderr(err):
+                    rc = mod.main(["check", "--ids", "CR0001", "--root", str(root)])
+            self.assertEqual(rc, 1)  # a verdict that was not computed is not a pass
+            self.assertIn("PARTIAL", out.getvalue())
+
+    def test_cli_exit_is_zero_when_every_check_ran(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._batch(root)
+            out = io.StringIO()
+            with redirect_stdout(out):
+                rc = _load().main(["check", "--ids", "CR0001", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertNotIn("PARTIAL", out.getvalue())
 
 
 class AlreadySatisfiedTests(unittest.TestCase):

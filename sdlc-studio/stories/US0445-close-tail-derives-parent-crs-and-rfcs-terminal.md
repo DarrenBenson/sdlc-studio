@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** agent closing a sprint
+**I want** the close tail to derive parent CRs and RFCs terminal once all their children are terminal
+**So that** a delivered request does not sit open behind completed children
 
 ## Acceptance Criteria
 

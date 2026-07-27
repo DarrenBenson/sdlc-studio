@@ -1,6 +1,7 @@
 # BG0315: cmd_set's one-call close neither pre-flights before writing nor passes pending_fields on dry-run: refused closes leave s
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
@@ -19,6 +20,16 @@ Evidence (`cmd_set` lines 951-1002 (annotate at 990, `record_verdict` at 993, tr
 ## Proposed Fix
 
 In `cmd_set`, run transition(`dry_run`=True, `pending_fields`={'Verification depth': depth}) as a full pre-flight before annotate/`record_verdict` and abort on refusal, and pass the same `pending_fields` on the user-facing --dry-run path so preview and real run agree.
+
+## Acceptance Criteria
+
+### AC1: a refused close leaves no stamp and no verdict row
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** `pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::OneCallPreflightTests::test_a_refused_close_leaves_no_stamp_and_no_verdict_row`, written red before the fix and green after
+- **Verified:** yes (2026-07-27, functional)
 
 ## Revision History
 

@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator reading a closed unit
+**I want** an amended acceptance criterion recorded as an AC defect
+**So that** a criterion that specified the wrong behaviour counts as a spec failure, not an ordinary revision
 
 ## Acceptance Criteria
 

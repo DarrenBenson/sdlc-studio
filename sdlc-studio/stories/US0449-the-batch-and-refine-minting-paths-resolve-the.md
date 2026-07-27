@@ -1,6 +1,6 @@
 # US0449: The batch and refine minting paths resolve the persona the same way, so the commands that mint most stories are covered too
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0425
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** it runs
 - **Then** each story's Persona line is resolved by the same rules `new` applies - the declared Primary by default, a warning on an unregistered name
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::BatchPersonaResolutionTests::test_batch_resolves_the_persona_per_story
+- **Verified:** yes (2026-07-27)
 
 ### AC2: stories minted by refine carry a resolved persona
 
@@ -30,6 +31,7 @@
 - **When** they are minted
 - **Then** each carries a Persona line resolved from the registry rather than none at all
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::RefinePersonaTests::test_refined_stories_carry_a_resolved_persona
+- **Verified:** yes (2026-07-27)
 
 ### AC3: the three minting paths agree, proven by comparing them rather than asserting each alone
 
@@ -37,6 +39,7 @@
 - **When** each mints a story
 - **Then** all three produce the same resolved Persona line, proven by one test that compares the three outputs and fails when any path diverges
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::RefinePersonaTests::test_new_batch_and_refine_agree_on_the_resolved_persona
+- **Verified:** yes (2026-07-27)
 
 ## Revision History
 

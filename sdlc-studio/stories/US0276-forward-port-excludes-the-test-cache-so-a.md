@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer forward-porting the skill
+**I want** the test cache excluded from the port
+**So that** machine-specific test state never reaches the installed copy
 
 ## Acceptance Criteria
 

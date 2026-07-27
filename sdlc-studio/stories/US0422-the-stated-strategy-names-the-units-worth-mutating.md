@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator scoping a mutation run
+**I want** the stated strategy to name the units worth mutating
+**So that** the selection is a stated decision rather than a budget accident
 
 ## Acceptance Criteria
 

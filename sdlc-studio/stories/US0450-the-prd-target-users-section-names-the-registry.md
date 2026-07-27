@@ -1,6 +1,6 @@
 # US0450: The PRD Target Users section names the registry's Primary, Secondary and Negative personas and points at the registry
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0426
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the PRD's Target Users section is read
 - **Then** it names each of them with its role and links to `sdlc-studio/personas/index.md`, and no longer designates `personas.md` as the authority
 - **Verify:** pytest tools/tests/test_persona_coherence.py::PrdTargetUsersTests::test_target_users_names_every_declared_persona
+- **Verified:** yes (2026-07-27)
 
 ### AC2: the expectation is derived from the registry, so a change on either side fails the check
 
@@ -30,6 +31,7 @@
 - **When** the check runs
 - **Then** it fails until the PRD names the changed set, because the expected names are read from `personas/index.md` at check time and never hardcoded in the test
 - **Verify:** pytest tools/tests/test_persona_coherence.py::PrdTargetUsersTests::test_expected_names_are_derived_from_the_registry_not_hardcoded
+- **Verified:** yes (2026-07-27)
 
 ## Revision History
 

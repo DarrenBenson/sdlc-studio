@@ -1,6 +1,7 @@
 # BG0305: parse_story's naive fence toggle executes Verify lines nested inside a double fence
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -19,6 +20,16 @@ Evidence (`parse_story`, lines 120-133 (fence handling)): Repro: a story whose b
 ## Proposed Fix
 
 Port transition.py's fence rule into `parse_story`: record the fence character and opening length, and close only on a run of the same character at least that long.
+
+## Acceptance Criteria
+
+### AC1: an inner fence inside a longer fence does not release the block
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** `pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::FencedVerifyTests::test_inner_fence_inside_a_longer_fence_does_not_release_the_block`, written red before the fix and green after
+- **Verified:** yes (2026-07-27, functional)
 
 ## Revision History
 

@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator closing a sprint
+**I want** the preflight to cover the apply-signoff prerequisites per unit, not just the gate lanes
+**So that** a unit missing a verdict or evidence is named before the close chain starts
 
 ## Acceptance Criteria
 

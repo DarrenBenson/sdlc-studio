@@ -10,9 +10,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader of the TSD
+**I want** the blocking 80% coverage gate and the bandit step recorded in the coverage and quality-gate tables
+**So that** the document states the gate CI enforces instead of claiming coverage is unwired
 
 ## Acceptance Criteria
 

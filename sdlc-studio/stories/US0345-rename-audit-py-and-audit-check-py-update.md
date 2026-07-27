@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** agent working in the scripts directory
+**I want** audit.py and audit_check.py renamed with every call site updated
+**So that** no caller is left invoking a module name that no longer exists
 
 ## Acceptance Criteria
 

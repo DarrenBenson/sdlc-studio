@@ -32,16 +32,20 @@
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_two_backlogs.py -k test_seed_not_ready_placeholders_still_flagged
 - **Verified:** yes (2026-07-16)
 
-### AC3: Opt-out preserved
+### AC3: Opt-out preserved (superseded by US0411)
 
 - **Given** refine apply --no-seed-acs
 - **When** stories are minted
-- **Then** the bare scaffold behaviour is byte-identical to today
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_two_backlogs.py -k test_seed_opt_out_restores_bare_scaffold
-- **Verified:** no (2026-07-27)
+- **Then** the opt-out still bypasses seeding. Its output is no longer the bare
+  `{{define}}` scaffold this AC originally pinned: US0411 replaced that with an explicit
+  ungroomed marker, so the shipped contract is that opting out marks the AC block
+  ungroomed rather than leaving a placeholder that reads as content
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_two_backlogs.py -k test_seed_opt_out_marks_ungroomed_instead_of_seeding
+- **Verified:** yes (2026-07-27)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-16 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-27 | BG0303 | AC3's selector (`test_seed_opt_out_restores_bare_scaffold`) was renamed away by US0411, which also REVERSED the behaviour AC3 asserted, so the discover run collected 0 tests and exited 0 - a Done story whose proof could never pass. The Then is restated to the shipped contract, marked superseded by US0411, and re-pointed at `test_seed_opt_out_marks_ungroomed_instead_of_seeding` |

@@ -43,9 +43,17 @@ def _version(text: str) -> str | None:
 
 def sync(master: Path, target_repo: Path, mode: str = "copy", dry_run: bool = False) -> dict:
     """Project master -> <target_repo>/sdlc-studio/product/pvd.md, read-only.
-    mode 'copy' writes a chmod-readonly copy (dev); 'symlink' links to the master (prod)."""
+    mode 'copy' writes a chmod-readonly copy (dev); 'symlink' links to the master (prod).
+    A missing or unreadable master is refused ({'action': 'error'}, exit 1), never projected."""
     master = Path(master)
     dest = Path(target_repo) / PROJECTED
+    if checksum(master) is None:
+        # Master missing or unreadable - refuse before touching the target. `symlink_to`
+        # succeeds against any path, so without this a mistyped --master left a dangling
+        # link behind an 'action': 'synced'. Mirrors drift()'s guard, and reads the master
+        # rather than testing exists() so an unreadable one is caught too.
+        return {"action": "error", "target": str(dest), "mode": mode,
+                "detail": f"master unreadable/missing: {master}"}
     if dry_run:  # preview: write nothing
         return {"action": "would-sync", "target": str(dest), "mode": mode, "dry_run": True}
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -90,9 +98,10 @@ def read_manifest(path: Path) -> dict:
 
 
 def cmd_sync(args: argparse.Namespace) -> int:
-    print(json.dumps(sync(args.master, args.target, args.mode,
-                          dry_run=getattr(args, "dry_run", False)), indent=2))
-    return 0
+    r = sync(args.master, args.target, args.mode,
+             dry_run=getattr(args, "dry_run", False))
+    print(json.dumps(r, indent=2))
+    return 1 if r["action"] == "error" else 0
 
 
 def cmd_drift(args: argparse.Namespace) -> int:

@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator about to open a run
+**I want** `--write` refused while plan-critic findings are undispositioned
+**So that** findings must be filed or declined with a reason, and silence cannot pass for agreement
 
 ## Acceptance Criteria
 

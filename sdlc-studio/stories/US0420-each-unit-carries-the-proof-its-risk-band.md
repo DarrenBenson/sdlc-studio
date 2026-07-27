@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator reading a sprint plan
+**I want** each unit to carry the proof its risk band requires, with omitted coverage flagged
+**So that** a unit in the highest risk band cannot ship on the weakest proof
 
 ## Acceptance Criteria
 

@@ -24,16 +24,21 @@
 - **Verify:** grep "project_upgrade.py. migrates a consuming project" sdlc-studio/trd.md
 - **Verified:** yes (2026-07-17)
 
-### AC2: The upgrade-vs-migrate type naming is reconciled with SKILL.md's type table
+### AC2: The upgrade-vs-migrate type naming is reconciled with SKILL.md's type table (restated by CR0365)
 
-- **Given** the paragraph blurred `upgrade` (the operator-facing type in SKILL.md's table) with `migrate` (the orchestrator command)
-- **When** it states the operator-facing surface is the `upgrade` type per SKILL.md's table, with migrate.py/project_upgrade.py/migrate_v3.py as the scripts under it
-- **Then** The upgrade-vs-migrate type naming is reconciled with SKILL.md's type table
-- **Verify:** grep "operator-facing surface is the .upgrade. type" sdlc-studio/trd.md
-- **Verified:** no (2026-07-27)
+- **Given** the paragraph blurred `upgrade` with `migrate` (the orchestrator command)
+- **When** it names the operator-facing types SKILL.md's table actually carries
+- **Then** the naming is reconciled with the table as it stands. The original wording pinned
+  an `upgrade` row in that table; CR0365 measured it and found no such row, so the claim this
+  AC asserted was false and its verifier could never pass. The paragraph now states that the
+  table lists `migrate` and `skill-update` and carries no `upgrade` row, with
+  `reference-upgrade.md` reached from the Progressive Loading Guide
+- **Verify:** grep "type table lists both and carries no" sdlc-studio/trd.md
+- **Verified:** yes (2026-07-27)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-27 | BG0303 | AC2's grep pinned a sentence CR0365 removed because the claim in it was false, leaving a Done story whose verifier could never pass. The AC is restated to what shipped and re-pointed at the present wording; the falsified `upgrade`-row claim is recorded here rather than quietly dropped |

@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator closing a design rung
+**I want** the close to report how many units it groomed and how many remain ungroomed
+**So that** an accepted-but-ungroomed batch cannot close silently
 
 ## Acceptance Criteria
 

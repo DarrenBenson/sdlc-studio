@@ -132,9 +132,20 @@ verified definition of Done, and a learning loop that must produce work.
 
 ### Target Users
 
-The orchestrator/operator running delivery, the developer of a consuming project,
-the AI agent executing the skill, and the skill maintainer. See
-`sdlc-studio/personas.md`.
+The design target is declared in the persona registry,
+[`sdlc-studio/personas/index.md`](./personas/index.md), which is the authority:
+
+- **Primary (the design target):** Maya Okafor, a solo founder-engineer who wants a
+  disciplined, trustworthy lifecycle driven by an agent rather than vibe-coding.
+- **Secondary (served, never at the Primary's expense):** Jonah Reyes, a small-team
+  lead adopting sdlc-studio on an inherited brownfield repo.
+- **Negative (deliberately not designed for):** Trevor Hale, an enterprise delivery
+  manager wanting a GUI, central governance and a human gate on every change. A
+  signal to decline, not a backlog.
+
+Each entry links to a full persona card. `tools/tests/test_persona_coherence.py`
+reads the registry at check time and fails if this section and the registry name
+different people, so the two cannot drift apart unnoticed.
 
 ### Context
 

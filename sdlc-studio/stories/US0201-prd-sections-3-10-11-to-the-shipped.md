@@ -10,9 +10,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader of the PRD
+**I want** Sections 3, 10 and 11 to describe the shipped Points model, with Effort named only as retired
+**So that** the specification matches what the tooling does and nobody sizes work from a retired scale
 
 ## Acceptance Criteria
 

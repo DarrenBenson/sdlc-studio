@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader of reference-persona.md
+**I want** the Primary-selection method documented with its tie-break
+**So that** competing candidates are resolved by a stated rule rather than by whoever writes the persona
 
 ## Acceptance Criteria
 

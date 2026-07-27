@@ -16,7 +16,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TypeVar
+from typing import NamedTuple, TypeVar
 
 T = TypeVar("T")
 
@@ -1499,6 +1499,132 @@ def resolve_author(name: str, atype: str, repo_root) -> bool:
         if key in blob:
             return True
     return False
+
+
+# -----------------------------------------------------------------------------
+# The design-persona registry (sdlc-studio/personas/index.md)
+# -----------------------------------------------------------------------------
+# Who the product is FOR - the goal-directed design personas, not the review seats that
+# critique artefacts (those live in personas/seats/ and resolve through persona_resolve).
+# One reader, so every command that needs a design target derives it from the registry
+# instead of restating a list that drifts.
+
+#: The roles the registry declares, in the order the index states them.
+PERSONA_ROLES = ("primary", "secondary", "negative")
+#: A role heading: `## Primary (the design target)`, `### Negative`, ...
+_PERSONA_ROLE_RE = re.compile(r"^#{2,}\s*(primary|secondary|negative)\b", re.I)
+
+
+class PersonaEntry(NamedTuple):
+    """One declared design persona: its name, its declared role, and its card path resolved
+    against the workspace (None when the bullet carries no local link)."""
+    name: str
+    role: str
+    card: str | None
+
+
+class PersonaRegistry(NamedTuple):
+    """The parsed registry. `available` is the honest-absence flag: False means the reader
+    could not read a registry (no `index.md`, unreadable, or no role heading in it) and
+    `reason` says which. A registry that parses but lists nobody is `available=True` with no
+    entries - genuinely empty, which is a different fact and must stay distinguishable."""
+    path: str
+    available: bool
+    reason: str | None
+    entries: tuple[PersonaEntry, ...]
+
+    @property
+    def primary(self) -> PersonaEntry | None:
+        """The declared Primary - the design target - or None."""
+        return next((e for e in self.entries if e.role == "primary"), None)
+
+    def by_role(self, role: str) -> tuple[PersonaEntry, ...]:
+        return tuple(e for e in self.entries if e.role == role.lower())
+
+    @property
+    def names(self) -> tuple[str, ...]:
+        return tuple(e.name for e in self.entries)
+
+    def find(self, name: str) -> PersonaEntry | None:
+        """The entry a supplied name refers to, matched on a normalised key so
+        `maya okafor`, `Maya Okafor` and `maya-okafor` are one person. None when unregistered."""
+        key = _persona_key(name)
+        if not key:
+            return None
+        return next((e for e in self.entries if _persona_key(e.name) == key), None)
+
+
+def _persona_key(name: str) -> str:
+    """The normalised match key for a persona name (letters and digits only, lower-cased)."""
+    return re.sub(r"[^a-z0-9]", "", (name or "").lower())
+
+
+def _persona_bullet(line: str) -> tuple[str, str | None] | None:
+    """`(name, href)` from a registry bullet, or None when the line is not a bullet.
+
+    Accepts the three shapes a registry uses: a linked card
+    (`- [Maya Okafor](maya-okafor.md) - ...`), a bold name, or bare prose whose name runs up
+    to the first ` - ` separator."""
+    m = re.match(r"^\s*[-*]\s+(.*)$", line)
+    if not m:
+        return None
+    body = m.group(1).strip()
+    if not body:
+        return None
+    link = re.match(r"^\[([^\]]+)\]\(([^)]+)\)", body)
+    if link:
+        return link.group(1).strip(), link.group(2).strip()
+    bold = re.match(r"^\*\*([^*]+)\*\*", body)
+    if bold:
+        return bold.group(1).strip(), None
+    name = re.split(r"\s+[-–:]\s+", body, maxsplit=1)[0].strip()
+    return (name, None) if name else None
+
+
+def persona_registry(repo_root) -> PersonaRegistry:
+    """Parse `sdlc-studio/personas/index.md` into its declared Primary / Secondary / Negative
+    personas with their card paths.
+
+    NEVER returns a bare empty result for a registry it could not read: an absent, unreadable or
+    heading-less index comes back `available=False` with a `reason` the caller reports, so
+    'there is no registry' can never be mistaken for 'the registry declares nobody'. Read-only.
+    """
+    path = Path(repo_root) / "sdlc-studio" / "personas" / "index.md"
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        why = ("no persona registry at" if not path.exists() else f"cannot read ({exc.strerror})")
+        return PersonaRegistry(str(path), False, f"{why} {path}", ())
+    entries: list[PersonaEntry] = []
+    role: str | None = None
+    seen_heading = False
+    in_fence = False
+    for line in text.splitlines():
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if line.startswith("#"):
+            m = _PERSONA_ROLE_RE.match(line)
+            role = m.group(1).lower() if m else None
+            seen_heading = seen_heading or role is not None
+            continue
+        if role is None:
+            continue
+        bullet = _persona_bullet(line)
+        if bullet is None:
+            continue
+        name, href = bullet
+        card = None
+        if href and not re.match(r"^[a-z][a-z0-9+.-]*:", href):
+            card = str((path.parent / href.split("#", 1)[0]).resolve())
+        entries.append(PersonaEntry(name, role, card))
+    if not seen_heading:
+        return PersonaRegistry(str(path), False,
+                               f"{path} declares no Primary/Secondary/Negative heading, so no "
+                               f"design target could be read from it", ())
+    return PersonaRegistry(str(path), True, None, tuple(entries))
 
 
 def alias_map(repo_root) -> dict[str, str]:

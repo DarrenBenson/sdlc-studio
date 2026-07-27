@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer relying on the CR0302 freshness guard
+**I want** it anchored to the claim rather than to a file mtime
+**So that** stale counts fail the guard instead of passing because the file was touched recently
 
 ## Acceptance Criteria
 

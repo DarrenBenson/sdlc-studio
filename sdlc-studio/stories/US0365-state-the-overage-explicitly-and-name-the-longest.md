@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** agent reading a doc_freshness refusal
+**I want** the overage stated explicitly and the longest sections named by line count
+**So that** I can fix the file from the message without measuring it myself
 
 ## Acceptance Criteria
 

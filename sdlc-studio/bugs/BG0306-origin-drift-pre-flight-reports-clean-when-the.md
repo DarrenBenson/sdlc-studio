@@ -1,6 +1,7 @@
 # BG0306: Origin-drift pre-flight reports clean when the fetch itself fails - even under --strict
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_rolling.py
@@ -19,6 +20,16 @@ Evidence (`origin_drift()` lines 2417-2441; _git() lines 2396-2402; `_origin_dri
 ## Proposed Fix
 
 Capture the fetch and rev-list results; on failure emit an 'origin unreachable - drift unverifiable' warning, and under --strict return the refusal exit code instead of a silent pass.
+
+## Acceptance Criteria
+
+### AC1: an unreachable origin is not reported clean
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** `pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_rolling.py::UnreachableOriginIsNotCleanTests`, written red before the fix and green after
+- **Verified:** yes (2026-07-27, functional)
 
 ## Revision History
 

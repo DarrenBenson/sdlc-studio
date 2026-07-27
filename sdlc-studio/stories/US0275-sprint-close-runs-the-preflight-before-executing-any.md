@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator closing a sprint
+**I want** close to run the preflight before it executes any step
+**So that** nothing is discovered serially, part-way through a chain that has already changed state
 
 ## Acceptance Criteria
 

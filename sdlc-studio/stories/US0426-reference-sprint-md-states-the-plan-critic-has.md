@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader of reference-sprint.md
+**I want** it to state that the plan critic has strictly less information than the builder
+**So that** a plan-time finding is trusted only as far as its evidence reaches
 
 ## Acceptance Criteria
 

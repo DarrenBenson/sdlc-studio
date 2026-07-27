@@ -5,9 +5,12 @@ Makes deterministic creation the *checkable* path. `new` stamps every artifact i
 creates (`> **Created-by:** sdlc-studio ...`); this module:
   check    flags artifacts past the adoption cutoff that LACK the stamp (hand-authored),
            with remediation. Advisory by default; `provenance.enforce: true` makes it block.
-           `provenance.adopt_after` (per-type id cutoff) exempts legacy artifacts.
+           `provenance.adopt_after` (per-type id cutoff) exempts legacy artifacts. An
+           artifact it cannot read is reported blocking in either mode: unjudged, not clean.
   remake   content-preservingly backfills the stamp into un-stamped artifacts (idempotent,
            dry-run-able). Stamp-backfill only - it never re-lays-out content (no loss risk).
+           Names every file it could not read or write, and exits 1 rather than printing a
+           count that reads as a complete backfill.
 
 Standalone + advisory by design: it is NOT wired into the gate, so adopting it is a project
 choice (set `provenance.enforce` to gate on it). Pure stdlib.
@@ -86,18 +89,28 @@ def check(repo_root: Path | str, types: list[str] | None = None) -> dict:
     enforce = _truthy(sdlc_md.project_override(root, "provenance.enforce", False))
     findings = []
     for t in (types or list(sdlc_md.ARTIFACT_TYPES)):
-        for p in sdlc_md.artifact_files(t, root):
-            idn = sdlc_md.id_number(p.stem.split("-")[0]) or 0  # number is in the id prefix, not the slug
+        # Consume the (path, text) pairs rather than re-reading: iter_artifact_files
+        # yields an unreadable or non-UTF-8 artifact as (path, None) precisely so a
+        # checker can NAME it. Re-reading here swallowed the OSError and reported the
+        # file clean, and crashed outright on a non-UTF-8 one.
+        for p, text in sdlc_md.iter_artifact_files(t, root):
+            aid = p.stem.split("-")[0]
+            idn = sdlc_md.id_number(aid) or 0  # number is in the id prefix, not the slug
             if idn <= cutoff:  # legacy, pre-adoption: exempt
                 continue
-            try:
-                if not has_provenance(p.read_text(encoding="utf-8")):
-                    findings.append({"id": p.stem.split("-")[0], "type": t, "kind": "no-provenance",
-                                     "blocking": enforce,
-                                     "detail": f"{p.stem.split('-')[0]} carries no Created-by "
-                                               "provenance - recreate with `new` or run `remake`"})
-            except OSError:
-                continue
+            if text is None:
+                # Never judged, so never clean. Blocking whatever `enforce` says: that
+                # toggle governs whether MISSING provenance blocks, not whether an
+                # unjudgeable file counts as a pass.
+                findings.append({"id": aid, "type": t, "kind": "unreadable",
+                                 "blocking": True,
+                                 "detail": f"{aid} could not be read as UTF-8 text "
+                                           f"({p}) - provenance was not judged"})
+            elif not has_provenance(text):
+                findings.append({"id": aid, "type": t, "kind": "no-provenance",
+                                 "blocking": enforce,
+                                 "detail": f"{aid} carries no Created-by "
+                                           "provenance - recreate with `new` or run `remake`"})
     return {"findings": findings, "enforced": enforce,
             "ok": not any(f["blocking"] for f in findings)}
 
@@ -111,28 +124,29 @@ def remake(repo_root: Path | str, types: list[str] | None = None, dry_run: bool 
     root = Path(repo_root)
     cutoff = 0 if include_exempt else \
         (sdlc_md.parse_cutoff(sdlc_md.project_override(root, "provenance.adopt_after")) or 0)
-    changed = []
+    changed, failed = [], []
     for t in (types or list(sdlc_md.ARTIFACT_TYPES)):
-        for p in sdlc_md.artifact_files(t, root):
-            idn = sdlc_md.id_number(p.stem.split("-")[0]) or 0
+        for p, text in sdlc_md.iter_artifact_files(t, root):
+            aid = p.stem.split("-")[0]
+            idn = sdlc_md.id_number(aid) or 0
             if idn <= cutoff:  # legacy, pre-adoption: exempt (mirror check)
                 continue
-            try:
-                text = p.read_text(encoding="utf-8")
-            except OSError:
+            if text is None:  # unreadable/non-UTF-8: name it, never skip it silently
+                failed.append(aid)
                 continue
             new_text, did = _add_stamp(text)
             if not did:
                 continue
             if dry_run:
-                changed.append(p.stem.split("-")[0])
+                changed.append(aid)
                 continue
-            try:  # a single unwritable file must not abort the whole backfill
-                p.write_text(new_text, encoding="utf-8")
-                changed.append(p.stem.split("-")[0])
-            except OSError:
-                continue
-    return {"changed": changed, "count": len(changed), "dry_run": dry_run}
+            try:  # a single unwritable file must not abort the whole backfill,
+                p.write_text(new_text, encoding="utf-8")  # but it must be REPORTED -
+                changed.append(aid)                       # a swallowed write left the
+            except OSError:                               # run claiming a complete
+                failed.append(aid)                        # backfill it did not do
+    return {"changed": changed, "count": len(changed),
+            "failed": failed, "dry_run": dry_run}
 
 
 def cmd_check(args: argparse.Namespace) -> int:
@@ -143,8 +157,12 @@ def cmd_check(args: argparse.Namespace) -> int:
     else:
         for f in r["findings"]:
             print(f"  [{'FAIL' if f['blocking'] else 'warn'}] {f['detail']}")
-        print(f"provenance: {len(r['findings'])} un-stamped "
-              f"({'enforced' if r['enforced'] else 'advisory'})")
+        # Count the two kinds apart: an unreadable artifact is not an un-stamped one,
+        # and folding it into that total would hide it inside an advisory number.
+        unreadable = sum(1 for f in r["findings"] if f["kind"] == "unreadable")
+        print(f"provenance: {len(r['findings']) - unreadable} un-stamped "
+              f"({'enforced' if r['enforced'] else 'advisory'})"
+              + (f", {unreadable} unreadable (not judged)" if unreadable else ""))
     return 0 if r["ok"] else 1
 
 
@@ -152,9 +170,14 @@ def cmd_remake(args: argparse.Namespace) -> int:
     types = [args.type] if args.type else None
     r = remake(args.root, types, args.dry_run, include_exempt=args.all)
     verb = "would stamp" if args.dry_run else "stamped"
-    print(json.dumps(r, indent=2) if args.format == "json"
-          else f"{verb} {r['count']} artifact(s): {', '.join(r['changed']) or '(none)'}")
-    return 0
+    if args.format == "json":
+        print(json.dumps(r, indent=2))
+    else:
+        print(f"{verb} {r['count']} artifact(s): {', '.join(r['changed']) or '(none)'}")
+        if r["failed"]:  # a partial backfill must not read as a complete one
+            print(f"  [FAIL] {len(r['failed'])} not stamped (unreadable or unwritable): "
+                  f"{', '.join(r['failed'])}")
+    return 1 if r["failed"] else 0
 
 
 def build_parser() -> argparse.ArgumentParser:

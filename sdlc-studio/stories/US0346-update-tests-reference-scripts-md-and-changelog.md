@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** agent working in the scripts directory
+**I want** the tests, reference-scripts.md and CHANGELOG updated with the rename
+**So that** the catalogue and the suite name the modules that actually ship
 
 ## Acceptance Criteria
 

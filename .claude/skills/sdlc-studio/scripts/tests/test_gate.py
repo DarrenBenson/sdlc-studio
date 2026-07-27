@@ -7,6 +7,7 @@ import io
 import json
 import os
 import re
+import shutil as _shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -3896,6 +3897,70 @@ class TestRelevantSetTests(unittest.TestCase):
             self.assertIn("--test-relevant", hook.read_text(encoding="utf-8"),
                           "the hook must ask gate.py for the measured set; a regex of its "
                           "own is the hand enumeration this story removed")
+
+    def test_deleting_a_file_a_test_reads_is_still_test_relevant(self) -> None:
+        """BG0329. The set is measured from the suite SOURCES, so a path the suites name is
+        relevant whether or not it is still on disk. Measuring only what exists drops a file
+        at the exact moment it is deleted - the commit that breaks the suite reading it."""
+        src = (
+            "from pathlib import Path\n"
+            "REPO = Path(__file__).resolve().parents[5]\n"
+            "DOC = REPO / 'docs' / 'read-by-a-test.md'\n"
+            "def test_doc():\n"
+            "    assert DOC.read_text()\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            root = self._suite_repo(Path(d), src)
+            os.remove(root / "docs" / "read-by-a-test.md")   # the commit under test DELETES it
+            measured = gate.test_relevant_paths(str(root))
+            self.assertIn("docs/read-by-a-test.md", measured,
+                          "a suite-read file must stay in the set once deleted - that commit "
+                          "is precisely the one that breaks the suite")
+            self.assertTrue(gate.is_test_relevant(["docs/read-by-a-test.md"], str(root)))
+            # The control: dropping the existence check must not make everything relevant.
+            self.assertFalse(gate.is_test_relevant(["docs/read-by-nobody.md"], str(root)),
+                             "a doc no test reads must still take the fast path")
+
+    def test_deleting_a_structural_tree_is_still_test_relevant(self) -> None:
+        """BG0329, the sibling path in the same function: the structural entries were
+        unioned in only when they existed, so removing one removed the obligation to run
+        the suites it feeds."""
+        src = (
+            "from pathlib import Path\n"
+            "REPO = Path(__file__).resolve().parents[5]\n"
+            "def test_doc():\n"
+            "    assert (REPO / 'docs' / 'read-by-a-test.md').read_text()\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._suite_repo(Path(d), src))   # this tree has no tools/ at all
+            self.assertTrue(gate.is_test_relevant(["tools/lint-style.sh"], root),
+                            "a structural tree absent from disk must still be relevant - "
+                            "deleting it is the commit that needs the suites")
+
+    def test_the_set_drops_only_entries_another_entry_already_covers(self) -> None:
+        """The prune that keeps the listing readable must be verdict-preserving: an entry
+        is dropped only when a covering entry answers identically."""
+        entries = {"tools", "tools/lint-style.sh", "docs/a.md", "install.sh"}
+        minimal = gate._minimal(entries)
+        self.assertEqual(minimal, {"tools", "docs/a.md", "install.sh"})
+        for probe in ("tools/lint-style.sh", "tools/tests/x.py", "docs/a.md", "install.sh"):
+            self.assertEqual(gate._matches_relevant(probe, minimal),
+                             gate._matches_relevant(probe, entries), probe)
+        self.assertFalse(gate._matches_relevant("docs/b.md", minimal))
+
+    def test_deleting_a_directory_a_test_globs_is_still_test_relevant(self) -> None:
+        """BG0329, the sibling path: a directory read-site drops out the same way."""
+        src = (
+            "from pathlib import Path\n"
+            "REPO = Path(__file__).resolve().parents[5]\n"
+            "def test_docs():\n"
+            "    assert list((REPO / 'docs').glob('*.md'))\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            root = self._suite_repo(Path(d), src)
+            _shutil.rmtree(root / "docs")                    # the commit under test DELETES it
+            self.assertTrue(gate.is_test_relevant(["docs/read-by-a-test.md"], str(root)),
+                            "a globbed directory must stay relevant once deleted")
 
 
 if __name__ == "__main__":

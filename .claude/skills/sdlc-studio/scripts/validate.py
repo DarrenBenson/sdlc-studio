@@ -277,10 +277,27 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
     # `specified, verifiable` once it is Ready+, and the AC-verify gate on Done. NOT the Ready
     # transition itself, which succeeds: the earlier wording here claimed the placeholder "keeps
     # the story out of Ready/Done", and that half is false. Every other type/status: error.
+    #
+    # A BODY slot (the `**As a** {{role}}` block and every other scaffolded section) is graded on
+    # the same principle but a different boundary, because every type is minted with one: it is an
+    # ERROR once the artefact has reached a TERMINAL status for its type, and a warning while it is
+    # still in flight. A terminal artefact carrying an unfilled slot is a finished record with a
+    # blank where its content should be; a fresh one carrying the same slot is simply not written
+    # yet. The terminal set is derived from the type's own vocabulary (`is_terminal_status`), never
+    # enumerated here, so a project that adds a terminal status is covered without editing this.
     _canon = sdlc_md.canonical_status(status, sdlc_md.status_vocab(type_, repo_root)) if status else None
     _pre_ready_story = type_ == "story" and _canon in ("Proposed", "Draft")
-    _check_placeholders(text, add,
-                        ac_severity=SEVERITY_WARNING if _pre_ready_story else SEVERITY_ERROR)
+    _ac_sev = SEVERITY_WARNING if _pre_ready_story else SEVERITY_ERROR
+    _terminal = bool(_canon) and sdlc_md.is_terminal_status(type_, _canon)
+    # A widened check must not block on the backlog it reveals. When the sweep was extended from
+    # the AC section to the whole body it surfaced 31 already-terminal artefacts carrying an
+    # unfilled scaffold - real debt, but debt that predates the check. Those ids are recorded in a
+    # committed baseline and report as a warning; anything NOT in it errors, so the count can only
+    # fall. Removing an id is one-way: the check errors on it from then on.
+    _body_sev = SEVERITY_ERROR if _terminal else (_ac_sev if type_ == "story" else SEVERITY_WARNING)
+    if _terminal and _body_sev == SEVERITY_ERROR and _in_placeholder_baseline(path, repo_root):
+        _body_sev = SEVERITY_WARNING
+    _check_placeholders(text, add, ac_severity=_ac_sev, body_severity=_body_sev)
     return out
 
 
@@ -289,6 +306,11 @@ _GWT = re.compile(r"\s*[-*]\s+\*\*(Given|When|Then)\b")
 _META = re.compile(r">\s*\*\*[\w ]+:\*\*")
 _CHECKBOX = re.compile(r"\s*[-*]\s+\[[ xX]\]")  # `- [ ] {{criterion}}` (change-request / story AC checklist)
 _BULLET_VAL = re.compile(r"^\s*[-*]\s+(?:\[[ xX]\]\s+)?(?:\*\*[^*]+\*\*:?\s*)?(.*)$")
+_FENCE = re.compile(r"^\s*(?:```|~~~)")
+# Any body line's fillable value: what remains after an optional bullet, checkbox, heading marker
+# and bold label. `**As a** {{role}}` -> `{{role}}`; a prose sentence keeps its words and so is
+# never placeholder-ONLY.
+_BODY_VAL = re.compile(r"^\s*(?:[-*+]\s+)?(?:\[[ xX]\]\s+)?(?:#{1,6}\s+)?(?:\*\*[^*]+\*\*:?\s*)?(.*)$")
 
 
 def _unfilled(value: str | None) -> bool:
@@ -306,6 +328,12 @@ def _ac_value(line: str) -> str:
         if m:
             return m.group(2) or ""
     m = _BULLET_VAL.match(line)  # Given/When/Then or `- [ ]` checkbox bullet
+    return m.group(1) if m else line
+
+
+def _body_value(line: str) -> str:
+    """The fillable value of an ordinary body line (text after any bullet/heading/bold label)."""
+    m = _BODY_VAL.match(line)
     return m.group(1) if m else line
 
 
@@ -354,21 +382,68 @@ def _cr_has_evidence(text: str) -> bool:
     return has_impact and has_size
 
 
-def _check_placeholders(text: str, add, ac_severity: str = SEVERITY_ERROR) -> None:
-    """Flag an unresolved `{{...}}` slot left in a metadata line or an acceptance-criteria
-    structural line (AC heading, ACn / Given / When / Then / checkbox bullet, Verify) - an
-    unfilled scaffold. Flags only a line whose *value* is placeholder-ONLY, so prose
+
+#: Artefacts that already carried an unfilled body scaffold when the sweep was widened.
+_PLACEHOLDER_BASELINE = "sdlc-studio/.placeholder-baseline.txt"
+_baseline_cache: set[str] | None = None
+
+
+def _in_placeholder_baseline(path, repo_root) -> bool:
+    """Is this artefact recorded as pre-existing body-placeholder debt?
+
+    Read once per process from the committed baseline. A missing baseline file means an empty
+    set - every terminal placeholder errors - which is the safe direction: an absent baseline
+    can never quieten a finding.
+    """
+    global _baseline_cache
+    if _baseline_cache is None:
+        _baseline_cache = set()
+        try:
+            src = (Path(repo_root) / _PLACEHOLDER_BASELINE).read_text(encoding="utf-8")
+        except OSError:
+            src = ""
+        _baseline_cache = {ln.strip() for ln in src.splitlines()
+                           if ln.strip() and not ln.startswith("#")}
+    aid = sdlc_md.artifact_id_from_path(Path(path)) if hasattr(sdlc_md, "artifact_id_from_path") else None
+    if aid is None:
+        import re as _re
+        m = _re.search(r"((?:BG|US|EP|CR|RFC)\d{4})", Path(path).name)
+        aid = m.group(1) if m else ""
+    return aid in _baseline_cache
+
+
+def _check_placeholders(text: str, add, ac_severity: str = SEVERITY_ERROR,
+                        body_severity: str | None = None) -> None:
+    """Flag an unresolved `{{...}}` slot left ANYWHERE outside a code fence - a metadata line, an
+    acceptance-criteria structural line (AC heading, ACn / Given / When / Then / checkbox bullet,
+    Verify), or any other body line. Flags only a line whose *value* is placeholder-ONLY, so prose
     that legitimately discusses `{{placeholder}}` syntax, and a real AC that merely references
     a token, are never flagged (consistent with conformance._real).
 
-    Metadata placeholders are always an error. An AC placeholder uses `ac_severity`, which must be
-    one of `SEVERITIES` or the summary counters will not see it: the caller passes
-    `SEVERITY_WARNING` for an ungroomed (pre-Ready) story - a fresh refine output whose ACs are
-    still scaffolds - so the refine commit that creates it lands. The story is still kept out of
-    DELIVERY by conformance's specified/verifiable bar (unchanged) and by the AC-verify gate on
-    Done; the transition to Ready is not itself blocked, so do not read this as gating it."""
+    The body sweep is deliberately NOT an enumeration of the sections that may hold a scaffold. It
+    used to read metadata plus the AC section only, and the `**As a** {{role}}` block the scaffolder
+    mints sits in neither, so 39 stories reached Done carrying an unfilled persona slot while the
+    check reported zero findings. A list of covered places silently exempts whatever it
+    forgot; the covered set is now every line, with fenced blocks the one stated exclusion because
+    a fence is sample text, not a slot.
+
+    Metadata placeholders are always an error. An AC placeholder uses `ac_severity` and a body
+    placeholder `body_severity` (defaulting to `ac_severity`); both must be one of `SEVERITIES` or
+    the summary counters will not see them. The caller passes `SEVERITY_WARNING` for an ungroomed
+    (pre-Ready) story - a fresh refine output whose ACs are still scaffolds - so the refine commit
+    that creates it lands, and for the body of any in-flight artefact, since every type is minted
+    with its sections scaffolded. The story is still kept out of DELIVERY by conformance's
+    specified/verifiable bar (unchanged) and by the AC-verify gate on Done; the transition to Ready
+    is not itself blocked, so do not read this as gating it."""
+    body_severity = body_severity or ac_severity
     in_ac = False
+    in_fence = False
     for line in text.splitlines():
+        if _FENCE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
         if line.startswith("## "):
             in_ac = "acceptance criteria" in line.lower()
             continue
@@ -382,6 +457,9 @@ def _check_placeholders(text: str, add, ac_severity: str = SEVERITY_ERROR) -> No
             if _unfilled(_ac_value(line)):
                 add(ac_severity, "placeholder",
                     f"unresolved placeholder in acceptance criteria: {line.strip()}")
+        elif _unfilled(_body_value(line)):
+            add(body_severity, "placeholder",
+                f"unresolved placeholder in body: {line.strip()}")
 
 
 def _ac_exempt(rec: str | None, repo_root: Path | None) -> bool:

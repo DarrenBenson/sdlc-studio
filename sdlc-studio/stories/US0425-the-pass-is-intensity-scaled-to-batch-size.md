@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator running the plan critic
+**I want** the pass intensity-scaled to batch size, recording what the scaling skipped
+**So that** the tokens it spends before any delivery are proportionate and its omissions stay visible
 
 ## Acceptance Criteria
 

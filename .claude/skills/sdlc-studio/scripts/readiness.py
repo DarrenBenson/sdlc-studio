@@ -17,7 +17,8 @@ clean, verifiable batch. Per unit it flags, deterministically:
                       judgement stays with review - see best-practices/testing.md),
 - **link-integrity** - reuses `integrity.py`'s error findings for the unit.
 
-Emits a JSON readiness report; exits non-zero when any unit is not ready. The
+Emits a JSON readiness report; exits non-zero when any unit is not ready, and equally
+when a check could not be computed at all (reported under `uncomputed`, never as a pass). The
 adversarial "is the problem still real" lens stays model-instructed (delegates to
 the adversarial audit when built). Read-only; pure stdlib.
 """
@@ -476,12 +477,18 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
 
 
 def audit_batch(repo_root: Path | str, ids: list[str]) -> dict:
-    """Readiness report over a batch of unit ids."""
+    """Readiness report over a batch of unit ids.
+
+    `uncomputed` names any check that did not run. It is never empty and quietly ignored:
+    a batch whose cross-epic sweep crashed has no cross-epic verdict for ANY unit, so the
+    report says so, the caller exits non-zero, and a partial answer is never dressed up as
+    a clean one."""
     root = Path(repo_root)
     ierr = {f["id"] for f in integrity.detect_integrity(root)["findings"] if f["severity"] == "error"}
+    uncomputed: list[str] = []
     # cross-epic AC leakage, computed once for the batch (ac_scope is repo-wide)
+    cross: dict[str, dict] = {}
     try:
-        cross: dict[str, dict] = {}
         for f in ac_scope.check(root):
             if not f.get("story"):
                 continue
@@ -490,15 +497,23 @@ def audit_batch(repo_root: Path | str, ids: list[str]) -> dict:
             # advisory one that happened to sort first.
             if sid not in cross or f.get("strength", 1) > cross[sid].get("strength", 1):
                 cross[sid] = f
-    except Exception:  # noqa: BLE001 - advisory readiness check, never break the audit
+    except Exception as exc:  # noqa: BLE001 - reported, never swallowed
+        # The sweep is repo-wide, so a partial `cross` cannot be trusted for any unit: drop
+        # it AND declare it. Erasing a blocking strength>1 hit silently is how a not-ready
+        # unit walks into a sprint carrying a green verdict nobody computed.
         cross = {}
+        uncomputed.append(f"cross-epic-ac: {type(exc).__name__}: {exc}")
+        print(f"warning: cross-epic AC check did not run ({type(exc).__name__}: {exc}); "
+              "no unit in this batch has a cross-epic verdict", file=sys.stderr)
     batch_ids = {sdlc_md.norm_id(i) for i in ids}
     units = [audit_unit(root, i, ierr, cross, batch_ids=batch_ids) for i in ids]
     ready = sum(1 for u in units if u["ready"])
     return {
         "generated_at": sdlc_md.now_iso8601(),
         "units": units,
-        "summary": {"total": len(units), "ready": ready, "not_ready": len(units) - ready},
+        "uncomputed": uncomputed,
+        "summary": {"total": len(units), "ready": ready, "not_ready": len(units) - ready,
+                    "uncomputed": len(uncomputed)},
     }
 
 
@@ -520,7 +535,13 @@ def cmd_check(args: argparse.Namespace) -> int:
         print(json.dumps(res, indent=2))
     else:
         s = res["summary"]
-        print(f"tranche audit: {s['ready']}/{s['total']} ready, {s['not_ready']} not")
+        # The header carries the partial marker, derived from the same list the exit code
+        # keys off: a total that reads as complete over a check that never ran is the
+        # defect, not the wording.
+        partial = f" - PARTIAL, {s['uncomputed']} check(s) did not run" if res["uncomputed"] else ""
+        print(f"tranche audit: {s['ready']}/{s['total']} ready, {s['not_ready']} not{partial}")
+        for miss in res["uncomputed"]:
+            print(f"  UNCOMPUTED {miss}")
         kinds = set()
         for u in res["units"]:
             if not u["ready"]:
@@ -533,7 +554,9 @@ def cmd_check(args: argparse.Namespace) -> int:
             print("Guidance:")
             for h in hints:
                 print(f"  - {h}")
-    return 1 if res["summary"]["not_ready"] else 0
+    # A check that did not run fails the gate exactly like a not-ready unit: the batch was
+    # not cleared, and only an exit code says so to the caller.
+    return 1 if (res["summary"]["not_ready"] or res["uncomputed"]) else 0
 
 
 def build_parser() -> argparse.ArgumentParser:

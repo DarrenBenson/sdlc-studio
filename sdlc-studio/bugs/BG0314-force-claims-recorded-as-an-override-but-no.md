@@ -1,6 +1,7 @@
 # BG0314: --force claims 'recorded as an override' but no record of a forced bypass is ever written
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
@@ -19,6 +20,16 @@ Evidence (`cmd_set` --force help text (lines 1114-1115); `_pre_write_gates` line
 ## Proposed Fix
 
 On a forced transition, annotate the artefact (and the telemetry event) with an override record naming the bypassed gate and the flag - or, failing that, correct the help text to stop claiming auditability.
+
+## Acceptance Criteria
+
+### AC1: a forced bypass is recorded on the artefact
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** `pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::ForcedOverrideRecordTests::test_forced_bypass_is_recorded_on_the_artefact`, written red before the fix and green after
+- **Verified:** yes (2026-07-27, functional)
 
 ## Revision History
 

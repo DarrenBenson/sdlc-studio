@@ -1845,12 +1845,17 @@ def _module_read_paths(src: str, module_path: str, root: str) -> set[str]:
                     env[node.targets[0].id] = got[1]
 
     def _record(abs_path: str, want_dir: bool, out: set[str]) -> None:
-        if not abs_path.startswith(root + os.sep) or not os.path.exists(abs_path):
+        if not abs_path.startswith(root + os.sep):
             return
-        if want_dir and not os.path.isdir(abs_path):
-            return
-        if not want_dir and os.path.isdir(abs_path):
-            return   # a bare directory is only relevant at a read-site (below)
+        if os.path.exists(abs_path):
+            # What is on disk classifies it: a bare directory is only relevant at a
+            # read-site (below), and a read-site naming a file is not a directory read.
+            if want_dir != os.path.isdir(abs_path):
+                return
+        # A path the suites name but that is NOT on disk is KEPT, classified by how the
+        # suite used it. The set is measured from the suite SOURCES, and a staged deletion
+        # or rename is exactly the change that breaks the suite reading it - dropping it
+        # here would skip the suites on the one commit that most needs them.
         out.add(os.path.relpath(abs_path, root).replace(os.sep, "/"))
 
     out: set[str] = set()
@@ -1908,9 +1913,23 @@ def test_relevant_paths(root: str = ".") -> set[str]:
     # The suites import the scripts they exercise, and a template edit can change an
     # assertion over the shipped payload. Those two are structural, not measurable from a
     # path expression, so they are unioned in rather than replaced by the measurement.
-    measured |= {p for p in LEGACY_TEST_RELEVANT
-                 if os.path.exists(os.path.join(root, p))}
-    return {p for p in measured if p and not p.startswith("..")}
+    # Unioned WITHOUT an existence test, for the reason `_record` keeps a missing path: a
+    # commit deleting one of these trees is a commit the suites must run on, and a set
+    # filtered by what survives the commit cannot see it.
+    measured |= set(LEGACY_TEST_RELEVANT)
+    return _minimal({p for p in measured if p and not p.startswith("..")})
+
+
+def _minimal(entries: set[str]) -> set[str]:
+    """The set with every entry another entry already covers removed.
+
+    `_matches_relevant` reads every entry as a prefix, so an entry under another answers
+    nothing the covering one does not - dropping it cannot change any verdict. It keeps the
+    listing readable: without this, one measured directory drags in every path a fixture
+    ever built beneath it, and a set nobody can read is a set nobody checks."""
+    prefixes = {e.rstrip("/") for e in entries}
+    return {e for e in entries
+            if not any(e.startswith(p + "/") for p in prefixes if p != e.rstrip("/"))}
 
 
 def is_test_relevant(paths, root: str = ".") -> bool:

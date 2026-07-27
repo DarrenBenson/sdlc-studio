@@ -117,19 +117,27 @@ def parse_story(text: str) -> list[ACBlock]:
         if current is not None:
             blocks.append(current)
 
-    in_fence = False
-    fence = ""
+    fence = None          # (char, length) of the OPEN fence, or None
     for i, line in enumerate(lines):
         stripped = line.lstrip()
         # A fenced code block inside an AC is an ILLUSTRATION, not a directive: a
         # `- **Verify:**` line shown as an example inside ``` must never be picked up and
         # executed. Skip fenced contents (the fence does not end the current AC block).
-        if not in_fence and (stripped.startswith("```") or stripped.startswith("~~~")):
-            in_fence, fence = True, stripped[:3]
-            continue
-        if in_fence:
-            if stripped.startswith(fence):
-                in_fence = False
+        # The rule is CommonMark's, not a toggle: a fence opens on 3+ of ` or ~ and closes
+        # only on the SAME character at that length or longer. A naive toggle counted the
+        # inner ```text of a ````markdown block as a closer, so the illustration below it
+        # became a LIVE shell verifier - the opposite of what this guard is for.
+        marker = "`" if stripped.startswith("```") else ("~" if stripped.startswith("~~~") else None)
+        if marker:
+            run = len(stripped) - len(stripped.lstrip(marker))
+            if fence is None:
+                fence = (marker, run)
+                continue
+            if marker == fence[0] and run >= fence[1]:
+                fence = None
+                continue
+            # a shorter or different fence inside an open one is CONTENT
+        if fence is not None:
             continue
 
         m = AC_HEADING_RE.match(line)
@@ -226,6 +234,14 @@ class VerifierResult:
 _UNITTEST_ZERO = re.compile(r"^Ran 0 tests? in ", re.M)
 # pytest: one summary line, exclusive. `--collect-only` reports "collected".
 _PYTEST_ZERO = re.compile(r"^(?:=+ )?no tests (?:ran|collected)\b", re.M | re.I)
+# pytest again: an ALL-SKIPPED run is not "no tests ran". Collection worked, the node exists,
+# the process exits 0 and prints "1 skipped in 0.01s" - and nothing executed. The batch path
+# has always refused a skip (`_parse_junit_xml`: a <skipped> case is not a pass), so without
+# this the two paths returned opposite verdicts for one run. Matched only when the summary
+# counts nothing that ran: "1 passed, 1 skipped" does not match, because a test did run.
+# Counts pytest prints after `skipped` and that still mean nothing ran are allowed through.
+_PYTEST_ONLY_SKIPPED = re.compile(
+    r"^(?:=+ )?\d+ skipped(?:, \d+ (?:deselected|warnings?))* in \d", re.M | re.I)
 # go: one line per PACKAGE. `?  pkg [no test files]` and `ok pkg 0.0s [no tests to run]` are
 # normal output of a green `./...` run, so the whole run is empty only when EVERY package line
 # says so.
@@ -266,13 +282,23 @@ def _ran_no_tests(kind: str, stdout: str, stderr: str) -> bool:
     blob = f"{stdout}\n{stderr}"
     return bool(_UNITTEST_ZERO.search(blob)
                 or _PYTEST_ZERO.search(blob)
+                or _pytest_all_skipped(blob)
                 or _go_ran_nothing(blob)
                 or _jest_ran_nothing(blob))
+
+
+def _pytest_all_skipped(blob: str) -> bool:
+    """True when pytest's summary reports skips and nothing that actually ran."""
+    return bool(_PYTEST_ONLY_SKIPPED.search(blob))
 
 
 _VACUOUS_MSG = ("verifier exited 0 but ran NO tests - a filter that matches nothing "
                 "(renamed or deleted test, stale -k/-run pattern) proves nothing. "
                 "Re-point the Verify line at a test that exists.")
+
+_SKIPPED_MSG = ("verifier exited 0 but every selected test was SKIPPED - a skipped test "
+                "proves exactly as much as one that never ran. Un-skip it, or re-point the "
+                "Verify line at a test that runs in this environment.")
 
 
 def _run_eval(expr: str, timeout: int, cwd: Path, start: float) -> VerifierResult:
@@ -355,12 +381,17 @@ def run_verifier(expression: str, timeout: int, cwd: Path,
         # a shell verb's own nonzero exit stays a plain failure it owns.
         unresolved = kind == "pytest" and result.returncode in (4, 5)
         vacuous = unresolved or (result.returncode == 0 and _ran_no_tests(kind, stdout, stderr))
+        # An all-skipped run is vacuous for a different reason and takes a different remedy,
+        # so it says so rather than telling the reader to re-point a Verify line that is fine.
+        msg = (_SKIPPED_MSG if (vacuous and not unresolved
+                                and _pytest_all_skipped(f"{stdout}\n{stderr}"))
+               else _VACUOUS_MSG)
         return VerifierResult(
             ok=(result.returncode == 0 and not vacuous),
             kind=kind,
             exit_code=result.returncode,
             stdout=stdout,
-            stderr=(f"{stderr}\n{_VACUOUS_MSG}".strip() if vacuous else stderr),
+            stderr=(f"{stderr}\n{msg}".strip() if vacuous else stderr),
             duration_ms=duration,
             vacuous=vacuous,
         )
@@ -1125,8 +1156,12 @@ def resolve_pytest_from_cache(verifier: str, nodes: dict[str, bool],
                 f"not in it, so the verifier names a test that does not exist", 0,
                 vacuous=True)
         return None
+    # The cache records pass / not-pass, and a skip is not a pass, so a red test and a
+    # skipped one are indistinguishable here. Calling both a "failure" sent the reader to
+    # debug code that may never have run, so the verdict says only what is known.
     return VerifierResult(ok, "pytest", 0 if ok else 1, "",
-                          "" if ok else f"cached pytest failure for {target}", 0)
+                          "" if ok else f"cached pytest run for {target} did not pass "
+                                        "(failed, errored, or skipped)", 0)
 
 
 def resolve_jest_from_cache(verifier: str, asserts: list[dict]) -> VerifierResult | None:

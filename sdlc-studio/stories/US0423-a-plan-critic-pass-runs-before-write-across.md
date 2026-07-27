@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator about to open a run
+**I want** a plan-critic pass across the scope, risk and efficiency lenses before `--write`
+**So that** the critique lands before the decision is made rather than after it
 
 ## Acceptance Criteria
 

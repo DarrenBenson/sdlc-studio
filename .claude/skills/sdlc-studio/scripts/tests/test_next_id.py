@@ -140,9 +140,11 @@ class AllocateNumberTests(unittest.TestCase):
             self.assertEqual(next_id.index_row_ids("cr", Path(d)), [3])
             self.assertEqual(next_id.allocate_number("cr", Path(d), remote=False), 4)
 
-    def test_remote_ids_graceful_without_git(self) -> None:
+    def test_remote_ids_reports_absent_where_there_is_no_origin(self) -> None:
+        # A directory that is not a checkout has no origin to read, so silence is correct
+        # and allocation carries on locally - the case the tri-state must NOT warn about.
         with tempfile.TemporaryDirectory() as d:
-            self.assertEqual(next_id.remote_ids("cr", Path(d)), ([], False))
+            self.assertEqual(next_id.remote_ids("cr", Path(d)), ([], next_id.REMOTE_ABSENT))
 
     def test_remote_ahead_id_not_reissued(self) -> None:
         import os, shutil, subprocess
@@ -163,6 +165,118 @@ class AllocateNumberTests(unittest.TestCase):
             rids, avail = next_id.remote_ids("cr", repo)
             self.assertTrue(avail); self.assertIn(9, rids)
             self.assertEqual(next_id.allocate_number("cr", repo, remote=True), 10)  # above remote, not 1
+
+
+class RemoteScanHonestyTests(unittest.TestCase):
+    """BG0326: 'there is no origin' and 'the origin scan FAILED' are different answers.
+
+    Collapsing them made a failed remote read degrade to a local-only allocation with no
+    signal anywhere, which re-issues an id origin already holds - the LL0002 collision
+    class, minted by the one tool whose job is to prevent it.
+    """
+
+    def _repo_with_unreachable_origin(self, d: Path) -> Path:
+        """A checkout whose `origin` is configured but whose origin/<branch> is not there:
+        the never-fetched / bad-remote case, indistinguishable from success before the fix."""
+        import subprocess
+        repo = d / "repo"
+        (repo / "sdlc-studio" / "change-requests").mkdir(parents=True)
+        (repo / "sdlc-studio" / "change-requests" / "CR0001-x.md").write_text(
+            "# CR0001: x\n\n> **Status:** Done\n", encoding="utf-8")
+        env = gitutil.git_env()
+        for args in (["init", "-q", "-b", "main"],
+                     ["remote", "add", "origin", str(d / "nowhere.git")]):
+            subprocess.run(["git", *args], cwd=str(repo), check=True,
+                           capture_output=True, env=env)
+        return repo
+
+    def _repo_without_origin(self, d: Path) -> Path:
+        import subprocess
+        repo = d / "solo"
+        (repo / "sdlc-studio" / "change-requests").mkdir(parents=True)
+        (repo / "sdlc-studio" / "change-requests" / "CR0001-x.md").write_text(
+            "# CR0001: x\n\n> **Status:** Done\n", encoding="utf-8")
+        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=str(repo), check=True,
+                       capture_output=True, env=gitutil.git_env())
+        return repo
+
+    def setUp(self) -> None:
+        import shutil
+        if shutil.which("git") is None:
+            self.skipTest("git not available")
+
+    def test_failed_scan_is_distinguished_from_no_origin(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.assertEqual(next_id.remote_ids("cr", self._repo_with_unreachable_origin(root))[1],
+                             next_id.REMOTE_FAILED)
+            self.assertEqual(next_id.remote_ids("cr", self._repo_without_origin(root))[1],
+                             next_id.REMOTE_ABSENT)
+
+    def test_failed_scan_warns_loudly_on_the_library_path(self) -> None:
+        # artifact.py allocates through allocate_number, so the warning has to live here:
+        # the mandated creation path never touches the CLI.
+        import io
+        from contextlib import redirect_stderr
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo_with_unreachable_origin(Path(d))
+            err = io.StringIO()
+            with redirect_stderr(err):
+                self.assertEqual(next_id.allocate_number("cr", repo, remote=True), 2)
+            self.assertIn("origin", err.getvalue())
+            self.assertIn("LOCAL", err.getvalue())
+
+    def test_no_origin_allocates_in_silence(self) -> None:
+        import io
+        from contextlib import redirect_stderr
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo_without_origin(Path(d))
+            err = io.StringIO()
+            with redirect_stderr(err):
+                self.assertEqual(next_id.allocate_number("cr", repo, remote=True), 2)
+            self.assertEqual(err.getvalue(), "")
+
+    def test_strict_refuses_to_allocate_on_a_failed_scan(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo_with_unreachable_origin(Path(d))
+            with self.assertRaises(next_id.RemoteScanError):
+                next_id.allocate_number("cr", repo, remote=True, strict=True)
+            # ... and strict is not a blanket refusal: a repo with nothing to scan is fine.
+            solo = self._repo_without_origin(Path(d))
+            self.assertEqual(next_id.allocate_number("cr", solo, remote=True, strict=True), 2)
+
+    def test_git_absent_counts_as_failed_not_absent(self) -> None:
+        # With no git we cannot rule out an origin holding ids, and an unanswerable question
+        # is not a clean answer.
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as d:
+            with mock.patch.object(next_id.subprocess, "run", side_effect=FileNotFoundError):
+                self.assertEqual(next_id.remote_ids("cr", Path(d))[1], next_id.REMOTE_FAILED)
+
+    def test_cli_text_mode_warns_and_strict_exits_non_zero(self) -> None:
+        import io
+        import json as _json
+        from contextlib import redirect_stderr, redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo_with_unreachable_origin(Path(d))
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                rc = next_id.main(["allocate", "--type", "cr", "--remote", "--root", str(repo)])
+            self.assertEqual(rc, 0)
+            self.assertEqual(out.getvalue().strip(), "CR0002")
+            self.assertIn("origin", err.getvalue())
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                rc = next_id.main(["allocate", "--type", "cr", "--remote", "--root", str(repo),
+                                   "--format", "json"])
+            payload = _json.loads(out.getvalue())
+            self.assertEqual(payload["remote_state"], next_id.REMOTE_FAILED)
+            self.assertFalse(payload["remote_available"])
+            self.assertIn("origin", payload["warning"])  # JSON consumers see it too
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                rc = next_id.main(["allocate", "--type", "cr", "--remote", "--root", str(repo),
+                                   "--strict"])
+            self.assertNotEqual(rc, 0)
 
 
 class ArchiveUnionTests(unittest.TestCase):

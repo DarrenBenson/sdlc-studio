@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator planning a sprint
+**I want** the breakdown gate to refuse an ungroomed batch at `--goal done` and accept it at `--goal design`
+**So that** grooming debt still blocks delivery while a design rung can proceed
 
 ## Acceptance Criteria
 

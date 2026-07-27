@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader of a sprint report
+**I want** every delegated sign-off disclosed by name and counted
+**So that** how much of a sprint was signed by agents is visible without reading the ledger
 
 ## Acceptance Criteria
 

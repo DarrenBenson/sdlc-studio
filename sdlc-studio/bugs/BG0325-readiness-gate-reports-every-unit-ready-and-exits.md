@@ -1,6 +1,7 @@
 # BG0325: Readiness gate reports every unit ready and exits 0 when the cross-epic AC checker crashes
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/readiness.py, .claude/skills/sdlc-studio/scripts/tests/test_readiness.py
@@ -19,6 +20,16 @@ Evidence (`audit_batch()` lines 483-496 (swallow at 493-494); `audit_unit()` lin
 ## Proposed Fix
 
 On `ac_scope.check` failure, print a stderr warning and either fail the command or mark affected units not-ready with a 'cross-check unavailable' issue - never return a clean verdict that was not computed.
+
+## Acceptance Criteria
+
+### AC1: a crashing cross-check is reported, not swallowed
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** `pytest .claude/skills/sdlc-studio/scripts/tests/test_readiness.py::CrossCheckUnavailableTests::test_crashing_cross_check_is_reported_not_swallowed`, written red before the fix and green after
+- **Verified:** yes (2026-07-27, functional)
 
 ## Revision History
 

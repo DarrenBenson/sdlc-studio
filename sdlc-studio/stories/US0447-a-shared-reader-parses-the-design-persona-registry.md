@@ -1,6 +1,6 @@
 # US0447: A shared reader parses the design-persona registry into Primary, Secondary and Negative with their card paths
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0425
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the shared reader parses it
 - **Then** it returns each persona's name, its declared role, and its card path resolved against the workspace
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaRegistryTests::test_registry_parses_each_declared_role
+- **Verified:** yes (2026-07-27)
 
 ### AC2: an absent or unparseable registry is distinguishable from one declaring nobody
 
@@ -30,6 +31,7 @@
 - **When** the reader runs
 - **Then** it reports that absence explicitly for the caller to handle, never an empty result indistinguishable from a registry that genuinely declares no personas
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaRegistryTests::test_absent_registry_is_distinguishable_from_empty
+- **Verified:** yes (2026-07-27)
 
 ## Revision History
 

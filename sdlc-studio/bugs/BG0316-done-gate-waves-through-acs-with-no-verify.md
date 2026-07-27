@@ -1,6 +1,7 @@
 # BG0316: Done gate waves through ACs with no Verify line while blocking honestly-declared manual ACs
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
@@ -19,6 +20,16 @@ Evidence (`_done_verify_gate` / `_story_has_executable_acs`, lines 106-159 (earl
 ## Proposed Fix
 
 Make `_done_verify_gate` treat a verifier-less AC the way gate.py does - block the Done transition (or require the same Verified: yes evidence as manual) so omission is never cheaper than honest declaration.
+
+## Acceptance Criteria
+
+### AC1: an AC with no Verify line blocks Done
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** `pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::UnspecifiedAcDoneGateTests::test_ac_with_no_verify_line_blocks_done`, written red before the fix and green after
+- **Verified:** yes (2026-07-27, functional)
 
 ## Revision History
 

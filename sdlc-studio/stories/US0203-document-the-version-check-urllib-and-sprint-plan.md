@@ -10,9 +10,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader of the PRD and TRD
+**I want** the version-check and sprint-plan git-fetch network calls enumerated in the Security NFR and threat table
+**So that** every outbound network path the skill makes is declared rather than discovered
 
 ## Acceptance Criteria
 

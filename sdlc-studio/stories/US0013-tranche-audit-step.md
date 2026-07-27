@@ -29,24 +29,24 @@ problem still real" stays model-instructed (delegates to RFC0002 when built).
 - **Given** a CR whose only AC is the tautology placeholder, and a CR with concrete AC
 - **When** `audit_unit` runs on each
 - **Then** the first is not ready (issue `weak-AC`) and the second is ready
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit.py::WeakAcTests::test_tautology_is_weak
-- **Verified:** no (2026-07-27)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_readiness.py::WeakAcTests::test_tautology_is_weak
+- **Verified:** yes (2026-07-27)
 
 ### AC2: Unmet-deps and already-terminal
 
 - **Given** a CR depending on an unfinished CR, and an already-Complete CR
 - **When** the audit runs
 - **Then** the first flags `unmet-deps` and the second flags `already-terminal`
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit.py::DepsTerminalTests::test_already_terminal
-- **Verified:** no (2026-07-27)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_readiness.py::DepsTerminalTests::test_already_terminal
+- **Verified:** yes (2026-07-27)
 
 ### AC3: JSON readiness report + non-zero exit
 
 - **Given** a batch with one ready and one not-ready unit
 - **When** `audit.py check --ids ... --format json` runs
 - **Then** it prints a `summary` and exits non-zero (a unit is not ready)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit.py::CliTests::test_batch_json_and_exit
-- **Verified:** no (2026-07-27)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_readiness.py::CliTests::test_batch_json_and_exit
+- **Verified:** yes (2026-07-27)
 
 ### AC4: Workflow step documented
 
@@ -58,12 +58,14 @@ problem still real" stays model-instructed (delegates to RFC0002 when built).
 
 ## Implementation
 
-`scripts/audit.py`: `audit_unit` / `audit_batch` plus a `check` subcommand; reuses
-`integrity.py` and `autosprint.select_batch`. Doc step in `reference-sprint.md`
-and `help/autosprint.md`.
+`scripts/audit.py` (renamed `scripts/readiness.py` by US0345, tests with it):
+`audit_unit` / `audit_batch` plus a `check` subcommand; reuses `integrity.py` and
+`autosprint.select_batch`. Doc step in `reference-sprint.md` and
+`help/autosprint.md`.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (CR0021) | Decomposed from CR0021 (determinism sprint) |
+| 2026-07-27 | BG0303 | AC1-AC3 named `tests/test_audit.py`, deleted by the US0345 rename, so the verifiers collected nothing and exited 0 while the story sat Done. Re-pointed at `tests/test_readiness.py`; the three classes and test names are unchanged, so the ACs assert what they always did |

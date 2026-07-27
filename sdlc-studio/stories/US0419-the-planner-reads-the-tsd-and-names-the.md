@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator reading a sprint plan
+**I want** the planner to read the TSD and name the risk areas the batch touches
+**So that** risk comes from the strategy document rather than from a collapsed WSJF score
 
 ## Acceptance Criteria
 

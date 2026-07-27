@@ -361,8 +361,19 @@ class NewTests(unittest.TestCase):
         because the preview consulted no gate at all.
         """
         p = Path(path)
-        p.write_text("\n".join(ln for ln in p.read_text(encoding="utf-8").splitlines()
-                               if "**Verify:**" not in ln) + "\n", encoding="utf-8")
+        out = []
+        for ln in p.read_text(encoding="utf-8").splitlines():
+            if "**Verify:**" in ln:
+                # BG0316: an AC with NO Verify line is now refused - omission buys no discount
+                # over declaring it. The fixture wants no EXECUTABLE AC, not a bare one, so the
+                # executable verifier is replaced by an honestly-declared manual one with its
+                # evidence rather than deleted.
+                indent = ln[:len(ln) - len(ln.lstrip())]
+                out.append(f"{indent}- **Verify:** manual a human confirms the scaffold is unchanged")
+                out.append(f"{indent}- **Verified:** yes (2026-07-27)")
+                continue
+            out.append(ln)
+        p.write_text("\n".join(out) + "\n", encoding="utf-8")
 
     def test_close_dry_run_does_not_transition(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -2098,6 +2109,147 @@ class DuplicateStrictTests(unittest.TestCase):
                                     "--strict", "--root", str(repo)])
             self.assertEqual(rc, 2)
             self.assertIn("BG0269", err.getvalue())
+
+
+PERSONA_INDEX = (
+    "# Persona Index\n\n"
+    "## Primary (the design target)\n\n"
+    "- [Maya Okafor](maya-okafor-founder-engineer.md) - solo founder-engineer. Well-formed.\n\n"
+    "## Secondary (served, never at the Primary's expense)\n\n"
+    "- [Jonah Reyes](jonah-reyes-team-lead.md) - small-team lead. Well-formed.\n\n"
+    "## Negative (deliberately not designed for)\n\n"
+    "- [Trevor Hale](trevor-hale-enterprise-pm.md) - enterprise delivery manager. A signal to\n"
+    "  decline, not a backlog.\n"
+)
+
+
+def _registry(repo: Path) -> None:
+    """Give the fixture project a design-persona registry."""
+    pdir = repo / "sdlc-studio" / "personas"
+    pdir.mkdir(parents=True, exist_ok=True)
+    (pdir / "index.md").write_text(PERSONA_INDEX, encoding="utf-8")
+    for stem in ("maya-okafor-founder-engineer", "jonah-reyes-team-lead",
+                 "trevor-hale-enterprise-pm"):
+        (pdir / f"{stem}.md").write_text(f"# {stem}\n", encoding="utf-8")
+
+
+def _persona_line(path) -> str | None:
+    return sdlc_md.extract_field(Path(path).read_text(encoding="utf-8"), "Persona")
+
+
+def _stories(repo: Path) -> list[str]:
+    d = repo / "sdlc-studio" / "stories"
+    return sorted(p.name for p in d.glob("*.md") if p.name != "_index.md")
+
+
+class PersonaResolutionTests(unittest.TestCase):
+    """US0448: `--persona` resolves through the registry - the declared Primary by default, a
+    warning on a name the registry does not declare, a refusal under --strict, and (D0066) a
+    warning but NEVER a refusal for the Negative persona."""
+
+    def _repo(self, d: str) -> Path:
+        repo = Path(d)
+        _index(repo, "story", "| ID | Title | Status | Epic | Created |")
+        _epic(repo)
+        _registry(repo)
+        return repo
+
+    def _mint(self, repo: Path, fields: dict, strict: bool = False):
+        import contextlib
+        import io
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            r = artifact.new(repo, "story", "a story", {"epic": "EP0001", **fields},
+                             strict=strict)
+        return r, err.getvalue()
+
+    def test_omitted_persona_defaults_to_the_declared_primary(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            r, _ = self._mint(repo, {})
+            self.assertEqual(_persona_line(r["path"]), "Maya Okafor")
+
+    def test_unregistered_persona_warns_and_strict_refuses(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            r, err = self._mint(repo, {"persona": "Nobody Real"})
+            self.assertEqual(_persona_line(r["path"]), "Nobody Real")
+            self.assertIn("Nobody Real", err)
+            self.assertIn("Maya Okafor", err)       # the warning names who IS registered
+            before = _stories(repo)
+            with self.assertRaises(ValueError) as cm:
+                self._mint(repo, {"persona": "Nobody Real"}, strict=True)
+            self.assertIn("Nobody Real", str(cm.exception))
+            self.assertEqual(_stories(repo), before, "strict refusal still minted a story")
+
+    def test_negative_persona_warns_but_is_never_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            r, err = self._mint(repo, {"persona": "Trevor Hale"})
+            self.assertEqual(_persona_line(r["path"]), "Trevor Hale")
+            self.assertIn("negative", err.lower())
+            # ... and --strict does not turn the signal into a refusal (D0066)
+            r2, err2 = self._mint(repo, {"persona": "Trevor Hale"}, strict=True)
+            self.assertEqual(_persona_line(r2["path"]), "Trevor Hale")
+            self.assertIn("negative", err2.lower())
+
+    def test_an_absent_registry_leaves_the_persona_alone(self) -> None:
+        # The honest-absence path: no registry means no design target to resolve against, so a
+        # named persona passes through and an omitted one stays absent - never a fabricated default.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created |")
+            _epic(repo)
+            r, err = self._mint(repo, {})
+            self.assertIsNone(_persona_line(r["path"]))
+            r2, _ = self._mint(repo, {"persona": "Anyone"}, strict=True)
+            self.assertEqual(_persona_line(r2["path"]), "Anyone")
+
+    def test_an_unreadable_registry_says_so_rather_than_standing_down_silently(self) -> None:
+        # A registry that EXISTS but cannot be parsed is not the same as no registry: resolving
+        # nothing and saying nothing would report a persona-resolved mint that never resolved one.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created |")
+            _epic(repo)
+            pdir = repo / "sdlc-studio" / "personas"
+            pdir.mkdir(parents=True, exist_ok=True)
+            (pdir / "index.md").write_text("# Persona Index\n\nprose, no role headings\n",
+                                           encoding="utf-8")
+            r, err = self._mint(repo, {})
+            self.assertIsNone(_persona_line(r["path"]))
+            self.assertIn("index.md", err)
+            self.assertIn("Primary", err)
+
+
+class BatchPersonaResolutionTests(unittest.TestCase):
+    """US0449: `batch` resolves the persona per story by the same rules `new` applies."""
+
+    def _repo(self, d: str) -> Path:
+        repo = Path(d)
+        _index(repo, "story", "| ID | Title | Status | Epic | Created |")
+        _epic(repo)
+        _registry(repo)
+        return repo
+
+    def test_batch_resolves_the_persona_per_story(self) -> None:
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                r = artifact.new_batch(repo, "story", [
+                    {"title": "omits the persona", "epic": "EP0001"},
+                    {"title": "names the primary", "epic": "EP0001", "persona": "Maya Okafor"},
+                    {"title": "names a stranger", "epic": "EP0001", "persona": "Nobody Real"},
+                ])
+            got = {Path(c["path"]).stem.split("-", 1)[1]: _persona_line(c["path"])
+                   for c in r["created"]}
+            self.assertEqual(got["omits-the-persona"], "Maya Okafor")
+            self.assertEqual(got["names-the-primary"], "Maya Okafor")
+            self.assertEqual(got["names-a-stranger"], "Nobody Real")
+            self.assertIn("Nobody Real", err.getvalue())
 
 
 if __name__ == "__main__":

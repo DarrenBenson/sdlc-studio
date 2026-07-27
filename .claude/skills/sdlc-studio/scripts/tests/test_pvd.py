@@ -106,6 +106,61 @@ class SymlinkModeTests(unittest.TestCase):
             self.assertFalse(dest2.is_symlink())
 
 
+class MissingMasterSyncTests(unittest.TestCase):
+    """BG0322: sync must never report a projection it did not make. symlink_to succeeds
+    against any path, so a mistyped --master used to leave a dangling link behind an
+    {'action': 'synced'} + exit 0."""
+
+    def test_symlink_mode_refuses_a_missing_master(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            r = pvd.sync(d / "NO_SUCH_FILE.md", d / "repo", mode="symlink")
+            self.assertEqual(r["action"], "error")
+            dest = d / "repo" / pvd.PROJECTED
+            self.assertFalse(dest.is_symlink())   # no dangling link left behind
+            self.assertFalse(dest.exists())
+
+    def test_copy_mode_refuses_a_missing_master(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            r = pvd.sync(d / "NO_SUCH_FILE.md", d / "repo", mode="copy")
+            self.assertEqual(r["action"], "error")
+
+    def test_unreadable_master_refused_like_drift_refuses_it(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            m = _master(d)
+            m.chmod(0)
+            try:
+                r = pvd.sync(m, d / "repo", mode="symlink")
+            finally:
+                m.chmod(stat.S_IRUSR | stat.S_IWUSR)
+            self.assertEqual(r["action"], "error")
+
+    def test_dry_run_does_not_promise_a_sync_it_cannot_make(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            r = pvd.sync(d / "NO_SUCH_FILE.md", d / "repo", mode="symlink", dry_run=True)
+            self.assertEqual(r["action"], "error")
+
+    def test_cli_sync_exits_nonzero_on_a_missing_master(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            rc = pvd.main(["sync", "--master", str(d / "NO_SUCH_FILE.md"),
+                           "--target", str(d / "repo"), "--mode", "symlink"])
+            self.assertEqual(rc, 1)
+
+    def test_existing_projection_survives_a_refused_sync(self) -> None:
+        # A good copy must not be unlinked to make way for a sync that then refuses.
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            m = _master(d)
+            dest = Path(pvd.sync(m, d / "repo")["target"])
+            pvd.sync(d / "NO_SUCH_FILE.md", d / "repo", mode="symlink")
+            self.assertTrue(dest.exists())
+            self.assertEqual(dest.read_text(encoding="utf-8"), MASTER)
+
+
 class ManifestCommentTests(unittest.TestCase):
     def test_inline_comments_stripped_from_values(self) -> None:
         with tempfile.TemporaryDirectory() as d:

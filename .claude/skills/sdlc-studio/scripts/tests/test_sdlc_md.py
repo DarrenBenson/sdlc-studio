@@ -899,6 +899,77 @@ class IdBoundaryTests(unittest.TestCase):
         self.assertIsNone(sdlc_md.id_number("BG-01JQK3F8"))
 
 
+class PersonaRegistryTests(unittest.TestCase):
+    """US0447: ONE shared reader for the design-persona registry. Every command that needs to
+    know who the product is for derives it from `personas/index.md`, and an ABSENT or unparseable
+    registry is reported as such - never as an empty result a caller reads as 'nobody declared'."""
+
+    INDEX = (
+        "# Persona Index\n\n"
+        "Goal-directed design personas for this product.\n\n"
+        "## Primary (the design target)\n\n"
+        "- [Maya Okafor](maya-okafor-founder-engineer.md) - solo founder-engineer; wants a\n"
+        "  disciplined lifecycle. Well-formed.\n\n"
+        "## Secondary (served, never at the Primary's expense)\n\n"
+        "- [Jonah Reyes](jonah-reyes-team-lead.md) - small-team lead. Well-formed.\n\n"
+        "## Negative (deliberately not designed for)\n\n"
+        "- [Trevor Hale](trevor-hale-enterprise-pm.md) - enterprise delivery manager. A signal\n"
+        "  to decline, not a backlog.\n\n"
+        "## Revision History\n\n"
+        "| Date | Author | Change |\n| --- | --- | --- |\n| 2026-07-27 | x | seeded |\n"
+    )
+
+    def _workspace(self, text: str | None = None, cards: bool = True) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="persona_registry_"))
+        pdir = d / "sdlc-studio" / "personas"
+        pdir.mkdir(parents=True)
+        if text is not None:
+            (pdir / "index.md").write_text(text, encoding="utf-8")
+        if cards:
+            for stem in ("maya-okafor-founder-engineer", "jonah-reyes-team-lead",
+                         "trevor-hale-enterprise-pm"):
+                (pdir / f"{stem}.md").write_text(f"# {stem}\n", encoding="utf-8")
+        return d
+
+    def test_registry_parses_each_declared_role(self):
+        reg = sdlc_md.persona_registry(self._workspace(self.INDEX))
+        self.assertTrue(reg.available, reg.reason)
+        self.assertEqual([(e.name, e.role) for e in reg.entries],
+                         [("Maya Okafor", "primary"), ("Jonah Reyes", "secondary"),
+                          ("Trevor Hale", "negative")])
+        # the card path is resolved against the workspace, not left as the raw href
+        for e in reg.entries:
+            self.assertIsNotNone(e.card, f"{e.name} lost its card path")
+            self.assertTrue(Path(e.card).is_file(), f"{e.name} card did not resolve: {e.card}")
+        self.assertEqual(reg.primary.name, "Maya Okafor")
+        self.assertEqual([e.name for e in reg.by_role("negative")], ["Trevor Hale"])
+        self.assertEqual(reg.find("maya okafor").role, "primary")   # match is name-normalised
+        self.assertIsNone(reg.find("Nobody At All"))
+
+    def test_absent_registry_is_distinguishable_from_empty(self):
+        # (a) no index.md at all - reported as unavailable, with a reason
+        absent = sdlc_md.persona_registry(self._workspace(None))
+        self.assertFalse(absent.available)
+        self.assertTrue(absent.reason)
+        self.assertEqual(absent.entries, ())
+        self.assertIsNone(absent.primary)
+        # (b) an index whose role headings cannot be parsed - equally unavailable, not empty
+        unparseable = sdlc_md.persona_registry(
+            self._workspace("# Persona Index\n\nSome prose, no role headings at all.\n"))
+        self.assertFalse(unparseable.available)
+        self.assertTrue(unparseable.reason)
+        self.assertEqual(unparseable.entries, ())
+        # (c) a registry that DOES declare its roles but lists nobody is genuinely empty, and
+        #     the caller can tell the two apart - which is the whole point of the flag
+        empty = sdlc_md.persona_registry(self._workspace(
+            "# Persona Index\n\n## Primary (the design target)\n\n_None yet._\n\n"
+            "## Negative (deliberately not designed for)\n\n_None yet._\n"))
+        self.assertTrue(empty.available, empty.reason)
+        self.assertEqual(empty.entries, ())
+        self.assertIsNone(empty.primary)
+        self.assertNotEqual(absent.available, empty.available)
+
+
 class RootResolverTests(unittest.TestCase):
     """US0382: ONE project-root resolver for the whole family. A script that resolved `--root`
     with a bare `Path(args.root)` wrote its output beside the CWD - a stray sdlc-studio/.local

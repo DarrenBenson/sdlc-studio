@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader of the TRD
+**I want** the sentence CR0304 recorded as false corrected and the doc-drift residuals dispositioned
+**So that** the document states what ships and the correction is dated rather than made silently
 
 ## Acceptance Criteria
 

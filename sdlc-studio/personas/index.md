@@ -20,9 +20,17 @@ who the product is *for*; the review seats that critique artefacts are a separat
   central governance, and a human gate on every change. A signal to decline, not a backlog.
   Well-formed.
 
+## Superseded
+
+The flat [`../personas.md`](../personas.md) is a **legacy appendix**, kept for history
+only. It holds a June 2026 brownfield extraction of four user *categories* (operator,
+consuming developer, executing agent, maintainer) with no declared Primary. It is not
+the design target and is not maintained; this registry is.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-07-27 | Claude Fable 5 | Recorded the flat `personas.md` as a superseded legacy appendix (US0451); the PRD's Target Users now names this registry (US0450) |
 | 2026-06-21 | Darren Benson | Seeded sdlc-studio's own Primary + Negative personas (dogfood of the Cooper template, RFC0017/CR0058) |
 | 2026-07-16 | Claude Fable 5 (persona review, operator-directed) | Maya gains the cost-honesty frustration + sprint-report scenario (RFC0038/EP0048); Secondary Jonah Reyes added (brownfield adoption path); Trevor confirmed unchanged |

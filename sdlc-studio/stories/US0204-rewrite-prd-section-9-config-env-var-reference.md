@@ -10,9 +10,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader of the PRD
+**I want** Section 9's config and env-var reference to state the shipped defaults and drop the retired flag
+**So that** a project configuring the skill from the PRD gets the behaviour the code has
 
 ## Acceptance Criteria
 

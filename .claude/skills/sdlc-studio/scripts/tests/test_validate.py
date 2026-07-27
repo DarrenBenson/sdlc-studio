@@ -641,6 +641,62 @@ class PlaceholderTests(unittest.TestCase):
                         "- [ ] a genuine filled criterion\n")
         self.assertNotIn("placeholder", [v["rule"] for v in validate.validate_file(f, "story")])
 
+    def test_user_story_block_placeholder_flagged(self):
+        # BG0304: the `**As a** {{role}}` scaffold artifact.py mints lives in the body, outside
+        # both metadata and the AC section - 39 stories reached Done carrying it unfilled while
+        # the check reported nothing. A Done story's unfilled body slot is an error.
+        f = self._story("# US0001: x\n\n> **Status:** Done\n\n## User Story\n\n"
+                        "**As a** {{role}}\n**I want** {{capability}}\n**So that** {{benefit}}\n\n"
+                        "## Acceptance Criteria\n\n- a real filled criterion\n")
+        findings = [v for v in validate.validate_file(f, "story") if v["rule"] == "placeholder"]
+        self.assertTrue(findings, "the unfilled user-story block is reported")
+        self.assertTrue(any(v["severity"] == "error" for v in findings),
+                        "a Done story's unfilled body slot is an error")
+
+    def test_draft_story_body_placeholder_is_a_warning_not_error(self):
+        # Same grandfather as the AC path: a fresh refine output is all scaffold, so its body
+        # placeholders must not block the refine commit that creates it.
+        f = self._story("# US0001: x\n\n> **Status:** Draft\n\n## User Story\n\n"
+                        "**As a** {{role}}\n\n## Acceptance Criteria\n\n- a real filled criterion\n")
+        findings = [v for v in validate.validate_file(f, "story") if v["rule"] == "placeholder"]
+        self.assertTrue(findings, "the placeholder is still reported")
+        self.assertTrue(all(v["severity"] == validate.SEVERITY_WARNING for v in findings),
+                        "an ungroomed Draft story's body placeholder is a warning, not an error")
+
+    def test_terminal_non_story_body_placeholder_is_an_error(self):
+        # The same hole in every other type: a bug that reached Fixed with its Summary still
+        # `{{symptom}}` is a finished record with a blank where its content should be. The
+        # terminal set is derived from the type's own vocabulary, not enumerated here.
+        import tempfile
+        f = pathlib.Path(tempfile.mkdtemp()) / "BG0001-x.md"
+        f.write_text("# BG0001: x\n\n> **Status:** Fixed\n> **Severity:** Medium\n\n"
+                     "## Summary\n\n{{symptom}}\n\n## Steps to Reproduce\n\nrun the tool\n",
+                     encoding="utf-8")
+        findings = [v for v in validate.validate_file(f, "bug") if v["rule"] == "placeholder"]
+        self.assertTrue(any(v["severity"] == "error" for v in findings),
+                        "a terminal bug's unfilled body slot is an error")
+
+    def test_in_flight_non_story_body_placeholder_is_a_warning(self):
+        # A freshly minted artefact is scaffolded by design, so creation must not error - the
+        # create/validate round trip depends on it. It is still reported.
+        import tempfile
+        f = pathlib.Path(tempfile.mkdtemp()) / "BG0001-x.md"
+        f.write_text("# BG0001: x\n\n> **Status:** Open\n> **Severity:** Medium\n\n"
+                     "## Summary\n\n{{symptom}}\n\n## Steps to Reproduce\n\nrun the tool\n",
+                     encoding="utf-8")
+        findings = [v for v in validate.validate_file(f, "bug") if v["rule"] == "placeholder"]
+        self.assertTrue(findings, "the placeholder is still reported")
+        self.assertTrue(all(v["severity"] == validate.SEVERITY_WARNING for v in findings),
+                        "an in-flight artefact's body placeholder is a warning, not an error")
+
+    def test_body_placeholder_inside_code_fence_not_flagged(self):
+        # A fenced block is sample text - a story documenting the scaffold it generates is not
+        # a story carrying an unfilled scaffold.
+        f = self._story("# US0001: x\n\n> **Status:** Done\n\n## Description\n\n"
+                        "The template emits:\n\n```markdown\n**As a** {{role}}\n```\n\n"
+                        "## Acceptance Criteria\n\n- a real filled criterion\n")
+        self.assertNotIn("placeholder", [v["rule"] for v in validate.validate_file(f, "story")])
+
     def test_embedded_token_in_real_ac_not_flagged(self):
         # A real, filled AC that references a {{...}} token in its text (this repo's own
         # meta-CRs) must NOT be flagged - only placeholder-ONLY values are (CR0056 critic).
@@ -1690,6 +1746,45 @@ class DiffScopedCheckTests(unittest.TestCase):
             self.assertEqual(data["summary"]["advisory_errors"], 0)
             self.assertTrue(data["scope"]["degraded"])
             self.assertFalse(any(v.get("scoped_out") for v in data["violations"]))
+
+
+
+
+class PlaceholderBaselineTests(unittest.TestCase):
+    """BG0304's widened sweep revealed 31 already-terminal artefacts carrying an unfilled body
+    scaffold. They are baselined so the check blocks a NEW instance without blocking on the
+    backlog it revealed - but the baseline must never be able to quieten something new."""
+
+    def _story(self, repo, sid, body):
+        d = repo / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        p = d / f"{sid}-x.md"
+        p.write_text(f"# {sid}: x\n\n> **Status:** Done\n\n## Summary\n\n{body}\n", encoding="utf-8")
+        return p
+
+    def test_a_terminal_artefact_not_in_the_baseline_still_errors(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (repo / "sdlc-studio" / ".placeholder-baseline.txt").write_text("US9998\n", encoding="utf-8")
+            validate._baseline_cache = None
+            p = self._story(repo, "US9999", "{{what changes and why}}")
+            sev = [f["severity"] for f in validate.validate_file(p, "story", repo_root=repo)
+                   if f.get("rule") == "placeholder"]
+            self.assertIn("error", sev,
+                          "an artefact absent from the baseline must still error - otherwise the "
+                          "baseline quietens new debt, which is the opposite of a ratchet")
+
+    def test_an_absent_baseline_file_quietens_nothing(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            validate._baseline_cache = None
+            p = self._story(repo, "US9999", "{{what changes and why}}")
+            sev = [f["severity"] for f in validate.validate_file(p, "story", repo_root=repo)
+                   if f.get("rule") == "placeholder"]
+            self.assertIn("error", sev,
+                          "a missing baseline must read as an empty set, never as a blanket waiver")
 
 
 if __name__ == "__main__":

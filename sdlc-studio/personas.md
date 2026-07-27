@@ -7,24 +7,35 @@ Confidence: INFERRED
 Status values: See reference-outputs.md
 Related: help/persona.md, reference-persona.md, reference-persona-generate.md
 -->
-# User Personas
+# User Personas (legacy appendix - superseded)
+
+> **This file is a legacy appendix. It is not the design target.**
+> The current persona authority is the registry at
+> [`sdlc-studio/personas/index.md`](./personas/index.md), which declares the
+> Primary, Secondary and Negative personas the product is designed for. Read that
+> instead. Everything below this banner is **historical**: a 2026-06-20 brownfield
+> extraction of four *user categories* (operator, consuming developer, executing
+> agent, maintainer), kept as background on who touches the skill. It records no
+> Primary and is superseded as a statement of who sdlc-studio is for. Do not design
+> against it, do not cite it as the target user, and do not update it - changes to
+> the design target go in the registry.
 
 **Project:** SDLC Studio
 **Version:** 2.0.0
 **Last Updated:** 2026-06-20
-**Status:** Generated (brownfield)
+**Status:** Superseded (historical; generated brownfield, 2026-06-20)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source
-> and usage. These personas are **inferred** and await validation against real
-> usage. Confidence markers per persona: [HIGH] clear from source, [MEDIUM]
+> and usage. These personas are **inferred** and were never validated against
+> real usage. Confidence markers per persona: [HIGH] clear from source, [MEDIUM]
 > inferred from patterns, [LOW] speculative.
 
-Personas for SDLC Studio, the Claude Code skill that drives a project from
-requirements through to verified implementation. Referenced in user stories so
-features are designed for specific users. Four personas are developed here,
-matching PRD §2 Target Users: the Orchestrator/Operator (primary), the
-Consuming-project Developer, the AI Agent executing the skill, and the Skill
-Maintainer.
+Historical record of the four user categories extracted in June 2026: the
+Orchestrator/Operator, the Consuming-project Developer, the AI Agent executing
+the skill, and the Skill Maintainer. The needs and pain points below still read
+true as background, but they are categories rather than goal-directed personas,
+which is why the registry replaced them. The PRD's Target Users section now names
+the registry's personas and no longer points here.
 
 ---
 
@@ -234,4 +245,6 @@ economical.
 
 > **Confidence Markers:** [HIGH] clear from source | [MEDIUM] inferred from patterns | [LOW] speculative
 >
-> All personas above are inferred in Generate mode and await validation against real usage.
+> All personas above are inferred in Generate mode and were never validated against
+> real usage. They are superseded by
+> [`sdlc-studio/personas/index.md`](./personas/index.md).

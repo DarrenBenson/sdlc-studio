@@ -223,6 +223,90 @@ class RemakeCutoffTests(unittest.TestCase):
             self.assertEqual(sorted(r["changed"]), ["US0005", "US0009"])
 
 
+class UnreadableArtifactTests(unittest.TestCase):
+    """BG0323: a file the check could not READ is not a file the check judged clean.
+    `sdlc_md.iter_artifact_files` deliberately yields it as (path, None) so a checker
+    can NAME it; check used to swallow the read error and leave `ok` true."""
+
+    def test_unreadable_artifact_is_named_not_silently_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            p = _story(repo, "US0020-x.md", STAMPED.replace("US0010", "US0020"))
+            p.chmod(0)
+            try:
+                r = prov.check(repo, ["story"])
+            finally:
+                p.chmod(0o600)
+            kinds = {f["id"]: f["kind"] for f in r["findings"]}
+            self.assertEqual(kinds.get("US0020"), "unreadable")
+            self.assertFalse(r["ok"])   # unjudgeable, so not a pass
+
+    def test_non_utf8_artifact_is_named_not_a_crash(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            p = _story(repo, "US0021-x.md", UNSTAMPED)
+            p.write_bytes(b"# US0021: x\n\n> **Status:** Done\n\n\xff\xfe body\n")
+            r = prov.check(repo, ["story"])
+            kinds = {f["id"]: f["kind"] for f in r["findings"]}
+            self.assertEqual(kinds.get("US0021"), "unreadable")
+            self.assertFalse(r["ok"])
+
+    def test_unreadable_blocks_even_in_advisory_mode(self) -> None:
+        # The advisory/enforce toggle governs whether MISSING provenance blocks. A file
+        # the checker could not read is a different thing: it was never judged at all.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            _story(repo, "US0005-x.md", UNSTAMPED)      # advisory finding
+            p = _story(repo, "US0022-x.md", STAMPED.replace("US0010", "US0022"))
+            p.chmod(0)
+            try:
+                r = prov.check(repo, ["story"])
+            finally:
+                p.chmod(0o600)
+            self.assertFalse(r["enforced"])
+            self.assertFalse(r["ok"])
+
+
+class RemakeFailureTests(unittest.TestCase):
+    """BG0323 sibling: remake swallowed both the read error and the write error, so a
+    backfill that stamped nothing printed a count and exited 0."""
+
+    def test_unwritable_artifact_is_reported_not_swallowed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            p = _story(repo, "US0030-x.md", UNSTAMPED.replace("US0005", "US0030"))
+            p.chmod(0o444)   # readable, not writable
+            try:
+                r = prov.remake(repo, ["story"])
+            finally:
+                p.chmod(0o600)
+            self.assertEqual(r["changed"], [])
+            self.assertEqual(r["failed"], ["US0030"])
+
+    def test_unreadable_artifact_is_reported_by_remake(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            p = _story(repo, "US0031-x.md", UNSTAMPED.replace("US0005", "US0031"))
+            p.chmod(0)
+            try:
+                r = prov.remake(repo, ["story"])
+            finally:
+                p.chmod(0o600)
+            self.assertEqual(r["failed"], ["US0031"])
+
+    def test_cli_remake_exits_nonzero_when_a_file_could_not_be_stamped(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            p = _story(repo, "US0032-x.md", UNSTAMPED.replace("US0005", "US0032"))
+            p.chmod(0o444)
+            try:
+                rc = prov.main(["remake", "--root", str(repo), "--type", "story"])
+            finally:
+                p.chmod(0o600)
+            self.assertEqual(rc, 1)
+
+
 class RemakeTests(unittest.TestCase):
     def test_remake_stamps_idempotent_dry_run(self) -> None:
         with tempfile.TemporaryDirectory() as d:

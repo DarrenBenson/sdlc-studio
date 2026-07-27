@@ -1,0 +1,35 @@
+# Terminal artefacts carrying an unfilled body scaffold when BG0304 widened the
+# placeholder sweep to the whole body. Recorded so the widened check blocks a NEW
+# instance without blocking on the backlog it revealed. Paid down by BG0347; an id
+# removed from this list can never come back, because the check then errors on it.
+BG0271
+BG0275
+BG0276
+BG0277
+BG0278
+BG0279
+BG0280
+BG0283
+BG0286
+BG0287
+BG0292
+BG0293
+CR0413
+CR0414
+CR0415
+CR0416
+CR0417
+CR0418
+CR0419
+EP0019
+EP0020
+EP0021
+EP0022
+EP0023
+EP0031
+EP0032
+EP0157
+EP0158
+EP0159
+EP0160
+RFC0054

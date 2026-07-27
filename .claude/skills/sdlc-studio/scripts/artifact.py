@@ -270,6 +270,65 @@ class DuplicateRefused(ValueError):
     written, so a refusal never leaves a half-minted artefact behind."""
 
 
+class PersonaRefused(ValueError):
+    """`--strict` met a `--persona` the design-persona registry does not declare. Raised BEFORE
+    any id is allocated or any file written, so a refusal leaves nothing half-minted."""
+
+
+def _resolve_persona(root: Path | str, requested, strict: bool = False, label: str = "") -> str:
+    """The Persona a story is minted with, resolved through the design-persona registry.
+
+    ONE resolver for every minting path, so `new`, `batch` and the commands that mint in bulk
+    cannot disagree about who a story serves:
+
+    - no persona given -> the declared Primary, the project's design target;
+    - a registered name -> its canonical spelling from the registry;
+    - an unregistered name -> minted anyway with a warning naming who IS registered, and
+      REFUSED under `strict` before anything is allocated;
+    - the NEGATIVE persona -> warned, never refused: the registry calls that persona a signal
+      to decline, and a story citing them as the reason something is out of scope is
+      legitimate work. The judgement is the author's, made with the signal in front of them.
+
+    An ABSENT registry resolves nothing and says nothing: with no declared design target,
+    inventing a default would attribute every story to a persona the project never declared.
+    """
+    name = str(requested or "").strip()
+    reg = sdlc_md.persona_registry(root)
+    where = f" [{label}]" if label else ""
+    if not reg.available:
+        # No registry at all is the greenfield case and needs no comment. A registry that is
+        # THERE but could not be read is a different fact, and saying nothing about it would
+        # report a resolved persona on a mint that resolved nothing.
+        if Path(reg.path).exists():
+            print(f"warning:{where} {reg.reason} - the persona was left exactly as given",
+                  file=sys.stderr)
+        return name
+    if not name:
+        primary = reg.primary
+        if primary is None:
+            print(f"warning:{where} no --persona given and {reg.path} declares no Primary, so "
+                  f"this story names no design target - declare one under a `## Primary` "
+                  f"heading, or pass --persona", file=sys.stderr)
+            return ""
+        return primary.name
+    entry = reg.find(name)
+    if entry is None:
+        known = ", ".join(reg.names) or "nobody"
+        msg = (f"persona {name!r} is not declared in {reg.path} (registered: {known})")
+        if strict:
+            raise PersonaRefused(f"--strict:{where} {msg} - nothing was minted. Name a "
+                                 f"registered persona, add this one to the registry, or "
+                                 f"re-run without --strict.")
+        print(f"warning:{where} {msg} - minted anyway with the name as given; pick a registered "
+              f"persona or add this one to the registry", file=sys.stderr)
+        return name
+    if entry.role == "negative":
+        print(f"warning:{where} {entry.name} is the NEGATIVE design persona - the registry "
+              f"deliberately does not design for them. Minted anyway (never refused): confirm "
+              f"this story is a deliberate decline, not a backlog item.", file=sys.stderr)
+    return entry.name
+
+
 def _with_notes(result: dict, ac_warnings: list[str], dupes: list[dict]) -> dict:
     """Attach a mint's advisory notes to its result. Carried on EVERY return path (including the
     dry-run preview and the consolidation path), because a warning worth giving on one path is
@@ -833,6 +892,10 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
             raise ValueError(f"epic {f['epic']} not found - create it first, or fix the id")
         _target_of(f)      # refuse an unknown target / multi-line Verify BEFORE any write,
         _verifiers_of(f)   # so a bad field never half-creates an artefact
+        # Who the story is FOR, resolved against the design-persona registry rather than carried
+        # as free text nothing downstream consumes. Resolved (and refused, under strict) here -
+        # before an id is allocated - so a refusal leaves nothing behind.
+        f["persona"] = _resolve_persona(root, f.get("persona"), strict=strict)
     # A criterion carrying its verifier inside itself is warned by name here, positionally - it
     # would otherwise be written out as prose with no Verify line anyone could run.
     ac_warnings = check_pipe_acs(f)
@@ -933,6 +996,7 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
     today = date.today().isoformat()
     if not items:
         raise ValueError("batch is empty")
+    items = [dict(it) for it in items]   # resolution rewrites fields; never mutate the caller's
     # Validate the whole batch BEFORE writing anything (atomic) - a story wired to a
     # missing epic is an orphan; a colliding id would corrupt the run.
     groom_preview = (_select_render(root, type_, template)
@@ -959,6 +1023,11 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
                 raise ValueError(f"epic {it['epic']} not found - create it first")
             _target_of(it)      # a bad target or Verify in item N must abort the whole
             _verifiers_of(it)   # batch here, not after items 1..N-1 are already on disk
+            # Same registry, same rules, same resolver as `new` - a story minted in bulk names
+            # the same design target it would have named one at a time. Resolved BEFORE any id
+            # is reserved, so the batch stays all-or-nothing.
+            it["persona"] = _resolve_persona(root, it.get("persona"),
+                                             label=str(it.get("title") or ""))
     # CR0183/BG0076: allocate the id block + write all files under the advisory lock,
     # so a concurrent `new`/`new_batch` cannot mint an overlapping id block.
     with sdlc_md.allocation_lock(root):
@@ -1206,7 +1275,7 @@ def cmd_new(args: argparse.Namespace) -> int:
         else:
             r = new(args.root, args.type, title, f, dry_run=args.dry_run,
                     strict=getattr(args, "strict", False))
-    except DuplicateRefused as exc:
+    except (DuplicateRefused, PersonaRefused) as exc:
         # A refusal is a message, not a traceback - and it names what to do next. Nothing was
         # allocated or written, so there is no half-minted artefact to clean up.
         print(f"refused: {exc}", file=sys.stderr)
@@ -1331,7 +1400,10 @@ def build_parser() -> argparse.ArgumentParser:
                         "invoking agent (SDLC_AUTHOR when set)")
     # Content the validator demands of a filled artefact. Supply it here and the artefact is
     # born clean; omit it and the scaffold keeps the slot for the agent to fill.
-    n.add_argument("--persona", help="story: the persona it serves")
+    n.add_argument("--persona",
+                   help="story: the design persona it serves, resolved against "
+                        "personas/index.md. Omitted, it defaults to the declared Primary; "
+                        "an unregistered name is warned about (refused under --strict)")
     n.add_argument("--summary", help="the Summary/Overview section")
     n.add_argument("--steps", help="bug: steps to reproduce (the evidence a bug must carry)")
     n.add_argument("--fix", help="bug: proposed fix")
@@ -1373,7 +1445,8 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--root", default=".")
     n.add_argument("--strict", action="store_true",
                    help="refuse the mint when the title looks like a duplicate of an existing "
-                        "artefact (default: report it and mint anyway)")
+                        "artefact, or when --persona names nobody the registry declares "
+                        "(default: report it and mint anyway)")
     n.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
     n.add_argument("--format", choices=("text", "json"), default="text")
     n.set_defaults(func=cmd_new)

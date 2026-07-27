@@ -10,9 +10,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader of the RFC index
+**I want** RFC0034 marked superseded by RFC0038 and cross-linked in both
+**So that** a superseded design cannot be read as current
 
 ## Acceptance Criteria
 

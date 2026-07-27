@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator closing a sprint
+**I want** a standalone preflight that reports every unmet close prerequisite in one read-only pass
+**So that** I learn the full remedy list at once instead of one failure per run
 
 ## Acceptance Criteria
 

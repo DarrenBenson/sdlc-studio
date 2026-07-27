@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reviewer of a test strategy
+**I want** a TSD older than the code it describes reported as STALE
+**So that** a batch is not reviewed against a wrong document, which produces confident wrong answers
 
 ## Acceptance Criteria
 

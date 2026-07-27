@@ -1,6 +1,7 @@
 # BG0322: pvd sync --mode symlink reports 'synced' and exits 0 after creating a dangling link to a nonexistent master
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/pvd.py, .claude/skills/sdlc-studio/scripts/tests/test_pvd.py
@@ -19,6 +20,16 @@ Evidence (sync(), lines 44-63; `cmd_sync()`, lines 92-95): Lines 58-59 link with
 ## Proposed Fix
 
 In sync(), refuse with exit 1 when the master path does not exist (mirroring drift()'s guard) before creating the link or copy.
+
+## Acceptance Criteria
+
+### AC1: symlink mode does not report a dangling link as synced
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** `pytest .claude/skills/sdlc-studio/scripts/tests/test_pvd.py::MissingMasterSyncTests`, written red before the fix and green after
+- **Verified:** yes (2026-07-27, functional)
 
 ## Revision History
 

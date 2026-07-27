@@ -1,6 +1,7 @@
 # BG0323: provenance check silently reports an unreadable artifact as clean - defeating the census's explicit keep-it-visible cont
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/provenance.py, .claude/skills/sdlc-studio/scripts/tests/test_provenance.py
@@ -19,6 +20,16 @@ Evidence (check(), lines 93-102 (except OSError: continue at 99-100)): Reproduce
 ## Proposed Fix
 
 Consume the (path, text) pairs from `sdlc_md.iter_artifact_files` instead of re-reading, and emit a blocking 'unreadable' finding for any text=None file.
+
+## Acceptance Criteria
+
+### AC1: an unreadable artefact is not reported clean
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** `pytest .claude/skills/sdlc-studio/scripts/tests/test_provenance.py::UnreadableArtifactTests`, written red before the fix and green after
+- **Verified:** yes (2026-07-27, functional)
 
 ## Revision History
 

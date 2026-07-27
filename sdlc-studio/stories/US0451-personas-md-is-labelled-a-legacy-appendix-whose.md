@@ -1,6 +1,6 @@
 # US0451: personas.md is labelled a legacy appendix whose still-true content is folded into or pointed at the registry
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0426
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** it is opened
 - **Then** its opening declares it a legacy appendix superseded by `sdlc-studio/personas/index.md`, with that pointer ahead of any persona content, and any still-true content is folded into the registry or explicitly marked historical
 - **Verify:** pytest tools/tests/test_persona_coherence.py::LegacyAppendixTests::test_personas_md_declares_itself_superseded_by_the_registry
+- **Verified:** yes (2026-07-27)
 
 ### AC2: no live document routes a reader to the superseded set
 
@@ -30,6 +31,7 @@
 - **When** they are scanned for references to `personas.md`
 - **Then** each remaining reference is either inside `personas.md` itself or explicitly labelled legacy, so no live document sends a reader to the superseded personas
 - **Verify:** pytest tools/tests/test_persona_coherence.py::LegacyAppendixTests::test_no_live_document_routes_to_the_superseded_set
+- **Verified:** yes (2026-07-27)
 
 ## Revision History
 

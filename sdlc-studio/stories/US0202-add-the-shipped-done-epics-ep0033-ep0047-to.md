@@ -10,9 +10,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader of the PRD
+**I want** the Done epics EP0033-EP0047 in the feature tables with their Epic columns populated
+**So that** the tables show what has shipped since the v4.1.0 tag rather than stopping at it
 
 ## Acceptance Criteria
 

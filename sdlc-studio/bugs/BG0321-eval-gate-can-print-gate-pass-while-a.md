@@ -1,6 +1,7 @@
 # BG0321: Eval gate can print 'gate pass' while a forbidden behaviour was observed - forbidden behaviours are unrecordable
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** tools/eval_run.py, tools/tests/test_eval_run.py
@@ -19,6 +20,16 @@ Evidence (`cmd_record` (lines 84-87), `cmd_report` (lines 104-131), `cmd_setup` 
 ## Proposed Fix
 
 Accept forbidden-behaviour ids in `cmd_record` (verdict observed = fail at the declared severity) and make `cmd_report` fail the gate whenever any forbidden behaviour is recorded.
+
+## Acceptance Criteria
+
+### AC1: a forbidden behaviour is recordable per case
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** `pytest tools/tests/test_eval_run.py::ForbiddenBehaviourTests`, written red before the fix and green after
+- **Verified:** yes (2026-07-27, functional)
 
 ## Revision History
 

@@ -2414,17 +2414,36 @@ def _default_branch(root) -> str:
     return next_id.origin_default_branch(Path(root))
 
 
+def _git_failure(result, what: str) -> str:
+    """Why a git step could not answer, in the words git itself used. Derived from the result,
+    never restated beside it, so the reason cannot drift from the failure."""
+    if result is None:
+        return f"{what} could not run (git absent, hung, or refused to start)"
+    detail = (result.stderr or result.stdout or "").strip().splitlines()
+    tail = detail[-1].strip() if detail else f"exit {result.returncode}"
+    return f"{what} failed: {tail}"
+
+
 def origin_drift(root, do_fetch: bool = True) -> dict:
     """Compare local HEAD to origin's default branch so a sprint is not planned against a stale
-    checkout. Fetches first (best-effort) unless `do_fetch=False`. Returns
-    {remote, behind, paths, branch}. Fail-safe: no origin, no git, or any error -> remote False,
-    behind 0 (identical to today's behaviour - no false positives)."""
-    out = {"remote": False, "behind": 0, "paths": [], "branch": None}
+    checkout. Fetches first unless `do_fetch=False`. Returns
+    {remote, behind, paths, branch, unverified}.
+
+    `unverified` names why the comparison could not be trusted - the fetch failed, or the
+    commit count could not be taken - and is None when the answer is real. A stale
+    remote-tracking ref answers 'level' whether or not the remote was reached, so a failed
+    fetch reported as behind=0 is not 'up to date', it is 'could not ask'. `do_fetch=False`
+    is a deliberate offline compare, not a failure, and never sets it.
+
+    Fail-safe: no origin, or no git at all -> remote False, behind 0, no warning."""
+    out = {"remote": False, "behind": 0, "paths": [], "branch": None, "unverified": None}
     if not _has_origin(root):
         return out
     out["remote"] = True
     if do_fetch:
-        _git(root, "fetch", "origin", "--quiet")            # best-effort; ignore failure
+        fetched = _git(root, "fetch", "origin", "--quiet")
+        if fetched is None or fetched.returncode != 0:
+            out["unverified"] = _git_failure(fetched, "fetch from origin")
     br = _default_branch(root)
     out["branch"] = br
     cnt = _git(root, "rev-list", "--count", f"HEAD..origin/{br}")
@@ -2432,7 +2451,12 @@ def origin_drift(root, do_fetch: bool = True) -> dict:
         try:
             out["behind"] = int(cnt.stdout.strip() or 0)
         except ValueError:
-            out["behind"] = 0
+            out["unverified"] = out["unverified"] or (
+                f"the commit count against origin/{br} was not a number: "
+                f"{cnt.stdout.strip()!r}")
+    else:
+        out["unverified"] = out["unverified"] or _git_failure(
+            cnt, f"counting commits against origin/{br}")
     if out["behind"]:
         names = _git(root, "diff", "--name-only", f"HEAD..origin/{br}")
         if names and names.returncode == 0:
@@ -2460,16 +2484,23 @@ def _batch_paths(root, batch_ids) -> set:
 def _drift_warning(drift: dict, batch_paths: set) -> str | None:
     """A warning line when local is behind origin, naming the commit-count and any overlap
     between the incoming remote changes and the batch's own artifact files (the collision the
-    incident hit). None when up to date."""
-    if not drift.get("behind"):
-        return None
-    overlap = sorted(p for p in drift["paths"] if p in batch_paths)
-    msg = (f"origin drift: local is {drift['behind']} commit(s) behind origin/{drift['branch']} "
-           f"- fetch and rebase before planning (a stale checkout can mint an id the remote "
-           f"already used)")
-    if overlap:
-        msg += f"; incoming changes touch batch artifacts: {', '.join(overlap)}"
-    return msg
+    incident hit) - and a line when the comparison could not be made at all. None only when
+    the checkout was really compared and is really level."""
+    lines = []
+    if drift.get("unverified"):
+        lines.append(f"origin drift UNVERIFIED: {drift['unverified']} - a failed fetch is not "
+                     f"evidence of no drift; this checkout may already be stale (restore the "
+                     f"remote and re-run, or pass --no-fetch to compare against the last "
+                     f"fetched state deliberately)")
+    if drift.get("behind"):
+        overlap = sorted(p for p in drift["paths"] if p in batch_paths)
+        msg = (f"origin drift: local is {drift['behind']} commit(s) behind "
+               f"origin/{drift['branch']} - fetch and rebase before planning (a stale checkout "
+               f"can mint an id the remote already used)")
+        if overlap:
+            msg += f"; incoming changes touch batch artifacts: {', '.join(overlap)}"
+        lines.append(msg)
+    return "\n".join(lines) or None
 
 
 def _preplan_reconcile(args: argparse.Namespace, kinds: list[str]) -> int | None:
@@ -5450,18 +5481,23 @@ def cmd_boundary(args: argparse.Namespace) -> int:
     how = "fetched" if fetched else "compared without fetching"
     if not drift.get("remote"):
         outcome = "no origin to compare"
+    elif drift.get("unverified"):
+        # Never "level": the boundary cannot claim an answer it did not get.
+        outcome = f"UNVERIFIED - {drift['unverified']}"
     elif drift.get("behind"):
         outcome = f"{drift['behind']} commit(s) behind origin/{drift['branch']}"
     else:
         outcome = f"level with origin/{drift['branch']}"
     print(f"cycle {index} | fetch: {how} - {outcome}")
-    if drift.get("behind"):
+    if drift.get("behind") or drift.get("unverified"):
         warn = _drift_warning(drift, _batch_paths(root, state.get("batch") or []))
         print(f"cycle {index} | {warn}", file=sys.stderr)
         if getattr(args, "strict", False):
+            reason = (f"local is {drift['behind']} commit(s) behind origin/{drift['branch']}"
+                      if drift.get("behind")
+                      else f"drift could not be verified: {drift['unverified']}")
             return _boundary_stop(
-                root, "origin-drift",
-                f"local is {drift['behind']} commit(s) behind origin/{drift['branch']}",
+                root, "origin-drift", reason,
                 "fetch and rebase, then re-run `sprint.py boundary` (or drop --strict to "
                 "continue against this checkout)")
 

@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reader of reference-review.md
+**I want** it stated plainly that a disclosed sign-off is not an independent one
+**So that** the guard is not read as proving the property its name claims
 
 ## Acceptance Criteria
 

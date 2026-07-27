@@ -639,7 +639,7 @@ package.json                # lint and test entry points
 
 - [Product Requirements Document](./prd.md)
 - [Technical Requirements Document](./trd.md)
-- [User Personas](./personas.md)
+- [User Personas](./personas/index.md)
 
 ## Revision History
 

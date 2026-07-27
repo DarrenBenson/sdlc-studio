@@ -397,9 +397,21 @@ class GhPrListMergedTests(unittest.TestCase):
         # Strictly-greater comparison: only the May PR survives.
         self.assertEqual([p["number"] for p in prs], [3])
 
-    def test_returns_empty_on_error(self) -> None:
+    def test_gh_failure_raises_rather_than_reading_as_no_prs(self) -> None:
+        # BG0324: a gh failure and "no merged PRs" are different answers. Returning []
+        # here made the cascade report an empty range it never read, so the failure must
+        # travel as a GhError exactly as `gh_issue_list` already makes it travel.
         with mock.patch.object(
             github_sync, "gh", return_value=subprocess_result(2, "", "fail")
+        ):
+            with self.assertRaises(github_sync.GhError):
+                github_sync.gh_pr_list_merged(None)
+
+    def test_clean_exit_with_malformed_json_still_degrades_to_empty(self) -> None:
+        # The parse tolerance is deliberate and separate: rc 0 with unreadable output is
+        # not a gh failure, so it must NOT raise (same split as gh_issue_list).
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(0, "not json", "")
         ):
             self.assertEqual(github_sync.gh_pr_list_merged(None), [])
 
@@ -780,6 +792,32 @@ class CascadeCommandTests(unittest.TestCase):
                 rc = github_sync.main(["cascade"])
         self.assertEqual(rc, 0)
         self.assertIn("no merged PRs", out.getvalue())
+
+    def test_gh_failure_is_not_reported_as_an_empty_range(self) -> None:
+        # BG0324: the whole lane, from the gh call down - a failed `gh pr list` must not
+        # come out as "no merged PRs found in range" and exit 0. Patching the low-level
+        # `gh` (not the lister) is the point: it pins the conflation where it happens.
+        out, err = io.StringIO(), io.StringIO()
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(2, "", "auth required")
+        ):
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = github_sync.main(["cascade"])
+        self.assertNotEqual(rc, 0)
+        self.assertNotIn("no merged PRs", out.getvalue())
+        self.assertIn("cascade", err.getvalue())
+        self.assertIn("auth required", err.getvalue())
+
+    def test_gh_failure_leaves_the_cascade_watermark_unwritten(self) -> None:
+        # A failed read must not advance (or create) the watermark: state that asserts a
+        # cascade which never happened is the same lie one file later.
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(2, "", "boom")
+        ):
+            with contextlib.redirect_stdout(io.StringIO()), \
+                 contextlib.redirect_stderr(io.StringIO()):
+                github_sync.main(["cascade"])
+        self.assertFalse(self._state_path().exists())
 
     def test_prs_without_sdlc_refs_report_none(self) -> None:
         prs = [{"number": 1, "body": "just a normal merge", "mergedAt": "2026-05-01T00:00:00Z"}]

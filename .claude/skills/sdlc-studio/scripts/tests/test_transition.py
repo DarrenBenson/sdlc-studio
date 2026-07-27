@@ -1943,5 +1943,188 @@ class RfcDecisionOverrideTests(unittest.TestCase):
                 tr.transition(root, "RFC0001", "Accepted")
 
 
+class UnspecifiedAcDoneGateTests(unittest.TestCase):
+    """BG0316: an AC carrying NO `Verify:` line at all must not be cheaper than one that
+    honestly declares `Verify: manual`.
+
+    The gate blocked a bare manual AC (BG0300) while waving through a criterion with no
+    verifier at all, so omitting the line was the cheapest way to Done - and the release
+    lane (`gate.py._verify_acs`) refuses the same story, so it failed only at tag time.
+    """
+
+    def _story(self, root: Path, acs: str) -> Path:
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True, exist_ok=True)
+        p = sd / "US0001-x.md"
+        p.write_text("# US0001: s\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n" + acs,
+                     encoding="utf-8")
+        (sd / "_index.md").write_text(
+            "# Stories\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0001](US0001-x.md) | s | Ready |\n", encoding="utf-8")
+        return p
+
+    def test_ac_with_no_verify_line_blocks_done(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._story(root, "### AC1\n- Given x\n\n### AC2\n- Given y\n")
+            with self.assertRaises(ValueError) as cm:
+                _quiet(tr.transition, root, "US0001", "Done")
+            msg = str(cm.exception)
+            self.assertIn("AC1", msg)
+            self.assertIn("AC2", msg)
+            self.assertIn("Verify:", msg)
+            self.assertIn("> **Status:** Ready", p.read_text(encoding="utf-8"))
+
+    def test_omission_is_never_cheaper_than_declaration(self) -> None:
+        # The parity the bug is about: the honest `Verify: manual` AC and the silent one
+        # must both refuse. A pass on either side inverts the incentive.
+        for acs in ("### AC1\n- **Verify:** manual eyeball it\n", "### AC1\n- Given x\n"):
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._story(root, acs)
+                with self.assertRaises(ValueError) as cm:
+                    _quiet(tr.transition, root, "US0001", "Done")
+                self.assertIn("AC1", str(cm.exception))
+
+    def test_recorded_human_evidence_lets_it_through(self) -> None:
+        # Symmetric with the manual path: the gate cannot judge the outcome, but a recorded
+        # PASSING human verdict is evidence somebody looked.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, "### AC1\n- Given x\n- **Verified:** yes (2026-07-27)\n")
+            res = _quiet(tr.transition, root, "US0001", "Done")
+            self.assertEqual(res["to"], "Done")
+
+    def test_force_still_overrides(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, "### AC1\n- Given x\n")
+            res = _quiet(tr.transition, root, "US0001", "Done", force=True)
+            self.assertEqual(res["to"], "Done")
+
+
+class ForcedOverrideRecordTests(unittest.TestCase):
+    """BG0314: `--force` advertised the bypass as `recorded as an override` and recorded
+    nothing - a forced close of a red-AC story was byte-identical to a verified one."""
+
+    def _story(self, root: Path, body: str | None = None) -> Path:
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True, exist_ok=True)
+        p = sd / "US0001-x.md"
+        p.write_text(body or ("# US0001: s\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n"
+                              "### AC1\n- **Verify:** shell true\n\n## Revision History\n\n"
+                              "| Date | Author | Change |\n| --- | --- | --- |\n"
+                              "| 2026-07-27 | a | Filed |\n"), encoding="utf-8")
+        (sd / "_index.md").write_text(
+            "# Stories\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0001](US0001-x.md) | s | Ready |\n", encoding="utf-8")
+        return p
+
+    def test_forced_bypass_is_recorded_on_the_artefact(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._story(root)
+            res = _quiet(tr.transition, root, "US0001", "Done", force=True)
+            text = p.read_text(encoding="utf-8")
+            self.assertIn("Forced-override", text)          # the durable record
+            self.assertIn("never verified", text)           # naming the gate it waived
+            self.assertTrue(res.get("forced_override"))     # and reported to the caller
+
+    def test_the_record_names_every_bypassed_gate_in_the_revision_log(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._story(root)
+            _quiet(tr.transition, root, "US0001", "Done", force=True)
+            rows = [ln for ln in p.read_text(encoding="utf-8").splitlines()
+                    if ln.startswith("|") and "force" in ln.lower()]
+            self.assertTrue(rows, "no Revision History row records the forced bypass")
+
+    def test_force_with_nothing_to_bypass_records_nothing(self) -> None:
+        # A force that waived no gate is not an override, and claiming one would be the
+        # same dishonesty in the opposite direction.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._story(root, "# US0001: s\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n"
+                                  "### AC1\n- **Verify:** manual eyeball\n"
+                                  "- **Verified:** yes (2026-07-27)\n")
+            res = _quiet(tr.transition, root, "US0001", "Done", force=True)
+            self.assertNotIn("Forced-override", p.read_text(encoding="utf-8"))
+            self.assertIsNone(res.get("forced_override"))
+
+    def test_a_forced_dry_run_writes_no_record(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._story(root)
+            before = p.read_text(encoding="utf-8")
+            _quiet(tr.transition, root, "US0001", "Done", dry_run=True, force=True)
+            self.assertEqual(before, p.read_text(encoding="utf-8"))
+
+
+class OneCallPreflightTests(unittest.TestCase):
+    """BG0315: `cmd_set`'s one-call close must pre-flight the WHOLE gate ladder before it
+    writes anything, and its `--dry-run` must judge the same text the real run will."""
+
+    def _story(self, root: Path) -> Path:
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True, exist_ok=True)
+        p = sd / "US0001-x.md"
+        p.write_text("# US0001: s\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n"
+                     "### AC1\n- **Verify:** shell true\n", encoding="utf-8")
+        (sd / "_index.md").write_text(
+            "# Stories\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0001](US0001-x.md) | s | Ready |\n", encoding="utf-8")
+        return p
+
+    def _bug(self, root: Path) -> Path:
+        bd = root / "sdlc-studio" / "bugs"
+        bd.mkdir(parents=True, exist_ok=True)
+        p = bd / "BG0001-x.md"
+        p.write_text("# BG0001: a\n\n> **Status:** In Progress\n", encoding="utf-8")
+        (bd / "_index.md").write_text(
+            "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [BG0001](BG0001-x.md) | a | In Progress |\n", encoding="utf-8")
+        return p
+
+    def test_a_refused_close_leaves_no_stamp_and_no_verdict_row(self) -> None:
+        # The AC-verify gate refuses this close, but the depth stamp and the critic verdict
+        # were already on disk by the time it ran - a persistent record of a close that
+        # never happened.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._story(root)
+            before = p.read_text(encoding="utf-8")
+            rc_val = _quiet(tr.main, ["set", "US0001", "Done", "--depth", "functional",
+                                      "--verdict", "approve", "--reviewer", "Blake",
+                                      "--author", "Alex", "--root", str(root)])
+            self.assertNotEqual(rc_val, 0)
+            self.assertEqual(before, p.read_text(encoding="utf-8"))   # byte-identical
+            self.assertFalse((root / "sdlc-studio" / "reviews" / "critic-verdicts.md").exists())
+
+    def test_depth_dry_run_agrees_with_the_real_run(self) -> None:
+        # `--depth functional --dry-run` judged the UN-stamped file and refused what the
+        # identical real command accepts: the preview/run divergence `pending_fields` exists
+        # to close, on the one path that never passed it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root)
+            dry = _quiet(tr.main, ["set", "BG0001", "Fixed", "--depth", "functional",
+                                   "--dry-run", "--root", str(root)])
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root)
+            real = _quiet(tr.main, ["set", "BG0001", "Fixed", "--depth", "functional",
+                                    "--root", str(root)])
+        self.assertEqual((dry, real), (0, 0), "dry-run and real run disagree")
+
+    def test_the_dry_run_still_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._bug(root)
+            before = p.read_text(encoding="utf-8")
+            _quiet(tr.main, ["set", "BG0001", "Fixed", "--depth", "functional",
+                             "--dry-run", "--root", str(root)])
+            self.assertEqual(before, p.read_text(encoding="utf-8"))
+
+
 if __name__ == "__main__":
     unittest.main()
