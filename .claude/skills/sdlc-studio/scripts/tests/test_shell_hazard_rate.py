@@ -256,5 +256,38 @@ class MeasuredCatchRateTests(unittest.TestCase):
                                       f"the quoted damage was repaired; drop the exclusion")
 
 
+class CodeBlockExemptionTests(unittest.TestCase):
+    """BG0301: a fenced or indented code block in a field is an illustration, not a stored
+    command - its aligned spacing and fence markers must not read as shell-hazard marks."""
+
+    @staticmethod
+    def _findings(text: str) -> list[tuple[str, str]]:
+        return ff.shell_hazards({"summary": text}, keys=("summary",))
+
+    def test_fenced_and_indented_blocks_are_not_flagged(self) -> None:
+        # Each fixture GENUINELY trips a rule without the exemption (asserted below), so this is
+        # not a vacuous "no findings on benign text" test - it proves the exemption does the work.
+        # A: an indented block whose column-aligned two-space gaps trip the collapsed-space rule.
+        indented = "Aligned columns below:\n\n    alpha    beta\n    gamma    delta\n\nend."
+        # B: a fenced block with a lone backtick inside, so the raw backtick count is odd.
+        fenced = "A snippet:\n\n```text\na stray backtick: ` inside\n```\n\ndone."
+        for label, text in (("indented", indented), ("fenced", fenced)):
+            with self.subTest(label):
+                self.assertEqual(self._findings(text), [], f"a {label} code block was flagged")
+                # Without the exemption the same text IS flagged - the fixture is real, not benign.
+                raw = ff.shell_hazards.__globals__["_strip_code_blocks"]
+                ff.shell_hazards.__globals__["_strip_code_blocks"] = lambda x: x
+                try:
+                    self.assertTrue(self._findings(text),
+                                    f"{label} fixture does not trip a rule unstripped - it is vacuous")
+                finally:
+                    ff.shell_hazards.__globals__["_strip_code_blocks"] = raw
+
+    def test_a_real_hazard_outside_a_code_block_is_still_flagged(self) -> None:
+        # The exemption must not blind the detector: a surviving `$(` in ordinary prose still flags.
+        self.assertTrue(self._findings("run $(whoami) now"),
+                        "a real shell hazard outside a code block was missed")
+
+
 if __name__ == "__main__":
     unittest.main()

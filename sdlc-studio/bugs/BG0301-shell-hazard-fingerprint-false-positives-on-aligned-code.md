@@ -27,6 +27,25 @@ The catch-rate test (`test_shell_hazard_rate.py`, `MeasuredCatchRateTests`) asse
 
 Exempt code context from these fingerprints, or require a stronger signal than a bare two-space gap or an odd backtick count. The real hazard is a value shaped like a shell command with a collapsed substitution, not any aligned code or any markdown inline-code or fence. Skip fenced and indented code blocks when scanning a field, and judge the double-space and backtick rules only against text that reads as a command. Add a regression fixture with a benign aligned code excerpt and a fenced block to the catch-rate test so the exemption stays.
 
+## Acceptance Criteria
+
+### AC1: a fenced or indented code block in a field is not scanned for shell hazards
+
+- **Given** an artefact field whose only hazard-shaped content sits inside a fenced code block
+  (column-aligned gaps of two spaces, and fence markers that make the backtick count odd)
+- **When** the shell-hazard scan runs over that field
+- **Then** it reports nothing - a code illustration is exempt, because its spacing and markers are
+  not the marks of a shell that ate a command-shaped argument
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_shell_hazard_rate.py::CodeBlockExemptionTests::test_fenced_and_indented_blocks_are_not_flagged
+
+### AC2: the exemption does not blind the detector to a real corruption
+
+- **Given** the recorded corpus of values a completed command substitution genuinely corrupted
+- **When** the scan runs after the code-block exemption is added
+- **Then** it still catches the same count it did before - the exemption removes false positives
+  without lowering the true-positive rate
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_shell_hazard_rate.py::MeasuredCatchRateTests::test_the_catch_count_over_the_corpus_is_asserted_as_a_number
+
 ## Revision History
 
 | Date | Author | Change |

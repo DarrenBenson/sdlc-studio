@@ -465,6 +465,33 @@ def _follows_a_flag(text: str, idx: int) -> bool:
     return text[start:idx].startswith("-")
 
 
+def _strip_code_blocks(value: str) -> str:
+    """Remove fenced (``` / ~~~) and indented (four-space / tab) code blocks from a field value.
+
+    A code block is an ILLUSTRATION quoted in prose, not a command being stored as an argument: its
+    column-aligned two-space gaps and its fence markers (an odd run of backticks) are not the marks
+    of a shell that ate a field. Scanning them for those marks was the false-positive source that
+    reddened the tree-wide catch-rate gate on legitimately-authored artefacts, so they are dropped
+    before any fingerprint runs. Detection is unaffected for real command-shaped values, which do
+    not arrive fenced or indented."""
+    out: list[str] = []
+    in_fence = False
+    fence = ""
+    for line in value.splitlines():
+        s = line.lstrip()
+        if not in_fence and (s.startswith("```") or s.startswith("~~~")):
+            in_fence, fence = True, s[:3]
+            continue
+        if in_fence:
+            if s.startswith(fence):
+                in_fence = False
+            continue
+        if line.startswith("    ") or line.startswith("\t"):
+            continue  # an indented code block - not a stored command
+        out.append(line)
+    return "\n".join(out)
+
+
 def substitution_fingerprints(value: str) -> list[str]:
     """What was found in `value` bearing the marks of a command substitution that COMPLETED.
 
@@ -475,7 +502,7 @@ def substitution_fingerprints(value: str) -> list[str]:
     marks catch three. The fourth lost a backticked token from the START of a sentence, which
     leaves grammatical text behind and is undetectable in principle - which is why the
     fields-file path, not this, is the fix."""
-    text = _CODE_SPAN.sub("C", value)
+    text = _CODE_SPAN.sub("C", _strip_code_blocks(value))
     found: list[str] = []
     if _COLLAPSED_SPACE.search(text):
         found.append("a collapsed double space - a completed command substitution leaves the "
@@ -515,18 +542,22 @@ def shell_hazards(fields: dict, keys: tuple[str, ...] | None = None) -> list[tup
         val = fields.get(key)
         if not isinstance(val, str) or not val:
             continue
-        if val.count("`") % 2:
+        # A fenced or indented code block is an illustration, not a stored command: its fence
+        # markers and aligned spacing are not the marks of a shell that ate a field. Strip them
+        # before every check, so a quoted excerpt no longer reddens the tree-wide catch-rate gate.
+        scanned = _strip_code_blocks(val)
+        if scanned.count("`") % 2:
             out.append((key, "an unbalanced backtick - a backtick pair is command "
                              "substitution, and its other half (with everything between) "
                              "is what a shell removes"))
-        if "$(" in val:
+        if "$(" in scanned:
             out.append((key, "a `$(` - command substitution the shell either already ran "
                              "or will run next time this value is passed as an argument"))
-        stripped = val.rstrip(" \t\n")
+        stripped = scanned.rstrip(" \t\n")
         if stripped.endswith("\\") and not stripped.endswith("\\\\"):
             out.append((key, "a trailing backslash - a line continuation swallows whatever "
                              "followed it"))
-        out.extend((key, what) for what in substitution_fingerprints(val))
+        out.extend((key, what) for what in substitution_fingerprints(scanned))
     return out
 
 
