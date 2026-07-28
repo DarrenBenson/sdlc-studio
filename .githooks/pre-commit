@@ -377,6 +377,30 @@ if [ "$fail" -eq 0 ] && staged_paths="$(git diff --cached --name-only)"; then
         printf '%s\n' "$staged_paths" | grep -qE "$test_relevant" && suites_needed=1 ;;
   esac
 fi
+# Even a test-relevant commit need not pay when the test-relevant SURFACE is byte-identical
+# to the tree a green verdict was already recorded over. Measured over one working day here:
+# the suites ran about 52 times for about 218 minutes, against about 35 minutes of delivery,
+# and a large share of those runs were over an identical source tree - paperwork commits, and
+# closes retried after a refusal. Nothing about the code had changed, so nothing about the
+# answer could have.
+#
+# `gate.py --suite-decision` answers that with a `suite-decision: run|skip` sentinel, read the
+# same way as the relevance sentinel above: no sentinel means the measurer could not answer,
+# and an unanswered question runs the suites. Every unknown inside it - an unhashable surface,
+# an absent or unreadable record, a red one, one earned by a partial run at a boundary -
+# already degrades to `run`, so this reads only the affirmative skip.
+suite_reuse=""
+if [ "$fail" -eq 0 ] && [ "$suites_needed" -eq 1 ]; then
+  decision_out="$(python3 "$skill/gate.py" --root . --suite-decision 2>/dev/null)"
+  case "$decision_out" in
+    *"suite-decision: skip"*)
+      suites_needed=0
+      suite_reuse="$(printf '%s\n' "$decision_out" \
+        | sed -n 's/^suite-decision: skip - //p' | head -1)"
+      [ -n "$suite_reuse" ] || suite_reuse="the recorded green verdict covers this surface"
+      ;;
+  esac
+fi
 if [ "$fail" -eq 0 ] && [ "$suites_needed" -eq 1 ]; then
   # This hook's share of the gate travels with the record, so the per-commit total the
   # budget reads still covers BOTH hooks rather than only the half that runs last.
@@ -396,6 +420,13 @@ if [ "$fail" -eq 0 ] && [ "$suites_needed" -eq 1 ]; then
 elif [ "$fail" -ne 0 ]; then
   printf '  %sSKIP%s unit suites - a cheaper lane already failed, so the commit is blocked either way.\n' "$Y" "$N"
   printf '       Fix the failure above and commit again; the suites run once the cheap guards are green.\n'
+elif [ -n "$suite_reuse" ]; then
+  # Named, like every other skip in this hook: a reused verdict a reader cannot see is
+  # indistinguishable from a run that passed, and the reuse is exactly the claim that has
+  # to be checkable on its face.
+  printf '  %sSKIP%s unit suites - %s\n' "$Y" "$N" "$suite_reuse"
+  printf '       The tests were run over this exact surface already; edit any file the suites\n'
+  printf '       read and the next commit pays in full.\n'
 else
   printf '  %sSKIP%s unit suites - no test-relevant file staged (measured from what the suites read).\n' "$Y" "$N"
   printf '       Docs-only commit: style, links, budgets, markdown and the artefact gate still ran.\n'

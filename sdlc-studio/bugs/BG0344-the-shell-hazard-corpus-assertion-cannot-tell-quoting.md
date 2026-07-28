@@ -1,6 +1,7 @@
 # BG0344: The shell-hazard corpus assertion cannot tell quoting from hazard, so evidence about shell defects must be degraded to commit
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_shell_hazard_rate.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py

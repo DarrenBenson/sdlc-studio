@@ -2,7 +2,7 @@
 
 > **Status:** Draft
 > **Parent:** CR0446
-> **Derived Point Total:** 8
+> **Derived Point Total:** 11
 > **Parent:** CR0445
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

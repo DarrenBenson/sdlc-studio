@@ -1,11 +1,11 @@
 # US0495: A full-suite run happens only at a boundary - push, release and sprint close - and the policy is stated where an operator reads it
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0451
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .githooks/pre-commit, .claude/skills/sdlc-studio/scripts/../help/gate.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .githooks/pre-commit, .claude/skills/sdlc-studio/scripts/../help/gate.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, tools/tests/test_help_coverage.py
 > **Epic:** EP0177
 > **Points:** 3
 > **Persona:** Maya Okafor

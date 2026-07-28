@@ -1,6 +1,7 @@
 # BG0340: lint-style provenance guard's hand-enumerated globs miss scripts/hooks/ (and narrow templates YAML to config*.yaml)
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/lint-style.sh

@@ -1,6 +1,7 @@
 # BG0339: check_neutrality silently reports a tracked file it could not read as clean, the exact silent-pass its own ls-files path
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/check_neutrality.py

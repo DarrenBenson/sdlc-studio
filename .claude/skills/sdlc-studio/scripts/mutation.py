@@ -805,6 +805,54 @@ def _recover_stranded(root: Path) -> list[str]:
     return recovered
 
 
+def dirty_targets(repo_root: Path | str, files) -> list[str] | None:
+    """Target files git reports as carrying uncommitted work, or None when git cannot answer.
+
+    None means UNKNOWN, never clean. Outside a work tree (every temp-directory fixture, and a
+    consuming project not under git) there is no committed state to compare against, so the
+    honest answer is that the question was not asked - the caller records that rather than
+    reporting a clean tree it never checked.
+
+    Why this exists at all: this engine rewrites files in place and restores them from bytes it
+    read at apply time, and every published remedy for a stranded mutant says restore the target
+    from git. Over a file carrying uncommitted work, neither move can tell the mutant from the
+    work - so a reviewer mutation-testing in an author's live tree can revert a repair with the
+    suite still green. Refusing is the only answer that does not silently destroy something.
+
+    Staged, unstaged and untracked all count: an untracked target has no committed state to
+    restore from at all, which is the same hazard with nothing to recover.
+    """
+    import os
+    paths = [str(Path(f)) for f in files]
+    if not paths:
+        return []
+    # Scrub repo-redirecting env for the same reason gate.py does: this may run from inside
+    # ANOTHER repo's hook, and an inherited GIT_DIR would make git answer for that repo.
+    env = {k: v for k, v in os.environ.items()
+           if k not in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE")}
+    try:
+        inside = subprocess.run(["git", "-C", str(repo_root), "rev-parse", "--is-inside-work-tree"],
+                                capture_output=True, text=True, timeout=10, env=env)
+        if inside.returncode != 0 or inside.stdout.strip() != "true":
+            return None
+        proc = subprocess.run(["git", "-C", str(repo_root), "status", "--porcelain",
+                               "--untracked-files=all", "--", *paths],
+                              capture_output=True, text=True, timeout=30, env=env)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0:
+        return None
+    found = set()
+    for line in proc.stdout.splitlines():
+        name = line[3:].strip()
+        if not name:
+            continue
+        if " -> " in name:            # a rename reports `old -> new`; the new path is the target
+            name = name.split(" -> ", 1)[1]
+        found.add(name.strip('"'))
+    return sorted(found)
+
+
 @contextlib.contextmanager
 def applied(mutation: dict, sidecar: Path | None = None):
     """Apply one mutation; ALWAYS restore the original bytes, even when the
@@ -922,6 +970,10 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     # Another declared writer in this tree makes this run the SECOND one, which is the hazard
     # itself: refuse before touching a byte, rather than interleaving two processes' rewrites.
     blocking = read_window(root)
+    # Uncommitted work on a target is the second way this run destroys something it cannot give
+    # back: the mutant and the work become one file, and neither the byte-restore nor the
+    # published `restore from git` remedy can separate them. None means git could not answer.
+    dirty = None
     if empty_surface:
         # Nothing to mutate: skip the baseline, the window and the loop entirely. A window a
         # concurrent run holds is irrelevant to a run that touches no byte, so it does not block.
@@ -933,6 +985,13 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
                   f"{', '.join(blocking.get('paths') or []) or '(unstated paths)'} - refusing to "
                   f"be the second process rewriting this tree. Wait for it, or clear it: "
                   f"{blocking['clear_with']}")
+    elif (dirty := dirty_targets(root, files)):
+        baseline = "not-run"
+        remedy = (f"uncommitted changes on {', '.join(dirty)} - refusing to mutate a file "
+                  f"carrying work that is not committed. A mutant applied over uncommitted work "
+                  f"cannot be told apart from that work when the file is restored, so a run that "
+                  f"proceeded here could revert it silently. Commit or stash it, or mutate an "
+                  f"isolated checkout of it (git worktree add) instead of this tree.")
     else:
         try:
             recovered = _recover_stranded(root)
@@ -1023,6 +1082,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
         "empty_surface": empty_surface,
         "remedy": remedy,
         "blocked_by_window": blocking,
+        "dirty_targets": dirty,
         "recovered": recovered,
         "selected_tests": ([str(p) for p in selected] if selected is not None else None),
         "selection_warnings": selection_warnings,
@@ -1838,6 +1898,13 @@ def cmd_run(args: argparse.Namespace) -> int:
         # NEVER a clean-looking zero over a report that judged nothing
         if args.format == "json":
             print(json.dumps(report, indent=2))
+        elif report.get("dirty_targets"):
+            # A dirty target refuses BEFORE the baseline, so quoting a baseline verdict here
+            # would name a run that never happened. Name the files instead - they are the
+            # thing the operator has to act on.
+            print(f"mutation: REFUSED - uncommitted changes on "
+                  f"{', '.join(report['dirty_targets'])} (no mutants applied). "
+                  f"{report['remedy']}", file=sys.stderr)
         else:
             print(f"mutation: REFUSED - baseline {report['baseline']} (no mutants applied). "
                   f"{report['remedy']}", file=sys.stderr)

@@ -185,6 +185,12 @@ The rule:
   loud** (or auto-resume the dead votes) when it is non-zero. A survivors/refuted split with a
   hidden unjudged tail is not a finished audit - it is a truncated one wearing a complete face.
 
+One layer down sits the same class with a different subject: not a dead vote but a **dead agent**,
+a skeptic that stops without returning and without erroring, so the driver never learns the vote
+is missing. `reference-agentic-lessons.md#silent-stall` states how to detect it. Read the two
+together - a panel loses a verdict either way, and both absences have to be reported rather than
+quietly counted as something.
+
 ## Taxonomy & Filing {#audit-taxonomy}
 
 Classify each survivor by the standard rule:

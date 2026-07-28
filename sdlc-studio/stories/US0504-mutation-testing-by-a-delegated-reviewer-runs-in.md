@@ -1,11 +1,11 @@
 # US0504: Mutation testing by a delegated reviewer runs in an isolated checkout, and mutation.py refuses to mutate a file with uncommitted changes
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0452
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/scripts/../reference-review.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/scripts/../reference-review.md, tools/tests/test_doc_claims.py
 > **Epic:** EP0177
 > **Points:** 5
 > **Persona:** Maya Okafor

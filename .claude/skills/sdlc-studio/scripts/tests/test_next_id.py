@@ -340,5 +340,63 @@ class RootAnchoringTests(unittest.TestCase):
             self.assertEqual(allocated["local_max"], 383)
 
 
+class MetaIdWidthTests(unittest.TestCase):
+    """BG0338: a meta id past 9999 must read back WHOLE.
+
+    The meta reader matched at most four digits, so RETRO10000 read back as 1000 - the
+    allocator then allocated over ids that already exist. `sdlc_md.id_number` was widened
+    to 4-7 digits for exactly this class; the meta reader was left behind."""
+
+    def _write(self, root: Path, rel: str, stems: list[str]) -> Path:
+        d = root / rel
+        d.mkdir(parents=True, exist_ok=True)
+        for s in stems:
+            (d / f"{s}.md").write_text(f"# {s}\n", encoding="utf-8")
+        return d
+
+    def test_five_digit_meta_id_reads_back_whole(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._write(root, "sdlc-studio/retros", ["RETRO10000-x"])
+            self.assertEqual(next_id.local_ids("retro", root), [10000])
+
+    def test_allocation_above_a_five_digit_id_does_not_re_mint_a_live_id(self) -> None:
+        # RETRO10000 truncated to 1000, so the allocator handed back 1001 - the number
+        # RETRO01001 already holds. Two files, one id.
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._write(root, "sdlc-studio/retros", ["RETRO10000-a", "RETRO01001-b"])
+            taken = set(next_id.local_ids("retro", root))
+            allocated = next_id.allocate_number("retro", root, remote=False)
+            self.assertNotIn(allocated, taken)
+            self.assertEqual(allocated, 10001)
+
+    def test_seven_digit_meta_id_matches_id_number_range(self) -> None:
+        # The upper bound is id_number's, so the two readers agree on the same id.
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._write(root, "sdlc-studio/reviews", ["RV1234567-x"])
+            self.assertEqual(next_id.local_ids("review", root), [1234567])
+            self.assertEqual(next_id.sdlc_md.id_number("RV1234567"), 1234567)
+
+    def test_a_digit_run_past_the_range_is_ignored_not_truncated(self) -> None:
+        # Widening the cap without refusing a longer run just moves the truncation: an
+        # eight-digit stem would read back as its first seven digits - a number no file
+        # holds, and one that would drag every later allocation up with it. id_number
+        # returns None there, and so must this reader.
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._write(root, "sdlc-studio/retros", ["RETRO12345678-x", "RETRO0004-y"])
+            self.assertEqual(next_id.local_ids("retro", root), [4])
+            self.assertIsNone(next_id.sdlc_md.id_number("RETRO12345678"))
+
+    def test_four_digit_ids_are_unaffected(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._write(root, "sdlc-studio/handoffs", ["HO0007-x", "HO-0009-y"])
+            self.assertEqual(next_id.local_ids("handoff", root), [7, 9])
+            self.assertEqual(next_id.allocate_number("handoff", root, remote=False), 10)
+
+
 if __name__ == "__main__":
     unittest.main()

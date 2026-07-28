@@ -1,6 +1,6 @@
 # US0499: The close reports execution actuals against the declared policy, so a sprint that ran the suite fifty times shows it
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0453
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

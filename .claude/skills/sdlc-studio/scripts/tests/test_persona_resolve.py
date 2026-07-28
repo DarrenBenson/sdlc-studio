@@ -328,5 +328,40 @@ class ConvergedHomeTests(unittest.TestCase):
             self.assertIn("seats/", err.getvalue())
 
 
+class SeatNameFenceTests(unittest.TestCase):
+    """BG0349: `seat_name` skips fenced illustration by the ONE shared CommonMark tracker. The
+    naive toggle released a four-backtick block on its inner three-backtick fence, so an H1 QUOTED
+    inside a card's example became the seat's name."""
+
+    TICK = "`"
+
+    def test_h1_quoted_inside_a_longer_fenced_block_is_not_the_seat_name(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            card = Path(d) / "card.md"
+            card.write_text(
+                self.TICK * 4 + "markdown\n"
+                + self.TICK * 3 + "\n"
+                "# Ghost Name - Engineering amigo\n"
+                + self.TICK * 3 + "\n"
+                + self.TICK * 4 + "\n\n"
+                "# Real Name - Engineering amigo\n",
+                encoding="utf-8")
+            self.assertEqual(mod.seat_name(card, "engineering"), "Real Name")
+
+    def test_a_fence_carrying_an_info_string_never_closes(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            card = Path(d) / "card.md"
+            card.write_text(
+                self.TICK * 3 + "markdown\n"
+                + self.TICK * 3 + "text\n"
+                "# Ghost Name - Engineering amigo\n"
+                + self.TICK * 3 + "\n\n"
+                "# Real Name - Engineering amigo\n",
+                encoding="utf-8")
+            self.assertEqual(mod.seat_name(card, "engineering"), "Real Name")
+
+
 if __name__ == "__main__":
     unittest.main()

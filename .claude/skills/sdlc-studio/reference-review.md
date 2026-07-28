@@ -385,9 +385,9 @@ not point at. One lens is always the **claims lens** above; the other reads the 
 reads only share a blind spot). Where a round runs with **one** reviewer anyway, the **review
 record says so** - a single-reviewer round is recorded as one, never read as a full round.
 
-### Three standing review practices
+### The standing review practices
 
-Every closing brief carries these three, each paired with the reason it exists:
+Every closing brief carries each of these, paired with the reason it exists:
 
 - **Per-item repair verdicts.** On a repair review, rule each previous finding **CLOSED,
   OVER-CLAIMED or MOVED** individually. A general "review the repair" answer blurs the three
@@ -400,10 +400,28 @@ Every closing brief carries these three, each paired with the reason it exists:
   **isolation** before drawing any conclusion from it. A sibling guard masked a survivor three
   separate times in one sprint, and each time the truth appeared only when the branch was
   exercised alone - a survivor is evidence about the harness, not about the test.
+- **Regression cover for every repair.** A repair that **changes behaviour carries a test**
+  asserting that behaviour. Where it does not, report the missing regression cover **as a
+  finding** in the same round: an unpinned repair is one a later edit reverts with the suite
+  still green, which is how a shipped repair was lost entirely and no suite said so.
 
-`critic.py` refuses to issue a brief missing any of the three practices, or a claim-inventory
+`critic.py` refuses to issue a brief missing any of these practices, or a claim-inventory
 pass that omits one of the four prose surfaces, so the discipline holds by construction rather
 than by the author remembering it.
+
+### Where a delegated reviewer mutates {#mutation-isolation}
+
+A delegated reviewer mutates code in an **isolated checkout** - its own worktree, or a copy of
+the file somewhere else - **never the author's working tree**. That tree is live: the author and
+other lanes are editing it, and a mutant written over an uncommitted change becomes
+indistinguishable from that change the moment the file is restored. A reviewer mutation-testing
+in an author's tree **silently reverted** a shipped repair this way, and the suite stayed green
+over the reverted code because nothing pinned the repaired behaviour.
+
+The author-side rule that follows: `scripts/mutation.py run` **refuses a target with uncommitted
+changes**, naming the file, before it applies a single mutant. Commit or stash the work first, or
+point the run at an isolated checkout. Reasoning about what edit would turn a test red costs
+nothing and needs no tree at all, which is the right move for a reviewer who has neither.
 
 ---
 

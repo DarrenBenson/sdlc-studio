@@ -101,6 +101,53 @@ class ProvenanceGuardTests(unittest.TestCase):
             self.assertEqual(r.returncode, 1, r.stdout)
             self.assertIn("provenance tag", r.stdout)
 
+    def test_flags_tag_in_a_scripts_subdirectory(self) -> None:
+        # BG0340: the guard enumerated scripts/*.py and scripts/lib/*.py, so the shipped
+        # scripts/hooks/close_guard.py - and every future subdirectory - was exempt.
+        with tempfile.TemporaryDirectory() as d:
+            root = _prov_fixture(Path(d), "# clean\n")
+            hooks = root / ".claude" / "skills" / "sdlc-studio" / "scripts" / "hooks"
+            hooks.mkdir()
+            (hooks / "close_guard.py").write_text("# gated by (CR0186)\n", encoding="utf-8")
+            r = _run(root)
+            self.assertEqual(r.returncode, 1, r.stdout)
+            self.assertIn("provenance tag", r.stdout)
+            self.assertIn("close_guard.py", r.stdout)
+
+    def test_flags_tag_in_a_non_config_templates_yaml(self) -> None:
+        # BG0340: the YAML term was templates/config*.yaml, exempting version.yaml and
+        # product-manifest.yaml, which ship just the same.
+        with tempfile.TemporaryDirectory() as d:
+            root = _prov_fixture(Path(d), "# clean\n")
+            tmpl = root / ".claude" / "skills" / "sdlc-studio" / "templates"
+            tmpl.mkdir()
+            (tmpl / "version.yaml").write_text("# bumped by (CR0186)\n", encoding="utf-8")
+            r = _run(root)
+            self.assertEqual(r.returncode, 1, r.stdout)
+            self.assertIn("version.yaml", r.stdout)
+
+    def test_scripts_tests_are_carved_out_deliberately(self) -> None:
+        # The widened find must not sweep in scripts/tests/: a test docstring citing the
+        # artefact it derives from is traceability nobody reads against their own project.
+        with tempfile.TemporaryDirectory() as d:
+            root = _prov_fixture(Path(d), "# clean\n")
+            tests = root / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"
+            tests.mkdir()
+            (tests / "test_x.py").write_text('"""Covers (CR0186)."""\n', encoding="utf-8")
+            r = _run(root)
+            self.assertEqual(r.returncode, 0, r.stdout)
+
+    def test_a_pycache_copy_does_not_reach_the_guard(self) -> None:
+        # Gathering the scripts tree with find must not drag compiled leftovers in: a stale
+        # __pycache__ copy of a since-cleaned file would report an offence that is not there.
+        with tempfile.TemporaryDirectory() as d:
+            root = _prov_fixture(Path(d), "# clean\n")
+            cache = root / ".claude" / "skills" / "sdlc-studio" / "scripts" / "__pycache__"
+            cache.mkdir()
+            (cache / "x.py").write_text("# stale (CR0186)\n", encoding="utf-8")
+            r = _run(root)
+            self.assertEqual(r.returncode, 0, r.stdout)
+
     def test_does_not_flag_example_ids(self) -> None:
         # comma/hyphen lists, a lone id, and ids trailing narrative text are legitimate examples
         clean = (

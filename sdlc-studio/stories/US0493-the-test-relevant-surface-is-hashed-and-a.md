@@ -1,6 +1,6 @@
 # US0493: The test-relevant surface is hashed, and a run whose surface is unchanged since the last green verdict is skipped with that verdict reused
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0451
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

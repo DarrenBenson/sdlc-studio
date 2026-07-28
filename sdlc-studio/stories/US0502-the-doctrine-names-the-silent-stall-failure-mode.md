@@ -1,11 +1,11 @@
 # US0502: The doctrine names the silent-stall failure mode and gives a driving agent a detection rule it can apply
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0450
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/../reference-agentic-lessons.md, .claude/skills/sdlc-studio/scripts/../reference-audit.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/../reference-agentic-lessons.md, .claude/skills/sdlc-studio/scripts/../reference-audit.md, tools/tests/test_doc_claims.py
 > **Epic:** EP0177
 > **Points:** 3
 > **Persona:** Maya Okafor

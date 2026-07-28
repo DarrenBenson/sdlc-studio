@@ -289,6 +289,93 @@ class DoneGateTests(unittest.TestCase):
             sdlc_md.project_override = orig
 
 
+class ManualEvidenceGateFailsLoudTests(unittest.TestCase):
+    """BG0335: `_acs_missing_evidence` returned an EMPTY pair on any exception, and an empty
+    pair is exactly what "every AC carries a passing human verdict" looks like. A broken
+    `verify_ac` import or a story the parser choked on therefore disarmed the manual-evidence
+    Done gate completely - the all-manual story below is blocked when the parser works
+    (`DoneGateTests.test_bare_manual_ac_blocks_done`) and sailed through when it did not.
+    The failure must be VISIBLE: a block reason, not silence."""
+
+    def _story(self, root: Path, body: str) -> None:
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True, exist_ok=True)
+        (sd / "US0001-x.md").write_text(body, encoding="utf-8")
+        (sd / "_index.md").write_text(
+            "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Ready | 1 |\n"
+            "| Done | 0 |\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0001](US0001-x.md) | s | Ready |\n", encoding="utf-8")
+
+    _BARE_MANUAL = ("# US0001: s\n\n> **Status:** Ready\n\n### AC1\n"
+                    "- **Verify:** manual eyeball it\n")
+
+    @contextlib.contextmanager
+    def _parser_raising(self):
+        import verify_ac
+        orig = verify_ac.parse_story
+
+        def _boom(_text):
+            raise RuntimeError("parser exploded")
+
+        verify_ac.parse_story = _boom
+        try:
+            yield
+        finally:
+            verify_ac.parse_story = orig
+
+    @contextlib.contextmanager
+    def _import_broken(self):
+        orig = sys.modules.get("verify_ac")
+        sys.modules["verify_ac"] = None      # `import verify_ac` now raises ImportError
+        try:
+            yield
+        finally:
+            if orig is None:
+                sys.modules.pop("verify_ac", None)
+            else:
+                sys.modules["verify_ac"] = orig
+
+    def test_parse_failure_blocks_done_instead_of_waving_it_through(self) -> None:
+        with self._parser_raising():
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._story(root, self._BARE_MANUAL)
+                with self.assertRaises(ValueError) as cm:
+                    tr.transition(root, "US0001", "Done")
+                msg = str(cm.exception)
+                self.assertIn("could not run", msg)
+                self.assertIn("parser exploded", msg)   # the reason is named, not swallowed
+
+    def test_import_failure_blocks_done(self) -> None:
+        with self._import_broken():
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._story(root, self._BARE_MANUAL)
+                with self.assertRaises(ValueError) as cm:
+                    tr.transition(root, "US0001", "Done")
+                self.assertIn("could not run", str(cm.exception))
+
+    def test_helper_reports_the_failure_rather_than_an_empty_all_clear(self) -> None:
+        """At the helper's own boundary: the caller must be able to tell "nothing owed" from
+        "nothing looked". An empty pair with no error signal cannot express the difference."""
+        with self._parser_raising():
+            result = tr._acs_missing_evidence(self._BARE_MANUAL)
+        self.assertIsNotNone(result[-1], "the parse failure was reported as an all-clear")
+        clean = tr._acs_missing_evidence(
+            "### AC1\n- **Verify:** manual eyeball it\n- **Verified:** yes (2026-07-27)\n")
+        self.assertIsNone(clean[-1], "a healthy parse must not report an error")
+
+    def test_force_still_overrides_the_loud_failure(self) -> None:
+        """Failing loud must not become unbypassable: `--force` is the deliberate,
+        recorded escape and it still works."""
+        with self._parser_raising():
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._story(root, self._BARE_MANUAL)
+                res = tr.transition(root, "US0001", "Done", force=True)
+                self.assertEqual(res["to"], "Done")
+
+
 def _bug_repo(root: Path, depth: str | None, prod: bool = False) -> Path:
     bd = root / "sdlc-studio" / "bugs"
     bd.mkdir(parents=True)

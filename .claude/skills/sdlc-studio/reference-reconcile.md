@@ -43,6 +43,22 @@ unlinked orphan row is never pruned (an inline-only record holds its only copy t
 a phantom inside an `archive/` sub-index is reported but not rewritten - `archive.py` is
 the one archive writer.
 
+## The `Last Updated` stamp is derived too {#last-updated-stamp}
+
+An index's `**Last Updated:**` header is a claim about the file, so reconcile owns it like
+any other derived cell. It is judged against the **newest date on the index's own rows**
+(the `Updated` column, else `Created`, else `Date`), never against today:
+
+- A header **behind** its rows is `stale-index-stamp` drift - the index claims a freshness
+  it does not have. `apply` restamps it from the rows and says so.
+- A header **level with or ahead of** its rows is not drift. An index nothing has been added
+  to is not stale, and judging the stamp against the clock would re-drift every index in
+  every project at midnight and rewrite files that had nothing new to say.
+- An index carrying **no** stamp asserts no freshness, so it is never flagged.
+
+Nothing else stamps it: every mint appends its row through the shared index writer, which
+finishes by calling `apply`, so a new row leaves the header current.
+
 ## Self-diagnosing count-mismatch findings {#count-mismatch-diagnosis}
 
 A `count-mismatch` finding carries its own diagnosis - never a bare "recompute":

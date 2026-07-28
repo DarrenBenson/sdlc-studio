@@ -12,6 +12,7 @@ from __future__ import annotations
 import importlib.util
 import re
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -19,6 +20,7 @@ SCR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCR))
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the sibling helper
 import workspace  # noqa: E402 - the shared "am I in the dev repo?" check
+from lib import sdlc_md  # noqa: E402 - the same instance file_finding imports, not a copy
 
 
 def _load(name: str):
@@ -109,6 +111,13 @@ def legitimate_prose_sample(repo: Path) -> list[tuple[str, str]]:
     A POPULATION, not a hand-picked sample: every artefact of every type, so the false-positive
     rate cannot be bought by choosing agreeable fields. Fenced blocks are dropped because a
     fenced block is verbatim code the author bracketed deliberately, not prose.
+
+    Inline code spans are masked for the same reason at a smaller scale, and this is where the
+    two halves of the guard part company on purpose. A value arriving on the COMMAND LINE crossed
+    a shell, so `shell_hazards` treats its backticks as suspect whatever they enclose. STORED
+    prose crossed no shell - the filing path reads it off disk - so here a code span is the
+    author saying "quoted, not meant", and reading it as damage means an artefact reporting a
+    shell defect cannot quote the syntax it is reporting.
     """
     out: list[tuple[str, str]] = []
     for d in _ARTEFACT_DIRS:
@@ -137,7 +146,7 @@ def legitimate_prose_sample(repo: Path) -> list[tuple[str, str]]:
                     buf.append(ln)
             if buf:
                 out.append((str(p), "\n".join(buf).strip()))
-    return [(p, t) for p, t in out if t]
+    return [(p, sdlc_md.mask_code_spans(t)) for p, t in out if t]
 
 
 class CorruptionCorpusTests(unittest.TestCase):
@@ -254,6 +263,92 @@ class MeasuredCatchRateTests(unittest.TestCase):
                         for _, w in self._findings(p.read_text(encoding="utf-8"))]
                 self.assertTrue(hits, f"{prefix} no longer carries text the detector flags - "
                                       f"the quoted damage was repaired; drop the exclusion")
+
+
+class QuotedShellSyntaxTests(unittest.TestCase):
+    """BG0344: an artefact whose evidence QUOTES shell syntax - because the defect it reports IS
+    shell syntax - was indistinguishable from a field a shell had eaten, so the corpus assertion
+    blocked the commit and the evidence was reworded into prose to buy a green gate. It happened
+    twice on 2026-07-27, and both artefacts now describe what the auditor found instead of
+    quoting it.
+
+    The boundary this pins: a value arriving on the COMMAND LINE crossed a shell and stays
+    strictly checked by `shell_hazards`, backticks or not. STORED prose never crossed one - the
+    filing path reads it off disk - so over the corpus a code span is quoting, and quoting is not
+    damage."""
+
+    #: The two real cases. `stored` is what the author wanted to commit; `reworded` is what the
+    #: gate forced instead, kept so the cost is legible rather than asserted.
+    QUOTED_EVIDENCE = (
+        {
+            "id": "BG0340-command-substitution-in-the-line-it-cites",
+            "stored": "Confirmed at lint-style.sh 64: the fix is to gather the tree with "
+                      "`py_files=$(find \"$skill/scripts\" -name '*.py')`, so a new "
+                      "subdirectory needs no list maintenance.",
+            "reworded": "run find over the skill's scripts directory for *.py excluding "
+                        "pycache and capture the result into pyfiles via command substitution",
+        },
+        {
+            "id": "BG0305-a-lone-backtick-in-a-quoted-repro",
+            "stored": "The fence tracker never closes on a line whose last character is a "
+                      "lone `` ` ``, so the illustration below it is parsed as content.",
+            "reworded": "the artefact was flagged for an unbalanced backtick in its quoted "
+                        "repro",
+        },
+    )
+
+    @staticmethod
+    def _sample_findings(repo: Path) -> list[tuple[str, str]]:
+        """Exactly the corpus assertion's pipeline: harvest prose, then fingerprint it."""
+        return [(path, what)
+                for path, text in legitimate_prose_sample(repo)
+                for _, what in ff.shell_hazards({"summary": text}, keys=("summary",))]
+
+    def _workspace(self, body: str) -> Path:
+        root = Path(tempfile.mkdtemp())
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True)
+        (d / "BG9999-fixture.md").write_text(
+            f"# BG9999: fixture\n\n## Steps to Reproduce\n\n{body}\n", encoding="utf-8")
+        return root
+
+    def test_evidence_quoting_shell_syntax_in_a_code_span_is_not_read_as_damage(self) -> None:
+        for e in self.QUOTED_EVIDENCE:
+            with self.subTest(e["id"]):
+                found = self._sample_findings(self._workspace(e["stored"]))
+                self.assertEqual(found, [],
+                                 f"{e['id']}: quoted shell syntax was read as a hazard, which is "
+                                 f"what forced the evidence down to {e['reworded']!r}")
+
+    def test_the_same_syntax_outside_a_code_span_is_still_read_as_damage(self) -> None:
+        """The discriminating half: without it the fix above would be a blanket mute."""
+        found = self._sample_findings(self._workspace("The guard runs $(find /) at import."))
+        self.assertTrue(found, "an unquoted command substitution in stored prose went unflagged")
+
+    def test_an_unbalanced_backtick_is_still_read_as_damage(self) -> None:
+        """A lone backtick has no closing run, so it is not a code span and stays flagged -
+        that is the shape a completed substitution actually leaves."""
+        found = self._sample_findings(self._workspace("The parser sees a stray ` and stops."))
+        self.assertTrue(found, "a genuinely unbalanced backtick went unflagged")
+
+    def test_masking_a_span_leaves_the_holes_around_it_visible(self) -> None:
+        """Masking must substitute a token, not delete: a span replaced by nothing MAKES the
+        collapsed space and the space-before-punctuation that the fingerprints hunt for."""
+        found = self._sample_findings(self._workspace("US0251 AC2 runs `command_audit.py`."))
+        self.assertEqual(found, [], "masking a code span manufactured a hole that was not there")
+        holed = self._sample_findings(self._workspace("US0251 AC2 runs ."))
+        self.assertTrue(holed, "the real hole beside a masked span went unflagged")
+
+    def test_the_masker_pairs_runs_of_equal_length(self) -> None:
+        mask = sdlc_md.mask_code_spans
+        self.assertEqual(mask("a `x` b"), "a C b")
+        self.assertEqual(mask("a `` ` `` b"), "a C b")          # a backtick quoted, CommonMark
+        self.assertEqual(mask("a ` b"), "a ` b")                # no closing run: not a span
+        self.assertEqual(mask("a ``x` b"), "a ``x` b")          # unequal runs: not a span
+        self.assertEqual(mask("a `x` b `y` c"), "a C b C c")
+        # A span never runs across a line break here: a greedy cross-line match would mask
+        # prose the guard is meant to read, so an unclosed backtick stays visible on its line.
+        self.assertEqual(mask("a ` b\nc ` d"), "a ` b\nc ` d")
 
 
 class CodeBlockExemptionTests(unittest.TestCase):

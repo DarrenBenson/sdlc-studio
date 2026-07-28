@@ -1,6 +1,7 @@
 # BG0327: Neutrality guard's suffix enumeration exempts 46 tracked files, including shipped .template payload, .jsonl evidence log
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** tools/check_neutrality.py

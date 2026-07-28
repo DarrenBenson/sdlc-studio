@@ -1173,6 +1173,39 @@ class JestBatchTests(unittest.TestCase):
     def test_resolve_non_jest_verb_is_none(self):
         self.assertIsNone(verify_ac.resolve_jest_from_cache("pytest tests/x.py", [{"name": "x", "ok": True}]))
 
+    # --- BG0337: the cache must select the SAME tests jest -t would -------------------
+    def test_a_pattern_is_a_regex_not_a_literal_substring(self):
+        """`jest -t` is a testNamePattern regex. Selecting by substring computes the verdict
+        over a different test set, and under --release the cache stands in for the
+        authoritative run in a blocking lane."""
+        asserts = [
+            {"name": "renders the total", "ok": False},
+            {"name": "renders the totals", "ok": True},
+        ]
+        # `renders the total$` anchors: jest selects only the FAILING one.
+        r = verify_ac.resolve_jest_from_cache('jest "renders the total$"', asserts)
+        self.assertIsNotNone(r, "the pattern matches an assertion, so the cache can answer")
+        self.assertFalse(r.ok, "jest -t would select the red test; the cache said green")
+
+    def test_a_metacharacter_pattern_matching_nothing_falls_through(self):
+        # Literal containment finds `a.b` inside `a.b passes`; as a regex the `.` still
+        # matches, so use a pattern where the two disagree the other way.
+        asserts = [{"name": "adds a valid item", "ok": True}]
+        self.assertIsNone(
+            verify_ac.resolve_jest_from_cache('jest "^valid item"', asserts),
+            "jest -t '^valid item' selects nothing here - the cache must not claim a pass")
+
+    def test_an_invalid_regex_falls_back_to_the_authoritative_run(self):
+        asserts = [{"name": "counts (1 items", "ok": True}]
+        self.assertIsNone(
+            verify_ac.resolve_jest_from_cache('jest "counts (1 items"', asserts),
+            "an unparseable pattern is not a verdict - the subprocess must own it")
+
+    def test_a_plain_pattern_still_resolves(self):
+        asserts = verify_ac._parse_jest_json(self.SAMPLE)
+        r = verify_ac.resolve_jest_from_cache('jest "adds a valid item"', asserts)
+        self.assertTrue(r.ok)
+
 
 class WriteReportMergeTests(unittest.TestCase):
     """BG0037: per-story runs merge into the report instead of clobbering it."""
@@ -2219,6 +2252,118 @@ class SkippedPytestVerifierTests(unittest.TestCase):
         self.assertFalse(r.ok)
         self.assertIn("skipped", r.stderr)
         self.assertNotRegex(r.stderr, r"cached pytest failure")
+
+
+class AllSkippedNonPytestRunnerTests(unittest.TestCase):
+    """BG0348 - the all-skipped hole was closed for pytest only. Every other runner family
+    exits 0 on a run where nothing executed and prints a summary the zero-count signatures do
+    not match, so the AC was stamped green by tests that never ran. `unittest` matters most:
+    it is this repository's own default runner."""
+
+    def _run(self, script: str):
+        return verify_ac.run_verifier(f"shell printf '%s\\n' {shlex_quote(script)}",
+                                      30, Path.cwd())
+
+    # --- unittest -------------------------------------------------------------------
+    def test_a_real_all_skipped_unittest_run_is_not_a_pass(self):
+        """The exact bytes a real `python3 -m unittest` all-skipped run prints."""
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "test_allskip.py").write_text(
+                "import unittest\n\n\n"
+                "class T(unittest.TestCase):\n"
+                "    @unittest.skip('not today')\n"
+                "    def test_a(self):\n        self.assertTrue(False)\n",
+                encoding="utf-8")
+            r = verify_ac.run_verifier("shell python3 -m unittest test_allskip", 60, Path(d))
+        self.assertEqual(r.exit_code, 0, "unittest exits 0 on an all-skipped run")
+        self.assertFalse(r.ok, "nothing ran, so nothing was proved")
+        self.assertTrue(r.vacuous)
+        self.assertIn("SKIPPED", r.stderr)
+
+    def test_a_mixed_unittest_run_with_one_skip_is_still_a_pass(self):
+        """`Ran 4 tests` beside `skipped=1` means three tests really ran - not vacuous."""
+        r = self._run("Ran 4 tests in 0.001s\n\nOK (skipped=1)")
+        self.assertTrue(r.ok, "three tests ran and passed")
+        self.assertFalse(r.vacuous)
+
+    def test_unittest_skips_beside_expected_failures_are_not_all_skipped(self):
+        r = self._run("Ran 2 tests in 0.001s\n\nOK (skipped=1, expected failures=1)")
+        self.assertFalse(r.vacuous, "an expected failure is a test that ran")
+
+    def test_two_unittest_runs_one_all_skipped_one_green_is_not_vacuous(self):
+        # A `shell` Verify line routinely runs both suites. One empty run beside a real one
+        # must not fail the gate.
+        r = self._run("Ran 1 test in 0.000s\n\nOK (skipped=1)\n"
+                      "Ran 9 tests in 0.100s\n\nOK")
+        self.assertFalse(r.vacuous)
+
+    def test_two_unittest_runs_both_all_skipped_is_vacuous(self):
+        r = self._run("Ran 1 test in 0.000s\n\nOK (skipped=1)\n"
+                      "Ran 3 tests in 0.100s\n\nOK (skipped=3)")
+        self.assertTrue(r.vacuous)
+
+    # --- jest -----------------------------------------------------------------------
+    def test_an_all_skipped_jest_run_is_not_a_pass(self):
+        r = self._run("Test Suites: 1 skipped, 1 total\n"
+                      "Tests:       3 skipped, 3 total\n"
+                      "Snapshots:   0 total")
+        self.assertFalse(r.ok)
+        self.assertTrue(r.vacuous)
+        self.assertIn("SKIPPED", r.stderr)
+
+    def test_a_mixed_jest_run_is_still_a_pass(self):
+        r = self._run("Tests:       1 skipped, 2 passed, 3 total")
+        self.assertTrue(r.ok)
+        self.assertFalse(r.vacuous)
+
+    def test_a_jest_run_of_only_todos_ran_nothing_either(self):
+        self.assertTrue(self._run("Tests:       2 todo, 2 total").vacuous)
+        self.assertTrue(self._run("Tests:       1 skipped, 1 todo, 2 total").vacuous)
+
+    # --- vitest ---------------------------------------------------------------------
+    def test_an_all_skipped_vitest_run_is_not_a_pass(self):
+        r = self._run(" Test Files  1 skipped (1)\n      Tests  3 skipped (3)")
+        self.assertFalse(r.ok)
+        self.assertTrue(r.vacuous)
+        self.assertIn("SKIPPED", r.stderr)
+
+    def test_a_mixed_vitest_run_is_still_a_pass(self):
+        r = self._run(" Test Files  1 passed (1)\n      Tests  2 passed | 1 skipped (3)")
+        self.assertTrue(r.ok)
+        self.assertFalse(r.vacuous)
+
+    # --- go -------------------------------------------------------------------------
+    def test_a_go_run_whose_every_test_skipped_is_not_a_pass(self):
+        r = self._run("=== RUN   TestA\n    a_test.go:6: not today\n--- SKIP: TestA (0.00s)\n"
+                      "PASS\nok  \tex/foo\t0.002s")
+        self.assertFalse(r.ok)
+        self.assertTrue(r.vacuous)
+        self.assertIn("SKIPPED", r.stderr)
+
+    def test_a_go_run_with_one_real_pass_beside_a_skip_is_still_a_pass(self):
+        r = self._run("--- SKIP: TestA (0.00s)\n--- PASS: TestB (0.00s)\n"
+                      "PASS\nok  \tex/foo\t0.002s")
+        self.assertTrue(r.ok)
+        self.assertFalse(r.vacuous)
+
+    # --- the remedy the reader is given --------------------------------------------
+    def test_the_all_skipped_remedy_is_not_the_re_point_one(self):
+        # Re-pointing a Verify line at a different test is the wrong advice here: the
+        # selector is fine, the test is switched off.
+        r = self._run("Ran 1 test in 0.000s\n\nOK (skipped=1)")
+        self.assertIn("SKIPPED", r.stderr)
+        self.assertNotIn("Re-point the Verify line at a test that exists", r.stderr)
+
+    def test_a_green_run_of_every_family_is_untouched(self):
+        for green in ("Ran 9 tests in 0.001s\n\nOK",
+                      "Tests:       3 passed, 3 total",
+                      " Test Files  1 passed (1)\n      Tests  3 passed (3)",
+                      "--- PASS: TestA (0.00s)\nPASS\nok  \tex/foo\t0.002s",
+                      "3 passed in 0.04s"):
+            with self.subTest(green=green.splitlines()[0]):
+                r = self._run(green)
+                self.assertTrue(r.ok)
+                self.assertFalse(r.vacuous)
 
 
 def shlex_quote(s: str) -> str:

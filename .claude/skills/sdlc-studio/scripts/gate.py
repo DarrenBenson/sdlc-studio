@@ -1541,13 +1541,104 @@ BOUND_LANE_SUBJECT = {
 }
 
 
+#: The gate's own declared cost budget, in seconds. Not a timeout - the gate always finishes -
+#: but a number every run is measured against and reports exceeding, so "the gate got slower"
+#: is a verdict it states rather than something an operator absorbs one commit at a time.
+#:
+#: Set to 45 against a MEASURED 33s for the standard lane set over this workspace. Not 30: a
+#: threshold a normal run exceeds is a constant, and a warning that always fires is already
+#: switched off. Re-derive it from a measured run when the lane set changes, never carry it
+#: forward silently. A project overrides it with `gate.budget_seconds` in `.config.yaml`.
+GATE_BUDGET_S = 45
+
+#: Where the last run's cost is kept, so the next one can state a direction of travel.
+GATE_COST_REL = "sdlc-studio/.local/gate-cost.json"
+
+
+def gate_budget(root: str) -> float:
+    """The declared budget for this project, in seconds."""
+    try:
+        override = sdlc_md.project_override(root, "gate.budget_seconds", None)
+    except Exception:  # noqa: BLE001 - a cost report must never break the gate
+        override = None
+    try:
+        value = float(override) if override is not None else float(GATE_BUDGET_S)
+    except (TypeError, ValueError):
+        return float(GATE_BUDGET_S)
+    return value if value > 0 else float(GATE_BUDGET_S)
+
+
+def read_gate_cost_baseline(root: str) -> float | None:
+    """The last recorded run cost, or None when there is none to compare against."""
+    try:
+        data = json.loads((Path(root) / GATE_COST_REL).read_text(encoding="utf-8"))
+        value = float(data["seconds"])
+    except (OSError, ValueError, TypeError, KeyError):
+        return None
+    return value if value > 0 else None
+
+
+def record_gate_cost(root: str, seconds: float) -> None:
+    """Record this run's cost as the next run's baseline. Best effort: a cost report that
+    could fail a gate would be worse than no cost report."""
+    try:
+        path = Path(root) / GATE_COST_REL
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({
+            "seconds": round(float(seconds), 3),
+            "recorded_at": datetime.now(timezone.utc).isoformat()}) + "\n",
+            encoding="utf-8")
+    except (OSError, ValueError, TypeError):
+        pass
+
+
+def _cost_report(root: str, results: list[dict], elapsed: float,
+                 record: bool = False) -> dict:
+    """This run's cost, its budget, the lane that dominated it and the direction of travel.
+
+    The DOMINANT lane is what makes this actionable: a total over budget with no lane named
+    sends a reader to bisect the gate by hand, which is the same as not reporting it. A lane
+    that RAISED is timed too - an error lane that dominated the run is exactly the one that
+    needs naming."""
+    budget = gate_budget(root)
+    timed = [r for r in results if isinstance(r.get("seconds"), (int, float))]
+    dominant = max(timed, key=lambda r: r["seconds"]) if timed else None
+    baseline = read_gate_cost_baseline(root)
+    over = elapsed > budget
+    if over:
+        detail = (f"{elapsed:.1f}s - OVER the {budget:g}s budget by "
+                  f"{elapsed - budget:.1f}s")
+    else:
+        detail = f"{elapsed:.1f}s of a {budget:g}s budget"
+    if dominant is not None:
+        detail += f"; dominant lane: {dominant['check']} at {dominant['seconds']:.1f}s"
+    if baseline is None:
+        detail += "; no baseline recorded yet, so this run becomes it"
+    else:
+        delta = elapsed - baseline
+        pct = abs(delta) / baseline * 100.0
+        if pct < 1.0:
+            detail += f"; level with the {baseline:.1f}s baseline"
+        else:
+            detail += (f"; {pct:.0f}% {'slower' if delta > 0 else 'faster'} than the "
+                       f"{baseline:.1f}s baseline")
+    if record:
+        record_gate_cost(root, elapsed)
+    return {"seconds": round(elapsed, 3), "budget": budget, "over": over,
+            "dominant": dominant["check"] if dominant is not None else None,
+            "dominant_seconds": (round(dominant["seconds"], 3)
+                                 if dominant is not None else None),
+            "baseline": baseline, "detail": detail}
+
+
 def run_gate(root: str = ".", only: list[str] | None = None,
              skip: list[str] | None = None, checks: dict | None = None,
              require_retro: str | None = None, release: bool = False,
              allow_external: bool = False, verify_batch: bool = False,
              require_lessons: bool = False, require_handoff: str | None = None,
              require_review: bool = False, require_close: bool = False,
-             conformance_scope: "set[str] | None" = None) -> dict:
+             conformance_scope: "set[str] | None" = None,
+             record_cost: bool = False) -> dict:
     """Run the selected checks and report. `ok` is False only when a BLOCKING check
     fails; a non-blocking failure is reported but does not fail the gate. `require_retro`
     is the SPRINT-CLOSE gate: it binds a blocking check that the named batch retro exists,
@@ -1679,12 +1770,15 @@ def run_gate(root: str = ".", only: list[str] | None = None,
                       f"(--release/--require-retro/--require-lessons/--require-handoff) and "
                       f"run the standard gate"}]}
     results = []
+    run_started = time.monotonic()
     for name in selected:
+        lane_started = time.monotonic()
         try:
             r = registry[name](root)
             results.append({"check": name, "count": r["count"], "blocking": r["blocking"],
                             "status": "pass" if r["count"] == 0 else "fail",
-                            "detail": r.get("detail", "")})
+                            "detail": r.get("detail", ""),
+                            "seconds": round(time.monotonic() - lane_started, 3)})
         except Exception as exc:  # noqa: BLE001 - one buggy check must not abort the whole gate
             # A conventions shape error is the operator's config, not a buggy
             # check: it silently disables whichever lane read it (reconcile's
@@ -1693,14 +1787,17 @@ def run_gate(root: str = ".", only: list[str] | None = None,
             from lib.conventions import ConventionsError
             blocking = isinstance(exc, ConventionsError) or name in BLOCKING_ON_ERROR
             results.append({"check": name, "count": 1, "blocking": blocking, "status": "error",
-                            "detail": f"check raised{'' if blocking else ', skipped'}: {exc}"})
+                            "detail": f"check raised{'' if blocking else ', skipped'}: {exc}",
+                            "seconds": round(time.monotonic() - lane_started, 3)})
     if downgraded:  # the document's downgrades, visible in the verdict - never silent
         results.append({"check": "dod-downgrades", "count": len(downgraded),
                         "blocking": False, "status": "warn",
                         "detail": f"downgraded to human-judged by definition-of-done.md "
                                   f"(tag removed): {', '.join(sorted(downgraded))}"})
     ok = all(r["status"] == "pass" for r in results if r["blocking"])
-    return {"ok": ok, "checks": results}
+    return {"ok": ok, "checks": results,
+            "cost": _cost_report(root, results, time.monotonic() - run_started,
+                                 record=record_cost)}
 
 
 def _split(v: str | None) -> list[str] | None:
@@ -1891,13 +1988,49 @@ def _module_read_paths(src: str, module_path: str, root: str) -> set[str]:
     return out
 
 
-def test_relevant_paths(root: str = ".") -> set[str]:
-    """The measured set of repo-relative paths the shipped suites read.
+#: Per-process memo for the suite measurement, keyed by the suite files' own
+#: (path, mtime, size) signature. One `--suite-decision` invocation asks for it three
+#: times - the surface hash, the relevance set and the selection - and parsing forty large
+#: test modules three times is most of that command's cost. Keyed on the signature rather
+#: than on the root, so a caller that EDITS a test module and asks again (which is what the
+#: tests here do, and what a watch loop would do) gets the new answer, not the cached one.
+_READ_MAP_MEMO: dict[str, tuple[tuple, dict[str, set[str]] | None]] = {}
 
-    A directory in the set means its whole subtree; a file means that file.
+
+def _suite_signature(root: str) -> tuple:
+    sig: list[tuple] = []
+    for suite in TEST_SUITE_DIRS:
+        suite_dir = os.path.join(root, suite)
+        if not os.path.isdir(suite_dir):
+            continue
+        for name in sorted(os.listdir(suite_dir)):
+            if not name.endswith(".py"):
+                continue
+            try:
+                st = os.stat(os.path.join(suite_dir, name))
+            except OSError:
+                continue
+            sig.append((suite, name, st.st_mtime_ns, st.st_size))
+    return tuple(sig)
+
+
+def suite_read_map(root: str = ".") -> dict[str, set[str]] | None:
+    """test module (repo-relative) -> the repo-relative paths its own source reads.
+
+    The per-module form of the measurement `test_relevant_paths` unions. Selection needs
+    the attribution, not only the union: a changed file that no import edge can reach - a
+    reference doc, a hook, a shipped artefact - is still reachable from the ONE suite module
+    that names it, and that is precisely the module that must run.
+
+    None when there are no suites to measure (a consuming project installs the skill without
+    them), which is the same condition that sends `test_relevant_paths` to its fallback.
     """
     root = os.path.abspath(root)
-    measured: set[str] = set()
+    signature = _suite_signature(root)
+    cached = _READ_MAP_MEMO.get(root)
+    if cached is not None and cached[0] == signature:
+        return cached[1]
+    out: dict[str, set[str]] = {}
     scanned = False
     for suite in TEST_SUITE_DIRS:
         suite_dir = os.path.join(root, suite)
@@ -1913,11 +2046,29 @@ def test_relevant_paths(root: str = ".") -> set[str]:
             except OSError:
                 continue
             scanned = True
-            measured |= _module_read_paths(src, module_path, root)
-        # A suite directory is itself read by whatever discovers it.
-        measured.add(suite)
-    if not scanned:
+            rel = os.path.relpath(module_path, root).replace(os.sep, "/")
+            out[rel] = _module_read_paths(src, module_path, root)
+    measured = out if scanned else None
+    _READ_MAP_MEMO[root] = (signature, measured)
+    return measured
+
+
+def test_relevant_paths(root: str = ".") -> set[str]:
+    """The measured set of repo-relative paths the shipped suites read.
+
+    A directory in the set means its whole subtree; a file means that file.
+    """
+    root = os.path.abspath(root)
+    read_map = suite_read_map(root)
+    if read_map is None:
         return {p for p in LEGACY_TEST_RELEVANT if os.path.exists(os.path.join(root, p))}
+    measured: set[str] = set()
+    for paths in read_map.values():
+        measured |= paths
+    for suite in TEST_SUITE_DIRS:
+        # A suite directory is itself read by whatever discovers it.
+        if os.path.isdir(os.path.join(root, suite)):
+            measured.add(suite)
     # The suites import the scripts they exercise, and a template edit can change an
     # assertion over the shipped payload. Those two are structural, not measurable from a
     # path expression, so they are unioned in rather than replaced by the measurement.
@@ -1983,9 +2134,413 @@ def cmd_test_relevant(args: argparse.Namespace) -> int:
 # --- end test-relevant set ---------------------------------------------------------
 
 
+# --- suite decision ----------------------------------------------------------------
+# Whether the unit suites need to run at all, and if so over what. `--test-relevant` above
+# answers a FILE-TYPE question - did this commit touch anything a test reads - and it is
+# binary in both directions: a commit touching one script pays for every test, and two
+# consecutive commits over an identical tree pay twice.
+#
+# Measured over one working day on this repository: the suites ran about 52 times for about
+# 218 minutes, against about 35 minutes of delivery. A large share of those runs were over a
+# byte-identical source tree - paperwork commits, and closes retried after a refusal. Nothing
+# about the code had changed, so nothing about the answer could have.
+#
+# So the question asked here is the content one: has the test-relevant SURFACE changed since
+# the last run that was green? The surface is the same measured set `test_relevant_paths`
+# reports, hashed by content, and the verdict is a record naming the run that earned it.
+#
+# Every failure degrades to RUNNING. An unhashable surface, an absent or malformed record, a
+# record with no hash, a record whose verdict was red: each of those is a thing not known, and
+# a cache that answered "skip" on a thing not known would be the false-green class this whole
+# gate exists to refuse. Slow is the safe direction; silent is not.
+
+#: Where the last suite verdict is recorded. Under `.local/`, so it is untracked and a gate
+#: run never dirties the tree it is judging.
+SUITE_VERDICT_REL = "sdlc-studio/.local/gate-suite-verdict.json"
+
+#: Directory names never hashed into the surface. Build caches and generated local state
+#: change on every run, so hashing them would make the surface differ from itself and the
+#: skip could never fire - a cache nothing can hit is a cache that was never built.
+_SURFACE_SKIP_DIRS = frozenset({
+    "__pycache__", ".git", ".local", ".pytest_cache", ".mypy_cache", ".ruff_cache",
+    "node_modules", ".venv", "venv", ".tox",
+})
+
+
+def surface_files(root: str = ".") -> list[str]:
+    """Every repo-relative file in the test-relevant surface, sorted.
+
+    A directory entry expands to its subtree; a file entry is itself. A path the suites name
+    that is NOT on disk is kept (as `test_relevant_paths` keeps it), because a deletion is
+    exactly the change that must not read as "unchanged"."""
+    root = os.path.abspath(root)
+    out: set[str] = set()
+    for entry in test_relevant_paths(root):
+        target = os.path.join(root, entry)
+        # A volatile directory is never expanded, even when a suite measurably READS it. `.git`
+        # is the case that matters: a test locating the repo reads it, so it is genuinely
+        # test-relevant, but its contents change on every commit by construction. Expanding it
+        # put 4,848 objects in the digest and the hash then differed on every single commit, so
+        # the skip this hash exists to enable could never once fire. The same rule already
+        # governs subdirectories during the walk; it has to govern the entry itself too.
+        if os.path.basename(entry.rstrip("/")) in _SURFACE_SKIP_DIRS:
+            continue
+        if os.path.isdir(target):
+            for dirpath, dirnames, filenames in os.walk(target):
+                dirnames[:] = [d for d in dirnames if d not in _SURFACE_SKIP_DIRS]
+                for name in filenames:
+                    rel = os.path.relpath(os.path.join(dirpath, name), root)
+                    out.add(rel.replace(os.sep, "/"))
+        else:
+            out.add(entry.replace(os.sep, "/"))
+    return sorted(out)
+
+
+def surface_hash(root: str = ".") -> str | None:
+    """A content digest of the test-relevant surface, or None when it cannot be taken.
+
+    None is UNKNOWN, never "unchanged": the caller runs the suites on it. Names are hashed
+    alongside contents, so a rename that preserves every byte still changes the digest."""
+    import hashlib
+    root_abs = os.path.abspath(root)
+    digest = hashlib.sha256()
+    try:
+        for rel in surface_files(root_abs):
+            path = os.path.join(root_abs, rel)
+            digest.update(rel.encode("utf-8", "surrogateescape") + b"\0")
+            if os.path.isfile(path):
+                with open(path, "rb") as handle:
+                    digest.update(hashlib.sha256(handle.read()).hexdigest().encode("ascii"))
+            else:
+                digest.update(b"ABSENT")   # a named path that is gone is a CHANGE
+            digest.update(b"\n")
+    except OSError:
+        return None
+    return digest.hexdigest()
+
+
+def read_suite_verdict(root: str = ".") -> dict | None:
+    """The recorded suite verdict, or None when there is nothing trustworthy to read.
+
+    One reader for absent, unreadable and malformed, because the caller must treat all three
+    the same way: as an answer it does not have."""
+    path = Path(root) / SUITE_VERDICT_REL
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeDecodeError):
+        return None
+    if not isinstance(data, dict) or not data.get("run"):
+        return None
+    return data
+
+
+def record_suite_verdict(root: str = ".", *, run: str, status: str = "green",
+                         mode: str = "full", digest: str | None = None) -> Path:
+    """Record `status` for the current surface, attributed to the run that earned it.
+
+    `mode` is how much of the suite earned it - `full` or `selected`. It is recorded because
+    a green from a SELECTED run is evidence about the tests that ran, not about the suite, so
+    a boundary must not reuse it (see `suite_decision`). A record with no mode is read as
+    UNKNOWN coverage, which a boundary also declines."""
+    path = Path(root) / SUITE_VERDICT_REL
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "run": str(run),
+        "status": str(status),
+        "mode": str(mode),
+        "surface_hash": digest if digest is not None else surface_hash(root),
+        "recorded_at": datetime.now(timezone.utc).isoformat(),
+    }
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+# --- test selection ---
+#: The repo map's index, where `repo map build` writes it.
+REPO_MAP_REL = "sdlc-studio/.local/repo-map.json"
+
+
+def _import_graph(root: str) -> dict[str, list[str]] | None:
+    """Repo-relative path -> its imports, for every indexed source file, or None.
+
+    Prefers the on-disk repo map, and only while it is NEWER than every file it indexes.
+    A stale graph would narrow a run using edges the code no longer has, which is the one
+    way selection could lose a defect rather than defer finding it - so a map that is not
+    demonstrably current is rebuilt in memory instead (pure stdlib, a couple of seconds
+    over this repository, against the minutes a full suite costs).
+    """
+    try:
+        import repo_map
+    except Exception:  # noqa: BLE001 - no map means no selection, never a wrong selection
+        return None
+    rootp = Path(root).resolve()
+    ignores = set(repo_map.DEFAULT_IGNORES)
+    try:
+        sources = list(repo_map.walk_source_files(rootp, ignores))
+    except OSError:
+        return None
+    try:
+        map_mtime = (rootp / REPO_MAP_REL).stat().st_mtime
+    except OSError:
+        map_mtime = None
+    if map_mtime is not None:
+        newest = 0.0
+        try:
+            for src in sources:
+                newest = max(newest, src.stat().st_mtime)
+        except OSError:
+            newest = float("inf")     # cannot prove currency: do not trust the map
+        if newest <= map_mtime:
+            try:
+                data = json.loads((rootp / REPO_MAP_REL).read_text(encoding="utf-8"))
+                files = data.get("files")
+                if isinstance(files, dict) and files:
+                    return {str(k): list((v or {}).get("imports") or [])
+                            for k, v in files.items() if isinstance(v, dict)}
+            except (OSError, ValueError, TypeError, AttributeError):
+                pass                  # an unreadable map is no map
+    try:
+        entries = repo_map.build_index(rootp, ignores)
+    except Exception:  # noqa: BLE001 - as above
+        return None
+    return {path: list(entry.imports) for path, entry in entries.items()} or None
+
+
+def _normalise(paths) -> list[str]:
+    out: list[str] = []
+    for raw in paths:
+        candidate = str(raw).strip().replace(os.sep, "/")
+        while candidate.startswith("./"):
+            candidate = candidate[2:]
+        candidate = candidate.lstrip("/")
+        if candidate and candidate not in out:
+            out.append(candidate)
+    return out
+
+
+def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
+    """The test modules `changed` can reach, or an unresolved verdict meaning "run all".
+
+    `{"resolved": bool, "selectors": [...], "total": int, "excluded": int, "reason": str}`.
+    `resolved` False ALWAYS means run everything - never run nothing.
+
+    Two routes, because the suites read two kinds of thing. A changed Python file is followed
+    through the import graph transitively (the repo map's own resolution, so this and the hub
+    score cannot come to disagree about what an import names). A changed file the graph has no
+    edge for - a reference doc, a hook, a shipped artefact - is attributed to the suite modules
+    whose SOURCE names it, which is the measurement `test_relevant_paths` already takes.
+
+    Anything neither route resolves widens the run: an unanswerable changed-file probe, a file
+    in the surface no module claims, and a resolvable change that reaches no test at all. That
+    last one matters most - a selection of zero tests reported as a pass is a vacuous green,
+    which is the failure this whole gate exists to refuse.
+    """
+    result: dict = {"resolved": False, "selectors": [], "total": 0, "excluded": 0,
+                    "reason": ""}
+    read_map = suite_read_map(root)
+    if read_map is None:
+        result["reason"] = "no shipped suites here to select from - running everything"
+        return result
+    modules = sorted(m for m in read_map if os.path.basename(m).startswith("test_"))
+    result["total"] = len(modules)
+    if changed is None:
+        result["reason"] = ("the changed-file probe could not answer, so nothing is known "
+                            "about this diff - running everything")
+        return result
+    norm = _normalise(changed)
+    if not norm:
+        result["reason"] = "no changed path was named - running everything"
+        return result
+    module_set = set(modules)
+    relevant = test_relevant_paths(root)
+    graph = _import_graph(root)
+    dependents = {}
+    if graph is not None:
+        import repo_map
+        dependents = repo_map.dependents_index(graph)
+    selected: set[str] = set()
+    for path in norm:
+        hits: set[str] = {path} if path in module_set else set()   # the test module itself
+        if graph is not None and path in graph:
+            seen = {path}
+            frontier = [path]
+            while frontier:                       # transitive: a dependent's dependents too
+                current = frontier.pop()
+                for dep in dependents.get(current, ()):
+                    if dep not in seen:
+                        seen.add(dep)
+                        frontier.append(dep)
+            hits |= seen & module_set
+        # BOTH routes, never one or the other. A shipped script loaded by its test through
+        # `spec_from_file_location` has no import edge at all, and is reached only by the
+        # read measurement; bailing out after an empty graph lookup sent every such change
+        # to the full suite, which is most of `tools/`.
+        hits.update(m for m in module_set if _matches_relevant(path, read_map[m]))
+        if hits:
+            selected |= hits
+            continue
+        if _matches_relevant(path, relevant):
+            result["selectors"] = []
+            result["reason"] = (f"{path} is test-relevant but reaches no test module (no "
+                                f"import edge and no suite read resolves it), and a run of "
+                                f"nothing is not a pass - running everything")
+            return result
+        # Outside the surface entirely: it can change no test outcome, so it selects nothing
+        # and forces nothing. Whether the suites run at all is `is_test_relevant`'s question.
+    if not selected:
+        result["reason"] = ("no changed path reaches any test module - running everything "
+                            "rather than nothing")
+        return result
+    result["resolved"] = True
+    result["selectors"] = sorted(selected)
+    result["excluded"] = len(modules) - len(selected)
+    result["reason"] = (f"{len(selected)} of {len(modules)} test module(s) selected from the "
+                        f"import graph for {len(norm)} changed file(s); "
+                        f"{result['excluded']} excluded - nothing this change touches "
+                        f"reaches them")
+    return result
+
+
+#: The moments the FULL suite is worth its price: a wrong answer past one of these is
+#: expensive and hard to unwind - it is out of the working tree and somebody else's to
+#: reverse. Everywhere else the gate runs what the change can reach, because paying the
+#: whole price on every keystroke-sized commit is what trains people to batch commits or
+#: reach for --no-verify, and a bypassed gate enforces nothing at all.
+BOUNDARIES = ("push", "release", "close")
+
+#: The environment spelling of `--boundary`, for a push hook or a release step that runs the
+#: gate through a wrapper it does not control the arguments of.
+BOUNDARY_ENV = "SDLC_GATE_BOUNDARY"
+
+
+class BoundaryError(ValueError):
+    """An unrecognised boundary. Refused rather than downgraded: a typo that quietly took
+    the selective path would leave the caller believing they had asked for everything, which
+    is the false-assurance class this gate exists to refuse."""
+
+
+def resolve_boundary(args=None) -> str | None:
+    """The boundary this run is at - the flag, else the environment, else none."""
+    value = getattr(args, "boundary", None) if args is not None else None
+    if not value:
+        value = os.environ.get(BOUNDARY_ENV, "")
+    value = str(value or "").strip().lower()
+    if not value:
+        return None
+    if value not in BOUNDARIES:
+        raise BoundaryError(
+            f"unrecognised boundary {value!r} - expected one of {', '.join(BOUNDARIES)}. "
+            f"Refusing rather than running the selective path: a caller who asked for a "
+            f"boundary and silently got a selection would be wrong about their coverage")
+    return value
+
+
+def suite_decision(root: str = ".", changed: "list[str] | None" = None,
+                   boundary: str | None = None) -> dict:
+    """Whether the unit suites must run over this tree, over what, and why.
+
+    `{"run", "mode", "reason", "reused", "selectors", "excluded", "surface_hash"}`, where
+    `mode` is one of `reuse` (run nothing), `selected` (run `selectors`) or `full`.
+
+    Two questions in order. WHY a run is needed: every branch that is not a hash-for-hash
+    match against a green record runs. Then WHAT to run: a boundary runs everything, and
+    anywhere else the selection decides - falling back to everything whenever it cannot.
+    """
+    digest = surface_hash(root)
+    verdict = read_suite_verdict(root)
+    at_boundary = bool(boundary)
+    why: str | None = None
+    if digest is None:
+        why = ("the test-relevant surface could not be hashed, so nothing is known about "
+               "this tree")
+    elif verdict is None:
+        why = "no readable suite verdict is recorded (absent, unreadable or malformed)"
+    else:
+        recorded = verdict.get("surface_hash")
+        run_id = str(verdict.get("run"))
+        recorded_mode = str(verdict.get("mode") or "unknown")
+        if str(verdict.get("status")) != "green":
+            why = (f"the last recorded verdict ({run_id}) is {verdict.get('status')!r}, "
+                   f"not green")
+        elif not isinstance(recorded, str) or not recorded:
+            # Two unknowns must never compare equal into a green - the same trap the
+            # mutation coverage lane's `_matches` guards.
+            why = (f"the recorded verdict ({run_id}) carries no surface hash, so it proves "
+                   f"nothing about this tree")
+        elif recorded != digest:
+            why = f"the test-relevant surface has changed since the green verdict of {run_id}"
+        elif at_boundary and recorded_mode != "full":
+            # The coverage half of the boundary rule. A green earned by a partial run is
+            # evidence about the tests that ran; reusing it here would let selection become
+            # the whole coverage story, which is the one way it could lose a defect rather
+            # than defer finding it.
+            why = (f"the green verdict of {run_id} was earned by a {recorded_mode} run, not "
+                   f"a full one, so it cannot stand in for a boundary's coverage")
+        else:
+            return {"run": False, "mode": "reuse", "reused": run_id, "surface_hash": digest,
+                    "selectors": [], "excluded": 0,
+                    "reason": (f"the test-relevant surface is unchanged since the "
+                               f"{recorded_mode} green verdict of {run_id} - reusing it and "
+                               f"running no tests")}
+    if at_boundary:
+        return {"run": True, "mode": "full", "reused": None, "surface_hash": digest,
+                "selectors": [], "excluded": 0,
+                "reason": f"{why}; {boundary} is a boundary, so the FULL suite runs"}
+    selection = select_tests(root, changed)
+    return {"run": True, "mode": "selected" if selection["resolved"] else "full",
+            "reused": None, "surface_hash": digest,
+            "selectors": selection["selectors"], "excluded": selection["excluded"],
+            "reason": f"{why}; {selection['reason']}"}
+
+
+def cmd_suite_decision(args: argparse.Namespace) -> int:
+    """Print the decision and exit 0 when a run is needed, 1 when it is not.
+
+    Same shape as `--test-relevant`: a SENTINEL line the hook keys on, so a stubbed or old
+    gate.py (which prints nothing) is told apart from a real answer, plus an exit code."""
+    try:
+        boundary = resolve_boundary(args)
+    except BoundaryError as exc:
+        print(f"suite-decision: refused - {exc}", file=sys.stderr)
+        return 2
+    decision = suite_decision(args.root, changed=changed_paths(args.root),
+                              boundary=boundary)
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps(decision, indent=2))
+    else:
+        print(f"suite-decision: {'run' if decision['run'] else 'skip'} - {decision['reason']}")
+        print(f"suite-mode: {decision['mode']}")
+        for selector in decision["selectors"]:
+            print(f"suite-selector: {selector}")
+    return 0 if decision["run"] else 1
+
+
+def cmd_record_suite_verdict(args: argparse.Namespace) -> int:
+    status = getattr(args, "status", "green")
+    mode = getattr(args, "verdict_mode", "full")
+    try:
+        path = record_suite_verdict(args.root, run=args.record_suite_verdict, status=status,
+                                    mode=mode)
+    except OSError as exc:
+        # Loud, not silent: an unrecordable verdict means every later run pays full price,
+        # which is a cost regression rather than a correctness one - but a caller that
+        # believed it recorded one would be wrong about why.
+        print(f"suite verdict NOT recorded ({exc}) - the next run will pay in full",
+              file=sys.stderr)
+        return 1
+    print(f"suite-verdict: {status} ({mode}) recorded for {args.record_suite_verdict} "
+          f"at {path}")
+    return 0
+# --- end suite decision ------------------------------------------------------------
+
+
 def cmd_gate(args: argparse.Namespace) -> int:
     if getattr(args, "test_relevant", None) is not None:
         return cmd_test_relevant(args)
+    if getattr(args, "record_suite_verdict", None):
+        return cmd_record_suite_verdict(args)
+    if getattr(args, "suite_decision", False):
+        return cmd_suite_decision(args)
     release = getattr(args, "release", False)
     report = run_gate(args.root, only=_split(args.only), skip=_split(args.skip),
                       require_retro=getattr(args, "require_retro", None), release=release,
@@ -1994,13 +2549,20 @@ def cmd_gate(args: argparse.Namespace) -> int:
                       require_lessons=getattr(args, "require_lessons", False),
                       require_handoff=getattr(args, "require_handoff", None),
                       require_review=getattr(args, "require_review", False),
-                      require_close=getattr(args, "require_close", False))
+                      require_close=getattr(args, "require_close", False),
+                      record_cost=True)
     if args.format == "json":
         print(json.dumps(report, indent=2))
     else:
         for c in report["checks"]:
             mark = "PASS" if c["status"] == "pass" else ("FAIL" if c["blocking"] else "warn")
             print(f"  [{mark}] {c['check']}: {c['detail']}")
+        # The gate's own cost, every run. A regression in gate time is absorbed silently
+        # otherwise - nobody notices thirty seconds becoming forty - and the dominant lane
+        # is what makes the number something a reader can act on rather than bisect.
+        cost = report.get("cost")
+        if cost:
+            print(f"  gate cost: {cost['detail']}")
         # The release banner is printed only when the release gate actually RAN - i.e. the
         # verify lane is in the results. Anything else prints the plain gate verdict, so a
         # deselected AC layer can never wear a release PASS.
@@ -2062,6 +2624,25 @@ def build_parser() -> argparse.ArgumentParser:
                         "set is measured from what the shipped suites read, so a commit "
                         "touching a doc a test asserts over is never taken for docs-only. "
                         "With no paths and no stdin, print the measured set")
+    p.add_argument("--suite-decision", dest="suite_decision", action="store_true",
+                   help="Answer whether the unit suites must run over this tree. Skips only "
+                        "when the test-relevant surface hashes identically to the tree the "
+                        "last GREEN verdict was recorded over; every unknown (no record, an "
+                        "unreadable one, a red one) runs. Exits 0 when a run is needed")
+    p.add_argument("--boundary", choices=BOUNDARIES,
+                   help="Declare that this run is at a boundary, so the FULL suite runs "
+                        f"rather than a selection (or set {BOUNDARY_ENV}). A boundary also "
+                        "declines a green verdict earned by a partial run")
+    p.add_argument("--record-suite-verdict", dest="record_suite_verdict", metavar="RUN",
+                   help="Record the current surface's suite verdict against this run label, "
+                        "so an unchanged tree can reuse it instead of paying again "
+                        "(use --status red to record a failure - a red is never reused)")
+    p.add_argument("--status", choices=("green", "red"), default="green",
+                   help="--record-suite-verdict: the verdict being recorded (default: green)")
+    p.add_argument("--verdict-mode", dest="verdict_mode", choices=("full", "selected"),
+                   default="full",
+                   help="--record-suite-verdict: how much of the suite earned the verdict. "
+                        "A boundary declines a green earned by a `selected` run")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_gate)
     return p

@@ -382,22 +382,23 @@ def iter_tables(text: str, header_predicate=None):
     - separator rows are never yielded (table_cells returns None for them)
     """
     current = None  # {"header": ..., "header_line": ..., "rows": [...]}
-    in_fence = False
-    fence = ""
+    fence: tuple[str, int] | None = None
     lines = text.splitlines()
     for i, line in enumerate(lines):
         stripped = line.lstrip()
         # A fenced code block is illustrative, not structure: a `|`-row inside ``` (a shipped
-        # example table) must never be tallied. Track fences and skip their contents entirely.
-        if not in_fence and (stripped.startswith("```") or stripped.startswith("~~~")):
-            if current:  # a fence, like a heading, ends the table scope
+        # example table) must never be tallied. Fences are tracked by the ONE shared CommonMark
+        # rule (`fence_step`), never a three-character toggle: a toggle released a ````markdown
+        # block on its inner ``` and tallied the illustration below it as real rows, which is
+        # the index-corruption class, because reconcile counts what this yields.
+        was_open = fence is not None
+        fence, is_fence_line = fence_step(stripped, fence)
+        if not was_open and is_fence_line:  # an opening fence, like a heading, ends the table
+            if current:
                 yield current
             current = None
-            in_fence, fence = True, stripped[:3]
             continue
-        if in_fence:
-            if stripped.startswith(fence):
-                in_fence = False
+        if was_open:  # inside the block, closer included - never structure
             continue
         if line.lstrip().startswith("#"):  # a heading ends the table scope
             if current:
@@ -1153,6 +1154,7 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "link-asymmetry": "a request/child link is declared on one side only - add the missing half (the child's `Parent:` or the request's `Decomposed-into:`) so it resolves both ways, or fix the id that resolves to nothing; a decomposition writes BOTH sides",
         "undecomposed": "a discovery item accepted into the workflow has no children - decompose it into the units that deliver it (refine a request into epics/stories; triage an Issue into bugs), or close it if it is not going ahead; a still-Proposed/Draft/Open item is pre-triage intake and is not flagged",
         "linked-epics": "the request index's Linked Epics cell disagrees with the file's `Decomposed-into` - run `reconcile apply` to census it from the files; a request that was never decomposed keeps its placeholder and is not flagged",
+        "stale-index-stamp": "the index's `**Last Updated:**` header is older than the newest date on its own rows, so it claims a freshness it does not have - run `reconcile apply` to restamp it from the rows (the stamp is derived, never hand-set; a header AHEAD of the rows is just an index nothing has been added to and is not flagged)",
         "request-derivable": "every child a request produced is resolved, so its successful terminal is EARNED but was never recorded - run `reconcile apply` to derive it (Complete / Accepted / Resolved), which goes through `transition` so the index row and cascades still run; a childless request is the separate `undecomposed` case and is never derived. Where the item names a gate that still refuses (an RFC with an open decision, say), `reconcile apply` CANNOT clear it and says so - resolve that gate first",
     },
 }
@@ -1279,6 +1281,32 @@ def fence_step(stripped: str, fence: tuple[str, int] | None) -> tuple[tuple[str,
         return None, True
     # a shorter fence, a different character, or a run carrying an info string: all content
     return fence, True
+
+
+# A CommonMark code span: an opening backtick run closed by a run of EQUAL length. Deliberately
+# single-line - a cross-line greedy match would swallow ordinary prose between two stray
+# backticks, and masking prose a guard is meant to read is worse than leaving one span visible.
+_CODE_SPAN_RUN = re.compile(r"(?<!`)(`+)(?!`)([^\n]+?)(?<!`)\1(?!`)")
+
+
+def mask_code_spans(text: str, replacement: str = "C") -> str:
+    """Replace every inline code span in `text` with `replacement`, delimiters included.
+
+    Backticks are how an author says "the characters between these are QUOTED, not meant". A
+    reader of stored prose that cannot tell quoting from content has to treat an artefact whose
+    evidence quotes shell syntax - because the defect it reports IS shell syntax - as if a shell
+    had eaten the field, and the only way past that is to reword the evidence, which trades
+    fidelity for a green gate.
+
+    The default replacement is a word-like token rather than the empty string, and that is the
+    whole care in this function: deleting a span closes the spaces that flanked it and butts the
+    surrounding words against punctuation, which is exactly the damage signature a completed
+    command substitution leaves. Masking must not manufacture the hole it is helping to look for.
+
+    An unpaired backtick, or runs of unequal length, form no span and are left where they are -
+    that shape is not quoting and stays visible to whatever is reading."""
+    return _CODE_SPAN_RUN.sub(replacement, text)
+
 
 def id_number(record_id: str) -> int | None:
     """Numeric part of a v2 sequential ID ('US0042' -> 42, 'CR-0007' -> 7). A v3 ULID id
@@ -1629,12 +1657,12 @@ def persona_registry(repo_root) -> PersonaRegistry:
     entries: list[PersonaEntry] = []
     role: str | None = None
     seen_heading = False
-    in_fence = False
+    fence: tuple[str, int] | None = None
     for line in text.splitlines():
-        if line.lstrip().startswith("```"):
-            in_fence = not in_fence
-            continue
-        if in_fence:
+        # the shared CommonMark tracker, never a toggle: a bullet quoted inside a ````markdown
+        # block is an example, and a toggle registered it as a declared persona
+        fence, is_fence_line = fence_step(line.lstrip(), fence)
+        if is_fence_line or fence is not None:
             continue
         if line.startswith("#"):
             m = _PERSONA_ROLE_RE.match(line)

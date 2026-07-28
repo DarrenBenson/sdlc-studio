@@ -1,9 +1,10 @@
 # BG0334: EP0163 init-stage AC verifiers under-assert their own ACs (US0442, US0438), and stage_agents silently skips a missing te
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_init.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_init.py, .claude/skills/sdlc-studio/scripts/init.py
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 (adversarial audit wf_804ef18d carry-over, run wf_d141ccb5); agent; skill v5.0.0
@@ -20,8 +21,36 @@ Evidence (`test_decompose_and_plan_stages_direct` (lines 453-458), `test_agents_
 
 Strengthen both tests to assert the exact backticked commands (`epic generate`, `story generate`, `sprint plan`) and the CLAUDE.md import file/content respectively, and change `stage_agents` to report a missing template loudly (list it in skipped or fail) rather than continue silently.
 
+## Acceptance Criteria
+
+### AC1: US0442's verifier asserts the commands, not prose that happens to contain them
+
+- **Given** the decompose and plan directives
+- **When** the verifier runs
+- **Then** it asserts the backticked `epic`, `story` and `sprint plan` as the directives mark them up
+  - stripping both commands out of the decompose directive turns it red, where the bare substring
+  'epic' was satisfied by the word 'epics' in the surrounding prose
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::GuidedInitTests::test_decompose_and_plan_stages_direct
+
+### AC2: US0438's verifier asserts the CLAUDE.md import its AC claims
+
+- **Given** the agents stage run against an empty repo
+- **When** the verifier runs
+- **Then** it asserts CLAUDE.md in `created`, on disk, and beginning with the `@AGENTS.md` import, so
+  dropping that starter reddens it instead of leaving Claude Code with no instructions at all
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::GuidedInitTests::test_agents_stage_drafts_the_instructions
+
+### AC3: a missing starter template is refused, never skipped in silence
+
+- **Given** an installed skill whose `templates/agent-instructions.CLAUDE.md` is absent
+- **When** the agents stage runs
+- **Then** it raises naming the missing starter, writes nothing at all, and the guided runner does not
+  swallow it - the stage stays the first incomplete one rather than a silent no-op the operator confirms
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::GuidedInitTests::test_a_missing_starter_template_is_refused_not_skipped_in_silence
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d carry-over, run wf_d141ccb5) | Filed |
+| 2026-07-28 | delivery lane (RUN-01KYJZGZ) | Acceptance criteria authored; verifiers strengthened, missing starter now refused |

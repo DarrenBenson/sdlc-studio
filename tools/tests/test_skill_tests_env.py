@@ -148,6 +148,11 @@ SCRUB_SITES: dict[str, str] = {
         "damages, and it is out of BG0230's scope. Widen it to REPO_LOCATING when touched.",
     ".claude/skills/sdlc-studio/scripts/lessons.py":
         "PARTIAL: same three variables, same read-only `git -C` shape, same debt as gate.py.",
+    ".claude/skills/sdlc-studio/scripts/mutation.py":
+        "PARTIAL: same three variables, same read-only `git -C` shape as gate.py, in "
+        "`dirty_targets` (US0504). It asks whether a mutation target carries uncommitted work; "
+        "an escape misreports - the run refuses a clean file, or proceeds over a dirty one - "
+        "rather than writing anywhere. Widen it to REPO_LOCATING when touched.",
 }
 
 

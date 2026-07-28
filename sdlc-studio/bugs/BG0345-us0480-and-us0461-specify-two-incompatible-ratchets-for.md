@@ -1,9 +1,10 @@
 # BG0345: US0480 and US0461 specify two incompatible ratchets for one concept, and neither can fail as written
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Points:** 3
-> **Affects:** sdlc-studio/stories/US0480-validate-ratchets-the-footprint-and-criterion-warnings.md, sdlc-studio/stories/US0461-verify-ac-lint-ratchet-refuses-a-duplicate-group.md, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/gate.py
+> **Affects:** sdlc-studio/stories/US0480-validate-ratchets-the-footprint-and-criterion-warnings-against.md, sdlc-studio/stories/US0461-verify-ac-lint-ratchet-refuses-a-duplicate-group.md, tools/tests/test_ratchet_story_agreement.py
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 (independent adversarial review of the residue stories); agent; skill v5.0.0
@@ -25,3 +26,4 @@ Settle one ratchet design before either story is built - the set-with-reasons fo
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (independent adversarial review of the residue stories) | Filed |
+| 2026-07-28 | Claude Opus 5 | Fixed: one set-with-reasons design settled across US0480 and US0461, each naming the other; US0480 given a reference-state baseline and the blocking-lane wiring; guarded by `tools/tests/test_ratchet_story_agreement.py`. `validate.py` and `gate.py` dropped from Affects - the wiring is US0480's to build, this fix is story-level |

@@ -187,12 +187,14 @@ def seat_name(card: Path | None, role: str) -> str:
     so a consult always has a name to attribute a question to."""
     if card is not None:
         try:
-            in_fence = False
+            fence: tuple[str, int] | None = None
             for ln in card.read_text(encoding="utf-8").splitlines():
-                if ln.lstrip().startswith("```"):   # skip fenced code: a `# x` inside it is not the H1
-                    in_fence = not in_fence
+                # skip fenced code by the ONE shared CommonMark rule: a `# x` inside a block is
+                # not the H1, and a toggle released a longer block on its inner fence
+                fence, is_fence_line = sdlc_md.fence_step(ln.lstrip(), fence)
+                if is_fence_line or fence is not None:
                     continue
-                if not in_fence and ln.startswith("# "):
+                if ln.startswith("# "):
                     return ln[2:].split(" - ", 1)[0].strip() or role.capitalize()
         except OSError:
             pass

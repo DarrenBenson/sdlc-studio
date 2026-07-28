@@ -1120,5 +1120,75 @@ class DocDriftResidualTests(unittest.TestCase):
             self.assertGreaterEqual(len(reason), 30, f"{from_}: reason too thin to be one")
 
 
+class TwoRoleCutoffOnUlidIdsTests(unittest.TestCase):
+    """BG0318: `review.two_role_after` is a NUMERIC cutoff compared against `id_number`, which
+    returns None for a v3 ULID id. `two_role_applies` was therefore False for every ULID unit,
+    so both halves defaulted True unchecked - a forward-only gate standing down on exactly the
+    newest units it exists to cover, silently. A ULID id is by construction newer than any
+    sequential cutoff, so the gate must fail CLOSED on an unnumbered id."""
+
+    ULID = "US-01JQK3F8"
+    V2 = "US0101"
+
+    def _stages(self, root, rid):
+        """Only `critic_required` is switched off, so `critiqued` here is decided by the
+        two-role halves ALONE - the assertion cannot pass on the verdict half's behaviour."""
+        return _load()._done_stages(root, rid, ["yes"], False, set(), True,
+                                    two_role_cutoff=100, critic_required=False)
+
+    def test_a_ulid_unit_past_the_cutoff_is_held_to_both_two_role_halves(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            mod = _load()
+            verified, _rec, critiqued, _doc, unmet = self._stages(d, self.ULID)
+            self.assertTrue(verified)   # the fixture is otherwise clean
+            self.assertFalse(critiqued,
+                             "a ULID unit with no evidence and no sign-off cleared `critiqued`")
+            self.assertEqual(unmet, [mod.HALF_EVIDENCE, mod.HALF_SIGNOFF])
+
+    def test_the_ulid_verdict_matches_the_v2_verdict_for_the_same_evidence(self) -> None:
+        """The two calls differ only in the id's ERA. A gate whose strictness depends on
+        which id scheme a project mints is the defect, so the verdicts must be identical."""
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(self._stages(d, self.ULID)[4], self._stages(d, self.V2)[4])
+
+    def test_no_cutoff_configured_still_leaves_a_ulid_unit_alone(self) -> None:
+        """Fail-closed must not become always-on: without `review.two_role_after` the
+        two-role halves apply to nobody, ULID ids included."""
+        with tempfile.TemporaryDirectory() as d:
+            unmet = _load()._done_stages(d, self.ULID, ["yes"], False, set(), True,
+                                         two_role_cutoff=None, critic_required=False)[4]
+            self.assertEqual(unmet, [])
+
+    @unittest.skipUnless(HAS_YAML, "review.two_role_after reads .config.yaml (needs PyYAML)")
+    def test_end_to_end_a_done_ulid_story_is_not_reported_conformant(self) -> None:
+        """The stage list `detect_conformance` builds drops `critiqued` from `required`
+        on the SAME None comparison, so the `_done_stages` fix alone would still report the
+        story conformant. This pins the report, which is what an operator reads.
+
+        The DoD downgrades the critic half only, leaving the two-role half armed - so
+        `critiqued` survives in `required` for one reason and one reason only."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sdir = root / "sdlc-studio"
+            sdir.mkdir(parents=True, exist_ok=True)
+            (sdir / ".config.yaml").write_text(
+                "review:\n  two_role_after: US0100\n", encoding="utf-8")
+            (sdir / "definition-of-done.md").write_text(
+                "# Definition of Done\n\n## Story\n\n"
+                "- adversarial review recorded [check: review.two-role]\n",
+                encoding="utf-8")
+            sd = sdir / "stories"
+            sd.mkdir(parents=True, exist_ok=True)
+            (sd / f"{self.ULID}-sample.md").write_text(
+                f"# {self.ULID}: sample\n\n> **Status:** Done\n"
+                "> **Epic:** [EP0001: x](../epics/EP0001-x.md)\n\n"
+                "## Acceptance Criteria\n\n### AC1: works\n- **Given** a thing\n"
+                "- **Verify:** shell echo ok\n- **Verified:** yes (2026-01-01)\n",
+                encoding="utf-8")
+            u = _units(root)[self.ULID]
+            self.assertIn("critiqued", u["missing"],
+                          "the two-role gate stood down for a v3 ULID unit")
+
+
 if __name__ == "__main__":
     unittest.main()

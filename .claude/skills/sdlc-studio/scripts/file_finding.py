@@ -21,7 +21,7 @@ import re
 import sys
 import tempfile
 from datetime import date
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
@@ -178,7 +178,8 @@ GROOMED_TYPES = ("bug", "cr")
 # What to hand the author for each gap the gate can name. Keyed by the gate's own token, so a
 # bug/story missing its `Points` and a CR/RFC missing its `Size` each get the flag that fills it.
 _GROOM_FLAG = {
-    "Affects": '--affects "path/to/file.py, path/to/other.py"  (the files this will touch)',
+    "Affects": ('--affects "path/to/file.py, path/to/test_file.py"  (where the FIX lands, not '
+                'where the evidence was read - and a fix arrives with a test)'),
     "Points": (f"--points {'|'.join(str(p) for p in sdlc_md.POINTS_SCALE)}  (the job SIZE of the "
                f"work, RELATIVE to units you have already delivered - a bug's Severity is its "
                f"urgency, a different axis)"),
@@ -377,6 +378,123 @@ def check_affects_resolvable(repo_root: Path | str, affects_value: str,
         f"sdlc-studio/.config.yaml makes this a warning.")
 
 
+# --- The understated footprint: a source file declared without its existing test ------------
+#
+# A declared `Affects` is where the FIX LANDS, not where the evidence was READ. A filer who names
+# only the file the defect was observed in declares a footprint smaller than the change, and this
+# repository's own doctrine says a fix arrives with a test - so a unit touching a source file whose
+# test already exists will touch that test too. Nothing refused an understated `Affects`, so it
+# caused silently exactly the three harms a FICTIONAL one is refused for: the plan's collision
+# analysis mis-groups the unit, the engagement floor under-reads it, and gate's changed-surface
+# pass misreports it - all while the filing exits 0. One audit filed 54 artefacts this way and not
+# one named a test file.
+#
+# The check NAMES the path rather than inventing one: it fires only where the companion test
+# EXISTS on disk, so the author is never sent to a file the tool made up. A warning, not a
+# refusal - the finding in hand is worth more than a perfect footprint, and a refusal here would
+# lose it. What must not happen is silence.
+
+#: Directories a test lives in relative to its source, by the conventions the suites in this family
+#: use, most conventional first. `""` is the source's own directory (`foo.py` / `test_foo.py`);
+#: `../tests` is the package-sibling suite (`scripts/lib/sdlc_md.py` is tested by
+#: `scripts/tests/test_sdlc_md.py`), which the source's own subtree never reaches.
+_TEST_DIRS = ("tests", "", "test", "__tests__", "spec", "../tests", "../test", "../__tests__")
+
+#: (source suffix, companion basename template) - the test-naming conventions worth deriving. A
+#: language absent from this table simply yields no candidate, which is silence, not a wrong guess.
+_TEST_NAMES = {
+    ".py": ("test_{stem}.py",),
+    ".go": ("{stem}_test.go",),
+    ".js": ("{stem}.test.js", "{stem}.spec.js"),
+    ".jsx": ("{stem}.test.jsx", "{stem}.spec.jsx"),
+    ".ts": ("{stem}.test.ts", "{stem}.spec.ts"),
+    ".tsx": ("{stem}.test.tsx", "{stem}.spec.tsx"),
+    ".mjs": ("{stem}.test.mjs", "{stem}.spec.mjs"),
+}
+
+
+def is_test_path(path: str) -> bool:
+    """Test-shaped by the conventions this family's suites use: `test_x.py`, `x_test.go`,
+    `x.test.ts`, `x.spec.ts`. Matches `gate._is_test_path`, so 'is a test' means one thing."""
+    stem = PurePosixPath(str(path).replace("\\", "/")).stem
+    return (stem.startswith("test_") or stem.endswith("_test")
+            or stem.endswith(".test") or stem.endswith(".spec"))
+
+
+def companion_test_candidates(path: str) -> list[str]:
+    """The paths a test for `path` would sit at by convention, most conventional first. Empty for
+    a test file, a file with no extension this family tests, or a path that is not a file."""
+    p = PurePosixPath(str(path).replace("\\", "/").rstrip("/"))
+    if not p.name or is_test_path(p.name):
+        return []
+    names = _TEST_NAMES.get(p.suffix)
+    if not names:
+        return []
+    import posixpath  # noqa: PLC0415 - local: only this derivation normalises a `..` segment
+    out: list[str] = []
+    for d in _TEST_DIRS:
+        base = posixpath.normpath(str(p.parent / d)) if d else str(p.parent)
+        if base.startswith(".."):
+            continue  # a source at the repo root has no parent-sibling suite
+        for name in names:
+            cand = posixpath.normpath(posixpath.join(base, name.format(stem=p.stem)))
+            if cand not in out:
+                out.append(cand)
+    return out
+
+
+def missing_companion_tests(repo_root: Path | str, affects_value: str,
+                            type_: str | None = None) -> list[tuple[str, str]]:
+    """`(source, companion_test)` for each declared source file whose test EXISTS on disk and which
+    the declared `Affects` does not name. Read-only; the single seam behind the filing warning.
+
+    Empty when the footprint already names a test file for a source (the fix is declared), when no
+    companion exists (nothing to name), or for a type whose `Affects` is not a sprint footprint -
+    an RFC's declared files are the OUTPUT of its decision, exactly as the resolvable check
+    skips it."""
+    if type_ is not None and type_ not in _AFFECTS_CHECKED_TYPES:
+        return []
+    declared = declared_affects(affects_value)
+    if not declared:
+        return []
+    import posixpath  # noqa: PLC0415 - local: comparing two spellings of one path
+    # normpath, never lstrip("./"): lstrip takes a SET of characters, so it would eat the leading
+    # dot of a dot-directory (`.claude/...` -> `claude/...`) as readily as a `./` prefix.
+    have = {posixpath.normpath(str(p).replace("\\", "/")) for p in declared}
+    root = Path(repo_root)
+    out: list[tuple[str, str]] = []
+    for src in declared:
+        if is_test_path(src):
+            continue
+        for cand in companion_test_candidates(src):
+            if cand in have:
+                break  # the footprint already declares a test beside this source
+            if sdlc_md.resolve_affects(root, cand) is not None:
+                out.append((src, cand))
+                break
+    return out
+
+
+def warn_missing_companion_tests(repo_root: Path | str, affects_value: str,
+                                 type_: str | None = None, label: str = "") -> list[tuple[str, str]]:
+    """Report an understated footprint at filing time, naming the exact test path, and return the
+    pairs reported (empty when there is nothing to say). A warning, never a refusal."""
+    missing = missing_companion_tests(repo_root, affects_value, type_)
+    if not missing:
+        return []
+    where = f"{label}: " if label else ""
+    lines = "\n".join(f"    {src} has a test at {cand}, which Affects does not name"
+                      for src, cand in missing)
+    print(f"warning: {where}the declared Affects names source files without their existing "
+          f"tests - a fix lands in both, so the footprint is understated.\n{lines}\n"
+          f"  Why it matters: an understated footprint mis-groups the unit in the plan's "
+          f"collision analysis, under-reads it in the engagement floor and misreports it in "
+          f"gate's changed-surface pass - silently, because nothing refuses it.\n"
+          f"  Affects is where the FIX LANDS, not where the evidence was read. Add the test "
+          f"path(s) above if the fix will touch them.", file=sys.stderr)
+    return missing
+
+
 def scan_prose_acs(text: str) -> list[tuple[int, str, str]]:
     """Every command-shaped pseudo-`Verify:` inside an artefact's Acceptance Criteria section, as
     (1-based line number, the line, the offending command). The read-only counterpart of
@@ -475,16 +593,12 @@ def _strip_code_blocks(value: str) -> str:
     before any fingerprint runs. Detection is unaffected for real command-shaped values, which do
     not arrive fenced or indented."""
     out: list[str] = []
-    in_fence = False
-    fence = ""
+    fence: tuple[str, int] | None = None
     for line in value.splitlines():
-        s = line.lstrip()
-        if not in_fence and (s.startswith("```") or s.startswith("~~~")):
-            in_fence, fence = True, s[:3]
-            continue
-        if in_fence:
-            if s.startswith(fence):
-                in_fence = False
+        # the ONE shared CommonMark tracker, never a three-character toggle: a toggle released a
+        # ````markdown block on its inner ``` and scanned the illustration below it as a value
+        fence, is_fence_line = sdlc_md.fence_step(line.lstrip(), fence)
+        if is_fence_line or fence is not None:
             continue
         if line.startswith("    ") or line.startswith("\t"):
             continue  # an indented code block - not a stored command
@@ -993,6 +1107,9 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     # ... and refuse a declared `Affects` that resolves to nothing, before an id is allocated,
     # from the ONE seam every writer shares - naming the closest basename match where there is one.
     check_affects_resolvable(root, fields.get("affects"), type_)
+    # ... and REPORT an understated one: a source file declared without its existing test is a
+    # footprint smaller than the change, which nothing else would ever say out loud.
+    warn_missing_companion_tests(root, fields.get("affects"), type_)
     # ... and refuse an attribution to a mutation run the series does not hold, before an id is
     # allocated: a finding stamped with an unresolvable run claims a provenance nobody can check.
     fields = check_mutation_run(root, fields)
@@ -1190,8 +1307,10 @@ def build_parser() -> argparse.ArgumentParser:
                         "down. Required for a cr: `sprint plan` refuses a request nobody sized. "
                         "Story points belong on the delivery unit (a story/bug), not on the request.")
     f.add_argument("--affects",
-                   help="comma-separated files this unit will touch, written as the `Affects` "
-                        "metadata line. Required for a bug and a cr: `sprint plan` refuses a "
+                   help="comma-separated files the FIX will touch - where the change lands, not "
+                        "where the evidence was read - written as the `Affects` metadata line. "
+                        "Include the test file: a fix arrives with a test, so that test is part "
+                        "of the footprint. Required for a bug and a cr: `sprint plan` refuses a "
                         "unit that names no files - it cannot size one, nor see two units "
                         "colliding on the same file. Optional on an rfc (not a sprint unit)")
     f.add_argument("--ac", action="append", help="cr acceptance criterion (repeatable)")

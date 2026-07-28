@@ -1,6 +1,7 @@
 """Unit tests for gate.py - the portable CI quality gate (CR0046)."""
 from __future__ import annotations
 
+import argparse
 import contextlib
 import importlib.util
 import io
@@ -296,7 +297,11 @@ class GateRealWrapperTests(unittest.TestCase):
         self.assertIsInstance(r["ok"], bool)
         self.assertEqual(len(r["checks"]), 17)
         for c in r["checks"]:
-            self.assertEqual(set(c), {"check", "count", "blocking", "status", "detail"})
+            # `seconds` is part of the row shape: the cost report derives the dominant lane
+            # from it, and a lane with no share of the total cannot be named as the cause.
+            self.assertEqual(set(c),
+                             {"check", "count", "blocking", "status", "detail", "seconds"})
+        self.assertIn("cost", r, "every run reports its own cost, not only its verdict")
 
     def test_reconcile_wrapper_counts_drift_not_dict_keys(self) -> None:
         # Regression (hermetic): detect_type returns a 6-key dict; the wrapper must count
@@ -3963,6 +3968,440 @@ class TestRelevantSetTests(unittest.TestCase):
                             "a globbed directory must stay relevant once deleted")
 
 
+class SurfaceHashTests(unittest.TestCase):
+    """US0493: the suite is skipped when the test-relevant surface is byte-identical to the
+    tree the last green verdict was recorded over.
+
+    Measured over one working day on this repository: the suites ran about 52 times for about
+    218 minutes against about 35 minutes of delivery, and a large share of those runs were over
+    an IDENTICAL source tree - paperwork commits and retried closes. The surface hash is what
+    lets the second run of an unchanged tree cost nothing.
+
+    The failure direction that matters is the false green: a cache that answered `skip` over a
+    changed tree, or over a verdict it could not read, would be worse than the slow run it
+    replaces. Every test below pins that direction rather than the saving.
+    """
+
+    SRC = (
+        "from pathlib import Path\n"
+        "REPO = Path(__file__).resolve().parents[5]\n"
+        "DOC = REPO / 'docs' / 'read.md'\n"
+        "def test_doc():\n"
+        "    assert DOC.read_text()\n"
+    )
+
+    def _repo(self, tmp: Path) -> Path:
+        scripts = tmp / ".claude" / "skills" / "sdlc-studio" / "scripts"
+        (scripts / "tests").mkdir(parents=True)
+        (scripts / "thing.py").write_text("VALUE = 1\n", encoding="utf-8")
+        (scripts / "tests" / "test_thing.py").write_text(self.SRC, encoding="utf-8")
+        (tmp / "docs").mkdir()
+        (tmp / "docs" / "read.md").write_text("# read\n", encoding="utf-8")
+        (tmp / "docs" / "unread.md").write_text("# unread\n", encoding="utf-8")
+        (tmp / "sdlc-studio" / ".local").mkdir(parents=True)
+        return tmp
+
+    def test_an_unchanged_surface_reuses_the_last_green_verdict(self) -> None:
+        """AC1: an unchanged surface reuses the recorded verdict, and NAMES the run it reuses."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d)))
+            gate.record_suite_verdict(root, run="RUN-01GREEN", status="green")
+            decision = gate.suite_decision(root)
+            self.assertFalse(decision["run"],
+                             "an unchanged surface must not pay for the suites again")
+            self.assertEqual(decision["mode"], "reuse")
+            self.assertEqual(decision["reused"], "RUN-01GREEN")
+            self.assertIn("RUN-01GREEN", decision["reason"],
+                          "a skip must name the run it is reusing - a silent skip is "
+                          "indistinguishable from a run that passed")
+            # The caller acts on it: the CLI prints the sentinel the hook reads and exits
+            # non-zero for "no run needed", exactly as --test-relevant does.
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = gate.main(["--root", root, "--suite-decision"])
+            self.assertEqual(rc, 1, "no suite run needed exits 1, as --test-relevant does")
+            self.assertIn("suite-decision: skip", buf.getvalue())
+            self.assertIn("RUN-01GREEN", buf.getvalue())
+
+    def test_a_changed_surface_forces_a_real_run(self) -> None:
+        """AC2: a one-character edit to a source file in the surface defeats the cache."""
+        with tempfile.TemporaryDirectory() as d:
+            root_p = self._repo(Path(d))
+            root = str(root_p)
+            gate.record_suite_verdict(root, run="RUN-01GREEN", status="green")
+            self.assertFalse(gate.suite_decision(root)["run"])   # control: cached first
+            src = root_p / ".claude" / "skills" / "sdlc-studio" / "scripts" / "thing.py"
+            src.write_text("VALUE = 2\n", encoding="utf-8")      # ONE character
+            decision = gate.suite_decision(root)
+            self.assertTrue(decision["run"],
+                            "a changed surface must run - a cache that masks a change is a "
+                            "false green, which is worse than the run it saved")
+            self.assertIn("changed", decision["reason"])
+            # A file OUTSIDE the surface must not defeat it: a cache nothing can hit is a
+            # cache that was never built.
+            gate.record_suite_verdict(root, run="RUN-01GREEN2", status="green")
+            (root_p / "docs" / "unread.md").write_text("# edited\n", encoding="utf-8")
+            self.assertFalse(gate.suite_decision(root)["run"],
+                             "a file no suite reads is not in the surface, so it must not "
+                             "force a run")
+
+    def test_editing_a_test_forces_a_run(self) -> None:
+        """AC3: the hash covers the tests too - a changed assertion is a changed question."""
+        with tempfile.TemporaryDirectory() as d:
+            root_p = self._repo(Path(d))
+            root = str(root_p)
+            gate.record_suite_verdict(root, run="RUN-01GREEN", status="green")
+            test_file = (root_p / ".claude" / "skills" / "sdlc-studio" / "scripts"
+                         / "tests" / "test_thing.py")
+            test_file.write_text(self.SRC + "\ndef test_more():\n    assert False\n",
+                                 encoding="utf-8")
+            self.assertTrue(gate.suite_decision(root)["run"],
+                            "an edited assertion is an unanswered question, whatever the "
+                            "source tree says")
+
+    def test_an_unreadable_verdict_runs_the_suite(self) -> None:
+        """AC4: absent, unreadable or malformed degrades to the SLOW answer, never a green."""
+        with tempfile.TemporaryDirectory() as d:
+            root_p = self._repo(Path(d))
+            root = str(root_p)
+            record = root_p / gate.SUITE_VERDICT_REL
+
+            # absent
+            self.assertTrue(gate.suite_decision(root)["run"])
+            self.assertIsNone(gate.read_suite_verdict(root))
+
+            # malformed
+            record.parent.mkdir(parents=True, exist_ok=True)
+            record.write_text("{not json", encoding="utf-8")
+            self.assertIsNone(gate.read_suite_verdict(root))
+            self.assertTrue(gate.suite_decision(root)["run"])
+
+            # unreadable (a directory where the record should be)
+            record.unlink()
+            record.mkdir()
+            self.assertIsNone(gate.read_suite_verdict(root))
+            self.assertTrue(gate.suite_decision(root)["run"])
+            record.rmdir()
+
+            # readable but RED: a recorded failure is not a verdict to reuse as a skip
+            gate.record_suite_verdict(root, run="RUN-01RED", status="red")
+            self.assertTrue(gate.suite_decision(root)["run"],
+                            "a red verdict must never be reused as a reason to skip")
+
+            # readable but hashless: two unknowns must not compare equal into a green, and
+            # the reason must say WHICH defect it hit. Falling through to "the surface has
+            # changed" would run the suites for the right reason with the wrong story, and
+            # send whoever reads it looking for an edit that never happened.
+            record.write_text(json.dumps({"run": "RUN-01NOHASH", "status": "green"}),
+                              encoding="utf-8")
+            hashless = gate.suite_decision(root)
+            self.assertTrue(hashless["run"],
+                            "a verdict with no surface hash proves nothing about this tree")
+            self.assertIn("no surface hash", hashless["reason"])
+            self.assertNotIn("has changed", hashless["reason"])
+
+
+class TestSelectionTests(unittest.TestCase):
+    """US0494: a commit runs the tests its change can REACH, derived from the import graph the
+    repo map already builds - not the whole suite, and not a hand-written module map.
+
+    Selection is the one narrowing in this gate that could lose coverage rather than defer it,
+    so each test below pins a direction: what it selects, what it says it excluded, and that
+    every failure to resolve widens the run instead of narrowing it.
+    """
+
+    @staticmethod
+    def _repo(tmp: Path) -> Path:
+        scripts = tmp / ".claude" / "skills" / "sdlc-studio" / "scripts"
+        tests = scripts / "tests"
+        tests.mkdir(parents=True)
+        (tmp / "sdlc-studio" / ".local").mkdir(parents=True)
+        (scripts / "alpha.py").write_text("VALUE = 1\n", encoding="utf-8")
+        (scripts / "beta.py").write_text("import alpha\nB = alpha.VALUE\n", encoding="utf-8")
+        (scripts / "gamma.py").write_text("VALUE = 3\n", encoding="utf-8")
+        for name, mod in (("test_alpha.py", "alpha"), ("test_beta.py", "beta"),
+                          ("test_gamma.py", "gamma")):
+            (tests / name).write_text(f"import {mod}\ndef test_it():\n    assert {mod}\n",
+                                      encoding="utf-8")
+        (tmp / "docs").mkdir()
+        (tmp / "docs" / "read.md").write_text("# read\n", encoding="utf-8")
+        return tmp
+
+    SCRIPTS = ".claude/skills/sdlc-studio/scripts"
+    TESTS = ".claude/skills/sdlc-studio/scripts/tests"
+
+    def test_selection_comes_from_the_import_graph(self) -> None:
+        """AC1: the selected set is what the change can reach through imports - including
+        transitively - and it MOVES when the graph moves, which a hand map cannot do."""
+        with tempfile.TemporaryDirectory() as d:
+            root_p = self._repo(Path(d))
+            root = str(root_p)
+            sel = gate.select_tests(root, [f"{self.SCRIPTS}/alpha.py"])
+            self.assertTrue(sel["resolved"], sel["reason"])
+            self.assertIn(f"{self.TESTS}/test_alpha.py", sel["selectors"])
+            self.assertIn(f"{self.TESTS}/test_beta.py", sel["selectors"],
+                          "beta imports alpha, so a change to alpha reaches test_beta - "
+                          "a one-hop selection would miss it")
+            self.assertNotIn(f"{self.TESTS}/test_gamma.py", sel["selectors"],
+                             "nothing reaches gamma from alpha, so running it is the cost "
+                             "this story exists to remove")
+            # Derived from the INDEX, not from a map somebody wrote: add one import edge in
+            # the source and the selection follows it with nothing else changed.
+            (root_p / self.SCRIPTS / "gamma.py").write_text(
+                "import alpha\nVALUE = 3\n", encoding="utf-8")
+            sel2 = gate.select_tests(root, [f"{self.SCRIPTS}/alpha.py"])
+            self.assertIn(f"{self.TESTS}/test_gamma.py", sel2["selectors"],
+                          "the graph gained an edge, so the selection must gain the test - "
+                          "otherwise it is a hand map wearing an index's name")
+
+    def test_a_selected_run_reports_what_it_excluded(self) -> None:
+        """AC2: a reader must see a JUDGEMENT was made, not assume everything ran."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d)))
+            sel = gate.select_tests(root, [f"{self.SCRIPTS}/gamma.py"])
+            self.assertEqual(sel["selectors"], [f"{self.TESTS}/test_gamma.py"])
+            self.assertEqual(sel["total"], 3)
+            self.assertEqual(sel["excluded"], 2)
+            self.assertIn("2", sel["reason"])
+            self.assertIn("excluded", sel["reason"].lower())
+            decision = gate.suite_decision(root, changed=[f"{self.SCRIPTS}/gamma.py"])
+            self.assertTrue(decision["run"])
+            self.assertEqual(decision["mode"], "selected")
+            self.assertEqual(decision["selectors"], [f"{self.TESTS}/test_gamma.py"])
+            self.assertEqual(decision["excluded"], 2)
+            self.assertIn("2", decision["reason"])
+
+    def test_an_unresolvable_change_runs_everything(self) -> None:
+        """AC3: the safe direction of a selection failure is MORE testing, never less."""
+        with tempfile.TemporaryDirectory() as d:
+            root_p = self._repo(Path(d))
+            root = str(root_p)
+            # A file in the test-relevant surface that no import edge and no suite read
+            # attributes to any test module: unresolvable, so everything runs.
+            (root_p / "tools").mkdir()
+            (root_p / "tools" / "lint-style.sh").write_text("#!/bin/sh\n", encoding="utf-8")
+            sel = gate.select_tests(root, ["tools/lint-style.sh"])
+            self.assertFalse(sel["resolved"])
+            self.assertEqual(sel["selectors"], [])
+            self.assertIn("tools/lint-style.sh", sel["reason"])
+            self.assertEqual(gate.suite_decision(root, changed=["tools/lint-style.sh"])["mode"],
+                             "full")
+
+            # An unknown changed-file probe is UNKNOWN, never "nothing changed".
+            self.assertFalse(gate.select_tests(root, None)["resolved"])
+            self.assertEqual(gate.suite_decision(root, changed=None)["mode"], "full")
+
+            # A resolvable change that reaches NO test at all also runs everything: a
+            # selection of zero tests reported as a pass is a vacuous green.
+            (root_p / self.SCRIPTS / "lonely.py").write_text("X = 1\n", encoding="utf-8")
+            lonely = gate.select_tests(root, [f"{self.SCRIPTS}/lonely.py"])
+            self.assertFalse(lonely["resolved"])
+            self.assertEqual(lonely["selectors"], [])
+            self.assertIn("no test", lonely["reason"].lower())
+
+    def test_selection_does_not_replace_the_boundary_run(self) -> None:
+        """AC4: selection trades WHEN the coverage is paid, never WHETHER.
+
+        A green verdict earned by a SELECTED run is evidence about the tests that ran, not
+        about the suite. Reusing it at a boundary would let selection quietly become the
+        whole coverage story - which is the one way this optimisation could lose a defect
+        rather than defer finding it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d)))
+            gate.record_suite_verdict(root, run="RUN-01SEL", status="green", mode="selected")
+            self.assertFalse(gate.suite_decision(root)["run"],
+                             "an unchanged surface at a commit may reuse a selected green")
+            at_push = gate.suite_decision(root, boundary="push")
+            self.assertTrue(at_push["run"],
+                            "a boundary must not reuse a verdict earned by a partial run")
+            self.assertEqual(at_push["mode"], "full")
+            self.assertIn("selected", at_push["reason"])
+
+            # ...and a boundary never takes the selected path, even with a resolvable diff.
+            picked = gate.suite_decision(root, changed=[f"{self.SCRIPTS}/gamma.py"],
+                                         boundary="push")
+            self.assertEqual(picked["mode"], "full")
+            self.assertEqual(picked.get("selectors"), [])
+
+            # The control: a FULL green over the same surface is exactly what a boundary
+            # may reuse, or the boundary rule would make the cache unreachable.
+            gate.record_suite_verdict(root, run="RUN-01FULL", status="green", mode="full")
+            self.assertFalse(gate.suite_decision(root, boundary="push")["run"])
+
+
+class BoundaryPolicyTests(unittest.TestCase):
+    """US0495: the full suite runs at a BOUNDARY - push, release, sprint close - and a
+    selection runs everywhere else, with each run saying which it was.
+
+    The rule exists because the price and the risk are not the same at every moment. A wrong
+    answer inside a working tree costs one more commit; a wrong answer past a push or a tag
+    is somebody else's problem to unwind. Paying the full price at every keystroke-sized
+    commit is what trains people to batch commits or reach for --no-verify, and a gate that
+    is bypassed enforces nothing at all.
+    """
+
+    def _repo(self, tmp: Path) -> Path:
+        return TestSelectionTests._repo(tmp)
+
+    SCRIPTS = TestSelectionTests.SCRIPTS
+    TESTS = TestSelectionTests.TESTS
+
+    def test_commit_is_selective_and_boundary_is_full(self) -> None:
+        """AC1: the same tree, two moments, two modes - and each names its own."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d)))
+            changed = [f"{self.SCRIPTS}/gamma.py"]
+
+            at_commit = gate.suite_decision(root, changed=changed)
+            self.assertEqual(at_commit["mode"], "selected")
+            self.assertEqual(at_commit["selectors"], [f"{self.TESTS}/test_gamma.py"])
+
+            for moment in gate.BOUNDARIES:
+                at_boundary = gate.suite_decision(root, changed=changed, boundary=moment)
+                self.assertEqual(at_boundary["mode"], "full", moment)
+                self.assertEqual(at_boundary["selectors"], [], moment)
+                self.assertIn(moment, at_boundary["reason"])
+                self.assertIn("boundary", at_boundary["reason"])
+
+            # The CLI says which mode it used, because the hook and the operator read that
+            # line rather than the return value. It reads the diff itself, so the fixture
+            # has to be a repo with a real change in it.
+            _git(root, "init", "-q")
+            _git(root, "config", "user.email", "t@t")
+            _git(root, "config", "user.name", "t")
+            _git(root, "add", "-A")
+            _git(root, "commit", "-q", "-m", "chore: fixture")
+            (Path(root) / self.SCRIPTS / "gamma.py").write_text(
+                "VALUE = 4\n", encoding="utf-8")
+            for argv, want in (([], "suite-mode: selected"),
+                               (["--boundary", "push"], "suite-mode: full")):
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf):
+                    gate.main(["--root", root, "--suite-decision", *argv])
+                self.assertIn(want, buf.getvalue(), str(argv))
+
+            # A boundary declared by the environment, for a push or release step that
+            # cannot pass a flag.
+            os.environ["SDLC_GATE_BOUNDARY"] = "release"
+            self.addCleanup(os.environ.pop, "SDLC_GATE_BOUNDARY", None)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                gate.main(["--root", root, "--suite-decision"])
+            self.assertIn("suite-mode: full", buf.getvalue())
+            self.assertIn("release", buf.getvalue())
+
+    def test_an_unknown_boundary_is_refused_not_ignored(self) -> None:
+        """A typo'd boundary that silently ran the cheap path would be the false-assurance
+        class: the caller believes it asked for everything and got a selection."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d)))
+            os.environ["SDLC_GATE_BOUNDARY"] = "puhs"
+            self.addCleanup(os.environ.pop, "SDLC_GATE_BOUNDARY", None)
+            buf, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
+                rc = gate.main(["--root", root, "--suite-decision"])
+            self.assertEqual(rc, 2, "an unrecognised boundary must fail, not downgrade")
+            self.assertIn("puhs", buf.getvalue() + err.getvalue())
+
+    def test_the_hook_honours_the_decision(self) -> None:
+        """AC1, at the call site: the pre-commit hook must ASK, and must name the skip.
+
+        A decision nothing consults is a decision that changes no cost, and a skip nobody
+        prints is indistinguishable from a run that passed.
+        """
+        if not _in_dev_repo():
+            self.skipTest("no dev repo here, so there is no shipped hook to bind")
+        hook = (REPO / ".githooks" / "pre-commit").read_text(encoding="utf-8")
+        self.assertIn("--suite-decision", hook,
+                      "the hook must consult the decision, or the surface-hash skip and "
+                      "the selection reach nothing that runs")
+        self.assertIn("suite-decision: skip", hook,
+                      "the hook must key on the sentinel, not on an exit code alone - a "
+                      "stubbed gate.py exits 0 for everything")
+        self.assertRegex(hook, r"SKIP.*unit suites")
+
+
+class GateBudgetTests(unittest.TestCase):
+    """US0496: the gate reports its OWN cost against a budget, per run.
+
+    A regression in gate time is absorbed silently today - nobody notices thirty seconds
+    becoming forty, and by the time anyone does the cause is a dozen commits back. It is
+    reported the same way a regression in behaviour is: a number, a budget, and the lane
+    that dominated the total, because the total alone names nothing to fix.
+    """
+
+    @staticmethod
+    def _root(tmp: Path, budget) -> str:
+        (tmp / "sdlc-studio").mkdir(parents=True)
+        (tmp / "sdlc-studio" / ".config.yaml").write_text(
+            f"gate:\n  budget_seconds: {budget}\n", encoding="utf-8")
+        return str(tmp)
+
+    @staticmethod
+    def _slow(seconds: float):
+        import time as _t
+
+        def check(_root):
+            _t.sleep(seconds)
+            return {"count": 0, "blocking": False, "detail": "ok"}
+        return check
+
+    def test_each_run_reports_cost_against_budget(self) -> None:
+        """AC1: the elapsed cost, the budget, and the direction against the baseline."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(Path(d), 30)
+            checks = {"a": self._slow(0.01), "b": self._slow(0.0)}
+            report = gate.run_gate(root, checks=checks)
+            cost = report["cost"]
+            self.assertGreater(cost["seconds"], 0.0)
+            self.assertEqual(cost["budget"], 30.0)
+            self.assertFalse(cost["over"])
+            self.assertIsNone(cost["baseline"], "nothing recorded yet: no direction to give")
+            self.assertIn("no baseline", cost["detail"].lower())
+            # Every lane carries its own share, or the dominant one cannot be derived.
+            self.assertTrue(all("seconds" in c for c in report["checks"]))
+
+            # With a baseline recorded, the run states the DIRECTION of travel.
+            gate.record_gate_cost(root, 100.0)
+            self.assertEqual(gate.read_gate_cost_baseline(root), 100.0)
+            again = gate.run_gate(root, checks=checks)
+            self.assertEqual(again["cost"]["baseline"], 100.0)
+            self.assertIn("faster", again["cost"]["detail"])
+
+            # ...and the CLI prints it, or the number exists and nobody sees it.
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                gate.cmd_gate(argparse.Namespace(
+                    root=root, only=None, skip=None, format="text", release=False))
+            self.assertIn("gate cost:", buf.getvalue())
+            self.assertIn("budget", buf.getvalue())
+
+    def test_an_over_budget_run_names_the_dominant_lane(self) -> None:
+        """AC2: the overage is stated plainly, WITH the lane that caused it.
+
+        A total over budget with no lane named sends a reader to bisect a gate by hand,
+        which is the same as not reporting it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(Path(d), 0.001)
+            report = gate.run_gate(root, checks={"quick": self._slow(0.0),
+                                                 "hog": self._slow(0.08)})
+            cost = report["cost"]
+            self.assertTrue(cost["over"], "a run past its budget must say so")
+            self.assertEqual(cost["dominant"], "hog",
+                             "the slowest lane is the one a reader can act on")
+            self.assertIn("OVER", cost["detail"])
+            self.assertIn("hog", cost["detail"])
+            self.assertIn("0.001", cost["detail"])
+            # A lane that RAISED is still timed: an error lane that dominated the run is
+            # exactly the one somebody needs named.
+            def boom(_root):
+                raise RuntimeError("nope")
+            raised = gate.run_gate(root, checks={"boom": boom})
+            self.assertIn("seconds", _lane(raised, "boom"))
+
+
 class ProvenanceBlockingTests(unittest.TestCase):
     """An UNREADABLE artefact is a hole in the census, not a missing stamp, so the checker marks it
     blocking regardless of provenance.enforce. The lane consuming that verdict derived blocking
@@ -3984,6 +4423,43 @@ class ProvenanceBlockingTests(unittest.TestCase):
         self._stub(False, [{"blocking": False, "id": "US0001", "reason": "unstamped"}])
         self.assertFalse(gate._provenance(".")["blocking"],
                          "the advisory class must not become blocking - that is the other error")
+
+
+class SurfaceVolatilityTests(unittest.TestCase):
+    """A hash whose inputs change on every commit can never match, so the skip it exists to
+    enable never fires. `.git` is measurably read by a repo-locating test, which put it in the
+    surface, and expanding it added 4,848 objects that turn over constantly - the feature was
+    inert as first shipped."""
+
+    def test_a_volatile_directory_is_not_expanded_into_the_surface(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / ".git" / "objects" / "ab").mkdir(parents=True)
+            (root / ".git" / "objects" / "ab" / "cafe").write_bytes(b"x")
+            (root / "tools").mkdir()
+            (root / "tools" / "a.py").write_text("x = 1\n")
+            orig = gate.test_relevant_paths
+            gate.test_relevant_paths = lambda r=".": [".git", "tools"]
+            self.addCleanup(lambda: setattr(gate, "test_relevant_paths", orig))
+            files = gate.surface_files(str(root))
+            self.assertNotIn(".git/objects/ab/cafe", files,
+                             "expanding a volatile directory makes the hash differ every commit")
+            self.assertIn("tools/a.py", files, "a real source entry must still be included")
+
+    def test_the_hash_survives_a_commit_that_changes_no_source(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / ".git" / "objects").mkdir(parents=True)
+            (root / "tools").mkdir()
+            (root / "tools" / "a.py").write_text("x = 1\n")
+            orig = gate.test_relevant_paths
+            gate.test_relevant_paths = lambda r=".": [".git", "tools"]
+            self.addCleanup(lambda: setattr(gate, "test_relevant_paths", orig))
+            before = gate.surface_hash(str(root))
+            (root / ".git" / "objects" / "newobject").write_bytes(b"a new commit's object")
+            self.assertEqual(gate.surface_hash(str(root)), before,
+                             "a commit that touched no source must leave the hash unchanged - "
+                             "otherwise the skip can never fire")
 
 
 if __name__ == "__main__":

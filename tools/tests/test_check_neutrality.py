@@ -64,5 +64,75 @@ class CheckNeutralityTests(unittest.TestCase):
         self.assertGreaterEqual(len(cn._BLOCKED), 3)
 
 
+class ScanCoverageTests(unittest.TestCase):
+    """BG0327: the contract is every tracked file, so the selector must be a small binary
+    DENYLIST, not a suffix allowlist that silently exempts whatever nobody enumerated."""
+
+    def test_shipped_template_payload_and_extensionless_text_are_selected(self):
+        # .template ships into every consuming project (the highest-risk leak site); the
+        # evidence log, the hook scripts, CODEOWNERS and .version are all tracked text too.
+        rels = [
+            ".claude/skills/sdlc-studio/templates/automation/pytest.py.template",
+            ".claude/skills/sdlc-studio/templates/docker-compose.test.template",
+            "sdlc-studio/retros/evidence/actuals-2026-07-27.jsonl",
+            ".githooks/pre-commit",
+            ".github/CODEOWNERS",
+            "sdlc-studio/.version",
+            "LICENSE",
+        ]
+        self.assertEqual(cn._scannable(rels), rels)
+
+    def test_binary_and_self_and_lockfiles_are_skipped(self):
+        rels = ["docs/whitepaper.pdf", "a/logo.png", "package-lock.json",
+                "tools/check_neutrality.py", "notes.md"]
+        self.assertEqual(cn._scannable(rels), ["notes.md"])
+
+    def test_the_real_tracked_listing_includes_the_previously_exempt_suffixes(self):
+        repo = Path(__file__).resolve().parents[2]
+        if not (repo / ".git").exists():
+            self.skipTest("not a git checkout")
+        rels = {p.relative_to(repo).as_posix() for p in cn._tracked_text_files(repo)}
+        for want in (".claude/skills/sdlc-studio/templates/automation/pytest.py.template",
+                     ".githooks/pre-commit"):
+            self.assertIn(want, rels, f"{want} is tracked text but the guard does not scan it")
+        self.assertNotIn("docs/whitepaper.pdf", rels)
+
+    def test_a_null_byte_payload_is_skipped_and_the_same_bytes_as_text_are_scanned(self):
+        """A discriminating pair, so the sniff is the thing under test rather than the
+        emptiness of the fixture: identical bytes, one carrying a NUL, one not."""
+        d = Path(tempfile.mkdtemp())
+        binary, text = d / "blob.bin", d / "blob.txt"
+        binary.write_bytes(b"\x00\x01" + SENTINEL.encode() + b"\x00")
+        text.write_bytes(SENTINEL.encode() + b"\n")
+        self.assertEqual(cn.check(d, blocked=BLOCK, files=[binary]), [],
+                         "binary payload was decoded and scanned as text")
+        self.assertEqual(len(cn.check(d, blocked=BLOCK, files=[text])), 1)
+
+
+class UnreadableFileTests(unittest.TestCase):
+    """BG0339: a tracked file the guard could not read is the silent clean-pass LL0008
+    forbids - the same failure `_tracked_text_files` already refuses by name."""
+
+    def test_an_unreadable_file_fails_loud_instead_of_scanning_as_empty(self):
+        d = Path(tempfile.mkdtemp())
+        missing = d / "gone.md"
+        with self.assertRaises(SystemExit) as ctx:
+            cn.check(d, blocked=BLOCK, files=[missing])
+        self.assertIn("gone.md", str(ctx.exception))
+        self.assertIn("refusing", str(ctx.exception))
+
+    def test_main_does_not_print_a_clean_scan_when_a_file_was_unreadable(self):
+        d = Path(tempfile.mkdtemp())
+        (d / "clean.md").write_text("nothing to see\n", encoding="utf-8")
+        original = cn._tracked_text_files
+        cn._tracked_text_files = lambda root: [d / "clean.md", d / "gone.md"]
+        try:
+            with self.assertRaises(SystemExit) as ctx:
+                cn.main([])
+        finally:
+            cn._tracked_text_files = original
+        self.assertIn("gone.md", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

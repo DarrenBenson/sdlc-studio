@@ -239,6 +239,34 @@ Don't generate stories and implement them in the same wave of thinking. Generate
 | Tests pass in worktree, fail after merge | Agents imported conflicting versions of a type | Run typecheck + tests on merged code, not worktree |
 | Massive reconcile at the end | No per-wave reconcile | Add `reconcile --scope stories` after every wave |
 | Agent implements too much | No scope exclusions | Always include "DO NOT" and "Out of Scope" sections |
+| Driver waits forever on a delegate | Silence read as progress | Detect the silent stall below, then re-dispatch or report unfinished |
+
+### A delegate can stop without erroring {#silent-stall}
+
+A delegated agent does not always fail loudly. It can **stop without erroring** - no result, no
+exception, no further output - and from the driver's seat that looks exactly like one thinking.
+Two review delegates stopped this way in one sprint, at 841KB and 405KB of transcript, and each
+cost about 35 minutes of a driver waiting for an answer that was never coming.
+
+**An absent result is not a pending result.** Pending says the answer may still arrive; absent
+says nothing is known. Read the first as the second and the run waits forever, so the only safe
+default is that a delegate with no result is unfinished until something positive says otherwise.
+
+How a driver tells the two apart, with no cooperation from the delegate:
+
+- **Growth, not output.** The size and mtime of the delegate's transcript are the liveness
+  signal. A transcript whose size has not moved for longer than that delegate's longest observed
+  single step has stopped; one that is still growing is working, however quiet it looks.
+- **A result marker is present or it is not.** Completion is read from the delegate's result
+  record, never from its last message. No marker and no growth is **stalled**; no marker and
+  growth is **running**; a marker is done. Three states, none of them inferred.
+- **Not the clock.** Elapsed time alone cannot separate a long step from a dead agent, which is
+  why the clock is not the detector. It is a prompt to look at growth, never a verdict.
+
+A stalled delegate is re-dispatched or reported unfinished, never waited on further, and the run
+report names it. This is the agent-level half of the class `reference-audit.md#audit-refute-quorum`
+states at the vote level: an absent vote is not a refutation, and an absent agent is not a pending
+one. See `reference-agent-prompt-template.md#unfinished-delegate` for how the batch reports it.
 
 ---
 

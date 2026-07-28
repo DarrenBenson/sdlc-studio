@@ -31,20 +31,36 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import conventions, sdlc_md  # noqa: E402
 
-# scope name -> artifact types it covers.
+# The default sweep, DERIVED from `sdlc_md.ARTIFACT_TYPES` - never hand-listed. A type
+# missing from this list is a type NO reconcile path can census: detect, apply,
+# `index_derived_issues` and the commit gate (gate.py) all iterate it, so an omission
+# exempts a whole index from every automated check while the per-type machinery quietly
+# works. That is exactly what happened to `issue` - `sdlc-studio/issues/` was reconciled
+# by nothing but a transition-time `apply_type`. `_REPORT_ORDER` only fixes the reporting
+# order of the familiar types; a type absent from it is still censused, appended in
+# ARTIFACT_TYPES order. (archive.py derives its type list the same way.)
+_REPORT_ORDER = ("story", "epic", "cr", "rfc", "issue", "plan", "test-spec", "bug", "workflow")
+DEFAULT_TYPES = sorted(
+    sdlc_md.ARTIFACT_TYPES,
+    key=lambda t: (_REPORT_ORDER.index(t) if t in _REPORT_ORDER else len(_REPORT_ORDER), t),
+)
+
+# scope name -> artifact types it covers. The per-type scope names are NOT derivable from the
+# directory (`crs` -> change-requests), so they are spelled out; a sibling test asserts every
+# ARTIFACT_TYPES member is reachable by some scope, so adding a type without a scope reddens.
 SCOPE_TYPES = {
     "stories": ["story"],
     "epics": ["epic"],
     "crs": ["cr"],
     "rfcs": ["rfc"],
+    "issues": ["issue"],
     "plans": ["plan"],
     "test-specs": ["test-spec"],
     "bugs": ["bug"],
     "workflows": ["workflow"],
-    "indexes": ["story", "epic", "cr", "rfc", "plan", "test-spec", "bug", "workflow"],
+    "indexes": list(DEFAULT_TYPES),
     "meta": [],  # retros/ + reviews/ are checked by meta_index_drift, not the pipeline detectors
 }
-DEFAULT_TYPES = ["story", "epic", "cr", "rfc", "plan", "test-spec", "bug", "workflow"]
 
 # Every drift kind this module can emit into a report's `by_kind`, which feeds
 # sdlc_md.remediation_lines("reconcile", ...). This is reconcile's finding-kind
@@ -69,6 +85,7 @@ DRIFT_KINDS = (
     "undecomposed",
     "request-derivable",
     "linked-epics",
+    "stale-index-stamp",
 )
 
 # Statuses that do NOT imply a backing file yet. An UNLINKED index row in one of
@@ -477,6 +494,84 @@ def index_row_links(text: str) -> list[tuple[int, str, str]]:
     return out
 
 
+# --- Index freshness stamp ---------------------------------------------------------------
+# Every shipped index template opens with a `**Last Updated:**` date, and no writer maintained
+# it: an index could claim a freshness weeks older than rows it already carried while detect
+# reported no drift, because the stamp sat outside every check - a false assertion in the
+# ledger file agents are told to trust.
+#
+# The stamp is judged against the newest ROW date, never against the clock. A header behind its
+# own rows is false; a header ahead of them is simply an index nothing has been added to since.
+# Judged against today, every index in every project would re-drift at midnight and `apply`
+# would rewrite four files a day to say nothing new.
+_INDEX_STAMP_RE = re.compile(r"^(\s*\*\*Last Updated:\*\*\s*)(\d{4}-\d{2}-\d{2})\s*$")
+_ISO_DATE_RE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
+
+
+def index_stamp(lines: list) -> tuple[int, str] | None:
+    """(0-based line, date) of the index's `**Last Updated:**` header, else None. An index
+    that carries no stamp asserts no freshness, so it can never assert a false one."""
+    for i, line in enumerate(lines):
+        m = _INDEX_STAMP_RE.match(line)
+        if m:
+            return i, m.group(2)
+    return None
+
+
+def newest_row_date(text: str) -> str | None:
+    """The newest date in an index's data rows, read from the Updated column, else Created,
+    else Date - the three date headers the shipped index templates use (story/bug/epic carry
+    Created + Updated, change-request/RFC carry a single Date).
+
+    None when a data table declares none of them: the rows then date nothing, so there is
+    nothing for the stamp to be stale against. ISO dates sort as strings, so no date parsing
+    is needed - and a malformed cell simply does not match rather than raising."""
+    newest: str | None = None
+    for tbl in sdlc_md.iter_tables(text, header_predicate=lambda cells: any(
+            c.strip().lower() == "id" for c in cells)):
+        lowered = [c.strip().lower() for c in (tbl["header"] or [])]
+        col = next((lowered.index(name) for name in ("updated", "created", "date")
+                    if name in lowered), None)
+        if col is None:  # iter_tables yields EVERY table, not only the ones matching above
+            continue
+        for _ln, cells in tbl["rows"]:
+            if col >= len(cells):
+                continue
+            m = _ISO_DATE_RE.search(cells[col])
+            if m and (newest is None or m.group(1) > newest):
+                newest = m.group(1)
+    return newest
+
+
+def _stale_stamp_drift(type_: str, repo_root: Path) -> list[dict]:
+    """Drift for one index whose `**Last Updated:**` header predates its own newest row."""
+    rel = sdlc_md.ARTIFACT_TYPES[type_][0]
+    index_path = Path(repo_root) / rel / "_index.md"
+    if not index_path.exists():
+        return []
+    text = sdlc_md.read_text_safe(index_path)
+    stamp = index_stamp(text.splitlines())
+    newest = newest_row_date(text)
+    if stamp is None or newest is None or stamp[1] >= newest:
+        return []
+    return [{"type": type_, "id": None, "kind": "stale-index-stamp",
+             "file_status": None, "index_status": None,
+             "fix": (f"{rel}/_index.md claims Last Updated {stamp[1]} but carries rows dated "
+                     f"{newest} - run `reconcile apply` to restamp it from the rows")}]
+
+
+def _freshen_stamp(lines: list) -> str | None:
+    """Restamp a `**Last Updated:**` header that is behind the newest row date, in place.
+    Returns the date written, or None when there was nothing to correct (which is also the
+    steady state - so `apply` stays a fixed point instead of rewriting the file every run)."""
+    stamp = index_stamp(lines)
+    newest = newest_row_date("\n".join(lines))
+    if stamp is None or newest is None or stamp[1] >= newest:
+        return None
+    lines[stamp[0]] = _INDEX_STAMP_RE.sub(rf"\g<1>{newest}", lines[stamp[0]])
+    return newest
+
+
 def _index_files(type_: str, repo_root: Path) -> list[Path]:
     """The index files that carry this type's rows: the live `_index.md` plus any
     release sub-indexes under `<type>/archive/` (parse_index unions those rows into the
@@ -637,6 +732,8 @@ def detect_type(type_: str, repo_root: Path) -> dict:
                                {_norm_id(d["id"]) for d in dead})
     row_counts = _row_counts(rows, vocab)
     drift += _count_mismatch_drift(type_, census, index, row_counts, vocab, degenerate)
+    # The index's own freshness claim, checked like any other cell it asserts.
+    drift += _stale_stamp_drift(type_, repo_root)
 
     bloat = index_bloat_advisory(type_, repo_root, index)
     return {
@@ -2080,7 +2177,7 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False,
     vocab = sdlc_md.status_vocab(type_, repo_root)
     index_path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
     result: dict = {"changes": [], "unapplied": [], "counts_updated": False,
-                    "appended": [], "missing_unapplied": []}
+                    "appended": [], "missing_unapplied": [], "stamped": None}
     # CR0277: a missing index is now a MECHANICAL fix - `_seed_missing_index` creates it from the
     # template (recording the outcome on `result`); we bail only when it cannot/should not seed,
     # else fall through so the census rows are appended and counts recomputed.
@@ -2132,11 +2229,15 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False,
     if inserted:
         result["counts_updated"] = True
     result["summary_missing"] = unplaceable
+    # Last, and against the buffer as it will be written: a row appended above dates the index
+    # today, so the freshness stamp must be read after the rows settle, not before.
+    result["stamped"] = _freshen_stamp(lines)
     # Partition the planned status fixes by what the writer actually rewrote, so a row it
     # declined to touch is surfaced as unapplied rather than fabricated as a clean flip.
     for ch in planned:
         (result["changes"] if _norm_id(ch["id"]) in applied else result["unapplied"]).append(ch)
-    if (result["changes"] or result["counts_updated"] or result["pruned"]) and not dry_run:
+    if (result["changes"] or result["counts_updated"] or result["pruned"]
+            or result["stamped"]) and not dry_run:
         text = "\n".join(lines) + ("\n" if original.endswith("\n") else "")
         sdlc_md.atomic_write(index_path, text)
     return result
@@ -2157,6 +2258,10 @@ def index_derived_issues(repo_root: Path | str, types=None) -> list[str]:
             n = len(res.get("changes", [])) + len(res.get("appended", []))
             out.append(f"{t}: index not derived-consistent (apply would change "
                        f"{n} row(s)/counts) - regenerate with `reconcile apply`, do not hand-edit")
+        elif res.get("stamped"):
+            out.append(f"{t}: index Last Updated stamp is behind its own newest row "
+                       f"(apply would restamp it {res['stamped']}) - regenerate with "
+                       f"`reconcile apply`, do not hand-edit")
     return out
 
 
@@ -2395,6 +2500,11 @@ def cmd_apply(args: argparse.Namespace) -> int:
             n += 1
         if res["counts_updated"]:
             print(f"{'WOULD recompute' if args.dry_run else 'recomputed'} {type_} summary counts")
+        if res.get("stamped"):
+            # Announced, not silent: this rewrites the file, and an apply that reports
+            # "changed 0 row(s)" while editing five indexes is the mis-report class itself.
+            print(f"{'WOULD restamp' if args.dry_run else 'restamped'} {type_} index "
+                  f"Last Updated -> {res['stamped']}")
         for u in res["unapplied"]:
             # fail loud: a status the writer could not place in the row (off-schema/header-less)
             # is reported as needing a hand-edit, never as a landed change.

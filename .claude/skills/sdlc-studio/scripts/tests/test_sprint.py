@@ -7863,5 +7863,454 @@ class ApplySignoffRequestDerivationTests(unittest.TestCase):
             self.assertEqual(derived, [])
 
 
+# The hook shapes the policy is read against. Fragments, not the whole file: what is asserted
+# is that the mode is DERIVED from the hook rather than restated beside it, so a hook that
+# selects and a hook that always runs must produce different answers from the same reader.
+_HOOK_SELECTS = """#!/usr/bin/env bash
+relevance_out="$(python3 "$skill/gate.py" --root . --test-relevant)"
+case "$relevance_out" in *"test-relevant: yes"*) suites_needed=1 ;; esac
+python3 -m unittest discover -s tools/tests
+"""
+_HOOK_ALWAYS = """#!/usr/bin/env bash
+python3 -m unittest discover -s tools/tests
+"""
+_HOOK_NOTHING = """#!/usr/bin/env bash
+bash tools/lint-style.sh
+"""
+
+
+class _ExecutionPolicyFixture(unittest.TestCase):
+    """A repo carrying a declared execution policy, a measured baseline and a commit hook."""
+
+    def _repo(self, d, *, declared: dict | None = None, baseline: int | None = 317,
+              hook: str | None = _HOOK_SELECTS) -> Path:
+        root = Path(d)
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        cfg = ""
+        if declared:
+            cfg += "test_execution:\n" + "".join(f"  {k}: {v}\n" for k, v in declared.items())
+        if baseline is not None:
+            cfg += (f"gate_budget:\n  seconds: 380\n  baseline_seconds: {baseline}\n"
+                    f"  baseline_date: 2026-07-26\n")
+        (root / "sdlc-studio" / ".config.yaml").write_text(cfg or "{}\n", encoding="utf-8")
+        if hook is not None:
+            (root / ".githooks").mkdir(parents=True, exist_ok=True)
+            (root / ".githooks" / "pre-commit").write_text(hook, encoding="utf-8")
+        return root
+
+
+class TestStrategyPolicyTests(_ExecutionPolicyFixture):
+    """US0497: the plan-time strategy states the EXECUTION policy and its cost, not only the
+    proof each unit owes. The largest single cost in a sprint was set by a habit living in a
+    hook that nobody proposed and nobody signed off."""
+
+    def test_the_strategy_states_the_execution_policy_and_cost(self) -> None:
+        """AC1: the per-commit mode, the boundary runs, and an estimated cost for each."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            text = "\n".join(sprint.render_test_strategy(sprint.test_strategy(root, [])))
+        self.assertIn("per commit", text)
+        self.assertIn("at close", text)
+        self.assertIn("at release", text)
+        self.assertIn("317", text, "each moment is priced from the measured baseline")
+
+    def test_an_unmeasured_execution_cost_is_never_rendered_as_zero(self) -> None:
+        """A cost nobody measured, printed as 0, is the cheapest-looking lie a plan can tell."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, baseline=None)
+            pol = sprint.execution_policy(root)
+            text = "\n".join(sprint.render_execution_policy(pol))
+        self.assertFalse(pol["measured"])
+        self.assertIsNone(pol["cost_s"]["at_close"], "unknown is not zero")
+        self.assertIn("NOT MEASURED", text)
+
+    def test_a_policy_diverging_from_the_hook_is_reported(self) -> None:
+        """AC2: a declared policy the hook does not implement is named, in both directions."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, declared={"per_commit": "full"}, hook=_HOOK_SELECTS)
+            diverged = sprint.execution_policy(root)
+        self.assertIsNotNone(diverged["divergence"])
+        self.assertIn("full", diverged["divergence"])
+        self.assertIn("selected", diverged["divergence"])
+        self.assertIn("execution policy DIVERGES",
+                      "\n".join(sprint.render_execution_policy(diverged)))
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, declared={"per_commit": "selected"}, hook=_HOOK_SELECTS)
+            agreed = sprint.execution_policy(root)
+        self.assertIsNone(agreed["divergence"], "an agreeing hook reports no divergence")
+
+    def test_the_hook_mode_is_read_from_the_hook_not_restated_beside_it(self) -> None:
+        """Three different hooks must give three different answers, or the reader is a copy
+        of the rule rather than a measurement of it (LL0042)."""
+        sprint = _load()
+        modes = []
+        for hook in (_HOOK_SELECTS, _HOOK_ALWAYS, _HOOK_NOTHING, None):
+            with tempfile.TemporaryDirectory() as d:
+                root = self._repo(d, hook=hook)
+                modes.append(sprint.hook_per_commit_mode(root)["mode"])
+        self.assertEqual(modes, ["selected", "full", "none", "unknown"])
+
+    def test_an_unreadable_hook_is_unreconciled_never_agreement(self) -> None:
+        """A hook nobody can read has not been shown to agree with the declaration."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, declared={"per_commit": "selected"}, hook=None)
+            pol = sprint.execution_policy(root)
+        self.assertIsNotNone(pol["divergence"])
+        self.assertIn("UNRECONCILED", pol["divergence"])
+
+
+class TestStrategyPersistenceTests(_ExecutionPolicyFixture):
+    """US0498: a strategy that leaves no record is advice, not a plan. It is written with the
+    plan so it can be reviewed, signed off with the goal, and compared afterwards with what
+    actually ran."""
+
+    def _plan(self, root, *extra):
+        mod = _load()
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                unittest.mock.patch.object(sys, "stdin", io.StringIO("")):
+            rc = mod.main(["plan", "--bugs", "Open", "--no-fetch", "--root", str(root), *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_the_strategy_is_persisted_with_the_plan(self) -> None:
+        """AC1: the plan RECORD carries it, so it survives the terminal and can be read back."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, declared={"per_commit": "full"})
+            _bug(root, 1)
+            rc, _, _ = self._plan(root, "--write")
+            self.assertEqual(rc, 0)
+            plan = json.loads(
+                (root / "sdlc-studio" / ".local" / "sprint-plan.json").read_text())
+        self.assertIn("test_strategy", plan, "the plan record must carry the strategy")
+        strat = plan["test_strategy"]
+        self.assertEqual(strat["execution"]["declared"]["per_commit"], "full")
+        self.assertIn("units", strat, "the proof obligations travel with it")
+
+    def test_the_close_reads_back_the_recorded_strategy(self) -> None:
+        """AC2: what is judged at the close is what was agreed at the plan.
+
+        The recorded policy and the live config are deliberately DIFFERENT, so a close that
+        re-derived instead of reading back would answer `selected` and fail here."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, declared={"per_commit": "selected"})
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True, exist_ok=True)
+            (local / "sprint-plan.json").write_text(json.dumps({
+                "test_strategy": {"available": True, "areas": ["Unit Testing"], "units": {},
+                                  "gaps": [], "why": "",
+                                  "execution": {"declared": {"per_commit": "full"}}}}),
+                encoding="utf-8")
+            got = sprint.close_test_strategy(root, ["BG0001"])
+        self.assertEqual(got["source"], "recorded")
+        self.assertEqual(got["strategy"]["execution"]["declared"]["per_commit"], "full")
+
+    def test_a_run_with_no_recorded_strategy_says_it_re_derived_one(self) -> None:
+        """The honest degrade. A re-derivation is not what was agreed, and it is NAMED as a
+        re-derivation rather than presented as the plan's own strategy."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            got = sprint.close_test_strategy(root, [])
+        self.assertEqual(got["source"], "re-derived")
+        self.assertIn("not what was agreed", got["why"])
+
+    def test_the_CLOSE_states_which_strategy_it_judges_against(self) -> None:
+        """LANE test, not a library test (LL0040): deleting the call from `cmd_close` would
+        leave the three above green. The line is printed above every refusal, so a close that
+        stops later still states what it was judging against."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True, exist_ok=True)
+            (local / "run-state.json").write_text(json.dumps({
+                "run_id": "RUN-T", "batch": ["BG0001"], "outcome": "running",
+                "started_at": "2026-07-28T00:00:00+00:00"}), encoding="utf-8")
+            (local / "sprint-plan.json").write_text(json.dumps({
+                "test_strategy": {"available": True, "areas": [], "units": {}, "gaps": [],
+                                  "why": "", "execution": {"declared": {"per_commit": "full"}}}}),
+                encoding="utf-8")
+            args = argparse.Namespace(root=str(root), retro=None, goal_verdict=None, note=None,
+                                      file_and_close=False, apply_signoff=False,
+                                      principal=None, author=None)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                sprint.cmd_close(args)
+        self.assertIn("test strategy recorded", out.getvalue() + err.getvalue())
+
+
+def _stub_gate(lanes: list[tuple[str, str]], *, surface: str = "HASH"):
+    """A gate module that refuses on exactly `lanes`, printing the real gate's verdict shape.
+
+    Stubbed because the behaviour under test is what the CLOSE does with a refusal, not what
+    the gate decides - and a close driven against the real gate would be measuring the
+    fixture's artefact debt instead."""
+    mod = types.ModuleType("gate")
+
+    def main(argv=None):
+        for name, detail in lanes:
+            print(f"  [FAIL] {name}: {detail}")
+        print(f"gate: {'FAIL' if lanes else 'PASS'}")
+        return 1 if lanes else 0
+
+    mod.main = main
+    mod.surface_files = lambda root=".": []
+    mod.surface_hash = lambda root=".": surface
+    mod.calls = lanes
+    return mod
+
+
+class CloseSelfInvalidationTests(unittest.TestCase):
+    """US0500: `sprint close` writes the review anchor and the handoff, which leaves the
+    anchor uncommitted, which fails the review-current lane on the next attempt. RUN-01KYHVWK
+    took four attempts and about 16 minutes of test execution to record a decision already
+    made - the close chasing a target it was moving itself."""
+
+    def _repo(self, *, close_output: list[str] | None = None,
+              close_findings: list[dict] | None = None) -> Path:
+        import os
+        import time
+        d = Path(tempfile.mkdtemp(prefix="close_self_"))
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        (d / "sdlc-studio" / "reviews").mkdir(parents=True)
+        anchor = d / "sdlc-studio" / "reviews" / "LATEST.md"
+        anchor.write_text("# Reviews - LATEST (anchor)\n", encoding="utf-8")
+        old = time.time() - 7200
+        os.utime(anchor, (old, old))
+        (d / "sdlc-studio" / "stories").mkdir(parents=True)
+        (d / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
+            "# US0001: s\n\n> **Status:** Done\n", encoding="utf-8")
+        (d / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (d / "sdlc-studio" / "bugs" / "BG9001-filed.md").write_text(
+            "# BG9001: filed during the close\n\n> **Status:** Open\n", encoding="utf-8")
+        state = {"run_id": "RUN-SELF", "batch": ["US0001"], "outcome": "running",
+                 "started_at": "2026-07-28T09:00:00Z",
+                 "close_output": close_output or [],
+                 "close_findings": close_findings or []}
+        (d / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            json.dumps(state), encoding="utf-8")
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        return d
+
+    def _state(self, root) -> dict:
+        return json.loads(
+            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))
+
+    def _close_gate(self, sprint, root, lanes):
+        gate = _stub_gate(lanes)
+        out, err = io.StringIO(), io.StringIO()
+        with unittest.mock.patch.dict(sys.modules, {"gate": gate}), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            ok, detail, remedy = sprint._close_gate(root, "RETRO0001", self._state(root))
+        return ok, detail, remedy
+
+    def test_the_close_output_does_not_fail_its_own_review_lane(self) -> None:
+        """AC1: the anchor, the handoff and the close's other output are recognised as its
+        own and do not make the review stale."""
+        sprint = _load()
+        own = ["sdlc-studio/reviews/LATEST.md", "sdlc-studio/bugs/BG9001-filed.md",
+               "sdlc-studio/stories/US0001-x.md"]
+        root = self._repo(close_output=own)
+        currency = sprint.close_review_currency(root, self._state(root))
+        self.assertTrue(currency["self_caused"])
+        self.assertEqual(currency["stale"], [], "nothing but the close's own output is newer")
+        ok, detail, _ = self._close_gate(
+            sprint, root, [("review-current", "reviews/LATEST.md is stale - 3 artefact(s) "
+                                              "changed since the last review")])
+        self.assertTrue(ok, "the close must not refuse itself for the paperwork it just wrote")
+        self.assertIn("created by this close", detail)
+
+    def test_a_finding_filed_during_the_close_is_carried(self) -> None:
+        """AC2: filing an honest finding during a close is the behaviour the doctrine asks
+        for, and it must not cost another full gate."""
+        sprint = _load()
+        root = self._repo(close_output=["sdlc-studio/reviews/LATEST.md",
+                                        "sdlc-studio/stories/US0001-x.md"])
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            sprint.record_close_finding(root, "BG9001", "sdlc-studio/bugs/BG9001-filed.md")
+        state = self._state(root)
+        self.assertIn("sdlc-studio/bugs/BG9001-filed.md",
+                      sprint.close_own_output(root, state))
+        self.assertTrue(sprint.close_review_currency(root, state)["self_caused"],
+                        "a finding the close filed is not unreviewed work against that close")
+        carried = sprint.carried_close_findings(root, state)
+        self.assertEqual([c["id"] for c in carried], ["BG9001"])
+        self.assertIn("CARRIED into the next run", sprint.carried_findings_line(carried) or "")
+        self.assertEqual(sprint.carried_findings_line([]), "",
+                         "a close that filed nothing says nothing")
+
+    def test_a_real_blocker_still_refuses_and_is_named_as_such(self) -> None:
+        """AC3: a correctness failure in the batch still refuses, and the message says which
+        blockers are in the work and which the close made for itself."""
+        sprint = _load()
+        root = self._repo(close_output=["sdlc-studio/reviews/LATEST.md",
+                                        "sdlc-studio/bugs/BG9001-filed.md",
+                                        "sdlc-studio/stories/US0001-x.md"])
+        ok, detail, remedy = self._close_gate(
+            sprint, root, [("conformance", "US0001: missing critiqued evidence"),
+                           ("review-current", "reviews/LATEST.md is stale")])
+        self.assertFalse(ok, "a blocker in the work is never waved through")
+        self.assertIn("in the WORK", detail)
+        self.assertIn("conformance", detail)
+        self.assertTrue(remedy)
+
+    def test_a_stale_artefact_the_close_did_not_write_still_refuses(self) -> None:
+        """The discriminating case for AC1: register only the anchor, and the story that
+        genuinely changed keeps the lane red."""
+        sprint = _load()
+        root = self._repo(close_output=["sdlc-studio/reviews/LATEST.md"])
+        currency = sprint.close_review_currency(root, self._state(root))
+        self.assertFalse(currency["self_caused"])
+        self.assertTrue(currency["stale"])
+        ok, detail, _ = self._close_gate(
+            sprint, root, [("review-current", "reviews/LATEST.md is stale")])
+        self.assertFalse(ok)
+        self.assertIn("in the WORK", detail)
+
+    def test_an_unattributable_refusal_is_never_called_self_inflicted(self) -> None:
+        """A gate whose verdict this cannot parse has not been shown to be the close's own
+        fault, and a refusal wrongly labelled self-inflicted is one that gets walked past."""
+        sprint = _load()
+        root = self._repo(close_output=["sdlc-studio/reviews/LATEST.md",
+                                        "sdlc-studio/bugs/BG9001-filed.md",
+                                        "sdlc-studio/stories/US0001-x.md"])
+        gate = _stub_gate([])
+        gate.main = lambda argv=None: (print("gate blew up in a shape nobody parses"), 1)[1]
+        out, err = io.StringIO(), io.StringIO()
+        with unittest.mock.patch.dict(sys.modules, {"gate": gate}), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            ok, detail, _ = sprint._close_gate(root, "RETRO0001", self._state(root))
+        self.assertFalse(ok)
+        self.assertIn("could not be attributed", detail)
+
+
+class CloseRetryTests(unittest.TestCase):
+    """US0501: RUN-01KYHVWK's close took four attempts, each paying a full gate, to record a
+    decision already made. A retry over an unchanged test-relevant surface reuses the verdict
+    it already earned; a retry after a real change never does."""
+
+    #: The surface the stub gate reports. The anchor is in it deliberately: the close writes
+    #: that file itself, and excluding it is what makes a retry read as unchanged.
+    SURFACE = ("src/code.py", "sdlc-studio/reviews/LATEST.md")
+
+    def _repo(self) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="close_retry_"))
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        (d / "sdlc-studio" / "reviews").mkdir(parents=True)
+        (d / "sdlc-studio" / "reviews" / "LATEST.md").write_text("# anchor\n", encoding="utf-8")
+        (d / "src").mkdir()
+        (d / "src" / "code.py").write_text("x = 1\n", encoding="utf-8")
+        (d / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
+            "run_id": "RUN-RETRY", "batch": ["US0001"], "outcome": "running",
+            "started_at": "2026-07-28T09:00:00Z",
+            "close_output": ["sdlc-studio/reviews/LATEST.md"]}), encoding="utf-8")
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        return d
+
+    def _gate(self, calls: list, rc: int = 0):
+        mod = types.ModuleType("gate")
+
+        def main(argv=None):
+            calls.append(list(argv or []))
+            print("gate: PASS" if rc == 0 else "  [FAIL] conformance: red\ngate: FAIL")
+            return rc
+
+        mod.main = main
+        mod.surface_files = lambda root=".": list(self.SURFACE)
+        return mod
+
+    def _attempt(self, sprint, root, gate):
+        state = json.loads(
+            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))
+        with unittest.mock.patch.dict(sys.modules, {"gate": gate}), \
+                contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()):
+            return sprint._close_gate(root, "RETRO0001", state)
+
+    def test_a_retry_over_an_unchanged_surface_reuses_the_verdict(self) -> None:
+        """AC1: four attempts at a close cost one gate run, not four - and the close's own
+        paperwork, written between the attempts, does not count as a change."""
+        sprint = _load()
+        root = self._repo()
+        calls: list = []
+        gate = self._gate(calls)
+        ok, first, _ = self._attempt(sprint, root, gate)
+        self.assertTrue(ok)
+        self.assertEqual(len(calls), 1)
+        self.assertNotIn("REUSED", first)
+        # The close stamps its own anchor between attempts - the exact write that made the
+        # review stale and cost RUN-01KYHVWK three further gates.
+        (root / "sdlc-studio" / "reviews" / "LATEST.md").write_text(
+            "# anchor\n\nstamped by the close\n", encoding="utf-8")
+        ok, second, _ = self._attempt(sprint, root, gate)
+        self.assertTrue(ok)
+        self.assertEqual(len(calls), 1, "the retry must not pay for a second gate run")
+        self.assertIn("REUSED", second)
+
+    def test_a_retry_after_a_change_reruns_the_gate(self) -> None:
+        """AC2: the reuse can never mask work done between attempts."""
+        sprint = _load()
+        root = self._repo()
+        calls: list = []
+        gate = self._gate(calls)
+        self._attempt(sprint, root, gate)
+        self.assertEqual(len(calls), 1)
+        (root / "src" / "code.py").write_text("x = 2\n", encoding="utf-8")
+        ok, detail, _ = self._attempt(sprint, root, gate)
+        self.assertTrue(ok)
+        self.assertEqual(len(calls), 2, "a changed surface pays for the gate again")
+        self.assertNotIn("REUSED", detail)
+
+    def test_a_red_verdict_is_never_reused(self) -> None:
+        """A recorded refusal is not a verdict worth saving anyone a run: the surface that
+        earned it is exactly the surface that must be re-judged."""
+        sprint = _load()
+        root = self._repo()
+        calls: list = []
+        red = self._gate(calls, rc=1)
+        ok, _, _ = self._attempt(sprint, root, red)
+        self.assertFalse(ok)
+        self.assertEqual(len(calls), 1)
+        ok, detail, _ = self._attempt(sprint, root, red)
+        self.assertEqual(len(calls), 2, "a red verdict is re-run, never reused")
+        self.assertNotIn("REUSED", detail)
+
+    def test_an_unhashable_surface_runs_rather_than_reuses(self) -> None:
+        """None is UNKNOWN, never `unchanged`. A cache that answered skip on a thing not known
+        would be the false-green class the whole gate exists to refuse."""
+        sprint = _load()
+        root = self._repo()
+        calls: list = []
+        gate = self._gate(calls)
+        self._attempt(sprint, root, gate)
+        broken = self._gate(calls)
+        def _boom(root="."):
+            raise OSError("the surface cannot be listed")
+        broken.surface_files = _boom
+        ok, detail, _ = self._attempt(sprint, root, broken)
+        self.assertEqual(len(calls), 2, "an unknown surface pays in full")
+        self.assertNotIn("REUSED", detail)
+
+    def test_every_gate_run_is_recorded_in_the_execution_ledger(self) -> None:
+        """The close's own runs are the half of the execution actuals the close can measure;
+        without the record the retro reports the cost as uncaptured."""
+        sprint = _load()
+        root = self._repo()
+        calls: list = []
+        gate = self._gate(calls)
+        self._attempt(sprint, root, gate)
+        self._attempt(sprint, root, gate)
+        rows = sprint.read_execution_ledger(root)
+        self.assertEqual([r["mode"] for r in rows], ["full", "reuse"])
+        self.assertEqual(rows[0]["moment"], "close")
+        self.assertIsNotNone(rows[0]["seconds"])
+        self.assertEqual(rows[1]["reused_from"], rows[0]["at"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -166,6 +166,22 @@ HALF_EVIDENCE = "adversarial-pass evidence"
 HALF_SIGNOFF = "reviewer-of-record sign-off"
 
 
+def two_role_applies_to(rid: str, two_role_cutoff: int | None) -> bool:
+    """Whether the two-role review requirement covers this unit.
+
+    `review.two_role_after` is a SEQUENTIAL cutoff, and `id_number` has no number to give for
+    a v3 short-ULID id. Treating that None as "before the cutoff" stood the gate down for
+    every ULID unit - the newest work in the workspace, and precisely what a forward-only
+    cutoff exists to cover. An unnumbered id is by construction later than any sequential
+    one, so it fails CLOSED: no number means the gate applies. Unset cutoff still means the
+    requirement applies to nobody, so a project that never configured it is untouched.
+    """
+    if two_role_cutoff is None:
+        return False
+    rid_num = sdlc_md.id_number(rid)
+    return rid_num is None or rid_num > two_role_cutoff
+
+
 def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
                  two_role_cutoff=None, critic_required=True, dead_stamps=0) -> tuple:
     """The four Done-only conformance stages (verified, reconciled, critiqued, documented),
@@ -212,9 +228,7 @@ def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
     # subagent - re-checked here as the backstop to record_signoff's write-time
     # refusal). Forward-only: pre-cutoff units and projects without the config keep
     # today's behaviour byte-for-byte.
-    rid_num = sdlc_md.id_number(rid)
-    two_role_applies = (two_role_cutoff is not None and rid_num is not None
-                        and rid_num > two_role_cutoff)
+    two_role_applies = two_role_applies_to(rid, two_role_cutoff)
     evidence_half = signoff_half = True
     if two_role_applies:
         # The evidence half is satisfied by a per-unit adversarial pass OR a sprint-level
@@ -404,9 +418,7 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
             # `critiqued` stays required while EITHER half applies: the two-role
             # requirement (an armed cutoff) survives a critic-approve downgrade -
             # dropping one tag must never disarm both.
-            rid_num_ = sdlc_md.id_number(rid)
-            two_role_applies = (two_role_cutoff is not None and rid_num_ is not None
-                                and rid_num_ > two_role_cutoff)
+            two_role_applies = two_role_applies_to(rid, two_role_cutoff)
             if not critic_required and not two_role_applies:
                 required.remove("critiqued")
         if scoped_out:

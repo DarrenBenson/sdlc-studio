@@ -1,6 +1,6 @@
 # US0496: The gate reports its own cost per run against a budget, so a regression in gate time is as visible as a regression in behaviour
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0451
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

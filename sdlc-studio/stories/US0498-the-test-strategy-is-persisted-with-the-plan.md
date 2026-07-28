@@ -1,6 +1,6 @@
 # US0498: The test strategy is persisted with the plan and read back at close, so it can be reviewed, signed off and compared with what ran
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0453
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

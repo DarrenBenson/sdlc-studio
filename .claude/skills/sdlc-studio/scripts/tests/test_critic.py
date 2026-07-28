@@ -1522,8 +1522,12 @@ def _norm(text: str) -> str:
 
 
 class ReviewerBriefTests(unittest.TestCase):
-    """US0318 (EP0108): the shipped reviewer brief carries the three standing practices, each
-    with its reason, and a brief missing any is refused; reference-review.md documents them."""
+    """US0318 (EP0108): the shipped reviewer brief carries every standing practice, each
+    with its reason, and a brief missing any is refused; reference-review.md documents them.
+
+    The set has since grown (US0505 added regression cover for a repair), so nothing here
+    hardcodes how many there are - the count comes from `_BRIEF_PRACTICES` itself. The method
+    name is kept because a shipped Verify line resolves to it."""
 
     def _brief(self, mod, root: Path) -> str:
         _workspace(root)
@@ -1534,7 +1538,7 @@ class ReviewerBriefTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             text = self._brief(mod, root)
-            # the shipped brief carries all three practices, each with its reason
+            # the shipped brief carries every practice, each with its reason
             self.assertEqual(mod.missing_practices(text), [])
             mod.assert_brief_practices(text)  # does not raise
             # strip each practice's instruction in turn: the guard names it missing and refuses
@@ -1548,12 +1552,15 @@ class ReviewerBriefTests(unittest.TestCase):
             reasonless = ("On a REPAIR review, rule each previous finding CLOSED, OVER-CLAIMED "
                           "or MOVED. Mutate the author's TESTS, not only the code. When a mutant "
                           "SURVIVES, re-test its branch in ISOLATION before drawing any "
-                          "conclusion from it.")
-            self.assertEqual(len(mod.missing_practices(reasonless)), 3,
+                          "conclusion from it. A repair that changes behaviour carries a test "
+                          "asserting that behaviour; where it does not, report the missing "
+                          "regression cover as a finding.")
+            self.assertEqual(len(mod.missing_practices(reasonless)), len(mod._BRIEF_PRACTICES),
                              "instructions with no reasons must all count as missing")
-            # reference-review.md documents all three, so the shipped doc and the code agree
+            # reference-review.md documents every one, so the shipped doc and the code agree
             doc = _norm(REFERENCE_REVIEW.read_text(encoding="utf-8"))
-            for token in ("CLOSED", "OVER-CLAIMED", "MOVED", "author's TESTS", "isolation"):
+            for token in ("CLOSED", "OVER-CLAIMED", "MOVED", "author's TESTS", "isolation",
+                          "regression cover"):
                 self.assertIn(token, doc)
 
     def test_the_survivor_instruction_requires_isolation_before_a_conclusion(self) -> None:

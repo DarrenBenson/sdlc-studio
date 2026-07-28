@@ -299,37 +299,65 @@ def build_index(root: Path, ignores: set[str]) -> dict[str, FileEntry]:
     return entries
 
 
-def compute_in_degree(entries: dict[str, FileEntry]) -> None:
-    """Set in_degree on each entry based on how many other files import it.
-
-    Imports are resolved heuristically: we match import substrings against
-    file paths. Exact matches score higher than partial ones. This is
-    intentionally crude because a regex indexer cannot do real module
-    resolution; the point is to find hub files, not build a call graph.
-    """
-    if not entries:
-        return
-
-    # Build a simple index of basename -> paths for fast import matching
+def basename_index(paths: Iterable[str]) -> dict[str, list[str]]:
+    """stem and filename -> the indexed paths carrying them, for import matching."""
     basenames: dict[str, list[str]] = {}
-    for path in entries:
+    for path in paths:
         name = os.path.basename(path)
         stem = os.path.splitext(name)[0]
         basenames.setdefault(stem, []).append(path)
         basenames.setdefault(name, []).append(path)
+    return basenames
 
+
+def import_candidates(imp: str, basenames: dict[str, list[str]]) -> list[str]:
+    """The indexed paths an import statement may name.
+
+    Deliberately crude - a regex indexer cannot do real module resolution - and ONE
+    definition, because every reader of this graph (the hub score, the gate's test
+    selection) must resolve an import the same way. Two rules become two answers, and
+    a selection that resolved differently from the index it claims to read would narrow
+    a test run on edges the index does not have.
+    """
+    imp_clean = imp.strip("\"'").rstrip(".")      # quotes, trailing dots
+    if imp_clean.startswith("./"):
+        imp_clean = imp_clean[2:]
+    tail = os.path.basename(imp_clean)
+    tail_stem = os.path.splitext(tail)[0]
+    return basenames.get(tail_stem) or basenames.get(tail) or []
+
+
+def dependents_index(imports_by_path: dict[str, list[str]]) -> dict[str, set[str]]:
+    """path -> the set of indexed paths that import it (one hop).
+
+    Takes a plain path -> imports mapping so it reads a built index and a serialised
+    `repo-map.json` alike, and resolves through `import_candidates`, so the reverse graph
+    is the same graph the in-degree score is computed from.
+    """
+    basenames = basename_index(imports_by_path)
+    out: dict[str, set[str]] = {path: set() for path in imports_by_path}
+    for importer, imports in imports_by_path.items():
+        for imp in imports or []:
+            for cand in import_candidates(imp, basenames):
+                if cand != importer:
+                    out.setdefault(cand, set()).add(importer)
+    return out
+
+
+def compute_in_degree(entries: dict[str, FileEntry]) -> None:
+    """Set in_degree on each entry based on how many other files import it.
+
+    Imports are resolved heuristically (see `import_candidates`): we match import
+    substrings against file paths. This is intentionally crude because a regex indexer
+    cannot do real module resolution; the point is to find hub files, not build a call
+    graph.
+    """
+    if not entries:
+        return
+    basenames = basename_index(entries)
     for importer, entry in entries.items():
         for imp in entry.imports:
-            # Strip quotes, a single leading './', and trailing dots
-            imp_clean = imp.strip("\"'").rstrip(".")
-            if imp_clean.startswith("./"):
-                imp_clean = imp_clean[2:]
-            tail = os.path.basename(imp_clean)
-            tail_stem = os.path.splitext(tail)[0]
-            candidates = basenames.get(tail_stem) or basenames.get(tail)
-            if not candidates:
-                continue
-            for cand in candidates:
+            for cand in import_candidates(imp, basenames):
                 if cand != importer:
                     entries[cand].in_degree += 1
 

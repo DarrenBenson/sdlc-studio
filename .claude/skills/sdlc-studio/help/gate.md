@@ -68,6 +68,50 @@ python3 "$CLAUDE_SKILL_DIR/scripts/conformance.py" check --changed
 python3 "$CLAUDE_SKILL_DIR/scripts/validate.py" check --changed
 ```
 
+## When the whole suite runs, and when a selection does
+
+The unit suites are the expensive half of the gate, and the price and the risk are not the
+same at every moment. A wrong answer inside a working tree costs one more commit; a wrong
+answer past a push or a tag is out of your hands and somebody else's to unwind. So the full
+suite is confined to a **boundary**, and everywhere else the gate runs what the change can
+reach.
+
+| Moment | What runs | Why |
+| --- | --- | --- |
+| A commit | the tests the changed files reach | the answer is cheap to correct, and a five-minute wait per commit is what trains people to batch commits or reach for `--no-verify` |
+| A **push** | everything | the change is leaving your tree |
+| A **release** | everything | a tag is a claim other people rely on |
+| A sprint **close** | everything | the close is the moment the batch is declared done |
+
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --suite-decision                  # what a commit owes
+python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --suite-decision --boundary push  # what a push owes
+SDLC_GATE_BOUNDARY=release python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --suite-decision
+```
+
+`--suite-decision` prints a `suite-decision: run|skip` sentinel, the `suite-mode:` it chose
+(`reuse`, `selected` or `full`), and one `suite-selector:` line per test module a selective run
+needs. It exits 0 when a run is owed. Set the boundary with `--boundary` or with the
+`SDLC_GATE_BOUNDARY` environment variable, for a push step that runs the gate through a
+wrapper. An unrecognised boundary is **refused**, never downgraded to the cheap path: a caller
+who asked for everything and silently got a selection would be wrong about their coverage.
+
+Three rules keep this from becoming a way to test less:
+
+- **An unchanged surface reuses the last green verdict.** The test-relevant surface is hashed
+  by content, so consecutive paperwork commits and a retried close cost nothing. Record a
+  verdict with `--record-suite-verdict RUN-xxxx` (`--status red` for a failure, which is never
+  reused). Every unknown - an absent, unreadable or malformed record, a red one, a surface that
+  cannot be hashed - runs the suites. A broken cache degrades to the slow answer, never to a
+  false green.
+- **A selection reports what it excluded.** The selected set comes from the import graph the
+  repo map builds, plus the paths each suite module is measured to read. A changed file that
+  neither route resolves runs **everything** and says why, and a selection that reaches no test
+  at all runs everything too - a run of nothing is not a pass.
+- **Selection trades when the coverage is paid, never whether.** A green earned by a selected
+  run is evidence about the tests that ran, so a boundary declines it and runs the full suite
+  anyway.
+
 ## `--release`: the one command before a tag
 
 The pre-tag ritual is otherwise two commands - the gate, plus a separate verify run whose exit

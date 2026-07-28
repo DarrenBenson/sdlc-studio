@@ -1,6 +1,6 @@
 # US0497: The plan-time test strategy states the execution policy - what runs per commit, at close and at release, with its estimated cost
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0453
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

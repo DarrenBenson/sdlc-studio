@@ -195,6 +195,14 @@ WRITER_CASES: dict[str, WriterCase] = {
         argv=("extract", "--id", "RETRO0001"),
         local_target="sdlc-studio/.local/lessons.md",
     ),
+    "gate.py": WriterCase(
+        # The gate is otherwise read-only by design (a pre-commit hook runs it). Its two
+        # writes are runtime state under `.local/`: the suite verdict an unchanged surface
+        # reuses, and the cost baseline the next run states its direction against. Neither
+        # may reach a tracked file - a gate that edits the tree it is judging is not a gate.
+        argv=("--record-suite-verdict", "RUN-PROBE"),
+        local_target="sdlc-studio/.local/gate-suite-verdict.json",
+    ),
     "sprint.py": WriterCase(
         argv=("plan", "--write", "--stories", "Ready", "--no-fetch",
               "--sprint-goal", "probe the confinement"),

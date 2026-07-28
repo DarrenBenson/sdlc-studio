@@ -2976,5 +2976,234 @@ class AlreadyDeliveredAdvisoryTests(unittest.TestCase):
             self.assertEqual(reconcile.already_delivered_advisory(root), [])
 
 
+class EveryArtifactTypeIsCensusedTests(unittest.TestCase):
+    """BG0330: the type lists were hand-written and omitted `issue`, so `sdlc-studio/issues/`
+    was censused by NO path - detect, apply, the index-derived check and the commit gate all
+    swept eight of the nine artefact types. The per-type machinery already handled it
+    (`detect_type("issue", ...)` returned the right drift); nothing ever called it, so
+    status-mismatch, missing-row, orphan-row and count drift in that index were exempt from
+    every automated check.
+
+    The two list guards below are the ones that hold for a FUTURE type as well: they compare
+    against `sdlc_md.ARTIFACT_TYPES`, so re-hardcoding either list reddens them.
+    """
+
+    IDX = ("# Issues\n\n"
+           "| Status | Count |\n| --- | --- |\n| Open | 1 |\n| **Total** | **1** |\n\n"
+           "| ID | Title | Status |\n| --- | --- | --- |\n"
+           "| [IS0001](IS0001-thing.md) | Thing | Open |\n")
+
+    def _repo(self, d: str) -> Path:
+        root = Path(d)
+        di = root / "sdlc-studio" / "issues"
+        di.mkdir(parents=True)
+        (di / "IS0001-thing.md").write_text("# IS0001: Thing\n\n> **Status:** Triaging\n",
+                                            encoding="utf-8")
+        (di / "_index.md").write_text(self.IDX, encoding="utf-8")
+        return root
+
+    def test_default_sweep_covers_every_artifact_type(self) -> None:
+        self.assertEqual(set(reconcile.DEFAULT_TYPES),
+                         set(reconcile.sdlc_md.ARTIFACT_TYPES))
+
+    def test_every_artifact_type_is_reachable_by_a_scope(self) -> None:
+        covered = {t for types in reconcile.SCOPE_TYPES.values() for t in types}
+        self.assertEqual(covered, set(reconcile.sdlc_md.ARTIFACT_TYPES))
+        self.assertEqual(set(reconcile.SCOPE_TYPES["indexes"]),
+                         set(reconcile.sdlc_md.ARTIFACT_TYPES))
+
+    def test_default_detect_reports_issue_index_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = reconcile.main(["detect", "--root", str(root)])
+            self.assertEqual(rc, 1, buf.getvalue())
+            self.assertIn("IS0001", buf.getvalue())
+
+    def test_the_issues_scope_selects_the_issue_type(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = reconcile.main(["detect", "--scope", "issues", "--root", str(root)])
+            self.assertEqual(rc, 1, buf.getvalue())
+            self.assertIn("IS0001", buf.getvalue())
+
+    def test_default_apply_reconciles_the_issue_index(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            with contextlib.redirect_stdout(io.StringIO()):
+                reconcile.main(["apply", "--root", str(root)])
+            text = (root / "sdlc-studio" / "issues" / "_index.md").read_text(encoding="utf-8")
+            self.assertIn("Triaging", text)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(reconcile.main(["detect", "--root", str(root)]), 0)
+
+    def test_index_derived_check_covers_the_issues_index(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            self.assertTrue(any(x.startswith("issue:")
+                                for x in reconcile.index_derived_issues(root)),
+                            reconcile.index_derived_issues(root))
+
+
+class StaleIndexStampTests(unittest.TestCase):
+    """BG0342: an index's `**Last Updated:**` header is an assertion nothing maintained.
+
+    Every artefact index carries the stamp and every writer ignored it, so all four indexes
+    claimed a freshness weeks older than rows they already held - and `detect` said
+    drift_items=0, because the stamp sat outside every check. The stamp is judged against the
+    newest row date (never against the clock): a header behind its own rows is false, a header
+    ahead of them is simply an index nothing has added to since.
+    """
+
+    def _repo(self, d: str, stamp: str | None = "2026-06-20",
+              updated: str = "2026-07-27") -> Path:
+        root = Path(d)
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        (sd / "US0001-login.md").write_text("# US0001: Login\n\n> **Status:** Done\n",
+                                            encoding="utf-8")
+        header = f"**Last Updated:** {stamp}\n\n" if stamp else ""
+        (sd / "_index.md").write_text(
+            "# Story Index\n\n" + header
+            + "| Status | Count |\n| --- | --- |\n| Done | 1 |\n| **Total** | **1** |\n\n"
+            "| ID | Title | Status | Created | Updated |\n| --- | --- | --- | --- | --- |\n"
+            f"| [US0001](US0001-login.md) | Login | Done | 2026-07-01 | {updated} |\n",
+            encoding="utf-8")
+        return root
+
+    def _kinds(self, root: Path) -> set:
+        return {x["kind"] for x in reconcile.detect_type("story", root)["drift"]}
+
+    def test_detect_flags_a_stamp_older_than_the_newest_row(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            self.assertIn("stale-index-stamp", self._kinds(root))
+
+    def test_the_finding_names_both_dates(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            fix = next(x["fix"] for x in reconcile.detect_type("story", root)["drift"]
+                       if x["kind"] == "stale-index-stamp")
+            self.assertIn("2026-06-20", fix)
+            self.assertIn("2026-07-27", fix)
+
+    def test_a_current_stamp_is_not_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, stamp="2026-07-27")
+            self.assertEqual(self._kinds(root), set())
+
+    def test_a_stamp_ahead_of_the_rows_is_not_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, stamp="2026-08-01")
+            self.assertEqual(self._kinds(root), set())
+
+    def test_an_index_with_no_stamp_asserts_nothing_and_is_not_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, stamp=None)
+            self.assertEqual(self._kinds(root), set())
+
+    def test_a_single_date_column_index_is_checked_too(self) -> None:
+        # change-requests and RFCs carry one `Date` column, not Created + Updated. Reading
+        # only the story shape exempted two of the four indexes the bug was filed over.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cd = root / "sdlc-studio" / "change-requests"
+            cd.mkdir(parents=True)
+            (cd / "CR0001-c.md").write_text("# CR0001: c\n\n> **Status:** Complete\n",
+                                            encoding="utf-8")
+            (cd / "_index.md").write_text(
+                "# Change Request Index\n\n**Last Updated:** 2026-07-04\n\n"
+                "| Status | Count |\n| --- | --- |\n| Complete | 1 |\n| **Total** | **1** |\n\n"
+                "| ID | Title | Status | Priority | Type | Date | Linked Epics |\n"
+                "| --- | --- | --- | --- | --- | --- | --- |\n"
+                "| [CR0001](CR0001-c.md) | c | Complete | Medium | Improvement "
+                "| 2026-07-27 | -- |\n", encoding="utf-8")
+            kinds = {x["kind"] for x in reconcile.detect_type("cr", root)["drift"]}
+            self.assertIn("stale-index-stamp", kinds)
+            reconcile.apply_type("cr", root)
+            self.assertIn("**Last Updated:** 2026-07-27",
+                          (cd / "_index.md").read_text(encoding="utf-8"))
+
+    def test_apply_restamps_the_header_from_the_newest_row(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            res = reconcile.apply_type("story", root)
+            self.assertEqual(res["stamped"], "2026-07-27")
+            idx = root / "sdlc-studio" / "stories" / "_index.md"
+            self.assertIn("**Last Updated:** 2026-07-27", idx.read_text(encoding="utf-8"))
+            self.assertNotIn("stale-index-stamp", self._kinds(root))
+
+    def test_apply_dry_run_reports_the_restamp_without_writing_it(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            idx = root / "sdlc-studio" / "stories" / "_index.md"
+            before = idx.read_text(encoding="utf-8")
+            res = reconcile.apply_type("story", root, dry_run=True)
+            self.assertEqual(res["stamped"], "2026-07-27")
+            self.assertEqual(idx.read_text(encoding="utf-8"), before)
+
+    def test_restamping_settles_it_is_not_re_applied_every_run(self) -> None:
+        # The stamp is derived from the rows, never from today, so a second apply is a
+        # no-op - a clock-stamped header would re-drift the index every single day.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            reconcile.apply_type("story", root)
+            idx = root / "sdlc-studio" / "stories" / "_index.md"
+            after = idx.read_text(encoding="utf-8")
+            res2 = reconcile.apply_type("story", root)
+            self.assertIsNone(res2["stamped"])
+            self.assertEqual(idx.read_text(encoding="utf-8"), after)
+            self.assertEqual(reconcile.index_derived_issues(root, ["story"]), [])
+
+    def test_the_derived_index_gate_sees_a_stale_stamp(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            self.assertTrue(any(x.startswith("story:")
+                                for x in reconcile.index_derived_issues(root, ["story"])),
+                            reconcile.index_derived_issues(root, ["story"]))
+
+    def test_detect_exits_non_zero_on_a_stale_stamp(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = reconcile.main(["detect", "--scope", "stories", "--root", str(root)])
+            self.assertEqual(rc, 1, buf.getvalue())
+            self.assertIn("stale-index-stamp", buf.getvalue())
+
+    def test_apply_announces_the_restamp_it_is_about_to_make(self) -> None:
+        # An apply that says "changed 0 row(s)" while rewriting the file is the mis-report
+        # class this whole sweep exists to kill.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                reconcile.main(["apply", "--scope", "stories", "--root", str(root),
+                                "--dry-run"])
+            self.assertIn("WOULD restamp", buf.getvalue())
+            self.assertIn("2026-07-27", buf.getvalue())
+
+    def test_a_row_insert_leaves_the_index_freshly_stamped(self) -> None:
+        # The one call site that matters: every mint (artifact.py, file_finding.py,
+        # triage_noise.py) appends its row through append_index_row, which finishes by
+        # calling apply_type - so a new row must not leave the header behind.
+        sys.path.insert(0, str(SCRIPT_PATH.parent))
+        import file_finding
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, stamp="2026-07-27")
+            sd = root / "sdlc-studio" / "stories"
+            (sd / "US0002-logout.md").write_text("# US0002: Logout\n\n> **Status:** Draft\n",
+                                                 encoding="utf-8")
+            self.assertTrue(file_finding.append_index_row(
+                root, "story",
+                "| [US0002](US0002-logout.md) | Logout | Draft | 2026-07-28 | 2026-07-28 |"))
+            self.assertIn("**Last Updated:** 2026-07-28",
+                          (sd / "_index.md").read_text(encoding="utf-8"))
+            self.assertNotIn("stale-index-stamp", self._kinds(root))
+
+
 if __name__ == "__main__":
     unittest.main()

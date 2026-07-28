@@ -3497,15 +3497,312 @@ def _close_lessons_summary(root, retro_id, state):
     return True, "lessons summary regenerated", ""
 
 
+# ---------------------------------------------------------------------------
+# The close must stop invalidating itself
+# ---------------------------------------------------------------------------
+# `sprint close` writes the review anchor and the handoff, which makes them newer than the
+# anchor's last review, which fails the review-currency lane on the next attempt. Committing
+# that paperwork is another change, so the close chases a target it is moving itself:
+# RUN-01KYHVWK took four attempts and about sixteen minutes of test execution to record a
+# decision that had already been made. Filing a finding DURING the close did the same, which
+# punishes exactly the honest behaviour the doctrine asks for.
+#
+# The fix is attribution, not amnesty. An artefact the close WROTE is not unreviewed work
+# against that same close; anything else still refuses, and the refusal says which is which.
+
+#: Where the paths a close wrote are recorded on the run state.
+CLOSE_OUTPUT_KEY = "close_output"
+
+#: Where findings filed DURING a close are recorded, to be carried into the next run.
+CLOSE_FINDINGS_KEY = "close_findings"
+
+#: The review anchor: stamped by the close as its last act, so it is uncommitted and newer
+#: than its own last review BY CONSTRUCTION for the rest of that close.
+ANCHOR_REL = "sdlc-studio/reviews/LATEST.md"
+
+#: The only gate lanes a close can break by writing its own paperwork. Everything else is
+#: the work's, including a lane this cannot attribute - a refusal wrongly labelled
+#: self-inflicted is a refusal that gets walked past.
+_CLOSE_SELF_LANES = ("review-current",)
+
+_GATE_FAIL_RE = re.compile(r"^\s*\[FAIL\]\s+([A-Za-z0-9_.-]+):\s*(.*)$")
+
+
+def _repo_rel(root, path) -> str:
+    """`path` as a repo-relative posix string, or "" when it is not under the root.
+
+    "" rather than a guess: an unresolvable path registered as close output would exempt
+    nothing, which is the safe direction, and it is never silently turned into a match.
+    """
+    if not path:
+        return ""
+    try:
+        return Path(path).resolve().relative_to(Path(root).resolve()).as_posix()
+    except (ValueError, OSError) as exc:  # noqa: BLE001 - a close never dies on a path
+        sdlc_md.debug("sprint._repo_rel", exc)
+        return ""
+
+
+def record_close_output(root, *paths: str) -> list[str]:
+    """Register paths THIS close wrote, so they are not counted as unreviewed work against it.
+
+    Recorded at the moment of writing rather than reconstructed afterwards: a list of likely
+    close artefacts written here would silently omit whatever a later step adds, and the
+    failure direction of that omission is a close refusing itself again.
+    """
+    try:
+        state = run_state.read(root) or {}
+    except run_state.RunStateError as exc:
+        sdlc_md.debug("sprint.record_close_output", exc)
+        return []
+    known = [p for p in (state.get(CLOSE_OUTPUT_KEY) or []) if isinstance(p, str)]
+    for p in paths:
+        rel = str(p or "").strip().replace("\\", "/")
+        if rel and rel not in known:
+            known.append(rel)
+    try:
+        run_state.update(root, **{CLOSE_OUTPUT_KEY: known})
+    except (run_state.RunStateError, OSError) as exc:
+        # Loud: an unrecorded write means the next attempt counts it as unreviewed work, which
+        # is the very loop this exists to break, and it would look like a real review failure.
+        sdlc_md.debug("sprint.record_close_output", exc)
+        print(f"warning: the close could not record its own output ({exc}) - a retry may "
+              f"count these artefacts as unreviewed changes against itself", file=sys.stderr)
+    return known
+
+
+def record_close_finding(root, artefact_id: str, path: str) -> dict:
+    """Record a finding filed DURING the close: carried into the next run, not held against
+    this one. Registers its path as close output too, so it cannot make the review stale."""
+    row = {"id": str(artefact_id), "path": str(path or "").replace("\\", "/"),
+           "at": sdlc_md.now_iso8601()}
+    try:
+        state = run_state.read(root) or {}
+        rows = [r for r in (state.get(CLOSE_FINDINGS_KEY) or []) if isinstance(r, dict)]
+        if not any(r.get("id") == row["id"] for r in rows):
+            rows.append(row)
+            run_state.update(root, **{CLOSE_FINDINGS_KEY: rows})
+    except (run_state.RunStateError, OSError) as exc:
+        sdlc_md.debug("sprint.record_close_finding", exc)
+        print(f"warning: {artefact_id} was filed during the close but could NOT be recorded as "
+              f"carried ({exc}) - name it in the handoff by hand", file=sys.stderr)
+    record_close_output(root, row["path"])
+    return row
+
+
+def carried_close_findings(root, state) -> list[dict]:  # noqa: ARG001 - root kept for symmetry
+    """The findings filed during this close, to be carried into the next run."""
+    return [r for r in ((state or {}).get(CLOSE_FINDINGS_KEY) or []) if isinstance(r, dict)]
+
+
+def carried_findings_line(carried: list[dict]) -> str:
+    """One line naming what this close filed and where it goes, or "" for none."""
+    if not carried:
+        return ""
+    ids = ", ".join(str(r.get("id") or "?") for r in carried[:8])
+    return (f"close: {len(carried)} finding(s) filed during this close ({ids}) are CARRIED "
+            f"into the next run - they are this close's own output, not unreviewed work "
+            f"against it")
+
+
+def close_own_output(root, state) -> set[str]:
+    """Repo-relative paths this close created or rewrote.
+
+    Almost all of it is RECORDED rather than inferred, because the failure direction of a
+    hand-written list here is over-exemption, and an over-wide review carve-out is a hole.
+    Two entries are structural rather than recorded - the anchor the close stamps and the
+    handoff it generates - because those are the close's contract, not an optional step.
+    """
+    out = {ANCHOR_REL}
+    for p in ((state or {}).get(CLOSE_OUTPUT_KEY) or []):
+        if isinstance(p, str) and p.strip():
+            out.add(p.strip().replace("\\", "/"))
+    handoff_id = (state or {}).get("handoff")
+    if handoff_id:
+        try:
+            hit = sdlc_md.find_by_id(Path(root), str(handoff_id))
+            if hit:
+                out.add(Path(hit[0]).resolve().relative_to(
+                    Path(root).resolve()).as_posix())
+        except (ValueError, OSError) as exc:  # noqa: BLE001 - a close never dies on a lookup
+            sdlc_md.debug("sprint.close_own_output", exc)
+    return out
+
+
+def close_review_currency(root, state) -> dict:
+    """Which artefacts are newer than the review anchor once the close's OWN output is set
+    aside, and whether a review-currency refusal is therefore self-inflicted.
+
+    The gate owns the VERDICT; this owns the ATTRIBUTION. It can only ever turn a refusal
+    into a pass when at least one stale artefact is the close's own AND nothing else is
+    stale. It fails safe in the other direction on purpose: if it cannot see the staleness
+    the gate saw, it reports nothing as self-caused, because agreeing to a pass on a
+    disagreement is how a carve-out becomes a hole.
+
+    The anchor's timestamp is the EARLIER of its last commit time and its working-tree mtime,
+    so the stale set computed here is a superset of the gate's rather than a subset. A
+    narrower view than the gate's would exempt artefacts the gate is still refusing over.
+    """
+    import review_prep  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    from datetime import datetime, timezone  # noqa: PLC0415 - local, as elsewhere here
+    rr = Path(root)
+    own = close_own_output(root, state)
+    anchor = rr / ANCHOR_REL
+    if not anchor.is_file():
+        return {"stale": [], "own_stale": [], "own": sorted(own), "self_caused": False,
+                "why": "there is no reviews/LATEST.md at all, which is not something this "
+                       "close created"}
+    stamps = [review_prep._parse_dt(review_prep._modified_iso(anchor, rr)[0]),
+              review_prep._parse_dt(
+                  datetime.fromtimestamp(anchor.stat().st_mtime, timezone.utc).isoformat())]
+    known = [s for s in stamps if s]
+    anchor_dt = min(known) if known else None
+    stale, own_stale = [], []
+    for key, rec in review_prep.staleness(rr).items():
+        modified = review_prep._parse_dt(rec.get("last_modified"))
+        if not (modified and anchor_dt and modified > anchor_dt):
+            continue
+        if not rec.get("needs_review", True):
+            continue
+        (own_stale if rec.get("path") in own else stale).append(key)
+    self_caused = bool(own_stale) and not stale
+    return {"stale": sorted(stale), "own_stale": sorted(own_stale), "own": sorted(own),
+            "self_caused": self_caused,
+            "why": (f"{len(own_stale)} artefact(s) newer than the review anchor were written "
+                    f"by this close ({', '.join(sorted(own_stale)[:6])}) and nothing else is "
+                    f"newer" if self_caused else
+                    f"{len(stale)} artefact(s) newer than the anchor were NOT written by this "
+                    f"close ({', '.join(sorted(stale)[:6]) or 'none seen from here'})")}
+
+
+def gate_failed_lanes(out: str) -> list[tuple[str, str]]:
+    """The blocking lanes a gate run refused on, read from its own printed verdict."""
+    found = []
+    for line in (out or "").splitlines():
+        m = _GATE_FAIL_RE.match(line)
+        if m:
+            found.append((m.group(1), m.group(2).strip()))
+    return found
+
+
+def close_blocker_split(root, state, out: str) -> dict:
+    """Split a failed close gate into blockers in the WORK and blockers the close created.
+
+    A lane counts as the close's own only when it is one the close can break by writing its
+    own paperwork AND the attribution shows every stale artefact under it is close output.
+    An unparseable verdict yields neither, and the caller must refuse on that: not knowing
+    whose fault a refusal is has never been evidence that it is nobody's.
+    """
+    lanes = gate_failed_lanes(out)
+    work, selfish, currency = [], [], None
+    for name, detail in lanes:
+        if name not in _CLOSE_SELF_LANES:
+            work.append((name, detail))
+            continue
+        if currency is None:
+            currency = close_review_currency(root, state)
+        (selfish if currency["self_caused"] else work).append((name, detail))
+    return {"work": work, "self": selfish, "attributed": bool(lanes), "currency": currency}
+
+
+def close_surface_hash(root, exclude) -> str | None:
+    """A content digest of the test-relevant surface MINUS the artefacts this close wrote.
+
+    The SET is the gate's own measurement (`gate.surface_files`), so there is one definition
+    of what a test reads and this cannot drift from it. The subtraction is what makes a close
+    retry answerable at all: the surface includes the workspace, so stamping the anchor and
+    generating the handoff would otherwise change the surface the close is asking about, and
+    the answer would be "changed" on every attempt for reasons the close created itself.
+
+    None is UNKNOWN, never "unchanged": the caller runs the gate on it. An unhashable
+    surface, a missing gate, an unreadable file - each is a thing not known, and a reuse
+    granted on a thing not known is the false-green class the gate exists to refuse.
+    """
+    import hashlib  # noqa: PLC0415 - local, only this path needs it
+    skip = {str(p) for p in (exclude or ())}
+    try:
+        import gate  # noqa: PLC0415
+        files = [f for f in gate.surface_files(str(root)) if f not in skip]
+    except Exception as exc:  # noqa: BLE001 - an unanswerable surface runs, it does not fail
+        sdlc_md.debug("sprint.close_surface_hash", exc)
+        return None
+    digest = hashlib.sha256()
+    rr = Path(root)
+    try:
+        for rel in sorted(files):
+            digest.update(rel.encode("utf-8", "surrogateescape") + b"\0")
+            path = rr / rel
+            if path.is_file():
+                digest.update(hashlib.sha256(path.read_bytes()).hexdigest().encode("ascii"))
+            else:
+                digest.update(b"ABSENT")   # a named path that is gone is a CHANGE
+            digest.update(b"\n")
+    except OSError as exc:
+        sdlc_md.debug("sprint.close_surface_hash", exc)
+        return None
+    return digest.hexdigest()
+
+
+def reusable_close_verdict(root, surface: str | None) -> dict | None:
+    """The recorded close-gate verdict this tree may reuse, or None.
+
+    Only the MOST RECENT close verdict is consulted, and only when it is a pass over this
+    exact surface. Reaching past a red one to an older green over the same bytes would be a
+    retry loop conflating "it failed" with "it did not run" - the class that never converges.
+    """
+    if not surface:
+        return None
+    for row in reversed(read_execution_ledger(root)):
+        if row.get("moment") != "close":
+            continue
+        if row.get("verdict") != "pass" or row.get("mode") == "reuse":
+            return None
+        return row if row.get("surface") and row["surface"] == surface else None
+    return None
+
+
 def _close_gate(root, retro_id, state):
     import gate  # noqa: PLC0415 - deferred so `plan` never pays for the gate import graph
+    import time  # noqa: PLC0415 - local, only this path measures
+    # WHAT THIS CLOSE ITSELF WROTE is subtracted before the surface is hashed, so a retry
+    # asks about the work rather than about the paperwork the previous attempt produced.
+    surface = close_surface_hash(root, close_own_output(root, state))
+    prior = reusable_close_verdict(root, surface)
+    if prior:
+        record_execution_run(root, moment="close", mode="reuse", seconds=0.0, verdict="pass",
+                             surface=surface, run_id=(state or {}).get("run_id"),
+                             reused_from=prior.get("at"))
+        return True, (f"gate verdict REUSED from the run at {prior.get('at')} - the "
+                      f"test-relevant surface is unchanged since it passed (the close's own "
+                      f"output is not part of that surface), so nothing was re-run"), ""
+    started = time.monotonic()
     rc, out = _run_cli(gate.main, ["--root", str(root), "--require-retro", retro_id,
                                    "--require-review"])
-    if rc != 0:
-        return False, out, ("address each failing lane the gate names (reconcile drift -> "
-                            "`reconcile.py apply`; stale review -> run `review`; lesson "
-                            "horizons -> `lessons.py revalidate`), then re-run sprint close")
-    return True, f"gate --require-retro {retro_id} --require-review: PASS", ""
+    record_execution_run(root, moment="close", mode="full",
+                         seconds=time.monotonic() - started,
+                         verdict="pass" if rc == 0 else "fail", surface=surface,
+                         run_id=(state or {}).get("run_id"))
+    if rc == 0:
+        return True, f"gate --require-retro {retro_id} --require-review: PASS", ""
+    split = close_blocker_split(root, state, out)
+    if not split["attributed"]:
+        return False, (f"{out}\nclose gate: the refusal could not be attributed - its verdict "
+                       f"named no failing lane this close can read, so it is treated as a "
+                       f"blocker in the WORK"), \
+               "read the gate output above and clear what it names, then re-run sprint close"
+    if split["self"] and not split["work"]:
+        names = ", ".join(n for n, _ in split["self"])
+        return True, (f"{out}\nclose gate: the only refusal ({names}) names artefacts created "
+                      f"by this close - {split['currency']['why']}. Recording the close does "
+                      f"not invalidate it, so the ceremony continues"), ""
+    work = ", ".join(n for n, _ in split["work"])
+    mine = (f"; {len(split['self'])} further lane(s) name only this close's own output and are "
+            f"not counted" if split["self"] else "")
+    return False, (f"{out}\nclose gate: {len(split['work'])} blocker(s) are in the WORK "
+                   f"({work}) and must be cleared{mine}"), \
+        ("address each failing lane the gate names (reconcile drift -> `reconcile.py apply`; "
+         "stale review -> run `review`; lesson horizons -> `lessons.py revalidate`), then "
+         "re-run sprint close")
 
 
 def _close_handoff(root, retro_id, state):
@@ -3847,7 +4144,14 @@ def _print_test_strategy(args, data) -> None:
     # contract is a list of ids. Project to ids at the boundary - passing the records straight
     # through hands a dict to norm_id and crashes every `sprint plan` with a non-empty batch.
     batch_ids = [b["id"] if isinstance(b, dict) else b for b in (data.get("batch") or [])]
-    for line in render_test_strategy(test_strategy(root, batch_ids)):
+    strat = test_strategy(root, batch_ids)
+    # RECORDED, not only printed. A strategy that leaves no record is advice: it cannot be
+    # reviewed at plan time, cannot be signed off with the goal, and cannot be compared
+    # afterwards with what actually ran. `data` is what the plan writes to sprint-plan.json,
+    # so putting it here is what makes it survive the terminal.
+    data["test_strategy"] = {**strat, "tsd_staleness": stale,
+                             "recorded_at": sdlc_md.now_iso8601()}
+    for line in render_test_strategy(strat):
         print(line, file=sys.stderr)
 
 
@@ -4675,6 +4979,26 @@ def _record_close_attempt(root, pre: dict) -> str | None:
     return f"outstanding set {prev} -> {n} ({word})"
 
 
+def _print_close_strategy(root, state: dict) -> dict:
+    """State the strategy the close is judging against, and its execution policy.
+
+    Returns it, so the caller can act on it; never raises - a close must not die on reading
+    its own paperwork, and a strategy that could not be read is reported as unread rather
+    than silently replaced with a fresh one.
+    """
+    try:
+        got = close_test_strategy(root, (state or {}).get("batch") or [])
+    except Exception as exc:  # noqa: BLE001 - a close never dies on a plan read
+        sdlc_md.debug("sprint._print_close_strategy", exc)
+        print(f"close: the recorded test strategy could NOT be read ({exc}) - this close is "
+              f"judging against no agreed strategy", file=sys.stderr)
+        return {"strategy": {}, "source": "unreadable", "why": str(exc)}
+    print(f"close: test strategy {got['source']} - {got['why']}")
+    for line in render_execution_policy((got["strategy"] or {}).get("execution") or {}):
+        print(line)
+    return got
+
+
 def _file_and_close(root, args, state: dict, pre: dict) -> int:
     """The bounded exit: file every deferrable blocker as a real artefact linked to the run,
     name the deferrals in the retro and the review anchor, and close the run with an outcome
@@ -4739,6 +5063,9 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
              "impact": (f"{run_id} closed with this work outstanding; until it is done, the "
                         f"sprint's record is complete but its ceremony debt is real")})
         filed.append((res["id"], b))
+        # Filed BY the close, so it is this close's own output and is carried into the next
+        # run - never counted as an unreviewed change against the close that wrote it.
+        record_close_finding(root, res["id"], _repo_rel(root, res.get("path")))
     note_lines = [f"- {fid}: [{b['stage']}] {b['detail']} (deferred, not waived)"
                   for fid, b in filed]
     text = retro_path.read_text(encoding="utf-8")
@@ -4748,6 +5075,7 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
               f"file-and-close over another fix cycle. Nothing here was waived - each "
               f"blocker is a filed artefact:\n\n" + "\n".join(note_lines) + "\n")
     sdlc_md.atomic_write(retro_path, text)
+    record_close_output(root, _repo_rel(root, retro_path))
     anchor = Path(root) / "sdlc-studio" / "reviews" / "LATEST.md"
     if anchor.is_file():
         atext = anchor.read_text(encoding="utf-8").rstrip("\n")
@@ -4762,6 +5090,9 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
     run_state.close_run(root, run_state.CLOSED_OUTSTANDING, handoff=state.get("handoff"))
     print(f"file-and-close: {len(filed)} blocker(s) filed ({', '.join(f for f, _ in filed)}) "
           f"and named in the {anchor_note}.")
+    carried = carried_findings_line(carried_close_findings(root, run_state.read(root) or {}))
+    if carried:
+        print(carried)
     print(f"{run_id} closed with known outstanding work - outcome "
           f"`{run_state.CLOSED_OUTSTANDING}`, nothing waived.")
     return 0
@@ -4846,6 +5177,17 @@ def cmd_close(args: argparse.Namespace) -> int:
     overage = appetite_overage_line(root)
     if overage:
         print(f"close: {overage}")
+    # WHICH strategy this close is judging against, stated above every refusal so a close
+    # that stops later has still said it. `recorded` means the plan's own agreed strategy;
+    # `re-derived` means nobody agreed this one and the close says so rather than letting it
+    # pass for the plan's.
+    _print_close_strategy(root, state)
+    # What this close FILED, stated as carried rather than as debt against itself. Filing an
+    # honest finding mid-close is the behaviour the doctrine asks for, and it used to cost
+    # another full gate.
+    carried = carried_findings_line(carried_close_findings(root, state))
+    if carried:
+        print(carried)
     # The close IS a stop: the decisions deferred while the batch ran are asked HERE,
     # together and structured - mechanically, not by a reference file hoping someone reads it.
     pending_dec = state.get("pending_decisions") or []
@@ -6489,8 +6831,13 @@ def test_strategy(root, batch: list[str]) -> dict:
     risk area added to the TSD appears in the next plan with no change here.
     """
     levels = tsd_levels(root)
+    # The EXECUTION policy is a property of the project, not of the TSD: it is what runs and
+    # what that costs. It is therefore attached on both branches - a batch whose proof
+    # obligations could not be derived still pays for every suite run it triggers.
+    execution = execution_policy(root)
     if not levels:
         return {"available": False, "areas": [], "units": {}, "gaps": [],
+                "execution": execution,
                 "why": "no `## Test Levels` section in sdlc-studio/tsd.md - the strategy could "
                        "not be derived, which is NOT the same as a batch that touches nothing"}
     per_unit: dict[str, list[str]] = {}
@@ -6507,7 +6854,7 @@ def test_strategy(root, batch: list[str]) -> dict:
         touched.update(hits)
     gaps = sorted(t for t in levels if t not in touched and levels[t])
     return {"available": True, "areas": sorted(touched), "units": per_unit, "gaps": gaps,
-            "why": ""}
+            "execution": execution, "why": ""}
 
 
 def render_test_strategy(strat: dict) -> list[str]:
@@ -6515,7 +6862,8 @@ def render_test_strategy(strat: dict) -> list[str]:
     indistinguishable from a lane that did not run, which is the reporting failure this project
     has already had to repair once."""
     if not strat.get("available"):
-        return [f"  test strategy: UNAVAILABLE - {strat.get('why')}"]
+        return [f"  test strategy: UNAVAILABLE - {strat.get('why')}",
+                *render_execution_policy(strat.get("execution") or {})]
     lines = []
     if strat["areas"]:
         lines.append(f"  test strategy: this batch touches {len(strat['areas'])} TSD risk "
@@ -6530,6 +6878,247 @@ def render_test_strategy(strat: dict) -> list[str]:
     if strat["gaps"]:
         lines.append(f"  coverage the TSD demands that this batch does NOT deliver: "
                      f"{', '.join(strat['gaps'][:6])}")
+    lines.extend(render_execution_policy(strat.get("execution") or {}))
+    return lines
+
+
+# ---------------------------------------------------------------------------
+# The EXECUTION policy: what runs, when, and what it costs
+# ---------------------------------------------------------------------------
+# The strategy above answers "what proof does each unit owe" and says nothing about
+# EXECUTION. Measured over one working day on this repository: the suites ran about 52 times
+# for about 218 minutes, against about 35 minutes of delivery. The plan named the proof each
+# unit owed. It never said "and re-run the whole suite fifty-two times". So the single
+# largest cost in a sprint was set by a habit living in a commit hook, which nobody
+# proposed, nobody reviewed and nobody signed off.
+#
+# The plan therefore states it: what runs per commit, at close and at release, and what each
+# is estimated to cost - and it REPORTS a declared policy the hook does not implement,
+# because the most expensive decision in the sprint cannot be one the two halves quietly
+# disagree about.
+
+#: The three moments a policy prices, in the order they happen.
+EXECUTION_MOMENTS = ("per_commit", "at_close", "at_release")
+
+#: What a moment may run. `selected` is the middle: the suites run only when the surface they
+#: read has changed, which is what makes the discipline cheaper than the work it guards.
+EXECUTION_MODES = ("full", "selected", "none")
+
+#: The shipped default, which is what a hooked repo already does. Declared rather than left
+#: absent, because an absent policy reads as no cost, and no cost is the one thing it is not.
+EXECUTION_DEFAULTS = {"per_commit": "selected", "at_close": "full", "at_release": "full"}
+
+_MOMENT_LABELS = {"per_commit": "per commit", "at_close": "at close",
+                  "at_release": "at release"}
+
+#: Where the hooks that actually decide the per-commit cost live, in both spellings a repo
+#: uses (a shared `core.hooksPath` tree, and git's own directory).
+HOOK_PATHS = (".githooks/pre-commit", ".githooks/commit-msg",
+              ".git/hooks/pre-commit", ".git/hooks/commit-msg")
+
+#: Evidence that the hook DECIDES whether to run the suites from what the commit touched.
+_HOOK_SELECTS = ("--suite-decision", "--test-relevant", "suites_needed")
+
+#: Evidence that the hook runs a test suite at all.
+_HOOK_RUNS = ("unittest discover", "pytest", "skill-tests.sh", "npm test", "npm run test")
+
+
+def hook_per_commit_mode(root) -> dict:
+    """What the commit hooks ACTUALLY do per commit, READ from the hooks themselves.
+
+    Derived from the hook, never restated beside it: a second copy of the rule written here
+    would be the copy that drifts, and the drift would be invisible in exactly the place the
+    declaration claims to have been checked.
+
+    `unknown` is a real answer and is reported as one. A hook nobody can read has not been
+    shown to agree with the declaration, and silence in that direction is how a policy comes
+    to look reconciled without ever having been.
+    """
+    seen, selects, runs = [], False, False
+    for rel in HOOK_PATHS:
+        text = sdlc_md.read_text_safe(Path(root) / rel)
+        if not text:
+            continue
+        seen.append(rel)
+        selects = selects or any(tok in text for tok in _HOOK_SELECTS)
+        runs = runs or any(tok in text for tok in _HOOK_RUNS)
+    if not seen:
+        return {"mode": "unknown", "read": [],
+                "why": f"no commit hook was readable at any of {', '.join(HOOK_PATHS)}"}
+    where = ", ".join(seen)
+    if selects:
+        return {"mode": "selected", "read": seen,
+                "why": f"{where} selects the suites from what the commit touched"}
+    if runs:
+        return {"mode": "full", "read": seen,
+                "why": f"{where} runs the suites on every commit, unselected"}
+    return {"mode": "none", "read": seen, "why": f"{where} runs no test suite"}
+
+
+def execution_cost(root) -> dict:
+    """The measured cost of one full run, or None with the reason it is not known.
+
+    Read from the declared gate budget's baseline: a number a human chose against a
+    measurement and recorded with the date they took it. Never invented, and never defaulted
+    to zero - an unmeasured cost printed as 0 is the cheapest-looking claim a plan can make,
+    and it is made about the largest line in the sprint.
+    """
+    seconds = config.get(root, "gate_budget.baseline_seconds", None)
+    when = config.get(root, "gate_budget.baseline_date", None)
+    try:
+        seconds = float(seconds)
+    except (TypeError, ValueError):
+        return {"seconds": None, "basis": None,
+                "why": "no `gate_budget.baseline_seconds` is declared, so a full run has "
+                       "never been measured here - the cost is UNKNOWN, which is not zero"}
+    basis = "gate_budget.baseline_seconds" + (f", measured {when}" if when else "")
+    return {"seconds": seconds, "basis": basis, "why": ""}
+
+
+def execution_policy(root) -> dict:
+    """The declared execution policy, its estimated cost, and whether the hook agrees.
+
+    The declaration is the project's (`test_execution.*`); the hook's behaviour is measured;
+    the divergence between them is the whole point, so it is computed here rather than left
+    for a reader to spot across two files.
+    """
+    declared = {}
+    for moment in EXECUTION_MOMENTS:
+        raw = str(config.get(root, f"test_execution.{moment}",
+                             EXECUTION_DEFAULTS[moment]) or "").strip().lower()
+        declared[moment] = raw if raw in EXECUTION_MODES else EXECUTION_DEFAULTS[moment]
+    cost = execution_cost(root)
+    # `none` costs zero because nothing runs - that IS the measurement. Every other mode
+    # costs what a full run costs, or None when nobody has measured one.
+    cost_s = {m: (0.0 if declared[m] == "none" else cost["seconds"]) for m in declared}
+    hook = hook_per_commit_mode(root)
+    if hook["mode"] == "unknown":
+        divergence = (f"the policy declares per-commit `{declared['per_commit']}` and the "
+                      f"hook could not be read ({hook['why']}), so the two are UNRECONCILED")
+    elif hook["mode"] != declared["per_commit"]:
+        divergence = (f"the policy declares per-commit `{declared['per_commit']}` but the "
+                      f"hook runs `{hook['mode']}` ({hook['why']}) - the two cannot silently "
+                      f"disagree about the most expensive decision in the sprint")
+    else:
+        divergence = None
+    return {"declared": declared, "cost_s": cost_s, "cost_basis": cost["basis"],
+            "cost_why": cost["why"], "measured": cost["seconds"] is not None,
+            "hook": hook, "divergence": divergence}
+
+
+#: The plan record. One spelling, written by `plan --write` and read back by the close.
+PLAN_REL = "sdlc-studio/.local/sprint-plan.json"
+
+#: Where every test-execution event is appended. One spelling, written here and read by the
+#: sprint report, so the actuals the close reports are the events that happened rather than a
+#: reconstruction. Under `.local/`, so recording a run never dirties the tree being judged.
+EXECUTION_LEDGER_REL = "sdlc-studio/.local/test-execution.json"
+
+#: How many events are kept. Long enough to span several sprints, bounded so the file cannot
+#: grow without limit on a repo that commits all day.
+EXECUTION_LEDGER_MAX = 500
+
+
+def read_execution_ledger(root) -> list[dict]:
+    """Every recorded test-execution event, oldest first.
+
+    `[]` covers absent, unreadable and malformed alike: the caller must treat all three as
+    "no measurement", and it must never treat them as "no cost".
+    """
+    data = sdlc_md.read_json(Path(root) / EXECUTION_LEDGER_REL, {})
+    runs = data.get("runs") if isinstance(data, dict) else None
+    return [r for r in runs if isinstance(r, dict)] if isinstance(runs, list) else []
+
+
+def record_execution_run(root, *, moment: str, mode: str, seconds: float | None,
+                         verdict: str, surface: str | None = None,
+                         run_id: str | None = None, reused_from: str | None = None) -> dict:
+    """Append one test-execution event. Returns the row, or a row carrying `error`.
+
+    Never raises into a close: a ledger that cannot be written costs the retro its cost
+    figure, which is a reporting loss, not a correctness one. It is REPORTED though - a
+    silently unwritten ledger is indistinguishable from a sprint that ran no tests, and that
+    is the exact misreading this ledger exists to end.
+    """
+    row = {"at": sdlc_md.now_iso8601(), "moment": moment, "mode": mode,
+           "seconds": None if seconds is None else round(float(seconds), 1),
+           "verdict": verdict, "surface": surface, "run_id": run_id,
+           "reused_from": reused_from}
+    path = Path(root) / EXECUTION_LEDGER_REL
+    try:
+        runs = read_execution_ledger(root)
+        runs.append(row)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"runs": runs[-EXECUTION_LEDGER_MAX:]}, indent=2),
+                        encoding="utf-8")
+    except OSError as exc:
+        sdlc_md.debug("sprint.record_execution_run", exc)
+        print(f"warning: the test-execution event could NOT be recorded ({exc}) - this "
+              f"sprint's retro will report its test cost as UNCAPTURED, not as zero",
+              file=sys.stderr)
+        return {**row, "error": str(exc)}
+    return row
+
+
+def recorded_test_strategy(root) -> dict | None:
+    """The strategy the PLAN recorded, or None when the plan carries none.
+
+    None covers absent, unreadable and malformed alike, because the caller must treat all
+    three the same way: as a strategy it does not have, and must therefore say it re-derived.
+    """
+    data = sdlc_md.read_json(Path(root) / PLAN_REL, {})
+    strat = data.get("test_strategy") if isinstance(data, dict) else None
+    return strat if isinstance(strat, dict) and strat else None
+
+
+def close_test_strategy(root, batch) -> dict:
+    """The strategy the CLOSE judges against: `{strategy, source, why}`.
+
+    The RECORDED one whenever the plan wrote it. What is judged at the close has to be what
+    was agreed at the plan, or the close marks its own homework against a strategy re-derived
+    from a config that may have moved since - and a policy that changes between the agreement
+    and the verdict is one nobody actually approved.
+
+    A run planned before the plan carried a strategy still gets an answer, and that answer is
+    NAMED as a re-derivation rather than presented as the plan's own.
+    """
+    rec = recorded_test_strategy(root)
+    if rec is not None:
+        return {"strategy": rec, "source": "recorded",
+                "why": f"read back from {PLAN_REL}, as agreed at plan time"}
+    ids = [b.get("id") if isinstance(b, dict) else b for b in (batch or [])]
+    return {"strategy": test_strategy(root, [i for i in ids if i]), "source": "re-derived",
+            "why": (f"no strategy is recorded in {PLAN_REL} (the run was planned before the "
+                    f"plan carried one, or no plan was written), so this was RE-DERIVED now "
+                    f"and is not what was agreed at plan time")}
+
+
+def render_execution_policy(pol: dict) -> list[str]:
+    """The execution block of the plan. Priced per moment, with an unmeasured cost NAMED as
+    unmeasured rather than rendered as a tidy zero."""
+    if not pol:
+        return []
+    # Read DEFENSIVELY. This renders a record that may have been written by an older plan,
+    # and a close must not die on reading its own paperwork - but a missing field is reported
+    # as unknown, never filled in with a plausible-looking default.
+    declared = pol.get("declared") or {}
+    cost_s = pol.get("cost_s") or {}
+    parts = []
+    for moment in EXECUTION_MOMENTS:
+        secs = cost_s.get(moment)
+        price = f"~{secs:.0f}s" if isinstance(secs, (int, float)) else "cost NOT MEASURED"
+        mode = str(declared.get(moment) or "unrecorded").upper()
+        parts.append(f"{_MOMENT_LABELS[moment]} {mode} ({price})")
+    lines = ["  execution policy: " + "; ".join(parts)]
+    if pol.get("measured"):
+        lines.append(f"  execution cost basis: {pol.get('cost_basis')} - the per-commit figure "
+                     f"is paid once per commit that pays it, so this sprint's largest cost is "
+                     f"that number times the commits, not once")
+    else:
+        lines.append(f"  execution cost: NOT MEASURED - "
+                     f"{pol.get('cost_why') or 'the record states no cost'}")
+    if pol.get("divergence"):
+        lines.append(f"  execution policy DIVERGES: {pol['divergence']}")
     return lines
 
 

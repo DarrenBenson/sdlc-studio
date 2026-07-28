@@ -531,5 +531,91 @@ class DisclosureTests(unittest.TestCase):
             sr._delegated_signoff_lines({"ok": True, "delegated_signoffs": []}), [])
 
 
+class ExecutionActualsTests(ReportBase):
+    """US0499: the close reports what test execution actually cost, against the policy the
+    plan declared. Measured on one run: the suite executed about 52 times for about 218
+    minutes against 35 minutes of delivery, and the retro said only what was delivered."""
+
+    WINDOW = ("2026-07-28T09:00:00Z", "2026-07-28T18:00:00Z")
+
+    def _run(self) -> None:
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
+            "run_id": "RUN-EXEC", "batch": ["US0001", "US0002"], "outcome": "running",
+            "started_at": self.WINDOW[0], "ended_at": self.WINDOW[1]}), encoding="utf-8")
+
+    def _ledger(self, runs: list[dict]) -> None:
+        (self.root / "sdlc-studio" / ".local" / "test-execution.json").write_text(
+            json.dumps({"runs": runs}), encoding="utf-8")
+
+    def _plan(self, declared: dict) -> None:
+        (self.root / "sdlc-studio" / ".local" / "sprint-plan.json").write_text(json.dumps({
+            "test_strategy": {"execution": {"declared": declared}}}), encoding="utf-8")
+
+    def test_the_close_reports_runs_against_the_policy(self) -> None:
+        """AC1: how many full-suite runs happened, how many were selected, what they cost -
+        set against what the policy declared."""
+        self._run()
+        self._plan({"per_commit": "selected", "at_close": "full", "at_release": "full"})
+        self._ledger([
+            {"at": "2026-07-28T10:00:00Z", "mode": "full", "seconds": 300,
+             "verdict": "pass", "moment": "commit"},
+            {"at": "2026-07-28T11:00:00Z", "mode": "full", "seconds": 310,
+             "verdict": "pass", "moment": "commit"},
+            {"at": "2026-07-28T12:00:00Z", "mode": "selected", "seconds": 40,
+             "verdict": "pass", "moment": "commit"},
+            {"at": "2026-07-28T13:00:00Z", "mode": "reuse", "seconds": 0,
+             "verdict": "pass", "moment": "close"},
+            {"at": "2026-07-27T10:00:00Z", "mode": "full", "seconds": 9999,
+             "verdict": "pass", "moment": "commit"},   # BEFORE the window: another sprint's
+        ])
+        act = sr._execution_actuals(self.root, ["US0001", "US0002"])
+        self.assertTrue(act["measured"])
+        self.assertEqual(act["full_runs"], 2, "the row outside this run's window is not ours")
+        self.assertEqual(act["selected_runs"], 1)
+        self.assertEqual(act["reused_runs"], 1)
+        self.assertEqual(act["seconds"], 650)
+        self.assertEqual(act["declared"]["per_commit"], "selected")
+        text = "\n".join(sr._execution_lines({"execution": act}))
+        self.assertIn("2 full", text)
+        self.assertIn("650", text)
+        self.assertIn("selected", text, "the declared policy is stated beside the actuals")
+
+    def test_an_unmeasured_cost_is_not_reported_as_zero(self) -> None:
+        """AC2: a run with no recorded execution data says the cost was not captured and why.
+        A total of 0 reads as a sprint that tested for free."""
+        self._run()                      # a window exists, but nothing was ever recorded
+        act = sr._execution_actuals(self.root, ["US0001", "US0002"])
+        text = "\n".join(sr._execution_lines({"execution": act}))
+        self.assertFalse(act["measured"])
+        self.assertIsNone(act["seconds"], "unknown is not zero")
+        self.assertIn("NOT CAPTURED", text)
+        self.assertNotIn("0s", text)
+        self.assertIn("not zero", text)
+
+    def test_an_unattributable_run_says_so_rather_than_claiming_the_series(self) -> None:
+        """Without a run window, every row belongs to SOME run and none provably to this one -
+        the same confounder the mutation summary had to learn."""
+        self._ledger([{"at": "2026-07-28T10:00:00Z", "mode": "full", "seconds": 300,
+                       "verdict": "pass", "moment": "commit"}])
+        act = sr._execution_actuals(self.root, ["US0001", "US0002"])
+        self.assertFalse(act["measured"])
+        self.assertEqual(act["full_runs"], 0)
+        self.assertIn("no run state", act["why"])
+
+    def test_the_report_carries_the_execution_block(self) -> None:
+        """LANE test, not a library test (LL0040): the three above call the helpers directly,
+        so deleting the call from `report`/`render` would leave them all green."""
+        self._run()
+        self._plan({"per_commit": "selected", "at_close": "full", "at_release": "full"})
+        self._ledger([{"at": "2026-07-28T10:00:00Z", "mode": "full", "seconds": 300,
+                       "verdict": "pass", "moment": "commit"}])
+        with contextlib.redirect_stderr(io.StringIO()):
+            rep = sr.report(self.root, "RETRO9100")
+            text = sr.render(rep)
+        self.assertIn("execution", rep)
+        self.assertIn("Test execution:", text)
+        self.assertIn("1 full", text)
+
+
 if __name__ == "__main__":
     unittest.main()

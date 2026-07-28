@@ -485,6 +485,88 @@ class IterTablesTests(unittest.TestCase):
         self.assertEqual(t["rows"][0][0], 3)
 
 
+class IterTablesFenceTests(unittest.TestCase):
+    """The table iterator tracks fences by the ONE CommonMark rule (`fence_step`), never a naive
+    three-character toggle. A toggle released a longer block on its inner fence and turned the
+    illustration beneath into counted structure - the index-corruption class, because reconcile
+    tallies what this yields."""
+
+    TICK = "`"
+
+    def test_inner_fence_inside_a_longer_block_is_not_a_closer(self) -> None:
+        # a four-backtick block quoting a three-backtick one: EVERYTHING inside is illustration
+        doc = (
+            "# Doc\n\n"
+            "| ID | Status |\n| --- | --- |\n| US0001 | Done |\n\n"
+            + self.TICK * 4 + "markdown\n"
+            + self.TICK * 3 + "\n"
+            "| ID | Status |\n| --- | --- |\n| FAKE | Done |\n"
+            + self.TICK * 3 + "\n"
+            + self.TICK * 4 + "\n"
+        )
+        rows = [c for t in sdlc_md.iter_tables(doc) for _ln, c in t["rows"]]
+        self.assertEqual(rows, [["US0001", "Done"]])
+
+    def test_a_fence_carrying_an_info_string_never_closes(self) -> None:
+        # CommonMark 4.5: a closer "may be followed only by spaces", so ```text is content
+        doc = (
+            "# Doc\n\n"
+            + self.TICK * 3 + "markdown\n"
+            + self.TICK * 3 + "text\n"
+            "| ID | Status |\n| --- | --- |\n| FAKE | Done |\n"
+            + self.TICK * 3 + "\n"
+        )
+        rows = [c for t in sdlc_md.iter_tables(doc) for _ln, c in t["rows"]]
+        self.assertEqual(rows, [])
+
+    def test_a_tilde_run_never_closes_a_backtick_block(self) -> None:
+        doc = (
+            "# Doc\n\n"
+            + self.TICK * 3 + "\n"
+            "~~~\n"
+            "| ID | Status |\n| --- | --- |\n| FAKE | Done |\n"
+            "~~~\n"
+            + self.TICK * 3 + "\n"
+        )
+        rows = [c for t in sdlc_md.iter_tables(doc) for _ln, c in t["rows"]]
+        self.assertEqual(rows, [])
+
+    def test_structure_resumes_after_the_matching_closer(self) -> None:
+        doc = (
+            self.TICK * 4 + "markdown\n"
+            + self.TICK * 3 + "\n| ID | X |\n| --- | --- |\n| FENCED | y |\n"
+            + self.TICK * 3 + "\n"
+            + self.TICK * 4 + "\n\n"
+            "| ID | Status |\n| --- | --- |\n| US0002 | Done |\n"
+        )
+        rows = [c for t in sdlc_md.iter_tables(doc) for _ln, c in t["rows"]]
+        self.assertEqual(rows, [["US0002", "Done"]])
+
+
+class PersonaRegistryFenceTests(unittest.TestCase):
+    """`persona_registry` skips fenced illustration by the same shared tracker: a bullet quoted
+    inside a longer block is an example, never a declared persona."""
+
+    TICK = "`"
+
+    def test_bullet_inside_a_longer_fenced_block_is_not_a_persona(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            idx = root / "sdlc-studio" / "personas" / "index.md"
+            idx.parent.mkdir(parents=True)
+            idx.write_text(
+                "## Primary\n\n- [Real](real.md)\n\n"
+                + self.TICK * 4 + "markdown\n"
+                + self.TICK * 3 + "\n"
+                "- [Ghost](ghost.md)\n"
+                + self.TICK * 3 + "\n"
+                + self.TICK * 4 + "\n",
+                encoding="utf-8")
+            reg = sdlc_md.persona_registry(root)
+            self.assertTrue(reg.available)
+            self.assertEqual([e.name for e in reg.entries], ["Real"])
+
+
 class ConfigOverrideWarnTests(unittest.TestCase):
     """US0076/CR0180: a present-but-unhonourable .config.yaml warns once, never silently."""
 

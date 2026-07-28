@@ -1,9 +1,10 @@
 # BG0346: US0482's duplicate-selector burn-down is scoped to stories while the ratchet it serves covers stories and bugs
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** sdlc-studio/stories/US0482-the-baselined-duplicate-verify-groups-are-split-into.md, sdlc-studio/bugs, sdlc-studio/stories
+> **Affects:** sdlc-studio/stories/US0482-the-baselined-duplicate-verify-groups-are-split-into.md, tools/tests/test_ratchet_story_agreement.py
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 (independent adversarial review of the residue stories); agent; skill v5.0.0
@@ -25,3 +26,4 @@ Widen US0482 to stories and bugs, add the baseline file to its Affects, resize f
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (independent adversarial review of the residue stories) | Filed |
+| 2026-07-28 | Claude Opus 5 | Fixed: US0482 widened to stories and bugs, baseline file declared, resized 5 to 8, and the invented four unanswerable groups replaced by a resolver-derived criterion. Counts re-measured (19/13 stories, 31/20 with bugs, 7 intra-record in bugs) and guarded by `tools/tests/test_ratchet_story_agreement.py`. The two evidence directories dropped from Affects - nothing in them changed |

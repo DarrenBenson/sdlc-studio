@@ -2951,5 +2951,91 @@ class WorktreeScanExclusionTests(unittest.TestCase):
             self.assertEqual(mod._drop_ignored(root, [f]), [f])
 
 
+class IsolationTests(unittest.TestCase):
+    """US0504: a delegated reviewer mutates an ISOLATED checkout, never the author's live tree.
+
+    The tool half of that rule. A mutant written over a file that carries uncommitted work
+    cannot be told apart from that work when the file is restored: the restore path writes
+    back whatever bytes the run read, and every published remedy for a stranded mutant says
+    'restore the target files from git', which throws the uncommitted work away. That is not
+    hypothetical - a reviewer mutation-testing in the author's tree silently reverted a
+    shipped repair, and the suite stayed green over the reverted code because the repair had
+    no test pinning it. So `run` refuses a dirty target, naming it, before touching a byte.
+    """
+
+    def _repo(self, d: Path) -> Path:
+        root = _fixture(d)
+        gitutil.git(["init", "-q"], root)
+        gitutil.git(["add", "-A"], root)
+        gitutil.git(["commit", "-qm", "base"], root)
+        return root
+
+    def test_mutation_refuses_a_dirty_file(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            target = root / "target.py"
+            # The author's uncommitted repair, sitting in the tree the reviewer was pointed at.
+            # Deliberately behaviour-PRESERVING, so the committed tests stay green over it: a
+            # refusal here can then only come from the dirty check, never from a red baseline.
+            target.write_text(TARGET + "\n# the author's uncommitted repair\n", encoding="utf-8")
+            dirty_bytes = target.read_bytes()
+            r = mut.run_gate(root, [target], f"{sys.executable} -m unittest test_good")
+            self.assertTrue(r["refused"], r)
+            self.assertEqual(r["mutations"], [])                  # nothing applied
+            self.assertEqual(r["summary"]["applied"], 0)
+            self.assertEqual(r["dirty_targets"], ["target.py"])   # named, not merely counted
+            self.assertIn("target.py", r["remedy"] or "")
+            self.assertEqual(target.read_bytes(), dirty_bytes)    # the repair is still there
+            # and the CLI ACTS on it: the refusal names the dirty file, not a baseline verdict
+            # (the baseline never ran), and exits non-zero
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = mut.main(["run", "--files", str(target),
+                               "--test", f"{sys.executable} -m unittest test_good",
+                               "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            msg = err.getvalue()
+            self.assertIn("REFUSED", msg)
+            self.assertIn("target.py", msg)
+            self.assertIn("uncommitted", msg.lower())
+            # The refusal happens BEFORE the baseline, so the message must not quote a baseline
+            # verdict for a run that never happened. This is what pins the caller: the generic
+            # refusal branch prints `baseline <verdict>`, and would otherwise pass every
+            # assertion above on the strength of the remedy string alone.
+            self.assertNotIn("baseline", msg.lower(), msg)
+
+    def test_a_committed_file_is_still_mutated(self) -> None:
+        """The control. A guard that refused every file would pass the test above while
+        switching the gate off, so a clean tracked target must still run to a verdict."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            target = root / "target.py"
+            r = mut.run_gate(root, [target], f"{sys.executable} -m unittest test_good")
+            self.assertEqual(r["dirty_targets"], [])
+            self.assertFalse(r["refused"], r)
+            self.assertGreater(r["summary"]["killed"], 0, r)
+            # An UNTRACKED target is dirty too, and for the worse reason: it has no committed
+            # state to restore from at all, so a stranded mutant over it is unrecoverable.
+            new = root / "helper.py"
+            new.write_text(TARGET, encoding="utf-8")
+            self.assertEqual(mut.dirty_targets(root, [new]), ["helper.py"])
+
+    def test_a_non_git_tree_is_unknown_not_clean(self) -> None:
+        """Outside a repository git cannot answer, so the check reports UNKNOWN (None) rather
+        than clean. The run proceeds - refusing every non-repo fixture would be a worse
+        failure - but the report says the tree was never checked, so a reader is not told a
+        dirty tree was clean."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))          # no git repo here
+            self.assertIsNone(mut.dirty_targets(root, [root / "target.py"]))
+            r = mut.run_gate(root, [root / "target.py"],
+                             f"{sys.executable} -m unittest test_good")
+            self.assertIsNone(r["dirty_targets"])
+            self.assertFalse(r["refused"], r)
+
+
 if __name__ == "__main__":
     unittest.main()

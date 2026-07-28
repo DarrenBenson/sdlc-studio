@@ -1397,5 +1397,154 @@ class DuplicateScopeParityTests(unittest.TestCase):
             self.assertIn("CR0100", [c["id"] for c in any_type])
 
 
+class CompanionTestFootprintTests(unittest.TestCase):
+    """BG0343: a declared `Affects` that names a source file and NOT its existing companion test
+    is an understated footprint. Nothing refused it, so the plan's collision analysis, the
+    engagement floor and gate's changed-surface pass all read a unit smaller than it is - silently,
+    because the filing exits 0. The filer names the missing path at the moment it can."""
+
+    def _tree(self, root: Path, *, with_test: bool = True) -> None:
+        _seed_index(root, "bug")
+        (root / "scripts").mkdir(parents=True, exist_ok=True)
+        (root / "scripts" / "thing.py").write_text("x\n", encoding="utf-8")
+        if with_test:
+            (root / "scripts" / "tests").mkdir(parents=True, exist_ok=True)
+            (root / "scripts" / "tests" / "test_thing.py").write_text("x\n", encoding="utf-8")
+
+    def test_missing_companion_test_is_named_by_the_predicate(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tree(root)
+            self.assertEqual(ff.missing_companion_tests(root, "scripts/thing.py", "bug"),
+                             [("scripts/thing.py", "scripts/tests/test_thing.py")])
+
+    def test_a_declared_test_file_satisfies_the_check(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tree(root)
+            self.assertEqual(
+                ff.missing_companion_tests(
+                    root, "scripts/thing.py, scripts/tests/test_thing.py", "bug"), [])
+
+    def test_no_companion_on_disk_means_no_invented_path(self) -> None:
+        # The tool never sends an author to a file it made up: with no test beside the source
+        # there is nothing to name, so it says nothing.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tree(root, with_test=False)
+            self.assertEqual(ff.missing_companion_tests(root, "scripts/thing.py", "bug"), [])
+
+    def test_a_package_sibling_suite_is_found(self) -> None:
+        # `scripts/lib/sdlc_md.py` is tested by `scripts/tests/test_sdlc_md.py` - one directory UP,
+        # which is exactly the shape the audit's 16 bugs all under-declared.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            (root / "scripts" / "lib").mkdir(parents=True, exist_ok=True)
+            (root / "scripts" / "lib" / "parser.py").write_text("x\n", encoding="utf-8")
+            (root / "scripts" / "tests").mkdir(parents=True, exist_ok=True)
+            (root / "scripts" / "tests" / "test_parser.py").write_text("x\n", encoding="utf-8")
+            self.assertEqual(ff.missing_companion_tests(root, "scripts/lib/parser.py", "bug"),
+                             [("scripts/lib/parser.py", "scripts/tests/test_parser.py")])
+
+    def test_a_root_level_source_has_no_parent_sibling_suite(self) -> None:
+        # The `..` candidate must never escape the repo root into a path nobody can resolve.
+        self.assertTrue(all(not c.startswith("..")
+                            for c in ff.companion_test_candidates("thing.py")))
+
+    def test_a_dot_directory_path_compares_intact(self) -> None:
+        # This repo's own sources live under `.claude/`. A normalisation that stripped the leading
+        # dot would compare two mangled spellings and warn about a test that IS declared.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            src = root / ".claude" / "scripts"
+            src.mkdir(parents=True, exist_ok=True)
+            (src / "thing.py").write_text("x\n", encoding="utf-8")
+            (src / "tests").mkdir(exist_ok=True)
+            (src / "tests" / "test_thing.py").write_text("x\n", encoding="utf-8")
+            self.assertEqual(
+                ff.missing_companion_tests(
+                    root, ".claude/scripts/thing.py, .claude/scripts/tests/test_thing.py", "bug"),
+                [])
+            self.assertEqual(
+                ff.missing_companion_tests(root, ".claude/scripts/thing.py", "bug"),
+                [(".claude/scripts/thing.py", ".claude/scripts/tests/test_thing.py")])
+
+    def test_an_rfc_footprint_is_not_checked(self) -> None:
+        # An RFC's declared files are the OUTPUT of its decision, exactly as the resolvable
+        # check skips it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tree(root)
+            self.assertEqual(ff.missing_companion_tests(root, "scripts/thing.py", "rfc"), [])
+
+    def test_the_cli_reports_the_missing_test_path(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tree(root)
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = ff.main(["file", "--type", "bug", "--title", "a defect", "--severity", "High",
+                              "--summary", "s", "--steps", "r", "--fix", "f",
+                              "--affects", "scripts/thing.py", "--points", "3",
+                              "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertIn("scripts/tests/test_thing.py", err.getvalue())
+            self.assertIn("Affects", err.getvalue())
+
+    def test_it_is_a_warning_not_a_refusal(self) -> None:
+        # Losing the finding would be worse than under-declaring it: the artefact is still written.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tree(root)
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                ff.main(["file", "--type", "bug", "--title", "a defect", "--severity", "High",
+                         "--summary", "s", "--steps", "r", "--fix", "f",
+                         "--affects", "scripts/thing.py", "--points", "3", "--root", str(root)])
+            self.assertTrue([p for p in (root / "sdlc-studio" / "bugs").glob("*.md")
+                             if p.name != "_index.md"])
+
+    def test_a_complete_footprint_files_silently(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tree(root)
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                ff.main(["file", "--type", "bug", "--title", "a defect", "--severity", "High",
+                         "--summary", "s", "--steps", "r", "--fix", "f",
+                         "--affects", "scripts/thing.py, scripts/tests/test_thing.py",
+                         "--points", "3", "--root", str(root)])
+            self.assertEqual(err.getvalue(), "")
+
+
+class StripCodeBlocksFenceTests(unittest.TestCase):
+    """BG0349: the shell-hazard scrubber drops fenced illustration by the ONE shared CommonMark
+    tracker. A naive toggle released a four-backtick block on its inner three-backtick fence, so
+    the quoted command below it was scanned as a stored value and reported as a hazard."""
+
+    TICK = "`"
+
+    def test_inner_fence_inside_a_longer_block_is_not_a_closer(self) -> None:
+        value = (self.TICK * 4 + "markdown\n"
+                 + self.TICK * 3 + "\n"
+                 "rm -rf build\n"
+                 + self.TICK * 3 + "\n"
+                 + self.TICK * 4 + "\n")
+        self.assertEqual(ff._strip_code_blocks(value).strip(), "")
+
+    def test_a_fence_carrying_an_info_string_never_closes(self) -> None:
+        value = (self.TICK * 3 + "markdown\n"
+                 + self.TICK * 3 + "text\n"
+                 "rm -rf build\n"
+                 + self.TICK * 3 + "\n")
+        self.assertEqual(ff._strip_code_blocks(value).strip(), "")
+
+    def test_prose_after_the_matching_closer_survives(self) -> None:
+        value = (self.TICK * 4 + "\n" + self.TICK * 3 + "\nfenced\n"
+                 + self.TICK * 3 + "\n" + self.TICK * 4 + "\nreal prose\n")
+        self.assertEqual(ff._strip_code_blocks(value).strip(), "real prose")
+
+
 if __name__ == "__main__":
     unittest.main()

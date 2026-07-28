@@ -349,5 +349,71 @@ class BodyLinkCodeSpanTests(unittest.TestCase):
             self.assertEqual(len(broken), 1, broken)
             self.assertIn(":7 ->", broken[0])
 
+class NestedFenceTests(unittest.TestCase):
+    """BG0349: the checker tracks fences by the ONE shared CommonMark rule, never a three-character
+    toggle. A toggle released a four-backtick block on its inner three-backtick fence, so the
+    documented example beneath it was reported as a live broken reference - the guard crying wolf
+    on exactly the artefact that DOCUMENTS a broken link."""
+
+    TICK = "`"
+
+    def _repo(self, root: Path) -> None:
+        _write(root, ".claude/skills/sdlc-studio/SKILL.md", "# Skill\n")
+
+    def test_a_link_inside_a_nested_fence_is_still_an_example(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._repo(root)
+            _write(root, "sdlc-studio/bugs/BG9997-probe.md",
+                   "# BG9997\n\n"
+                   + self.TICK * 4 + "markdown\n"
+                   + self.TICK * 3 + "\n"
+                   "[x](gone-nested.md)\n"
+                   + self.TICK * 3 + "\n"
+                   + self.TICK * 4 + "\n")
+            broken = check_links.check_body_links(root / "sdlc-studio", set())
+            self.assertEqual(broken, [])
+
+    def test_a_fence_carrying_an_info_string_never_closes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._repo(root)
+            _write(root, "sdlc-studio/bugs/BG9996-probe.md",
+                   "# BG9996\n\n"
+                   + self.TICK * 3 + "markdown\n"
+                   + self.TICK * 3 + "text\n"
+                   "[x](gone-info.md)\n"
+                   + self.TICK * 3 + "\n")
+            broken = check_links.check_body_links(root / "sdlc-studio", set())
+            self.assertEqual(broken, [])
+
+    def test_a_live_link_after_the_matching_closer_is_still_reported(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._repo(root)
+            _write(root, "sdlc-studio/bugs/BG9995-probe.md",
+                   "# BG9995\n\n"
+                   + self.TICK * 4 + "markdown\n"
+                   + self.TICK * 3 + "\n"
+                   "[x](gone-nested.md)\n"
+                   + self.TICK * 3 + "\n"
+                   + self.TICK * 4 + "\n\n"
+                   "Live: [x](gone-live.md)\n")
+            broken = check_links.check_body_links(root / "sdlc-studio", set())
+            joined = " ".join(broken)
+            self.assertIn("gone-live.md", joined)
+            self.assertNotIn("gone-nested.md", joined)
+
+    def test_rename_never_rewrites_a_link_inside_a_nested_fence(self):
+        text = (self.TICK * 4 + "markdown\n"
+                + self.TICK * 3 + "\n"
+                "[x](old.md)\n"
+                + self.TICK * 3 + "\n"
+                + self.TICK * 4 + "\n")
+        new_text, changed = check_links.rewrite_inbound_links(text, "old.md", "new.md")
+        self.assertEqual(changed, 0)
+        self.assertEqual(new_text, text)
+
+
 if __name__ == "__main__":
     unittest.main()

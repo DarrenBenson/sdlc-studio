@@ -40,10 +40,15 @@ ALLOWLIST = {
     "reference-decisions.md": 724,
     "reference-test-best-practices.md": 706,  # +assertion-integrity + mutation-check section (CR0131)
     "reference-config.md": 640,  # +repair-plan gate keys (EP0106): a new opt-in config surface
-    "reference-review.md": 705,  # +closing-review brief (EP0108/EP0109) +supersession boundary rule
-                                 # first pass and the three standing adversarial practices;
+    "reference-review.md": 755,  # +closing-review brief (EP0108/EP0109) +supersession boundary rule
+                                 # first pass and the standing adversarial practices;
                                  # +the verdict-log supersession section (EP0133/US0374/US0375):
-                                 # the correction path and what a retired row does to each gate
+                                 # the correction path and what a retired row does to each gate.
+                                 # Raised 705 -> 755 for US0504/US0505: where a delegated reviewer
+                                 # mutates (isolated checkout, never the author's tree - a reviewer
+                                 # reverted a shipped repair mutating a live one) and the standing
+                                 # practice that a behaviour-changing repair carries a test. Both
+                                 # are doctrine nothing executes, so the reference IS the artefact
     "reference-sprint.md": 724,  # +EP0130/0146/0150-0155 sprint-engine, +report-only lane partition/export
                                  # +the amend/material goal-review and seat-brief notes (EP0152/0153)
                                  # (Sprint 1 of the three-sprint run). FLAGGED for a structural

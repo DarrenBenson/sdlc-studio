@@ -42,10 +42,22 @@ def _spec(type_: str) -> tuple[str, str]:
     return sdlc_md.ARTIFACT_TYPES.get(type_) or META_TYPES[type_]
 
 
+# One id-digit range for BOTH readers. `sdlc_md.id_number` accepts 4-7 digits (four is the
+# minted width; the upper bound is what separates a long sequential id from a ULID), and this
+# reader must accept the same range or the two disagree about what an id IS. Capped at four
+# digits it read RETRO10000 back as 1000, so `allocate_number` computed its max from the wrong
+# numbers and handed out an id already on disk. The trailing `(?!\d)` refuses a longer digit run
+# outright rather than silently truncating it to its first seven digits, which is how the
+# four-digit cap did its damage. Three digits stays admitted at the bottom: it is below the minted
+# width, but a hand-made `RV001` still HOLDS its number, and reading fewer ids than exist is the
+# direction that re-mints one.
+_META_ID_DIGITS = r"(\d{3,7})(?!\d)"
+
+
 def _meta_nums(prefix: str, stems) -> list[int]:
     """Numeric ids from file stems for a meta prefix (e.g. RV0005, RETRO0001) - the standard
-    extract_record_id does not recognise these prefixes, so match prefix + 3-4 digits directly."""
-    pat = re.compile(rf"^{re.escape(prefix)}-?(\d{{3,4}})", re.IGNORECASE)
+    extract_record_id does not recognise these prefixes, so match prefix + digits directly."""
+    pat = re.compile(rf"^{re.escape(prefix)}-?{_META_ID_DIGITS}", re.IGNORECASE)
     return sorted({int(m.group(1)) for s in stems if (m := pat.match(s))})
 
 

@@ -10,8 +10,12 @@ Matching is sub-token aware: a hyphenated identifier is checked against every co
 hyphen-join of its parts, so a base name (e.g. its hash) also catches longer variants
 (`<base>-studio`, `<base>-ha`) without listing them.
 
+Coverage is every tracked file minus a small binary denylist, never an allowlist of suffixes:
+an allowlist exempts whatever nobody enumerated, and a file nobody thought of is the one a name
+leaks through. A file that cannot be read is a refusal, not a clean pass.
+
 Usage:
-    python3 tools/check_neutrality.py            # scan tracked text files; exit 1 on any hit
+    python3 tools/check_neutrality.py            # scan every tracked file; exit 1 on any hit
 """
 from __future__ import annotations
 
@@ -30,9 +34,19 @@ _BLOCKED: set[str] = {
     "09d3bbfa840850aa66cf189464b355d0e592a0dbf84070fe10dec9b11a27fbc3",
 }
 
-# Text files worth scanning; binaries and lockfiles are skipped.
-_TEXT_SUFFIXES = {".md", ".markdown", ".txt", ".yaml", ".yml", ".json", ".toml", ".cfg",
-                  ".ini", ".sh", ".py", ".ps1"}
+# Every tracked file is scanned. The filter is a DENYLIST, not an allowlist of suffixes: an
+# allowlist exempts whatever nobody thought to enumerate, and what it exempted here was the
+# shipped .template payload (instantiated by every consuming project, so the highest-risk leak
+# site), the evidence logs, and every extensionless script. A suffix absent from this set is
+# scanned; a payload that is binary in fact rather than by suffix is caught by the NUL sniff
+# in `check`.
+_BINARY_SUFFIXES = {".pdf", ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp", ".svgz",
+                    ".woff", ".woff2", ".ttf", ".otf", ".eot",
+                    ".zip", ".gz", ".tgz", ".bz2", ".xz", ".tar", ".7z", ".rar",
+                    ".mp3", ".mp4", ".mov", ".wav", ".webm", ".ogg",
+                    ".pyc", ".pyo", ".so", ".dll", ".dylib", ".exe", ".bin",
+                    ".class", ".jar", ".wasm",
+                    ".db", ".sqlite", ".sqlite3"}
 _SKIP_NAMES = {"package-lock.json"}
 # This checker and its test legitimately reference the mechanism - never scan them for names.
 _SELF = {"tools/check_neutrality.py",
@@ -58,6 +72,15 @@ def scan_text(text: str, blocked: set[str]) -> set[str]:
     return {h[:12] for c in _candidates(text) if (h := _h(c)) in blocked}
 
 
+def _scannable(rels: list[str]) -> list[str]:
+    """The tracked paths this guard is responsible for: everything except its own source,
+    lockfiles, and suffixes that are binary by definition."""
+    return [rel for rel in rels
+            if rel not in _SELF
+            and Path(rel).name not in _SKIP_NAMES
+            and Path(rel).suffix.lower() not in _BINARY_SUFFIXES]
+
+
 def _tracked_text_files(root: Path) -> list[Path]:
     try:
         out = subprocess.run(["git", "ls-files"], cwd=str(root), capture_output=True,
@@ -66,13 +89,7 @@ def _tracked_text_files(root: Path) -> list[Path]:
         # LL0008: a guard that cannot list files must fail loud, never silently pass.
         raise SystemExit("neutrality: could not `git ls-files` - run from inside the repo; "
                          "refusing to report a clean scan of nothing")
-    files = []
-    for rel in out.splitlines():
-        if rel in _SELF or Path(rel).name in _SKIP_NAMES:
-            continue
-        if Path(rel).suffix.lower() in _TEXT_SUFFIXES:
-            files.append(root / rel)
-    return files
+    return [root / rel for rel in _scannable(out.splitlines())]
 
 
 def check(root: Path | str, blocked: set[str] | None = None,
@@ -82,15 +99,28 @@ def check(root: Path | str, blocked: set[str] | None = None,
     root = Path(root)
     targets = files if files is not None else _tracked_text_files(root)
     findings: list[dict] = []
+    unreadable: list[str] = []
     for f in targets:
         try:
-            lines = Path(f).read_text(encoding="utf-8", errors="replace").splitlines()
-        except OSError:
+            raw = Path(f).read_bytes()
+        except OSError as exc:
+            # LL0008 again, and the same refusal `_tracked_text_files` already makes above: a
+            # file the guard could not open is NOT a file it scanned clean. `read_bytes` is the
+            # only failure left - decoding below cannot raise, because errors='replace'.
+            unreadable.append(f"{f} ({exc.strerror or exc.__class__.__name__})")
             continue
-        for n, line in enumerate(lines, 1):
+        if b"\x00" in raw[:8192]:
+            continue  # binary payload whatever its suffix - there is no text here to scan
+        for n, line in enumerate(raw.decode("utf-8", errors="replace").splitlines(), 1):
             hits = scan_text(line, blocked)
             if hits:
                 findings.append({"file": str(f), "line": n, "hashes": sorted(hits)})
+    if unreadable:
+        raise SystemExit(
+            f"neutrality: {len(unreadable)} tracked file(s) could not be read, so this scan "
+            f"covers less than it claims - refusing to report on it "
+            f"({len(findings)} finding(s) in what WAS read):\n  "
+            + "\n  ".join(unreadable))
     return findings
 
 

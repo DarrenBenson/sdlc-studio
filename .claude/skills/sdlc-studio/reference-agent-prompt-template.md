@@ -249,6 +249,19 @@ Say the same about the build tooling: an agent changing the pre-commit hook, the
 the commit path runs is changing the machinery every other agent commits through, however disjoint
 its declared files look.
 
+### An unfinished delegate is reported unfinished, never pending {#unfinished-delegate}
+
+A delegate that returns no result is **unfinished**, and the batch report names it: which
+delegate, which unit, and that no result arrived. It is never folded into a pending count,
+because a pending count says the answer may still come and this one will not. A batch reporting
+"3 done, 1 pending" when the fourth agent died has reported an outage as progress, and the units
+it was carrying are silently uncovered.
+
+Detect it before reporting it: `reference-agentic-lessons.md#silent-stall` gives the rule, which
+is transcript growth plus a result marker rather than elapsed time. Count an unfinished delegate
+against the batch as work not done, and re-dispatch it or hand it back - never let the run close
+over it.
+
 ## Building the Prompt {#agentic-execution}
 
 Before writing the prompt, the orchestrator MUST:

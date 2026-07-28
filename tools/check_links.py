@@ -42,6 +42,29 @@ from pathlib import Path
 
 DEFAULT_ROOT = ".claude/skills/sdlc-studio"
 
+
+def _load_sdlc_md():
+    """The skill's own markdown parser, for the ONE CommonMark fenced-block rule (`fence_step`).
+
+    This guard and the runtime scripts must never disagree about where a block ends: a
+    three-character toggle released a ````markdown block on its inner ```, and the documented
+    example beneath it was then reported as a live broken reference - the guard crying wolf on the
+    very artefact that DOCUMENTS a broken link.
+
+    Loaded BY PATH rather than by putting the skill's `scripts/` directory on `sys.path`: that
+    directory holds sixty modules with ordinary names (`config`, `status`, `plan`, `gate`), and
+    prepending it would shadow them for every other module sharing this process."""
+    import importlib.util  # noqa: PLC0415 - local: only this loader needs it
+    path = Path(__file__).resolve().parents[1] / DEFAULT_ROOT / "scripts" / "lib" / "sdlc_md.py"
+    spec = importlib.util.spec_from_file_location("check_links_sdlc_md", path)
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+sdlc_md = _load_sdlc_md()
+
 # Illustrative link examples that are not real references.
 DEFAULT_ALLOW = {"doc.md#section-name"}
 
@@ -170,7 +193,6 @@ def check_index_links(workspace: Path) -> list[str]:
     return sorted(broken)
 
 
-_FENCE_RE = re.compile(r"^\s*(```|~~~)")
 _SPAN_RE = re.compile(r"`[^`]*`")
 
 
@@ -185,13 +207,13 @@ def _without_code(text: str) -> list[str]:
     line the reader will open.
     """
     out: list[str] = []
-    in_fence = False
+    fence = None
     for line in text.splitlines():
-        if _FENCE_RE.match(line):
-            in_fence = not in_fence
+        fence, is_fence_line = sdlc_md.fence_step(line.lstrip(), fence)
+        if is_fence_line or fence is not None:
             out.append("")
             continue
-        out.append("" if in_fence else _SPAN_RE.sub("", line))
+        out.append(_SPAN_RE.sub("", line))
     return out
 
 
@@ -287,15 +309,12 @@ def rewrite_inbound_links(text: str, old_name: str, new_name: str) -> tuple[str,
         return _INBOUND_LINK_RE.sub(repl, seg)
 
     out: list[str] = []
-    in_fence = False
+    fence = None
     changed = 0
     for line in text.splitlines():
-        if _FENCE_RE.match(line):
-            in_fence = not in_fence
-            out.append(line)
-            continue
-        if in_fence:
-            out.append(line)
+        fence, is_fence_line = sdlc_md.fence_step(line.lstrip(), fence)
+        if is_fence_line or fence is not None:
+            out.append(line)   # illustration: a rename never rewrites an example
             continue
         # rewrite only the segments OUTSIDE inline code spans (odd `-split indices are code)
         segs = line.split("`")

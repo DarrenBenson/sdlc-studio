@@ -1,11 +1,11 @@
 # US0506: A report attributes suite time and test count to the module each test covers, so the expensive areas are visible
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0455
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** tools/tests, tools/test_census.py
+> **Affects:** tools/tests, tools/test_census.py, tools/tests/test_test_census.py
 > **Epic:** EP0177
 > **Points:** 5
 > **Persona:** Maya Okafor

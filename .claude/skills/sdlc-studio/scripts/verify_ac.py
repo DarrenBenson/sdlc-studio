@@ -214,11 +214,15 @@ class VerifierResult:
 # then silenced the whole gate. Disarming this check is a worse failure than the false alarm it
 # was added to fix, so nothing outside a family's own summary may speak for it.
 #
-# Only `go` and `jest` need a counter-signature at all, because only they report PER UNIT and
-# can say "nothing here" beside a real result. `unittest` and `pytest` each print exactly one
-# summary, and their empty and non-empty forms are mutually exclusive ("Ran 0 tests" vs
-# "Ran 9 tests"; "no tests ran" vs "3 passed, 90 deselected"), so they are judged on their own
-# line with no veto.
+# A run can also be empty WITHOUT being zero-count: every selected test skipped. That exits 0
+# and prints a summary with real counts in it, so it is judged by reading those counts rather
+# than by matching an empty-run phrase - see `_all_skipped` and the per-family signatures below.
+#
+# For the zero-count case, only `go` and `jest` need a counter-signature, because only they
+# report PER UNIT and can say "nothing here" beside a real result. `unittest` and `pytest` each
+# print exactly one summary, and their empty and non-empty forms are mutually exclusive ("Ran 0
+# tests" vs "Ran 9 tests"; "no tests ran" vs "3 passed, 90 deselected"), so they are judged on
+# their own line with no veto.
 
 # unittest: one summary line, exclusive.
 _UNITTEST_ZERO = re.compile(r"^Ran 0 tests? in ", re.M)
@@ -232,6 +236,29 @@ _PYTEST_ZERO = re.compile(r"^(?:=+ )?no tests (?:ran|collected)\b", re.M | re.I)
 # Counts pytest prints after `skipped` and that still mean nothing ran are allowed through.
 _PYTEST_ONLY_SKIPPED = re.compile(
     r"^(?:=+ )?\d+ skipped(?:, \d+ (?:deselected|warnings?))* in \d", re.M | re.I)
+# The same hole is open in every other family, and each needs its OWN signature because each
+# reports skips differently. `unittest` is the one that matters most: it is this repository's
+# own default runner, so the silent pass was live on the path the project itself uses.
+#
+# unittest prints BOTH a run count and a skip count, so the two are compared rather than
+# pattern-matched: "Ran 4 tests" beside "OK (skipped=1)" means three tests really ran. Counts
+# are summed across the blob so a `shell` line that runs two suites is judged on the whole:
+# one empty run beside a real one is not vacuous, both empty is.
+_UNITTEST_RAN = re.compile(r"^Ran (\d+) tests? in ", re.M)
+_UNITTEST_OK_SKIPPED = re.compile(r"^OK \([^)]*\bskipped=(\d+)", re.M)
+# jest: "Tests:  1 skipped, 2 passed, 3 total". A `todo` test never runs either, so it counts
+# with the skips - calling it "ran" would stamp a run of nothing but todos green.
+_JEST_TESTS_LINE = re.compile(r"^Tests:[ \t]+(.+)$", re.M)
+# vitest: "Tests  2 passed | 1 skipped (3)", the total in brackets. The `Test Files` line above
+# it does not match: `Tests` must be followed by whitespace, and there it is followed by " Files".
+_VITEST_TESTS_LINE = re.compile(r"^[ \t]*Tests[ \t]+(.+?)[ \t]*\((\d+)\)[ \t]*$", re.M)
+# go: `go test` WITHOUT -v prints `ok pkg 0.002s` whether every test passed or every test
+# called t.Skip, so a non-verbose all-skipped run is genuinely indistinguishable from a green
+# one and is not detectable here. With -v each test prints its own outcome line, and that is
+# judged: every outcome a SKIP means nothing ran. A parent test whose subtests all skip is
+# itself reported PASS, so such a run reads as not-vacuous - a miss, never a false alarm.
+_GO_OUTCOME = re.compile(r"^[ \t]*--- (PASS|FAIL|SKIP|BENCH)\b", re.M)
+_COUNT_WORD = "(?:^|[ \t|,])(\\d+) {}\\b"
 # go: one line per PACKAGE. `?  pkg [no test files]` and `ok pkg 0.0s [no tests to run]` are
 # normal output of a green `./...` run, so the whole run is empty only when EVERY package line
 # says so.
@@ -272,14 +299,70 @@ def _ran_no_tests(kind: str, stdout: str, stderr: str) -> bool:
     blob = f"{stdout}\n{stderr}"
     return bool(_UNITTEST_ZERO.search(blob)
                 or _PYTEST_ZERO.search(blob)
-                or _pytest_all_skipped(blob)
                 or _go_ran_nothing(blob)
-                or _jest_ran_nothing(blob))
+                or _jest_ran_nothing(blob)
+                or _all_skipped(kind, stdout, stderr))
 
 
 def _pytest_all_skipped(blob: str) -> bool:
     """True when pytest's summary reports skips and nothing that actually ran."""
     return bool(_PYTEST_ONLY_SKIPPED.search(blob))
+
+
+def _summary_count(segment: str, word: str) -> int:
+    """Total of `<n> <word>` counts in one runner summary segment."""
+    return sum(int(n) for n in re.findall(_COUNT_WORD.format(word), segment))
+
+
+def _unittest_all_skipped(blob: str) -> bool:
+    """True when every test unittest ran was skipped: `Ran N` matched by `skipped=N`."""
+    ran = sum(int(n) for n in _UNITTEST_RAN.findall(blob))
+    if not ran:
+        return False  # "Ran 0 tests" is the zero signature, judged separately
+    return sum(int(n) for n in _UNITTEST_OK_SKIPPED.findall(blob)) == ran
+
+
+def _summaries_all_skipped(rows: list[tuple[str, int]]) -> bool:
+    """True when every (segment, total) summary counts a total > 0 of nothing but skips/todos."""
+    if not rows:
+        return False
+    return all(total and _summary_count(seg, "skipped") + _summary_count(seg, "todo") == total
+               for seg, total in rows)
+
+
+def _jest_all_skipped(blob: str) -> bool:
+    """True when jest's `Tests:` summary counts nothing but skips and todos."""
+    return _summaries_all_skipped([(seg, _summary_count(seg, "total"))
+                                   for seg in _JEST_TESTS_LINE.findall(blob)])
+
+
+def _vitest_all_skipped(blob: str) -> bool:
+    """True when vitest's `Tests` summary counts nothing but skips and todos."""
+    return _summaries_all_skipped([(seg, int(total))
+                                   for seg, total in _VITEST_TESTS_LINE.findall(blob)])
+
+
+def _go_all_skipped(blob: str) -> bool:
+    """True when go printed per-test outcomes (-v) and every one of them was a SKIP."""
+    outcomes = _GO_OUTCOME.findall(blob)
+    return bool(outcomes) and all(o == "SKIP" for o in outcomes)
+
+
+def _all_skipped(kind: str, stdout: str, stderr: str) -> bool:
+    """True when a runner selected tests, ran none of them, and exited clean anyway.
+
+    Vacuous for a DIFFERENT reason from a filter that matched nothing, and it takes a different
+    remedy - the Verify line names a test that exists, it is switched off - so the caller says
+    so rather than telling the reader to re-point a selector that is fine.
+    """
+    if kind not in _TEST_KINDS:
+        return False
+    blob = f"{stdout}\n{stderr}"
+    return bool(_pytest_all_skipped(blob)
+                or _unittest_all_skipped(blob)
+                or _jest_all_skipped(blob)
+                or _vitest_all_skipped(blob)
+                or _go_all_skipped(blob))
 
 
 _VACUOUS_MSG = ("verifier exited 0 but ran NO tests - a filter that matches nothing "
@@ -374,7 +457,7 @@ def run_verifier(expression: str, timeout: int, cwd: Path,
         # An all-skipped run is vacuous for a different reason and takes a different remedy,
         # so it says so rather than telling the reader to re-point a Verify line that is fine.
         msg = (_SKIPPED_MSG if (vacuous and not unresolved
-                                and _pytest_all_skipped(f"{stdout}\n{stderr}"))
+                                and _all_skipped(kind, stdout, stderr))
                else _VACUOUS_MSG)
         return VerifierResult(
             ok=(result.returncode == 0 and not vacuous),
@@ -1156,13 +1239,27 @@ def resolve_pytest_from_cache(verifier: str, nodes: dict[str, bool],
 
 def resolve_jest_from_cache(verifier: str, asserts: list[dict]) -> VerifierResult | None:
     """Resolve a `jest <pattern>` verifier against cached assertions, mirroring `jest -t`:
-    pass iff >=1 assertion name contains the pattern and all matching pass. None when the verb is
-    not jest or nothing matches -> the caller runs the authoritative per-AC subprocess."""
+    pass iff >=1 assertion name MATCHES the pattern as a regex and all matching pass. None when
+    the verb is not jest, when the pattern will not compile, or when nothing matches -> the
+    caller runs the authoritative per-AC subprocess.
+
+    The pattern is a regex, not a substring. `jest -t` is `testNamePattern`, so `total$` selects
+    "renders the total" and not "renders the totals" - selecting by containment computes the
+    verdict over a DIFFERENT set of tests from the one jest would run, and under `--release`
+    this cache stands in for the authoritative run in a blocking lane. A pattern Python cannot
+    compile is not a verdict either: fall through and let the subprocess answer, rather than
+    guess with the wrong matcher.
+    """
     head, _, tail = verifier.strip().partition(" ")
     if head.lower() != "jest" or not tail:
         return None
     pat = tail.strip().strip('"\'')
-    matches = [a for a in asserts if pat in a["name"]]
+    try:
+        rx = re.compile(pat)
+    except re.error as exc:
+        sdlc_md.debug("jest_cache_pattern", exc)
+        return None
+    matches = [a for a in asserts if rx.search(a["name"])]
     if not matches:
         return None
     ok = all(a["ok"] for a in matches)

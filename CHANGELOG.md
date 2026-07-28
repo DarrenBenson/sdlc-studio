@@ -7,6 +7,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`reconcile` swept eight of the nine artefact types, so the issues index was censused by
+  nothing (BG0330).** `DEFAULT_TYPES` and `SCOPE_TYPES` were hand-written and omitted `issue`, and
+  no `--scope` named it either, so status-mismatch, missing-row, orphan-row and count drift under
+  `sdlc-studio/issues/` were exempt from detect, apply, the index-derived check and the commit gate
+  - while the per-type machinery worked perfectly and only a transition-time `apply_type` ever
+  called it. Both lists are now DERIVED from `sdlc_md.ARTIFACT_TYPES` (the convention `archive.py`
+  already followed), `--scope issues` exists, and two guards compare each list against
+  `ARTIFACT_TYPES`, so re-hardcoding either one, or adding a tenth type without a scope, reddens
+  rather than quietly exempting a whole index.
+- **The guided classifier called a repo full of source greenfield unless it carried one of six
+  manifests (BG0312).** `classify_path` keyed entirely off the DETECT marker list, so a C/C++,
+  Ruby or PHP tree, or a Python project with only a `setup.py`, read as an empty repo and the PRD
+  stage sent it down the greenfield INTERVIEW instead of generating its PRD from its own code -
+  the exact wrong fork the guided flow exists to avoid. A manifest-less repo now falls through to a
+  census of the source files themselves: a wide extension set (the question is whether code exists,
+  not which stack it is), version-control, dependency and build directories pruned so a vendored
+  tree is never mistaken for this project's source, returning on the first hit and bounded, so it
+  stays cheap on the orientation path.
+- **The agents stage skipped a missing starter template in silence (BG0334).** `stage_agents` passed
+  over an absent template with a bare `continue`: the file appeared in neither `created` nor
+  `skipped`, so the first stage of onboarding drafted nothing, said nothing, and the operator
+  confirmed it. It now refuses, naming the missing starter, and refuses BEFORE writing anything, so
+  there is never a half-drafted stage to confirm. The two verifiers that should have caught it were
+  strengthened at the same time: one asserted the bare substring `epic` (satisfied by the word
+  'epics' in the surrounding prose) and never mentioned the story command, the other asserted
+  `AGENTS.md` but not the `CLAUDE.md` import its criterion claims - and Claude Code reads CLAUDE.md,
+  not AGENTS.md.
+- **Five markdown parsers still toggled on any three-character fence run (BG0349).** The naive
+  toggle treated every `` ``` `` as a closer, so a four-backtick block released on its inner fence
+  and everything below it was read as live document. All five now call the ONE shared CommonMark
+  tracker, `sdlc_md.fence_step`: `iter_tables` (the widest - it governs the table-row counting
+  reconcile consumes, which is the index-corruption class), `persona_registry`,
+  `file_finding._strip_code_blocks`, `persona_resolve.seat_name`, and both fence walks in
+  `tools/check_links.py`. Two rules a toggle cannot express: a block closes only on the same marker
+  at the opening run length or longer, and a closing fence may carry no info string.
+- **The finding filer names a test file the declared footprint leaves out (BG0343).** `Affects` is
+  where the FIX lands, not where the evidence was read, and this project's doctrine says a fix
+  arrives with a test - yet 54 artefacts filed from one audit declared a single source file and not
+  one named a test. An understated footprint causes silently the same three harms a fictional one is
+  refused for: it mis-groups the unit in the plan's collision analysis, under-reads it in the
+  engagement floor and misreports it in gate's changed-surface pass. The filer now reports, at
+  filing time, each declared source file whose companion test EXISTS on disk and which `Affects`
+  does not name - including the package-sibling suite one directory up (`scripts/lib/x.py` tested
+  by `scripts/tests/test_x.py`). It names the path rather than inventing one, so it stays silent
+  where no test exists, and it warns rather than refuses, because losing the finding in hand is
+  worse than an understated footprint.
+- **An all-skipped run was still stamped green for unittest, jest, vitest and go (BG0348).** The
+  earlier repair closed the hole for pytest only. Every other family exits 0 on a run where nothing
+  executed and prints a summary carrying real counts, which none of the zero-count signatures match:
+  `Ran 1 test` beside `OK (skipped=1)`, `Tests: 3 skipped, 3 total`, `Tests 3 skipped (3)`, and a
+  `go test -v` whose every outcome line is `--- SKIP`. `unittest` is the one that mattered most - it
+  is this repository's own default runner, so the silent pass was live on the path the project
+  itself uses. Each family now has its own all-skipped signature, read from that family's own
+  summary and nothing else. A legitimately mixed run is untouched, because the counts are compared
+  rather than pattern-matched: `Ran 4 tests` beside `skipped=1` means three tests really ran, and
+  unittest counts are summed across the blob so one empty run beside a real one is not vacuous. A
+  `todo` counts with the skips, since it never ran either. The reader gets the skipped remedy
+  (un-skip it) rather than being told to re-point a selector that is fine. Non-verbose `go test`
+  prints `ok pkg` whether every test passed or every test called `t.Skip`, so that one case carries
+  no signal and is documented at the signature rather than papered over.
+- **The jest batch cache matched patterns by literal substring where `jest -t` is a regex
+  (BG0337).** The resolver's docstring claimed to mirror `jest -t`, but selected assertions with
+  Python containment, so a metacharacter-bearing pattern computed its verdict over a different test
+  set from the one jest would run - and under `--release` the cache stands in for the authoritative
+  run in a blocking lane. `renders the total$` now selects only the anchored match instead of
+  everything containing the phrase. A pattern Python cannot compile is not a verdict either: the
+  resolver returns `None` and the caller falls through to the authoritative per-AC subprocess, which
+  owns the answer.
+- **The id allocator read a meta id past 9999 as its first four digits (BG0338).** `RETRO10000` came
+  back as 1000, so the allocator computed its maximum from numbers no file holds and handed out an
+  id already on disk - with a different title slug the `path.exists()` guard does not fire and the
+  duplicate lands. `sdlc_md.id_number` was widened to 4-7 digits for exactly this class and the
+  sibling reader was left behind; both now admit the same range, and a longer digit run is refused
+  outright rather than truncated to its first seven digits, which would only move the same defect.
+- **Every artefact index asserted a `Last Updated` date no writer maintained (BG0342).** Five
+  indexes claimed a freshness up to five weeks older than rows they already carried, and `detect`
+  reported no drift, because the stamp sat outside every check - a false assertion in the ledger
+  files agents are told to trust. The header is now derived like any other index cell: a stamp
+  behind the newest date on its own rows is `stale-index-stamp` drift, `apply` restamps it from the
+  rows and says so, and because every mint appends through the shared index writer (which finishes
+  by calling `apply`), a new row leaves the header current. It is judged against the rows and never
+  against the clock - a clock-stamped header would re-drift every index in every project at
+  midnight; a header level with or ahead of its rows, or an index carrying no stamp, is not flagged.
+
 ## [5.0.0] - 2026-07-26
 
 ### Breaking (opt-in; the next release is semver-major 5.0.0)

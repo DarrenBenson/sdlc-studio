@@ -1283,9 +1283,9 @@ BLOCKING: <the subset that must be fixed before Done, or 'none'>"""
 
 
 # --- Standing review-brief practices ---------------------------------------------------
-# The three practices that produced this project's highest-value findings, each a STANDING
-# instruction carried in every reviewer brief with the reason it exists beside it. All three
-# were improvised mid-sprint rather than drawn from anything shipped, so they depended on
+# The practices that produced this project's highest-value findings, each a STANDING
+# instruction carried in every reviewer brief with the reason it exists beside it. Each was
+# improvised mid-sprint rather than drawn from anything shipped, so they depended on
 # whoever wrote the brief remembering them - the party the review exists to check. Woven into
 # every brief so they no longer do. `missing_practices` proves both halves are present: a
 # practice named without its reason is the half a fresh reviewer drops first.
@@ -1302,7 +1302,11 @@ the code never finds that.
 When a mutant SURVIVES, re-test its branch in ISOLATION before drawing any conclusion from it:
 a sibling guard masked a survivor three separate times in one sprint, and each time the truth
 appeared only when the branch was exercised alone - a survivor is evidence about the harness,
-not about the test."""
+not about the test.
+
+A repair that changes behaviour carries a test asserting that behaviour; where it does not,
+report the missing regression cover as a finding: an unpinned repair is one a later edit
+reverts with the suite still green, and a shipped repair was lost exactly that way."""
 
 # Each practice: (name, instruction-regex, reason-regex). Both must be present in a brief for
 # the practice to count as carried; the reason clause is the half worth keeping. Searched over
@@ -1318,6 +1322,9 @@ _BRIEF_PRACTICES = (
     ("isolation re-test of a survivor",
      r"re-test[^.]*in ISOLATION[^.]*before drawing any conclusion",
      r"sibling guard[^.]*masked"),
+    ("regression cover for a repair",
+     r"changes behaviour carries a test[^.]*report the missing regression cover as a finding",
+     r"reverts with the suite still green"),
 )
 
 # The four prose surfaces the claim-inventory first pass must cover. A pass that omits one
@@ -1339,8 +1346,8 @@ def _normalise_brief(text: str) -> str:
 
 
 def missing_practices(brief_text: str) -> list[str]:
-    """The standing review practices a brief fails to carry, by name. Empty means all three are
-    present with their reasons. A practice whose instruction is present but whose reason clause
+    """The standing review practices a brief fails to carry, by name. Empty means every one is
+    present with its reason. A practice whose instruction is present but whose reason clause
     is not still counts as missing - the reason is what survives into a fresh reviewer's head."""
     body = _normalise_brief(brief_text)
     absent = []
@@ -1351,15 +1358,19 @@ def missing_practices(brief_text: str) -> list[str]:
 
 
 def assert_brief_practices(brief_text: str) -> None:
-    """Refuse a brief missing any of the three standing practices, naming which. A brief that
-    omits one leaves it to whoever wrote the brief to remember, which is how all three were
-    improvised rather than shipped - so it is refused, never issued."""
+    """Refuse a brief missing any standing practice, naming which. A brief that omits one leaves
+    it to whoever wrote the brief to remember, which is how each was improvised rather than
+    shipped - so it is refused, never issued.
+
+    The roll-call in the message is DERIVED from `_BRIEF_PRACTICES`, never written beside it: a
+    hand-listed roll-call goes stale the first time a practice is added, and then the refusal
+    describes a rule set the guard no longer enforces."""
     absent = missing_practices(brief_text)
     if absent:
+        every = ", ".join(name for name, _i, _r in _BRIEF_PRACTICES)
         raise ValueError(
             "reviewer brief is missing standing practice(s): " + "; ".join(absent)
-            + " - each of per-item repair verdict, mutating the author's TESTS, and isolation "
-              "re-testing of a survivor is a standing instruction; a brief that omits one is "
+            + f" - each of {every} is a standing instruction; a brief that omits one is "
               "refused, not issued")
 
 

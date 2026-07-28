@@ -113,9 +113,15 @@ def _story_has_executable_acs(text: str) -> bool:
     return False
 
 
-def _acs_missing_evidence(text: str) -> tuple[list[str], list[str]]:
+def _acs_missing_evidence(text: str) -> tuple[list[str], list[str], str | None]:
     """The ACs no deterministic verifier can speak for, split by WHY, and carrying no recorded
-    passing human verdict: (declared manual, no `Verify:` line at all).
+    passing human verdict: (declared manual, no `Verify:` line at all, error).
+
+    The third element is None on a healthy parse and a short description of the failure when the
+    ACs could not be read at all. It exists because the first two CANNOT express that difference:
+    two empty lists are exactly what a fully-evidenced story looks like, so returning them on an
+    import or parse failure told the caller "nothing is owed" when the truth was "nothing was
+    looked at" - and the caller waved the story to Done.
 
     Manual ACs are the ones the deterministic gate CANNOT evaluate - a human observes the
     outcome. The gate cannot check the outcome, but it can require the EVIDENCE that a human did:
@@ -132,8 +138,11 @@ def _acs_missing_evidence(text: str) -> tuple[list[str], list[str]]:
     try:
         import verify_ac  # noqa: PLC0415 - sibling; imports only sdlc_md, no cycle
         blocks = verify_ac.parse_story(text)
-    except Exception:  # noqa: BLE001 - a parse hiccup must not mask the gate
-        return [], []
+    except Exception as exc:  # noqa: BLE001 - report it, never swallow it
+        # Fail LOUD. The previous `return []` was indistinguishable from a clean bill of health,
+        # so the one condition under which the gate was least able to judge - broken tooling or
+        # an unreadable story - was the one condition under which it approved everything.
+        return [], [], f"{type(exc).__name__}: {exc}"
     bare_manual: list[str] = []
     bare_unspecified: list[str] = []
     for b in blocks:
@@ -154,7 +163,7 @@ def _acs_missing_evidence(text: str) -> tuple[list[str], list[str]]:
             continue
         if toks[0].lower() in ("manual", "manually"):
             bare_manual.append(b.ac_id)
-    return bare_manual, bare_unspecified
+    return bare_manual, bare_unspecified, None
 
 
 def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
@@ -174,7 +183,13 @@ def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
     with no discount for saying nothing: waving it through made omission strictly cheaper than
     honest declaration, and it disagreed with the release lane, which refuses an unspecified AC -
     so a story closed Done all sprint failed only at tag time."""
-    bare_manual, bare_unspecified = _acs_missing_evidence(text)
+    bare_manual, bare_unspecified, evidence_error = _acs_missing_evidence(text)
+    if evidence_error is not None:
+        # Broken tooling is not a passed gate. Refuse and name the failure, so the actor repairs
+        # the story or the environment rather than being handed a Done nothing checked.
+        return (f"the manual-evidence check could not run ({evidence_error}) - an unreadable "
+                f"story or a broken `verify_ac` import is not a passed gate. Fix that, then "
+                f"retry; `--force` overrides deliberately")
     # Both are reported in ONE refusal: fixing one and being refused for the other next attempt
     # is the round-trip-per-gate cost the ladder above already avoids.
     parts = []

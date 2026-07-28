@@ -316,6 +316,74 @@ class GuidedInitTests(unittest.TestCase):
             root = Path(d)
             (root / "pyproject.toml").write_text("[project]\nname='x'\n", encoding="utf-8")
             self.assertEqual(init.classify_path(root), "brownfield")
+        # BG0312: US0437 AC2's Given is a repo that already CONTAINS SOURCE. This verifier
+        # exercised a manifest only, so it could not fail on the AC's own Given - the case that
+        # was broken. Source with no manifest belongs in the criterion's own verifier, not only
+        # in the sibling test below.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "app.rb").write_text("class App; end\n", encoding="utf-8")
+            self.assertIsNone(init.detect_stack(root))
+            self.assertEqual(init.classify_path(root), "brownfield")
+
+    def test_source_without_a_recognised_manifest_classifies_brownfield(self) -> None:
+        """BG0312: US0437 AC2 promises brownfield for a repo 'that already contains source', but
+        the classifier keyed entirely off six manifest markers plus *.csproj - so a C/C++, Ruby or
+        PHP tree, or a Python project with only a setup.py, read as an empty repo and US0439's PRD
+        stage sent it down the greenfield INTERVIEW. That is the exact wrong fork the guided flow
+        exists to avoid. The AC's own Given is source on disk, not a manifest this skill happens
+        to recognise, so the classifier must census the source too."""
+        cases = {
+            "c": [("src/main.c", "int main(void) { return 0; }\n"),
+                  ("src/util.h", "#pragma once\n")],
+            "ruby": [("app/models/user.rb", "class User; end\n")],
+            "php": [("public/index.php", "<?php echo 'hi';\n")],
+            "setup-py-only-python": [("setup.py", "from setuptools import setup\nsetup()\n"),
+                                     ("pkg/core.py", "def go():\n    return 1\n")],
+        }
+        for name, files in cases.items():
+            with self.subTest(stack=name), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                for rel, body in files:
+                    p = root / rel
+                    p.parent.mkdir(parents=True, exist_ok=True)
+                    p.write_text(body, encoding="utf-8")
+                self.assertIsNone(init.detect_stack(root))      # no manifest marker: the premise
+                self.assertEqual(init.classify_path(root), "brownfield")
+
+    def test_a_manifest_less_source_repo_is_sent_down_the_brownfield_prd_fork(self) -> None:
+        # The consequence the bug is about: the classification is only useful if the PRD stage
+        # forks on it. A C repo must be told to GENERATE its PRD from the code, never interviewed.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "src").mkdir()
+            (root / "src" / "main.c").write_text("int main(void) { return 0; }\n",
+                                                 encoding="utf-8")
+            self.assertEqual(init.start_onboarding(root)["path"], "brownfield")
+            r = init.stage_prd(root)
+            self.assertEqual(r["path"], "brownfield")
+            self.assertIn("prd generate", r["directive"])
+            self.assertNotIn("prd create", r["directive"])
+
+    def test_docs_and_derived_directories_do_not_make_a_repo_brownfield(self) -> None:
+        """The census must not fire on non-source, or every greenfield project reads brownfield
+        the moment `init` writes its own markdown. Vendored/derived trees are pruned for the same
+        reason: a checked-in dependency is not this project's source."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "README.md").write_text("# hi\n", encoding="utf-8")
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            (root / "sdlc-studio" / "stories" / "_index.md").write_text("# Stories\n",
+                                                                        encoding="utf-8")
+            (root / "notes.txt").write_text("thoughts\n", encoding="utf-8")
+            self.assertEqual(init.classify_path(root), "greenfield")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for pruned in ("node_modules/left-pad", ".git/hooks", ".venv/lib", "dist/bundle"):
+                p = root / pruned
+                p.mkdir(parents=True)
+                (p / "index.js").write_text("module.exports = 1;\n", encoding="utf-8")
+            self.assertEqual(init.classify_path(root), "greenfield")
 
     def test_stage_runner_confirm_skip_and_reset(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -332,15 +400,55 @@ class GuidedInitTests(unittest.TestCase):
                                 for s in init.read_onboarding(root)["stages"]))
 
     def test_agents_stage_drafts_the_instructions(self) -> None:
+        # US0438 AC1 promises `AGENTS.md` AND the `CLAUDE.md` import. BG0334: this verifier
+        # asserted only AGENTS.md, so deleting the CLAUDE.md starter from AGENT_FILES - or
+        # shipping an installed copy without that template - kept it green while Claude Code,
+        # which reads CLAUDE.md and not AGENTS.md, inherited nothing.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             r = init.stage_agents(root)
             self.assertIn("AGENTS.md", r["created"])
+            self.assertIn("CLAUDE.md", r["created"])
             self.assertTrue((root / "AGENTS.md").is_file())
-            # idempotent: a second run leaves the (possibly edited) file untouched
+            self.assertTrue((root / "CLAUDE.md").is_file())
+            # the CLAUDE.md file is the IMPORT the AC names, not merely a file of that name
+            claude = (root / "CLAUDE.md").read_text(encoding="utf-8")
+            # the guidance comment is stripped and the import is the first thing Claude Code reads
+            self.assertTrue(claude.lstrip().startswith("@AGENTS.md"), claude[:120])
+            # idempotent: a second run leaves the (possibly edited) files untouched
             r2 = init.stage_agents(root)
             self.assertIn("AGENTS.md", r2["skipped"])
+            self.assertIn("CLAUDE.md", r2["skipped"])
             self.assertEqual(r2["created"], [])
+
+    def test_a_missing_starter_template_is_refused_not_skipped_in_silence(self) -> None:
+        """BG0334: `stage_agents` skipped a missing template with a bare `continue`, reporting it
+        in neither `created` nor `skipped`. The first stage of onboarding then produced nothing,
+        said nothing, and the operator confirmed it - the silent-success class. A starter missing
+        from the installed skill is a broken install, so the stage refuses rather than drafting
+        half of what its AC promises."""
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as fake:
+            root, skill = Path(d), Path(fake)
+            (skill / "templates").mkdir()
+            # only the AGENTS.md starter is present; the CLAUDE.md import starter is gone
+            (skill / "templates" / "agent-instructions.md").write_text(
+                (init.SKILL / "templates" / "agent-instructions.md").read_text(encoding="utf-8"),
+                encoding="utf-8")
+            real = init.SKILL
+            init.SKILL = skill
+            try:
+                with self.assertRaises(RuntimeError) as ctx:
+                    init.stage_agents(root)
+                self.assertIn("agent-instructions.CLAUDE.md", str(ctx.exception))
+                # nothing partial is written: no half-drafted stage to confirm
+                self.assertFalse((root / "AGENTS.md").exists())
+                # and the runner does not swallow it - the stage stays pending, not advanced
+                init.start_onboarding(root)
+                with contextlib.redirect_stdout(io.StringIO()), self.assertRaises(RuntimeError):
+                    init.main(["guided", "--root", str(root)])
+                self.assertEqual(init.first_incomplete(init.read_onboarding(root)), "agents")
+            finally:
+                init.SKILL = real
 
     def test_guided_confirm_and_skip_advance_the_runner(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -451,11 +559,18 @@ class GuidedInitTests(unittest.TestCase):
             self.assertEqual(init.first_incomplete(init.read_onboarding(root)), "decompose")
 
     def test_decompose_and_plan_stages_direct(self) -> None:
+        # US0442 AC1 names three commands. BG0334: this verifier asserted the bare substrings
+        # 'epic' and 'sprint plan' and never mentioned the story command at all - and 'epic' is
+        # satisfied by the word 'epics' in the surrounding prose, so stripping BOTH backticked
+        # commands out of the directive left it green. Assert the commands as the directive
+        # marks them up, so prose alone can never satisfy the AC.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             init.start_onboarding(root)
-            self.assertIn("epic", init.stage_decompose(root)["directive"])
-            self.assertIn("sprint plan", init.stage_plan(root)["directive"])
+            decompose = init.stage_decompose(root)["directive"]
+            self.assertIn("`epic`", decompose)
+            self.assertIn("`story`", decompose)
+            self.assertIn("`sprint plan`", init.stage_plan(root)["directive"])
 
     def test_confirming_all_stages_completes_onboarding(self) -> None:
         with tempfile.TemporaryDirectory() as d:

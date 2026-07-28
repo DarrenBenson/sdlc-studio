@@ -1385,5 +1385,95 @@ class UnnamedUnitAttributionTests(unittest.TestCase):
             self.assertIn("attribution", err.getvalue())
 
 
+def _write_v3_unit(root, rid, *, status, affects=None):
+    """A bug artefact under a v3 short-ULID id (`BG-01JQK3F8`), the id form schema v3 mints."""
+    d = root / "sdlc-studio" / "bugs"
+    d.mkdir(parents=True, exist_ok=True)
+    lines = [f"# {rid}: sample", "", f"> **Status:** {status}"]
+    if affects:
+        lines.append(f"> **Affects:** {', '.join(affects)}")
+    lines.append("")
+    (d / f"{rid}-sample.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+class IdGrammarCoversV3AndFiveDigitTests(unittest.TestCase):
+    """BG0328: every floor entry point read ids through `\\b(US|BG|CR)-?\\d{4}\\b` - the v2
+    four-digit form and nothing else. A v3 short-ULID id and a five-digit id both match
+    NOTHING (the trailing `\\b` refuses the fifth digit), so on a schema-v3 project the floor
+    reported clean while judging no unit at all. The shared library widened its grammar for
+    exactly this lesson; the floor never adopted it."""
+
+    ULID_A = "BG-01JQK3F8"
+    ULID_B = "BG-01JQK3F9"
+
+    def _git(self, root, *args):
+        gitutil.git(list(args), cwd=root, text=True)
+
+    def _init_repo(self, root):
+        self._git(root, "init", "-q")
+        self._git(root, "config", "user.email", "t@t")
+        self._git(root, "config", "user.name", "t")
+
+    def test_a_v3_ulid_multi_id_subject_is_nudged_for_a_refs_trailer(self):
+        code, warning = _load().check_commit_message(
+            f"{self.ULID_A} {self.ULID_B}: batch fix", strict=True)
+        self.assertEqual(code, 1, "a v3 multi-id subject was not judged at all")
+        # AS WRITTEN, dash intact: the remedy is meant to be pasted, and `Refs: BG01JQK3F8`
+        # (the normalised spelling) parses as no id at all, so a normalised hint would print a
+        # trailer that does not satisfy the rule printing it.
+        self.assertIn(f"Refs: {self.ULID_A}", warning)
+        self.assertIn(self.ULID_B, warning)
+
+    def test_a_five_digit_multi_id_subject_is_nudged_for_a_refs_trailer(self):
+        code, warning = _load().check_commit_message("US01010 US01011: batch fix", strict=True)
+        self.assertEqual(code, 1, "a five-digit multi-id subject was not judged at all")
+        self.assertIn("US01010", warning)
+
+    def test_a_v3_refs_trailer_still_clears_the_nudge(self):
+        """The widened grammar must read the trailer as well as the subject, or every v3
+        batch commit would be refused with no way to satisfy it."""
+        code, warning = _load().check_commit_message(
+            f"{self.ULID_A} {self.ULID_B}: batch fix\n\nRefs: {self.ULID_A}, {self.ULID_B}",
+            strict=True)
+        self.assertEqual(code, 0)
+        self.assertIsNone(warning)
+
+    def test_a_v3_artefact_path_names_its_owning_unit(self):
+        self.assertEqual(_load()._path_owner(f"sdlc-studio/bugs/{self.ULID_A}-sample.md"),
+                         "BG01JQK3F8")
+
+    def test_a_mixed_era_subject_counts_as_the_batch_it_is(self):
+        """The mis-attribution the bug names: a subject naming a v2 id AND a v3 id read as
+        SOLO, so git handed the whole shared file set to the v2 unit. Two ids is a batch
+        whichever eras they come from, and a batch is not apportionable."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            (root / "src").mkdir()
+            for n in ("a", "b"):
+                (root / "src" / f"{n}.py").write_text("x=1\n", encoding="utf-8")
+            self._git(root, "add", "-A")
+            self._git(root, "commit", "-q", "-m",
+                      f"BG0500 {self.ULID_A}: batch fix across two files")
+            self.assertEqual(_load()._git_touched_source_files(root, "BG0500"), set(),
+                             "a mixed-era batch commit's files were attributed to the v2 id")
+
+    def test_a_v3_unit_the_pending_commit_puts_below_the_floor_is_seen(self):
+        """The pending lane dropped a v3 unit before judging it, so the gate reported clean
+        on a violation the commit it was gating was about to create."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            _write_v3_unit(root, self.ULID_A, status="Fixed", affects=["src/one.py"])
+            (root / "src").mkdir(exist_ok=True)
+            for n in ("one", "two", "three"):
+                (root / "src" / f"{n}.py").write_text("x = 1\n", encoding="utf-8")
+            self._git(root, "add", "-A")
+            units = {u["id"]: u for u in _load().detect(root, include_staged=True)["units"]}
+            u = units[self.ULID_A]
+            self.assertTrue(u["violation"], "the v3 unit's pending files were never counted")
+            self.assertGreaterEqual(u["source_files"], 3)
+
+
 if __name__ == "__main__":
     unittest.main()

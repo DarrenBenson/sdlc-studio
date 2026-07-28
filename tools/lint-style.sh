@@ -58,10 +58,17 @@ fi
 #    sample output, indistinguishable from a citation. A bare id or one trailing narrative text
 #    (`(e.g. CR0003)`, `(see CR0141)`) is likewise not flagged.
 skill="$scan_root/.claude/skills/sdlc-studio"
-# templates/ nests (core/, indexes/, personas/amigos/, ...), so gather its markdown with find
-# rather than a single-level glob; skill filenames carry no spaces, so word-splitting is safe.
-tmpl_md="$(find "$skill/templates" -name '*.md' 2>/dev/null || true)"
-prov_hits="$(grep -InE '\((CR|BG|RFC)[0-9]{4}|\(US[0-9]{4}[/;]' "$skill"/reference-*.md "$skill"/help/*.md "$skill"/scripts/*.py "$skill"/scripts/lib/*.py "$skill"/templates/config*.yaml $tmpl_md 2>/dev/null || true)"
+# Both trees NEST (templates/core/, indexes/, personas/amigos/; scripts/lib/, scripts/hooks/),
+# so gather them with find rather than single-level globs - a hand-enumerated glob exempts every
+# directory added after it was written, which is how scripts/hooks/ shipped unguarded. Markdown
+# AND yaml under templates/, every *.py under scripts/ bar compiled leftovers; skill filenames
+# carry no spaces, so word-splitting is safe. scripts/tests/ is carved out deliberately, not by
+# omission: a test docstring naming the artefact it derives from is traceability in the one place
+# no consuming agent reads it against its own project.
+tmpl_files="$(find "$skill/templates" \( -name '*.md' -o -name '*.yaml' -o -name '*.yml' \) 2>/dev/null || true)"
+py_files="$(find "$skill/scripts" -name '*.py' \
+  -not -path '*/__pycache__/*' -not -path "$skill/scripts/tests/*" 2>/dev/null || true)"
+prov_hits="$(grep -InE '\((CR|BG|RFC)[0-9]{4}|\(US[0-9]{4}[/;]' "$skill"/reference-*.md "$skill"/help/*.md $py_files $tmpl_files 2>/dev/null || true)"
 if [ -n "$prov_hits" ]; then
   echo "Style error: internal provenance tag in a consuming-facing file. Strip it - traceability lives in change-requests/CHANGELOG/git, not in docs a consuming project reads."
   printf '%s\n' "$prov_hits"

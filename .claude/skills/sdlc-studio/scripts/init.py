@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from datetime import date
@@ -74,6 +75,31 @@ TAILOR_SUGGESTIONS = {
 }
 
 
+
+# Source-file extensions the brownfield census recognises. Deliberately WIDER than the DETECT
+# manifest list: the question here is only "does this repo already contain code", not "which
+# stack is it", so a language the tailoring pass knows nothing about still counts.
+SOURCE_EXTS = frozenset({
+    ".c", ".cc", ".clj", ".cpp", ".cs", ".cxx", ".dart", ".ex", ".exs", ".erl", ".fs", ".go",
+    ".h", ".hpp", ".hs", ".hxx", ".java", ".jl", ".js", ".jsx", ".kt", ".kts", ".lua", ".m",
+    ".mjs", ".ml", ".mm", ".php", ".pl", ".py", ".r", ".rb", ".rs", ".scala", ".sh", ".sql",
+    ".svelte", ".swift", ".ts", ".tsx", ".vb", ".vue", ".zig",
+})
+# Directories the census never descends: version control, dependency and build output. A
+# vendored dependency or a build artefact is not THIS project's source, and a greenfield repo
+# with a populated node_modules must not read as brownfield on somebody else's code.
+_CENSUS_SKIP_DIRS = frozenset({
+    ".git", ".hg", ".svn", ".idea", ".vscode", ".tox", ".nox", ".mypy_cache", ".pytest_cache",
+    ".ruff_cache", ".gradle", ".terraform", "__pycache__", "node_modules", "bower_components",
+    "vendor", "venv", ".venv", "env", ".env", "dist", "build", "out", "target", "bin", "obj",
+    "coverage", ".next", ".nuxt", ".svelte-kit", "site-packages",
+})
+# Bound the walk. The classifier runs on the orientation path and returns on the FIRST source
+# file, so this ceiling only bites on a large repo that genuinely has none - where the answer is
+# greenfield anyway. A census is not worth an unbounded filesystem walk.
+_CENSUS_MAX_ENTRIES = 20_000
+
+
 def detect_stack(root: Path) -> str | None:
     for marker, lang in DETECT:
         if (root / marker).exists():
@@ -81,6 +107,22 @@ def detect_stack(root: Path) -> str | None:
     if list(root.glob("*.csproj")):
         return "csharp/dotnet"
     return None
+
+
+def has_source(root: Path | str) -> bool:
+    """True when the tree holds at least one source file of its own - the manifest-free evidence
+    that a repo already contains code. Returns on the first hit, prunes dependency/build/VCS
+    directories, and is bounded, so it stays cheap on the orientation path."""
+    seen = 0
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in _CENSUS_SKIP_DIRS]
+        for name in filenames:
+            seen += 1
+            if os.path.splitext(name)[1].lower() in SOURCE_EXTS:
+                return True
+        if seen >= _CENSUS_MAX_ENTRIES:
+            return False
+    return False
 
 
 def tailor_suggestions(root: Path, lang: str | None) -> list[dict]:
@@ -177,10 +219,17 @@ def onboarding_path(root: Path | str) -> Path:
 
 
 def classify_path(root: Path | str) -> str:
-    """`greenfield` (empty/near-empty repo) or `brownfield` (existing source). Brownfield is
-    signalled by a recognised stack marker - the same DETECT set `init` already uses - so
-    'meets your code where it is' keys off real evidence, not a guess."""
-    return "brownfield" if detect_stack(Path(root)) else "greenfield"
+    """`greenfield` (empty/near-empty repo) or `brownfield` (existing source).
+
+    Two signals, in order: a recognised stack marker (the DETECT set `init` already uses), then a
+    census of the source files themselves. The second is what makes the classification match what
+    it claims to answer - "does this repo already contain source" - rather than "does it carry one
+    of six manifests this skill happens to recognise". Manifest-only, a C/C++, Ruby or PHP tree, or
+    a Python project with only a setup.py, read as an empty repo and got sent down the greenfield
+    INTERVIEW instead of having its PRD generated from its code: the exact wrong fork the guided
+    flow exists to avoid. 'Meets your code where it is' keys off real evidence, not a guess."""
+    root = Path(root)
+    return "brownfield" if (detect_stack(root) or has_source(root)) else "greenfield"
 
 
 def read_onboarding(root: Path | str) -> dict | None:
@@ -258,12 +307,22 @@ def stage_agents(root: Path | str, force: bool = False) -> dict:
     Idempotent - an existing file is left for the operator to edit, never overwritten unless
     `force`. Returns what was drafted vs left in place."""
     root = Path(root)
+    starters = [(SKILL / "templates" / src, dst) for src, dst in AGENT_FILES]
+    # A starter missing from the installed skill was skipped with a bare `continue`: the file
+    # appeared in neither `created` nor `skipped`, so the first stage of onboarding drafted
+    # nothing, said nothing, and the operator confirmed it. Refuse instead, and refuse BEFORE
+    # writing anything, so there is never a half-drafted stage to confirm. Same reasoning as
+    # `_fill_known`: the defect was not the missing file, it was that nothing noticed.
+    missing = [src for (st, _), (src, _) in zip(starters, AGENT_FILES) if not st.exists()]
+    if missing:
+        raise RuntimeError(
+            "init: the agent-instructions starter(s) " + ", ".join(missing)
+            + " are missing from the installed skill (templates/) - the agents stage cannot "
+              "draft what it promises. Reinstall the skill rather than onboarding a repo whose "
+              "agents would inherit no instructions.")
     fields = seed_fields(root, date.today().isoformat())
     created, skipped = [], []
-    for src, dst in AGENT_FILES:
-        st = SKILL / "templates" / src
-        if not st.exists():
-            continue
+    for st, dst in starters:
         p = root / dst
         if p.exists() and not force:
             skipped.append(dst)

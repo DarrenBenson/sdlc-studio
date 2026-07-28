@@ -1,6 +1,6 @@
 # US0494: The gate selects the tests a change can reach from the import graph, reporting what it excluded and falling back to everything when it cannot resolve
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0451
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

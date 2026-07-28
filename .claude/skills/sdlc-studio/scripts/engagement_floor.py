@@ -98,7 +98,18 @@ SOURCE_SUFFIXES = _source_suffixes()
 FLOOR_THRESHOLD = 1  # "multi-file" = strictly more than one source file
 WAIVER_RULE = "rule:engagement-floor"           # the whole-project opt-out subject
 _PLAN_LINK_RE = re.compile(r"\bPL-?\d{4}\b")     # a reference to a plan artefact
-_JUDGED_ID_RE = re.compile(r"\b((?:US|BG|CR)-?\d{4})\b")  # a judged-type id in a commit message
+# A judged-type id in a commit message. The grammar mirrors `sdlc_md.ID_RE`, narrowed to the
+# judged types: the v3 short-ULID form FIRST (so an all-digit suffix is claimed whole by the v3
+# branch rather than truncated by the v2 one), then the v2 sequential form with an OPEN-ENDED
+# digit run. A fixed `\d{4}` enumerated one era: a v3 id matched nothing, and `US01010` matched
+# nothing either (the trailing `\b` refuses the fifth digit), so on a schema-v3 project every
+# floor entry point read an empty id set and reported clean while judging no unit at all.
+_JUDGED_ID_RE = re.compile(r"\b((?:US|BG|CR)(?:-[0-9A-HJKMNP-TV-Z]{8,}|-?\d{4,}))\b")
+# The same grammar against a NORMALISED id, for the call sites asking "is this normalised id a
+# judged one?". `sdlc_md.norm_id` strips the dash (`BG-01JQK3F8` -> `BG01JQK3F8`), so the pattern
+# above - which requires it before a ULID suffix, as the message-scanning form must to avoid
+# claiming ordinary uppercase words - can never fullmatch one.
+_JUDGED_NORM_ID_RE = re.compile(r"(?:US|BG|CR)(?:[0-9A-HJKMNP-TV-Z]{8,}|\d{4,})")
 # A `Refs:` commit trailer line. Grammar: a line beginning `Refs:` (case-insensitive), then one or
 # more judged ids separated by commas and/or whitespace; repeatable across lines. A trailer is an
 # explicit statement of which id owns the change, so the git leg trusts it to attribute a shared
@@ -347,7 +358,7 @@ def _pending_touched_by_id(root: Path) -> dict[str, set[str]]:
         if not rid:
             continue
         norm = sdlc_md.norm_id(rid)
-        if _JUDGED_ID_RE.fullmatch(norm):
+        if _JUDGED_NORM_ID_RE.fullmatch(norm):
             ids.add(norm)
     return {rid: set(files) for rid in ids}
 
@@ -637,19 +648,27 @@ def check_commit_message(message: str, *, strict: bool = False) -> tuple[int, st
     """
     body = _strip_comments(message)
     subject = _subject_line(message)
-    subject_ids = {sdlc_md.norm_id(i) for i in _JUDGED_ID_RE.findall(subject)}
-    if len(subject_ids) <= 1:
+    # Compare on the NORMALISED id (so `CR-0257` in the subject and `CR0257` in the trailer are
+    # one id, not a gap), but report the id AS WRITTEN. The remedy this prints is meant to be
+    # pasted, and a v3 id's dash is load-bearing: `Refs: BG01JQK3F8` parses as nothing, so a
+    # normalised hint would hand the author a trailer that does not satisfy the rule that
+    # printed it.
+    written: dict[str, str] = {}
+    for i in _JUDGED_ID_RE.findall(subject):
+        written.setdefault(sdlc_md.norm_id(i), i)
+    if len(written) <= 1:
         return 0, None  # solo or no judged id: the floor handles it, nothing to nudge
-    uncovered = sorted(subject_ids - _refs_ids(body))
+    uncovered = sorted(set(written) - _refs_ids(body))
     if not uncovered:
         return 0, None  # every co-named id has an explicit Refs trailer
+    names = [written[i] for i in uncovered]
     warning = (
         "commit subject names more than one work-item id but "
-        + ("some lack" if len(uncovered) < len(subject_ids) else "none carry")
-        + " a Refs: trailer: " + ", ".join(uncovered) + ". Without it the engagement floor cannot "
+        + ("some lack" if len(uncovered) < len(written) else "none carry")
+        + " a Refs: trailer: " + ", ".join(names) + ". Without it the engagement floor cannot "
         "attribute this commit's files per id (a shared commit is skipped), so an understated "
         "Affects would go uncaught. Add a trailer line per owning id, e.g. `Refs: "
-        + uncovered[0] + "`."
+        + names[0] + "`."
     )
     return (1 if strict else 0), warning
 
@@ -744,7 +763,7 @@ def _path_owner(path: str) -> str | None:
     if not rid:
         return None
     norm = sdlc_md.norm_id(rid)
-    return norm if _JUDGED_ID_RE.fullmatch(norm) else None
+    return norm if _JUDGED_NORM_ID_RE.fullmatch(norm) else None
 
 
 def unnamed_unit_attribution(repo_root: Path | str, message: str,
@@ -772,7 +791,7 @@ def unnamed_unit_attribution(repo_root: Path | str, message: str,
     body = _strip_comments(message)
     declared = {sdlc_md.norm_id(i) for i in sdlc_md.ID_SEARCH_RE.findall(_subject_line(message))}
     declared |= _refs_ids(body)
-    if not any(_JUDGED_ID_RE.fullmatch(i) for i in declared):
+    if not any(_JUDGED_NORM_ID_RE.fullmatch(i) for i in declared):
         # The message claims no judged unit at all - a `docs:`, `chore:` or planning commit. There
         # is no attribution to get wrong, so there is nothing to report. Without this the lane
         # fired on every close and every planning batch, which is how a check gets switched off.

@@ -15,6 +15,15 @@
 **I want** a duplicate Verify selector refused at commit time unless the baseline records it with a stated reason
 **So that** the advisory count stops drifting upward and a shared selector has to be argued for rather than absorbed
 
+## Notes
+
+**US0480** (CR0443) ratchets validate's `affects-undeclared`, `affects-unresolvable` and
+`pseudo-verify` warnings and follows this story's design: a baseline recording each
+tolerated instance by identity with a stated reason, compared as a SET, and wired into a
+blocking lane. Separate baseline file, same entry schema and the same
+not-baselined / corrupt / stale / reasonless states. Whichever lands second should reuse
+the machinery rather than build a second shape of ratchet.
+
 ## Acceptance Criteria
 
 ### AC1: AC1: an unbaselined duplicate group refuses, over stories AND bugs
@@ -58,3 +67,4 @@
 | --- | --- | --- |
 | 2026-07-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-27 | Claude Fable 5 | Groomed: authored from the reviewed breakdown (two adversarial rounds), scope capped to the request per D0069 |
+| 2026-07-28 | Claude Opus 5 (BG0345) | Notes now name US0480 as the paired ratchet, so the shared design is visible from either story |

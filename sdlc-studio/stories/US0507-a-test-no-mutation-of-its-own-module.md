@@ -1,11 +1,11 @@
 # US0507: A test no mutation of its own module can kill is reported as a removal candidate, and removing one records what it no longer protects
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0455
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, tools/tests, tools/test_census.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, tools/tests, tools/test_census.py, tools/tests/test_test_census.py
 > **Epic:** EP0177
 > **Points:** 5
 > **Persona:** Maya Okafor

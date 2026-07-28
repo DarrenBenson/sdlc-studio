@@ -1,6 +1,6 @@
 # US0501: A close retry over an unchanged test-relevant surface reuses the previous gate verdict instead of re-running it
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0454
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

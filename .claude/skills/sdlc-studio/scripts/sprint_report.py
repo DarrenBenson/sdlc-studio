@@ -259,6 +259,7 @@ def report(root: Path, retro_id: str, *, sprint_tokens: int | None = None,
         "sprint_goal": goal, "sprint_goal_verdict": goal_verdict,
         "flow": _flow_summary(Path(root)),
         "mutation": _mutation_summary(Path(root), unit_ids),
+        "execution": _execution_actuals(Path(root), unit_ids),
         "units": unit_ids,
         "delivered_points": b.get("delivered_points"),
         "delegated_signoffs": _delegated_rows(root),
@@ -338,6 +339,102 @@ def _mutation_lines(m: dict | None) -> list[str]:
             f"yield {cur['yield']} filed artefact(s) ({filed}){per}.", *trailing]
 
 
+#: Modes that count as having RUN something. `reuse` ran nothing and is counted apart: folding
+#: it into the full-run count would report a saving as a cost, and dropping it would hide that
+#: a decision was taken at all.
+_RAN_MODES = ("full", "selected", "none")
+
+
+def _execution_actuals(root: Path, unit_ids: list[str]) -> dict:
+    """What test execution actually cost this sprint, beside what the policy declared.
+
+    The ledger is PROJECT-WIDE, so it is joined to this sprint by the run's own measured
+    window - the same confounder `_mutation_summary` had to learn, and for the same reason: a
+    sprint that ran nothing would otherwise republish the previous sprint's cost as its own.
+
+    `measured` is False whenever nothing can be attributed, and `seconds` is then None. Never
+    0: a total of zero reads as a sprint that tested for free, which is precisely the reading
+    that let 218 minutes of re-running go unremarked in a retro that said the sprint went well.
+    """
+    empty = {"measured": False, "full_runs": 0, "selected_runs": 0, "reused_runs": 0,
+             "seconds": None, "declared": _declared_policy(root), "runs": 0}
+    try:
+        import sprint  # noqa: PLC0415 - deferred; the report never pays for the plan graph
+        rows = sprint.read_execution_ledger(root)
+    except Exception as exc:  # noqa: BLE001 - the report never fails on its evidence
+        print(f"note: test-execution ledger unavailable ({type(exc).__name__}: {exc})",
+              file=sys.stderr)
+        return {**empty, "why": f"the test-execution ledger could not be read ({exc}), so what "
+                                f"the suites cost is UNKNOWN, not zero"}
+    window = _run_window(Path(root), unit_ids)
+    if window is None:
+        return {**empty, "why": ("no run state names this sprint's units, so no test-execution "
+                                 "row can be attributed to it - the cost is UNKNOWN, not zero")}
+    start, end = window
+    mine = []
+    for r in rows:
+        at = telemetry._parse_iso(r.get("at"))  # noqa: SLF001 - ONE stamp reader
+        if at is None or at < start:
+            continue
+        if end is None or at <= end:
+            mine.append(r)
+    if not mine:
+        return {**empty, "why": "no test execution was recorded inside this run's window, so "
+                                "what the suites cost is NOT CAPTURED - which is not the same "
+                                "as a sprint that ran none, and is not zero"}
+    counted = [r for r in mine if str(r.get("mode")) in _RAN_MODES]
+    seconds = [float(r["seconds"]) for r in counted
+               if isinstance(r.get("seconds"), (int, float))]
+    return {
+        "measured": bool(seconds),
+        "runs": len(mine),
+        "full_runs": sum(1 for r in mine if r.get("mode") == "full"),
+        "selected_runs": sum(1 for r in mine if r.get("mode") == "selected"),
+        "reused_runs": sum(1 for r in mine if r.get("mode") == "reuse"),
+        "seconds": round(sum(seconds), 1) if seconds else None,
+        "declared": _declared_policy(root),
+        "why": ("" if seconds else
+                f"{len(mine)} execution event(s) are recorded for this run but none carries a "
+                f"duration, so the cost is NOT CAPTURED - not zero"),
+    }
+
+
+def _declared_policy(root: Path) -> dict | None:
+    """The execution policy the PLAN recorded, or None when it recorded none.
+
+    Read back rather than re-derived: the actuals are judged against what was agreed at plan
+    time, never against a config that may have moved since.
+    """
+    try:
+        import sprint  # noqa: PLC0415
+        strat = sprint.recorded_test_strategy(root) or {}
+    except Exception as exc:  # noqa: BLE001 - the report never fails on a plan read
+        sdlc_md.debug("sprint_report._declared_policy", exc)
+        return None
+    declared = (strat.get("execution") or {}).get("declared")
+    return declared if isinstance(declared, dict) and declared else None
+
+
+def _execution_lines(rep: dict) -> list[str]:
+    """The execution block. A sprint that ran the suite fifty times shows it here, beside the
+    policy that was supposed to govern how often it would."""
+    act = rep.get("execution")
+    if not act:
+        return []
+    declared = act.get("declared")
+    against = (" Declared policy: "
+               + "; ".join(f"{k.replace('_', ' ')} {str(v).upper()}"
+                           for k, v in declared.items()) + "."
+               if declared else
+               " The plan recorded NO execution policy, so there is nothing to judge these "
+               "against.")
+    if not act.get("measured"):
+        return [f"Test execution: NOT CAPTURED - {act.get('why')}.{against}"]
+    reused = f", {act['reused_runs']} reused (ran nothing)" if act.get("reused_runs") else ""
+    return [f"Test execution: {act['full_runs']} full run(s), {act['selected_runs']} "
+            f"selected{reused} - {act['seconds']:,.0f}s of test time.{against}"]
+
+
 def _delegated_rows(root: Path) -> list[dict]:
     """The delegated-agent sign-off rows, read from `critic` rather than re-derived. One
     definition of "delegated" - a second spelling here is how a writer and its readers stop
@@ -400,6 +497,7 @@ def render(rep: dict) -> str:
     if acc["models"]:
         lines.append(f"Models: {', '.join(acc['models'])}.")
     lines.extend(_mutation_lines(rep.get("mutation")))
+    lines.extend(_execution_lines(rep))
     lines.append(f"Tickets raised: {', '.join(rep['tickets']) if rep['tickets'] else 'none'}.")
     lines.append(f"Lessons: {len(rep['lessons'])} recorded.")
     fl = rep.get("flow")

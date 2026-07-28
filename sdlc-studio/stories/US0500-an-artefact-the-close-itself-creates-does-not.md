@@ -1,6 +1,6 @@
 # US0500: An artefact the close itself creates does not count as an unreviewed change against that same close
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0454
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
