@@ -1,6 +1,7 @@
 # CR-0463: A delivery lane returns without proving its own acceptance criteria, so basic AC failures survive to review
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0178
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

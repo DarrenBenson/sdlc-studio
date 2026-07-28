@@ -1,6 +1,7 @@
 # CR-0459: validate does not refuse a bug reaching Fixed with no acceptance criteria, so six shipped without any
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0178
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
