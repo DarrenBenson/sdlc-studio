@@ -24,6 +24,7 @@ Who: every project running a sprint, and the release decision itself - this is c
 
 ## Acceptance Criteria
 
+- [ ] The test strategy is REVIEWED before the batch runs, by the seats that review the Sprint Goal and in the same pass, so the most expensive decision in the sprint is examined rather than merely printed. A batch whose strategy nobody examined is reported as unreviewed, the way an unreviewed goal already is.
 - [ ] The plan-time test strategy states the EXECUTION policy as well as the proof obligations: what runs per commit, what runs at close, what runs at release, and the estimated cost of each.
 - [ ] The strategy is persisted with the plan rather than printed only, so it can be reviewed at plan time, signed off with the goal, and read back afterwards.
 - [ ] The close reports execution actuals against that policy - how many full-suite runs happened and what they cost - so a sprint that ran the suite fifty times shows it in the retro rather than hiding it.

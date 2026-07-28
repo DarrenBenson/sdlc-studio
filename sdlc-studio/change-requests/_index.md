@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 7 |
 | Approved | 0 |
 | In Progress | 31 |
 | Complete | 405 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **460** |
+| **Total** | **462** |
 
 ## All Changes
 
@@ -282,6 +282,8 @@
 | [CR-0458](CR0458-audit-filed-bugs-arrive-with-no-acceptance-criteria.md) | Audit-filed bugs arrive with no Acceptance Criteria, so a delivery lane has nothing to deliver against | Proposed | Medium | Improvement | 2026-07-28 | -- |
 | [CR-0459](CR0459-validate-does-not-refuse-a-bug-reaching-fixed.md) | validate does not refuse a bug reaching Fixed with no acceptance criteria, so six shipped without any | Proposed | High | Improvement | 2026-07-28 | -- |
 | [CR-0460](CR0460-a-recorded-waiver-is-invisible-to-the-conformance.md) | A recorded waiver is invisible to the conformance lane, so waived debt blocks every clean-tree close | Proposed | High | Improvement | 2026-07-28 | -- |
+| [CR-0461](CR0461-an-acceptance-criterion-can-describe-a-function-nothing.md) | An acceptance criterion can describe a function nothing calls, and nothing refuses it | Proposed | High | Improvement | 2026-07-28 | -- |
+| [CR-0462](CR0462-nothing-measures-a-sprint-s-overhead-against-its.md) | Nothing measures a sprint's overhead against its delivery, so a 9:1 ratio took an operator noticing | Proposed | High | Improvement | 2026-07-28 | -- |
 
 ## Archived Releases
 

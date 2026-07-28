@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 22 |
+| Open | 23 |
 | In Progress | 0 |
 | Fixed | 252 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **357** |
+| **Total** | **358** |
 
 ## All Bugs
 
@@ -75,6 +75,7 @@
 | [BG0355](BG0355-a-delegated-lane-can-edit-the-tree-and.md) | A delegated lane can edit the tree and stop without returning a result, leaving finished work unrecorded | Open | High | 2026-07-28 | 2026-07-28 |
 | [BG0356](BG0356-validate-and-verify-ac-disagree-about-whether-a.md) | validate and verify_ac disagree about whether a bug's Verify line executes | Open | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0357](BG0357-mutation-py-records-no-per-test-attribution-so.md) | mutation.py records no per-test attribution, so the prune-candidate consumer can never run | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0358](BG0358-a-declared-proof-obligation-can-go-unmet-and.md) | A declared proof obligation can go unmet and the sprint still closes clean | Open | High | 2026-07-28 | 2026-07-28 |
 
 ## Archived Releases
 
