@@ -2273,6 +2273,49 @@ class SuppliedContentLandsTests(unittest.TestCase):
             for c in self.CRITERIA:
                 self.assertIn(c, body)
 
+    def test_a_bare_string_of_criteria_is_ONE_criterion(self) -> None:
+        """`--fields-file` accepts arbitrary JSON, so `"acs": "the fix holds"` is a shape a
+        caller reaches for. Iterating a string character by character produced 31 criteria
+        reading `- [ ] t`, `- [ ] h`, `- [ ] e` at exit 0 - through BOTH filers."""
+        import file_finding
+        self.assertEqual(artifact._list({"acs": "the fix holds"}, "acs"), ["the fix holds"])
+        self.assertEqual(
+            file_finding.criteria_block("bug", {"acs": "the fix holds"}).count("- [ ]"), 1)
+
+    def test_a_batch_refusal_leaves_NOTHING_on_disk(self) -> None:
+        """`new_batch` documents all-or-nothing. The drop check ran inside the write loop, so
+        items 1..N-1 were already written, indexed and epic-wired when item N was refused."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created |")
+            _groom_stubs(repo)
+            before = sorted(p.name for p in (repo / "sdlc-studio" / "bugs").glob("BG*.md"))
+            # The lander means a real drop is now rare, so the REFUSAL is provoked directly.
+            # What this pins is where the check RUNS: in the pre-write validation loop, not in
+            # the write loop, which is the placement that leaked items 1..N-1 onto disk.
+            real = artifact._refuse_dropped_content
+            calls = {"n": 0}
+
+            def refuse_on_the_second(body, type_, f):
+                calls["n"] += 1
+                if calls["n"] == 2:
+                    raise artifact.ContentDropped("provoked on item two")
+                return real(body, type_, f)
+
+            artifact._refuse_dropped_content = refuse_on_the_second
+            try:
+                with self.assertRaises(artifact.ContentDropped):
+                    artifact.new_batch(repo, "bug", [
+                        {"title": "item one", **GROOM, "acs": ["alpha"]},
+                        {"title": "item two", **GROOM, "acs": ["beta"]},
+                    ])
+            finally:
+                artifact._refuse_dropped_content = real
+            after = sorted(p.name for p in (repo / "sdlc-studio" / "bugs").glob("BG*.md"))
+            self.assertEqual(before, after, "a refused batch left artefacts on disk")
+            idx = (repo / "sdlc-studio" / "bugs" / "_index.md").read_text()
+            self.assertNotIn("item one", idx, "a refused batch left an index row behind")
+
     def test_the_two_filing_paths_agree_on_a_bug_s_criteria(self) -> None:
         """`artifact.new` and `file_finding.file` build the same artefact. Two paths that
         disagree about what a supplied criterion MEANS is the defect; the looser one is the
@@ -2298,17 +2341,45 @@ class SuppliedContentLandsTests(unittest.TestCase):
         self.assertEqual(counts[0], counts[1])
         self.assertEqual(counts[0], len(self.CRITERIA))
 
-    def test_a_field_the_type_cannot_store_is_refused_not_dropped(self) -> None:
-        """An RFC is options and a recommendation, not criteria. The point is that the caller
-        is TOLD, rather than handed a clean exit over a document missing what they wrote."""
+    def test_a_field_the_scaffold_lacks_is_LANDED_rather_than_refused(self) -> None:
+        """The contract improved under review. Refusing a caller's whole artefact because the
+        TEMPLATE lacks a heading is a worse outcome than the silent drop it replaced - and the
+        verdict depended on which template was selected, so `--summary` on a story succeeded
+        with `--template full` and was refused without it. Nothing supplied is dropped, and
+        nothing is refused for a heading that can simply be appended."""
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "rfc", "| ID | Title | Status | Created |")
             _groom_stubs(repo)
-            with self.assertRaises(artifact.ContentDropped) as caught:
-                artifact.new(repo, "rfc", "a design question",
+            r = artifact.new(repo, "rfc", "a design question",
                              {**GROOM_REQUEST, "acs": self.CRITERIA})
-            self.assertIn("acs", str(caught.exception))
+            body = Path(r["path"]).read_text()
+            for c in self.CRITERIA:
+                self.assertIn(c, body)
+
+    def test_every_supplied_field_lands_for_every_non_meta_type(self) -> None:
+        """The property, asserted over the whole matrix rather than one example. `retro`,
+        `review` and `handoff` are excluded because they route through `meta_new` and never
+        reach this renderer at all."""
+        fields = {"summary": "zebra alpha summary", "steps": "quokka steps",
+                  "fix": "narwhal fix", "impact": "ocelot impact", "acs": ["dingo one"],
+                  "options": ["puffin one"], "recommendation": "lemur rec"}
+        for type_ in artifact.SPEC:
+            if type_ in artifact.META:
+                continue
+            for key, value in fields.items():
+                with self.subTest(type=type_, field=key):
+                    f = {"date": "2026-07-28", key: value}
+                    body = artifact._land_supplied(
+                        artifact._render(type_, "XX0001", "T", "2026-07-28", f), type_, f)
+                    artifact._refuse_dropped_content(body, type_, f)   # must not raise
+
+    def test_the_refusal_still_fires_when_a_field_genuinely_cannot_land(self) -> None:
+        """The backstop must remain able to fail, or it is a guard that cannot - which is the
+        defect this sprint filed three of."""
+        with self.assertRaises(artifact.ContentDropped):
+            artifact._refuse_dropped_content("# X: t\n\nnothing here\n", "bug",
+                                             {"summary": "a value that reached nothing"})
 
     def test_the_check_is_structural_not_a_list_of_types(self) -> None:
         """The defect was an enumeration - ('story', 'cr', 'epic') - and an enumeration

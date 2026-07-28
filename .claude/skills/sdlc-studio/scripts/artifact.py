@@ -105,9 +105,16 @@ def _text(f: dict, key: str, placeholder: str) -> str:
 
 
 def _list(f: dict, key: str) -> list[str]:
+    """A list field's items. A bare STRING is one item, never one item per character.
+
+    `--fields-file` accepts arbitrary JSON, so `"acs": "the fix holds"` is a shape a caller
+    reaches for. Iterating it character by character produced 31 criteria reading `- [ ] t`,
+    `- [ ] h`, `- [ ] e` at exit 0."""
     items = f.get(key)
+    if isinstance(items, str):
+        items = [items] if items.strip() else []
     return [file_finding._md_safe(i) for i in items if str(i).strip()] \
-        if isinstance(items, list) else []
+        if isinstance(items, (list, tuple)) else []
 
 
 TARGET_TIERS = ("functional", "conversational", "soak", "live")
@@ -527,6 +534,23 @@ def _probe(value) -> str:
     return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())[:30]
 
 
+def _land_supplied(body: str, type_: str, f: dict) -> str:
+    """Append a section for any supplied content field the render found no home for.
+
+    `_fill_acs` was made unconditional with a `_put_section` fallback so criteria always land.
+    The other content fields were not given the same treatment, so `--summary` on a story -
+    a generic, documented flag - was REFUSED outright, and the verdict depended on which
+    template was selected. Refusing a caller's whole artefact for a field the TEMPLATE lacks
+    is a worse outcome than the silent drop it replaced; landing it is the outcome both were
+    standing in for."""
+    for key, names in _LANDABLE_SECTIONS:
+        probe = _probe(f.get(key))
+        if probe and probe not in re.sub(r"[^a-z0-9]+", "", body.lower()):
+            content = _story_acs(f) if (key == "acs" and type_ == "story") else _rendered(key, f)
+            body = _put_section(body, names, content)
+    return body
+
+
 def _refuse_dropped_content(body: str, type_: str, f: dict) -> None:
     """Refuse a render that silently discarded something the caller supplied.
 
@@ -599,6 +623,17 @@ _CONTENT_SECTIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("options", ("Design Options", "Options")),
     ("recommendation", ("Recommendation",)),
 )
+#: Every field `_refuse_dropped_content` guards, with the section each lands under. It EXTENDS
+#: `_CONTENT_SECTIONS` with `acs` and `impact`, which have their own fillers on the graft path
+#: and had no home at all on the minimal one - so the guard refused them for types whose
+#: scaffold simply omits the heading. The check and the lander must cover the same set, or the
+#: guard refuses a field nothing was ever going to place.
+_LANDABLE_SECTIONS: tuple[tuple[str, tuple[str, ...]], ...] = _CONTENT_SECTIONS + (
+    ("impact", ("Impact", "Motivation")),
+    ("acs", ("Acceptance Criteria",)),
+)
+
+
 _REV_SECTION_RE = re.compile(r"^##\s+Revision History\b.*$", re.M | re.I)
 
 
@@ -1006,7 +1041,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         # creators, one column, one behaviour - never the raw triple, never a discarded identity.
         f["author"] = sdlc_md.authorship_name(f["_raised_by"])
         render = _select_render(root, type_, f.get("template"))
-        body = render(type_, disp, title, f["date"], f)
+        body = _land_supplied(render(type_, disp, title, f["date"], f), type_, f)
         _refuse_dropped_content(body, type_, f)
         prov = str(f.get("provenance") or "").strip()
         if prov:
@@ -1071,6 +1106,16 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
                 file_finding.check_groomed(root, type_, groom_preview(
                     type_, "PREVIEW", str(it.get("title") or ""), today,
                     {**it, "date": today, "_root": str(root)}))
+            # ... and so does a supplied field that would reach no part of the artefact. Checked
+            # HERE, against the same preview render, because `new_batch` promises all-or-nothing:
+            # run inside the write loop it left items 1..N-1 on disk, indexed and epic-wired,
+            # when item N was refused.
+            preview_render = groom_preview or _select_render(root, type_, template)
+            preview_fields = {**it, "date": today, "_root": str(root)}
+            _refuse_dropped_content(
+                _land_supplied(preview_render(type_, "PREVIEW", str(it.get("title") or ""),
+                                              today, preview_fields), type_, preview_fields),
+                type_, preview_fields)
         except ValueError as exc:
             raise ValueError(f"batch item {i}: {exc}") from exc
     if type_ == "story":
@@ -1134,8 +1179,7 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             f["_raised_by"] = sdlc_md.authorship_value(f.get("author"), root)
             f["author"] = sdlc_md.authorship_name(f["_raised_by"])  # index cell: the name
             p["path"].parent.mkdir(parents=True, exist_ok=True)
-            body = render(type_, p["disp"], it["title"], today, f)
-            _refuse_dropped_content(body, type_, f)
+            body = _land_supplied(render(type_, p["disp"], it["title"], today, f), type_, f)
             sdlc_md.atomic_write(p["path"], body)
             header = _header_cells(root, type_)
             link = f"[{p['disp']}]({p['file_id']}-{p['slug']}.md)"
