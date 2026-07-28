@@ -3386,5 +3386,124 @@ class SchemaSyncSafetyTests(unittest.TestCase):
             self.assertIn("High", out, "the priority cell was not derived")
 
 
+class RelationshipCellsAreNotOverwrittenTests(unittest.TestCase):
+    """The BG0380 widening destroyed cross-links in any project using the SHIPPED bug index
+    template. `_INDEX_OWNED_COLUMNS` listed the plural projection columns and not the singular
+    ones, so `Epic` and `Story` were treated as file-owned scalars - and a bug carries
+    `> **Epic:** --` as a placeholder. `transition set` wrote `--` over a populated cross-link
+    and reported `index synced=True`."""
+
+    HEADER = "| ID | Title | Severity | Priority | Status | Epic | Story | Created |"
+
+    def _repo(self, tmp: Path) -> Path:
+        bugs = tmp / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True)
+        (bugs / "BG0001-x.md").write_text(
+            "# BG0001: Login fails\n\n> **Status:** Open\n> **Severity:** High\n"
+            "> **Epic:** --\n> **Story:** --\n> **Created:** 2026-07-28\n\n"
+            "## Summary\n\nx\n\n## Acceptance Criteria\n\n- [ ] fixed\n", encoding="utf-8")
+        (bugs / "_index.md").write_text(
+            f"# Bugs\n\n{self.HEADER}\n| --- | --- | --- | --- | --- | --- | --- | --- |\n"
+            f"| [BG0001](BG0001-x.md) | Login fails | High | High | Open | EP0012 | US0345 "
+            f"| 2026-07-28 |\n", encoding="utf-8")
+        return tmp
+
+    def test_a_placeholder_never_overwrites_a_populated_cell(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            reconcile.apply_type("bug", root, dry_run=False)
+            row = (root / "sdlc-studio/bugs/_index.md").read_text()
+            self.assertIn("EP0012", row, "the epic cross-link was destroyed by a `--` stub")
+            self.assertIn("US0345", row, "the story cross-link was destroyed by a `--` stub")
+
+    def test_a_relationship_column_is_owned_whatever_its_grammatical_number(self) -> None:
+        """The enumeration listed `stories` and not `story`. A relationship is not a file-owned
+        scalar, whichever heading the template uses."""
+        for col in ("epic", "story", "stories", "linked epics", "parent"):
+            with self.subTest(column=col):
+                self.assertIn(col, reconcile._INDEX_OWNED_COLUMNS)
+
+    def test_a_placeholder_in_a_PROJECTED_column_is_still_refused(self) -> None:
+        """The relationship exclusion above shadows the placeholder guard for epic/story, so
+        without this the guard is never exercised and a mutant removing it survives. A column
+        that IS projected - Severity here - must still refuse a `--` over a real value: `--`
+        means "not set yet", never "set to nothing"."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bugs = root / "sdlc-studio" / "bugs"
+            bugs.mkdir(parents=True)
+            (bugs / "BG0001-x.md").write_text(
+                "# BG0001: b\n\n> **Status:** Open\n> **Severity:** --\n\n"
+                "## Summary\n\nx\n\n## Acceptance Criteria\n\n- [ ] fixed\n",
+                encoding="utf-8")
+            (bugs / "_index.md").write_text(
+                "# B\n\n| ID | Title | Status | Severity |\n| --- | --- | --- | --- |\n"
+                "| [BG0001](BG0001-x.md) | b | Open | High |\n", encoding="utf-8")
+            reconcile.project_fields(root, "bug", dry_run=False)
+            self.assertIn("High", (bugs / "_index.md").read_text(),
+                          "a `--` placeholder overwrote a populated severity")
+
+    def test_a_placeholder_still_fills_an_EMPTY_cell(self) -> None:
+        """The guard is about not DESTROYING; it must not stop the index recording an absence
+        the row has no value for at all."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bugs = root / "sdlc-studio" / "bugs"
+            bugs.mkdir(parents=True)
+            (bugs / "BG0001-x.md").write_text(
+                "# BG0001: b\n\n> **Status:** Open\n> **Severity:** High\n\n"
+                "## Summary\n\nx\n\n## Acceptance Criteria\n\n- [ ] fixed\n",
+                encoding="utf-8")
+            (bugs / "_index.md").write_text(
+                "# B\n\n| ID | Title | Status | Severity |\n| --- | --- | --- | --- |\n"
+                "| [BG0001](BG0001-x.md) | b | Open |  |\n", encoding="utf-8")
+            reconcile.project_fields(root, "bug", dry_run=False)
+            self.assertIn("High", (bugs / "_index.md").read_text())
+
+    def test_a_cell_already_linking_the_value_is_left_alone(self) -> None:
+        """`[US0345](../stories/US0345-x.md)` and `US0345` say the same thing; rewriting the
+        first to the second strips a working link on every run."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            wf = root / "sdlc-studio" / "workflows"
+            wf.mkdir(parents=True)
+            (wf / "WF0001-x.md").write_text(
+                "# WF0001: w\n\n> **Status:** In Progress\n> **Current Phase:** Implement\n",
+                encoding="utf-8")
+            (wf / "_index.md").write_text(
+                "# W\n\n| ID | Current Phase | Status |\n| --- | --- | --- |\n"
+                "| [WF0001](WF0001-x.md) | [Implement](../phases/implement.md) | In Progress |\n",
+                encoding="utf-8")
+            reconcile.project_fields(root, "workflow", dry_run=False)
+            self.assertIn("[Implement](", (wf / "_index.md").read_text())
+
+    def test_a_declared_status_alias_is_left_to_the_status_writer(self) -> None:
+        """The exclusion was the literal string `status`, so a project declaring
+        `conventions.status_column: [State]` got two writers on one cell - and the blunt one
+        ran second."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bugs = root / "sdlc-studio" / "bugs"
+            bugs.mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                'conventions:\n  status_column: ["State"]\n', encoding="utf-8")
+            (bugs / "BG0001-x.md").write_text(
+                "# BG0001: b\n\n> **Status:** Fixed\n> **Severity:** High\n\n"
+                "## Summary\n\nx\n\n## Acceptance Criteria\n\n- [ ] fixed\n",
+                encoding="utf-8")
+            (bugs / "_index.md").write_text(
+                "# B\n\n| ID | Title | State | Severity |\n| --- | --- | --- | --- |\n"
+                "| [BG0001](BG0001-x.md) | b | Open | High |\n", encoding="utf-8")
+            self.assertNotIn("state", {f["field"] for f in
+                                       reconcile.project_fields(root, "bug", dry_run=True)["drift"]})
+
+    def test_a_field_quoted_in_the_BODY_is_not_read_as_a_declaration(self) -> None:
+        """`_ANY_FIELD_RE` scanned the whole document, so a quoted `> **State:** archived` in a
+        body blockquote became an index cell."""
+        text = ("# BG0001: b\n\n> **Status:** Fixed\n\n## Summary\n\n"
+                "The old doc said:\n\n> **Status:** archived\n")
+        self.assertEqual(reconcile._file_field_values(text)["status"], "Fixed")
+
+
 if __name__ == "__main__":
     unittest.main()

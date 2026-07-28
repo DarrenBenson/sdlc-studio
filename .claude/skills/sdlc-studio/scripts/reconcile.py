@@ -2330,8 +2330,57 @@ _ANY_FIELD_RE = re.compile(r"^>?\s*\*\*([A-Za-z][A-Za-z ]*?):\*\*\s*(.*?)\s*$", 
 #: and be projected over a correct derived value. Everything else is decided by whether the
 #: artefact carries a field of that column's name - the ROW SCHEMA drives the sync, so a column
 #: added to a type is covered without an edit here.
-_INDEX_OWNED_COLUMNS = frozenset({"stories", "deps", "linked epics", "spawned crs", "updated",
-                                  "status"})
+_INDEX_OWNED_COLUMNS = frozenset({
+    # Projections of OTHER artefacts. The PLURAL forms were listed and the SINGULAR ones were
+    # not, which is the enumeration defect this module keeps re-filing: `epic` and `story` are
+    # relationship cells exactly as `stories` and `linked epics` are, and a bug's template
+    # carries `> **Epic:** --` as a placeholder. The pass read that stub as authority and wrote
+    # `--` over a populated cross-link, reporting `index synced=True`. A relationship is not a
+    # file-owned scalar, whichever grammatical number the column heading uses.
+    "stories", "deps", "linked epics", "spawned crs",
+    "epic", "story", "parent", "rfc", "cr", "delivers", "depends on", "blocked by",
+    # The index's own bookkeeping.
+    "updated",
+    # `status` has a DEDICATED writer (`apply_type`) that knows what this pass cannot: emphasis
+    # to preserve (`**Complete**`), the status vocabulary, a headerless block, and when to
+    # decline rather than relocate a status into a title. Two writers for one cell diverge, and
+    # the blunter one wins by running second. Widened below to the project's declared aliases.
+    "status"})
+
+
+#: Values that are an ABSENCE, not a value. A placeholder must never overwrite a populated cell:
+#: an artefact that has not been wired to its epic says so with `--`, and treating that as the
+#: truth destroys the wiring the index already recorded.
+_PLACEHOLDER_VALUES = frozenset({"--", "-", "tbd", "n/a", "none", ""})
+
+
+def _owned_columns(repo_root: Path | str) -> frozenset:
+    """`_INDEX_OWNED_COLUMNS` widened by the project's declared status-column aliases.
+
+    The exclusion was the literal string `status`, so a project declaring
+    `conventions.status_column: [State]` got two writers on one cell - the dedicated status
+    writer and this blunt one, with the blunt one running second."""
+    try:
+        from lib import conventions  # noqa: PLC0415
+        aliases = {str(c).strip().lower() for c in conventions.status_column(repo_root) or ()}
+    except Exception as exc:  # noqa: BLE001 - a conventions read must never break a sync
+        sdlc_md.debug("reconcile._owned_columns", exc)
+        aliases = set()
+    return _INDEX_OWNED_COLUMNS | {a for a in aliases if a}
+
+
+def _metadata_head(text: str) -> str:
+    """The artefact's leading metadata block: the `>`-quoted run before the first `##` heading.
+
+    Everything a writer may project comes from there. Prose below it - a quoted example, an
+    archived block, a code fence - is content, and reading it as declaration is how a body
+    sentence ends up in an index cell."""
+    out: list[str] = []
+    for line in (text or "").splitlines():
+        if line.startswith("## "):
+            break
+        out.append(line)
+    return "\n".join(out)
 
 
 def _file_field_values(text: str) -> dict:
@@ -2343,7 +2392,11 @@ def _file_field_values(text: str) -> dict:
     `detect` reported zero drift - and `status.py` reads the index, so every backlog figure
     taken while that was true was wrong."""
     out: dict = {}
-    for m in _ANY_FIELD_RE.finditer(text):
+    # The LEADING metadata block only: the run of `> **Field:** value` lines under the H1. An
+    # unbounded scan reads a quoted `> **State:** archived` out of a body blockquote and writes
+    # it into the index as though the artefact had declared it.
+    head = _metadata_head(text)
+    for m in _ANY_FIELD_RE.finditer(head):
         name, value = m.group(1).strip().lower(), m.group(2).strip()
         if value and name not in out:      # first wins: the metadata block, not a later mention
             out[name] = value
@@ -2393,8 +2446,8 @@ def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = 
             # EVERY column the row carries, not three named ones. The header IS the schema, so
             # a column added to a type is projected without an edit here - the enumerated list
             # is the defect this repo keeps re-filing (LL0013).
-            cols = {n: i for i, n in enumerate(lowered)
-                    if n and n not in _INDEX_OWNED_COLUMNS}
+            owned = _owned_columns(repo_root)
+            cols = {n: i for i, n in enumerate(lowered) if n and n not in owned}
             ncols = len(cells)
             continue
         if "id" not in cols or cols["id"] >= len(cells):
@@ -2418,6 +2471,16 @@ def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = 
         for field in [c for c in cols if c != "id"]:
             if field in cols and cols[field] < len(cells) and fv.get(field) is not None:
                 cur = cells[cols[field]].strip()
+                new = str(fv[field]).strip()
+                # A PLACEHOLDER never overwrites a populated cell: `--` means "not wired yet",
+                # not "wired to nothing", and writing it destroys what the index recorded.
+                if new.lower() in _PLACEHOLDER_VALUES and cur:
+                    continue
+                # A cell already LINKING the value it derives from is in agreement:
+                # `[US0345](../stories/US0345-x.md)` and `US0345` say the same thing, and
+                # rewriting the first to the second strips a working link every time it runs.
+                if new and re.search(rf"(?<![A-Za-z0-9]){re.escape(new)}(?![A-Za-z0-9])", cur):
+                    continue
                 if cur != fv[field]:
                     drift.append({"id": m.group(0), "field": field, "index": cur, "file": fv[field]})
                     cells[cols[field]] = fv[field]

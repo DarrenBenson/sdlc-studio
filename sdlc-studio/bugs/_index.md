@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 22 |
+| Open | 24 |
 | In Progress | 0 |
 | Fixed | 279 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **384** |
+| **Total** | **386** |
 
 ## All Bugs
 
@@ -102,6 +102,8 @@
 | [BG0382](BG0382-close-owed-treats-a-decision-terminal-status-as.md) | close_owed treats a decision-terminal status as delivery, so a unit nobody built demands a sprint close | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0383](BG0383-one-whole-tree-reader-collapses-the-test-relevance.md) | One whole-tree reader collapses the test-relevance set to `sdlc-studio`, so every artefact commit pays the full suites | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0384](BG0384-artifact-py-silently-discards-a-bug-s-acceptance.md) | artifact.py silently discards a bug's acceptance criteria, so the sanctioned filing path produces the criteria-less bug the floor exists to refuse | Fixed | High | 2026-07-28 | 2026-07-28 |
+| [BG0385](BG0385-five-units-of-run-01kymjem-ship-mechanisms-with.md) | Five units of RUN-01KYMJEM ship mechanisms with no caller: the goal panel, the defect judgement and BOTH ends of the bookend review are unreachable | Open | High | 2026-07-28 | 2026-07-28 |
+| [BG0386](BG0386-caller-check-unit-is-single-valued-so-a.md) | caller-check --unit is single-valued, so a repeated flag silently checks only the last unit and reports a clean batch | Open | High | 2026-07-28 | 2026-07-28 |
 
 ## Archived Releases
 
