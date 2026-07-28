@@ -9,3 +9,5 @@ Signed off by Darren Benson as reviewer of record. See
 
 The same defect class appeared four times across this sprint - a correct mechanism reaching no
 caller - and every instance was invisible to a green suite and to the author.
+
+Operator sign-off recorded 2026-07-28; the pre-two-role conformance debt (D0074, BG0350, CR0460) is accepted as inherited and out of this sprint scope.
