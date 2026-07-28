@@ -24,6 +24,39 @@ FOUR SEPARABLE CAUSES, each with its own remedy.
 
 **4. The gate runs the full suites over a close that touches no code.** Measured relevance of what a close actually writes: a CR body, a bug body, a story body and `reviews/LATEST.md` are all `test-relevant: no`; `retros/VELOCITY.md` and every NEWLY FILED artefact are `yes`. A close is filings plus VELOCITY.md, so BG0383's fast path buys it nothing - the saving lands on mid-sprint body edits, which is not where the cost is. The close had already run `gate --require-retro --require-review: PASS` before the commits that each re-ran 5,006 tests over an untouched script tree.
 
+## Steps to Reproduce
+
+Close a run of ~30 units and count: `sprint close` invocations, `critic.py` spawns, and the
+gate seconds recorded in `.local/gate-timings.json`. For RUN-01KYMJEM: 3, 57 and [398, 427] on
+the last two commits.
+
+## Proposed Fix
+
+Five changes. D first - it is the largest single saving.
+
+**D. A close-scoped gate profile.** The close changes no code and has already run the full gate
+once as step 4 of 7; the commits that follow re-run the suites over an untouched script tree.
+Reuse that verdict rather than re-earning it per commit. Worth about 25 of the 32 minutes on
+its own.
+
+**E. Let a listing-only declaration name the IDS its structural read depends on**, not just the
+directory. `GATE_LISTING_ONLY = ("sdlc-studio",)` becomes structural for the ids the census
+actually names and irrelevant for every other new file, which makes filing an artefact free -
+and filing is most of what a close does. Keep the fail-safe direction: a declaration naming no
+ids stays structural for the whole tree exactly as now, so the narrowing is opt-in and a module
+that gets it wrong is slower rather than wrong.
+
+**A. `close --dry-run`** runs all seven steps against a scratch copy and reports EVERY refusal
+in one pass, retro content included. Converts three serial round-trips into one.
+
+**B. Batch forms on `critic evidence|record|signoff`:** `--from-run` reads the open batch,
+`--units` takes a list. 57 spawns become 3, and an argument error costs one refusal rather than
+nineteen.
+
+**C. The retro scaffold emits a template that PASSES `retro validate` once filled:** the
+carried-set shape and the `fixed-in:` / `declined:` disposition vocabulary demonstrated, not
+merely named in a refusal.
+
 ## Impact
 
 A ceremony more expensive than the work it certifies is one people learn to skip, and this project's whole argument rests on it not being skipped. The gate budget lane went OVER during this close - 427s against a 380s ceiling, +35% on the 2026-07-26 baseline - so the cost is now visible in the tool's own reading rather than only in wall-clock. The close is also the moment an operator is most tired and least willing to absorb three serial four-hundred-second round-trips, which is when a `--no-verify` starts to look reasonable.
@@ -42,3 +75,4 @@ A ceremony more expensive than the work it certifies is one people learn to skip
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-29 | Claude Opus 5 | Raised |
+| 2026-07-29 | Claude Opus 5 | Steps and Proposed Fix RESTORED. Both were supplied at filing and silently discarded: `file_finding`'s CR renderer has only Summary, Impact and Acceptance Criteria, so a `fix` or `steps` field for a CR reaches nothing. That is BG0384's class still live in the other filer - `artifact.py` now lands an unhomed field, `file_finding.py` does not. Filed separately. |

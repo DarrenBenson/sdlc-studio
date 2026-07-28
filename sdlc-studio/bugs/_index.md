@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-07-28
+**Last Updated:** 2026-07-29
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 36 |
+| Open | 37 |
 | In Progress | 0 |
 | Fixed | 279 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **398** |
+| **Total** | **399** |
 
 ## All Bugs
 
@@ -116,6 +116,7 @@
 | [BG0396](BG0396-cmd-seams-silently-drops-unresolvable-ids-and-re.md) | cmd_seams silently drops unresolvable ids and re-implements the worklist reader the planner refuses on | Open | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0397](BG0397-index-derived-issues-never-consults-the-new-field.md) | index_derived_issues never consults the new field drift, so the gate lane asserting the index is derived is green over it | Open | High | 2026-07-28 | 2026-07-28 |
 | [BG0398](BG0398-listing-only-paths-never-checks-that-the-declared.md) | listing_only_paths never checks that the declared read IS a listing, and applies one module's declaration globally | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0399](BG0399-file-finding-discards-a-cr-s-steps-and.md) | file_finding discards a CR's steps and fix fields, so BG0384's defect is still live in the other filer | Open | High | 2026-07-29 | 2026-07-29 |
 
 ## Archived Releases
 
