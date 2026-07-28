@@ -90,3 +90,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0078](RETRO0078-transition-set-positional-form-us0446-cr0423.md) | transition set positional form (US0446, CR0423) | 2026-07-27 | -- | -- |
 | [RETRO-0079](RETRO0079-run-01kyhvwk-the-silent-success-sprint-21-units.md) | RUN-01KYHVWK: the silent-success sprint - 21 units, gates that now fail loud | 2026-07-27 | -- | -- |
 | [RETRO-0080](RETRO0080-run-01kyjzgz-the-efficiency-sprint-the-gate-stops.md) | RUN-01KYJZGZ: the efficiency sprint - the gate stops charging for work it is not doing | 2026-07-28 | -- | -- |
+| [RETRO-0081](RETRO0081-run-01kykvzm-the-in-lane-quality-sprint-the.md) | RUN-01KYKVZM: the in-lane quality sprint - the lane that graded its own homework | 2026-07-28 | -- | -- |

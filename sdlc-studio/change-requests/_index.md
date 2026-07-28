@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 7 |
 | Approved | 0 |
 | In Progress | 40 |
 | Complete | 405 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **467** |
+| **Total** | **471** |
 
 ## All Changes
 
@@ -289,6 +289,10 @@
 | [CR-0465](CR0465-reconcile-s-sweep-detectors-re-read-the-whole.md) | reconcile's sweep detectors re-read the whole corpus per unit: 733,271 file opens for one run | Proposed | Medium | Improvement | 2026-07-28 | -- |
 | [CR-0466](CR0466-a-review-round-records-no-duration-so-the.md) | A review round records no duration, so the overhead ratio can only ever be a lower bound | Proposed | Medium | Improvement | 2026-07-28 | -- |
 | [CR-0467](CR0467-the-one-lane-one-file-changelog-rule-and.md) | The one-lane-one-file changelog rule and the [Unreleased] rule contradict each other under parallel delivery | Proposed | Medium | Improvement | 2026-07-28 | -- |
+| [CR-0468](CR0468-decomposition-creates-seams-between-units-and-nothing-owns.md) | Decomposition creates seams between units and nothing owns them, so a jointly inconsistent batch passes every unit's own acceptance criteria | Proposed | High | Improvement | 2026-07-28 | -- |
+| [CR-0469](CR0469-a-sprint-goal-achieved-verdict-judged-by-a.md) | A sprint-goal-achieved verdict judged by a stakeholder panel, which decides whether an open defect can be left or must be addressed before close | Proposed | High | Feature | 2026-07-28 | -- |
+| [CR-0470](CR0470-bookend-the-sprint-with-a-goal-content-review.md) | Bookend the sprint with a goal-content review: will this batch deliver the goal, and at close did it, given what was not delivered and what was raised | Proposed | High | Feature | 2026-07-28 | -- |
+| [CR-0471](CR0471-a-sprint-is-named-by-its-goal-not.md) | A sprint is named by its goal, not only by its run id, so the goal is visible wherever the sprint is listed | Proposed | Medium | Improvement | 2026-07-28 | -- |
 
 ## Archived Releases
 

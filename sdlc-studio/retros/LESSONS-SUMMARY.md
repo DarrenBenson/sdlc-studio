@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0253: **Verifying the premise beat trusting it three times in one afternoon**, twice against findings this author had filed hours earlier.**
+- **L-0252: **In-lane verification changed what review found, not how much.** 20 majors on 33 units last sprint, 17 on 31 this sprint: the rate barely...**
+- **L-0251: **Enforcing a rule is not obeying it.** The batch that built the criteria floor put four bugs into Fixed with no criteria, and the batch...**
+- **L-0250: **A guard that cannot fail is not evidence, and its greenness is the tell.** `caller_resolves` approved `unknown` and `nothing at all` and...**
+- **L-0249: **One truth held in two places diverges, and the looser copy is the one that runs.** Two of the four serious findings were this shape...**
 - **L-0248: **A review that only reads the diff misses what HEAD has become.** The finding that mattered most in the previous sprint was a repair...**
 - **L-0247: **An empty measurement is an unanswered question, not an answer of "nothing".** 57 of 162 suite modules measured an empty read set because...**
 - **L-0246: **Ship the wiring in the same unit as the mechanism, or it is inert.** Twice in one sprint a correct mechanism reached nothing: the surface...**
