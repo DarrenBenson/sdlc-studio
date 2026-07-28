@@ -982,5 +982,94 @@ class RefinePersonaTests(unittest.TestCase):
                              "the three minting paths disagree about the resolved persona")
 
 
+class SeamMapTests(unittest.TestCase):
+    """US0538. Thirteen of the seventeen round-one majors in RUN-01KYKVZM were seam defects -
+    four directly contradicting PAIRS in one batch, every one of which passed its own criteria.
+    A delivery lane reads ONE unit; review is the first actor in the loop that reads two, so
+    the pair is invisible until the most expensive moment."""
+
+    def _unit(self, root: Path, uid: str, affects: str, preserves: str = "") -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        line = f"- **Preserves:** {preserves}\n" if preserves else ""
+        (d / f"{uid}-x.md").write_text(
+            f"# {uid}: x\n\n> **Status:** Ready\n> **Affects:** {affects}\n\n"
+            f"## Acceptance Criteria\n\n### AC1: it works\n\n{line}"
+            f"- **Verify:** shell true\n", encoding="utf-8")
+
+    def test_a_pair_sharing_a_property_with_no_preserving_criterion_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "src/thing.py")
+            self._unit(root, "US0002", "src/thing.py")
+            found = refine.seam_findings(root, ["US0001", "US0002"])
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0]["shared"], ["src/thing.py"])
+
+    def test_the_us0529_us0530_shape_is_reported(self) -> None:
+        """The real pair: one unit fixing a property, its partner reintroducing it. Both
+        satisfied their own criteria, which is why nothing before review saw it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0529", "src/init.py, tests/test_init.py")
+            self._unit(root, "US0530", "src/init.py, tests/test_init.py")
+            found = refine.seam_findings(root, ["US0529", "US0530"])
+            self.assertEqual([f["units"] for f in found], [["US0529", "US0530"]])
+
+    def test_a_declared_owner_clears_the_seam(self) -> None:
+        """`Preserves:` is what makes the seam owned - the check reports a pair NOBODY has been
+        asked about, and must stop reporting one somebody has."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "src/thing.py", preserves="src/thing.py stays idempotent")
+            self._unit(root, "US0002", "src/thing.py")
+            self.assertEqual(refine.seam_findings(root, ["US0001", "US0002"]), [])
+
+    def test_a_declaration_naming_something_else_does_not_own_the_seam(self) -> None:
+        """The case a mutant walked straight through: `owners.append(owner)` for ANY unit
+        carrying a `Preserves:` line passed every other test here, because they all declare
+        the shared file. A declaration about an unrelated property is not an answer about
+        this pair, and accepting one turns the field into a box to tick."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "src/thing.py",
+                       preserves="src/unrelated.py keeps its cache warm")
+            self._unit(root, "US0002", "src/thing.py")
+            self.assertEqual(len(refine.seam_findings(root, ["US0001", "US0002"])), 1,
+                             "a Preserves line naming another file owned this seam")
+
+    def test_naming_the_SIBLING_unit_also_owns_the_seam(self) -> None:
+        """The other legitimate spelling: saying which unit you must not regress is as good as
+        saying which file, and often clearer."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "src/thing.py",
+                       preserves="whatever US0002 asserts about the parse order")
+            self._unit(root, "US0002", "src/thing.py")
+            self.assertEqual(refine.seam_findings(root, ["US0001", "US0002"]), [])
+
+    def test_units_that_share_nothing_are_not_a_seam(self) -> None:
+        """A check that fires on everything is not a check."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "src/a.py")
+            self._unit(root, "US0002", "src/b.py")
+            self.assertEqual(refine.seam_map(root, ["US0001", "US0002"]), [])
+
+    def test_a_shared_markdown_file_is_not_a_seam(self) -> None:
+        """Two units editing one document are not sharing a behaviour, and reporting every doc
+        pair would bury the pairs that matter."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "docs/guide.md")
+            self._unit(root, "US0002", "docs/guide.md")
+            self.assertEqual(refine.seam_map(root, ["US0001", "US0002"]), [])
+
+    def test_an_empty_report_says_what_it_checked_for(self) -> None:
+        """A batch with no seams must not be indistinguishable from one nobody mapped."""
+        self.assertIn("nothing to own", " ".join(refine.render_seam_findings([], 0)))
+        self.assertIn("every one owned", " ".join(refine.render_seam_findings([], 3)))
+
+
 if __name__ == "__main__":
     unittest.main()

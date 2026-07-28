@@ -804,6 +804,50 @@ def review_round_count(repo_root: Path | str) -> int:
     return len(review_rounds(repo_root))
 
 
+#: Units a lane was BRIEFED on and has not returned from. A lane that dies mid-flight leaves
+#: real code in the working tree behind a unit still marked Ready, and a restart cannot tell a
+#: delivered unit from an untouched one - one restarted lane was dispatched onto three units
+#: whose repair was already present, with no signal, and a partial edit reached a commit that
+#: way. The revision row is written BEFORE the work, so it cannot answer this; only a marker
+#: taken at dispatch and cleared at return can.
+IN_FLIGHT = "lanes_in_flight"
+
+
+def record_lane_start(repo_root: Path | str, unit: str) -> dict | None:
+    """Mark a unit as dispatched to a lane. Returns the entry, or None when no run is open."""
+    uid = sdlc_md.norm_id(unit)
+    if not uid or not read(repo_root).get("run_id"):
+        return None
+    entry = {"unit": uid, "started_at": sdlc_md.now_iso8601()}
+
+    def apply(state: dict) -> dict:
+        rows = [r for r in (state.get(IN_FLIGHT) or []) if r.get("unit") != uid]
+        state[IN_FLIGHT] = rows + [entry]
+        return state
+
+    _mutate(repo_root, apply)
+    return entry
+
+
+def record_lane_return(repo_root: Path | str, unit: str) -> bool:
+    """Clear a unit's in-flight marker. True when one was cleared."""
+    uid = sdlc_md.norm_id(unit)
+    found = any(r.get("unit") == uid for r in lanes_in_flight(repo_root))
+
+    def apply(state: dict) -> dict:
+        state[IN_FLIGHT] = [r for r in (state.get(IN_FLIGHT) or []) if r.get("unit") != uid]
+        return state
+
+    if found:
+        _mutate(repo_root, apply)
+    return found
+
+
+def lanes_in_flight(repo_root: Path | str) -> list[dict]:
+    """Units dispatched to a lane that never returned - the tree may already carry their work."""
+    return [r for r in (read(repo_root).get(IN_FLIGHT) or []) if isinstance(r, dict)]
+
+
 def round_duration(entry: dict) -> int | None:
     """A recorded round's duration in seconds, or None for UNMEASURED.
 

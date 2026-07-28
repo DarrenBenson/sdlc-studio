@@ -144,6 +144,41 @@ def _create_section(unreleased: str, section: str, entry: str) -> str:
     return unreleased.rstrip("\n") + "\n\n" + block
 
 
+def _unreleased_body(text: str) -> str:
+    """The `[Unreleased]` region of a CHANGELOG, or "" when there is none."""
+    lines = (text or "").splitlines()
+    start = next((i for i, ln in enumerate(lines) if ln.lstrip().startswith("## ")
+                  and "unreleased" in ln.lower()), None)
+    if start is None:
+        return ""
+    end = next((i for i in range(start + 1, len(lines))
+                if lines[i].lstrip().startswith("## ")), len(lines))
+    return "\n".join(lines[start + 1:end]).strip()
+
+
+def unreleased_hand_edit(before: str, after: str) -> str | None:
+    """The refusal when a lane edited `[Unreleased]` directly, or None when it did not.
+
+    `[Unreleased]` is ONE region of ONE file. Two lanes owing a changelog entry both edit it,
+    and the collision surfaces as a merge conflict in the paperwork rather than in the work -
+    which is how a lane comes to spend its time resolving a conflict about a sentence. A
+    fragment under `changelog.d/` is per-unit by construction and cannot collide.
+
+    The refusal NAMES THE COMMAND. A refusal that says only what the author did wrong sends
+    them to read a reference page to find out what to do instead; this project has filed that
+    complaint against its own tools more than once.
+    """
+    if _unreleased_body(before) == _unreleased_body(after):
+        return None
+    return ("refused: this edits the `[Unreleased]` section of CHANGELOG.md directly. That "
+            "section is one region of one file, so two lanes editing it collide - and the "
+            "collision lands in the paperwork rather than in the work. Write a fragment "
+            "instead, which is per-unit and cannot collide:\n"
+            "    changelog.d/<UNIT-ID>.md, first line `<!-- section: Added|Fixed|Changed -->`\n"
+            "`changelog compose --apply` folds every fragment at the RELEASE cut - editing "
+            "[Unreleased] is a release step, never a delivery step.")
+
+
 def structure_errors(root) -> list[str]:
     """Structural faults in CHANGELOG.md's `[Unreleased]` headings: subsections out of the
     canonical SECTIONS order, a subsection repeated inside the release, or an empty

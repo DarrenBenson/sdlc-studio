@@ -82,6 +82,13 @@ rules, the agents/services) live in that project's agent-instructions file
    `CLAUDE.md`) with per-ship narrative – that's what
    `git log` + spec detail blocks + `LATEST.md` are for.
 
+   **A lane writes a FRAGMENT, never the `[Unreleased]` section.** One file per unit
+   under `changelog.d/`, named for the unit, with a `<!-- section: Added|Fixed|... -->`
+   marker. `changelog compose` folds the fragments at the release cut. This is the rule for a
+   lane because `[Unreleased]` is one region of one file: two lanes editing it collide,
+   and the collision surfaces as a merge conflict in the paperwork rather than in the
+   work. Editing `[Unreleased]` directly is a RELEASE step, not a delivery step.
+
 10. **Query current API docs before using any library.** Training data is stale;
     verify current signatures before writing against a dependency.
 

@@ -1965,7 +1965,21 @@ def export_lanes(repo_root: Path | str, batch: list[dict], out_dir: Path | str) 
 # brief and the review brief - the two places where the work that would repeat a lesson happens.
 
 #: Where the retro writes the curated set, relative to the repo root.
-CARRIED_LESSONS_REL = ("sdlc-studio", "retros", "LESSONS-TOP.md")
+def _carried_lessons_rel() -> tuple[str, ...]:
+    """The carried-lessons path, DERIVED from `lessons.CARRIED_FILE` rather than restated.
+
+    This module named LESSONS-TOP.md while `lessons` named CARRIED-LESSONS.md, so the file a
+    retro curated and the file a lane brief read were two different files and nothing
+    reconciled them. A hard-coded fallback stays for a tree without the sibling, but
+    the sibling is the authority whenever it can be imported."""
+    try:
+        import lessons  # noqa: PLC0415 - deferred sibling, as elsewhere
+        return tuple(lessons.CARRIED_FILE.split("/"))
+    except Exception:  # noqa: BLE001 - a missing sibling must not break a brief
+        return ("sdlc-studio", "retros", "LESSONS-TOP.md")
+
+
+CARRIED_LESSONS_REL = _carried_lessons_rel()
 #: A curated lesson is a numbered `## N. Title` heading. Derived by the parser, so the count is
 #: whatever the retro curated - this module never asserts how many there should be.
 _CARRIED_HEADING_RE = re.compile(r"^##\s+(\d+)\.\s+(.+?)\s*$", re.M)
@@ -2105,6 +2119,11 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
     # differ between lanes of one sprint, and "every brief carries the set" would stop being one
     # fact about the sprint.
     carried = carried_lessons(root)
+    # The batch's seam map, computed ONCE for the dispatch. A seam is a fact about a PAIR, and
+    # a lane reads one unit - so the neighbouring property a lane must not regress is the one
+    # thing it can never learn by reading its own brief's unit. Thirteen of seventeen round-one
+    # majors in RUN-01KYKVZM were seam defects for exactly this reason.
+    seams = _batch_seams(root, list(unit_ids or []))
     briefs: list[dict] = []
     refused: list[dict] = []
     for uid in unit_ids or []:
@@ -2116,8 +2135,19 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
                        "criteria": contract["criteria"],
                        "obligations": list(LANE_OBLIGATIONS),
                        "proof": lane_proof(root, contract["id"]),
+                       "seams": [s for s in seams if contract["id"] in s["units"]],
                        "carried_lessons": carried})
-    return {"briefs": briefs, "refused": refused, "carried_lessons": carried}
+    return {"briefs": briefs, "refused": refused, "seams": seams, "carried_lessons": carried}
+
+
+def _batch_seams(root: Path, unit_ids: list[str]) -> list[dict]:
+    """The batch's seam map, or [] when it cannot be computed - a brief must still be issued."""
+    try:
+        import refine  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+        return refine.seam_map(root, unit_ids)
+    except Exception as exc:  # noqa: BLE001 - a seam read must never block a dispatch
+        sdlc_md.debug("sprint._batch_seams", exc)
+        return []
 
 
 def lane_brief_text(brief: dict) -> str:
@@ -2134,6 +2164,13 @@ def lane_brief_text(brief: dict) -> str:
                                         "one is authored")
         lines.append(f"  {crit['ac']}: {crit['title']}")
         lines.append(f"    Verify: {declared}")
+    for seam in brief.get("seams") or []:
+        other = [u for u in seam["units"] if u != brief["id"]]
+        owned = (f"owned by {', '.join(seam['owners'])}" if seam.get("owners")
+                 else "NOBODY states what the other must not regress - you are the first "
+                      "actor who can")
+        lines.append(f"Seam with {', '.join(other)}: you both touch "
+                     f"{', '.join(seam['shared'])}. {owned}.")
     proof = brief.get("proof") or {}
     if not proof.get("available"):
         lines.append(f"Proof obligations: UNDERIVABLE - {proof.get('why') or 'unknown'}")
@@ -5590,6 +5627,20 @@ def cmd_lane(args: argparse.Namespace) -> int:
         return 2
     if args.action == "brief":
         dispatch = lane_dispatch(root, units)
+        # An IN-FLIGHT marker per briefed unit, taken at dispatch and cleared at return. A lane
+        # that dies mid-flight leaves real code in the working tree behind a unit still marked
+        # Ready, and a restart cannot tell a delivered unit from an untouched one - the revision
+        # row is written BEFORE the work, so it cannot answer this. Reported to the operator on
+        # the next brief rather than discovered when a restarted lane redoes work already there.
+        stale = run_state.lanes_in_flight(root)
+        for row in stale:
+            if row["unit"] in [b["id"] for b in dispatch["briefs"]]:
+                print(f"WARNING {row['unit']} was briefed at {row['started_at']} and never "
+                      f"returned - the working tree MAY ALREADY CARRY its work. Check the diff "
+                      f"before starting: a lane redoing a repair that is already present is how "
+                      f"a partial edit reached a commit.", file=sys.stderr)
+        for b in dispatch["briefs"]:
+            run_state.record_lane_start(root, b["id"])
         if getattr(args, "format", "text") == "json":
             print(json.dumps(dispatch, indent=2))
         else:
@@ -5607,6 +5658,10 @@ def cmd_lane(args: argparse.Namespace) -> int:
         return 2
     results = [lane_return(root, uid, claimed=args.claimed, proof=proof, proof_gaps=gaps,
                            timeout=args.timeout) for uid in units]
+    # Cleared on RETURN, whatever the outcome: a blocked return is still a lane that came back,
+    # and leaving the marker set would warn about a unit nobody is mid-way through.
+    for res in results:
+        run_state.record_lane_return(root, res["unit"])
     if getattr(args, "format", "text") == "json":
         print(json.dumps(results, indent=2))
     else:

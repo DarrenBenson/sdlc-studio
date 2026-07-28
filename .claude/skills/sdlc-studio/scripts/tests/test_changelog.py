@@ -301,5 +301,51 @@ class StructureCheckTests(unittest.TestCase):
             self.assertEqual(order, ["Breaking", "Added", "Fixed", "Security"])
 
 
+class ParallelLaneRuleTests(unittest.TestCase):
+    """US0536/US0537. `[Unreleased]` is ONE region of ONE file. Two lanes owing a changelog
+    entry both edit it, and the collision surfaces as a merge conflict in the paperwork rather
+    than in the work - a lane then spends its time resolving a conflict about a sentence."""
+
+    BEFORE = ("# CL\n\n## [Unreleased]\n\n### Fixed\n\n- one thing\n\n"
+              "## [1.0]\n\n- old\n")
+
+    def test_a_fragment_is_accepted_and_a_hand_edit_is_refused(self) -> None:
+        # Lane A writes a fragment: CHANGELOG.md is untouched, so nothing is refused.
+        self.assertIsNone(changelog.unreleased_hand_edit(self.BEFORE, self.BEFORE))
+        # Lane B hand-edits [Unreleased]: refused.
+        after = self.BEFORE.replace("- one thing", "- one thing\n- a hand-added line")
+        refusal = changelog.unreleased_hand_edit(self.BEFORE, after)
+        self.assertIsNotNone(refusal)
+
+    def test_the_refusal_names_the_fragment_command(self) -> None:
+        """A refusal that says only what the author did wrong sends them to a reference page
+        to find out what to do instead."""
+        after = self.BEFORE.replace("- one thing", "- one thing\n- a hand-added line")
+        refusal = changelog.unreleased_hand_edit(self.BEFORE, after)
+        self.assertIn("changelog.d/", refusal)
+        self.assertIn("section:", refusal)
+        self.assertIn("compose", refusal)
+
+    def test_an_edit_to_a_RELEASED_section_is_not_refused(self) -> None:
+        """The rule is about the machine-managed region. Released history stays hand-editable,
+        so a correction to a published section must not be caught by this."""
+        after = self.BEFORE.replace("- old", "- old, corrected")
+        self.assertIsNone(changelog.unreleased_hand_edit(self.BEFORE, after))
+
+    def test_a_changelog_with_no_unreleased_section_refuses_nothing(self) -> None:
+        plain = "# CL\n\n## [1.0]\n\n- old\n"
+        self.assertIsNone(changelog.unreleased_hand_edit(plain, plain + "- more\n"))
+
+    def test_the_doctrine_states_the_fragment_path_as_the_rule_for_a_lane(self) -> None:
+        """US0536. The guidance said 'ship the paperwork in the same commit' and left HOW to a
+        reader's judgement, so an author following it reasonably reached for [Unreleased]."""
+        import pathlib
+        doc = (pathlib.Path(__file__).resolve().parents[2]
+               / "reference-doctrine.md").read_text(encoding="utf-8")
+        self.assertIn("fragment", doc.lower())
+        self.assertIn("changelog.d/", doc)
+        self.assertIn("release step", doc.lower())
+
+
 if __name__ == "__main__":
     unittest.main()

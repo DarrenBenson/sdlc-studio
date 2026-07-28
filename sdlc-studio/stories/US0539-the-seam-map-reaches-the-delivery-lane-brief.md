@@ -1,6 +1,6 @@
 # US0539: The seam map reaches the delivery lane brief and the review brief, so a lane is told which neighbouring property it must not regress
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0468
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** a delivery lane is briefed and a review brief is produced
 - **Then** each names the neighbouring property this unit must not regress, asserted on the brief's content rather than on the map's existence
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeamBriefTests::test_the_brief_names_the_neighbouring_property
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

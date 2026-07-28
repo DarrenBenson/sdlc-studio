@@ -1,6 +1,7 @@
 # BG0355: A delegated lane can edit the tree and stop without returning a result, leaving finished work unrecorded
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; predicates mutation-killed)
 > **Severity:** High
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-agentic-lessons.md
@@ -20,8 +21,26 @@ ls -la --time-style=full-iso tools/test_census.py tools/tests/test_test_census.p
 
 See the summary; each cited site names its own remedy.
 
+## Acceptance Criteria
+
+### AC1: A briefed unit is marked in flight, and the marker outlives the process that set it
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightTests::test_a_dispatch_that_never_returned_survives_to_be_reported
+- **Verified:** yes (2026-07-28)
+
+### AC2: A returned unit is cleared whatever the outcome, so the warning does not fire on everything
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightTests::test_a_returned_unit_is_cleared_whatever_the_outcome
+- **Verified:** yes (2026-07-28)
+
+### AC3: The whole in-flight contract holds, including re-dispatch and no open run
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightTests
+- **Verified:** yes (2026-07-28)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Fable 5 (RUN-01KYJZGZ delivery lanes, dogfooding friction) | Filed |
+| 2026-07-28 | Claude Opus 5 | Criteria authored at delivery. |

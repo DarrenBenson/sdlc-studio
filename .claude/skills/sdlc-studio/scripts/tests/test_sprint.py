@@ -8940,5 +8940,119 @@ class SprintNamingTests(unittest.TestCase):
             _load().run_state.sprint_name("", "a goal")
 
 
+class SeamBriefTests(unittest.TestCase):
+    """US0539. The seam is a fact about a PAIR, and a lane reads one unit - so the neighbouring
+    property a lane must not regress is the one thing it can never learn from its own brief's
+    unit. Asserted on the brief's CONTENT, not on the map's existence: a map computed and not
+    rendered helps nobody."""
+
+    def _unit(self, root: Path, uid: str, affects: str) -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{uid}-x.md").write_text(
+            f"# {uid}: x\n\n> **Status:** Ready\n> **Affects:** {affects}\n\n"
+            f"## Acceptance Criteria\n\n### AC1: it works\n\n- **Verify:** shell true\n",
+            encoding="utf-8")
+
+    def test_the_brief_names_the_neighbouring_property(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "src/thing.py")
+            self._unit(root, "US0002", "src/thing.py")
+            dispatch = mod.lane_dispatch(root, ["US0001", "US0002"])
+            texts = {b["id"]: mod.lane_brief_text(b) for b in dispatch["briefs"]}
+            self.assertIn("Seam with US0002", texts["US0001"])
+            self.assertIn("src/thing.py", texts["US0001"])
+            self.assertIn("Seam with US0001", texts["US0002"])
+
+    def test_a_lane_with_no_seam_carries_no_seam_line(self) -> None:
+        """A brief that always names a seam is one whose seam lines are furniture."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "src/a.py")
+            self._unit(root, "US0002", "src/b.py")
+            dispatch = mod.lane_dispatch(root, ["US0001", "US0002"])
+            for b in dispatch["briefs"]:
+                self.assertNotIn("Seam with", mod.lane_brief_text(b))
+
+    def test_the_dispatch_carries_the_map_for_the_review_brief_too(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "src/thing.py")
+            self._unit(root, "US0002", "src/thing.py")
+            self.assertEqual(len(mod.lane_dispatch(root, ["US0001", "US0002"])["seams"]), 1)
+
+
+class LaneInFlightTests(unittest.TestCase):
+    """BG0355. A lane that dies mid-flight leaves real code in the working tree behind a unit
+    still marked Ready, and a restart cannot tell a delivered unit from an untouched one - the
+    revision row is written BEFORE the work. Observed four times in one night; one restarted
+    lane was dispatched onto three units whose repair was already present, with no signal, and
+    a partial edit reached a commit that way."""
+
+    def _root(self, d) -> Path:
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        return root
+
+    def test_a_briefed_unit_is_marked_in_flight(self) -> None:
+        rs = _load().run_state
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            rs.open_run(root, batch=["US0001"])
+            rs.record_lane_start(root, "US0001")
+            self.assertEqual([r["unit"] for r in rs.lanes_in_flight(root)], ["US0001"])
+
+    def test_a_returned_unit_is_cleared_whatever_the_outcome(self) -> None:
+        """A BLOCKED return is still a lane that came back. Leaving the marker set would warn
+        about a unit nobody is mid-way through, and a warning that fires on everything is one
+        an operator learns to scroll past."""
+        rs = _load().run_state
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            rs.open_run(root, batch=["US0001"])
+            rs.record_lane_start(root, "US0001")
+            self.assertTrue(rs.record_lane_return(root, "US0001"))
+            self.assertEqual(rs.lanes_in_flight(root), [])
+
+    def test_clearing_a_unit_that_was_never_dispatched_reports_false(self) -> None:
+        rs = _load().run_state
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            rs.open_run(root, batch=["US0001"])
+            self.assertFalse(rs.record_lane_return(root, "US0009"))
+
+    def test_a_dispatch_that_never_returned_survives_to_be_reported(self) -> None:
+        """The property that matters: the marker OUTLIVES the process that set it, because the
+        lane that would have cleared it is the one that died."""
+        rs = _load().run_state
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            rs.open_run(root, batch=["US0001", "US0002"])
+            rs.record_lane_start(root, "US0001")
+            rs.record_lane_start(root, "US0002")
+            rs.record_lane_return(root, "US0001")
+            self.assertEqual([r["unit"] for r in rs.lanes_in_flight(root)], ["US0002"])
+            self.assertTrue(rs.lanes_in_flight(root)[0]["started_at"])
+
+    def test_a_re_dispatch_does_not_duplicate_the_marker(self) -> None:
+        rs = _load().run_state
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            rs.open_run(root, batch=["US0001"])
+            rs.record_lane_start(root, "US0001")
+            rs.record_lane_start(root, "US0001")
+            self.assertEqual(len(rs.lanes_in_flight(root)), 1)
+
+    def test_no_open_run_records_nothing_rather_than_raising(self) -> None:
+        rs = _load().run_state
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            self.assertIsNone(rs.record_lane_start(root, "US0001"))
+
+
 if __name__ == "__main__":
     unittest.main()

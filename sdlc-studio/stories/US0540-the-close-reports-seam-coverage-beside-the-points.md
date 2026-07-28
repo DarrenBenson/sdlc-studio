@@ -1,6 +1,6 @@
 # US0540: The close reports seam coverage beside the points, and a batch that shipped with unowned seams says so
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0468
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the close reports
 - **Then** seam coverage appears beside the points and the unowned seams are named rather than omitted
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SeamCoverageTests::test_unowned_seams_are_named_at_close
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

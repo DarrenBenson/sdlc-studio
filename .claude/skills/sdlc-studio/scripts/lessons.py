@@ -938,7 +938,13 @@ def plan_digest(repo_root, project_file=None, summary_path=None) -> dict:
 
 #: The carried set lives beside the retros and is COMMITTED, like LESSONS-SUMMARY.md: the log is
 #: gitignored, and a curation a fresh clone cannot read is a curation nobody reads.
-CARRIED_FILE = "sdlc-studio/retros/CARRIED-LESSONS.md"
+#: THE carried-lessons file. One constant, read by the writer (`lessons`) and by every
+#: reader (`sprint`'s plan digest and every lane brief). It named CARRIED-LESSONS.md
+#: while the readers named - and the tree carried - LESSONS-TOP.md, so the curation a
+#: retro wrote and the set a lane was briefed on were two different files, and neither
+#: side had any way to notice. One truth held in two places diverges, and the looser
+#: copy is the one that runs.
+CARRIED_FILE = "sdlc-studio/retros/LESSONS-TOP.md"
 DEFAULT_CARRIED_MAX = 5
 CARRIED_MAX_KEY = "lessons.carried_max"
 
@@ -991,10 +997,26 @@ def _section_lines(text: str, heading: str) -> list[str]:
     return out
 
 
+#: The carried set's rendered shape: `## N. Title`, one section per lesson. The readers
+#: (`sprint.carried_lessons`, and every lane brief through it) have always read this; the
+#: writer read a bullet list under a `## Carried` heading that the file does not use. Two
+#: parsers over one file is the same defect as two paths to one fact - and the writer's
+#: reading was the one that silently returned nothing.
+CARRIED_HEADING_RE = re.compile(r"^##\s+(\d+)\.\s+(.+?)\s*$", re.M)
+
+
 def parse_carried(text: str) -> list[dict]:
-    """The carried set a CARRIED-LESSONS.md holds, in order. Rendered in the same bullet form as
-    the summary digest, so `SUMMARY_LINE_RE` reads both - one parser, not two."""
-    items = []
+    """The carried set the file holds, in order.
+
+    Reads the NUMBERED-SECTION shape the file actually uses, and falls back to the bullet form
+    under a `## Carried` heading for a file written in the older shape. Both are read by one
+    function so the writer and the readers cannot disagree about what the file says - which
+    they did: this returned [] over a file the lane briefs were reading five lessons out of.
+    """
+    items = [{"id": "", "title": m.group(2).strip(), "gist": "", "n": int(m.group(1))}
+             for m in CARRIED_HEADING_RE.finditer(text or "")]
+    if items:
+        return items
     for line in _section_lines(text, CARRIED_HEADING):
         m = SUMMARY_LINE_RE.match(line.strip())
         if m:

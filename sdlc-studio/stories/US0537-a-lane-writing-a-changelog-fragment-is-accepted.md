@@ -1,6 +1,6 @@
 # US0537: A lane writing a changelog fragment is accepted and a lane hand-editing [Unreleased] is refused with the fragment command in the refusal
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0467
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** one writes a fragment and the other hand-edits the [Unreleased] section
 - **Then** the fragment is accepted, the hand-edit is refused, and the refusal names the fragment command so the author can act on it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_changelog.py::ParallelLaneRuleTests::test_a_fragment_is_accepted_and_a_hand_edit_is_refused
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

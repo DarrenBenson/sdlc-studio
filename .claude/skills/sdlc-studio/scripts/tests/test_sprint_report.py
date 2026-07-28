@@ -856,5 +856,86 @@ class GoalVersusCountTests(unittest.TestCase):
         self.assertIn("clause: the goal is judged -> missed", out)
 
 
+class SeamCoverageTests(unittest.TestCase):
+    """US0540. A run that shipped with unowned seams is not the same as one whose pairs were
+    all accounted for, and a close report that omits the difference lets the second read like
+    the first."""
+
+    def _cov(self, total, unowned):
+        return {"available": True, "total": total, "unowned": unowned}
+
+    def test_unowned_seams_are_named_at_close(self) -> None:
+        """NAMED, not counted: a number tells a reader how many pairs went unaccounted for and
+        not which ones, and the value of the report is that somebody can go and look."""
+        lines = sr._seam_lines({"seams": self._cov(
+            3, [{"units": ["US0529", "US0530"], "shared": ["src/init.py"]}])})
+        joined = " ".join(lines)
+        self.assertIn("US0529 + US0530", joined)
+        self.assertIn("src/init.py", joined)
+
+    def test_a_fully_owned_batch_says_so_rather_than_going_quiet(self) -> None:
+        self.assertIn("all owned", " ".join(sr._seam_lines({"seams": self._cov(4, [])})))
+
+    def test_a_batch_with_no_seams_is_distinguishable_from_one_nobody_mapped(self) -> None:
+        self.assertIn("no pair", " ".join(sr._seam_lines({"seams": self._cov(0, [])})))
+        self.assertEqual(sr._seam_lines({"seams": {"available": False}}), [])
+
+
+class UnreadableBatchTests(unittest.TestCase):
+    """BG0362. A Batch line written as prose yields no unit ids, and the report then stated the
+    sprint delivered nothing. Zero units is an empty MEASUREMENT presented as a finding - and
+    the two readings call for opposite responses (fix the retro, versus explain a sprint that
+    shipped nothing), so the report must not pick the alarming one by default."""
+
+    def _rep(self, units):
+        return {"ok": True, "id": "RETRO0001", "date": "2026-07-28", "units": units,
+                "delivered_points": 0 if not units else 8,
+                "velocity": {"points_per_elapsed_hour": None, "elapsed_hours": None,
+                             "elapsed_source": None, "points_per_worker_hour": None,
+                             "tokens_per_point": None, "sprint_tokens_per_point": None,
+                             "overhead_ratio": None, "overhead_bound": None,
+                             "overhead_excludes": []},
+                "accuracy": {"ratio": None, "refused": None, "n_measured": 0, "models": []},
+                "spend": {"measured_units": 0, "cost": 0, "unpriced": []},
+                "lessons": [], "tickets": [], "declined": [], "delegated_signoffs": [],
+                "mutation": {}, "execution": {}, "overhead": {}, "flow": {}, "seams": {}}
+
+    def test_no_units_reads_as_unreadable_not_as_nothing_delivered(self) -> None:
+        out = sr.render(self._rep([]))
+        self.assertIn("UNREADABLE, not zero", out)
+        self.assertIn("Batch", out)
+
+    def test_a_readable_batch_still_reports_its_count(self) -> None:
+        out = sr.render(self._rep(["US0001", "US0002"]))
+        self.assertIn("Delivered: 2 unit(s), 8 points.", out)
+        self.assertNotIn("UNREADABLE", out)
+
+
+class ProofObligationCoverageTests(unittest.TestCase):
+    """BG0358. RUN-01KYJZGZ named six units owing mutation-plus-unit proof; zero mutation runs
+    were recorded, all six reached terminal, both suites were green, the gate passed and the
+    close ran. No lane, gate or close ever compared what the strategy DEMANDED against what the
+    delivery PRODUCED - so an obligation voided for a good reason removed the strategy's central
+    proof with nothing anywhere to notice the trade."""
+
+    def _rep(self, unmet):
+        return {"proof": {"available": True, "units": 6, "unmet": unmet}}
+
+    def test_an_undischarged_declared_obligation_is_named_with_its_unit(self) -> None:
+        lines = " ".join(sr._proof_lines(self._rep([{"unit": "US0493",
+                                                    "unmet": ["mutation", "unit"]}])))
+        self.assertIn("US0493", lines)
+        self.assertIn("mutation", lines)
+        self.assertIn("nothing else compares the two sides", lines)
+
+    def test_a_fully_discharged_batch_says_so(self) -> None:
+        self.assertIn("was discharged", " ".join(sr._proof_lines(self._rep([]))))
+
+    def test_an_underivable_strategy_reports_nothing_rather_than_all_clear(self) -> None:
+        """A missing TSD tells you nothing about the risk of the change, so silence here must
+        not read as every obligation met."""
+        self.assertEqual(sr._proof_lines({"proof": {"available": False}}), [])
+
+
 if __name__ == "__main__":
     unittest.main()

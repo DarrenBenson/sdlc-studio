@@ -878,6 +878,114 @@ def refinable(repo_root: Path | str, request_id: str, allow_decomposed: bool = F
             "decomposed_into": existing}
 
 
+# --- the seam map --------------------------------------------------------------------
+# A SEAM is where two units of one batch touch the same thing. Thirteen of the seventeen
+# round-one majors in RUN-01KYKVZM were seam defects - four directly contradicting PAIRS in one
+# batch, every one of which passed its own acceptance criteria. A delivery lane reads ONE unit;
+# review is the first actor in the whole loop that reads two. So the pair is invisible until the
+# most expensive moment, and the repair lands after both units are built.
+#
+# The map is computed where the pair first EXISTS: at decomposition, when the batch is chosen.
+# It cannot decide correctness - nothing mechanical can - but it can say which pairs share a
+# surface and which of those has nobody responsible for what the other must not regress.
+
+#: The criterion-level declaration that OWNS a seam: what this unit must not regress in the
+#: surface it shares with a sibling. Modelled on `critic.CALLER_FIELD`, which solved the same
+#: shape of problem - a property no criterion states is a property no lane is asked about.
+SEAM_FIELD = "Preserves"
+_SEAM_RE = re.compile(rf"^\s*[-*]\s*\*\*{SEAM_FIELD}:?\*\*:?\s*(.+?)\s*$", re.I | re.M)
+
+
+def seam_declarations(text: str) -> list[str]:
+    """Every `- **Preserves:** ...` line in a unit, as its stated text."""
+    return [m.group(1).strip() for m in _SEAM_RE.finditer(text or "")]
+
+
+def _unit_surface(root: Path, uid: str) -> tuple[set[str], str]:
+    """(the non-markdown files a unit declares, its full text). Markdown is excluded for the
+    reason `critic.mechanism_files` excludes it: two units editing one document are not sharing
+    a behaviour, and reporting every doc pair would bury the pairs that matter."""
+    hit = sdlc_md.find_by_id(root, uid)
+    if not hit:
+        return set(), ""
+    text = sdlc_md.read_text_safe(Path(hit[0]))
+    files = {f.strip().strip("`") for f in sdlc_md.affects_files(text)}
+    return {f for f in files if f and not f.endswith(".md")}, text
+
+
+def seam_map(repo_root: Path | str, units: list[str]) -> list[dict]:
+    """Every pair in `units` that shares a declared file, and whether the seam has an OWNER.
+
+    Owned means at least one of the two states, in a criterion, what it must not regress -
+    a `Preserves:` declaration naming the shared surface or the sibling unit. An unowned seam
+    is not a defect and is never reported as one: it is a pair nobody has been ASKED about,
+    which is the state every one of those four contradicting pairs was in.
+    """
+    root = Path(repo_root)
+    ids = [sdlc_md.norm_id(u) for u in (units or []) if sdlc_md.norm_id(u)]
+    info = {uid: _unit_surface(root, uid) for uid in ids}
+    seams: list[dict] = []
+    for i, a in enumerate(ids):
+        for b in ids[i + 1:]:
+            shared = sorted(info[a][0] & info[b][0])
+            if not shared:
+                continue
+            owners = []
+            for owner, other in ((a, b), (b, a)):
+                declared = " ".join(seam_declarations(info[owner][1])).lower()
+                if not declared:
+                    continue
+                if other.lower() in declared or any(s.lower() in declared for s in shared):
+                    owners.append(owner)
+            seams.append({"units": [a, b], "shared": shared, "owners": owners,
+                          "owned": bool(owners)})
+    return seams
+
+
+def seam_findings(repo_root: Path | str, units: list[str]) -> list[dict]:
+    """The seams nobody owns - the report `refine` and the planner print."""
+    return [s for s in seam_map(repo_root, units) if not s["owned"]]
+
+
+def render_seam_findings(seams: list[dict], total: int) -> list[str]:
+    """The lines a seam report prints. An empty result SAYS what it checked for rather than
+    printing nothing, so a batch with no seams cannot be told from one nobody mapped."""
+    if not total:
+        return ["seam map: no pair in this batch shares a declared file - nothing to own."]
+    if not seams:
+        return [f"seam map: {total} seam(s), every one owned - each pair states what it must "
+                f"not regress in the surface it shares."]
+    out = [f"seam map: {len(seams)} of {total} seam(s) have NO OWNER. A lane reads one unit; "
+           f"review is the first actor that reads two, so an unowned seam is a pair nobody is "
+           f"asked about until the most expensive moment:"]
+    for s in seams:
+        a, b = s["units"]
+        out.append(f"  {a} + {b} share {', '.join(s['shared'])} - neither states what the other "
+                   f"must not regress. Add `- **{SEAM_FIELD}:** <property>` to a criterion of "
+                   f"whichever unit owns it.")
+    return out
+
+
+def cmd_seams(args: argparse.Namespace) -> int:
+    """Report the batch's seam map. Read-only."""
+    units = [u.strip() for u in (args.units or "").replace(",", " ").split() if u.strip()]
+    if not units and getattr(args, "worklist", None):
+        units = [ln.split("#")[0].strip(" -*\t") for ln in
+                 Path(args.worklist).read_text(encoding="utf-8").splitlines()]
+        units = [u for u in units if u]
+    if not units:
+        print("seams: name the batch with --units or --worklist", file=sys.stderr)
+        return 2
+    all_seams = seam_map(args.root, units)
+    unowned = [s for s in all_seams if not s["owned"]]
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps({"seams": all_seams, "unowned": unowned}, indent=2))
+        return 1 if unowned else 0
+    for line in render_seam_findings(unowned, len(all_seams)):
+        print(line)
+    return 1 if unowned else 0
+
+
 def cmd_show(args: argparse.Namespace) -> int:
     try:
         # show is READ-ONLY and accepts an already-decomposed request: it exists to inform a
@@ -1036,6 +1144,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--root", default=".")
     sdlc_md.add_format_arg(s)
     s.set_defaults(func=cmd_show)
+
+    sm = sub.add_parser("seams", help="Report the batch's seam map (pairs sharing a surface).")
+    sm.add_argument("--units", help="unit ids, comma- or space-separated")
+    sm.add_argument("--worklist", help="a worklist file naming the batch")
+    sm.add_argument("--root", default=".")
+    sm.add_argument("--format", choices=("text", "json"), default="text")
+    sm.set_defaults(func=cmd_seams)
 
     sdlc_md.add_global_root(p)
     return p

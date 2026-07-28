@@ -1,6 +1,6 @@
 # US0536: The guidance states the fragment path as the rule for a lane, so an author following it cannot collide with a sibling
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0467
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** an author working in a parallel lane follows it
 - **Then** it directs them to write a fragment, and the [Unreleased] instruction is scoped to the release step rather than stated as the general rule
 - **Verify:** grep -n 'fragment' .claude/skills/sdlc-studio/reference-doctrine.md
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

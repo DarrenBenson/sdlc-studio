@@ -286,6 +286,8 @@ def report(root: Path, retro_id: str, *, sprint_tokens: int | None = None,
         "execution": execution,
         "overhead": overhead,
         "units": unit_ids,
+        "seams": _seam_coverage(Path(root), unit_ids),
+        "proof": _proof_coverage(Path(root), unit_ids),
         "delivered_points": b.get("delivered_points"),
         "delegated_signoffs": _delegated_rows(root),
         "spend": _spend(root, unit_ids),
@@ -636,13 +638,96 @@ def _overhead_lines(rep: dict) -> list[str]:
     if not ov.get("measured"):
         return [f"Overhead vs delivery: UNMEASURED - {ov.get('why')}.",
                 *_overhead_component_lines(ov)]
-    excludes = (f" It EXCLUDES {', '.join(ov['unmeasured'])}, so the true ratio is higher."
+    # DELIVERY IS DERIVED BY SUBTRACTION, so every minute of overhead the instruments failed
+    # to attribute is credited to delivery - the ratio flatters the loop exactly in proportion
+    # to how poorly it is measured. Saying which components are missing is not the same as
+    # saying where their time WENT, and only the second warns a reader that the delivery figure
+    # is inflated rather than merely incomplete.
+    excludes = (f" It EXCLUDES {', '.join(ov['unmeasured'])}; delivery is derived by "
+                f"SUBTRACTION, so that unattributed time is counted as delivery and both the "
+                f"ratio and the delivery figure flatter the loop."
                 if ov["unmeasured"] else "")
     floor = "at least " if ov.get("bound") == "lower" else ""
     return [f"Overhead vs delivery: {floor}{ov['ratio']}:1 - {ov['overhead_s'] / 60:,.0f} min of "
             f"gate, review and repair against {ov['delivery_s'] / 60:,.0f} min of delivery, "
             f"within a measured {ov['total_s'] / 60:,.0f} min run.{excludes}",
             *_overhead_component_lines(ov)]
+
+
+def _proof_coverage(root: Path, unit_ids: list[str]) -> dict:
+    """What the plan's test strategy DEMANDED of this batch against what the delivery produced.
+
+    RUN-01KYJZGZ named six units owing mutation-plus-unit proof; zero mutation runs were
+    recorded, and all six reached terminal with both suites green, the gate passed and the
+    close run. No lane, gate or close ever compared the two sides, so an obligation voided by a
+    reasonable decision - lanes were told not to mutation-test in the working tree, after a
+    reviewer doing exactly that silently reverted a shipped repair - removed the strategy's
+    central proof with nothing anywhere to notice the trade.
+    """
+    try:
+        import sprint  # noqa: PLC0415 - deferred sibling
+        rows = []
+        for uid in unit_ids:
+            proof = sprint.lane_proof(root, uid)
+            if proof.get("available") and proof.get("undischarged"):
+                rows.append({"unit": uid,
+                             "unmet": [u["obligation"] for u in proof["undischarged"]]})
+        return {"available": True, "units": len(unit_ids), "unmet": rows}
+    except Exception as exc:  # noqa: BLE001 - a proof read must never break a close report
+        sdlc_md.debug("sprint_report._proof_coverage", exc)
+        return {"available": False, "units": 0, "unmet": []}
+
+
+def _proof_lines(rep: dict) -> list[str]:
+    """Declared proof against delivered proof. An unmet obligation is NAMED with its unit: a
+    count says how much went unproven and not what, and the trade is only reviewable if the
+    reader can see which proof was dropped."""
+    cov = rep.get("proof") or {}
+    if not cov.get("available"):
+        return []
+    if not cov["unmet"]:
+        return [f"Proof: every obligation the test strategy assigned this batch was "
+                f"discharged across {cov['units']} unit(s)."]
+    out = [f"Proof: {len(cov['unmet'])} of {cov['units']} unit(s) reached terminal with a "
+           f"DECLARED obligation nobody discharged. Both suites can be green and the gate can "
+           f"pass while this is true - nothing else compares the two sides:"]
+    out.extend(f"  {r['unit']}: {', '.join(r['unmet'])}" for r in cov["unmet"])
+    return out
+
+
+def _seam_coverage(root: Path, unit_ids: list[str]) -> dict:
+    """Which pairs of this batch shared a surface, and which of those nobody owned.
+
+    Reported at the CLOSE because that is where a batch can still be judged as a batch. A run
+    that shipped with unowned seams is not the same as one whose pairs were all accounted for,
+    and a report that omits the difference lets the second read like the first."""
+    try:
+        import refine  # noqa: PLC0415 - deferred sibling
+        seams = refine.seam_map(root, unit_ids)
+    except Exception as exc:  # noqa: BLE001 - a seam read must never break a close report
+        sdlc_md.debug("sprint_report._seam_coverage", exc)
+        return {"available": False, "total": 0, "unowned": []}
+    return {"available": True, "total": len(seams),
+            "unowned": [s for s in seams if not s["owned"]]}
+
+
+def _seam_lines(rep: dict) -> list[str]:
+    """Seam coverage beside the points. An unowned seam is NAMED rather than counted: a number
+    tells a reader how many pairs went unaccounted for and not which ones, and the whole value
+    of the report is that somebody can go and look."""
+    cov = rep.get("seams") or {}
+    if not cov.get("available"):
+        return []
+    if not cov["total"]:
+        return ["Seams: no pair in this batch shared a declared file."]
+    unowned = cov["unowned"]
+    if not unowned:
+        return [f"Seams: {cov['total']}, all owned - each pair stated what it must not regress."]
+    out = [f"Seams: {cov['total']}, of which {len(unowned)} shipped with NO OWNER - a pair "
+           f"nobody was asked about, which is the state every contradicting pair of "
+           f"RUN-01KYKVZM was in:"]
+    out.extend(f"  {' + '.join(s['units'])} share {', '.join(s['shared'])}" for s in unowned)
+    return out
 
 
 def _delegated_rows(root: Path) -> list[dict]:
@@ -689,7 +774,19 @@ def render(rep: dict) -> str:
             # one word cannot express it. Printed under the goal it belongs to, so a reader
             # meets the detail without knowing to look for it.
             lines.append(f"  clause: {c.get('clause', '')} -> {c.get('verdict') or 'not judged'}")
-    lines.append(f"Delivered: {len(rep['units'])} unit(s), {rep['delivered_points']} points.")
+    if not rep["units"]:
+        # BG0362: an unreadable Batch line yielded no units and the report then stated the
+        # sprint delivered nothing. Zero units is an empty MEASUREMENT presented as a finding -
+        # the two readings call for opposite responses (fix the retro, versus explain a sprint
+        # that shipped nothing), and the report must not pick the alarming one by default.
+        lines.append("Delivered: the Batch field named no unit ids, so what this sprint "
+                     "delivered is UNREADABLE, not zero. Name the units individually in the "
+                     "retro's `> **Batch:**` field, then re-run.")
+    else:
+        lines.append(f"Delivered: {len(rep['units'])} unit(s), "
+                     f"{rep['delivered_points']} points.")
+    lines.extend(_seam_lines(rep))
+    lines.extend(_proof_lines(rep))
     # A GREEN UNIT COUNT IS NOT A GOAL. Every unit reaching terminal while the goal was not
     # achieved is the most misreadable state a close can be in - the numbers all look like
     # success - so it is stated in the headline rather than left to be inferred from a verdict

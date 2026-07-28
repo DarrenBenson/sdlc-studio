@@ -1,6 +1,7 @@
 # BG0365: The carried-lessons set has three representations and the read gate may read a different one from the one the retro writes
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; predicates mutation-killed)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -22,10 +23,24 @@ Name one store authoritative - the file - and derive the other two from it: the 
 
 ## Acceptance Criteria
 
-No acceptance criterion could be derived from this finding's evidence: none of its prose fields carries fewer than 5 words of substance, so nothing here states what fixed would look like. Whoever picks this up agrees the contract with the author before starting - this is a stated gap, not a criterion to tick.
+### AC1: The writer and the readers name ONE file, and it is the file the tree carries
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::CarriedSetOneTruthTests::test_the_constant_names_the_file_the_tree_actually_carries
+- **Verified:** yes (2026-07-28)
+
+### AC2: The writer and the readers read that file the same way, asserted as agreement
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::CarriedSetOneTruthTests::test_the_writer_and_the_readers_read_one_file_the_same_way
+- **Verified:** yes (2026-07-28)
+
+### AC3: The older bullet shape is still read, so the repair is a widening rather than a replacement
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::CarriedSetOneTruthTests::test_the_older_bullet_shape_is_still_read
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 (RUN-01KYKVZM review carry-forward) | Filed |
+| 2026-07-28 | Claude Opus 5 | Criteria authored at delivery. |

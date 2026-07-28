@@ -1,6 +1,7 @@
 # BG0366: _overhead_ratio computes delivery by subtraction, so unmeasured overhead is reported as delivery
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; predicates mutation-killed)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -22,10 +23,19 @@ Measure delivery directly rather than by residue, and report the unattributed re
 
 ## Acceptance Criteria
 
-No acceptance criterion could be derived from this finding's evidence: none of its prose fields carries fewer than 5 words of substance, so nothing here states what fixed would look like. Whoever picks this up agrees the contract with the author before starting - this is a stated gap, not a criterion to tick.
+### AC1: The overhead line states that delivery is derived by SUBTRACTION, so unattributed time is counted as delivery
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::OverheadReviewTermTests
+- **Verified:** yes (2026-07-28)
+
+### AC2: A recorded round duration feeds the term rather than leaving it unmeasured
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::OverheadReviewTermTests::test_recorded_round_durations_feed_the_overhead_term
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 (RUN-01KYKVZM review carry-forward) | Filed |
+| 2026-07-28 | Claude Opus 5 | Criteria authored at delivery. |

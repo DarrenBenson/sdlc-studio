@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 27 |
+| Open | 22 |
 | In Progress | 0 |
-| Fixed | 274 |
+| Fixed | 279 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -72,18 +72,18 @@
 | [BG0352](BG0352-pytest-cannot-collect-the-scripts-and-tools-suites.md) | pytest cannot collect the scripts and tools suites in one invocation, so no Verify line can span both | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0353](BG0353-telemetry-parse-iso-rejects-a-valid-iso-8601.md) | telemetry._parse_iso rejects a valid ISO-8601 offset stamp, making a whole sprint report unreadable | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0354](BG0354-three-more-places-still-enumerate-the-v2-four.md) | Three more places still enumerate the v2 four-digit id, so a v3 ULID unit silently escapes them | Open | Medium | 2026-07-28 | 2026-07-28 |
-| [BG0355](BG0355-a-delegated-lane-can-edit-the-tree-and.md) | A delegated lane can edit the tree and stop without returning a result, leaving finished work unrecorded | Open | High | 2026-07-28 | 2026-07-28 |
+| [BG0355](BG0355-a-delegated-lane-can-edit-the-tree-and.md) | A delegated lane can edit the tree and stop without returning a result, leaving finished work unrecorded | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0356](BG0356-validate-and-verify-ac-disagree-about-whether-a.md) | validate and verify_ac disagree about whether a bug's Verify line executes | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0357](BG0357-mutation-py-records-no-per-test-attribution-so.md) | mutation.py records no per-test attribution, so the prune-candidate consumer can never run | Open | Medium | 2026-07-28 | 2026-07-28 |
-| [BG0358](BG0358-a-declared-proof-obligation-can-go-unmet-and.md) | A declared proof obligation can go unmet and the sprint still closes clean | Open | High | 2026-07-28 | 2026-07-28 |
+| [BG0358](BG0358-a-declared-proof-obligation-can-go-unmet-and.md) | A declared proof obligation can go unmet and the sprint still closes clean | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0359](BG0359-nothing-keeps-the-rfc-index-s-spawned-work.md) | Nothing keeps the RFC index's spawned-work column true once it has been backfilled | Open | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0360](BG0360-verify-ac-cannot-resolve-a-bug-id-so.md) | verify_ac cannot resolve a bug id, so no bug can prove its own acceptance criteria | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0361](BG0361-d0074-s-recorded-waiver-still-covers-nothing-and.md) | D0074's recorded waiver still covers nothing, and record-time validation would accept the same shape again | Fixed | High | 2026-07-28 | 2026-07-28 |
-| [BG0362](BG0362-a-retro-whose-batch-line-is-prose-yields.md) | A retro whose Batch line is prose yields an empty sprint report - the latest sprint reads zero units | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0362](BG0362-a-retro-whose-batch-line-is-prose-yields.md) | A retro whose Batch line is prose yields an empty sprint report - the latest sprint reads zero units | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0363](BG0363-gate-py-records-a-cost-baseline-on-every.md) | gate.py records a cost baseline on every CLI run including scoped ones, so the trend compares unlike runs | Open | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0364](BG0364-two-more-modules-hand-roll-the-strict-timestamp.md) | Two more modules hand-roll the strict timestamp parser BG0353 just fixed in telemetry | Open | Medium | 2026-07-28 | 2026-07-28 |
-| [BG0365](BG0365-the-carried-lessons-set-has-three-representations-and.md) | The carried-lessons set has three representations and the read gate may read a different one from the one the retro writes | Open | High | 2026-07-28 | 2026-07-28 |
-| [BG0366](BG0366-overhead-ratio-computes-delivery-by-subtraction-so-unmeasured.md) | _overhead_ratio computes delivery by subtraction, so unmeasured overhead is reported as delivery | Open | High | 2026-07-28 | 2026-07-28 |
+| [BG0365](BG0365-the-carried-lessons-set-has-three-representations-and.md) | The carried-lessons set has three representations and the read gate may read a different one from the one the retro writes | Fixed | High | 2026-07-28 | 2026-07-28 |
+| [BG0366](BG0366-overhead-ratio-computes-delivery-by-subtraction-so-unmeasured.md) | _overhead_ratio computes delivery by subtraction, so unmeasured overhead is reported as delivery | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0367](BG0367-the-ac-less-baseline-is-not-one-way.md) | The AC-less baseline is not one-way, so a newly filed unit can be added to it and exempt itself | Open | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0368](BG0368-init-s-derived-artefact-tree-creates-a-type.md) | init's derived artefact tree creates a type's directory without its index, regressing what US0529 fixed for issues | Open | Low | 2026-07-28 | 2026-07-28 |
 | [BG0369](BG0369-the-conformance-waiver-report-is-blanked-when-the.md) | The conformance waiver report is blanked when the diff contains no stories, hiding a waived unit rather than reporting it | Open | Medium | 2026-07-28 | 2026-07-28 |

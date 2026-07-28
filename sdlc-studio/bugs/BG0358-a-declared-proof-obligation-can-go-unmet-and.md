@@ -1,6 +1,7 @@
 # BG0358: A declared proof obligation can go unmet and the sprint still closes clean
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; predicates mutation-killed)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/gate.py
@@ -22,8 +23,21 @@ Plan a batch containing a unit the strategy assigns mutation proof. Deliver it w
 
 At close, compare the strategy's per-unit proof obligations against the evidence actually recorded, and report each unmet one by name. Blocking or advisory is a configuration choice, but silence is not an option - an obligation nothing checks should not be printed as a requirement. A deliberate waiver of an obligation, such as suspending mutation runs for tree safety, must be recordable so the trade is visible rather than invisible.
 
+## Acceptance Criteria
+
+### AC1: A declared obligation nobody discharged is named with its unit at the close
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ProofObligationCoverageTests::test_an_undischarged_declared_obligation_is_named_with_its_unit
+- **Verified:** yes (2026-07-28)
+
+### AC2: A fully discharged batch says so, and an underivable strategy reports nothing rather than all-clear
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ProofObligationCoverageTests
+- **Verified:** yes (2026-07-28)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Fable 5 (operator-raised at the RUN-01KYJZGZ close) | Filed |
+| 2026-07-28 | Claude Opus 5 | Criteria authored at delivery. |
