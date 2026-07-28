@@ -55,3 +55,29 @@ of the sprint.
 2. Open the next sprint on BG0378 and BG0379 first, repaired by a context that did not write them.
 3. Refine CR0468 and CR0469 - they address the failure this review measured, which the 31 units did
    not.
+
+## Deferred at close (RUN-01KYKVZM)
+
+- CR-0472: [sign-off] US0508: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0473: [sign-off] US0509: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0474: [sign-off] US0510: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0475: [sign-off] US0511: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0476: [sign-off] US0512: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0477: [sign-off] US0513: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0478: [sign-off] US0514: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0479: [sign-off] US0515: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0480: [sign-off] US0516: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0481: [sign-off] US0517: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0482: [sign-off] US0518: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0483: [sign-off] US0519: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0484: [sign-off] US0520: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0485: [sign-off] US0521: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0486: [sign-off] US0522: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0487: [sign-off] US0523: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0488: [sign-off] US0524: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0489: [sign-off] US0525: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0490: [sign-off] US0526: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0491: [sign-off] US0527: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0492: [sign-off] US0528: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0493: [sign-off] US0529: no critic verdict and no sprint-level review covering it (deferred, not waived)
+- CR-0494: [sign-off] US0530: no critic verdict and no sprint-level review covering it (deferred, not waived)
