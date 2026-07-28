@@ -737,6 +737,31 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
     # dry-run report `would set BG0001 Open -> Fixed` for a transition the real run BLOCKS, so
     # the one pre-flight an agent has gave the opposite answer to the real thing. `force` is
     # still honoured, because a forced dry-run must predict what a forced real run does.
+    # The criteria floor, at the VERB. BG0370 closed it at the validate layer, which the
+    # pre-commit gate enforces - so a unit could not LAND at a terminal status with no
+    # criteria, but `transition set` still performed the change and the refusal arrived later,
+    # from a different tool, phrased as a validation error. Defence at the gate rather than at
+    # the verb is weaker than the rule reads, and it leaves the working tree in the state the
+    # rule forbids. The PREDICATE is validate's own, imported rather than re-derived, so the
+    # two cannot disagree about what counts as a criterion.
+    #
+    # Only a DELIVERED-terminal status: a unit ruled `Won't Fix` or `Superseded` was never
+    # built, so it owes no contract. That distinction is `sdlc_md.is_delivered_terminal`, read
+    # here and by `close_owed`, rather than a second list of statuses to drift.
+    if (not force and sdlc_md.executes_verifiers(type_)
+            and sdlc_md.is_delivered_terminal(type_, target_canon or "")):
+        try:
+            import validate as _validate
+            has_criteria = _validate._has_criteria(text)
+        except Exception:  # noqa: BLE001 - an unimportable validator must not break the verb
+            has_criteria = True
+        if not has_criteria:
+            blocks.append(
+                f"no acceptance criteria; {target_canon} requires at least one - a unit "
+                f"reaching a terminal status with nothing stating what done looks like "
+                f"cannot be checked by anything downstream. Add a criterion (a `Verify:` "
+                f"line makes it executable), or state the absence deliberately. "
+                f"Override with --force")
     if type_ == "bug" and not force:
         block = _bug_depth_gate(text, target_canon)
         if block:

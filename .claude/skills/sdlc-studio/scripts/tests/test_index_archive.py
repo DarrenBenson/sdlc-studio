@@ -53,8 +53,12 @@ def _fixture(root: Path, index: str = INDEX) -> Path:
     for sid, st in [("US0001", "Draft"), ("US0002", "In Progress"),
                     ("US0003", "Done"), ("US0004", "Superseded")]:
         slug = {"US0001": "a", "US0002": "b", "US0003": "c", "US0004": "d"}[sid]
+        # The H1 title matches the index row's, because BG0380 makes every index CELL derived
+        # from the artefact - a fixture whose file says `t` while its row says `A` now has its
+        # row corrected, and these tests are about ARCHIVING, not about which title wins.
+        title = {"US0001": "A", "US0002": "B", "US0003": "C", "US0004": "D"}[sid]
         (d / f"{sid}-{slug}.md").write_text(
-            f"# {sid}: t\n\n> **Status:** {st}\n", encoding="utf-8")
+            f"# {sid}: {title}\n\n> **Status:** {st}\n", encoding="utf-8")
     (d / "_index.md").write_text(index, encoding="utf-8")
     return d
 

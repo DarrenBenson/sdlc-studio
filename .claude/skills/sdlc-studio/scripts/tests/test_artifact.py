@@ -28,7 +28,10 @@ artifact = _load()
 # A bug and a CR may not be born UNGROOMED: both creators refuse a unit `sprint plan` could not
 # plan - one naming neither the files it touches nor a size (BG0136). The prose of a scaffold may
 # still be deferred to whoever fills it in; the grooming may not.
-GROOM = {"affects": "src/thing.py", "points": 3}
+# A criterion, because BG0378 made the criteria floor fire at the VERB: a unit reaching a
+# delivered-terminal status with nothing stating what done looks like is refused there,
+# not later by the validator. A groomed fixture is one `sprint plan` could plan AND close.
+GROOM = {"affects": "src/thing.py", "points": 3, "acs": ["the defect no longer reproduces"]}
 GROOM_CLI = ["--affects", "src/thing.py", "--points", "3"]
 # A CR/RFC/epic is a REQUEST: it carries a T-shirt Size (S/M/L/XL), never delivery Points (BG0148).
 GROOM_REQUEST = {"affects": "src/thing.py", "size": "M"}

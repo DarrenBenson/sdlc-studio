@@ -219,6 +219,23 @@ def subject_error(subject: str, subjects: set[str], unreadable: list[str]) -> st
             f"recorded and then do nothing. Known subjects: {', '.join(sorted(subjects))}{short}")
 
 
+def _scope_tail_error(subject: str) -> str | None:
+    """The consumer's scope-tail check, for the subjects that carry one. A rule whose checker
+    declares no scope grammar is unaffected - only a `rule:conformance:<stage>:<scope>` tail is
+    read here, because that is the one a lane resolves against unit ids."""
+    stem = "rule:conformance:"
+    if not subject.startswith(stem):
+        return None
+    _stage, sep, scope = subject[len(stem):].partition(":")
+    if not sep:
+        return None
+    try:
+        import conformance
+    except ImportError:  # pragma: no cover - the lane is always shipped beside this
+        return None
+    return conformance.scope_tail_error(scope)
+
+
 def record_waiver(root: Path | str, subject: str, rationale: str,
                   today: str | None = None) -> dict:
     """Record a machine-detectable waiver: a decision row `waiver: <subject>`, with the human
@@ -237,6 +254,15 @@ def record_waiver(root: Path | str, subject: str, rationale: str,
             f"a waiver of {subject!r} must record WHY the rule is out of scope here - an "
             "unexplained waiver is indistinguishable from forgetting the rule exists")
     err = subject_error(subject, *waivable_subjects())
+    if err:
+        raise ValueError(err)
+    # ... and the SCOPE TAIL, not only the rule half. Validating the rule and not the scope let
+    # `rule:conformance:critiqued:pre-two-role` record clean and cover nothing, so a sprint
+    # close stayed blocked by a rule the log said had been waived. The check is the consumer's
+    # own (`conformance.scope_tail_error`), imported rather than re-derived - a second reading
+    # of the grammar here would be a copy that drifts, and the copy that drifts is the one
+    # that accepts what the consumer rejects.
+    err = _scope_tail_error(subject)
     if err:
         raise ValueError(err)
     return add(root, f"{WAIVER_PREFIX} {subject}", rationale, today=today)

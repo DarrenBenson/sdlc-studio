@@ -45,7 +45,7 @@ def _repo(root: Path) -> Path:
     ed.mkdir(parents=True)
     (ed / "EP0001-e.md").write_text(
         "# EP0001: e\n\n> **Status:** In Progress\n\n## Story Breakdown\n\n"
-        "- [ ] [US0001: s](../stories/US0001-x.md)\n", encoding="utf-8")
+        "- [ ] [US0001: s](../stories/US0001-x.md)\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
     return root
 
 
@@ -384,8 +384,13 @@ def _bug_repo(root: Path, depth: str | None, prod: bool = False) -> Path:
         header += "> **Production-affecting:** yes\n"
     if depth is not None:
         header += f"> **Verification depth:** {depth}\n"
+    # A criterion, because BG0378 made the criteria floor fire at the VERB: a bug reaching a
+    # delivered-terminal status with nothing stating what fixed looks like is refused. These
+    # fixtures are about the depth tiers, so they carry the minimum that lets the unit under
+    # test be the one that decides the verdict.
     (bd / "BG0001-x.md").write_text(
-        header + "\n## Summary\n\nx\n\n## Steps to Reproduce\n\n1. x\n\n## Proposed Fix\n\ny\n",
+        header + "\n## Summary\n\nx\n\n## Steps to Reproduce\n\n1. x\n\n## Proposed Fix\n\ny\n"
+        "\n## Acceptance Criteria\n\n- [ ] the defect no longer reproduces\n",
         encoding="utf-8")
     (bd / "_index.md").write_text(
         "# Bugs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
@@ -555,10 +560,10 @@ class BatchIdsTests(unittest.TestCase):
         bd.mkdir(parents=True)
         (bd / "BG0001-x.md").write_text(
             "# BG0001: a\n\n> **Status:** In Progress\n"
-            "> **Verification depth:** functional\n", encoding="utf-8")
+            "> **Verification depth:** functional\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
         (bd / "BG0002-y.md").write_text(
             "# BG0002: b\n\n> **Status:** In Progress\n"
-            "> **Verification depth:** smoke\n", encoding="utf-8")
+            "> **Verification depth:** smoke\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
         (bd / "_index.md").write_text(
             "# Bugs\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
             "| [BG0001](BG0001-x.md) | a | In Progress |\n"
@@ -637,7 +642,7 @@ class BatchJsonCleanTests(unittest.TestCase):
             root = Path(d)
             bd = root / "sdlc-studio" / "bugs"; bd.mkdir(parents=True)
             (bd / "BG0001-x.md").write_text(
-                "# BG0001: a\n\n> **Status:** Open\n", encoding="utf-8")
+                "# BG0001: a\n\n> **Status:** Open\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
             (bd / "_index.md").write_text(
                 "# B\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
                 "| [BG0001](BG0001-x.md) | a | Open |\n", encoding="utf-8")
@@ -657,7 +662,7 @@ class TelemetryOnCloseTests(unittest.TestCase):
         bd.mkdir(parents=True, exist_ok=True)
         (bd / "BG0001-x.md").write_text(
             f"# BG0001: a\n\n> **Status:** {status}\n"
-            "> **Verification depth:** soak\n", encoding="utf-8")
+            "> **Verification depth:** soak\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
         (bd / "_index.md").write_text(
             "# B\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
             f"| [BG0001](BG0001-x.md) | a | {status} |\n", encoding="utf-8")
@@ -766,7 +771,7 @@ class HonestSyncTests(unittest.TestCase):
             sd = root / "sdlc-studio" / "stories"
             sd.mkdir(parents=True)
             (sd / "US0001-x.md").write_text(
-                "# US0001: s\n\n> **Status:** Ready\n", encoding="utf-8")
+                "# US0001: s\n\n> **Status:** Ready\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
             (sd / "_index.md").write_text(
                 "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Ready | 1 |\n"
                 "| Done | 0 |\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n",
@@ -789,7 +794,7 @@ class HonestSyncTests(unittest.TestCase):
             root = Path(d)
             sd = root / "sdlc-studio" / "stories"
             sd.mkdir(parents=True)
-            (sd / "US0001-x.md").write_text("# US0001: s\n\n> **Status:** Ready\n", encoding="utf-8")
+            (sd / "US0001-x.md").write_text("# US0001: s\n\n> **Status:** Ready\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
             (sd / "_index.md").write_text(
                 "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Ready | 1 |\n\n"
                 "## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
@@ -815,7 +820,7 @@ class HonestSyncTests(unittest.TestCase):
             cd = root / "sdlc-studio" / "change-requests"
             cd.mkdir(parents=True)
             (cd / "CR0001-x.md").write_text(
-                "# CR-0001: c\n\n> **Status:** Proposed\n> **Decomposed-into:** EP0001\n",
+                "# CR-0001: c\n\n> **Status:** Proposed\n> **Decomposed-into:** EP0001\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n",
                 encoding="utf-8")
             (cd / "_index.md").write_text(
                 "# CRs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Proposed | 1 |\n"
@@ -827,7 +832,7 @@ class HonestSyncTests(unittest.TestCase):
             ed = root / "sdlc-studio" / "epics"
             ed.mkdir(parents=True)
             (ed / "EP0001-c.md").write_text(
-                "# EP0001: c\n\n> **Status:** Done\n> **Parent:** CR0001\n", encoding="utf-8")
+                "# EP0001: c\n\n> **Status:** Done\n> **Parent:** CR0001\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
             res = tr.transition(root, "CR0001", "Complete")
             self.assertTrue(res["index_synced"])
             self.assertIsNone(res["epic"])
@@ -856,7 +861,7 @@ def _v3_bug_repo(root: Path, status: str = "inbox",
     bd.mkdir(parents=True)
     (bd / "BG0001-x.md").write_text(
         f"# BG0001: b\n\n> **Status:** {status}\n> **Severity:** high\n"
-        f"> **Raised-by:** {raised_by}\n\n## Summary\n\nx\n", encoding="utf-8")
+        f"> **Raised-by:** {raised_by}\n\n## Summary\n\nx\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
     (bd / "_index.md").write_text(
         "# Bugs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
         "| inbox | 1 |\n| Open | 0 |\n\n## All\n\n| ID | Title | Status |\n"
@@ -899,7 +904,7 @@ class TriageGateTests(unittest.TestCase):
             bd = root / "sdlc-studio" / "bugs"
             bd.mkdir(parents=True)
             (bd / "BG0001-x.md").write_text(
-                "# BG0001: b\n\n> **Status:** Open\n> **Severity:** high\n\n## Summary\n\nx\n",
+                "# BG0001: b\n\n> **Status:** Open\n> **Severity:** high\n\n## Summary\n\nx\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n",
                 encoding="utf-8")
             (bd / "_index.md").write_text(
                 "# Bugs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Open | 1 |\n"
@@ -1056,7 +1061,7 @@ class AnnotateVerbTests(unittest.TestCase):
         d.mkdir(parents=True, exist_ok=True)
         p = d / "BG0001-x.md"
         p.write_text("# BG0001: x\n\n> **Status:** Open\n> **Severity:** Low\n"
-                     "> **Created-by:** sdlc-studio new\n\n## Summary\n\ns\n", encoding="utf-8")
+                     "> **Created-by:** sdlc-studio new\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
         return p
 
     def test_annotate_inserts_a_new_field(self) -> None:
@@ -1105,7 +1110,7 @@ class AllGatesInOneRefusalTests(unittest.TestCase):
             bd = root / "sdlc-studio" / "bugs"
             bd.mkdir()
             (bd / "BG0001-x.md").write_text(
-                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n",
+                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n",
                 encoding="utf-8")
             with self.assertRaises(ValueError) as ctx:
                 _quiet(tr.transition, root, "BG0001", "Fixed")
@@ -1139,7 +1144,7 @@ class DryRunHonestyTests(unittest.TestCase):
         d.mkdir(parents=True)
         (d / "BG0001-x.md").write_text(
             "# BG0001: x\n\n> **Status:** Open\n> **Severity:** Low\n> **Points:** 2\n\n"
-            "## Summary\n\ns\n", encoding="utf-8")
+            "## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
         (d / "_index.md").write_text(
             "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
             "| [BG0001](BG0001-x.md) | x | Open |\n", encoding="utf-8")
@@ -1251,7 +1256,7 @@ class RequirementsPreflightTests(unittest.TestCase):
         line = f"> **Verification depth:** {depth}\n" if depth else ""
         p = d / "BG0001-x.md"
         p.write_text(f"# BG0001: x\n\n> **Status:** Open\n{line}"
-                     "> **Severity:** Low\n> **Points:** 2\n\n## Summary\n\ns\n",
+                     "> **Severity:** Low\n> **Points:** 2\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n",
                      encoding="utf-8")
         (d / "_index.md").write_text(
             "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
@@ -1343,7 +1348,7 @@ class RequirementsPreflightTests(unittest.TestCase):
         ed.mkdir()
         (ed / "EP0001-e.md").write_text(
             "# EP0001: e\n\n> **Status:** In Progress\n\n## Story Breakdown\n\n"
-            "- [ ] [US0001: s](../stories/US0001-x.md)\n", encoding="utf-8")
+            "- [ ] [US0001: s](../stories/US0001-x.md)\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
 
     def test_two_suffix_free_gates_are_two_requirements_not_one(self) -> None:
         """THE case the re-parsing collapsed - driven through the real ladder.
@@ -1390,7 +1395,7 @@ class RequirementsPreflightTests(unittest.TestCase):
             bd = root / "sdlc-studio" / "bugs"
             bd.mkdir()
             (bd / "BG0001-x.md").write_text(
-                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n",
+                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n",
                 encoding="utf-8")
             unmet = _quiet(tr.requirements, root, "BG0001", "Fixed")
         self.assertGreaterEqual(len(unmet), 2)
@@ -1407,7 +1412,7 @@ class RequirementsPreflightTests(unittest.TestCase):
             bd = root / "sdlc-studio" / "bugs"
             bd.mkdir()
             (bd / "BG0001-x.md").write_text(
-                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n",
+                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n",
                 encoding="utf-8")
             unmet = _quiet(tr.requirements, root, "BG0001", "Fixed")
             try:
@@ -1428,7 +1433,7 @@ class RequirementsPreflightTests(unittest.TestCase):
             bd = root / "sdlc-studio" / "bugs"
             bd.mkdir()
             (bd / "BG0001-x.md").write_text(
-                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n",
+                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n",
                 encoding="utf-8")
             unmet = _quiet(tr.requirements, root, "BG0001", "Fixed")
             self.assertGreaterEqual(len(unmet), 2, f"expected several requirements, got {unmet}")
@@ -1449,7 +1454,7 @@ class AnnotateCannotBypassGatesTests(unittest.TestCase):
         d.mkdir(exist_ok=True)
         p = d / "BG0001-x.md"
         p.write_text("# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n"
-                     "## Summary\n\ns\n", encoding="utf-8")
+                     "## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
         return p
 
     def test_annotate_refuses_the_status_field(self) -> None:
@@ -1521,7 +1526,7 @@ class OneCallCloseTests(unittest.TestCase):
         bd = root / "sdlc-studio" / "bugs"
         bd.mkdir(parents=True)
         (bd / "BG0001-x.md").write_text(
-            "# BG0001: a\n\n> **Status:** In Progress\n", encoding="utf-8")
+            "# BG0001: a\n\n> **Status:** In Progress\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
         (bd / "_index.md").write_text(
             "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
             "| [BG0001](BG0001-x.md) | a | In Progress |\n", encoding="utf-8")
@@ -1894,7 +1899,7 @@ class RfcOpenDecisionGateTests(unittest.TestCase):
                 rd = root / "sdlc-studio" / "rfcs"
                 rd.mkdir(parents=True)
                 (rd / "RFC0001-r.md").write_text(
-                    "# RFC0001: r\n\n> **Status:** In Review\n\n" + body, encoding="utf-8")
+                    "# RFC0001: r\n\n> **Status:** In Review\n\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n" + body, encoding="utf-8")
                 (rd / "_index.md").write_text(
                     "# RFCs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
                     "| [RFC0001](RFC0001-r.md) | r | In Review |\n", encoding="utf-8")
@@ -1946,7 +1951,7 @@ class RfcOpenDecisionGateTests(unittest.TestCase):
             rd = root / "sdlc-studio" / "rfcs"
             rd.mkdir(parents=True)
             (rd / "RFC0001-r.md").write_text(
-                "# RFC0001: r\n\n> **Status:** In Review\n\n" + body, encoding="utf-8")
+                "# RFC0001: r\n\n> **Status:** In Review\n\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n" + body, encoding="utf-8")
             (rd / "_index.md").write_text(
                 "# RFCs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
                 "| [RFC0001](RFC0001-r.md) | r | In Review |\n", encoding="utf-8")
@@ -1969,7 +1974,7 @@ class RfcOpenDecisionGateTests(unittest.TestCase):
             rd.mkdir(parents=True)
             (rd / "RFC0001-r.md").write_text(
                 "# RFC0001: r\n\n> **Status:** In Review\n\n### Open Decisions\n\n"
-                "| # | Decision | Status |\n| --- | --- | --- |\n| D1 | q | Open |\n",
+                "| # | Decision | Status |\n| --- | --- | --- |\n| D1 | q | Open |\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n",
                 encoding="utf-8")
             (rd / "_index.md").write_text(
                 "# RFCs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
@@ -1992,7 +1997,7 @@ class RfcOpenDecisionGateTests(unittest.TestCase):
             dd = root / "sdlc-studio" / "rfcs"
             dd.mkdir(parents=True)
             (dd / "RFC0001-r.md").write_text(
-                "# RFC0001: r\n\n> **Status:** In Review\n\n## Summary\n\nx\n", encoding="utf-8")
+                "# RFC0001: r\n\n> **Status:** In Review\n\n## Summary\n\nx\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
             (dd / "_index.md").write_text(
                 "# RFCs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
                 "| [RFC0001](RFC0001-r.md) | r | In Review |\n", encoding="utf-8")
@@ -2194,7 +2199,7 @@ class OneCallPreflightTests(unittest.TestCase):
         bd = root / "sdlc-studio" / "bugs"
         bd.mkdir(parents=True, exist_ok=True)
         p = bd / "BG0001-x.md"
-        p.write_text("# BG0001: a\n\n> **Status:** In Progress\n", encoding="utf-8")
+        p.write_text("# BG0001: a\n\n> **Status:** In Progress\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
         (bd / "_index.md").write_text(
             "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
             "| [BG0001](BG0001-x.md) | a | In Progress |\n", encoding="utf-8")
@@ -2239,6 +2244,67 @@ class OneCallPreflightTests(unittest.TestCase):
             _quiet(tr.main, ["set", "BG0001", "Fixed", "--depth", "functional",
                              "--dry-run", "--root", str(root)])
             self.assertEqual(before, p.read_text(encoding="utf-8"))
+
+
+class CriteriaFloorAtTheVerbTests(unittest.TestCase):
+    """BG0378. BG0370 closed the criteria floor at the VALIDATE layer, which the pre-commit
+    gate enforces - so a unit could not LAND at a terminal status with no criteria. The verb
+    still performed the change, and the refusal arrived later, from a different tool, phrased
+    as a validation error. Defence at the gate rather than at the verb is weaker than the rule
+    reads, and it leaves the working tree in the state the rule forbids."""
+
+    def _bug(self, root: Path, ident: str = "BG0001", criteria: str = "") -> Path:
+        bugs = root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True, exist_ok=True)
+        p = bugs / f"{ident}-x.md"
+        p.write_text(
+            f"# {ident}: a defect\n\n> **Status:** Open\n> **Severity:** Low\n"
+            f"> **Points:** 1\n> **Verification depth:** functional\n\n"
+            f"## Summary\n\nx\n\n## Acceptance Criteria\n\n{criteria}\n",
+            encoding="utf-8")
+        return p
+
+    def test_a_terminal_transition_with_no_criteria_is_refused_at_the_verb(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            path = self._bug(root)
+            before = path.read_text()
+            unmet = tr.requirements(root, "BG0001", "Fixed")
+            self.assertTrue(any("acceptance criteria" in u for u in unmet), unmet)
+            with self.assertRaises(Exception):
+                tr.transition(root, "BG0001", "Fixed")
+            self.assertEqual(path.read_text(), before,
+                             "the artefact was mutated by a transition that is refused")
+
+    def test_a_unit_with_criteria_still_transitions(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, criteria="- [ ] the defect no longer reproduces")
+            self.assertEqual(tr.requirements(root, "BG0001", "Fixed"), [])
+
+    def test_a_decision_terminal_status_needs_no_criteria(self) -> None:
+        """A unit ruled `Won't Fix` was never built, so it owes no contract. Without this the
+        floor would demand a definition of done for work nobody did."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root)
+            self.assertEqual(
+                [u for u in tr.requirements(root, "BG0001", "Won't Fix")
+                 if "acceptance criteria" in u], [])
+
+    def test_the_verb_and_the_validator_use_one_predicate(self) -> None:
+        """Two copies of "what counts as a criterion" would diverge, and the looser one is the
+        one that runs. Asserted as agreement rather than as two expected answers."""
+        import validate
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for criteria in ("", "- [ ] it works", "### AC1: x\n\n- **Then** y"):
+                path = self._bug(root, criteria=criteria)
+                text = path.read_text()
+                refused = any("acceptance criteria" in u
+                              for u in tr.requirements(root, "BG0001", "Fixed"))
+                self.assertEqual(refused, not validate._has_criteria(text),
+                                 f"verb and validator disagree for {criteria!r}")
 
 
 if __name__ == "__main__":

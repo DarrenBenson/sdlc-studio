@@ -197,7 +197,14 @@ def scan_delivery(root: Path) -> tuple[list[tuple[str, str]], set[str]]:
             ids.add(sdlc_md.norm_id(cid))
             status = sdlc_md.canonical_status(
                 sdlc_md.extract_field(sdlc_md.read_text_safe(p), "Status"), vocab)
-            if status and sdlc_md.is_terminal_status(type_, status):
+            # DELIVERED-terminal only. The terminal set mixes two different things: `Done`
+            # and `Fixed` are reached by building, `Won't Fix` / `Superseded` / `Duplicate`
+            # by ruling. A close-down accounts for what a sprint DELIVERED, so a unit nobody
+            # built can owe no retro - and an advisory no correct action can discharge is one
+            # an operator learns to scroll past, which is fatal for the surface that exists
+            # so a skipped close is SEEN. Recognised by wording in `sdlc_md`, shared with the
+            # transition verb's criteria floor, not by a list of statuses kept here.
+            if status and sdlc_md.is_delivered_terminal(type_, status):
                 out.append((cid, type_))
     return out, ids
 

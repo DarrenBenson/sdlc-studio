@@ -601,5 +601,49 @@ class CloseOwedFieldsFileTests(unittest.TestCase):
         self.assertEqual(data["note"], hazard)        # byte-for-byte - it crossed no shell
 
 
+class DecisionTerminalTests(unittest.TestCase):
+    """BG0382. The terminal set mixes two different things: `Done`/`Fixed` are reached by
+    BUILDING, `Won't Fix`/`Superseded`/`Duplicate` by RULING. A close-down accounts for what a
+    sprint delivered, so only the first kind can owe one - and an advisory no correct action
+    can discharge is one an operator learns to scroll past."""
+
+    def _unit(self, root: Path, ident: str, status: str) -> None:
+        d = root / "sdlc-studio" / ("bugs" if ident.startswith("BG") else "stories")
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{ident}-x.md").write_text(
+            f"# {ident}: x\n\n> **Status:** {status}\n\n"
+            f"## Acceptance Criteria\n\n- [ ] it behaves\n", encoding="utf-8")
+
+    def test_a_unit_ruled_rather_than_built_owes_no_close(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "Won't Implement")
+            close_owed.stamp_baseline(root)
+            self._unit(root, "US0002", "Won't Implement")
+            owed = [cid for cid, _ in close_owed.owed(root)["owed"]]
+            self.assertNotIn("US0002", owed)
+
+    def test_a_delivered_unit_still_does(self) -> None:
+        """The other half, so the carve-out cannot widen into a blanket exemption."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "Ready")
+            close_owed.stamp_baseline(root)
+            self._unit(root, "US0002", "Done")
+            owed = [cid for cid, _ in close_owed.owed(root)["owed"]]
+            self.assertIn("US0002", owed)
+
+    def test_the_split_is_shared_with_the_criteria_floor(self) -> None:
+        """One authority, not two lists of statuses. The transition verb's criteria floor asks
+        the same question, and a second copy here would drift from it."""
+        self.assertTrue(close_owed.sdlc_md.is_delivered_terminal("story", "Done"))
+        self.assertTrue(close_owed.sdlc_md.is_delivered_terminal("bug", "Fixed"))
+        for ruled in ("Won't Implement", "Won't Fix", "Superseded"):
+            with self.subTest(status=ruled):
+                self.assertTrue(close_owed.sdlc_md.is_decision_terminal(ruled))
+                self.assertFalse(close_owed.sdlc_md.is_delivered_terminal("story", ruled)
+                                 or close_owed.sdlc_md.is_delivered_terminal("bug", ruled))
+
+
 if __name__ == "__main__":
     unittest.main()

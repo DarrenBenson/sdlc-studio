@@ -1,6 +1,7 @@
 # BG0380: The index syncer covers a bug's status but not its severity, and not an RFC's status at all, so a corrected artefact and its index row disagree with drift_items=0
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; each load-bearing predicate mutation-killed)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py
@@ -22,10 +23,24 @@ Derive every index cell the row carries from the artefact, not a subset of them.
 
 ## Acceptance Criteria
 
-No acceptance criterion could be derived from this finding's evidence: none of its prose fields carries fewer than 5 words of substance, so nothing here states what fixed would look like. Whoever picks this up agrees the contract with the author before starting - this is a stated gap, not a criterion to tick.
+### AC1: A stale index cell is drift, so `drift_items` can no longer read 0 while a row disagrees with its artefact
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EveryIndexCellIsDerivedTests
+- **Verified:** yes (2026-07-28)
+
+### AC2: The row's own header drives the sync, so a column the code has never heard of is projected without an edit
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EveryIndexCellIsDerivedTests::test_the_schema_drives_it_so_a_new_column_needs_no_edit
+- **Verified:** yes (2026-07-28)
+
+### AC3: The three clobber routes the widening made reachable are each refused: an off-schema row, a second block's own columns, and a literal pipe
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::SchemaSyncSafetyTests
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 (discovery-backlog triage, RUN-01KYKVZM follow-on) | Filed |
+| 2026-07-28 | Claude Opus 5 | Criteria authored at delivery, replacing the auto-written stated absence the filer produced. Executable, because BG0356/BG0360 made a bug's Verify lines run. |

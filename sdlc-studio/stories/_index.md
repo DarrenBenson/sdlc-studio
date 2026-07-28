@@ -22,7 +22,7 @@
 
 | ID | Title | Status | Epic | Created | Updated |
 | --- | --- | --- | --- | --- | --- |
-| [US0112](US0112-hygiene-close-fixed-bugs-archive-over-threshold-indexes.md) | Hygiene: close fixed bugs, archive over-threshold indexes, apply small deferred fixes | Done | EP0025 | 2026-07-09 | 2026-07-09 |
+| [US0112](US0112-hygiene-close-fixed-bugs-archive-over-threshold-indexes.md) | Hygiene: close fixed bugs, archive over-threshold indexes, accept v3 ULID ids in validate | Done | EP0025 | 2026-07-09 | 2026-07-09 |
 | [US0113](US0113-detect-a-disabled-commit-gate-in-gate-and.md) | Detect a disabled commit gate in gate and status | Done | EP0026 | 2026-07-10 | 2026-07-10 |
 | [US0114](US0114-normalise-mid-file-main-guards-in-the-test.md) | Normalise mid-file main guards in the test suite | Done | EP0026 | 2026-07-10 | 2026-07-10 |
 | [US0115](US0115-advisory-lanes-earn-their-signal-mutation-wired-into.md) | Advisory lanes earn their signal: mutation wired into sprint close, disclosure triaged to zero | Done | EP0026 | 2026-07-10 | 2026-07-10 |
@@ -75,8 +75,8 @@
 | [US0162](US0162-drop-the-interactive-equals-unmeasured-language-for-not.md) | Drop the interactive-equals-UNMEASURED language for not-yet-captured, preserving CR0273 guards | Done | EP0045 | 2026-07-15 | 2026-07-15 |
 | [US0163](US0163-close-owed-detector-terminal-delivery-units-since-the.md) | Close-owed detector: terminal delivery units since the last retro no retro Batch names | Done | EP0046 | 2026-07-16 | 2026-07-16 |
 | [US0164](US0164-surface-a-close-owed-nudge-in-status-and.md) | Surface a close-owed nudge in status and hint | Done | EP0046 | 2026-07-16 | 2026-07-16 |
-| [US0165](US0165-gate-grows-an-auto-detecting-close-owed-lane.md) | Gate grows an auto-detecting close-owed lane, warn by default and block under --require-close | Done | EP0046 | 2026-07-16 | 2026-07-16 |
-| [US0166](US0166-ship-a-stop-hook-installer-and-redefine-sprint.md) | Ship a Stop-hook installer and redefine sprint-done as close-gate-green | Done | EP0046 | 2026-07-16 | 2026-07-16 |
+| [US0165](US0165-gate-grows-an-auto-detecting-close-owed-lane.md) | Gate grows a bound close-owed lane under --require-close (the soft nudge lives on status/hint) | Done | EP0046 | 2026-07-16 | 2026-07-16 |
+| [US0166](US0166-ship-a-stop-hook-installer-and-redefine-sprint.md) | Ship a Stop-hook close guard and redefine sprint-done as close-gate-green | Done | EP0046 | 2026-07-16 | 2026-07-16 |
 | [US0167](US0167-backlog-triage-lens-engine-duplicate-subsumed-and-superseded.md) | Backlog-triage lens engine: duplicate/subsumed and superseded via Affects-overlap and title/summary similarity | Done | EP0047 | 2026-07-16 | 2026-07-16 |
 | [US0168](US0168-backlog-triage-lenses-oversized-block-stale-and-orphaned.md) | Backlog-triage lenses: oversized (block), stale, and orphaned-dependency | Done | EP0047 | 2026-07-16 | 2026-07-16 |
 | [US0169](US0169-filing-time-duplicate-detection-warn-when-a-new.md) | Filing-time duplicate detection: warn when a new finding overlaps an open artefact | Done | EP0047 | 2026-07-16 | 2026-07-16 |
@@ -196,7 +196,7 @@
 | [US0283](US0283-close-reports-whether-the-outstanding-set-shrinks-or.md) | Close reports whether the outstanding set shrinks or grows across re-runs; hard correctness gates stay unwaivable | Done | EP0092 | 2026-07-20 | 2026-07-20 |
 | [US0284](US0284-test-gate-s-two-real-wrapper-tests-share.md) | test_gate's two real-wrapper tests share one gate execution instead of running it twice | Done | EP0093 | 2026-07-21 | 2026-07-21 |
 | [US0285](US0285-the-never-rolled-evidence-log-pin-drives-an.md) | The never-rolled evidence-log pin drives an injected cap, not 5,050 real records | Done | EP0093 | 2026-07-21 | 2026-07-21 |
-| [US0286](US0286-the-three-heavy-gate-lanes-share-one-artefact.md) | The three heavy gate lanes share one artefact corpus instead of walking it each | Done | EP0093 | 2026-07-21 | 2026-07-21 |
+| [US0286](US0286-the-three-heavy-gate-lanes-share-one-artefact.md) | The three heavy gate lanes stop re-parsing config and re-shelling git | Done | EP0093 | 2026-07-21 | 2026-07-21 |
 | [US0287](US0287-set-d6-s-per-commit-gate-budget-against.md) | Set D6's per-commit gate budget against the improved baseline and pin the ratchet | Done | EP0093 | 2026-07-21 | 2026-07-21 |
 | [US0288](US0288-close-owed-treats-a-missing-velocity-row-as.md) | close_owed treats a missing velocity row as an owed close item | Done | EP0094 | 2026-07-22 | 2026-07-22 |
 | [US0289](US0289-backfill-the-velocity-record-from-retro0029-marking-unmeasurable.md) | Backfill the velocity record from RETRO0029, marking unmeasurable rows as such | Done | EP0094 | 2026-07-22 | 2026-07-22 |

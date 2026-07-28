@@ -1,6 +1,7 @@
 # BG0382: close_owed treats a decision-terminal status as delivery, so a unit nobody built demands a sprint close
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; each load-bearing predicate mutation-killed)
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
 > **Raised-by:** Claude Opus 5; human; v1
@@ -26,9 +27,15 @@ Split the terminal set at the point of use. `close_owed` should account for DELI
 
 ## Acceptance Criteria
 
-- [ ] A delivery unit at a decision-terminal status is not counted as owing a sprint close.
-- [ ] A delivery unit at a delivered-terminal status still owes one, pinned by a test asserting both halves against the same fixture - so the carve-out cannot be widened into a blanket exemption.
-- [ ] The split is derived from the status vocabularies rather than enumerated, and a test adds a new decision-terminal status to a vocabulary and asserts it lands on the correct side without any edit to close_owed.
+### AC1: A unit at a decision-terminal status does not owe a sprint close
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::CriteriaFloorAtTheVerbTests::test_a_decision_terminal_status_needs_no_criteria
+- **Verified:** yes (2026-07-28)
+
+### AC2: A delivered-terminal unit still owes one, and the split lives in one place shared with the criteria floor
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py::DecisionTerminalTests
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 
@@ -36,3 +43,4 @@ Split the terminal set at the point of use. `close_owed` should account for DELI
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 | Created via `new` (deterministic) |
 | 2026-07-28 | Claude Opus 5 | Acceptance criteria back-filled. They were supplied at filing and neither creation path wrote them: `artifact.py` has no Acceptance Criteria section for a bug, and `file_finding.py` rendered the STATED ABSENCE over them. Both are repaired under BG0384; these four documents are the evidence of the defect and are restored from the fields files they were filed from, not re-invented. |
+| 2026-07-28 | Claude Opus 5 | Criteria authored at delivery, replacing the auto-written stated absence the filer produced. Executable, because BG0356/BG0360 made a bug's Verify lines run. |

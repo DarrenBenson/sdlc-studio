@@ -101,6 +101,30 @@ def _scope_covers(scope: str, rid: str) -> bool:
     return False
 
 
+def scope_tail_error(scope: str) -> str | None:
+    """Why a waiver's scope tail resolves to no unit, or None when it can resolve to one.
+
+    The RECORD-time counterpart of `_scope_covers`, and derived from it rather than a second
+    reading of the grammar: a tail this refuses is one `_scope_covers` could never match. The
+    same three forms and no fourth - absent, one id, an inclusive `<id>-<id>` range.
+
+    Without this, `rule:conformance:critiqued:pre-two-role` records clean and covers NOTHING:
+    the rule half is validated, the tail is not, so a waiver that silently exempts nobody looks
+    exactly like one that works. Worse than a refused waiver, because the gate it was meant to
+    quiet stays red and the record says the question was settled.
+    """
+    if not scope:
+        return None
+    if sdlc_md.id_number(scope) is not None:
+        return None
+    lo, sep, hi = scope.partition("-")
+    if sep and None not in (sdlc_md.id_number(lo.strip()), sdlc_md.id_number(hi.strip())):
+        return None
+    return (f"waiver scope {scope!r} names neither a unit nor an inclusive `<id>-<id>` range, "
+            f"so it would cover no unit at all - a waiver that exempts nobody. Name the units "
+            f"(e.g. `US0103-US0310`), or drop the scope tail to waive the stage outright")
+
+
 def stage_waivers(root: Path | str) -> list[dict]:
     """Every ACCEPTED `rule:conformance:<stage>[:<scope>]` waiver, read once per run.
 

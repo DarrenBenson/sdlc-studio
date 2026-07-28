@@ -1005,6 +1005,30 @@ def executes_verifiers(type_: str) -> bool:
     return (type_ or "").strip().lower() in EXECUTES_VERIFIERS
 
 
+#: A terminal status reached by DECIDING rather than by delivering. The terminal set mixes the
+#: two - `Done`/`Fixed` are earned by building, `Won't Fix`/`Superseded`/`Rejected`/`Withdrawn`
+#: are rulings - and callers that care about DELIVERY must not treat a ruling as one. A unit
+#: nobody built owes no acceptance criteria, no verification depth and no sprint close.
+#:
+#: Recognised by the WORDING rather than by a per-type list, so a status added to any type's
+#: vocabulary lands on the correct side without an edit here. `Superseded` is the one that has
+#: to be named: it says another artefact took the work over, which is a ruling however the
+#: sentence is phrased.
+_DECISION_TERMINAL_MARKERS = ("won't", "wont", "reject", "withdraw", "supersede", "duplicate",
+                              "cancel", "obsolete")
+
+
+def is_decision_terminal(status: str) -> bool:
+    """True when this terminal status was reached by a ruling rather than by delivery."""
+    low = (status or "").strip().lower()
+    return any(m in low for m in _DECISION_TERMINAL_MARKERS)
+
+
+def is_delivered_terminal(type_: str, status: str) -> bool:
+    """True when `status` is terminal for `type_` AND was reached by building the thing."""
+    return is_terminal_status(type_, status) and not is_decision_terminal(status)
+
+
 INBOX_STATUS = "inbox"
 TRIAGE_TARGET: dict[str, str] = {"bug": "Open", "cr": "Approved", "rfc": "In Review"}
 
@@ -1176,7 +1200,7 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "undecomposed": "a discovery item accepted into the workflow has no children - decompose it into the units that deliver it (refine a request into epics/stories; triage an Issue into bugs), or close it if it is not going ahead; a still-Proposed/Draft/Open item is pre-triage intake and is not flagged",
         "linked-epics": "the request index's Linked Epics cell disagrees with the file's `Decomposed-into` - run `reconcile apply` to census it from the files; a request that was never decomposed keeps its placeholder and is not flagged",
         "stale-index-stamp": "the index's `**Last Updated:**` header is older than the newest date on its own rows, so it claims a freshness it does not have - run `reconcile apply` to restamp it from the rows (the stamp is derived, never hand-set; a header AHEAD of the rows is just an index nothing has been added to and is not flagged)",
-        "request-derivable": "every child a request produced is resolved, so its successful terminal is EARNED but was never recorded - run `reconcile apply` to derive it (Complete / Accepted / Resolved), which goes through `transition` so the index row and cascades still run; a childless request is the separate `undecomposed` case and is never derived. Where the item names a gate that still refuses (an RFC with an open decision, say), `reconcile apply` CANNOT clear it and says so - resolve that gate first",
+        "index-field": "an index CELL disagrees with the artefact it is derived from - a bug's Severity, an RFC's Status, a CR's Priority. The index is derived output, and `status.py` reads it, so a stale cell makes every backlog figure taken from it wrong. Run `reconcile apply` to project the cells from the artefacts (an off-schema row is skipped rather than written into, and reported here so it can be fixed by hand)",        "request-derivable": "every child a request produced is resolved, so its successful terminal is EARNED but was never recorded - run `reconcile apply` to derive it (Complete / Accepted / Resolved), which goes through `transition` so the index row and cascades still run; a childless request is the separate `undecomposed` case and is never derived. Where the item names a gate that still refuses (an RFC with an open decision, say), `reconcile apply` CANNOT clear it and says so - resolve that gate first",
     },
 }
 

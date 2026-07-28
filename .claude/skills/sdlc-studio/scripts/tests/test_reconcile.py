@@ -311,7 +311,11 @@ class ApplyTests(unittest.TestCase):
             root = Path(d)
             sd = root / "sdlc-studio" / "stories"
             sd.mkdir(parents=True)
-            (sd / "US0001-x.md").write_text("# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            # The literal pipe lives in the FILE's title, so it is still the payload of the
+            # round-trip now that BG0380 makes the Title cell derived. A payload only the index
+            # carried would just be corrected, and the escaping would go untested.
+            (sd / "US0001-x.md").write_text("# US0001: `a | b`\n\n> **Status:** Done\n",
+                                            encoding="utf-8")
             (sd / "_index.md").write_text(
                 "# Stories\n\n| Status | Count |\n| --- | --- |\n| Done | 0 |\n\n"
                 "| ID | Title | Status |\n| --- | --- | --- |\n"
@@ -1094,7 +1098,16 @@ class MultiSchemaStatusTests(unittest.TestCase):
                 "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
                 "| BG0003 | Open the dialog on load | TBD |\n", encoding="utf-8")  # title leads 'Open'; col2 non-vocab
             reconcile.apply_type("bug", root)
-            self.assertIn("| BG0003 | Open the dialog on load | TBD |", (bd / "_index.md").read_text())
+            out = (bd / "_index.md").read_text()
+            # The STATUS cell is what must survive: a non-vocabulary value in the pinned column
+            # is not a status the writer may replace, and relocating one into a title leading
+            # with a status word is the data loss this pins. BG0380 made apply derive the
+            # file-owned cells too, so the stale TITLE is now corrected - a different, intended
+            # behaviour. Asserted per cell rather than on the whole row, so this test keeps
+            # saying what it was written to say.
+            self.assertIn("| TBD |", out, "a non-vocabulary status cell was overwritten")
+            self.assertNotIn("Open the dialog on load | Fixed", out,
+                             "the status was relocated into the title")
 
     def test_headerless_block_status_read_by_vocab(self):
         # the legitimate fallback: a block with no Status header -> status found by vocab token.
@@ -3203,6 +3216,174 @@ class StaleIndexStampTests(unittest.TestCase):
             self.assertIn("**Last Updated:** 2026-07-28",
                           (sd / "_index.md").read_text(encoding="utf-8"))
             self.assertNotIn("stale-index-stamp", self._kinds(root))
+
+
+class EveryIndexCellIsDerivedTests(unittest.TestCase):
+    """BG0380. The index is documented as derived output that must never be hand-authored, and
+    `reconcile` is named as the thing that syncs it. It synced three cells - title, points,
+    persona - from a hand-picked list, so a bug's Severity, an RFC's Status or a CR's Priority
+    could disagree with its row while `detect` reported `drift_items`=0. `status.py` reads the
+    index, so every backlog figure taken in that state was wrong."""
+
+    HEADER = "| ID | Title | Status | Severity | Created | Updated |"
+
+    def _repo(self, tmp: Path, severity_in_index: str = "Medium") -> Path:
+        bugs = tmp / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True)
+        (bugs / "BG0001-a-defect.md").write_text(
+            "# BG0001: a defect\n\n> **Status:** Open\n> **Severity:** Critical\n"
+            "> **Points:** 2\n> **Created:** 2026-07-28\n\n## Summary\n\nx\n",
+            encoding="utf-8")
+        (bugs / "_index.md").write_text(
+            f"# Bugs\n\n{self.HEADER}\n| --- | --- | --- | --- | --- | --- |\n"
+            f"| [BG0001](BG0001-a-defect.md) | a defect | Open | {severity_in_index} "
+            f"| 2026-07-28 | 2026-07-28 |\n", encoding="utf-8")
+        return tmp
+
+    def test_a_stale_severity_cell_is_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            found = reconcile.project_fields(root, "bug", dry_run=True)["drift"]
+            self.assertTrue(any(f["field"] == "severity" and f["file"] == "Critical"
+                                for f in found), found)
+
+    def test_detect_counts_it_so_drift_items_cannot_read_zero(self) -> None:
+        """The standalone `fields` verb already saw title drift, and nothing ran it: not
+        `detect`, not `apply`, not the gate's reconcile lane. A drift no gate counts is a
+        drift the tree carries indefinitely."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            _, drift = reconcile.detect_all(root, scope="bugs")
+            self.assertTrue(any(x.get("kind") == "index-field" and x.get("field") == "severity"
+                                for x in drift), drift)
+
+    def test_apply_repairs_it_and_a_second_detect_is_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            reconcile.apply_type("bug", root, dry_run=False)
+            self.assertIn("Critical", (root / "sdlc-studio/bugs/_index.md").read_text())
+            _, drift = reconcile.detect_all(root, scope="bugs")
+            self.assertEqual([x for x in drift if x.get("kind") == "index-field"], [])
+
+    def test_an_already_derived_index_reports_nothing(self) -> None:
+        """The other direction: the check must not fire on a correct index, or it becomes a
+        constant and an operator learns to ignore it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), severity_in_index="Critical")
+            _, drift = reconcile.detect_all(root, scope="bugs")
+            self.assertEqual([x for x in drift if x.get("kind") == "index-field"], [])
+
+    def test_the_schema_drives_it_so_a_new_column_needs_no_edit(self) -> None:
+        """The fix must not be a longer hand-picked list. A column the code has never heard
+        of is projected because the artefact carries a field of that name."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bugs = root / "sdlc-studio" / "bugs"
+            bugs.mkdir(parents=True)
+            (bugs / "BG0001-a-defect.md").write_text(
+                "# BG0001: a defect\n\n> **Status:** Open\n> **Severity:** Low\n"
+                "> **Points:** 2\n> **Squadron:** Blue\n\n## Summary\n\nx\n",
+                encoding="utf-8")
+            (bugs / "_index.md").write_text(
+                "# Bugs\n\n| ID | Title | Status | Severity | Squadron |\n"
+                "| --- | --- | --- | --- | --- |\n"
+                "| [BG0001](BG0001-a-defect.md) | a defect | Open | Low | Red |\n",
+                encoding="utf-8")
+            found = reconcile.project_fields(root, "bug", dry_run=True)["drift"]
+            self.assertTrue(any(f["field"] == "squadron" and f["file"] == "Blue" for f in found),
+                            found)
+
+    def test_a_column_projected_from_other_artefacts_is_left_alone(self) -> None:
+        """An epic's Stories cell and a CR's Linked Epics are derived from OTHER artefacts.
+        Projecting a same-named field over them would clobber a correct derived value, so the
+        schema-driven sync has a floor."""
+        self.assertIn("stories", reconcile._INDEX_OWNED_COLUMNS)
+        self.assertIn("linked epics", reconcile._INDEX_OWNED_COLUMNS)
+        self.assertNotIn("severity", reconcile._INDEX_OWNED_COLUMNS)
+
+
+class SchemaSyncSafetyTests(unittest.TestCase):
+    """The BG0380 widening - from three named cells to every column - made three clobber
+    routes reachable that were harmless while almost nothing was projected. Each is pinned
+    here with the shape that actually corrupted a row while the fix was being built."""
+
+    def _bug_file(self, bugs: Path, ident: str, title: str, severity: str) -> None:
+        (bugs / f"{ident}-x.md").write_text(
+            f"# {ident}: {title}\n\n> **Status:** Open\n> **Severity:** {severity}\n"
+            "> **Points:** 1\n\n## Summary\n\nx\n", encoding="utf-8")
+
+    def test_an_off_schema_row_is_skipped_whole(self) -> None:
+        """A row with more or fewer cells than its header describes: column positions mean
+        nothing in it, so projecting by index rewrites whichever cell happens to sit there."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bugs = root / "sdlc-studio" / "bugs"
+            bugs.mkdir(parents=True)
+            self._bug_file(bugs, "BG0001", "real title", "Critical")
+            idx = bugs / "_index.md"
+            idx.write_text(
+                "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| BG0001 | a note | Open | trailing |\n", encoding="utf-8")
+            reconcile.project_fields(root, "bug", dry_run=False)
+            self.assertIn("| BG0001 | a note | Open | trailing |", idx.read_text(),
+                          "an off-schema row was written into")
+
+    def test_a_second_block_with_its_own_header_uses_its_own_columns(self) -> None:
+        """Two data tables, different schemas. Failing to re-pin at the second header wrote
+        the first block's Title position into the second block's Status cell."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bugs = root / "sdlc-studio" / "bugs"
+            bugs.mkdir(parents=True)
+            self._bug_file(bugs, "BG0002", "second block title", "Critical")
+            idx = bugs / "_index.md"
+            idx.write_text(
+                "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| BG0001 | x | Open |\n\n## Older\n\n| ID | Severity | Points |\n"
+                "| --- | --- | --- |\n| BG0002 | Low | 9 |\n", encoding="utf-8")
+            reconcile.project_fields(root, "bug", dry_run=False)
+            out = idx.read_text()
+            self.assertIn("| BG0002 | Critical | 1 |", out,
+                          "the second block's own columns were not used")
+            self.assertNotIn("second block title | ", out,
+                             "a title was written into a block that has no Title column")
+
+    def test_a_literal_pipe_in_a_projected_value_is_escaped_on_write(self) -> None:
+        """A value containing `|` must be re-escaped, or it splits the row and every column
+        after it shifts."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bugs = root / "sdlc-studio" / "bugs"
+            bugs.mkdir(parents=True)
+            self._bug_file(bugs, "BG0001", "a | b", "Low")
+            idx = bugs / "_index.md"
+            idx.write_text(
+                "# Bugs\n\n| ID | Title | Severity |\n| --- | --- | --- |\n"
+                "| BG0001 | stale | Low |\n", encoding="utf-8")
+            reconcile.project_fields(root, "bug", dry_run=False)
+            row = [ln for ln in idx.read_text().splitlines() if "BG0001" in ln][0]
+            self.assertEqual(len(reconcile._table_cells(row)), 3,
+                             "the projected pipe split the row into an extra column")
+
+    def test_the_status_cell_is_left_to_its_own_writer(self) -> None:
+        """`status` has a dedicated writer that knows about emphasis, the status vocabulary
+        and when to decline. Two writers for one cell diverge, and the blunter one wins by
+        running second."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            crs = root / "sdlc-studio" / "change-requests"
+            crs.mkdir(parents=True)
+            (crs / "CR0001-x.md").write_text(
+                "# CR-0001: t\n\n> **Status:** Complete\n> **Priority:** High\n",
+                encoding="utf-8")
+            idx = crs / "_index.md"
+            idx.write_text(
+                "# CRs\n\n| ID | Title | Status | Priority |\n| --- | --- | --- | --- |\n"
+                "| [CR-0001](CR0001-x.md) | t | **Complete** | Low |\n", encoding="utf-8")
+            reconcile.project_fields(root, "cr", dry_run=False)
+            out = idx.read_text()
+            self.assertIn("**Complete**", out, "emphasis on the status cell was stripped")
+            self.assertIn("High", out, "the priority cell was not derived")
 
 
 if __name__ == "__main__":

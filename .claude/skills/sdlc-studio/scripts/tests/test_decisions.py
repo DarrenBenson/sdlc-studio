@@ -356,5 +356,58 @@ class ConcurrencySafetyTests(unittest.TestCase):
             self.assertEqual(len(rows), 8, "a concurrent write clobbered a row")
 
 
+class WaiverScopeTailTests(unittest.TestCase):
+    """BG0361. `record_waiver` validated the RULE half of a subject and not the scope tail, so
+    `rule:conformance:critiqued:pre-two-role` recorded clean and covered NOTHING - the sprint
+    close it was written to unblock stayed blocked, while the log said the question was settled.
+    A waiver that silently exempts nobody is worse than a refused one: the refusal is visible."""
+
+    RATIONALE = "the cohort predates the gate and is being paid down under BG0350"
+
+    def _root(self, d) -> Path:
+        root = Path(d)
+        (root / "sdlc-studio").mkdir(parents=True)
+        return root
+
+    def test_a_scope_naming_no_unit_is_refused_at_record_time(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            with self.assertRaises(ValueError) as caught:
+                decisions.record_waiver(
+                    root, "rule:conformance:critiqued:pre-two-role", self.RATIONALE)
+            self.assertIn("pre-two-role", str(caught.exception))
+            self.assertIn("no unit", str(caught.exception))
+
+    def test_a_range_and_a_single_id_are_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            for scope in ("US0103-US0310", "US0288"):
+                with self.subTest(scope=scope):
+                    r = decisions.record_waiver(
+                        root, f"rule:conformance:critiqued:{scope}", self.RATIONALE)
+                    self.assertTrue(r["id"])
+
+    def test_a_bare_rule_with_no_tail_still_waives_the_stage(self) -> None:
+        """The carve-out must not become a refusal of every waiver: an absent tail waives the
+        stage outright, which is a deliberate and legitimate form."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            r = decisions.record_waiver(root, "rule:conformance:critiqued", self.RATIONALE)
+            self.assertTrue(r["id"])
+
+    def test_the_check_agrees_with_the_consumer_that_resolves_it(self) -> None:
+        """The record-time refusal and the run-time matcher must answer the same question. Two
+        readings of one grammar diverge, and the looser one accepts what the other rejects -
+        which is exactly how a waiver covering nothing came to be recorded."""
+        import conformance
+        for scope in ("pre-two-role", "US0103-US0310", "US0288", "everything"):
+            with self.subTest(scope=scope):
+                refused = conformance.scope_tail_error(scope) is not None
+                covers_any = any(conformance._scope_covers(scope, rid)
+                                 for rid in ("US0103", "US0288", "US0310", "US9999"))
+                self.assertEqual(refused, not covers_any,
+                                 f"{scope!r}: refused={refused} but covers_any={covers_any}")
+
+
 if __name__ == "__main__":
     unittest.main()

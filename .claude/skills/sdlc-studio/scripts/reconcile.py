@@ -86,6 +86,7 @@ DRIFT_KINDS = (
     "request-derivable",
     "linked-epics",
     "stale-index-stamp",
+    "index-field",
 )
 
 # Statuses that do NOT imply a backing file yet. An UNLINKED index row in one of
@@ -1622,6 +1623,21 @@ def detect_all(repo_root: Path | str, scope: str | None = None) -> tuple[dict, l
         result = detect_type(type_, repo_root)
         per_type[type_] = result
         all_drift.extend(result["drift"])
+        # A stale index CELL is drift. It used to live only in the separate `fields` verb,
+        # which is not run by detect, by apply, or by the gate's reconcile lane - so a bug's
+        # Severity or an RFC's Status could disagree with its row while `drift_items` read 0.
+        # `status.py` reads the index, which made every backlog figure taken in that state
+        # wrong. The index is derived output; a command answering "is it derived" must answer
+        # for every cell it carries.
+        for item in project_fields(repo_root, type_, dry_run=True)["drift"]:
+            all_drift.append({"kind": "index-field", "type": type_, "id": item["id"],
+                              "field": item["field"], "index": item["index"],
+                              "file": item["file"],
+                              "detail": (f"{item['id']}: index {item['field']} is "
+                                         f"{item['index']!r}, the artefact says "
+                                         f"{item['file']!r}"),
+                              "fix": (f"set the index {item['field']} of {item['id']} to "
+                                      f"{item['file']!r} (`reconcile.py apply`)")})
     # The meta indexes (retros/, reviews/) run on the default 'all' sweep and on the explicit
     # 'meta' scope, never on a single pipeline scope like 'bugs'.
     if scope in (None, "meta"):
@@ -2257,6 +2273,13 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False,
             or result["stamped"]) and not dry_run:
         text = "\n".join(lines) + ("\n" if original.endswith("\n") else "")
         sdlc_md.atomic_write(index_path, text)
+    # ... then the file-owned CELLS, from the same authority `detect` counts. Run after the
+    # write above because it re-reads the index: a row this pass appended must have its cells
+    # projected too, or `apply` would leave behind exactly the drift `detect` had just
+    # reported. Folded in here rather than left in the standalone `fields` verb, which apply
+    # never called - so `apply` could report success over an index it had not finished
+    # deriving, and the next `detect` would disagree with it.
+    result["fields"] = project_fields(repo_root, type_, dry_run=dry_run)["drift"]
     return result
 
 
@@ -2293,13 +2316,45 @@ _TITLE_RE = re.compile(r"^#\s+[A-Za-z]+-?\d+:\s*(.+?)\s*$", re.MULTILINE)
 _PERSONA_RE = re.compile(r"^>?\s*\*\*Persona:\*\*\s*(.+?)\s*$", re.MULTILINE)  # canonical field
 
 
+#: Any canonical metadata field, as the artefacts write it: `> **Name:** value`.
+_ANY_FIELD_RE = re.compile(r"^>?\s*\*\*([A-Za-z][A-Za-z ]*?):\*\*\s*(.*?)\s*$", re.MULTILINE)
+
+#: Index columns this pass must NOT write. Two reasons, both about ownership rather than taste.
+#: `stories` / `deps` / `linked epics` / `spawned crs` are projections of OTHER artefacts, and
+#: `updated` is the index's own bookkeeping - a same-named field appearing in an artefact must
+#: not overwrite a correct derived value. `status` has a DEDICATED writer (`apply_type`) that
+#: knows what this pass cannot: emphasis to preserve (`**Complete**`), the status vocabulary,
+#: a headerless block, and when to decline rather than relocate a status into a title. Two
+#: writers for one cell would diverge, and the blunter one would win by running second.
+#: They are excluded by name because a same-named field could otherwise appear in an artefact
+#: and be projected over a correct derived value. Everything else is decided by whether the
+#: artefact carries a field of that column's name - the ROW SCHEMA drives the sync, so a column
+#: added to a type is covered without an edit here.
+_INDEX_OWNED_COLUMNS = frozenset({"stories", "deps", "linked epics", "spawned crs", "updated",
+                                  "status"})
+
+
 def _file_field_values(text: str) -> dict:
+    """Every index-projectable value the artefact carries, keyed by lowercased field name.
+
+    Read from the artefact's OWN fields rather than a hand-picked list of three. The
+    enumerated version synced title, points and persona and nothing else, so a bug's Severity,
+    an RFC's Status and a CR's Priority could each disagree with their index row while
+    `detect` reported zero drift - and `status.py` reads the index, so every backlog figure
+    taken while that was true was wrong."""
+    out: dict = {}
+    for m in _ANY_FIELD_RE.finditer(text):
+        name, value = m.group(1).strip().lower(), m.group(2).strip()
+        if value and name not in out:      # first wins: the metadata block, not a later mention
+            out[name] = value
     t = _TITLE_RE.search(text)
-    p = _POINTS_RE.search(text)
+    out["title"] = t.group(1).strip() if t else None
+    p = _POINTS_RE.search(text)            # `Story Points` and `Points` are one column
+    if p:
+        out["points"] = p.group(1)
     pe = _PERSONA_RE.search(text)
-    return {"title": t.group(1).strip() if t else None,
-            "points": p.group(1) if p else None,
-            "persona": pe.group(1).strip() if pe else None}
+    out["persona"] = pe.group(1).strip() if pe else out.get("persona")
+    return out
 
 
 def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = True) -> dict:
@@ -2321,6 +2376,7 @@ def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = 
     original = index_path.read_text(encoding="utf-8")
     lines = original.splitlines()
     cols: dict = {}
+    ncols = 0
     drift: list = []
     changed = False
     for i, line in enumerate(lines):
@@ -2328,10 +2384,29 @@ def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = 
         if not cells:
             continue
         lowered = [c.strip().lower() for c in cells]
-        if "id" in lowered and ("title" in lowered or "points" in lowered):  # re-pin per header
-            cols = {n: lowered.index(n) for n in ("id", "title", "points", "persona") if n in lowered}
+        # Re-pin at ANY header carrying an ID column. The old condition also demanded Title or
+        # Points, so a second block headed `| ID | Status | Severity |` did not re-pin and kept
+        # the FIRST block's positions - writing a title into that block's Status cell. Harmless
+        # while only three cells were projected and nothing ran this pass on apply; corruption
+        # once every column is projected and apply does.
+        if "id" in lowered:  # re-pin per header
+            # EVERY column the row carries, not three named ones. The header IS the schema, so
+            # a column added to a type is projected without an edit here - the enumerated list
+            # is the defect this repo keeps re-filing (LL0013).
+            cols = {n: i for i, n in enumerate(lowered)
+                    if n and n not in _INDEX_OWNED_COLUMNS}
+            ncols = len(cells)
             continue
         if "id" not in cols or cols["id"] >= len(cells):
+            continue
+        # An OFF-SCHEMA row - more or fewer cells than its header - is skipped whole, never
+        # written into. Column positions only mean anything in a row the header describes;
+        # projecting by index into a ragged one rewrites whichever cell happens to sit there,
+        # which is the value-clobber class this module refuses everywhere else. Widening the
+        # sync from three named cells to the whole schema is exactly what made this reachable:
+        # with only title/points/persona projected, a four-cell row under a three-column
+        # header was mostly harmless; with every column projected it is corruption.
+        if len(cells) != ncols:
             continue
         m = sdlc_md.ID_SEARCH_RE.search(cells[cols["id"]])
         if not m:
@@ -2340,8 +2415,8 @@ def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = 
         if not fv:
             continue
         row_changed = False
-        for field in ("title", "points", "persona"):
-            if field in cols and cols[field] < len(cells) and fv[field] is not None:
+        for field in [c for c in cols if c != "id"]:
+            if field in cols and cols[field] < len(cells) and fv.get(field) is not None:
                 cur = cells[cols[field]].strip()
                 if cur != fv[field]:
                     drift.append({"id": m.group(0), "field": field, "index": cur, "file": fv[field]})
@@ -2514,6 +2589,13 @@ def cmd_apply(args: argparse.Namespace) -> int:
             unapplied += 1
         for c in res["changes"]:
             print(f"{'WOULD set' if args.dry_run else 'set'} {type_} {c['id']}: {c['from']} -> {c['to']}")
+            n += 1
+        for f in res.get("fields", []):
+            # Counted, for the reason the restamp line below is announced: this pass rewrites
+            # rows, and an apply reporting "changed 0 row(s)" while editing 105 of them is the
+            # mis-report class the whole module exists to refuse.
+            print(f"{'WOULD set' if args.dry_run else 'set'} {type_} {f['id']} "
+                  f"{f['field']}: {f['index']!r} -> {f['file']!r}")
             n += 1
         if res["counts_updated"]:
             print(f"{'WOULD recompute' if args.dry_run else 'recomputed'} {type_} summary counts")

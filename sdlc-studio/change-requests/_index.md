@@ -20,7 +20,7 @@
 
 | ID | Title | Status | Priority | Type | Date | Linked Epics |
 | --- | --- | --- | --- | --- | --- | --- |
-| [CR-0198](CR0198-v4-0-release-engineering-schema-v3-becomes-the.md) | v4.0 release engineering: schema v3 becomes the default, upgrade walk, major-release checklist | Complete | Medium | process | 2026-07-08 | -- |
+| [CR-0198](CR0198-v4-0-release-engineering-schema-v3-becomes-the.md) | v4.0 release engineering: schema v3 becomes the default, upgrade walk, major-release checklist | Complete | High | process | 2026-07-08 | -- |
 | [CR-0199](CR0199-status-backlog-deterministic-non-terminal-census-grouped-by.md) | status backlog: deterministic non-terminal census grouped by type and status | Complete | Medium | tooling | 2026-07-08 | -- |
 | [CR-0201](CR0201-provenance-tag-lint-guard-misses-us-form-and.md) | Provenance-tag lint guard misses US-form and non-leading ids | Complete | P3 | Improvement | 2026-07-09 | -- |
 | [CR-0202](CR0202-detect-a-disabled-commit-gate-nothing-verifies-core.md) | detect a disabled commit gate: nothing verifies core.hooksPath on any surface | Complete | High | tooling | 2026-07-09 | -- |
@@ -45,7 +45,7 @@
 | [CR-0221](CR0221-cooper-usage-pass-personas-that-arbitrate-not-decorate.md) | Cooper usage pass: personas that arbitrate, not decorate | Complete | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0222](CR0222-positioning-and-lifecycle-wiring-the-honest-differentiator-everywhere.md) | positioning and lifecycle wiring: the honest differentiator, everywhere the team is met | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0223](CR0223-the-handoff-guide-a-first-class-remaining-work.md) | the handoff guide: a first-class remaining-work artefact at run close | Complete | Medium | Feature | 2026-07-10 | -- |
-| [CR-0224](CR0224-multi-repo-context-the-repo-map-and-census.md) | multi-repo context: the repo map and census grow PVD-wide awareness | Complete | Medium | Feature | 2026-07-10 | -- |
+| [CR-0224](CR0224-multi-repo-context-the-repo-map-and-census.md) | cross-repo `Depends on:` resolution in audit and sprint plan | Complete | Medium | Feature | 2026-07-10 | -- |
 | [CR-0225](CR0225-appetite-bounded-unattended-runs-a-budget-circuit-breaker.md) | appetite-bounded unattended runs: a budget circuit-breaker for epic-level execution | Complete | Medium | Feature | 2026-07-10 | -- |
 | [CR-0226](CR0226-a-brand-new-readme-newcomer-value-first-existing.md) | a brand-new README: newcomer value first, existing users get their own page | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0227](CR0227-the-sdlc-studio-white-paper-the-mill-described.md) | the sdlc-studio white paper: the mill, described properly | Complete | High | Feature | 2026-07-10 | -- |
@@ -94,7 +94,7 @@
 | [CR-0270](CR0270-rfc0038-u7-stamp-project-and-points-on-every.md) | RFC0038 U7: stamp project and points on every evidence record, so cross-project data is collatable and never blindly pooled | Complete | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0271](CR0271-rfc0038-u6-two-backlogs-rfcs-and-crs-are.md) | RFC0038 U6: two backlogs - RFCs and CRs are requests, gated so they cannot reach Done without becoming work | Complete | P1 | Improvement | 2026-07-14 | EP0033 (which holds US0120-US0124) |
 | [CR-0272](CR0272-audit-and-clean-up-the-skill-command-surface.md) | Audit and clean up the skill command surface, then rewrite the help files around the core process | Complete | P2 | Improvement | 2026-07-15 | EP0041, EP0081 |
-| [CR-0273](CR0273-track-points-per-worker-hour-as-a-descriptive.md) | Track points-per-worker-hour as a descriptive velocity metric, runner-only, never a target | Superseded | P2 | Improvement | 2026-07-15 | -- |
+| [CR-0273](CR0273-track-points-per-worker-hour-as-a-descriptive.md) | Track sprint velocity (points per elapsed sprint), ceremony included, as a descriptive planning metric | Superseded | P2 | Improvement | 2026-07-15 | -- |
 | [CR-0274](CR0274-refine-add-append-an-epic-to-an-already.md) | refine --add: append an epic to an already-decomposed request, for incremental slices | Complete | P1 | Improvement | 2026-07-15 | EP0036 |
 | [CR-0275](CR0275-refine-show-should-work-on-an-already-decomposed.md) | refine show should work on an already-decomposed request, to inform a refine add | Complete | P3 | Improvement | 2026-07-15 | EP0039 |
 | [CR-0276](CR0276-audit-must-warn-about-workflow-scale-and-confirm.md) | audit must warn about workflow scale and confirm before launching a large adversarial fan-out | Complete | High | Improvement | 2026-07-15 | EP0044 |

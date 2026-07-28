@@ -5569,7 +5569,7 @@ class GateBriefingTests(unittest.TestCase):
         line = f"> **Verification depth:** {depth}\n" if depth else ""
         (d / "BG0001-x.md").write_text(
             f"# BG0001: x\n\n> **Status:** Open\n{line}> **Severity:** Low\n"
-            "> **Points:** 2\n\n## Summary\n\ns\n", encoding="utf-8")
+            "> **Points:** 2\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [ ] the defect no longer reproduces\n", encoding="utf-8")
         (d / "_index.md").write_text(
             "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
             "| [BG0001](BG0001-x.md) | x | Open |\n", encoding="utf-8")
@@ -5729,8 +5729,13 @@ class ClosePreflightTests(unittest.TestCase):
         sd = root / "sdlc-studio" / "stories"
         sd.mkdir(parents=True, exist_ok=True)
         for u in batch:
+            # With a criterion: BG0378 made the criteria floor fire at the transition VERB, so
+            # a unit with none is blocked by the done-gate and these tests would be asserting
+            # the pre-flight's composition against a fixture that fails for an unrelated reason.
             (sd / f"{u}-x.md").write_text(
-                f"# {u}: x\n\n> **Status:** Done\n> **Points:** 2\n", encoding="utf-8")
+                f"# {u}: x\n\n> **Status:** Done\n> **Points:** 2\n\n"
+                f"## Acceptance Criteria\n\n- [ ] it behaves\n",
+                encoding="utf-8")
         _close_state(root, batch=batch)
         return mod
 
@@ -7275,7 +7280,7 @@ class ApplySignoffBatchCoverageTests(unittest.TestCase):
             folder = root / "sdlc-studio" / kind_dir
             folder.mkdir(parents=True, exist_ok=True)
             (folder / f"{uid}-x.md").write_text(
-                f"# {uid}: x\n\n> **Status:** {status}\n", encoding="utf-8")
+                f"# {uid}: x\n\n> **Status:** {status}\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
         return root
 
     def test_bugs_in_the_batch_are_transitioned_or_named(self) -> None:
