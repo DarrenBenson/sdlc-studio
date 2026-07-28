@@ -10,12 +10,11 @@
 
 ## Summary
 
-validate.py reports a bug's `Verify:` line as pseudo-verify - 'nothing executes this' - while `verify_ac.py` will in fact execute it. Two guards give the author opposite advice about the same line, and a fixed bug consequently has no agreed executable closure path.
+validate.py reports a bug's Verify: line as pseudo-verify - 'nothing executes this' - while verify_ac.py will in fact execute it. Two guards give the author opposite advice about the same line, and a fixed bug consequently has no agreed executable closure path.
 
 ## Steps to Reproduce
 
-$ python3 .claude/skills/sdlc-studio/scripts/`verify_ac.py` run --story sdlc-studio/bugs/BG0342-all-four-artefact-indexes-assert-stale-last-updated.md --dry-run --root .
-[DRY] BG0342-...: ac=9 pass=9 fail=0 manual=0 unspec; `verify_ac.py`:1569-1574 (`stories = [i for i in ids if i.startswith("US")]`; 'non-story id(s) skipped'); validate.py:185-194 comment plus `if type_ in ("cr", "bug")` pseudo-verify warning. `python3 .claude/skills/sdlc-stu
+Run verify_ac in dry-run over a bug artefact whose acceptance criteria carry pytest Verify lines. It reports nine criteria, nine passing, none unspecified - so verify_ac does execute them. Then run validate check over the same file: it reports each of those lines as pseudo-verify, meaning nothing executes it. Two shipped guards give the author opposite advice about the same line. The verify_ac side skips only ids that do not begin with the story prefix; the validate side warns for any artefact typed change-request or bug.
 
 ## Proposed Fix
 

@@ -190,12 +190,25 @@ done
 # silent (an expected diagnostic from a bad-fixture test must be captured and asserted on,
 # not leaked to the console, or a real error hides in the noise). Both read the same run -
 # a guard paid for on every commit has to be cheap, or it gets disabled and guards nothing.
+# The selection pre-commit computed, if it handed one over. Absent means run everything: a
+# missing list is an unanswered question, never an answer of "nothing to run".
+selectors="$(sed -n 's/^suite-selector=//p' "$handoff" 2>/dev/null | tr '\n' ' ')"
+if [ -n "$selectors" ]; then
+  printf '  %snote%s running %s selected test module(s) (the whole suite runs at push, release and close)\n' \
+    "$Y" "$N" "$(printf '%s\n' "$selectors" | wc -w)"
+fi
+
 t0=$SECONDS
 run "skill-tests" \
   "every shipped skill script unit test passes, and a green run prints no stray diagnostics" \
   "fix the code or the test named above; re-run: bash tools/skill-tests.sh" \
   -- bash tools/skill-tests.sh "$skill"
 python3 tools/gate_timing.py record --suite skill-tests --seconds "$((SECONDS - t0))" 2>/dev/null
+# Record the green so a later commit over an unchanged surface can reuse it. Without this call
+# no verdict is ever written, read_suite_verdict is always None, and the skip branch is
+# unreachable in production however well it is tested.
+python3 "$skill/gate.py" --root . --record-suite-verdict "$(git rev-parse HEAD 2>/dev/null || echo pending)" \
+  --status green --verdict-mode "$([ -n "$selectors" ] && echo selected || echo full)" 2>/dev/null || true
 suite_tests=$(printf '%s\n' "$last_run_out" | sed -n 's/^Ran \([0-9]*\) tests\{0,1\} in .*/\1/p' | tail -1)
 printf '%s\n' "$last_run_out" | grep -q '_FailedTest' && loader_error=1
 t0=$SECONDS

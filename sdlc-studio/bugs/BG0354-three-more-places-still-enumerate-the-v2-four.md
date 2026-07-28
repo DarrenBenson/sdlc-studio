@@ -10,19 +10,19 @@
 
 ## Summary
 
-BG0318 closed this in conformance.py. The same hole survives in sprint.py's `reachable_end_state` (a fail-open, so a ULID unit is reported reachable when it is not) and in .githooks/commit-msg's paste-ready Refs hint, which prints a WRONG id for a ULID unit rather than none. Same LL0013 class, third and fourth instances.
+BG0318 closed this in conformance.py. The same hole survives in sprint.py's reachable_end_state (a fail-open, so a ULID unit is reported reachable when it is not) and in .githooks/commit-msg's paste-ready Refs hint, which prints a WRONG id for a ULID unit rather than none. Same LL0013 class, third and fourth instances.
 
 ## Steps to Reproduce
 
-Measured against the current tree, not read. With sdlc-studio/.config.yaml containing 'review:\n  `two_role_after`: US0100\n':
+Measured against the current tree, not read. With sdlc-studio/.config.yaml containing 'review:\n two_role_after: US0100\n':
 
-  `sprint.reachable_end_state(root`, [{"id": "US0101"}])       -> Review | derived from the cuto; Reproduced directly at the shell:
+ sprint.reachable_end_state(root, [{"id": "US0101"}]) -> Review | derived from the cuto; Reproduced directly at the shell:
 
-  $ printf 'US01010 US01011: batch\n' | grep -oE '(US|BG|CR)-?[0-9]{4}' | tr -d '-'
-  US0101
-  US0101
+ $ printf 'US01010 US01011: batch\n' | grep -oE '(US|BG|CR)-?[0-9]{4}' | tr -d '-'
+ US0101
+ US0101
 
-  $ printf 'US-01JQK3F8 BG-01JQK4Z2: batch\n' | grep -oE '(US|BG|CR)-?[0-9]{4}' |
+ $ printf 'US-01JQK3F8 BG-01JQK4Z2: batch\n' | grep -oE '(US|BG|CR)-?[0-9]{4}' |
 
 ## Proposed Fix
 

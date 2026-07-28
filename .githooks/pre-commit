@@ -404,7 +404,17 @@ fi
 if [ "$fail" -eq 0 ] && [ "$suites_needed" -eq 1 ]; then
   # This hook's share of the gate travels with the record, so the per-commit total the
   # budget reads still covers BOTH hooks rather than only the half that runs last.
-  if printf 'precommit_seconds=%s\n' "$SECONDS" > "$handoff" 2>/dev/null; then
+  # Carry the SELECTION through, not only the elapsed seconds. commit-msg is where the suites
+  # actually run, so a decision computed here and not handed over is a decision nothing acts on -
+  # the whole mechanism was inert for exactly this reason.
+  # Written in ONE redirection so an unwritable handover still fails the way it always did: the
+  # refusal below is load-bearing, because a handover that cannot be written means the suites
+  # never run at all, and a silently unrunnable lane inside a green gate is the coverage loss
+  # every named skip here exists to prevent.
+  if {
+       printf 'precommit_seconds=%s\n' "$SECONDS"
+       printf '%s\n' "$decision_out" | sed -n 's/^suite-selector: /suite-selector=/p'
+     } > "$handoff" 2>/dev/null; then
     printf '  %snote%s unit suites selected - they run in the commit-msg hook, after the commit\n' "$Y" "$N"
     printf '       message rules, so a message defect is refused in seconds instead of after them.\n'
   else

@@ -2168,32 +2168,30 @@ _SURFACE_SKIP_DIRS = frozenset({
 
 
 def surface_files(root: str = ".") -> list[str]:
-    """Every repo-relative file in the test-relevant surface, sorted.
+    """Every TRACKED repo-relative file, sorted - not the measured read set.
 
-    A directory entry expands to its subtree; a file entry is itself. A path the suites name
-    that is NOT on disk is kept (as `test_relevant_paths` keeps it), because a deletion is
-    exactly the change that must not read as "unchanged"."""
+    The measured set is a proxy, and a proxy is the wrong instrument for "did anything change".
+    Measured on this repo it omitted 233 tracked files - SKILL.md, every help/ and reference-*.md
+    page, README, CHANGELOG, AGENTS.md, the workflows - and an edit to SKILL.md left the digest
+    BYTE-IDENTICAL while three tests in test_command_audit.py went red. A cache that can mask a
+    change is the false-green this module exists to refuse, so the digest now covers everything
+    git tracks: 2,517 files hash in 0.03s, which makes the precision worth nothing and the
+    completeness worth everything.
+
+    Falls back to the measured surface only when git cannot answer, and that fallback is reported
+    by `surface_hash` returning None rather than a narrower digest, so an unanswerable probe runs
+    the suites instead of reusing a verdict taken over less.
+    """
     root = os.path.abspath(root)
-    out: set[str] = set()
-    for entry in test_relevant_paths(root):
-        target = os.path.join(root, entry)
-        # A volatile directory is never expanded, even when a suite measurably READS it. `.git`
-        # is the case that matters: a test locating the repo reads it, so it is genuinely
-        # test-relevant, but its contents change on every commit by construction. Expanding it
-        # put 4,848 objects in the digest and the hash then differed on every single commit, so
-        # the skip this hash exists to enable could never once fire. The same rule already
-        # governs subdirectories during the walk; it has to govern the entry itself too.
-        if os.path.basename(entry.rstrip("/")) in _SURFACE_SKIP_DIRS:
-            continue
-        if os.path.isdir(target):
-            for dirpath, dirnames, filenames in os.walk(target):
-                dirnames[:] = [d for d in dirnames if d not in _SURFACE_SKIP_DIRS]
-                for name in filenames:
-                    rel = os.path.relpath(os.path.join(dirpath, name), root)
-                    out.add(rel.replace(os.sep, "/"))
-        else:
-            out.add(entry.replace(os.sep, "/"))
-    return sorted(out)
+    import subprocess as _sp  # local: gate.py keeps heavy imports off the cold paths
+    try:
+        proc = _sp.run(["git", "-C", root, "ls-files", "-z"],
+                       capture_output=True, text=True, timeout=30)
+        if proc.returncode == 0:
+            return sorted(p for p in proc.stdout.split("\0") if p)
+    except (OSError, _sp.SubprocessError):
+        pass
+    return []
 
 
 def surface_hash(root: str = ".") -> str | None:
@@ -2204,8 +2202,14 @@ def surface_hash(root: str = ".") -> str | None:
     import hashlib
     root_abs = os.path.abspath(root)
     digest = hashlib.sha256()
+    files = surface_files(root_abs)
+    if not files:
+        # An empty surface is git declining to answer, not a tree with nothing in it. Hashing
+        # nothing yields a STABLE digest, which would make the skip fire for ever on any
+        # directory git cannot enumerate - the false-green this returns None to avoid.
+        return None
     try:
-        for rel in surface_files(root_abs):
+        for rel in files:
             path = os.path.join(root_abs, rel)
             digest.update(rel.encode("utf-8", "surrogateescape") + b"\0")
             if os.path.isfile(path):
@@ -2391,6 +2395,13 @@ def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
         result["reason"] = ("no changed path reaches any test module - running everything "
                             "rather than nothing")
         return result
+    # A module whose measured read set is EMPTY told us nothing about what it reads; that is an
+    # unanswered question, not an answer of "it reaches nothing". 57 of 162 modules here measure
+    # empty, because a path built from an IMPORTED constant is invisible to the static reader.
+    # Counting silence as "unreachable" is exactly how a selection reported itself resolved while
+    # excluding the module the change actually reddened. Always include the unattributable.
+    _unattributable = {mod for mod, paths in suite_read_map(root).items() if not paths}
+    selected |= (_unattributable & set(modules))
     result["resolved"] = True
     result["selectors"] = sorted(selected)
     result["excluded"] = len(modules) - len(selected)
@@ -2469,7 +2480,15 @@ def suite_decision(root: str = ".", changed: "list[str] | None" = None,
                    f"nothing about this tree")
         elif recorded != digest:
             why = f"the test-relevant surface has changed since the green verdict of {run_id}"
-        elif at_boundary and recorded_mode != "full":
+        elif at_boundary:
+            # A boundary NEVER reuses, whatever the digest says. Reuse at a boundary inherits
+            # every gap in whatever produced the earlier verdict, and the boundary is precisely
+            # the backstop the per-commit selection leans on. Verified by construction: with a
+            # full green recorded and a tracked file then edited, reuse let the change through
+            # a push and a tag alike.
+            why = (f"boundary {boundary}: a boundary always runs in full - it is the backstop "
+                   f"the per-commit selection relies on, so it never reuses a verdict")
+        elif False and recorded_mode != "full":
             # The coverage half of the boundary rule. A green earned by a partial run is
             # evidence about the tests that ran; reusing it here would let selection become
             # the whole coverage story, which is the one way it could lose a defect rather

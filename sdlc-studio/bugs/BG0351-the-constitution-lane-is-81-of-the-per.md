@@ -10,11 +10,11 @@
 
 ## Summary
 
-Measured in fresh processes on this repo: the whole artefact gate is 32.9s cold and the `constitution` lane alone is 26.6s of it - 81%. `.githooks/pre-commit` describes that gate to the reader as 'fast, ~1s', which is wrong by a factor of thirty-three. This is pure per-commit cost sitting on top of the suites, and it is the largest single lane by a wide margin.
+Measured in fresh processes on this repo: the whole artefact gate is 32.9s cold and the constitution lane alone is 26.6s of it - 81%. .githooks/pre-commit describes that gate to the reader as 'fast, ~1s', which is wrong by a factor of thirty-three. This is pure per-commit cost sitting on top of the suites, and it is the largest single lane by a wide margin.
 
 ## Steps to Reproduce
 
-`python3 .claude/skills/sdlc-studio/scripts/gate.py --root .` -> `gate cost: 33.6s of a 45s budget; dominant lane: constitution at 26.5s`. `--only constitution` on its own: 24.5s then 23.2s. `gate._constitution` calls `c;`.githooks/pre-commit`, the comment beginning "# Comprehensive artefact gate (fast, ~1s): conformance, reconcile drift, validate, ...". Measured:`time python3 .claude/skills/sdlc-studio/scripts/gate.py --root .` -> real
+Run the gate with no arguments and it reports its own cost: 33.6s of a 45s budget, dominant lane constitution at 26.5s. Measured again in fresh processes to remove warm-cache confounding: the whole artefact gate 32.9s, the constitution lane alone 26.6s - 81% of it. The pre-commit hook's own comment describes that gate as a comprehensive artefact gate that is fast, about one second, which is wrong by a factor of thirty-three.
 
 ## Proposed Fix
 
