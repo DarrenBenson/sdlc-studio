@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 33 |
+| Open | 34 |
 | In Progress | 0 |
 | Fixed | 264 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **380** |
+| **Total** | **381** |
 
 ## All Bugs
 
@@ -98,6 +98,7 @@
 | [BG0378](BG0378-transition-does-not-consult-the-criteria-floor-so.md) | transition does not consult the criteria floor, so the terminal status is set and only the commit that records it is refused | Open | Medium | Medium | 2026-07-28 |
 | [BG0379](BG0379-caller-check-silently-passes-a-unit-whose-mechanism.md) | caller-check silently passes a unit whose mechanism surface its own verifier emptied, so US0512's criterion cannot fail | Open | High | High | 2026-07-28 |
 | [BG0380](BG0380-the-index-syncer-covers-a-bug-s-status.md) | The index syncer covers a bug's status but not its severity, and not an RFC's status at all, so a corrected artefact and its index row disagree with drift_items=0 | Open | High | High | 2026-07-28 |
+| [BG0381](BG0381-the-seat-brief-names-the-closed-run-s.md) | The seat brief names the CLOSED run's goal, so the seats are briefed on a goal that is not the one under review | Open | High | 2026-07-28 | 2026-07-28 |
 
 ## Archived Releases
 

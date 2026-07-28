@@ -5,7 +5,7 @@
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/changelog.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/changelog.py, .claude/skills/sdlc-studio/scripts/tests/test_changelog.py
 > **Epic:** EP0183
 > **Points:** 3
 > **Persona:** Maya Okafor

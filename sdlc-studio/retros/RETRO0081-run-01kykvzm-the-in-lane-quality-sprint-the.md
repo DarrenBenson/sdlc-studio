@@ -281,4 +281,3 @@ Closed with known outstanding work (RUN-01KYKVZM): the operator chose file-and-c
 ## Handoff
 
 - [HO-0035](../handoffs/HO0035-a-defect-is-caught-by-the-lane-that.md) - 23 remaining item(s): 0 copilot-tail, 23 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
-
