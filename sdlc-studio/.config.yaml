@@ -56,7 +56,16 @@ conformance:
   # RESTORE TO 82 when an APPROVE COVERING US0288-US0310 SPECIFICALLY is recorded, or when
   # those 23 units are signed off individually. Not "when an APPROVE exists" - that is the
   # wording that let the last raise outlive its expiry by four days.
-  adopt_after: 310
+  #
+  # RESTORED 310 -> 82 the SAME DAY, 2026-07-28 (D0076). The named condition fired within the
+  # hour: the operator approved US0288-US0310 specifically rather than accepting the threshold.
+  # Both missing halves are now real records against those 23 units - the adversarial pass
+  # recorded as per-unit evidence pointing at the ten rounds that actually ran, and an APPROVE
+  # from the reviewer of record resting on the round-7 convergence (zero logic defects; the
+  # residue was prose). The raise existed for 23 units and exempted 228; the approval covers
+  # the 23 and exempts none. This is what the restore condition was for, and naming the UNITS
+  # rather than "an APPROVE" is why it fired in an hour instead of outliving itself by four days.
+  adopt_after: 82
 
 review:
   # Two-role review gate (RFC0044/CR0323), forward-only from the sprint that built it:
