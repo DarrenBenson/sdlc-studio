@@ -1,6 +1,6 @@
 # US0451: personas.md is labelled a legacy appendix whose still-true content is folded into or pointed at the registry
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0426
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

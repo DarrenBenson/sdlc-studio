@@ -1,6 +1,6 @@
 # US0550: A run with no goal recorded falls back to the id alone rather than inventing a slug
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0471
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator running a sprint before its goal is set
+**I want** a run with no recorded goal named by its id alone
+**So that** the tool does not invent a slug for a goal nobody has written
 
 ## Acceptance Criteria
 

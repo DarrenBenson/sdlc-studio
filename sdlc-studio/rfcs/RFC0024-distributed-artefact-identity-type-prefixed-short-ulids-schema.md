@@ -154,3 +154,4 @@ for the v4 release (schema-v3 tranche).
 | 2026-07-06 | Dani Okafor (Engineering amigo) | Created via `new` (deterministic) |
 | 2026-07-06 | Dani Okafor (Engineering amigo) | Drafted options, rejected unnumbered-until-triage, recommended ULID |
 | 2026-07-06 | Dani Okafor (Engineering amigo) | Open decisions resolved on leanings; accepted for v4 |
+| 2026-07-28 | Claude Opus 5 | REVERTED - `Complete` is not in the RFC status vocabulary (Draft/In Review/Accepted/Superseded/Withdrawn) and `Accepted` is already TERMINAL for an RFC, so these were correctly closed before I touched them. The evidence gathered still stands and is kept below: delivered rather than decomposed. Evidence checked: type-prefixed short ULIDs ship (schema v3, .claude/skills/sdlc-studio/scripts/migrate_v3.py); ids minted today are of the form BG-01KYM3JY. It carried no `Decomposed-into` link because it was implemented directly rather than via stories, which is why it sat Accepted while shipped. |

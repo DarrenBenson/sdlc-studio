@@ -1,6 +1,6 @@
 # US0449: The batch and refine minting paths resolve the persona the same way, so the commands that mint most stories are covered too
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0425
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

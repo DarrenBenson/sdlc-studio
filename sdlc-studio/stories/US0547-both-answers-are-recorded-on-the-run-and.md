@@ -1,6 +1,6 @@
 # US0547: Both answers are recorded on the run and shown side by side, reporting a prediction miss where the plan predicted delivery and the close judged otherwise
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0470
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator calibrating how seriously plan-time answers are given
+**I want** both goal answers recorded and shown side by side, with a prediction miss reported
+**So that** over several sprints I can see whether the plan-time question is being answered seriously
 
 ## Acceptance Criteria
 

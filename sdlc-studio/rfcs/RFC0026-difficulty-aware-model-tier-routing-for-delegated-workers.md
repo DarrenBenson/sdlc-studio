@@ -177,3 +177,4 @@ benchmark axis via arm R.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-08 | operator + sdlc | Drafted with all open decisions resolved in-session (operator answered D1-D3 directly; D4-D6 settled by design review); accepted |
+| 2026-07-28 | Claude Opus 5 | REVERTED - `Complete` is not in the RFC status vocabulary (Draft/In Review/Accepted/Superseded/Withdrawn) and `Accepted` is already TERMINAL for an RFC, so these were correctly closed before I touched them. The evidence gathered still stands and is kept below: delivered rather than decomposed. Evidence checked: difficulty-aware routing ships via .claude/skills/sdlc-studio/scripts/complexity.py and the scripts README documents the tier mapping. It carried no `Decomposed-into` link because it was implemented directly rather than via stories, which is why it sat Accepted while shipped. |

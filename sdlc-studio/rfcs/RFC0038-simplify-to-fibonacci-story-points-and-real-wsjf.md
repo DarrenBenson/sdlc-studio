@@ -267,3 +267,4 @@ Doctrine that is printed and ignored is not doctrine, it is decoration (LL0027).
 
 This closes the oldest gap in the project. BG0132 said only stories are gated on executable ACs, and we
 have never once produced a story from a CR.
+| 2026-07-28 | Claude Opus 5 | REVERTED - `Complete` is not in the RFC status vocabulary (Draft/In Review/Accepted/Superseded/Withdrawn) and `Accepted` is already TERMINAL for an RFC, so these were correctly closed before I touched them. The evidence gathered still stands and is kept below: delivered rather than decomposed. Evidence checked: Fibonacci points and real WSJF ship in .claude/skills/sdlc-studio/scripts/sprint.py and are pinned by test_points_model.py and test_two_backlogs.py. It carried no `Decomposed-into` link because it was implemented directly rather than via stories, which is why it sat Accepted while shipped. |

@@ -1,6 +1,6 @@
 # US0551: Blockers sharing a cause and a remedy are filed as one artefact listing the units it covers
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0495
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator reading the discovery backlog after a bounded close
+**I want** blockers sharing a cause filed as one artefact listing the units it covers
+**So that** one owed sign-off does not arrive as 23 identical change requests
 
 ## Acceptance Criteria
 

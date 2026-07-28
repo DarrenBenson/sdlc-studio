@@ -1,6 +1,6 @@
 # US0539: The seam map reaches the delivery lane brief and the review brief, so a lane is told which neighbouring property it must not regress
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0468
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an agent delivering one unit of a batch
+**I want** the seam map in my lane brief and in the review brief
+**So that** I know which neighbouring property I must not regress, which reading my own unit can never tell me
 
 ## Acceptance Criteria
 

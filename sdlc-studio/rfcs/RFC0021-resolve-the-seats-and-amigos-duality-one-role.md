@@ -1,6 +1,6 @@
 # RFC-0021: resolve the seats and amigos duality - one role-based actor model
 
-> **Status:** Accepted - Option B (sliced), settled by Three Amigos consult
+> **Status:** Accepted
 > **Created:** 2026-06-25
 > **Created-by:** sdlc-studio new
 
@@ -131,3 +131,4 @@ slice 1.
 | --- | --- | --- |
 | 2026-06-25 | field | Created via `new` (deterministic) |
 | 2026-06-25 | consult | Three Amigos consulted as independent instances; all three chose B. Accepted Option B (sliced), D1-D6 resolved. Refinements: declared `role:` field (Eng), build-id != review-id + role-less-seat hard error (QA), two-slice delivery (Product). |
+| 2026-07-28 | Claude Opus 5 | REVERTED - `Complete` is not in the RFC status vocabulary (Draft/In Review/Accepted/Superseded/Withdrawn) and `Accepted` is already TERMINAL for an RFC, so these were correctly closed before I touched them. The evidence gathered still stands and is kept below: delivered rather than decomposed. Evidence checked: the seats/amigos duality is resolved to one role-based actor model; the status line records Option B (sliced) settled by consult. It carried no `Decomposed-into` link because it was implemented directly rather than via stories, which is why it sat Accepted while shipped. |

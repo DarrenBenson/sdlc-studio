@@ -1,6 +1,6 @@
 # US0480: validate ratchets the footprint and criterion warnings against a recorded set of tolerated instances
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0443
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

@@ -15,11 +15,11 @@ Decomposed from CR0425. Delivers the work CR0425 requested.
 
 ## Story Breakdown
 
-- [ ] [US0447: A shared reader parses the design-persona registry into Primary, Secondary and Negative with their card paths](../stories/US0447-a-shared-reader-parses-the-design-persona-registry.md)
-- [ ] [US0448: artifact.py resolves --persona through the registry: the declared Primary by default, a warning on an unregistered name, a refusal under strict](../stories/US0448-artifact-py-resolves-persona-through-the-registry-the.md)
-- [ ] [US0449: The batch and refine minting paths resolve the persona the same way, so the commands that mint most stories are covered too](../stories/US0449-the-batch-and-refine-minting-paths-resolve-the.md)
-- [ ] [US0450: The PRD Target Users section names the registry's Primary, Secondary and Negative personas and points at the registry](../stories/US0450-the-prd-target-users-section-names-the-registry.md)
-- [ ] [US0451: personas.md is labelled a legacy appendix whose still-true content is folded into or pointed at the registry](../stories/US0451-personas-md-is-labelled-a-legacy-appendix-whose.md)
+- [x] [US0447: A shared reader parses the design-persona registry into Primary, Secondary and Negative with their card paths](../stories/US0447-a-shared-reader-parses-the-design-persona-registry.md)
+- [x] [US0448: artifact.py resolves --persona through the registry: the declared Primary by default, a warning on an unregistered name, a refusal under strict](../stories/US0448-artifact-py-resolves-persona-through-the-registry-the.md)
+- [x] [US0449: The batch and refine minting paths resolve the persona the same way, so the commands that mint most stories are covered too](../stories/US0449-the-batch-and-refine-minting-paths-resolve-the.md)
+- [x] [US0450: The PRD Target Users section names the registry's Primary, Secondary and Negative personas and points at the registry](../stories/US0450-the-prd-target-users-section-names-the-registry.md)
+- [x] [US0451: personas.md is labelled a legacy appendix whose still-true content is folded into or pointed at the registry](../stories/US0451-personas-md-is-labelled-a-legacy-appendix-whose.md)
 
 ## Acceptance Criteria (Epic Level)
 

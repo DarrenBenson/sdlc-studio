@@ -1,6 +1,6 @@
 # US0448: artifact.py resolves --persona through the registry: the declared Primary by default, a warning on an unregistered name, a refusal under strict
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0425
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0546: At close, the seats are asked whether the delivered content achieved the goal, with the undelivered units and the defects raised supplied rather than recalled
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0470
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator closing a sprint
+**I want** the seats asked whether the delivered content achieved the goal, with the shortfall supplied
+**So that** the judgement rests on the evidence in front of them rather than on what anyone remembers
 
 ## Acceptance Criteria
 

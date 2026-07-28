@@ -1,6 +1,6 @@
 # US0537: A lane writing a changelog fragment is accepted and a lane hand-editing [Unreleased] is refused with the fragment command in the refusal
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0467
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an agent delivering a unit alongside others
+**I want** a fragment accepted and a hand-edit of [Unreleased] refused with the fragment command named
+**So that** the refusal tells me what to do instead of only what I did wrong
 
 ## Acceptance Criteria
 

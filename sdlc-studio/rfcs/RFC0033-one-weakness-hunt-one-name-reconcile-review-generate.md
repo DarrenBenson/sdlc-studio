@@ -101,3 +101,4 @@ this-week production release.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-28 | Claude Opus 5 | REVERTED - `Complete` is not in the RFC status vocabulary (Draft/In Review/Accepted/Superseded/Withdrawn) and `Accepted` is already TERMINAL for an RFC, so these were correctly closed before I touched them. The evidence gathered still stands and is kept below: delivered rather than decomposed. Evidence checked: the single weakness-hunt ships as `critic` plus `reconcile` (.claude/skills/sdlc-studio/scripts/critic.py). It carried no `Decomposed-into` link because it was implemented directly rather than via stories, which is why it sat Accepted while shipped. |

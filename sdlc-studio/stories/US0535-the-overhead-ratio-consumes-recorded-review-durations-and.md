@@ -1,6 +1,6 @@
 # US0535: The overhead ratio consumes recorded review durations, and states it is a lower bound only while a component is genuinely unmeasured
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0466
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator judging where sprint time goes
+**I want** the overhead ratio to consume recorded review durations
+**So that** the headline figure stops excluding the largest overhead component of the last two sprints
 
 ## Acceptance Criteria
 

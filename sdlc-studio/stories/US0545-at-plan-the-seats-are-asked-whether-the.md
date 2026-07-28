@@ -1,6 +1,6 @@
 # US0545: At plan, the seats are asked whether the chosen content will deliver the goal, and a partial or no answer must name what is missing
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0470
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator approving a plan
+**I want** the seats asked whether the chosen content will deliver the goal, naming anything missing
+**So that** the batch is checked against the goal before the work starts, not after
 
 ## Acceptance Criteria
 

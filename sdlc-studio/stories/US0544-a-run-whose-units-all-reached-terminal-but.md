@@ -1,6 +1,6 @@
 # US0544: A run whose units all reached terminal but whose goal was not achieved reports that in the close and the retro, not only the unit count
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0469
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator reading a close report
+**I want** a run whose units all reached terminal but whose goal was not achieved to say so
+**So that** a green unit count cannot stand in for a goal that was not met
 
 ## Acceptance Criteria
 

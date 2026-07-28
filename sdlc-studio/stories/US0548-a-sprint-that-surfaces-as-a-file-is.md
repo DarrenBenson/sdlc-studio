@@ -1,6 +1,6 @@
 # US0548: A sprint that surfaces as a file is named sprint-<run id>-<goal slug>, slugged by the shared helper
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0471
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator scanning a list of sprints
+**I want** each sprint file named for its goal as well as its run id
+**So that** I can see what a sprint was for without opening it
 
 ## Acceptance Criteria
 

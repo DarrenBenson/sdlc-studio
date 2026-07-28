@@ -1,6 +1,6 @@
 # RFC-0034: Sprint sizing, velocity and estimate calibration: close the estimate -> deliver -> recalibrate loop
 
-> **Status:** Accepted (partially superseded)
+> **Status:** Accepted
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -106,3 +106,4 @@ modified-Fibonacci story points, not tokens, become the canonical size unit; D2-
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-17 | sdlc-studio | Partial supersession recorded: D1 and D5 overtaken by RFC-0038 (points, not tokens, are canonical); header note, D1/D5 rows and Related cross-link added; D2-D4 remain live |
+| 2026-07-28 | Claude Opus 5 | REVERTED - `Complete` is not in the RFC status vocabulary (Draft/In Review/Accepted/Superseded/Withdrawn) and `Accepted` is already TERMINAL for an RFC, so these were correctly closed before I touched them. The evidence gathered still stands and is kept below: delivered rather than decomposed. Evidence checked: sprint sizing, velocity and estimate calibration ship - retros/VELOCITY.md carries the rows and the close records the ratio. It carried no `Decomposed-into` link because it was implemented directly rather than via stories, which is why it sat Accepted while shipped. |

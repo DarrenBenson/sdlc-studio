@@ -1,6 +1,6 @@
 # US0538: Refine computes the seam map for a batch and reports a pair sharing a property with no criterion asserting it is preserved
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0468
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator planning a batch
+**I want** refine to compute the seam map and report a pair sharing a property nothing preserves
+**So that** two units that contradict each other are caught at plan rather than at review
 
 ## Acceptance Criteria
 

@@ -1,6 +1,6 @@
 # US0541: A Sprint Goal is recorded as clauses at plan time and the close reports a verdict per clause
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0469
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator whose sprint goal has more than one clause
+**I want** the goal recorded as clauses and a verdict reported per clause
+**So that** a goal reached in two parts of three is expressible instead of collapsing to one word
 
 ## Acceptance Criteria
 

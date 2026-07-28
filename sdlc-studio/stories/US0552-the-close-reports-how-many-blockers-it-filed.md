@@ -1,6 +1,6 @@
 # US0552: The close reports how many blockers it filed and how many distinct causes they represent, so a fan-out is visible when it happens
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0495
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator watching a close file its outstanding work
+**I want** the close to report how many artefacts it filed and how many distinct causes they represent
+**So that** a fan-out is visible at the moment it happens rather than discovered in the backlog later
 
 ## Acceptance Criteria
 

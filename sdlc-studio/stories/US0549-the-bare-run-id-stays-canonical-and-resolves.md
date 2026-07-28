@@ -1,6 +1,6 @@
 # US0549: The bare run id stays canonical and resolves the sprint whatever the slug says, so rewording a goal orphans nothing
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0471
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator who has reworded a sprint goal
+**I want** the bare run id to stay canonical and keep resolving the sprint
+**So that** rewording a goal does not orphan every reference to that sprint
 
 ## Acceptance Criteria
 

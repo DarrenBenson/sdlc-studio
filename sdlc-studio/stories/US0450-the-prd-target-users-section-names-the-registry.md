@@ -1,6 +1,6 @@
 # US0450: The PRD Target Users section names the registry's Primary, Secondary and Negative personas and points at the registry
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0426
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

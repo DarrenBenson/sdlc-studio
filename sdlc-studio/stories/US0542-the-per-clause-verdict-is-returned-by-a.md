@@ -1,6 +1,6 @@
 # US0542: The per-clause verdict is returned by a panel of seats, and a panel including the author is refused rather than warned
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0469
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator relying on an independent judgement
+**I want** the per-clause verdict returned by a panel that refuses to include the author
+**So that** the verdict is not the author marking their own homework
 
 ## Acceptance Criteria
 

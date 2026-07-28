@@ -1,6 +1,6 @@
 # US0540: The close reports seam coverage beside the points, and a batch that shipped with unowned seams says so
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0468
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator closing a sprint
+**I want** seam coverage reported beside the points, naming any seam nobody owned
+**So that** a batch that shipped with unowned seams says so instead of reading as complete
 
 ## Acceptance Criteria
 

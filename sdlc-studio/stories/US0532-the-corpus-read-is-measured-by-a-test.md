@@ -1,6 +1,6 @@
 # US0532: The corpus read is measured by a test that fails if it grows back to per-unit, so the fix cannot silently regress
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0465
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an engineer maintaining reconcile
+**I want** the corpus read count pinned by a test that fails if it scales with the unit count
+**So that** the fix cannot silently regress into per-unit reading as the workspace grows
 
 ## Acceptance Criteria
 

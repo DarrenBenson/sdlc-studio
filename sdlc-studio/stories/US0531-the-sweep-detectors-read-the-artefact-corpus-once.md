@@ -1,6 +1,6 @@
 # US0531: The sweep detectors read the artefact corpus once per run and share it, so the cost is paid once rather than per unit
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0465
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an engineer waiting on the pre-commit gate
+**I want** the sweep detectors to read the artefact corpus once per run instead of once per unit
+**So that** the gate stops charging me 25 seconds of repeated file opens on every commit
 
 ## Acceptance Criteria
 

@@ -1,6 +1,6 @@
 # US0534: A recorded review round carries a duration, and a round recorded without one says so rather than counting as zero
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0466
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator reading what a sprint cost
+**I want** a recorded review round to carry its duration, and an untimed one to say so
+**So that** review time is a measured number rather than a silence counted as zero
 
 ## Acceptance Criteria
 

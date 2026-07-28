@@ -1,6 +1,6 @@
 # US0543: An open defect is judged against the goal clauses: one that falsifies a clause blocks the close, one that does not is recorded leavable with its priority
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0469
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator deciding whether a defect can wait
+**I want** each open defect judged against the goal clauses
+**So that** the decision rests on whether it falsifies the goal rather than on a severity somebody guessed
 
 ## Acceptance Criteria
 

@@ -1,6 +1,6 @@
 # US0533: The gate attributes its seconds per lane, so a lane that becomes the dominant cost is visible without profiling it by hand
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0465
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an operator deciding where to spend gate-time budget
+**I want** the gate to report its seconds per lane
+**So that** I can see which lane became the cost without profiling it by hand
 
 ## Acceptance Criteria
 

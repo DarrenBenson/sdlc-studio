@@ -1,6 +1,6 @@
 # US0536: The guidance states the fragment path as the rule for a lane, so an author following it cannot collide with a sibling
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0467
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -12,9 +12,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** an agent working in a parallel delivery lane
+**I want** the guidance to name the changelog fragment as the rule for a lane
+**So that** following the documented path does not collide with a sibling lane or get me refused
 
 ## Acceptance Criteria
 

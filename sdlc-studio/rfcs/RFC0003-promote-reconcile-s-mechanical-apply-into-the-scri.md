@@ -58,3 +58,4 @@ The largest token cost and largest drift-correctness risk in the skill: every re
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (rfc-decide session) | Accepted in the RFC decision session - Accepted (Option A, scoped) |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: determinism) |
+| 2026-07-28 | Claude Opus 5 | REVERTED - `Complete` is not in the RFC status vocabulary (Draft/In Review/Accepted/Superseded/Withdrawn) and `Accepted` is already TERMINAL for an RFC, so these were correctly closed before I touched them. The evidence gathered still stands and is kept below: delivered rather than decomposed. Evidence checked: reconcile's mechanical apply ships as `reconcile.py apply` and is the documented remedy in AGENTS.md. It carried no `Decomposed-into` link because it was implemented directly rather than via stories, which is why it sat Accepted while shipped. |

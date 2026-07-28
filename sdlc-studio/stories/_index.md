@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 24 |
-| Ready | 38 |
+| Draft | 0 |
+| Ready | 62 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 5 |
-| Done | 483 |
+| Review | 0 |
+| Done | 488 |
 | Won't Implement | 1 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -357,11 +357,11 @@
 | [US0444](US0444-docs-and-supersession-rewrite-help-init-md-and.md) | Docs and supersession: rewrite help/init.md and reference for the guided flow, mark RFC0019 superseded | Done | EP0163 | 2026-07-26 | 2026-07-26 |
 | [US0445](US0445-close-tail-derives-parent-crs-and-rfcs-terminal.md) | Close tail derives parent CRs and RFCs terminal when all their children are terminal | Done | EP0164 | 2026-07-27 | 2026-07-27 |
 | [US0446](US0446-accept-transition-set-id-status-positionally-or-name.md) | Accept transition set ID Status positionally, or name the exact fix in the error | Done | EP0165 | 2026-07-27 | 2026-07-27 |
-| [US0447](US0447-a-shared-reader-parses-the-design-persona-registry.md) | A shared reader parses the design-persona registry into Primary, Secondary and Negative with their card paths | Review | EP0166 | 2026-07-27 | 2026-07-27 |
-| [US0448](US0448-artifact-py-resolves-persona-through-the-registry-the.md) | artifact.py resolves --persona through the registry: the declared Primary by default, a warning on an unregistered name, a refusal under strict | Review | EP0166 | 2026-07-27 | 2026-07-27 |
-| [US0449](US0449-the-batch-and-refine-minting-paths-resolve-the.md) | The batch and refine minting paths resolve the persona the same way, so the commands that mint most stories are covered too | Review | EP0166 | 2026-07-27 | 2026-07-27 |
-| [US0450](US0450-the-prd-target-users-section-names-the-registry.md) | The PRD Target Users section names the registry's Primary, Secondary and Negative personas and points at the registry | Review | EP0166 | 2026-07-27 | 2026-07-27 |
-| [US0451](US0451-personas-md-is-labelled-a-legacy-appendix-whose.md) | personas.md is labelled a legacy appendix whose still-true content is folded into or pointed at the registry | Review | EP0166 | 2026-07-27 | 2026-07-27 |
+| [US0447](US0447-a-shared-reader-parses-the-design-persona-registry.md) | A shared reader parses the design-persona registry into Primary, Secondary and Negative with their card paths | Done | EP0166 | 2026-07-27 | 2026-07-27 |
+| [US0448](US0448-artifact-py-resolves-persona-through-the-registry-the.md) | artifact.py resolves --persona through the registry: the declared Primary by default, a warning on an unregistered name, a refusal under strict | Done | EP0166 | 2026-07-27 | 2026-07-27 |
+| [US0449](US0449-the-batch-and-refine-minting-paths-resolve-the.md) | The batch and refine minting paths resolve the persona the same way, so the commands that mint most stories are covered too | Done | EP0166 | 2026-07-27 | 2026-07-27 |
+| [US0450](US0450-the-prd-target-users-section-names-the-registry.md) | The PRD Target Users section names the registry's Primary, Secondary and Negative personas and points at the registry | Done | EP0166 | 2026-07-27 | 2026-07-27 |
+| [US0451](US0451-personas-md-is-labelled-a-legacy-appendix-whose.md) | personas.md is labelled a legacy appendix whose still-true content is folded into or pointed at the registry | Done | EP0166 | 2026-07-27 | 2026-07-27 |
 | [US0452](US0452-the-version-guard-reaches-every-authoritative-home-discovered.md) | The version guard reaches every authoritative home, discovered rather than hand-enumerated | Ready | EP0167 | 2026-07-27 | 2026-07-27 |
 | [US0453](US0453-countable-claims-in-the-trd-and-tsd-are.md) | Countable claims in the TRD and TSD are checked against a census of what the repo actually ships | Ready | EP0167 | 2026-07-27 | 2026-07-27 |
 | [US0454](US0454-timing-claims-are-checked-against-recorded-measurements-rather.md) | Timing claims are checked against recorded measurements rather than restated from memory | Ready | EP0167 | 2026-07-27 | 2026-07-27 |
@@ -390,9 +390,9 @@
 | [US0477](US0477-reconcile-derives-the-epic-index-s-stories-and.md) | reconcile derives the epic index's Stories and Deps cells from the census and syncs them | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
 | [US0478](US0478-the-mint-path-writes-the-canonical-epic-row.md) | The mint path writes the canonical epic row, and the shipped template declares the same columns | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
 | [US0479](US0479-delete-gate-s-dead-verify-batch-flag-and.md) | Delete gate's dead --verify-batch flag and the documentation claiming it does something | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
-| [US0480](US0480-validate-ratchets-the-footprint-and-criterion-warnings-against.md) | validate ratchets the footprint and criterion warnings against a recorded set of tolerated instances | Draft | EP0173 | 2026-07-27 | 2026-07-27 |
+| [US0480](US0480-validate-ratchets-the-footprint-and-criterion-warnings-against.md) | validate ratchets the footprint and criterion warnings against a recorded set of tolerated instances | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
 | [US0481](US0481-sprint-plan-validates-the-units-in-its-batch.md) | sprint plan validates the units in its batch, not only their index rows | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
-| [US0482](US0482-the-baselined-duplicate-verify-groups-are-split-into.md) | The baselined duplicate Verify groups are split into discriminating selectors | Draft | EP0174 | 2026-07-27 | 2026-07-27 |
+| [US0482](US0482-the-baselined-duplicate-verify-groups-are-split-into.md) | The baselined duplicate Verify groups are split into discriminating selectors | Ready | EP0174 | 2026-07-27 | 2026-07-27 |
 | [US0483](US0483-the-falsified-token-observation-premise-is-replaced-wherever.md) | The falsified token-observation premise is replaced wherever the tracked tree asserts it | Won't Implement | EP0174 | 2026-07-27 | 2026-07-27 |
 | [US0484](US0484-reconcile-reports-a-supersession-only-one-side-of.md) | reconcile reports a supersession only one side of the pair records | Ready | EP0175 | 2026-07-27 | 2026-07-27 |
 | [US0485](US0485-command-audit-reports-a-flag-whose-argparse-destination.md) | command_audit reports a flag whose argparse destination no line ever reads | Ready | EP0175 | 2026-07-27 | 2026-07-27 |
@@ -441,28 +441,28 @@
 | [US0528](US0528-a-draft-story-declaring-a-file-it-will.md) | A Draft story declaring a file it will create is not warned as unresolvable, since that is the normal case | Done | EP0180 | 2026-07-28 | 2026-07-28 |
 | [US0529](US0529-init-creates-the-issues-directory-and-its-index.md) | init creates the issues directory and its index, so the issue type is usable on a new project | Done | EP0180 | 2026-07-28 | 2026-07-28 |
 | [US0530](US0530-the-artefact-tree-init-creates-is-derived-from.md) | The artefact tree init creates is derived from the shipped type list, so a new type is never silently omitted | Done | EP0180 | 2026-07-28 | 2026-07-28 |
-| [US0531](US0531-the-sweep-detectors-read-the-artefact-corpus-once.md) | The sweep detectors read the artefact corpus once per run and share it, so the cost is paid once rather than per unit | Draft | EP0181 | 2026-07-28 | 2026-07-28 |
-| [US0532](US0532-the-corpus-read-is-measured-by-a-test.md) | The corpus read is measured by a test that fails if it grows back to per-unit, so the fix cannot silently regress | Draft | EP0181 | 2026-07-28 | 2026-07-28 |
-| [US0533](US0533-the-gate-attributes-its-seconds-per-lane-so.md) | The gate attributes its seconds per lane, so a lane that becomes the dominant cost is visible without profiling it by hand | Draft | EP0181 | 2026-07-28 | 2026-07-28 |
-| [US0534](US0534-a-recorded-review-round-carries-a-duration-and.md) | A recorded review round carries a duration, and a round recorded without one says so rather than counting as zero | Draft | EP0182 | 2026-07-28 | 2026-07-28 |
-| [US0535](US0535-the-overhead-ratio-consumes-recorded-review-durations-and.md) | The overhead ratio consumes recorded review durations, and states it is a lower bound only while a component is genuinely unmeasured | Draft | EP0182 | 2026-07-28 | 2026-07-28 |
-| [US0536](US0536-the-guidance-states-the-fragment-path-as-the.md) | The guidance states the fragment path as the rule for a lane, so an author following it cannot collide with a sibling | Draft | EP0183 | 2026-07-28 | 2026-07-28 |
-| [US0537](US0537-a-lane-writing-a-changelog-fragment-is-accepted.md) | A lane writing a changelog fragment is accepted and a lane hand-editing [Unreleased] is refused with the fragment command in the refusal | Draft | EP0183 | 2026-07-28 | 2026-07-28 |
-| [US0538](US0538-refine-computes-the-seam-map-for-a-batch.md) | Refine computes the seam map for a batch and reports a pair sharing a property with no criterion asserting it is preserved | Draft | EP0184 | 2026-07-28 | 2026-07-28 |
-| [US0539](US0539-the-seam-map-reaches-the-delivery-lane-brief.md) | The seam map reaches the delivery lane brief and the review brief, so a lane is told which neighbouring property it must not regress | Draft | EP0184 | 2026-07-28 | 2026-07-28 |
-| [US0540](US0540-the-close-reports-seam-coverage-beside-the-points.md) | The close reports seam coverage beside the points, and a batch that shipped with unowned seams says so | Draft | EP0184 | 2026-07-28 | 2026-07-28 |
-| [US0541](US0541-a-sprint-goal-is-recorded-as-clauses-at.md) | A Sprint Goal is recorded as clauses at plan time and the close reports a verdict per clause | Draft | EP0185 | 2026-07-28 | 2026-07-28 |
-| [US0542](US0542-the-per-clause-verdict-is-returned-by-a.md) | The per-clause verdict is returned by a panel of seats, and a panel including the author is refused rather than warned | Draft | EP0185 | 2026-07-28 | 2026-07-28 |
-| [US0543](US0543-an-open-defect-is-judged-against-the-goal.md) | An open defect is judged against the goal clauses: one that falsifies a clause blocks the close, one that does not is recorded leavable with its priority | Draft | EP0185 | 2026-07-28 | 2026-07-28 |
-| [US0544](US0544-a-run-whose-units-all-reached-terminal-but.md) | A run whose units all reached terminal but whose goal was not achieved reports that in the close and the retro, not only the unit count | Draft | EP0185 | 2026-07-28 | 2026-07-28 |
-| [US0545](US0545-at-plan-the-seats-are-asked-whether-the.md) | At plan, the seats are asked whether the chosen content will deliver the goal, and a partial or no answer must name what is missing | Draft | EP0186 | 2026-07-28 | 2026-07-28 |
-| [US0546](US0546-at-close-the-seats-are-asked-whether-the.md) | At close, the seats are asked whether the delivered content achieved the goal, with the undelivered units and the defects raised supplied rather than recalled | Draft | EP0186 | 2026-07-28 | 2026-07-28 |
-| [US0547](US0547-both-answers-are-recorded-on-the-run-and.md) | Both answers are recorded on the run and shown side by side, reporting a prediction miss where the plan predicted delivery and the close judged otherwise | Draft | EP0186 | 2026-07-28 | 2026-07-28 |
-| [US0548](US0548-a-sprint-that-surfaces-as-a-file-is.md) | A sprint that surfaces as a file is named sprint-<run id>-<goal slug>, slugged by the shared helper | Draft | EP0187 | 2026-07-28 | 2026-07-28 |
-| [US0549](US0549-the-bare-run-id-stays-canonical-and-resolves.md) | The bare run id stays canonical and resolves the sprint whatever the slug says, so rewording a goal orphans nothing | Draft | EP0187 | 2026-07-28 | 2026-07-28 |
-| [US0550](US0550-a-run-with-no-goal-recorded-falls-back.md) | A run with no goal recorded falls back to the id alone rather than inventing a slug | Draft | EP0187 | 2026-07-28 | 2026-07-28 |
-| [US0551](US0551-blockers-sharing-a-cause-and-a-remedy-are.md) | Blockers sharing a cause and a remedy are filed as one artefact listing the units it covers | Draft | EP0188 | 2026-07-28 | 2026-07-28 |
-| [US0552](US0552-the-close-reports-how-many-blockers-it-filed.md) | The close reports how many blockers it filed and how many distinct causes they represent, so a fan-out is visible when it happens | Draft | EP0188 | 2026-07-28 | 2026-07-28 |
+| [US0531](US0531-the-sweep-detectors-read-the-artefact-corpus-once.md) | The sweep detectors read the artefact corpus once per run and share it, so the cost is paid once rather than per unit | Ready | EP0181 | 2026-07-28 | 2026-07-28 |
+| [US0532](US0532-the-corpus-read-is-measured-by-a-test.md) | The corpus read is measured by a test that fails if it grows back to per-unit, so the fix cannot silently regress | Ready | EP0181 | 2026-07-28 | 2026-07-28 |
+| [US0533](US0533-the-gate-attributes-its-seconds-per-lane-so.md) | The gate attributes its seconds per lane, so a lane that becomes the dominant cost is visible without profiling it by hand | Ready | EP0181 | 2026-07-28 | 2026-07-28 |
+| [US0534](US0534-a-recorded-review-round-carries-a-duration-and.md) | A recorded review round carries a duration, and a round recorded without one says so rather than counting as zero | Ready | EP0182 | 2026-07-28 | 2026-07-28 |
+| [US0535](US0535-the-overhead-ratio-consumes-recorded-review-durations-and.md) | The overhead ratio consumes recorded review durations, and states it is a lower bound only while a component is genuinely unmeasured | Ready | EP0182 | 2026-07-28 | 2026-07-28 |
+| [US0536](US0536-the-guidance-states-the-fragment-path-as-the.md) | The guidance states the fragment path as the rule for a lane, so an author following it cannot collide with a sibling | Ready | EP0183 | 2026-07-28 | 2026-07-28 |
+| [US0537](US0537-a-lane-writing-a-changelog-fragment-is-accepted.md) | A lane writing a changelog fragment is accepted and a lane hand-editing [Unreleased] is refused with the fragment command in the refusal | Ready | EP0183 | 2026-07-28 | 2026-07-28 |
+| [US0538](US0538-refine-computes-the-seam-map-for-a-batch.md) | Refine computes the seam map for a batch and reports a pair sharing a property with no criterion asserting it is preserved | Ready | EP0184 | 2026-07-28 | 2026-07-28 |
+| [US0539](US0539-the-seam-map-reaches-the-delivery-lane-brief.md) | The seam map reaches the delivery lane brief and the review brief, so a lane is told which neighbouring property it must not regress | Ready | EP0184 | 2026-07-28 | 2026-07-28 |
+| [US0540](US0540-the-close-reports-seam-coverage-beside-the-points.md) | The close reports seam coverage beside the points, and a batch that shipped with unowned seams says so | Ready | EP0184 | 2026-07-28 | 2026-07-28 |
+| [US0541](US0541-a-sprint-goal-is-recorded-as-clauses-at.md) | A Sprint Goal is recorded as clauses at plan time and the close reports a verdict per clause | Ready | EP0185 | 2026-07-28 | 2026-07-28 |
+| [US0542](US0542-the-per-clause-verdict-is-returned-by-a.md) | The per-clause verdict is returned by a panel of seats, and a panel including the author is refused rather than warned | Ready | EP0185 | 2026-07-28 | 2026-07-28 |
+| [US0543](US0543-an-open-defect-is-judged-against-the-goal.md) | An open defect is judged against the goal clauses: one that falsifies a clause blocks the close, one that does not is recorded leavable with its priority | Ready | EP0185 | 2026-07-28 | 2026-07-28 |
+| [US0544](US0544-a-run-whose-units-all-reached-terminal-but.md) | A run whose units all reached terminal but whose goal was not achieved reports that in the close and the retro, not only the unit count | Ready | EP0185 | 2026-07-28 | 2026-07-28 |
+| [US0545](US0545-at-plan-the-seats-are-asked-whether-the.md) | At plan, the seats are asked whether the chosen content will deliver the goal, and a partial or no answer must name what is missing | Ready | EP0186 | 2026-07-28 | 2026-07-28 |
+| [US0546](US0546-at-close-the-seats-are-asked-whether-the.md) | At close, the seats are asked whether the delivered content achieved the goal, with the undelivered units and the defects raised supplied rather than recalled | Ready | EP0186 | 2026-07-28 | 2026-07-28 |
+| [US0547](US0547-both-answers-are-recorded-on-the-run-and.md) | Both answers are recorded on the run and shown side by side, reporting a prediction miss where the plan predicted delivery and the close judged otherwise | Ready | EP0186 | 2026-07-28 | 2026-07-28 |
+| [US0548](US0548-a-sprint-that-surfaces-as-a-file-is.md) | A sprint that surfaces as a file is named sprint-<run id>-<goal slug>, slugged by the shared helper | Ready | EP0187 | 2026-07-28 | 2026-07-28 |
+| [US0549](US0549-the-bare-run-id-stays-canonical-and-resolves.md) | The bare run id stays canonical and resolves the sprint whatever the slug says, so rewording a goal orphans nothing | Ready | EP0187 | 2026-07-28 | 2026-07-28 |
+| [US0550](US0550-a-run-with-no-goal-recorded-falls-back.md) | A run with no goal recorded falls back to the id alone rather than inventing a slug | Ready | EP0187 | 2026-07-28 | 2026-07-28 |
+| [US0551](US0551-blockers-sharing-a-cause-and-a-remedy-are.md) | Blockers sharing a cause and a remedy are filed as one artefact listing the units it covers | Ready | EP0188 | 2026-07-28 | 2026-07-28 |
+| [US0552](US0552-the-close-reports-how-many-blockers-it-filed.md) | The close reports how many blockers it filed and how many distinct causes they represent, so a fan-out is visible when it happens | Ready | EP0188 | 2026-07-28 | 2026-07-28 |
 
 ## Archived Releases
 

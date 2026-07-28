@@ -1,6 +1,6 @@
 # US0447: A shared reader parses the design-persona registry into Primary, Secondary and Negative with their card paths
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0425
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
