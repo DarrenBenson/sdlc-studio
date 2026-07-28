@@ -1394,12 +1394,50 @@ def verify_story(
     return report
 
 
-def walk_stories(stories_dir: Path) -> Iterable[Path]:
-    """Yield every US story file in a directory, sorted, EXCLUDING companion docs. Matches the
+#: The unit types whose acceptance criteria this module EXECUTES. A story and a bug are both
+#: DELIVERY units: each is planned, sized, gated by the criteria floor and reaches a terminal
+#: status by being built, so a criterion on either has something to gate. A CR or an RFC is a
+#: REQUEST - it is decomposed rather than delivered, so an executable check on one would gate
+#: nothing, and `file_finding.check_prose_acs` still refuses to write it. The split is the
+#: repo's own delivery/discovery vocabulary rather than a list invented here.
+VERIFIABLE_PREFIXES = ("US", "BG")
+
+#: Where each verifiable prefix's files live, relative to the workspace.
+_UNIT_DIRS = {"US": "stories", "BG": "bugs"}
+
+
+def unit_dirs(repo_root: Path, stories_dir: Path) -> list[Path]:
+    """Every directory holding a verifiable unit, given the `--dir` the caller named.
+
+    `--dir` names the stories directory (its historical meaning, kept so no caller breaks).
+    The bugs directory is its sibling, derived rather than configured: a bug that cannot be
+    found is a bug whose criteria cannot run, which is the defect this resolves."""
+    out = [stories_dir]
+    if stories_dir.name == "stories":
+        bugs = stories_dir.parent / "bugs"
+        if bugs.exists():
+            out.append(bugs)
+    return out
+
+
+def walk_units(dirs: Iterable[Path], prefixes: tuple[str, ...] = VERIFIABLE_PREFIXES) -> list[Path]:
+    """Every verifiable unit file across `dirs`, sorted within each directory."""
+    out: list[Path] = []
+    for d in dirs:
+        out.extend(walk_stories(d, prefixes))
+    return out
+
+
+def walk_stories(stories_dir: Path,
+                 prefixes: tuple[str, ...] = ("US",)) -> Iterable[Path]:
+    """Yield every unit file in a directory, sorted, EXCLUDING companion docs. Matches the
     shared `sdlc_md.iter_artifact_files` discipline: a file counts only when its stem resolves
-    to a `US` record id and it does not carry a declared companion suffix (a
+    to a record id with one of `prefixes` and it does not carry a declared companion suffix (a
     `US0001-login-consultations.md` note must not be verified - executing its quoted example
-    `Verify:` lines runs arbitrary shell from a non-story document). Case-insensitive."""
+    `Verify:` lines runs arbitrary shell from a non-story document). Case-insensitive.
+
+    `prefixes` defaults to stories alone so every existing caller is unchanged; the callers
+    that verify a whole batch pass `VERIFIABLE_PREFIXES` and reach bugs too."""
     if not stories_dir.exists():
         return []
     from lib import conventions
@@ -1414,7 +1452,7 @@ def walk_stories(stories_dir: Path) -> Iterable[Path]:
         if suffixes and p.stem.endswith(suffixes):
             continue  # a companion/note under a shared id, not the story itself
         rec = sdlc_md.extract_record_id(p.stem) or ""
-        if sdlc_md.norm_id(rec).startswith("US"):
+        if sdlc_md.norm_id(rec).startswith(tuple(prefixes)):
             out.append(p)
     return out
 
@@ -1571,30 +1609,34 @@ def _scoped_paths(args: argparse.Namespace, repo_root: Path) -> tuple[list[Path]
     """Resolve a scope to story files under `--dir`, or a refusal message.
 
     An id resolving to nothing REFUSES: a silent skip is read by the completion gate as
-    "that story had nothing to fail". A batch source that legitimately carries other unit
-    types (`--worklist`, `--from-run`) has its non-story ids dropped and SAID so; ids typed
-    by hand into `--ids` are taken literally, so a bug id there is an unresolved story.
+    "that unit had nothing to fail". A batch source that legitimately carries non-delivery
+    ids (`--worklist`, `--from-run` carry CRs and RFCs) has those dropped and SAID so; ids
+    typed by hand into `--ids` are taken literally.
+
+    Stories AND bugs resolve. A lane's return rule - verify your unit before returning - was
+    unrunnable for every bug in a batch while this walked stories alone, so a bug lane could
+    only return BLOCKED or claim a verification it had not performed.
     """
     flag = scope_flag(args)
     ids, refusal = _scope_ids(args, repo_root)
     if refusal:
         return [], refusal
     if flag != "--ids":
-        stories = [i for i in ids if i.startswith("US")]
-        skipped = len(ids) - len(stories)
+        units = [i for i in ids if i.startswith(VERIFIABLE_PREFIXES)]
+        skipped = len(ids) - len(units)
         if skipped:
-            print(f"{flag}: {skipped} non-story id(s) skipped - `run` verifies stories",
-                  file=sys.stderr)
-        ids = stories
+            print(f"{flag}: {skipped} non-delivery id(s) skipped - `run` verifies "
+                  f"{'/'.join(VERIFIABLE_PREFIXES)}", file=sys.stderr)
+        ids = units
     by_id: dict[str, Path] = {}
-    for p in walk_stories(under_root(repo_root, args.dir)):
+    for p in walk_units(unit_dirs(repo_root, under_root(repo_root, args.dir))):
         by_id.setdefault(sdlc_md.norm_id(sdlc_md.extract_record_id(p.stem) or ""), p)
     missing = [i for i in ids if i not in by_id]
     if missing:
-        return [], (f"{flag} names {len(missing)} id(s) with no story file under "
-                    f"{args.dir}: {', '.join(missing)}")
+        return [], (f"{flag} names {len(missing)} id(s) with no unit file under "
+                    f"{args.dir} or its sibling bugs/: {', '.join(missing)}")
     if not ids:
-        return [], (f"{flag} resolved to no stories - refusing to fall back to a "
+        return [], (f"{flag} resolved to no units - refusing to fall back to a "
                     f"whole-workspace run, which is the cost a scope exists to avoid")
     return [by_id[i] for i in ids], None
 
@@ -1649,12 +1691,13 @@ def cmd_run(args: argparse.Namespace) -> int:
             else:
                 print(f"no story file at {args.story}", file=sys.stderr)
                 return 2
-    elif getattr(args, "id", None):  # resolve --id USNNNN under --dir (case-insensitive)
+    elif getattr(args, "id", None):  # resolve --id US/BGNNNN under --dir (case-insensitive)
         target = sdlc_md.norm_id(args.id)
-        matches = [p for p in walk_stories(under_root(repo_root, args.dir))
+        matches = [p for p in walk_units(unit_dirs(repo_root, under_root(repo_root, args.dir)))
                    if sdlc_md.norm_id(sdlc_md.extract_record_id(p.stem) or "") == target]
         if not matches:
-            print(f"no story file for id {args.id} under {args.dir}", file=sys.stderr)
+            print(f"no unit file for id {args.id} under {args.dir} or its sibling bugs/",
+                  file=sys.stderr)
             return 2
         paths = matches[:1]
     else:

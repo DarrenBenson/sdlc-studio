@@ -984,6 +984,27 @@ def default_terminal_status(type_: str) -> str:
 # type - `Proposed` (cr) / `Draft` (rfc) are pre-workflow proposal states an agent
 # finding never occupies, so triage promotes straight past them. Dormant under v2.
 FINDING_TYPES: tuple[str, ...] = ("bug", "cr", "rfc")
+
+#: The types whose acceptance criteria are EXECUTED (`verify_ac`), rather than prose a human
+#: reads. A story and a bug are both DELIVERY units: each is planned, sized, held to the
+#: criteria floor and reaches a terminal status by being built, so a criterion on either has
+#: something to gate. A CR or an RFC is a REQUEST, decomposed rather than delivered, so a
+#: command-shaped `Verify:` on one is assurance with nothing behind it.
+#:
+#: ONE authority, read by all three sites that used to decide it independently: the runner
+#: (`verify_ac`), the validator's pseudo-verify warning, and the creators' refusal. Two of
+#: them disagreed - the validator called a bug's Verify line "executed by nothing" while the
+#: runner was about to execute it - so an author was told opposite things about one line and
+#: a fixed bug had no agreed closure path. A rule held in two places diverges, and the looser
+#: copy is the one that runs.
+EXECUTES_VERIFIERS: tuple[str, ...] = ("story", "bug")
+
+
+def executes_verifiers(type_: str) -> bool:
+    """True when this type's `- **Verify:**` lines are run rather than read."""
+    return (type_ or "").strip().lower() in EXECUTES_VERIFIERS
+
+
 INBOX_STATUS = "inbox"
 TRIAGE_TARGET: dict[str, str] = {"bug": "Open", "cr": "Approved", "rfc": "In Review"}
 

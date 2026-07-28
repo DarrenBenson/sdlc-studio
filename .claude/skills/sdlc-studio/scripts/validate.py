@@ -342,18 +342,23 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
             + (" [recorded in the criteria baseline as known debt]" if known else ""),
             baseline_key=key)
 
-    # A CR/bug acceptance criterion is prose. A command-shaped `Verify:` written into it is
-    # executed by nothing (verify_ac only runs a STORY's canonical `- **Verify:**` line), so it is
-    # assurance with no proof behind it: a wrong command is a permanent false red, and a loose one
-    # (a grep that matches unrelated prose) is a false green on a feature nobody built. The
-    # creators now REFUSE to write one; this reports the ones already on disk. A warning, not an
-    # error: the instances predate the guard, and the gate must not fail unrelated work - but they
-    # are named, with their line, rather than silently tolerated.
-    if type_ in ("cr", "bug"):
+    # A REQUEST's acceptance criterion is prose. A command-shaped `Verify:` written into it is
+    # executed by nothing, so it is assurance with no proof behind it: a wrong command is a
+    # permanent false red, and a loose one (a grep that matches unrelated prose) is a false green
+    # on a feature nobody built. The creators REFUSE to write one; this reports the ones already
+    # on disk. A warning, not an error: the instances predate the guard, and the gate must not
+    # fail unrelated work - but they are named, with their line, rather than silently tolerated.
+    #
+    # WHICH types is `sdlc_md.executes_verifiers`, not a list restated here. This lane used to
+    # name bugs, while `verify_ac` was already running a bug's verifiers - so the two guards gave
+    # an author opposite advice about the same line, and there was no agreed way to close a bug.
+    if type_ in sdlc_md.FINDING_TYPES and not sdlc_md.executes_verifiers(type_):
         for lineno, line, cmd in file_finding.scan_prose_acs(text):
             add("warning", "pseudo-verify",
                 f"line {lineno}: acceptance criterion carries a command-shaped `Verify:` "
-                f"({cmd!r}) that NOTHING executes - only a story's `- **Verify:**` line is run. "
+                f"({cmd!r}) that NOTHING executes - a {type_} is a REQUEST, decomposed rather than "
+                f"delivered, so it is not among the types whose verifiers run "
+                f"(`sdlc_md.EXECUTES_VERIFIERS`). "
                 f"Restate it as the observable outcome; executable proof belongs on the stories "
                 f"this is actioned into. Offending line: {line.strip()}")
 

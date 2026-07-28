@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 35 |
+| Open | 33 |
 | In Progress | 0 |
-| Fixed | 266 |
+| Fixed | 268 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -73,11 +73,11 @@
 | [BG0353](BG0353-telemetry-parse-iso-rejects-a-valid-iso-8601.md) | telemetry._parse_iso rejects a valid ISO-8601 offset stamp, making a whole sprint report unreadable | Fixed | Medium | Medium | 2026-07-28 |
 | [BG0354](BG0354-three-more-places-still-enumerate-the-v2-four.md) | Three more places still enumerate the v2 four-digit id, so a v3 ULID unit silently escapes them | Open | Medium | Medium | 2026-07-28 |
 | [BG0355](BG0355-a-delegated-lane-can-edit-the-tree-and.md) | A delegated lane can edit the tree and stop without returning a result, leaving finished work unrecorded | Open | High | High | 2026-07-28 |
-| [BG0356](BG0356-validate-and-verify-ac-disagree-about-whether-a.md) | validate and verify_ac disagree about whether a bug's Verify line executes | Open | Medium | Medium | 2026-07-28 |
+| [BG0356](BG0356-validate-and-verify-ac-disagree-about-whether-a.md) | validate and verify_ac disagree about whether a bug's Verify line executes | Fixed | Medium | Medium | 2026-07-28 |
 | [BG0357](BG0357-mutation-py-records-no-per-test-attribution-so.md) | mutation.py records no per-test attribution, so the prune-candidate consumer can never run | Open | Medium | Medium | 2026-07-28 |
 | [BG0358](BG0358-a-declared-proof-obligation-can-go-unmet-and.md) | A declared proof obligation can go unmet and the sprint still closes clean | Open | High | High | 2026-07-28 |
 | [BG0359](BG0359-nothing-keeps-the-rfc-index-s-spawned-work.md) | Nothing keeps the RFC index's spawned-work column true once it has been backfilled | Open | Medium | Medium | 2026-07-28 |
-| [BG0360](BG0360-verify-ac-cannot-resolve-a-bug-id-so.md) | verify_ac cannot resolve a bug id, so no bug can prove its own acceptance criteria | Open | High | High | 2026-07-28 |
+| [BG0360](BG0360-verify-ac-cannot-resolve-a-bug-id-so.md) | verify_ac cannot resolve a bug id, so no bug can prove its own acceptance criteria | Fixed | High | High | 2026-07-28 |
 | [BG0361](BG0361-d0074-s-recorded-waiver-still-covers-nothing-and.md) | D0074's recorded waiver still covers nothing, and record-time validation would accept the same shape again | Open | High | High | 2026-07-28 |
 | [BG0362](BG0362-a-retro-whose-batch-line-is-prose-yields.md) | A retro whose Batch line is prose yields an empty sprint report - the latest sprint reads zero units | Open | Medium | Medium | 2026-07-28 |
 | [BG0363](BG0363-gate-py-records-a-cost-baseline-on-every.md) | gate.py records a cost baseline on every CLI run including scoped ones, so the trend compares unlike runs | Open | Medium | Medium | 2026-07-28 |

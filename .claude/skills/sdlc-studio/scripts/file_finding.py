@@ -120,12 +120,16 @@ def pseudo_verify(text: str) -> str | None:
 
 
 def check_prose_acs(type_: str, fields: dict) -> None:
-    """Refuse, BEFORE any id is allocated or any byte written, a CR/bug acceptance criterion
+    """Refuse, BEFORE any id is allocated or any byte written, a REQUEST's acceptance criterion
     carrying a command-shaped `Verify:`. Called from BOTH creation paths (the finding filer and
     `artifact new` / `artifact batch`), so neither is an escape hatch for the other.
 
-    Stories are untouched: their `--verify` lines are the real, executed thing."""
-    if type_ not in ("cr", "bug"):
+    Stories and BUGS are untouched: both are delivery units whose `Verify:` lines are the real,
+    executed thing. This used to refuse a bug's, which left a bug with no executable closure
+    path at all - the criteria floor demanded criteria and this refused the one form that could
+    prove them. WHICH types is `sdlc_md.executes_verifiers`, the same authority the runner and
+    the validator read, so the three cannot drift into contradicting each other again."""
+    if type_ not in sdlc_md.FINDING_TYPES or sdlc_md.executes_verifiers(type_):
         return
     items = fields.get("acs")
     if not isinstance(items, (list, tuple)):

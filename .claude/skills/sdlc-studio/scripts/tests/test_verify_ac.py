@@ -1340,19 +1340,49 @@ class WorklistScopeTests(_ScopeCase):
 class RunStateScopeTests(_ScopeCase):
     """US0394 AC3: the open run's approved batch is the scope, and no run is a refusal."""
 
-    def test_batch_stories_run_and_no_open_run_exits_2(self) -> None:
+    def _bug(self, ident: str = "BG0007") -> None:
+        """A real bug file for the batch to resolve. BG0360: a bug is a DELIVERY unit and its
+        criteria are executed, so an id in the batch names a file that must exist - it is no
+        longer quietly skipped as "not a story"."""
+        bugs = self.root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True, exist_ok=True)
+        (bugs / f"{ident}-scoped.md").write_text(
+            f"# {ident}: a scoped bug\n\n> **Status:** Open\n> **Severity:** Low\n"
+            "> **Points:** 1\n\n## Acceptance Criteria\n\n"
+            "### AC1: it is verifiable\n\n- **Verify:** manual verified at delivery\n",
+            encoding="utf-8")
+
+    def test_batch_units_run_including_bugs(self) -> None:
+        self._bug()
         run_state.open_run(self.root, batch=["US0001", "BG0007", "US0003"], goal="scope test")
         rc, _, err = _run_quiet(["run", "--root", str(self.root), "--from-run"])
         self.assertEqual(rc, 0, err)
-        # the story units of the batch, and no others - the bug id is not a story
+        # BG0360: the bug is verified alongside the stories rather than skipped. A lane's
+        # return rule - verify your unit before returning - was unrunnable for every bug in a
+        # batch while this walked stories alone.
+        self.assertEqual(self._keys(),
+                         {"US0001-login", "US0003-search", "BG0007-scoped"})
+
+    def test_a_batch_id_with_no_unit_file_refuses(self) -> None:
+        """The carve-out must not become a silent skip: an id resolving to nothing is read by
+        the completion gate as "that unit had nothing to fail"."""
+        run_state.open_run(self.root, batch=["US0001", "BG0007"], goal="dangling")
+        rc, _, err = _run_quiet(["run", "--root", str(self.root), "--from-run"])
+        self.assertEqual(rc, 2)
+        self.assertIn("BG0007", err)
+
+    def test_batch_stories_run_and_no_open_run_exits_2(self) -> None:
+        run_state.open_run(self.root, batch=["US0001", "US0003"], goal="scope test")
+        rc, _, err = _run_quiet(["run", "--root", str(self.root), "--from-run"])
+        self.assertEqual(rc, 0, err)
         self.assertEqual(self._keys(), {"US0001-login", "US0003-search"})
 
         before = self.report.read_bytes()
 
-        # an OPEN run whose batch holds no story either - the fallback is the same nine
+        # an OPEN run whose batch resolves to nothing at all - the fallback is the same nine
         # minutes whichever way the scope comes out empty
         run_state.path(self.root).unlink()
-        run_state.open_run(self.root, batch=["BG0007"], goal="bugs only")
+        run_state.open_run(self.root, batch=["CR0007"], goal="requests only")
         rc, _, err = _run_quiet(["run", "--root", str(self.root), "--from-run"])
         self.assertEqual(rc, 2, err)
         self.assertEqual(self.report.read_bytes(), before,

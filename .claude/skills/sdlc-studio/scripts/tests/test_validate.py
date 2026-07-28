@@ -2220,5 +2220,64 @@ class ScopedCheckTests(unittest.TestCase):
             self.assertNotIn("affects-unresolvable", self._rules(p, root))
 
 
+class VerifierAuthorityAgreementTests(unittest.TestCase):
+    """BG0356. The validator called a bug's command-shaped `Verify:` "executed by nothing"
+    while `verify_ac` was about to execute it, so an author was told opposite things about
+    one line and a fixed bug had no agreed closure path. One rule held in two places
+    diverges, and the looser copy is the one that runs."""
+
+    LINE = "- **Verify:** pytest tests/test_thing.py::Thing::test_it\n"
+
+    def _artefact(self, root: Path, type_: str, ident: str) -> Path:
+        d = root / "sdlc-studio" / {"bug": "bugs", "cr": "change-requests"}[type_]
+        d.mkdir(parents=True, exist_ok=True)
+        p = d / f"{ident}-x.md"
+        p.write_text(f"# {ident}: a thing\n\n> **Status:** Open\n\n"
+                     f"## Acceptance Criteria\n\n- [ ] it works\n{self.LINE}",
+                     encoding="utf-8")
+        return p
+
+    def _pseudo(self, path: Path, type_: str, root: Path) -> list:
+        return [v for v in validate.validate_file(path, type_, root)
+                if v["rule"] == "pseudo-verify"]
+
+    def test_a_bug_s_verify_line_is_not_reported_as_executed_by_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._artefact(root, "bug", "BG0001")
+            self.assertEqual(self._pseudo(p, "bug", root), [],
+                             "the runner executes a bug's verifiers; the validator must agree")
+
+    def test_a_request_s_verify_line_still_is(self) -> None:
+        """The carve-out is a bug/story rule, not the deletion of the warning. A CR is
+        decomposed rather than delivered, so a command on one gates nothing."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._artefact(root, "cr", "CR0001")
+            self.assertTrue(self._pseudo(p, "cr", root))
+
+    def test_the_three_sites_read_one_authority(self) -> None:
+        """The runner, the validator's warning and the creators' refusal each decided this
+        independently. They now read `sdlc_md.executes_verifiers`, and this asserts the
+        AGREEMENT rather than three separate expected answers - so a future edit to one
+        cannot pass while the others disagree."""
+        import file_finding
+        import verify_ac
+        for type_, prefix in (("story", "US"), ("bug", "BG"), ("cr", "CR"), ("rfc", "RFC")):
+            executes = sdlc_md.executes_verifiers(type_)
+            with self.subTest(type=type_):
+                # the runner walks exactly the executing types
+                self.assertEqual(prefix in verify_ac.VERIFIABLE_PREFIXES, executes)
+                # the creators refuse a command-shaped Verify on exactly the others
+                refused = False
+                try:
+                    file_finding.check_prose_acs(
+                        type_, {"acs": ["it works\n  - **Verify:** pytest a.py::B::c"]})
+                except Exception:  # noqa: BLE001 - the refusal type is the filer's business
+                    refused = True
+                if type_ in sdlc_md.FINDING_TYPES:
+                    self.assertEqual(refused, not executes)
+
+
 if __name__ == "__main__":
     unittest.main()
