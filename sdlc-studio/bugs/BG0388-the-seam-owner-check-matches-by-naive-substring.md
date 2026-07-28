@@ -1,0 +1,33 @@
+# BG0388: The seam owner check matches by naive substring, so a unit's own test file owns the seam over its source
+
+> **Status:** Open
+> **Severity:** High
+> **Points:** 3
+> **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py
+> **Evidence:** adversarial review of RUN-01KYMJEM, reproduced by the reviewer
+> **Created:** 2026-07-28
+> **Created-by:** sdlc-studio file
+> **Raised-by:** Claude Opus 5; human; v1
+
+## Summary
+
+`any(s.lower() in declared for s in shared)` means `Preserves: tests/test_critic.py keeps passing` owns the seam on `critic.py`, because `'critic.py' in 'tests/test_critic.py'` is true. `critic._verifier_names` already documents and fixes this exact rule three files away, and the seam block claims to be modelled on it.
+
+## Steps to Reproduce
+
+US0001 Affects critic.py+tests/`test_critic.py` with Preserves naming only the test file; US0002 Affects critic.py -> `seam_findings` returns [].
+
+## Proposed Fix
+
+Match at path boundaries, reusing the sibling's predicate rather than a second reading.
+
+## Acceptance Criteria
+
+- [ ] A Preserves line naming only a unit's own test file does not own the seam on its source.
+- [ ] The path-matching predicate is shared with critic rather than re-derived.
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-07-28 | Claude Opus 5 | Filed |

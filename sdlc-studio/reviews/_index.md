@@ -34,3 +34,4 @@ The volatile project-state pointer lives in `LATEST.md` (not a numbered review).
 | [RV-0021](RV0021-run-01kyhvwk-closing-review-21-units-gates-that.md) | RUN-01KYHVWK closing review: 21 units, gates that now fail loud | 2026-07-27 |
 | [RV-0022](RV0022-run-01kyjzgz-closing-review-the-efficiency-sprint-two.md) | RUN-01KYJZGZ closing review: the efficiency sprint, two REJECT rounds | 2026-07-28 |
 | [RV-0023](RV0023-run-01kykvzm-three-rounds-three-rejects-and-the.md) | RUN-01KYKVZM: three rounds, three rejects, and the repair rate that did not fall | 2026-07-28 |
+| [RV-0024](RV0024-run-01kymjem-two-independent-adversarial-passes-nineteen-majors.md) | RUN-01KYMJEM - two independent adversarial passes, nineteen majors, and the two the sprint had already learned | 2026-07-28 |

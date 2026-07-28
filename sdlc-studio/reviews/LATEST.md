@@ -6,7 +6,8 @@
 > Stamped by hand at delivery - `sprint close` rewrites this block when it runs.
 <!-- close-status:end -->
 
-> **Retro:** RETRO0082 · **Goal verdict:** not yet judged · **Outcome:** delivered, close owed
+> **Review record:** RV0024 (2026-07-28) - two independent adversarial passes, nineteen majors
+> **Retro:** RETRO0082 · **Goal verdict:** partial (per clause) · **Outcome:** closing with known issues
 
 ## Where the pipeline is
 
@@ -62,12 +63,26 @@ name the shared file, and the carried-file test compared two constants that deri
 so it passed whatever they said - including the wrong name they both had. A test written by the
 author of the fix tends to assert the shape of the fix rather than the property it was for.
 
+## The review
+
+Two independent contexts reviewed the diff, neither of which wrote it. **REJECT** - 19 majors
+and 17 minors, none of them caught by the shipped suites (RV0024).
+
+Repaired before the close: index cross-link DESTRUCTION (data loss, reaching every caller of
+`apply_type`, already mirrored to the installed copy - fixed, tested, re-ported and verified);
+the status-alias and body-scrape defects beside it; and three regressions into paths that
+worked this morning.
+
+Filed OPEN, 37 points across BG0385-BG0398: seven unreachable mechanisms, a severity floor
+blind to this repo's own priority vocabulary, two defects the codebase had already solved
+three files away, and nine guards narrower than they claim. **Nothing waived.**
+
 ## Next steps
 
-1. Adversarial review of RUN-01KYMJEM by a context that did not write it; the review brief now
-   carries the seam map.
-2. Operator sign-off as reviewer of record, then `sprint close --retro RETRO0082`.
-3. The per-clause goal verdict, from a panel the author is not on - the capability this sprint
-   built and cannot use on itself.
-4. The gate budget is at +17% of its 380s ceiling and will fail its own lane soon. It wants a
+1. BG0385-BG0398 at the front of the next batch. BG0386 first - `caller-check --unit` is
+   single-valued, so a batch check silently answers about one unit, and it has already
+   produced one false measurement in this repository.
+2. The first genuinely independent goal panel is the next sprint's. Both the qa seat at plan
+   time and the review at close say so, for different reasons that both hold.
+3. The gate budget is at +17% of its 380s ceiling and will fail its own lane soon. It wants a
    decision about what the gate is for, not a patch.
