@@ -11,3 +11,5 @@ The same defect class appeared four times across this sprint - a correct mechani
 caller - and every instance was invisible to a green suite and to the author.
 
 Operator sign-off recorded 2026-07-28; the pre-two-role conformance debt (D0074, BG0350, CR0460) is accepted as inherited and out of this sprint scope.
+
+All 33 units are Done or Fixed and operator-signed-off as of 2026-07-28. The carried-lessons curation (retros/LESSONS-TOP.md) and CR0464 are recorded against this close.
