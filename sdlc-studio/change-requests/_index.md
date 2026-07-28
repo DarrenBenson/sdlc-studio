@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 31 |
+| Proposed | 8 |
 | Approved | 0 |
 | In Progress | 40 |
-| Complete | 405 |
+| Complete | 428 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 18 |
@@ -293,29 +293,29 @@
 | [CR-0469](CR0469-a-sprint-goal-achieved-verdict-judged-by-a.md) | A sprint-goal-achieved verdict judged by a stakeholder panel, which decides whether an open defect can be left or must be addressed before close | Proposed | High | Feature | 2026-07-28 | -- |
 | [CR-0470](CR0470-bookend-the-sprint-with-a-goal-content-review.md) | Bookend the sprint with a goal-content review: will this batch deliver the goal, and at close did it, given what was not delivered and what was raised | Proposed | High | Feature | 2026-07-28 | -- |
 | [CR-0471](CR0471-a-sprint-is-named-by-its-goal-not.md) | A sprint is named by its goal, not only by its run id, so the goal is visible wherever the sprint is listed | Proposed | Medium | Improvement | 2026-07-28 | -- |
-| [CR-0472](CR0472-deferred-close-blocker-sign-off-us0508-no-critic.md) | Deferred close blocker (sign-off): US0508: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0473](CR0473-deferred-close-blocker-sign-off-us0509-no-critic.md) | Deferred close blocker (sign-off): US0509: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0474](CR0474-deferred-close-blocker-sign-off-us0510-no-critic.md) | Deferred close blocker (sign-off): US0510: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0475](CR0475-deferred-close-blocker-sign-off-us0511-no-critic.md) | Deferred close blocker (sign-off): US0511: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0476](CR0476-deferred-close-blocker-sign-off-us0512-no-critic.md) | Deferred close blocker (sign-off): US0512: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0477](CR0477-deferred-close-blocker-sign-off-us0513-no-critic.md) | Deferred close blocker (sign-off): US0513: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0478](CR0478-deferred-close-blocker-sign-off-us0514-no-critic.md) | Deferred close blocker (sign-off): US0514: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0479](CR0479-deferred-close-blocker-sign-off-us0515-no-critic.md) | Deferred close blocker (sign-off): US0515: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0480](CR0480-deferred-close-blocker-sign-off-us0516-no-critic.md) | Deferred close blocker (sign-off): US0516: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0481](CR0481-deferred-close-blocker-sign-off-us0517-no-critic.md) | Deferred close blocker (sign-off): US0517: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0482](CR0482-deferred-close-blocker-sign-off-us0518-no-critic.md) | Deferred close blocker (sign-off): US0518: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0483](CR0483-deferred-close-blocker-sign-off-us0519-no-critic.md) | Deferred close blocker (sign-off): US0519: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0484](CR0484-deferred-close-blocker-sign-off-us0520-no-critic.md) | Deferred close blocker (sign-off): US0520: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0485](CR0485-deferred-close-blocker-sign-off-us0521-no-critic.md) | Deferred close blocker (sign-off): US0521: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0486](CR0486-deferred-close-blocker-sign-off-us0522-no-critic.md) | Deferred close blocker (sign-off): US0522: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0487](CR0487-deferred-close-blocker-sign-off-us0523-no-critic.md) | Deferred close blocker (sign-off): US0523: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0488](CR0488-deferred-close-blocker-sign-off-us0524-no-critic.md) | Deferred close blocker (sign-off): US0524: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0489](CR0489-deferred-close-blocker-sign-off-us0525-no-critic.md) | Deferred close blocker (sign-off): US0525: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0490](CR0490-deferred-close-blocker-sign-off-us0526-no-critic.md) | Deferred close blocker (sign-off): US0526: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0491](CR0491-deferred-close-blocker-sign-off-us0527-no-critic.md) | Deferred close blocker (sign-off): US0527: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0492](CR0492-deferred-close-blocker-sign-off-us0528-no-critic.md) | Deferred close blocker (sign-off): US0528: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0493](CR0493-deferred-close-blocker-sign-off-us0529-no-critic.md) | Deferred close blocker (sign-off): US0529: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
-| [CR-0494](CR0494-deferred-close-blocker-sign-off-us0530-no-critic.md) | Deferred close blocker (sign-off): US0530: no critic verdict and no sprint-level review covering it | Proposed | High | Process | 2026-07-28 | -- |
+| [CR-0472](CR0472-deferred-close-blocker-sign-off-us0508-no-critic.md) | Deferred close blocker (sign-off): US0508: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0473](CR0473-deferred-close-blocker-sign-off-us0509-no-critic.md) | Deferred close blocker (sign-off): US0509: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0474](CR0474-deferred-close-blocker-sign-off-us0510-no-critic.md) | Deferred close blocker (sign-off): US0510: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0475](CR0475-deferred-close-blocker-sign-off-us0511-no-critic.md) | Deferred close blocker (sign-off): US0511: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0476](CR0476-deferred-close-blocker-sign-off-us0512-no-critic.md) | Deferred close blocker (sign-off): US0512: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0477](CR0477-deferred-close-blocker-sign-off-us0513-no-critic.md) | Deferred close blocker (sign-off): US0513: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0478](CR0478-deferred-close-blocker-sign-off-us0514-no-critic.md) | Deferred close blocker (sign-off): US0514: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0479](CR0479-deferred-close-blocker-sign-off-us0515-no-critic.md) | Deferred close blocker (sign-off): US0515: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0480](CR0480-deferred-close-blocker-sign-off-us0516-no-critic.md) | Deferred close blocker (sign-off): US0516: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0481](CR0481-deferred-close-blocker-sign-off-us0517-no-critic.md) | Deferred close blocker (sign-off): US0517: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0482](CR0482-deferred-close-blocker-sign-off-us0518-no-critic.md) | Deferred close blocker (sign-off): US0518: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0483](CR0483-deferred-close-blocker-sign-off-us0519-no-critic.md) | Deferred close blocker (sign-off): US0519: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0484](CR0484-deferred-close-blocker-sign-off-us0520-no-critic.md) | Deferred close blocker (sign-off): US0520: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0485](CR0485-deferred-close-blocker-sign-off-us0521-no-critic.md) | Deferred close blocker (sign-off): US0521: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0486](CR0486-deferred-close-blocker-sign-off-us0522-no-critic.md) | Deferred close blocker (sign-off): US0522: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0487](CR0487-deferred-close-blocker-sign-off-us0523-no-critic.md) | Deferred close blocker (sign-off): US0523: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0488](CR0488-deferred-close-blocker-sign-off-us0524-no-critic.md) | Deferred close blocker (sign-off): US0524: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0489](CR0489-deferred-close-blocker-sign-off-us0525-no-critic.md) | Deferred close blocker (sign-off): US0525: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0490](CR0490-deferred-close-blocker-sign-off-us0526-no-critic.md) | Deferred close blocker (sign-off): US0526: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0491](CR0491-deferred-close-blocker-sign-off-us0527-no-critic.md) | Deferred close blocker (sign-off): US0527: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0492](CR0492-deferred-close-blocker-sign-off-us0528-no-critic.md) | Deferred close blocker (sign-off): US0528: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0493](CR0493-deferred-close-blocker-sign-off-us0529-no-critic.md) | Deferred close blocker (sign-off): US0529: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
+| [CR-0494](CR0494-deferred-close-blocker-sign-off-us0530-no-critic.md) | Deferred close blocker (sign-off): US0530: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
 | [CR-0495](CR0495-file-and-close-fans-one-systemic-blocker-into.md) | file-and-close fans one systemic blocker into one change request per unit, so a single owed sign-off filled the discovery backlog with 23 identical artefacts | Proposed | High | Improvement | 2026-07-28 | -- |
 
 ## Archived Releases

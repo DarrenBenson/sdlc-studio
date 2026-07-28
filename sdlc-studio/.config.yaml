@@ -41,7 +41,22 @@ conformance:
   # (2026-07-27). The raise outlived its own stated expiry by four days, exempting 228 units that
   # were never in scope for it, so the restore is the whole point of naming a condition. The
   # findings the re-armed gate reports are the real backlog it was hiding, not a regression.
-  adopt_after: 82
+  #
+  # RAISED 82 -> 310 AGAIN on 2026-07-28, at the RUN-01KYKVZM close, on the operator's explicit
+  # ruling (D0073) after being shown that this is the same raise BG0302 reverted the day before.
+  # The re-armed gate blocked a DIFFERENT sprint's sign-off: US0288-US0310 still read `missing
+  # critiqued`, because BG0302's restore condition was read as satisfied by RV0020's APPROVE,
+  # and that APPROVE covers a later batch rather than these 23 units. A restore condition that
+  # names "an APPROVE" without naming WHICH UNITS it must cover is the defect, not the raise.
+  #
+  # BLAST RADIUS, restated because a threshold is still not a list: this exempts 228 units, not
+  # the 23 that need it. A narrower act was available and declined - the reviewer of record can
+  # sign off US0288-US0310 directly, as they did for RUN-01KYKVZM's 31.
+  #
+  # RESTORE TO 82 when an APPROVE COVERING US0288-US0310 SPECIFICALLY is recorded, or when
+  # those 23 units are signed off individually. Not "when an APPROVE exists" - that is the
+  # wording that let the last raise outlive its expiry by four days.
+  adopt_after: 310
 
 review:
   # Two-role review gate (RFC0044/CR0323), forward-only from the sprint that built it:

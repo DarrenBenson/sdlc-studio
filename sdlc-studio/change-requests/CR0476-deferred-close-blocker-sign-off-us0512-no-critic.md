@@ -1,6 +1,6 @@
 # CR-0476: Deferred close blocker (sign-off): US0512: no critic verdict and no sprint-level review covering it
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Process
 > **Size:** S
@@ -19,11 +19,12 @@ RUN-01KYKVZM closed with this work outstanding; until it is done, the sprint's r
 
 ## Acceptance Criteria
 
-- [ ] the deferred prerequisite is met: `critic.py record --unit <id> ...` or `critic.py sprint-review --units <ids> ...`
-- [ ] the close-owed record for this blocker is cleared
+- [x] the deferred prerequisite is met: `critic.py record --unit <id> ...` or `critic.py sprint-review --units <ids> ...`
+- [x] the close-owed record for this blocker is cleared
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | sdlc-studio | Raised |
+| 2026-07-28 | Claude Opus 5 | Resolved: the operator recorded an APPROVE sprint-review covering all 31 units of RUN-01KYKVZM, plus a per-unit sign-off as reviewer of record. The deferred prerequisite this CR names is met. |
