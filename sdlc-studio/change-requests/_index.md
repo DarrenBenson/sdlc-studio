@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 3 |
 | Approved | 0 |
 | In Progress | 40 |
 | Complete | 405 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **464** |
+| **Total** | **467** |
 
 ## All Changes
 
@@ -286,6 +286,9 @@
 | [CR-0462](CR0462-nothing-measures-a-sprint-s-overhead-against-its.md) | Nothing measures a sprint's overhead against its delivery, so a 9:1 ratio took an operator noticing | In Progress | High | Improvement | 2026-07-28 | EP0179 |
 | [CR-0463](CR0463-a-delivery-lane-returns-without-proving-its-own.md) | A delivery lane returns without proving its own acceptance criteria, so basic AC failures survive to review | In Progress | High | Improvement | 2026-07-28 | EP0178 |
 | [CR-0464](CR0464-lessons-accumulate-faster-than-they-are-read-curate.md) | Lessons accumulate faster than they are read: curate a top few at each retro and make them a read gate for the sprint and its reviewers | In Progress | High | Improvement | 2026-07-28 | EP0179 |
+| [CR-0465](CR0465-reconcile-s-sweep-detectors-re-read-the-whole.md) | reconcile's sweep detectors re-read the whole corpus per unit: 733,271 file opens for one run | Proposed | Medium | Improvement | 2026-07-28 | -- |
+| [CR-0466](CR0466-a-review-round-records-no-duration-so-the.md) | A review round records no duration, so the overhead ratio can only ever be a lower bound | Proposed | Medium | Improvement | 2026-07-28 | -- |
+| [CR-0467](CR0467-the-one-lane-one-file-changelog-rule-and.md) | The one-lane-one-file changelog rule and the [Unreleased] rule contradict each other under parallel delivery | Proposed | Medium | Improvement | 2026-07-28 | -- |
 
 ## Archived Releases
 

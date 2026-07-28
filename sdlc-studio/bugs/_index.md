@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 16 |
+| Open | 21 |
 | In Progress | 0 |
 | Fixed | 260 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **359** |
+| **Total** | **364** |
 
 ## All Bugs
 
@@ -77,6 +77,11 @@
 | [BG0357](BG0357-mutation-py-records-no-per-test-attribution-so.md) | mutation.py records no per-test attribution, so the prune-candidate consumer can never run | Open | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0358](BG0358-a-declared-proof-obligation-can-go-unmet-and.md) | A declared proof obligation can go unmet and the sprint still closes clean | Open | High | 2026-07-28 | 2026-07-28 |
 | [BG0359](BG0359-nothing-keeps-the-rfc-index-s-spawned-work.md) | Nothing keeps the RFC index's spawned-work column true once it has been backfilled | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0360](BG0360-verify-ac-cannot-resolve-a-bug-id-so.md) | verify_ac cannot resolve a bug id, so no bug can prove its own acceptance criteria | Open | High | 2026-07-28 | 2026-07-28 |
+| [BG0361](BG0361-d0074-s-recorded-waiver-still-covers-nothing-and.md) | D0074's recorded waiver still covers nothing, and record-time validation would accept the same shape again | Open | High | 2026-07-28 | 2026-07-28 |
+| [BG0362](BG0362-a-retro-whose-batch-line-is-prose-yields.md) | A retro whose Batch line is prose yields an empty sprint report - the latest sprint reads zero units | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0363](BG0363-gate-py-records-a-cost-baseline-on-every.md) | gate.py records a cost baseline on every CLI run including scoped ones, so the trend compares unlike runs | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0364](BG0364-two-more-modules-hand-roll-the-strict-timestamp.md) | Two more modules hand-roll the strict timestamp parser BG0353 just fixed in telemetry | Open | Medium | 2026-07-28 | 2026-07-28 |
 
 ## Archived Releases
 
