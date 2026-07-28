@@ -1,6 +1,6 @@
 # EP0185: A sprint goal is judged clause by clause, by a panel the author is not on
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 18
 > **Parent:** CR0469
 > **Created:** 2026-07-28
@@ -14,10 +14,10 @@ Decomposed from CR0469. Delivers the work CR0469 requested.
 
 ## Story Breakdown
 
-- [ ] [US0541: A Sprint Goal is recorded as clauses at plan time and the close reports a verdict per clause](../stories/US0541-a-sprint-goal-is-recorded-as-clauses-at.md)
-- [ ] [US0542: The per-clause verdict is returned by a panel of seats, and a panel including the author is refused rather than warned](../stories/US0542-the-per-clause-verdict-is-returned-by-a.md)
-- [ ] [US0543: An open defect is judged against the goal clauses: one that falsifies a clause blocks the close, one that does not is recorded leavable with its priority](../stories/US0543-an-open-defect-is-judged-against-the-goal.md)
-- [ ] [US0544: A run whose units all reached terminal but whose goal was not achieved reports that in the close and the retro, not only the unit count](../stories/US0544-a-run-whose-units-all-reached-terminal-but.md)
+- [x] [US0541: A Sprint Goal is recorded as clauses at plan time and the close reports a verdict per clause](../stories/US0541-a-sprint-goal-is-recorded-as-clauses-at.md)
+- [x] [US0542: The per-clause verdict is returned by a panel of seats, and a panel including the author is refused rather than warned](../stories/US0542-the-per-clause-verdict-is-returned-by-a.md)
+- [x] [US0543: An open defect is judged against the goal clauses: one that falsifies a clause blocks the close, one that does not is recorded leavable with its priority](../stories/US0543-an-open-defect-is-judged-against-the-goal.md)
+- [x] [US0544: A run whose units all reached terminal but whose goal was not achieved reports that in the close and the retro, not only the unit count](../stories/US0544-a-run-whose-units-all-reached-terminal-but.md)
 
 ## Acceptance Criteria (Epic Level)
 

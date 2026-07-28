@@ -1,6 +1,6 @@
 # EP0186: The goal review is a bookend: asked of the content at plan, and of the outcome at close
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 13
 > **Parent:** CR0470
 > **Created:** 2026-07-28
@@ -14,9 +14,9 @@ Decomposed from CR0470. Delivers the work CR0470 requested.
 
 ## Story Breakdown
 
-- [ ] [US0545: At plan, the seats are asked whether the chosen content will deliver the goal, and a partial or no answer must name what is missing](../stories/US0545-at-plan-the-seats-are-asked-whether-the.md)
-- [ ] [US0546: At close, the seats are asked whether the delivered content achieved the goal, with the undelivered units and the defects raised supplied rather than recalled](../stories/US0546-at-close-the-seats-are-asked-whether-the.md)
-- [ ] [US0547: Both answers are recorded on the run and shown side by side, reporting a prediction miss where the plan predicted delivery and the close judged otherwise](../stories/US0547-both-answers-are-recorded-on-the-run-and.md)
+- [x] [US0545: At plan, the seats are asked whether the chosen content will deliver the goal, and a partial or no answer must name what is missing](../stories/US0545-at-plan-the-seats-are-asked-whether-the.md)
+- [x] [US0546: At close, the seats are asked whether the delivered content achieved the goal, with the undelivered units and the defects raised supplied rather than recalled](../stories/US0546-at-close-the-seats-are-asked-whether-the.md)
+- [x] [US0547: Both answers are recorded on the run and shown side by side, reporting a prediction miss where the plan predicted delivery and the close judged otherwise](../stories/US0547-both-answers-are-recorded-on-the-run-and.md)
 
 ## Acceptance Criteria (Epic Level)
 

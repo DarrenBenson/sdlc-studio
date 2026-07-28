@@ -1,6 +1,6 @@
 # US0538: Refine computes the seam map for a batch and reports a pair sharing a property with no criterion asserting it is preserved
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0468
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

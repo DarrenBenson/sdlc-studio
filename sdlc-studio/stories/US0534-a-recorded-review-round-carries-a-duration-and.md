@@ -1,6 +1,6 @@
 # US0534: A recorded review round carries a duration, and a round recorded without one says so rather than counting as zero
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0466
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

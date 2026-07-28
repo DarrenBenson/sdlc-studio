@@ -1,6 +1,6 @@
 # CR-0470: Bookend the sprint with a goal-content review: will this batch deliver the goal, and at close did it, given what was not delivered and what was raised
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0186
 > **Priority:** High
 > **Type:** Feature

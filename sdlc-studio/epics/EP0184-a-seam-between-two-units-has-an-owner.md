@@ -1,6 +1,6 @@
 # EP0184: A seam between two units has an owner before the work starts
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 11
 > **Parent:** CR0468
 > **Created:** 2026-07-28
@@ -14,9 +14,9 @@ Decomposed from CR0468. Delivers the work CR0468 requested.
 
 ## Story Breakdown
 
-- [ ] [US0538: Refine computes the seam map for a batch and reports a pair sharing a property with no criterion asserting it is preserved](../stories/US0538-refine-computes-the-seam-map-for-a-batch.md)
-- [ ] [US0539: The seam map reaches the delivery lane brief and the review brief, so a lane is told which neighbouring property it must not regress](../stories/US0539-the-seam-map-reaches-the-delivery-lane-brief.md)
-- [ ] [US0540: The close reports seam coverage beside the points, and a batch that shipped with unowned seams says so](../stories/US0540-the-close-reports-seam-coverage-beside-the-points.md)
+- [x] [US0538: Refine computes the seam map for a batch and reports a pair sharing a property with no criterion asserting it is preserved](../stories/US0538-refine-computes-the-seam-map-for-a-batch.md)
+- [x] [US0539: The seam map reaches the delivery lane brief and the review brief, so a lane is told which neighbouring property it must not regress](../stories/US0539-the-seam-map-reaches-the-delivery-lane-brief.md)
+- [x] [US0540: The close reports seam coverage beside the points, and a batch that shipped with unowned seams says so](../stories/US0540-the-close-reports-seam-coverage-beside-the-points.md)
 
 ## Acceptance Criteria (Epic Level)
 

@@ -1,6 +1,6 @@
 # US0550: A run with no goal recorded falls back to the id alone rather than inventing a slug
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0471
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

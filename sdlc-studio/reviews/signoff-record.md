@@ -330,3 +330,22 @@
 | BG0351 | Darren Benson | - | Claude Opus 5 (sprint author); agent; skill v5.0.0 | 2026-07-28 | Operator sign-off given directly in session as reviewer of record, after three independent adversarial review rounds (all REJECT) and their repairs. Accepted with known issues as directed: the four High defects were fixed and mutation-pinned before close (BG0370, BG0375, BG0376, BG0377); eleven defects carried with recorded priorities (BG0378, BG0379 High; nine Medium/Low), none P0, each with a workaround. Goal verdict partial. |
 | BG0352 | Darren Benson | - | Claude Opus 5 (sprint author); agent; skill v5.0.0 | 2026-07-28 | Operator sign-off given directly in session as reviewer of record, after three independent adversarial review rounds (all REJECT) and their repairs. Accepted with known issues as directed: the four High defects were fixed and mutation-pinned before close (BG0370, BG0375, BG0376, BG0377); eleven defects carried with recorded priorities (BG0378, BG0379 High; nine Medium/Low), none P0, each with a workaround. Goal verdict partial. |
 | BG0353 | Darren Benson | - | Claude Opus 5 (sprint author); agent; skill v5.0.0 | 2026-07-28 | Operator sign-off given directly in session as reviewer of record, after three independent adversarial review rounds (all REJECT) and their repairs. Accepted with known issues as directed: the four High defects were fixed and mutation-pinned before close (BG0370, BG0375, BG0376, BG0377); eleven defects carried with recorded priorities (BG0378, BG0379 High; nine Medium/Low), none P0, each with a workaround. Goal verdict partial. |
+| US0536 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0550 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0552 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0534 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0535 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0537 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0539 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0540 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0544 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0547 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0548 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0549 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0551 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0538 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0541 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0542 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0543 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0545 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |
+| US0546 | Darren Benson | - | Claude Opus 5 | 2026-07-28 | - |

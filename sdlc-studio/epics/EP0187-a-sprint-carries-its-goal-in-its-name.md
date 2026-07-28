@@ -1,6 +1,6 @@
 # EP0187: A sprint carries its goal in its name
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0471
 > **Created:** 2026-07-28
@@ -14,9 +14,9 @@ Decomposed from CR0471. Delivers the work CR0471 requested.
 
 ## Story Breakdown
 
-- [ ] [US0548: A sprint that surfaces as a file is named sprint-<run id>-<goal slug>, slugged by the shared helper](../stories/US0548-a-sprint-that-surfaces-as-a-file-is.md)
-- [ ] [US0549: The bare run id stays canonical and resolves the sprint whatever the slug says, so rewording a goal orphans nothing](../stories/US0549-the-bare-run-id-stays-canonical-and-resolves.md)
-- [ ] [US0550: A run with no goal recorded falls back to the id alone rather than inventing a slug](../stories/US0550-a-run-with-no-goal-recorded-falls-back.md)
+- [x] [US0548: A sprint that surfaces as a file is named sprint-<run id>-<goal slug>, slugged by the shared helper](../stories/US0548-a-sprint-that-surfaces-as-a-file-is.md)
+- [x] [US0549: The bare run id stays canonical and resolves the sprint whatever the slug says, so rewording a goal orphans nothing](../stories/US0549-the-bare-run-id-stays-canonical-and-resolves.md)
+- [x] [US0550: A run with no goal recorded falls back to the id alone rather than inventing a slug](../stories/US0550-a-run-with-no-goal-recorded-falls-back.md)
 
 ## Acceptance Criteria (Epic Level)
 

@@ -1,6 +1,6 @@
 # CR-0467: The one-lane-one-file changelog rule and the [Unreleased] rule contradict each other under parallel delivery
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0183
 > **Priority:** Medium
 > **Type:** Improvement

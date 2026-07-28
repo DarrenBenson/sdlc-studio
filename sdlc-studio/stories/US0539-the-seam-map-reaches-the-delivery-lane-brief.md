@@ -1,6 +1,6 @@
 # US0539: The seam map reaches the delivery lane brief and the review brief, so a lane is told which neighbouring property it must not regress
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0468
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

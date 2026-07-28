@@ -1,6 +1,6 @@
 # EP0183: One changelog rule that parallel lanes can all obey
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0467
 > **Created:** 2026-07-28
@@ -14,8 +14,8 @@ Decomposed from CR0467. Delivers the work CR0467 requested.
 
 ## Story Breakdown
 
-- [ ] [US0536: The guidance states the fragment path as the rule for a lane, so an author following it cannot collide with a sibling](../stories/US0536-the-guidance-states-the-fragment-path-as-the.md)
-- [ ] [US0537: A lane writing a changelog fragment is accepted and a lane hand-editing [Unreleased] is refused with the fragment command in the refusal](../stories/US0537-a-lane-writing-a-changelog-fragment-is-accepted.md)
+- [x] [US0536: The guidance states the fragment path as the rule for a lane, so an author following it cannot collide with a sibling](../stories/US0536-the-guidance-states-the-fragment-path-as-the.md)
+- [x] [US0537: A lane writing a changelog fragment is accepted and a lane hand-editing [Unreleased] is refused with the fragment command in the refusal](../stories/US0537-a-lane-writing-a-changelog-fragment-is-accepted.md)
 
 ## Acceptance Criteria (Epic Level)
 

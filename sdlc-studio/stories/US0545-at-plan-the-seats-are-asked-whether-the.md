@@ -1,6 +1,6 @@
 # US0545: At plan, the seats are asked whether the chosen content will deliver the goal, and a partial or no answer must name what is missing
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0470
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

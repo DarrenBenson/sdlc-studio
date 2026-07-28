@@ -1,6 +1,6 @@
 # CR-0466: A review round records no duration, so the overhead ratio can only ever be a lower bound
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0182
 > **Priority:** Medium
 > **Type:** Improvement

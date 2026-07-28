@@ -1,6 +1,6 @@
 # US0547: Both answers are recorded on the run and shown side by side, reporting a prediction miss where the plan predicted delivery and the close judged otherwise
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0470
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0548: A sprint that surfaces as a file is named sprint-<run id>-<goal slug>, slugged by the shared helper
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0471
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

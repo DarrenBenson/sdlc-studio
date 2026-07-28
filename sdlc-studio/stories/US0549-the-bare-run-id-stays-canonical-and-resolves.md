@@ -1,6 +1,6 @@
 # US0549: The bare run id stays canonical and resolves the sprint whatever the slug says, so rewording a goal orphans nothing
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0471
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

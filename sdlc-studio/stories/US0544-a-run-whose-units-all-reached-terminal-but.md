@@ -1,6 +1,6 @@
 # US0544: A run whose units all reached terminal but whose goal was not achieved reports that in the close and the retro, not only the unit count
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0469
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

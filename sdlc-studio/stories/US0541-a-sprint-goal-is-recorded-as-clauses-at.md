@@ -1,6 +1,6 @@
 # US0541: A Sprint Goal is recorded as clauses at plan time and the close reports a verdict per clause
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0469
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

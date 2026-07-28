@@ -1,6 +1,6 @@
 # US0537: A lane writing a changelog fragment is accepted and a lane hand-editing [Unreleased] is refused with the fragment command in the refusal
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0467
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

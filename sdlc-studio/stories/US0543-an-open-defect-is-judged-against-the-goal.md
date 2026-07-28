@@ -1,6 +1,6 @@
 # US0543: An open defect is judged against the goal clauses: one that falsifies a clause blocks the close, one that does not is recorded leavable with its priority
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0469
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0552: The close reports how many blockers it filed and how many distinct causes they represent, so a fan-out is visible when it happens
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0495
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

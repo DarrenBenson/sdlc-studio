@@ -1,6 +1,6 @@
 # US0542: The per-clause verdict is returned by a panel of seats, and a panel including the author is refused rather than warned
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0469
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

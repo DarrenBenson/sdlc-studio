@@ -1,6 +1,6 @@
 # US0540: The close reports seam coverage beside the points, and a batch that shipped with unowned seams says so
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0468
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

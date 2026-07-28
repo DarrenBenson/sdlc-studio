@@ -1,6 +1,6 @@
 # CR-0495: file-and-close fans one systemic blocker into one change request per unit, so a single owed sign-off filled the discovery backlog with 23 identical artefacts
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0188
 > **Priority:** High
 > **Type:** Improvement

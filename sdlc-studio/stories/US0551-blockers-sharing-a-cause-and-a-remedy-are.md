@@ -1,6 +1,6 @@
 # US0551: Blockers sharing a cause and a remedy are filed as one artefact listing the units it covers
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0495
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

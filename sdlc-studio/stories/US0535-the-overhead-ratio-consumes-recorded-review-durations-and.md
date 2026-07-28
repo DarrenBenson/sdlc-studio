@@ -1,6 +1,6 @@
 # US0535: The overhead ratio consumes recorded review durations, and states it is a lower bound only while a component is genuinely unmeasured
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0466
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

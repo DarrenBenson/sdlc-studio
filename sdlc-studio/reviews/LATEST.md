@@ -1,9 +1,8 @@
 # Latest review anchor
 
 <!-- close-status:begin -->
-> **RUN-01KYMJEM is DELIVERED, not closed.** 34 unit(s), 112 points, 0 blocked. Sign-off is
-> OWED: 19 stories hold at Review pending an adversarial pass and the reviewer of record.
-> Stamped by hand at delivery - `sprint close` rewrites this block when it runs.
+> **RUN-01KYMJEM closed stopped.** 34 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
 > **Review record:** RV0024 (2026-07-28) - two independent adversarial passes, nineteen majors

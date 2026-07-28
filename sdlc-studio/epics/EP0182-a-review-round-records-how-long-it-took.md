@@ -1,6 +1,6 @@
 # EP0182: A review round records how long it took, so the overhead ratio stops being a floor
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 6
 > **Parent:** CR0466
 > **Created:** 2026-07-28
@@ -14,8 +14,8 @@ Decomposed from CR0466. Delivers the work CR0466 requested.
 
 ## Story Breakdown
 
-- [ ] [US0534: A recorded review round carries a duration, and a round recorded without one says so rather than counting as zero](../stories/US0534-a-recorded-review-round-carries-a-duration-and.md)
-- [ ] [US0535: The overhead ratio consumes recorded review durations, and states it is a lower bound only while a component is genuinely unmeasured](../stories/US0535-the-overhead-ratio-consumes-recorded-review-durations-and.md)
+- [x] [US0534: A recorded review round carries a duration, and a round recorded without one says so rather than counting as zero](../stories/US0534-a-recorded-review-round-carries-a-duration-and.md)
+- [x] [US0535: The overhead ratio consumes recorded review durations, and states it is a lower bound only while a component is genuinely unmeasured](../stories/US0535-the-overhead-ratio-consumes-recorded-review-durations-and.md)
 
 ## Acceptance Criteria (Epic Level)
 

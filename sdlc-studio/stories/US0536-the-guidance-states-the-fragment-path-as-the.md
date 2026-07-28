@@ -1,6 +1,6 @@
 # US0536: The guidance states the fragment path as the rule for a lane, so an author following it cannot collide with a sibling
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0467
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

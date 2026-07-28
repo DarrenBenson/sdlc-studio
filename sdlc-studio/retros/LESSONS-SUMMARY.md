@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0257: **An empty measurement is not a finding.** A Batch line naming no units meant "unreadable", and the report said "delivered nothing"; a...**
+- **L-0256: **A contradicting pair is decided ONCE, in one place.** BG0356/BG0360 were satisfiable in opposite directions.**
+- **L-0255: **Verify the premise before filing, not just before fixing.** Two bug reports were wrong about the code they described.**
+- **L-0254: **A guard that cannot fail is not evidence, and mutation is how you find out.** Three survivors this sprint, two of them tests I had just...**
 - **L-0253: **Verifying the premise beat trusting it three times in one afternoon**, twice against findings this author had filed hours earlier.**
 - **L-0252: **In-lane verification changed what review found, not how much.** 20 majors on 33 units last sprint, 17 on 31 this sprint: the rate barely...**
 - **L-0251: **Enforcing a rule is not obeying it.** The batch that built the criteria floor put four bugs into Fixed with no criteria, and the batch...**
