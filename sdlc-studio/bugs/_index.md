@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 15 |
+| Open | 21 |
 | In Progress | 0 |
 | Fixed | 252 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **350** |
+| **Total** | **356** |
 
 ## All Bugs
 
@@ -68,6 +68,12 @@
 | [BG0348](BG0348-an-all-skipped-run-is-still-stamped-green.md) | An all-skipped run is still stamped green for unittest, jest, vitest and go | Fixed | High | 2026-07-27 | 2026-07-27 |
 | [BG0349](BG0349-four-modules-still-carry-the-naive-fence-toggle.md) | Four modules still carry the naive fence toggle the parser fix replaced | Fixed | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0350](BG0350-25-done-stories-carry-no-independent-critic-verdict.md) | 25 Done stories carry no independent critic verdict, waived rather than cleared | Open | Low | 2026-07-28 | 2026-07-28 |
+| [BG0351](BG0351-the-constitution-lane-is-81-of-the-per.md) | The constitution lane is 81% of the per-commit artefact gate, and the hook documents that gate as ~1s | Open | High | 2026-07-28 | 2026-07-28 |
+| [BG0352](BG0352-pytest-cannot-collect-the-scripts-and-tools-suites.md) | pytest cannot collect the scripts and tools suites in one invocation, so no Verify line can span both | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0353](BG0353-telemetry-parse-iso-rejects-a-valid-iso-8601.md) | telemetry._parse_iso rejects a valid ISO-8601 offset stamp, making a whole sprint report unreadable | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0354](BG0354-three-more-places-still-enumerate-the-v2-four.md) | Three more places still enumerate the v2 four-digit id, so a v3 ULID unit silently escapes them | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0355](BG0355-a-delegated-lane-can-edit-the-tree-and.md) | A delegated lane can edit the tree and stop without returning a result, leaving finished work unrecorded | Open | High | 2026-07-28 | 2026-07-28 |
+| [BG0356](BG0356-validate-and-verify-ac-disagree-about-whether-a.md) | validate and verify_ac disagree about whether a bug's Verify line executes | Open | Medium | 2026-07-28 | 2026-07-28 |
 
 ## Archived Releases
 

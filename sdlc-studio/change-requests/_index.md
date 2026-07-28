@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 3 |
 | Approved | 0 |
 | In Progress | 31 |
 | Complete | 405 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **455** |
+| **Total** | **458** |
 
 ## All Changes
 
@@ -277,6 +277,9 @@
 | [CR-0453](CR0453-the-plan-time-test-strategy-governs-proof-per.md) | The plan-time test strategy governs proof per unit but not execution cost, and is printed rather than recorded | In Progress | High | Improvement | 2026-07-28 | EP0177 |
 | [CR-0454](CR0454-the-sprint-close-invalidates-itself-its-own-output.md) | The sprint close invalidates itself: its own output makes the review stale and each retry pays a full suite | In Progress | High | Improvement | 2026-07-28 | EP0177 |
 | [CR-0455](CR0455-nothing-ever-asks-whether-a-test-still-earns.md) | Nothing ever asks whether a test still earns its place, so the suite only grows | In Progress | Medium | Improvement | 2026-07-28 | EP0177 |
+| [CR-0456](CR0456-validate-py-cannot-be-pointed-at-one-artefact.md) | validate.py cannot be pointed at one artefact, so checking a single story reads 1,548 files | Proposed | Medium | Improvement | 2026-07-28 | -- |
+| [CR-0457](CR0457-init-never-creates-sdlc-studio-issues-so-the.md) | init never creates sdlc-studio/issues/, so the issue type is unusable on a new project | Proposed | Medium | Improvement | 2026-07-28 | -- |
+| [CR-0458](CR0458-audit-filed-bugs-arrive-with-no-acceptance-criteria.md) | Audit-filed bugs arrive with no Acceptance Criteria, so a delivery lane has nothing to deliver against | Proposed | Medium | Improvement | 2026-07-28 | -- |
 
 ## Archived Releases
 
