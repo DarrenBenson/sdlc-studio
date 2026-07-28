@@ -24,6 +24,7 @@
 - **When** lanes are dispatched
 - **Then** each brief carries the set, so it reaches the agent doing the work rather than scrolling past at plan time
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CarriedLessonsBriefTests::test_every_lane_brief_carries_the_set
+- **Verified:** yes (2026-07-28)
 
 ### AC2: the reviewers receive it too
 
@@ -31,6 +32,7 @@
 - **When** its brief is built
 - **Then** it carries the same set, because the pass most likely to catch a repeat should know what has been repeating
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CarriedLessonsBriefTests::test_the_review_brief_carries_the_set
+- **Verified:** yes (2026-07-28)
 
 ### AC3: an absent set is reported, never silently skipped
 
@@ -38,6 +40,7 @@
 - **When** lanes are dispatched
 - **Then** the absence is reported rather than the briefs silently going out without it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CarriedLessonsBriefTests::test_an_absent_set_is_reported
+- **Verified:** yes (2026-07-28)
 
 ### AC4: the mechanism is reached by a named caller
 
@@ -47,6 +50,7 @@
   reachable in production rather than correct in isolation
 - **Caller:** `sprint plan` (build_plan records it) and `sprint lane brief`, documented in help/sprint.md
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/critic.py caller-check --unit US0520 --root .
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

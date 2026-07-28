@@ -24,6 +24,7 @@
 - **When** the lane returns that unit
 - **Then** the result carries the assigned proof, identified by the obligation it discharges
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneProofTests::test_a_lane_returns_the_assigned_proof
+- **Verified:** yes (2026-07-28)
 
 ### AC2: an obligation it could not discharge is stated, not omitted
 
@@ -31,6 +32,7 @@
 - **When** it returns
 - **Then** the result names the obligation and why it was not discharged, so the gap is visible at the lane rather than at the close
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneProofTests::test_an_undischarged_obligation_is_stated_not_omitted
+- **Verified:** yes (2026-07-28)
 
 ### AC3: the mechanism is reached by a named caller
 
@@ -40,6 +42,7 @@
   reachable in production rather than correct in isolation
 - **Caller:** `sprint lane brief` and `sprint lane return` (both call lane_proof), documented in help/sprint.md
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/critic.py caller-check --unit US0510 --root .
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

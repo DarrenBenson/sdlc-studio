@@ -24,6 +24,7 @@
 - **When** the lane returns
 - **Then** the unit is reported blocked with the failing criterion named, never as fixed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneVerifyTests::test_a_red_criterion_returns_blocked_not_fixed
+- **Verified:** yes (2026-07-28)
 
 ### AC2: the result carries the verification output, not a claim about it
 
@@ -31,6 +32,7 @@
 - **When** the result is read
 - **Then** it carries the verifier's own output for each criterion, so the claim can be checked rather than trusted
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneVerifyTests::test_the_result_carries_the_verifier_output
+- **Verified:** yes (2026-07-28)
 
 ### AC3: a criterion the runner cannot resolve is reported unresolved, never as passing
 
@@ -38,6 +40,7 @@
 - **When** the lane verifies
 - **Then** it reports the criterion unresolved and the unit blocked - an unanswerable check is not a passed one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneVerifyTests::test_an_unresolvable_criterion_is_not_a_pass
+- **Verified:** yes (2026-07-28)
 
 ### AC4: the mechanism is reached by a named caller
 
@@ -47,6 +50,7 @@
   reachable in production rather than correct in isolation
 - **Caller:** `sprint lane return` (cmd_lane -> lane_return -> lane_verify), documented in help/sprint.md
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/critic.py caller-check --unit US0509 --root .
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

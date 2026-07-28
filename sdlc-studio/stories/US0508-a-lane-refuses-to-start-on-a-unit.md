@@ -24,6 +24,7 @@
 - **When** a lane is dispatched onto it
 - **Then** it refuses, naming the unit and what is missing, rather than inferring the contract from the summary
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneContractTests::test_a_unit_with_no_criteria_is_refused_at_dispatch
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a unit whose criteria are an ungroomed placeholder is refused the same way
 
@@ -31,6 +32,7 @@
 - **When** a lane is dispatched
 - **Then** it refuses, because a placeholder is an absent contract wearing the shape of one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneContractTests::test_an_ungroomed_placeholder_is_refused_too
+- **Verified:** yes (2026-07-28)
 
 ### AC3: the mechanism is reached by a named caller
 
@@ -40,6 +42,7 @@
   reachable in production rather than correct in isolation
 - **Caller:** `sprint lane brief` (cmd_lane -> lane_dispatch -> lane_contract), documented in help/sprint.md
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/critic.py caller-check --unit US0508 --root .
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 
