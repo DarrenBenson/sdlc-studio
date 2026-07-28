@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 31 |
+| Open | 34 |
 | In Progress | 0 |
 | Fixed | 260 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **374** |
+| **Total** | **377** |
 
 ## All Bugs
 
@@ -92,6 +92,9 @@
 | [BG0372](BG0372-the-overhead-ratio-never-reaches-the-velocity-record.md) | The overhead ratio never reaches the velocity record, so the measurement is taken and discarded | Open | Low | 2026-07-28 | 2026-07-28 |
 | [BG0373](BG0373-the-review-currency-carve-out-repaired-in-bg0336.md) | The review-currency carve-out repaired in BG0336 remains story-shaped, so a bug or change request takes a different path | Open | Low | 2026-07-28 | 2026-07-28 |
 | [BG0374](BG0374-the-markdownlint-path-fixed-in-bg0341-still-cannot.md) | The markdownlint path fixed in BG0341 still cannot see every tracked markdown file | Open | Low | 2026-07-28 | 2026-07-28 |
+| [BG0375](BG0375-the-lane-contract-refusal-governing-475-units-is.md) | The lane_contract refusal governing 475 units is asserted by no test, so a silent revert reddens nothing | Open | High | 2026-07-28 | 2026-07-28 |
+| [BG0376](BG0376-five-stories-caller-criteria-are-verified-by-a.md) | Five stories' caller criteria are verified by a test class that never reads the story, so the criterion cannot fail | Open | High | 2026-07-28 | 2026-07-28 |
+| [BG0377](BG0377-four-of-the-five-caller-declarations-added-at.md) | Four of the five Caller declarations added at review resolve only on the documentation filename, not on the caller they name | Open | Medium | 2026-07-28 | 2026-07-28 |
 
 ## Archived Releases
 

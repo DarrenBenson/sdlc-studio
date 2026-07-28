@@ -74,6 +74,14 @@ BG0351, BG0352, BG0353.
   475 live units would have dispatched with an empty contract.
 - **A guard that resolved nonsense.** `caller_resolves` built its vocabulary from an unfiltered walk,
   so `unknown` and `nothing at all` resolved while a real tracked path did not.
+- **The author's repair reported a number it had not measured, and the number was wrong.** The repair
+  claimed caller-unnamed went from five to zero. An independent re-review of the repair returned
+  REJECT and showed it is seventeen of twenty-three, including one of the six lane units the repair
+  was about. The false figure reached this retro and two commit messages before it was checked. It
+  was produced by a command-line invocation whose repeated flag silently overwrote rather than
+  accumulated - the library call is authoritative and says otherwise. Two of the four repairs were
+  confirmed closed with mutations killed; one is correct but pinned by no test at all; this one was
+  over-claimed.
 - **The author graded ten defects by feel and got two wrong in opposite directions.** BG0368 was
   filed Medium and is Low - `artifact.py` creates a missing index on demand, so no user is blocked.
   BG0370 was filed Medium and is High - it lets a bug reach terminal with zero criteria by default.
@@ -156,7 +164,9 @@ reaches the two-parser and re-derived-rule cases the narrower wording could not.
 | `lane_verify` re-derived the shell and provenance rule and executed a verifier `verify_ac` refuses, on a unit carrying externally ingested content | fixed-in: 343da768 - one shared `shell_allowed_for` with a differential test |
 | `lane_contract` decided with one parser and built with another, so 475 units would have dispatched with an empty contract | fixed-in: 343da768 |
 | `caller_resolves` resolved `unknown` and `nothing at all` while a real tracked path failed | fixed-in: 343da768 |
-| `sprint lane brief\|return` was named in no documentation and called by nothing | fixed-in: 343da768 - documented in three places, caller-unnamed count 5 to 0 |
+| `sprint lane brief\|return` was named in no documentation and called by nothing | PARTLY fixed-in: 343da768 - documented in three places, and the documentation is accurate (an independent re-reviewer ran every documented invocation verbatim). The claim that caller-unnamed reached 0 was FALSE and is withdrawn: 17 of 23 stories still report it, including US0513 among the six lane units. BG0377 |
+| The lane_contract refusal governing 475 units is asserted by no test - neutering it leaves all 4,860 tests green, violating US0505 from this same batch | BG0375 |
+| Five stories' caller criteria are verified by a class that never reads the story, so deleting a Caller declaration leaves the criterion green | BG0376 |
 | Four bugs reached Fixed with no acceptance criteria, in the batch that built the rule refusing that | fixed-in: 343da768 |
 | A repair renamed test classes and left criteria pointing at nothing, third consecutive sprint | BG0352, filed and fixed in this batch |
 | Decomposition creates seams between units and nothing owns them - 13 of 17 majors were seam defects, including four directly contradicting pairs in one batch | CR0468 |
