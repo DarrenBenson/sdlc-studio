@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 8 |
+| Proposed | 9 |
 | Approved | 0 |
 | In Progress | 31 |
 | Complete | 405 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **463** |
+| **Total** | **464** |
 
 ## All Changes
 
@@ -285,6 +285,7 @@
 | [CR-0461](CR0461-an-acceptance-criterion-can-describe-a-function-nothing.md) | An acceptance criterion can describe a function nothing calls, and nothing refuses it | Proposed | High | Improvement | 2026-07-28 | -- |
 | [CR-0462](CR0462-nothing-measures-a-sprint-s-overhead-against-its.md) | Nothing measures a sprint's overhead against its delivery, so a 9:1 ratio took an operator noticing | Proposed | High | Improvement | 2026-07-28 | -- |
 | [CR-0463](CR0463-a-delivery-lane-returns-without-proving-its-own.md) | A delivery lane returns without proving its own acceptance criteria, so basic AC failures survive to review | Proposed | High | Improvement | 2026-07-28 | -- |
+| [CR-0464](CR0464-lessons-accumulate-faster-than-they-are-read-curate.md) | Lessons accumulate faster than they are read: curate a top few at each retro and make them a read gate for the sprint and its reviewers | Proposed | High | Improvement | 2026-07-28 | -- |
 
 ## Archived Releases
 
