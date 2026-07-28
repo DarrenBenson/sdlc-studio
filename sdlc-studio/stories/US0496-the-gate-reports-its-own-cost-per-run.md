@@ -1,6 +1,6 @@
 # US0496: The gate reports its own cost per run against a budget, so a regression in gate time is as visible as a regression in behaviour
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0451
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the gate completes
 - **Then** it prints the elapsed cost, the budget and the direction of travel against the recorded baseline
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::GateBudgetTests::test_each_run_reports_cost_against_budget
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a run over budget is reported, not silently absorbed
 
@@ -31,6 +32,7 @@
 - **When** it completes
 - **Then** the overage is stated plainly with the lane that dominated it, so the cause is visible rather than the total alone
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::GateBudgetTests::test_an_over_budget_run_names_the_dominant_lane
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

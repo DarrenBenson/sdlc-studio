@@ -1,6 +1,6 @@
 # US0500: An artefact the close itself creates does not count as an unreviewed change against that same close
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0454
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the same close re-checks review currency
 - **Then** those artefacts are recognised as its own output and do not make the review stale
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseSelfInvalidationTests::test_the_close_output_does_not_fail_its_own_review_lane
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a finding filed during the close is carried, not treated as unreviewed work
 
@@ -31,6 +32,7 @@
 - **When** the close continues
 - **Then** it is recorded as carried into the next run rather than failing the current one, so honest filing is not punished
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseSelfInvalidationTests::test_a_finding_filed_during_the_close_is_carried
+- **Verified:** yes (2026-07-28)
 
 ### AC3: a real blocker in the work still refuses
 
@@ -38,6 +40,7 @@
 - **When** the close runs
 - **Then** it still refuses, and its message distinguishes a blocker in the work from one the close created itself
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseSelfInvalidationTests::test_a_real_blocker_still_refuses_and_is_named_as_such
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

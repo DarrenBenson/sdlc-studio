@@ -1,6 +1,6 @@
 # US0506: A report attributes suite time and test count to the module each test covers, so the expensive areas are visible
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0455
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the census runs
 - **Then** it reports per module the number of tests and the time they took, ordered by cost
 - **Verify:** pytest tools/tests/test_test_census.py::CensusTests::test_time_and_count_are_attributed_per_module
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a test covering no resolvable module is reported, not dropped
 
@@ -31,6 +32,7 @@
 - **When** it runs
 - **Then** that test is named as unattributed rather than silently excluded, so the total stays honest
 - **Verify:** pytest tools/tests/test_test_census.py::CensusTests::test_an_unattributable_test_is_named_not_dropped
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

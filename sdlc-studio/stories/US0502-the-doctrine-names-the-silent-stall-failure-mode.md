@@ -1,6 +1,6 @@
 # US0502: The doctrine names the silent-stall failure mode and gives a driving agent a detection rule it can apply
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0450
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** it is read
 - **Then** it states that a delegate can stop without erroring, that an absent result must never be read as pending, and how a driver tells one from the other
 - **Verify:** pytest tools/tests/test_doc_claims.py::StallDoctrineTests::test_the_stall_mode_and_detection_are_documented
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

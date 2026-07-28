@@ -4112,7 +4112,7 @@ class BoundaryNeverReusesTests(unittest.TestCase):
     """A boundary that can reuse inherits every gap in whatever produced the earlier verdict and
     stops being the backstop selection leans on."""
 
-    def test_every_boundary_runs_in_full_even_on_a_hash_match(self):
+    def test_commit_is_selective_and_boundary_is_full(self):
         for boundary in gate.BOUNDARIES:
             d = gate.suite_decision(".", boundary=boundary)
             self.assertTrue(d["run"], f"boundary {boundary} must always run")
@@ -4123,7 +4123,7 @@ class UnattributableSelectionTests(unittest.TestCase):
     """A module whose measured read set is empty told us nothing; counting that as "reaches
     nothing" excluded the very module a change reddened."""
 
-    def test_a_change_selects_its_own_test_module(self):
+    def test_selection_comes_from_the_import_graph(self):
         r = gate.select_tests(".", [".claude/skills/sdlc-studio/scripts/command_audit.py"])
         self.assertTrue(r["resolved"])
         self.assertTrue(any("test_command_audit" in s for s in r["selectors"]),
@@ -4171,6 +4171,20 @@ class SurfaceHashTests(unittest.TestCase):
             rec.write_text("{not json", encoding="utf-8")
             self.assertTrue(gate.suite_decision(str(root))["run"])
 
+
+    def test_editing_a_test_forces_a_run(self):
+        """A changed assertion is a changed question even when the code it asks about is
+        untouched. Restored after a repair rewrote this class and deleted it, leaving US0493's
+        AC3 pointing at nothing - the rotted-verifier class, self-inflicted."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _git_fixture(root, {"a.py": "x = 1\n", "tests/test_a.py": "def test_x(): assert True\n"})
+            gate.record_suite_verdict(str(root), run="RUN1", status="green", mode="full")
+            self.assertFalse(gate.suite_decision(str(root))["run"], "fixture: starts reusable")
+            (root / "tests" / "test_a.py").write_text("def test_x(): assert 1 == 1\n", encoding="utf-8")
+            self.assertTrue(gate.suite_decision(str(root))["run"],
+                            "editing a test must force a run - the surface covers tests too")
+
     def test_a_tree_git_cannot_enumerate_is_unanswerable(self):
         with tempfile.TemporaryDirectory() as d:
             (Path(d) / "a.py").write_text("x = 1\n", encoding="utf-8")   # no git init
@@ -4183,7 +4197,7 @@ class SurfaceHashTests(unittest.TestCase):
 class BoundaryPolicyTests(unittest.TestCase):
     """A boundary is the backstop selection leans on, so it never reuses and never selects."""
 
-    def test_every_boundary_runs_in_full_even_on_a_hash_match(self):
+    def test_commit_is_selective_and_boundary_is_full(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _git_fixture(root, {"a.py": "x = 1\n"})
@@ -4209,10 +4223,25 @@ class BoundaryPolicyTests(unittest.TestCase):
 class TestSelectionTests(unittest.TestCase):
     """Selection must never claim resolved over a set that misses a real dependent."""
 
-    def test_a_change_selects_its_own_test_module(self):
+    def test_selection_comes_from_the_import_graph(self):
         r = gate.select_tests(".", [".claude/skills/sdlc-studio/scripts/command_audit.py"])
         self.assertTrue(r["resolved"])
         self.assertTrue(any("test_command_audit" in s for s in r["selectors"]))
+
+
+    def test_selection_does_not_replace_the_boundary_run(self):
+        """AC4's guarantee, strengthened by review: a boundary does not merely decline a green
+        earned by a selected run - it never reuses at all, so selection can only ever trade WHEN
+        coverage is paid, never WHETHER."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _git_fixture(root, {"a.py": "x = 1\n"})
+            for mode in ("selected", "full"):
+                gate.record_suite_verdict(str(root), run="R", status="green", mode=mode)
+                for boundary in gate.BOUNDARIES:
+                    dec = gate.suite_decision(str(root), boundary=boundary)
+                    self.assertTrue(dec["run"], f"{boundary} must run over a {mode} green")
+                    self.assertEqual(dec["mode"], "full")
 
     def test_a_selected_run_reports_what_it_excluded(self):
         r = gate.select_tests(".", [".claude/skills/sdlc-studio/scripts/next_id.py"])

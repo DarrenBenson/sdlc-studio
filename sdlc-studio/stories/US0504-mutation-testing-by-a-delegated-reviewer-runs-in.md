@@ -1,6 +1,6 @@
 # US0504: Mutation testing by a delegated reviewer runs in an isolated checkout, and mutation.py refuses to mutate a file with uncommitted changes
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0452
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** mutation runs
 - **Then** it refuses, naming the file, because a mutation applied over uncommitted work cannot be distinguished from that work when it is restored
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::IsolationTests::test_mutation_refuses_a_dirty_file
+- **Verified:** yes (2026-07-28)
 
 ### AC2: the doctrine states where a reviewer mutates
 
@@ -31,6 +32,7 @@
 - **When** it is read
 - **Then** it states that a delegated reviewer mutates in an isolated checkout, never the author's tree, and states the author-side rule that follows
 - **Verify:** pytest tools/tests/test_doc_claims.py::MutationIsolationTests::test_the_isolation_rule_is_documented
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

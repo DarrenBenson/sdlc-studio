@@ -1,6 +1,6 @@
 # US0498: The test strategy is persisted with the plan and read back at close, so it can be reviewed, signed off and compared with what ran
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0453
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the plan is written
 - **Then** the plan record carries the strategy, so it survives the terminal and can be read back
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TestStrategyPersistenceTests::test_the_strategy_is_persisted_with_the_plan
+- **Verified:** yes (2026-07-28)
 
 ### AC2: the close reads it back
 
@@ -31,6 +32,7 @@
 - **When** the close runs
 - **Then** it reads the recorded strategy rather than re-deriving one, so what is judged at close is what was agreed at plan
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TestStrategyPersistenceTests::test_the_close_reads_back_the_recorded_strategy
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

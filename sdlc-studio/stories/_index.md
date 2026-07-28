@@ -11,8 +11,8 @@
 | Ready | 38 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 20 |
-| Done | 445 |
+| Review | 5 |
+| Done | 460 |
 | Won't Implement | 1 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -403,21 +403,21 @@
 | [US0490](US0490-a-charter-carries-its-own-goal-review-and.md) | A charter carries its own goal review, and the run records who reviewed the goal and who ran it without refusing when they match | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
 | [US0491](US0491-calling-a-sprint-at-a-point-is-an.md) | Calling a sprint at a point is an honest close: the unstarted remainder is descoped with a reason and returns to the backlog | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
 | [US0492](US0492-the-queue-lifecycle-is-documented-alongside-the-run.md) | The queue lifecycle is documented alongside the run lifecycle, with every invocation shown taken from the shipped parser | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
-| [US0493](US0493-the-test-relevant-surface-is-hashed-and-a.md) | The test-relevant surface is hashed, and a run whose surface is unchanged since the last green verdict is skipped with that verdict reused | Review | EP0177 | 2026-07-28 | 2026-07-28 |
-| [US0494](US0494-the-gate-selects-the-tests-a-change-can.md) | The gate selects the tests a change can reach from the import graph, reporting what it excluded and falling back to everything when it cannot resolve | Review | EP0177 | 2026-07-28 | 2026-07-28 |
-| [US0495](US0495-a-full-suite-run-happens-only-at-a.md) | A full-suite run happens only at a boundary - push, release and sprint close - and the policy is stated where an operator reads it | Review | EP0177 | 2026-07-28 | 2026-07-28 |
-| [US0496](US0496-the-gate-reports-its-own-cost-per-run.md) | The gate reports its own cost per run against a budget, so a regression in gate time is as visible as a regression in behaviour | Review | EP0177 | 2026-07-28 | 2026-07-28 |
-| [US0497](US0497-the-plan-time-test-strategy-states-the-execution.md) | The plan-time test strategy states the execution policy - what runs per commit, at close and at release, with its estimated cost | Review | EP0177 | 2026-07-28 | 2026-07-28 |
-| [US0498](US0498-the-test-strategy-is-persisted-with-the-plan.md) | The test strategy is persisted with the plan and read back at close, so it can be reviewed, signed off and compared with what ran | Review | EP0177 | 2026-07-28 | 2026-07-28 |
-| [US0499](US0499-the-close-reports-execution-actuals-against-the-declared.md) | The close reports execution actuals against the declared policy, so a sprint that ran the suite fifty times shows it | Review | EP0177 | 2026-07-28 | 2026-07-28 |
-| [US0500](US0500-an-artefact-the-close-itself-creates-does-not.md) | An artefact the close itself creates does not count as an unreviewed change against that same close | Review | EP0177 | 2026-07-28 | 2026-07-28 |
-| [US0501](US0501-a-close-retry-over-an-unchanged-test-relevant.md) | A close retry over an unchanged test-relevant surface reuses the previous gate verdict instead of re-running it | Review | EP0177 | 2026-07-28 | 2026-07-28 |
-| [US0502](US0502-the-doctrine-names-the-silent-stall-failure-mode.md) | The doctrine names the silent-stall failure mode and gives a driving agent a detection rule it can apply | Review | EP0177 | 2026-07-28 | 2026-07-28 |
-| [US0503](US0503-a-delegated-task-that-stops-without-a-result.md) | A delegated task that stops without a result is reported as unfinished, never as pending, and the audit quorum rule cross-references it | Review | EP0177 | 2026-07-28 | 2026-07-28 |
-| [US0504](US0504-mutation-testing-by-a-delegated-reviewer-runs-in.md) | Mutation testing by a delegated reviewer runs in an isolated checkout, and mutation.py refuses to mutate a file with uncommitted changes | Review | EP0177 | 2026-07-28 | 2026-07-28 |
-| [US0505](US0505-a-repair-that-changes-behaviour-carries-a-test.md) | A repair that changes behaviour carries a test asserting that behaviour, so a later silent revert reddens the suite | Review | EP0177 | 2026-07-28 | 2026-07-28 |
-| [US0506](US0506-a-report-attributes-suite-time-and-test-count.md) | A report attributes suite time and test count to the module each test covers, so the expensive areas are visible | Review | EP0177 | 2026-07-28 | 2026-07-28 |
-| [US0507](US0507-a-test-no-mutation-of-its-own-module.md) | A test no mutation of its own module can kill is reported as a removal candidate, and removing one records what it no longer protects | Review | EP0177 | 2026-07-28 | 2026-07-28 |
+| [US0493](US0493-the-test-relevant-surface-is-hashed-and-a.md) | The test-relevant surface is hashed, and a run whose surface is unchanged since the last green verdict is skipped with that verdict reused | Done | EP0177 | 2026-07-28 | 2026-07-28 |
+| [US0494](US0494-the-gate-selects-the-tests-a-change-can.md) | The gate selects the tests a change can reach from the import graph, reporting what it excluded and falling back to everything when it cannot resolve | Done | EP0177 | 2026-07-28 | 2026-07-28 |
+| [US0495](US0495-a-full-suite-run-happens-only-at-a.md) | A full-suite run happens only at a boundary - push, release and sprint close - and the policy is stated where an operator reads it | Done | EP0177 | 2026-07-28 | 2026-07-28 |
+| [US0496](US0496-the-gate-reports-its-own-cost-per-run.md) | The gate reports its own cost per run against a budget, so a regression in gate time is as visible as a regression in behaviour | Done | EP0177 | 2026-07-28 | 2026-07-28 |
+| [US0497](US0497-the-plan-time-test-strategy-states-the-execution.md) | The plan-time test strategy states the execution policy - what runs per commit, at close and at release, with its estimated cost | Done | EP0177 | 2026-07-28 | 2026-07-28 |
+| [US0498](US0498-the-test-strategy-is-persisted-with-the-plan.md) | The test strategy is persisted with the plan and read back at close, so it can be reviewed, signed off and compared with what ran | Done | EP0177 | 2026-07-28 | 2026-07-28 |
+| [US0499](US0499-the-close-reports-execution-actuals-against-the-declared.md) | The close reports execution actuals against the declared policy, so a sprint that ran the suite fifty times shows it | Done | EP0177 | 2026-07-28 | 2026-07-28 |
+| [US0500](US0500-an-artefact-the-close-itself-creates-does-not.md) | An artefact the close itself creates does not count as an unreviewed change against that same close | Done | EP0177 | 2026-07-28 | 2026-07-28 |
+| [US0501](US0501-a-close-retry-over-an-unchanged-test-relevant.md) | A close retry over an unchanged test-relevant surface reuses the previous gate verdict instead of re-running it | Done | EP0177 | 2026-07-28 | 2026-07-28 |
+| [US0502](US0502-the-doctrine-names-the-silent-stall-failure-mode.md) | The doctrine names the silent-stall failure mode and gives a driving agent a detection rule it can apply | Done | EP0177 | 2026-07-28 | 2026-07-28 |
+| [US0503](US0503-a-delegated-task-that-stops-without-a-result.md) | A delegated task that stops without a result is reported as unfinished, never as pending, and the audit quorum rule cross-references it | Done | EP0177 | 2026-07-28 | 2026-07-28 |
+| [US0504](US0504-mutation-testing-by-a-delegated-reviewer-runs-in.md) | Mutation testing by a delegated reviewer runs in an isolated checkout, and mutation.py refuses to mutate a file with uncommitted changes | Done | EP0177 | 2026-07-28 | 2026-07-28 |
+| [US0505](US0505-a-repair-that-changes-behaviour-carries-a-test.md) | A repair that changes behaviour carries a test asserting that behaviour, so a later silent revert reddens the suite | Done | EP0177 | 2026-07-28 | 2026-07-28 |
+| [US0506](US0506-a-report-attributes-suite-time-and-test-count.md) | A report attributes suite time and test count to the module each test covers, so the expensive areas are visible | Done | EP0177 | 2026-07-28 | 2026-07-28 |
+| [US0507](US0507-a-test-no-mutation-of-its-own-module.md) | A test no mutation of its own module can kill is reported as a removal candidate, and removing one records what it no longer protects | Done | EP0177 | 2026-07-28 | 2026-07-28 |
 
 ## Archived Releases
 

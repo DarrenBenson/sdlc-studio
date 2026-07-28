@@ -1,6 +1,6 @@
 # US0495: A full-suite run happens only at a boundary - push, release and sprint close - and the policy is stated where an operator reads it
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0451
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the gate runs at each
 - **Then** the commit runs the selected set and the push runs everything, and each says which mode it used
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::BoundaryPolicyTests::test_commit_is_selective_and_boundary_is_full
+- **Verified:** yes (2026-07-28)
 
 ### AC2: the policy is documented where an operator reads it
 
@@ -31,6 +32,7 @@
 - **When** it is read
 - **Then** it states which moments run the full suite and which run a selection, so the behaviour is discoverable without reading the hook
 - **Verify:** pytest tools/tests/test_help_coverage.py::GatePolicyDocsTests::test_the_boundary_policy_is_documented
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

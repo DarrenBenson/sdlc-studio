@@ -1,6 +1,6 @@
 # US0493: The test-relevant surface is hashed, and a run whose surface is unchanged since the last green verdict is skipped with that verdict reused
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0451
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the gate runs
 - **Then** it reports the reused verdict and runs no tests, naming the run it is reusing so the decision is visible rather than silent
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::SurfaceHashTests::test_an_unchanged_surface_reuses_the_last_green_verdict
+- **Verified:** yes (2026-07-28)
 
 ### AC2: any change to the surface forces a real run
 
@@ -31,6 +32,7 @@
 - **When** the gate runs
 - **Then** the hash differs and the suite executes, so the cache can never mask a change
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::SurfaceHashTests::test_a_changed_surface_forces_a_real_run
+- **Verified:** yes (2026-07-28)
 
 ### AC3: the hash covers the tests themselves, not only the source
 
@@ -38,6 +40,7 @@
 - **When** the gate runs
 - **Then** the suite executes, because a changed assertion is a changed question even when the answer's code is untouched
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::SurfaceHashTests::test_editing_a_test_forces_a_run
+- **Verified:** yes (2026-07-28)
 
 ### AC4: a verdict that cannot be read is not a pass
 
@@ -45,6 +48,7 @@
 - **When** the gate runs
 - **Then** it runs the suite rather than reusing nothing, so a broken cache degrades to the slow answer and never to a false green
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::SurfaceHashTests::test_an_unreadable_verdict_runs_the_suite
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

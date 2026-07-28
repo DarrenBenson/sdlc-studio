@@ -1,6 +1,6 @@
 # US0507: A test no mutation of its own module can kill is reported as a removal candidate, and removing one records what it no longer protects
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0455
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the census runs with mutation evidence
 - **Then** the test that killed nothing is reported as a candidate, with the mutants it failed to catch named
 - **Verify:** pytest tools/tests/test_test_census.py::PruneCandidateTests::test_a_test_no_mutation_kills_is_a_candidate
+- **Verified:** yes (2026-07-28)
 
 ### AC2: removing a test records what it no longer protects
 
@@ -31,6 +32,7 @@
 - **When** it is recorded
 - **Then** the record states what the test asserted and why that is now covered elsewhere or no longer true, so pruning cannot quietly become coverage loss
 - **Verify:** pytest tools/tests/test_test_census.py::PruneCandidateTests::test_a_removal_records_what_it_no_longer_protects
+- **Verified:** yes (2026-07-28)
 
 ## Scope note (added at review)
 

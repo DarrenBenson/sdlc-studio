@@ -1,6 +1,6 @@
 # US0499: The close reports execution actuals against the declared policy, so a sprint that ran the suite fifty times shows it
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0453
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the close runs
 - **Then** it reports the number of full-suite runs, the selected runs and their cost, set against what the policy declared
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ExecutionActualsTests::test_the_close_reports_runs_against_the_policy
+- **Verified:** yes (2026-07-28)
 
 ### AC2: an unmeasured cost is reported as unmeasured, never as zero
 
@@ -31,6 +32,7 @@
 - **When** the close runs
 - **Then** it says the cost was not captured and why, rather than printing a total that reads as cheap
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ExecutionActualsTests::test_an_unmeasured_cost_is_not_reported_as_zero
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

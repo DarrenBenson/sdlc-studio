@@ -1,6 +1,6 @@
 # US0505: A repair that changes behaviour carries a test asserting that behaviour, so a later silent revert reddens the suite
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0452
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the review records its verdict
 - **Then** the missing regression cover is reported as a finding, so an unpinned repair is visible before it is trusted
 - **Verify:** pytest tools/tests/test_doc_claims.py::RepairCoverageTests::test_an_unpinned_repair_is_reported
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

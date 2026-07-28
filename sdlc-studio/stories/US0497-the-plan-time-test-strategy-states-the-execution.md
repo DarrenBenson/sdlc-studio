@@ -1,6 +1,6 @@
 # US0497: The plan-time test strategy states the execution policy - what runs per commit, at close and at release, with its estimated cost
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0453
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the plan prints its test strategy
 - **Then** it states the per-commit mode, the boundary runs, and an estimated cost for each, alongside the per-unit proof obligations it already carries
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TestStrategyPolicyTests::test_the_strategy_states_the_execution_policy_and_cost
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a policy that disagrees with the hook is reported
 
@@ -31,6 +32,7 @@
 - **When** the plan runs
 - **Then** the divergence is reported, because the two cannot silently disagree about the most expensive decision in the sprint
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TestStrategyPolicyTests::test_a_policy_diverging_from_the_hook_is_reported
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 
