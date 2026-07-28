@@ -228,3 +228,7 @@ Closed with known outstanding work (RUN-01KYKVZM): the operator chose file-and-c
 - CR-0492: [sign-off] US0528: no critic verdict and no sprint-level review covering it (deferred, not waived)
 - CR-0493: [sign-off] US0529: no critic verdict and no sprint-level review covering it (deferred, not waived)
 - CR-0494: [sign-off] US0530: no critic verdict and no sprint-level review covering it (deferred, not waived)
+
+## Handoff
+
+- [HO-0034](../handoffs/HO0034-a-defect-is-caught-by-the-lane-that.md) - 23 remaining item(s): 0 copilot-tail, 23 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

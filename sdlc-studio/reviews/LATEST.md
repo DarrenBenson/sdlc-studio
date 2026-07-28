@@ -1,5 +1,10 @@
 # Latest review anchor
 
+<!-- close-status:begin -->
+> **RUN-01KYKVZM closed stopped.** 31 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> Stamped by `sprint close` - edit the prose below, not this block.
+<!-- close-status:end -->
+
 > **Review record:** RV0023 (2026-07-28) - RUN-01KYKVZM: three rounds, three rejects, and the
 > repair rate that did not fall
 > **Retro:** RETRO0081 · **Goal verdict:** partial · **Outcome:** closed with known issues

@@ -46,3 +46,4 @@ next `sprint plan --worklist` reads back.
 | [HO-0031](HO0031-harden-the-delivery-gates-and-finish-request-derivation.md) | Harden the delivery gates and finish request derivation: close the manual-AC Done bypass, stop shell-hazard false positives, and derive parent requests at close | 2026-07-27 |
 | [HO-0032](HO0032-accept-the-natural-positional-form-of-transition-set.md) | Accept the natural positional form of transition set so the obvious first attempt works | 2026-07-27 |
 | [HO-0033](HO0033-every-gate-the-audit-showed-silently-standing-down.md) | Every gate the audit showed silently standing down or silently passing fails loud, and no terminal artefact carries a claim its own verifier contradicts | 2026-07-28 |
+| [HO-0034](HO0034-a-defect-is-caught-by-the-lane-that.md) | A defect is caught by the lane that made it, the loop measures what it costs, and a lesson carried forward is read by the work that would repeat it | 2026-07-28 |
