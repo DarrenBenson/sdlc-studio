@@ -1,9 +1,9 @@
 # RETRO-0081: RUN-01KYKVZM: the in-lane quality sprint - the lane that graded its own homework
 
 > **Date:** 2026-07-28
-> **Batch:** RUN-01KYKVZM - 31 units, 102 points: US0508, US0509, US0510, US0511, US0512, US0513, US0514, US0515, US0516, US0517, US0518, US0519, US0520, US0521, US0522, US0523, US0524, US0525, US0526, US0527, US0528, US0529, US0530, BG0313, BG0319, BG0331, BG0336, BG0341, BG0351, BG0352, BG0353
+> **Batch:** RUN-01KYKVZM - 35 units, 112 points delivered (the plan approved 31 units / 102 points; four were filed and fixed mid-run): US0508, US0509, US0510, US0511, US0512, US0513, US0514, US0515, US0516, US0517, US0518, US0519, US0520, US0521, US0522, US0523, US0524, US0525, US0526, US0527, US0528, US0529, US0530, BG0313, BG0319, BG0331, BG0336, BG0341, BG0351, BG0352, BG0353, BG0370, BG0375, BG0376, BG0377
 > **Goal:** A defect is caught by the lane that made it, the loop measures what it costs, and a lesson carried forward is read by the work that would repeat it
-> **Delivered:** 31 / 31   **Blocked:** 0
+> **Delivered:** 35 / 35   **Blocked:** 0
 
 ## Goal verdict, by clause
 
@@ -281,3 +281,5 @@ Closed with known outstanding work (RUN-01KYKVZM): the operator chose file-and-c
 ## Handoff
 
 - [HO-0035](../handoffs/HO0035-a-defect-is-caught-by-the-lane-that.md) - 23 remaining item(s): 0 copilot-tail, 23 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
+| 2026-07-28 | Claude Opus 5 | Batch line extended with BG0370, BG0375, BG0376 and BG0377. All four were FILED and FIXED inside this run as round-3 repairs, so they were never in the approved batch of 31 - the counts above are the plan's and stay as they were. They were delivered by this sprint and no other retro can account for them, so listing them here is where they belong. |
+| 2026-07-28 | Claude Opus 5 | Delivered header 31/31 -> 35/35 and the batch line's counts restated, so the header and the id list agree. The PLAN's numbers - 31 units, 102 points - are named on the same line and unchanged; the forecast is judged against those, not against the four mid-run repairs it never priced. |
