@@ -1,6 +1,6 @@
 # US0514: A bug reaching a terminal status with no acceptance-criteria section is refused, as a story reaching Done already is
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0459
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** it is transitioned to a terminal status
 - **Then** the transition is refused, naming what is missing, exactly as a story reaching Done is
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::BugCriteriaTests::test_a_terminal_bug_with_no_criteria_is_refused
+- **Verified:** yes (2026-07-28)
 
 ### AC2: the rule is derived from the type's own terminal set, not a list of statuses
 
@@ -31,6 +32,7 @@
 - **When** that status is used
 - **Then** the rule covers it without editing the checker, because the terminal set comes from the vocabulary
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::BugCriteriaTests::test_the_terminal_set_is_derived_not_enumerated
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

@@ -37,6 +37,9 @@ PROMPT = SKILL / "reference-agent-prompt-template.md"
 REVIEW = SKILL / "reference-review.md"
 MUTATION = SKILL / "scripts" / "mutation.py"
 CRITIC = SKILL / "scripts" / "critic.py"
+SPRINT = SKILL / "scripts" / "sprint.py"
+SPRINT_REF = SKILL / "reference-sprint.md"
+STORY_TEMPLATE = SKILL / "templates" / "core" / "story.md"
 
 
 def _norm(text: str) -> str:
@@ -192,6 +195,74 @@ class RepairCoverageTests(unittest.TestCase):
         doc = _doc(REVIEW)
         self.assertRegex(doc, r"(?i)regression cover",
                          "reference-review.md must document the repair-cover practice")
+
+
+class CallerNamedTests(unittest.TestCase):
+    """US0512: the story template asks for the consuming caller where the criterion is written.
+
+    A lesson the author has to recall is a lesson the author skips: four mechanisms shipped
+    reaching nothing in one sprint, each with green tests. The prompt has to arrive at the point
+    the criterion is typed, and the field it asks for has to be the field the checker reads -
+    a template and a checker disagreeing by one word is a field that looks answered and is never
+    checked.
+    """
+
+    def test_the_template_asks_for_the_caller(self) -> None:
+        mod = _load(CRITIC, "critic_docclaims")
+        template = STORY_TEMPLATE.read_text(encoding="utf-8")
+        field = mod.CALLER_FIELD
+        # DERIVED from the template's own AC blocks: an AC4 added later without the field
+        # fails here, rather than being silently exempt from a list written today
+        blocks = re.split(r"^### AC(\d+)", template, flags=re.M)[1:]
+        ac_ids = blocks[0::2]
+        bodies = blocks[1::2]
+        self.assertTrue(ac_ids, "the template has no AC blocks to check")
+        for ac, body in zip(ac_ids, bodies):
+            self.assertRegex(body, rf"(?m)^- \*\*{field}:\*\*",
+                             f"AC{ac} in the story template never asks for the {field} field")
+        # the field the template writes is the field the checker reads, proven by running the
+        # checker's own parser over the shipped template rather than by reading both
+        declared = {d["ac"] for d in mod.caller_declarations(template)}
+        self.assertEqual(declared, {f"AC{ac}" for ac in ac_ids},
+                         "the caller check does not read the field the template asks for")
+        body = _norm(template)
+        # the reason travels with the prompt: a field whose point is unstated gets a placeholder
+        self.assertRegex(body, r"(?i)mechanism[^.]*(nothing calls|calls nothing|reaches no)",
+                         "the template must say WHY the consumer is asked for")
+        # and how to check it, so the author is not left to run the review in their head
+        self.assertIn("caller-check", body,
+                      "the template must name the command that checks the field")
+
+
+class LaneObligationDocsTests(unittest.TestCase):
+    """US0511: what a delivery lane is held to is carried by the dispatch, and stated where
+    somebody building their own harness will meet it.
+
+    The shipped dispatch already attaches the obligations to every brief, so a lane run through
+    this project's own tooling inherits them. A project writing its own dispatch reads the
+    reference instead, and an obligation that lives only in code is one such a project
+    rediscovers by repeating the incident that bought it.
+    """
+
+    def test_the_obligations_are_documented(self) -> None:
+        mod = _load(SPRINT, "sprint_docclaims")
+        obligations = list(mod.LANE_OBLIGATIONS)
+        self.assertTrue(obligations,
+                        "an empty obligation set would make every assertion below vacuous")
+        body = _section(PROMPT, "lane-obligations")
+        for text in obligations:
+            self.assertIn(_norm(text), body,
+                          "the reference must carry the SHIPPED obligation text, so the doc and "
+                          f"the dispatch cannot drift apart: {text!r}")
+        # why the section exists: they travel with the dispatch rather than with whoever wrote
+        # that sprint's prompt - the claim the whole arrangement rests on
+        self.assertRegex(body, r"(?i)dispatch",
+                         "the reference must say the obligations ride the dispatch")
+        self.assertRegex(body, r"(?i)who(?:ever|m)?\s+(?:wrote|writes)",
+                         "the reference must say they do not depend on who wrote the brief")
+        # one home per rule: the sprint reference points here rather than restating them
+        self.assertIn("reference-agent-prompt-template.md#lane-obligations", _doc(SPRINT_REF),
+                      "reference-sprint.md must point at the obligations, not restate them")
 
 
 if __name__ == "__main__":

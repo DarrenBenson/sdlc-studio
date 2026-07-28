@@ -1,6 +1,7 @@
 # BG0336: Review-currency close-bookkeeping carve-out is direction-blind: any hand-edited Status flip, including to Done, is exemp
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py

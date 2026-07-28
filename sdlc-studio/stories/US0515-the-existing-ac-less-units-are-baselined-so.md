@@ -1,6 +1,6 @@
 # US0515: The existing AC-less units are baselined so the new rule blocks a new one without blocking on the backlog it reveals
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0459
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the check runs
 - **Then** each recorded instance reports as known debt rather than failing, and the record is captured from the checker's own output rather than hand-written
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::BugCriteriaTests::test_a_baselined_unit_reports_as_debt
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a new instance still fails, and removal from the baseline is one-way
 
@@ -31,6 +32,7 @@
 - **When** the check runs
 - **Then** it fails; and an id removed from the baseline errors from then on, so the count can only fall
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::BugCriteriaTests::test_a_new_instance_still_fails
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

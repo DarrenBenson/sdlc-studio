@@ -1,6 +1,7 @@
 # BG0313: US0433 AC3's verifier never evaluates the done-gate nor transitions anything to Deferred: it asserts a run-state proxy f
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** sdlc-studio/stories/US0433-sprint-batch-drop-and-add-mutate-an-open.md
@@ -20,8 +21,21 @@ Evidence (AC3 (line 39); `test_run_state.py` lines 730-739; sprint.py `_done_gat
 
 Replace or supplement the verifier with a test that builds a batch containing one Deferred and one dropped unit and asserts `_done_gate_preflight`'s refusal set directly, then re-run `verify_ac` for the story.
 
+## Acceptance Criteria
+
+### AC1: US0433 AC3 is proved at the done-gate, not at a run-state label
+
+- **Given** two batch units identical in every respect the gate reads, one transitioned to
+  `Deferred` through the real transition and one removed by the real `batch drop`
+- **When** the done-gate pre-flight is evaluated
+- **Then** its refusal set names the Deferred unit and not the dropped one, so a gate changed to
+  skip Deferred units, or to stop reading `state["batch"]`, turns the verifier red
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DropVersusDeferredDoneGateTests
+- **Verified:** yes (2026-07-28)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d) | Filed |
+| 2026-07-28 | Claude Fable 5 (RUN-01KYKVZM lane) | Acceptance criterion authored and fixed: US0433 AC3 re-pointed at a verifier that invokes the gate |

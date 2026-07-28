@@ -89,8 +89,13 @@ def _mutation_row(mut, root: Path, row: dict) -> dict:
             "cost_per_finding_s": cost, "cost_per_finding_note": note}
 
 
-def _run_window(root: Path, unit_ids: list[str]) -> tuple | None:
-    """`(started_at, ended_at)` of the run that delivered THIS sprint, or None.
+def _run_record(root: Path, unit_ids: list[str]) -> dict | None:
+    """The run record that delivered THIS sprint, or None.
+
+    The selection rule lives here, ONCE, and both readers share it: `_run_window` wants the
+    span, the overhead ratio wants the record's own review rounds and idle gaps, and a second
+    copy of "which run was this sprint's" would drift into a second answer. See `_run_window`
+    for why closeness rather than overlap decides it.
 
     Same guard as `_sprint_goal`: a run record counts only when its batch names this sprint's
     units. Where more than one does, the CLOSEST record wins - most of this sprint's units
@@ -112,7 +117,7 @@ def _run_window(root: Path, unit_ids: list[str]) -> tuple | None:
         pass                      # the report stays renderable; the close gate owns that failure
     # `archived` skips an unreadable record rather than raising, so there is nothing to catch.
     records.extend(reversed(run_state.archived(root)))
-    best = None                   # ((cover, -extraneous), started_at, ended_at)
+    best = None                   # ((cover, -extraneous), state)
     for state in records:
         batch = {sdlc_md.norm_id(u) for u in (state.get("batch") or [])}
         cover = len(batch & want)
@@ -130,8 +135,21 @@ def _run_window(root: Path, unit_ids: list[str]) -> tuple | None:
         # tie on both terms.
         score = (cover, -len(batch - want))
         if best is None or score > best[0]:
-            best = (score, start, telemetry._parse_iso(state.get("ended_at")))  # noqa: SLF001
-    return (best[1], best[2]) if best else None
+            best = (score, state)
+    return best[1] if best else None
+
+
+def _run_window(root: Path, unit_ids: list[str]) -> tuple | None:
+    """`(started_at, ended_at)` of the run that delivered THIS sprint, or None.
+
+    Derived from `_run_record`, whose docstring holds the selection rule. `ended_at` may be
+    None - an open run has a start and no end, and a row after its start still belongs to it.
+    """
+    state = _run_record(root, unit_ids)
+    if state is None:
+        return None
+    return (telemetry._parse_iso(state.get("started_at")),        # noqa: SLF001 - ONE stamp reader
+            telemetry._parse_iso(state.get("ended_at")))          # noqa: SLF001
 
 
 #: Said when no run record can be joined to this sprint. The series is project-wide, so without
@@ -254,12 +272,19 @@ def report(root: Path, retro_id: str, *, sprint_tokens: int | None = None,
     val = retro.validate(root, retro_id)  # lessons + dispositioned findings (tickets raised)
     b = acc["batch"]
     goal, goal_verdict = _sprint_goal(Path(root), unit_ids)
+    # Composed ONCE and read twice - the overhead block reads the execution and mutation
+    # summaries rather than re-deriving them, so the close cannot report one cost here and a
+    # different one three lines down.
+    mut = _mutation_summary(Path(root), unit_ids)
+    execution = _execution_actuals(Path(root), unit_ids)
+    overhead = _overhead_ratio(Path(root), unit_ids, execution, mut)
     return {
         "ok": True, "id": retro_id, "date": acc.get("date", ""),
         "sprint_goal": goal, "sprint_goal_verdict": goal_verdict,
         "flow": _flow_summary(Path(root)),
-        "mutation": _mutation_summary(Path(root), unit_ids),
-        "execution": _execution_actuals(Path(root), unit_ids),
+        "mutation": mut,
+        "execution": execution,
+        "overhead": overhead,
         "units": unit_ids,
         "delivered_points": b.get("delivered_points"),
         "delegated_signoffs": _delegated_rows(root),
@@ -272,6 +297,13 @@ def report(root: Path, retro_id: str, *, sprint_tokens: int | None = None,
             "points_per_worker_hour": b.get("points_per_worker_hour"),
             "tokens_per_point": b.get("tokens_per_point"),
             "sprint_tokens_per_point": b.get("sprint_tokens_per_point"),
+            # The overhead ratio belongs WITH the velocity figures, not in a block of its own:
+            # it is the same question (what an hour of this loop buys) and a reader of the
+            # velocity record must meet it without knowing to look. Read off the one composed
+            # block above, never recomputed, so the two readings cannot disagree.
+            "overhead_ratio": overhead["ratio"],
+            "overhead_bound": overhead["bound"],
+            "overhead_excludes": overhead["unmeasured"],
         },
         "accuracy": {"ratio": b.get("ratio"), "refused": b.get("refused"),
                      "n_measured": acc.get("n_measured"), "models": acc.get("models")},
@@ -435,6 +467,170 @@ def _execution_lines(rep: dict) -> list[str]:
             f"selected{reused} - {act['seconds']:,.0f}s of test time.{against}"]
 
 
+# ---------------------------------------------------------------------------
+# OVERHEAD AGAINST DELIVERY: the ratio that tests the product's own claim.
+# ---------------------------------------------------------------------------
+# The close already reports what a sprint delivered and what it cost in tokens. It did not
+# report the number an operator actually decides on: how much of the run went on the process
+# rather than on the work. On one run that ratio was about 9:1 - roughly 35 minutes of delivery
+# against roughly 316 minutes of gate, review and re-running - and it surfaced only because the
+# operator said it felt slow and it was then computed by hand.
+#
+# Two rules it will not bend, and they are the same two the rest of this file lives by:
+#
+#   EVERY COMPONENT IS READ BACK FROM A RECORD THE RUN WROTE - the test-execution ledger, the
+#   mutation series, the review-round stamps, the run's own start and end. Nothing here is
+#   estimated at close time. A figure invented at the close is a claim about a sprint, not a
+#   measurement of one, and it would be indistinguishable from the hand-computed number this
+#   exists to replace.
+#
+#   AN UNMEASURED COMPONENT READS UNMEASURED, NEVER ZERO, and the ratio names what it excludes.
+#   A zero there reports overhead that was never measured as overhead that never happened,
+#   which understates the ratio in the one direction that flatters the tool.
+
+
+def _component_test_execution(ctx: dict) -> dict:
+    """Gate time: the test-execution ledger, already joined to this run's window."""
+    act = ctx.get("execution") or {}
+    seconds = act.get("seconds")
+    if act.get("measured") and isinstance(seconds, (int, float)):
+        return {"seconds": float(seconds), "measured": True, "bound": "exact",
+                "source": "the test-execution ledger", "why": ""}
+    return {"seconds": None, "measured": False, "bound": None,
+            "source": "the test-execution ledger",
+            "why": act.get("why") or "no test-execution row is attributed to this run"}
+
+
+def _component_mutation(ctx: dict) -> dict:
+    """Gate time: the mutation run attributed to this sprint, wall-clock as the series recorded
+    it. A refused run still spent its time, so its elapsed still counts as overhead."""
+    mut = ctx.get("mutation") or {}
+    elapsed = (mut.get("current") or {}).get("elapsed_s")
+    if isinstance(elapsed, (int, float)):
+        return {"seconds": float(elapsed), "measured": True, "bound": "exact",
+                "source": "the mutation series", "why": ""}
+    # The REASON is stated once, by the mutation block, and pointed at rather than repeated:
+    # the same sentence written by two renderers is how a reader starts counting one fact twice.
+    return {"seconds": None, "measured": False, "bound": None,
+            "source": "the mutation series",
+            "why": "no mutation run is attributed to this run (see the mutation gate line), so "
+                   "what that gate cost is NOT CAPTURED, not zero"}
+
+
+def _component_review(ctx: dict) -> dict:
+    """Review and repair: the span the run's own review-round stamps cover.
+
+    A LOWER BOUND, and labelled one. No round records a duration, so the span from the first
+    recorded round to the last is the repair time BETWEEN rounds and nothing before the first;
+    a run whose rounds were all stamped together at close covers seconds of a review that took
+    hours. Fewer than two stamps, or a span of zero, measures nothing at all and says so -
+    reporting either as 0s would publish a review that cost nothing.
+    """
+    state = ctx.get("state") or {}
+    rounds = [r for r in (state.get(run_state.REVIEW_ROUNDS) or []) if isinstance(r, dict)]
+    stamps = sorted(t for t in (telemetry._parse_iso(r.get("recorded_at"))  # noqa: SLF001
+                                for r in rounds) if t is not None)
+    source = "the recorded review-round stamps"
+    if len(stamps) < 2:
+        return {"seconds": None, "measured": False, "bound": None, "source": source,
+                "why": f"{len(rounds)} review round(s) are recorded and no round carries a "
+                       f"duration, so the review and repair time is NOT CAPTURED, not zero"}
+    span = (stamps[-1] - stamps[0]).total_seconds()
+    if span <= 0:
+        return {"seconds": None, "measured": False, "bound": None, "source": source,
+                "why": "every recorded round carries the same stamp (they were recorded "
+                       "together), so their span measures nothing - not a review that was free"}
+    return {"seconds": round(span, 1), "measured": True, "bound": "lower", "source": source,
+            "why": "the span between the first and last recorded round, so it bounds the "
+                   "review and repair time from below"}
+
+
+#: The overhead components, defined ONCE as a table of extractors. The sum, the unmeasured
+#: list and the rendered breakdown are all derived from this table by iteration, so a component
+#: added here reaches all three readers - a hand-typed second list is how one of them silently
+#: exempts the component it forgot.
+_OVERHEAD_COMPONENTS = (
+    ("test execution", _component_test_execution),
+    ("mutation", _component_mutation),
+    ("review and repair", _component_review),
+)
+
+
+def _overhead_ratio(root: Path, unit_ids: list[str], execution: dict, mutation: dict) -> dict:
+    """Overhead time against delivery time for THIS run, from what the run recorded.
+
+    Delivery is what the measured wall-clock has LEFT once the recorded overhead comes out of
+    it - the run's own idle-deducted span, never a figure supplied at close. It is therefore an
+    upper bound whenever a component is unmeasured, which makes the ratio a lower bound, and
+    `bound` says so rather than letting the number read as exact.
+    """
+    state = _run_record(root, unit_ids)
+    blank = {"measured": False, "ratio": None, "delivery_s": None, "overhead_s": None,
+             "total_s": None, "components": [], "unmeasured": [], "bound": None}
+    if state is None:
+        return {**blank, "why": "no run state names this sprint's units, so how long it spent "
+                                "on delivery and on overhead is UNKNOWN, not zero"}
+    ctx = {"execution": execution, "mutation": mutation, "state": state}
+    components = [{"name": name, **fn(ctx)} for name, fn in _OVERHEAD_COMPONENTS]
+    measured = [c for c in components if c["measured"]]
+    unmeasured = [c["name"] for c in components if not c["measured"]]
+    overhead = round(sum(c["seconds"] for c in measured), 1) if measured else None
+    span = telemetry.elapsed_excluding_idle(state.get("started_at"), state.get("ended_at"), state)
+    total = None if span.get("hours") is None else round(span["hours"] * 3600.0, 1)
+    # A ratio is a floor, not an equality, unless every component is measured AND exact. It
+    # qualifies a RATIO, so it stays None while there is no ratio to qualify - a bound beside a
+    # null figure reads as a claim about a number nobody has.
+    bound = ("exact" if not unmeasured and all(c["bound"] == "exact" for c in measured)
+             else "lower")
+    base = {**blank, "components": components, "unmeasured": unmeasured,
+            "overhead_s": overhead, "total_s": total}
+    if total is None:
+        return {**base, "why": "the run records no closed wall-clock span (it is still open, or "
+                               "its stamps do not parse), so delivery time is UNKNOWN, not zero"}
+    if overhead is None:
+        return {**base, "why": "no overhead component was measured, so the split between "
+                               "delivery and overhead is UNKNOWN, not zero"}
+    if overhead >= total:
+        return {**base, "why": f"the recorded overhead ({overhead:,.0f}s) meets or exceeds the "
+                               f"run's measured wall-clock ({total:,.0f}s), so the components "
+                               f"overlap or fell outside it and delivery time cannot be derived "
+                               f"- it is UNKNOWN, not zero"}
+    delivery = round(total - overhead, 1)
+    return {**base, "measured": True, "delivery_s": delivery, "bound": bound,
+            "ratio": round(overhead / delivery, 1), "why": ""}
+
+
+def _overhead_component_lines(ov: dict) -> list[str]:
+    """One line per component, derived from the same table the sum is - a measured one shows
+    its minutes, an unmeasured one shows why it has none."""
+    out = []
+    for c in ov.get("components") or []:
+        if c["measured"]:
+            floor = " (a floor)" if c.get("bound") == "lower" else ""
+            out.append(f"  {c['name']}: {c['seconds'] / 60:,.0f} min{floor}, from "
+                       f"{c['source']}.")
+        else:
+            out.append(f"  {c['name']}: UNMEASURED - {c['why']}.")
+    return out
+
+
+def _overhead_lines(rep: dict) -> list[str]:
+    """The overhead block, drawn with the velocity figures because it is read with them."""
+    ov = rep.get("overhead")
+    if not ov:
+        return []
+    if not ov.get("measured"):
+        return [f"Overhead vs delivery: UNMEASURED - {ov.get('why')}.",
+                *_overhead_component_lines(ov)]
+    excludes = (f" It EXCLUDES {', '.join(ov['unmeasured'])}, so the true ratio is higher."
+                if ov["unmeasured"] else "")
+    floor = "at least " if ov.get("bound") == "lower" else ""
+    return [f"Overhead vs delivery: {floor}{ov['ratio']}:1 - {ov['overhead_s'] / 60:,.0f} min of "
+            f"gate, review and repair against {ov['delivery_s'] / 60:,.0f} min of delivery, "
+            f"within a measured {ov['total_s'] / 60:,.0f} min run.{excludes}",
+            *_overhead_component_lines(ov)]
+
+
 def _delegated_rows(root: Path) -> list[dict]:
     """The delegated-agent sign-off rows, read from `critic` rather than re-derived. One
     definition of "delegated" - a second spelling here is how a writer and its readers stop
@@ -488,6 +684,7 @@ def render(rep: dict) -> str:
                      f"points, harness-tracked).")
     elif v["tokens_per_point"]:
         lines.append(f"Tokens/point: {v['tokens_per_point']:,} (over rated units).")
+    lines.extend(_overhead_lines(rep))
     acc = rep["accuracy"]
     if acc["refused"]:
         lines.append(f"Estimate vs actual: {acc['refused']}")

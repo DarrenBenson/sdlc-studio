@@ -1524,5 +1524,276 @@ class SummaryOutRootAnchoringTests(unittest.TestCase):
         self.assertFalse((self.outside / "summary-out.md").exists())
 
 
+class CarriedSetBase(unittest.TestCase):
+    """A workspace with a lessons log and a carried set."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        (self.root / "sdlc-studio" / "retros").mkdir(parents=True)
+        (self.root / "sdlc-studio" / ".local").mkdir(parents=True)
+
+    def log(self, n: int) -> Path:
+        p = lessons.default_project_file(self.root)
+        body = "# Project Lessons\n\n**Last Updated:** 2026-07-28\n"
+        for i in range(1, n + 1):
+            body += (f"\n## L-{i:04d}: lesson number {i}\n\n"
+                     f"- **Added:** 2026-07-28\n- **Rule:** do the {i}th thing\n")
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(body, encoding="utf-8")
+        return p
+
+    def fill(self) -> list[str]:
+        """Carry exactly `carried_max` lessons, so the set is full."""
+        ids = [f"L-{i:04d}" for i in range(1, lessons.carried_max(self.root) + 1)]
+        for lid in ids:
+            lessons.carry(self.root, lid)
+        return ids
+
+    def carried_text(self) -> str:
+        return lessons.default_carried_path(self.root).read_text(encoding="utf-8")
+
+
+class DisplacementTests(CarriedSetBase):
+    """US0519/CR0464: a set that can GROW is the 252-entry summary again. The size is held by
+    construction - a lesson earns a place only by displacing one, named with the reason - so the
+    judgement 'is this more important than what is already carried' is forced rather than
+    avoided. Displaced is not deleted: the lesson stays in the full registry."""
+
+    def test_adding_without_displacing_is_refused(self) -> None:
+        self.log(20)
+        self.fill()
+        limit = lessons.carried_max(self.root)
+        before = lessons.parse_carried(self.carried_text())
+        with self.assertRaises(ValueError) as ctx:
+            lessons.carry(self.root, f"L-{limit + 1:04d}")
+        msg = str(ctx.exception)
+        self.assertIn("displac", msg.lower())
+        self.assertIn(str(limit), msg)
+        # nothing was written: a refusal that half-applies is worse than one that blocks
+        self.assertEqual(lessons.parse_carried(self.carried_text()), before)
+
+    def test_the_displaced_lesson_is_named_and_retained(self) -> None:
+        log = self.log(20)
+        self.fill()
+        limit = lessons.carried_max(self.root)
+        new, gone = f"L-{limit + 1:04d}", "L-0002"
+        res = lessons.carry(self.root, new, displaces=gone,
+                            reason="the repeat it warns about has a guard now")
+        self.assertEqual(res["displaced"], gone)
+        ids = [c["id"] for c in lessons.parse_carried(self.carried_text())]
+        self.assertIn(new, ids)
+        self.assertNotIn(gone, ids)
+        self.assertEqual(len(ids), limit, "the set must stay fixed size")
+        # the displacement is on the record, with WHY
+        row = [d for d in lessons.parse_displaced(self.carried_text()) if d["id"] == gone]
+        self.assertEqual(len(row), 1, self.carried_text())
+        self.assertIn("guard now", row[0]["reason"])
+        self.assertEqual(row[0]["by"], new)
+        # ... and the lesson itself is still in the full registry - displaced is not deleted
+        entries = lessons.parse_project_lessons(log.read_text(encoding="utf-8"))
+        self.assertIn(gone, [e["id"] for e in entries])
+
+    def test_a_displacement_without_a_reason_is_refused(self) -> None:
+        self.log(20)
+        self.fill()
+        limit = lessons.carried_max(self.root)
+        with self.assertRaises(ValueError) as ctx:
+            lessons.carry(self.root, f"L-{limit + 1:04d}", displaces="L-0002")
+        self.assertIn("reason", str(ctx.exception).lower())
+
+    def test_displacing_a_lesson_that_is_not_carried_is_refused(self) -> None:
+        self.log(20)
+        self.fill()
+        limit = lessons.carried_max(self.root)
+        with self.assertRaises(ValueError) as ctx:
+            lessons.carry(self.root, f"L-{limit + 1:04d}", displaces="L-0019", reason="why")
+        self.assertIn("L-0019", str(ctx.exception))
+
+    def test_an_unknown_lesson_cannot_be_carried(self) -> None:
+        self.log(3)
+        with self.assertRaises(ValueError) as ctx:
+            lessons.carry(self.root, "L-0099")
+        self.assertIn("L-0099", str(ctx.exception))
+
+    def test_room_in_the_set_needs_no_displacement(self) -> None:
+        self.log(20)
+        res = lessons.carry(self.root, "L-0001")
+        self.assertTrue(res["changed"])
+        self.assertEqual([c["id"] for c in lessons.parse_carried(self.carried_text())], ["L-0001"])
+
+    def test_carrying_the_same_lesson_twice_is_a_no_op(self) -> None:
+        self.log(20)
+        lessons.carry(self.root, "L-0001")
+        res = lessons.carry(self.root, "L-0001")
+        self.assertFalse(res["changed"])
+        self.assertEqual(len(lessons.parse_carried(self.carried_text())), 1)
+
+
+class RepeatTests(CarriedSetBase):
+    """US0521/CR0464: a lesson violated AGAIN after being carried is evidence that it needs a
+    guard, not a louder note. It is reported at the close naming the unit that repeated it, so
+    the evidence attaches to the work that produced it instead of dissolving into the next retro.
+
+    Scoped to what was CARRIED on purpose. The claim is 'this was put in front of you and it
+    happened anyway'; a violation of one of the other 247 lessons nobody was asked to hold is a
+    finding, not a repeat, and counting it would make the repeat number mean nothing."""
+
+    def test_a_repeat_after_carrying_is_reported_with_its_unit(self) -> None:
+        self.log(20)
+        lessons.carry(self.root, "L-0001")
+        lessons.record_violation(self.root, "L-0001", "US0512",
+                                 note="renamed a test and left four ACs pointing at nothing")
+        found = lessons.repeats(self.root)
+        self.assertEqual([r["id"] for r in found], ["L-0001"])
+        self.assertEqual(found[0]["units"], ["US0512"])
+        report = lessons.repeat_report(self.root)
+        self.assertIn("L-0001", report)
+        self.assertIn("US0512", report)
+
+    def test_an_uncarried_lesson_is_not_a_repeat(self) -> None:
+        self.log(20)
+        lessons.carry(self.root, "L-0001")
+        lessons.record_violation(self.root, "L-0007", "US0512", note="not a carried lesson")
+        found = lessons.repeats(self.root)
+        self.assertEqual(found, [], "a lesson nobody was asked to carry is not a repeat")
+        self.assertEqual(lessons.repeat_report(self.root), "")
+
+    def test_every_unit_that_repeated_it_is_named(self) -> None:
+        self.log(20)
+        lessons.carry(self.root, "L-0001")
+        for unit in ("US0512", "US0513", "US0512"):
+            lessons.record_violation(self.root, "L-0001", unit)
+        found = lessons.repeats(self.root)
+        self.assertEqual(found[0]["count"], 3)
+        self.assertEqual(found[0]["units"], ["US0512", "US0513"])   # named once each, in order
+
+    def test_a_violation_of_an_unknown_lesson_is_refused(self) -> None:
+        self.log(3)
+        with self.assertRaises(ValueError) as ctx:
+            lessons.record_violation(self.root, "L-0099", "US0512")
+        self.assertIn("L-0099", str(ctx.exception))
+
+    def test_a_violation_needs_the_unit_that_produced_it(self) -> None:
+        self.log(3)
+        with self.assertRaises(ValueError) as ctx:
+            lessons.record_violation(self.root, "L-0001", "")
+        self.assertIn("unit", str(ctx.exception).lower())
+
+    def test_the_close_reports_repeats(self) -> None:
+        """The mechanism must reach the CALLER: `sprint close` prints this, or it is inert."""
+        import sprint  # noqa: PLC0415 - the close is the caller under test
+        self.log(20)
+        lessons.carry(self.root, "L-0001")
+        lessons.record_violation(self.root, "L-0001", "US0512")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            sprint._close_lesson_repeats(self.root)
+        self.assertIn("L-0001", out.getvalue())
+        self.assertIn("US0512", out.getvalue())
+
+
+class ProposalTests(CarriedSetBase):
+    """US0522/CR0464: a lesson violated over and over is not a memory problem, it is a MISSING
+    GUARD. The loop should end in work rather than in a longer list - so a repeatedly violated
+    carried lesson proposes a change request or a bug for the operator to accept or decline.
+
+    Nothing is filed without acceptance, and a decline is RECORDED against the lesson so the same
+    proposal cannot come back on the same evidence. New evidence re-opens it; the old evidence
+    does not."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self._seed_workspace()
+
+    def _seed_workspace(self) -> None:
+        """A workspace a CR can actually be filed into: an index, and a real file to declare."""
+        d = self.root / "sdlc-studio" / "change-requests"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "_index.md").write_text(
+            "# Index\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Proposed | 0 |\n"
+            "| **Total** | **0** |\n\n## All\n\n"
+            "| ID | Title | Status | Priority | Type | Date | Linked Epics |\n"
+            "| --- | --- | --- | --- | --- | --- | --- |\n", encoding="utf-8")
+        (self.root / "scripts").mkdir(parents=True, exist_ok=True)
+        (self.root / "scripts" / "guard.py").write_text("x\n", encoding="utf-8")
+
+    def _repeat(self, lesson: str, times: int) -> None:
+        for i in range(times):
+            lessons.record_violation(self.root, lesson, f"US05{i:02d}",
+                                     note=f"repeated it in wave {i}")
+
+    def _filed(self) -> list[Path]:
+        return [p for p in (self.root / "sdlc-studio" / "change-requests").glob("*.md")
+                if p.name != "_index.md"]
+
+    def test_a_repeated_lesson_proposes_a_unit(self) -> None:
+        self.log(20)
+        lessons.carry(self.root, "L-0001")
+        self._repeat("L-0001", lessons.repeat_threshold(self.root) + 1)
+        found = lessons.proposals(self.root)
+        self.assertEqual([p["id"] for p in found], ["L-0001"])
+        prop = found[0]
+        self.assertIn(prop["type"], ("cr", "bug"))
+        self.assertIn("L-0001", prop["title"])
+        # the violations travel WITH the proposal as evidence, not as a count to take on trust
+        self.assertTrue(all(u in prop["evidence"] for u in prop["units"]), prop["evidence"])
+        # the operator accepts it, and only THEN is an artefact created
+        self.assertEqual(self._filed(), [])
+        res = lessons.accept_proposal(self.root, "L-0001", affects="scripts/guard.py", size="M")
+        body = Path(res["path"]).read_text(encoding="utf-8")
+        self.assertIn("L-0001", body)
+        self.assertIn("US0500", body)
+        self.assertEqual(len(self._filed()), 1)
+
+    def test_a_declined_proposal_files_nothing_and_is_recorded(self) -> None:
+        self.log(20)
+        lessons.carry(self.root, "L-0001")
+        count = lessons.repeat_threshold(self.root) + 1
+        self._repeat("L-0001", count)
+        res = lessons.decline_proposal(self.root, "L-0001",
+                                       reason="the guard belongs in the reviewer, not the tool")
+        self.assertEqual(self._filed(), [], "a declined proposal must file nothing")
+        # ... recorded against the lesson, with the evidence it was declined on
+        declines = lessons.parse_declines(self.carried_text())
+        self.assertEqual([d["id"] for d in declines], ["L-0001"])
+        self.assertEqual(declines[0]["count"], count)
+        self.assertIn("reviewer", declines[0]["reason"])
+        self.assertEqual(res["count"], count)
+        # ... and it does not come back on the same evidence
+        self.assertEqual(lessons.proposals(self.root), [])
+
+    def test_new_evidence_re_opens_a_declined_proposal(self) -> None:
+        """A decline settles the evidence it was made on, not the lesson for ever."""
+        self.log(20)
+        lessons.carry(self.root, "L-0001")
+        self._repeat("L-0001", lessons.repeat_threshold(self.root) + 1)
+        lessons.decline_proposal(self.root, "L-0001", reason="not worth a guard yet")
+        self.assertEqual(lessons.proposals(self.root), [])
+        lessons.record_violation(self.root, "L-0001", "US0599", note="and again")
+        self.assertEqual([p["id"] for p in lessons.proposals(self.root)], ["L-0001"])
+
+    def test_a_lesson_under_the_threshold_proposes_nothing(self) -> None:
+        self.log(20)
+        lessons.carry(self.root, "L-0001")
+        self._repeat("L-0001", lessons.repeat_threshold(self.root))
+        self.assertEqual(lessons.proposals(self.root), [])
+
+    def test_an_uncarried_lesson_proposes_nothing(self) -> None:
+        self.log(20)
+        lessons.carry(self.root, "L-0001")
+        self._repeat("L-0007", 9)
+        self.assertEqual(lessons.proposals(self.root), [])
+
+    def test_a_decline_needs_a_reason(self) -> None:
+        self.log(20)
+        lessons.carry(self.root, "L-0001")
+        self._repeat("L-0001", lessons.repeat_threshold(self.root) + 1)
+        with self.assertRaises(ValueError) as ctx:
+            lessons.decline_proposal(self.root, "L-0001", reason="  ")
+        self.assertIn("reason", str(ctx.exception).lower())
+
+
 if __name__ == "__main__":
     unittest.main()

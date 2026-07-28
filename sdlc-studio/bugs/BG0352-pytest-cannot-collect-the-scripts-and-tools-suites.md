@@ -1,6 +1,7 @@
 # BG0352: pytest cannot collect the scripts and tools suites in one invocation, so no Verify line can span both
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests, tools/tests, pytest.ini
@@ -22,8 +23,25 @@ ERROR: found no collectors for /home/darren/code/DarrenBenson/sdlc-s;python3 -m 
 
 See the summary; each cited site names its own remedy.
 
+## Acceptance Criteria
+
+### AC1: both test packages collect in one invocation
+
+- **Given** `scripts/tests` and `tools/tests`, both named `tests`
+- **When** pytest is asked to collect from both in a single run
+- **Then** both collect, because the import mode resolves them by path rather than by a package name they share
+- **Verify:** pytest tools/tests/test_pytest_collection.py::CrossPackageCollectionTests::test_both_test_packages_collect_in_one_invocation
+
+### AC2: a Verify line can name node ids in both halves
+
+- **Given** one node id from each package
+- **When** they are passed to a single pytest invocation
+- **Then** both resolve and run, so an acceptance criterion can span both halves of the gate
+- **Verify:** pytest tools/tests/test_pytest_collection.py::CrossPackageCollectionTests::test_node_ids_from_both_packages_resolve_together
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Fable 5 (RUN-01KYJZGZ delivery lanes, dogfooding friction) | Filed |
+| 2026-07-28 | Claude Fable 5 | Acceptance criteria authored at delivery - the lane refused to claim fixed without a contract to verify against |

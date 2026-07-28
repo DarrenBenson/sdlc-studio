@@ -1601,11 +1601,21 @@ def era_divergence_advisory(repo_root: Path | str) -> str | None:
             f"`migrate_v3.py adopt --confirm` / `apply --confirm`) before writers diverge.")
 
 
-def cmd_detect(args: argparse.Namespace) -> int:
-    """Run drift detection across the selected scope and report."""
-    repo_root = Path(args.root).resolve()
-    types = SCOPE_TYPES.get(args.scope, DEFAULT_TYPES) if args.scope else DEFAULT_TYPES
+def detect_all(repo_root: Path | str, scope: str | None = None) -> tuple[dict, list[dict]]:
+    """(per-type results, every drift item this scope detects). THE sweep.
 
+    One definition of "what drift is on this tree", so nothing downstream can hold a
+    smaller one. `cmd_detect` decides its exit code from this list, and gate.py's blocking
+    reconcile lane counts it. The lane used to assemble its own total from two of the nine
+    sources - the sweep-level detectors were exempt by omission - so a tree on which
+    `reconcile detect` exited 1 passed the pre-commit hook and CI, and the documented gate
+    disagreed with the executed one. Anything added below is therefore counted by both
+    callers on the day it is added, which is the property a hand-kept second list cannot
+    have. Advisory lanes stay OUT: they never decide an exit code, so a caller that only
+    wants the verdict must not pay for them.
+    """
+    repo_root = Path(repo_root).resolve()
+    types = SCOPE_TYPES.get(scope, DEFAULT_TYPES) if scope else DEFAULT_TYPES
     per_type: dict[str, dict] = {}
     all_drift: list[dict] = []
     for type_ in types:
@@ -1614,11 +1624,11 @@ def cmd_detect(args: argparse.Namespace) -> int:
         all_drift.extend(result["drift"])
     # The meta indexes (retros/, reviews/) run on the default 'all' sweep and on the explicit
     # 'meta' scope, never on a single pipeline scope like 'bugs'.
-    if args.scope in (None, "meta"):
+    if scope in (None, "meta"):
         all_drift.extend(meta_index_drift(repo_root))
     # Breakdown checkboxes run on the default sweep and the 'epics' scope (they belong to
     # the epic files even though the drifting unit may be a bug or CR).
-    if args.scope in (None, "epics"):
+    if scope in (None, "epics"):
         all_drift.extend(epic_breakdown_drift(repo_root))
         all_drift.extend(epic_points_drift(repo_root))
     # The request<->child link check and the undecomposed check are cross-type (a CR under an RFC,
@@ -1626,12 +1636,19 @@ def cmd_detect(args: argparse.Namespace) -> int:
     # single pipeline scope. link-asymmetry is always on (it only fires on links a project chose to
     # write); undecomposed is a HARD workflow rule, so it fires only when the project enforces the
     # two-backlog workflow - an unenforced project is not told its childless CRs are drift.
-    if args.scope is None:
+    if scope is None:
         all_drift.extend(link_asymmetry_drift(repo_root))
         all_drift.extend(detect_linked_epics(repo_root)["drift"])
         if sdlc_md.two_backlog_enforced(repo_root):
             all_drift.extend(undecomposed_drift(repo_root))
             all_drift.extend(derivable_request_drift(repo_root))
+    return per_type, all_drift
+
+
+def cmd_detect(args: argparse.Namespace) -> int:
+    """Run drift detection across the selected scope and report."""
+    repo_root = Path(args.root).resolve()
+    per_type, all_drift = detect_all(repo_root, args.scope)
 
     by_kind: dict[str, int] = {}
     for d in all_drift:

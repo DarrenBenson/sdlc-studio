@@ -1,6 +1,6 @@
 # US0526: A waiver naming no reason or an unknown rule is refused at record time rather than silently doing nothing
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0460
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** it is recorded
 - **Then** it is refused, naming the rules that exist, so a waiver cannot be written against nothing
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_decisions.py::WaiverValidationTests::test_an_unknown_rule_is_refused
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a waiver with no rationale is refused
 
@@ -31,6 +32,7 @@
 - **When** it is recorded
 - **Then** it is refused - an unexplained waiver is indistinguishable from forgetting the rule exists
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_decisions.py::WaiverValidationTests::test_a_waiver_without_a_reason_is_refused
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

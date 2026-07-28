@@ -211,5 +211,97 @@ class RuleCoverageTests(unittest.TestCase):
             self.assertEqual(res["unknown_rules"], [])
 
 
+class LaneCostTests(unittest.TestCase):
+    """The constitution lane is the per-commit gate's dominant cost, and none of it buys
+    an answer the declared rules read.
+
+    Measured on this repo in fresh processes: the whole artefact gate 32.9s, the
+    constitution lane 26.6s of it. Profiled, the 26.6s is 107 `pytest --collect-only`
+    subprocesses inside `verify_ac.unresolvable_stamps`, reached because the
+    conformance-backed rules asked for the WHOLE-workspace sweep - which computes the
+    Done-only stages (verified, critiqued, ...) for every Done story. The two rules that
+    ask for it read `specified` and `verifiable`, the Definition-of-Ready signals, which
+    are computed for every unit whatever the scope. So the lane paid for the Done-only
+    half and threw it away.
+
+    These are CALLER tests: they drive `check_constitution`, which is what gate.py's
+    constitution lane calls, not the individual rule functions.
+    """
+
+    def _done_story_with_a_stamped_verifier(self, root: Path) -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "US0001-s.md").write_text(
+            "# US0001: s\n\n> **Status:** Done\n"
+            "> **Epic:** [EP0001: x](../epics/EP0001-x.md)\n\n"
+            "## Acceptance Criteria\n\n### AC1: works\n\n- **Given** a thing\n"
+            "- **Verify:** pytest tests/test_thing.py::Klass::test_it\n"
+            "- **Verified:** yes\n", encoding="utf-8")
+
+    def test_the_lane_does_not_pay_the_done_only_verification_sweep(self) -> None:
+        """RED before the fix: `unresolvable_stamps` is reached once per stamped Done
+        criterion, each a `pytest --collect-only` subprocess."""
+        import conformance as conf
+        calls: list = []
+        real = conf.verify_ac.unresolvable_stamps
+
+        def spy(path, cwd=None):
+            calls.append(str(path))
+            return real(path, cwd)
+
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._done_story_with_a_stamped_verifier(root)
+            _epic(root, 1)
+            _const(root, "- **P.** `rule: story-has-ac`\n")
+            conf.verify_ac.unresolvable_stamps = spy
+            try:
+                res = con.check_constitution(root)
+            finally:
+                conf.verify_ac.unresolvable_stamps = real
+        self.assertTrue(res["ok"])
+        self.assertEqual(calls, [], "the constitution lane reads only the "
+                                    "Definition-of-Ready stages, so it must not run the "
+                                    "per-criterion selector-resolution sweep")
+
+    def test_a_detector_two_rules_share_runs_once(self) -> None:
+        """`story-requires-epic` and `links-resolve` both read the integrity census. Two
+        declared principles must not mean two full censuses."""
+        runs: list = []
+        real = con.integrity.detect_integrity
+
+        def spy(root):
+            runs.append(str(root))
+            return real(root)
+
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, epic=True)
+            _epic(root, 1)
+            _const(root, "- **A.** `rule: story-requires-epic`\n"
+                         "- **B.** `rule: links-resolve`\n")
+            con.integrity.detect_integrity = spy
+            try:
+                res = con.check_constitution(root)
+            finally:
+                con.integrity.detect_integrity = real
+        self.assertTrue(res["ok"])
+        self.assertEqual(len(runs), 1,
+                         f"the integrity census must run once per check, ran {len(runs)}")
+
+    def test_the_cache_does_not_outlive_the_run(self) -> None:
+        """A memo that survived the call would answer the SECOND check from the FIRST
+        tree - the gate would then pass a repo it had never looked at."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, epic=True)
+            _epic(root, 1)
+            _const(root, "- **P.** `rule: story-requires-epic`\n")
+            self.assertTrue(con.check_constitution(root)["ok"])
+            _story(root, 1, epic=False)   # same path, now violating
+            self.assertFalse(con.check_constitution(root)["ok"],
+                             "a re-check must read the tree again, not a stale memo")
+
+
 if __name__ == "__main__":
     unittest.main()

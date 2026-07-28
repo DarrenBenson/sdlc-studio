@@ -13,6 +13,7 @@ receives during `epic implement --agentic` and `project implement
 - [Prompt Structure](#agent-prompt-template) - the mandatory sections in order
 - [Seat Framing](#seat-framing) - append the amigo stance after the contract
 - [What Makes a Good Prompt](#good-prompt) - bad vs good examples
+- [Lane Obligations](#lane-obligations) - what every delegated lane owes, carried by the dispatch
 - [Building the Prompt](#agentic-execution) - orchestrator pre-work
 - [Structured Clarifications](#structured-clarifications) - pause format
 - [Inter-Epic Context](#inter-epic-context)
@@ -261,6 +262,34 @@ Detect it before reporting it: `reference-agentic-lessons.md#silent-stall` gives
 is transcript growth plus a result marker rather than elapsed time. Count an unfinished delegate
 against the batch as work not done, and re-dispatch it or hand it back - never let the run close
 over it.
+
+## Lane Obligations {#lane-obligations}
+
+A **lane** is one unit of delegated delivery - a subagent, a worktree, a teammate. What a lane
+owes used to live in whatever prompt the operator typed that night, so the checks were only as
+good as one person's memory: in one run six units reached Fixed carrying no acceptance criterion
+at all, each lane having inferred a contract from the unit's summary and delivered against the
+inference.
+
+So the obligations travel with the DISPATCH. The dispatch attaches them to every brief it issues,
+from one shared definition, with nowhere in its signature for a caller to substitute its own -
+every lane is held to the same three whoever wrote that sprint's brief. A project writing its own
+harness inherits them by carrying this list into its dispatch, rather than by rediscovering them
+through the incident that bought each one:
+
+1. **Refuse without criteria.** Refuse a unit that carries no authored acceptance criteria - never
+   infer a contract from its summary. A grooming placeholder counts as an absence: it is an absent
+   contract in the shape of one.
+2. **Verify before returning.** Run this unit's OWN acceptance criteria before returning, and
+   return BLOCKED on a red or unresolvable one, carrying the verifier's own output rather than a
+   claim about it. An unresolvable selector is not a pass, and an absent answer is not a green one.
+3. **Return the proof.** Return the proof the plan's test strategy assigned this unit, or name the
+   obligation you could not discharge and why. A mechanism nothing calls is inert however green
+   its tests, so the proof names the caller that now reaches what was built.
+
+The dispatch enforces the first of them itself rather than passing the judgement down: a unit
+whose contract cannot be READ never reaches a lane, and the refusal names the unit and what is
+missing, at the point where fixing it costs a sentence.
 
 ## Building the Prompt {#agentic-execution}
 

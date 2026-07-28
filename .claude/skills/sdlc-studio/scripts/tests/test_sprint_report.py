@@ -617,5 +617,153 @@ class ExecutionActualsTests(ReportBase):
         self.assertIn("1 full", text)
 
 
+class OverheadRatioTests(ReportBase):
+    """US0523 + US0524 (CR0462): the close reports delivery time against overhead time.
+
+    On RUN-01KYHVWK that ratio was about 9:1 and surfaced only because the operator said it
+    felt slow and it was then computed by hand. Every component here comes from a record the
+    run wrote - the test-execution ledger, the mutation series, the review-round stamps - and a
+    component nothing recorded reads UNMEASURED, never as a cheap zero.
+    """
+
+    #: A ten-hour run. 08:00-18:00 = 36,000s of measured wall-clock.
+    WINDOW = ("2026-07-28T08:00:00Z", "2026-07-28T18:00:00Z")
+
+    def _run(self, rounds: list[dict] | None = None, ended: str | None = "") -> None:
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
+            "run_id": "RUN-OVERHEAD", "batch": ["US0001", "US0002"], "outcome": "running",
+            "started_at": self.WINDOW[0],
+            "ended_at": self.WINDOW[1] if ended == "" else ended,
+            "review_rounds": rounds if rounds is not None else [
+                {"round": 1, "verdict": "REJECT", "recorded_at": "2026-07-28T12:00:00Z"},
+                {"round": 2, "verdict": "APPROVE", "recorded_at": "2026-07-28T13:00:00Z"},
+            ]}), encoding="utf-8")
+
+    def _ledger(self, runs: list[dict]) -> None:
+        (self.root / "sdlc-studio" / ".local" / "test-execution.json").write_text(
+            json.dumps({"runs": runs}), encoding="utf-8")
+
+    def _mutation_run(self, elapsed: float, at: str = "2026-07-28T09:00:00Z") -> str:
+        mut = _mutation()
+        rid = mut._new_run_id()
+        mut.append_series(self.root, {
+            "run_id": rid, "generated_at": at, "git_rev": "abc1234",
+            "test_cmd": "t", "targets": ["src/thing.py"], "refused": False, "unchecked": [],
+            "summary": {"applied": 10, "killed": 7, "survived": 3,
+                        "errors": 0, "unviable": 0, "truncated": 0}}, elapsed)
+        return rid
+
+    def _measured_sprint(self) -> None:
+        """21,600s of test execution + 1,800s of mutation + a 3,600s review-and-repair span =
+        27,000s of overhead inside a 36,000s run, leaving 9,000s of delivery: 3.0:1."""
+        self._run()
+        self._ledger([
+            {"at": "2026-07-28T10:00:00Z", "mode": "full", "seconds": 18000,
+             "verdict": "pass", "moment": "commit"},
+            {"at": "2026-07-28T14:00:00Z", "mode": "full", "seconds": 3600,
+             "verdict": "pass", "moment": "close"},
+            {"at": "2026-07-27T10:00:00Z", "mode": "full", "seconds": 9999,
+             "verdict": "pass", "moment": "commit"},   # BEFORE the window: another sprint's
+        ])
+        self._mutation_run(1800.0)
+
+    def _report(self) -> dict:
+        with contextlib.redirect_stderr(io.StringIO()):
+            return sr.report(self.root, "RETRO9100")
+
+    def test_the_close_reports_the_ratio(self) -> None:
+        """US0523 AC1: delivery time, overhead time and the ratio between them, on the page the
+        close draws - a LANE test, so deleting the call from `report`/`render` fails here."""
+        self._measured_sprint()
+        rep = self._report()
+        ov = rep["overhead"]
+        self.assertTrue(ov["measured"])
+        self.assertEqual(ov["overhead_s"], 27000.0)
+        self.assertEqual(ov["delivery_s"], 9000.0)
+        self.assertEqual(ov["ratio"], 3.0)
+        text = sr.render(rep)
+        line = next(ln for ln in text.splitlines() if ln.startswith("Overhead vs delivery"))
+        self.assertIn("3.0:1", line)
+        self.assertIn("delivery", line)
+        # ...beside the figures the report already carries
+        self.assertIn("8 points", text)
+
+    def test_the_components_are_derived_not_estimated(self) -> None:
+        """US0523 AC2: every component traces to a record the run wrote. Proved by MOVING the
+        record - a figure invented at close would not follow it."""
+        self._measured_sprint()
+        by_name = {c["name"]: c for c in self._report()["overhead"]["components"]}
+        self.assertEqual(by_name["test execution"]["seconds"], 21600.0)
+        self.assertEqual(by_name["mutation"]["seconds"], 1800.0)
+        self.assertEqual(by_name["review and repair"]["seconds"], 3600.0)
+        for comp in by_name.values():
+            self.assertTrue(comp["source"], "a component names the record it came from")
+        # the ledger gains another 1,800s: overhead follows the record, delivery falls by it
+        self._ledger([
+            {"at": "2026-07-28T10:00:00Z", "mode": "full", "seconds": 18000,
+             "verdict": "pass", "moment": "commit"},
+            {"at": "2026-07-28T14:00:00Z", "mode": "full", "seconds": 3600,
+             "verdict": "pass", "moment": "close"},
+            {"at": "2026-07-28T15:00:00Z", "mode": "full", "seconds": 1800,
+             "verdict": "pass", "moment": "close"},
+        ])
+        ov = self._report()["overhead"]
+        self.assertEqual(ov["overhead_s"], 28800.0)
+        self.assertEqual(ov["delivery_s"], 7200.0)
+        self.assertEqual(ov["ratio"], 4.0)
+        self.assertEqual(round(ov["overhead_s"] + ov["delivery_s"], 1), ov["total_s"],
+                         "the parts sum to the measured run, so nothing was invented")
+
+    def test_an_unmeasured_component_is_not_zero(self) -> None:
+        """US0524 AC1: a run with no recorded review round has UNMEASURED review time, and the
+        ratio says which part it excludes. A zero there would read as a review that was free."""
+        self._run(rounds=[])
+        self._ledger([{"at": "2026-07-28T10:00:00Z", "mode": "full", "seconds": 21600,
+                       "verdict": "pass", "moment": "commit"}])
+        self._mutation_run(1800.0)
+        rep = self._report()
+        ov = rep["overhead"]
+        review = next(c for c in ov["components"] if c["name"] == "review and repair")
+        self.assertFalse(review["measured"])
+        self.assertIsNone(review["seconds"], "unknown is not zero")
+        self.assertTrue(review["why"])
+        self.assertEqual(ov["unmeasured"], ["review and repair"])
+        self.assertEqual(ov["overhead_s"], 23400.0, "only the measured parts are summed")
+        self.assertEqual(ov["bound"], "lower", "an excluded component makes the ratio a floor")
+        text = sr.render(rep)
+        self.assertIn("UNMEASURED", text)
+        self.assertIn("EXCLUDES", text)
+        self.assertIn("review and repair", text)
+        self.assertNotIn("review and repair 0", text)
+        # and with NOTHING recorded, the whole ratio is unmeasured rather than a tidy 0:1
+        self._ledger([])
+        (self.root / "sdlc-studio" / ".local" / "mutation-series.jsonl").write_text(
+            "", encoding="utf-8")
+        ov = self._report()["overhead"]
+        self.assertFalse(ov["measured"])
+        self.assertIsNone(ov["ratio"])
+        self.assertIsNone(ov["delivery_s"])
+        self.assertIn("not zero", ov["why"])
+        self.assertIn("UNMEASURED", sr.render(self._report()))
+
+    def test_the_ratio_reaches_the_velocity_record(self) -> None:
+        """US0524 AC2: the ratio joins the velocity figures rather than sitting in a block of
+        its own, so a reader of the velocity record meets it without knowing to look."""
+        self._measured_sprint()
+        rep = self._report()
+        vel = rep["velocity"]
+        self.assertEqual(vel["overhead_ratio"], 3.0)
+        self.assertEqual(vel["overhead_ratio"], rep["overhead"]["ratio"],
+                         "ONE computation, so the two readings cannot drift")
+        self.assertEqual(vel["overhead_excludes"], [])
+        text = sr.render(rep)
+        idx = [i for i, ln in enumerate(text.splitlines())]
+        lines = text.splitlines()
+        vpos = next(i for i in idx if lines[i].startswith("Velocity"))
+        opos = next(i for i in idx if lines[i].startswith("Overhead vs delivery"))
+        self.assertLess(vpos, opos, "the ratio sits with the velocity figures")
+        self.assertLess(opos - vpos, 4, "...not paragraphs away from them")
+
+
 if __name__ == "__main__":
     unittest.main()

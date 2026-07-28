@@ -1,6 +1,6 @@
 # US0527: validate can be pointed at one artefact, so checking a story does not read the whole workspace
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0456
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** validate is pointed at one
 - **Then** it reports that artefact's findings and reads only what that requires
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::ScopedCheckTests::test_a_single_artefact_can_be_checked
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a scoped run says it was scoped, so its silence is not read as a clean workspace
 
@@ -31,6 +32,7 @@
 - **When** it reports
 - **Then** it states the scope it covered, because 'no findings here' and 'no findings anywhere' are different claims
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::ScopedCheckTests::test_a_scoped_run_states_its_scope
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

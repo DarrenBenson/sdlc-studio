@@ -67,6 +67,7 @@ Related: help/story.md, reference-story.md
 - **When** {{ac1_when}}
 - **Then** {{ac1_then}}
 - **Verify:** {{ac1_verify}}
+- **Caller:** {{ac1_caller}}
 - **Verification target:** {{ac1_verification_target}}
 - **Mutation-checked:** {{ac1_mutation_checked}}
 - **Verified:** no
@@ -77,6 +78,7 @@ Related: help/story.md, reference-story.md
 - **When** {{ac2_when}}
 - **Then** {{ac2_then}}
 - **Verify:** {{ac2_verify}}
+- **Caller:** {{ac2_caller}}
 - **Verification target:** {{ac2_verification_target}}
 - **Mutation-checked:** {{ac2_mutation_checked}}
 - **Verified:** no
@@ -87,10 +89,21 @@ Related: help/story.md, reference-story.md
 - **When** {{ac3_when}}
 - **Then** {{ac3_then}}
 - **Verify:** {{ac3_verify}}
+- **Caller:** {{ac3_caller}}
 - **Verification target:** {{ac3_verification_target}}
 - **Mutation-checked:** {{ac3_mutation_checked}}
 - **Verified:** no
 
+> **Caller** names what CONSUMES the thing this criterion is about - the hook, lane, command or
+> call site that will reach it - as a path or a command, so the name can be resolved: `the commit
+> gate (tools/hooks/pre-commit)`, `sprint plan --export-lanes`. A mechanism nothing calls is inert
+> however green its tests, and a criterion describing only a function's own behaviour cannot tell
+> the two apart; four such mechanisms shipped in one sprint, each with a passing suite. Answer it
+> while the criterion is being written, when the answer is a sentence. Leave `n/a` only for a
+> criterion whose subject IS the call site (a hook, a CLI verb, a page). Check a written unit with
+> `critic.py caller-check --unit US{{story_id}}`: it reports a unit that adds a mechanism and names
+> no consumer, and a named consumer that resolves to nothing in the tree.
+>
 > **Verification target tiers:** `functional` (single round-trip – default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 >
 > **Mutation-checked** answers a prior question the tiers assume: *would the test go red if the feature were broken?* For any behaviour-bearing AC (`functional` and above), break the feature on purpose (unset the field the loader delivers, revert the component to a stub, invert the guard), confirm the AC's test **fails**, then restore. Record the result, e.g. `unsetting reAttestation turns governance-lifecycle GP1 red`. Leave `n/a` only for pure config/layout ACs with no runtime behaviour. A test never seen to fail cannot gate a release - see `reference-test-best-practices.md#assertion-integrity`.

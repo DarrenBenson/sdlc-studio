@@ -178,9 +178,11 @@ class WaiverTests(unittest.TestCase):
         # a waiver of a LONGER subject must not satisfy a lookup for a prefix of it: `leg:tsd`
         # is a prefix of the token `waiver: rule:engagement-floor-v2`? no - but a substring match
         # on the shared stem would; full-cell equality is the only correct rule.
+        # Written through `add`, not `record_waiver`: this pins the LOOKUP rule, and the subject
+        # is deliberately one no checker declares (which record-time validation now refuses).
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            decisions.record_waiver(root, "rule:engagement-floor-v2", "later")
+            decisions.add(root, f"{decisions.WAIVER_PREFIX} rule:engagement-floor-v2", "later")
             self.assertIsNone(decisions.waiver_for(root, "rule:engagement-floor"))
             self.assertIsNotNone(decisions.waiver_for(root, "rule:engagement-floor-v2"))
 
@@ -232,6 +234,52 @@ class WaiverTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 with contextlib.redirect_stderr(io.StringIO()):
                     decisions.main(["waive", "--rationale", "x", "--root", d])   # neither given
+
+
+class WaiverValidationTests(unittest.TestCase):
+    """US0526: a waiver that will do nothing is refused when it is WRITTEN, not discovered
+    when it fails to help. Two ways a waiver does nothing: it names a rule no checker
+    declares, or it carries no reason and so cannot be audited later."""
+
+    def test_an_unknown_rule_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            with self.assertRaises(ValueError) as cm:
+                decisions.record_waiver(root, "rule:no-such-checker", "seemed reasonable")
+            msg = str(cm.exception)
+            # it names the rules that DO exist, derived from the checkers themselves
+            self.assertIn("rule:engagement-floor", msg)
+            self.assertIn("rule:conformance:critiqued", msg)
+            self.assertEqual(decisions.list_decisions(root), [])   # nothing was recorded
+
+    def test_a_waiver_without_a_reason_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for empty in ("", "   ", None):
+                with self.assertRaises(ValueError):
+                    decisions.record_waiver(root, "rule:engagement-floor", empty)
+            self.assertEqual(decisions.list_decisions(root), [])
+
+    def test_a_declared_rule_and_its_scope_tail_still_record(self) -> None:
+        # the guard must not refuse the legitimate shapes: the bare rule, a per-unit scope
+        # tail, and a leg. Over-refusal would be the same defect pointing the other way.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for subject in ("rule:engagement-floor", "rule:engagement-floor:US0100",
+                            "rule:conformance:critiqued:US0103-US0310", "leg:tsd"):
+                self.assertIsNotNone(decisions.record_waiver(root, subject, "recorded reason"))
+                self.assertIsNotNone(decisions.waiver_for(root, subject), subject)
+
+    def test_the_known_rules_are_derived_from_the_checkers(self) -> None:
+        # LL: an enumerated list silently exempts what it forgot. The rule vocabulary is read
+        # off the checker modules, so a stage added to conformance.STAGES is waivable without
+        # a second list here remembering to grow.
+        subjects, unreadable = decisions.waivable_subjects()
+        self.assertEqual(unreadable, [], f"scripts unreadable for their declared rules: {unreadable}")
+        import importlib
+        conf = importlib.import_module("conformance")
+        for stage in conf.STAGES:
+            self.assertIn(f"rule:conformance:{stage}", subjects)
 
 
 class ConcurrencySafetyTests(unittest.TestCase):

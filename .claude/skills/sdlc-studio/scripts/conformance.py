@@ -10,7 +10,14 @@ critic stage is an independence gate: a self-review, or a verdict with no record
 author, never clears Done - and that floor applies to generic workers too, not only
 persona-framed ones. Exits non-zero on any non-conformant unit, so the sprint loop
 cannot mark a unit Done with a stage silently skipped - including skipping the critic
-or self-reviewing it. Read-only; pure stdlib.
+or self-reviewing it.
+
+A stage a project has WAIVED through the decisions log (`decisions.py waive --subject
+rule:conformance:<stage>[:<unit-or-range>]`) is reported as waived, naming the decision,
+rather than counted as a fault: the lane's own remedy text recommends a waiver, so a waiver
+it could not read made the gate recommend a no-op. The waiver is read from the log and is
+therefore independent of any diff scope, because a close runs on a clean tree and that is
+exactly when it is needed. Read-only; pure stdlib.
 """
 from __future__ import annotations
 
@@ -24,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md, tiers  # noqa: E402
 import reconcile  # noqa: E402  (sibling scripts; scripts dir is on sys.path)
 import critic  # noqa: E402
+import decisions  # noqa: E402  (the recorded waivers: a rule the project waived is not a finding)
 try:
     import carry_forward  # noqa: E402  (EP0113 review policy)
 except ImportError:  # pragma: no cover
@@ -59,6 +67,71 @@ STAGES = ALWAYS_STAGES + DONE_STAGES
 #: from the file's own text or from repo-wide facts already computed once, so it costs nothing
 #: to keep judging and stays reported for every unit.
 UNJUDGED_WHEN_SCOPED = ("verified", "critiqued")
+
+#: The rules this lane honours a recorded waiver for, DERIVED from the stage vocabulary above:
+#: one rule per stage, so a stage added to STAGES is waivable without a second list here
+#: remembering to grow. `decisions.py` reads this to validate a waiver at record time, which is
+#: the only reason an operator ever learns the spelling before the row is already inert.
+WAIVABLE_RULES = tuple(f"conformance:{stage}" for stage in STAGES)
+#: The decision-cell stem a waiver of this lane carries: `waiver: rule:conformance:<stage>[:scope]`.
+WAIVER_SUBJECT_STEM = "rule:conformance:"
+
+
+def _scope_covers(scope: str, rid: str) -> bool:
+    """Whether a waiver's scope tail covers this unit.
+
+    Three forms and no fourth: absent (the stage is waived for every unit), one normalised id,
+    or an inclusive `<id>-<id>` range - the shape an inherited cohort actually has. A tail that
+    resolves to none of them covers NOTHING, so a misspelled scope narrows to nobody rather
+    than widening to everybody; the record-time refusal is what makes that visible.
+    """
+    if not scope:
+        return True
+    # The single-id reading is tried FIRST, because a v3 ULID id (`US-01JQK3F8`) contains the
+    # same dash a range does: parsing for the range first would read that scope as a range from
+    # `US` to `01JQK3F8`, resolve neither, and cover nothing - a waiver silently naming no unit,
+    # on exactly the newest ids, which is the shape BG0318 already cost this gate once.
+    if sdlc_md.norm_id(scope) == sdlc_md.norm_id(rid):
+        return True
+    lo, sep, hi = scope.partition("-")
+    if sep:
+        lo_n, hi_n, num = (sdlc_md.id_number(lo.strip()), sdlc_md.id_number(hi.strip()),
+                           sdlc_md.id_number(rid))
+        return None not in (lo_n, hi_n, num) and lo_n <= num <= hi_n
+    return False
+
+
+def stage_waivers(root: Path | str) -> list[dict]:
+    """Every ACCEPTED `rule:conformance:<stage>[:<scope>]` waiver, read once per run.
+
+    Returns [{stage, scope, decision}]. A superseded or revisited waiver does not hold (that is
+    `decisions.list_decisions`' own rule), and a subject naming something outside STAGES is not
+    a waiver of this lane, so it is ignored here rather than guessed at.
+    """
+    stem = f"{decisions.WAIVER_PREFIX} {WAIVER_SUBJECT_STEM}"
+    out: list[dict] = []
+    for rec in decisions.list_decisions(root):
+        if rec["status"] != "accepted":
+            continue
+        cell = rec["decision"].strip().lower()
+        if not cell.startswith(stem):
+            continue
+        stage, _sep, scope = cell[len(stem):].partition(":")
+        if stage in STAGES:
+            out.append({"stage": stage, "scope": scope.strip(), "decision": rec["id"]})
+    return out
+
+
+def waived_stages(waivers: list[dict], rid: str, missing: list[str]) -> list[dict]:
+    """The subset of `missing` this unit has a recorded waiver for, each naming its decision.
+    Order follows `missing`, so the report reads in stage order however the log is written."""
+    out: list[dict] = []
+    for stage in missing:
+        did = next((w["decision"] for w in waivers
+                    if w["stage"] == stage and _scope_covers(w["scope"], rid)), None)
+        if did:
+            out.append({"stage": stage, "decision": did})
+    return out
 
 
 def _real(value: str | None) -> bool:
@@ -359,6 +432,11 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
             "remedy": "run `reconcile.py apply` to rebuild the index from the file census",
         })
     global_failed = {g["stage"] for g in globals_}
+    # The recorded waivers, read ONCE for the run. A rule the project waived through the
+    # sanctioned path is not a finding: the lane's own remedy text recommends a waiver, so a
+    # waiver that cleared nothing made the gate recommend a no-op. Independent of the diff
+    # scope, because a close runs on a clean tree and that is exactly when it is needed.
+    waivers = stage_waivers(root)
     units: list[dict] = []
     ok = 0
     for path in sdlc_md.artifact_files("story", root):
@@ -429,6 +507,13 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
         rid_num = sdlc_md.id_number(rid)
         exempt = cutoff_num is not None and rid_num is not None and rid_num <= cutoff_num
         all_missing = [] if exempt else [s for s in required if not stages[s]]
+        # A waived stage is REPORTED as waived, naming the decision, and is not charged as a
+        # fault. Applied before the global/per-unit split, so waiving a repo-wide stage clears
+        # it the same way; an exempt unit has nothing to waive.
+        waived = waived_stages(waivers, rid, all_missing)
+        if waived:
+            done_by = {w["stage"] for w in waived}
+            all_missing = [s for s in all_missing if s not in done_by]
         # A repo-GLOBAL failure is one fact about the repository, not a defect in each unit.
         # Fanned per unit it reads as "118 broken units" when it is one uncatalogued command,
         # burying every genuine per-unit finding in the noise. Attribute it once (see
@@ -452,6 +537,9 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
             # marker, so an operator can count how much a refined backlog owes before planning it.
             "ungroomed": story_is_ungroomed(text),
             "missing": missing,
+            # The stages a recorded decision waived, each naming the decision that waived it -
+            # so waived debt reads as waived-and-attributable, never as silently absent.
+            "waived": waived,
             # Which of `critiqued`'s halves are owed. Empty when the stage is satisfied, not
             # required, or not judged - so a reader never has to infer it from the composite.
             "critiqued_missing": critiqued_missing if "critiqued" in missing else [],
@@ -473,6 +561,9 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
     advisory_n = sum(1 for u in units if not u["conformant"] and u["scoped_out"])
     judged_n = sum(1 for u in units if not u["scoped_out"])
     ungroomed_n = sum(1 for u in units if u["ungroomed"])
+    # Units carrying at least one waived stage. Counted separately from `conformant`, so
+    # waived debt is never invisible: the lane passes it and still says how much it passed.
+    waived_n = sum(1 for u in units if u["waived"])
     return {
         "generated_at": sdlc_md.now_iso8601(),
         "units": units,
@@ -500,6 +591,8 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
                     # The refined backlog's outstanding grooming, countable rather than met at
                     # plan time: how many stories still carry the ungroomed-AC placeholder.
                     "ungroomed": ungroomed_n,
+                    # Debt this lane passed on a recorded decision rather than on evidence.
+                    "waived": waived_n,
                     "global_failures": len(globals_)},
     }
 
@@ -583,7 +676,14 @@ def remedy_detail(result: dict) -> str:
     # The scope rides on the PASSING line too: a green count over a narrowed run must say how
     # narrow it was, or the narrowing becomes a silent way to report less than was checked.
     sc = scope_detail(result)
-    tail = (f". Repo-wide: {gl}" if gl else "") + (f". {sc}" if sc else "")
+    # Debt this lane passed on a RECORDED DECISION rather than on evidence, said on the passing
+    # line too. A gate that silently swallows a waiver is the mirror of a gate that cannot see
+    # one: both leave an operator reading a number that does not mean what it says.
+    wv = result["summary"].get("waived") or 0
+    tail = ((f". Repo-wide: {gl}" if gl else "")
+            + (f". {wv} unit(s) passed on a recorded waiver (sdlc-studio/decisions.md)"
+               if wv else "")
+            + (f". {sc}" if sc else ""))
     if not n:
         return f"{n} non-conformant unit(s)" + tail
     bulk = _bulk_missed(result)
@@ -630,6 +730,18 @@ def cmd_check(args: argparse.Namespace) -> int:
         if downgrades:
             print(f"  downgraded to human-judged by definition-of-done.md (tag removed): "
                   f"{', '.join(downgrades)}")
+        # Waived debt, named with the decision that waived it. Printed BEFORE the findings and
+        # never folded into them: an operator reading a clean lane must still see what the lane
+        # passed on a decision rather than on evidence, and be able to go and read that decision.
+        # Grouped by (stage, decision) with the ids elided, because one inherited cohort is one
+        # fact - printed per unit it buries the findings it sits above.
+        waived_groups: dict[tuple, list[str]] = {}
+        for u in result["units"]:
+            for w in u.get("waived", []):
+                waived_groups.setdefault((w["stage"], w["decision"]), []).append(u["id"])
+        for (stage, did), ids in sorted(waived_groups.items()):
+            print(f"  WAIVED {stage}: {len(ids)} unit(s) by {did} "
+                  f"({_elide(ids)}) - see sdlc-studio/decisions.md")
         tally: dict[str, int] = {}
         for u in result["units"]:
             if not u["conformant"]:

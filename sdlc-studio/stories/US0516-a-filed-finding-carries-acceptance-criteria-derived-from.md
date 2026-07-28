@@ -1,6 +1,6 @@
 # US0516: A filed finding carries acceptance criteria derived from its own evidence, so a lane has a contract to deliver against
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0458
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** it is written
 - **Then** the artefact carries a criterion derived from its evidence, so the engagement floor and the delivery lane both have something to read
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::FiledCriteriaTests::test_a_filed_finding_carries_a_criterion
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a finding whose evidence cannot support a criterion says so rather than emitting a placeholder
 
@@ -31,6 +32,7 @@
 - **When** it is filed
 - **Then** the artefact records that explicitly instead of carrying a scaffold that reads like content
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::FiledCriteriaTests::test_thin_evidence_is_stated_not_scaffolded
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

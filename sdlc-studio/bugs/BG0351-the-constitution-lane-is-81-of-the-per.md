@@ -1,6 +1,7 @@
 # BG0351: The constitution lane is 81% of the per-commit artefact gate, and the hook documents that gate as ~1s
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/constitution.py, .claude/skills/sdlc-studio/scripts/gate.py, .githooks/pre-commit

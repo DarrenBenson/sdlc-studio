@@ -28,10 +28,38 @@ import file_finding  # noqa: E402  (reuse ensure_index - the index helper)
 
 SKILL = Path(__file__).resolve().parent.parent
 SDLC = "sdlc-studio"
-# The full tree: the 8 numbered-artifact dirs plus the cross-cutting workspaces.
-DIRS = ["epics", "stories", "plans", "bugs", "change-requests", "rfcs", "test-specs",
-        "workflows", "retros", "handoffs", "decisions", "reviews", ".local"]
-INDEX_TYPES = ["epic", "story", "plan", "bug", "cr", "rfc", "test-spec", "workflow"]
+# The cross-cutting workspaces: not numbered artefact types, so they cannot be derived from
+# the type table and are named here. Every NUMBERED type's directory comes from the table.
+WORKSPACE_DIRS = ["retros", "handoffs", "decisions", "reviews", ".local"]
+
+
+def _dir_under_sdlc(rel: str) -> str:
+    """The path of a type's directory relative to the `sdlc-studio/` workspace root."""
+    head, sep, tail = rel.partition("/")
+    if head != SDLC or not sep:
+        raise ValueError(f"artefact directory {rel!r} does not sit under {SDLC}/")
+    return tail
+
+
+def index_types() -> list[str]:
+    """Every numbered artefact type, read from the shipped table at call time.
+
+    Derived, never typed out: a type added to the table must get its directory and index on a
+    new project without anyone remembering to edit this file. A hand-written list silently
+    exempts what it forgot, which is exactly how new projects came to have no issues
+    directory and no way to file an issue."""
+    return list(sdlc_md.ARTIFACT_TYPES)
+
+
+def tree_dirs() -> list[str]:
+    """The full tree: one directory per numbered type (derived) plus the workspaces."""
+    return [_dir_under_sdlc(sdlc_md.ARTIFACT_TYPES[t][0]) for t in index_types()] + WORKSPACE_DIRS
+
+
+# Snapshots for callers that introspect the module. `init()` calls the functions above, so a
+# type added to the table is covered even if these were bound before it existed.
+DIRS = tree_dirs()
+INDEX_TYPES = index_types()
 SINGLETONS = ["prd", "trd", "tsd", "personas"]
 AGENT_FILES = [("agent-instructions.md", "AGENTS.md"),
                ("agent-instructions.CLAUDE.md", "CLAUDE.md")]
@@ -477,7 +505,7 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
             p.write_text(content, encoding="utf-8")
 
     # 1. directory tree
-    for d in DIRS:
+    for d in tree_dirs():
         rel = f"{SDLC}/{d}"
         if (root / rel).is_dir():
             skipped.append(rel + "/")
@@ -487,7 +515,7 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
                 (root / rel).mkdir(parents=True, exist_ok=True)
 
     # 2. per-type indexes (reuse the index helper; idempotent)
-    for t in INDEX_TYPES:
+    for t in index_types():
         idx_rel = f"{sdlc_md.ARTIFACT_TYPES[t][0]}/_index.md"
         if (root / idx_rel).exists():
             skipped.append(idx_rel)

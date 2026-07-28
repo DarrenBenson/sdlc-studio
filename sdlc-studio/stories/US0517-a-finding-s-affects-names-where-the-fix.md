@@ -1,6 +1,6 @@
 # US0517: A finding's Affects names where the fix will land rather than where the evidence was read, and includes the test file
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0458
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** it is filed
 - **Then** the Affects names the paths the fix will touch, and the evidence location is recorded as evidence rather than as footprint
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::AffectsFootprintTests::test_affects_names_the_fix_site
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a source file's companion test is included when one exists by convention
 
@@ -31,6 +32,7 @@
 - **When** it is filed
 - **Then** the test file is in the Affects, because a fix lands in both and a footprint naming one is understated
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::AffectsFootprintTests::test_the_companion_test_is_included
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

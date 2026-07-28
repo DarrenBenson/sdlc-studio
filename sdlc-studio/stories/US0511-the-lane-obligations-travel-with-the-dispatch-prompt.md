@@ -1,6 +1,6 @@
 # US0511: The lane obligations travel with the dispatch prompt, so they do not depend on who wrote that sprint's brief
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0463
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the brief is built
 - **Then** it carries the refuse-without-criteria, verify-before-returning and return-the-proof obligations, from the shared template rather than from the caller
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneContractTests::test_the_dispatch_carries_the_obligations
+- **Verified:** yes (2026-07-28)
 
 ### AC2: the reference states them where an author of a new harness will read them
 
@@ -31,6 +32,7 @@
 - **When** it is read
 - **Then** the obligations appear there, so a project building its own dispatch inherits them rather than rediscovering them
 - **Verify:** pytest tools/tests/test_doc_claims.py::LaneObligationDocsTests::test_the_obligations_are_documented
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

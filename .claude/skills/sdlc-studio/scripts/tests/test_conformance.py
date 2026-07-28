@@ -282,7 +282,7 @@ class CliTests(unittest.TestCase):
             # reporting a failure differently never enforces less.
             self.assertEqual(set(data["summary"]),
                              {"total", "conformant", "nonconformant", "exempt", "ungroomed",
-                              "global_failures", "judged", "advisory"})
+                              "global_failures", "judged", "advisory", "waived"})
 
 
 try:
@@ -1188,6 +1188,135 @@ class TwoRoleCutoffOnUlidIdsTests(unittest.TestCase):
             u = _units(root)[self.ULID]
             self.assertIn("critiqued", u["missing"],
                           "the two-role gate stood down for a v3 ULID unit")
+
+
+def _decisions_mod():
+    spec = importlib.util.spec_from_file_location("decisions", SCRIPT.parent / "decisions.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.modules["decisions"] = m
+    spec.loader.exec_module(m)
+    return m
+
+
+def _waive(root, subject, rationale="recorded, reasoned, inherited debt") -> str:
+    return _decisions_mod().record_waiver(root, subject, rationale)["id"]
+
+
+def _index(root, statuses: dict) -> None:
+    """A story index matching the fixture, so the repo-global `reconciled` stage is clean and
+    the waiver under test is the only thing moving the verdict."""
+    rows = "".join(f"| [US{n:04d}](US{n:04d}-sample.md) | sample | {s} |\n"
+                   for n, s in sorted(statuses.items()))
+    (root / "sdlc-studio" / "stories" / "_index.md").write_text(
+        "# Stories\n\n| ID | Title | Status |\n|---|---|---|\n" + rows, encoding="utf-8")
+
+
+class WaiverTests(unittest.TestCase):
+    """US0525 / CR0460: the lane reads the recorded waivers. D0074 waived the pre-two-role
+    critic debt through the sanctioned `decisions waive` path and the lane never read it, so
+    the waived units were reported non-conformant on every clean-tree run - which is the state
+    a close runs in, so the escape hatch the gate's own remedy text recommends was invisible
+    precisely when it was needed."""
+
+    def test_a_waived_unit_reports_as_waived_naming_the_decision(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, status="Done")          # Done, no critic verdict -> missing critiqued
+            _index(root, {1: "Done"})
+            did = _waive(root, "rule:conformance:critiqued:US0001")
+            mod = _load()
+            res = mod.detect_conformance(root)
+            u = {x["id"]: x for x in res["units"]}["US0001"]
+            self.assertEqual([w["stage"] for w in u["waived"]], ["critiqued"])
+            self.assertEqual(u["waived"][0]["decision"], did)   # the decision is NAMED
+            self.assertNotIn("critiqued", u["missing"])
+            self.assertTrue(u["conformant"], u["missing"])
+            self.assertEqual(res["summary"]["nonconformant"], 0)
+            self.assertEqual(res["summary"]["waived"], 1)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = mod.main(["check", "--root", str(root)])
+            out = buf.getvalue()
+            self.assertEqual(rc, 0, out)            # a waived unit does not block the lane
+            self.assertIn(did, out)                 # ... and the report says which decision
+            self.assertIn("waived", out.lower())
+
+    def test_an_unwaived_unit_is_still_reported(self) -> None:
+        """A waiver NARROWS the finding rather than silencing the lane: it clears the stage it
+        names, for the units it covers, and nothing else."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, status="Done", verify=False)   # missing verifiable AND critiqued
+            _story(root, 2, status="Done")                 # missing critiqued, covered
+            _story(root, 3, status="Done")                 # missing critiqued, OUTSIDE the scope
+            _index(root, {1: "Done", 2: "Done", 3: "Done"})
+            _waive(root, "rule:conformance:critiqued:US0001-US0002")   # an id range, as recorded
+            res = _load().detect_conformance(root)
+            units = {x["id"]: x for x in res["units"]}
+            # covered on the stage named, still reported on the stage it was not
+            self.assertEqual([w["stage"] for w in units["US0001"]["waived"]], ["critiqued"])
+            self.assertIn("verifiable", units["US0001"]["missing"])
+            self.assertFalse(units["US0001"]["conformant"])
+            self.assertTrue(units["US0002"]["conformant"])
+            # outside the waiver's scope: judged exactly as before
+            self.assertEqual(units["US0003"]["waived"], [])
+            self.assertIn("critiqued", units["US0003"]["missing"])
+            self.assertEqual(res["summary"]["nonconformant"], 2)
+
+    def test_a_ulid_scoped_waiver_covers_its_unit(self) -> None:
+        """A v3 ULID id carries the same dash a range does. Read as a range it resolves to
+        nothing and the waiver covers nobody - silently, and on the newest ids, which is the
+        shape BG0318 already cost this gate once."""
+        mod = _load()
+        ulid = "US-01JQK3F8"
+        waivers = [{"stage": "critiqued", "scope": ulid.lower(), "decision": "D0009"}]
+        self.assertEqual(mod.waived_stages(waivers, ulid, ["critiqued"]),
+                         [{"stage": "critiqued", "decision": "D0009"}])
+        # ... and it covers that unit ONLY
+        self.assertEqual(mod.waived_stages(waivers, "US-01JQK3F9", ["critiqued"]), [])
+        self.assertEqual(mod.waived_stages(waivers, "US0288", ["critiqued"]), [])
+
+    def test_a_scope_that_resolves_to_nothing_covers_nothing(self) -> None:
+        """A scope tail naming neither a unit nor a range must narrow to nobody, never widen to
+        everybody: a misspelled waiver is a waiver of nothing, not a waiver of the whole rule."""
+        mod = _load()
+        waivers = [{"stage": "critiqued", "scope": "pre-two-role", "decision": "D0074"}]
+        for rid in ("US0288", "US0103", "US-01JQK3F8"):
+            self.assertEqual(mod.waived_stages(waivers, rid, ["critiqued"]), [], rid)
+        # the bare rule, with no tail at all, is the deliberate way to waive it everywhere
+        every = [{"stage": "critiqued", "scope": "", "decision": "D0074"}]
+        self.assertEqual([w["decision"] for w in mod.waived_stages(every, "US0288", ["critiqued"])],
+                         ["D0074"])
+
+    def test_the_waiver_holds_on_a_clean_tree(self) -> None:
+        """The defect's actual shape: it only appeared to pass when there was a diff to scope
+        to. A close runs on a CLEAN tree, where the lane judges the whole workspace - so the
+        waiver must hold identically in both."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            _story(root, 1, status="Done")
+            _index(root, {1: "Done"})
+            did = _waive(root, "rule:conformance:critiqued:US0001")
+            gitutil.git(["init", "-q"], cwd=root)
+            gitutil.git(["add", "-A"], cwd=root)
+            gitutil.git(["commit", "-qm", "baseline"], cwd=root)
+
+            clean = mod.detect_conformance(root, changed=True)   # nothing changed: a close
+            self.assertTrue(clean["scope"]["degraded"])          # no diff -> judged everything
+            self.assertEqual(clean["summary"]["judged"], 1)      # ... so it WAS judged
+            u = {x["id"]: x for x in clean["units"]}["US0001"]
+            self.assertEqual([w["decision"] for w in u["waived"]], [did])
+            self.assertEqual(clean["summary"]["nonconformant"], 0)
+            self.assertEqual(clean["summary"]["global_failures"], 0)
+
+            p = root / "sdlc-studio" / "stories" / "US0001-sample.md"
+            p.write_text(p.read_text(encoding="utf-8") + "\n<!-- edited -->\n", encoding="utf-8")
+            dirty = mod.detect_conformance(root, changed=True)
+            self.assertFalse(dirty["scope"]["degraded"])
+            d_unit = {x["id"]: x for x in dirty["units"]}["US0001"]
+            self.assertEqual(u["waived"], d_unit["waived"])      # identical in both
+            self.assertEqual(dirty["summary"]["nonconformant"], 0)
 
 
 if __name__ == "__main__":

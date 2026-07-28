@@ -31,29 +31,65 @@ import validate  # noqa: E402
 import reconcile  # noqa: E402
 
 
+# --- shared detector results, computed at most once per `check_constitution` run.
+#
+# Several rules read the same census, so a project declaring two integrity-backed
+# principles ran two full integrity sweeps. The memo is keyed by resolved root and CLEARED
+# at the start of every check: a memo that outlived its run would answer the next check
+# from the previous tree, which is a gate passing a repo it never looked at.
+
+_RUN_CACHE: dict = {}
+
+
+def _memo(root: Path, key: str, produce):
+    k = (key, str(Path(root).resolve()))
+    if k not in _RUN_CACHE:
+        _RUN_CACHE[k] = produce()
+    return _RUN_CACHE[k]
+
+
+def _integrity_findings(root: Path) -> list[dict]:
+    return _memo(root, "integrity", lambda: integrity.detect_integrity(root)["findings"])
+
+
+def _conformance_units(root: Path) -> list[dict]:
+    """The per-unit conformance ledger, WITHOUT the Done-only stages.
+
+    The two rules below read `specified` and `verifiable` - the Definition-of-Ready
+    signals, computed for every unit whatever the scope. The Done-only stages (verified,
+    critiqued, ...) are the expensive half: resolving each stamped criterion's selector
+    costs one `pytest --collect-only` per test file, and that was 26.6s of a 32.9s
+    per-commit artefact gate here - 81% of it - for an answer no declared rule reads.
+    An empty explicit scope is the detector's documented way to charge nothing per unit;
+    it narrows what is JUDGED, never what `specified`/`verifiable`/`exempt` say.
+    """
+    return _memo(root, "conformance",
+                 lambda: conformance.detect_conformance(root, scope_ids=set())["units"])
+
+
 # --- the checkable-rule vocabulary: rule name -> detector(root) -> [violation strings]
 
 
 def _r_story_requires_epic(root: Path) -> list[str]:
     return [f"{f['id']}: missing {f['field']} link"
-            for f in integrity.detect_integrity(root)["findings"]
+            for f in _integrity_findings(root)
             if f["kind"] == "missing-required" and f["type"] == "story" and f["field"] == "Epic"]
 
 
 def _r_links_resolve(root: Path) -> list[str]:
     return [f"{f['id']}.{f['field']} -> {f['ref']} (no such artifact)"
-            for f in integrity.detect_integrity(root)["findings"] if f["kind"] == "dangling"]
+            for f in _integrity_findings(root) if f["kind"] == "dangling"]
 
 
 def _r_ac_requires_verify(root: Path) -> list[str]:
     return [f"{u['id']}: no Verify line"
-            for u in conformance.detect_conformance(root)["units"]
+            for u in _conformance_units(root)
             if not u.get("exempt") and u["stages"].get("verifiable") is False]
 
 
 def _r_story_has_ac(root: Path) -> list[str]:
     return [f"{u['id']}: no acceptance criteria"
-            for u in conformance.detect_conformance(root)["units"]
+            for u in _conformance_units(root)
             if not u.get("exempt") and u["stages"].get("specified") is False]
 
 
@@ -110,6 +146,7 @@ def check_constitution(repo_root: Path | str) -> dict:
     """Assert each checkable principle. Returns the report; `ok` is False only when a
     gated principle is violated."""
     root = Path(repo_root)
+    _RUN_CACHE.clear()   # this run reads the tree as it is now, never a previous run's
     result: dict = {"exists": constitution_path(root).exists(), "enforced": False,
                     "gated": [], "advisory": [], "unknown_rules": [], "violations": [], "ok": True}
     if not result["exists"]:

@@ -1397,6 +1397,158 @@ class DuplicateScopeParityTests(unittest.TestCase):
             self.assertIn("CR0100", [c["id"] for c in any_type])
 
 
+class FiledCriteriaTests(unittest.TestCase):
+    """US0516/CR0458: a filed bug carried Steps to Reproduce and a Proposed Fix and NO acceptance
+    criteria, so a lane picking it up had to infer the contract from a summary - and the
+    engagement floor read the unit as unplanned. The criterion is DERIVED from the finding's own
+    evidence, and where the evidence cannot support one that is STATED rather than scaffolded: a
+    `{{placeholder}}` reads like content and a checkbox nobody derived buys a false pass at the
+    floor."""
+
+    EVIDENCED = {
+        "severity": "High",
+        "summary": "The close chain skips the velocity row when the retro id arrives dashed.",
+        "steps": "Run `sprint close --retro RETRO-0049` against a tree holding RETRO0049-x.md.",
+        "fix": "Normalise the retro id through sdlc_md.norm_id before globbing for the file.",
+        "affects": "src/thing.py", "points": 3,
+    }
+
+    def test_a_filed_finding_carries_a_criterion(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            res = ff.file_finding(root, "bug", "a defect", dict(self.EVIDENCED))
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertIn("## Acceptance Criteria", body)
+            # the criterion is CHECKABLE, so the engagement floor and the lane both read it
+            self.assertGreater(sdlc_md.count_acs(body), 0, body)
+            # ... and DERIVED from this finding's own evidence, not boilerplate: the criteria
+            # quote the steps and the fix the author actually wrote
+            acs = "\n".join(ln for ln in body.splitlines() if ln.startswith("- [ ]"))
+            self.assertIn("norm_id", acs)
+            self.assertIn("RETRO-0049", acs)
+            self.assertNotIn("{{", body)
+
+    def test_thin_evidence_is_stated_not_scaffolded(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            res = ff.file_finding(root, "bug", "a defect",
+                                  {"severity": "High", "summary": "s", "steps": "r", "fix": "f",
+                                   "affects": "src/thing.py", "points": 3})
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertIn("## Acceptance Criteria", body)
+            # stated, in the artefact, naming the thin fields
+            self.assertIn(ff.THIN_EVIDENCE_MARK, body)
+            self.assertIn("steps", body)
+            # ... and NOT a scaffold: no placeholder, and no checkbox nobody derived - a
+            # checkbox here would satisfy the engagement floor on a finding that planned nothing
+            self.assertNotIn("{{", body)
+            self.assertEqual(sdlc_md.count_acs(body), 0, body)
+
+    def test_an_authored_criterion_is_never_overwritten(self) -> None:
+        # A CR arrives with its own acceptance criteria; the derivation must not displace them.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "cr")
+            res = ff.file_finding(root, "cr", "t",
+                                  {"priority": "Low", "ctype": "Improvement", "summary": "s",
+                                   "acs": ["the operator's own criterion"], "impact": "i",
+                                   "size": "M", "affects": "src/x.py"})
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertIn("- [ ] the operator's own criterion", body)
+            self.assertEqual(sdlc_md.count_acs(body), 1, body)
+
+
+class AffectsFootprintTests(unittest.TestCase):
+    """US0517/CR0458: `Affects` is where the FIX LANDS. Filers kept writing the file the evidence
+    was READ in, which is a different file - so the plan's collision analysis grouped the unit by
+    the wrong surface and the footprint was understated by the test file besides. The evidence
+    location is now recorded AS evidence, and an existing companion test is put in the footprint
+    rather than merely mentioned in a warning nobody acts on."""
+
+    def _tree(self, root: Path) -> None:
+        _seed_index(root, "bug")
+        (root / "scripts").mkdir(parents=True, exist_ok=True)
+        (root / "scripts" / "thing.py").write_text("x\n", encoding="utf-8")
+        (root / "scripts" / "tests").mkdir(parents=True, exist_ok=True)
+        (root / "scripts" / "tests" / "test_thing.py").write_text("x\n", encoding="utf-8")
+        ev = root / "sdlc-studio" / "reviews"
+        ev.mkdir(parents=True, exist_ok=True)
+        (ev / "RV0021-round-two.md").write_text("x\n", encoding="utf-8")
+
+    def _affects_line(self, body: str) -> str:
+        return next(ln for ln in body.splitlines() if ln.startswith("> **Affects:**"))
+
+    def test_affects_names_the_fix_site(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tree(root)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                res = ff.file_finding(root, "bug", "a defect",
+                                      {"severity": "High", "summary": "s", "steps": "r",
+                                       "fix": "f", "points": 3,
+                                       "affects": "scripts/thing.py",
+                                       "evidence": "sdlc-studio/reviews/RV0021-round-two.md:88"})
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            line = self._affects_line(body)
+            # the footprint is the FIX site, as the planner's own parser reads it
+            self.assertIn("scripts/thing.py", sdlc_md.affects_files(line))
+            # ... and the evidence site is NOT in it
+            self.assertNotIn("RV0021", line)
+            self.assertTrue(all("RV0021" not in p for p in sdlc_md.affects_files(line)), line)
+            # ... it is recorded as evidence instead, so the trace is kept, not discarded
+            self.assertIn("> **Evidence:** sdlc-studio/reviews/RV0021-round-two.md:88", body)
+
+    def test_the_companion_test_is_included(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tree(root)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                res = ff.file_finding(root, "bug", "a defect",
+                                      {"severity": "High", "summary": "s", "steps": "r",
+                                       "fix": "f", "points": 3, "affects": "scripts/thing.py"})
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            declared = sdlc_md.affects_files(self._affects_line(body))
+            self.assertIn("scripts/thing.py", declared)
+            self.assertIn("scripts/tests/test_thing.py", declared)
+            self.assertIn("scripts/tests/test_thing.py", err.getvalue())  # and said so
+
+    def test_a_test_with_no_source_partner_is_left_alone(self) -> None:
+        # Nothing is invented: with no companion on disk the footprint is written as declared.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            (root / "scripts").mkdir(parents=True, exist_ok=True)
+            (root / "scripts" / "lonely.py").write_text("x\n", encoding="utf-8")
+            with contextlib.redirect_stderr(io.StringIO()):
+                res = ff.file_finding(root, "bug", "a defect",
+                                      {"severity": "High", "summary": "s", "steps": "r",
+                                       "fix": "f", "points": 3, "affects": "scripts/lonely.py"})
+            declared = sdlc_md.affects_files(
+                self._affects_line(Path(res["path"]).read_text(encoding="utf-8")))
+            self.assertEqual(declared, ["scripts/lonely.py"])
+
+    def test_the_cli_takes_the_evidence_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tree(root)
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                rc = ff.main(["file", "--type", "bug", "--title", "a defect",
+                              "--severity", "High", "--summary", "s", "--steps", "r", "--fix", "f",
+                              "--affects", "scripts/thing.py", "--points", "3",
+                              "--evidence", "sdlc-studio/reviews/RV0021-round-two.md:88",
+                              "--root", str(root)])
+            self.assertEqual(rc, 0)
+            filed = [p for p in (root / "sdlc-studio" / "bugs").glob("*.md")
+                     if p.name != "_index.md"]
+            self.assertIn("> **Evidence:** sdlc-studio/reviews/RV0021-round-two.md:88",
+                          filed[0].read_text(encoding="utf-8"))
+
+
 class CompanionTestFootprintTests(unittest.TestCase):
     """BG0343: a declared `Affects` that names a source file and NOT its existing companion test
     is an understated footprint. Nothing refused it, so the plan's collision analysis, the

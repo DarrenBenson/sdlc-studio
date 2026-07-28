@@ -1,6 +1,6 @@
 # US0521: A lesson violated again after being carried is reported at the close, naming the unit that repeated it
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0464
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the close runs
 - **Then** the repeat is reported, naming the lesson and the unit, so the evidence is attached to the work that produced it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RepeatTests::test_a_repeat_after_carrying_is_reported_with_its_unit
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a lesson that was not carried is not counted as a repeat
 
@@ -31,6 +32,7 @@
 - **When** the close runs
 - **Then** it is not reported as a repeat, because the claim is about what was carried and read, not about the whole registry
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RepeatTests::test_an_uncarried_lesson_is_not_a_repeat
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

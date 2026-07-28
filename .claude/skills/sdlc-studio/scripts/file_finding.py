@@ -475,10 +475,46 @@ def missing_companion_tests(repo_root: Path | str, affects_value: str,
     return out
 
 
+def complete_affects(repo_root: Path | str, affects_value: str,
+                     type_: str | None = None) -> tuple[str, list[tuple[str, str]]]:
+    """The declared `Affects` with each source file's EXISTING companion test folded in, plus the
+    `(source, test)` pairs that were added. Read-only over the tree; nothing is invented, because
+    `missing_companion_tests` fires only where the test is already on disk.
+
+    Warning about the gap was not enough. The message printed, the artefact was written with the
+    understated footprint anyway, and the plan then read it - so the harm the warning described
+    happened every time it was shown. The tool holds the exact path at the moment it complains, so
+    it writes it: a fix lands in the source AND its test, and a footprint naming one is short by
+    the other."""
+    missing = missing_companion_tests(repo_root, affects_value, type_)
+    if not missing:
+        return str(affects_value or ""), []
+    declared = declared_affects(affects_value)
+    return ", ".join([*declared, *(t for _s, t in missing)]), missing
+
+
+def report_completed_affects(added: list[tuple[str, str]], label: str = "") -> None:
+    """Say what was added to the footprint and why. Not silent: an author who did not mean the
+    fix to touch the test must be able to see the tool widened their declaration and edit it."""
+    if not added:
+        return
+    where = f"{label}: " if label else ""
+    lines = "\n".join(f"    {src} is tested by {cand} - added to Affects"
+                      for src, cand in added)
+    print(f"note: {where}the declared Affects named source files without their existing tests, so "
+          f"the footprint was understated - a fix lands in both.\n{lines}\n"
+          f"  Why it matters: an understated footprint mis-groups the unit in the plan's "
+          f"collision analysis, under-reads it in the engagement floor and misreports it in "
+          f"gate's changed-surface pass.\n"
+          f"  Affects is where the FIX LANDS, not where the evidence was read. Edit the artefact "
+          f"if the fix genuinely will not touch the test.", file=sys.stderr)
+
+
 def warn_missing_companion_tests(repo_root: Path | str, affects_value: str,
                                  type_: str | None = None, label: str = "") -> list[tuple[str, str]]:
-    """Report an understated footprint at filing time, naming the exact test path, and return the
-    pairs reported (empty when there is nothing to say). A warning, never a refusal."""
+    """Report an understated footprint without changing it, and return the pairs reported. Kept as
+    the read-only half for callers that inspect a footprint they do not own (`complete_affects` is
+    what the FILER uses, because a filer can fix what it finds)."""
     missing = missing_companion_tests(repo_root, affects_value, type_)
     if not missing:
         return []
@@ -487,12 +523,117 @@ def warn_missing_companion_tests(repo_root: Path | str, affects_value: str,
                       for src, cand in missing)
     print(f"warning: {where}the declared Affects names source files without their existing "
           f"tests - a fix lands in both, so the footprint is understated.\n{lines}\n"
-          f"  Why it matters: an understated footprint mis-groups the unit in the plan's "
-          f"collision analysis, under-reads it in the engagement floor and misreports it in "
-          f"gate's changed-surface pass - silently, because nothing refuses it.\n"
           f"  Affects is where the FIX LANDS, not where the evidence was read. Add the test "
           f"path(s) above if the fix will touch them.", file=sys.stderr)
     return missing
+
+
+# --- The derived acceptance criterion: a filed finding carries its own contract -------------
+#
+# A filed bug carried Steps to Reproduce and a Proposed Fix and NOTHING a lane could deliver
+# against. Two costs, both measured on this repository's own backlog: whoever picked the unit up
+# had to infer the contract from a summary, and the engagement floor read the unit as unplanned
+# and refused the batch that held it.
+#
+# So a criterion is DERIVED from the finding's own evidence at filing time, when the author's
+# context is at its richest. Derived, never invented: the criterion quotes the words the author
+# wrote, and where the evidence cannot support one that is STATED in the artefact rather than
+# scaffolded. A `{{placeholder}}` reads like content to everything downstream, and a checkbox
+# nobody derived is worse still - it would satisfy the engagement floor on a finding that planned
+# nothing, which is the exact failure this exists to end. The thin note is therefore a PARAGRAPH:
+# `sdlc_md.count_acs` counts checkboxes and AC headings, so a stated absence stays an absence.
+
+#: How many words of a field it takes to state what 'fixed' would look like. Below this the field
+#: is a token ('r', 'f', 'see above'), which yields a criterion that only restates the token.
+MIN_EVIDENCE_WORDS = 5
+
+#: The opening of the stated-absence paragraph. Exported so the caller (and the test that pins
+#: this) matches the tool's own string rather than a second copy of it.
+THIN_EVIDENCE_MARK = "No acceptance criterion could be derived from this finding's evidence"
+
+#: Required fields that CLASSIFY a finding (a severity, a priority) or that ARE criteria already.
+#: Everything else in a type's `required` tuple is prose evidence, so a required field added later
+#: becomes a criterion source without anybody remembering to list it here - the set is derived from
+#: `TYPES`, never enumerated beside it.
+_NON_EVIDENCE_FIELDS = frozenset({"severity", "priority", "ctype", "acs", "options"})
+
+#: How each evidence field reads as a criterion. A field with no form here still yields one through
+#: `_CRITERION_FALLBACK`, so a source this table forgets is covered rather than silently exempt.
+_CRITERION_FORM = {
+    "steps": "Following the recorded steps no longer reproduces the defect: {gist}",
+    "fix": "The proposed fix lands, pinned by a test: {gist}",
+    "summary": "The behaviour described is corrected: {gist}",
+    "impact": "The impact described no longer follows: {gist}",
+}
+_CRITERION_FALLBACK = "The recorded {field} is satisfied: {gist}"
+_GIST_MAX = 160
+
+
+def evidence_fields(type_: str) -> tuple[str, ...]:
+    """The prose fields of a type a criterion can be derived from, read off the type's OWN
+    `required` tuple minus the fields that classify rather than evidence. Derived, so a required
+    field added to `TYPES` later is a criterion source from the moment it is added."""
+    return tuple(k for k in TYPES.get(type_, {}).get("required", ())
+                 if k not in _NON_EVIDENCE_FIELDS)
+
+
+def evidence_gist(value) -> str:
+    """One field's evidence as a single clause: fenced/indented code stripped (an illustration is
+    not a statement of the contract), `{{placeholder}}` scaffolding removed, whitespace collapsed,
+    cut at the first sentence and bounded. Empty when nothing substantive is left."""
+    text = _strip_code_blocks(str(value or ""))
+    text = re.sub(r"\{\{.*?\}\}", " ", text)
+    text = re.sub(r"<!--.*?-->", " ", text, flags=re.DOTALL)
+    flat = " ".join(text.split())
+    if not flat:
+        return ""
+    m = re.search(r"[.!?](?:\s|$)", flat)
+    first = flat[:m.start() + 1] if m else flat
+    if len(first) > _GIST_MAX:
+        first = first[:_GIST_MAX].rsplit(" ", 1)[0].rstrip(" ,;:") + "..."
+    return first.strip()
+
+
+def _is_thin(gist: str) -> bool:
+    """A gist too thin to state a contract from: fewer than `MIN_EVIDENCE_WORDS` words."""
+    return len(gist.split()) < MIN_EVIDENCE_WORDS
+
+
+def derived_criteria(type_: str, fields: dict) -> list[str]:
+    """The acceptance criteria derived from a finding's own evidence, one per evidence field that
+    carries enough to state a contract from. Empty when the author supplied their own `acs` (an
+    authored criterion is never displaced by a derived one) and when every field is thin."""
+    if fields.get("acs"):
+        return []
+    out: list[str] = []
+    for key in evidence_fields(type_):
+        gist = evidence_gist(fields.get(key))
+        if not gist or _is_thin(gist):
+            continue
+        form = _CRITERION_FORM.get(key, _CRITERION_FALLBACK)
+        out.append(form.format(field=key, gist=gist))
+    return out
+
+
+def thin_evidence_note(type_: str, fields: dict) -> str:
+    """The stated absence written in place of a criterion, naming the fields whose evidence was
+    too thin. A paragraph, deliberately: it must read as an absence to a human AND count as one
+    to `sdlc_md.count_acs`, or a finding that planned nothing would pass the engagement floor."""
+    thin = [k for k in evidence_fields(type_) if _is_thin(evidence_gist(fields.get(k)))]
+    named = ", ".join(f"`{k}`" for k in thin) or "none of its prose fields"
+    return (f"{THIN_EVIDENCE_MARK}: {named} carries fewer than {MIN_EVIDENCE_WORDS} words of "
+            f"substance, so nothing here states what fixed would look like. Whoever picks this "
+            f"up agrees the contract with the author before starting - this is a stated gap, "
+            f"not a criterion to tick.")
+
+
+def criteria_block(type_: str, fields: dict) -> str:
+    """The body of a filed finding's `## Acceptance Criteria` section: derived checkboxes, or the
+    stated absence. The one renderer both halves share."""
+    derived = derived_criteria(type_, fields)
+    if derived:
+        return "\n".join(f"- [ ] {c}" for c in derived)
+    return thin_evidence_note(type_, fields)
 
 
 def scan_prose_acs(text: str) -> list[tuple[int, str, str]]:
@@ -535,8 +676,11 @@ COMMON_FIELDS_FILE_KEYS: tuple[str, ...] = (
     "points", "size", "affects", "acs", "options", "recommendation", "parent", "author",
     "date",
 )
+#: The filer's own extra keys. `evidence` is deliberately NOT in the common set: it is the finding
+#: filer's record of WHERE a defect was observed, and a key the general creator would accept and
+#: then ignore is the silent-loss class the fields-file refusal exists to end.
 FIELDS_FILE_KEYS: tuple[str, ...] = (*COMMON_FIELDS_FILE_KEYS,
-                                     "mutation_run", "mutation_target")
+                                     "mutation_run", "mutation_target", "evidence")
 
 #: The `--fields-file` spelling that means "read the document from stdin" - the family
 #: convention, so no writer grows its own.
@@ -894,6 +1038,19 @@ def _affects_line(f: dict) -> str:
     return f"> **Affects:** {val}\n" if val else ""
 
 
+def _evidence_line(f: dict) -> str:
+    """The `Evidence` metadata line: WHERE the finding was observed - a review, a transcript, a
+    log, a file and line.
+
+    A separate field from `Affects` on purpose. `Affects` is the sprint FOOTPRINT the planner
+    reads, so a filer who wrote the evidence location into it declared a footprint that is not
+    where any code will change: the collision analysis then groups the unit by the wrong surface.
+    Losing the trace instead would be no better, so it is recorded here, where nothing reads it as
+    a file the fix will touch."""
+    val = str(f.get("evidence") or "").strip()
+    return f"> **Evidence:** {val}\n" if val else ""
+
+
 def _mutation_link_lines(f: dict) -> str:
     """The `Mutation-run` / `Mutation-target` metadata lines: which mutation run raised this
     finding, and which file the mutant sat in.
@@ -985,11 +1142,15 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
         points = f"> **Points:** {f['points']}\n" if f.get("points") is not None else ""
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Open'}\n> **Severity:** {f['severity']}\n"
-                f"{points}{_affects_line(f)}{_mutation_link_lines(f)}"
+                f"{points}{_affects_line(f)}{_evidence_line(f)}{_mutation_link_lines(f)}"
                 f"> **Created:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Steps to Reproduce\n\n{f['steps']}\n\n"
                 f"## Proposed Fix\n\n{f['fix']}\n\n"
+                # Derived from the evidence above, so the lane that picks this up has a contract
+                # and the engagement floor has something to read. Thin evidence is STATED here,
+                # never scaffolded - see `criteria_block`.
+                f"## Acceptance Criteria\n\n{_md_safe(criteria_block(type_, f))}\n\n"
                 f"## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
                 f"{rev_row(today, f, 'Filed')}\n")
     if type_ == "cr":
@@ -999,7 +1160,7 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
         acs = "\n".join(f"- [ ] {a}" for a in stripped)
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Proposed'}\n> **Priority:** {f['priority']}\n"
-                f"> **Type:** {f['ctype']}\n{_size_line(f)}{_affects_line(f)}"
+                f"> **Type:** {f['ctype']}\n{_size_line(f)}{_affects_line(f)}{_evidence_line(f)}"
                 f"{_mutation_link_lines(f)}"
                 f"> **Date:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
@@ -1010,7 +1171,7 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
     options = "\n".join(f"- **{o}**" for o in f["options"])
     decision = _decision_question(title, f["options"])
     return (f"# {disp_id}: {title}\n\n"
-            f"> **Status:** {status or 'Draft'}\n{_size_line(f)}{_affects_line(f)}"
+            f"> **Status:** {status or 'Draft'}\n{_size_line(f)}{_affects_line(f)}{_evidence_line(f)}"
             f"{_mutation_link_lines(f)}"
             f"> **Date:** {today}\n{_stamp(f)}\n"
             f"## Summary\n\n{f['summary']}\n\n"
@@ -1099,6 +1260,10 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     # anything is allocated or written - the same guard the general creator runs, from the
     # same authority, so neither path is an escape hatch for the other.
     sdlc_md.check_creator_fields({**fields, "title": title})
+    # `Evidence` is written into a metadata line of its own, so it is held to the same
+    # one-line rule as every other metadata field rather than being the one that can break out.
+    if isinstance(fields.get("evidence"), str):
+        sdlc_md.require_single_line("evidence", fields["evidence"])
     # ... and refuse a CR/bug criterion carrying a command-shaped `Verify:` - a check nobody runs.
     check_prose_acs(type_, fields)
     root = Path(repo_root)
@@ -1107,9 +1272,13 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     # ... and refuse a declared `Affects` that resolves to nothing, before an id is allocated,
     # from the ONE seam every writer shares - naming the closest basename match where there is one.
     check_affects_resolvable(root, fields.get("affects"), type_)
-    # ... and REPORT an understated one: a source file declared without its existing test is a
-    # footprint smaller than the change, which nothing else would ever say out loud.
-    warn_missing_companion_tests(root, fields.get("affects"), type_)
+    # ... and COMPLETE an understated one: a source file declared without its existing test is a
+    # footprint smaller than the change, and the tool holds the exact path at the moment it would
+    # otherwise only complain about it. Written, then reported - never silently.
+    completed, added = complete_affects(root, fields.get("affects"), type_)
+    if added:
+        fields = {**fields, "affects": completed}
+        report_completed_affects(added)
     # ... and refuse an attribution to a mutation run the series does not hold, before an id is
     # allocated: a finding stamped with an unresolvable run claims a provenance nobody can check.
     fields = check_mutation_run(root, fields)
@@ -1214,7 +1383,7 @@ def cmd_file(args: argparse.Namespace) -> int:
     flags = {"severity": args.severity, "priority": args.priority, "ctype": args.ctype,
              "summary": args.summary, "steps": args.steps, "fix": args.fix,
              "impact": args.impact, "points": args.points, "size": args.size,
-             "affects": args.affects,
+             "affects": args.affects, "evidence": getattr(args, "evidence", None),
              "author": args.author, "recommendation": args.recommendation,
              "parent": getattr(args, "parent", None),
              "mutation_run": getattr(args, "mutation_run", None),
@@ -1313,6 +1482,11 @@ def build_parser() -> argparse.ArgumentParser:
                         "of the footprint. Required for a bug and a cr: `sprint plan` refuses a "
                         "unit that names no files - it cannot size one, nor see two units "
                         "colliding on the same file. Optional on an rfc (not a sprint unit)")
+    f.add_argument("--evidence",
+                   help="WHERE this finding was observed - a review, a transcript, a log, a "
+                        "file:line. Recorded as the `Evidence` metadata line and deliberately "
+                        "kept OUT of `Affects`: the evidence site is not where the fix lands, and "
+                        "a footprint naming it groups the unit by a surface no code will change")
     f.add_argument("--ac", action="append", help="cr acceptance criterion (repeatable)")
     f.add_argument("--option", action="append", help="rfc design option (repeatable)")
     f.add_argument("--recommendation", help="rfc recommendation")

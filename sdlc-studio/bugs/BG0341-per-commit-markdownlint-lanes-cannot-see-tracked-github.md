@@ -1,6 +1,7 @@
 # BG0341: Per-commit markdownlint lanes cannot see tracked .github/ markdown; only the excluded weekly corpus job covers it
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .githooks/pre-commit

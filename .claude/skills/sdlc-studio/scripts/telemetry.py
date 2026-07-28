@@ -136,11 +136,34 @@ _ISO_Z = "%Y-%m-%dT%H:%M:%SZ"
 
 
 def _parse_iso(value) -> "datetime | None":
+    """Any ISO-8601 stamp carrying an explicit UTC offset, normalised to UTC. None otherwise.
+
+    THIS IS THE ONE STAMP READER FOR THE WHOLE MEASUREMENT PATH, so what it refuses is what the
+    reports cannot see - and a refusal is not reported as one bad row. `sprint_report._run_window`
+    skips a run whose `started_at` will not parse; with no window the report says no run state
+    names this sprint's units, which is false and reads as a sprint that measured nothing.
+
+    It matched ONE hand-written pattern, `%Y-%m-%dT%H:%M:%SZ` - the form this project writes via
+    `sdlc_md.now_iso8601()`, but not the form the standard library writes. `.isoformat()` on an
+    aware datetime yields `+00:00`, and that call is live in this tree (gate.py's cost and
+    sign-off records, review_prep's freshness stamp), as it is in any consuming project whose
+    state this reads. The Z form stays the fast path; anything else goes through
+    `fromisoformat`, with `Z` rewritten as `+00:00` so Python 3.10 accepts it too.
+
+    A NAIVE stamp is still refused. It names no instant, and calling it UTC would invent the one
+    fact it is missing - unreadable is the honest reading of it. Sub-second precision is kept
+    rather than rounded away."""
     from datetime import datetime, timezone  # noqa: PLC0415 - local, as elsewhere here
+    text = str(value).strip()
     try:
-        return datetime.strptime(str(value), _ISO_Z).replace(tzinfo=timezone.utc)
+        return datetime.strptime(text, _ISO_Z).replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        pass
+    try:
+        parsed = datetime.fromisoformat(text[:-1] + "+00:00" if text.endswith("Z") else text)
     except (TypeError, ValueError):
         return None
+    return None if parsed.tzinfo is None else parsed.astimezone(timezone.utc)
 
 
 def idle_gaps(state: dict) -> list[dict]:

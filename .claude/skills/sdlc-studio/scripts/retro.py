@@ -102,6 +102,20 @@ REQUIRED_SECTIONS = (
     "Actions raised",
 )
 
+# The curated set the retro decides for the NEXT batch. Not in REQUIRED_SECTIONS: the
+# demand is CONDITIONAL, and a section listed there is demanded of every retro in every project.
+#
+# The condition is derived from the log rather than declared: curation is a CHOICE between lessons,
+# so it only means something when there are more lessons than the carried set can hold. A project
+# with three lessons has nothing to choose between - its whole log is the readable set - and a
+# ceremony demanded where there is no judgement to make is exactly the theatre that teaches people
+# to bypass a gate. A project with 252 has the condition the rule exists for.
+#
+# The SIZE of the set is not declared here: `lessons.carried_max` owns it, and `carried_max`
+# below delegates. Fixed by construction, not by discipline - a set that can grow is the
+# 252-entry summary again.
+CARRIED_SECTION = "Carried lessons"
+
 # `## Heading` -> body, to the next `##` of the same level.
 SECTION_RE = re.compile(r"^##\s+(.+?)\s*$")
 
@@ -318,6 +332,53 @@ def lessons_in(text: str) -> list[str]:
     return _real_bullets(sections(text).get("Lessons", []))
 
 
+def carried_max(root) -> int:
+    """How many lessons the carried set holds - delegated to `lessons.carried_max`, which is the
+    ONE reader of that number. The writer that enforces the size and the check that judges it must
+    not be able to disagree, and a second copy of the default here is precisely how they would."""
+    return lessons.carried_max(root)
+
+
+def carried_in(text: str) -> list[str]:
+    """The lessons this retro curated for the next batch. A `{{placeholder}}` bullet counts as
+    nothing, exactly as it does in `## Lessons` - a scaffold is the template talking."""
+    return _real_bullets(sections(text).get(CARRIED_SECTION, []))
+
+
+def curation_applies(root) -> tuple[bool, int]:
+    """Whether this project has more still-valid lessons than the carried set can hold, and how
+    many it has. Read from the lessons store itself (`lessons.plan_digest`, the same reader the
+    sprint plan uses), never from a flag somebody has to remember to set."""
+    try:
+        count = int(lessons.plan_digest(root).get("count") or 0)
+    except Exception:  # noqa: BLE001 - an unreadable lessons store must not break the retro check
+        return False, 0
+    return count > carried_max(root), count
+
+
+def carried_errors(root, text: str) -> list[str]:
+    """What is wrong with this retro's curation: nothing when the project has fewer lessons than
+    the set can hold, otherwise a missing set or an oversized one. Each error names the section
+    and the number, so the remedy is readable without opening the source."""
+    applies, count = curation_applies(root)
+    if not applies:
+        return []
+    limit = carried_max(root)
+    carried = carried_in(text)
+    if not carried:
+        return [f"no curated set - '## {CARRIED_SECTION}' is missing, empty, or still holds its "
+                f"{{{{placeholder}}}}. This project carries {count} still-valid lesson(s), which "
+                f"is more than anyone reads: name the {limit} that matter most for the NEXT "
+                f"batch. A ranking is a fact about the past; the carried set is a decision about "
+                f"what to carry forward, and it is re-decided every retro"]
+    if len(carried) > limit:
+        return [f"'## {CARRIED_SECTION}' carries {len(carried)} lessons, over the limit of "
+                f"{limit} - refused. A set that can grow is a set nobody reads, which is the "
+                f"condition the {count}-lesson summary is already in. Drop one for each you add, "
+                f"and name what it displaced (`lessons carry --displaces`)"]
+    return []
+
+
 def dispositions_in(text: str) -> list[dict]:
     """Every row of `## Actions raised`, with its disposition classified.
 
@@ -385,6 +446,9 @@ def validate(root, retro_id: str) -> dict:
             "{{placeholder}}. A sprint that taught nothing is a claim, not a default; "
             "if it truly taught nothing, say so in a bullet")
 
+    # The curated set for the NEXT batch, demanded only where there is a choice to make.
+    errors.extend(carried_errors(root, text))
+
     rows = dispositions_in(text)
     if "Actions raised" in present and not rows:
         errors.append(
@@ -404,6 +468,7 @@ def validate(root, retro_id: str) -> dict:
         "path": str(path),
         "errors": errors,
         "lessons": lessons_in(text),
+        "carried": carried_in(text),
         "findings": rows,
         "filed": [r["detail"] for r in rows if r["state"] == "filed"],
         "fixed": [r["detail"] for r in rows if r["state"] == "fixed"],

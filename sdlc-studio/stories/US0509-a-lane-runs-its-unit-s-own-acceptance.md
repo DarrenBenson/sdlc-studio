@@ -1,6 +1,6 @@
 # US0509: A lane runs its unit's own acceptance criteria before returning, and a unit whose criteria do not pass comes back blocked
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0463
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

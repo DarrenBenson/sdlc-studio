@@ -270,8 +270,19 @@ run "floor-pending" \
   "plan the unit (one acceptance criterion, a Verify line, or a linked plan), or declare a real single-file footprint in its Affects field; the lane prints the per-unit remedies" \
   -- python3 "$skill/engagement_floor.py" check --pending --root .
 
-# Comprehensive artefact gate (fast, ~1s): conformance, reconcile drift, validate,
-# integrity, duplicate-id, doc-coverage, doc-freshness. This is the same gate CI runs.
+# Comprehensive artefact gate: conformance, reconcile drift, validate, integrity,
+# duplicate-id, doc-coverage, doc-freshness. This is the same gate CI runs.
+#
+# COST, measured, not guessed. This comment used to sell the gate as a one-second check.
+# Measured cold in fresh processes on this repo it was 32.9s - wrong by a factor of
+# thirty-three, and the largest lane in the whole hook was the one an operator had been
+# told to ignore. It is ~25s warm today against a declared 45s budget. Two changes landed
+# together: the constitution lane lost the Done-only conformance sweep no declared
+# principle read (-22s), and the reconcile lane stopped counting two of the nine drift
+# sources and now reads the same sweep `reconcile detect` does (+20s, and the correctness
+# it buys is that the two can no longer disagree about one tree). Most of what remains is
+# reconcile's own corpus re-reads. The gate prints its own `gate cost:` line and its
+# dominant lane on every run, so read that line rather than this comment for the number.
 if gate_out="$(python3 "$skill/gate.py" --root . 2>&1)"; then
   printf '  %sok%s   gate (conformance / reconcile / validate / integrity / duplicate-id / docs)\n' "$G" "$N"
 else
@@ -307,24 +318,57 @@ if [ -x node_modules/.bin/markdownlint ]; then
 elif command -v markdownlint >/dev/null 2>&1; then
   md_cmd="markdownlint"
 fi
+# WHAT GETS LINTED IS DERIVED FROM THE INDEX, NOT FROM A GLOB.
+#
+# These lanes used to name `**/*.md` plus one hand-added dot-directory (`.claude/**/*.md`).
+# markdownlint's glob cannot enter a dot-directory at all, so the enumeration was a list of
+# the dot-directories somebody remembered - and it silently exempted the ones it forgot:
+# three tracked files under `.github/` (the PR template and two issue templates) matched
+# neither glob here nor in `npm run lint:md`, so a markdown defect in them passed every
+# per-commit and per-push lane. Only the schedule-only corpus job ever saw them, which also
+# made the Node-absent SKIP message below untrue for exactly those files.
+#
+# `git ls-files` answers instead. It reads the INDEX, so a newly staged file is covered on
+# the commit that adds it and an unstaged scratch file is not linted at all; every tracked
+# dot-directory is covered without anybody having to think of it.
+#
+# >>> md-enumeration (executed verbatim by tools/tests/test_precommit_markdown_scope.py)
+md_root=(); md_payload=()
+while IFS= read -r -d '' f; do
+  case "$f" in
+    # Transient agent worktrees (parallel-delivery scratch): never shipped payload, and a
+    # builder's half-written markdown must not block an unrelated commit in the main tree.
+    .claude/worktrees/*) continue ;;
+    # The shipped payload has its own config (template/example rules relaxed, mechanics
+    # enforced), so it is linted as its own lane rather than under the root rule set.
+    .claude/*) md_payload+=("$f") ;;
+    *) md_root+=("$f") ;;
+  esac
+done < <(git ls-files -z -- '*.md')
+# <<< md-enumeration
+
 if [ -n "$md_cmd" ]; then
-  run "markdown" \
-    "markdown mechanics: blank lines around lists (MD032), heading levels, fenced blocks" \
-    "auto-fix most with: npm run lint:fix" \
-    -- $md_cmd '**/*.md' --ignore node_modules
-  # The shipped payload lives under a dot-directory the glob above cannot see; lint it
-  # explicitly with its own config (template/example rules relaxed, mechanics enforced).
-  # `.claude/worktrees/` holds transient agent worktrees (parallel-delivery scratch), which
-  # are never shipped payload and carry in-progress files - excluded so a builder's
-  # half-written markdown cannot block an unrelated commit in the main tree.
-  run "markdown-payload" \
-    "markdown mechanics of the SHIPPED skill payload (.claude/, invisible to the '**/*.md' glob)" \
-    "auto-fix most with: npm run lint:fix" \
-    -- $md_cmd --config .claude/skills/sdlc-studio/.markdownlint.json '.claude/**/*.md' \
-       --ignore '.claude/worktrees/**'
+  if [ "${#md_root[@]}" -gt 0 ]; then
+    run "markdown" \
+      "markdown mechanics: blank lines around lists (MD032), heading levels, fenced blocks" \
+      "auto-fix most with: npm run lint:fix" \
+      -- $md_cmd "${md_root[@]}"
+  else
+    printf '  %sSKIP%s markdown - no tracked markdown outside the payload.\n' "$Y" "$N"
+  fi
+  if [ "${#md_payload[@]}" -gt 0 ]; then
+    run "markdown-payload" \
+      "markdown mechanics of the SHIPPED skill payload (.claude/), under its own config" \
+      "auto-fix most with: npm run lint:fix" \
+      -- $md_cmd --config .claude/skills/sdlc-studio/.markdownlint.json "${md_payload[@]}"
+  else
+    printf '  %sSKIP%s markdown-payload - no tracked markdown under .claude/.\n' "$Y" "$N"
+  fi
 else
   printf '  %sSKIP%s markdown - markdownlint not found. Run %snpm install%s to enable it locally.\n' "$Y" "$N" "$B" "$N"
-  printf '       CI still enforces it, so a markdown-mechanics error can pass here and fail on push.\n'
+  printf '       CI enforces most of it, so a markdown-mechanics error can pass here and fail on push -\n'
+  printf '       but not all: `npm run lint:md` still globs, so it cannot see tracked dot-directory\n'
+  printf '       markdown (.github/) that the lanes above do. For those files this SKIP is total.\n'
 fi
 
 # Unit tests: only when the commit touches a file that can change a test outcome -

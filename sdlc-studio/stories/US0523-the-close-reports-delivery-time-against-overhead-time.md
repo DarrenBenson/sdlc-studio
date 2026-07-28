@@ -1,6 +1,6 @@
 # US0523: The close reports delivery time against overhead time as a ratio, beside the points and token figures
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0462
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the close reports
 - **Then** it states delivery time, overhead time and the ratio between them, alongside the figures it already carries
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::OverheadRatioTests::test_the_close_reports_the_ratio
+- **Verified:** yes (2026-07-28)
 
 ### AC2: the components are derived from what the run recorded, not estimated at close
 
@@ -31,6 +32,7 @@
 - **When** the ratio is computed
 - **Then** each component comes from the run's own record rather than from a figure invented at close time
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::OverheadRatioTests::test_the_components_are_derived_not_estimated
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

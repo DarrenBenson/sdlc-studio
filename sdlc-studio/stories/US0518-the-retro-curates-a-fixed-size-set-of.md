@@ -1,6 +1,6 @@
 # US0518: The retro curates a fixed-size set of carried lessons, and the content check requires it
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0464
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** its content check runs
 - **Then** it fails, naming the missing curation, so the set cannot quietly stop being maintained
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::CarriedLessonsTests::test_a_retro_without_a_curated_set_fails
+- **Verified:** yes (2026-07-28)
 
 ### AC2: the set is fixed size and a retro exceeding it is refused
 
@@ -31,6 +32,7 @@
 - **When** the check runs
 - **Then** it is refused, because a set that can grow is the 252-entry summary again
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::CarriedLessonsTests::test_an_oversized_carried_set_is_refused
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

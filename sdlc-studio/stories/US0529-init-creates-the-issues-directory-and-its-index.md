@@ -1,6 +1,6 @@
 # US0529: init creates the issues directory and its index, so the issue type is usable on a new project
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0457
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** init runs
 - **Then** the issues directory and its index exist and an issue can be filed immediately, with no hand-made directory
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::IssueTypeTests::test_init_creates_a_usable_issues_directory
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

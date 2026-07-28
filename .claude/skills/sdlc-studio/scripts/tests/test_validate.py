@@ -287,11 +287,16 @@ class ContradictedAffectsTests(unittest.TestCase):
     """US0292 AC4. `validate` and the planner must reach the same verdict on one artefact,
     because they read the same field for different purposes - the planner to cluster parallel
     work, the engagement floor to judge a declared footprint. Two implementations of
-    "contradicted" is how the same bytes come to pass one check and fail the other."""
+    "contradicted" is how the same bytes come to pass one check and fail the other.
 
-    def _story(self, root: Path, affects: str, verify: str) -> Path:
+    The fixtures are TERMINAL (US0528): the predicate is still the planner's and still shared,
+    but validate reports the `unresolvable` half only once the unit is closed, because
+    declaring the file you are about to create is what an open unit is for. What the two
+    readers must agree on is what is unresolvable, which is what these tests assert."""
+
+    def _story(self, root: Path, affects: str, verify: str, status: str = "Done") -> Path:
         return _write(root, "sdlc-studio/stories/US0001-x.md",
-                      f"# US0001: s\n\n> **Status:** Ready\n> **Affects:** {affects}\n"
+                      f"# US0001: s\n\n> **Status:** {status}\n> **Affects:** {affects}\n"
                       f"> **Points:** 2\n\n## Acceptance Criteria\n\n### AC1: a\n\n"
                       f"- **Given** x\n- **Verify:** {verify}\n")
 
@@ -1870,6 +1875,291 @@ class PlaceholderFenceTests(unittest.TestCase):
             self.assertTrue(any("a real blank" in f for f in found),
                             "the naive toggle left the fence state inverted and MISSED this")
             self.assertFalse(any("illustration" in f for f in found))
+
+
+class PartialCapabilityTests(unittest.TestCase):
+    """US0513: a unit that ships half a capability may say so, and saying so is only an
+    answer when it names the unit that ships the other half.
+
+    The declaration is read from an EXPLICIT place - the `> **Partial:**` metadata line or a
+    `## Scope note` section (the shape US0507 established at review) - never from prose that
+    happens to contain the words. CR0461, EP0178 and US0513 itself all discuss `consumer-only`
+    in their acceptance criteria; a phrase sweep over the whole body would refuse every one of
+    them, which is the lint-fires-on-the-text-describing-the-lint trap.
+    """
+
+    HEAD = "# {sid}: x\n\n> **Status:** {status}\n{extra}\n### AC1: y\n- **Verify:** file a.py\n"
+
+    def _unit(self, root, *, extra="", body="", sid="US9990", status="Done"):
+        return _write(root, f"sdlc-studio/stories/{sid}-x.md",
+                      self.HEAD.format(sid=sid, status=status, extra=extra) + body)
+
+    def _rules(self, path, root):
+        return [f["rule"] for f in validate.validate_file(path, "story", repo_root=root)]
+
+    def test_a_declared_partial_capability_is_accepted(self):
+        """Both declaration shapes pass when the follow-up is named."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            meta = self._unit(root, sid="US9990",
+                              extra="> **Partial:** consumer-only; follow-up BG0357\n")
+            self.assertEqual([r for r in self._rules(meta, root) if r.startswith("partial")], [],
+                             "a declaration that names its follow-up is a recorded gap, not a defect")
+
+            note = self._unit(root, sid="US9991", body=(
+                "\n## Scope note (added at review)\n\n"
+                "**This unit ships the CONSUMER only.** The producer half is filed as BG0357.\n"))
+            self.assertEqual([r for r in self._rules(note, root) if r.startswith("partial")], [],
+                             "the scope-note shape US0507 established must pass too")
+
+    def test_a_partial_capability_must_name_its_follow_up(self):
+        """No follow-up named -> refused. An acknowledged gap nobody owns is the same as an
+        unacknowledged one."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            meta = self._unit(root, sid="US9992", extra="> **Partial:** consumer-only\n")
+            self.assertIn("partial-no-followup", self._rules(meta, root))
+
+            note = self._unit(root, sid="US9993", body=(
+                "\n## Scope note\n\n**This unit ships the producer only.** The consumer is "
+                "not built yet.\n"))
+            self.assertIn("partial-no-followup", self._rules(note, root))
+
+            # the unit's OWN id is not a follow-up - it names nobody else
+            own = self._unit(root, sid="US9994",
+                             extra="> **Partial:** producer-only; see US9994\n")
+            self.assertIn("partial-no-followup", self._rules(own, root))
+
+            # and a `Partial:` value naming neither half is refused rather than read as
+            # "no declaration", which would silently exempt the unit
+            odd = self._unit(root, sid="US9995", extra="> **Partial:** half of it; BG0357\n")
+            self.assertIn("partial-scope", self._rules(odd, root))
+
+    def test_prose_discussing_the_rule_is_not_a_declaration(self):
+        """CR0461/EP0178/US0513 quote the phrase in their criteria. A body sweep would refuse
+        every artefact that describes this rule."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._unit(root, sid="US9996", body=(
+                "\n## Notes\n\nA unit whose mechanism has no caller states that as "
+                "consumer-only or producer-only.\n"))
+            self.assertEqual([r for r in self._rules(p, root) if r.startswith("partial")], [])
+
+
+class BugCriteriaTests(unittest.TestCase):
+    """US0514/US0515: a bug reaching a terminal status with no acceptance criteria is refused,
+    as a story reaching Done already is - and the corpus that already breaks the rule is
+    baselined from the checker's OWN output so the new rule blocks a new instance without
+    blocking on the backlog it reveals.
+    """
+
+    def _bug(self, root, bid="BG9990", status="Fixed", ac=""):
+        return _write(root, f"sdlc-studio/bugs/{bid}-x.md",
+                      f"# {bid}: x\n\n> **Status:** {status}\n\n## Summary\n\nsomething broke "
+                      f"at a.py:12\n{ac}")
+
+    def _findings(self, path, root, rule="no-ac"):
+        validate._baseline_cache.clear()
+        return [f for f in validate.validate_file(path, "bug", repo_root=root)
+                if f["rule"] == rule]
+
+    def _baseline(self, root, *entries):
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / validate._CRITERIA_BASELINE.split("/")[-1]).write_text(
+            "\n".join(entries) + "\n", encoding="utf-8")
+
+    # --- US0514 ---------------------------------------------------------------------------
+    def test_a_terminal_bug_with_no_criteria_is_refused(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            found = self._findings(self._bug(root), root)
+            self.assertEqual([f["severity"] for f in found], ["error"],
+                             "a bug at a terminal status with no criteria must be refused")
+            self.assertIn("acceptance criteria", found[0]["message"])
+
+            # ... and a bug that carries criteria is not
+            ok = self._bug(root, "BG9991", ac="\n## Acceptance Criteria\n\n- the crash is gone\n")
+            self.assertEqual(self._findings(ok, root), [])
+
+            # ... and a bug still in flight is not: the criteria are owed at the terminal
+            # status, which is where the record starts speaking for shipped code
+            live = self._bug(root, "BG9992", status="Open")
+            self.assertEqual(self._findings(live, root), [])
+
+    def test_the_terminal_set_is_derived_not_enumerated(self):
+        """A project whose bug vocabulary gains a terminal status is covered with no edit here.
+        Dies if the checker enumerates Fixed/Verified/Closed instead of asking the vocabulary."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            novel = self._bug(root, "BG9993", status="Retired")
+            self.assertEqual(self._findings(novel, root), [],
+                             "precondition: Retired is not a bug status yet")
+            vocab = sdlc_md.STATUS_VOCAB["bug"]
+            terminal = sdlc_md.TERMINAL_STATUS["bug"]
+            sdlc_md.STATUS_VOCAB["bug"] = [*vocab, "Retired"]
+            sdlc_md.TERMINAL_STATUS["bug"] = {*terminal, "Retired"}
+            try:
+                found = self._findings(novel, root)
+            finally:
+                sdlc_md.STATUS_VOCAB["bug"] = vocab
+                sdlc_md.TERMINAL_STATUS["bug"] = terminal
+            self.assertEqual([f["severity"] for f in found], ["error"],
+                             "the rule must follow the type's own terminal set")
+
+    # --- US0515 ---------------------------------------------------------------------------
+    def test_a_baselined_unit_reports_as_debt(self):
+        """The record is CAPTURED from the checker's own output, not hand-written: the emitter
+        and the reader are pinned to each other here, so a format drift fails this test rather
+        than silently quietening nothing."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, "BG9990")
+            self._bug(root, "BG9991")
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = validate.main(["check", "--root", str(root), "--type", "bug",
+                                    "--emit-baseline"])
+            self.assertEqual(rc, 0, "emitting the baseline is a report, not a verdict")
+            emitted = buf.getvalue()
+            self.assertIn("BG9990", emitted)
+            self.assertIn("BG9991", emitted)
+
+            (root / "sdlc-studio" / validate._CRITERIA_BASELINE.split("/")[-1]).write_text(
+                emitted, encoding="utf-8")
+            found = self._findings(root / "sdlc-studio/bugs/BG9990-x.md", root)
+            self.assertEqual([f["severity"] for f in found], ["warning"],
+                             "a recorded pre-existing instance is known debt, not a block")
+            self.assertIn("baseline", found[0]["message"])
+
+            # and the run as a whole now passes: the rule does not block on the backlog it revealed
+            validate._baseline_cache.clear()
+            buf2 = io.StringIO()
+            with contextlib.redirect_stdout(buf2):
+                rc2 = validate.main(["check", "--root", str(root), "--type", "bug"])
+            self.assertEqual(rc2, 0, buf2.getvalue())
+
+    def test_a_new_instance_still_fails(self):
+        """Not in the baseline -> error. And removal is one-way: an id taken out errors from
+        then on, so the recorded count can only fall."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._baseline(root, "BG9990")
+            listed = self._bug(root, "BG9990")
+            fresh = self._bug(root, "BG9994")
+            self.assertEqual([f["severity"] for f in self._findings(listed, root)], ["warning"])
+            self.assertEqual([f["severity"] for f in self._findings(fresh, root)], ["error"],
+                             "a NEW criteria-less unit must still be refused")
+
+            self._baseline(root, "# nothing left")     # the id removed from the record
+            self.assertEqual([f["severity"] for f in self._findings(listed, root)], ["error"],
+                             "removal is one-way - the check errors on it from then on")
+
+    def test_an_absent_baseline_quietens_nothing(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            self.assertEqual([f["severity"] for f in self._findings(self._bug(root), root)],
+                             ["error"])
+
+
+class ScopedCheckTests(unittest.TestCase):
+    """US0527: validate can be pointed at one artefact, and a scoped run SAYS it was scoped.
+    US0528: the contradicted-`Affects` warning fires where a missing file is a real signal.
+    """
+
+    def _workspace(self, root):
+        _write(root, "sdlc-studio/stories/US0001-good.md", GOOD_STORY)
+        _write(root, "sdlc-studio/stories/US0002-bad.md",
+               "# X\n\n> **Status:** Frozen\n\n### AC1: y\n- **Verify:** file b\n")
+        _write(root, "sdlc-studio/stories/US0009-notes.md", "plain notes\n")  # census bait
+        _write(root, "sdlc-studio/definition-of-ready.md",
+               "- a criterion [check: no-such-check]\n")                      # DoR bait
+        return root / "sdlc-studio" / "stories" / "US0001-good.md"
+
+    def _json(self, root, *extra):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = validate.main(["check", "--root", str(root), "--format", "json", *extra])
+        return rc, json.loads(buf.getvalue())
+
+    def _text(self, root, *extra):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            validate.main(["check", "--root", str(root), *extra])
+        return buf.getvalue()
+
+    # --- US0527 ---------------------------------------------------------------------------
+    def test_a_single_artefact_can_be_checked(self):
+        """Points at one artefact in a workspace of many: its findings, and only what reading
+        it required. The read COUNT is asserted, not just the output - a scope that still swept
+        the tree and filtered the report afterwards would pass an output-only test."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            one = self._workspace(root)
+            real = validate.validate_file
+            read: list[str] = []
+
+            def counting(path, type_, repo_root=None):
+                read.append(Path(path).name)
+                return real(path, type_, repo_root)
+
+            validate.validate_file = counting
+            try:
+                rc, data = self._json(root, "--file", str(one))
+            finally:
+                validate.validate_file = real
+
+            self.assertEqual(read, ["US0001-good.md"], "the whole workspace was read")
+            self.assertEqual(data["checked"], 1)
+            self.assertEqual(rc, 0)
+            self.assertEqual({v["file"] for v in data["violations"]} - {str(one)}, set(),
+                             "only the named artefact's findings belong in a scoped report")
+            self.assertFalse(any(v["rule"] == "unknown-check-id" for v in data["violations"]),
+                             "the DoR sweep is not this artefact's business")
+
+    def test_a_scoped_run_states_its_scope(self):
+        """'no findings here' and 'no findings anywhere' are different claims. A clean scoped
+        run that does not say what it covered is read as the second."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            one = self._workspace(root)
+            out = self._text(root, "--file", str(one))
+            self.assertIn("scope:", out)
+            self.assertIn("US0001-good.md", out)
+            self.assertNotIn("US0002-bad.md", out)      # genuinely scoped, not merely narrated
+            _, data = self._json(root, "--file", str(one))
+            self.assertEqual(data["scope"]["file"], str(one))
+            self.assertEqual(data["scope"]["judged"], 1)
+
+            # the unscoped run makes the wider claim and does NOT carry the narrower one
+            full = self._text(root)
+            self.assertNotIn("scope:", full)
+
+    # --- US0528 ---------------------------------------------------------------------------
+    def _affects(self, root, sid, status, path):
+        return _write(root, f"sdlc-studio/stories/{sid}-x.md",
+                      f"# {sid}: x\n\n> **Status:** {status}\n> **Affects:** {path}\n\n"
+                      f"### AC1: y\n- **Verify:** file {path}\n")
+
+    def _rules(self, path, root):
+        return [f["rule"] for f in validate.validate_file(path, "story", repo_root=root)]
+
+    def test_a_draft_declaring_a_new_file_is_not_warned(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._affects(root, "US9970", "Draft", "src/not_written_yet.py")
+            self.assertNotIn("affects-unresolvable", self._rules(p, root),
+                             "declaring what you will create is the normal case for new work")
+
+    def test_a_terminal_unit_with_a_missing_path_is_still_warned(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._affects(root, "US9971", "Done", "src/never_existed.py")
+            self.assertIn("affects-unresolvable", self._rules(p, root),
+                          "at a terminal status the file should exist and its absence is real")
+            # and the file existing clears it, so the warning tracks the tree, not the status
+            _write(root, "src/never_existed.py", "x = 1\n")
+            self.assertNotIn("affects-unresolvable", self._rules(p, root))
 
 
 if __name__ == "__main__":

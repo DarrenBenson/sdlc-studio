@@ -1,6 +1,6 @@
 # US0519: A lesson earns a place only by displacing one, and the displaced lesson is named with the reason
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0464
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the change is recorded
 - **Then** it is refused unless a displaced lesson is named, so the size is held by construction rather than by discipline
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::DisplacementTests::test_adding_without_displacing_is_refused
+- **Verified:** yes (2026-07-28)
 
 ### AC2: the displaced lesson is named with its reason and stays in the registry
 
@@ -31,6 +32,7 @@
 - **When** it is recorded
 - **Then** the displaced lesson is named with why it was dropped, and remains in the full registry - displaced is not deleted
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::DisplacementTests::test_the_displaced_lesson_is_named_and_retained
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

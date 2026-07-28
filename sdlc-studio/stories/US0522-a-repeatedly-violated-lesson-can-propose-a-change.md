@@ -1,6 +1,6 @@
 # US0522: A repeatedly violated lesson can propose a change request or bug for the operator to accept or decline
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0464
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the close runs
 - **Then** it proposes a change request or bug carrying the lesson and its violations as evidence, for the operator to accept or decline
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::ProposalTests::test_a_repeated_lesson_proposes_a_unit
+- **Verified:** yes (2026-07-28)
 
 ### AC2: nothing is filed without acceptance
 
@@ -31,6 +32,7 @@
 - **When** the operator declines it
 - **Then** no artefact is created and the decline is recorded against the lesson, so the proposal cannot recur silently
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::ProposalTests::test_a_declined_proposal_files_nothing_and_is_recorded
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

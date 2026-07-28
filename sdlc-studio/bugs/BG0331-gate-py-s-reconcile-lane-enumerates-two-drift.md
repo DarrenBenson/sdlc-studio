@@ -1,6 +1,7 @@
 # BG0331: gate.py's reconcile lane enumerates two drift sources and exempts the five sweep-level detectors, re-creating the bug it
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py

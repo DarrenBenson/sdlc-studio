@@ -2227,5 +2227,86 @@ class AcDefectTests(unittest.TestCase):
             self.assertEqual(mod.ac_defects(p), [])
 
 
+class CallerNamedTests(unittest.TestCase):
+    """A criterion for a mechanism names the CALLER that consumes it.
+
+    Four mechanisms shipped in one sprint reaching nothing - a hash whose digest could never
+    match, a selection computed by one hook and ignored by the one that runs the tests, a
+    consumer whose producer did not exist. Each had passing tests and a green gate, because
+    every criterion described the function's own behaviour and nothing asked what would call
+    it. The check reads the criteria at authoring time, when the answer is a sentence.
+    """
+
+    def _unit(self, root: Path, num: int, affects: str, acs: str) -> Path:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        p = d / f"US{num:04d}-x.md"
+        p.write_text(f"# US{num:04d}: a unit\n\n> **Status:** Ready\n"
+                     f"> **Affects:** {affects}\n> **Points:** 3\n\n"
+                     f"## Acceptance Criteria\n\n{acs}", encoding="utf-8")
+        return p
+
+    def _file(self, root: Path, rel: str) -> None:
+        p = root / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("# marker\n", encoding="utf-8")
+
+    def test_a_mechanism_with_no_named_caller_is_reported(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._file(root, "src/thing.py")
+            self._file(root, "tests/test_thing.py")
+            self._unit(root, 1, "src/thing.py, tests/test_thing.py",
+                       "### AC1: the helper returns the digest\n\n"
+                       "- **Given** a payload\n- **When** the helper runs\n"
+                       "- **Then** it returns the digest\n"
+                       "- **Verify:** pytest tests/test_thing.py::T::t\n")
+            findings = mod.caller_findings(root, ["US0001"])
+            self.assertEqual([f["unit"] for f in findings], ["US0001"])
+            self.assertEqual(findings[0]["kind"], mod.CALLER_UNNAMED)
+            self.assertIn("AC1", findings[0]["criteria"],
+                          "the finding must NAME the criterion that describes a function with "
+                          "no consumer, not just the unit")
+            self.assertIn("AC1", findings[0]["detail"])
+            # the negative control: a check that fires on everything is not a check. A unit
+            # whose declared surface is documentation adds no mechanism, so it is not asked
+            # for a consumer.
+            self._file(root, "reference-x.md")
+            self._unit(root, 2, "reference-x.md",
+                       "### AC1: the reference states it\n\n- **Then** it is stated\n"
+                       "- **Verify:** file reference-x.md\n")
+            self.assertEqual(mod.caller_findings(root, ["US0002"]), [])
+
+    def test_the_named_caller_must_resolve(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._file(root, "src/thing.py")
+            self._file(root, "tests/test_thing.py")
+            self._file(root, "tools/hooks/pre-commit")
+            resolving = ("### AC1: the pre-commit hook consumes the digest\n\n"
+                         "- **Then** the hook refuses a stale digest\n"
+                         "- **Verify:** pytest tests/test_thing.py::T::t\n"
+                         "- **Caller:** the commit gate (tools/hooks/pre-commit)\n")
+            self._unit(root, 3, "src/thing.py, tests/test_thing.py", resolving)
+            self.assertEqual(mod.caller_findings(root, ["US0003"]), [],
+                             "a criterion naming a caller that exists satisfies the check")
+            # naming a caller that is nowhere in the tree is not a way past it: the whole
+            # failure being caught is a mechanism whose consumer does not exist
+            self._unit(root, 4, "src/thing.py, tests/test_thing.py",
+                       resolving.replace("tools/hooks/pre-commit", "tools/hooks/nightly-sweep"))
+            findings = mod.caller_findings(root, ["US0004"])
+            self.assertEqual([f["kind"] for f in findings], [mod.CALLER_UNRESOLVED])
+            self.assertIn("nightly-sweep", findings[0]["detail"])
+            self.assertIn("AC1", findings[0]["criteria"])
+            # an unreadable tree is not a tree in which nothing resolves: a scan that answered
+            # nothing must say so rather than fail every caller it was asked about
+            empty = root / "nothing-here"
+            empty.mkdir()
+            with self.assertRaises(ValueError):
+                mod.tree_index(empty)
+
+
 if __name__ == "__main__":
     unittest.main()

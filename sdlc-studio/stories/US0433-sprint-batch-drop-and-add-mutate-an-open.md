@@ -42,8 +42,8 @@ a day-one list that binds the close forever - without hand-editing the tool's ow
 - **When** the done-gate is evaluated
 - **Then** the Deferred unit still blocks (Deferred judges the WORK), while the dropped unit does not
   (drop judges THIS BATCH) - the two are not interchangeable
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::BatchMutationTests::test_drop_releases_the_done_gate_but_deferred_does_not
-- **Verified:** yes (2026-07-26)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DropVersusDeferredDoneGateTests
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

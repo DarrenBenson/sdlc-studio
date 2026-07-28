@@ -210,6 +210,73 @@ class ALessonIsTitledFromItsSentenceNotItsLine(RetroBase):
         self.assertIn("r = +0.03", text, "the body must keep the full text, not just the title")
 
 
+class CarriedLessonsTests(RetroBase):
+    """US0518/CR0464: 252 open lessons sat in the summary, ranked and printed at plan time and
+    still not read - a ranking of 252 is not something a working agent holds. The retro must
+    CURATE a fixed-size set for the next batch, and the content check must require it, or the
+    curation quietly stops being maintained the first sprint somebody is in a hurry.
+
+    The requirement is DERIVED, not universal: curation only means anything when there is more
+    than the set can hold. A project with three lessons has nothing to choose between, and a
+    ceremony demanded where there is no judgement to make is the theatre that gets bypassed."""
+
+    def log(self, n: int) -> None:
+        """A lessons log carrying `n` still-valid lessons."""
+        p = self.root / "sdlc-studio" / ".local" / "lessons.md"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        body = "# Project Lessons\n\n**Last Updated:** 2026-07-28\n"
+        for i in range(1, n + 1):
+            body += (f"\n## L-{i:04d}: lesson number {i}\n\n"
+                     f"- **Added:** 2026-07-28\n- **Rule:** do the {i}th thing\n")
+        p.write_text(body, encoding="utf-8")
+
+    def retro_with(self, carried: list[str]) -> str:
+        block = "## Carried lessons\n" + "".join(f"- {c}\n" for c in carried)
+        return FULL.replace("## Actions raised", block + "## Actions raised")
+
+    def test_a_retro_without_a_curated_set_fails(self) -> None:
+        self.log(20)                       # far more lessons than a set can hold
+        self.write(FULL)                   # ... and no curation in the retro
+        res = self.validate()
+        self.assertFalse(res["ok"])
+        self.assertTrue(any(retro.CARRIED_SECTION in e for e in res["errors"]), res["errors"])
+
+    def test_an_oversized_carried_set_is_refused(self) -> None:
+        self.log(20)
+        over = retro.carried_max(str(self.root)) + 1
+        self.write(self.retro_with([f"L-{i:04d}: lesson number {i}" for i in range(1, over + 1)]))
+        res = self.validate()
+        self.assertFalse(res["ok"])
+        self.assertTrue(any("carries" in e and str(over) in e for e in res["errors"]),
+                        res["errors"])
+
+    def test_a_curated_set_within_the_size_passes(self) -> None:
+        self.log(20)
+        self.write(self.retro_with([f"L-{i:04d}: lesson number {i}"
+                                    for i in range(1, retro.carried_max(str(self.root)) + 1)]))
+        res = self.validate()
+        self.assertTrue(res["ok"], res["errors"])
+        self.assertEqual(len(res["carried"]), retro.carried_max(str(self.root)))
+
+    def test_a_placeholder_set_is_not_a_curated_set(self) -> None:
+        self.log(20)
+        self.write(self.retro_with(["{{the lessons to carry}}"]))
+        res = self.validate()
+        self.assertFalse(res["ok"])
+        self.assertTrue(any(retro.CARRIED_SECTION in e for e in res["errors"]), res["errors"])
+
+    def test_nothing_to_curate_needs_no_curation(self) -> None:
+        """A project holding fewer lessons than the set can carry has no judgement to make; the
+        whole log IS the readable set. Demanding a ceremony there is how a gate teaches bypass."""
+        self.log(2)
+        self.write(FULL)
+        self.assertTrue(self.validate()["ok"], self.validate()["errors"])
+
+    def test_no_lessons_log_at_all_needs_no_curation(self) -> None:
+        self.write(FULL)
+        self.assertTrue(self.validate()["ok"], self.validate()["errors"])
+
+
 class GateUsesTheContentCheck(RetroBase):
     """The fix must hold at the PUBLIC path, not just in the helper (LL0024)."""
 

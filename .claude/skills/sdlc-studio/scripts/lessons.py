@@ -921,6 +921,477 @@ def plan_digest(repo_root, project_file=None, summary_path=None) -> dict:
             "reason": "no lessons recorded yet", "path": str(log)}
 
 
+# -----------------------------------------------------------------------------
+# The carried set: a fixed-size curation, held by construction
+# -----------------------------------------------------------------------------
+#
+# 252 open lessons sat in the summary, ranked and printed at the top of every plan, and were
+# still not applied - the recorded scar 'a test rename is cross-unit coupling' was violated four
+# times in one repair by the author who had filed it that same night. A ranking of 252 is a fact
+# about the past; nobody reads it and nobody holds it.
+#
+# So the retro CURATES a small set for the NEXT batch, and the size is held BY CONSTRUCTION rather
+# than by discipline: a lesson earns a place only by displacing one, named with the reason. A set
+# that can grow is the 252-entry summary again, and 'we will keep it short' is exactly the promise
+# that produced 252. Displaced is NOT deleted - the lesson stays in the full registry, which this
+# file never writes to; what changes is only what is carried forward.
+
+#: The carried set lives beside the retros and is COMMITTED, like LESSONS-SUMMARY.md: the log is
+#: gitignored, and a curation a fresh clone cannot read is a curation nobody reads.
+CARRIED_FILE = "sdlc-studio/retros/CARRIED-LESSONS.md"
+DEFAULT_CARRIED_MAX = 5
+CARRIED_MAX_KEY = "lessons.carried_max"
+
+CARRIED_HEADING = "## Carried"
+DISPLACED_HEADING = "## Displaced"
+DECLINED_HEADING = "## Declined proposals"
+_DISPLACED_ROW_RE = re.compile(
+    r"^\|\s*([0-9-]{10})\s*\|\s*(L-\d{4})\s*\|\s*(L-\d{4}|-)\s*\|\s*(.+?)\s*\|\s*$")
+_DECLINE_ROW_RE = re.compile(
+    r"^\|\s*([0-9-]{10})\s*\|\s*(L-\d{4})\s*\|\s*(\d+|-)\s*\|\s*(.+?)\s*\|\s*$")
+
+CARRIED_HEADER = """# Carried Lessons
+
+**Last Updated:** {date}
+
+The fixed-size set carried into the next batch, re-decided each retro. A lesson earns a place
+only by displacing one, named with the reason; the displaced lesson stays in the full registry.
+"""
+
+
+def default_carried_path(repo_root) -> Path:
+    return Path(repo_root) / CARRIED_FILE
+
+
+def carried_max(repo_root, explicit: int | None = None) -> int:
+    """How many lessons the carried set holds. THE reader of that number - `retro.carried_max`
+    delegates here - so the writer that enforces the size and the check that judges it cannot
+    drift. A non-positive or unparseable override falls back to the default rather than
+    silently disabling the rule."""
+    if explicit is not None:
+        return explicit if explicit > 0 else DEFAULT_CARRIED_MAX
+    raw = sdlc_md.project_override(repo_root, CARRIED_MAX_KEY, DEFAULT_CARRIED_MAX)
+    try:
+        n = int(raw)
+    except (TypeError, ValueError):
+        return DEFAULT_CARRIED_MAX
+    return n if n > 0 else DEFAULT_CARRIED_MAX
+
+
+def _section_lines(text: str, heading: str) -> list[str]:
+    """The lines under a `## Heading`, to the next heading of the same level."""
+    out: list[str] = []
+    inside = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            inside = line.strip() == heading
+            continue
+        if inside:
+            out.append(line)
+    return out
+
+
+def parse_carried(text: str) -> list[dict]:
+    """The carried set a CARRIED-LESSONS.md holds, in order. Rendered in the same bullet form as
+    the summary digest, so `SUMMARY_LINE_RE` reads both - one parser, not two."""
+    items = []
+    for line in _section_lines(text, CARRIED_HEADING):
+        m = SUMMARY_LINE_RE.match(line.strip())
+        if m:
+            items.append({"id": m.group(1), "title": m.group(2).strip(),
+                          "gist": (m.group(3) or "").strip()})
+    return items
+
+
+def parse_displaced(text: str) -> list[dict]:
+    """Every recorded displacement: what was dropped, what displaced it, and why."""
+    out = []
+    for line in _section_lines(text, DISPLACED_HEADING):
+        m = _DISPLACED_ROW_RE.match(line.strip())
+        if m:
+            out.append({"date": m.group(1), "id": m.group(2),
+                        "by": None if m.group(3) == "-" else m.group(3),
+                        "reason": m.group(4).strip()})
+    return out
+
+
+def parse_declines(text: str) -> list[dict]:
+    """Every declined proposal: which lesson, at what violation count, and why."""
+    out = []
+    for line in _section_lines(text, DECLINED_HEADING):
+        m = _DECLINE_ROW_RE.match(line.strip())
+        if m:
+            out.append({"date": m.group(1), "id": m.group(2),
+                        "count": int(m.group(3)) if m.group(3) != "-" else 0,
+                        "reason": m.group(4).strip()})
+    return out
+
+
+def render_carried(carried: list[dict], displaced: list[dict], declines: list[dict]) -> str:
+    """The whole CARRIED-LESSONS.md, rewritten from its parts. Derived output, like an
+    `_index.md`: it is regenerated rather than edited in place, so the file can never hold a
+    carried set and a displacement record that disagree."""
+    parts = [CARRIED_HEADER.format(date=sdlc_md.now_date()).rstrip() + "\n",
+             f"\n{CARRIED_HEADING}\n\n"]
+    if carried:
+        for c in carried:
+            gist = f" - {c['gist']}" if c.get("gist") else ""
+            parts.append(f"- **{c['id']}: {c['title']}**{gist}\n")
+    else:
+        parts.append("Nothing carried yet.\n")
+    parts.append(f"\n{DISPLACED_HEADING}\n\n| Date | Lesson | Displaced by | Reason |\n"
+                 f"| --- | --- | --- | --- |\n")
+    for d in displaced:
+        parts.append(f"| {d['date']} | {d['id']} | {d.get('by') or '-'} | {d['reason']} |\n")
+    parts.append(f"\n{DECLINED_HEADING}\n\n| Date | Lesson | At repeats | Reason |\n"
+                 f"| --- | --- | --- | --- |\n")
+    for d in declines:
+        parts.append(f"| {d['date']} | {d['id']} | {d.get('count') or 0} | {d['reason']} |\n")
+    return "".join(parts)
+
+
+def read_carried_file(path: Path) -> tuple[list[dict], list[dict], list[dict]]:
+    """(carried, displaced, declines) from the file, or three empty lists when it is absent."""
+    if not Path(path).is_file():
+        return [], [], []
+    text = Path(path).read_text(encoding="utf-8")
+    return parse_carried(text), parse_displaced(text), parse_declines(text)
+
+
+def registry_item(repo_root, lesson_id: str, project_file=None) -> dict | None:
+    """One still-valid lesson from the project log, in digest form, or None when the id names
+    nothing. Read from the log itself so a carried lesson is always one that exists: a set
+    listing an id nobody can open is a curation of nothing."""
+    log = Path(project_file) if project_file else default_project_file(repo_root)
+    if not log.is_file():
+        return None
+    want = str(lesson_id).strip()
+    for item in digest_items(parse_project_lessons(log.read_text(encoding="utf-8"))):
+        if item["id"] == want:
+            return item
+    return None
+
+
+def carry(repo_root, lesson_id: str, displaces: str | None = None, reason: str | None = None,
+          carried_path=None, project_file=None, max_carried: int | None = None) -> dict:
+    """Put a lesson in the carried set, displacing one when the set is full.
+
+    Raises ValueError - having written nothing - when the id names no still-valid lesson, when
+    the set is full and no displacement is named, when a displacement carries no reason, or when
+    the named displacement is not in the set. The project log is never touched, so a displaced
+    lesson stays in the full registry: it stopped being carried, it did not stop being true.
+    """
+    path = Path(carried_path) if carried_path else default_carried_path(repo_root)
+    limit = carried_max(repo_root, max_carried)
+    item = registry_item(repo_root, lesson_id, project_file)
+    if item is None:
+        raise ValueError(
+            f"{lesson_id} names no still-valid lesson in "
+            f"{project_file or default_project_file(repo_root)} - a carried set listing an id "
+            f"nobody can open is a curation of nothing. Record the lesson first "
+            f"(`lessons add`), or name one that is open.")
+    carried, displaced, declines = read_carried_file(path)
+    if any(c["id"] == item["id"] for c in carried):
+        return {"changed": False, "id": item["id"], "displaced": None,
+                "carried": [c["id"] for c in carried], "path": str(path)}
+    if displaces is not None:
+        gone = str(displaces).strip()
+        if not any(c["id"] == gone for c in carried):
+            raise ValueError(
+                f"{gone} is not in the carried set, so it cannot be displaced - the set holds "
+                f"{', '.join(c['id'] for c in carried) or 'nothing'}")
+        if not (reason or "").strip():
+            raise ValueError(
+                f"displacing {gone} needs a reason - the whole point of a displacement is the "
+                f"judgement it records, and a swap nobody justified is a swap nobody made a "
+                f"decision about. Pass --reason.")
+    elif len(carried) >= limit:
+        raise ValueError(
+            f"the carried set is full at {limit} - refused. A lesson earns a place only by "
+            f"DISPLACING one: say which of {', '.join(c['id'] for c in carried)} matters less "
+            f"than {item['id']} for the next batch, and why (--displaces <id> --reason <why>). "
+            f"A set that can grow is a set nobody reads, which is the condition the full "
+            f"registry is already in.")
+    if displaces is not None:
+        gone = str(displaces).strip()
+        carried = [c for c in carried if c["id"] != gone]
+        displaced = [*displaced, {"date": sdlc_md.now_date(), "id": gone, "by": item["id"],
+                                  "reason": " ".join(str(reason).split())}]
+    carried = [*carried, item]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    sdlc_md.atomic_write(path, render_carried(carried, displaced, declines))
+    return {"changed": True, "id": item["id"],
+            "displaced": str(displaces).strip() if displaces is not None else None,
+            "carried": [c["id"] for c in carried], "path": str(path)}
+
+
+def carried_digest(repo_root, carried_path=None) -> dict:
+    """The carried set as the sprint plan and the delivery briefs read it. The read point that
+    makes curation worth doing - a set nobody reads is a shorter list nobody reads."""
+    path = Path(carried_path) if carried_path else default_carried_path(repo_root)
+    carried, _displaced, _declines = read_carried_file(path)
+    return {"lessons": carried, "count": len(carried), "path": str(path)}
+
+
+# -----------------------------------------------------------------------------
+# Repeats: a lesson violated AFTER it was carried
+# -----------------------------------------------------------------------------
+#
+# A repeat is not a memory failure, it is a missing guard - and the only way to argue that is to
+# be able to point at the unit that repeated it. So violations are recorded as they are found
+# (by a reviewer, by the author, by a lane checking itself) and the close reports the ones whose
+# lesson was in the CARRIED set.
+#
+# The scoping is the whole claim. 'You were given five lessons to hold and this one still
+# happened' is evidence. 'One of 252 lessons was violated' is not, and folding the two together
+# would make the repeat count mean nothing - which is how the 252 got there.
+
+#: An append-only ledger, one JSON object per line, under `.local/`: it is working state for the
+#: current cycle, and the durable record is the retro and whatever the repeat causes to be filed.
+VIOLATIONS_FILE = "sdlc-studio/.local/lesson-violations.jsonl"
+
+
+def default_violations_path(repo_root) -> Path:
+    return Path(repo_root) / VIOLATIONS_FILE
+
+
+def record_violation(repo_root, lesson_id: str, unit: str, note: str = "",
+                     path=None, project_file=None, run: str | None = None) -> dict:
+    """Record that `unit` violated `lesson_id`. Refuses an id that names no still-valid lesson and
+    a violation with no unit: 'somebody did this somewhere' cannot be acted on, and an unattached
+    repeat is exactly the shape of finding that gets absorbed into a retro and forgotten."""
+    unit = str(unit or "").strip()
+    if not unit:
+        raise ValueError(
+            "a violation needs the unit that produced it - the point of reporting a repeat is "
+            "that the evidence stays attached to the work, and 'it happened somewhere' is not "
+            "something an operator can act on")
+    if registry_item(repo_root, lesson_id, project_file) is None:
+        raise ValueError(
+            f"{lesson_id} names no still-valid lesson - refusing to record a violation of "
+            f"something nobody can read. Record the lesson first (`lessons add`).")
+    p = Path(path) if path else default_violations_path(repo_root)
+    row = {"lesson": str(lesson_id).strip(), "unit": unit,
+           "note": " ".join(str(note or "").split()), "date": sdlc_md.now_date()}
+    if run:
+        row["run"] = str(run)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+    return row
+
+
+def violations(repo_root, path=None) -> list[dict]:
+    """Every recorded violation, in the order it was recorded. A malformed line is skipped rather
+    than fatal: a ledger one bad append cannot be read from would lose the whole record."""
+    p = Path(path) if path else default_violations_path(repo_root)
+    if not p.is_file():
+        return []
+    out: list[dict] = []
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(row, dict) and row.get("lesson") and row.get("unit"):
+            out.append(row)
+    return out
+
+
+def repeats(repo_root, carried_path=None, violations_path=None) -> list[dict]:
+    """The carried lessons that were violated anyway, each naming the units that repeated them.
+
+    A violation of a lesson OUTSIDE the carried set is deliberately not here. Most-repeated
+    first, so the one nearest a guard is read first."""
+    carried, _displaced, _declines = read_carried_file(
+        Path(carried_path) if carried_path else default_carried_path(repo_root))
+    by_id = {c["id"]: c for c in carried}
+    grouped: dict[str, dict] = {}
+    for v in violations(repo_root, violations_path):
+        lid = v["lesson"]
+        if lid not in by_id:
+            continue
+        entry = grouped.setdefault(lid, {"id": lid, "title": by_id[lid]["title"],
+                                         "units": [], "notes": [], "count": 0})
+        entry["count"] += 1
+        if v["unit"] not in entry["units"]:
+            entry["units"].append(v["unit"])
+        if v.get("note"):
+            entry["notes"].append(v["note"])
+    return sorted(grouped.values(), key=lambda r: (-r["count"], r["id"]))
+
+
+def repeat_report(repo_root, carried_path=None, violations_path=None) -> str:
+    """The close's repeat report, or "" when nothing repeated. Names the lesson AND every unit, so
+    the reader can go and look rather than take the count on trust."""
+    found = repeats(repo_root, carried_path, violations_path)
+    if not found:
+        return ""
+    lines = [f"{len(found)} carried lesson(s) were violated anyway - a repeat is evidence the "
+             f"lesson needs a guard, not a louder note:"]
+    for r in found:
+        lines.append(f"  {r['id']}: {r['title']}")
+        lines.append(f"    repeated {r['count']}x by {', '.join(r['units'])}")
+        for note in r["notes"][:3]:
+            lines.append(f"    - {note}")
+    return "\n".join(lines)
+
+
+# -----------------------------------------------------------------------------
+# Proposals: a repeat that keeps happening becomes work
+# -----------------------------------------------------------------------------
+#
+# The loop has to END somewhere other than in a longer list. A lesson violated once after being
+# carried is a repeat; a lesson violated repeatedly is a missing guard, and the honest response to
+# a missing guard is a change request or a bug, not a better-worded note.
+#
+# The operator decides. Nothing is filed on the tool's own authority: a proposal is offered with
+# its evidence attached, and a DECLINE is recorded against the lesson at the repeat count it was
+# declined on. That last part is what stops the proposal becoming nagging - it cannot return on
+# the same evidence, and it can return on new evidence, which is exactly the distinction a
+# 'dismiss' button loses.
+
+#: How many repeats it takes before a carried lesson proposes work. Strictly MORE than this, so
+#: the default of 2 means 'three times is a pattern'. Override with `lessons.repeat_threshold`.
+DEFAULT_REPEAT_THRESHOLD = 2
+REPEAT_THRESHOLD_KEY = "lessons.repeat_threshold"
+
+
+def repeat_threshold(repo_root, explicit: int | None = None) -> int:
+    """The repeat count a carried lesson must exceed before it proposes work."""
+    if explicit is not None:
+        return explicit if explicit > 0 else DEFAULT_REPEAT_THRESHOLD
+    raw = sdlc_md.project_override(repo_root, REPEAT_THRESHOLD_KEY, DEFAULT_REPEAT_THRESHOLD)
+    try:
+        n = int(raw)
+    except (TypeError, ValueError):
+        return DEFAULT_REPEAT_THRESHOLD
+    return n if n > 0 else DEFAULT_REPEAT_THRESHOLD
+
+
+def _proposal_evidence(rep: dict) -> str:
+    """The violations, as the evidence a proposal carries. The units are named, not counted: a
+    number is something to take on trust and a list is something to go and check."""
+    lines = [f"{rep['id']} was carried and violated {rep['count']} time(s) by "
+             f"{', '.join(rep['units'])}."]
+    lines.extend(f"- {n}" for n in rep["notes"])
+    return "\n".join(lines)
+
+
+def proposals(repo_root, type_: str = "cr", threshold: int | None = None,
+              carried_path=None, violations_path=None) -> list[dict]:
+    """The carried lessons repeated often enough to be worth a guard, each with its evidence.
+
+    A lesson already DECLINED at this repeat count or higher is not offered again - the operator
+    settled that evidence. One more violation is new evidence, and it comes back."""
+    limit = repeat_threshold(repo_root, threshold)
+    path = Path(carried_path) if carried_path else default_carried_path(repo_root)
+    _carried, _displaced, declines = read_carried_file(path)
+    declined_at = {}
+    for d in declines:
+        declined_at[d["id"]] = max(declined_at.get(d["id"], 0), d.get("count") or 0)
+    out = []
+    for rep in repeats(repo_root, carried_path, violations_path):
+        if rep["count"] <= limit or rep["count"] <= declined_at.get(rep["id"], 0):
+            continue
+        out.append({
+            "id": rep["id"], "lesson_title": rep["title"], "count": rep["count"],
+            "units": rep["units"], "type": type_,
+            "title": (f"Guard the repeatedly violated lesson {rep['id']}: "
+                      f"{rep['title'][:90]}"),
+            "evidence": _proposal_evidence(rep),
+        })
+    return out
+
+
+def _proposal_fields(prop: dict, affects: str, size: str | None, points: int | None) -> dict:
+    """The finding-filer fields for an accepted proposal. The lesson and every unit that repeated
+    it travel INTO the artefact, so whoever picks the work up reads the evidence, not a reference
+    to it."""
+    summary = (f"The lesson `{prop['id']}` ({prop['lesson_title']}) was carried into the batch "
+               f"and violated anyway, {prop['count']} time(s). A lesson repeated after being "
+               f"carried is a missing guard: a note that has already failed to work is not "
+               f"improved by being written again.\n\n{prop['evidence']}")
+    common = {"summary": summary, "affects": affects}
+    if prop["type"] == "bug":
+        return {**common, "severity": "Medium", "points": points or 3,
+                "steps": prop["evidence"],
+                "fix": (f"Make the class {prop['id']} describes mechanically impossible, or "
+                        f"detectable at the moment it happens, rather than relying on the "
+                        f"lesson being read.")}
+    return {**common, "priority": "Medium", "ctype": "Improvement", "size": size or "M",
+            "impact": (f"Every lane and every reviewer, in this project and any consuming one: "
+                       f"the lesson is being read and violated anyway, so each repeat costs a "
+                       f"review round and a repair cycle. Units so far: "
+                       f"{', '.join(prop['units'])}."),
+            "acs": [f"The class {prop['id']} describes is caught by a guard rather than by "
+                    f"whoever remembers the lesson.",
+                    "The guard is proven against the recorded violations above, not only "
+                    "against a fresh example."]}
+
+
+def accept_proposal(repo_root, lesson_id: str, type_: str = "cr", affects: str | None = None,
+                    size: str | None = None, points: int | None = None,
+                    threshold: int | None = None, carried_path=None, violations_path=None,
+                    dry_run: bool = False) -> dict:
+    """File the proposed unit for a repeatedly violated lesson, through the ordinary finding
+    filer - so it gets a collision-free id, an index row and every creation guard, exactly like
+    any other artefact.
+
+    `affects` is REQUIRED and deliberately not guessed: the tool knows the lesson kept being
+    violated, it does not know where the guard belongs, and inventing a footprint is the fictional
+    `Affects` the filer refuses anyway."""
+    found = [p for p in proposals(repo_root, type_, threshold, carried_path, violations_path)
+             if p["id"] == str(lesson_id).strip()]
+    if not found:
+        raise ValueError(
+            f"no open proposal for {lesson_id} - it is not carried, has not been repeated more "
+            f"than {repeat_threshold(repo_root, threshold)} time(s), or was already declined at "
+            f"this repeat count")
+    if not (affects or "").strip():
+        raise ValueError(
+            "accepting a proposal needs --affects: the guard has to land somewhere, and the tool "
+            "knows the lesson kept being violated, not where the guard belongs. A footprint the "
+            "tool invented is the fictional Affects the filer refuses anyway")
+    prop = found[0]
+    import file_finding  # noqa: PLC0415 - deferred: the filer imports the world, this does not
+    res = file_finding.file_finding(repo_root, prop["type"], prop["title"],
+                                    _proposal_fields(prop, affects, size, points),
+                                    dry_run=dry_run)
+    return {**res, "lesson": prop["id"], "count": prop["count"], "type": prop["type"]}
+
+
+def decline_proposal(repo_root, lesson_id: str, reason: str, threshold: int | None = None,
+                     carried_path=None, violations_path=None) -> dict:
+    """Decline a proposal: file NOTHING, and record the decline against the lesson at the repeat
+    count it was declined on.
+
+    Recorded rather than merely dropped, for the reason a decline is recorded anywhere else in
+    this workspace: a decision nobody wrote down comes back as the same question next week. The
+    count is the evidence the operator ruled on - a further violation is new evidence and the
+    proposal returns."""
+    lid = str(lesson_id).strip()
+    if not (reason or "").strip():
+        raise ValueError(
+            f"declining the proposal for {lid} needs a reason - a decline with no reason is "
+            f"silence wearing a decision's clothes, and the next reader cannot tell whether the "
+            f"guard was judged unnecessary or the question was just closed")
+    found = [p for p in proposals(repo_root, "cr", threshold, carried_path, violations_path)
+             if p["id"] == lid]
+    if not found:
+        raise ValueError(f"no open proposal for {lid} to decline")
+    path = Path(carried_path) if carried_path else default_carried_path(repo_root)
+    carried, displaced, declines = read_carried_file(path)
+    row = {"date": sdlc_md.now_date(), "id": lid, "count": found[0]["count"],
+           "reason": " ".join(str(reason).split())}
+    sdlc_md.atomic_write(path, render_carried(carried, displaced, [*declines, row]))
+    return {"filed": None, "lesson": lid, "count": row["count"], "path": str(path),
+            "reason": row["reason"]}
+
+
 def cross_digest(repo_root, lessons_dir=None) -> dict:
     """The ranked cross-project tier, in the shape the plan renders. One walk, not two."""
     ranked = rank_lessons(repo_root, lessons_dir)
@@ -1360,8 +1831,166 @@ def build_parser() -> argparse.ArgumentParser:
     _common(rk)
     rk.set_defaults(func=cmd_rank)
 
+    cy = sub.add_parser("carry",
+                        help="Put a lesson in the fixed-size carried set (displacing one when "
+                             "the set is full).")
+    cy.add_argument("--id", required=True, metavar="L-NNNN",
+                    help="The lesson to carry into the next batch")
+    cy.add_argument("--displaces", metavar="L-NNNN",
+                    help="The carried lesson this one replaces - required once the set is full, "
+                         "because the size is held by construction, not by good intentions")
+    cy.add_argument("--reason", help="Why the displaced lesson matters less now (required with "
+                                     "--displaces: the judgement IS the record)")
+    _common(cy)
+    cy.set_defaults(func=cmd_carry)
+
+    cd = sub.add_parser("carried", help="Show the carried set (and what it displaced).")
+    _common(cd)
+    cd.set_defaults(func=cmd_carried)
+
+    vi = sub.add_parser("violated",
+                        help="Record that a unit violated a lesson (a repeat, if it was carried).")
+    vi.add_argument("--id", required=True, metavar="L-NNNN", help="The lesson that was violated")
+    vi.add_argument("--unit", required=True, metavar="US0123",
+                    help="The unit that violated it - a repeat with no unit cannot be acted on")
+    vi.add_argument("--note", help="What happened, in one line")
+    vi.add_argument("--run", help="The run id, when there is one")
+    _common(vi)
+    vi.set_defaults(func=cmd_violated)
+
+    rp = sub.add_parser("repeats",
+                        help="Report carried lessons violated anyway, naming the units.")
+    _common(rp)
+    rp.set_defaults(func=cmd_repeats)
+
+    ps = sub.add_parser("propose",
+                        help="Offer a CR/bug for each repeatedly violated carried lesson, or "
+                             "--accept / --decline one.")
+    ps.add_argument("--id", metavar="L-NNNN",
+                    help="The lesson to accept or decline a proposal for (omit to list)")
+    act2 = ps.add_mutually_exclusive_group()
+    act2.add_argument("--accept", action="store_true",
+                      help="File the proposed unit (needs --affects)")
+    act2.add_argument("--decline", action="store_true",
+                      help="File nothing and record the decline against the lesson (needs "
+                           "--reason)")
+    ps.add_argument("--type", choices=("cr", "bug"), default="cr",
+                    help="What to propose (default: cr - a repeat is usually a missing guard)")
+    ps.add_argument("--affects", help="Where the guard will land (required with --accept: the "
+                                      "tool knows the lesson was violated, not where to fix it)")
+    ps.add_argument("--size", help="T-shirt size for an accepted cr")
+    ps.add_argument("--points", type=int, help="Points for an accepted bug")
+    ps.add_argument("--reason", help="Why the proposal is declined (required with --decline)")
+    ps.add_argument("--dry-run", action="store_true", help="Preview the filing, write nothing")
+    _common(ps)
+    ps.set_defaults(func=cmd_propose)
+
     sdlc_md.add_global_root(p)
     return p
+
+
+def cmd_carry(args: argparse.Namespace) -> int:
+    """Carry a lesson, refusing loudly rather than growing the set."""
+    try:
+        res = carry(_root(args), args.id, displaces=args.displaces, reason=args.reason,
+                    project_file=_project_file(args))
+    except ValueError as exc:
+        print(f"carry refused: {exc}", file=sys.stderr)
+        return 1
+    if args.format == "json":
+        print(json.dumps(res, indent=2))
+        return 0
+    if not res["changed"]:
+        print(f"{res['id']} is already carried ({len(res['carried'])} in the set)")
+        return 0
+    swap = f", displacing {res['displaced']}" if res["displaced"] else ""
+    print(f"carried {res['id']}{swap} -> {res['path']} ({len(res['carried'])} in the set)")
+    return 0
+
+
+def cmd_carried(args: argparse.Namespace) -> int:
+    """Print the carried set - the read point curation exists to serve."""
+    path = default_carried_path(_root(args))
+    carried, displaced, declines = read_carried_file(path)
+    if args.format == "json":
+        print(json.dumps({"carried": carried, "displaced": displaced, "declined": declines,
+                          "path": str(path)}, indent=2))
+        return 0
+    if not carried:
+        print(f"nothing carried yet ({path})")
+        return 0
+    print(f"{len(carried)} carried lesson(s) - read these before the batch:")
+    for c in carried:
+        gist = f" - {c['gist']}" if c.get("gist") else ""
+        print(f"  {c['id']}: {c['title']}{gist}")
+    return 0
+
+
+def cmd_violated(args: argparse.Namespace) -> int:
+    """Record a violation against a lesson."""
+    try:
+        row = record_violation(_root(args), args.id, args.unit, note=args.note or "",
+                               project_file=_project_file(args), run=args.run)
+    except ValueError as exc:
+        print(f"violation refused: {exc}", file=sys.stderr)
+        return 1
+    carried = {c["id"] for c in carried_digest(_root(args))["lessons"]}
+    if args.format == "json":
+        print(json.dumps({**row, "repeat": row["lesson"] in carried}, indent=2))
+        return 0
+    kind = "REPEAT of a carried lesson" if row["lesson"] in carried else "violation"
+    print(f"recorded {kind}: {row['lesson']} by {row['unit']}")
+    return 0
+
+
+def cmd_repeats(args: argparse.Namespace) -> int:
+    """Print the carried lessons that were violated anyway."""
+    root = _root(args)
+    if args.format == "json":
+        print(json.dumps({"repeats": repeats(root)}, indent=2))
+        return 0
+    text = repeat_report(root)
+    print(text if text else "no carried lesson was violated - nothing to report")
+    return 0
+
+
+def cmd_propose(args: argparse.Namespace) -> int:
+    """List, accept or decline the proposals a repeatedly violated lesson raises."""
+    root = _root(args)
+    if args.accept or args.decline:
+        if not args.id:
+            print("propose refused: --accept/--decline needs --id", file=sys.stderr)
+            return 1
+        try:
+            if args.accept:
+                res = accept_proposal(root, args.id, type_=args.type, affects=args.affects,
+                                      size=args.size, points=args.points, dry_run=args.dry_run)
+                print(json.dumps(res, indent=2) if args.format == "json"
+                      else f"{'would file' if args.dry_run else 'filed'} {res['id']} for "
+                           f"{res['lesson']} -> {res['path']}")
+            else:
+                res = decline_proposal(root, args.id, args.reason or "")
+                print(json.dumps(res, indent=2) if args.format == "json"
+                      else f"declined the proposal for {res['lesson']} at {res['count']} "
+                           f"repeat(s) - nothing filed, recorded in {res['path']}")
+        except (ValueError, FileExistsError) as exc:
+            print(f"propose refused: {exc}", file=sys.stderr)
+            return 1
+        return 0
+    found = proposals(root, args.type)
+    if args.format == "json":
+        print(json.dumps({"proposals": found}, indent=2))
+        return 0
+    if not found:
+        print("no lesson has been repeated often enough to propose work")
+        return 0
+    print(f"{len(found)} proposal(s) - accept or decline each:")
+    for p in found:
+        print(f"  {p['id']} ({p['count']} repeats by {', '.join(p['units'])}): {p['title']}")
+        print(f"    accept:  lessons.py propose --id {p['id']} --accept "
+              f"--affects \"path/to/file.py, path/to/test_file.py\"")
+        print(f"    decline: lessons.py propose --id {p['id']} --decline --reason \"...\"")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:

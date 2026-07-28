@@ -61,6 +61,17 @@ def _has_ac_section(text: str) -> bool:
     return False
 
 
+def _has_criteria(text: str) -> bool:
+    """True when the artefact carries acceptance criteria in any accepted shape: labelled
+    `### ACn` / `- **ACn:**` ids, or a populated `## Acceptance Criteria` section.
+
+    ONE predicate, so the story floor and the bug floor cannot drift into disagreeing about
+    what counts as a criterion on identical bytes.
+    """
+    return (any(sdlc_md.extract_ac_id(line) for line in text.splitlines())
+            or _has_ac_section(text))
+
+
 def _is_ungroomed(text: str) -> bool:
     """True when the story declares its ACs an explicit grooming placeholder - a known
     pre-Ready state, not a malformed artefact.
@@ -83,6 +94,64 @@ def _is_ungroomed(text: str) -> bool:
         # predicate's owner on the path, the marker's presence is all that can be read.
         return sdlc_md.UNGROOMED_AC_TOKEN in text
     return conformance.story_is_ungroomed(text)
+
+
+# --- Partial-capability declaration ----------------------------------------------------------
+# A unit may ship one half of a capability - the consumer with no producer, or the producer with
+# no consumer. That is legitimate, and it is only an ANSWER when the unit says so and names the
+# unit that ships the other half; an acknowledged gap nobody owns is the same as an unacknowledged
+# one, and the record then reads as a complete capability the system does not have.
+#
+# The declaration is read from an EXPLICIT place - the `> **Partial:**` metadata line, or a
+# `## Scope note` section - and never from prose that merely contains the words. Several artefacts
+# in this backlog discuss `consumer-only` in their own acceptance criteria, so a whole-body phrase
+# sweep would refuse every artefact that describes this rule.
+PARTIAL_SCOPES = ("consumer-only", "producer-only")
+#: `consumer-only`, `consumer only`, `CONSUMER only` - how an author actually writes it.
+_PARTIAL_PHRASE_RE = re.compile(r"\b(consumer|producer)[\s-]only\b", re.I)
+_SCOPE_NOTE_RE = re.compile(r"^#{2,}\s+scope note\b.*$", re.I | re.M)
+
+
+def _section_body(text: str, m: re.Match) -> str:
+    """The body under a heading match, up to the next heading of any level."""
+    body = text[m.end():]
+    nxt = re.search(r"^#{1,6}\s", body, re.M)
+    return body[:nxt.start()] if nxt else body
+
+
+def declared_partial_capability(text: str) -> dict | None:
+    """The unit's partial-capability declaration, or None when it makes none.
+
+    `{scope, where, text}` - `scope` is the declared half (or None when the `Partial:` field
+    carries a value naming neither, which is a finding rather than a shrug: an unrecognised
+    value would read as no declaration and silently exempt the unit). `text` is the declaring
+    passage, which is where the follow-up must be named.
+    """
+    field = sdlc_md.extract_field(text, "Partial")
+    if field is not None:
+        m = _PARTIAL_PHRASE_RE.search(field)
+        scope = f"{m.group(1).lower()}-only" if m else None
+        return {"scope": scope, "where": "the `> **Partial:**` line", "text": field}
+    note = _SCOPE_NOTE_RE.search(text)
+    if note:
+        body = _section_body(text, note)
+        m = _PARTIAL_PHRASE_RE.search(body)
+        if m:
+            return {"scope": f"{m.group(1).lower()}-only",
+                    "where": "the `## Scope note` section", "text": body}
+    return None
+
+
+def _follow_up_ids(passage: str, own: str | None) -> list[str]:
+    """Artefact ids named in the declaring passage, excluding the unit's own id. Uses the
+    family's one unanchored id finder, so what counts as an id here is what counts everywhere."""
+    mine = sdlc_md.norm_id(own) if own else None
+    seen = []
+    for m in sdlc_md.ID_SEARCH_RE.finditer(passage):
+        rid = sdlc_md.norm_id(m.group(0))
+        if rid != mine and rid not in seen:
+            seen.append(rid)
+    return seen
 
 
 # Directory basename -> artifact type, for inferring a file's type from path.
@@ -110,10 +179,10 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
     project's `.config.yaml` status_vocab extensions count as valid."""
     out: list[dict] = []
 
-    def add(severity: str, rule: str, message: str) -> None:
+    def add(severity: str, rule: str, message: str, **extra) -> None:
         out.append({
             "file": str(path), "type": type_,
-            "severity": severity, "rule": rule, "message": message,
+            "severity": severity, "rule": rule, "message": message, **extra,
         })
 
     rec = sdlc_md.extract_record_id(path.stem)
@@ -170,17 +239,57 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
             "unrecognised tier reads as 'not planning' and would silently disable the "
             "promotion gate")
 
+    # Resolved ONCE, here, because three rules below turn on it (the criteria floor, the
+    # contradicted-`Affects` warning and the body-scaffold severity) and two of them once
+    # answered "is this finished?" differently on the same bytes. The terminal set is DERIVED
+    # from the type's own vocabulary (`is_terminal_status`), never enumerated: a project that
+    # adds a terminal status is covered without editing this file.
+    _canon = sdlc_md.canonical_status(status, sdlc_md.status_vocab(type_, repo_root)) if status else None
+    _terminal = bool(_canon) and sdlc_md.is_terminal_status(type_, _canon)
+
+    # A declared half-capability. Declaring it is what makes the gap a record; naming the
+    # follow-up is what gives the record an owner.
+    partial = declared_partial_capability(text)
+    if partial is not None:
+        if partial["scope"] is None:
+            add(SEVERITY_ERROR, "partial-scope",
+                f"`Partial:` value {partial['text'].strip()!r} names neither half "
+                f"({', '.join(PARTIAL_SCOPES)}) - an unrecognised value reads as no "
+                "declaration at all and would silently exempt the unit from the caller check")
+        elif not _follow_up_ids(partial["text"], rec):
+            add(SEVERITY_ERROR, "partial-no-followup",
+                f"unit declares itself {partial['scope']} but {partial['where']} names no "
+                "follow-up unit - an acknowledged gap nobody owns is the same as an "
+                "unacknowledged one; name the id of the unit that ships the other half")
+
     if type_ == "story":
-        ac_ids = [
-            sdlc_md.extract_ac_id(line)
-            for line in text.splitlines()
-            if sdlc_md.extract_ac_id(line)
-        ]
-        if (not ac_ids and not _has_ac_section(text) and not _ac_exempt(rec, repo_root)
+        if (not _has_criteria(text) and not _ac_exempt(rec, repo_root)
                 and not _is_ungroomed(text)):
             add("error", "no-ac",
                 "story has no acceptance criteria (`### ACn`, `- **ACn:**`, or a "
                 "populated `## Acceptance Criteria` section)")
+
+    # The same floor for the OTHER delivery unit. The project's non-negotiable is that work
+    # becomes a story OR A BUG with acceptance criteria before it becomes a diff; a story was
+    # held to that and a bug was not, so 228 bugs reached a terminal status carrying no
+    # criterion and no verifier while real code landed against each. With neither, the
+    # Done-freshness spine, `verify_ac`, the release lane's unspecified-AC refusal and the
+    # close reconcile can never speak for those units.
+    #
+    # The bar is the TERMINAL status, not every status: a bug is filed from a symptom and the
+    # criteria are owed by the time the record starts speaking for shipped code. `story` is
+    # already held to it at every status above and `epic` is a container whose criteria are its
+    # breakdown, so this names the one type the floor was missing rather than sweeping the
+    # product types.
+    if type_ == "bug" and _terminal and not _has_criteria(text):
+        key = sdlc_md.norm_id(rec) if rec else None
+        known = bool(key) and key in _read_baseline(repo_root, _CRITERIA_BASELINE)
+        add(SEVERITY_WARNING if known else SEVERITY_ERROR, "no-ac",
+            f"bug is {_canon} with no acceptance criteria (`### ACn`, `- **ACn:**`, or a "
+            "populated `## Acceptance Criteria` section) - with no criterion and no verifier "
+            "nothing in the machinery can speak for the code that landed against it"
+            + (" [recorded in the criteria baseline as known debt]" if known else ""),
+            baseline_key=key)
 
     # A CR/bug acceptance criterion is prose. A command-shaped `Verify:` written into it is
     # executed by nothing (verify_ac only runs a STORY's canonical `- **Verify:**` line), so it is
@@ -204,6 +313,15 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
     # A WARNING, deliberately: a path to a file the unit will CREATE is legitimate and common, so
     # an error would fail the ordinary case. It is named because `Affects` is read by the
     # collision analysis and by the engagement floor, and a wrong one degrades both silently.
+    #
+    # UNRESOLVABLE is reported only at a TERMINAL status. Declaring the file you are about to
+    # create is what a Draft story is FOR, so warning on it fired on the normal case for every
+    # piece of new work - and a warning that fires on the normal case is one an author learns to
+    # scroll past, which costs the signal in the case that matters. By the time the unit is
+    # closed the file should exist, and its absence is a real signal (a typo, or a claim about
+    # code that never landed). The terminal set is the type's own, so a project that adds a
+    # terminal status is covered without editing this. `undeclared` is unconditional: a
+    # `Verify:` line targeting a file the declaration omits is wrong at any status.
     if repo_root is not None and type_ in ("story", "bug", "cr"):
         try:
             import sprint  # noqa: PLC0415 - deferred sibling; validate must run without it
@@ -211,11 +329,11 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
         except Exception as exc:  # noqa: BLE001 - a validate run must never break on this
             sdlc_md.debug("validate.affects_mismatch", exc)
             mism = {"unresolvable": [], "undeclared": []}
-        if mism["unresolvable"]:
+        if mism["unresolvable"] and _terminal:
             add(SEVERITY_WARNING, "affects-unresolvable",
                 "`Affects` names path(s) not on disk: "
-                f"{', '.join(mism['unresolvable'])} - legitimate for a file this unit will "
-                "create, a typo otherwise")
+                f"{', '.join(mism['unresolvable'])} - the unit is {_canon}, so the file it "
+                "declared should exist by now (a typo, or a claim about code that never landed)")
         if mism["undeclared"]:
             add(SEVERITY_WARNING, "affects-undeclared",
                 "the artefact's own `Verify:` lines target file(s) its `Affects` omits: "
@@ -285,10 +403,8 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
     # blank where its content should be; a fresh one carrying the same slot is simply not written
     # yet. The terminal set is derived from the type's own vocabulary (`is_terminal_status`), never
     # enumerated here, so a project that adds a terminal status is covered without editing this.
-    _canon = sdlc_md.canonical_status(status, sdlc_md.status_vocab(type_, repo_root)) if status else None
     _pre_ready_story = type_ == "story" and _canon in ("Proposed", "Draft")
     _ac_sev = SEVERITY_WARNING if _pre_ready_story else SEVERITY_ERROR
-    _terminal = bool(_canon) and sdlc_md.is_terminal_status(type_, _canon)
     # A widened check must not block on the backlog it reveals. When the sweep was extended from
     # the AC section to the whole body it surfaced 31 already-terminal artefacts carrying an
     # unfilled scaffold - real debt, but debt that predates the check. Those ids are recorded in a
@@ -386,28 +502,39 @@ def _cr_has_evidence(text: str) -> bool:
 #: never the artefact. Keying on the artefact blanketed every placeholder in a listed file for ever,
 #: so a NEW blank in an old record inherited the waiver.
 _PLACEHOLDER_BASELINE = "sdlc-studio/.placeholder-baseline.txt"
-#: Keyed by resolved repo root: a bare module global leaked one repo's baseline into the next, and
-#: cached a failed read as an empty set so the retry never happened.
-_baseline_cache: dict[str, set[str]] = {}
+#: Units already at a terminal status with no acceptance criteria when that rule was introduced,
+#: one artefact id per line. Same contract as the placeholder baseline: captured from the
+#: checker's own output (`check --emit-baseline`), never hand-written, and removing a line is
+#: one-way, so the recorded count can only fall.
+_CRITERIA_BASELINE = "sdlc-studio/.criteria-baseline.txt"
+#: Keyed by (resolved repo root, baseline file): a bare module global leaked one repo's baseline
+#: into the next, and cached a failed read as an empty set so the retry never happened.
+_baseline_cache: dict[tuple[str, str], set[str]] = {}
 
 
-def _placeholder_baseline(repo_root) -> set[str]:
-    """The recorded pre-existing findings for this root, read once per root.
+def _read_baseline(repo_root, rel: str) -> set[str]:
+    """The recorded pre-existing findings of one baseline file for this root, read once per
+    (root, file).
 
-    A missing or unreadable baseline is an EMPTY set - every terminal placeholder then errors,
-    which is the safe direction: an absent baseline can never quieten a finding. A failed read is
-    not cached, so a transient failure is retried rather than frozen as "nothing is baselined".
+    A missing or unreadable baseline is an EMPTY set - every finding then errors, which is the
+    safe direction: an absent baseline can never quieten one. A failed read is not cached, so a
+    transient failure is retried rather than frozen as "nothing is baselined".
     """
-    key = str(Path(repo_root or ".").resolve())
+    key = (str(Path(repo_root or ".").resolve()), rel)
     if key in _baseline_cache:
         return _baseline_cache[key]
     try:
-        src = (Path(repo_root or ".") / _PLACEHOLDER_BASELINE).read_text(encoding="utf-8")
+        src = (Path(repo_root or ".") / rel).read_text(encoding="utf-8")
     except (OSError, TypeError, ValueError):
         return set()  # deliberately NOT cached
     entries = {ln.strip() for ln in src.splitlines() if ln.strip() and not ln.startswith("#")}
     _baseline_cache[key] = entries
     return entries
+
+
+def _placeholder_baseline(repo_root) -> set[str]:
+    """The recorded pre-existing body-scaffold findings for this root."""
+    return _read_baseline(repo_root, _PLACEHOLDER_BASELINE)
 
 
 def _baselined(path, repo_root, token: str) -> bool:
@@ -613,6 +740,20 @@ def cmd_check(args: argparse.Namespace) -> int:
             repo_root, [args.type] if args.type else None))
         violations.extend(check_dor_dod(repo_root))
 
+    if getattr(args, "emit_baseline", False):
+        # The baseline is CAPTURED from the checker's own output, never hand-written: a
+        # hand-kept list drifts from what the checker actually reports and then quietens
+        # nothing (or the wrong thing). Every finding carrying a `baseline_key` is emitted,
+        # so a rule that later gains one is covered without editing this.
+        keys = sorted({v["baseline_key"] for v in violations if v.get("baseline_key")})
+        print(f"# Captured from `validate.py check --emit-baseline` on "
+              f"{sdlc_md.now_iso8601()} - do not hand-edit.")
+        print("# Pre-existing findings recorded as known debt. Removing a line is one-way:")
+        print("# the check errors on it from then on, so the count can only fall.")
+        for key in keys:
+            print(key)
+        return 0
+
     def _judged(v: dict) -> bool:
         return not v.get("scoped_out")
 
@@ -621,7 +762,14 @@ def cmd_check(args: argparse.Namespace) -> int:
     warnings = sum(1 for v in violations if v["severity"] == SEVERITY_WARNING and _judged(v))
     judged_n = sum(1 for p, _ in targets if scope is None or p.resolve() in scope)
     scope_line = ""
-    if getattr(args, "changed", False) and not args.file:
+    if args.file:
+        # A scoped run must SAY it was scoped. 'no findings here' and 'no findings anywhere'
+        # are different claims, and a clean tail with nothing else on it is read as the second -
+        # which is how a green single-file check comes to be reported as a clean workspace.
+        scope_line = (f"scope: 1 artefact judged ({args.file}); no other artefact was read, and "
+                      f"the repo-wide census and DoR/DoD sweeps did NOT run - this says nothing "
+                      f"about the rest of the workspace")
+    elif getattr(args, "changed", False):
         scope_line = ("scope: the git changed-file probe could not answer, so the WHOLE "
                       "workspace was judged" if scope is None else
                       f"scope: {judged_n} of {len(targets)} artefact(s) judged (this diff); "
@@ -636,6 +784,10 @@ def cmd_check(args: argparse.Namespace) -> int:
             "scope": {"changed": bool(getattr(args, "changed", False)) and not args.file,
                       "degraded": bool(getattr(args, "changed", False))
                       and not args.file and scope is None,
+                      # the artefact a single-file run covered, so a machine reader can tell a
+                      # scoped silence from a workspace-wide one
+                      "file": args.file or None,
+                      "sweeps_ran": not args.file,
                       "judged": judged_n},
             "summary": {"errors": errors, "warnings": warnings,
                         "advisory_errors": advisory},
@@ -1301,6 +1453,11 @@ def build_parser() -> argparse.ArgumentParser:
                         "or untracked). Untouched errors are still printed, as advisory; the "
                         "whole-tree census and DoR/DoD sweeps still run and still fail. With no "
                         "git answer the whole workspace is judged")
+    c.add_argument("--emit-baseline", action="store_true", dest="emit_baseline",
+                   help="Print the baseline record for the findings that support one (one id "
+                        "per line, ready to redirect into sdlc-studio/.criteria-baseline.txt) "
+                        "instead of a verdict. The record is captured from the checker's own "
+                        "output, never hand-written")
     c.add_argument("--format", choices=("text", "json"), default="text")
     c.set_defaults(func=cmd_check)
 

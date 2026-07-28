@@ -196,6 +196,18 @@ class _GateFixture(unittest.TestCase):
             "gate_budget:\n  seconds: 120\n  baseline_seconds: 99\n"
             "  baseline_date: 2026-07-21\n", encoding="utf-8")
 
+        # One tracked markdown file per markdown lane. The lanes take their file list from
+        # `git ls-files` rather than from a glob (BG0341 - the glob could not enter a
+        # dot-directory, so tracked `.github/` markdown was linted by nothing), and a lane
+        # with no files to lint reports a named SKIP instead of a verdict. Without these
+        # the fixture repo has no markdown at all and both lanes drop out of the inventory,
+        # which is the fixture being unrepresentative, not the hook losing a check.
+        (root / "docs").mkdir(parents=True, exist_ok=True)
+        (root / "docs" / "notes.md").write_text("# notes\n", encoding="utf-8")
+        (root / ".claude" / "skills" / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / ".claude" / "skills" / "sdlc-studio" / "NOTES.md").write_text(
+            "# payload notes\n", encoding="utf-8")
+
         _git(root, "init", "-q")
         _git(root, "config", "user.email", "t@t")
         _git(root, "config", "user.name", "t")

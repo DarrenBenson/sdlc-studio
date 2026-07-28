@@ -1,6 +1,6 @@
 # US0528: A Draft story declaring a file it will create is not warned as unresolvable, since that is the normal case
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0456
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** validate runs
 - **Then** no unresolvable warning is raised, because declaring what you will create is the normal case for new work
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::ScopedCheckTests::test_a_draft_declaring_a_new_file_is_not_warned
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a terminal unit naming a path that never existed is still warned
 
@@ -31,6 +32,7 @@
 - **When** validate runs
 - **Then** the warning is raised, because at that point the file should exist and its absence is a real signal
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::ScopedCheckTests::test_a_terminal_unit_with_a_missing_path_is_still_warned
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

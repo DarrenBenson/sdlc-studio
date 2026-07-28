@@ -1636,6 +1636,227 @@ def render_claim_pass(rulings) -> str:
             f"(TRUE {s['true']}, FALSE {s['false']}){trust}")
 
 
+# ---------------------------------------------------------------------------
+# The consuming caller: a criterion for a mechanism names what will call it
+# ---------------------------------------------------------------------------
+# Four mechanisms shipped in one sprint reaching nothing: a hash whose digest could never match,
+# a selection computed by one hook and ignored by the one that runs the tests, a consumer whose
+# producer did not exist. Every one had passing tests and a green gate, because every criterion
+# described the function's own behaviour and none asked what would call it. Reviewing for it
+# afterwards costs a round; asking for it while the criterion is being written costs a sentence.
+#
+# So a criterion for a mechanism declares its consumer, and the declaration must RESOLVE - a
+# named caller that is nowhere in the tree is the same defect wearing an answer's clothes.
+
+#: The AC bullet an author writes to name the consumer. Read here and asked for by the shipped
+#: story template: a checker reading a different word from the one the template writes is exactly
+#: the drift that makes a field look answered and go unchecked.
+CALLER_FIELD = "Caller"
+
+#: No criterion names a consumer at all.
+CALLER_UNNAMED = "caller-unnamed"
+#: A consumer is named but does not resolve to anything in the tree.
+CALLER_UNRESOLVED = "caller-unresolved"
+
+_CALLER_RE = re.compile(rf"^\s*[-*]\s*\*\*{CALLER_FIELD}s?:?\*\*:?\s*(.+?)\s*$", re.I)
+#: Path-, command- and identifier-shaped runs inside a declaration, so `the commit gate
+#: (tools/hooks/pre-commit)` offers `tools/hooks/pre-commit` to the resolver.
+_CALLER_TOKEN = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_./-]*")
+
+#: The only directories a tree scan skips, and both are DERIVED content rather than source:
+#: git's object store and the interpreter's bytecode cache. Nothing else is excluded, because a
+#: list of "uninteresting" directories is a list of places a caller can hide.
+_TREE_SKIP = (".git", "__pycache__")
+
+
+def tree_index(repo_root: Path | str) -> dict:
+    """Every file in the tree, indexed by relative path, file name and stem.
+
+    Built by walking the filesystem rather than by asking git: a file git cannot enumerate (new,
+    ignored, or in a directory git declines to list) is still a caller that exists.
+
+    Refuses an EMPTY result. A scan that found nothing is not the finding "no caller resolves
+    here" - it is a scan that did not answer, and reading it as a verdict would fail every
+    declaration it was asked about while looking like a careful check.
+    """
+    root = Path(repo_root)
+    paths: set[str] = set()
+    names: set[str] = set()
+    stems: set[str] = set()
+    for p in root.rglob("*"):
+        if any(part in _TREE_SKIP for part in p.parts):
+            continue
+        if not p.is_file():
+            continue
+        paths.add(p.relative_to(root).as_posix())
+        names.add(p.name)
+        stems.add(p.stem)
+    if not paths:
+        raise ValueError(f"tree scan of {root} found no files - an empty index is not the answer "
+                         f"'nothing resolves here', it is a scan that did not run; check the "
+                         f"root before reading any caller as unresolved")
+    return {"paths": paths, "names": names, "stems": stems}
+
+
+def caller_resolves(index: dict, declaration: str) -> bool:
+    """Whether the consumer named by `declaration` resolves to something in the tree.
+
+    A caller is named as a path or as a command (a command IS a script in the tree), so a token
+    matching a relative path, a file name or a file stem resolves. This is deliberately generous
+    about prose around the name and deliberately silent about intent: it proves the named thing
+    EXISTS, never that it calls the mechanism. The second question is the reviewer's.
+    """
+    for token in _CALLER_TOKEN.findall(declaration or ""):
+        cleaned = token.strip("./-")
+        if len(cleaned) < 2:
+            continue
+        if (cleaned in index["paths"] or cleaned in index["names"]
+                or cleaned in index["stems"]):
+            return True
+        tail = Path(cleaned).name
+        if tail and (tail in index["names"] or tail in index["stems"]):
+            return True
+    return False
+
+
+def _ac_blocks_with_bodies(text: str) -> list[tuple[str, list[str]]]:
+    """`(AC id, body lines)` per criterion, using `verify_ac.parse_story` for the block
+    boundaries - the SAME parser the verifier executes, so a criterion shape the runner
+    recognises is a criterion this check reads. A second AC parser here would let a unit be
+    judged against criteria the runner cannot see."""
+    import verify_ac  # noqa: PLC0415 - sibling; imported lazily so a record never pays for it
+    lines = text.splitlines()
+    blocks = verify_ac.parse_story(text)
+    out: list[tuple[str, list[str]]] = []
+    for i, b in enumerate(blocks):
+        end = blocks[i + 1].heading_line if i + 1 < len(blocks) else len(lines)
+        out.append((b.ac_id, lines[b.heading_line:end]))
+    return out
+
+
+def caller_declarations(text: str) -> list[dict]:
+    """The consumers the unit's criteria declare, as `{ac, caller}` in criterion order."""
+    found: list[dict] = []
+    for ac_id, body in _ac_blocks_with_bodies(text):
+        for line in body:
+            m = _CALLER_RE.match(line)
+            if m:
+                found.append({"ac": ac_id, "caller": m.group(1).strip()})
+                break
+    return found
+
+
+def _verifier_names(line: str, rel: str) -> bool:
+    """Whether a Verify line NAMES this file.
+
+    Matched at path boundaries rather than by substring: a verifier reading
+    `tests/test_thing.py` does not name `src/thing.py`, and reading it as though it did
+    subtracts the mechanism from the unit and reports nothing about it. Both the declared path
+    and its basename count, because a verifier names a path inside a node id
+    (`pytest path/test_x.py::Class::test`) and a `./` or `.claude/` prefix must not make the
+    same file look like a different one.
+    """
+    for cand in (rel, Path(rel).name):
+        if re.search(rf"(?<![\w./-]){re.escape(cand)}(?![\w-])", line):
+            return True
+    return False
+
+
+def mechanism_files(text: str) -> list[str]:
+    """The declared files that are the unit's MECHANISM.
+
+    Derived by SUBTRACTION from what the unit itself declares: its `Affects`, less the files its
+    own verifiers name (those are its proof, not its mechanism) and less markdown (a document is
+    not a mechanism). Never a list of code extensions - such a list exempts the language nobody
+    thought of, which is the failure mode this project has paid for repeatedly.
+
+    One known miss, stated rather than hidden: a unit whose verifier reads the mechanism file
+    directly (a `grep` over the source it changes) subtracts that file as proof, so it is not
+    asked for a consumer. Widening the rule to keep it would have to guess which verbs are
+    tests, and a guess about the runner is how the two parsers diverge.
+    """
+    verify_lines = [line for _ac, body in _ac_blocks_with_bodies(text)
+                    for line in body if sdlc_md.VERIFY_RE.match(line)]
+    out: list[str] = []
+    for raw in sdlc_md.affects_files(text):
+        rel = raw.strip().strip("`")
+        if not rel or rel.endswith(".md"):
+            continue
+        if any(_verifier_names(line, rel) for line in verify_lines):
+            continue
+        out.append(rel)
+    return out
+
+
+def caller_findings(repo_root: Path | str, units: list[str]) -> list[dict]:
+    """Units adding a mechanism whose criteria name no consumer, or name one that does not exist.
+
+    A REPORT, not a gate: each finding is `{unit, kind, criteria, detail}` and names the criterion
+    it is about, because "this unit needs a caller" sends the author back to read all of them
+    while "AC1 describes a function with no consumer" points at the line to fix. A unit whose
+    declared surface is documentation, or is only its own tests, adds no mechanism and is not
+    asked for one - a check that fires on everything is not a check.
+    """
+    root = Path(repo_root)
+    index = tree_index(root)
+    findings: list[dict] = []
+    for raw in units or []:
+        uid = sdlc_md.norm_id(raw)
+        hit = sdlc_md.find_by_id(root, uid)
+        if not hit:
+            raise ValueError(f"no artefact with id {uid!r} - the caller check needs a real unit; "
+                             f"an id that resolves to nothing is not a unit with no findings")
+        text = sdlc_md.read_text_safe(Path(hit[0]))
+        mech = mechanism_files(text)
+        if not mech:
+            continue
+        declared = caller_declarations(text)
+        surface = ", ".join(mech)
+        if not declared:
+            criteria = [ac for ac, _body in _ac_blocks_with_bodies(text)]
+            named = ", ".join(criteria) or "no criteria at all"
+            findings.append({
+                "unit": uid, "kind": CALLER_UNNAMED, "criteria": criteria,
+                "detail": (f"{uid} adds a mechanism ({surface}) and no criterion names the "
+                           f"caller that consumes it: {named} describe the function's own "
+                           f"behaviour only. A mechanism that reaches no caller is inert "
+                           f"however green its tests."),
+            })
+            continue
+        for d in declared:
+            if caller_resolves(index, d["caller"]):
+                continue
+            findings.append({
+                "unit": uid, "kind": CALLER_UNRESOLVED, "criteria": [d["ac"]],
+                "detail": (f"{uid} {d['ac']} names {d['caller']!r} as the consumer of "
+                           f"{surface}, and nothing in the tree resolves to it - naming a "
+                           f"caller that does not exist is not a way past the check."),
+            })
+    return findings
+
+
+def render_caller_findings(findings: list[dict]) -> list[str]:
+    """The lines a caller-check prints. An empty result says what it checked FOR rather than
+    printing nothing, so a run that found nothing cannot be told apart from one that never
+    looked."""
+    if not findings:
+        return ["caller check: every mechanism unit names a consumer that resolves"]
+    return [f"  {f['unit']} [{f['kind']}]: {f['detail']}" for f in findings]
+
+
+def cmd_caller_check(args: argparse.Namespace) -> int:
+    """Report the mechanism units whose criteria name no consumer, or an absent one. Returns 1
+    when there is something to report, so a hook or lane can act on it."""
+    try:
+        findings = caller_findings(args.root, args.unit)
+    except (OSError, ValueError) as exc:
+        print(f"caller check refused: {exc}", file=sys.stderr)
+        return 2
+    for line in render_caller_findings(findings):
+        print(line)
+    return 1 if findings else 0
+
+
 def cmd_brief(args: argparse.Namespace) -> int:
     try:
         if getattr(args, "rejoinder", None):
@@ -1834,6 +2055,13 @@ def build_parser() -> argparse.ArgumentParser:
                         "demand, same return contract; a malformed block is refused")
     b.add_argument("--root", default=".")
     b.set_defaults(func=cmd_brief)
+    cc = sub.add_parser("caller-check",
+                        help="Report units adding a mechanism whose criteria name no consuming "
+                             "caller, or name one that does not resolve in the tree.")
+    cc.add_argument("--unit", required=True, nargs="+", metavar="ID",
+                    help="the unit ids to check")
+    cc.add_argument("--root", default=".")
+    cc.set_defaults(func=cmd_caller_check)
     e = sub.add_parser("evidence", help="Record the adversarial pass as evidence "
                                         "(findings, reviewer seat, author) - distinct from the verdict.")
     e.add_argument("--unit", required=True)

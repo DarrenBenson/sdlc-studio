@@ -10,6 +10,8 @@ Distinct from the sprint per-tranche ledger (`ledger.py`). Pure stdlib.
 from __future__ import annotations
 
 import argparse
+import ast
+import importlib
 import json
 import re
 import sys
@@ -20,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 
 SKILL = Path(__file__).resolve().parent.parent
+SCRIPTS = Path(__file__).resolve().parent
 LOG_REL = "sdlc-studio/decisions.md"
 _ROW = re.compile(r"^\|\s*D(\d{4})\s*\|")
 
@@ -134,14 +137,108 @@ def _norm_subject(subject: str | None) -> str:
     return (subject or "").strip().lower()
 
 
+#: The module-level constant a checker publishes the rules it will honour a waiver for in.
+#: Matched by PATTERN over the scripts tree, not against a list of module names typed here: a
+#: list would silently exempt the checker added tomorrow, and the whole point of validating a
+#: waiver subject is that the vocabulary is complete. Both spellings the tree uses are covered
+#: (`WAIVER_RULE` holding a full `rule:x` subject, `WAIVABLE_RULES` holding bare rule names).
+RULES_ATTR_RE = re.compile(r"^WAIV(?:ER|ABLE)_RULES?$")
+#: The subject families. `leg:` is closed (the four document legs); `rule:` is open and derived.
+SUBJECT_RULE = "rule:"
+
+
+def _modules_declaring_rules(scripts: Path) -> tuple[list[str], list[str]]:
+    """(module names assigning a rules constant, module names that could not be read).
+
+    A static parse, so discovery costs no imports and cannot cycle back through this module.
+    An unreadable script is returned as UNREADABLE, never as "declares nothing": a file the
+    scan could not answer for must widen what the caller admits it does not know.
+    """
+    declaring, unreadable = [], []
+    for path in sorted(scripts.glob("*.py")):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (OSError, SyntaxError, ValueError, UnicodeDecodeError):
+            unreadable.append(path.stem)
+            continue
+        for node in tree.body:
+            names = []
+            if isinstance(node, ast.Assign):
+                names = [t.id for t in node.targets if isinstance(t, ast.Name)]
+            elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+                names = [node.target.id]
+            if any(RULES_ATTR_RE.match(n) for n in names):
+                declaring.append(path.stem)
+                break
+    return declaring, unreadable
+
+
+def waivable_subjects(scripts: Path | None = None) -> tuple[set[str], list[str]]:
+    """Every subject a waiver may name, plus the scripts whose declaration could not be read.
+
+    Two families, both derived: `leg:<leg>` from DOC_LEGS, and `rule:<name>` from every sibling
+    checker that declares one. The declaring modules are IMPORTED (only those, and only at call
+    time) rather than read literally, so a checker may derive its own rule names from its stage
+    vocabulary instead of repeating them as a literal - which is the same lesson one rung down.
+    """
+    scripts = scripts or SCRIPTS
+    subjects = {f"leg:{leg}" for leg in DOC_LEGS}
+    declaring, unreadable = _modules_declaring_rules(scripts)
+    for name in declaring:
+        try:
+            mod = importlib.import_module(name)
+        except Exception:  # noqa: BLE001 - an unimportable checker is UNKNOWN, not empty
+            unreadable.append(name)
+            continue
+        for attr in dir(mod):
+            if not RULES_ATTR_RE.match(attr):
+                continue
+            value = getattr(mod, attr)
+            rules = (value,) if isinstance(value, str) else tuple(value or ())
+            for rule in rules:
+                rule = _norm_subject(str(rule))
+                if rule:
+                    subjects.add(rule if rule.startswith(SUBJECT_RULE) else SUBJECT_RULE + rule)
+    return subjects, unreadable
+
+
+def subject_error(subject: str, subjects: set[str], unreadable: list[str]) -> str | None:
+    """Why `subject` cannot be waived, or None when it can.
+
+    A subject is waivable when it IS a declared subject, or extends one with a scope tail on a
+    colon boundary (`rule:engagement-floor:US0100`, `rule:conformance:critiqued:US0103-US0310`) -
+    the boundary is what keeps `rule:engagement-floor-v2` a different subject rather than a
+    scoped form of `rule:engagement-floor`, exactly as the lookup treats it.
+    """
+    if subject in subjects or any(subject.startswith(f"{s}:") for s in subjects):
+        return None
+    short = (f"; note {len(unreadable)} script(s) could not be read for their declared rules "
+             f"({', '.join(sorted(unreadable))}), so this list may be incomplete"
+             if unreadable else "")
+    return (f"unknown waiver subject {subject!r}: no checker declares it, so the waiver would be "
+            f"recorded and then do nothing. Known subjects: {', '.join(sorted(subjects))}{short}")
+
+
 def record_waiver(root: Path | str, subject: str, rationale: str,
                   today: str | None = None) -> dict:
     """Record a machine-detectable waiver: a decision row `waiver: <subject>`, with the human
     reason in the rationale cell. General over any waivable subject (a review leg `leg:tsd`, or
-    a rule `rule:engagement-floor`), so a later gate reuses the same primitive."""
+    a rule `rule:engagement-floor`), so a later gate reuses the same primitive.
+
+    Refused at RECORD time when it would do nothing: an unknown rule (no checker reads that
+    subject, so the row is inert), or no rationale (an unexplained waiver is indistinguishable
+    from forgetting the rule exists, and nobody can later judge whether it still holds).
+    """
     subject = _norm_subject(subject)
     if not subject:
         raise ValueError("a waiver subject must be non-empty (e.g. leg:tsd or rule:<name>)")
+    if not str(rationale or "").strip():
+        raise ValueError(
+            f"a waiver of {subject!r} must record WHY the rule is out of scope here - an "
+            "unexplained waiver is indistinguishable from forgetting the rule exists")
+    err = subject_error(subject, *waivable_subjects())
+    if err:
+        raise ValueError(err)
     return add(root, f"{WAIVER_PREFIX} {subject}", rationale, today=today)
 
 
@@ -321,7 +418,10 @@ def build_parser() -> argparse.ArgumentParser:
     wv_what = wv.add_mutually_exclusive_group(required=True)
     wv_what.add_argument("--leg", choices=DOC_LEGS,
                          help="the required document leg being waived (CODE is out of scope)")
-    wv_what.add_argument("--subject", help="a general waiver subject, e.g. rule:engagement-floor")
+    wv_what.add_argument("--subject", help="a general waiver subject, e.g. rule:engagement-floor "
+                                           "or rule:conformance:critiqued:US0103-US0310 (the "
+                                           "rule must be one a checker declares, and an optional "
+                                           "`:<unit>`/`:<id>-<id>` tail scopes it)")
     wv.add_argument("--rationale", help="why it is out of scope for this project (required "
                                         "unless the --fields-file document carries one)")
     add_fields_file_arg(wv, ("rationale",))

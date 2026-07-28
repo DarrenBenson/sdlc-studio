@@ -45,10 +45,16 @@ def _conformance(root: str, changed: bool = False,
 def _reconcile(root: str) -> dict:
     import reconcile
     rr = Path(root).resolve()
-    # detect_type returns a dict; the drift items live under "drift" (not len(dict)).
-    total = sum(len(reconcile.detect_type(t, rr)["drift"]) for t in reconcile.DEFAULT_TYPES)
-    # `request-derivable` is assembled in the sweep, not in `detect_type`, so it was invisible
-    # here - the gate passed on a tree where `reconcile detect` exited 1.
+    # ONE sweep, `reconcile.detect_all`, shared with `reconcile detect` itself - never a
+    # second list assembled here. This lane used to name two of the nine drift sources, and
+    # an enumerated list silently exempts what it forgot: `meta-index`, `epic-breakdown`
+    # (including ticked-early, the direction that masks unfinished work), `epic-points`,
+    # `link-asymmetry`, linked-epics and `undecomposed` were all invisible, so a tree on
+    # which `reconcile detect` exited 1 passed the pre-commit hook and CI. Sharing the sweep
+    # is what makes that unrepeatable: a detector added to the sweep is counted here the day
+    # it lands, with nobody having to remember this call site.
+    _per_type, drift = reconcile.detect_all(rr)
+    total = len(drift)
     #
     # Only the items apply can clear are COUNTED. One blocked behind another gate is real drift
     # and is reported in the detail, but it does not block, because the committer who trips it is
@@ -62,11 +68,12 @@ def _reconcile(root: str) -> dict:
     # delivered request blocked behind a resolvable gate reports PASS, which is a narrowed form of
     # the very bug this kind exists to kill. `reconcile detect` still exits 1 on it. Anyone
     # widening this should weigh that cost, not assume there is nothing to weigh.
-    blocked = 0
-    if sdlc_md.two_backlog_enforced(rr):
-        derivable = reconcile.derivable_request_drift(rr)
-        blocked = sum(1 for d in derivable if d.get("blocked_by"))
-        total += len(derivable) - blocked
+    #
+    # DERIVED from the items, not from a second call to the one detector that happens to
+    # produce them today: `blocked_by` is the property that means "another gate owns this",
+    # and any future detector setting it is carved out automatically.
+    blocked = sum(1 for d in drift if d.get("blocked_by"))
+    total -= blocked
     detail = f"{total} drift item(s)"
     if blocked:
         detail += f" (+{blocked} awaiting another gate, not blocking)"
@@ -1159,6 +1166,71 @@ def _is_dirty(root: Path, path: Path) -> bool:
 #: close's own bookkeeping, not content a review would have judged differently.
 _CLOSE_OWNED_FIELDS = ("Status:", "Verified:", "Verification depth:", "Signed-off", "Critiqued")
 
+#: The field whose carve-out is DIRECTIONAL. Every other close-owned field above is a stamp
+#: the close adds; `Status` is the one whose meaning depends entirely on which way it moved.
+_STATUS_FIELD = "Status:"
+
+def _status_value(body: str) -> str | None:
+    """The value of a `Status:` metadata line, or None when the line carries none.
+    Tolerates both the bold (`**Status:** Done`) and bare (`Status: Done`) spellings."""
+    import re as _re  # noqa: PLC0415 - as elsewhere in this module
+    m = _re.search(r"\*{0,2}Status:\*{0,2}\s*(.+?)\s*$", body)
+    return m.group(1).strip().strip("*").strip() if m else None
+
+
+def _artifact_type_of(root: Path, path: Path) -> str | None:
+    """The artefact type `path` belongs to, from the declared type->directory map. Derived
+    from `ARTIFACT_TYPES`, never a list written here, so a new type is covered on the day
+    it is declared."""
+    try:
+        rel = path.resolve().relative_to(Path(root).resolve()).as_posix()
+    except (ValueError, OSError):
+        rel = path.as_posix()
+    for type_, (dirname, _prefix) in sdlc_md.ARTIFACT_TYPES.items():
+        if rel.startswith(dirname.rstrip("/") + "/"):
+            return type_
+    return None
+
+
+def _close_recorded_transition(type_: str | None, frm: str | None, to: str | None,
+                               root: Path | str | None = None) -> bool:
+    """True when a Status move is one the CLOSE tooling itself records.
+
+    The carve-out used to ask only whether a changed line contained the substring
+    `Status:`, so it was blind to both direction and value: a hand-flip from Draft or
+    Blocked straight to Done, and a reopen of a terminal status, were both waved through as
+    "the close recording a verdict already reached" - over a verdict no reviewer reached.
+
+    Three conditions, each read from a DECLARED vocabulary rather than a list kept here:
+
+    * the new value is an absorbing state for the type (`terminal_statuses`) - only a close
+      moves a unit into one;
+    * the old value is not (terminal to terminal is a re-labelling, and terminal to
+      anything else is a reopen: both are changes a reviewer would judge);
+    * the old value is one of the implementation states the delivery loop actually parks a
+      unit at before the close (`transition._IMPL_TARGETS`, the same set the tier gate
+      reads). A unit that was Draft, Ready or Blocked did not pass through delivery, so
+      nothing about its arrival at Done is bookkeeping.
+
+    Unknown type, unreadable value, or an unrecognised status: NOT a close transition. The
+    carve-out is an exemption, and an exemption granted on an unanswered question is the
+    failure mode this whole lane exists to prevent.
+    """
+    if not type_ or not frm or not to:
+        return False
+    vocab = sdlc_md.status_vocab(type_, root)   # honours a project's declared vocabulary
+    frm = sdlc_md.canonical_status(frm, vocab) or frm
+    to = sdlc_md.canonical_status(to, vocab) or to
+    terminal = sdlc_md.terminal_statuses(type_)
+    if to not in terminal or frm in terminal:
+        return False
+    try:
+        import transition  # noqa: PLC0415 - sibling; the one declaration of the delivery states
+        in_flight = set(transition._IMPL_TARGETS)
+    except Exception:  # noqa: BLE001 - a gate must not break on an import
+        return False
+    return frm in (in_flight & set(vocab)) - terminal
+
 
 def _anchor_last_commit(root: Path, path: Path) -> str:
     """The sha of the last commit touching `path`, or "" when unknown.
@@ -1191,6 +1263,13 @@ def _close_owned_change_only(root: Path, path: Path, since: str) -> bool:
     change". A status moving Review to Done is the close recording a verdict already reached; a
     changed acceptance criterion is not. Anything this cannot read falls back to STALE, because
     an unreadable diff is not evidence of innocence.
+
+    The Status line is read for its DIRECTION and its VALUES, not for the substring. Asking
+    only whether the line contained `Status:` exempted a hand-flip from Draft or Blocked
+    straight to Done, and a reopen of a terminal status, as readily as it exempted the
+    close's own Review-to-Done stamp - so the gate printed PASS over a status change no
+    reviewer ever judged. `_close_recorded_transition` decides which moves the close
+    records; every other close-owned field is still a plain stamp and still exempt.
     """
     import subprocess  # noqa: PLC0415 - as elsewhere in this module
     try:
@@ -1201,6 +1280,8 @@ def _close_owned_change_only(root: Path, path: Path, since: str) -> bool:
         return False
     if proc.returncode != 0:
         return False
+    removed_status: list[str] = []
+    added_status: list[str] = []
     for line in proc.stdout.splitlines():
         if not line.startswith(("+", "-")) or line.startswith(("+++", "---")):
             continue
@@ -1208,6 +1289,19 @@ def _close_owned_change_only(root: Path, path: Path, since: str) -> bool:
         if not body:
             continue
         if not any(f in body for f in _CLOSE_OWNED_FIELDS):
+            return False
+        if _STATUS_FIELD in body:
+            value = _status_value(body)
+            if value is None:
+                return False   # a Status line whose value cannot be read is not evidence
+            (added_status if line.startswith("+") else removed_status).append(value)
+    if added_status or removed_status:
+        # A Status line ADDED where none existed, or REMOVED and not replaced, is not a
+        # transition the close records either - it is somebody rewriting the field.
+        if len(added_status) != 1 or len(removed_status) != 1:
+            return False
+        if not _close_recorded_transition(_artifact_type_of(root, path),
+                                          removed_status[0], added_status[0], root):
             return False
     return True
 

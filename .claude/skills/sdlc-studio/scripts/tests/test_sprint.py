@@ -8312,5 +8312,412 @@ class CloseRetryTests(unittest.TestCase):
         self.assertEqual(rows[1]["reused_from"], rows[0]["at"])
 
 
+# ---------------------------------------------------------------------------
+# The lane contract: what a lane is dispatched with, and what it must return.
+# ---------------------------------------------------------------------------
+
+
+def _lane_story(root: Path, num: int, ac_section: str, affects: str = "src/lane.py",
+                points: int = 2, status: str = "Ready") -> Path:
+    """A story whose Acceptance Criteria section is written verbatim by the caller, so a test
+    can hand the lane contract the exact shape it is meant to judge (absent, placeholder or
+    authored) without a helper deciding it."""
+    d = root / "sdlc-studio" / "stories"
+    d.mkdir(parents=True, exist_ok=True)
+    _affect(root, affects)
+    p = d / f"US{num:04d}-lane.md"
+    p.write_text(f"# US{num:04d}: a lane unit\n\n> **Status:** {status}\n"
+                 f"> **Priority:** Medium\n> **Affects:** {affects}\n> **Points:** {points}\n\n"
+                 f"## User Story\n\n**As a** x **I want** y **So that** z\n\n{ac_section}",
+                 encoding="utf-8")
+    return p
+
+
+class LaneContractTests(unittest.TestCase):
+    """US0508. Six units reached Fixed last sprint carrying no acceptance criterion at all: the
+    lane inferred a contract from the summary, delivered against the inference, and nothing
+    downstream could tell the difference. A lane that cannot read what it is being held to must
+    say so at dispatch, when the cost is a sentence, rather than at review."""
+
+    def test_a_unit_with_no_criteria_is_refused_at_dispatch(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _lane_story(root, 900, "")  # no Acceptance Criteria section at all
+            contract = sprint.lane_contract(root, "US0900")
+            self.assertFalse(contract["ok"])
+            self.assertIn("US0900", contract["refusal"])
+            self.assertIn("acceptance criteria", contract["refusal"].lower())
+            dispatch = sprint.lane_dispatch(root, ["US0900"])
+            self.assertEqual([r["id"] for r in dispatch["refused"]], ["US0900"])
+            self.assertEqual(dispatch["briefs"], [])
+
+    def test_an_ungroomed_placeholder_is_refused_too(self) -> None:
+        sprint = _load()
+        sdlc_md = sys.modules["sdlc_md"] if "sdlc_md" in sys.modules else None
+        token = sdlc_md.UNGROOMED_AC_TOKEN if sdlc_md else (
+            "Ungroomed - acceptance criteria are a grooming placeholder")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _lane_story(root, 901, f"## Acceptance Criteria\n\n- {token}\n")
+            contract = sprint.lane_contract(root, "US0901")
+            self.assertFalse(contract["ok"], "a placeholder is an absent contract in the shape "
+                                             "of one")
+            self.assertIn("placeholder", contract["refusal"].lower())
+            _lane_story(root, 902, "## Acceptance Criteria\n\n### AC1: {{criterion}}\n\n"
+                                   "- **Given** {{context}}\n- **Verify:** {{command}}\n")
+            self.assertFalse(sprint.lane_contract(root, "US0902")["ok"],
+                             "the bare template scaffold is the same absence, older shape")
+
+    def test_an_authored_unit_is_dispatched(self) -> None:
+        """The positive control. A refusal that fires on everything is not a gate, and a test
+        suite that only ever asserts the refusal cannot tell one from the other."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _lane_story(root, 903, "## Acceptance Criteria\n\n### AC1: it holds\n\n"
+                                   "- **Given** a thing\n- **Verify:** file src/lane.py\n")
+            contract = sprint.lane_contract(root, "US0903")
+            self.assertTrue(contract["ok"], contract.get("refusal"))
+            self.assertEqual([c["ac"] for c in contract["criteria"]], ["AC1"])
+            dispatch = sprint.lane_dispatch(root, ["US0903"])
+            self.assertEqual(dispatch["refused"], [])
+            self.assertEqual([b["id"] for b in dispatch["briefs"]], ["US0903"])
+
+    def test_the_dispatch_carries_the_obligations(self) -> None:
+        """The obligations ride the DISPATCH, not the sprint brief somebody typed that night.
+
+        The caller hands `lane_dispatch` a root and a list of ids and nothing else, and every
+        brief comes back carrying every obligation - DERIVED from the shared `LANE_OBLIGATIONS`
+        rather than listed here, so one added later is covered without editing this test. The
+        three concerns are asserted as a floor because an emptied tuple would satisfy the
+        derived loop while proving nothing.
+        """
+        sprint = _load()
+        obligations = list(sprint.LANE_OBLIGATIONS)
+        self.assertTrue(obligations, "an empty obligation set passes every derived check below")
+        joined = " ".join(obligations).lower()
+        for concern in ("acceptance criteria", "before returning", "proof"):
+            self.assertIn(concern, joined, f"no obligation covers the {concern!r} concern")
+        # the caller cannot supply them: there is nowhere in the signature to put them, so a
+        # dispatch is never as good or as bad as the memory of whoever wrote that night's prompt
+        self.assertEqual(list(inspect.signature(sprint.lane_dispatch).parameters),
+                         ["repo_root", "unit_ids"],
+                         "the dispatch must take its obligations from the shared template, "
+                         "never from its caller")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            authored = ("## Acceptance Criteria\n\n### AC1: it holds\n\n"
+                        "- **Given** a thing\n- **Verify:** file src/lane.py\n")
+            _lane_story(root, 904, authored)
+            _lane_story(root, 905, authored)
+            dispatch = sprint.lane_dispatch(root, ["US0904", "US0905"])
+            self.assertEqual(dispatch["refused"], [])
+            self.assertEqual(len(dispatch["briefs"]), 2)
+            for brief in dispatch["briefs"]:
+                self.assertEqual(brief["obligations"], obligations,
+                                 f"{brief['id']} was dispatched without the shared obligations")
+            # each lane gets its own copy: an edit to what one lane received must not reach the
+            # next dispatch, or the obligations stop being the same for every lane
+            dispatch["briefs"][0]["obligations"].append("deliver on your own judgement")
+            again = sprint.lane_dispatch(root, ["US0904"])
+            self.assertEqual(again["briefs"][0]["obligations"], obligations)
+
+
+class LaneVerifyTests(unittest.TestCase):
+    """US0509. Every verifier below is REAL - `file` resolves to `test -e` and `pytest` to a
+    pytest process - because the behaviour under test is what the runner actually reports, and a
+    stubbed runner would only prove that this module can read a dictionary it wrote itself."""
+
+    def test_a_red_criterion_returns_blocked_not_fixed(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _lane_story(root, 910, "## Acceptance Criteria\n\n### AC1: the file is there\n\n"
+                                   "- **Verify:** file src/lane.py\n\n"
+                                   "### AC2: the other file is there\n\n"
+                                   "- **Verify:** file src/never-written.py\n")
+            result = sprint.lane_return(root, "US0910", claimed="fixed")
+            self.assertEqual(result["outcome"], "blocked")
+            self.assertEqual(result["claimed"], "fixed")
+            self.assertIn("AC2", result["why"])
+            self.assertEqual(result["verification"]["blocking"], ["AC2"])
+            states = {c["ac"]: c["state"] for c in result["verification"]["criteria"]}
+            self.assertEqual(states, {"AC1": "passed", "AC2": "failed"})
+
+    def test_the_result_carries_the_verifier_output(self) -> None:
+        """Not a summary of it. A lane that returns "all green" is asking to be trusted; one
+        that returns the runner's own exit code and text can be checked."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "src").mkdir(parents=True, exist_ok=True)
+            (root / "src" / "shout.sh").write_text("echo THE-RUNNER-SAID-THIS\n", encoding="utf-8")
+            _lane_story(root, 911, "## Acceptance Criteria\n\n### AC1: it speaks\n\n"
+                                   "- **Verify:** shell sh src/shout.sh\n")
+            result = sprint.lane_return(root, "US0911", claimed="fixed")
+            crit = result["verification"]["criteria"][0]
+            self.assertEqual(crit["state"], "passed")
+            self.assertEqual(crit["exit_code"], 0)
+            self.assertEqual(crit["verifier"], "shell sh src/shout.sh")
+            self.assertIn("THE-RUNNER-SAID-THIS", crit["output"])
+
+    def test_an_unresolvable_criterion_is_not_a_pass(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _lane_story(root, 912, "## Acceptance Criteria\n\n### AC1: a test that is not there\n"
+                                   "\n- **Verify:** pytest tests/test_absent.py::Gone::test_gone"
+                                   "\n")
+            result = sprint.lane_return(root, "US0912", claimed="fixed")
+            crit = result["verification"]["criteria"][0]
+            self.assertEqual(crit["state"], "unresolved",
+                             "a check that could not be answered is not a check that passed")
+            self.assertEqual(result["outcome"], "blocked")
+            self.assertIn("AC1", result["verification"]["blocking"])
+
+    def test_a_green_unit_returns_what_the_lane_claimed(self) -> None:
+        """The positive control: a gate that blocks everything reports the same as one that
+        works, and only a green case can tell them apart."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _lane_story(root, 913, "## Acceptance Criteria\n\n### AC1: the file is there\n\n"
+                                   "- **Verify:** file src/lane.py\n")
+            result = sprint.lane_return(root, "US0913", claimed="fixed")
+            self.assertEqual(result["outcome"], "fixed")
+            self.assertTrue(result["verification"]["ok"])
+            self.assertEqual(result["verification"]["blocking"], [])
+
+    def test_an_unverifiable_criterion_blocks_rather_than_disappearing(self) -> None:
+        """An AC with no Verify line proves nothing, so it cannot be counted as proven. It is
+        reported unspecified and blocks, rather than vanishing from the arithmetic."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _lane_story(root, 914, "## Acceptance Criteria\n\n### AC1: nobody said how\n\n"
+                                   "- **Given** a criterion with no verifier\n")
+            result = sprint.lane_return(root, "US0914", claimed="fixed")
+            self.assertEqual(result["verification"]["criteria"][0]["state"], "unspecified")
+            self.assertEqual(result["outcome"], "blocked")
+
+
+def _tsd_mutation_level(root: Path, *paths: str) -> None:
+    """A TSD whose `## Test Levels` puts the given paths under `### Mutation Testing`, so a unit
+    declaring one of them owes the `mutation` proof band."""
+    body = ("# Test Strategy\n\n## Test Levels\n\n### Mutation Testing\n\n"
+            + "".join(f"Covers `{p}`.\n" for p in paths)
+            + "\n## Traceability\n\nend.\n")
+    (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-studio" / "tsd.md").write_text(body, encoding="utf-8")
+
+
+class LaneProofTests(unittest.TestCase):
+    """US0510. The plan named the proof each unit owed and then nothing read it back at the
+    lane, so six obligations went unmet in RUN-01KYJZGZ without one line of output saying so.
+    The obligation is derived from the TSD through `test_strategy`, never listed here."""
+
+    def _story(self, root: Path, num: int) -> None:
+        _tsd_mutation_level(root, "src/lane.py")
+        _lane_story(root, num, "## Acceptance Criteria\n\n### AC1: the file is there\n\n"
+                               "- **Verify:** file src/lane.py\n")
+
+    def test_a_lane_returns_the_assigned_proof(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 920)
+            evidence = "3 mutants, 3 killed - sdlc-studio/.local/mutation-report.json"
+            result = sprint.lane_return(root, "US0920", claimed="fixed",
+                                        proof={"mutation": evidence})
+            proof = result["proof"]
+            self.assertEqual(proof["obligations"], ["mutation"])
+            self.assertEqual(proof["discharged"],
+                             [{"obligation": "mutation", "evidence": evidence}])
+            self.assertEqual(proof["undischarged"], [])
+
+    def test_an_undischarged_obligation_is_stated_not_omitted(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 921)
+            silent = sprint.lane_return(root, "US0921", claimed="fixed")["proof"]
+            self.assertEqual([g["obligation"] for g in silent["undischarged"]], ["mutation"])
+            self.assertTrue(silent["undischarged"][0]["why"],
+                            "a gap with no reason is the omission this unit exists to stop")
+            self.assertEqual(silent["discharged"], [])
+            stated = sprint.lane_return(
+                root, "US0921", claimed="fixed",
+                proof_gaps={"mutation": "no mutation runner on this machine"})["proof"]
+            self.assertEqual(stated["undischarged"],
+                             [{"obligation": "mutation",
+                               "why": "no mutation runner on this machine"}])
+
+    def test_an_underivable_strategy_is_reported_not_read_as_no_obligations(self) -> None:
+        """An absence is not an answer. With no TSD the obligations cannot be derived, and
+        reporting that as "this unit owes nothing" is the silent false-negative the carried
+        lessons name."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _lane_story(root, 922, "## Acceptance Criteria\n\n### AC1: the file is there\n\n"
+                                   "- **Verify:** file src/lane.py\n")
+            proof = sprint.lane_return(root, "US0922", claimed="fixed")["proof"]
+            self.assertFalse(proof["available"])
+            self.assertIn("Test Levels", proof["why"])
+
+
+def _carried_set(root: Path, *titles: str) -> Path:
+    """The curated carried-lessons file the retro writes - a fixed-size set, numbered."""
+    d = root / "sdlc-studio" / "retros"
+    d.mkdir(parents=True, exist_ok=True)
+    body = "# The carried lessons\n\nA fixed-size set.\n\n"
+    for i, t in enumerate(titles, 1):
+        body += f"## {i}. {t}\n\nWhy it is here.\n\n"
+    p = d / "LESSONS-TOP.md"
+    p.write_text(body, encoding="utf-8")
+    return p
+
+
+class CarriedLessonsBriefTests(unittest.TestCase):
+    """US0520. The retro curates the set and the plan printed it once, into a terminal the
+    delivery agent never sees. A lesson that reaches only the operator has been paid for and
+    not spent, so it travels in every lane brief and in the reviewers'."""
+
+    TITLES = ("a mechanism that reaches no caller is inert",
+              "an absence is not an answer")
+
+    def test_every_lane_brief_carries_the_set(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _carried_set(root, *self.TITLES)
+            ids = []
+            for num in (930, 931, 932):
+                _lane_story(root, num, "## Acceptance Criteria\n\n### AC1: it holds\n\n"
+                                       f"- **Verify:** file src/lane{num}.py\n",
+                            affects=f"src/lane{num}.py")
+                ids.append(f"US{num:04d}")
+            dispatch = sprint.lane_dispatch(root, ids)
+            self.assertEqual(len(dispatch["briefs"]), 3)
+            # Derived from what the dispatch produced, never from a list written here: a brief
+            # added later is covered by this assertion without an edit.
+            for brief in dispatch["briefs"]:
+                text = sprint.lane_brief_text(brief)
+                for title in self.TITLES:
+                    self.assertIn(title, text, f"{brief['id']} went out without the carried set")
+            # ...and in the lane worklists the plan exports for a team to pick up.
+            batch = [{"id": i, "path": str(next((root / "sdlc-studio" / "stories").glob(
+                f"{i}-*.md")))} for i in ids]
+            out = sprint.export_lanes(root, batch, root / "export")
+            self.assertTrue(out["lane_files"])
+            for f in out["lane_files"]:
+                body = Path(f).read_text(encoding="utf-8")
+                for title in self.TITLES:
+                    self.assertIn(title, body, f"{f} went out without the carried set")
+
+    def test_the_review_brief_carries_the_set(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _carried_set(root, *self.TITLES)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / ".local" / "sprint-plan.json").write_text(json.dumps(
+                {"count": 1, "order": "priority", "sprint_goal": "g",
+                 "breakdown": {"ungroomed": [], "clusters": []},
+                 "reachable_end_state": {"state": "Review", "basis": "b"}}), encoding="utf-8")
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(
+                {"schema": 1, "run_id": "R", "sprint_goal": "g", "batch": []}), encoding="utf-8")
+            brief = sprint.seat_brief(root)
+            for title in self.TITLES:
+                self.assertIn(title, brief)
+
+    def test_an_absent_set_is_reported(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # No LESSONS-TOP.md at all.
+            missing = sprint.carried_lessons(root)
+            self.assertFalse(missing["available"])
+            self.assertTrue(missing["why"])
+            _lane_story(root, 933, "## Acceptance Criteria\n\n### AC1: it holds\n\n"
+                                   "- **Verify:** file src/lane.py\n")
+            brief = sprint.lane_brief_text(sprint.lane_dispatch(root, ["US0933"])["briefs"][0])
+            self.assertIn("CARRIED LESSONS UNAVAILABLE", brief)
+            # A file that exists but names no lesson is the same unanswered question, not an
+            # answer of "there are none".
+            (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / "retros" / "LESSONS-TOP.md").write_text(
+                "# The carried lessons\n\nnothing curated yet.\n", encoding="utf-8")
+            empty = sprint.carried_lessons(root)
+            self.assertFalse(empty["available"])
+            self.assertTrue(empty["why"])
+
+
+class DropVersusDeferredDoneGateTests(unittest.TestCase):
+    """US0433 AC3, verified where the AC actually makes its claim: at the DONE-GATE.
+
+    The verifier this replaces asserted `assertIn`/`assertNotIn` on `run_state.read()["batch"]`
+    and left the gate linkage in a comment. That is a proxy for the run state, not a test of the
+    gate: it stays green if the gate is changed to skip Deferred units, and green if the gate
+    stops reading `state["batch"]` at all - the two regressions the AC exists to rule out.
+
+    So the gate is invoked. The two units are IDENTICAL in every respect the gate reads (same
+    body, same unverified executable AC, both undelivered) and differ only in what was done to
+    them: one transitioned to `Deferred` through the real transition, one removed with the real
+    `batch drop`. Any difference in the refusal set is therefore attributable to that, and
+    nothing else.
+    """
+
+    BODY = ("# {uid}: undelivered\n\n> **Status:** In Progress\n> **Points:** 2\n\n"
+            "## Acceptance Criteria\n\n### AC1: it works\n\n- **Verify:** shell true\n")
+
+    def _repo(self, d: str):
+        root = Path(d)
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        for uid in ("US0101", "US0102"):
+            (sd / f"{uid}-x.md").write_text(self.BODY.format(uid=uid), encoding="utf-8")
+        return root
+
+    def _blocked_ids(self, blockers) -> set[str]:
+        return {b["detail"].split(":")[0].strip() for b in blockers}
+
+    def test_deferred_still_blocks_the_done_gate_while_dropped_does_not(self) -> None:
+        import transition
+        from lib import run_state
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            run_state.open_run(root, batch=["US0101", "US0102"], goal="g")
+            transition.transition(root, "US0101", "Deferred")   # judges the WORK
+            self.assertIn("US0101", run_state.read(root)["batch"],
+                          "Deferred must leave the unit in the batch the gate reads")
+            run_state.drop_from_batch(root, "US0102", reason="out of scope for this batch")
+            blockers = sprint._done_gate_preflight(root, run_state.read(root))
+            blocked = self._blocked_ids(blockers)
+        self.assertIn("US0101", blocked,
+                      "the Deferred unit was released by the done-gate - Deferred judges the "
+                      "WORK and must still block")
+        self.assertNotIn("US0102", blocked,
+                         "the dropped unit is still demanded by the done-gate - drop judges "
+                         "THIS BATCH and must release it")
+        self.assertEqual(len(blockers), 1, blockers)
+
+    def test_the_gate_is_refusing_for_a_reason_not_returning_empty(self) -> None:
+        """The control. With nothing dropped, BOTH identical units are refused - so the single
+        refusal above is the drop's doing, not a gate that happens to name one unit."""
+        import transition
+        from lib import run_state
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            run_state.open_run(root, batch=["US0101", "US0102"], goal="g")
+            transition.transition(root, "US0101", "Deferred")
+            blocked = self._blocked_ids(
+                sprint._done_gate_preflight(root, run_state.read(root)))
+        self.assertEqual(blocked, {"US0101", "US0102"})
+
+
 if __name__ == "__main__":
     unittest.main()

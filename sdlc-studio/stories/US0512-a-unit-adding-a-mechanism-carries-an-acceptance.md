@@ -1,6 +1,6 @@
 # US0512: A unit adding a mechanism carries an acceptance criterion naming the caller that consumes it
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0461
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the check runs
 - **Then** it reports the unit, naming the criterion that describes a function with no consumer
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerNamedTests::test_a_mechanism_with_no_named_caller_is_reported
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a criterion naming a caller satisfies it, and the caller must exist
 
@@ -31,6 +32,7 @@
 - **When** the check runs
 - **Then** the unit passes only when the named caller resolves to something in the tree, so naming a caller that does not exist is not a way past it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerNamedTests::test_the_named_caller_must_resolve
+- **Verified:** yes (2026-07-28)
 
 ### AC3: the story template asks for it where the author is looking
 
@@ -38,6 +40,7 @@
 - **When** an author writes a criterion
 - **Then** the template asks for the consuming caller at the point the criterion is written, rather than leaving it to a lesson the author would have to recall
 - **Verify:** pytest tools/tests/test_doc_claims.py::CallerNamedTests::test_the_template_asks_for_the_caller
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

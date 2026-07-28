@@ -1,6 +1,6 @@
 # US0513: A unit whose mechanism has no caller yet says so explicitly and names the follow-up that completes it
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0461
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the check runs
 - **Then** it passes, because the gap is recorded rather than implied
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::PartialCapabilityTests::test_a_declared_partial_capability_is_accepted
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a declaration naming no follow-up is refused
 
@@ -31,6 +32,7 @@
 - **When** the check runs
 - **Then** it is refused, since an acknowledged gap nobody owns is the same as an unacknowledged one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::PartialCapabilityTests::test_a_partial_capability_must_name_its_follow_up
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

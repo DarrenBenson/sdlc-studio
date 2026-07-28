@@ -316,11 +316,66 @@ class GateRealWrapperTests(unittest.TestCase):
         # derivable-request sweep, which reads the live workspace.
         reconcile.derivable_request_drift = lambda root, explain=True: []
         try:
-            count = gate._reconcile(str(REPO))["count"]
+            # An EMPTY root, not the dev repo: the lane now reads the whole shared sweep, and
+            # pointing it at the live workspace made this stubbed test re-read the artefact
+            # corpus for detectors it has nothing to say about (~18s a call, four calls in
+            # this class). The stubs decide the assertion either way; the empty tree only
+            # removes work whose answer is not being tested.
+            with tempfile.TemporaryDirectory() as d:
+                count = gate._reconcile(d)["count"]
         finally:
             reconcile.detect_type = orig
             reconcile.derivable_request_drift = orig_d
         self.assertEqual(count, 2 * len(reconcile.DEFAULT_TYPES))  # 2 drift/type, not 6 keys
+
+    def test_the_gate_lane_sees_every_drift_source_reconcile_detect_does(self) -> None:
+        """BG0331. The lane counted `detect_type` plus one sweep-level kind, so the other
+        sweep-level detectors were exempt by omission: a tree on which `reconcile detect`
+        exits 1 passed the pre-commit hook and CI, and AGENTS.md's documented gate
+        disagreed with the executed one.
+
+        Driven from a real tree rather than a stub, because the defect WAS the enumeration:
+        a test that stubs the detectors it remembered would exempt the ones it forgot in
+        exactly the same way the lane did.
+        """
+        import reconcile
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            retros = root / "sdlc-studio" / "retros"
+            retros.mkdir(parents=True)
+            # A meta-index source: a numbered retro with no `retros/_index.md`. Assembled in
+            # the sweep, never in `detect_type`, so the old lane could not see it.
+            (retros / "RETRO0001-x.md").write_text(
+                "# RETRO0001: x\n\n> **Date:** 2026-01-01\n", encoding="utf-8")
+            sweep = reconcile.meta_index_drift(root)
+            self.assertTrue(sweep, "fixture must actually produce sweep-level drift")
+            res = gate._reconcile(str(root))
+        self.assertEqual(res["count"], len(sweep),
+                         f"the gate lane must count what `reconcile detect` counts; "
+                         f"reconcile saw {len(sweep)}, the gate saw {res['count']}")
+
+    def test_the_lane_reads_the_shared_sweep_rather_than_its_own_list(self) -> None:
+        """The structural half, and the one that stops the defect coming back. A lane that
+        re-derives its own total passes the fixture above the moment somebody adds the one
+        detector it happens to remember; only reading `reconcile.detect_all` makes the two
+        unable to disagree. Asserted at the CALL SITE - the lane, not the helper."""
+        import reconcile
+        calls: list = []
+        real = reconcile.detect_all
+
+        def spy(root, scope=None):
+            calls.append((str(root), scope))
+            return real(root, scope)
+
+        with tempfile.TemporaryDirectory() as d:
+            reconcile.detect_all = spy
+            try:
+                gate._reconcile(d)
+            finally:
+                reconcile.detect_all = real
+        self.assertEqual(len(calls), 1,
+                         "the reconcile lane must take its drift from the shared sweep")
+        self.assertIsNone(calls[0][1], "the lane judges the full default sweep, not a scope")
 
     def test_gate_counts_a_derivable_request_that_apply_can_clear(self) -> None:
         """The kind is assembled in the sweep, not in `detect_type`, so the gate could not see
@@ -342,7 +397,8 @@ class GateRealWrapperTests(unittest.TestCase):
             # Stubbing it keeps the test running everywhere; whether the detector is consulted
             # at all is pinned separately, both ways, by the paired test below.
             gate.sdlc_md.two_backlog_enforced = lambda root: True
-            res = gate._reconcile(str(REPO))
+            with tempfile.TemporaryDirectory() as d:   # empty root: see the note above
+                res = gate._reconcile(d)
         finally:
             reconcile.detect_type, reconcile.derivable_request_drift = orig, orig_d
             gate.sdlc_md.two_backlog_enforced = orig_e
@@ -370,7 +426,8 @@ class GateRealWrapperTests(unittest.TestCase):
             # copy skips the sweep entirely and the assertion fails on a missing detail string
             # rather than on the blocked/counted distinction it exists to pin.
             gate.sdlc_md.two_backlog_enforced = lambda root: True
-            res = gate._reconcile(str(REPO))
+            with tempfile.TemporaryDirectory() as d:   # empty root: see the note above
+                res = gate._reconcile(d)
         finally:
             reconcile.detect_type, reconcile.derivable_request_drift = orig, orig_d
             gate.sdlc_md.two_backlog_enforced = orig_e
@@ -389,10 +446,11 @@ class GateRealWrapperTests(unittest.TestCase):
         reconcile.derivable_request_drift = lambda root, explain=True: [
             {"id": "CR0001", "kind": "request-derivable", "blocked_by": None}]
         try:
-            gate.sdlc_md.two_backlog_enforced = lambda root: False
-            off = gate._reconcile(str(REPO))["count"]
-            gate.sdlc_md.two_backlog_enforced = lambda root: True
-            on = gate._reconcile(str(REPO))["count"]
+            with tempfile.TemporaryDirectory() as d:   # empty root: see the note above
+                gate.sdlc_md.two_backlog_enforced = lambda root: False
+                off = gate._reconcile(d)["count"]
+                gate.sdlc_md.two_backlog_enforced = lambda root: True
+                on = gate._reconcile(d)["count"]
         finally:
             reconcile.detect_type, reconcile.derivable_request_drift = orig, orig_d
             gate.sdlc_md.two_backlog_enforced = orig_e
@@ -3782,6 +3840,73 @@ class ReviewCurrentSelfStalenessTests(unittest.TestCase):
         self.assertFalse(res["blocking"],
                          "the close's own transition must not stale the anchor against itself")
         self.assertIn("close bookkeeping", res["detail"])
+
+    def test_a_hand_flip_straight_to_done_is_not_close_bookkeeping(self) -> None:
+        """BG0336. The carve-out asked only whether the changed line CONTAINED `Status:`,
+        with no reading of the direction or the values, so a unit hand-flipped from Draft
+        (or Blocked) straight to Done was exempted as 'the close recording a verdict
+        already reached' - over a verdict no reviewer ever reached."""
+        for frm in ("Draft", "Blocked", "Ready"):
+            with self.subTest(frm=frm), tempfile.TemporaryDirectory() as d:
+                root = self._repo(d)
+                story = root / "sdlc-studio" / "stories" / "US0001-x.md"
+                story.write_text(f"# US0001: x\n\n> **Status:** {frm}\n\nbody text\n",
+                                 encoding="utf-8")
+                base = self._commit(root, "seed")
+                story.write_text("# US0001: x\n\n> **Status:** Done\n\nbody text\n",
+                                 encoding="utf-8")
+                self._commit(root, "hand-flip", "2026-06-01T00:00:00+00:00")
+                self.assertFalse(
+                    gate._close_owned_change_only(root, story, base),
+                    f"{frm} -> Done is not a transition the close tooling records")
+
+    def test_a_reopen_of_a_terminal_status_is_not_close_bookkeeping(self) -> None:
+        """The other direction the substring test could not see. Reopening Done puts the
+        unit back in flight; nothing about that is a close stamping a reached verdict."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            story = root / "sdlc-studio" / "stories" / "US0001-x.md"
+            story.write_text("# US0001: x\n\n> **Status:** Done\n\nbody text\n",
+                             encoding="utf-8")
+            base = self._commit(root, "seed")
+            story.write_text("# US0001: x\n\n> **Status:** In Progress\n\nbody text\n",
+                             encoding="utf-8")
+            self._commit(root, "reopen", "2026-06-01T00:00:00+00:00")
+            self.assertFalse(gate._close_owned_change_only(root, story, base),
+                             "a reopen is a change a reviewer would judge")
+
+    def test_the_LANE_blocks_on_a_hand_flip_to_done(self) -> None:
+        """The CALL SITE, not the helper. A helper that returns the right answer to nobody
+        proves nothing - this drives `_review_current`, which is what the gate runs."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            reviews = root / "sdlc-studio" / "reviews"
+            reviews.mkdir(parents=True, exist_ok=True)
+            (reviews / "LATEST.md").write_text("# Reviews - LATEST\n\nprose\n", encoding="utf-8")
+            story = root / "sdlc-studio" / "stories" / "US0001-x.md"
+            story.write_text("# US0001: x\n\n> **Status:** Draft\n\nbody\n", encoding="utf-8")
+            self._commit(root, "seed with the anchor", "2026-01-01T00:00:00+00:00")
+            story.write_text("# US0001: x\n\n> **Status:** Done\n\nbody\n", encoding="utf-8")
+            self._commit(root, "hand-flip to Done", "2026-06-01T00:00:00+00:00")
+            res = gate._review_current(str(root))
+        self.assertTrue(res["blocking"],
+                        "a status nobody reviewed must stale the review anchor")
+
+    def test_a_non_status_close_field_is_still_bookkeeping(self) -> None:
+        """The negative control on the narrowing: only the Status line gained direction and
+        value awareness. The close's other stamps are still its own bookkeeping, or this
+        repair would block every close it was written to unblock."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            story = root / "sdlc-studio" / "stories" / "US0001-x.md"
+            story.write_text("# US0001: x\n\n> **Status:** Done\n\nbody text\n",
+                             encoding="utf-8")
+            base = self._commit(root, "seed")
+            story.write_text("# US0001: x\n\n> **Status:** Done\n"
+                             "> **Verified:** 2026-06-01\n\nbody text\n", encoding="utf-8")
+            self._commit(root, "close: stamp the verification", "2026-06-01T00:00:00+00:00")
+            self.assertTrue(gate._close_owned_change_only(root, story, base),
+                            "an unchanged Status plus a new Verified stamp is close paperwork")
 
     def test_the_LANE_still_blocks_on_a_real_content_change(self) -> None:
         """The paired lane control. Without this, the test above is satisfied by a lane that

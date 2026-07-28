@@ -773,5 +773,72 @@ class AttemptsAndCostTests(unittest.TestCase):
             self.assertEqual(c["unpriced"], [])
 
 
+class StampParsingTests(unittest.TestCase):
+    """`_parse_iso` is the ONE stamp reader for the whole measurement path, so what it refuses
+    is what the sprint report cannot see. It read a single hand-written pattern
+    (`%Y-%m-%dT%H:%M:%SZ`), which is the form THIS project writes - but not the form the
+    standard library writes, and `datetime.now(timezone.utc).isoformat()` is a live producer in
+    this tree (gate.py's cost and sign-off records, review_prep's freshness stamp). A stamp it
+    refuses is not reported as one bad row: `sprint_report._run_window` skips a run whose
+    `started_at` will not parse, and with no window the report says no run state names this
+    sprint's units - which is false, and reads as a sprint with no measurement at all.
+    """
+
+    def _utc(self, y, mo, d, h, mi, s):
+        from datetime import datetime, timezone
+        return datetime(y, mo, d, h, mi, s, tzinfo=timezone.utc)
+
+    def test_an_offset_stamp_is_the_same_instant_as_its_z_form(self) -> None:
+        self.assertEqual(tel._parse_iso("2026-07-28T09:00:00+00:00"),
+                         tel._parse_iso("2026-07-28T09:00:00Z"))
+        self.assertEqual(tel._parse_iso("2026-07-28T09:00:00+00:00"),
+                         self._utc(2026, 7, 28, 9, 0, 0))
+
+    def test_a_non_utc_offset_is_normalised_not_read_as_wall_clock(self) -> None:
+        """09:00+01:00 is 08:00Z. Reading the digits and ignoring the offset would book an hour
+        of elapsed that never happened."""
+        self.assertEqual(tel._parse_iso("2026-07-28T09:00:00+01:00"),
+                         self._utc(2026, 7, 28, 8, 0, 0))
+
+    def test_fractional_seconds_do_not_make_a_stamp_unreadable(self) -> None:
+        parsed = tel._parse_iso("2026-07-28T09:00:00.123456+00:00")
+        self.assertIsNotNone(parsed)
+        self.assertEqual(parsed.replace(microsecond=0), self._utc(2026, 7, 28, 9, 0, 0))
+        self.assertEqual(parsed.microsecond, 123456)  # precision kept, not rounded away
+
+    def test_the_stamp_the_standard_library_writes_is_readable(self) -> None:
+        """Derived from the producer, not typed by hand: this is verbatim what the
+        `datetime.now(timezone.utc).isoformat()` call sites in gate.py record."""
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        parsed = tel._parse_iso(now.isoformat())
+        self.assertIsNotNone(parsed)
+        self.assertEqual(parsed.replace(microsecond=0), now.replace(microsecond=0))
+
+    def test_a_stamp_with_no_offset_is_still_refused_rather_than_assumed_utc(self) -> None:
+        """The boundary of the repair. A naive stamp names no instant; calling it UTC would
+        invent the one fact it is missing. It stays unreadable, and unreadable is honest."""
+        self.assertIsNone(tel._parse_iso("2026-07-28T09:00:00"))
+        self.assertIsNone(tel._parse_iso("not a stamp"))
+        self.assertIsNone(tel._parse_iso(None))
+
+    def test_an_idle_gap_written_with_offsets_is_measured_not_dropped(self) -> None:
+        """The nearest caller inside this module: `idle_gaps` drops a gap whose ends do not
+        parse, so a refused stamp silently shortened nothing and lengthened the measured run."""
+        state = {"idle_gaps": [{"from": "2026-07-28T01:00:00+00:00",
+                                "to": "2026-07-28T02:30:00+00:00"}]}
+        self.assertEqual([g["seconds"] for g in tel.idle_gaps(state)], [5400.0])
+        self.assertAlmostEqual(tel.idle_hours(state), 1.5, places=3)
+
+    def test_elapsed_is_measured_when_the_run_stamps_carry_offsets(self) -> None:
+        state = {"idle_gaps": [{"from": "2026-07-28T01:00:00+00:00",
+                                "to": "2026-07-28T02:00:00+00:00"}]}
+        el = tel.elapsed_excluding_idle("2026-07-28T00:00:00+00:00",
+                                        "2026-07-28T04:00:00+00:00", state)
+        self.assertEqual(el["raw_hours"], 4.0)
+        self.assertEqual(el["idle_hours"], 1.0)
+        self.assertEqual(el["hours"], 3.0)
+
+
 if __name__ == "__main__":
     unittest.main()

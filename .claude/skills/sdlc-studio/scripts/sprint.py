@@ -1916,13 +1916,20 @@ def lane_partition(repo_root: Path | str, batch: list[dict]) -> dict:
             "files_by_unit": files_by_unit}
 
 
-def _write_lane_worklists(lanes: list[list[str]], out_dir: Path | str) -> list[str]:
+def _write_lane_worklists(lanes: list[list[str]], out_dir: Path | str,
+                          repo_root: Path | str | None = None) -> list[str]:
     """Write each lane as a worklist file the planner reads back (`sprint plan --worklist`). The
     undeclared-file caveat is stated in EVERY export, because the guarantee travels with the
     artefact handed to a team: disjointness is only as good as the declared `Affects`, and a unit
-    touching a file it did not declare (an undeclared file) can still collide with another lane."""
+    touching a file it did not declare (an undeclared file) can still collide with another lane.
+
+    With `repo_root`, the carried lessons travel in the same header - the file handed to a team
+    is the last thing between the curation and the work, so the set arrives with the units rather
+    than in a terminal the person picking this up never saw."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
+    carried = [f"# {line}" for line in
+               render_carried_lessons(carried_lessons(repo_root))] if repo_root else []
     lane_files: list[str] = []
     for i, lane in enumerate(lanes, start=1):
         p = out / f"lane-{i:02d}.worklist.txt"
@@ -1932,6 +1939,7 @@ def _write_lane_worklists(lanes: list[list[str]], out_dir: Path | str) -> list[s
             "# CAVEAT: disjointness is only as good as the declared Affects. A unit touching a"
             " file it did not declare (an undeclared file) can still collide with another lane -"
             " the guarantee does not cover what was never declared.",
+            *carried,
         ]
         p.write_text("\n".join(header + list(lane)) + "\n", encoding="utf-8")
         lane_files.append(str(p))
@@ -1943,8 +1951,334 @@ def export_lanes(repo_root: Path | str, batch: list[dict], out_dir: Path | str) 
     (`sprint plan --worklist`), so a lane can be handed to a separate team, agent or worktree.
     Returns `{lane_files, unplaceable}`; the caller writes nothing else."""
     part = lane_partition(repo_root, batch)
-    return {"lane_files": _write_lane_worklists(part["lanes"], out_dir),
+    return {"lane_files": _write_lane_worklists(part["lanes"], out_dir, repo_root),
             "unplaceable": part["unplaceable"]}
+
+
+# ---------------------------------------------------------------------------
+# The carried lessons: the curated set, read at plan and carried into every brief
+# ---------------------------------------------------------------------------
+# The retro curates a FIXED-SIZE set of the lessons that matter most for the next batch. Before
+# this, the plan printed the registry digest once, into a terminal the delivery agent never saw:
+# the learning reached the operator and stopped there, and three of the five carried lessons were
+# violated by their own author inside a day. So the set is read here and travels into every lane
+# brief and the review brief - the two places where the work that would repeat a lesson happens.
+
+#: Where the retro writes the curated set, relative to the repo root.
+CARRIED_LESSONS_REL = ("sdlc-studio", "retros", "LESSONS-TOP.md")
+#: A curated lesson is a numbered `## N. Title` heading. Derived by the parser, so the count is
+#: whatever the retro curated - this module never asserts how many there should be.
+_CARRIED_HEADING_RE = re.compile(r"^##\s+(\d+)\.\s+(.+?)\s*$", re.M)
+
+
+def carried_lessons(repo_root: Path | str) -> dict:
+    """The curated carried-lessons set: `{available, path, count, lessons, why}`.
+
+    `available` is False - with `why` saying which of the two it is - when the file is absent or
+    unreadable, and when it exists but names no curated lesson. Those are different facts and
+    NEITHER is "there are no lessons to carry": an empty read is an unanswered question, and a
+    brief that silently omits the set reads exactly like a brief with nothing to carry.
+    """
+    path = Path(repo_root).joinpath(*CARRIED_LESSONS_REL)
+    rel = "/".join(CARRIED_LESSONS_REL)
+    text = sdlc_md.read_text_safe(path)
+    if not text.strip():
+        return {"available": False, "path": str(path), "count": 0, "lessons": [],
+                "why": f"no readable carried-lessons set at {rel} - either no retro has curated "
+                       f"one yet or the file cannot be read; this is an unanswered question, "
+                       f"not a set with nothing in it"}
+    lessons_found = [{"n": int(m.group(1)), "title": m.group(2).strip()}
+                     for m in _CARRIED_HEADING_RE.finditer(text)]
+    if not lessons_found:
+        return {"available": False, "path": str(path), "count": 0, "lessons": [],
+                "why": f"{rel} exists but names no curated lesson (`## N. Title`) - the file was "
+                       f"read and answered nothing, which is not the same as a curated set of "
+                       f"zero"}
+    lessons_found.sort(key=lambda item: item["n"])
+    return {"available": True, "path": str(path), "count": len(lessons_found),
+            "lessons": lessons_found, "why": ""}
+
+
+def render_carried_lessons(carried: dict) -> list[str]:
+    """The carried set as brief lines - or the reported absence, which is never silence."""
+    if not carried.get("available"):
+        return [f"CARRIED LESSONS UNAVAILABLE: {carried.get('why', 'unknown')}. Reported rather "
+                f"than omitted, because a brief that drops them silently cannot be told from one "
+                f"with none to carry."]
+    return [f"Carried lessons ({carried['count']}) - read these before starting:",
+            *(f"  {item['n']}. {item['title']}" for item in carried["lessons"])]
+
+
+# ---------------------------------------------------------------------------
+# The lane contract: what a lane may be dispatched onto, and what it must return
+# ---------------------------------------------------------------------------
+# A lane is the unit of delegated delivery - a subagent, a worktree, a teammate. Everything it
+# is held to used to live in whatever prompt the operator typed that night, so the checks were
+# only as good as one person's memory at 3am. Six units reached Fixed in RUN-01KYJZGZ carrying
+# no acceptance criterion at all: each lane inferred a contract from the unit's summary,
+# delivered against the inference, and nothing downstream could tell that from the real thing.
+#
+# So the obligations live here, beside the dispatch, and the dispatch enforces the first of them
+# itself: a unit whose contract cannot be READ is refused before a lane starts on it.
+
+#: What every lane is held to, stated once. Carried in the brief so it travels with the work
+#: rather than depending on who wrote that sprint's prompt.
+LANE_OBLIGATIONS = (
+    "Refuse a unit that carries no authored acceptance criteria - never infer a contract from "
+    "its summary.",
+    "Run this unit's OWN acceptance criteria before returning, and return BLOCKED on a red or "
+    "unresolvable one, carrying the verifier's own output rather than a claim about it.",
+    "Return the proof the plan's test strategy assigned this unit, or name the obligation you "
+    "could not discharge and why.",
+)
+
+
+def _lane_ac_blocks(text: str) -> list[dict]:
+    """The unit's acceptance criteria as `{ac, title, verifier}`, parsed by the SAME parser the
+    verifier executes (`verify_ac.parse_story`). A second parser here would let a lane be
+    dispatched against criteria the runner cannot see, which is the divergence that makes an
+    executable contract stop being executable."""
+    import verify_ac  # noqa: PLC0415 - sibling; imported lazily so a plan never pays for it
+    return [{"ac": b.ac_id, "title": b.title, "verifier": b.verifier}
+            for b in verify_ac.parse_story(text)]
+
+
+def lane_contract(repo_root: Path | str, unit_id: str) -> dict:
+    """What a lane is contracted to deliver for one unit, or why it must not start.
+
+    Returns `{id, path, ok, refusal, criteria}`. `ok` is False - and `refusal` names the unit
+    and what is missing - when the unit cannot be read, carries no acceptance-criteria section,
+    or carries a grooming placeholder instead of authored criteria. A placeholder is refused for
+    the same reason as an absence: it is an absent contract wearing the shape of one, and a lane
+    that reads it as a specification delivers against nothing.
+
+    The two absence tests are NOT a second copy of the rules. "Is this authored?" comes from
+    `conformance._ac_signals` and "is this a placeholder?" from `conformance.story_is_ungroomed`,
+    the same definitions the grooming gate and the close report use, so a shape added there is
+    refused here without an edit.
+    """
+    root = Path(repo_root)
+    uid = sdlc_md.norm_id(unit_id)
+    hit = sdlc_md.find_by_id(root, uid)
+    if not hit:
+        return {"id": uid, "path": None, "ok": False, "criteria": [],
+                "refusal": f"{uid}: no artefact on disk resolves to this id - a lane cannot be "
+                           f"dispatched onto a unit whose contract it cannot read"}
+    path = Path(hit[0])
+    text = sdlc_md.read_text_safe(path)
+    import conformance  # noqa: PLC0415 - one definition of authored/ungroomed, never a second
+    if conformance.story_is_ungroomed(text):
+        return {"id": uid, "path": str(path), "ok": False, "criteria": [],
+                "refusal": f"{uid} ({path.name}): its acceptance criteria are an ungroomed "
+                           f"placeholder, not authored content - a placeholder is an absent "
+                           f"contract in the shape of one. Groom it before dispatching a lane."}
+    has_ac, _has_verify, _states = conformance._ac_signals(text)
+    if not has_ac:
+        return {"id": uid, "path": str(path), "ok": False, "criteria": [],
+                "refusal": f"{uid} ({path.name}): carries no authored acceptance criteria - "
+                           f"there is nothing to deliver against, and a contract inferred from "
+                           f"the summary is the lane's guess, not the unit's specification."}
+    return {"id": uid, "path": str(path), "ok": True, "refusal": "",
+            "criteria": _lane_ac_blocks(text)}
+
+
+def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
+    """Dispatch lanes onto `unit_ids`, refusing any unit whose contract cannot be read.
+
+    Returns `{briefs, refused}`. A refused unit never reaches a brief: the refusal is the
+    answer, and it names the unit and what is missing so the operator can groom it rather than
+    discover at review that the lane invented a specification.
+    """
+    root = Path(repo_root)
+    # Read ONCE per dispatch and put the same object in every brief: a set read per lane could
+    # differ between lanes of one sprint, and "every brief carries the set" would stop being one
+    # fact about the sprint.
+    carried = carried_lessons(root)
+    briefs: list[dict] = []
+    refused: list[dict] = []
+    for uid in unit_ids or []:
+        contract = lane_contract(root, uid)
+        if not contract["ok"]:
+            refused.append({"id": contract["id"], "refusal": contract["refusal"]})
+            continue
+        briefs.append({"id": contract["id"], "path": contract["path"],
+                       "criteria": contract["criteria"],
+                       "obligations": list(LANE_OBLIGATIONS),
+                       "proof": lane_proof(root, contract["id"]),
+                       "carried_lessons": carried})
+    return {"briefs": briefs, "refused": refused, "carried_lessons": carried}
+
+
+def lane_brief_text(brief: dict) -> str:
+    """One lane's brief as the text handed to whoever (or whatever) picks the unit up: the
+    criteria it is held to, the proof its unit owes, the standing obligations, and the carried
+    lessons. Composed purely from the brief record, so the same dispatch renders identically."""
+    lines = [f"Unit: {brief['id']} ({brief.get('path') or 'path unknown'})",
+             f"Acceptance criteria ({len(brief['criteria'])}) - these are the contract:"]
+    for crit in brief["criteria"]:
+        # Built outside the f-string, not inside its braces: a replacement field spanning two
+        # lines is a 3.12+ grammar (PEP 701) and a SyntaxError on the 3.10 floor this skill
+        # supports - it would not fail here, it would fail on somebody else's machine.
+        declared = crit["verifier"] or ("NONE DECLARED - this criterion proves nothing until "
+                                        "one is authored")
+        lines.append(f"  {crit['ac']}: {crit['title']}")
+        lines.append(f"    Verify: {declared}")
+    proof = brief.get("proof") or {}
+    if not proof.get("available"):
+        lines.append(f"Proof obligations: UNDERIVABLE - {proof.get('why') or 'unknown'}")
+    elif proof.get("obligations"):
+        lines.append(f"Proof this unit owes (from the plan's test strategy): "
+                     f"{', '.join(proof['obligations'])}")
+    else:
+        lines.append("Proof this unit owes: none beyond its own acceptance criteria")
+    lines.append("Obligations on this lane:")
+    lines.extend(f"  - {ob}" for ob in brief.get("obligations", ()))
+    lines.extend(render_carried_lessons(brief.get("carried_lessons") or {}))
+    return "\n".join(lines)
+
+
+#: Criterion states that stop a lane returning `fixed`. Derived by SUBTRACTION from the states
+#: the verifier can produce, never by listing the bad ones: a state added later is blocking until
+#: somebody deliberately decides it is not, which is the safe direction for an unknown.
+LANE_CRITERION_STATES = ("passed", "failed", "unresolved", "unspecified", "manual")
+#: The only two states that do not block. `manual` is a DECLARED human check, not a silent pass -
+#: it is reported in the counts so a reader can see how much of the contract a machine proved.
+LANE_NON_BLOCKING_STATES = ("passed", "manual")
+
+
+def _lane_criterion_state(verifier: str | None, result) -> str:
+    """One criterion's state from the runner's own verdict.
+
+    `vacuous` is reported as UNRESOLVED rather than as a pass or a plain failure. The runner
+    sets it when a pytest target no longer collects, or when a run exited clean having executed
+    nothing: in both cases the check did not answer. An unanswerable check counted as passing is
+    exactly the false green the executable-criteria machinery exists to prevent.
+    """
+    import verify_ac  # noqa: PLC0415 - sibling
+    if verifier is None:
+        return "unspecified"
+    if verify_ac._is_manual(verifier):
+        return "manual"
+    if result is None or result.vacuous:
+        return "unresolved"
+    return "passed" if result.ok else "failed"
+
+
+def lane_verify(repo_root: Path | str, unit_id: str, timeout: int = 300,
+                allow_shell: bool = True) -> dict:
+    """Run a unit's OWN acceptance criteria and report each with the verifier's own output.
+
+    Returns `{unit, ok, criteria, counts, blocking}`. Each criterion carries `state`, the
+    runner's `exit_code` and its `output` - the text the runner printed, not a summary of it.
+    A claim can then be checked instead of trusted, which is the difference between a lane
+    reporting evidence and a lane reporting confidence.
+
+    Nothing is written back to the artefact: this runs at the LANE, before review, and a
+    verification that stamps the story it is judging would be scoring its own paper.
+    """
+    import verify_ac  # noqa: PLC0415 - sibling
+    root = Path(repo_root)
+    contract = lane_contract(root, unit_id)
+    if not contract["ok"]:
+        return {"unit": contract["id"], "ok": False, "criteria": [],
+                "counts": dict.fromkeys(LANE_CRITERION_STATES, 0),
+                "blocking": [], "refusal": contract["refusal"]}
+    rows: list[dict] = []
+    for crit in contract["criteria"]:
+        verifier = crit["verifier"]
+        result = None
+        if verifier is not None and not verify_ac._is_manual(verifier):
+            result = verify_ac.run_verifier(verifier, timeout, root, allow_shell=allow_shell)
+        state = _lane_criterion_state(verifier, result)
+        output = ""
+        if result is not None:
+            output = "\n".join(p for p in (result.stdout, result.stderr) if p).strip()
+        rows.append({"ac": crit["ac"], "title": crit["title"], "verifier": verifier,
+                     "state": state,
+                     "exit_code": result.exit_code if result is not None else None,
+                     "output": output[-4000:]})
+    counts = {s: sum(1 for r in rows if r["state"] == s) for s in LANE_CRITERION_STATES}
+    blocking = [r["ac"] for r in rows if r["state"] not in LANE_NON_BLOCKING_STATES]
+    return {"unit": contract["id"], "ok": not blocking and bool(rows), "criteria": rows,
+            "counts": counts, "blocking": blocking, "refusal": ""}
+
+
+def _lane_why(verification: dict) -> str:
+    """The one sentence that says why a lane could not return what it claimed - naming the
+    criteria, because "some criteria failed" sends the reader back to the terminal."""
+    if verification.get("refusal"):
+        return verification["refusal"]
+    blocking = verification.get("blocking") or []
+    if not blocking:
+        if not verification.get("criteria"):
+            return (f"{verification['unit']}: no acceptance criterion was run, so nothing was "
+                    f"proved - an empty verification is not a green one")
+        return ""
+    named = ", ".join(f"{r['ac']} ({r['state']})"
+                      for r in verification["criteria"] if r["ac"] in blocking)
+    return (f"{verification['unit']}: {len(blocking)} acceptance criterion/criteria did not "
+            f"pass - {named}. The verifier output for each is carried in this result.")
+
+
+def lane_return(repo_root: Path | str, unit_id: str, claimed: str = "fixed",
+                proof: dict | None = None, proof_gaps: dict | None = None,
+                timeout: int = 300, allow_shell: bool = True) -> dict:
+    """What a lane returns for one unit: its own verification, and an outcome it cannot inflate.
+
+    `claimed` is what the lane believes it achieved. The returned `outcome` is that claim only
+    when every executable criterion passed; otherwise it is `blocked`, whatever the lane
+    claimed. This is the whole point: a lane may be wrong about its work, and the criteria are
+    the thing that is allowed to say so.
+    """
+    verification = lane_verify(repo_root, unit_id, timeout=timeout, allow_shell=allow_shell)
+    why = _lane_why(verification)
+    outcome = claimed if verification["ok"] else "blocked"
+    return {"unit": verification["unit"], "claimed": claimed, "outcome": outcome,
+            "verification": verification, "why": why,
+            "proof": lane_proof(repo_root, verification["unit"], proof, proof_gaps)}
+
+
+def lane_proof(repo_root: Path | str, unit_id: str, proof: dict | None = None,
+               proof_gaps: dict | None = None) -> dict:
+    """The proof the plan's test strategy assigned this unit, matched against what the lane
+    returned.
+
+    Returns `{available, why, obligations, discharged, undischarged}`. The obligations are the
+    unit's own risk bands from `test_strategy` - derived from the TSD, so a level added to that
+    document is owed by the next lane with no edit here.
+
+    Every obligation lands in exactly one of the two lists. An obligation for which the lane
+    supplied neither evidence nor a reason is UNDISCHARGED with that stated as its reason, so
+    the silence is what shows up in the result rather than the obligation disappearing from it -
+    an obligation nobody mentions reads exactly like an obligation that was met.
+
+    `available` is False when the strategy could not be derived at all. That is reported as an
+    unanswered question, never as "this unit owes no proof": a missing TSD tells you nothing
+    about the risk of the change.
+    """
+    root = Path(repo_root)
+    uid = sdlc_md.norm_id(unit_id)
+    strat = test_strategy(root, [uid])
+    if not strat.get("available"):
+        return {"available": False, "why": strat.get("why", ""), "obligations": [],
+                "discharged": [], "undischarged": []}
+    obligations = sorted(set(strat["units"].get(uid) or []))
+    supplied = {str(k): str(v) for k, v in (proof or {}).items()}
+    gaps = {str(k): str(v) for k, v in (proof_gaps or {}).items()}
+    discharged: list[dict] = []
+    undischarged: list[dict] = []
+    for band in obligations:
+        if band in supplied and supplied[band].strip():
+            discharged.append({"obligation": band, "evidence": supplied[band]})
+        elif band in gaps and gaps[band].strip():
+            undischarged.append({"obligation": band, "why": gaps[band]})
+        else:
+            undischarged.append({"obligation": band,
+                                 "why": "the lane returned neither evidence nor a reason - "
+                                        "stated here rather than omitted, because an obligation "
+                                        "nobody mentions reads like one that was met"})
+    return {"available": True, "why": "", "obligations": obligations,
+            "discharged": discharged, "undischarged": undischarged}
 
 
 def _batch_triage(root: Path, batch_ids: list[str]) -> dict:
@@ -2293,6 +2627,11 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         # The cross-project tier, ranked. It had NO automatic reader: recall was a prose
         # instruction, and prose instructions are the ones that get skipped.
         "cross_lessons": lessons.cross_digest(root),
+        # The RETRO's curated fixed-size set. Distinct from the digest above: that is everything
+        # still in force, this is a judgement about what to carry into THIS batch. Recorded on
+        # the plan so it travels into every lane brief and the review brief rather than scrolling
+        # past in a terminal the delivery agent never sees.
+        "carried_lessons": carried_lessons(root),
         # What each unit must satisfy to close, and the checks every commit meets - so the
         # requirements arrive as a briefing rather than as refusals one gate run at a time.
         "gate_briefing": build_gate_briefing(root, batch),
@@ -2380,6 +2719,9 @@ def build_authoring_plan(repo_root: Path | str, prd_path: str) -> dict:
         # A greenfield project has no lessons of its own - so the inherited registry is the
         # ONLY tier that can help it, and the one it most needs.
         "cross_lessons": lessons.cross_digest(repo_root),
+        # A greenfield plan has no curated set either, and says so: the authoring path reports
+        # the absence rather than being the one plan shape that omits it silently.
+        "carried_lessons": carried_lessons(repo_root),
     }
 
 
@@ -2911,6 +3253,17 @@ def _render_lessons(data: dict) -> None:
               f"the ones that no longer hold)")
 
 
+def _render_carried_lessons(data: dict) -> None:
+    """The retro's curated set, printed in the plan - and its ABSENCE printed too, because a
+    plan that silently omits it reads exactly like a plan with none to carry."""
+    carried = data.get("carried_lessons")
+    if carried is None:
+        return
+    print("")
+    for line in render_carried_lessons(carried):
+        print(f"  {line}")
+
+
 def _render_cross_lessons(data: dict) -> None:
     """The CROSS-PROJECT lessons, ranked, printed in the plan.
 
@@ -3280,6 +3633,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_gate_briefing(data)
     _render_lessons(data)
     _render_cross_lessons(data)
+    _render_carried_lessons(data)
 
 
 def _plan_authoring(args: argparse.Namespace) -> int:
@@ -3295,6 +3649,7 @@ def _plan_authoring(args: argparse.Namespace) -> int:
     print(f"authoring plan: bootstrap from {data['prd']} (PRD -> epics -> stories)")
     _render_lessons(data)
     _render_cross_lessons(data)
+    _render_carried_lessons(data)
     return 0
 
 
@@ -3856,6 +4211,28 @@ def _only_blocked_derivable_drift(root, blocked) -> bool:
                 for t in reconcile.DEFAULT_TYPES)
     derivable = reconcile.derivable_request_drift(root)
     return total == 0 and len(derivable) == len(blocked)
+
+
+def _close_lesson_repeats(root) -> bool:
+    """Report, at the close, every CARRIED lesson this run violated anyway, naming the unit.
+
+    Not a chain step and never blocking: a repeat is evidence for the operator's next decision
+    (does this lesson need a guard?), not a reason to refuse the ceremony that produced the
+    evidence. Silent when nothing repeated, so it is a signal rather than a fixture of every
+    close. Returns True iff it printed."""
+    import lessons  # noqa: PLC0415 - deferred, like the chain's other sibling imports
+    try:
+        text = lessons.repeat_report(root)
+    except Exception as exc:  # noqa: BLE001 - a reporting lane must never fail a close
+        sdlc_md.debug("sprint._close_lesson_repeats", exc)
+        return False
+    if not text:
+        return False
+    print()
+    print(text)
+    print("  A lesson repeated after being carried is a missing guard: consider "
+          "`lessons.py propose` to turn it into work.")
+    return True
 
 
 # Chain order is the ceremony's order; cmd_close resolves each step through globals() at
@@ -5151,6 +5528,90 @@ def cmd_batch(args: argparse.Namespace) -> int:
     return 0
 
 
+def _lane_unit_ids(args: argparse.Namespace) -> list[str]:
+    """The units this lane covers: the ones named, else the OPEN run's approved batch. Derived
+    from the run rather than retyped, so a lane brief cannot quietly cover a different set from
+    the one the sprint approved."""
+    if getattr(args, "units", None):
+        return [u.strip() for u in args.units if u and u.strip()]
+    try:
+        return list((run_state.read(args.root) or {}).get("batch") or [])
+    except Exception as exc:  # noqa: BLE001 - a missing run state is reported, not fatal
+        sdlc_md.debug("sprint._lane_unit_ids", exc)
+        return []
+
+
+def _lane_pairs(values: list[str] | None, flag: str) -> dict:
+    """`--proof band=evidence` pairs. A malformed pair raises rather than being dropped: a proof
+    silently discarded on a typo is the undischarged obligation this command exists to surface."""
+    out: dict = {}
+    for raw in values or []:
+        if "=" not in raw:
+            raise ValueError(f"{flag} expects `obligation=text`, got {raw!r}")
+        band, text = raw.split("=", 1)
+        if not band.strip() or not text.strip():
+            raise ValueError(f"{flag} expects `obligation=text` with both sides set, got {raw!r}")
+        out[band.strip()] = text.strip()
+    return out
+
+
+def cmd_lane(args: argparse.Namespace) -> int:
+    """`sprint lane brief|return`: the two ends of a delegated unit of delivery.
+
+    `brief` dispatches lanes onto the units and prints what each is held to, refusing any unit
+    whose acceptance criteria cannot be read. `return` runs a unit's own criteria and prints the
+    outcome, which is `blocked` whenever a criterion is red, unresolved or unspecified, whatever
+    the lane claimed. Exit 2 on a refusal, 1 on a blocked return - so a wrapper script cannot
+    treat either as a delivery.
+    """
+    root = Path(args.root)
+    units = _lane_unit_ids(args)
+    if not units:
+        print("sprint lane: no units - name them with --units, or open a run whose batch has "
+              "some. An empty lane is reported, never treated as a lane with nothing to do.",
+              file=sys.stderr)
+        return 2
+    if args.action == "brief":
+        dispatch = lane_dispatch(root, units)
+        if getattr(args, "format", "text") == "json":
+            print(json.dumps(dispatch, indent=2))
+        else:
+            for brief in dispatch["briefs"]:
+                print(lane_brief_text(brief))
+                print("")
+            for ref in dispatch["refused"]:
+                print(f"REFUSED {ref['refusal']}", file=sys.stderr)
+        return 2 if dispatch["refused"] else 0
+    try:
+        proof = _lane_pairs(getattr(args, "proof", None), "--proof")
+        gaps = _lane_pairs(getattr(args, "gap", None), "--gap")
+    except ValueError as exc:
+        print(f"sprint lane return: {exc}", file=sys.stderr)
+        return 2
+    results = [lane_return(root, uid, claimed=args.claimed, proof=proof, proof_gaps=gaps,
+                           timeout=args.timeout) for uid in units]
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps(results, indent=2))
+    else:
+        for res in results:
+            print(f"{res['unit']}: {res['outcome']} (claimed {res['claimed']})")
+            for crit in res["verification"]["criteria"]:
+                print(f"  {crit['ac']}: {crit['state']} (exit {crit['exit_code']}) "
+                      f"<- {crit['verifier']}")
+                if crit["state"] not in LANE_NON_BLOCKING_STATES and crit["output"]:
+                    for line in crit["output"].splitlines()[-12:]:
+                        print(f"      | {line}")
+            for got in res["proof"]["discharged"]:
+                print(f"  proof {got['obligation']}: {got['evidence']}")
+            for gap in res["proof"]["undischarged"]:
+                print(f"  proof {gap['obligation']}: NOT DISCHARGED - {gap['why']}")
+            if not res["proof"]["available"] and res["proof"]["why"]:
+                print(f"  proof obligations UNDERIVABLE: {res['proof']['why']}")
+            if res["why"]:
+                print(f"  {res['why']}", file=sys.stderr)
+    return 1 if any(r["outcome"] == "blocked" for r in results) else 0
+
+
 def cmd_close(args: argparse.Namespace) -> int:
     """The sprint close ceremony as one deterministic, resumable chain."""
     root = args.root
@@ -5251,6 +5712,10 @@ def cmd_close(args: argparse.Namespace) -> int:
         print(f"close [{i}/{len(_CLOSE_CHAIN)}] {name}: ok - {detail.splitlines()[-1] if detail else 'ok'}")
         if name == "handoff":
             state = run_state.read(root) or state  # the handoff closes the run object
+    # A carried lesson violated anyway is reported HERE, on both close paths, before the brief or
+    # the sign-off fan-out: the operator is about to decide, and a repeat is evidence for that
+    # decision. Never blocking - see `_close_lesson_repeats`.
+    _close_lesson_repeats(root)
     # `--apply-signoff`: the operator has already reviewed the brief and decided - fan their
     # recorded approval into per-unit sign-offs + Done transitions, then the tail. Replaces the
     # brief print (the brief is what you read to DECIDE; here the decision is made).
@@ -5561,7 +6026,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
     export_dir = getattr(args, "export_lanes", None)
     if export_dir:
         lp = data.get("lane_partition") or {"lanes": [], "unplaceable": []}
-        files = _write_lane_worklists(lp["lanes"], export_dir)
+        files = _write_lane_worklists(lp["lanes"], export_dir, args.root)
         print(f"exported {len(files)} lane worklist(s) to {export_dir}: "
               + ", ".join(Path(f).name for f in files))
         if lp["unplaceable"]:
@@ -6114,7 +6579,8 @@ def _plan_path(root: Path) -> Path:
     return Path(root) / "sdlc-studio" / ".local" / "sprint-plan.json"
 
 
-def _compose_seat_brief(plan: dict, goal: str | None, digest: dict) -> str:
+def _compose_seat_brief(plan: dict, goal: str | None, digest: dict,
+                        carried: dict | None = None) -> str:
     """The seat brief text, composed PURELY from the planner's output, the goal and the lessons
     digest - so the same batch and goal produce the same brief every time."""
     bd = plan.get("breakdown") or {}
@@ -6142,6 +6608,11 @@ def _compose_seat_brief(plan: dict, goal: str | None, digest: dict) -> str:
             lines.append(f"  - {lesson.get('id')}: {lesson.get('title')}")
     else:
         lines.append("Lessons registry: no recorded failure modes yet")
+    # The CURATED set as well as the registry digest, and for a different reason: the review is
+    # the pass most likely to catch a repeat, so it must know what has been repeating. An absent
+    # set is reported here too - a reviewer who is not told the set is missing assumes they were
+    # given it.
+    lines.extend(render_carried_lessons(carried or {}))
     return "\n".join(lines)
 
 
@@ -6176,6 +6647,7 @@ def seat_brief(repo_root: Path | str, worklist: str | None = None) -> str:
     previous sprint's by construction."""
     root = Path(repo_root)
     digest = lessons.plan_digest(root)
+    carried = carried_lessons(root)
     if worklist:
         plan = build_plan(root, worklist=worklist, skip_personas=True)
         goal = plan.get("sprint_goal")
@@ -6183,7 +6655,7 @@ def seat_brief(repo_root: Path | str, worklist: str | None = None) -> str:
             goal = (run_state.read(root) or {}).get("sprint_goal") or goal
         except Exception as exc:  # noqa: BLE001
             sdlc_md.debug("sprint.seat_brief", exc)
-        return _compose_seat_brief(plan, goal, digest)
+        return _compose_seat_brief(plan, goal, digest, carried)
     plan = sdlc_md.read_json(_plan_path(root), {})
     stale = _persisted_plan_is_stale(root, plan)
     if stale:
@@ -6195,7 +6667,7 @@ def seat_brief(repo_root: Path | str, worklist: str | None = None) -> str:
         goal = (run_state.read(root) or {}).get("sprint_goal") or goal
     except Exception as exc:  # noqa: BLE001 - a missing run state must not break the brief
         sdlc_md.debug("sprint.seat_brief", exc)
-    return _compose_seat_brief(plan, goal, digest)
+    return _compose_seat_brief(plan, goal, digest, carried)
 
 
 def _parse_seat_verdict(spec: str) -> dict:
@@ -6752,6 +7224,28 @@ def build_parser() -> argparse.ArgumentParser:
     bt.add_argument("--format", choices=("text", "json"), default="text")
     bt.add_argument("--root", default=".", help="Repo root (default: .)")
     bt.set_defaults(func=cmd_batch)
+
+    ln = sub.add_parser(
+        "lane",
+        help="Dispatch and close ONE delegated unit of delivery. `brief` prints what each lane "
+             "is held to (its acceptance criteria, the proof its unit owes, the standing "
+             "obligations and the carried lessons) and REFUSES a unit whose criteria are absent "
+             "or a placeholder. `return` runs the unit's own criteria and reports blocked on a "
+             "red, unresolved or unspecified one, carrying the verifier's own output.")
+    ln.add_argument("action", choices=("brief", "return"))
+    ln.add_argument("--units", nargs="+", default=None,
+                    help="the unit ids this lane covers (default: the open run's batch)")
+    ln.add_argument("--claimed", default="fixed",
+                    help="(return) what the lane believes it achieved; the criteria may refuse it")
+    ln.add_argument("--proof", action="append", default=None, metavar="BAND=EVIDENCE",
+                    help="(return) evidence discharging an assigned proof obligation; repeatable")
+    ln.add_argument("--gap", action="append", default=None, metavar="BAND=WHY",
+                    help="(return) why an assigned obligation could NOT be discharged; repeatable")
+    ln.add_argument("--timeout", type=int, default=300,
+                    help="(return) per-verifier timeout in seconds (default: 300)")
+    ln.add_argument("--format", choices=("text", "json"), default="text")
+    ln.add_argument("--root", default=".", help="Repo root (default: .)")
+    ln.set_defaults(func=cmd_lane)
 
     sdlc_md.add_global_root(parser)
     return parser

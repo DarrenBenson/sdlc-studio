@@ -1,6 +1,6 @@
 # US0525: The conformance lane reads recorded waivers and reports a waived unit as waived, naming the decision
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0460
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the conformance check runs
 - **Then** it reports the unit as waived and names the decision that waived it, rather than counting it non-conformant
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::WaiverTests::test_a_waived_unit_reports_as_waived_naming_the_decision
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a unit outside the waiver is unaffected
 
@@ -31,6 +32,7 @@
 - **When** the check runs
 - **Then** it is still reported, so a waiver narrows the finding rather than silencing the lane
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::WaiverTests::test_an_unwaived_unit_is_still_reported
+- **Verified:** yes (2026-07-28)
 
 ### AC3: the lane behaves the same whether or not a diff exists to scope to
 
@@ -38,6 +40,7 @@
 - **When** the check runs in each
 - **Then** the waiver is honoured in both, because a close runs on a clean tree and that is exactly when the waiver was needed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::WaiverTests::test_the_waiver_holds_on_a_clean_tree
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

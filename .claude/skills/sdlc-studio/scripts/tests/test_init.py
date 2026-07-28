@@ -8,10 +8,13 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SCR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCR))
 from lib import sdlc_md  # noqa: E402
+import artifact  # noqa: E402
+import file_finding  # noqa: E402
 
 
 def _load():
@@ -625,6 +628,78 @@ class InstalledSkillIsNotSourceTests(unittest.TestCase):
             self._tree(root, [".claude/skills/s/scripts/a.py", "app.py"])
             self.assertEqual(init.classify_path(root), "brownfield",
                              "pruning the payload must not blind the census to real source")
+
+
+class IssueTypeTests(unittest.TestCase):
+    """US0529/US0530: the tree init creates is DERIVED from the shipped type table.
+
+    A new project had no `issues/` directory and no issues index, so the issue type - a shipped
+    artefact type with its own status vocabulary, index template and creator branch - could not be
+    used until somebody made the directory by hand. The cause was a hand-written list of
+    directories that silently exempted the type nobody remembered to add to it."""
+
+    def test_init_creates_a_usable_issues_directory(self) -> None:
+        """US0529 AC1: the issues directory and index exist, and an issue files straight in."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            init.init(repo)
+            issues = repo / sdlc_md.ARTIFACT_TYPES["issue"][0]
+            self.assertTrue(issues.is_dir(), "init created no issues directory")
+            idx = issues / "_index.md"
+            self.assertTrue(idx.exists(), "init created no issues index")
+            self.assertNotIn("{{", idx.read_text(encoding="utf-8"))
+            # Usable immediately: file an issue with NO directory made by hand.
+            r = artifact.new(repo, "issue", "Login times out on a slow link",
+                             {"summary": "reported by a user", "size": "S"})
+            self.assertTrue(Path(r["path"]).exists(), "the filed issue was not written")
+            self.assertEqual(Path(r["path"]).parent, issues,
+                             "the issue did not land in the directory init created")
+            self.assertTrue(r["indexed"], "the filed issue was not indexed")
+            self.assertIn(r["id"], idx.read_text(encoding="utf-8"))
+
+    def test_every_shipped_type_gets_a_directory(self) -> None:
+        """US0530 AC1: measured against the shipped table, not against init's own list."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            init.init(repo)
+            missing = []
+            for t, (rel, _prefix) in sdlc_md.ARTIFACT_TYPES.items():
+                if not (repo / rel).is_dir():
+                    missing.append(f"{t}: no {rel}/")
+                elif not (repo / rel / "_index.md").exists():
+                    missing.append(f"{t}: no {rel}/_index.md")
+            self.assertEqual(missing, [], "shipped types with no home on a new project")
+            # ... and the list init exposes is the table's, not a subset that drifted from it.
+            self.assertEqual(set(init.index_types()), set(sdlc_md.ARTIFACT_TYPES))
+
+    def test_a_new_type_is_covered_without_editing_init(self) -> None:
+        """US0530 AC2: append a type to the shipped table; init covers it with no edit to init.
+
+        The per-type index template is a separate shipped asset, so its lookup is stubbed here -
+        what is under test is whether init DERIVES its tree from the table or restates it."""
+        real_template = file_finding.index_template_path
+
+        def _stub(type_: str) -> Path:
+            return real_template("bug" if type_ == "widget" else type_)
+
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.dict(sdlc_md.ARTIFACT_TYPES,
+                                {"widget": ("sdlc-studio/widgets", "WG")}), \
+                mock.patch.object(file_finding, "index_template_path", _stub):
+            repo = Path(d)
+            init.init(repo)
+            self.assertTrue((repo / "sdlc-studio" / "widgets").is_dir(),
+                            "a type added to the shipped table got no directory")
+            self.assertTrue((repo / "sdlc-studio" / "widgets" / "_index.md").exists(),
+                            "a type added to the shipped table got no index")
+
+    def test_the_workspaces_are_still_created(self) -> None:
+        """Deriving the artefact dirs must not drop the cross-cutting workspaces beside them."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            init.init(repo)
+            for w in ("retros", "handoffs", "decisions", "reviews", ".local"):
+                self.assertTrue((repo / "sdlc-studio" / w).is_dir(), w)
 
 
 if __name__ == "__main__":
