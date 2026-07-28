@@ -1,6 +1,7 @@
 # CR-0471: A sprint is named by its goal, not only by its run id, so the goal is visible wherever the sprint is listed
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0187
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

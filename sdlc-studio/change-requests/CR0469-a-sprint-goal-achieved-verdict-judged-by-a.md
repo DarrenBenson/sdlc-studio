@@ -1,6 +1,7 @@
 # CR-0469: A sprint-goal-achieved verdict judged by a stakeholder panel, which decides whether an open defect can be left or must be addressed before close
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0185
 > **Priority:** High
 > **Type:** Feature
 > **Size:** L

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 8 |
+| Proposed | 0 |
 | Approved | 0 |
-| In Progress | 31 |
+| In Progress | 39 |
 | Complete | 437 |
 | Rejected | 1 |
 | Deferred | 0 |
@@ -286,13 +286,13 @@
 | [CR-0462](CR0462-nothing-measures-a-sprint-s-overhead-against-its.md) | Nothing measures a sprint's overhead against its delivery, so a 9:1 ratio took an operator noticing | Complete | High | Improvement | 2026-07-28 | EP0179 |
 | [CR-0463](CR0463-a-delivery-lane-returns-without-proving-its-own.md) | A delivery lane returns without proving its own acceptance criteria, so basic AC failures survive to review | Complete | High | Improvement | 2026-07-28 | EP0178 |
 | [CR-0464](CR0464-lessons-accumulate-faster-than-they-are-read-curate.md) | Lessons accumulate faster than they are read: curate a top few at each retro and make them a read gate for the sprint and its reviewers | Complete | High | Improvement | 2026-07-28 | EP0179 |
-| [CR-0465](CR0465-reconcile-s-sweep-detectors-re-read-the-whole.md) | reconcile's sweep detectors re-read the whole corpus per unit: 733,271 file opens for one run | Proposed | Medium | Improvement | 2026-07-28 | -- |
-| [CR-0466](CR0466-a-review-round-records-no-duration-so-the.md) | A review round records no duration, so the overhead ratio can only ever be a lower bound | Proposed | Medium | Improvement | 2026-07-28 | -- |
-| [CR-0467](CR0467-the-one-lane-one-file-changelog-rule-and.md) | The one-lane-one-file changelog rule and the [Unreleased] rule contradict each other under parallel delivery | Proposed | Medium | Improvement | 2026-07-28 | -- |
-| [CR-0468](CR0468-decomposition-creates-seams-between-units-and-nothing-owns.md) | Decomposition creates seams between units and nothing owns them, so a jointly inconsistent batch passes every unit's own acceptance criteria | Proposed | High | Improvement | 2026-07-28 | -- |
-| [CR-0469](CR0469-a-sprint-goal-achieved-verdict-judged-by-a.md) | A sprint-goal-achieved verdict judged by a stakeholder panel, which decides whether an open defect can be left or must be addressed before close | Proposed | High | Feature | 2026-07-28 | -- |
-| [CR-0470](CR0470-bookend-the-sprint-with-a-goal-content-review.md) | Bookend the sprint with a goal-content review: will this batch deliver the goal, and at close did it, given what was not delivered and what was raised | Proposed | High | Feature | 2026-07-28 | -- |
-| [CR-0471](CR0471-a-sprint-is-named-by-its-goal-not.md) | A sprint is named by its goal, not only by its run id, so the goal is visible wherever the sprint is listed | Proposed | Medium | Improvement | 2026-07-28 | -- |
+| [CR-0465](CR0465-reconcile-s-sweep-detectors-re-read-the-whole.md) | reconcile's sweep detectors re-read the whole corpus per unit: 733,271 file opens for one run | In Progress | Medium | Improvement | 2026-07-28 | EP0181 |
+| [CR-0466](CR0466-a-review-round-records-no-duration-so-the.md) | A review round records no duration, so the overhead ratio can only ever be a lower bound | In Progress | Medium | Improvement | 2026-07-28 | EP0182 |
+| [CR-0467](CR0467-the-one-lane-one-file-changelog-rule-and.md) | The one-lane-one-file changelog rule and the [Unreleased] rule contradict each other under parallel delivery | In Progress | Medium | Improvement | 2026-07-28 | EP0183 |
+| [CR-0468](CR0468-decomposition-creates-seams-between-units-and-nothing-owns.md) | Decomposition creates seams between units and nothing owns them, so a jointly inconsistent batch passes every unit's own acceptance criteria | In Progress | High | Improvement | 2026-07-28 | EP0184 |
+| [CR-0469](CR0469-a-sprint-goal-achieved-verdict-judged-by-a.md) | A sprint-goal-achieved verdict judged by a stakeholder panel, which decides whether an open defect can be left or must be addressed before close | In Progress | High | Feature | 2026-07-28 | EP0185 |
+| [CR-0470](CR0470-bookend-the-sprint-with-a-goal-content-review.md) | Bookend the sprint with a goal-content review: will this batch deliver the goal, and at close did it, given what was not delivered and what was raised | In Progress | High | Feature | 2026-07-28 | EP0186 |
+| [CR-0471](CR0471-a-sprint-is-named-by-its-goal-not.md) | A sprint is named by its goal, not only by its run id, so the goal is visible wherever the sprint is listed | In Progress | Medium | Improvement | 2026-07-28 | EP0187 |
 | [CR-0472](CR0472-deferred-close-blocker-sign-off-us0508-no-critic.md) | Deferred close blocker (sign-off): US0508: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
 | [CR-0473](CR0473-deferred-close-blocker-sign-off-us0509-no-critic.md) | Deferred close blocker (sign-off): US0509: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
 | [CR-0474](CR0474-deferred-close-blocker-sign-off-us0510-no-critic.md) | Deferred close blocker (sign-off): US0510: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
@@ -316,7 +316,7 @@
 | [CR-0492](CR0492-deferred-close-blocker-sign-off-us0528-no-critic.md) | Deferred close blocker (sign-off): US0528: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
 | [CR-0493](CR0493-deferred-close-blocker-sign-off-us0529-no-critic.md) | Deferred close blocker (sign-off): US0529: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
 | [CR-0494](CR0494-deferred-close-blocker-sign-off-us0530-no-critic.md) | Deferred close blocker (sign-off): US0530: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
-| [CR-0495](CR0495-file-and-close-fans-one-systemic-blocker-into.md) | file-and-close fans one systemic blocker into one change request per unit, so a single owed sign-off filled the discovery backlog with 23 identical artefacts | Proposed | High | Improvement | 2026-07-28 | -- |
+| [CR-0495](CR0495-file-and-close-fans-one-systemic-blocker-into.md) | file-and-close fans one systemic blocker into one change request per unit, so a single owed sign-off filled the discovery backlog with 23 identical artefacts | In Progress | High | Improvement | 2026-07-28 | EP0188 |
 
 ## Archived Releases
 

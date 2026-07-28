@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 12 |
+| Draft | 20 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 168 |
-| **Total** | **180** |
+| **Total** | **188** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -203,3 +203,11 @@
 | [EP0178](EP0178-defects-are-caught-at-the-lane-not-at.md) | Defects are caught at the lane, not at review: a unit arrives with its acceptance criteria already proven | Done | -- | -- | 2026-07-28 | 2026-07-28 |
 | [EP0179](EP0179-the-loop-measures-its-own-cost-and-carries.md) | The loop measures its own cost and carries its own learning forward | Done | -- | -- | 2026-07-28 | 2026-07-28 |
 | [EP0180](EP0180-tooling-gaps-that-block-the-work-they-are.md) | Tooling gaps that block the work they are meant to serve | Done | -- | -- | 2026-07-28 | 2026-07-28 |
+| [EP0181](EP0181-reconcile-s-sweeps-read-the-corpus-once-per.md) | reconcile's sweeps read the corpus once per run, not once per unit | Draft | -- | -- | 2026-07-28 | 2026-07-28 |
+| [EP0182](EP0182-a-review-round-records-how-long-it-took.md) | A review round records how long it took, so the overhead ratio stops being a floor | Draft | -- | -- | 2026-07-28 | 2026-07-28 |
+| [EP0183](EP0183-one-changelog-rule-that-parallel-lanes-can-all.md) | One changelog rule that parallel lanes can all obey | Draft | -- | -- | 2026-07-28 | 2026-07-28 |
+| [EP0184](EP0184-a-seam-between-two-units-has-an-owner.md) | A seam between two units has an owner before the work starts | Draft | -- | -- | 2026-07-28 | 2026-07-28 |
+| [EP0185](EP0185-a-sprint-goal-is-judged-clause-by-clause.md) | A sprint goal is judged clause by clause, by a panel the author is not on | Draft | -- | -- | 2026-07-28 | 2026-07-28 |
+| [EP0186](EP0186-the-goal-review-is-a-bookend-asked-of.md) | The goal review is a bookend: asked of the content at plan, and of the outcome at close | Draft | -- | -- | 2026-07-28 | 2026-07-28 |
+| [EP0187](EP0187-a-sprint-carries-its-goal-in-its-name.md) | A sprint carries its goal in its name | Draft | -- | -- | 2026-07-28 | 2026-07-28 |
+| [EP0188](EP0188-the-bounded-exit-files-one-artefact-per-cause.md) | The bounded exit files one artefact per cause, not one per unit | Draft | -- | -- | 2026-07-28 | 2026-07-28 |

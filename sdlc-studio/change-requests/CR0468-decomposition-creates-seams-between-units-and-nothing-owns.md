@@ -1,6 +1,7 @@
 # CR-0468: Decomposition creates seams between units and nothing owns them, so a jointly inconsistent batch passes every unit's own acceptance criteria
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0184
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
