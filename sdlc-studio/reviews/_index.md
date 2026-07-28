@@ -32,3 +32,4 @@ The volatile project-state pointer lives in `LATEST.md` (not a numbered review).
 | [RV-0019](RV0019-gate-hardening-sprint-closing-unified-review-bg0300-bg0301.md) | Gate-hardening sprint - closing unified review (BG0300, BG0301, US0445) | 2026-07-27 |
 | [RV-0020](RV0020-us0446-transition-set-positional-form-closing-review.md) | US0446 transition-set positional form - closing review | 2026-07-27 |
 | [RV-0021](RV0021-run-01kyhvwk-closing-review-21-units-gates-that.md) | RUN-01KYHVWK closing review: 21 units, gates that now fail loud | 2026-07-27 |
+| [RV-0022](RV0022-run-01kyjzgz-closing-review-the-efficiency-sprint-two.md) | RUN-01KYJZGZ closing review: the efficiency sprint, two REJECT rounds | 2026-07-28 |
