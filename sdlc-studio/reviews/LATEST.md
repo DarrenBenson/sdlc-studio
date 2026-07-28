@@ -1,88 +1,73 @@
 # Latest review anchor
 
 <!-- close-status:begin -->
-> **RUN-01KYKVZM closed stopped.** 31 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
-> Stamped by `sprint close` - edit the prose below, not this block.
+> **RUN-01KYMJEM is DELIVERED, not closed.** 34 unit(s), 112 points, 0 blocked. Sign-off is
+> OWED: 19 stories hold at Review pending an adversarial pass and the reviewer of record.
+> Stamped by hand at delivery - `sprint close` rewrites this block when it runs.
 <!-- close-status:end -->
 
-> **Review record:** RV0023 (2026-07-28) - RUN-01KYKVZM: three rounds, three rejects, and the
-> repair rate that did not fall
-> **Retro:** RETRO0081 · **Goal verdict:** partial · **Outcome:** closed with known issues
+> **Retro:** RETRO0082 · **Goal verdict:** not yet judged · **Outcome:** delivered, close owed
 
 ## Where the pipeline is
 
-The delivery backlog was repopulated by the 2026-07-27 audit and is being worked down by a series of
-efficiency sprints. RUN-01KYKVZM is the third: 31 units, 102 points, 0 blocked, closed with a partial
-goal verdict. The two sprints before it (RUN-01KYJZGZ, RUN-01KYAHY9) are closed and signed off.
+RUN-01KYMJEM delivered all 34 units of its batch: 15 bugs Fixed, 19 stories at Review, 112 of
+112 points, across eight commits every one of which passed the full gate. The batch is the
+machinery the RUN-01KYKVZM review said was missing, plus the defects that review found.
 
-**Sign-off owed.** The 23 stories of RUN-01KYKVZM stand at Review pending the operator's sign-off as
-reviewer of record. The author does not record it; the two-role rule holds.
+**Sign-off owed.** The 19 stories stand at Review pending an adversarial pass by a context that
+did not write them and the operator's sign-off as reviewer of record. The author does not record
+either; the two-role rule holds.
 
-## What RUN-01KYKVZM changed
+## What RUN-01KYMJEM changed
 
-- **EP0178** - a lane refuses a unit whose acceptance criteria it cannot read, runs those criteria
-  before returning, and returns the proof the test strategy assigned it. A unit adding a mechanism
-  names the caller that consumes it, or states there is none and names the follow-up.
-- **EP0179** - the retro curates a fixed-size carried lesson set with a displacement rule, the sprint
-  reads it at plan and in every lane brief, and the close reports delivery against overhead.
-- **EP0180** - waivers are read and reported, validate can be pointed at one artefact, and `init`
-  derives the artefact tree from the shipped type list.
-- A **trust boundary** was found open and closed: the lane path executed a shell verifier from
-  externally ingested content that `verify_ac` refuses. Reproduced live, repaired with one shared
-  predicate, mutation-pinned, and mirrored to the installed copy.
+- **EP0184** - a seam between two units has an owner before the work starts. `refine seams` maps
+  the pairs of a batch sharing a declared file, a `Preserves:` criterion owns one, the map reaches
+  every lane brief, and the close names any seam that shipped unowned.
+- **EP0185/EP0186/EP0187/EP0188** - a Sprint Goal is recorded as clauses and judged clause by
+  clause by a panel that refuses the author; an open defect is judged against those clauses rather
+  than a guessed severity; the goal review is a bookend asked at plan and at close with the
+  shortfall supplied; a sprint carries its goal in its name; the bounded exit files one artefact
+  per cause rather than one per unit.
+- **EP0182/EP0183** - a review round records how long it took, so the overhead ratio stops
+  crediting unattributed time to delivery; one changelog rule that parallel lanes can obey.
+- **Fifteen bugs**, eight of them found and filed DURING the sprint by using the tools it built.
+
+## What the new instruments measured about runs that had already closed clean
+
+- **RUN-01KYKVZM: 52 seams, none owned.**
+- **RUN-01KYJZGZ: 24 of 33 units** reached terminal carrying a declared proof obligation nobody
+  discharged - both suites green, gate passed, close clean.
+- **The carried-lessons writer read ZERO lessons** out of the file the lane briefs read five from.
+- **109 stale index cells** while `reconcile detect` reported `drift_items=0`. `status.py` reads
+  the index, so every backlog figure quoted that day came from an unchecked source.
 
 ## Known divergences
 
-Eleven defects are carried, every one a defect in a unit this batch delivered rather than a
-pre-existing finding. Two are High - **BG0378** (the transition verb sets a terminal status without
-consulting the criteria floor, so only the commit recording it is refused) and **BG0379**
-(caller-check silently passes a unit whose mechanism surface its own verifier emptied). The rest -
-BG0365, BG0366, BG0367, BG0368, BG0369, BG0371, BG0372, BG0373, BG0374 - are Medium or Low with
-recorded workarounds. Nothing is P0.
+**This run's own seam coverage is 107 seams, none owned.** The map was built during the sprint and
+so was not available when the batch was planned; the units are heavily concentrated in `sprint.py`
+by design (the planner withheld parallel delivery for exactly that reason). It is reported here
+rather than omitted, because a batch that ships with unowned seams is not the same as one whose
+pairs were accounted for.
+
+**Clause 2 cannot be closed by this run.** The qa seat said so at plan time: US0542 asserts a
+panel excludes the author, and this sprint's plan-time seat review was written by the author of
+the plan. A capability cannot be dogfooded by the run that builds it. The first genuinely
+independent panel is the next sprint's.
 
 ## The finding that outlives the batch
 
-Three independent review rounds each returned REJECT, and each repair produced new defects: 17, then
-3, then 3. **The rate did not fall.** Every round's damage came from one author repairing their own
-review findings at pace with no independent verdict between attempts. Thirteen of the seventeen
-round-one majors were **seam defects between units** - four directly contradicting pairs in one
-batch, every one of which passed its own acceptance criteria, because a lane reads one unit and
-review is the first actor that reads two.
-
-That is what **CR0468** (seam ownership at decomposition), **CR0469** (a stakeholder-panel goal
-verdict deciding whether a defect can be left), **CR0470** (bookend the goal review at plan and
-close) and **CR0471** (name a sprint by its goal) exist to address. They are the most valuable output
-of the sprint.
+Mutation testing produced three survivors, and two were tests written in this sprint to check its
+own fixes: the seam owner-check accepted any `Preserves:` line because every fixture happened to
+name the shared file, and the carried-file test compared two constants that derive from each other,
+so it passed whatever they said - including the wrong name they both had. A test written by the
+author of the fix tends to assert the shape of the fix rather than the property it was for.
 
 ## Next steps
 
-1. Operator sign-off on RUN-01KYKVZM as reviewer of record.
-2. Open the next sprint on BG0378 and BG0379 first, repaired by a context that did not write them.
-3. Refine CR0468 and CR0469 - they address the failure this review measured, which the 31 units did
-   not.
-
-## Deferred at close (RUN-01KYKVZM)
-
-- CR-0472: [sign-off] US0508: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0473: [sign-off] US0509: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0474: [sign-off] US0510: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0475: [sign-off] US0511: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0476: [sign-off] US0512: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0477: [sign-off] US0513: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0478: [sign-off] US0514: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0479: [sign-off] US0515: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0480: [sign-off] US0516: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0481: [sign-off] US0517: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0482: [sign-off] US0518: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0483: [sign-off] US0519: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0484: [sign-off] US0520: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0485: [sign-off] US0521: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0486: [sign-off] US0522: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0487: [sign-off] US0523: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0488: [sign-off] US0524: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0489: [sign-off] US0525: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0490: [sign-off] US0526: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0491: [sign-off] US0527: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0492: [sign-off] US0528: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0493: [sign-off] US0529: no critic verdict and no sprint-level review covering it (deferred, not waived)
-- CR-0494: [sign-off] US0530: no critic verdict and no sprint-level review covering it (deferred, not waived)
+1. Adversarial review of RUN-01KYMJEM by a context that did not write it; the review brief now
+   carries the seam map.
+2. Operator sign-off as reviewer of record, then `sprint close --retro RETRO0082`.
+3. The per-clause goal verdict, from a panel the author is not on - the capability this sprint
+   built and cannot use on itself.
+4. The gate budget is at +17% of its 380s ceiling and will fail its own lane soon. It wants a
+   decision about what the gate is for, not a patch.
