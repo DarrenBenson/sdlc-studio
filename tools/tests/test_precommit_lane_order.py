@@ -158,13 +158,26 @@ class ShortCircuitTests(unittest.TestCase):
                             "run() does not exit; the expensive block needs its own guard")
 
     def test_the_unit_suites_are_guarded_by_the_accumulated_failure(self) -> None:
-        # The suites must not run once a cheaper lane has already failed.
+        # The suites must not run once a cheaper lane has already failed. Anchored on
+        # `--name-` rather than on one spelling of the flag: this test is about the GUARD,
+        # and pinning the flag made it fail when the staged list moved to --name-status for
+        # a reason that has nothing to do with lane order.
         text = _text()
-        guard = re.search(r'if \[ "\$fail" -eq 0 \].*?git diff --cached --name-only', text, re.S)
+        guard = re.search(r'if \[ "\$fail" -eq 0 \].*?git diff --cached --name-', text, re.S)
         self.assertIsNotNone(
             guard,
             'the unit-suite block must be guarded by `[ "$fail" -eq 0 ]`, or a failing cheap '
             "lane still pays for the full suite - `run` records the failure and returns 0")
+
+    def test_the_staged_list_carries_the_change_kind(self) -> None:
+        # `--name-status`, not `--name-only`: the letter says whether a file was added,
+        # deleted or renamed rather than edited, and the relevance measurer needs that to
+        # tell a census of the artefact tree (which sees files appear and vanish) from a
+        # read of what is inside them. With --name-only every artefact commit paid for both
+        # suites, which is the cost BG0383 records.
+        self.assertRegex(
+            _text(), r"git diff --cached --name-status",
+            "the staged list feeding --test-relevant must carry each file's change kind")
 
     def test_the_short_circuit_skip_is_named(self) -> None:
         # A silent skip is indistinguishable from a lane that ran and passed.

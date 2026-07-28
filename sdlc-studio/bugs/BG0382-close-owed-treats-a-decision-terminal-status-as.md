@@ -24,8 +24,15 @@ US0483 is the live case. It reached `Won't Implement` on 2026-07-27 - a ruling, 
 
 Split the terminal set at the point of use. `close_owed` should account for DELIVERED-terminal statuses only, and treat decision-terminal ones as out of population rather than as covered - a unit that was never built is not a unit some retro forgot. Derive the split from the type vocabularies rather than hard-coding a list, or the next status added to a vocabulary is silently in the wrong half (LL0013).
 
+## Acceptance Criteria
+
+- [ ] A delivery unit at a decision-terminal status is not counted as owing a sprint close.
+- [ ] A delivery unit at a delivered-terminal status still owes one, pinned by a test asserting both halves against the same fixture - so the carve-out cannot be widened into a blanket exemption.
+- [ ] The split is derived from the status vocabularies rather than enumerated, and a test adds a new decision-terminal status to a vocabulary and asserts it lands on the correct side without any edit to close_owed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 | Created via `new` (deterministic) |
+| 2026-07-28 | Claude Opus 5 | Acceptance criteria back-filled. They were supplied at filing and neither creation path wrote them: `artifact.py` has no Acceptance Criteria section for a bug, and `file_finding.py` rendered the STATED ABSENCE over them. Both are repaired under BG0384; these four documents are the evidence of the defect and are restored from the fields files they were filed from, not re-invented. |

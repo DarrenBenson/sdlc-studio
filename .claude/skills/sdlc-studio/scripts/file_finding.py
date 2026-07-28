@@ -628,8 +628,20 @@ def thin_evidence_note(type_: str, fields: dict) -> str:
 
 
 def criteria_block(type_: str, fields: dict) -> str:
-    """The body of a filed finding's `## Acceptance Criteria` section: derived checkboxes, or the
-    stated absence. The one renderer both halves share."""
+    """The body of a filed finding's `## Acceptance Criteria` section: the AUTHORED criteria,
+    else derived checkboxes, else the stated absence. The one renderer both halves share.
+
+    Authored first, and that order is the whole point. `derived_criteria` returns nothing when
+    the author supplied their own - "an authored criterion is never displaced by a derived one" -
+    but nothing then rendered them, so the block fell through to the stated absence and wrote
+    `nothing here states what fixed would look like` OVER criteria the author had written. That
+    is worse than dropping them: the document asserts the opposite of the truth, and the
+    engagement floor reads the assertion and agrees."""
+    authored = [re.sub(r"^\s*-\s*\[[ xX]\]\s*", "", str(a)).strip()
+                for a in (fields.get("acs") or [])]
+    authored = [a for a in authored if a]
+    if authored:
+        return "\n".join(f"- [ ] {a}" for a in authored)
     derived = derived_criteria(type_, fields)
     if derived:
         return "\n".join(f"- [ ] {c}" for c in derived)

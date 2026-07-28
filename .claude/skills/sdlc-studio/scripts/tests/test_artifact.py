@@ -2252,5 +2252,85 @@ class BatchPersonaResolutionTests(unittest.TestCase):
             self.assertIn("Nobody Real", err.getvalue())
 
 
+class SuppliedContentLandsTests(unittest.TestCase):
+    """A creator that accepts content and drops it hands back exit 0 over a document the
+    caller's words never reached. By the time a downstream floor objects the words are gone
+    and somebody has to invent replacements, so the drop has to be refused where it happens."""
+
+    CRITERIA = ["THE FIRST CRITERION", "THE SECOND CRITERION"]
+
+    def test_a_bug_filed_with_criteria_carries_them(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created |")
+            _groom_stubs(repo)
+            r = artifact.new(repo, "bug", "a defect", {**GROOM, "acs": self.CRITERIA})
+            body = Path(r["path"]).read_text()
+            self.assertIn("## Acceptance Criteria", body)
+            for c in self.CRITERIA:
+                self.assertIn(c, body)
+
+    def test_the_two_filing_paths_agree_on_a_bug_s_criteria(self) -> None:
+        """`artifact.new` and `file_finding.file` build the same artefact. Two paths that
+        disagree about what a supplied criterion MEANS is the defect; the looser one is the
+        one that runs."""
+        import file_finding
+        # The filer demands a complete finding; the creator does not. The fields below are
+        # the intersection both accept, so the comparison is about the CRITERIA and not about
+        # which path has the stricter completeness rule.
+        fields = {**GROOM, "acs": self.CRITERIA, "summary": "s", "steps": "s", "fix": "f",
+                  "severity": "Low", "priority": "Low"}
+        counts = []
+        for build in ("artifact", "file_finding"):
+            with tempfile.TemporaryDirectory() as d:
+                repo = Path(d)
+                _index(repo, "bug", "| ID | Title | Status | Severity | Created |")
+                _groom_stubs(repo)
+                if build == "artifact":
+                    path = Path(artifact.new(repo, "bug", "a defect", dict(fields))["path"])
+                else:
+                    path = Path(file_finding.file_finding(repo, "bug", "a defect", dict(fields))
+                                ["path"])
+                counts.append(sdlc_md.count_acs(path.read_text()))
+        self.assertEqual(counts[0], counts[1])
+        self.assertEqual(counts[0], len(self.CRITERIA))
+
+    def test_a_field_the_type_cannot_store_is_refused_not_dropped(self) -> None:
+        """An RFC is options and a recommendation, not criteria. The point is that the caller
+        is TOLD, rather than handed a clean exit over a document missing what they wrote."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "rfc", "| ID | Title | Status | Created |")
+            _groom_stubs(repo)
+            with self.assertRaises(artifact.ContentDropped) as caught:
+                artifact.new(repo, "rfc", "a design question",
+                             {**GROOM_REQUEST, "acs": self.CRITERIA})
+            self.assertIn("acs", str(caught.exception))
+
+    def test_the_check_is_structural_not_a_list_of_types(self) -> None:
+        """The defect was an enumeration - ('story', 'cr', 'epic') - and an enumeration
+        silently exempts what it forgot. Every type that RENDERS the field must pass and
+        every type that does not must be refused, decided by reading the rendered document
+        rather than by any list this test could go stale against."""
+        stores, refuses = [], []
+        for t in artifact.SPEC:
+            fields = {"acs": self.CRITERIA}
+            render = artifact._select_render(Path("."), t, None)
+            body = render(t, "XX0999", "probe", "2026-07-28", dict(fields))
+            landed = all(c in body for c in self.CRITERIA)
+            try:
+                artifact._refuse_dropped_content(body, t, dict(fields))
+                refused = False
+            except artifact.ContentDropped:
+                refused = True
+            # The verdict tracks the DOCUMENT, in both directions: nothing rendered is
+            # refused, and nothing dropped is accepted.
+            self.assertEqual(landed, not refused, f"{t}: landed={landed} refused={refused}")
+            (stores if landed else refuses).append(t)
+        self.assertIn("bug", stores)     # the unit this bug was filed for
+        self.assertIn("story", stores)
+        self.assertTrue(refuses, "no type refuses, so the check cannot be failing on anything")
+
+
 if __name__ == "__main__":
     unittest.main()

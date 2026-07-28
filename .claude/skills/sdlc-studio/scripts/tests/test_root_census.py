@@ -26,6 +26,14 @@ from pathlib import Path
 SCRIPTS = Path(__file__).resolve().parent.parent
 REPO = SCRIPTS.parents[3]
 RECORD = REPO / "sdlc-studio" / "reviews" / "root-census.md"
+
+# This module globs the whole artefact workspace to answer "does an artefact with this id
+# exist" (`_artefact_on_disk`). That is a read of the tree's SHAPE: a file appearing, vanishing
+# or being renamed changes the answer, and the words inside a file never can. Declared so
+# `gate.listing_only_paths` can tell the two apart - without it this one glob made every
+# artefact commit in the repo pay for both unit suites. The narrower reads this module also
+# performs (RECORD, below) are measured separately and stay fully relevant.
+GATE_LISTING_ONLY = ("sdlc-studio",)
 # The census is a fact about the skill's OWN source tree, so it is only meaningful where that
 # tree is under development - detected by the repo's guard directory sitting beside the
 # workspace. A project that merely installed the skill has no census to hold, and holding it

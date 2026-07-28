@@ -406,12 +406,20 @@ rm -f "$handoff" 2>/dev/null
 # `test-relevant: yes|no` sentinel line. The regex below stays as the FALLBACK for a tree
 # where that call cannot answer (an old gate, or a stubbed one), and the sentinel is what
 # tells a real answer from a stub that exits 0 for every argument.
-test_relevant='^\.claude/skills/sdlc-studio/scripts/|^\.claude/skills/sdlc-studio/templates/|^tools/'
+# Anchored at a line start OR after the status letter's tab, because the staged list is now
+# `--name-status`. A bare `^` anchor stopped matching the moment that letter appeared, which
+# would have disabled this fallback in silence - it only runs when the measurer cannot answer,
+# so nothing would have failed to tell us.
+test_relevant='(^|[[:space:]])(\.claude/skills/sdlc-studio/scripts/|\.claude/skills/sdlc-studio/templates/|tools/)'
 suites_needed=0
 # Measured only when a commit is still viable: once a cheaper lane has failed the commit is
 # blocked either way, so paying the relevance measurement (a python call) is wasted. The
 # selection therefore sits UNDER the `$fail -eq 0` guard, not before it.
-if [ "$fail" -eq 0 ] && staged_paths="$(git diff --cached --name-only)"; then
+# --name-STATUS, not --name-only: the letter says whether the file was ADDED, DELETED or RENAMED
+# or merely edited, and a directory the suites read as a LISTING (a census asking which artefacts
+# exist) is relevant to the first kind and not the second. The measurer accepts either spelling
+# and treats a bare path list as "unknown, assume structural", so an older gate still answers.
+if [ "$fail" -eq 0 ] && staged_paths="$(git diff --cached --name-status)"; then
   relevance_out="$(printf '%s\n' "$staged_paths" | python3 "$skill/gate.py" --root . --test-relevant 2>/dev/null)"
   case "$relevance_out" in
     *"test-relevant: yes"*) suites_needed=1 ;;

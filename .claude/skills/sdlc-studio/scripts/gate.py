@@ -17,6 +17,7 @@ import argparse
 import ast
 import json
 import os
+import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -2170,25 +2171,96 @@ def test_relevant_paths(root: str = ".") -> set[str]:
     # commit deleting one of these trees is a commit the suites must run on, and a set
     # filtered by what survives the commit cannot see it.
     measured |= set(LEGACY_TEST_RELEVANT)
-    return _minimal({p for p in measured if p and not p.startswith("..")})
+    return _minimal({p for p in measured if p and not p.startswith("..")},
+                    keep_under=listing_only_paths(root))
 
 
-def _minimal(entries: set[str]) -> set[str]:
+#: The module-level name a test declares to say "I read this directory's LISTING, not the
+#: contents of the files in it". Opt-in, so the default stays fully relevant: a module that
+#: declares nothing is treated exactly as before, and a wrong declaration is a test defect that
+#: `test_relevant_paths` reports rather than a silent widening.
+LISTING_DECL = "GATE_LISTING_ONLY"
+
+
+def listing_only_paths(root: str = ".") -> set[str]:
+    """Directories the suites read as a LISTING - which files exist - and never open.
+
+    A census over the artefact workspace answers a question about the tree's SHAPE. Adding,
+    deleting or renaming a file under it can change that answer; editing the prose inside one
+    cannot. Recording such a directory as fully relevant made every artefact commit pay for
+    both suites, because one entry then absorbed the four narrow reads under it.
+
+    Never widened beyond the measurement: a declared path that the module does not actually
+    read is ignored, and the shipped code trees are excluded outright - `scripts/`, `templates/`
+    and `tools/` are imported and asserted over, so no declaration may make them listing-only."""
+    root = os.path.abspath(root)
+    read_map = suite_read_map(root)
+    if read_map is None:
+        return set()
+    protected = {p.rstrip("/") for p in LEGACY_TEST_RELEVANT} | {s.rstrip("/") for s in TEST_SUITE_DIRS}
+    out: set[str] = set()
+    for module, paths in read_map.items():
+        try:
+            with open(os.path.join(root, module), encoding="utf-8") as handle:
+                tree = ast.parse(handle.read())
+        except (OSError, SyntaxError):
+            continue
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.Assign) and len(node.targets) == 1
+                    and isinstance(node.targets[0], ast.Name)
+                    and node.targets[0].id == LISTING_DECL):
+                continue
+            try:
+                declared = ast.literal_eval(node.value)
+            except ValueError:
+                continue
+            for entry in (declared if isinstance(declared, (list, tuple)) else [declared]):
+                rel = str(entry).strip().strip("/")
+                # Declared AND measured: a declaration about a directory this module never
+                # reads narrows nothing, and letting it through would be a way to exempt a
+                # tree by writing its name down.
+                if rel and rel in paths and rel not in protected:
+                    out.add(rel)
+    return out
+
+
+def _minimal(entries: set[str], keep_under: set[str] | None = None) -> set[str]:
     """The set with every entry another entry already covers removed.
 
     `_matches_relevant` reads every entry as a prefix, so an entry under another answers
     nothing the covering one does not - dropping it cannot change any verdict. It keeps the
     listing readable: without this, one measured directory drags in every path a fixture
-    ever built beneath it, and a set nobody can read is a set nobody checks."""
+    ever built beneath it, and a set nobody can read is a set nobody checks.
+
+    `keep_under` is the exception, and it is the whole repair: an entry nested under a
+    LISTING-ONLY directory is NOT covered by it, because the covering entry answers only for
+    structural change. Dropping it would lose the content relevance of `sdlc-studio/trd.md`
+    behind a census of `sdlc-studio`."""
+    keep_under = {k.rstrip("/") for k in (keep_under or set())}
     prefixes = {e.rstrip("/") for e in entries}
     return {e for e in entries
-            if not any(e.startswith(p + "/") for p in prefixes if p != e.rstrip("/"))}
+            if not any(e.startswith(p + "/")
+                       for p in prefixes if p != e.rstrip("/") and p not in keep_under)}
 
 
-def is_test_relevant(paths, root: str = ".") -> bool:
-    """True when any of `paths` (repo-relative) can change a test outcome."""
+def is_test_relevant(paths, root: str = ".", structural=None) -> bool:
+    """True when any of `paths` (repo-relative) can change a test outcome.
+
+    `structural` is the subset of `paths` whose change is an ADD, DELETE or RENAME. A path
+    that matches only listing-only entries is relevant just when it is structural: the census
+    reading that directory sees a file appear or vanish, and sees nothing at all when the words
+    inside one change. Omit it and every path is treated as structural, which is the old
+    behaviour and the safe direction - an unanswered question runs the suites."""
     relevant = test_relevant_paths(root)
-    return any(_matches_relevant(p, relevant) for p in paths)
+    listing = {p.rstrip("/") for p in listing_only_paths(root)}
+    content = relevant - listing
+    structural = None if structural is None else {str(p).strip() for p in structural}
+    for p in paths:
+        if _matches_relevant(p, content):
+            return True
+        if _matches_relevant(p, listing) and (structural is None or str(p).strip() in structural):
+            return True
+    return False
 
 
 def _matches_relevant(path: str, relevant: set[str]) -> bool:
@@ -2204,21 +2276,75 @@ def _matches_relevant(path: str, relevant: set[str]) -> bool:
                for entry in relevant)
 
 
+def _matched_entries(paths, root: str = ".", structural=None) -> set[str]:
+    """Which relevance entries each path matched, and why - the answer to "what dragged the
+    suites in this time". Without it, one reader collapsing the set is invisible from the tool
+    and has to be found by reading the read map by hand, which is how it went unnoticed."""
+    relevant = test_relevant_paths(root)
+    listing = {p.rstrip("/") for p in listing_only_paths(root)}
+    structural = None if structural is None else {str(p).strip() for p in structural}
+    out: set[str] = set()
+    for p in paths:
+        for entry in relevant:
+            if not _matches_relevant(p, {entry}):
+                continue
+            if entry.rstrip("/") in listing:
+                if structural is None or str(p).strip() in structural:
+                    out.add(f"{entry} (listing-only, structural change)")
+            else:
+                out.add(entry)
+    return out
+
+
+#: Git name-status letters that mean the SET of files changed rather than the bytes in one:
+#: added, deleted, renamed, copied. A listing-only directory is relevant to exactly these.
+_STRUCTURAL_STATUS = ("A", "D", "R", "C")
+
+
+def _split_name_status(lines) -> tuple[list[str], set[str] | None]:
+    """`(paths, structural)` from stdin that may be `--name-only` OR `--name-status`.
+
+    Accepts both because the answer must not depend on how the caller was spelled: a plain path
+    list yields `structural=None`, which `is_test_relevant` reads as "unknown, treat everything
+    as structural" - the old behaviour, and the safe direction. A rename line carries both names
+    and both are recorded, since the old path vanishing is as structural as the new one arriving.
+    """
+    paths: list[str] = []
+    structural: set[str] = set()
+    tagged = False
+    for line in lines:
+        parts = [p for p in line.rstrip("\n").split("\t") if p != ""]
+        if len(parts) >= 2 and re.fullmatch(r"[A-Z]\d*", parts[0]):
+            tagged = True
+            names = parts[1:]
+            paths.extend(names)
+            if parts[0][0] in _STRUCTURAL_STATUS:
+                structural.update(names)
+        elif parts:
+            paths.append(parts[0])
+    return paths, (structural if tagged else None)
+
+
 def cmd_test_relevant(args: argparse.Namespace) -> int:
     paths = list(args.test_relevant or [])
+    structural = None
     asked = bool(paths)
     if not paths and not sys.stdin.isatty():
-        paths = [line for line in sys.stdin.read().splitlines() if line.strip()]
+        paths, structural = _split_name_status(
+            [line for line in sys.stdin.read().splitlines() if line.strip()])
         asked = True   # an EMPTY pipe is an empty commit, not a request for the listing
     if getattr(args, "format", "text") == "json":
+        relevant = is_test_relevant(paths, args.root, structural)
         print(json.dumps({"set": sorted(test_relevant_paths(args.root)),
-                          "relevant": is_test_relevant(paths, args.root)}, indent=2))
-        return 0 if (not asked or is_test_relevant(paths, args.root)) else 1
+                          "listing_only": sorted(listing_only_paths(args.root)),
+                          "matched": sorted(_matched_entries(paths, args.root, structural)),
+                          "relevant": relevant}, indent=2))
+        return 0 if (not asked or relevant) else 1
     if not asked:
         for entry in sorted(test_relevant_paths(args.root)):
             print(entry)
         return 0
-    relevant = is_test_relevant(paths, args.root)
+    relevant = is_test_relevant(paths, args.root, structural)
     # A SENTINEL line, not just the exit code. A caller (the commit hook) must be able to tell
     # a real answer from a stub that exits 0 for every argument - the pre-commit fixtures stub
     # gate.py to `sys.exit(0)`, which without this would read as "everything is relevant". The

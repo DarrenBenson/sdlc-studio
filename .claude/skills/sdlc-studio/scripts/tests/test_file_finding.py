@@ -1698,5 +1698,50 @@ class StripCodeBlocksFenceTests(unittest.TestCase):
         self.assertEqual(ff._strip_code_blocks(value).strip(), "real prose")
 
 
+class AuthoredCriteriaSurviveTests(unittest.TestCase):
+    """`derived_criteria` returns nothing when the author supplied their own, on the stated rule
+    that an authored criterion is never displaced by a derived one. Nothing then RENDERED them,
+    so the block fell through to the stated absence - and the finding asserted that nothing said
+    what fixed would look like, over four criteria that did."""
+
+    AUTHORED = ["THE FIRST AUTHORED CRITERION", "THE SECOND AUTHORED CRITERION"]
+
+    def _fields(self, **over):
+        f = {"severity": "Low", "priority": "Low", "points": 2, "affects": "src/thing.py",
+             "summary": "a summary with plenty of substantive words in it",
+             "steps": "run the command and read the output it prints",
+             "fix": "change the renderer so the authored criteria are written"}
+        f.update(over)
+        return f
+
+    def test_authored_criteria_are_rendered_not_replaced_by_a_stated_absence(self) -> None:
+        block = ff.criteria_block("bug", self._fields(acs=list(self.AUTHORED)))
+        for a in self.AUTHORED:
+            self.assertIn(a, block)
+        self.assertNotIn(ff.THIN_EVIDENCE_MARK, block)
+
+    def test_they_are_counted_as_criteria_by_the_floor_that_reads_them(self) -> None:
+        """The engagement floor counts with `count_acs`. Rendering the words somewhere in the
+        document is not enough - they have to count, or the floor reads a finding that planned
+        nothing and agrees with it."""
+        block = ff.criteria_block("bug", self._fields(acs=list(self.AUTHORED)))
+        self.assertEqual(sdlc_md.count_acs(f"## Acceptance Criteria\n\n{block}\n"),
+                         len(self.AUTHORED))
+
+    def test_a_finding_with_no_authored_criteria_still_derives_or_states_the_absence(self) -> None:
+        """The carve-out must not widen: with nothing authored, the derived path and the stated
+        absence both still work, so this is a precedence change and not an exemption."""
+        derived = ff.criteria_block("bug", self._fields())
+        self.assertNotIn(ff.THIN_EVIDENCE_MARK, derived)
+        self.assertTrue(derived.strip().startswith("- [ ]"))
+        thin = ff.criteria_block("bug", self._fields(summary="x", steps="y", fix="z"))
+        self.assertIn(ff.THIN_EVIDENCE_MARK, thin)
+
+    def test_an_authored_criterion_already_carrying_a_checkbox_is_not_doubled(self) -> None:
+        block = ff.criteria_block("bug", self._fields(acs=["- [ ] ALREADY BOXED"]))
+        self.assertIn("- [ ] ALREADY BOXED", block)
+        self.assertNotIn("- [ ] - [ ]", block)
+
+
 if __name__ == "__main__":
     unittest.main()

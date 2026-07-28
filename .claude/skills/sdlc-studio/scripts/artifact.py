@@ -464,10 +464,17 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     if type_ == "bug":
         # Points are the job SIZE of the fix; Severity is its urgency. Two axes, and the planner
         # sizes on the first: a bug created without one is a unit `sprint plan` refuses.
+        #
+        # Criteria are rendered on the same terms as an epic's: written when supplied, absent
+        # when not. A bug WITHOUT them is a legitimate scaffold the criteria floor refuses at
+        # the transition to Fixed; a bug whose author WROTE them and had them dropped in silence
+        # is the failure that floor cannot help with, because by then the words are gone.
+        acs = _list(f, "acs")
+        ac_body = ("\n## Acceptance Criteria\n\n" + "".join(f"- [ ] {a}\n" for a in acs)) if acs else ""
         return (head + f"> **Severity:** {f.get('severity', 'Medium')}\n" + _sizing_line("bug", f) +
                 "\n## Summary\n\n" + _text(f, "summary", "{{symptom}}") +
                 "\n\n## Steps to Reproduce\n\n" + _text(f, "steps", "{{steps}}") +
-                "\n\n## Proposed Fix\n\n" + _text(f, "fix", "{{fix}}") + "\n" + rev)
+                "\n\n## Proposed Fix\n\n" + _text(f, "fix", "{{fix}}") + "\n" + ac_body + rev)
     if type_ == "issue":
         # An Issue is a DISCOVERY item - a raw report/symptom, not yet reproduced or scoped. It
         # carries a T-shirt Size (the discovery estimate) and a Severity (the urgency a triager
@@ -496,19 +503,69 @@ _AC_HEAD_RE = re.compile(r"^##\s+Acceptance Criteria\b.*$", re.M | re.I)
 _IMPACT_HEAD_RE = re.compile(r"^##\s+(?:Impact|Motivation)\b.*$", re.M | re.I)
 
 
+class ContentDropped(Exception):
+    """A field the caller supplied reached no part of the rendered artefact."""
+
+
+#: The caller-supplied content fields. Whether a given type stores a given one is NOT listed
+#: here and deliberately so: an enumeration of type/field pairs is a lower bound that forgets
+#: the next type added, which is exactly how a bug's criteria came to be discarded in silence.
+#: The check below asks the RENDERED DOCUMENT whether the caller's words are in it, so a type
+#: nobody thought about is covered on the day it is written.
+_MUST_LAND = ("summary", "steps", "fix", "impact", "acs", "options", "recommendation")
+
+
+def _probe(value) -> str:
+    """A supplied field reduced to its alphanumerics - the form that survives rendering.
+
+    Markdown-safing inserts escapes and the renderers wrap values in bullets and headings, so a
+    literal substring test would report drops that never happened. Letters and digits pass
+    through all of it unchanged, so comparing on those alone tests presence without testing
+    formatting."""
+    if isinstance(value, (list, tuple)):
+        value = value[0] if value else ""
+    return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())[:30]
+
+
+def _refuse_dropped_content(body: str, type_: str, f: dict) -> None:
+    """Refuse a render that silently discarded something the caller supplied.
+
+    A creator that accepts content and drops it is worse than one that never accepted it: the
+    caller gets exit 0 and a clean validator over an artefact its words never reached, and by
+    the time a downstream floor objects the words are gone and someone has to invent
+    replacements. Loud refusal at the moment of the drop is the only point where the content
+    still exists to be saved."""
+    haystack = re.sub(r"[^a-z0-9]+", "", body.lower())
+    for key in _MUST_LAND:
+        probe = _probe(f.get(key))
+        if probe and probe not in haystack:
+            raise ContentDropped(
+                f"a {type_} scaffold has no home for '{key}', so the value supplied for it "
+                f"reached none of the rendered artefact. Refused rather than written away - "
+                f"exit 0 over a document missing the caller's own words is the failure this "
+                f"check exists to prevent. Use a type that stores the field, or drop it.")
+
+
 def _fill_acs(body: str, type_: str, f: dict) -> str:
-    """Write the caller's criteria into a grafted template's Acceptance Criteria section,
-    replacing its placeholder block."""
+    """Write the caller's criteria into the artefact's Acceptance Criteria section.
+
+    EVERY type, not an enumerated few. The type chooses only the SHAPE - a story's id'd
+    Given/When/Then blocks, a checkbox list everywhere else - and a template carrying no
+    such heading gets the section appended by `_put_section`, on the same never-drop rule
+    `_CONTENT_SECTIONS` already states. The enumeration this replaced (`story`, `cr`,
+    `epic`) dropped a bug's criteria in silence at exit 0, which is precisely the failure
+    that rule exists to prevent; an enumeration is a lower bound and forgets what nobody
+    thought of, so the shape is now derived and the storage is unconditional."""
     acs = _list(f, "acs")
-    if not acs or type_ not in ("story", "cr", "epic"):
+    if not acs:
         return body
+    filled = _story_acs(f) if type_ == "story" else "".join(f"- [ ] {a}\n" for a in acs)
     m = _AC_HEAD_RE.search(body)
     if not m:
-        return body
+        return _put_section(body, ("Acceptance Criteria",), filled)
     rest = body[m.end():]
     nxt = re.search(r"^##\s", rest, re.M)  # `### ACn` subsections belong to this section
     tail = rest[nxt.start():] if nxt else ""
-    filled = _story_acs(f) if type_ == "story" else "".join(f"- [ ] {a}\n" for a in acs)
     return f"{body[:m.end()]}\n\n{filled}\n{tail}"
 
 
@@ -950,6 +1007,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         f["author"] = sdlc_md.authorship_name(f["_raised_by"])
         render = _select_render(root, type_, f.get("template"))
         body = render(type_, disp, title, f["date"], f)
+        _refuse_dropped_content(body, type_, f)
         prov = str(f.get("provenance") or "").strip()
         if prov:
             # The trust-boundary stamp the verify_ac shell gate reads: an ingested artefact
@@ -1076,7 +1134,9 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             f["_raised_by"] = sdlc_md.authorship_value(f.get("author"), root)
             f["author"] = sdlc_md.authorship_name(f["_raised_by"])  # index cell: the name
             p["path"].parent.mkdir(parents=True, exist_ok=True)
-            sdlc_md.atomic_write(p["path"], render(type_, p["disp"], it["title"], today, f))
+            body = render(type_, p["disp"], it["title"], today, f)
+            _refuse_dropped_content(body, type_, f)
+            sdlc_md.atomic_write(p["path"], body)
             header = _header_cells(root, type_)
             link = f"[{p['disp']}]({p['file_id']}-{p['slug']}.md)"
             if header:
@@ -1275,7 +1335,7 @@ def cmd_new(args: argparse.Namespace) -> int:
         else:
             r = new(args.root, args.type, title, f, dry_run=args.dry_run,
                     strict=getattr(args, "strict", False))
-    except (DuplicateRefused, PersonaRefused) as exc:
+    except (DuplicateRefused, PersonaRefused, ContentDropped) as exc:
         # A refusal is a message, not a traceback - and it names what to do next. Nothing was
         # allocated or written, so there is no half-minted artefact to clean up.
         print(f"refused: {exc}", file=sys.stderr)

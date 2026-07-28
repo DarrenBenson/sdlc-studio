@@ -24,8 +24,15 @@ The stale-plan guard next to it (`_persisted_plan_is_stale`) exists for exactly 
 
 Thread the goal through: `seat_brief(root, worklist=..., goal=...)`, with the caller's goal taking precedence over the run state. Fall back to the run state only for an OPEN run, on the same reasoning the stale-plan guard already records - and render an absent goal as absent rather than substituting a neighbouring one.
 
+## Acceptance Criteria
+
+- [ ] A goal passed to the brief is the goal the brief names, whatever the run state holds.
+- [ ] A brief requested while the last run is closed does not name that run's goal; with no goal supplied it says no goal is under review rather than substituting one.
+- [ ] The run state supplies the goal only for an OPEN run, pinned by a test that closes a run and asserts the goal does not survive into the next brief.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 | Created via `new` (deterministic) |
+| 2026-07-28 | Claude Opus 5 | Acceptance criteria back-filled. They were supplied at filing and neither creation path wrote them: `artifact.py` has no Acceptance Criteria section for a bug, and `file_finding.py` rendered the STATED ABSENCE over them. Both are repaired under BG0384; these four documents are the evidence of the defect and are restored from the fields files they were filed from, not re-invented. |

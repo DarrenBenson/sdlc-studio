@@ -4379,5 +4379,136 @@ class TestSelectionTests(unittest.TestCase):
         self.assertFalse(r["resolved"], "an unresolvable change must widen, never narrow")
 
 
+class WorkspaceRelevanceGranularityTests(unittest.TestCase):
+    """BG0383. One module censusing the whole artefact workspace recorded the bare directory,
+    `_minimal` absorbed every narrower read under it, and every artefact commit in the repo
+    then paid for both unit suites. The census is not wrong to read the tree - it reads the
+    tree's SHAPE, and only a file appearing, vanishing or moving can change that answer."""
+
+    @staticmethod
+    def _repo(tmp: Path) -> Path:
+        suite = tmp / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"
+        suite.mkdir(parents=True)
+        ws = tmp / "sdlc-studio"
+        (ws / "bugs").mkdir(parents=True)
+        (ws / "bugs" / "BG0001-x.md").write_text("# a bug\n", encoding="utf-8")
+        (ws / "trd.md").write_text("# trd\n", encoding="utf-8")
+        (suite / "test_census.py").write_text(
+            "from pathlib import Path\n"
+            "REPO = Path(__file__).resolve().parents[5]\n"
+            "GATE_LISTING_ONLY = ('sdlc-studio',)\n"
+            "WS = REPO / 'sdlc-studio'\n"
+            "TRD = REPO / 'sdlc-studio' / 'trd.md'\n"
+            "def test_census():\n"
+            "    assert list(WS.glob('**/*.md'))\n"
+            "    assert TRD.read_text()\n", encoding="utf-8")
+        return tmp
+
+    def test_a_body_only_edit_under_a_listing_only_tree_is_not_relevant(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d)))
+            self.assertIn("sdlc-studio", gate.listing_only_paths(root))
+            self.assertFalse(
+                gate.is_test_relevant(["sdlc-studio/bugs/BG0001-x.md"], root, structural=set()),
+                "editing the prose inside an artefact cannot change what the census counts")
+
+    def test_a_structural_change_under_the_same_tree_still_is(self) -> None:
+        """The other half, and it is what stops the carve-out becoming a blanket exemption of
+        the workspace: the census DOES see a file arrive, leave or move."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d)))
+            added = "sdlc-studio/bugs/BG0002-new.md"
+            self.assertTrue(gate.is_test_relevant([added], root, structural={added}))
+
+    def test_a_narrower_read_under_it_keeps_its_content_relevance(self) -> None:
+        """The absorbing `_minimal` is what made this expensive. A file a suite genuinely
+        OPENS must survive underneath a listing-only directory, or the repair would trade one
+        false green for another."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d)))
+            self.assertIn("sdlc-studio/trd.md", gate.test_relevant_paths(root))
+            self.assertTrue(gate.is_test_relevant(["sdlc-studio/trd.md"], root, structural=set()))
+
+    def test_an_undeclared_whole_tree_read_stays_fully_relevant(self) -> None:
+        """The declaration is opt-in and the default is unchanged. A module that censuses a
+        tree without saying so is treated exactly as before - the safe direction, and the
+        reason a wrong declaration cannot widen anything by accident."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            mod = root / ".claude/skills/sdlc-studio/scripts/tests/test_census.py"
+            mod.write_text(mod.read_text().replace("GATE_LISTING_ONLY = ('sdlc-studio',)\n", ""),
+                           encoding="utf-8")
+            self.assertEqual(gate.listing_only_paths(str(root)), set())
+            self.assertTrue(gate.is_test_relevant(["sdlc-studio/bugs/BG0001-x.md"], str(root),
+                                                  structural=set()))
+
+    def test_a_declaration_cannot_exempt_the_shipped_code_trees(self) -> None:
+        """A declaration is a narrowing, so it needs a floor. `scripts/`, `templates/` and
+        `tools/` are imported and asserted over; writing their names down must not make an
+        edit to them skippable."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            (root / "tools").mkdir()
+            (root / "tools" / "x.py").write_text("x = 1\n", encoding="utf-8")
+            mod = root / ".claude/skills/sdlc-studio/scripts/tests/test_census.py"
+            mod.write_text(mod.read_text().replace(
+                "GATE_LISTING_ONLY = ('sdlc-studio',)",
+                "GATE_LISTING_ONLY = ('sdlc-studio', 'tools')")
+                .replace("WS = REPO / 'sdlc-studio'",
+                         "WS = REPO / 'sdlc-studio'\nTOOLS = REPO / 'tools'")
+                .replace("    assert list(WS.glob('**/*.md'))",
+                         "    assert list(WS.glob('**/*.md'))\n    assert list(TOOLS.glob('*.py'))"),
+                encoding="utf-8")
+            self.assertNotIn("tools", gate.listing_only_paths(str(root)))
+            self.assertTrue(gate.is_test_relevant(["tools/x.py"], str(root), structural=set()))
+
+    def test_an_unknown_change_kind_is_treated_as_structural(self) -> None:
+        """`structural=None` means the caller could not say. An unanswered question runs the
+        suites; that is the direction every other unknown in this module degrades to."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d)))
+            self.assertTrue(gate.is_test_relevant(["sdlc-studio/bugs/BG0001-x.md"], root))
+
+    def test_name_status_input_is_parsed_and_a_bare_path_list_still_works(self) -> None:
+        """The hook now pipes `--name-status`. Both spellings must answer, or the verdict
+        depends on how the caller was written rather than on what changed."""
+        paths, structural = gate._split_name_status(["M\tsdlc-studio/bugs/a.md"])
+        self.assertEqual(paths, ["sdlc-studio/bugs/a.md"])
+        self.assertEqual(structural, set())
+        paths, structural = gate._split_name_status(["A\tsdlc-studio/bugs/b.md"])
+        self.assertEqual(structural, {"sdlc-studio/bugs/b.md"})
+        # A rename names both sides, and the old path vanishing is as structural as the new
+        # one arriving - counting only the new name would call the deletion a content edit.
+        paths, structural = gate._split_name_status(["R100\tsdlc-studio/bugs/a.md\tsdlc-studio/bugs/b.md"])
+        self.assertEqual(sorted(paths), ["sdlc-studio/bugs/a.md", "sdlc-studio/bugs/b.md"])
+        self.assertEqual(len(structural), 2)
+        paths, structural = gate._split_name_status(["sdlc-studio/bugs/a.md"])
+        self.assertEqual(paths, ["sdlc-studio/bugs/a.md"])
+        self.assertIsNone(structural, "a bare list says nothing about the change kind")
+
+    def test_the_tool_reports_which_entry_matched(self) -> None:
+        """AC4. One reader collapsing the set was invisible from the tool and had to be found
+        by reading the read map by hand."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d)))
+            matched = gate._matched_entries(["sdlc-studio/trd.md"], root, structural=set())
+            self.assertIn("sdlc-studio/trd.md", matched)
+            added = "sdlc-studio/bugs/BG0002-new.md"
+            matched = gate._matched_entries([added], root, structural={added})
+            self.assertTrue(any("listing-only" in m for m in matched), matched)
+
+    def test_the_repo_s_own_workspace_is_no_longer_wholly_relevant(self) -> None:
+        """The live case. A change request body is the cheapest possible commit and it was
+        paying about 334 seconds."""
+        if not _in_dev_repo():
+            self.skipTest("no dev repo here, so there is no workspace to measure")
+        root = str(REPO)
+        self.assertIn("sdlc-studio", gate.listing_only_paths(root))
+        self.assertFalse(gate.is_test_relevant(
+            ["sdlc-studio/change-requests/CR0001-x.md"], root, structural=set()))
+        self.assertTrue(gate.is_test_relevant(["sdlc-studio/trd.md"], root, structural=set()),
+                        "a file the suites genuinely open must stay relevant")
+
+
 if __name__ == "__main__":
     unittest.main()
