@@ -1,6 +1,6 @@
 # US0546: At close, the seats are asked whether the delivered content achieved the goal, with the undelivered units and the defects raised supplied rather than recalled
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0470
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the seats are asked at close
 - **Then** the question carries those units and defects with it rather than relying on recall
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GoalContentReviewTests::test_the_close_question_supplies_the_shortfall
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

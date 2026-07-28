@@ -1,6 +1,6 @@
 # US0543: An open defect is judged against the goal clauses: one that falsifies a clause blocks the close, one that does not is recorded leavable with its priority
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0469
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the close judges the defect
 - **Then** one falsifying a clause blocks the close, and one that does not is recorded leavable with its priority and the clause reasoning
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DefectAgainstGoalTests::test_a_clause_falsifying_defect_blocks_and_others_are_recorded_leavable
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

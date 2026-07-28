@@ -743,6 +743,45 @@ def goal_panel(repo_root: Path | str, clauses: list[str], seats: list[str], auth
                         else "partial")}
 
 
+#: Priorities that describe a defect a release cannot carry. Read as a FLOOR: a defect at
+#: one of these blocks a close whatever the clause reasoning says, because "the goal was met
+#: anyway" is not an answer to a user who cannot work around it.
+BLOCKING_PRIORITIES = ("p0", "p1", "critical", "blocker")
+
+
+def judge_defects_against_goal(defects: list[dict], clauses: list[str]) -> dict:
+    """Which open defects BLOCK a close and which can be left, judged against the goal.
+
+    `{blocking, leavable}`. A defect blocks when it falsifies a goal clause - it names one, or
+    an explicit `falsifies` says so - or when its priority is one a release cannot carry.
+    Everything else is LEAVABLE and recorded with its priority and the reasoning, never
+    silently dropped: the decision to ship with a known defect is a decision, and one nobody
+    wrote down is indistinguishable from not having noticed.
+
+    The severity floor exists because a clause argument can be made for almost anything. A
+    defect at P0/P1 blocks whatever the reasoning says.
+    """
+    lowered = [c.strip().lower() for c in (clauses or []) if str(c).strip()]
+    blocking, leavable = [], []
+    for d in defects or []:
+        priority = str(d.get("priority") or d.get("severity") or "").strip().lower()
+        named = str(d.get("falsifies") or "").strip().lower()
+        clause = next((c for c in lowered if named and (named in c or c in named)), None)
+        if clause is None and named:
+            clause = named          # names a clause this goal does not carry: still a claim
+        if clause:
+            blocking.append({**d, "why": f"falsifies the goal clause: {clause}"})
+        elif priority in BLOCKING_PRIORITIES:
+            blocking.append({**d, "why": f"priority {priority} - a defect a release cannot "
+                                         f"carry blocks the close whatever the clause "
+                                         f"reasoning says"})
+        else:
+            leavable.append({**d, "why": f"falsifies no goal clause; priority "
+                                         f"{priority or 'unstated'} - recorded leavable, not "
+                                         f"dropped"})
+    return {"blocking": blocking, "leavable": leavable}
+
+
 def sprint_reviews(repo_root: Path | str) -> list[dict]:
     return _read_rows(sprint_review_path(repo_root), _SPRINT_COLS)
 

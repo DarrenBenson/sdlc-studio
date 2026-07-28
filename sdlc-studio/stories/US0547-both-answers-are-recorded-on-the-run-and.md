@@ -1,6 +1,6 @@
 # US0547: Both answers are recorded on the run and shown side by side, reporting a prediction miss where the plan predicted delivery and the close judged otherwise
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0470
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the close judges it was not achieved
 - **Then** both answers are shown side by side and the difference is reported as a prediction miss
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GoalContentReviewTests::test_a_prediction_miss_is_reported
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

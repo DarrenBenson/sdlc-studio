@@ -1,6 +1,6 @@
 # US0545: At plan, the seats are asked whether the chosen content will deliver the goal, and a partial or no answer must name what is missing
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0470
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the seats are asked at plan time
 - **Then** the question is whether these units deliver this goal, and a partial or no answer that names nothing missing is refused
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GoalContentReviewTests::test_an_unexplained_partial_is_refused
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

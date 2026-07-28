@@ -5479,16 +5479,20 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
         return 2
     run_id = (state.get("run_id") or "unopened run")
     filed: list[tuple[str, dict]] = []
-    for b in blockers:
+    groups = group_blockers(blockers)
+    for group in groups:
+        b = group["blockers"][0]
+        covers = group["units"]
+        scope = (f" It covers {len(covers)} unit(s): {', '.join(covers)}." if covers else "")
         res = file_finding.file_finding(
             Path(root), "cr",
-            f"Deferred close blocker ({b['stage']}): {b['detail'][:80]}",
+            f"Deferred close blocker ({b['stage']}): {group['cause'][:80]}",
             {"priority": "High", "ctype": "Process", "size": "S",
              "affects": str(retro_path.relative_to(Path(root))),
              "summary": (f"Deferred at the close of {run_id} by an explicit file-and-close "
                          f"decision. The close prerequisite was not met and was recorded as "
                          f"outstanding rather than fixed inline or waived. Blocker: "
-                         f"{b['detail']}. Remedy when picked up: {b['remedy']}"),
+                         f"{b['detail']}. Remedy when picked up: {b['remedy']}.{scope}"),
              "acs": [f"the deferred prerequisite is met: {b['remedy']}",
                      "the close-owed record for this blocker is cleared"],
              "impact": (f"{run_id} closed with this work outstanding; until it is done, the "
@@ -5499,6 +5503,14 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
         record_close_finding(root, res["id"], _repo_rel(root, res.get("path")))
     note_lines = [f"- {fid}: [{b['stage']}] {b['detail']} (deferred, not waived)"
                   for fid, b in filed]
+    # SAY what the fan-out was, at the moment it happened. One owed sign-off arriving as 23
+    # identical change requests is discovered later, in the backlog, by someone who has to work
+    # out that they are one thing - and by then the cost has been paid twice.
+    print(f"file-and-close: filed {len(filed)} artefact(s) for {len(blockers)} blocker(s) "
+          f"across {len(groups)} distinct cause(s).")
+    if len(filed) < len(blockers):
+        print(f"  {len(blockers) - len(filed)} blocker(s) shared a cause with another and are "
+              f"listed inside the artefact that covers them, rather than filed again.")
     text = retro_path.read_text(encoding="utf-8")
     text = (text.rstrip("\n")
             + "\n\n## Deferred at close\n\n"
@@ -5607,6 +5619,102 @@ def _lane_pairs(values: list[str] | None, flag: str) -> dict:
             raise ValueError(f"{flag} expects `obligation=text` with both sides set, got {raw!r}")
         out[band.strip()] = text.strip()
     return out
+
+
+_UNIT_IN_DETAIL = re.compile(r"\b((?:US|BG|CR|EP|RFC)-?\d{3,})\b")
+
+
+#: The two ends of the bookend goal review. At PLAN the seats judge whether the chosen content
+#: will deliver the goal; at CLOSE they judge whether what was delivered did. Same question,
+#: two moments, and the pair is what makes either answer worth recording - a plan-time yes
+#: nobody ever revisits is a prediction with no scoring, and an answer nobody scores is one
+#: given carelessly.
+CONTENT_REVIEW_KEY = "goal_content_review"
+CONTENT_ANSWERS = ("yes", "partial", "no")
+
+
+def record_content_review(repo_root: Path | str, phase: str, goal: str, answer: str,
+                          missing: str = "", shortfall: dict | None = None) -> dict:
+    """Record one end of the bookend goal review. `phase` is `plan` or `close`.
+
+    A PARTIAL or NO that names nothing missing is REFUSED. The value of the question is the
+    list of what the batch does not cover; an unexplained partial records a doubt that nobody
+    can act on and that the close cannot score against.
+
+    At `close`, `shortfall` carries the undelivered units and the defects raised - SUPPLIED to
+    the seats rather than recalled by them. The judgement rests on the evidence in front of the
+    panel, which is the difference between a review and a recollection.
+    """
+    if phase not in ("plan", "close"):
+        raise ValueError(f"phase must be 'plan' or 'close', got {phase!r}")
+    a = str(answer or "").strip().lower()
+    if a not in CONTENT_ANSWERS:
+        raise ValueError(f"answer must be one of {', '.join(CONTENT_ANSWERS)}, got {answer!r}")
+    if a in ("partial", "no") and not str(missing or "").strip():
+        raise ValueError(
+            f"a {a!r} answer must NAME what is missing - the value of this question is the "
+            f"list of what the content does not cover, and an unexplained doubt is one nobody "
+            f"can act on and the close cannot score against")
+    entry = {"phase": phase, "goal": goal, "answer": a, "missing": str(missing or "").strip(),
+             "shortfall": shortfall or {}, "recorded_at": sdlc_md.now_iso8601()}
+    state = run_state.read(repo_root) or {}
+    rows = [r for r in (state.get(CONTENT_REVIEW_KEY) or []) if r.get("phase") != phase]
+    run_state.update(repo_root, **{CONTENT_REVIEW_KEY: rows + [entry]})
+    return entry
+
+
+def content_reviews(repo_root: Path | str) -> dict:
+    """`{plan, close}` - the two recorded answers, either of which may be None."""
+    rows = (run_state.read(repo_root) or {}).get(CONTENT_REVIEW_KEY) or []
+    return {phase: next((r for r in rows if r.get("phase") == phase), None)
+            for phase in ("plan", "close")}
+
+
+def prediction_miss(repo_root: Path | str) -> str | None:
+    """The plan-time prediction against the close-time judgement, when they disagree.
+
+    Reported so that over several sprints an operator can see whether the plan-time question is
+    being answered seriously. A question whose answer is never checked is one that gets a
+    confident yes every time."""
+    rev = content_reviews(repo_root)
+    plan, close = rev["plan"], rev["close"]
+    if not plan or not close:
+        return None
+    if plan["answer"] == "yes" and close["answer"] != "yes":
+        return (f"PREDICTION MISS: at plan the seats said this content WOULD deliver the goal; "
+                f"at close they judged it {close['answer']}"
+                + (f" - {close['missing']}" if close["missing"] else ""))
+    if plan["answer"] != "yes" and close["answer"] == "yes":
+        return (f"prediction beaten: at plan the seats said {plan['answer']} "
+                f"({plan['missing']}); at close they judged the goal delivered")
+    return None
+
+
+def group_blockers(blockers: list[dict]) -> list[dict]:
+    """Blockers grouped by CAUSE: `[{cause, stage, remedy, blockers, units}]`.
+
+    One missing sign-off across twenty-three units is ONE thing to fix and one artefact to
+    read. Filed per unit it arrives in the discovery backlog as twenty-three identical change
+    requests, and whoever picks them up has to work out that they are one - a cost paid twice,
+    once at the close and again at the triage.
+
+    The cause is the stage plus the remedy with unit ids stripped, so two blockers differing
+    only in WHICH unit they name group, and two with genuinely different remedies do not. That
+    matters as much as the grouping: merging unrelated blockers would hide one behind another.
+    """
+    groups: dict[tuple, dict] = {}
+    for b in blockers:
+        remedy = _UNIT_IN_DETAIL.sub("<unit>", str(b.get("remedy") or "")).strip()
+        key = (b.get("stage"), remedy)
+        cause = _UNIT_IN_DETAIL.sub("<unit>", str(b.get("detail") or "")).strip()
+        g = groups.setdefault(key, {"cause": cause, "stage": b.get("stage"),
+                                    "remedy": b.get("remedy"), "blockers": [], "units": []})
+        g["blockers"].append(b)
+        for m in _UNIT_IN_DETAIL.finditer(f"{b.get('detail', '')} {b.get('remedy', '')}"):
+            uid = sdlc_md.norm_id(m.group(1))
+            if uid not in g["units"]:
+                g["units"].append(uid)
+    return list(groups.values())
 
 
 def cmd_lane(args: argparse.Namespace) -> int:

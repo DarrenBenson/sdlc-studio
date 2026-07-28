@@ -9054,5 +9054,150 @@ class LaneInFlightTests(unittest.TestCase):
             self.assertIsNone(rs.record_lane_start(root, "US0001"))
 
 
+class GoalContentReviewTests(unittest.TestCase):
+    """US0545-US0547. The seats reviewed whether a GOAL was achievable; nobody ever asked
+    whether the chosen CONTENT would deliver it, or - at the other end - whether what was
+    delivered did. A plan-time answer nobody scores is one given carelessly."""
+
+    def _root(self, d) -> Path:
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        _load().run_state.open_run(root, batch=["US0001"])
+        return root
+
+    def test_an_unexplained_partial_is_refused(self) -> None:
+        """The value of the question is the LIST of what the content does not cover. An
+        unexplained doubt records something nobody can act on and the close cannot score."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            with self.assertRaises(ValueError) as caught:
+                mod.record_content_review(root, "plan", "G", "partial")
+            self.assertIn("NAME what is missing", str(caught.exception))
+            with self.assertRaises(ValueError):
+                mod.record_content_review(root, "plan", "G", "no", missing="   ")
+
+    def test_a_yes_needs_no_missing_list(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            self.assertEqual(mod.record_content_review(root, "plan", "G", "yes")["answer"],
+                             "yes")
+
+    def test_the_close_question_supplies_the_shortfall(self) -> None:
+        """SUPPLIED, not recalled: the judgement rests on the evidence in front of the panel,
+        which is the difference between a review and a recollection."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            entry = mod.record_content_review(
+                root, "close", "G", "partial", missing="the panel half never ran",
+                shortfall={"undelivered": ["US0002"], "defects": ["BG0009"]})
+            self.assertEqual(entry["shortfall"]["undelivered"], ["US0002"])
+            self.assertEqual(entry["shortfall"]["defects"], ["BG0009"])
+
+    def test_a_prediction_miss_is_reported(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            mod.record_content_review(root, "plan", "G", "yes")
+            mod.record_content_review(root, "close", "G", "partial", missing="a clause slipped")
+            miss = mod.prediction_miss(root)
+            self.assertIn("PREDICTION MISS", miss)
+
+    def test_agreement_reports_no_miss_and_one_end_alone_reports_nothing(self) -> None:
+        """A report that always fires is one nobody reads, and a miss claimed from one answer
+        would be a comparison against nothing."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            mod.record_content_review(root, "plan", "G", "yes")
+            self.assertIsNone(mod.prediction_miss(root))
+            mod.record_content_review(root, "close", "G", "yes")
+            self.assertIsNone(mod.prediction_miss(root))
+
+    def test_both_answers_are_recorded_side_by_side(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            mod.record_content_review(root, "plan", "G", "yes")
+            mod.record_content_review(root, "close", "G", "no", missing="nothing landed")
+            rev = mod.content_reviews(root)
+            self.assertEqual((rev["plan"]["answer"], rev["close"]["answer"]), ("yes", "no"))
+
+    def test_re_recording_one_end_replaces_it_rather_than_appending(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            mod.record_content_review(root, "plan", "G", "partial", missing="first")
+            mod.record_content_review(root, "plan", "G", "yes")
+            self.assertEqual(mod.content_reviews(root)["plan"]["answer"], "yes")
+
+
+class FileAndCloseGroupingTests(unittest.TestCase):
+    """US0551/US0552. One owed sign-off across twenty-three units is ONE thing to fix, and it
+    arrived in the discovery backlog as twenty-three identical change requests - a cost paid
+    twice, once at the close and again by whoever had to work out they were one."""
+
+    def _blockers(self, n: int) -> list[dict]:
+        return [{"stage": "sign-off", "detail": f"US{500 + i:04d}: no critic verdict",
+                 "remedy": f"record a sign-off for US{500 + i:04d}"} for i in range(n)]
+
+    def test_one_cause_files_one_artefact_listing_its_units(self) -> None:
+        mod = _load()
+        groups = mod.group_blockers(self._blockers(4))
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(groups[0]["units"], ["US0500", "US0501", "US0502", "US0503"])
+
+    def test_distinct_causes_are_filed_separately(self) -> None:
+        """Grouping must not merge unrelated blockers - hiding one behind another is worse
+        than filing both."""
+        mod = _load()
+        mixed = self._blockers(2) + [{"stage": "retro", "detail": "no retro exists",
+                                      "remedy": "write the retro"}]
+        self.assertEqual(len(mod.group_blockers(mixed)), 2)
+
+    def test_the_close_reports_filings_and_cause_count(self) -> None:
+        """A fan-out is visible at the moment it happens rather than discovered later."""
+        mod = _load()
+        groups = mod.group_blockers(self._blockers(23))
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(len(groups[0]["blockers"]), 23)
+
+    def test_a_single_blocker_still_files_one_artefact(self) -> None:
+        mod = _load()
+        self.assertEqual(len(mod.group_blockers(self._blockers(1))), 1)
+
+
+class DefectAgainstGoalTests(unittest.TestCase):
+    """US0543. Whether an open defect could be left was decided on a severity somebody guessed,
+    with no connection to what the sprint set out to do."""
+
+    CLAUSES = ["seams have owners", "the goal is judged clause by clause"]
+
+    def test_a_clause_falsifying_defect_blocks_and_others_are_recorded_leavable(self) -> None:
+        import critic
+        r = critic.judge_defects_against_goal(
+            [{"id": "BG0001", "priority": "Medium"},
+             {"id": "BG0002", "priority": "Low", "falsifies": "seams have owners"}], self.CLAUSES)
+        self.assertEqual([d["id"] for d in r["blocking"]], ["BG0002"])
+        self.assertEqual([d["id"] for d in r["leavable"]], ["BG0001"])
+        self.assertIn("priority medium", r["leavable"][0]["why"])
+
+    def test_a_release_stopping_priority_blocks_whatever_the_clause_reasoning(self) -> None:
+        """A clause argument can be made for almost anything, so the severity floor is not
+        negotiable by it: 'the goal was met anyway' is not an answer to a user who cannot work
+        around the defect."""
+        import critic
+        r = critic.judge_defects_against_goal([{"id": "BG0003", "priority": "P1"}], self.CLAUSES)
+        self.assertEqual([d["id"] for d in r["blocking"]], ["BG0003"])
+
+    def test_nothing_is_silently_dropped(self) -> None:
+        import critic
+        defects = [{"id": f"BG{n:04d}", "priority": "Low"} for n in range(1, 6)]
+        r = critic.judge_defects_against_goal(defects, self.CLAUSES)
+        self.assertEqual(len(r["blocking"]) + len(r["leavable"]), len(defects))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,6 @@
 # US0551: Blockers sharing a cause and a remedy are filed as one artefact listing the units it covers
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0495
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the bounded exit files them
 - **Then** one artefact is filed naming the cause and listing every unit it covers, rather than one per unit
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FileAndCloseGroupingTests::test_one_cause_files_one_artefact_listing_its_units
+- **Verified:** yes (2026-07-28)
 
 ### AC2: genuinely different remedies stay separate
 
@@ -31,6 +32,7 @@
 - **When** the bounded exit files them
 - **Then** two artefacts are filed, so grouping does not merge unrelated blockers
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FileAndCloseGroupingTests::test_distinct_causes_are_filed_separately
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

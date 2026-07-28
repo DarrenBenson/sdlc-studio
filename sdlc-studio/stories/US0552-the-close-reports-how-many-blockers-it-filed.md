@@ -1,6 +1,6 @@
 # US0552: The close reports how many blockers it filed and how many distinct causes they represent, so a fan-out is visible when it happens
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0495
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the close reports
 - **Then** it states how many artefacts were filed and how many distinct causes they represent, so a fan-out is visible when it happens
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FileAndCloseGroupingTests::test_the_close_reports_filings_and_cause_count
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 
