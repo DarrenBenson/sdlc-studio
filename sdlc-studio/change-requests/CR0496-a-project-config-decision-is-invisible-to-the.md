@@ -32,3 +32,4 @@ A threshold raised as a temporary exemption stays raised silently. The 2026-07-2
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 | Created via `new` (deterministic) |
+| 2026-07-28 | Claude Opus 5 | Related: CR0497 applies the same rule at the ADOPTION moment. This one is about an exemption granted mid-life by an operator who knows why; that one is about the exemptions v5 grants a project automatically on the day it upgrades, when nobody has written a reason down at all. Same defect, two moments. |

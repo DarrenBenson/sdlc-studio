@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 39 |
 | Complete | 437 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **496** |
+| **Total** | **497** |
 
 ## All Changes
 
@@ -318,6 +318,7 @@
 | [CR-0494](CR0494-deferred-close-blocker-sign-off-us0530-no-critic.md) | Deferred close blocker (sign-off): US0530: no critic verdict and no sprint-level review covering it | Complete | High | Process | 2026-07-28 | -- |
 | [CR-0495](CR0495-file-and-close-fans-one-systemic-blocker-into.md) | file-and-close fans one systemic blocker into one change request per unit, so a single owed sign-off filled the discovery backlog with 23 identical artefacts | In Progress | High | Improvement | 2026-07-28 | EP0188 |
 | [CR-0496](CR0496-a-project-config-decision-is-invisible-to-the.md) | A project-config decision is invisible to the forward-port check, so 'in sync' reads as 'everything is mirrored' when the reasoning stayed behind | Proposed | Medium | enhancement | 2026-07-28 | -- |
+| [CR-0497](CR0497-the-v5-upgrade-grandfathers-a-project-s-history.md) | The v5 upgrade grandfathers a project's history silently, so every exemption it grants is a number with no record of what it forgave or why | Proposed | High | enhancement | 2026-07-28 | -- |
 
 ## Archived Releases
 
