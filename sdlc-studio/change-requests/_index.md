@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 4 |
+| Proposed | 5 |
 | Approved | 0 |
 | In Progress | 31 |
 | Complete | 405 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **459** |
+| **Total** | **460** |
 
 ## All Changes
 
@@ -281,6 +281,7 @@
 | [CR-0457](CR0457-init-never-creates-sdlc-studio-issues-so-the.md) | init never creates sdlc-studio/issues/, so the issue type is unusable on a new project | Proposed | Medium | Improvement | 2026-07-28 | -- |
 | [CR-0458](CR0458-audit-filed-bugs-arrive-with-no-acceptance-criteria.md) | Audit-filed bugs arrive with no Acceptance Criteria, so a delivery lane has nothing to deliver against | Proposed | Medium | Improvement | 2026-07-28 | -- |
 | [CR-0459](CR0459-validate-does-not-refuse-a-bug-reaching-fixed.md) | validate does not refuse a bug reaching Fixed with no acceptance criteria, so six shipped without any | Proposed | High | Improvement | 2026-07-28 | -- |
+| [CR-0460](CR0460-a-recorded-waiver-is-invisible-to-the-conformance.md) | A recorded waiver is invisible to the conformance lane, so waived debt blocks every clean-tree close | Proposed | High | Improvement | 2026-07-28 | -- |
 
 ## Archived Releases
 
