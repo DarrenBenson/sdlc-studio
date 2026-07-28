@@ -72,6 +72,17 @@
   in the previous sprint was a repair reverted by a later commit, found only by diffing the claim
   against HEAD. Every review brief since carries that instruction.
 
+## Carried lessons (curated)
+
+Five lessons carried into the next batch, written to `retros/LESSONS-TOP.md`: a mechanism that reaches no
+caller is inert; an absence is not an answer; a repair breaks its neighbours and a rename is cross-unit
+coupling; an enumerated list exempts what it forgot; verify the premise before building on it.
+
+This is the first curation, so nothing was displaced. From the next retro the rule binds: a lesson earns a
+place only by displacing one, and the displaced lesson is named here with the reason. Four of the five are
+drawn from failures this sprint or the one before it, and three were violated by the author who had already
+recorded them - which is the argument for a read gate rather than a longer registry.
+
 ## Estimate vs actual
 
 **Were the estimates any good?** The plan forecast a token cost per unit; telemetry recorded

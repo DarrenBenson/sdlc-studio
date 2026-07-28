@@ -23,6 +23,7 @@ Who: every sprint and every reviewer, in this project and in every consuming one
 
 ## Acceptance Criteria
 
+- [ ] The carried set is FIXED SIZE and changes only by displacement: each retro asks of every lesson the batch produced whether it is more important than anything already carried, and a lesson that earns a place names the one it displaces and why. Adding without displacing is refused, because a set that can grow is a set nobody reads - which is the condition the 252-entry summary is already in.
 - [ ] The retro produces a curated summary of the few lessons that matter most for the NEXT batch - a written judgement, not a ranking - and the retro's content check requires it.
 - [ ] The sprint reads that summary at plan time and carries it into every delivery lane's brief, so it reaches the agent doing the work rather than only the operator watching.
 - [ ] The reviewers receive it too, so the pass most likely to catch a repeat is told what has been repeating.
@@ -35,3 +36,4 @@ Who: every sprint and every reviewer, in this project and in every consuming one
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Fable 5 (operator-proposed, evidenced by four violations of a recorded scar in one night) | Raised |
+| 2026-07-28 | Darren Benson (operator) | Displacement rule added: a retro must ask whether a new lesson outranks a carried one, and swap rather than append |
