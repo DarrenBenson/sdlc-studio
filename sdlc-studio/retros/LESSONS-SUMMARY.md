@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0248: **A review that only reads the diff misses what HEAD has become.** The finding that mattered most in the previous sprint was a repair...**
+- **L-0247: **An empty measurement is an unanswered question, not an answer of "nothing".** 57 of 162 suite modules measured an empty read set because...**
+- **L-0246: **Ship the wiring in the same unit as the mechanism, or it is inert.** Twice in one sprint a correct mechanism reached nothing: the surface...**
+- **L-0245: **A measured proxy is the wrong instrument for "did anything change".** The surface hash was computed over the set of files the suites were...**
 - **L-0244: **The strongest evidence a fail-loud fix works is that it refuses its own repository.** Three did.**
 - **L-0243: **Put the evidence where the tooling actually reads it.** A `Verify:` line on a bug executes nothing - only a story's does.**
 - **L-0242: **Per-lane green is not suite green.** Parallel file-disjoint delivery removes file collisions, not semantic ones: a lane that changes a...**
