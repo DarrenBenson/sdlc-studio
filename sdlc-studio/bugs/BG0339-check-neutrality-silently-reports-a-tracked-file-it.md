@@ -21,8 +21,19 @@ Evidence (check(), lines 86-89 ('except OSError: continue')): Confirmed at tools
 
 Collect unreadable files and fail loud (SystemExit naming them), mirroring the LL0008 treatment already applied in `_tracked_text_files`, instead of continue.
 
+## Acceptance Criteria
+
+### AC1: a tracked file the guard cannot read is reported, never counted clean
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** pytest tools/tests/test_check_neutrality.py::UnreadableFileTests, written red before the fix and green after
+- **Verified:** yes (2026-07-28, functional)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d carry-over, run wf_d141ccb5) | Filed |
+| 2026-07-28 | Claude Fable 5 | Delivered in RUN-01KYJZGZ; acceptance criteria authored at review against the tests that landed |

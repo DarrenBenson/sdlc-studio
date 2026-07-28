@@ -21,6 +21,16 @@ Measured: `verify_ac.duplicate_verifiers` over sdlc-studio/stories gives 19 grou
 
 Widen US0482 to stories and bugs, add the baseline file to its Affects, resize from 5 to 8 for 20 groups, and replace the invented four with a criterion that identifies the unanswerable groups by running the resolver rather than by citing a count.
 
+## Acceptance Criteria
+
+### AC1: the burn-down story is scoped to the same corpus as the ratchet it serves
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** pytest tools/tests/test_ratchet_story_agreement.py, written red before the fix and green after
+- **Verified:** yes (2026-07-28, functional)
+
 ## Revision History
 
 | Date | Author | Change |

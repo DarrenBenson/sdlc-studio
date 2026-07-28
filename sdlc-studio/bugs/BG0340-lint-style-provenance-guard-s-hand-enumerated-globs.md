@@ -21,8 +21,19 @@ Evidence (rule 3, grep file list at line 64): Confirmed at lint-style.sh 64: gre
 
 Gather the scripts-tree Python with find, as templates markdown already is: run find over the skill's scripts directory for *.py excluding pycache and capture the result into pyfiles via command substitution, and widen the YAML term to every templates/*.yaml (or a find), so new subdirectories are covered without list maintenance.
 
+## Acceptance Criteria
+
+### AC1: the provenance guard gathers the scripts tree by discovery, so a new subdirectory is covered
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** pytest tools/tests/test_lint_style.py::ProvenanceGuardTests, written red before the fix and green after
+- **Verified:** yes (2026-07-28, functional)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d carry-over, run wf_d141ccb5) | Filed |
+| 2026-07-28 | Claude Fable 5 | Delivered in RUN-01KYJZGZ; acceptance criteria authored at review against the tests that landed |

@@ -595,5 +595,37 @@ class GuidedInitTests(unittest.TestCase):
                 init.set_stage(root, init.ONBOARDING_STAGES[0], "finished")
 
 
+class InstalledSkillIsNotSourceTests(unittest.TestCase):
+    """`install.sh --local` writes the skill into .claude/, .agents/ and .github/. A repo carrying
+    that payload and nothing else is GREENFIELD - classifying it brownfield sends guided onboarding
+    to reverse-engineer a PRD from the skill's own scripts, which is the wrong-fork harm the census
+    exists to prevent, inverted."""
+
+    def _tree(self, root, extra=None):
+        (root / "README.md").write_text("x", encoding="utf-8")
+        (root / "sdlc-studio").mkdir(exist_ok=True)
+        (root / "sdlc-studio" / "prd.md").write_text("x", encoding="utf-8")
+        for rel in (extra or []):
+            p = root / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("x = 1\n", encoding="utf-8")
+
+    def test_an_installed_skill_payload_does_not_make_a_repo_brownfield(self):
+        for skill_dir in (".claude/skills/s/scripts/a.py", ".agents/skills/s/scripts/a.py",
+                          ".github/skills/s/scripts/a.py", ".gemini/skills/s/a.py"):
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._tree(root, [skill_dir])
+                self.assertEqual(init.classify_path(root), "greenfield",
+                                 f"{skill_dir} is installed payload, not this project's source")
+
+    def test_real_source_beside_an_installed_skill_is_still_brownfield(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tree(root, [".claude/skills/s/scripts/a.py", "app.py"])
+            self.assertEqual(init.classify_path(root), "brownfield",
+                             "pruning the payload must not blind the census to real source")
+
+
 if __name__ == "__main__":
     unittest.main()

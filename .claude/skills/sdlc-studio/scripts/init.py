@@ -93,6 +93,12 @@ _CENSUS_SKIP_DIRS = frozenset({
     ".ruff_cache", ".gradle", ".terraform", "__pycache__", "node_modules", "bower_components",
     "vendor", "venv", ".venv", "env", ".env", "dist", "build", "out", "target", "bin", "obj",
     "coverage", ".next", ".nuxt", ".svelte-kit", "site-packages",
+    # Agent-tooling directories hold INSTALLED skill payload, not this project's source. An
+    # otherwise-empty repo carrying a locally-installed copy of this very skill classified
+    # brownfield, which sent guided onboarding down the reverse-engineer-the-PRD fork and would
+    # have generated a PRD from the skill's own scripts - the wrong-fork harm this census was
+    # written to fix, inverted. `install.sh --local` writes exactly this layout.
+    ".claude", ".agents", ".gemini", ".opencode", ".github", ".cursor", ".windsurf",
 })
 # Bound the walk. The classifier runs on the orientation path and returns on the FIRST source
 # file, so this ceiling only bites on a large repo that genuinely has none - where the answer is

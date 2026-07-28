@@ -71,3 +71,4 @@ Replace `_JUDGED_ID_RE` (and the commit-msg hint grep) with the `sdlc_md` `ID_RE
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d) | Filed |
 | 2026-07-28 | delivery lane (RUN-01KYJZGZ) | Acceptance criteria authored; fix + regression tests landed |
+| 2026-07-28 | Claude Fable 5 | Carve-out: the commit-msg paste-hint grep named in the Proposed Fix was NOT changed here and is tracked as BG0354 - this artefact should not read as complete for that half |

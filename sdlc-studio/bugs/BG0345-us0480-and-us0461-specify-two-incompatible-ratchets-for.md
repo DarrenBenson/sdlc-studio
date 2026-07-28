@@ -21,6 +21,16 @@ US0461 (CR0433) builds a SET-based baseline at sdlc-studio/.verify-lint-baseline
 
 Settle one ratchet design before either story is built - the set-with-reasons form, since a count cannot say WHICH instance is new and cannot carry a waiver. Then give US0480 a reference state to compare against, and either wire the ratchet into a gate lane (adding gate.py, the hook and the lane-order test to its Affects) or state explicitly that it is CLI-only and file the wiring separately.
 
+## Acceptance Criteria
+
+### AC1: the two ratchet stories agree on one design rather than specifying incompatible ones
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** pytest tools/tests/test_ratchet_story_agreement.py, written red before the fix and green after
+- **Verified:** yes (2026-07-28, functional)
+
 ## Revision History
 
 | Date | Author | Change |

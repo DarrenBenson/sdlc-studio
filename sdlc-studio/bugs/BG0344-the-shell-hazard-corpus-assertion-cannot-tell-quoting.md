@@ -21,8 +21,19 @@ The measured-catch-rate test asserts that no legitimate artefact field is flagge
 
 Give an artefact a way to say a field quotes shell syntax deliberately - a fenced span the fingerprint skips, or an explicit escape - so the guard keeps its zero-false-positive property without the corpus paying for it in falsified evidence. Failing that, scope the assertion to fields that can actually reach a shell, since the recommended filing path already prevents that for stored prose.
 
+## Acceptance Criteria
+
+### AC1: a field quoting shell syntax deliberately is not counted as a hazard
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** pytest .claude/skills/sdlc-studio/scripts/tests/test_shell_hazard_rate.py::QuotedShellSyntaxTests, written red before the fix and green after
+- **Verified:** yes (2026-07-28, functional)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (dogfooding friction, pre-sprint check RUN-01KYHVWK) | Filed |
+| 2026-07-28 | Claude Fable 5 | Delivered in RUN-01KYJZGZ; acceptance criteria authored at review against the tests that landed |

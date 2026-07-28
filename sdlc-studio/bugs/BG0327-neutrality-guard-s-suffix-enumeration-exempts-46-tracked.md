@@ -21,8 +21,19 @@ Evidence (`_TEXT_SUFFIXES` (lines 33-35) as consumed by `_tracked_text_files` (l
 
 Invert the filter: scan every tracked file and skip a small binary/lockfile denylist (or sniff for null bytes), so .template, .jsonl, and extensionless text files are covered by default.
 
+## Acceptance Criteria
+
+### AC1: the neutrality guard scans every tracked text file, not an enumerated suffix set
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** pytest tools/tests/test_check_neutrality.py::ScanCoverageTests, written red before the fix and green after
+- **Verified:** yes (2026-07-28, functional)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d) | Filed |
+| 2026-07-28 | Claude Fable 5 | Delivered in RUN-01KYJZGZ; acceptance criteria authored at review against the tests that landed |
