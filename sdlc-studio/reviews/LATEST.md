@@ -83,5 +83,11 @@ three files away, and nine guards narrower than they claim. **Nothing waived.**
    produced one false measurement in this repository.
 2. The first genuinely independent goal panel is the next sprint's. Both the qa seat at plan
    time and the review at close say so, for different reasons that both hold.
-3. The gate budget is at +17% of its 380s ceiling and will fail its own lane soon. It wants a
-   decision about what the gate is for, not a patch.
+3. **CR0498 - the close ceremony costs more than the work it certifies.** Measured on this
+   run: ~32 minutes of gate across 5 commits, 57 process spawns to record three facts about 19
+   units (38 of them wasted on one argument error), and 3 close attempts of which 2 stopped on
+   a refusal. Four remedies, largest first: a `close --dry-run` reporting every refusal in one
+   pass, batch forms on the critic verbs, a retro scaffold that passes its own validator, and a
+   close-scoped gate profile.
+4. The gate budget lane went OVER during this close - 427s against a 380s ceiling, +35% on the
+   2026-07-26 baseline. It has stopped being advisory noise and is now a true reading.
