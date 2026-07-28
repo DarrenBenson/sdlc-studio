@@ -191,3 +191,27 @@ invent a target the data cannot defend. Read `retro.py velocity` and decide per 
 - `/sdlc-studio sprint report --id RETROxxxx` - the end-of-sprint report, composed from the
   retro, the accuracy pass and telemetry (`report.enabled: false` turns the page off)
 - `/sdlc-studio status` - shows Blocked units after a run
+
+## Lanes: dispatching work and accepting it back
+
+A delivery lane is dispatched with a brief and accepted back with evidence. Both are commands, so
+the obligations travel with the work rather than with whoever wrote the prompt.
+
+```bash
+sprint lane brief  --units US0123 US0124     # the contract, the obligations, the proof owed, the carried lessons
+sprint lane return --units US0123 --proof unit="<evidence>"   # runs the unit's OWN criteria and reports each
+```
+
+`lane brief` **refuses** a unit that carries no authored acceptance criteria, or criteria the
+verifier cannot read, and exits non-zero naming it. There is nothing to deliver against, and a
+contract inferred from the summary is the lane's guess rather than the unit's specification.
+
+`lane return` runs every executable criterion and reports each with the runner's own output and
+exit code, not a summary. It forces the outcome to `blocked` whenever a criterion did not pass,
+**whatever the lane claimed** - a lane cannot inflate its own result. An unresolvable selector is
+reported `unresolved` and blocks: an unanswerable check is not a passed one. Shell verifiers obey
+the same provenance rule the authoritative runner uses, so an externally ingested artefact cannot
+reach a shell through this path either.
+
+An orchestrator should call `lane brief` before dispatching and `lane return` before accepting a
+lane's work. Skipping them is how a unit with no contract reaches Fixed.

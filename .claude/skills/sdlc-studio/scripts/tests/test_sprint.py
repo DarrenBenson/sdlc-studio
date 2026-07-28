@@ -8719,5 +8719,54 @@ class DropVersusDeferredDoneGateTests(unittest.TestCase):
         self.assertEqual(blocked, {"US0101", "US0102"})
 
 
+class LaneTrustBoundaryTests(unittest.TestCase):
+    """The lane runner must not be more permissive than the authoritative one. It was: a story
+    stamped `Provenance: external` with a `shell` verifier was FAILED by verify_ac and PASSED by
+    the lane, which also executed the command. Both now read one shared rule."""
+
+    def _story(self, root, provenance, marker):
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        p = d / "US0777-x.md"
+        prov = f"> **Provenance:** {provenance}\n" if provenance else ""
+        p.write_text(f"# US0777: probe\n\n> **Status:** Ready\n{prov}> **Epic:** EP0001\n\n"
+                     f"## Acceptance Criteria\n\n### AC1: probe\n\n- **Given** x\n- **When** y\n"
+                     f"- **Then** z\n- **Verify:** shell touch {marker}\n", encoding="utf-8")
+        (d / "_index.md").write_text(
+            "# Stories\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0777](US0777-x.md) | probe | Ready |\n", encoding="utf-8")
+        return p
+
+    def test_an_external_provenance_shell_verifier_does_not_run_in_the_lane(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            marker = root / "PWNED"
+            self._story(root, "external", marker)
+            res = sprint.lane_verify(root, "US0777")
+            self.assertFalse(marker.exists(),
+                             "the lane executed shell from an external-provenance artefact")
+            self.assertTrue(res["blocking"], "an unrunnable verifier must block, not pass")
+
+    def test_the_lane_and_the_authoritative_runner_agree(self):
+        import verify_ac
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            marker = root / "PWNED"
+            path = self._story(root, "external", marker)
+            lane_ok = sprint.lane_verify(root, "US0777")["ok"]
+            report = verify_ac.verify_story(path, dry_run=True, timeout=30, repo_root=root)
+            self.assertEqual(lane_ok, report.failed == 0,
+                             "the lane and verify_story must reach the SAME verdict on one file")
+
+    def test_a_local_provenance_shell_verifier_still_runs(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            marker = root / "RAN"
+            self._story(root, "", marker)
+            sprint.lane_verify(root, "US0777")
+            self.assertTrue(marker.exists(),
+                            "the fix must not disable shell verifiers for ordinary artefacts")
+
+
 if __name__ == "__main__":
     unittest.main()

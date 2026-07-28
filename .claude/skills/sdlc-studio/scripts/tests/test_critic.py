@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parent.parent / "critic.py"
+REPO_ROOT = Path(__file__).resolve().parents[5]
 
 
 def _load():
@@ -2306,6 +2307,39 @@ class CallerNamedTests(unittest.TestCase):
             empty.mkdir()
             with self.assertRaises(ValueError):
                 mod.tree_index(empty)
+
+
+class CallerResolverAtScaleTests(unittest.TestCase):
+    """A negative control on a four-file tree cannot judge a resolver whose failure mode is a
+    LARGE tree. Against this repository the original accepted `unknown`, `nothing at all` and
+    `the main loop` - the rule was satisfiable by a word naming no consumer at all."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.critic = _load()
+        cls.index = cls.critic.tree_index(REPO_ROOT)
+
+    def test_nonsense_declarations_do_not_resolve_against_this_repo(self):
+        for junk in ("unknown", "n/a", "nothing at all", "the main loop", "the gate",
+                     "the review", "the index", "the story", "none", "tbd"):
+            self.assertFalse(self.critic.caller_resolves(self.index, junk),
+                             f"{junk!r} names no consumer and must not satisfy the rule")
+
+    def test_real_callers_still_resolve_against_this_repo(self):
+        for real in (".githooks/pre-commit", "scripts/sprint.py", "gate.py",
+                     ".claude/skills/sdlc-studio/scripts/verify_ac.py"):
+            self.assertTrue(self.critic.caller_resolves(self.index, real),
+                            f"{real!r} is a real caller and must resolve")
+
+    def test_the_index_holds_only_tracked_files(self):
+        self.assertFalse([p for p in self.index["paths"] if p.startswith("node_modules/")],
+                         "a vendored tree turns the index into an English vocabulary")
+
+    def test_an_index_that_found_nothing_refuses_rather_than_failing_everything(self):
+        with tempfile.TemporaryDirectory() as d:
+            c = _load()
+            with self.assertRaises(ValueError):
+                c.tree_index(d)
 
 
 if __name__ == "__main__":

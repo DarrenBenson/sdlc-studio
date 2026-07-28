@@ -21,8 +21,19 @@ Evidence (markdown lanes, lines 310-324; same globs in package.json lint:md (lin
 
 Add '.github/**/*.md' to both the hook lane and package.json lint:md (kept in sync), or better, feed markdownlint the file list from git ls-files '*.md' so every tracked dot-directory is covered without per-directory enumeration.
 
+## Acceptance Criteria
+
+### AC1: tracked markdown under a dot-directory is linted per commit
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** pytest tools/tests/test_message_first_gate.py::MarkdownLaneTests
+- **Verified:** yes (2026-07-28, functional)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d carry-over, run wf_d141ccb5) | Filed |
+| 2026-07-28 | Claude Fable 5 | Acceptance criterion authored at review - the unit reached Fixed without one, which CR0459 exists to refuse |

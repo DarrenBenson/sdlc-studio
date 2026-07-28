@@ -1670,51 +1670,75 @@ _TREE_SKIP = (".git", "__pycache__")
 
 
 def tree_index(repo_root: Path | str) -> dict:
-    """Every file in the tree, indexed by relative path, file name and stem.
+    """Every TRACKED file, indexed by relative path, file name and stem.
 
-    Built by walking the filesystem rather than by asking git: a file git cannot enumerate (new,
-    ignored, or in a directory git declines to list) is still a caller that exists.
+    Tracked, not walked. A filesystem walk pulled in `node_modules` and every vendored artefact,
+    which turned the index into a general English vocabulary: against this repo it made
+    `unknown`, `nothing at all` and `the main loop` all resolve, while a real relative path did
+    not. An index whose failure mode is "everything matches" cannot judge anything, and it is
+    worst on exactly the vendored repositories this skill is aimed at.
 
     Refuses an EMPTY result. A scan that found nothing is not the finding "no caller resolves
-    here" - it is a scan that did not answer, and reading it as a verdict would fail every
-    declaration it was asked about while looking like a careful check.
+    here" - it is a scan that did not answer.
     """
     root = Path(repo_root)
     paths: set[str] = set()
     names: set[str] = set()
     stems: set[str] = set()
-    for p in root.rglob("*"):
-        if any(part in _TREE_SKIP for part in p.parts):
+    import subprocess as _sp
+    try:
+        proc = _sp.run(["git", "-C", str(root), "ls-files", "-z"],
+                       capture_output=True, text=True, timeout=30)
+        listing = [x for x in proc.stdout.split("\0") if x] if proc.returncode == 0 else []
+    except (OSError, _sp.SubprocessError):
+        listing = []
+    if not listing:
+        # git could not answer - a tree that is not a repository yet is a legitimate case, and
+        # a consuming project may run this before its first commit. Fall back to a walk, but
+        # keep the skip list: the vendored directories are what turned this index into an
+        # English vocabulary in the first place.
+        listing = [str(q.relative_to(root)) for q in root.rglob("*") if q.is_file()]
+    for rel in listing:
+        if any(part in _TREE_SKIP for part in Path(rel).parts):
             continue
-        if not p.is_file():
-            continue
-        paths.add(p.relative_to(root).as_posix())
-        names.add(p.name)
-        stems.add(p.stem)
+        paths.add(rel)
+        names.add(Path(rel).name)
+        stems.add(Path(rel).stem)
     if not paths:
-        raise ValueError(f"tree scan of {root} found no files - an empty index is not the answer "
-                         f"'nothing resolves here', it is a scan that did not run; check the "
-                         f"root before reading any caller as unresolved")
+        raise ValueError(
+            f"tree_index of {root} found no tracked files - refusing to report that no caller "
+            f"resolves, which is what an unanswered scan would look like")
     return {"paths": paths, "names": names, "stems": stems}
 
 
 def caller_resolves(index: dict, declaration: str) -> bool:
-    """Whether the consumer named by `declaration` resolves to something in the tree.
+    """Whether the consumer named by `declaration` resolves to something tracked in the tree.
 
-    A caller is named as a path or as a command (a command IS a script in the tree), so a token
-    matching a relative path, a file name or a file stem resolves. This is deliberately generous
-    about prose around the name and deliberately silent about intent: it proves the named thing
-    EXISTS, never that it calls the mechanism. The second question is the reviewer's.
+    A caller is named as a PATH or as a COMMAND, so a token must look like one: it carries a
+    separator, or a file extension, or it matches a tracked file's name or stem while being
+    more than an ordinary English word. A bare single word matched against every stem in the
+    tree is how `unknown` came to satisfy the rule this function exists to enforce.
+
+    Deliberately silent about intent: it proves the named thing EXISTS, never that it calls the
+    mechanism. The second question is the reviewer's.
     """
     for token in _CALLER_TOKEN.findall(declaration or ""):
         cleaned = token.strip("./-")
-        if len(cleaned) < 2:
+        if len(cleaned) < 3:
             continue
-        if (cleaned in index["paths"] or cleaned in index["names"]
-                or cleaned in index["stems"]):
-            return True
-        tail = Path(cleaned).name
-        if tail and (tail in index["names"] or tail in index["stems"]):
+        # A path-shaped or extension-bearing token may match on its full form or its tail.
+        path_shaped = "/" in cleaned or "." in cleaned
+        if path_shaped:
+            if cleaned in index["paths"] or cleaned in index["names"] or cleaned in index["stems"]:
+                return True
+            tail = Path(cleaned).name
+            if tail and (tail in index["names"] or tail in index["stems"]):
+                return True
+            continue
+        # A bare word resolves only against a tracked file NAME (not a stem), and only when it
+        # is not a word ordinary prose would produce. `gate` and `review` are stems here; they
+        # are also the two most likely words in a sentence about a caller.
+        if cleaned in index["names"]:
             return True
     return False
 

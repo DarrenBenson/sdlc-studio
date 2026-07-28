@@ -2061,7 +2061,7 @@ def lane_contract(repo_root: Path | str, unit_id: str) -> dict:
     uid = sdlc_md.norm_id(unit_id)
     hit = sdlc_md.find_by_id(root, uid)
     if not hit:
-        return {"id": uid, "path": None, "ok": False, "criteria": [],
+        return {"id": uid, "path": None, "ok": False, "criteria": [], "text": "",
                 "refusal": f"{uid}: no artefact on disk resolves to this id - a lane cannot be "
                            f"dispatched onto a unit whose contract it cannot read"}
     path = Path(hit[0])
@@ -2074,12 +2074,23 @@ def lane_contract(repo_root: Path | str, unit_id: str) -> dict:
                            f"contract in the shape of one. Groom it before dispatching a lane."}
     has_ac, _has_verify, _states = conformance._ac_signals(text)
     if not has_ac:
-        return {"id": uid, "path": str(path), "ok": False, "criteria": [],
+        return {"id": uid, "path": str(path), "ok": False, "criteria": [], "text": text,
                 "refusal": f"{uid} ({path.name}): carries no authored acceptance criteria - "
                            f"there is nothing to deliver against, and a contract inferred from "
                            f"the summary is the lane's guess, not the unit's specification."}
+    blocks = _lane_ac_blocks(text)
+    if not blocks:
+        # One definition decides, not two. `_ac_signals` accepts checkbox and prose criteria
+        # the runner cannot parse, so a unit passed the gate with an EMPTY contract and was
+        # dispatched under the very obligation to refuse that - and could then never be
+        # reported fixed, because no criterion could be run. Measured live: 475 units.
+        return {"id": uid, "path": str(path), "ok": False, "criteria": [], "text": text,
+                "refusal": f"{uid} ({path.name}): carries an Acceptance Criteria section the "
+                           f"runner cannot read - no `### ACn` block. Rewrite the criteria in "
+                           f"the executable shape before dispatching a lane; a contract the "
+                           f"runner cannot parse is not a contract."}
     return {"id": uid, "path": str(path), "ok": True, "refusal": "",
-            "criteria": _lane_ac_blocks(text)}
+            "criteria": blocks, "text": text}
 
 
 def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
@@ -2165,7 +2176,7 @@ def _lane_criterion_state(verifier: str | None, result) -> str:
 
 
 def lane_verify(repo_root: Path | str, unit_id: str, timeout: int = 300,
-                allow_shell: bool = True) -> dict:
+                allow_shell: bool = True, allow_external: bool = False) -> dict:
     """Run a unit's OWN acceptance criteria and report each with the verifier's own output.
 
     Returns `{unit, ok, criteria, counts, blocking}`. Each criterion carries `state`, the
@@ -2177,18 +2188,24 @@ def lane_verify(repo_root: Path | str, unit_id: str, timeout: int = 300,
     verification that stamps the story it is judging would be scoring its own paper.
     """
     import verify_ac  # noqa: PLC0415 - sibling
+    # The trust boundary is verify_ac's to define, never ours to re-derive: a lane runner
+    # more permissive than the authoritative one passed a criterion that runner failed, and
+    # executed shell from an external-provenance artefact while doing it.
     root = Path(repo_root)
     contract = lane_contract(root, unit_id)
     if not contract["ok"]:
         return {"unit": contract["id"], "ok": False, "criteria": [],
                 "counts": dict.fromkeys(LANE_CRITERION_STATES, 0),
                 "blocking": [], "refusal": contract["refusal"]}
+    _lane_allow_shell = verify_ac.shell_allowed_for(
+        contract["text"], allow_shell=allow_shell, allow_external=allow_external)
     rows: list[dict] = []
     for crit in contract["criteria"]:
         verifier = crit["verifier"]
         result = None
         if verifier is not None and not verify_ac._is_manual(verifier):
-            result = verify_ac.run_verifier(verifier, timeout, root, allow_shell=allow_shell)
+            result = verify_ac.run_verifier(verifier, timeout, root,
+                                            allow_shell=_lane_allow_shell)
         state = _lane_criterion_state(verifier, result)
         output = ""
         if result is not None:

@@ -32,9 +32,19 @@
 - **Then** the result names the obligation and why it was not discharged, so the gap is visible at the lane rather than at the close
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneProofTests::test_an_undischarged_obligation_is_stated_not_omitted
 
+### AC3: the mechanism is reached by a named caller
+
+- **Given** the mechanism this unit adds
+- **When** the caller check runs over this unit
+- **Then** the consuming call site is named and resolves in the tree, so the mechanism is
+  reachable in production rather than correct in isolation
+- **Caller:** `sprint lane brief` and `sprint lane return` (both call lane_proof), documented in help/sprint.md
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerNamedTests
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-28 | Claude Fable 5 | Groomed against the carried lessons |
+| 2026-07-28 | Claude Fable 5 | Caller named at review - this unit's own check reported it caller-unnamed |

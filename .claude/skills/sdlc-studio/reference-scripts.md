@@ -251,3 +251,5 @@ lists every script with a one-line summary; open the linked page for the full en
 
 - `scripts/README.md` - directory conventions
 - `reference-*.md` - the workflow references
+
+- `sprint.py lane brief|return` - dispatch a delivery lane with its contract, obligations and proof owed, and accept it back with its own acceptance criteria run. Refuses a unit with no readable contract; forces `blocked` when a criterion did not pass.

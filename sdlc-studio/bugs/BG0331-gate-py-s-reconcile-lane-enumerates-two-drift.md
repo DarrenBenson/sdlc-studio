@@ -21,8 +21,19 @@ Evidence (_reconcile, lines 45-73 (summing line 49, derivable-only addition line
 
 Factor `cmd_detect`'s default sweep into a `detect_all()` returning the full `all_drift` list and have `gate._reconcile` count that, so the gate and reconcile detect can never disagree on the same tree.
 
+## Acceptance Criteria
+
+### AC1: the reconcile lane covers every drift source the detector produces
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReconcileLaneTests
+- **Verified:** yes (2026-07-28, functional)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d) | Filed |
+| 2026-07-28 | Claude Fable 5 | Acceptance criterion authored at review - the unit reached Fixed without one, which CR0459 exists to refuse |

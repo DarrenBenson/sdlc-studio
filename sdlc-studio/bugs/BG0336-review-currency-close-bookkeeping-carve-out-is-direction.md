@@ -21,8 +21,19 @@ Evidence (`_CLOSE_OWNED_FIELDS` line 1152, `_close_owned_change_only` lines 1196
 
 Make the carve-out value-aware: exempt a Status: line only when the transition is one the close tooling itself records (e.g. Review to Done alongside sign-off fields), and treat any other status flip - especially any line whose new value is Done or that reopens a terminal status - as a substantive change requiring review currency.
 
+## Acceptance Criteria
+
+### AC1: a status change the close did not record still demands re-review
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::CloseBookkeepingTests
+- **Verified:** yes (2026-07-28, functional)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d carry-over, run wf_d141ccb5) | Filed |
+| 2026-07-28 | Claude Fable 5 | Acceptance criterion authored at review - the unit reached Fixed without one, which CR0459 exists to refuse |

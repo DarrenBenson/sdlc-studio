@@ -30,14 +30,14 @@ See the summary; each cited site names its own remedy.
 - **Given** `scripts/tests` and `tools/tests`, both named `tests`
 - **When** pytest is asked to collect from both in a single run
 - **Then** both collect, because the import mode resolves them by path rather than by a package name they share
-- **Verify:** pytest tools/tests/test_pytest_collection.py::CrossPackageCollectionTests::test_both_test_packages_collect_in_one_invocation
+- **Verify:** pytest tools/tests/test_pytest_collection.py::CrossPackageCollectionTests::test_both_suites_collect_in_one_invocation
 
 ### AC2: a Verify line can name node ids in both halves
 
 - **Given** one node id from each package
 - **When** they are passed to a single pytest invocation
 - **Then** both resolve and run, so an acceptance criterion can span both halves of the gate
-- **Verify:** pytest tools/tests/test_pytest_collection.py::CrossPackageCollectionTests::test_node_ids_from_both_packages_resolve_together
+- **Verify:** pytest tools/tests/test_pytest_collection.py::CrossPackageCollectionTests::test_a_node_id_from_each_suite_runs_in_one_invocation
 
 ## Revision History
 
@@ -45,3 +45,4 @@ See the summary; each cited site names its own remedy.
 | --- | --- | --- |
 | 2026-07-28 | Claude Fable 5 (RUN-01KYJZGZ delivery lanes, dogfooding friction) | Filed |
 | 2026-07-28 | Claude Fable 5 | Acceptance criteria authored at delivery - the lane refused to claim fixed without a contract to verify against |
+| 2026-07-28 | Claude Fable 5 | Verifiers re-pointed at the tests that exist - the criteria I authored named methods the lane had not written |

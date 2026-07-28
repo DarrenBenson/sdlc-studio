@@ -1280,6 +1280,20 @@ def _read_body(path: Path | str) -> str:
     return text
 
 
+
+def shell_allowed_for(text: str, *, allow_shell: bool = True,
+                      allow_external: bool = False) -> bool:
+    """May a `shell` verifier in THIS artefact's text be executed?
+
+    The technical control behind the documented trust boundary: externally ingested content
+    must not reach a shell just because a workflow copied it into an artefact. This is the ONE
+    definition - a second caller re-deriving it is how a lane runner came to execute a
+    `shell` verifier on an external-provenance story that the authoritative runner refused,
+    passing a criterion the project's own verifier failed.
+    """
+    provenance = (sdlc_md.extract_field(text, "Provenance") or "").strip().lower()
+    return allow_shell and (allow_external or provenance != "external")
+
 def verify_story(
     story_path: Path,
     dry_run: bool,
@@ -1305,8 +1319,8 @@ def verify_story(
     blocks = parse_story(text)
     report = StoryReport(path=str(story_path), ac_count=len(blocks),
                          ac_fingerprint=ac_fingerprint(text))
-    provenance = (sdlc_md.extract_field(text, "Provenance") or "").strip().lower()
-    story_allow_shell = allow_shell and (allow_external or provenance != "external")
+    story_allow_shell = shell_allowed_for(text, allow_shell=allow_shell,
+                                          allow_external=allow_external)
     pending: list = []  # (block, new_state) - applied bottom-up after the loop
 
     for block in blocks:

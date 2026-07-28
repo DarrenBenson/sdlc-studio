@@ -39,9 +39,19 @@
 - **Then** it reports the criterion unresolved and the unit blocked - an unanswerable check is not a passed one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneVerifyTests::test_an_unresolvable_criterion_is_not_a_pass
 
+### AC4: the mechanism is reached by a named caller
+
+- **Given** the mechanism this unit adds
+- **When** the caller check runs over this unit
+- **Then** the consuming call site is named and resolves in the tree, so the mechanism is
+  reachable in production rather than correct in isolation
+- **Caller:** `sprint lane return` (cmd_lane -> lane_return -> lane_verify), documented in help/sprint.md
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerNamedTests
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-28 | Claude Fable 5 | Groomed against the carried lessons |
+| 2026-07-28 | Claude Fable 5 | Caller named at review - this unit's own check reported it caller-unnamed |

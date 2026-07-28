@@ -351,3 +351,11 @@ When implementing later epics that depend on earlier ones (e.g. EP0004 depends o
 - Agent prompts should reference files from earlier epics in "READ THESE FILES FIRST"
 - Example: EP0004 agents should read `src/lib/bridge/client.ts` (from EP0001) to understand BridgeClient patterns
 - The commit strategy (per-epic) ensures earlier code is available to later agents
+
+## Lane obligations {#lane-obligations}
+
+Dispatch a lane with `sprint lane brief --units <id>` and accept it back with
+`sprint lane return --units <id>`. The brief carries the unit's contract, the proof it owes and
+the carried lessons; the return runs the unit's own acceptance criteria and refuses to report a
+unit fixed whose criteria did not pass. A hand-written prompt that omits them is how a unit with
+no contract reaches a terminal status.

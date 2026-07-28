@@ -21,8 +21,19 @@ Run the gate with no arguments and it reports its own cost: 33.6s of a 45s budge
 
 See the summary; each cited site names its own remedy.
 
+## Acceptance Criteria
+
+### AC1: the artefact gate's dominant lane is affordable per commit and its cost is stated honestly
+
+- **Given** the defect as filed in Steps to Reproduce
+- **When** the repair is in place
+- **Then** the behaviour is the one the Proposed Fix describes, proven by a test written red before the fix
+- **Proven by:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::GateBudgetTests
+- **Verified:** yes (2026-07-28, functional)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Fable 5 (RUN-01KYJZGZ delivery lanes, dogfooding friction) | Filed |
+| 2026-07-28 | Claude Fable 5 | Acceptance criterion authored at review - the unit reached Fixed without one, which CR0459 exists to refuse |
