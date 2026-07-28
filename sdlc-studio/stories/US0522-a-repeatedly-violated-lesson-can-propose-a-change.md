@@ -1,6 +1,6 @@
 # US0522: A repeatedly violated lesson can propose a change request or bug for the operator to accept or decline
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0464
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0528: A Draft story declaring a file it will create is not warned as unresolvable, since that is the normal case
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0456
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

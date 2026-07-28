@@ -1,6 +1,6 @@
 # US0512: A unit adding a mechanism carries an acceptance criterion naming the caller that consumes it
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0461
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

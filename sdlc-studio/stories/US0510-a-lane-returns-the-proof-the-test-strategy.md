@@ -1,6 +1,6 @@
 # US0510: A lane returns the proof the test strategy assigned to its unit, or states plainly that it could not and why
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0463
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

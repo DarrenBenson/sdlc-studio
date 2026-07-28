@@ -1,7 +1,7 @@
 # Latest review anchor
 
 <!-- close-status:begin -->
-> **RUN-01KYKVZM closed stopped.** 31 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> **RUN-01KYKVZM closed stopped.** 31 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 

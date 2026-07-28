@@ -1,6 +1,6 @@
 # US0524: An unmeasured component is reported as unmeasured rather than as zero, and the ratio is written to the velocity record
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0462
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # CR-0460: A recorded waiver is invisible to the conformance lane, so waived debt blocks every clean-tree close
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0180
 > **Priority:** High
 > **Type:** Improvement

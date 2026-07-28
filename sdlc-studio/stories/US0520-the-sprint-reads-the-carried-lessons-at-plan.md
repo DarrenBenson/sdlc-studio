@@ -1,6 +1,6 @@
 # US0520: The sprint reads the carried lessons at plan and puts them in every delivery lane's brief and the reviewers'
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0464
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

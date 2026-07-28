@@ -1,6 +1,6 @@
 # EP0179: The loop measures its own cost and carries its own learning forward
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0462
 > **Derived Point Total:** 29
 > **Parent:** CR0464
@@ -15,13 +15,13 @@ Decomposed from CR0464. Delivers the work CR0464 requested.
 
 ## Story Breakdown
 
-- [ ] [US0518: The retro curates a fixed-size set of carried lessons, and the content check requires it](../stories/US0518-the-retro-curates-a-fixed-size-set-of.md)
-- [ ] [US0519: A lesson earns a place only by displacing one, and the displaced lesson is named with the reason](../stories/US0519-a-lesson-earns-a-place-only-by-displacing.md)
-- [ ] [US0520: The sprint reads the carried lessons at plan and puts them in every delivery lane's brief and the reviewers'](../stories/US0520-the-sprint-reads-the-carried-lessons-at-plan.md)
-- [ ] [US0521: A lesson violated again after being carried is reported at the close, naming the unit that repeated it](../stories/US0521-a-lesson-violated-again-after-being-carried-is.md)
-- [ ] [US0522: A repeatedly violated lesson can propose a change request or bug for the operator to accept or decline](../stories/US0522-a-repeatedly-violated-lesson-can-propose-a-change.md)
-- [ ] [US0523: The close reports delivery time against overhead time as a ratio, beside the points and token figures](../stories/US0523-the-close-reports-delivery-time-against-overhead-time.md)
-- [ ] [US0524: An unmeasured component is reported as unmeasured rather than as zero, and the ratio is written to the velocity record](../stories/US0524-an-unmeasured-component-is-reported-as-unmeasured-rather.md)
+- [x] [US0518: The retro curates a fixed-size set of carried lessons, and the content check requires it](../stories/US0518-the-retro-curates-a-fixed-size-set-of.md)
+- [x] [US0519: A lesson earns a place only by displacing one, and the displaced lesson is named with the reason](../stories/US0519-a-lesson-earns-a-place-only-by-displacing.md)
+- [x] [US0520: The sprint reads the carried lessons at plan and puts them in every delivery lane's brief and the reviewers'](../stories/US0520-the-sprint-reads-the-carried-lessons-at-plan.md)
+- [x] [US0521: A lesson violated again after being carried is reported at the close, naming the unit that repeated it](../stories/US0521-a-lesson-violated-again-after-being-carried-is.md)
+- [x] [US0522: A repeatedly violated lesson can propose a change request or bug for the operator to accept or decline](../stories/US0522-a-repeatedly-violated-lesson-can-propose-a-change.md)
+- [x] [US0523: The close reports delivery time against overhead time as a ratio, beside the points and token figures](../stories/US0523-the-close-reports-delivery-time-against-overhead-time.md)
+- [x] [US0524: An unmeasured component is reported as unmeasured rather than as zero, and the ratio is written to the velocity record](../stories/US0524-an-unmeasured-component-is-reported-as-unmeasured-rather.md)
 
 ## Acceptance Criteria (Epic Level)
 

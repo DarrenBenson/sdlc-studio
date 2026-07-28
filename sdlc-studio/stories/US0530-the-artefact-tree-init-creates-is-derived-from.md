@@ -1,6 +1,6 @@
 # US0530: The artefact tree init creates is derived from the shipped type list, so a new type is never silently omitted
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0457
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

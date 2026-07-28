@@ -1,6 +1,6 @@
 # US0518: The retro curates a fixed-size set of carried lessons, and the content check requires it
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0464
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

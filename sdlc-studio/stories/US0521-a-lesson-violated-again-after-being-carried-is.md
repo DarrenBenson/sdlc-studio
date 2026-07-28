@@ -1,6 +1,6 @@
 # US0521: A lesson violated again after being carried is reported at the close, naming the unit that repeated it
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0464
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

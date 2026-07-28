@@ -1,6 +1,6 @@
 # US0511: The lane obligations travel with the dispatch prompt, so they do not depend on who wrote that sprint's brief
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0463
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

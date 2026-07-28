@@ -1,6 +1,6 @@
 # US0523: The close reports delivery time against overhead time as a ratio, beside the points and token figures
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0462
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

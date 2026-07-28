@@ -1,6 +1,6 @@
 # EP0178: Defects are caught at the lane, not at review: a unit arrives with its acceptance criteria already proven
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0458
 > **Parent:** CR0459
 > **Parent:** CR0461
@@ -17,16 +17,16 @@ Decomposed from CR0463. Delivers the work CR0463 requested.
 
 ## Story Breakdown
 
-- [ ] [US0508: A lane refuses to start on a unit that carries no acceptance criteria, naming it rather than inferring a contract](../stories/US0508-a-lane-refuses-to-start-on-a-unit.md)
-- [ ] [US0509: A lane runs its unit's own acceptance criteria before returning, and a unit whose criteria do not pass comes back blocked](../stories/US0509-a-lane-runs-its-unit-s-own-acceptance.md)
-- [ ] [US0510: A lane returns the proof the test strategy assigned to its unit, or states plainly that it could not and why](../stories/US0510-a-lane-returns-the-proof-the-test-strategy.md)
-- [ ] [US0511: The lane obligations travel with the dispatch prompt, so they do not depend on who wrote that sprint's brief](../stories/US0511-the-lane-obligations-travel-with-the-dispatch-prompt.md)
-- [ ] [US0512: A unit adding a mechanism carries an acceptance criterion naming the caller that consumes it](../stories/US0512-a-unit-adding-a-mechanism-carries-an-acceptance.md)
-- [ ] [US0513: A unit whose mechanism has no caller yet says so explicitly and names the follow-up that completes it](../stories/US0513-a-unit-whose-mechanism-has-no-caller-yet.md)
-- [ ] [US0514: A bug reaching a terminal status with no acceptance-criteria section is refused, as a story reaching Done already is](../stories/US0514-a-bug-reaching-a-terminal-status-with-no.md)
-- [ ] [US0515: The existing AC-less units are baselined so the new rule blocks a new one without blocking on the backlog it reveals](../stories/US0515-the-existing-ac-less-units-are-baselined-so.md)
-- [ ] [US0516: A filed finding carries acceptance criteria derived from its own evidence, so a lane has a contract to deliver against](../stories/US0516-a-filed-finding-carries-acceptance-criteria-derived-from.md)
-- [ ] [US0517: A finding's Affects names where the fix will land rather than where the evidence was read, and includes the test file](../stories/US0517-a-finding-s-affects-names-where-the-fix.md)
+- [x] [US0508: A lane refuses to start on a unit that carries no acceptance criteria, naming it rather than inferring a contract](../stories/US0508-a-lane-refuses-to-start-on-a-unit.md)
+- [x] [US0509: A lane runs its unit's own acceptance criteria before returning, and a unit whose criteria do not pass comes back blocked](../stories/US0509-a-lane-runs-its-unit-s-own-acceptance.md)
+- [x] [US0510: A lane returns the proof the test strategy assigned to its unit, or states plainly that it could not and why](../stories/US0510-a-lane-returns-the-proof-the-test-strategy.md)
+- [x] [US0511: The lane obligations travel with the dispatch prompt, so they do not depend on who wrote that sprint's brief](../stories/US0511-the-lane-obligations-travel-with-the-dispatch-prompt.md)
+- [x] [US0512: A unit adding a mechanism carries an acceptance criterion naming the caller that consumes it](../stories/US0512-a-unit-adding-a-mechanism-carries-an-acceptance.md)
+- [x] [US0513: A unit whose mechanism has no caller yet says so explicitly and names the follow-up that completes it](../stories/US0513-a-unit-whose-mechanism-has-no-caller-yet.md)
+- [x] [US0514: A bug reaching a terminal status with no acceptance-criteria section is refused, as a story reaching Done already is](../stories/US0514-a-bug-reaching-a-terminal-status-with-no.md)
+- [x] [US0515: The existing AC-less units are baselined so the new rule blocks a new one without blocking on the backlog it reveals](../stories/US0515-the-existing-ac-less-units-are-baselined-so.md)
+- [x] [US0516: A filed finding carries acceptance criteria derived from its own evidence, so a lane has a contract to deliver against](../stories/US0516-a-filed-finding-carries-acceptance-criteria-derived-from.md)
+- [x] [US0517: A finding's Affects names where the fix will land rather than where the evidence was read, and includes the test file](../stories/US0517-a-finding-s-affects-names-where-the-fix.md)
 
 ## Acceptance Criteria (Epic Level)
 

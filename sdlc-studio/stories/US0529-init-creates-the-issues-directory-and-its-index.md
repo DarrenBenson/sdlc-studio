@@ -1,6 +1,6 @@
 # US0529: init creates the issues directory and its index, so the issue type is usable on a new project
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0457
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

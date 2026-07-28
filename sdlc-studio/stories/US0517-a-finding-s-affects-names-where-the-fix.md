@@ -1,6 +1,6 @@
 # US0517: A finding's Affects names where the fix will land rather than where the evidence was read, and includes the test file
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0458
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

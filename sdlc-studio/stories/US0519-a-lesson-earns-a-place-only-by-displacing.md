@@ -1,6 +1,6 @@
 # US0519: A lesson earns a place only by displacing one, and the displaced lesson is named with the reason
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0464
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

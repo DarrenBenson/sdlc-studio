@@ -1,6 +1,6 @@
 # CR-0464: Lessons accumulate faster than they are read: curate a top few at each retro and make them a read gate for the sprint and its reviewers
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0179
 > **Priority:** High
 > **Type:** Improvement

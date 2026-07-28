@@ -1,6 +1,6 @@
 # CR-0457: init never creates sdlc-studio/issues/, so the issue type is unusable on a new project
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0180
 > **Priority:** Medium
 > **Type:** Improvement

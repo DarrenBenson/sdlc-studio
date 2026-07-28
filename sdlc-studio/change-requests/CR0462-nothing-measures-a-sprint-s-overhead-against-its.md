@@ -1,6 +1,6 @@
 # CR-0462: Nothing measures a sprint's overhead against its delivery, so a 9:1 ratio took an operator noticing
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0179
 > **Priority:** High
 > **Type:** Improvement

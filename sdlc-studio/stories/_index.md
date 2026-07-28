@@ -11,8 +11,8 @@
 | Ready | 38 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 28 |
-| Done | 460 |
+| Review | 5 |
+| Done | 483 |
 | Won't Implement | 1 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -418,29 +418,29 @@
 | [US0505](US0505-a-repair-that-changes-behaviour-carries-a-test.md) | A repair that changes behaviour carries a test asserting that behaviour, so a later silent revert reddens the suite | Done | EP0177 | 2026-07-28 | 2026-07-28 |
 | [US0506](US0506-a-report-attributes-suite-time-and-test-count.md) | A report attributes suite time and test count to the module each test covers, so the expensive areas are visible | Done | EP0177 | 2026-07-28 | 2026-07-28 |
 | [US0507](US0507-a-test-no-mutation-of-its-own-module.md) | A test no mutation of its own module can kill is reported as a removal candidate, and removing one records what it no longer protects | Done | EP0177 | 2026-07-28 | 2026-07-28 |
-| [US0508](US0508-a-lane-refuses-to-start-on-a-unit.md) | A lane refuses to start on a unit that carries no acceptance criteria, naming it rather than inferring a contract | Review | EP0178 | 2026-07-28 | 2026-07-28 |
-| [US0509](US0509-a-lane-runs-its-unit-s-own-acceptance.md) | A lane runs its unit's own acceptance criteria before returning, and a unit whose criteria do not pass comes back blocked | Review | EP0178 | 2026-07-28 | 2026-07-28 |
-| [US0510](US0510-a-lane-returns-the-proof-the-test-strategy.md) | A lane returns the proof the test strategy assigned to its unit, or states plainly that it could not and why | Review | EP0178 | 2026-07-28 | 2026-07-28 |
-| [US0511](US0511-the-lane-obligations-travel-with-the-dispatch-prompt.md) | The lane obligations travel with the dispatch prompt, so they do not depend on who wrote that sprint's brief | Review | EP0178 | 2026-07-28 | 2026-07-28 |
-| [US0512](US0512-a-unit-adding-a-mechanism-carries-an-acceptance.md) | A unit adding a mechanism carries an acceptance criterion naming the caller that consumes it | Review | EP0178 | 2026-07-28 | 2026-07-28 |
-| [US0513](US0513-a-unit-whose-mechanism-has-no-caller-yet.md) | A unit whose mechanism has no caller yet says so explicitly and names the follow-up that completes it | Review | EP0178 | 2026-07-28 | 2026-07-28 |
-| [US0514](US0514-a-bug-reaching-a-terminal-status-with-no.md) | A bug reaching a terminal status with no acceptance-criteria section is refused, as a story reaching Done already is | Review | EP0178 | 2026-07-28 | 2026-07-28 |
-| [US0515](US0515-the-existing-ac-less-units-are-baselined-so.md) | The existing AC-less units are baselined so the new rule blocks a new one without blocking on the backlog it reveals | Review | EP0178 | 2026-07-28 | 2026-07-28 |
-| [US0516](US0516-a-filed-finding-carries-acceptance-criteria-derived-from.md) | A filed finding carries acceptance criteria derived from its own evidence, so a lane has a contract to deliver against | Review | EP0178 | 2026-07-28 | 2026-07-28 |
-| [US0517](US0517-a-finding-s-affects-names-where-the-fix.md) | A finding's Affects names where the fix will land rather than where the evidence was read, and includes the test file | Review | EP0178 | 2026-07-28 | 2026-07-28 |
-| [US0518](US0518-the-retro-curates-a-fixed-size-set-of.md) | The retro curates a fixed-size set of carried lessons, and the content check requires it | Review | EP0179 | 2026-07-28 | 2026-07-28 |
-| [US0519](US0519-a-lesson-earns-a-place-only-by-displacing.md) | A lesson earns a place only by displacing one, and the displaced lesson is named with the reason | Review | EP0179 | 2026-07-28 | 2026-07-28 |
-| [US0520](US0520-the-sprint-reads-the-carried-lessons-at-plan.md) | The sprint reads the carried lessons at plan and puts them in every delivery lane's brief and the reviewers' | Review | EP0179 | 2026-07-28 | 2026-07-28 |
-| [US0521](US0521-a-lesson-violated-again-after-being-carried-is.md) | A lesson violated again after being carried is reported at the close, naming the unit that repeated it | Review | EP0179 | 2026-07-28 | 2026-07-28 |
-| [US0522](US0522-a-repeatedly-violated-lesson-can-propose-a-change.md) | A repeatedly violated lesson can propose a change request or bug for the operator to accept or decline | Review | EP0179 | 2026-07-28 | 2026-07-28 |
-| [US0523](US0523-the-close-reports-delivery-time-against-overhead-time.md) | The close reports delivery time against overhead time as a ratio, beside the points and token figures | Review | EP0179 | 2026-07-28 | 2026-07-28 |
-| [US0524](US0524-an-unmeasured-component-is-reported-as-unmeasured-rather.md) | An unmeasured component is reported as unmeasured rather than as zero, and the ratio is written to the velocity record | Review | EP0179 | 2026-07-28 | 2026-07-28 |
-| [US0525](US0525-the-conformance-lane-reads-recorded-waivers-and-reports.md) | The conformance lane reads recorded waivers and reports a waived unit as waived, naming the decision | Review | EP0180 | 2026-07-28 | 2026-07-28 |
-| [US0526](US0526-a-waiver-naming-no-reason-or-an-unknown.md) | A waiver naming no reason or an unknown rule is refused at record time rather than silently doing nothing | Review | EP0180 | 2026-07-28 | 2026-07-28 |
-| [US0527](US0527-validate-can-be-pointed-at-one-artefact-so.md) | validate can be pointed at one artefact, so checking a story does not read the whole workspace | Review | EP0180 | 2026-07-28 | 2026-07-28 |
-| [US0528](US0528-a-draft-story-declaring-a-file-it-will.md) | A Draft story declaring a file it will create is not warned as unresolvable, since that is the normal case | Review | EP0180 | 2026-07-28 | 2026-07-28 |
-| [US0529](US0529-init-creates-the-issues-directory-and-its-index.md) | init creates the issues directory and its index, so the issue type is usable on a new project | Review | EP0180 | 2026-07-28 | 2026-07-28 |
-| [US0530](US0530-the-artefact-tree-init-creates-is-derived-from.md) | The artefact tree init creates is derived from the shipped type list, so a new type is never silently omitted | Review | EP0180 | 2026-07-28 | 2026-07-28 |
+| [US0508](US0508-a-lane-refuses-to-start-on-a-unit.md) | A lane refuses to start on a unit that carries no acceptance criteria, naming it rather than inferring a contract | Done | EP0178 | 2026-07-28 | 2026-07-28 |
+| [US0509](US0509-a-lane-runs-its-unit-s-own-acceptance.md) | A lane runs its unit's own acceptance criteria before returning, and a unit whose criteria do not pass comes back blocked | Done | EP0178 | 2026-07-28 | 2026-07-28 |
+| [US0510](US0510-a-lane-returns-the-proof-the-test-strategy.md) | A lane returns the proof the test strategy assigned to its unit, or states plainly that it could not and why | Done | EP0178 | 2026-07-28 | 2026-07-28 |
+| [US0511](US0511-the-lane-obligations-travel-with-the-dispatch-prompt.md) | The lane obligations travel with the dispatch prompt, so they do not depend on who wrote that sprint's brief | Done | EP0178 | 2026-07-28 | 2026-07-28 |
+| [US0512](US0512-a-unit-adding-a-mechanism-carries-an-acceptance.md) | A unit adding a mechanism carries an acceptance criterion naming the caller that consumes it | Done | EP0178 | 2026-07-28 | 2026-07-28 |
+| [US0513](US0513-a-unit-whose-mechanism-has-no-caller-yet.md) | A unit whose mechanism has no caller yet says so explicitly and names the follow-up that completes it | Done | EP0178 | 2026-07-28 | 2026-07-28 |
+| [US0514](US0514-a-bug-reaching-a-terminal-status-with-no.md) | A bug reaching a terminal status with no acceptance-criteria section is refused, as a story reaching Done already is | Done | EP0178 | 2026-07-28 | 2026-07-28 |
+| [US0515](US0515-the-existing-ac-less-units-are-baselined-so.md) | The existing AC-less units are baselined so the new rule blocks a new one without blocking on the backlog it reveals | Done | EP0178 | 2026-07-28 | 2026-07-28 |
+| [US0516](US0516-a-filed-finding-carries-acceptance-criteria-derived-from.md) | A filed finding carries acceptance criteria derived from its own evidence, so a lane has a contract to deliver against | Done | EP0178 | 2026-07-28 | 2026-07-28 |
+| [US0517](US0517-a-finding-s-affects-names-where-the-fix.md) | A finding's Affects names where the fix will land rather than where the evidence was read, and includes the test file | Done | EP0178 | 2026-07-28 | 2026-07-28 |
+| [US0518](US0518-the-retro-curates-a-fixed-size-set-of.md) | The retro curates a fixed-size set of carried lessons, and the content check requires it | Done | EP0179 | 2026-07-28 | 2026-07-28 |
+| [US0519](US0519-a-lesson-earns-a-place-only-by-displacing.md) | A lesson earns a place only by displacing one, and the displaced lesson is named with the reason | Done | EP0179 | 2026-07-28 | 2026-07-28 |
+| [US0520](US0520-the-sprint-reads-the-carried-lessons-at-plan.md) | The sprint reads the carried lessons at plan and puts them in every delivery lane's brief and the reviewers' | Done | EP0179 | 2026-07-28 | 2026-07-28 |
+| [US0521](US0521-a-lesson-violated-again-after-being-carried-is.md) | A lesson violated again after being carried is reported at the close, naming the unit that repeated it | Done | EP0179 | 2026-07-28 | 2026-07-28 |
+| [US0522](US0522-a-repeatedly-violated-lesson-can-propose-a-change.md) | A repeatedly violated lesson can propose a change request or bug for the operator to accept or decline | Done | EP0179 | 2026-07-28 | 2026-07-28 |
+| [US0523](US0523-the-close-reports-delivery-time-against-overhead-time.md) | The close reports delivery time against overhead time as a ratio, beside the points and token figures | Done | EP0179 | 2026-07-28 | 2026-07-28 |
+| [US0524](US0524-an-unmeasured-component-is-reported-as-unmeasured-rather.md) | An unmeasured component is reported as unmeasured rather than as zero, and the ratio is written to the velocity record | Done | EP0179 | 2026-07-28 | 2026-07-28 |
+| [US0525](US0525-the-conformance-lane-reads-recorded-waivers-and-reports.md) | The conformance lane reads recorded waivers and reports a waived unit as waived, naming the decision | Done | EP0180 | 2026-07-28 | 2026-07-28 |
+| [US0526](US0526-a-waiver-naming-no-reason-or-an-unknown.md) | A waiver naming no reason or an unknown rule is refused at record time rather than silently doing nothing | Done | EP0180 | 2026-07-28 | 2026-07-28 |
+| [US0527](US0527-validate-can-be-pointed-at-one-artefact-so.md) | validate can be pointed at one artefact, so checking a story does not read the whole workspace | Done | EP0180 | 2026-07-28 | 2026-07-28 |
+| [US0528](US0528-a-draft-story-declaring-a-file-it-will.md) | A Draft story declaring a file it will create is not warned as unresolvable, since that is the normal case | Done | EP0180 | 2026-07-28 | 2026-07-28 |
+| [US0529](US0529-init-creates-the-issues-directory-and-its-index.md) | init creates the issues directory and its index, so the issue type is usable on a new project | Done | EP0180 | 2026-07-28 | 2026-07-28 |
+| [US0530](US0530-the-artefact-tree-init-creates-is-derived-from.md) | The artefact tree init creates is derived from the shipped type list, so a new type is never silently omitted | Done | EP0180 | 2026-07-28 | 2026-07-28 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # US0513: A unit whose mechanism has no caller yet says so explicitly and names the follow-up that completes it
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0461
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

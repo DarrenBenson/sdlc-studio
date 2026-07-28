@@ -1,6 +1,6 @@
 # EP0180: Tooling gaps that block the work they are meant to serve
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0457
 > **Parent:** CR0456
 > **Derived Point Total:** 15
@@ -16,12 +16,12 @@ Decomposed from CR0460. Delivers the work CR0460 requested.
 
 ## Story Breakdown
 
-- [ ] [US0525: The conformance lane reads recorded waivers and reports a waived unit as waived, naming the decision](../stories/US0525-the-conformance-lane-reads-recorded-waivers-and-reports.md)
-- [ ] [US0526: A waiver naming no reason or an unknown rule is refused at record time rather than silently doing nothing](../stories/US0526-a-waiver-naming-no-reason-or-an-unknown.md)
-- [ ] [US0527: validate can be pointed at one artefact, so checking a story does not read the whole workspace](../stories/US0527-validate-can-be-pointed-at-one-artefact-so.md)
-- [ ] [US0528: A Draft story declaring a file it will create is not warned as unresolvable, since that is the normal case](../stories/US0528-a-draft-story-declaring-a-file-it-will.md)
-- [ ] [US0529: init creates the issues directory and its index, so the issue type is usable on a new project](../stories/US0529-init-creates-the-issues-directory-and-its-index.md)
-- [ ] [US0530: The artefact tree init creates is derived from the shipped type list, so a new type is never silently omitted](../stories/US0530-the-artefact-tree-init-creates-is-derived-from.md)
+- [x] [US0525: The conformance lane reads recorded waivers and reports a waived unit as waived, naming the decision](../stories/US0525-the-conformance-lane-reads-recorded-waivers-and-reports.md)
+- [x] [US0526: A waiver naming no reason or an unknown rule is refused at record time rather than silently doing nothing](../stories/US0526-a-waiver-naming-no-reason-or-an-unknown.md)
+- [x] [US0527: validate can be pointed at one artefact, so checking a story does not read the whole workspace](../stories/US0527-validate-can-be-pointed-at-one-artefact-so.md)
+- [x] [US0528: A Draft story declaring a file it will create is not warned as unresolvable, since that is the normal case](../stories/US0528-a-draft-story-declaring-a-file-it-will.md)
+- [x] [US0529: init creates the issues directory and its index, so the issue type is usable on a new project](../stories/US0529-init-creates-the-issues-directory-and-its-index.md)
+- [x] [US0530: The artefact tree init creates is derived from the shipped type list, so a new type is never silently omitted](../stories/US0530-the-artefact-tree-init-creates-is-derived-from.md)
 
 ## Acceptance Criteria (Epic Level)
 

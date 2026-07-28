@@ -1,6 +1,6 @@
 # US0515: The existing AC-less units are baselined so the new rule blocks a new one without blocking on the backlog it reveals
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0459
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

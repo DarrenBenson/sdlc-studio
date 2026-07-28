@@ -1,6 +1,6 @@
 # CR-0461: An acceptance criterion can describe a function nothing calls, and nothing refuses it
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0178
 > **Priority:** High
 > **Type:** Improvement

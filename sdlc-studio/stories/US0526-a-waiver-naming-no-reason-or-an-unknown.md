@@ -1,6 +1,6 @@
 # US0526: A waiver naming no reason or an unknown rule is refused at record time rather than silently doing nothing
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0460
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0516: A filed finding carries acceptance criteria derived from its own evidence, so a lane has a contract to deliver against
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0458
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

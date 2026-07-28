@@ -1,6 +1,6 @@
 # US0514: A bug reaching a terminal status with no acceptance-criteria section is refused, as a story reaching Done already is
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0459
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

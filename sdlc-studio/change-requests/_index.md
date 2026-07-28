@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 8 |
 | Approved | 0 |
-| In Progress | 40 |
-| Complete | 428 |
+| In Progress | 31 |
+| Complete | 437 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 18 |
@@ -277,15 +277,15 @@
 | [CR-0453](CR0453-the-plan-time-test-strategy-governs-proof-per.md) | The plan-time test strategy governs proof per unit but not execution cost, and is printed rather than recorded | In Progress | High | Improvement | 2026-07-28 | EP0177 |
 | [CR-0454](CR0454-the-sprint-close-invalidates-itself-its-own-output.md) | The sprint close invalidates itself: its own output makes the review stale and each retry pays a full suite | In Progress | High | Improvement | 2026-07-28 | EP0177 |
 | [CR-0455](CR0455-nothing-ever-asks-whether-a-test-still-earns.md) | Nothing ever asks whether a test still earns its place, so the suite only grows | In Progress | Medium | Improvement | 2026-07-28 | EP0177 |
-| [CR-0456](CR0456-validate-py-cannot-be-pointed-at-one-artefact.md) | validate.py cannot be pointed at one artefact, so checking a single story reads 1,548 files | In Progress | Medium | Improvement | 2026-07-28 | EP0180 |
-| [CR-0457](CR0457-init-never-creates-sdlc-studio-issues-so-the.md) | init never creates sdlc-studio/issues/, so the issue type is unusable on a new project | In Progress | Medium | Improvement | 2026-07-28 | EP0180 |
-| [CR-0458](CR0458-audit-filed-bugs-arrive-with-no-acceptance-criteria.md) | Audit-filed bugs arrive with no Acceptance Criteria, so a delivery lane has nothing to deliver against | In Progress | Medium | Improvement | 2026-07-28 | EP0178 |
-| [CR-0459](CR0459-validate-does-not-refuse-a-bug-reaching-fixed.md) | validate does not refuse a bug reaching Fixed with no acceptance criteria, so six shipped without any | In Progress | High | Improvement | 2026-07-28 | EP0178 |
-| [CR-0460](CR0460-a-recorded-waiver-is-invisible-to-the-conformance.md) | A recorded waiver is invisible to the conformance lane, so waived debt blocks every clean-tree close | In Progress | High | Improvement | 2026-07-28 | EP0180 |
-| [CR-0461](CR0461-an-acceptance-criterion-can-describe-a-function-nothing.md) | An acceptance criterion can describe a function nothing calls, and nothing refuses it | In Progress | High | Improvement | 2026-07-28 | EP0178 |
-| [CR-0462](CR0462-nothing-measures-a-sprint-s-overhead-against-its.md) | Nothing measures a sprint's overhead against its delivery, so a 9:1 ratio took an operator noticing | In Progress | High | Improvement | 2026-07-28 | EP0179 |
-| [CR-0463](CR0463-a-delivery-lane-returns-without-proving-its-own.md) | A delivery lane returns without proving its own acceptance criteria, so basic AC failures survive to review | In Progress | High | Improvement | 2026-07-28 | EP0178 |
-| [CR-0464](CR0464-lessons-accumulate-faster-than-they-are-read-curate.md) | Lessons accumulate faster than they are read: curate a top few at each retro and make them a read gate for the sprint and its reviewers | In Progress | High | Improvement | 2026-07-28 | EP0179 |
+| [CR-0456](CR0456-validate-py-cannot-be-pointed-at-one-artefact.md) | validate.py cannot be pointed at one artefact, so checking a single story reads 1,548 files | Complete | Medium | Improvement | 2026-07-28 | EP0180 |
+| [CR-0457](CR0457-init-never-creates-sdlc-studio-issues-so-the.md) | init never creates sdlc-studio/issues/, so the issue type is unusable on a new project | Complete | Medium | Improvement | 2026-07-28 | EP0180 |
+| [CR-0458](CR0458-audit-filed-bugs-arrive-with-no-acceptance-criteria.md) | Audit-filed bugs arrive with no Acceptance Criteria, so a delivery lane has nothing to deliver against | Complete | Medium | Improvement | 2026-07-28 | EP0178 |
+| [CR-0459](CR0459-validate-does-not-refuse-a-bug-reaching-fixed.md) | validate does not refuse a bug reaching Fixed with no acceptance criteria, so six shipped without any | Complete | High | Improvement | 2026-07-28 | EP0178 |
+| [CR-0460](CR0460-a-recorded-waiver-is-invisible-to-the-conformance.md) | A recorded waiver is invisible to the conformance lane, so waived debt blocks every clean-tree close | Complete | High | Improvement | 2026-07-28 | EP0180 |
+| [CR-0461](CR0461-an-acceptance-criterion-can-describe-a-function-nothing.md) | An acceptance criterion can describe a function nothing calls, and nothing refuses it | Complete | High | Improvement | 2026-07-28 | EP0178 |
+| [CR-0462](CR0462-nothing-measures-a-sprint-s-overhead-against-its.md) | Nothing measures a sprint's overhead against its delivery, so a 9:1 ratio took an operator noticing | Complete | High | Improvement | 2026-07-28 | EP0179 |
+| [CR-0463](CR0463-a-delivery-lane-returns-without-proving-its-own.md) | A delivery lane returns without proving its own acceptance criteria, so basic AC failures survive to review | Complete | High | Improvement | 2026-07-28 | EP0178 |
+| [CR-0464](CR0464-lessons-accumulate-faster-than-they-are-read-curate.md) | Lessons accumulate faster than they are read: curate a top few at each retro and make them a read gate for the sprint and its reviewers | Complete | High | Improvement | 2026-07-28 | EP0179 |
 | [CR-0465](CR0465-reconcile-s-sweep-detectors-re-read-the-whole.md) | reconcile's sweep detectors re-read the whole corpus per unit: 733,271 file opens for one run | Proposed | Medium | Improvement | 2026-07-28 | -- |
 | [CR-0466](CR0466-a-review-round-records-no-duration-so-the.md) | A review round records no duration, so the overhead ratio can only ever be a lower bound | Proposed | Medium | Improvement | 2026-07-28 | -- |
 | [CR-0467](CR0467-the-one-lane-one-file-changelog-rule-and.md) | The one-lane-one-file changelog rule and the [Unreleased] rule contradict each other under parallel delivery | Proposed | Medium | Improvement | 2026-07-28 | -- |

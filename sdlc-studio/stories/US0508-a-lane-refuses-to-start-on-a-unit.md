@@ -1,6 +1,6 @@
 # US0508: A lane refuses to start on a unit that carries no acceptance criteria, naming it rather than inferring a contract
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0463
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

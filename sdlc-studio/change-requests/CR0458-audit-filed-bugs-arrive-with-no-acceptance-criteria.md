@@ -1,6 +1,6 @@
 # CR-0458: Audit-filed bugs arrive with no Acceptance Criteria, so a delivery lane has nothing to deliver against
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0178
 > **Priority:** Medium
 > **Type:** Improvement

@@ -1,6 +1,6 @@
 # CR-0456: validate.py cannot be pointed at one artefact, so checking a single story reads 1,548 files
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0180
 > **Priority:** Medium
 > **Type:** Improvement

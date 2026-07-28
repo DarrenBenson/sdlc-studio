@@ -1,6 +1,6 @@
 # US0525: The conformance lane reads recorded waivers and reports a waived unit as waived, naming the decision
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0460
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
