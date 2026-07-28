@@ -82,6 +82,42 @@ class ValidateFileTests(unittest.TestCase):
             rules = {v["rule"] for v in validate.validate_file(p, "story")}
             self.assertIn("no-ac", rules)
 
+    def test_a_stated_absence_is_not_criteria_at_a_terminal_status(self) -> None:
+        """`file_finding` writes this paragraph AUTOMATICALLY when a finding's evidence is too
+        thin to derive a criterion, so it is the DEFAULT for a thin finding, not a deliberate
+        act. `sdlc_md.count_acs` correctly reads it as zero criteria; `_has_criteria` read the
+        populated section as criteria present, and the floor consults the second one - so a bug
+        carrying no criterion at all reached Fixed with nothing to refuse it. Verified live on
+        a fresh project before this test was written.
+
+        One question, two answers, and the looser one runs: the same defect as the lane's two
+        parsers, one file away.
+        """
+        import file_finding
+        with tempfile.TemporaryDirectory() as d:
+            body = (f"# X\n\n> **Status:** Fixed\n\n## Acceptance Criteria\n\n"
+                    f"{file_finding.THIN_EVIDENCE_MARK}: `summary` carries fewer than 5 words "
+                    f"of substance, so nothing here states what fixed would look like.\n")
+            p = _write(Path(d), "sdlc-studio/bugs/BG0009-x.md", body)
+            rules = {v["rule"] for v in validate.validate_file(p, "bug")}
+            self.assertIn("no-ac", rules,
+                          "a stated absence states that there is no criterion - counting it as "
+                          "one lets a bug reach terminal with nothing verifiable")
+
+    def test_the_two_criteria_predicates_agree(self) -> None:
+        """The differential. Each predicate was individually correct and they disagreed on the
+        same bytes, which no test of either alone could see."""
+        import file_finding
+        absence = (f"# X\n\n> **Status:** Fixed\n\n## Acceptance Criteria\n\n"
+                   f"{file_finding.THIN_EVIDENCE_MARK}: too thin to derive anything.\n")
+        real = ("# X\n\n> **Status:** Fixed\n\n## Acceptance Criteria\n\n"
+                "### AC1: it holds\n\n- **Given** a thing\n- **Verify:** file b\n")
+        for text, expect in ((absence, False), (real, True)):
+            self.assertEqual(validate._has_criteria(text), expect)
+            self.assertEqual(sdlc_md.count_acs(text) > 0, expect)
+            self.assertEqual(validate._has_criteria(text), sdlc_md.count_acs(text) > 0,
+                             "the floor and the counter must give one answer, not two")
+
     def test_no_ac_grandfathered_below_adopt_after(self) -> None:
         # A pre-cutoff story is exempt from no-ac; a story at/after the cutoff is not.
         with tempfile.TemporaryDirectory() as d:

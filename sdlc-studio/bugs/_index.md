@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 34 |
+| Open | 31 |
 | In Progress | 0 |
-| Fixed | 260 |
+| Fixed | 264 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **377** |
+| **Total** | **378** |
 
 ## All Bugs
 
@@ -87,14 +87,15 @@
 | [BG0367](BG0367-the-ac-less-baseline-is-not-one-way.md) | The AC-less baseline is not one-way, so a newly filed unit can be added to it and exempt itself | Open | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0368](BG0368-init-s-derived-artefact-tree-creates-a-type.md) | init's derived artefact tree creates a type's directory without its index, regressing what US0529 fixed for issues | Open | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0369](BG0369-the-conformance-waiver-report-is-blanked-when-the.md) | The conformance waiver report is blanked when the diff contains no stories, hiding a waived unit rather than reporting it | Open | Medium | 2026-07-28 | 2026-07-28 |
-| [BG0370](BG0370-us0516-s-stated-absence-escape-hatch-defeats-the.md) | US0516's stated-absence escape hatch defeats the criteria floor US0514 and US0515 establish | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0370](BG0370-us0516-s-stated-absence-escape-hatch-defeats-the.md) | US0516's stated-absence escape hatch defeats the criteria floor US0514 and US0515 establish | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0371](BG0371-the-repeated-lesson-report-rests-on-a-single.md) | The repeated-lesson report rests on a single unpinned call, so a lesson violated twice can report once | Open | Low | 2026-07-28 | 2026-07-28 |
 | [BG0372](BG0372-the-overhead-ratio-never-reaches-the-velocity-record.md) | The overhead ratio never reaches the velocity record, so the measurement is taken and discarded | Open | Low | 2026-07-28 | 2026-07-28 |
 | [BG0373](BG0373-the-review-currency-carve-out-repaired-in-bg0336.md) | The review-currency carve-out repaired in BG0336 remains story-shaped, so a bug or change request takes a different path | Open | Low | 2026-07-28 | 2026-07-28 |
 | [BG0374](BG0374-the-markdownlint-path-fixed-in-bg0341-still-cannot.md) | The markdownlint path fixed in BG0341 still cannot see every tracked markdown file | Open | Low | 2026-07-28 | 2026-07-28 |
-| [BG0375](BG0375-the-lane-contract-refusal-governing-475-units-is.md) | The lane_contract refusal governing 475 units is asserted by no test, so a silent revert reddens nothing | Open | High | 2026-07-28 | 2026-07-28 |
-| [BG0376](BG0376-five-stories-caller-criteria-are-verified-by-a.md) | Five stories' caller criteria are verified by a test class that never reads the story, so the criterion cannot fail | Open | High | 2026-07-28 | 2026-07-28 |
-| [BG0377](BG0377-four-of-the-five-caller-declarations-added-at.md) | Four of the five Caller declarations added at review resolve only on the documentation filename, not on the caller they name | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0375](BG0375-the-lane-contract-refusal-governing-475-units-is.md) | The lane_contract refusal governing 475 units is asserted by no test, so a silent revert reddens nothing | Fixed | High | 2026-07-28 | 2026-07-28 |
+| [BG0376](BG0376-five-stories-caller-criteria-are-verified-by-a.md) | Five stories' caller criteria are verified by a test class that never reads the story, so the criterion cannot fail | Fixed | High | 2026-07-28 | 2026-07-28 |
+| [BG0377](BG0377-four-of-the-five-caller-declarations-added-at.md) | Four of the five Caller declarations added at review resolve only on the documentation filename, not on the caller they name | Fixed | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0378](BG0378-transition-does-not-consult-the-criteria-floor-so.md) | transition does not consult the criteria floor, so the terminal status is set and only the commit that records it is refused | Open | Medium | 2026-07-28 | 2026-07-28 |
 
 ## Archived Releases
 

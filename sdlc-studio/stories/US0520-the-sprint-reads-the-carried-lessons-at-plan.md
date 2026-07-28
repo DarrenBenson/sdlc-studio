@@ -46,7 +46,7 @@
 - **Then** the consuming call site is named and resolves in the tree, so the mechanism is
   reachable in production rather than correct in isolation
 - **Caller:** `sprint plan` (build_plan records it) and `sprint lane brief`, documented in help/sprint.md
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerNamedTests
+- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/critic.py caller-check --unit US0520 --root .
 
 ## Revision History
 

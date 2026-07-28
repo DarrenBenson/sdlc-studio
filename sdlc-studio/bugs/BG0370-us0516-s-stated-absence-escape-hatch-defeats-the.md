@@ -1,6 +1,7 @@
 # BG0370: US0516's stated-absence escape hatch defeats the criteria floor US0514 and US0515 establish
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py
@@ -30,3 +31,4 @@ No acceptance criterion could be derived from this finding's evidence: none of i
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 | Severity Medium -> High: Verified on a fresh project: file_finding writes the stated absence AUTOMATICALLY for a thin finding, and the bug then reached Fixed with zero acceptance criteria and no refusal. This is the default path, not a deliberate act, and it defeats the criteria floor US0514 installed. |
 | 2026-07-28 | Claude Opus 5 (RUN-01KYKVZM review carry-forward) | Filed |
+| 2026-07-28 | Claude Opus 5 | Fixed at the validate layer, which the pre-commit gate enforces: `_has_criteria` now agrees with `count_acs`, so a stated absence is an absence. The transition VERB half is filed separately as BG0378. |

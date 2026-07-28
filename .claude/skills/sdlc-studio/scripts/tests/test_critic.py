@@ -2341,6 +2341,28 @@ class CallerResolverAtScaleTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 c.tree_index(d)
 
+    def test_a_caller_named_as_a_symbol_resolves(self):
+        """The repair that killed the nonsense-word hole required a path-shaped token, which
+        made a caller named as a FUNCTION unverifiable. Every declaration in the lane stories
+        names its consumer that way - `cmd_lane -> lane_dispatch` - and each passed only
+        because an unrelated documentation filename sat on the same line. A rule satisfied by
+        a token nobody meant as the caller is the theatre this class exists to refuse."""
+        for sym in ("cmd_lane", "lane_dispatch", "lane_contract", "lane_verify", "build_plan"):
+            self.assertTrue(self.critic.caller_resolves(self.index, sym),
+                            f"{sym!r} is a real function in a tracked file and must resolve")
+
+    def test_a_symbol_declaration_resolves_without_an_incidental_path_token(self):
+        decl = "`sprint lane brief` (cmd_lane -> lane_dispatch -> lane_contract)"
+        self.assertTrue(self.critic.caller_resolves(self.index, decl),
+                        "the declaration names a real call chain and must resolve on it")
+
+    def test_prose_words_are_not_rescued_by_the_symbol_index(self):
+        """Widening to symbols must not reopen the hole it sits beside."""
+        for junk in ("unknown", "nothing at all", "the main loop", "none", "tbd",
+                     "future work", "to be decided", "see above"):
+            self.assertFalse(self.critic.caller_resolves(self.index, junk),
+                             f"{junk!r} names no consumer and must not satisfy the rule")
+
 
 if __name__ == "__main__":
     unittest.main()

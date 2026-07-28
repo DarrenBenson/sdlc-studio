@@ -1698,17 +1698,43 @@ def tree_index(repo_root: Path | str) -> dict:
         # keep the skip list: the vendored directories are what turned this index into an
         # English vocabulary in the first place.
         listing = [str(q.relative_to(root)) for q in root.rglob("*") if q.is_file()]
+    symbols: set[str] = set()
     for rel in listing:
         if any(part in _TREE_SKIP for part in Path(rel).parts):
             continue
         paths.add(rel)
         names.add(Path(rel).name)
         stems.add(Path(rel).stem)
+        if rel.endswith(".py"):
+            symbols |= _defined_symbols(root / rel)
     if not paths:
         raise ValueError(
             f"tree_index of {root} found no tracked files - refusing to report that no caller "
             f"resolves, which is what an unanswered scan would look like")
-    return {"paths": paths, "names": names, "stems": stems}
+    return {"paths": paths, "names": names, "stems": stems, "symbols": symbols}
+
+
+#: A `def` or `class` at any indentation in a tracked source file.
+_SYMBOL_DEF = re.compile(r"^\s*(?:async\s+)?(?:def|class)\s+([A-Za-z_]\w*)", re.MULTILINE)
+
+
+def _defined_symbols(path: Path) -> set[str]:
+    """The function and class names a tracked source file defines.
+
+    A caller is very often named as a SYMBOL rather than a path - `cmd_lane -> lane_dispatch`
+    is how every lane story names its consumer - and requiring a path-shaped token made those
+    declarations unverifiable. They then passed only because an unrelated documentation
+    filename sat on the same line, which is the theatre the path rule was added to stop,
+    reappearing one step to the left.
+
+    Reads the source rather than importing it: an index that imports every tracked module to
+    ask what it defines runs arbitrary code to answer a naming question.
+    """
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return set()
+    return set(_SYMBOL_DEF.findall(text))
 
 
 def caller_resolves(index: dict, declaration: str) -> bool:
@@ -1739,6 +1765,15 @@ def caller_resolves(index: dict, declaration: str) -> bool:
         # is not a word ordinary prose would produce. `gate` and `review` are stems here; they
         # are also the two most likely words in a sentence about a caller.
         if cleaned in index["names"]:
+            return True
+        # ...or against a symbol a tracked source file DEFINES, which is how a caller is most
+        # often named. Guarded structurally, never by a word list: the token must also be
+        # code-shaped - carrying an underscore or an interior capital - so `main`, `run`,
+        # `report` and `review` stay unresolvable even though each is a real `def` somewhere.
+        # A list of forbidden English words is the enumerated-list defect this repo keeps
+        # re-filing; a shape rule cannot forget an entry.
+        code_shaped = "_" in cleaned or any(c.isupper() for c in cleaned[1:])
+        if code_shaped and cleaned in index.get("symbols", ()):
             return True
     return False
 

@@ -1,6 +1,7 @@
 # BG0375: The lane_contract refusal governing 475 units is asserted by no test, so a silent revert reddens nothing
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -29,3 +30,4 @@ No acceptance criterion could be derived from this finding's evidence: `steps` c
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 (independent re-review of 343da768, run wf_b62b2ed2) | Filed |
+| 2026-07-28 | Claude Opus 5 | Fixed: two LaneContractTests cases pin the refusal; neutering it to `if False:` now reddens both, where it previously left all 4,860 tests green. |

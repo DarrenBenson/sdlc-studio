@@ -46,7 +46,7 @@
 - **Then** the consuming call site is named and resolves in the tree, so the mechanism is
   reachable in production rather than correct in isolation
 - **Caller:** `sprint lane return` (cmd_lane -> lane_return -> lane_verify), documented in help/sprint.md
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerNamedTests
+- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/critic.py caller-check --unit US0509 --root .
 
 ## Revision History
 

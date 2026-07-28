@@ -67,9 +67,34 @@ def _has_criteria(text: str) -> bool:
 
     ONE predicate, so the story floor and the bug floor cannot drift into disagreeing about
     what counts as a criterion on identical bytes.
+
+    A STATED ABSENCE is not a criterion. `file_finding` writes that paragraph automatically
+    when a finding's evidence is too thin to derive one, so it is what a thin finding gets by
+    DEFAULT rather than something an author chooses. `sdlc_md.count_acs` already reads it as
+    zero; this predicate read the populated section as criteria present, and the floor consults
+    this one - so a bug carrying nothing verifiable reached a terminal status with nothing to
+    refuse it. Two predicates answering one question, disagreeing on identical bytes, and the
+    looser one deciding: the same defect the lane's two parsers had. The marker is imported
+    from the tool that writes it rather than restated here, because a second copy of the string
+    is how the two would drift apart again.
     """
+    if _states_absence(text):
+        return False
     return (any(sdlc_md.extract_ac_id(line) for line in text.splitlines())
             or _has_ac_section(text))
+
+
+def _states_absence(text: str) -> bool:
+    """True when the criteria section's content is the tool's own stated-absence paragraph."""
+    try:
+        import file_finding  # noqa: PLC0415 - sibling; lazy so an unrelated run never pays
+    except ImportError:                                   # pragma: no cover - defensive
+        return False
+    mark = getattr(file_finding, "THIN_EVIDENCE_MARK", None)
+    if not mark:                                          # pragma: no cover - defensive
+        return False
+    return mark in text and not any(
+        sdlc_md.extract_ac_id(line) for line in text.splitlines())
 
 
 def _is_ungroomed(text: str) -> bool:

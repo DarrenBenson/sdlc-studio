@@ -1,6 +1,7 @@
 # BG0377: Four of the five Caller declarations added at review resolve only on the documentation filename, not on the caller they name
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** sdlc-studio/stories/US0508-a-lane-refuses-to-start-on-a-unit.md
@@ -29,3 +30,4 @@ No acceptance criterion could be derived from this finding's evidence: `steps` c
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 (independent re-review of 343da768, run wf_b62b2ed2) | Filed |
+| 2026-07-28 | Claude Opus 5 | Fixed: the declarations were TRUE - the resolver could not see a symbol caller after the path-shaped repair. `tree_index` now indexes defined symbols and all five resolve on the caller itself, not on an appended documentation filename. |

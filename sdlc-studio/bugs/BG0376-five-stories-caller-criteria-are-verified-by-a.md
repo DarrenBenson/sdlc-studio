@@ -1,6 +1,7 @@
 # BG0376: Five stories' caller criteria are verified by a test class that never reads the story, so the criterion cannot fail
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Points:** 3
 > **Affects:** sdlc-studio/stories/US0508-a-lane-refuses-to-start-on-a-unit.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -29,3 +30,4 @@ No acceptance criterion could be derived from this finding's evidence: `steps` c
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 (independent re-review of 343da768, run wf_b62b2ed2) | Filed |
+| 2026-07-28 | Claude Opus 5 | Fixed: the five criteria now run `critic.py caller-check --unit <id>`, which exits 1 when the Caller declaration is removed - the reviewer's mutation now kills them. |

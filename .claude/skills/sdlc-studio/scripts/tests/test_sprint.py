@@ -8369,6 +8369,53 @@ class LaneContractTests(unittest.TestCase):
             self.assertFalse(sprint.lane_contract(root, "US0902")["ok"],
                              "the bare template scaffold is the same absence, older shape")
 
+    def test_criteria_the_runner_cannot_parse_are_refused_not_dispatched_empty(self) -> None:
+        """The checkbox shape - what 475 live units carry. `_ac_signals` reads it as authored
+        while the runner's parser returns no blocks, so the unit passed the gate with an EMPTY
+        contract and was dispatched under the very obligation to refuse it.
+
+        Pinned here because it was not: the refusal shipped asserted by nothing, and replacing
+        its condition with a constant false left the whole suite green. US0505 - shipped in the
+        same batch - is the rule that a behaviour change carries a test a silent revert reddens.
+        """
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _lane_story(root, 904, "## Acceptance Criteria\n\n"
+                                   "- [x] the lane refuses a unit it cannot read\n"
+                                   "- [ ] and says which shape it wanted\n")
+            contract = sprint.lane_contract(root, "US0904")
+            self.assertFalse(contract["ok"],
+                             "criteria the runner cannot parse are an empty contract, and a "
+                             "lane dispatched on one can never report the unit fixed")
+            self.assertIn("US0904", contract["refusal"])
+            self.assertIn("### AC", contract["refusal"],
+                          "the refusal must name the shape it wanted, or the author cannot act")
+            self.assertEqual(contract["criteria"], [])
+            dispatch = sprint.lane_dispatch(root, ["US0904"])
+            self.assertEqual([r["id"] for r in dispatch["refused"]], ["US0904"])
+            self.assertEqual(dispatch["briefs"], [])
+
+    def test_one_parser_decides_and_builds_the_contract(self) -> None:
+        """The root defect was two parsers answering one question: `_ac_signals` decided and
+        `parse_story` built. Whatever decides must be what builds, or the gap between them is
+        where a unit slips through - silently, because each parser is individually correct."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _lane_story(root, 905, "## Acceptance Criteria\n\n### AC1: it holds\n\n"
+                                   "- **Given** a thing\n- **Verify:** file src/lane.py\n")
+            ok = sprint.lane_contract(root, "US0905")
+            self.assertTrue(ok["ok"])
+            self.assertTrue(ok["criteria"], "a dispatched unit must carry a NON-EMPTY contract")
+            _lane_story(root, 906, "## Acceptance Criteria\n\n- [x] prose only\n")
+            bad = sprint.lane_contract(root, "US0906")
+            self.assertFalse(bad["ok"])
+            self.assertEqual(bool(ok["criteria"]), ok["ok"])
+            self.assertEqual(bool(bad["criteria"]), bad["ok"],
+                             "ok and a readable contract must be the same answer - they were "
+                             "two answers, and 475 units were dispatched on the gap")
+
     def test_an_authored_unit_is_dispatched(self) -> None:
         """The positive control. A refusal that fires on everything is not a gate, and a test
         suite that only ever asserts the refusal cannot tell one from the other."""
