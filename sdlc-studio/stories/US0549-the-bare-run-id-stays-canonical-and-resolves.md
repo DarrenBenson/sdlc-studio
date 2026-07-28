@@ -1,6 +1,6 @@
 # US0549: The bare run id stays canonical and resolves the sprint whatever the slug says, so rewording a goal orphans nothing
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0471
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -23,7 +23,8 @@
 - **Given** a sprint whose recorded goal no longer matches the slug in its filename
 - **When** the sprint is resolved by its run id
 - **Then** it resolves, so rewording a goal orphans no reference
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::SprintNamingTests::test_the_run_id_resolves_a_sprint_whose_slug_is_stale
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SprintNamingTests::test_the_run_id_resolves_a_sprint_whose_slug_is_stale
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 
@@ -31,3 +32,4 @@
 | --- | --- | --- |
 | 2026-07-28 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-28 | Claude Opus 5 | Groomed: criteria authored against this story's slice, each with an executable Verify line |
+| 2026-07-28 | Claude Opus 5 | Verifier re-pointed from test_run_state.py to test_sprint.py, where the naming tests were written. A `Verify:` line is not verified until it is RUN - this one named a node that did not exist and would have stamped green on a story nobody checked (L-0233). |

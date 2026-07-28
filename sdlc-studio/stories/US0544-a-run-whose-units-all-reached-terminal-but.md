@@ -1,6 +1,6 @@
 # US0544: A run whose units all reached terminal but whose goal was not achieved reports that in the close and the retro, not only the unit count
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0469
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the close and the retro report
 - **Then** both state the goal was not achieved rather than reporting only the unit count
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::GoalVersusCountTests::test_all_units_terminal_with_an_unachieved_goal_says_so
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

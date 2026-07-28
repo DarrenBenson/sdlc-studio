@@ -6652,7 +6652,8 @@ def _persisted_plan_is_stale(root: Path, plan: dict) -> str | None:
     return None
 
 
-def seat_brief(repo_root: Path | str, worklist: str | None = None) -> str:
+def seat_brief(repo_root: Path | str, worklist: str | None = None,
+               goal: str | None = None) -> str:
     """The context a review seat is GIVEN before it judges the Sprint Goal: what the batch is, the
     grooming state the first live review turned on (placeholder ACs, shared-file clusters, the
     reachable end state), and THIS project's own relevant failure modes from the lessons registry -
@@ -6667,24 +6668,40 @@ def seat_brief(repo_root: Path | str, worklist: str | None = None) -> str:
     carried = carried_lessons(root)
     if worklist:
         plan = build_plan(root, worklist=worklist, skip_personas=True)
-        goal = plan.get("sprint_goal")
-        try:
-            goal = (run_state.read(root) or {}).get("sprint_goal") or goal
-        except Exception as exc:  # noqa: BLE001
-            sdlc_md.debug("sprint.seat_brief", exc)
-        return _compose_seat_brief(plan, goal, digest, carried)
+        return _compose_seat_brief(plan, _brief_goal(root, goal, plan), digest, carried)
     plan = sdlc_md.read_json(_plan_path(root), {})
     stale = _persisted_plan_is_stale(root, plan)
     if stale:
         return (f"NO CURRENT BATCH TO BRIEF: {stale}. Give the brief the batch it is to describe "
                 f"(`goal-review brief --worklist <file>`); the previous run's plan is not rendered "
                 f"here, because a brief describing the wrong batch cannot be told from a right one.")
-    goal = plan.get("sprint_goal")
+    return _compose_seat_brief(plan, _brief_goal(root, goal, plan), digest, carried)
+
+
+def _brief_goal(root: Path, supplied: str | None, plan: dict) -> str | None:
+    """The goal the seats are being briefed on, in precedence order: what the CALLER passed,
+    then the plan's, then an OPEN run's.
+
+    The caller's wins because the brief is written to review a goal the caller is proposing;
+    the run state comes last and only while the run is OPEN, on exactly the reasoning the
+    stale-plan guard beside it already records - on a new sprint the previous run's goal is
+    the wrong one by construction. It used to override unconditionally, and the CLI's `--goal`
+    never reached this function at all, so the seats were briefed on the CLOSED run's goal
+    while their verdict was recorded against the new one. `plan --write` cannot catch that:
+    by then both sides name the same string, and the brief was the only place the wrong goal
+    appeared - and the only artefact the seat actually read."""
+    if (supplied or "").strip():
+        return supplied
+    if plan.get("sprint_goal"):
+        return plan.get("sprint_goal")
     try:
-        goal = (run_state.read(root) or {}).get("sprint_goal") or goal
+        state = run_state.read(root) or {}
     except Exception as exc:  # noqa: BLE001 - a missing run state must not break the brief
-        sdlc_md.debug("sprint.seat_brief", exc)
-    return _compose_seat_brief(plan, goal, digest, carried)
+        sdlc_md.debug("sprint._brief_goal", exc)
+        return None
+    if state.get("run_id") and not state.get("ended_at"):
+        return state.get("sprint_goal")
+    return None
 
 
 def _parse_seat_verdict(spec: str) -> dict:
@@ -6715,7 +6732,10 @@ def cmd_goal_review(args) -> int:
     """
     root = Path(args.root)
     if args.action == "brief":
-        print(seat_brief(root, worklist=getattr(args, "brief_worklist", None)))
+        # The CLI's --goal reaches the brief. It never did, which is the whole of BG0381:
+        # the flag was accepted, documented and silently discarded.
+        print(seat_brief(root, worklist=getattr(args, "brief_worklist", None),
+                         goal=getattr(args, "goal", None)))
         return 0
     if args.action == "show":
         rec = goal_review(root)

@@ -1,6 +1,6 @@
 # US0548: A sprint that surfaces as a file is named sprint-<run id>-<goal slug>, slugged by the shared helper
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0471
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the sprint surfaces as a file
 - **Then** it is named sprint-<run id>-<goal slug>, slugged by the shared helper the other artefact types use
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SprintNamingTests::test_a_sprint_file_carries_its_goal_slug
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

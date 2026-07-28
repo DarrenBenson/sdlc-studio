@@ -1,6 +1,7 @@
 # BG0381: The seat brief names the CLOSED run's goal, so the seats are briefed on a goal that is not the one under review
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; both precedence branches mutation-killed)
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
 > **Raised-by:** Claude Opus 5; human; v1
@@ -26,9 +27,20 @@ Thread the goal through: `seat_brief(root, worklist=..., goal=...)`, with the ca
 
 ## Acceptance Criteria
 
-- [ ] A goal passed to the brief is the goal the brief names, whatever the run state holds.
-- [ ] A brief requested while the last run is closed does not name that run's goal; with no goal supplied it says no goal is under review rather than substituting one.
-- [ ] The run state supplies the goal only for an OPEN run, pinned by a test that closes a run and asserts the goal does not survive into the next brief.
+### AC1: A goal passed to the brief is the goal it names, whatever the run state holds
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeatBriefGoalTests::test_a_goal_passed_to_the_brief_is_the_goal_it_names
+- **Verified:** yes (2026-07-28)
+
+### AC2: A brief taken while the last run is CLOSED does not name that run's goal
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeatBriefGoalTests::test_a_closed_run_s_goal_does_not_reach_the_next_brief
+- **Verified:** yes (2026-07-28)
+
+### AC3: An OPEN run's goal is still the fallback, so the carve-out is about a closed run rather than about ignoring run state
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeatBriefGoalTests::test_an_open_run_s_goal_is_still_the_fallback
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 
@@ -36,3 +48,4 @@ Thread the goal through: `seat_brief(root, worklist=..., goal=...)`, with the ca
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 | Created via `new` (deterministic) |
 | 2026-07-28 | Claude Opus 5 | Acceptance criteria back-filled. They were supplied at filing and neither creation path wrote them: `artifact.py` has no Acceptance Criteria section for a bug, and `file_finding.py` rendered the STATED ABSENCE over them. Both are repaired under BG0384; these four documents are the evidence of the defect and are restored from the fields files they were filed from, not re-invented. |
+| 2026-07-28 | Claude Opus 5 | Criteria made executable at delivery. |

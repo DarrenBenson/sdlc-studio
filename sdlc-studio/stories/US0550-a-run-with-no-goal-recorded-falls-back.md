@@ -1,6 +1,6 @@
 # US0550: A run with no goal recorded falls back to the id alone rather than inventing a slug
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0471
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** its name is derived
 - **Then** it is the bare run id rather than an invented slug
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SprintNamingTests::test_a_run_with_no_goal_is_named_by_id_alone
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

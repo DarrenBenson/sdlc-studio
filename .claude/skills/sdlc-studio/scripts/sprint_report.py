@@ -684,7 +684,22 @@ def render(rep: dict) -> str:
         judged = (f"{gv['verdict']}" + (f" - {gv['note']}" if gv.get("note") else "")
                   if gv else "not judged (record with `sprint goal-verdict`)")
         lines.append(f"Sprint Goal: {rep['sprint_goal']} [{judged}]")
+        for c in (gv or {}).get("clauses") or []:
+            # Per clause, because a goal reached in two parts of three is a real outcome and
+            # one word cannot express it. Printed under the goal it belongs to, so a reader
+            # meets the detail without knowing to look for it.
+            lines.append(f"  clause: {c.get('clause', '')} -> {c.get('verdict') or 'not judged'}")
     lines.append(f"Delivered: {len(rep['units'])} unit(s), {rep['delivered_points']} points.")
+    # A GREEN UNIT COUNT IS NOT A GOAL. Every unit reaching terminal while the goal was not
+    # achieved is the most misreadable state a close can be in - the numbers all look like
+    # success - so it is stated in the headline rather than left to be inferred from a verdict
+    # printed above it. Silence here is what let a run report completion it had not earned.
+    if rep.get("sprint_goal"):
+        verdict = ((rep.get("sprint_goal_verdict") or {}).get("verdict") or "").strip().lower()
+        if verdict and verdict not in ("achieved", "reached", "met"):
+            lines.append(f"  ... and the goal was {verdict}: every unit reached a terminal "
+                         f"status, which is not the same as the sprint having done what it "
+                         f"set out to do.")
     lines.extend(_delegated_signoff_lines(rep))
     lines.append(_spend_line(rep["spend"], rep.get("sprint_actual_tokens")))
     if v["points_per_elapsed_hour"]:

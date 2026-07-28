@@ -8820,5 +8820,125 @@ class LaneTrustBoundaryTests(unittest.TestCase):
                             "the fix must not disable shell verifiers for ordinary artefacts")
 
 
+class SeatBriefGoalTests(unittest.TestCase):
+    """BG0381. `seat_brief` took no goal argument at all, so the CLI's `--goal` never reached
+    it, and both branches let the run state override unconditionally - including a CLOSED run.
+    The seats were briefed on one goal and their verdict recorded against another, and
+    `plan --write` cannot catch that: by then both sides name the same string."""
+
+    def _root(self, d) -> Path:
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        return root
+
+    def test_a_goal_passed_to_the_brief_is_the_goal_it_names(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            _load().run_state.open_run(root, batch=["US0001"])
+            _load().run_state.update(root, sprint_goal="THE OLD GOAL")
+            self.assertEqual(mod._brief_goal(root, "THE NEW GOAL", {}), "THE NEW GOAL")
+
+    def test_a_closed_run_s_goal_does_not_reach_the_next_brief(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            _load().run_state.open_run(root, batch=["US0001"])
+            _load().run_state.update(root, sprint_goal="THE OLD GOAL")
+            _load().run_state.update(root, ended_at="2026-07-28T10:00:00Z")
+            self.assertIsNone(mod._brief_goal(root, None, {}))
+
+    def test_an_open_run_s_goal_is_still_the_fallback(self) -> None:
+        """The carve-out is about a CLOSED run, not about ignoring run state - a brief taken
+        mid-sprint should describe the sprint that is running."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            _load().run_state.open_run(root, batch=["US0001"])
+            _load().run_state.update(root, sprint_goal="THE OPEN GOAL")
+            self.assertEqual(mod._brief_goal(root, None, {}), "THE OPEN GOAL")
+
+    def test_the_plan_s_goal_outranks_the_run_state(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            _load().run_state.open_run(root, batch=["US0001"])
+            _load().run_state.update(root, sprint_goal="THE OLD GOAL")
+            self.assertEqual(mod._brief_goal(root, None, {"sprint_goal": "THE PLANNED GOAL"}),
+                             "THE PLANNED GOAL")
+
+
+class GoalClauseTests(unittest.TestCase):
+    """US0541. A Sprint Goal with more than one clause was judged with one word, so a goal
+    reached in two parts of three had to be reported as achieved or missed - both wrong."""
+
+    THREE = ("A sprint tells the truth about itself: seams have owners, the goal is judged by "
+             "a panel, and the defects are repaired rather than carried")
+
+    def test_a_three_clause_goal_reports_three_verdicts(self) -> None:
+        self.assertEqual(len(_load().run_state.goal_clauses(self.THREE)), 3)
+
+    def test_a_single_clause_goal_is_one_clause_not_shredded(self) -> None:
+        """Conservative on purpose: a comma is ordinary punctuation unless the sentence also
+        carries the Oxford `, and ` an operator uses to enumerate commitments."""
+        self.assertEqual(_load().run_state.goal_clauses("Ship the widget, quickly"),
+                         ["Ship the widget, quickly"])
+
+    def test_semicolons_separate_and_a_hyphenated_word_does_not(self) -> None:
+        self.assertEqual(len(_load().run_state.goal_clauses("A thing; another thing; a third")), 3)
+        self.assertEqual(len(_load().run_state.goal_clauses("Ship the well-tested widget")), 1)
+
+    def test_no_goal_yields_no_clauses_rather_than_one_empty_one(self) -> None:
+        self.assertEqual(_load().run_state.goal_clauses(""), [])
+        self.assertEqual(_load().run_state.goal_clauses(None), [])
+
+    def test_the_verdict_record_carries_the_clauses_beside_the_word(self) -> None:
+        """Beside, not instead of: the single word is what every existing reader consumes, and
+        the clause list is what makes `partial` mean something specific."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            _load().run_state.open_run(root, batch=["US0001"])
+            _load().run_state.update(root, sprint_goal=self.THREE)
+            rec = _load().run_state.record_goal_verdict(
+                root, "partial", clauses=[{"clause": "seams have owners", "verdict": "achieved"},
+                                          {"clause": "the goal is judged", "verdict": "missed"}])
+            self.assertEqual(rec["verdict"], "partial")
+            self.assertEqual([c["verdict"] for c in rec["clauses"]], ["achieved", "missed"])
+
+
+class SprintNamingTests(unittest.TestCase):
+    """US0548-US0550. A sprint was identified by a run id alone, so a list of them said nothing
+    about what any of them was for without opening each one."""
+
+    def test_a_sprint_file_carries_its_goal_slug(self) -> None:
+        name = _load().run_state.sprint_name("RUN-01KYMJEM", "ship the widget end to end")
+        self.assertTrue(name.startswith("sprint-RUN-01KYMJEM-"))
+        self.assertIn("ship-the-widget", name)
+
+    def test_the_run_id_resolves_a_sprint_whose_slug_is_stale(self) -> None:
+        """The reason the id stays first and canonical: a goal is routinely reworded between
+        the plan and the close, and a name that resolved only through its slug would orphan
+        every reference to that sprint the moment it changed."""
+        self.assertEqual(_load().run_state.run_id_from_name("sprint-RUN-01KYMJEM-an-old-wording"),
+                         "RUN-01KYMJEM")
+        self.assertEqual(
+            _load().run_state.run_id_from_name(_load().run_state.sprint_name("RUN-01KYMJEM", "a new wording")),
+            "RUN-01KYMJEM")
+
+    def test_a_run_with_no_goal_is_named_by_id_alone(self) -> None:
+        """No invented slug. A goal nobody wrote is absent, not guessed - the same discipline
+        as reporting an unmeasured figure rather than zero."""
+        self.assertEqual(_load().run_state.sprint_name("RUN-01KYMJEM"), "sprint-RUN-01KYMJEM")
+        self.assertEqual(_load().run_state.sprint_name("RUN-01KYMJEM", "   "), "sprint-RUN-01KYMJEM")
+
+    def test_a_name_with_no_run_id_resolves_to_nothing(self) -> None:
+        self.assertIsNone(_load().run_state.run_id_from_name("sprint-something-else"))
+
+    def test_an_empty_run_id_is_refused(self) -> None:
+        with self.assertRaises(ValueError):
+            _load().run_state.sprint_name("", "a goal")
+
+
 if __name__ == "__main__":
     unittest.main()

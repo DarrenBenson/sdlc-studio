@@ -1,6 +1,6 @@
 # US0541: A Sprint Goal is recorded as clauses at plan time and the close reports a verdict per clause
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0469
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the close reports its verdict
 - **Then** each clause carries its own verdict, so a goal reached in two parts of three is expressible rather than collapsing to one word
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GoalClauseTests::test_a_three_clause_goal_reports_three_verdicts
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

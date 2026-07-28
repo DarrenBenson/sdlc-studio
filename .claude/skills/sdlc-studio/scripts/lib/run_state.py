@@ -902,7 +902,74 @@ def record_review_round(repo_root: Path | str, verdict: str, units: list[str] | 
     return entry
 
 
-def record_goal_verdict(repo_root: Path | str, verdict: str, note: str = "") -> dict:
+#: How a multi-clause Sprint Goal is split. A goal is one sentence by convention, and its
+#: clauses are what the operator actually wrote as separable commitments. Semicolons and
+#: dashes always separate. Commas separate ONLY when the sentence also carries `, and ` - the
+#: Oxford-list shape an operator uses to enumerate commitments. Without that marker a comma is
+#: ordinary punctuation inside one clause, and splitting on it would shred a single commitment
+#: into three nobody made.
+# A semicolon needs no space before it (`thing; another` is the usual spelling); a dash
+# does, or a hyphenated word would separate two clauses out of one.
+_CLAUSE_HARD = re.compile(r"\s*;\s+|\s-\s+")
+_CLAUSE_LIST = re.compile(r"\s*,\s+(?:and\s+)?")
+_OXFORD = re.compile(r",\s+and\s+")
+
+
+def goal_clauses(goal: str | None) -> list[str]:
+    """A Sprint Goal as its clauses, in order. One clause for a single-clause goal.
+
+    A goal reached in two parts of three is a real and common outcome, and collapsing it to one
+    word forces the closer to overstate or understate. Splitting is deliberately conservative:
+    a goal nobody wrote as separable commitments comes back as ONE clause rather than being
+    shredded into commitments its author never made."""
+    text = " ".join(str(goal or "").split())
+    if not text:
+        return []
+    head, sep, tail = text.partition(": ")
+    body = tail if sep and len(head) < 80 else text
+    splitter = _CLAUSE_LIST if _OXFORD.search(body) else _CLAUSE_HARD
+    parts = [p.strip(" .;-") for p in splitter.split(body) if p and p.strip(" .;-")]
+    return parts if len(parts) > 1 else [text]
+
+
+#: How many words of a goal reach a filename. Long enough to tell two sprints apart at a
+#: glance, short enough that the name stays a name - a 200-character filename is one nothing
+#: displays in full and every tool truncates differently.
+_NAME_SLUG_WORDS = 8
+
+
+def sprint_name(run_id: str, goal: str | None = None) -> str:
+    """A sprint's display name: `sprint-<run id>-<goal slug>`, or the bare id when no goal.
+
+    The RUN ID stays first and canonical. A goal can be reworded - it routinely is, between the
+    plan and the close - and a name that resolved only through its slug would orphan every
+    reference to that sprint the moment it changed. The slug is decoration on a stable id, and
+    `run_id_from_name` reads the id back out of any spelling.
+
+    A run with NO recorded goal is named by its id alone. Inventing a slug for a goal nobody
+    wrote is the same class of error as reporting an unmeasured figure as zero."""
+    rid = str(run_id or "").strip()
+    if not rid:
+        raise ValueError("a sprint name needs a run id - the id is the canonical half")
+    words = " ".join(str(goal or "").split()).split(" ")[:_NAME_SLUG_WORDS]
+    tail = sdlc_md.slug(" ".join(words))
+    return f"sprint-{rid}-{tail}" if tail else f"sprint-{rid}"
+
+
+_RUN_ID_IN_NAME = re.compile(r"(RUN-[0-9A-Za-z]+)", re.I)
+
+
+def run_id_from_name(name: str) -> str | None:
+    """The run id inside a sprint name, whatever the slug says - or None.
+
+    This is what makes a reworded goal harmless: the slug in an old filename may describe a
+    goal nobody uses any more, and the sprint still resolves."""
+    m = _RUN_ID_IN_NAME.search(str(name or ""))
+    return m.group(1).upper() if m else None
+
+
+def record_goal_verdict(repo_root: Path | str, verdict: str, note: str = "",
+                        clauses: list[dict] | None = None) -> dict:
     """Record the closing review's Sprint Goal verdict beside the goal it judges.
 
     The round count is DERIVED from the ledger and stamped on the record (`rounds`), never taken
@@ -919,6 +986,11 @@ def record_goal_verdict(repo_root: Path | str, verdict: str, note: str = "") -> 
             f"(len(review_rounds)) - a note may not restate a round count the ledger contradicts. "
             f"Drop the number (the derived `rounds` field carries it) or record the missing rounds")
     record = {"verdict": verdict, "note": note, "rounds": ledger}
+    if clauses:
+        # Per-clause verdicts, recorded BESIDE the single word rather than instead of it: the
+        # one-word verdict is what every existing reader consumes, and a clause list is what
+        # makes `partial` mean something specific rather than "not entirely".
+        record["clauses"] = clauses
     update(repo_root, sprint_goal_verdict=record)
     return record
 

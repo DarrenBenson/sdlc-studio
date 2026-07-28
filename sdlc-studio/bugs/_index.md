@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 28 |
+| Open | 27 |
 | In Progress | 0 |
-| Fixed | 273 |
+| Fixed | 274 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -98,7 +98,7 @@
 | [BG0378](BG0378-transition-does-not-consult-the-criteria-floor-so.md) | transition does not consult the criteria floor, so the terminal status is set and only the commit that records it is refused | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0379](BG0379-caller-check-silently-passes-a-unit-whose-mechanism.md) | caller-check silently passes a unit whose mechanism surface its own verifier emptied, so US0512's criterion cannot fail | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0380](BG0380-the-index-syncer-covers-a-bug-s-status.md) | The index syncer covers a bug's status but not its severity, and not an RFC's status at all, so a corrected artefact and its index row disagree with drift_items=0 | Fixed | High | 2026-07-28 | 2026-07-28 |
-| [BG0381](BG0381-the-seat-brief-names-the-closed-run-s.md) | The seat brief names the CLOSED run's goal, so the seats are briefed on a goal that is not the one under review | Open | High | 2026-07-28 | 2026-07-28 |
+| [BG0381](BG0381-the-seat-brief-names-the-closed-run-s.md) | The seat brief names the CLOSED run's goal, so the seats are briefed on a goal that is not the one under review | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0382](BG0382-close-owed-treats-a-decision-terminal-status-as.md) | close_owed treats a decision-terminal status as delivery, so a unit nobody built demands a sprint close | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0383](BG0383-one-whole-tree-reader-collapses-the-test-relevance.md) | One whole-tree reader collapses the test-relevance set to `sdlc-studio`, so every artefact commit pays the full suites | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0384](BG0384-artifact-py-silently-discards-a-bug-s-acceptance.md) | artifact.py silently discards a bug's acceptance criteria, so the sanctioned filing path produces the criteria-less bug the floor exists to refuse | Fixed | High | 2026-07-28 | 2026-07-28 |

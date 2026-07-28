@@ -814,5 +814,47 @@ class OverheadReviewTermTests(unittest.TestCase):
         self.assertIsNone(c["seconds"])
 
 
+class GoalVersusCountTests(unittest.TestCase):
+    """US0544. A close whose units all reached terminal while the goal was NOT achieved is the
+    most misreadable state a report can be in: every number looks like success. The verdict
+    was printed above the count and left to be inferred."""
+
+    def _rep(self, verdict: str, clauses=None) -> dict:
+        gv = {"verdict": verdict, "note": "", "rounds": 1}
+        if clauses:
+            gv["clauses"] = clauses
+        return {"ok": True, "id": "RETRO0001", "date": "2026-07-28",
+                "sprint_goal": "ship the widget", "sprint_goal_verdict": gv,
+                "units": ["US0001", "US0002"], "delivered_points": 8,
+                "velocity": {"points_per_elapsed_hour": None, "elapsed_hours": None,
+                             "elapsed_source": None, "points_per_worker_hour": None,
+                             "tokens_per_point": None, "sprint_tokens_per_point": None,
+                             "overhead_ratio": None, "overhead_bound": None,
+                             "overhead_excludes": []},
+                "accuracy": {"ratio": None, "refused": None, "n_measured": 0, "models": []},
+                "spend": {"measured_units": 0, "cost": 0, "unpriced": []},
+                "lessons": [], "tickets": [], "declined": [], "delegated_signoffs": [],
+                "mutation": {}, "execution": {}, "overhead": {}, "flow": {}}
+
+    def test_all_units_terminal_with_an_unachieved_goal_says_so(self) -> None:
+        out = sr.render(self._rep("partial"))
+        self.assertIn("the goal was partial", out)
+        self.assertIn("not the same as", out)
+
+    def test_an_achieved_goal_adds_no_such_line(self) -> None:
+        """The line must not become constant furniture - one that always appears is one a
+        reader stops seeing, and the state it warns about would then be invisible again."""
+        out = sr.render(self._rep("achieved"))
+        self.assertNotIn("not the same as", out)
+
+    def test_each_clause_verdict_is_printed_under_the_goal(self) -> None:
+        out = sr.render(self._rep("partial", [{"clause": "seams have owners",
+                                               "verdict": "achieved"},
+                                              {"clause": "the goal is judged",
+                                               "verdict": "missed"}]))
+        self.assertIn("clause: seams have owners -> achieved", out)
+        self.assertIn("clause: the goal is judged -> missed", out)
+
+
 if __name__ == "__main__":
     unittest.main()
