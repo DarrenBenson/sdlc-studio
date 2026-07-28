@@ -23,7 +23,13 @@ Point each of the five criteria at a check that can fail on the unit - the calle
 
 ## Acceptance Criteria
 
-No acceptance criterion could be derived from this finding's evidence: `steps` carries fewer than 5 words of substance, so nothing here states what fixed would look like. Whoever picks this up agrees the contract with the author before starting - this is a stated gap, not a criterion to tick.
+### AC1: deleting a Caller declaration reddens the story's own criterion
+
+- **Given** a story whose acceptance criterion asserts that its consuming call site is named and resolves
+- **When** the `- **Caller:**` declaration is removed from that story
+- **Then** the criterion's verifier exits non-zero, so the criterion can fail on the unit it describes
+- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/critic.py caller-check --unit US0508 --root .
+- **Verified:** yes (2026-07-28, functional)
 
 ## Revision History
 

@@ -23,7 +23,13 @@ Declare the caller that actually consumes the mechanism, and where none exists y
 
 ## Acceptance Criteria
 
-No acceptance criterion could be derived from this finding's evidence: `steps` carries fewer than 5 words of substance, so nothing here states what fixed would look like. Whoever picks this up agrees the contract with the author before starting - this is a stated gap, not a criterion to tick.
+### AC1: a caller named as a symbol resolves without an incidental path token
+
+- **Given** a Caller declaration naming a real function in a tracked source file and no path
+- **When** the declaration is resolved
+- **Then** it resolves on the symbol, while prose such as `unknown` or `the main loop` still does not
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerResolverAtScaleTests
+- **Verified:** yes (2026-07-28, functional)
 
 ## Revision History
 

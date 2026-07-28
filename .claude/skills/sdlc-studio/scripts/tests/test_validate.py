@@ -118,6 +118,28 @@ class ValidateFileTests(unittest.TestCase):
             self.assertEqual(validate._has_criteria(text), sdlc_md.count_acs(text) > 0,
                              "the floor and the counter must give one answer, not two")
 
+    def test_quoting_the_absence_marker_elsewhere_does_not_erase_real_criteria(self) -> None:
+        """The first version of this predicate scanned the whole document, so an artefact that
+        merely QUOTED the filer's sentence - a bug filed ABOUT the filer is the obvious case -
+        was judged to carry no criteria even with a populated section. Prose criteria are the
+        shape that breaks: with no `### ACn` id to find, the marker decided alone."""
+        import file_finding
+        prose = ("# X\n\n> **Status:** Fixed\n\n## Summary\n\n"
+                 f'This bug is about the filer writing "{file_finding.THIN_EVIDENCE_MARK}".\n\n'
+                 "## Acceptance Criteria\n\nThe waiver is refused at record time when it names "
+                 "no reason, and the refusal names the rule it could not resolve.\n")
+        self.assertTrue(validate._has_criteria(prose),
+                        "a populated criteria section is criteria, whatever the body quotes")
+        labelled = prose.replace(
+            "The waiver is refused at record time when it names no reason, and the refusal "
+            "names the rule it could not resolve.",
+            "### AC1: it holds\n\n- **Given** a thing\n- **Verify:** file b")
+        self.assertTrue(validate._has_criteria(labelled))
+        absent = ("# X\n\n> **Status:** Fixed\n\n## Acceptance Criteria\n\n"
+                  f"{file_finding.THIN_EVIDENCE_MARK}: too thin to derive anything.\n")
+        self.assertFalse(validate._has_criteria(absent),
+                         "the marker IN the section is still an absence")
+
     def test_no_ac_grandfathered_below_adopt_after(self) -> None:
         # A pre-cutoff story is exempt from no-ac; a story at/after the cutoff is not.
         with tempfile.TemporaryDirectory() as d:

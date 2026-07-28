@@ -23,7 +23,13 @@ Rule what a stated absence means at terminal. Either it is permitted at filing b
 
 ## Acceptance Criteria
 
-No acceptance criterion could be derived from this finding's evidence: none of its prose fields carries fewer than 5 words of substance, so nothing here states what fixed would look like. Whoever picks this up agrees the contract with the author before starting - this is a stated gap, not a criterion to tick.
+### AC1: a stated absence is not counted as acceptance criteria
+
+- **Given** a bug whose `## Acceptance Criteria` section holds only the filer's auto-written stated-absence paragraph
+- **When** the criteria floor is evaluated at a terminal status
+- **Then** the unit is reported as having no acceptance criteria, and `_has_criteria` and `sdlc_md.count_acs` return the same answer on identical bytes
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::ValidateFileTests::test_the_two_criteria_predicates_agree
+- **Verified:** yes (2026-07-28, functional)
 
 ## Revision History
 

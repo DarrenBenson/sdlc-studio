@@ -85,7 +85,13 @@ def _has_criteria(text: str) -> bool:
 
 
 def _states_absence(text: str) -> bool:
-    """True when the criteria section's content is the tool's own stated-absence paragraph."""
+    """True when the CRITERIA SECTION's content is the tool's own stated-absence paragraph.
+
+    Scoped to the section, not the document. Scanning the whole body made any artefact that
+    merely QUOTES the filer's sentence - a bug filed about the filer, a revision note, a repro
+    paragraph - read as carrying no criteria at all, even with a populated section right there.
+    That is the same over-broad predicate this function was written to remove, one section up.
+    """
     try:
         import file_finding  # noqa: PLC0415 - sibling; lazy so an unrelated run never pays
     except ImportError:                                   # pragma: no cover - defensive
@@ -93,8 +99,28 @@ def _states_absence(text: str) -> bool:
     mark = getattr(file_finding, "THIN_EVIDENCE_MARK", None)
     if not mark:                                          # pragma: no cover - defensive
         return False
-    return mark in text and not any(
-        sdlc_md.extract_ac_id(line) for line in text.splitlines())
+    section = _criteria_section(text)
+    return bool(section) and mark in section and not any(
+        sdlc_md.extract_ac_id(line) for line in section.splitlines())
+
+
+def _criteria_section(text: str) -> str:
+    """The body of the `## Acceptance Criteria` section, to the next heading of any level."""
+    lines = text.splitlines()
+    start = None
+    for i, line in enumerate(lines):
+        if re.match(r"^\s*#{1,6}\s+acceptance criteria\b", line, re.IGNORECASE):
+            start = i + 1
+            break
+    if start is None:
+        return ""
+    out = []
+    for line in lines[start:]:
+        if re.match(r"^\s*#{1,6}\s+\S", line) and not re.match(r"^\s*#{3,6}\s+AC\d", line,
+                                                               re.IGNORECASE):
+            break
+        out.append(line)
+    return "\n".join(out)
 
 
 def _is_ungroomed(text: str) -> bool:

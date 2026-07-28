@@ -23,7 +23,13 @@ Add a lane-contract test pair: a unit whose criteria are checkbox items - the re
 
 ## Acceptance Criteria
 
-No acceptance criterion could be derived from this finding's evidence: `steps` carries fewer than 5 words of substance, so nothing here states what fixed would look like. Whoever picks this up agrees the contract with the author before starting - this is a stated gap, not a criterion to tick.
+### AC1: neutering the lane contract refusal reddens the suite
+
+- **Given** the refusal that stops a unit dispatching with a contract the runner cannot read
+- **When** its condition is replaced with a constant false
+- **Then** the suite goes red rather than staying green, so a silent revert cannot pass
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneContractTests::test_criteria_the_runner_cannot_parse_are_refused_not_dispatched_empty
+- **Verified:** yes (2026-07-28, functional)
 
 ## Revision History
 

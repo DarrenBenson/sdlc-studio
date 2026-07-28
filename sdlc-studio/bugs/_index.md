@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 31 |
+| Open | 32 |
 | In Progress | 0 |
 | Fixed | 264 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **378** |
+| **Total** | **379** |
 
 ## All Bugs
 
@@ -96,6 +96,7 @@
 | [BG0376](BG0376-five-stories-caller-criteria-are-verified-by-a.md) | Five stories' caller criteria are verified by a test class that never reads the story, so the criterion cannot fail | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0377](BG0377-four-of-the-five-caller-declarations-added-at.md) | Four of the five Caller declarations added at review resolve only on the documentation filename, not on the caller they name | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0378](BG0378-transition-does-not-consult-the-criteria-floor-so.md) | transition does not consult the criteria floor, so the terminal status is set and only the commit that records it is refused | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0379](BG0379-caller-check-silently-passes-a-unit-whose-mechanism.md) | caller-check silently passes a unit whose mechanism surface its own verifier emptied, so US0512's criterion cannot fail | Open | High | 2026-07-28 | 2026-07-28 |
 
 ## Archived Releases
 
