@@ -765,5 +765,54 @@ class OverheadRatioTests(ReportBase):
         self.assertLess(opos - vpos, 4, "...not paragraphs away from them")
 
 
+class OverheadReviewTermTests(unittest.TestCase):
+    """US0535 / BG0366. `_component_review` could only measure the span BETWEEN round stamps -
+    nothing before the first round, and zero when rounds were stamped together at close. So the
+    largest overhead component of the last two sprints was reported UNMEASURED, and the ratio,
+    which computes delivery by subtraction, credited that time to delivery."""
+
+    def _rounds(self, *seconds):
+        return [{"round": i, "verdict": "REJECT", "recorded_at": "2026-07-28T10:00:00Z",
+                 "seconds": s} for i, s in enumerate(seconds, 1)]
+
+    def _ctx(self, rounds):
+        return {"state": {sr.run_state.REVIEW_ROUNDS: rounds}}
+
+    def test_recorded_round_durations_feed_the_overhead_term(self) -> None:
+        c = sr._component_review(self._ctx(self._rounds(600, 900)))
+        self.assertTrue(c["measured"])
+        self.assertEqual(c["seconds"], 1500.0)
+
+    def test_every_round_timed_is_exact_and_a_mix_is_a_lower_bound(self) -> None:
+        """A sum of durations counts the review itself rather than the gaps between stamps, so
+        it is exact when every round carries one. A mix stays a floor: the untimed rounds
+        contribute nothing, and counting them as zero is the error being removed."""
+        exact = sr._component_review(self._ctx(self._rounds(600, 900)))
+        self.assertEqual(exact["bound"], "exact")
+        UN = sr.run_state.UNMEASURED
+        mixed = sr._component_review(self._ctx(self._rounds(600, UN)))
+        self.assertTrue(mixed["measured"])
+        self.assertEqual(mixed["seconds"], 600.0)
+        self.assertEqual(mixed["bound"], "lower")
+
+    def test_the_floor_caveat_tracks_actual_unmeasured_components(self) -> None:
+        """The caveat qualifies a number. It must be stated while a component is genuinely
+        unmeasured and dropped when none is - a permanent 'at least' is noise a reader learns
+        to skip, and an absent one on an incomplete measurement is a false precision."""
+        UN = sr.run_state.UNMEASURED
+        none_timed = sr._component_review(self._ctx(self._rounds(UN, UN)))
+        self.assertFalse(none_timed["measured"])
+        # It falls through to the stamp-span reading, which correctly refuses too - and says
+        # so in its own words. The assertion is that it is NOT reported as free, however it
+        # reaches that answer.
+        self.assertIn("not a review that was free", none_timed["why"])
+        self.assertIsNone(none_timed["seconds"])
+
+    def test_no_rounds_at_all_is_still_unmeasured_not_zero(self) -> None:
+        c = sr._component_review(self._ctx([]))
+        self.assertFalse(c["measured"])
+        self.assertIsNone(c["seconds"])
+
+
 if __name__ == "__main__":
     unittest.main()

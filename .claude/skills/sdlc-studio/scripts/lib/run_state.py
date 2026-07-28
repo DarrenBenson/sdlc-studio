@@ -804,9 +804,46 @@ def review_round_count(repo_root: Path | str) -> int:
     return len(review_rounds(repo_root))
 
 
+def round_duration(entry: dict) -> int | None:
+    """A recorded round's duration in seconds, or None for UNMEASURED.
+
+    None is the honest reading of a round nobody timed, and it must never be folded to 0: the
+    overhead ratio computes delivery by subtraction, so a silent zero reports review as having
+    cost nothing and inflates the delivered share by exactly the time the review took. The two
+    largest sprints in this record spent more wall-clock in review-and-repair than in delivery,
+    and the ratio said review was unmeasured while treating it as free."""
+    value = entry.get("seconds", UNMEASURED)
+    if value is UNMEASURED or value is None:
+        return None
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        return None
+    return n if n >= 0 else None
+
+
+def _elapsed_seconds(started_at: str | None, ended_at: str | None) -> int | None:
+    """Seconds between two ISO-8601 stamps, or None when either is absent or unparseable.
+
+    Unparseable is UNMEASURED, never 0 - a stamp the parser cannot read says nothing about how
+    long the round took, and answering 0 would be an invented measurement."""
+    if not started_at or not ended_at:
+        return None
+    from datetime import datetime
+    try:
+        a = datetime.fromisoformat(str(started_at).replace("Z", "+00:00"))
+        b = datetime.fromisoformat(str(ended_at).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    delta = int((b - a).total_seconds())
+    return delta if delta >= 0 else None
+
+
 def record_review_round(repo_root: Path | str, verdict: str, units: list[str] | None = None,
                         reviewer: str = "", tokens: int | None = UNMEASURED,
-                        repaired: list[dict] | None = None) -> dict | None:
+                        repaired: list[dict] | None = None,
+                        started_at: str | None = None, ended_at: str | None = None,
+                        seconds: int | None = UNMEASURED) -> dict | None:
     """Append one close-review round to the run. Returns the round recorded, or None when no
     run is open.
 
@@ -834,6 +871,13 @@ def record_review_round(repo_root: Path | str, verdict: str, units: list[str] | 
             f"reviewer label {reviewer!r} names round {label}, but this entry is stored at round "
             f"{index} - the ledger's numbering and the reviewer's must not disagree. Drop the "
             f"number from the label (the index is authoritative) or record it at the right round")
+    # A round's DURATION, on the same UNMEASURED discipline as its tokens: an explicit figure
+    # wins, else it is derived from a start and an end, else it stays UNMEASURED. Never 0 by
+    # default - a zero is a measurement, and inventing one here is what let the overhead ratio
+    # report review as free while it was the largest cost in the sprint.
+    if seconds is UNMEASURED or seconds is None:
+        derived = _elapsed_seconds(started_at, ended_at)
+        seconds = UNMEASURED if derived is None else derived
     entry = {
         "round": index,
         "verdict": (verdict or "").upper(),
@@ -842,6 +886,9 @@ def record_review_round(repo_root: Path | str, verdict: str, units: list[str] | 
         "recorded_at": sdlc_md.now_iso8601(),
         "tokens": tokens,
         "repaired": repaired or [],
+        "started_at": started_at or None,
+        "ended_at": ended_at or None,
+        "seconds": seconds,
     }
 
     def apply(state: dict) -> dict:

@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 62 |
+| Ready | 59 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 0 |
+| Review | 3 |
 | Done | 488 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -444,15 +444,15 @@
 | [US0531](US0531-the-sweep-detectors-read-the-artefact-corpus-once.md) | The sweep detectors read the artefact corpus once per run and share it, so the cost is paid once rather than per unit | Ready | EP0181 | 2026-07-28 | 2026-07-28 |
 | [US0532](US0532-the-corpus-read-is-measured-by-a-test.md) | The corpus read is measured by a test that fails if it grows back to per-unit, so the fix cannot silently regress | Ready | EP0181 | 2026-07-28 | 2026-07-28 |
 | [US0533](US0533-the-gate-attributes-its-seconds-per-lane-so.md) | The gate attributes its seconds per lane, so a lane that becomes the dominant cost is visible without profiling it by hand | Ready | EP0181 | 2026-07-28 | 2026-07-28 |
-| [US0534](US0534-a-recorded-review-round-carries-a-duration-and.md) | A recorded review round carries a duration, and a round recorded without one says so rather than counting as zero | Ready | EP0182 | 2026-07-28 | 2026-07-28 |
-| [US0535](US0535-the-overhead-ratio-consumes-recorded-review-durations-and.md) | The overhead ratio consumes recorded review durations, and states it is a lower bound only while a component is genuinely unmeasured | Ready | EP0182 | 2026-07-28 | 2026-07-28 |
+| [US0534](US0534-a-recorded-review-round-carries-a-duration-and.md) | A recorded review round carries a duration, and a round recorded without one says so rather than counting as zero | Review | EP0182 | 2026-07-28 | 2026-07-28 |
+| [US0535](US0535-the-overhead-ratio-consumes-recorded-review-durations-and.md) | The overhead ratio consumes recorded review durations, and states it is a lower bound only while a component is genuinely unmeasured | Review | EP0182 | 2026-07-28 | 2026-07-28 |
 | [US0536](US0536-the-guidance-states-the-fragment-path-as-the.md) | The guidance states the fragment path as the rule for a lane, so an author following it cannot collide with a sibling | Ready | EP0183 | 2026-07-28 | 2026-07-28 |
 | [US0537](US0537-a-lane-writing-a-changelog-fragment-is-accepted.md) | A lane writing a changelog fragment is accepted and a lane hand-editing [Unreleased] is refused with the fragment command in the refusal | Ready | EP0183 | 2026-07-28 | 2026-07-28 |
 | [US0538](US0538-refine-computes-the-seam-map-for-a-batch.md) | Refine computes the seam map for a batch and reports a pair sharing a property with no criterion asserting it is preserved | Ready | EP0184 | 2026-07-28 | 2026-07-28 |
 | [US0539](US0539-the-seam-map-reaches-the-delivery-lane-brief.md) | The seam map reaches the delivery lane brief and the review brief, so a lane is told which neighbouring property it must not regress | Ready | EP0184 | 2026-07-28 | 2026-07-28 |
 | [US0540](US0540-the-close-reports-seam-coverage-beside-the-points.md) | The close reports seam coverage beside the points, and a batch that shipped with unowned seams says so | Ready | EP0184 | 2026-07-28 | 2026-07-28 |
 | [US0541](US0541-a-sprint-goal-is-recorded-as-clauses-at.md) | A Sprint Goal is recorded as clauses at plan time and the close reports a verdict per clause | Ready | EP0185 | 2026-07-28 | 2026-07-28 |
-| [US0542](US0542-the-per-clause-verdict-is-returned-by-a.md) | The per-clause verdict is returned by a panel of seats, and a panel including the author is refused rather than warned | Ready | EP0185 | 2026-07-28 | 2026-07-28 |
+| [US0542](US0542-the-per-clause-verdict-is-returned-by-a.md) | The per-clause verdict is returned by a panel of seats, and a panel including the author is refused rather than warned | Review | EP0185 | 2026-07-28 | 2026-07-28 |
 | [US0543](US0543-an-open-defect-is-judged-against-the-goal.md) | An open defect is judged against the goal clauses: one that falsifies a clause blocks the close, one that does not is recorded leavable with its priority | Ready | EP0185 | 2026-07-28 | 2026-07-28 |
 | [US0544](US0544-a-run-whose-units-all-reached-terminal-but.md) | A run whose units all reached terminal but whose goal was not achieved reports that in the close and the retro, not only the unit count | Ready | EP0185 | 2026-07-28 | 2026-07-28 |
 | [US0545](US0545-at-plan-the-seats-are-asked-whether-the.md) | At plan, the seats are asked whether the chosen content will deliver the goal, and a partial or no answer must name what is missing | Ready | EP0186 | 2026-07-28 | 2026-07-28 |

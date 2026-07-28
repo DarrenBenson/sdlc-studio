@@ -1,6 +1,6 @@
 # US0542: The per-clause verdict is returned by a panel of seats, and a panel including the author is refused rather than warned
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0469
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the panel is assembled with the unit's author among the seats
 - **Then** it is refused rather than warned, and a panel excluding the author returns a per-clause verdict with the evidence it relied on
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::GoalPanelTests::test_a_panel_including_the_author_is_refused
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

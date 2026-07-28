@@ -1,6 +1,6 @@
 # US0534: A recorded review round carries a duration, and a round recorded without one says so rather than counting as zero
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0466
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the round is written to the review record
 - **Then** the round carries its duration
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ReviewDurationTests::test_a_recorded_round_carries_its_duration
+- **Verified:** yes (2026-07-28)
 
 ### AC2: a round with no duration says so rather than counting as zero
 
@@ -31,6 +32,7 @@
 - **When** the round is read back
 - **Then** its duration reads as unmeasured, and nothing treats it as zero elapsed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ReviewDurationTests::test_an_untimed_round_reads_unmeasured_not_zero
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

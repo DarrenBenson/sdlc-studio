@@ -1,6 +1,6 @@
 # US0535: The overhead ratio consumes recorded review durations, and states it is a lower bound only while a component is genuinely unmeasured
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0466
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the overhead ratio is computed
 - **Then** the review and repair component is measured from those durations rather than reported unmeasured
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::OverheadReviewTermTests::test_recorded_round_durations_feed_the_overhead_term
+- **Verified:** yes (2026-07-28)
 
 ### AC2: the lower-bound caveat is stated only while a component is genuinely unmeasured
 
@@ -31,6 +32,7 @@
 - **When** the ratio is rendered
 - **Then** it is not described as a floor, and a run with any unmeasured component still is
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::OverheadReviewTermTests::test_the_floor_caveat_tracks_actual_unmeasured_components
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 

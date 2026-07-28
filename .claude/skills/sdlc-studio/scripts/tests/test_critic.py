@@ -2364,5 +2364,143 @@ class CallerResolverAtScaleTests(unittest.TestCase):
                              f"{junk!r} names no consumer and must not satisfy the rule")
 
 
+class CallerIndeterminateTests(unittest.TestCase):
+    """BG0379. `mechanism_files` subtracts every Affects path a unit's own verifiers name, so a
+    unit whose criterion points at a shell verifier INVOKING its only code file has an empty
+    surface - and `caller_findings` then skipped it entirely. The check exited 0 whether the
+    Caller declaration said something, said nothing, or was deleted: vacuous, which is the
+    exact defect the check was built to remove, reintroduced by a repair to it."""
+
+    def _unit(self, root: Path, ident: str, affects: str, verify: str, caller: str = "") -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        line = f"- **Caller:** {caller}\n" if caller else ""
+        (d / f"{ident}-x.md").write_text(
+            f"# {ident}: x\n\n> **Status:** Review\n> **Affects:** {affects}\n\n"
+            f"## Acceptance Criteria\n\n### AC1: it works\n\n{line}"
+            f"- **Verify:** {verify}\n", encoding="utf-8")
+
+    def test_a_surface_emptied_by_its_own_verifier_is_reported_not_skipped(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "src/thing.py", "shell python3 src/thing.py --check")
+            kinds = [f["kind"] for f in _load().caller_findings(root, ["US0001"])]
+            self.assertIn(_load().CALLER_INDETERMINATE, kinds)
+
+    def test_a_documentation_only_unit_is_still_not_asked_for_a_caller(self) -> None:
+        """The carve-out must not widen: a unit whose declared surface is markdown adds no
+        mechanism and a check that fires on everything is not a check."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0002", "docs/guide.md", "grep -n x docs/guide.md")
+            self.assertEqual(_load().caller_findings(root, ["US0002"]), [])
+
+    def test_a_unit_with_a_real_surface_is_judged_as_before(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0003", "src/thing.py, tests/test_thing.py",
+                       "pytest tests/test_thing.py::T::t")
+            kinds = [f["kind"] for f in _load().caller_findings(root, ["US0003"])]
+            self.assertIn(_load().CALLER_UNNAMED, kinds)
+            self.assertNotIn(_load().CALLER_INDETERMINATE, kinds)
+
+    def test_the_verdict_changes_when_the_declaration_does(self) -> None:
+        """The property that was missing. Before the fix, deleting the Caller declaration left
+        the check at exit 0 - so its greenness said nothing about the unit."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0004", "src/thing.py, tests/test_thing.py",
+                       "pytest tests/test_thing.py::T::t", caller="src/consumer.py")
+            with_decl = _load().caller_findings(root, ["US0004"])
+            self._unit(root, "US0004", "src/thing.py, tests/test_thing.py",
+                       "pytest tests/test_thing.py::T::t")
+            without = _load().caller_findings(root, ["US0004"])
+            self.assertNotEqual([f["kind"] for f in with_decl], [f["kind"] for f in without])
+
+
+class ReviewDurationTests(unittest.TestCase):
+    """US0534. No round recorded a duration, so `_component_review` could only measure the span
+    BETWEEN round stamps - nothing before the first round, and zero for rounds stamped together
+    at close. A review that took hours read as unmeasured while the ratio treated it as free."""
+
+    def test_a_recorded_round_carries_its_duration(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            _load().run_state.open_run(root, batch=["US0001"], goal="x")
+            entry = _load().run_state.record_review_round(
+                root, verdict="REJECT", units=["US0001"], reviewer="qa",
+                started_at="2026-07-28T10:00:00Z", ended_at="2026-07-28T10:22:30Z")
+            self.assertEqual(_load().run_state.round_duration(entry), 1350)
+
+    def test_an_untimed_round_reads_unmeasured_not_zero(self) -> None:
+        """The distinction the whole field exists for: a round nobody timed must not be folded
+        to zero, because the ratio computes delivery by subtraction and a silent zero reports
+        the review as having cost nothing."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            _load().run_state.open_run(root, batch=["US0001"], goal="x")
+            entry = _load().run_state.record_review_round(root, verdict="APPROVE", units=["US0001"],
+                                                  reviewer="qa")
+            self.assertIsNone(_load().run_state.round_duration(entry))
+            self.assertIsNot(entry["seconds"], 0)
+
+    def test_an_unparseable_stamp_is_unmeasured_rather_than_invented(self) -> None:
+        self.assertIsNone(_load().run_state._elapsed_seconds("nonsense", "2026-07-28T10:00:00Z"))
+        self.assertIsNone(_load().run_state._elapsed_seconds("2026-07-28T10:00:00Z", None))
+
+    def test_a_measured_zero_is_kept_as_a_measurement(self) -> None:
+        """Zero seconds is a legitimate reading; only UNMEASURED means nobody looked."""
+        self.assertEqual(_load().run_state.round_duration({"seconds": 0}), 0)
+
+
+class GoalPanelTests(unittest.TestCase):
+    """US0542. The Sprint Goal verdict was recorded by whoever ran the close - which, on an
+    author-run sprint, is the author. The two-role rule protects every unit's sign-off and
+    left the goal judgement itself unprotected."""
+
+    CLAUSES = ["seams have owners", "the goal is judged clause by clause"]
+
+    def test_a_panel_including_the_author_is_refused(self) -> None:
+        with self.assertRaises(ValueError) as caught:
+            _load().goal_panel(".", self.CLAUSES, ["qa", "builder"], "builder")
+        self.assertIn("author", str(caught.exception))
+
+    def test_a_panel_excluding_the_author_returns_a_verdict_per_clause(self) -> None:
+        r = _load().goal_panel(".", self.CLAUSES, ["qa", "product"], "builder",
+                              {"seams have owners": {"qa": {"verdict": "achieved",
+                                                            "evidence": "US0538 passes"},
+                                                     "product": "achieved"},
+                               "the goal is judged clause by clause":
+                                   {"qa": "missed", "product": "missed"}})
+        self.assertEqual([c["verdict"] for c in r["clauses"]], ["achieved", "missed"])
+        self.assertEqual(r["verdict"], "partial")
+
+    def test_a_clause_carries_the_evidence_the_panel_relied_on(self) -> None:
+        r = _load().goal_panel(".", ["one clause"], ["qa"], "builder",
+                              {"one clause": {"qa": {"verdict": "achieved",
+                                                     "evidence": "the fixture reproduces"}}})
+        self.assertEqual(r["clauses"][0]["evidence"], ["the fixture reproduces"])
+
+    def test_disagreement_is_partial_rather_than_the_majority_word(self) -> None:
+        """A clause one seat says was missed is not achieved because two others disagree -
+        reporting the majority would let a dissent vanish into a number."""
+        r = _load().goal_panel(".", ["one clause"], ["a", "b", "c"], "builder",
+                              {"one clause": {"a": "achieved", "b": "achieved", "c": "missed"}})
+        self.assertEqual(r["clauses"][0]["verdict"], "partial")
+
+    def test_an_unknown_verdict_word_is_refused(self) -> None:
+        with self.assertRaises(ValueError):
+            _load().goal_panel(".", ["one clause"], ["qa"], "builder",
+                              {"one clause": {"qa": "mostly"}})
+
+    def test_an_empty_panel_or_no_clauses_is_refused(self) -> None:
+        with self.assertRaises(ValueError):
+            _load().goal_panel(".", ["one clause"], [], "builder")
+        with self.assertRaises(ValueError):
+            _load().goal_panel(".", [], ["qa"], "builder")
+
+
 if __name__ == "__main__":
     unittest.main()

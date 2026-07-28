@@ -666,6 +666,83 @@ def record_sprint_review(repo_root: Path | str, units: list[str], reviewer: str,
     return written
 
 
+#: A goal clause's possible verdicts. `partial` exists because a goal with more than one clause
+#: is routinely reached in part, and collapsing that to achieved-or-missed forces the closer to
+#: overstate or understate. The vocabulary is closed: an unrecognised verdict is refused rather
+#: than stored, or the close would report a word nothing downstream can read.
+GOAL_VERDICTS = ("achieved", "partial", "missed")
+
+
+def goal_panel(repo_root: Path | str, clauses: list[str], seats: list[str], author: str,
+               verdicts: dict | None = None) -> dict:
+    """A per-clause verdict on the Sprint Goal from a panel of seats the AUTHOR IS NOT ON.
+
+    The author is REFUSED from the panel rather than warned about. A warning is advice, and the
+    whole value of the judgement is that it was not made by the person whose work is being
+    judged - the two-role rule at close exists for the same reason, and a goal verdict the
+    author signed is the one place that rule was never applied.
+
+    Each clause carries the EVIDENCE the panel relied on, not only its word. A verdict with no
+    evidence behind it cannot be reviewed later, and this project has twice recorded a
+    completion claim that reading the evidence would have refused.
+    """
+    clauses = [c.strip() for c in (clauses or []) if str(c).strip()]
+    if not clauses:
+        raise ValueError("a goal panel needs at least one clause to judge - a goal nobody broke "
+                         "into clauses is judged as one clause, never as none")
+    panel = [s.strip() for s in (seats or []) if str(s).strip()]
+    if not panel:
+        raise ValueError("a goal panel needs at least one seat - an empty panel returns a "
+                         "verdict nobody gave")
+    if not (author or "").strip():
+        raise ValueError("a goal panel needs the AUTHOR named, so it can prove the author is "
+                         "not on it - an unnamed author cannot be excluded")
+    conflicted = [s for s in panel if _id(s) == _id(author)]
+    if conflicted:
+        raise ValueError(
+            f"goal panel refused: {', '.join(conflicted)} is the author - a panel including the "
+            f"author is the author marking their own homework, which is the one thing this "
+            f"judgement exists to prevent. Convene seats outside the authoring context")
+    supplied = verdicts or {}
+    out: list[dict] = []
+    for clause in clauses:
+        given = supplied.get(clause) or {}
+        rows = []
+        for seat in panel:
+            entry = given.get(seat)
+            if entry is None:
+                rows.append({"seat": seat, "verdict": None, "evidence": ""})
+                continue
+            if isinstance(entry, str):
+                entry = {"verdict": entry, "evidence": ""}
+            v = str(entry.get("verdict", "")).strip().lower()
+            if v not in GOAL_VERDICTS:
+                raise ValueError(
+                    f"{seat} returned {entry.get('verdict')!r} for {clause!r} - a clause verdict "
+                    f"must be one of {', '.join(GOAL_VERDICTS)}")
+            rows.append({"seat": seat, "verdict": v,
+                         "evidence": str(entry.get("evidence", "")).strip()})
+        answered = [r for r in rows if r["verdict"]]
+        if not answered:
+            verdict = None
+        elif all(r["verdict"] == "achieved" for r in answered):
+            verdict = "achieved"
+        elif all(r["verdict"] == "missed" for r in answered):
+            verdict = "missed"
+        else:
+            # Disagreement is PARTIAL, never the majority word. A clause one seat says was
+            # missed is not achieved because two others disagree; reporting the majority would
+            # let a dissent vanish into a number.
+            verdict = "partial"
+        out.append({"clause": clause, "verdict": verdict, "seats": rows,
+                    "evidence": [r["evidence"] for r in rows if r["evidence"]],
+                    "unanswered": [r["seat"] for r in rows if not r["verdict"]]})
+    return {"author": author, "panel": panel, "clauses": out,
+            "verdict": ("achieved" if out and all(c["verdict"] == "achieved" for c in out)
+                        else "missed" if out and all(c["verdict"] == "missed" for c in out)
+                        else "partial")}
+
+
 def sprint_reviews(repo_root: Path | str) -> list[dict]:
     return _read_rows(sprint_review_path(repo_root), _SPRINT_COLS)
 
@@ -1657,6 +1734,11 @@ CALLER_FIELD = "Caller"
 CALLER_UNNAMED = "caller-unnamed"
 #: A consumer is named but does not resolve to anything in the tree.
 CALLER_UNRESOLVED = "caller-unresolved"
+#: The unit declares code, but every declared file was subtracted as its own proof, so the
+#: mechanism surface came out empty and the check cannot speak for the unit either way. Reported
+#: rather than skipped: a silent pass on a unit nothing judged is indistinguishable from a pass
+#: the unit earned, and that is how a vacuous criterion survived the check built to catch it.
+CALLER_INDETERMINATE = "caller-indeterminate"
 
 _CALLER_RE = re.compile(rf"^\s*[-*]\s*\*\*{CALLER_FIELD}s?:?\*\*:?\s*(.+?)\s*$", re.I)
 #: Path-, command- and identifier-shaped runs inside a declaration, so `the commit gate
@@ -1868,6 +1950,24 @@ def caller_findings(repo_root: Path | str, units: list[str]) -> list[dict]:
         text = sdlc_md.read_text_safe(Path(hit[0]))
         mech = mechanism_files(text)
         if not mech:
+            # A unit whose declared surface is documentation, or only its own tests, adds no
+            # mechanism and is legitimately not asked for one. A unit that DECLARED code and
+            # had every entry subtracted as its own proof is a different thing entirely: the
+            # subtraction emptied the surface, so the check judges nothing and would exit 0
+            # however the Caller declaration were written - delete it, or replace it with text
+            # naming no consumer, and the verdict is unchanged. That is a vacuous criterion,
+            # which is the exact defect this check exists to remove.
+            code = [f for f in sdlc_md.affects_files(text)
+                    if f.strip().strip("`") and not f.strip().strip("`").endswith(".md")]
+            if code:
+                findings.append({
+                    "unit": uid, "kind": CALLER_INDETERMINATE, "criteria": [],
+                    "detail": (f"{uid} declares {', '.join(code)} but every one of those files "
+                               f"is named by its own verifiers, so the mechanism surface is "
+                               f"empty and this check judges nothing. Point a criterion at the "
+                               f"behaviour rather than at the file, or declare the mechanism "
+                               f"the unit adds - a check that cannot fail is not evidence."),
+                })
             continue
         declared = caller_declarations(text)
         surface = ", ".join(mech)

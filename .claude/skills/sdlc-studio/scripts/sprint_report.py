@@ -528,6 +528,20 @@ def _component_review(ctx: dict) -> dict:
     """
     state = ctx.get("state") or {}
     rounds = [r for r in (state.get(run_state.REVIEW_ROUNDS) or []) if isinstance(r, dict)]
+    # A round that CARRIES a duration is measured directly, and a sum of durations is exact -
+    # it counts the review itself, not merely the gaps between the stamps. The stamp-span
+    # fallback below stays for rounds recorded before durations existed, and stays labelled a
+    # lower bound. Mixed is still a lower bound: the untimed rounds contribute nothing, and
+    # counting them as zero is what made review look free while it was the largest cost.
+    durations = [d for d in (run_state.round_duration(r) for r in rounds) if d is not None]
+    if durations:
+        every = len(durations) == len(rounds)
+        return {"seconds": float(sum(durations)), "measured": True,
+                "bound": "exact" if every else "lower",
+                "source": (f"{len(durations)} recorded round duration(s)"
+                           + ("" if every else f" of {len(rounds)} round(s); the rest are "
+                                               f"UNMEASURED and contribute nothing")),
+                "why": ""}
     stamps = sorted(t for t in (telemetry._parse_iso(r.get("recorded_at"))  # noqa: SLF001
                                 for r in rounds) if t is not None)
     source = "the recorded review-round stamps"

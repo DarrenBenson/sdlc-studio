@@ -1,6 +1,7 @@
 # BG0379: caller-check silently passes a unit whose mechanism surface its own verifier emptied, so US0512's criterion cannot fail
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; the indeterminate branch mutation-killed)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, sdlc-studio/stories/US0512-a-unit-adding-a-mechanism-carries-an-acceptance.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -22,10 +23,24 @@ Two candidates, and the choice needs a clear head rather than a sixth repair in 
 
 ## Acceptance Criteria
 
-No acceptance criterion could be derived from this finding's evidence: `steps` carries fewer than 5 words of substance, so nothing here states what fixed would look like. Whoever picks this up agrees the contract with the author before starting - this is a stated gap, not a criterion to tick.
+### AC1: a mechanism surface emptied by the unit's own verifier is REPORTED, not skipped
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerIndeterminateTests::test_a_surface_emptied_by_its_own_verifier_is_reported_not_skipped
+- **Verified:** yes (2026-07-28)
+
+### AC2: the verdict changes when the Caller declaration does, so the check's greenness means something
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerIndeterminateTests::test_the_verdict_changes_when_the_declaration_does
+- **Verified:** yes (2026-07-28)
+
+### AC3: a documentation-only unit is still not asked for a caller, so the carve-out does not widen into firing on everything
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerIndeterminateTests::test_a_documentation_only_unit_is_still_not_asked_for_a_caller
+- **Verified:** yes (2026-07-28)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 (round 3 review of RUN-01KYKVZM, run wf_95377bad) | Filed |
+| 2026-07-28 | Claude Opus 5 | Criteria authored at delivery; executable since BG0356/BG0360. |
