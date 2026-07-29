@@ -5340,6 +5340,136 @@ def _render_preflight(data: dict) -> None:
         print(f"      -> {b['remedy']}")
 
 
+#: The chain steps a dry run performs against a SCRATCH COPY. `gate` is absent deliberately:
+#: it is read-only already and the preflight has just run it against the real tree, so running
+#: it again in the copy would double the one genuinely expensive step of a preview whose whole
+#: point is to be cheap.
+DRY_RUN_ACTION_STEPS = ("retro-validate", "retro-extract", "lessons-summary",
+                        "handoff", "reconcile", "review-anchor")
+
+
+def close_dry_run(root, retro_id: str | None = None) -> dict:
+    """Every refusal all seven close steps would raise, in ONE pass, writing nothing.
+
+    `close_preflight` answers the PREREQUISITES and is read-only by construction, but three of
+    the chain's steps exist to DO something and so cannot be judged without doing it - and one
+    of those, the retro's CONTENT, is the class that actually refused three closes in a row.
+    A preview that performed half a close would be worse than none, so the action steps run
+    against a scratch copy of the workspace instead: the real tree is never opened for writing.
+
+    Returns `{"clean", "steps", "blockers", "unevaluated", "scratch"}`. `clean` is true only
+    when nothing refused AND nothing was left unevaluated - a pass with an unanswered step is
+    not a clean pass, and reporting it as one would make the whole preview untrustworthy in
+    exactly the direction that matters.
+    """
+    import shutil  # noqa: PLC0415 - local; only this path copies a tree
+    import tempfile  # noqa: PLC0415
+    root = Path(root)
+    steps: list[dict] = []
+
+    def note(step: str, status: str, detail: str = "", remedy: str = "") -> None:
+        steps.append({"step": step, "status": status, "detail": detail, "remedy": remedy})
+
+    pre = close_preflight(root, retro_id)
+    for blocker in pre["blockers"]:
+        note(blocker["stage"], "refuse", blocker.get("detail", ""), blocker.get("remedy", ""))
+    if pre["ready"]:
+        note("prerequisites", "ok", "every prerequisite the preflight reads is met")
+
+    scratch = None
+    try:
+        scratch = Path(tempfile.mkdtemp(prefix="close_dry_run_"))
+        shutil.copytree(root / "sdlc-studio", scratch / "sdlc-studio", symlinks=True)
+    except OSError as exc:
+        sdlc_md.debug("sprint.close_dry_run.copy", exc)
+        for step in DRY_RUN_ACTION_STEPS:
+            note(step, "unevaluated",
+                 f"the scratch copy could not be made ({exc}), so this step was not run",
+                 "free some disk or set TMPDIR, then re-run the dry run")
+        return _dry_run_result(steps, scratch)
+
+    try:
+        state = run_state.read(scratch) or {}
+        rid = retro_id or _dry_run_retro(scratch, state, note)
+        for step in DRY_RUN_ACTION_STEPS:
+            if rid is None and step.startswith("retro"):
+                note(step, "unevaluated", "no retro to run this step against",
+                     "name one with --retro, or let `close` scaffold it")
+                continue
+            fn = globals().get("_close_" + step.replace("-", "_"))
+            if fn is None:
+                note(step, "unevaluated", "no read-only probe exists for this step", "")
+                continue
+            try:
+                ok, detail, remedy = fn(scratch, rid, run_state.read(scratch) or state)
+            except Exception as exc:  # noqa: BLE001 - a step that explodes is UNEVALUATED
+                # Never "ok". A step whose probe failed for a reason peculiar to the copy has
+                # told us nothing about the real close, and calling that a pass is the single
+                # way this preview could actively mislead.
+                sdlc_md.debug(f"sprint.close_dry_run.{step}", exc)
+                note(step, "unevaluated", f"the probe raised {exc!r} in the scratch copy",
+                     f"run the step directly against the repository to see its real verdict")
+            else:
+                note(step, "ok" if ok else "refuse", detail, remedy)
+    finally:
+        if scratch:
+            shutil.rmtree(scratch, ignore_errors=True)
+    return _dry_run_result(steps, scratch)
+
+
+def _dry_run_retro(scratch: Path, state: dict, note) -> str | None:
+    """Scaffold a retro IN THE COPY so its content can be judged before one exists.
+
+    This is the whole reason a dry run beats the preflight. `close` mints the retro itself and
+    then refuses on what it contains, so the content class cannot be reported by anything that
+    declines to create one - which is why three closes in a row each discovered it separately.
+    """
+    import artifact  # noqa: PLC0415 - deferred, like the chain's other siblings
+    title = state.get("sprint_goal") or state.get("run_id") or "dry run"
+    try:
+        rc, out = _run_cli(artifact.main, ["new", "--type", "retro", "--title", str(title)[:120],
+                                           "--root", str(scratch)])
+    except Exception as exc:  # noqa: BLE001
+        sdlc_md.debug("sprint._dry_run_retro", exc)
+        note("retro-scaffold", "unevaluated", f"a retro could not be scaffolded ({exc})", "")
+        return None
+    match = re.search(r"\bRETRO\d{4}\b", out or "")
+    if rc != 0 or not match:
+        note("retro-scaffold", "unevaluated",
+             f"a retro could not be scaffolded in the copy: {(out or '').strip()[:200]}", "")
+        return None
+    note("retro-scaffold", "ok",
+         f"{match.group(0)} scaffolded IN THE COPY - the steps below judge the content `close` "
+         f"would mint, so a content gap is reported before the real retro exists")
+    return match.group(0)
+
+
+def _dry_run_result(steps: list[dict], scratch) -> dict:
+    blockers = [s for s in steps if s["status"] == "refuse"]
+    unevaluated = [s for s in steps if s["status"] == "unevaluated"]
+    return {"clean": not blockers and not unevaluated, "steps": steps,
+            "blockers": blockers, "unevaluated": unevaluated,
+            "scratch": str(scratch) if scratch else None}
+
+
+def dry_run_report(result: dict) -> str:
+    """The dry run as an operator reads it: every step, its verdict, and what to do."""
+    icon = {"ok": "ok  ", "refuse": "STOP", "unevaluated": "??  "}
+    lines = ["close --dry-run: nothing was written."]
+    for step in result["steps"]:
+        lines.append(f"  {icon.get(step['status'], '?')} {step['step']}: "
+                     f"{(step['detail'] or step['status']).splitlines()[0][:160]}")
+        if step["remedy"]:
+            lines.append(f"       -> {step['remedy'].splitlines()[0][:160]}")
+    if result["clean"]:
+        lines.append("dry run CLEAN - every step was evaluated and none refused.")
+    else:
+        lines.append(f"dry run: {len(result['blockers'])} refusal(s), "
+                     f"{len(result['unevaluated'])} step(s) UNEVALUATED. An unevaluated step "
+                     f"is not a passing one.")
+    return "\n".join(lines)
+
+
 def _report_preflight(root, retro_id: str | None) -> dict:
     """Print every unmet prerequisite to stderr. Returns the pre-flight result.
 
@@ -5820,6 +5950,12 @@ def cmd_close(args: argparse.Namespace) -> int:
     # placed after them reported nothing whenever one of them fired - which is exactly the serial
     # discovery this exists to end, reintroduced by its own placement. Reported, never a refusal:
     # the refusals below and the chain after them still decide what stops the close.
+    if getattr(args, "dry_run", False):
+        # Before `_record_close_attempt`: a preview is not an attempt, and counting it as one
+        # would make the attempt trend report the tool being used carefully as a tool failing.
+        result = close_dry_run(root, args.retro)
+        print(dry_run_report(result))
+        return 0 if result["clean"] else 1
     pre = _report_preflight(root, args.retro)
     trend = _record_close_attempt(root, pre)
     if trend:
@@ -7256,6 +7392,12 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the batch retro this close validates and gates on. Omit it and close "
                          "SCAFFOLDS one (id + template + index row) via the deterministic path, "
                          "then stops so you fill it and re-run with the id it prints")
+    cl.add_argument("--dry-run", dest="dry_run", action="store_true",
+                    help="report EVERY refusal all seven steps would raise, in one pass, and "
+                         "write nothing. The action steps run against a scratch copy of the "
+                         "workspace, so the retro's CONTENT is judged before a retro exists - "
+                         "the class a read-only preflight cannot reach. A step that could not "
+                         "be evaluated is reported as such and the pass is not called clean")
     cl.add_argument("--goal-verdict", dest="goal_verdict",
                     choices=("achieved", "partial", "missed"), default=None,
                     help="record the Sprint Goal judgement as part of the close")

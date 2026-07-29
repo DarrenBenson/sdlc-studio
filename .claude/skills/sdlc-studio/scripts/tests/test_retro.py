@@ -3091,5 +3091,74 @@ class OverAppetiteReportTests(RetroBase):
         self.assertIsNone(retro.appetite_overage_note(str(self.root)))
 
 
+class ScaffoldPassesItsValidatorTests(unittest.TestCase):
+    """US0558. The shipped template omitted `## Carried lessons` entirely and left every
+    other checked section as a `{{placeholder}}`, so a freshly scaffolded retro failed its own
+    validator three ways. RUN-01KYMJEM learned the carried-set shape and the `fixed-in:` /
+    `declined:` vocabulary from three separate rejections, each after a full gate run.
+
+    The template now DEMONSTRATES each shape. That trades one failure for another - a retro
+    nobody filled in would pass - so every worked example carries a marker and an unreplaced
+    one is reported."""
+
+    TEMPLATE = (Path(__file__).resolve().parents[2] / "templates" / "reviews" / "retro.md")
+
+    def _scaffold(self) -> Path:
+        """The template as `artifact.py new` lands it: front matter filled, body verbatim."""
+        d = Path(tempfile.mkdtemp(prefix="retro_scaffold_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        (d / "sdlc-studio" / "retros").mkdir(parents=True)
+        body = self.TEMPLATE.read_text(encoding="utf-8")
+        body = body.replace("{{retro_id}}", "9998").replace("{{sprint_title}}", "a sprint")
+        (d / "sdlc-studio" / "retros" / "RETRO9998-a-sprint.md").write_text(body,
+                                                                           encoding="utf-8")
+        return d
+
+    def test_the_scaffolded_retro_passes_its_own_validator(self) -> None:
+        root = self._scaffold()
+        # The carried-set demand only applies where the project has more lessons than the set
+        # can hold, so it is forced on: a fixture with no lessons store would skip the very
+        # check this story exists to satisfy, and the test would pass having proved nothing.
+        with mock.patch.object(retro, "curation_applies", lambda _root: (True, 257)):
+            res = retro.validate(root, "RETRO9998")
+        self.assertTrue(res["ok"], f"the scaffold still fails its own validator: {res['errors']}")
+
+    def test_the_carried_lessons_section_demonstrates_the_accepted_shape(self) -> None:
+        root = self._scaffold()
+        text = (root / "sdlc-studio" / "retros" / "RETRO9998-a-sprint.md").read_text("utf-8")
+        carried = retro.carried_in(text)
+        self.assertTrue(carried, "the section the validator demands is missing from the template")
+        self.assertEqual(retro.carried_max(root), len(carried),
+                         "the demonstration shows exactly the number the limit allows")
+        body = retro.sections(text).get(retro.CARRIED_SECTION, [])
+        self.assertTrue(any(line.lstrip().startswith("-") for line in body),
+                        "bullets are the accepted shape; the numbered list was rejected")
+
+    def test_the_actions_table_demonstrates_the_disposition_vocabulary(self) -> None:
+        root = self._scaffold()
+        text = (root / "sdlc-studio" / "retros" / "RETRO9998-a-sprint.md").read_text("utf-8")
+        states = {r["state"] for r in retro.dispositions_in(text)}
+        self.assertEqual({"filed", "fixed", "declined"}, states,
+                         "all three accepted dispositions are shown filled in, so none is "
+                         "first met in a refusal")
+
+    def test_unreplaced_demonstration_content_is_reported(self) -> None:
+        root = self._scaffold()
+        text = (root / "sdlc-studio" / "retros" / "RETRO9998-a-sprint.md").read_text("utf-8")
+        left = retro.demonstration_leftovers(text)
+        self.assertGreaterEqual(len(left), 6, "every worked example carries the marker")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = retro.main(["--root", str(root), "validate", "--id", "RETRO9998"])
+        self.assertEqual(0, rc, "structurally valid - the report is not a refusal")
+        self.assertIn("EXAMPLES", out.getvalue(),
+                      "a retro that is only the template must not read as a filled-in one")
+
+    def test_a_filled_in_retro_reports_no_leftovers(self) -> None:
+        """The discriminating half: the marker must find the template's examples and nothing
+        else, or the warning fires for ever and gets ignored."""
+        self.assertEqual([], retro.demonstration_leftovers(FULL))
+
+
 if __name__ == "__main__":
     unittest.main()

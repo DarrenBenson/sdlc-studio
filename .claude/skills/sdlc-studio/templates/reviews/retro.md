@@ -33,7 +33,20 @@ Related: reference-sprint.md, help/lessons.md
 
 ## Lessons
 
+- EXAMPLE - replace this. A lesson is a transferable claim with the evidence that produced it, not a task: "a test that asserts a label rather than the value proves the tool named its state, not that it reached it - two of this sprint's three mutation survivors were exactly that". <!-- example -->
 - {{lesson}}   <!-- record it: lessons add (project tier). Promote with --global only what generalises beyond this repo -->
+
+## Carried lessons
+
+The 5 that matter most for the NEXT batch, chosen now rather than ranked from the whole
+store. A ranking is a fact about the past; this is a decision, re-made every retro. Bullets,
+not a numbered list, and drop one for each you add (`lessons carry --displaces`).
+
+- EXAMPLE - replace this. A mechanism that reaches no caller is inert, however well it is tested. <!-- example -->
+- EXAMPLE - replace this. An absence is not an answer: an empty result and an unanswerable question are different facts. <!-- example -->
+- EXAMPLE - replace this. A repair breaks its neighbours, and a rename is cross-unit coupling. <!-- example -->
+- EXAMPLE - replace this. An enumerated list silently exempts what it forgot. <!-- example -->
+- EXAMPLE - replace this. Verify the premise before building on it. <!-- example -->
 
 ## Estimate vs actual
 
@@ -82,9 +95,15 @@ that repaired eleven findings reads as eleven fixed, not eleven declined.
 To say "nothing worth raising", say so in a row and give the reason. An empty table is
 not an answer.
 
+All three accepted dispositions are shown below, filled in rather than described - the
+vocabulary is exact and a refusal is a poor place to meet it for the first time. Replace
+every EXAMPLE row; a row left in place is reported at the close.
+
 | Finding | Disposition |
 | --- | --- |
-| {{finding}} | {{BG0123 / CR0456 / fixed-in: a1b2c3d / declined: why not}} |
+| EXAMPLE - replace this. A defect worth its own artefact | BG0123 |
+| EXAMPLE - replace this. A defect repaired inside this sprint | fixed-in: a1b2c3d |
+| EXAMPLE - replace this. A finding not worth acting on | declined: the cost lands on a path this project does not use |
 
 <!-- file one with: scripts/file_finding.py · check with: scripts/retro.py dispose --id RETROxxxx -->
 

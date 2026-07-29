@@ -1,6 +1,6 @@
 # US0533: The gate attributes its seconds per lane, so a lane that becomes the dominant cost is visible without profiling it by hand
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0465
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the gate reports
 - **Then** each lane's own seconds are named beside it and the dominant lane is identified, so a lane becoming the cost is visible without profiling by hand
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::LaneCostAttributionTests::test_each_lane_reports_its_own_seconds
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

@@ -13,6 +13,7 @@ import re
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 SCRIPT_PATH = Path(__file__).resolve().parent.parent / "reconcile.py"
@@ -3503,6 +3504,208 @@ class RelationshipCellsAreNotOverwrittenTests(unittest.TestCase):
         text = ("# BG0001: b\n\n> **Status:** Fixed\n\n## Summary\n\n"
                 "The old doc said:\n\n> **Status:** archived\n")
         self.assertEqual(reconcile._file_field_values(text)["status"], "Fixed")
+
+
+class CorpusReadOnceTests(unittest.TestCase):
+    """US0531/US0532 (CR0465). Every sweep detector walks the artefact tree, and several resolve
+    an id or list a request's children unit by unit - each of those a fresh walk that opens and
+    reads every file. One `reconcile detect` over this repository opened 777,732 files and took
+    22 seconds, paid on every commit because reconcile is a gate lane.
+
+    The reads are counted, not timed. A timing assertion on a shared machine is a flake; the
+    read count is the thing that was quadratic and it is deterministic."""
+
+    @staticmethod
+    def _workspace(root: Path, n_units: int) -> None:
+        ws = root / "sdlc-studio"
+        for rel in ("stories", "epics", "bugs"):
+            (ws / rel).mkdir(parents=True, exist_ok=True)
+        (ws / "epics" / "EP0001-parent.md").write_text(
+            "# EP0001: parent\n\n> **Status:** In Progress\n", encoding="utf-8")
+        for i in range(1, n_units + 1):
+            (ws / "stories" / f"US{i:04d}-unit.md").write_text(
+                f"# US{i:04d}: unit {i}\n\n> **Status:** Done\n> **Epic:** EP0001\n",
+                encoding="utf-8")
+
+    @staticmethod
+    def _count_reads(fn):
+        """How many artefact files `fn` opens. Patched on the Path class the walkers use."""
+        import pathlib
+        real = pathlib.Path.read_text
+        seen = []
+
+        def counting(self, *a, **kw):
+            seen.append(str(self))
+            return real(self, *a, **kw)
+
+        pathlib.Path.read_text = counting
+        try:
+            fn()
+        finally:
+            pathlib.Path.read_text = real
+        return len([p for p in seen if p.endswith(".md")])
+
+    def _sweep(self, root: Path, n_units: int):
+        from lib import sdlc_md
+        self._workspace(root, n_units)
+
+        def run() -> None:
+            with sdlc_md.corpus_cache():
+                for _ in range(6):     # six detectors, each of which walks the corpus
+                    sdlc_md.find_by_id(root, "US0001")
+                    sdlc_md.children_of(root, "EP0001")
+        return run
+
+    def test_the_corpus_is_read_once_per_run(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            reads = self._count_reads(self._sweep(root, 20))
+            # 21 artefacts. Two indexes are built (by-id and by-parent), each reading the
+            # corpus once, and the file walk behind them is itself memoised - so the ceiling
+            # is a small constant multiple of the corpus, NOT twelve walks of it.
+            self.assertLessEqual(reads, 21 * 3,
+                                 f"{reads} reads for 21 artefacts - the corpus is still being "
+                                 f"re-read per lookup")
+
+    def test_the_read_count_does_not_scale_with_unit_count(self) -> None:
+        """US0532. The pin. Uncached, doubling the units quadruples the reads, because each of
+        the 2N lookups walks a corpus of 2N files. Cached, doubling the units doubles them -
+        every file is still read, but only once. A return to per-unit reading is then a red
+        test rather than a slower gate nobody attributes."""
+        with tempfile.TemporaryDirectory() as d1, tempfile.TemporaryDirectory() as d2:
+            small = self._count_reads(self._sweep(Path(d1), 20))
+            large = self._count_reads(self._sweep(Path(d2), 40))
+        ratio = large / max(small, 1)
+        self.assertLess(ratio, 3.0,
+                        f"reads grew {ratio:.1f}x when the corpus doubled - that is per-unit "
+                        f"reading, not per-run")
+
+    def test_a_repeated_file_walk_reads_the_corpus_once(self) -> None:
+        """The file memo on its own. The sweep test above passes on the child index alone, so
+        without this the memo behind it could be deleted and nothing would redden - which is
+        what mutation testing found."""
+        from lib import sdlc_md
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._workspace(root, 15)
+            with sdlc_md.corpus_cache():
+                first = self._count_reads(lambda: sdlc_md.artifact_files("story", root))
+                second = self._count_reads(lambda: sdlc_md.artifact_files("story", root))
+        self.assertGreater(first, 0, "the first walk reads the corpus")
+        self.assertEqual(0, second, f"{second} reads on the second walk - the memo is not held")
+
+    def test_a_repeated_id_lookup_does_not_rewalk_the_corpus(self) -> None:
+        """The by-id index on its own. `find_by_id` was 650 calls, each a full walk of every
+        type.
+
+        The read COUNT cannot see this - the file memo has already removed the reads - so the
+        assertion is that the corpus is not WALKED again. Mutation testing is what exposed the
+        gap: deleting the index left the read-count test green, because the memo underneath it
+        was doing the work the test was crediting to the index.
+        """
+        from lib import sdlc_md
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._workspace(root, 15)
+            walks = []
+            real = sdlc_md.artifact_files
+
+            def counting(type_, repo_root):
+                walks.append(type_)
+                return real(type_, repo_root)
+
+            with unittest.mock.patch.object(sdlc_md, "artifact_files", counting), \
+                    sdlc_md.corpus_cache():
+                sdlc_md.find_by_id(root, "US0003")
+                built = len(walks)
+                for i in range(1, 16):
+                    sdlc_md.find_by_id(root, f"US{i:04d}")
+                after = len(walks) - built
+        self.assertGreater(built, 0, "the index is built on the first lookup")
+        self.assertEqual(0, after,
+                         f"{after} corpus walks for 15 further lookups - the index is not held")
+
+    def test_the_index_keeps_the_first_match_the_linear_walk_returned(self) -> None:
+        """Two files can carry one id - a corpus this project's duplicate-id guard exists to
+        REPORT, not to resolve. Until it is resolved the memo must return whichever file the
+        walk returned, or a fast lookup silently changes which of the two a caller edits."""
+        from lib import sdlc_md
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._workspace(root, 2)
+            (root / "sdlc-studio" / "stories" / "US0001-a-clashing-duplicate.md").write_text(
+                "# US0001: a clashing duplicate\n\n> **Status:** Done\n", encoding="utf-8")
+            self.assertEqual(
+                2, len([p for p in (root / "sdlc-studio" / "stories").glob("US0001*")]),
+                "the fixture must actually contain a duplicate, or this proves nothing")
+            uncached = sdlc_md.find_by_id(root, "US0001")
+            with sdlc_md.corpus_cache():
+                cached = sdlc_md.find_by_id(root, "US0001")
+        self.assertEqual(uncached, cached,
+                         "the index resolved a duplicate id differently from the walk")
+
+    def test_the_cache_answers_exactly_what_the_walk_answered(self) -> None:
+        """The load-bearing test, and the one a speed-up story is most likely to omit. A memo
+        that is fast and wrong is worse than the cost it removed."""
+        from lib import sdlc_md
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._workspace(root, 12)
+            uncached_children = sdlc_md.children_of(root, "EP0001")
+            uncached_find = sdlc_md.find_by_id(root, "US0007")
+            uncached_missing = sdlc_md.find_by_id(root, "US9999")
+            with sdlc_md.corpus_cache():
+                self.assertEqual(uncached_children, sdlc_md.children_of(root, "EP0001"))
+                self.assertEqual(uncached_find, sdlc_md.find_by_id(root, "US0007"))
+                self.assertEqual(uncached_missing, sdlc_md.find_by_id(root, "US9999"))
+            self.assertEqual(12, len(uncached_children), "the fixture must have children to compare")
+            self.assertIsNotNone(uncached_find)
+            self.assertIsNone(uncached_missing, "an absent id is absent under both paths")
+
+    def test_the_cache_is_off_unless_a_caller_opens_it(self) -> None:
+        """A memo that outlives its read serves a writer a stale corpus, and `reconcile apply`
+        sits beside the sweep this exists for. Off by default, and closed on the way out."""
+        from lib import sdlc_md
+        self.assertFalse(sdlc_md.corpus_cache_active())
+        with sdlc_md.corpus_cache():
+            self.assertTrue(sdlc_md.corpus_cache_active())
+        self.assertFalse(sdlc_md.corpus_cache_active())
+
+    def test_the_cache_closes_even_when_the_sweep_raises(self) -> None:
+        from lib import sdlc_md
+        with contextlib.suppress(RuntimeError), sdlc_md.corpus_cache():
+            raise RuntimeError("a detector blew up mid-sweep")
+        self.assertFalse(sdlc_md.corpus_cache_active(),
+                         "a leaked cache would serve every later write a stale corpus")
+
+    def test_a_nested_cache_does_not_replace_the_outer_one(self) -> None:
+        """A sweep that calls a helper which also takes the cache must not get a second, emptier
+        one - that would re-read the corpus and quietly undo the fix."""
+        from lib import sdlc_md
+        with sdlc_md.corpus_cache() as outer:
+            outer["probe"] = 1
+            with sdlc_md.corpus_cache() as inner:
+                self.assertIs(outer, inner)
+            self.assertTrue(sdlc_md.corpus_cache_active(),
+                            "the inner block must not close the outer cache")
+        self.assertFalse(sdlc_md.corpus_cache_active())
+
+    def test_a_trust_names_call_bypasses_the_cache_in_both_directions(self) -> None:
+        """`trust_names` yields `(path, None)` for a trusted file, so its result differs from an
+        ordinary walk's by construction. Serving one from the other's memo would hand a caller
+        the opposite of what it asked for."""
+        from lib import sdlc_md
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._workspace(root, 3)
+            with sdlc_md.corpus_cache():
+                plain = dict(sdlc_md.iter_artifact_files("story", root))
+                trusted = dict(sdlc_md.iter_artifact_files(
+                    "story", root, trust_names={"US0001-unit.md"}))
+                again = dict(sdlc_md.iter_artifact_files("story", root))
+        self.assertTrue(all(v is not None for v in plain.values()))
+        self.assertTrue(any(v is None for v in trusted.values()), "the elision must happen")
+        self.assertEqual(plain, again, "the trusted call must not poison the ordinary memo")
 
 
 if __name__ == "__main__":

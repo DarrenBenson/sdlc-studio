@@ -2876,7 +2876,13 @@ def cmd_gate(args: argparse.Namespace) -> int:
     else:
         for c in report["checks"]:
             mark = "PASS" if c["status"] == "pass" else ("FAIL" if c["blocking"] else "warn")
-            print(f"  [{mark}] {c['check']}: {c['detail']}")
+            # Each lane's OWN seconds, beside it. The total plus a dominant lane tells a reader
+            # where the worst of the cost went; it does not tell them what the second and third
+            # lanes cost, which is what a decision about where to spend effort needs. A lane
+            # that was not timed prints nothing rather than 0.0s - untimed is not instant.
+            secs = c.get("seconds")
+            stamp = f" [{secs:.1f}s]" if isinstance(secs, (int, float)) else ""
+            print(f"  [{mark}] {c['check']}{stamp}: {c['detail']}")
         # The gate's own cost, every run. A regression in gate time is absorbed silently
         # otherwise - nobody notices thirty seconds becoming forty - and the dominant lane
         # is what makes the number something a reader can act on rather than bisect.

@@ -379,6 +379,24 @@ def carried_errors(root, text: str) -> list[str]:
     return []
 
 
+#: The marker the shipped template puts on every worked example it demonstrates. An HTML
+#: comment, so `_real_bullets` strips it and the demonstration COUNTS as content - which is the
+#: point: the scaffold passes its own validator instead of teaching its shapes through three
+#: rejections. The trade is that a retro nobody filled in would then pass too, so the marker is
+#: also what `demonstration_leftovers` finds.
+DEMO_MARKER = "<!-- example -->"
+
+
+def demonstration_leftovers(text: str) -> list[str]:
+    """Every line of the shipped template's worked examples still sitting in this retro.
+
+    Reported, never an error. A structurally valid retro whose content is the template's is a
+    different failure from a malformed one, and conflating them would either block a legitimate
+    close or let an unfilled retro through in silence. Naming it lets the close say which."""
+    return [" ".join(line.split())[:120] for line in text.splitlines()
+            if DEMO_MARKER in line]
+
+
 def dispositions_in(text: str) -> list[dict]:
     """Every row of `## Actions raised`, with its disposition classified.
 
@@ -467,6 +485,9 @@ def validate(root, retro_id: str) -> dict:
         "id": retro_id,
         "path": str(path),
         "errors": errors,
+        # Reported alongside the verdict rather than folded into it - see
+        # `demonstration_leftovers`. A caller that ignores this key behaves exactly as before.
+        "demonstration": demonstration_leftovers(text),
         "lessons": lessons_in(text),
         "carried": carried_in(text),
         "findings": rows,
@@ -2728,6 +2749,15 @@ def cmd_validate(args) -> int:
             print(f"retro {res['id']}: FAIL")
             for e in res["errors"]:
                 print(f"  - {e}")
+        # On BOTH paths. A retro that is structurally fine and still holds the template's
+        # worked examples passes this check, so the only thing standing between that and a
+        # signed-off close is saying so out loud.
+        if res.get("demonstration"):
+            print(f"  ! {len(res['demonstration'])} line(s) are still the template's worked "
+                  f"EXAMPLES, not this sprint's content - replace them before the close reads "
+                  f"this as a filled-in retro:")
+            for line in res["demonstration"][:6]:
+                print(f"      {line}")
     return 0 if res["ok"] else 1
 
 

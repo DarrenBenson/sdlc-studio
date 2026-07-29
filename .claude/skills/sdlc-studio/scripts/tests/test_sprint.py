@@ -8272,6 +8272,157 @@ class CloseVerdictReuseTests(unittest.TestCase):
         self.assertEqual([], gate.recorded_verdicts)
 
 
+class CloseDryRunTests(unittest.TestCase):
+    """US0555. `close` runs seven steps and stops at the first unmet prerequisite; RUN-01KYMJEM
+    took three attempts, two of them stopping on a refusal, and each restart re-ran the steps
+    before it. `preflight` reports every prerequisite at once and always did - but it cannot
+    judge the retro's CONTENT before a retro exists, and that is precisely the class that
+    refused. The dry run performs the action steps against a scratch copy so it can."""
+
+    @staticmethod
+    def _steps(result: dict) -> dict:
+        return {s["step"]: s for s in result["steps"]}
+
+    def _repo(self) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="close_dry_"))
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        (d / "sdlc-studio" / "reviews").mkdir(parents=True)
+        (d / "sdlc-studio" / "reviews" / "LATEST.md").write_text("# anchor\n", encoding="utf-8")
+        (d / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
+            "run_id": "RUN-DRY", "batch": ["US0001"], "outcome": "running",
+            "sprint_goal": "a goal", "started_at": "2026-07-29T09:00:00Z"}), encoding="utf-8")
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        return d
+
+    @staticmethod
+    def _fingerprint(root: Path) -> list[tuple[str, int, float]]:
+        return sorted((str(p.relative_to(root)), p.stat().st_size, p.stat().st_mtime)
+                      for p in root.rglob("*") if p.is_file())
+
+    def _broken_retro(self, root: Path, retro_id: str = "RETRO9001") -> str:
+        """A retro that EXISTS and whose content is wrong - an undecided finding. Since US0558
+        the scaffold passes its own validator, so a content refusal has to be constructed
+        rather than assumed; a test that relied on the scaffold failing would now be asserting
+        the defect US0558 removed."""
+        (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "retros" / f"{retro_id}-broken.md").write_text(
+            f"# {retro_id}: a sprint\n\n## Delivered\n\n- US0001 - shipped\n\n"
+            "## What went well\n\n- it went well\n\n## What was hard / what stalled\n\n"
+            "- it was hard\n\n## Lessons\n\n- a real lesson, learned the hard way\n\n"
+            "## Actions raised\n\n| Finding | Disposition |\n| --- | --- |\n"
+            "| a finding nobody decided | |\n", encoding="utf-8")
+        return retro_id
+
+    def test_every_refusing_step_is_reported_not_only_the_first(self) -> None:
+        """The property the whole story is for: a close stops at its first refusal, a dry run
+        must not. Refusals from two different stages, in one pass."""
+        sprint = _load()
+        root = self._repo()
+        retro_id = self._broken_retro(root)
+        pre = sprint.close_preflight(root, retro_id)
+        self.assertGreater(len(pre["blockers"]), 1,
+                           "the fixture must produce several prerequisite gaps, or this test "
+                           "cannot tell 'every one' from 'the first one'")
+        result = sprint.close_dry_run(root, retro_id)
+        stages = [s["step"] for s in result["blockers"]]
+        # EVERY prerequisite the preflight found, by count and not merely by presence - a
+        # report that kept the first of each stage would still name the stages.
+        self.assertEqual([b["stage"] for b in pre["blockers"]], stages[:len(pre["blockers"])],
+                         "the dry run dropped prerequisite refusals the preflight had found")
+        self.assertIn("retro-validate", stages,
+                      "the undecided finding is a CONTENT gap, and it is reported in the same "
+                      "pass as the prerequisites above rather than on the next attempt")
+        self.assertGreater(len(result["blockers"]), len(pre["blockers"]),
+                           "the chain steps add refusals of their own; the pass covers both")
+
+    def test_retro_content_defects_are_reported_in_the_same_pass(self) -> None:
+        """What `preflight` cannot do. With no `--retro` given there is no retro to validate,
+        so a read-only pass says NOTHING about its content - not "fine", nothing. The dry run
+        scaffolds one in the copy and judges what `close` would actually mint, so the content
+        step has a verdict in the same pass as the prerequisites."""
+        sprint = _load()
+        root = self._repo()
+        pre = sprint.close_preflight(root, None)
+        self.assertNotIn("retro-validate", {b["stage"] for b in pre["blockers"]},
+                         "the preflight cannot reach the content class - that is the premise")
+        self.assertNotIn("retro-validate", {b["stage"] for b in pre["blockers"]})
+        steps = self._steps(sprint.close_dry_run(root))
+        self.assertEqual("ok", steps["retro-scaffold"]["status"])
+        self.assertIn("RETRO", steps["retro-scaffold"]["detail"])
+        self.assertIn(steps["retro-validate"]["status"], ("ok", "refuse"),
+                      "the content step is EVALUATED, which is the whole difference from a "
+                      "read-only preflight that cannot reach it at all")
+
+    def test_a_retro_whose_content_is_wrong_refuses_before_one_is_written(self) -> None:
+        """The discriminating half of the same property: the verdict tracks the content rather
+        than always reading ok. Since US0558 a scaffolded retro passes, so a test that only
+        watched the scaffold would pass whatever this step did."""
+        sprint = _load()
+        root = self._repo()
+        retro_id = self._broken_retro(root)
+        steps = self._steps(sprint.close_dry_run(root, retro_id))
+        self.assertEqual("refuse", steps["retro-validate"]["status"])
+        self.assertIn("not dispositioned", steps["retro-validate"]["detail"])
+
+    def test_the_dry_run_writes_nothing(self) -> None:
+        sprint = _load()
+        root = self._repo()
+        before = self._fingerprint(root)
+        sprint.close_dry_run(root)
+        self.assertEqual(before, self._fingerprint(root),
+                         "a preview that wrote to the real tree is a close, not a preview")
+
+    def test_the_scratch_copy_is_removed(self) -> None:
+        sprint = _load()
+        result = sprint.close_dry_run(self._repo())
+        self.assertIsNotNone(result["scratch"])
+        self.assertFalse(Path(result["scratch"]).exists(),
+                         "a dry run per close would otherwise leave a 14MB copy behind each time")
+
+    def test_a_clean_dry_run_predicts_a_close_that_does_not_refuse(self) -> None:
+        """`clean` has to mean something a caller can act on, so it is asserted against the
+        report rather than inferred: no refusal AND no unevaluated step."""
+        sprint = _load()
+        self.assertTrue(sprint._dry_run_result(
+            [{"step": "gate", "status": "ok", "detail": "", "remedy": ""}], None)["clean"])
+        self.assertFalse(sprint._dry_run_result(
+            [{"step": "gate", "status": "refuse", "detail": "", "remedy": ""}], None)["clean"])
+
+    def test_an_unevaluated_step_is_never_reported_as_passing(self) -> None:
+        """The direction this must fail in. A step whose probe blew up in the scratch copy has
+        said nothing about the real close; calling that a pass is the one way a preview could
+        actively mislead."""
+        sprint = _load()
+        result = sprint._dry_run_result(
+            [{"step": "handoff", "status": "unevaluated", "detail": "boom", "remedy": ""}], None)
+        self.assertFalse(result["clean"], "an unanswered step is not a passing one")
+        self.assertEqual([], result["blockers"])
+        self.assertEqual(1, len(result["unevaluated"]))
+        report = sprint.dry_run_report(result)
+        self.assertIn("UNEVALUATED", report)
+        self.assertNotIn("CLEAN", report)
+
+    def test_a_step_that_raises_in_the_copy_is_unevaluated_not_ok(self) -> None:
+        sprint = _load()
+        root = self._repo()
+
+        def explode(*_a, **_kw):
+            raise RuntimeError("the probe blew up")
+
+        with unittest.mock.patch.object(sprint, "_close_reconcile", explode):
+            steps = self._steps(sprint.close_dry_run(root))
+        self.assertEqual("unevaluated", steps["reconcile"]["status"])
+        self.assertIn("blew up", steps["reconcile"]["detail"])
+
+    def test_the_report_names_every_step_and_its_remedy(self) -> None:
+        sprint = _load()
+        result = sprint.close_dry_run(self._repo())
+        report = sprint.dry_run_report(result)
+        self.assertIn("nothing was written", report)
+        for step in sprint.DRY_RUN_ACTION_STEPS:
+            self.assertIn(step, report, f"{step} is missing from the report")
+
+
 class CloseCostReportTests(unittest.TestCase):
     """US0559. The close's own cost was recalled, never reported: RUN-01KYMJEM's `~32 minutes`
     was reconstructed afterwards from a timings file and a memory of how many attempts there

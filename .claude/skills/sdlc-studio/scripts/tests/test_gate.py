@@ -4510,6 +4510,74 @@ class WorkspaceRelevanceGranularityTests(unittest.TestCase):
                         "a file the suites genuinely open must stay relevant")
 
 
+class LaneCostAttributionTests(unittest.TestCase):
+    """US0533 (CR0465). The gate reported one total and named its dominant lane, which says
+    where the worst of the cost went but not what the second and third lanes cost - and that is
+    what a decision about where to spend effort needs. CR0465's own 25 seconds were invisible
+    for exactly this reason: nothing attributed gate seconds to a lane."""
+
+    @staticmethod
+    def _slow_registry():
+        import time as _t
+
+        def fast(_root):
+            return {"count": 0, "blocking": False, "detail": "quick"}
+
+        def slow(_root):
+            _t.sleep(0.05)
+            return {"count": 0, "blocking": False, "detail": "the expensive one"}
+
+        return {"fast": fast, "slow": slow}
+
+    def test_each_lane_reports_its_own_seconds(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir()
+            report = gate.run_gate(d, checks=self._slow_registry())
+        timed = {c["check"]: c["seconds"] for c in report["checks"] if "seconds" in c}
+        self.assertEqual({"fast", "slow"}, set(timed), "every lane carries its own seconds")
+        self.assertGreater(timed["slow"], timed["fast"],
+                           "the seconds must be the lane's own, not the run's")
+        self.assertEqual("slow", report["cost"]["dominant"],
+                         "and the dominant lane is named, so the number is actionable")
+
+    def test_a_lane_that_raised_is_still_timed(self) -> None:
+        """An error lane that dominated the run is exactly the one that needs naming."""
+        def boom(_root):
+            raise RuntimeError("lane exploded")
+
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir()
+            report = gate.run_gate(d, checks={"boom": boom})
+        self.assertEqual("error", report["checks"][0]["status"])
+        self.assertIsInstance(report["checks"][0]["seconds"], float)
+
+    def test_the_text_report_prints_each_lane_s_seconds(self) -> None:
+        """Recorded but unprinted is the state this was already in - the field had existed since
+        the cost report was added and no reader ever saw it. Asserted against the real renderer,
+        because "the data is in the dict" is precisely what was already true."""
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir()
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                gate.main(["--root", d, "--only", "duplicate-id,integrity"])
+            printed = out.getvalue()
+        lanes = [line for line in printed.splitlines() if line.lstrip().startswith("[")]
+        self.assertTrue(lanes, f"no lane lines in the report:\n{printed}")
+        for line in lanes:
+            with self.subTest(line=line):
+                self.assertRegex(line, r"\[\d+\.\d+s\]",
+                                 "a lane line with no seconds is the unprinted state")
+
+    def test_an_untimed_lane_prints_no_seconds_rather_than_zero(self) -> None:
+        """Untimed is not instant. A lane stamped `0.0s` because nobody measured it would send
+        a reader looking for cost anywhere but the lane that has it."""
+        row = {"check": "x", "status": "pass", "blocking": False, "detail": "d"}
+        secs = row.get("seconds")
+        self.assertEqual("", f" [{secs:.1f}s]" if isinstance(secs, (int, float)) else "")
+
+
 class CloseVerdictReuseTests(unittest.TestCase):
     """US0553. `suite_decision` already knew how to reuse a green verdict over an unchanged
     surface (US0493), and the commit hook already records one after a green run. The close did

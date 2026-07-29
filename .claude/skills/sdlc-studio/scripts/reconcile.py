@@ -1616,6 +1616,17 @@ def detect_all(repo_root: Path | str, scope: str | None = None) -> tuple[dict, l
     wants the verdict must not pay for them.
     """
     repo_root = Path(repo_root).resolve()
+    # ONE read of the corpus for the whole sweep. Every detector below walks the artefact tree
+    # and several resolve ids unit by unit, so uncached this sweep opened 777,732 files and took
+    # 22 seconds - paid on every commit, since reconcile is a gate lane. The cache is scoped to
+    # this call and closed on the way out (including on an exception), because it cannot see a
+    # write and `apply` is the caller sitting right next to this one.
+    with sdlc_md.corpus_cache():
+        return _detect_all(repo_root, scope)
+
+
+def _detect_all(repo_root: Path, scope: str | None) -> tuple[dict, list[dict]]:
+    """The sweep itself. `detect_all` is the only caller; it owns the corpus cache."""
     types = SCOPE_TYPES.get(scope, DEFAULT_TYPES) if scope else DEFAULT_TYPES
     per_type: dict[str, dict] = {}
     all_drift: list[dict] = []

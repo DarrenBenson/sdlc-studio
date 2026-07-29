@@ -1,6 +1,6 @@
 # US0531: The sweep detectors read the artefact corpus once per run and share it, so the cost is paid once rather than per unit
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0465
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the sweep detectors execute
 - **Then** the artefact corpus is opened once for the run rather than once per unit, and the opens do not scale with the unit count
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::CorpusReadOnceTests::test_the_corpus_is_read_once_per_run
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

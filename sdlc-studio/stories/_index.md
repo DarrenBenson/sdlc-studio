@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 45 |
+| Ready | 40 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 5 |
+| Review | 10 |
 | Done | 507 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -441,9 +441,9 @@
 | [US0528](US0528-a-draft-story-declaring-a-file-it-will.md) | A Draft story declaring a file it will create is not warned as unresolvable, since that is the normal case | Done | EP0180 | 2026-07-28 | 2026-07-28 |
 | [US0529](US0529-init-creates-the-issues-directory-and-its-index.md) | init creates the issues directory and its index, so the issue type is usable on a new project | Done | EP0180 | 2026-07-28 | 2026-07-28 |
 | [US0530](US0530-the-artefact-tree-init-creates-is-derived-from.md) | The artefact tree init creates is derived from the shipped type list, so a new type is never silently omitted | Done | EP0180 | 2026-07-28 | 2026-07-28 |
-| [US0531](US0531-the-sweep-detectors-read-the-artefact-corpus-once.md) | The sweep detectors read the artefact corpus once per run and share it, so the cost is paid once rather than per unit | Ready | EP0181 | 2026-07-28 | 2026-07-28 |
-| [US0532](US0532-the-corpus-read-is-measured-by-a-test.md) | The corpus read is measured by a test that fails if it grows back to per-unit, so the fix cannot silently regress | Ready | EP0181 | 2026-07-28 | 2026-07-28 |
-| [US0533](US0533-the-gate-attributes-its-seconds-per-lane-so.md) | The gate attributes its seconds per lane, so a lane that becomes the dominant cost is visible without profiling it by hand | Ready | EP0181 | 2026-07-28 | 2026-07-28 |
+| [US0531](US0531-the-sweep-detectors-read-the-artefact-corpus-once.md) | The sweep detectors read the artefact corpus once per run and share it, so the cost is paid once rather than per unit | Review | EP0181 | 2026-07-28 | 2026-07-28 |
+| [US0532](US0532-the-corpus-read-is-measured-by-a-test.md) | The corpus read is measured by a test that fails if it grows back to per-unit, so the fix cannot silently regress | Review | EP0181 | 2026-07-28 | 2026-07-28 |
+| [US0533](US0533-the-gate-attributes-its-seconds-per-lane-so.md) | The gate attributes its seconds per lane, so a lane that becomes the dominant cost is visible without profiling it by hand | Review | EP0181 | 2026-07-28 | 2026-07-28 |
 | [US0534](US0534-a-recorded-review-round-carries-a-duration-and.md) | A recorded review round carries a duration, and a round recorded without one says so rather than counting as zero | Done | EP0182 | 2026-07-28 | 2026-07-28 |
 | [US0535](US0535-the-overhead-ratio-consumes-recorded-review-durations-and.md) | The overhead ratio consumes recorded review durations, and states it is a lower bound only while a component is genuinely unmeasured | Done | EP0182 | 2026-07-28 | 2026-07-28 |
 | [US0536](US0536-the-guidance-states-the-fragment-path-as-the.md) | The guidance states the fragment path as the rule for a lane, so an author following it cannot collide with a sibling | Done | EP0183 | 2026-07-28 | 2026-07-28 |
@@ -465,10 +465,10 @@
 | [US0552](US0552-the-close-reports-how-many-blockers-it-filed.md) | The close reports how many blockers it filed and how many distinct causes they represent, so a fan-out is visible when it happens | Done | EP0188 | 2026-07-28 | 2026-07-28 |
 | [US0553](US0553-a-close-phase-commit-over-an-unchanged-test.md) | A close-phase commit over an unchanged test-relevant surface reuses the gate verdict the close itself earned, rather than re-running the suites | Review | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0554](US0554-a-listing-only-declaration-names-the-ids-its.md) | A listing-only declaration names the ids its structural read depends on, so filing an artefact stops triggering the full suites | Review | EP0189 | 2026-07-29 | 2026-07-29 |
-| [US0555](US0555-sprint-close-dry-run-reports-every-unmet-prerequisite.md) | sprint close --dry-run reports every unmet prerequisite of all seven steps in one read-only pass, retro content included, and writes nothing | Ready | EP0189 | 2026-07-29 | 2026-07-29 |
+| [US0555](US0555-sprint-close-dry-run-reports-every-unmet-prerequisite.md) | sprint close --dry-run reports every unmet prerequisite of all seven steps in one read-only pass, retro content included, and writes nothing | Review | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0556](US0556-critic-evidence-record-and-signoff-each-record-a.md) | critic evidence, record and signoff each record a whole batch in one invocation, with the open run as the default scope | Review | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0557](US0557-a-batch-invocation-missing-a-required-argument-is.md) | A batch invocation missing a required argument is refused once before any unit is written, naming every argument the command needs | Review | EP0189 | 2026-07-29 | 2026-07-29 |
-| [US0558](US0558-a-retro-created-by-the-scaffold-and-filled.md) | A retro created by the scaffold and filled in as its template demonstrates passes retro validate without a rejection round-trip | Ready | EP0189 | 2026-07-29 | 2026-07-29 |
+| [US0558](US0558-a-retro-created-by-the-scaffold-and-filled.md) | A retro created by the scaffold and filled in as its template demonstrates passes retro validate without a rejection round-trip | Review | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0559](US0559-the-close-reports-its-own-cost-gate-seconds.md) | The close reports its own cost - gate seconds and elapsed - so the next reduction is measured against a number rather than an impression | Review | EP0189 | 2026-07-29 | 2026-07-29 |
 
 ## Archived Releases

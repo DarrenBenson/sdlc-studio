@@ -1,6 +1,6 @@
 # US0532: The corpus read is measured by a test that fails if it grows back to per-unit, so the fix cannot silently regress
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0465
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** the sweep detectors run over both
 - **Then** the number of corpus reads is unchanged between the two, so a return to per-unit reading fails the test rather than only slowing the gate
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::CorpusReadOnceTests::test_the_read_count_does_not_scale_with_unit_count
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

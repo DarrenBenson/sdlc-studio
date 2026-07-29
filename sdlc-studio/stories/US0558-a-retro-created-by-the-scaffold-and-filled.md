@@ -1,6 +1,6 @@
 # US0558: A retro created by the scaffold and filled in as its template demonstrates passes retro validate without a rejection round-trip
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0498
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** `retro validate` runs against a retro scaffolded from it with the demonstration content left in place
 - **Then** it passes, so the template is a worked example rather than a set of headings
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::ScaffoldPassesItsValidatorTests::test_the_scaffolded_retro_passes_its_own_validator
+- **Verified:** yes (2026-07-29)
 
 ### AC2: the carried-lessons shape is shown, not merely named
 
@@ -31,6 +32,7 @@
 - **When** it is read
 - **Then** it shows the bullet form the validator requires, so the numbered form that was rejected is not the natural thing to write
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::ScaffoldPassesItsValidatorTests::test_the_carried_lessons_section_demonstrates_the_accepted_shape
+- **Verified:** yes (2026-07-29)
 
 ### AC3: the disposition vocabulary is demonstrated in the actions table
 
@@ -38,6 +40,7 @@
 - **When** it is read
 - **Then** each accepted disposition form appears as a filled example, so the vocabulary is not first met in a refusal
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::ScaffoldPassesItsValidatorTests::test_the_actions_table_demonstrates_the_disposition_vocabulary
+- **Verified:** yes (2026-07-29)
 
 ### AC4: the demonstration content cannot be mistaken for a real entry
 
@@ -45,6 +48,7 @@
 - **When** the close reads it
 - **Then** the unreplaced demonstration is reported, so a retro that passes structurally is not silently accepted as filled in
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::ScaffoldPassesItsValidatorTests::test_unreplaced_demonstration_content_is_reported
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

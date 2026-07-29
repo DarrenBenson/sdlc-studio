@@ -1241,14 +1241,68 @@ def canonical_status(raw: str | None, vocab: list[str]) -> str | None:
     return None
 
 
+#: The corpus memo, live only inside `corpus_cache()`. `None` means OFF, and off is the default
+#: everywhere: a cache that outlives the read it was taken for serves a writer its own stale
+#: view, and every one of this module's callers may write.
+_CORPUS_CACHE: "dict | None" = None
+
+
+@contextlib.contextmanager
+def corpus_cache():
+    """Read the artefact corpus ONCE for the duration of a read-only sweep.
+
+    `find_by_id`, `children_of` and every `artifact_files` caller walk the whole tree and read
+    every file. Called once that is cheap; called once per unit it is quadratic, and one
+    `reconcile detect` over this workspace opened 777,732 files and took 22 seconds - paid on
+    every commit, because reconcile is a gate lane.
+
+    OPT-IN and SCOPED, never a module-level memo. The cache cannot see a write, so anything
+    holding it open across one would read its own stale corpus - and the caller most likely to
+    write is `reconcile apply`, sitting next to the sweep this exists for. A `with` block makes
+    the window explicit and closes it on the way out, including on an exception.
+
+    Nesting is a no-op rather than an error: a sweep that calls a helper which also takes the
+    cache must not get a second, emptier one."""
+    global _CORPUS_CACHE  # noqa: PLW0603 - the memo IS module state; the scope is the guard
+    if _CORPUS_CACHE is not None:
+        yield _CORPUS_CACHE
+        return
+    _CORPUS_CACHE = {}
+    try:
+        yield _CORPUS_CACHE
+    finally:
+        _CORPUS_CACHE = None
+
+
+def corpus_cache_active() -> bool:
+    """Whether a corpus cache is currently open. For tests and diagnostics, never for control."""
+    return _CORPUS_CACHE is not None
+
+
 def iter_artifact_files(type_: str, repo_root: Path, trust_names=frozenset()):
-    """Yield `(path, text)` for each artifact file of `type_`. `text` is the file's content,
-    read to apply the is-artifact filter - EXCEPT for a filename in `trust_names`, which is
-    yielded as `(path, None)` WITHOUT being read. A caller that already knows a file is a
-    closed artefact (e.g. from a digest keyed by filename) passes its name here to skip the
-    read - the context-tiering optimisation. The filter/exclusion rules match `artifact_files`;
-    only the read is elided for trusted names.
-    """
+    """Yield `(path, text)` for each artifact file of `type_`, memoised inside `corpus_cache`.
+
+    `text` is the file's content, read to apply the is-artifact filter - EXCEPT for a filename
+    in `trust_names`, which is yielded as `(path, None)` WITHOUT being read. A caller that
+    already knows a file is a closed artefact (e.g. from a digest keyed by filename) passes its
+    name here to skip the read - the context-tiering optimisation. The filter/exclusion rules
+    match `artifact_files`; only the read is elided for trusted names.
+
+    A `trust_names` call BYPASSES the cache in both directions. Its results differ from an
+    ordinary walk's by construction (a trusted file yields `None` for its text), so serving one
+    from the other's memo would hand a caller the opposite of what it asked for."""
+    if _CORPUS_CACHE is None or trust_names:
+        yield from _walk_artifact_files(type_, repo_root, trust_names)
+        return
+    key = ("files", type_, os.path.abspath(repo_root))
+    rows = _CORPUS_CACHE.get(key)
+    if rows is None:
+        rows = _CORPUS_CACHE[key] = list(_walk_artifact_files(type_, repo_root, frozenset()))
+    yield from rows
+
+
+def _walk_artifact_files(type_: str, repo_root: Path, trust_names=frozenset()):
+    """The unmemoised walk. `iter_artifact_files` is the only caller."""
     if type_ not in ARTIFACT_TYPES:
         return
     try:  # late import: conventions imports this module at load time
@@ -1761,14 +1815,33 @@ def find_by_id(repo_root, rec_id: str):
     """(path, type) of the artefact with this id across all types, or None. Resolves a
     pre-migration id through the `alias_map` (a `--id US0001` still works after a v2 -> v3
     migration). The single lookup that `transition` and `audit` delegate to, so a fix to
-    id-resolution lands in one place."""
+    id-resolution lands in one place.
+
+    Inside `corpus_cache` this reads a by-id index built once instead of walking every type for
+    every lookup - 650 lookups over this workspace walked the corpus 650 times. The index keeps
+    the FIRST match in `ARTIFACT_TYPES` order, which is the answer the linear walk gave, so the
+    memo cannot change which of two same-id artefacts wins."""
     root = Path(repo_root)
     norm = norm_id(rec_id)
-    for type_ in ARTIFACT_TYPES:
-        for p in artifact_files(type_, root):
-            rec = extract_record_id(p.stem)
-            if rec and norm_id(rec) == norm:
-                return p, type_
+    if _CORPUS_CACHE is not None:
+        key = ("byid", os.path.abspath(root))
+        index = _CORPUS_CACHE.get(key)
+        if index is None:
+            index = _CORPUS_CACHE[key] = {}
+            for type_ in ARTIFACT_TYPES:
+                for p in artifact_files(type_, root):
+                    rec = extract_record_id(p.stem)
+                    if rec:
+                        index.setdefault(norm_id(rec), (p, type_))
+        hit = index.get(norm)
+        if hit is not None:
+            return hit
+    else:
+        for type_ in ARTIFACT_TYPES:
+            for p in artifact_files(type_, root):
+                rec = extract_record_id(p.stem)
+                if rec and norm_id(rec) == norm:
+                    return p, type_
     aliased = alias_map(root).get(norm)
     if aliased and norm_id(aliased) != norm:
         return find_by_id(root, aliased)
@@ -1950,24 +2023,51 @@ def children_of(repo_root, parent_id: str) -> list[tuple[str, str]]:
     UNDECOMPOSED drift check all share - so "what did this request produce" has ONE answer."""
     root = Path(repo_root)
     target = norm_id(parent_id)
+    if _CORPUS_CACHE is not None:
+        # Inside a sweep this is asked once per request - 72 times over this workspace, each
+        # re-deriving every child's parent links from scratch. The index is the same derivation
+        # done once; membership in it is the same test the linear scan makes.
+        return list(_child_index(root).get(target, ()))
     out: list[tuple[str, str]] = []
     for type_ in ARTIFACT_TYPES:
         for p in artifact_files(type_, root):
             cid = extract_record_id(p.stem)
             if not cid:
                 continue
-            text = read_text_safe(p)
-            # ALL of a child's parents: every `Parent:` line (a shared batch epic carries one per
-            # request it delivers), plus the most-specific single link (a story's `Epic:`, or the
-            # legacy `Change Request:`) via child_parent - so a multi-parent epic and a story both
-            # resolve here.
-            parents = {norm_id(x) for x in parent_refs(text)}
-            cp = child_parent(text)
-            if cp:
-                parents.add(norm_id(cp))
-            if target in parents:
+            if target in _parents_of(read_text_safe(p)):
                 out.append((cid, type_))
     return out
+
+
+def _parents_of(text: str) -> set:
+    """Every parent id a child declares, normalised.
+
+    ALL of them: each `Parent:` line (a shared batch epic carries one per request it delivers),
+    plus the most-specific single link (a story's `Epic:`, or the legacy `Change Request:`) via
+    `child_parent` - so a multi-parent epic and a story both resolve here. One definition,
+    shared by the linear scan and the index, so the memo cannot answer a different question
+    from the walk it replaces."""
+    parents = {norm_id(x) for x in parent_refs(text)}
+    cp = child_parent(text)
+    if cp:
+        parents.add(norm_id(cp))
+    return parents
+
+
+def _child_index(root: Path) -> dict:
+    """parent id -> [(child_id, child_type)] in type/id order, built once per corpus cache."""
+    key = ("children", os.path.abspath(root))
+    index = _CORPUS_CACHE.get(key)
+    if index is None:
+        index = _CORPUS_CACHE[key] = {}
+        for type_ in ARTIFACT_TYPES:
+            for p in artifact_files(type_, root):
+                cid = extract_record_id(p.stem)
+                if not cid:
+                    continue
+                for parent in _parents_of(read_text_safe(p)):
+                    index.setdefault(parent, []).append((cid, type_))
+    return index
 
 
 def new_ulid() -> str:
