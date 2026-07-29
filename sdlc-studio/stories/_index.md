@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 4 |
-| Ready | 35 |
+| Ready | 34 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 13 |
+| Review | 14 |
 | Done | 512 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -370,7 +370,7 @@
 | [US0456](US0456-the-tsd-s-per-script-test-contract-stops.md) | The TSD's per-script test contract stops being prose: a sweep of scripts and scripts/lib derives the exception list, and the shipped document is held to it | Ready | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0457](US0457-adr-011-states-the-breakdown-gate-s-real.md) | ADR-011 states the breakdown gate's real firing rule, and carries a dated amendment marker so a reader of the block sees it | Ready | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0458](US0458-the-trd-s-shipped-surface-enumerations-are-derived.md) | The TRD's shipped-surface enumerations are derived from the code and the router, and the stale CR0132 caveat is refused by name | Ready | EP0168 | 2026-07-27 | 2026-07-27 |
-| [US0459](US0459-the-token-budget-premise-is-replaced-by-the.md) | The token-budget premise is replaced by the measured one everywhere it is asserted: transcript-measured, and a lower bound because delegated spend is supplied not measured | Ready | EP0168 | 2026-07-27 | 2026-07-27 |
+| [US0459](US0459-the-token-budget-premise-is-replaced-by-the.md) | The token-budget premise is replaced by the measured one everywhere it is asserted: transcript-measured, and a lower bound because delegated spend is supplied not measured | Review | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0460](US0460-the-porting-doctrine-is-stated-in-one-direction.md) | The porting doctrine is stated in one direction across the TRD and personas.md: the repo is source, the installed copy is the derived mirror | Review | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0461](US0461-verify-ac-lint-ratchet-refuses-a-duplicate-group.md) | verify_ac lint --ratchet refuses a duplicate group the baseline does not record with a reason, and the pinned pre-commit lane set gains it | Ready | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0462](US0462-a-filed-finding-records-the-lens-profile-and.md) | A filed finding records the lens, profile and a resolvable audit run, and the existing corpus is backfilled from its Raised-by stamps | Ready | EP0169 | 2026-07-27 | 2026-07-27 |

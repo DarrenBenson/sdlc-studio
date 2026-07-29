@@ -20,7 +20,8 @@ never abandoned mid-implementation. It reads elapsed from the run's `started_at`
 spends against units already terminal - both deterministic and harness-independent,
 neither self-reported. Budget-exhausted is DISTINCT from quarantine: its own exit code
 (4), and it touches nothing - the units are left in their true status, not Blocked. A
-token number is never a gate here: a script cannot observe token spend, so it stays a
+token number is never a gate here: the total is transcript-measured but a LOWER BOUND,
+# because delegated and sidechain spend is supplied rather than observed, so it stays a
 forecast reported by `sprint plan`, never read by this breaker. Pure stdlib.
 """
 from __future__ import annotations

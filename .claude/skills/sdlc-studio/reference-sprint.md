@@ -631,7 +631,7 @@ to go unattended. The appetite is that ceiling (Shape Up's fixed timebox: appeti
 - **Never auto-extended:** a spent appetite is not topped up mid-run. Extending it is an
   explicit operator action - a fresh `sprint plan --write` opens a new run with a new
   appetite and a new clock.
-- **Tokens are a FORECAST, never a gate:** a script cannot observe token spend, so a token
+- **Tokens are a FORECAST, never a gate:** the total is transcript-measured but a LOWER BOUND, because delegated and sidechain spend is supplied rather than observed, so a token
   ceiling would depend on the actor self-reporting the budget meant to constrain it. The
   plan reports a token forecast, labelled an estimate; the close repeats it. It never
   stops a run.

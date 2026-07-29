@@ -1,6 +1,6 @@
 # US0459: The token-budget premise is replaced by the measured one everywhere it is asserted: transcript-measured, and a lower bound because delegated spend is supplied not measured
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0431
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the guard calls the function, observes it returns a measured total, and then reads the two TRD passages (trd.md:625-629 and the Won't Have bullet at :1055-1057) and the D0020 row
 - **Then** none of them states that a script cannot observe token spend; the verdict is derived from the call's result, so if the measurement were ever removed the claim would be permitted again rather than banned by a hardcoded rule
 - **Verify:** pytest tools/tests/test_token_premise.py::TokenPremiseMatchesTheCode::test_a_measuring_session_tokens_refuses_the_cannot_observe_claim
+- **Verified:** yes (2026-07-29)
 
 ### AC2: the recorded limit matches the delegated lower-bound behaviour
 
@@ -30,6 +31,7 @@
 - **When** the guard confirms the delegated figure is supplied rather than measured and is excluded from the measured total, then reads the reason the TRD and D0020 give for a breaker being or not being appropriate
 - **Then** both documents state that reason - tokens are transcript-measured but a lower bound because delegated and sidechain spend is invisible - rather than the falsified premise or a vaguer restatement
 - **Verify:** pytest tools/tests/test_token_premise.py::TokenPremiseMatchesTheCode::test_both_documents_state_the_delegated_lower_bound_reason
+- **Verified:** yes (2026-07-29)
 
 ### AC3: no live file still asserts the falsified premise
 
@@ -37,6 +39,7 @@
 - **When** the guard sweeps tracked .md and .py files outside that allowlist for the 'cannot observe token spend' family of phrasings
 - **Then** it finds none, and reintroducing the phrase in a fixture file outside the allowlist reddens the sweep - so the epic's own LL0016 rule about two copies of one contract is held rather than only cited
 - **Verify:** pytest tools/tests/test_token_premise.py::ThePremiseIsGoneFromEveryLiveFile::test_no_live_file_outside_the_history_allowlist_asserts_the_premise
+- **Verified:** yes (2026-07-29)
 
 ### AC4: the amended D0020 row cites no file that no longer says what it is cited for
 
@@ -44,6 +47,7 @@
 - **When** the guard extracts every file path the amended row cites and reads each cited file for the claim it is cited as supporting
 - **Then** each citation is borne out by the file it names, so a rotted citation fails; the check is derived by reading the cited file, so the row cannot keep pointing at evidence that has moved
 - **Verify:** pytest tools/tests/test_token_premise.py::ThePremiseIsGoneFromEveryLiveFile::test_the_d0020_citation_is_borne_out_by_the_file_it_names
+- **Verified:** yes (2026-07-29)
 
 ### AC5: an absent D0020 row fails rather than passing silently
 
@@ -51,6 +55,7 @@
 - **When** the guard tries to resolve the row it is asserting against
 - **Then** it fails with a message naming the row it could not find, so a deleted decision cannot read as a compliant one - the empty-input clean verdict that hides the whole class
 - **Verify:** pytest tools/tests/test_token_premise.py::ThePremiseIsGoneFromEveryLiveFile::test_a_missing_d0020_row_fails_rather_than_passing_silently
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

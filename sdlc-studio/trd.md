@@ -633,7 +633,9 @@ plan time** to `retros/evidence/forecasts-*.jsonl` (`telemetry.forecasts`), stam
 with the points and the estimator rate constants that produced it, so `retro
 accuracy` judges that recorded number and never re-derives one - the loop can falsify
 itself. It is quoted with a band (about +/-50%) and is **never** a gate: a script
-cannot observe token spend, so tokens warn while minutes and units stop a run. See §12.
+measures the session total from the transcript but only as a LOWER BOUND - delegated and
+sidechain spend is supplied, not observed - so tokens warn while minutes and units stop a
+run. See §12.
 
 ---
 
@@ -1060,7 +1062,8 @@ falls back to enforce.
 - Executable conformance tests for the markdown command flows (the eval scenarios are a
   partial stand-in, not a replacement).
 - Full agentic-wave parity outside Claude Code.
-- A token budget that gates. A script cannot observe token spend, so a self-reported
+- A token budget that gates. The session total IS transcript-measured, but it is a LOWER
+  BOUND because delegated and sidechain spend is supplied rather than observed, so a
   number could never be a breaker; tokens warn, minutes and units stop the run.
 - Auto-refitting of the estimator's fitted constants from the velocity history. Curve-
   fitting a handful of sprints fits noise and dresses it as evidence; a human reads the

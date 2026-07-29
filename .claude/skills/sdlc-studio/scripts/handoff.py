@@ -552,7 +552,8 @@ def _appetite_body(report: dict) -> str:
            f"- **Delivered:** {ap['delivered']} unit(s)"]
     if ap.get("token_forecast"):
         out.append(f"- **Token forecast:** ~{ap['token_forecast']:,} tokens - a plan-time "
-                   f"estimate, never a gate (a script cannot observe token spend)")
+                   f"estimate, never a gate (the total is transcript-measured but a LOWER "
+                   f"BOUND - delegated spend is supplied, not observed)")
     return "\n".join(out) + "\n"
 
 

@@ -246,7 +246,7 @@ How much ONE sprint may cost. The single source for both the plan-time "does thi
 | `capacity.minutes` | 240 | Wall-clock ceiling for the run; feeds the appetite breaker |
 | `capacity.units` | 8 | Unit-count ceiling for the run; feeds the appetite breaker |
 
-`sprint plan` sizes the batch against these and flags an over-budget batch **at plan time** - while the operator can still cut it, instead of mid-run when the breaker halts the sprint. Over budget never refuses to plan: a script cannot observe token spend, and the forecast is `sum(Points) x a measured tokens-per-point rate`, so the plan quotes a plausible **range** rather than a bare number that reads as fact. The wall-clock and unit axes are the real breaker. 0 on an axis = unbounded.
+`sprint plan` sizes the batch against these and flags an over-budget batch **at plan time** - while the operator can still cut it, instead of mid-run when the breaker halts the sprint. Over budget never refuses to plan: the token total IS transcript-measured, but only as a LOWER BOUND - delegated and sidechain spend is supplied rather than observed - and the forecast is `sum(Points) x a measured tokens-per-point rate`, so the plan quotes a plausible **range** rather than a bare number that reads as fact. The wall-clock and unit axes are the real breaker. 0 on an axis = unbounded.
 
 **Provisional, and re-measured.** The tokens-per-point rate is derived from `sdlc-studio/retros/VELOCITY.md` - actual tokens over points delivered - and re-read every sprint, so it tracks the project rather than a constant. Until enough sprints have recorded points it falls back to a seed rate, and the plan says which it used. Nothing recalibrates the capacity ceilings automatically - a human reads the velocity trend and decides.
 

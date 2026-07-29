@@ -27,7 +27,9 @@ minutes, units) and says whether it fits - at plan time, while the operator can 
 rather than mid-run when the breaker halts the sprint. The same capacity resolves the run
 APPETITE that `loop_guard budget` later breaks on, so the plan-time ceiling and the run-time
 ceiling are ONE number and cannot disagree. Over budget is a WARNING, never a refusal: a script
-cannot observe token spend, and the token model is a hypothesis, not a measurement.
+measures the session total from the transcript, but only as a LOWER BOUND - delegated and
+sidechain spend is supplied rather than observed - and the token model is a hypothesis, not a
+measurement.
 
 The plan also EMITS the still-valid lessons digest (`lessons.plan_digest`): the lessons the
 last sprints paid for arrive inside the plan the agent reads at sprint start, rather than as a
@@ -590,7 +592,8 @@ def capacity_report(repo_root: Path | str, batch: list[dict], forecast: dict | N
                     appetite: dict) -> dict:
     """Does this batch fit the sprint's capacity? Answered AT PLAN TIME, as a WARNING.
 
-    Never a gate. A script cannot observe token spend (see telemetry.py), so a token ceiling
+    Never a gate. The session total IS transcript-measured, but it is a LOWER BOUND -
+    delegated spend is supplied, not observed - so a token ceiling
     would depend on the actor self-reporting the budget meant to constrain it; and the forecast
     itself is mis-calibrated out-of-sample by ~30%. Refusing to plan on a number that soft would
     be false authority. The real breaker is wall-clock/unit-count, and it fires on the SAME
@@ -632,7 +635,8 @@ def capacity_report(repo_root: Path | str, batch: list[dict], forecast: dict | N
         "calibration": cal,
         "unit_wall_minutes_floor": _unit_wall_minutes(_velocity_rows(root)),
         "advisory": True,
-        "basis": "a WARNING, never a gate - a script cannot observe token spend, and the "
+        "basis": "a WARNING, never a gate - the total is transcript-measured but a LOWER "
+                 "BOUND, since delegated spend is supplied rather than observed, and the "
                  "forecast is a hypothesis. The run breaker is wall-clock/unit-count, on the "
                  "same appetite reported here",
     }
