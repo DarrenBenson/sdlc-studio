@@ -132,3 +132,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 - Gate: 427s at the previous close to 319s here · Reconcile detect: 22.3s to 1.3s · Close
   refusal discovery: three serial ~400s attempts to one 2m read-only pass · Critic spawns per
   close: 57 to 3 · Open bugs: 37 to 2 · Mutants applied and killed: 41
+
+## Handoff
+
+- [HO-0037](../handoffs/HO0037-the-ceremony-costs-less-than-the-work-it.md) - 11 remaining item(s): 0 copilot-tail, 11 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

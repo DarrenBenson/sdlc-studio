@@ -1,7 +1,7 @@
 # Latest review anchor
 
 <!-- close-status:begin -->
-> **RUN-01KYNKDP is closing.** 47 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> **RUN-01KYNKDP closed stopped.** 47 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
