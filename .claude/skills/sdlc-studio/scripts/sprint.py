@@ -3972,11 +3972,26 @@ def _close_retro_accuracy(root, retro_id, state):
     """
     import retro  # noqa: PLC0415
     rc, out = _run_cli(retro.main, ["--root", str(root), "accuracy", "--id", retro_id, "--write"])
-    if rc != 0:
-        return False, out, (f"`retro.py accuracy --id {retro_id} --write` must succeed - the "
-                            f"estimate-versus-actual block is the sprint's row in the "
-                            f"calibration every later forecast is drawn from")
-    return True, "estimate-versus-actual written to the retro and to VELOCITY.md", ""
+    if rc == 0:
+        return True, "estimate-versus-actual written to the retro and to VELOCITY.md", ""
+    # A NIL RESULT IS NOT A FAILURE, and the docstring above promised exactly that while the
+    # first version blocked on it: a retro naming no units in its `Batch:` field has nothing to
+    # compare, and `cmd_close` returns 1 at the first `not ok`, so every such close hard-stopped
+    # at this step. That is a refusal for lacking a measurement nobody could have taken.
+    if _is_nil_accuracy(out):
+        return True, f"estimate-versus-actual: NOTHING TO MEASURE - {out.strip().splitlines()[-1] if out.strip() else 'no units named'}", ""
+    return False, out, (f"`retro.py accuracy --id {retro_id} --write` failed for a reason other "
+                        f"than an empty batch - the estimate-versus-actual block is the sprint's "
+                        f"row in the calibration every later forecast is drawn from")
+
+
+#: Output that means "there was nothing to compare", as distinct from "the write failed".
+_NIL_ACCURACY = ("no units named", "nothing to measure", "no forecast", "parses to 0 unit")
+
+
+def _is_nil_accuracy(out: str) -> bool:
+    low = (out or "").lower()
+    return any(marker in low for marker in _NIL_ACCURACY)
 
 
 def _close_lessons_summary(root, retro_id, state):
@@ -6441,13 +6456,31 @@ def cmd_lane(args: argparse.Namespace) -> int:
         # briefed set meant a lane that died on US0001 went unmentioned when the operator
         # briefed US0002 - which is the restart case the marker exists for, and the only case
         # in which the operator has not already noticed.
-        for row in run_state.lanes_in_flight(root):
+        # BOTH of these read the run state, and BOTH must not stop a brief being issued. The
+        # first repair guarded `lane_dispatch` and left these three statements later in the same
+        # command, so the artefact's own reproduction still produced a traceback and issued no
+        # brief - and the test written for it exercised the library function, not the command it
+        # names. A library test is not a lane test.
+        try:
+            in_flight = run_state.lanes_in_flight(root)
+        except Exception as exc:  # noqa: BLE001 - a brief must be issued even so
+            sdlc_md.debug("sprint.cmd_lane.in_flight", exc)
+            in_flight = []
+            print("WARNING the run state could not be read, so whether any lane never returned "
+                  "is UNKNOWN, not none - check the diff before starting", file=sys.stderr)
+        for row in in_flight:
             print(f"WARNING {row['unit']} was briefed at {row['started_at']} and never "
                   f"returned - the working tree MAY ALREADY CARRY its work. Check the diff "
                   f"before starting: a lane redoing a repair that is already present is how "
                   f"a partial edit reached a commit.", file=sys.stderr)
         for b in dispatch["briefs"]:
-            run_state.record_lane_start(root, b["id"])
+            try:
+                run_state.record_lane_start(root, b["id"])
+            except Exception as exc:  # noqa: BLE001 - recording must not withhold the brief
+                sdlc_md.debug("sprint.cmd_lane.record_lane_start", exc)
+                print(f"WARNING {b['id']}'s lane start could not be recorded (the run state is "
+                      f"unreadable), so a restart will not know this lane was briefed",
+                      file=sys.stderr)
         if getattr(args, "format", "text") == "json":
             print(json.dumps(dispatch, indent=2))
         else:
@@ -7491,6 +7524,15 @@ def _seat_from_dict(d: dict) -> dict:
     note = str(d.get("note") or "").strip()
     if note:
         out["note"] = note
+    # PER-CLAUSE answers, carried through. The reader (`_recorded_clause_verdicts`) was changed
+    # to require this key while this whitelist silently stripped it, so no writer in the shipped
+    # code could produce one and the goal panel reported UNANSWERED on every close, permanently.
+    # A wrong path was replaced by a DEAD path - which is worse, because nothing reports it.
+    clauses = d.get("clauses")
+    if isinstance(clauses, dict):
+        kept = {str(k): str(v).strip() for k, v in clauses.items() if str(v or "").strip()}
+        if kept:
+            out["clauses"] = kept
     return out
 
 

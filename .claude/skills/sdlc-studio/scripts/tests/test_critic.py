@@ -2884,10 +2884,91 @@ class ASignoffSkipsAUnitThatDeliveredNothingTests(unittest.TestCase):
             encoding="utf-8")
         return root
 
+    def _story_repo(self, status: str):
+        """A STORY, because that is the type whose vocabulary holds `Review`. The first version
+        of this test used a bug - which has no Review status - so `_unit_status` returned
+        "cannot say" and the test passed however the rule behaved. It survived the mutant that
+        restored the deadlock."""
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        (sd / "US0001-x.md").write_text(
+            f"# US0001: x\n\n> **Status:** {status}\n\n"
+            f"## Acceptance Criteria\n\n- [ ] something\n", encoding="utf-8")
+        return root
+
+    def test_a_unit_AWAITING_signoff_is_eligible(self) -> None:
+        """The deadlock an independent reviewer found. The first version skipped every
+        NON-TERMINAL unit - and `Review` is exactly where this repo's two-role rule HOLDS a unit
+        until the sign-off lands. Skipping it there meant only an already-terminal unit could be
+        signed off, inverting the gate into retrospective paperwork."""
+        mod = _load()
+        root = self._story_repo("Review")
+        state = mod._unit_status(root, "US0001")
+        self.assertEqual("Review", state["status"], "the fixture's status was not read at all")
+        self.assertFalse(state["terminal"], "Review must be non-terminal for this to bite")
+        self.assertIsNone(mod._signoff_withheld(root, "US0001"),
+                          "a story at Review was refused the sign-off that moves it to Done")
+
+    def test_an_undelivered_STORY_is_still_withheld(self) -> None:
+        """The other side, on the same type - so eligibility is about the STATUS and not about
+        the type happening to lack a review state."""
+        mod = _load()
+        root = self._story_repo("Ready")
+        why = mod._signoff_withheld(root, "US0001")
+        self.assertIsNotNone(why, "a story at Ready took a sign-off row")
+        self.assertIn("not been delivered", why)
+
+    def test_a_skip_is_reflected_in_the_exit_code(self) -> None:
+        """The false clean an independent reviewer found: the skip was named on stderr while the
+        summary printed "N unit(s) written" with rc 0 over a record holding fewer. The batch
+        contract's own docstring says acting on nothing and reporting success is a false clean."""
+        import argparse
+        import contextlib
+        import io
+        mod = _load()
+        root = self._story_repo("Ready")
+        args = argparse.Namespace(root=root, unit=["US0001"], units=None, from_run=False,
+                                  principal="Operator", author="agent", delegate=None,
+                                  boundary=None, note="n", fields_file=None, format="text")
+        err = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+            rc = mod.cmd_signoff(args)
+        self.assertNotEqual(0, rc,
+                            "every unit was skipped and the command still reported success")
+        self.assertIn("SKIPPED", err.getvalue())
+
+    def test_an_undelivered_unit_is_withheld_and_named(self) -> None:
+        mod = _load()
+        # Statuses the BUG vocabulary actually holds. `Ready` is a story status, so a bug
+        # carrying it reads as "cannot say" - which is correct, and not what this asserts.
+        for status in ("Open", "In Progress"):
+            root = self._repo(status)
+            why = mod._signoff_withheld(root, "BG0001")
+            self.assertIsNotNone(why, f"{status!r} took a sign-off row")
+            self.assertIn("not been delivered", why)
+
+    def test_a_retracted_delivery_is_withheld_whatever_its_status(self) -> None:
+        """The original defect, and the real signal for it: a reopen RETRACTS the evidence, so
+        the unit delivered nothing however its status now reads."""
+        mod = _load()
+        root = self._repo("Fixed")
+        p = root / "sdlc-studio" / "bugs" / "BG0001-a-bug.md"
+        p.write_text(p.read_text(encoding="utf-8").replace(
+            "> **Severity:** Medium",
+            "> **Severity:** Medium\n> **Verification depth:** RETRACTED on reopen (was: "
+            "functional) - re-verify"), encoding="utf-8")
+        why = mod._signoff_withheld(root, "BG0001")
+        self.assertIsNotNone(why, "a retracted delivery took a sign-off row")
+        self.assertIn("RETRACTED", why)
+
     def test_a_non_terminal_unit_is_skipped_and_named(self) -> None:
         root = self._repo("Open")
         state = _load()._unit_status(root, "BG0001")
-        self.assertEqual(state, {"status": "Open", "terminal": False})
+        self.assertEqual(state["status"], "Open")
+        self.assertFalse(state["terminal"])
 
     def test_a_terminal_unit_is_not_skipped(self) -> None:
         """The positive control: skipping the non-terminal must not skip everything, or the

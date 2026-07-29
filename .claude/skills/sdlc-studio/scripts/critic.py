@@ -2330,25 +2330,64 @@ def cmd_signoff(args: argparse.Namespace) -> int:
         print(f"signoff refused: {exc}", file=sys.stderr)
         return 2
 
+    skipped: list[str] = []
+
     def write(unit: str) -> None:
-        # A sign-off row against a NON-TERMINAL unit reads as approval of work that does not
-        # exist. Closing RUN-01KYNKDP wrote three: two bugs reopened precisely because they
-        # delivered nothing, and a story reverted to Blocked. `--from-run` takes the approved
-        # BATCH as its scope and never consulted status. Skipped and NAMED, because a silent
-        # skip would be the same defect pointing the other way.
-        state = _unit_status(args.root, unit)
-        if state and not state["terminal"]:
-            print(f"sign-off SKIPPED for {sdlc_md.norm_id(unit)}: its status is "
-                  f"{state['status']!r}, which is not terminal - a sign-off row against a unit "
-                  f"that delivered nothing reads as approval of work that does not exist",
-                  file=sys.stderr)
+        # A sign-off row against a unit whose DELIVERY WAS WITHDRAWN reads as approval of work
+        # that does not exist. The first version skipped every NON-TERMINAL unit, which
+        # deadlocked the repo's central gate: `Review` is exactly where the two-role rule holds
+        # a unit UNTIL this sign-off lands, so refusing it there meant only an already-terminal
+        # unit could be signed off - inverting the gate into retrospective paperwork.
+        why = _signoff_withheld(args.root, unit)
+        if why:
+            skipped.append(f"{sdlc_md.norm_id(unit)} ({why})")
+            print(f"sign-off SKIPPED for {sdlc_md.norm_id(unit)}: {why}", file=sys.stderr)
             return
         path = record_signoff(args.root, unit, args.principal, args.author,
                               delegate=args.delegate, boundary=args.boundary,
                               note=fields.get("note", ""))
         print(f"sign-off recorded for {sdlc_md.norm_id(unit)} -> {path}")
 
-    return _run_batch(args, "signoff", write)
+    rc = _run_batch(args, "signoff", write)
+    if skipped:
+        # The COUNT and the EXIT CODE must agree with the record. The first version named the
+        # skip on stderr and still printed "N unit(s) written" with rc 0 over a record holding
+        # fewer - the same false clean the batch contract exists to prevent.
+        print(f"signoff: {len(skipped)} unit(s) SKIPPED and NOT written: "
+              f"{', '.join(skipped)} - the count above covers only what was recorded",
+              file=sys.stderr)
+        return rc or 3
+    return rc
+
+
+#: Statuses that mean "delivered, awaiting the reviewer of record" - the state a sign-off EXISTS
+#: to resolve. Matched by name so a project renaming its review status keeps working.
+def _is_awaiting_signoff(status: str) -> bool:
+    return "review" in (status or "").strip().lower()
+
+
+def _signoff_withheld(root, unit: str) -> str | None:
+    """Why this unit must not take a sign-off row, or None when it may.
+
+    Withheld only for a WITHDRAWN delivery, never for one merely unfinished-looking:
+
+    * a RETRACTED verification depth - a reopen withdrew the evidence, so the unit delivered
+      nothing whatever its status now reads; and
+    * a status that is neither terminal nor awaiting sign-off, which means the work has not been
+      delivered at all.
+
+    `Review` is explicitly eligible. That is the whole point of the gate.
+    """
+    state = _unit_status(root, unit)
+    if state is None:
+        return None                     # cannot say is not the same as not delivered
+    if state.get("retracted"):
+        return ("its delivery evidence was RETRACTED by a reopen, so it delivered nothing - a "
+                "sign-off row would read as approval of work that does not exist")
+    if state["terminal"] or _is_awaiting_signoff(state["status"]):
+        return None
+    return (f"its status is {state['status']!r}, which is neither terminal nor awaiting "
+            f"sign-off - the work has not been delivered")
 
 
 def _unit_status(root, unit: str) -> dict | None:
@@ -2366,7 +2405,8 @@ def _unit_status(root, unit: str) -> dict | None:
         status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
         if not status:
             return None
-        return {"status": status, "terminal": sdlc_md.is_terminal_status(type_, status)}
+        return {"status": status, "terminal": sdlc_md.is_terminal_status(type_, status),
+                "retracted": sdlc_md.depth_retracted(text)}
     except Exception as exc:  # noqa: BLE001 - cannot say is not the same as not terminal
         sdlc_md.debug("critic._unit_status", exc)
         return None

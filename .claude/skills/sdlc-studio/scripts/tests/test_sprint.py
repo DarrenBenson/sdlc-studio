@@ -10372,6 +10372,41 @@ class BlockerGroupingSurvivesBothIdErasTests(unittest.TestCase):
         self.assertEqual(len(groups[0]["blockers"]), 3,
                          "the per-unit details were lost, not merely un-keyed")
 
+    def test_the_done_gate_blocker_CARRIES_an_explicit_cause(self) -> None:
+        """M4: deleting the `cause` key from `_done_gate_preflight`'s blocker survived all 600
+        sprint tests, and the one-CR-per-unit fan-out returned in full. The sibling test builds
+        the blocker by hand with a cause already in it, so it could never see the producer stop
+        emitting one. Asserted at the PRODUCER."""
+        import inspect
+        src = inspect.getsource(sprint._done_gate_preflight)
+        self.assertIn('"cause"', src,
+                      "the done-gate blocker no longer states its cause, so one owed action "
+                      "files one change request per unit again")
+
+    def test_the_done_gate_producer_groups_to_one(self) -> None:
+        """The behavioural half, through the real producer: three units failing the done gate
+        must be ONE group, because the owed action is the same for all three."""
+        import contextlib as _ctx
+        import io as _io
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        for n in (1, 2, 3):
+            (sd / f"US000{n}-x.md").write_text(
+                f"# US000{n}: x\n\n> **Status:** Review\n\n"
+                f"## Acceptance Criteria\n\n### AC{n}\n- **Verify:** shell false\n",
+                encoding="utf-8")
+        with _ctx.redirect_stdout(_io.StringIO()), _ctx.redirect_stderr(_io.StringIO()):
+            blockers = sprint._done_gate_preflight(root, {"batch": ["US0001", "US0002", "US0003"]})
+        if not blockers:
+            self.skipTest("the fixture did not trip the done gate")
+        groups = sprint.group_blockers(blockers)
+        self.assertEqual(1, len(groups),
+                         f"three units failing one gate produced {len(groups)} groups, so "
+                         f"--file-and-close files that many change requests for one action")
+
     def test_genuinely_different_causes_stay_apart(self) -> None:
         """BG0394's property, which this must not undo: merging unrelated blockers hides one
         behind another, and the second detail never reaches the filed artefact."""
@@ -10408,6 +10443,36 @@ class AGoalClauseIsNotAnsweredByGuessworkTests(unittest.TestCase):
         self.assertIsNone(sprint._recorded_clause_verdicts(root, ["clause a", "clause b"]),
                           "one plan-time answer about the whole goal was copied onto every "
                           "clause as per-clause evidence")
+
+    def test_the_clauses_key_SURVIVES_the_real_writer(self) -> None:
+        """The dead path an independent reviewer found. The reader was changed to require
+        `seat["clauses"]` while `_seat_from_dict` whitelisted four fields and silently stripped
+        it, so NO writer in the shipped code could produce one - the panel reported UNANSWERED on
+        every close, permanently, and all six sibling tests asserted over a fixture shape the
+        product cannot write. End-to-end through the CLI."""
+        import contextlib as _ctx
+        import io as _io
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        ff = root / "gr.json"
+        ff.write_text(json.dumps({"goal": "clause a and clause b", "seats": [
+            {"seat": "qa", "achievable": "yes", "done_means": "d", "one_increment": "yes",
+             "clauses": {"clause a": "no", "clause b": "yes"}}]}), encoding="utf-8")
+        with _ctx.redirect_stdout(_io.StringIO()), _ctx.redirect_stderr(_io.StringIO()):
+            rc = sprint.main(["goal-review", "record", "--fields-file", str(ff),
+                              "--root", str(root)])
+        self.assertEqual(0, rc)
+        recorded = json.loads(
+            (root / "sdlc-studio" / ".local" / "goal-review.json").read_text(encoding="utf-8"))
+        seat = recorded["rounds"][-1]["seats"][0]
+        self.assertIn("clauses", seat,
+                      "the writer stripped the per-clause answers, so the reader can never "
+                      "return anything and the panel is permanently UNANSWERED")
+        self.assertEqual({"clause a": {"qa": "missed"}, "clause b": {"qa": "achieved"}},
+                         sprint._recorded_clause_verdicts(root, ["clause a", "clause b"]),
+                         "the round-trip through the real writer produced no verdicts")
 
     def test_a_seat_answering_no_is_recorded_missed_not_partial(self) -> None:
         root = self._review([{"seat": "qa", "clauses": {"clause a": "no"}}])
@@ -10461,6 +10526,28 @@ class TheCloseAsksTheEstimateQuestionTests(unittest.TestCase):
         """`close --dry-run` asserts it evaluated every step; a step missing from its table
         makes that claim false by omission."""
         self.assertIn("retro-accuracy", sprint.DRY_RUN_ACTION_STEPS)
+
+    def test_a_NIL_result_does_not_block_the_close(self) -> None:
+        """The docstring promised "NEVER BLOCKING on a nil result" and the first version blocked
+        on exactly that: a retro naming no units has nothing to compare, and `cmd_close` returns
+        1 at the first `not ok`, so every such close hard-stopped at this step. A refusal for
+        lacking a measurement nobody could have taken."""
+        import contextlib as _ctx
+        import io as _io
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        r = root / "sdlc-studio" / "retros"
+        r.mkdir(parents=True)
+        (r / "RETRO0001-x.md").write_text(
+            "# RETRO-0001: x\n\n> **Delivered:** 1 / 1\n\n## Delivered\n\nx\n\n"
+            "## What went well\n\nx\n\n## What was hard / what stalled\n\nx\n\n"
+            "## Actions raised\n\nx\n", encoding="utf-8")
+        with _ctx.redirect_stdout(_io.StringIO()), _ctx.redirect_stderr(_io.StringIO()):
+            ok, detail, _ = sprint._close_retro_accuracy(root, "RETRO0001", {})
+        self.assertTrue(ok, f"a nil accuracy result hard-stopped the close: {detail}")
+        self.assertIn("NOTHING TO MEASURE", detail,
+                      "the nil result passed silently - an absence must be stated")
 
     def test_a_failing_write_stops_the_close_and_says_why(self) -> None:
         import retro as retro_mod
@@ -10529,6 +10616,49 @@ class TheCommandActuallyReachesTheseMechanismsTests(unittest.TestCase):
             self.assertNotEqual(rc, 0)
         finally:
             mod.close_goal_judgement = real
+
+
+class TheLaneCommandIssuesABriefOverACorruptStateTests(unittest.TestCase):
+    """BG0405's stop-ship. The first repair guarded `lane_dispatch` and left the identical
+    unguarded read three statements later in `cmd_lane`, so the artefact's own reproduction
+    still tracebacked and issued no brief - and the test written for it exercised the LIBRARY
+    function, not the command it names. A library test is not a lane test."""
+
+    def _corrupt(self):
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            "{ this is not json", encoding="utf-8")
+        bugs = root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True)
+        (bugs / "BG0001-b.md").write_text(
+            "# BG0001: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            "> **Affects:** a.py\n> **Points:** 2\n\n"
+            "## Acceptance Criteria\n\n### AC1\n- **Verify:** shell true\n", encoding="utf-8")
+        return root
+
+    def test_the_COMMAND_does_not_traceback(self) -> None:
+        root = self._corrupt()
+        mod = _load()
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(["--root", str(root), "lane", "brief", "--units", "BG0001"])
+        self.assertIn(rc, (0, 1, 2), f"the command raised instead of reporting (rc={rc})")
+        self.assertIn("UNKNOWN", err.getvalue(),
+                      "the unreadable run state was not reported at all")
+
+    def test_recording_a_lane_start_cannot_withhold_the_brief(self) -> None:
+        """The third read in the same command. It writes, so it fails differently - and a
+        recording failure must not swallow the brief that was already composed."""
+        import inspect
+        src = inspect.getsource(_load().cmd_lane)
+        self.assertIn("record_lane_start", src)
+        guarded = src[src.index("record_lane_start") - 400:]
+        self.assertIn("except Exception", guarded,
+                      "record_lane_start is unguarded, so an unreadable run state still loses "
+                      "the brief at the last step")
 
 
 if __name__ == "__main__":

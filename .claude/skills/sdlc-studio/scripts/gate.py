@@ -2469,17 +2469,25 @@ def _declared_ids(value, root: str | None = None, rel: str | None = None,
         return None
     if root is None or rel is None:
         return frozenset(ids)
-    base = os.path.join(root, rel)
+    # Resolved against the ARTEFACT INDEX, which is what the bug's Proposed Fix asked for and
+    # what a filename cannot forge. Two weaker versions shipped first: a filename-pattern walk
+    # (defeated by any stray `BG288-repro.png`), then an extension check (defeated by
+    # `BG288-repro.md` - the "scratch note" the bug report itself named as sufficient). A file
+    # is not an artefact because it is markdown; it is an artefact because the workspace holds
+    # it as one.
     present = set()
-    for dirpath, _dirnames, filenames in os.walk(base):
-        for name in filenames:
-            got = _path_artefact_id(os.path.join(dirpath, name))
-            # A filename PATTERN is not an artefact. One stray `BG288-repro.png` - a
-            # screenshot, an attachment, a scratch note - made a typo'd id resolve and restored
-            # the false green in full. The file has to actually be the artefact the declaration
-            # says it depends on.
-            if got and _is_artefact_file(os.path.join(dirpath, name)):
-                present.add(got)
+    for declared in ids:
+        found = sdlc_md.find_by_id(root, declared)
+        if not found:
+            continue
+        # ...and it must live UNDER the declared directory, or an artefact elsewhere in the
+        # workspace would satisfy a declaration about this tree.
+        try:
+            rel_found = os.path.relpath(str(found[0]), root).replace(os.sep, "/")
+        except ValueError:
+            continue
+        if rel_found == rel or rel_found.startswith(rel.rstrip("/") + "/"):
+            present.add(declared)
     unresolved = ids - present
     if unresolved:
         # On the NORMAL output path, not through `debug`. A declaration that has stopped
@@ -2496,12 +2504,35 @@ def _declared_ids(value, root: str | None = None, rel: str | None = None,
 
 
 def _is_artefact_file(path: str) -> bool:
-    """True when `path` is a markdown artefact, not merely a file whose NAME carries an id.
+    """True when `path` is a real ARTEFACT, not merely a markdown file whose NAME carries an id.
 
-    Deliberately structural rather than a full parse: the declaration's contract is that the id
-    names something the suites can read, and a non-markdown file cannot be it. Kept cheap because
-    it runs once per file under a declared directory."""
-    return str(path).lower().endswith(".md") and os.path.isfile(path)
+    An extension check is not enough, and the bug report said so: it named "a screenshot, an
+    attachment or a SCRATCH NOTE" as sufficient to defeat the old check - and a scratch note is
+    markdown. `BG288-repro.md` restored the false green in full. The declaration's contract is
+    that the id names an artefact, so the file has to look like one: a markdown file whose FIRST
+    HEADING carries the same id its name does, which is the shape every writer in this project
+    emits and which no stray note has.
+    """
+    p = str(path)
+    if not p.lower().endswith(".md") or not os.path.isfile(p):
+        return False
+    named = _path_artefact_id(p)
+    if not named:
+        return False
+    try:
+        with open(p, encoding="utf-8") as handle:
+            for line in handle:
+                if not line.strip():
+                    continue
+                if not line.startswith("#"):
+                    return False        # an artefact opens with its heading
+                # The HEADING form (`# BG0288: title`), not the FILENAME form - `_PATH_ID`
+                # requires a `-` or `.` after the id and a heading uses `:`.
+                m = re.match(r"([A-Z]{2,4}-?\d{3,4})\b", line.lstrip("# ").strip())
+                return bool(m) and m.group(1).replace("-", "").upper() == named.upper()
+    except OSError:
+        return False
+    return False
 
 
 def listing_only_paths(root: str = ".") -> set[str]:

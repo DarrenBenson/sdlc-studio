@@ -4800,7 +4800,12 @@ class FalseGreenPathsAreClosedTests(unittest.TestCase):
         suite.mkdir(parents=True)
         ws = tmp / "sdlc-studio"
         (ws / "bugs").mkdir(parents=True)
-        (ws / "bugs" / "BG0288-named.md").write_text("# named\n", encoding="utf-8")
+        # A REAL artefact shape. A declared id now resolves against the artefact index rather
+        # than a filename pattern, so a fixture whose heading is `# named` is not an
+        # artefact - which is the point: a stray `BG288-repro.md` must not satisfy a
+        # declaration either.
+        (ws / "bugs" / "BG0288-named.md").write_text(
+            "# BG0288: named\n\n> **Status:** Open\n", encoding="utf-8")
         (suite / "test_census.py").write_text(
             "from pathlib import Path\n"
             "REPO = Path(__file__).resolve().parents[5]\n"
@@ -5137,8 +5142,14 @@ class ListingOnlyIdScopeTests(unittest.TestCase):
         suite.mkdir(parents=True)
         ws = tmp / "sdlc-studio"
         (ws / "bugs").mkdir(parents=True)
-        (ws / "bugs" / "BG0288-named.md").write_text("# named\n", encoding="utf-8")
-        (ws / "bugs" / "BG0001-other.md").write_text("# other\n", encoding="utf-8")
+        # A REAL artefact shape. A declared id now resolves against the artefact index rather
+        # than a filename pattern, so a fixture whose heading is `# named` is not an
+        # artefact - which is the point: a stray `BG288-repro.md` must not satisfy a
+        # declaration either.
+        (ws / "bugs" / "BG0288-named.md").write_text(
+            "# BG0288: named\n\n> **Status:** Open\n", encoding="utf-8")
+        (ws / "bugs" / "BG0001-other.md").write_text(
+            "# BG0001: other\n\n> **Status:** Open\n", encoding="utf-8")
         (ws / "trd.md").write_text("# trd\n", encoding="utf-8")
         (suite / "test_census.py").write_text(
             "from pathlib import Path\n"
@@ -5271,7 +5282,12 @@ class SilenceWithholdsTheNarrowingTests(unittest.TestCase):
         suite.mkdir(parents=True)
         ws = tmp / "sdlc-studio"
         (ws / "bugs").mkdir(parents=True)
-        (ws / "bugs" / "BG0288-named.md").write_text("# named\n", encoding="utf-8")
+        # A REAL artefact shape. A declared id now resolves against the artefact index rather
+        # than a filename pattern, so a fixture whose heading is `# named` is not an
+        # artefact - which is the point: a stray `BG288-repro.md` must not satisfy a
+        # declaration either.
+        (ws / "bugs" / "BG0288-named.md").write_text(
+            "# BG0288: named\n\n> **Status:** Open\n", encoding="utf-8")
         (suite / "test_census.py").write_text(
             "from pathlib import Path\n"
             "REPO = Path(__file__).resolve().parents[5]\n"
