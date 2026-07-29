@@ -46,7 +46,9 @@ the next batch, with BG0412 (the filer writes fences its own gate refuses).
 
 ## Where the pipeline is
 
-RUN-01KYNKDP delivered 47 of its 48 units and 143 of 148 points: two efficiency epics, a dead
+RUN-01KYNKDP delivered **45 of its 48 units and 138 of 148 points** (corrected from 47 and 143,
+which counted BG0372 and BG0359 - both later reopened for delivering nothing; the sign-off note
+on the record quotes the pre-correction figure): two efficiency epics, a dead
 flag removed, and **36 bugs - the entire open bug backlog except two, both of which are named
 rather than absorbed.** Open bugs went from 37 to 2.
 

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 12 |
+| Open | 14 |
 | In Progress | 0 |
 | Fixed | 317 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **412** |
+| **Total** | **414** |
 
 ## All Bugs
 
@@ -130,6 +130,8 @@
 | [BG0410](BG0410-the-mutation-run-s-temp-file-sink-stopped.md) | The mutation run's temp-file sink stopped the hang by orphaning the child, and leaks an fd and a temp file whenever Popen fails | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0411](BG0411-a-declared-gate-id-resolves-against-any-filename.md) | A declared gate id resolves against any filename matching the id pattern, and a withheld narrowing is announced only under SDLC_DEBUG | Open | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0412](BG0412-file-finding-writes-fenced-blocks-with-no-language.md) | file_finding writes fenced blocks with no language, so the deterministic filer produces artefacts the commit gate refuses | Open | Medium | 2026-07-29 | 2026-07-29 |
+| [BG0413](BG0413-a-suite-that-loses-90-of-its-tests.md) | A suite that loses 90% of its tests is judged not to have covered its scope and is committed anyway - the scope floor declines to record a timing instead of refusing | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0414](BG0414-the-retro-s-estimate-vs-actual-block-is.md) | The retro's estimate-vs-actual block is empty on a 148-point sprint: the close never runs the accuracy write it templates a home for | Open | Medium | 2026-07-29 | 2026-07-29 |
 
 ## Archived Releases
 
