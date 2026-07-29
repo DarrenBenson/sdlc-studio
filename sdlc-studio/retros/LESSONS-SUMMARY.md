@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0260: **A speed-up test measures the wrong memo unless each is isolated.** Four mutants survived the corpus-cache work because the read-count...**
+- **L-0259: **Verify the premise before repairing it, and record it when it does not hold.** Three findings this sprint did not reproduce.**
+- **L-0258: **A guard that answers a narrower question than it claims reports the narrow answer as the broad one.** Eight of RV0024's residue bugs were...**
 - **L-0257: **An empty measurement is not a finding.** A Batch line naming no units meant "unreadable", and the report said "delivered nothing"; a...**
 - **L-0256: **A contradicting pair is decided ONCE, in one place.** BG0356/BG0360 were satisfiable in opposite directions.**
 - **L-0255: **Verify the premise before filing, not just before fixing.** Two bug reports were wrong about the code they described.**
