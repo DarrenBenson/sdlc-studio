@@ -12,11 +12,11 @@
 
 ## Summary
 
-{{what changes and why}}
+Not recorded at the time. Its substance is the title above and the units it was decomposed into.
 
 ## Impact
 
-{{who this affects and what breaks}}
+Not recorded at the time. Stated rather than left blank, so a finished record is not mistaken for an unexamined one.
 
 ## Revision History
 

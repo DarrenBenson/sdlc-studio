@@ -153,17 +153,7 @@ def _parse_iso(value) -> "datetime | None":
     A NAIVE stamp is still refused. It names no instant, and calling it UTC would invent the one
     fact it is missing - unreadable is the honest reading of it. Sub-second precision is kept
     rather than rounded away."""
-    from datetime import datetime, timezone  # noqa: PLC0415 - local, as elsewhere here
-    text = str(value).strip()
-    try:
-        return datetime.strptime(text, _ISO_Z).replace(tzinfo=timezone.utc)
-    except (TypeError, ValueError):
-        pass
-    try:
-        parsed = datetime.fromisoformat(text[:-1] + "+00:00" if text.endswith("Z") else text)
-    except (TypeError, ValueError):
-        return None
-    return None if parsed.tzinfo is None else parsed.astimezone(timezone.utc)
+    return sdlc_md.parse_iso8601(value)
 
 
 def idle_gaps(state: dict) -> list[dict]:

@@ -106,9 +106,11 @@ def elapsed_minutes(started_at: str | None, now: datetime | None = None) -> floa
     so clock skew on a shared checkout cannot report a negative spend."""
     if not started_at:
         return 0.0
-    try:
-        start = datetime.strptime(started_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
-    except (ValueError, TypeError):
+    # The SHARED reader - see `sdlc_md.parse_iso8601`. A hand-rolled Z-only pattern here meant
+    # the breaker read a run opened with an offset-bearing stamp as never opened, and reported
+    # zero minutes spent on a run that had been going for hours.
+    start = sdlc_md.parse_iso8601(started_at)
+    if start is None:
         return 0.0
     now = now or datetime.now(timezone.utc)
     return max(0.0, (now - start).total_seconds() / 60.0)

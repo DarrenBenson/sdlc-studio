@@ -275,6 +275,35 @@ def inflight_refusal(root: Path | str) -> str | None:
             f"{inflight_age_note(state)}")
 
 
+#: The stamp `now_iso8601` writes. The fast path, kept because it is the overwhelming case.
+_ISO_Z = "%Y-%m-%dT%H:%M:%SZ"
+
+
+def parse_iso8601(value) -> "datetime.datetime | None":
+    """Any ISO-8601 stamp carrying an explicit UTC offset, normalised to UTC. None otherwise.
+
+    THE ONE STAMP READER. This rule had three implementations - here (as telemetry's private
+    `_parse_iso`), in `transition.py` and in `loop_guard.py` - and two of them matched a single
+    hand-written `%Y-%m-%dT%H:%M:%SZ`. That is the form this project writes; it is NOT the form
+    the standard library writes, and `.isoformat()` on an aware datetime yields `+00:00`, which
+    is live in this tree and in any consuming project whose state these read. So a fix to the
+    reader landed in one place and the other two went on refusing valid stamps.
+
+    A NAIVE stamp is still refused: it names no instant, and calling it UTC would invent the one
+    fact it is missing. Sub-second precision is kept rather than rounded away."""
+    import datetime as _dt  # noqa: PLC0415 - local, as elsewhere in this module
+    text = str(value).strip()
+    try:
+        return _dt.datetime.strptime(text, _ISO_Z).replace(tzinfo=_dt.timezone.utc)
+    except (TypeError, ValueError):
+        pass
+    try:
+        parsed = _dt.datetime.fromisoformat(text[:-1] + "+00:00" if text.endswith("Z") else text)
+    except (TypeError, ValueError):
+        return None
+    return None if parsed.tzinfo is None else parsed.astimezone(_dt.timezone.utc)
+
+
 def now_iso8601() -> str:
     """Current UTC time as an ISO-8601 Z string (YYYY-MM-DDTHH:MM:SSZ)."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -1200,7 +1229,8 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "undecomposed": "a discovery item accepted into the workflow has no children - decompose it into the units that deliver it (refine a request into epics/stories; triage an Issue into bugs), or close it if it is not going ahead; a still-Proposed/Draft/Open item is pre-triage intake and is not flagged",
         "linked-epics": "the request index's Linked Epics cell disagrees with the file's `Decomposed-into` - run `reconcile apply` to census it from the files; a request that was never decomposed keeps its placeholder and is not flagged",
         "stale-index-stamp": "the index's `**Last Updated:**` header is older than the newest date on its own rows, so it claims a freshness it does not have - run `reconcile apply` to restamp it from the rows (the stamp is derived, never hand-set; a header AHEAD of the rows is just an index nothing has been added to and is not flagged)",
-        "index-field": "an index CELL disagrees with the artefact it is derived from - a bug's Severity, an RFC's Status, a CR's Priority. The index is derived output, and `status.py` reads it, so a stale cell makes every backlog figure taken from it wrong. Run `reconcile apply` to project the cells from the artefacts (an off-schema row is skipped rather than written into, and reported here so it can be fixed by hand)",        "request-derivable": "every child a request produced is resolved, so its successful terminal is EARNED but was never recorded - run `reconcile apply` to derive it (Complete / Accepted / Resolved), which goes through `transition` so the index row and cascades still run; a childless request is the separate `undecomposed` case and is never derived. Where the item names a gate that still refuses (an RFC with an open decision, say), `reconcile apply` CANNOT clear it and says so - resolve that gate first",
+        "index-field": "an index CELL disagrees with the artefact it is derived from - a bug's Severity, an RFC's Status, a CR's Priority. The index is derived output, and `status.py` reads it, so a stale cell makes every backlog figure taken from it wrong. Run `reconcile apply` to project the cells from the artefacts (an off-schema row is skipped rather than written into, and reported here so it can be fixed by hand)",        "spawned-column": "a request's index cell claiming the work it spawned disagrees with the census of what actually names it as parent. A one-off backfill corrected 33 such cells here and nothing kept them true, so the next decomposition left a stale one exactly as before - correct the cell from the census, which `children_of` computes; the column can be wrong by over-claiming as readily as by under-claiming",
+        "request-derivable": "every child a request produced is resolved, so its successful terminal is EARNED but was never recorded - run `reconcile apply` to derive it (Complete / Accepted / Resolved), which goes through `transition` so the index row and cascades still run; a childless request is the separate `undecomposed` case and is never derived. Where the item names a gate that still refuses (an RFC with an open decision, say), `reconcile apply` CANNOT clear it and says so - resolve that gate first",
     },
 }
 

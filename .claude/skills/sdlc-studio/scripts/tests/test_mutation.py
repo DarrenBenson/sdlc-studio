@@ -3037,5 +3037,53 @@ class IsolationTests(unittest.TestCase):
             self.assertFalse(r["refused"], r)
 
 
+class KilledMutantsCarryTheirKillerTests(unittest.TestCase):
+    """BG0357. `US0507` ships a consumer that nominates a test no mutation of its own module can
+    kill, and it requires each killed mutant to carry the test that killed it. `mutation.py` -
+    this repository's only producer of mutation evidence - threw the runner's output away, so
+    the key was never emitted and the consumer took its refusal branch against every real
+    report. Loud rather than falsely green, but the capability was unreachable."""
+
+    def test_a_pytest_failure_is_attributed(self) -> None:
+        mut = _load()
+        self.assertEqual(
+            "tests/test_x.py::C::test_y",
+            mut._killing_test("FAILED tests/test_x.py::C::test_y - AssertionError"))
+
+    def test_a_unittest_failure_is_attributed(self) -> None:
+        """Two runners, both parsed. A parser knowing one would attribute nothing for the
+        other, which is the same silence this fix exists to end."""
+        mut = _load()
+        self.assertEqual("tests.test_x.C.test_y",
+                         mut._killing_test("FAIL: test_y (tests.test_x.C)"))
+        self.assertEqual("tests.test_x.C.test_y",
+                         mut._killing_test("ERROR: test_y (tests.test_x.C)"))
+
+    def test_output_naming_no_test_attributes_nothing(self) -> None:
+        """None is honest and is not an error: a runner this cannot parse, a suite printing
+        nothing, or a kill by collection failure all genuinely name no test. A fabricated
+        attribution would be evidence about the wrong test."""
+        mut = _load()
+        self.assertIsNone(mut._killing_test("the suite exploded"))
+        self.assertIsNone(mut._killing_test(""))
+
+    def test_the_run_loop_records_the_key_on_a_kill(self) -> None:
+        """The producer emits it, which is the whole finding - a parser nothing calls would
+        leave the consumer refusing exactly as before."""
+        import inspect
+        src = inspect.getsource(_load())
+        self.assertIn('row["test"] = killer', src,
+                      "the run loop does not attach the killing test to a killed mutant")
+        self.assertIn("_killing_test(_LAST_RUN_OUTPUT[0])", src)
+
+    def test_the_runner_output_is_captured_not_discarded(self) -> None:
+        """The precondition. With the streams sent to DEVNULL there is nothing to parse, and
+        the attribution above could only ever be None."""
+        import inspect
+        src = inspect.getsource(_load()._run_tests)
+        self.assertIn("subprocess.PIPE", src)
+        self.assertNotIn("stdout=subprocess.DEVNULL", src)
+
+
 if __name__ == "__main__":
     unittest.main()

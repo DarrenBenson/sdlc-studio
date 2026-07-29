@@ -3576,6 +3576,64 @@ class IndexDerivedSeesFieldDriftTests(unittest.TestCase):
                       "it has to be named explicitly - and it is the one that was missed")
 
 
+class SpawnedColumnStaysTrueTests(unittest.TestCase):
+    """BG0359. A one-off backfill corrected 33 false cells in the RFC index by deriving them
+    from the files, and NOTHING kept them true: reconcile did not check the column, so the next
+    decomposition left a stale cell exactly as before. A column that is right only on the day
+    somebody sweeps it is one nobody can trust - and this one is read by anyone asking what a
+    request produced."""
+
+    def _repo(self, cell: str, header: str = "Spawned CRs") -> Path:
+        d = Path(tempfile.mkdtemp(prefix="spawned_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        (d / "sdlc-studio" / "rfcs").mkdir(parents=True)
+        (d / "sdlc-studio" / "epics").mkdir(parents=True)
+        (d / "sdlc-studio" / "rfcs" / "RFC0001-x.md").write_text(
+            "# RFC0001: x\n\n> **Status:** Accepted\n", encoding="utf-8")
+        (d / "sdlc-studio" / "epics" / "EP0001-y.md").write_text(
+            "# EP0001: y\n\n> **Status:** Draft\n> **Parent:** RFC0001\n", encoding="utf-8")
+        (d / "sdlc-studio" / "rfcs" / "_index.md").write_text(
+            f"# RFC Index\n\n| ID | Title | Status | {header} |\n| --- | --- | --- | --- |\n"
+            f"| [RFC0001](RFC0001-x.md) | x | Accepted | {cell} |\n", encoding="utf-8")
+        return d
+
+    def test_a_stale_cell_is_reported(self) -> None:
+        drift = reconcile.spawned_column_drift(self._repo("--"))
+        self.assertEqual(1, len(drift), "a placeholder cell against a real child is drift")
+        self.assertIn("EP0001", drift[0]["detail"])
+        self.assertEqual("spawned-column", drift[0]["kind"])
+
+    def test_a_true_cell_is_not(self) -> None:
+        """The discriminating half - a detector that always fires is not a detector."""
+        self.assertEqual([], reconcile.spawned_column_drift(self._repo("EP0001")))
+
+    def test_a_cell_claiming_work_that_does_not_exist_is_reported(self) -> None:
+        """Drift the other way: the column can be wrong by over-claiming as readily as by
+        under-claiming, and a check that only looked for missing ids would pass a fabrication."""
+        drift = reconcile.spawned_column_drift(self._repo("EP0001, EP9999"))
+        self.assertEqual(1, len(drift))
+        self.assertIn("EP9999", drift[0]["detail"])
+
+    def test_the_column_is_found_under_any_of_its_names(self) -> None:
+        """This repo's header says `Spawned CRs` while most of its cells hold EPIC ids, and
+        renaming it is a cross-file change. A detector keyed to one spelling would silently
+        exempt every project that named the column anything else."""
+        for header in ("Spawned CRs", "Spawned work", "Decomposed into", "Children"):
+            with self.subTest(header=header):
+                self.assertEqual(1, len(reconcile.spawned_column_drift(
+                    self._repo("--", header=header))))
+
+    def test_an_index_without_the_column_is_not_drift(self) -> None:
+        drift = reconcile.spawned_column_drift(self._repo("--", header="Author"))
+        self.assertEqual([], drift, "a project that has no such column owes nothing")
+
+    def test_the_sweep_includes_it(self) -> None:
+        """A detector nothing calls reports nothing - the inert-mechanism class this repo has
+        just spent a sprint on."""
+        _per_type, drift = reconcile.detect_all(self._repo("--"))
+        self.assertIn("spawned-column", {d.get("kind") for d in drift})
+
+
 class CorpusReadOnceTests(unittest.TestCase):
     """US0531/US0532 (CR0465). Every sweep detector walks the artefact tree, and several resolve
     an id or list a request's children unit by unit - each of those a fresh walk that opens and

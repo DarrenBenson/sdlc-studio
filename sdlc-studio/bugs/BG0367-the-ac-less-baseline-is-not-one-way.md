@@ -1,6 +1,7 @@
 # BG0367: The AC-less baseline is not one-way, so a newly filed unit can be added to it and exempt itself
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py
@@ -22,7 +23,21 @@ Make the baseline one-way: a unit created after the baseline was taken is never 
 
 ## Acceptance Criteria
 
-No acceptance criterion could be derived from this finding's evidence: none of its prose fields carries fewer than 5 words of substance, so nothing here states what fixed would look like. Whoever picks this up agrees the contract with the author before starting - this is a stated gap, not a criterion to tick.
+### AC1: a baseline may only shrink
+
+- **Given** each grandfathering baseline and its committed state
+- **When** it is checked
+- **Then** no id has been added - a baseline grandfathers what ALREADY existed, and adding to it turns a time-boxed exemption into a permanent and extensible one
+- **Verify:** pytest tools/tests/test_baselines_only_shrink.py::BaselinesOnlyShrinkTests::test_no_baseline_has_grown_against_the_last_commit
+- **Verified:** yes (2026-07-29)
+
+### AC2: the comparison reads the committed state
+
+- **Given** `git show` against HEAD
+- **When** it is checked
+- **Then** it resolves for every baseline, because if it stopped resolving every assertion above would pass vacuously by taking the no-previous-state branch
+- **Verify:** pytest tools/tests/test_baselines_only_shrink.py::BaselinesOnlyShrinkTests::test_the_comparison_reads_the_committed_state
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

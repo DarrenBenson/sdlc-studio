@@ -873,11 +873,9 @@ def _elapsed_seconds(started_at: str | None, ended_at: str | None) -> int | None
     long the round took, and answering 0 would be an invented measurement."""
     if not started_at or not ended_at:
         return None
-    from datetime import datetime
-    try:
-        a = datetime.fromisoformat(str(started_at).replace("Z", "+00:00"))
-        b = datetime.fromisoformat(str(ended_at).replace("Z", "+00:00"))
-    except ValueError:
+    a = sdlc_md.parse_iso8601(started_at)
+    b = sdlc_md.parse_iso8601(ended_at)
+    if a is None or b is None:
         return None
     delta = int((b - a).total_seconds())
     return delta if delta >= 0 else None

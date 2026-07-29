@@ -92,15 +92,17 @@ def _story_target_parity(text: str) -> str | None:
 
 
 def _iso_to_epoch(value) -> float | None:
-    """Parse a `YYYY-MM-DDTHH:MM:SSZ` verify-report timestamp to a UTC epoch, or None."""
+    """Parse a verify-report timestamp to a UTC epoch, or None.
+
+    Any ISO-8601 stamp carrying an explicit UTC offset, via the one shared reader."""
     if not value:
         return None
-    from datetime import datetime, timezone
-    try:
-        return datetime.strptime(str(value), "%Y-%m-%dT%H:%M:%SZ").replace(
-            tzinfo=timezone.utc).timestamp()
-    except (ValueError, TypeError):
-        return None
+    # The SHARED reader. This carried its own `%Y-%m-%dT%H:%M:%SZ` pattern, so the
+    # offset-bearing stamps the standard library writes - and which are live in this tree -
+    # were refused here while telemetry accepted them. One rule, three implementations, two
+    # of them wrong.
+    parsed = sdlc_md.parse_iso8601(value)
+    return None if parsed is None else parsed.timestamp()
 
 
 def _story_has_executable_acs(text: str) -> bool:

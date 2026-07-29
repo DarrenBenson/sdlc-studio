@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 7 |
+| Open | 2 |
 | In Progress | 0 |
-| Fixed | 310 |
+| Fixed | 315 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -64,7 +64,7 @@
 | [BG0344](BG0344-the-shell-hazard-corpus-assertion-cannot-tell-quoting.md) | The shell-hazard corpus assertion cannot tell quoting from hazard, so evidence about shell defects must be degraded to commit | Fixed | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0345](BG0345-us0480-and-us0461-specify-two-incompatible-ratchets-for.md) | US0480 and US0461 specify two incompatible ratchets for one concept, and neither can fail as written | Fixed | High | 2026-07-27 | 2026-07-27 |
 | [BG0346](BG0346-us0482-s-duplicate-selector-burn-down-is-scoped.md) | US0482's duplicate-selector burn-down is scoped to stories while the ratchet it serves covers stories and bugs | Fixed | Medium | 2026-07-27 | 2026-07-27 |
-| [BG0347](BG0347-31-terminal-artefacts-carry-an-unfilled-body-scaffold.md) | 31 terminal artefacts carry an unfilled body scaffold, including 12 bugs with no symptom, steps or fix | Open | Medium | 2026-07-27 | 2026-07-27 |
+| [BG0347](BG0347-31-terminal-artefacts-carry-an-unfilled-body-scaffold.md) | 31 terminal artefacts carry an unfilled body scaffold, including 12 bugs with no symptom, steps or fix | Fixed | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0348](BG0348-an-all-skipped-run-is-still-stamped-green.md) | An all-skipped run is still stamped green for unittest, jest, vitest and go | Fixed | High | 2026-07-27 | 2026-07-27 |
 | [BG0349](BG0349-four-modules-still-carry-the-naive-fence-toggle.md) | Four modules still carry the naive fence toggle the parser fix replaced | Fixed | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0350](BG0350-25-done-stories-carry-no-independent-critic-verdict.md) | 25 Done stories carry no independent critic verdict, waived rather than cleared | Open | Low | 2026-07-28 | 2026-07-28 |
@@ -74,17 +74,17 @@
 | [BG0354](BG0354-three-more-places-still-enumerate-the-v2-four.md) | Three more places still enumerate the v2 four-digit id, so a v3 ULID unit silently escapes them | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0355](BG0355-a-delegated-lane-can-edit-the-tree-and.md) | A delegated lane can edit the tree and stop without returning a result, leaving finished work unrecorded | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0356](BG0356-validate-and-verify-ac-disagree-about-whether-a.md) | validate and verify_ac disagree about whether a bug's Verify line executes | Fixed | Medium | 2026-07-28 | 2026-07-28 |
-| [BG0357](BG0357-mutation-py-records-no-per-test-attribution-so.md) | mutation.py records no per-test attribution, so the prune-candidate consumer can never run | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0357](BG0357-mutation-py-records-no-per-test-attribution-so.md) | mutation.py records no per-test attribution, so the prune-candidate consumer can never run | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0358](BG0358-a-declared-proof-obligation-can-go-unmet-and.md) | A declared proof obligation can go unmet and the sprint still closes clean | Fixed | High | 2026-07-28 | 2026-07-28 |
-| [BG0359](BG0359-nothing-keeps-the-rfc-index-s-spawned-work.md) | Nothing keeps the RFC index's spawned-work column true once it has been backfilled | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0359](BG0359-nothing-keeps-the-rfc-index-s-spawned-work.md) | Nothing keeps the RFC index's spawned-work column true once it has been backfilled | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0360](BG0360-verify-ac-cannot-resolve-a-bug-id-so.md) | verify_ac cannot resolve a bug id, so no bug can prove its own acceptance criteria | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0361](BG0361-d0074-s-recorded-waiver-still-covers-nothing-and.md) | D0074's recorded waiver still covers nothing, and record-time validation would accept the same shape again | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0362](BG0362-a-retro-whose-batch-line-is-prose-yields.md) | A retro whose Batch line is prose yields an empty sprint report - the latest sprint reads zero units | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0363](BG0363-gate-py-records-a-cost-baseline-on-every.md) | gate.py records a cost baseline on every CLI run including scoped ones, so the trend compares unlike runs | Fixed | Medium | 2026-07-28 | 2026-07-28 |
-| [BG0364](BG0364-two-more-modules-hand-roll-the-strict-timestamp.md) | Two more modules hand-roll the strict timestamp parser BG0353 just fixed in telemetry | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0364](BG0364-two-more-modules-hand-roll-the-strict-timestamp.md) | Two more modules hand-roll the strict timestamp parser BG0353 just fixed in telemetry | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0365](BG0365-the-carried-lessons-set-has-three-representations-and.md) | The carried-lessons set has three representations and the read gate may read a different one from the one the retro writes | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0366](BG0366-overhead-ratio-computes-delivery-by-subtraction-so-unmeasured.md) | _overhead_ratio computes delivery by subtraction, so unmeasured overhead is reported as delivery | Fixed | High | 2026-07-28 | 2026-07-28 |
-| [BG0367](BG0367-the-ac-less-baseline-is-not-one-way.md) | The AC-less baseline is not one-way, so a newly filed unit can be added to it and exempt itself | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0367](BG0367-the-ac-less-baseline-is-not-one-way.md) | The AC-less baseline is not one-way, so a newly filed unit can be added to it and exempt itself | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0368](BG0368-init-s-derived-artefact-tree-creates-a-type.md) | init's derived artefact tree creates a type's directory without its index, regressing what US0529 fixed for issues | Fixed | Low | 2026-07-28 | 2026-07-28 |
 | [BG0369](BG0369-the-conformance-waiver-report-is-blanked-when-the.md) | The conformance waiver report is blanked when the diff contains no stories, hiding a waived unit rather than reporting it | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0370](BG0370-us0516-s-stated-absence-escape-hatch-defeats-the.md) | US0516's stated-absence escape hatch defeats the criteria floor US0514 and US0515 establish | Fixed | High | 2026-07-28 | 2026-07-28 |

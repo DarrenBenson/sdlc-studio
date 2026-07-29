@@ -10,7 +10,7 @@
 
 ## Summary
 
-{{what this epic groups}}
+Not recorded at the time. What this epic groups is its story breakdown below, which is derived rather than written.
 
 ## Story Breakdown
 

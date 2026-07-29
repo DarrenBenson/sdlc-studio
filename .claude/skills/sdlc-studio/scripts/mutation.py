@@ -906,6 +906,32 @@ def _viability(path: Path, mutated: str) -> str | None:
     return None
 
 
+#: The last test run's captured output, so `_killing_test` can read it without changing the
+#: `_run_tests` contract every caller depends on. A single slot: the run loop is sequential.
+_LAST_RUN_OUTPUT = [""]
+
+#: How a failing test names itself. pytest's summary line and unittest's FAIL/ERROR header are
+#: both matched - a parser knowing one runner would attribute nothing for the other, which is
+#: the same silence this fix exists to end.
+_FAILED_NODE = re.compile(r"^(?:FAILED|ERROR)\s+(\S+)", re.M)
+_UNITTEST_FAIL = re.compile(r"^(?:FAIL|ERROR):\s+(\S+)\s+\(([^)]+)\)", re.M)
+
+
+def _killing_test(output: str) -> str | None:
+    """The test that killed the mutant, or None when the output does not name one.
+
+    None is honest and is NOT an error: a runner this cannot parse, a suite that prints
+    nothing, or a mutant killed by a collection failure all genuinely name no test. The
+    consumer treats an unattributed kill as unattributed rather than assuming one."""
+    m = _FAILED_NODE.search(output or "")
+    if m:
+        return m.group(1)
+    m = _UNITTEST_FAIL.search(output or "")
+    if m:
+        return f"{m.group(2)}.{m.group(1)}"
+    return None
+
+
 def _run_tests(test_cmd: str, cwd: Path) -> str:
     """One test run -> 'pass' | 'fail' | 'error' (the runner itself broke).
 
@@ -918,16 +944,24 @@ def _run_tests(test_cmd: str, cwd: Path) -> str:
     import os
     import signal
     env = _suite_env()
+    # Output is CAPTURED, not discarded. A killed mutant with no attribution is a killed mutant
+    # nobody can act on: `US0507`'s prune-candidate consumer needs the test that did the
+    # killing, and with the streams thrown away it took its refusal branch against every real
+    # report - a capability unreachable because the only producer never recorded the key.
     proc = subprocess.Popen(test_cmd, shell=True, cwd=cwd, start_new_session=True, env=env,  # nosec B602 - operator-authored test command, same trust boundary as verify_ac's Verify lines
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                            errors="replace")
     try:
-        rc = proc.wait(timeout=_RUN_TIMEOUT)
+        out, _ = proc.communicate(timeout=_RUN_TIMEOUT)
+        rc = proc.returncode
+        _LAST_RUN_OUTPUT[0] = out or ""
     except subprocess.TimeoutExpired:
         try:
             os.killpg(proc.pid, signal.SIGKILL)
         except (ProcessLookupError, PermissionError):
             pass
         proc.wait()
+        _LAST_RUN_OUTPUT[0] = ""
         return "error"
     if rc == 0:
         return "pass"
@@ -1026,7 +1060,15 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
                 with applied(m, sidecar=sidecar):
                     outcome = _run_tests(test_cmd, root)
                 verdict = {"pass": "survived", "fail": "killed", "error": "error"}[outcome]
-                records.append({**m, "verdict": verdict})
+                # ATTRIBUTION on a kill. Absent rather than guessed when the runner's output
+                # names no test - the consumer reads a missing key as unattributed, which is
+                # true, where a fabricated one would be evidence about the wrong test.
+                row = {**m, "verdict": verdict}
+                if verdict == "killed":
+                    killer = _killing_test(_LAST_RUN_OUTPUT[0])
+                    if killer:
+                        row["test"] = killer
+                records.append(row)
         finally:
             # Never raise out of the restore path. A window this run cannot find - cleared by
             # hand mid-run, or replaced - would otherwise become the exception that buries the

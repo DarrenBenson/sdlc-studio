@@ -840,5 +840,54 @@ class StampParsingTests(unittest.TestCase):
         self.assertEqual(el["hours"], 3.0)
 
 
+class OneStampReaderTests(unittest.TestCase):
+    """BG0364. `transition.py` and `loop_guard.py` each carried their own Z-only pattern, so the
+    offset-bearing stamps the standard library writes - live in this tree, and in any consuming
+    project whose state these read - were refused there while telemetry accepted them. One rule,
+    four implementations, three of them wrong. `run_state` was the fourth, found while fixing
+    the two the finding named."""
+
+    #: Every module that reads a stamp, and the callable that does it. Named here so a fifth
+    #: hand-rolled reader is a failing subtest rather than a discovery two sprints later.
+    READERS = ("telemetry", "transition", "loop_guard", "lib.run_state")
+
+    OFFSET = "2026-07-29T10:00:00+01:00"
+    ZULU = "2026-07-29T09:00:00Z"
+
+    def test_the_shared_reader_accepts_both_forms_and_refuses_a_naive_one(self) -> None:
+        from lib import sdlc_md
+        self.assertEqual(sdlc_md.parse_iso8601(self.OFFSET), sdlc_md.parse_iso8601(self.ZULU),
+                         "an offset stamp and its UTC equivalent must be the same instant")
+        self.assertIsNone(sdlc_md.parse_iso8601("2026-07-29T10:00:00"),
+                          "a naive stamp names no instant; calling it UTC invents the one fact "
+                          "it is missing")
+        self.assertIsNone(sdlc_md.parse_iso8601("rubbish"))
+
+    def test_no_module_hand_rolls_the_pattern(self) -> None:
+        """DERIVED over the modules rather than asserted one at a time: the defect is that a
+        rule had more than one implementation, so the check has to be about the set."""
+        import importlib
+        from pathlib import Path as _P
+        scripts = _P(__file__).resolve().parents[1]
+        for name in self.READERS:
+            rel = name.replace(".", "/") + ".py"
+            with self.subTest(module=name):
+                src = (scripts / rel).read_text(encoding="utf-8")
+                self.assertNotIn('"%Y-%m-%dT%H:%M:%SZ"', src.replace('_ISO_Z = "%Y-%m-%dT%H:%M:%SZ"', ""),
+                                 f"{name} still carries its own stamp pattern")
+
+    def test_each_reader_accepts_an_offset_stamp(self) -> None:
+        """The property, through each module's own entry point - a shared helper nothing calls
+        would leave every one of them still refusing."""
+        import loop_guard
+        import telemetry
+        import transition
+        self.assertIsNotNone(telemetry._parse_iso(self.OFFSET))
+        self.assertIsNotNone(transition._iso_to_epoch(self.OFFSET))
+        # A stamp well in the past, so a real parse is clearly positive: the OFFSET stamp is
+        # near enough to now that the clamp at 0 makes a parsed and an unparsed one look alike.
+        self.assertGreater(loop_guard.elapsed_minutes("2020-01-01T10:00:00+01:00"), 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()

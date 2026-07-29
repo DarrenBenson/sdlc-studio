@@ -11,15 +11,15 @@
 
 ## Summary
 
-{{symptom}}
+The symptom was never written into this record. Its substance is the title above and the disposition in its revision history; nothing here is reconstructed, because inventing what an author would have said is the false-evidence class this project files bugs about.
 
 ## Steps to Reproduce
 
-{{steps}}
+Not recorded at the time. Stated rather than left blank: a closed record with an empty field is indistinguishable from one nobody investigated.
 
 ## Proposed Fix
 
-{{fix}}
+Not recorded at the time. What landed is in the commits that reference this id and in the revision history below.
 
 ## Detail
 

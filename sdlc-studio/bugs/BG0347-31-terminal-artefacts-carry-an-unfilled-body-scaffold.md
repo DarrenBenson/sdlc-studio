@@ -1,6 +1,7 @@
 # BG0347: 31 terminal artefacts carry an unfilled body scaffold, including 12 bugs with no symptom, steps or fix
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first)
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** sdlc-studio/.placeholder-baseline.txt, sdlc-studio/bugs, sdlc-studio/epics, sdlc-studio/change-requests
@@ -19,6 +20,24 @@ BG0304 widened the placeholder sweep from the acceptance-criteria section to the
 ## Proposed Fix
 
 Backfill each artefact's missing content and remove its id from the baseline. Removal is one-way by design: once an id leaves the list the check errors on it, so the count can only fall. Where a record's content is genuinely unrecoverable - nobody remembers what the bug was - say so explicitly in the artefact rather than leaving a scaffold, and remove it from the baseline on that basis.
+
+## Acceptance Criteria
+
+### AC1: no terminal artefact carries an unfilled body scaffold
+
+- **Given** the workspace
+- **When** it is read
+- **Then** `validate check` reports no unresolved body placeholder - a closed bug that never said what went wrong is indistinguishable from one nobody investigated
+- **Verify:** shell test $(python3 .claude/skills/sdlc-studio/scripts/validate.py check 2>&1 | grep -c 'unresolved placeholder in body') -eq 0
+- **Verified:** yes (2026-07-29)
+
+### AC2: the absence is STATED, never reconstructed
+
+- **Given** a field that was never filled at the time
+- **When** it is read
+- **Then** the record says so and points at what does carry its substance, because inventing what an author would have said is the false-evidence class this project files bugs about
+- **Verify:** shell grep -q 'Not recorded at the time' sdlc-studio/bugs/BG0271-the-site-sweep-test-is-unrunnable-inside-a.md
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

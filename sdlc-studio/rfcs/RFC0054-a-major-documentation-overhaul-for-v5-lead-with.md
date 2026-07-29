@@ -11,7 +11,10 @@ v5 is a semver-major release and the documentation has grown by accretion, one r
 
 ## Design Options
 
-- **Option A** {{...}}
+- **Option A** - the in-repo documentation overhaul this RFC was raised to plan. It was
+  never elaborated: the RFC was superseded before its options were written out, and the
+  paragraph below records what happened instead. Stated rather than left as a scaffold,
+  because a design record with a blank option reads as an option nobody considered.
 
 **Superseded by the sdlc-studio.com website.** The v5 documentation overhaul this RFC planned (a narrative two-backlog + sprint-planning guide, lifecycle overview, front-door rewrite) was delivered instead as the standalone site at sdlc-studio.com under the site-only-docs decision: getting-started, the two-backlog and sprint-planning concept pages, an end-to-end walkthrough, a comparison table and a multi-harness page all live there, canonical, rather than in the repo. Kept for the design record; the live artefact is the website.
 

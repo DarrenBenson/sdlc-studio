@@ -87,6 +87,7 @@ DRIFT_KINDS = (
     "linked-epics",
     "stale-index-stamp",
     "index-field",
+    "spawned-column",
 )
 
 # Statuses that do NOT imply a backing file yet. An UNLINKED index row in one of
@@ -1602,6 +1603,65 @@ def era_divergence_advisory(repo_root: Path | str) -> str | None:
             f"`migrate_v3.py adopt --confirm` / `apply --confirm`) before writers diverge.")
 
 
+#: Index columns that project a request's DECOMPOSED WORK, by the header text projects use.
+#: Read as a set of aliases rather than one spelling: this repo's RFC index says `Spawned CRs`
+#: while most of its cells now hold epic ids, and a detector keyed to one header silently
+#: exempts every project that named the column anything else.
+SPAWNED_COLUMN_ALIASES = ("spawned crs", "spawned", "spawned work", "decomposed into", "children")
+
+
+def spawned_column_drift(repo_root: Path | str) -> list[dict]:
+    """An index cell claiming a request's spawned work that the census disagrees with.
+
+    A one-off backfill corrected 33 false cells here by deriving them from the files, and
+    nothing kept them true: the next decomposition left a stale cell exactly as before. A
+    column that is right only on the day somebody sweeps it is a column nobody can trust, and
+    this one is read by anyone asking what a request produced.
+
+    Compared as SETS of ids, so ordering and separator style are not drift. A cell holding a
+    placeholder (`--`) against real children IS drift; real children in the cell against none
+    on disk is drift the other way."""
+    root = Path(repo_root)
+    drift: list[dict] = []
+    for type_ in sdlc_md.DISCOVERY_TYPES:
+        rel = sdlc_md.ARTIFACT_TYPES.get(type_, (None,))[0]
+        if not rel:
+            continue
+        path = root / rel / "_index.md"
+        if not path.is_file():
+            continue
+        header: list[str] | None = None
+        col: int | None = None
+        for line in sdlc_md.read_text_safe(path).splitlines():
+            cells = sdlc_md.table_cells(line)
+            if not cells:
+                continue
+            if header is None:
+                header = [c.strip().lower() for c in cells]
+                col = next((i for i, h in enumerate(header)
+                            if any(h.startswith(a) for a in SPAWNED_COLUMN_ALIASES)), None)
+                continue
+            if col is None or col >= len(cells):
+                continue
+            m = sdlc_md.ID_SEARCH_RE.search(cells[0])
+            if not m:
+                continue
+            rid = sdlc_md.norm_id(m.group(0))
+            claimed = {sdlc_md.norm_id(x) for x in sdlc_md.ID_SEARCH_RE.findall(cells[col] or "")}
+            actual = {sdlc_md.norm_id(cid) for cid, _t in sdlc_md.children_of(root, rid)}
+            if claimed == actual:
+                continue
+            drift.append({
+                "kind": "spawned-column", "type": type_, "id": rid,
+                "detail": (f"{rid}: the index claims spawned work {sorted(claimed) or '(none)'} "
+                           f"and the census finds {sorted(actual) or '(none)'} - a column that "
+                           f"is right only on the day somebody sweeps it is one nobody can "
+                           f"trust"),
+                "remedy": f"correct the {rel}/_index.md cell for {rid} from the census",
+            })
+    return drift
+
+
 def detect_all(repo_root: Path | str, scope: str | None = None) -> tuple[dict, list[dict]]:
     """(per-type results, every drift item this scope detects). THE sweep.
 
@@ -1666,6 +1726,7 @@ def _detect_all(repo_root: Path, scope: str | None) -> tuple[dict, list[dict]]:
     if scope is None:
         all_drift.extend(link_asymmetry_drift(repo_root))
         all_drift.extend(detect_linked_epics(repo_root)["drift"])
+        all_drift.extend(spawned_column_drift(repo_root))
         if sdlc_md.two_backlog_enforced(repo_root):
             all_drift.extend(undecomposed_drift(repo_root))
             all_drift.extend(derivable_request_drift(repo_root))
