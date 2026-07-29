@@ -6,6 +6,43 @@
 <!-- close-status:end -->
 
 > **Retro:** RETRO0083 · **Goal verdict:** partial (per clause) · **Outcome:** delivered 47 of 48
+> · **Sign-off:** RECORDED 2026-07-29, operator as reviewer of record, as a knowingly PARTIAL increment
+
+## The close is done, and it cost more than the sprint
+
+**5h to deliver, 6h35m to close.** Only about 70 minutes of that close - roughly 18% - was gate
+and suite time. The rest was repair: nine stop-ships, eight test classes restored after a bad
+revert, then four more bugs found by re-reviewing those repairs.
+
+The cause is not the test count. **The adversarial review runs at the close**, so every defect it
+finds is close work by definition. Filed as **CR0500**: the review belongs at the delivery batch
+boundary this project already commits on, so a finding is delivery work in the batch that caused
+it and the close only certifies that coverage exists. Read it before planning the next sprint -
+it changes the shape of the run, not just a script.
+
+**Two independent review rounds, both REJECT.** Round one: five reviewers, ~32 majors, 8 of 39
+mutants surviving; nine stop-ships fixed. Round two reviewed those repairs and rejected again -
+9 of 21 mutants surviving, plus defects the repairs had introduced. Its four material findings
+are fixed, each verified by applying its mutant rather than by a green suite:
+
+| Fixed | What it was |
+| --- | --- |
+| BG0408 | The release guard STILL failed open - the previous fix caught only what `owed()` raised, and an unreadable tree returns quietly. `chmod 000` turned a refusal into "no close is owed" |
+| BG0410 | The mutation sink cured the hang by ORPHANING the child; the group was reaped only on a branch the fix made unreachable. Plus an fd/temp leak and a dead constant |
+| BG0409 | Six repairs reverted with no test going red - both `file_finding` halves shipped with no test at all |
+| BG0400 | An existence probe outvoted a real declaration, so every artefact-only commit paid ~313s of unit suites. Filing an artefact is no longer test-relevant |
+
+Full suite green at **5,190 tests**.
+
+## Left open, knowingly
+
+BG0401, BG0402 (two halves, recorded as criteria), BG0406, BG0411, BG0412. None writes a false
+claim into evidence a decision is read from, and none disarms a guard - that was the bar for
+shipping them. **BG0372 and BG0359 were REOPENED**: both were marked Fixed while delivering
+nothing.
+
+**The gate budget is OVER: 458s against 380s, +44% since the 2026-07-26 baseline.** First item of
+the next batch, with BG0412 (the filer writes fences its own gate refuses).
 
 ## Where the pipeline is
 

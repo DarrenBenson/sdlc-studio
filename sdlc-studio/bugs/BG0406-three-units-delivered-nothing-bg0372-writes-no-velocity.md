@@ -36,6 +36,13 @@ BG0359: re-pin the header at any table row carrying an ID column, as `project_fi
 - [ ] `spawned_column_drift` finds its column in an index whose first table is a Summary table.
 - [ ] A true spawned-work cell is not reported as drift, for every parent-child link spelling this corpus uses.
 - [ ] Each of the three units' status reflects what it actually delivers.
+- [ ] `critic signoff --from-run` does not record a sign-off row against a non-terminal unit, or it reports which ones it included and why.
+
+## The sign-off fan-out repeats the same shape
+
+Closing RUN-01KYNKDP demonstrated the tooling half of this bug. `critic signoff --from-run` takes the run's APPROVED BATCH as its scope and writes a row for every id in it without consulting status. BG0372 and BG0359 had been reopened precisely because they deliver nothing, and US0553 was reverted to Blocked - and all three took a sign-off row naming the reviewer of record.
+
+The note is batch-scoped, so it states no falsehood about those units specifically. The ROW still reads as approval of work that does not exist, which is the same defect as a status asserting a repair that did not happen: a record meaning less than it appears to. A sign-off should skip a non-terminal unit, or say that it included one.
 
 ## Impact
 
