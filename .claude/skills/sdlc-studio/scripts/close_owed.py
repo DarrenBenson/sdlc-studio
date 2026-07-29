@@ -292,8 +292,13 @@ def owed(root: Path) -> dict:
     adoption and closes later - the precise false "none owed" this feature exists to kill - and
     breaks entirely on non-numeric (ULID / schema-v3) ids. Membership in a set has neither hole.
     """
-    covered = covered_ids(root)
-    terminal, known = scan_delivery(root)     # one tree scan, reused by every epic below
+    # The scan is wrapped so an UNREADABLE tree can be told from an empty one. Every read below
+    # degrades quietly by design - one bad artefact must not abort the walk - and the tag guard
+    # was reading that silence as "nothing is owed". The swallow stays; the witness is new.
+    with sdlc_md.degradation_log():
+        covered = covered_ids(root)
+        terminal, known = scan_delivery(root)  # one tree scan, reused by every epic below
+        degraded = sdlc_md.degradations()
     uncovered: list[tuple[str, str]] = []
     dead_ids: list[list[str]] = []
     for cid, t in terminal:
@@ -340,20 +345,22 @@ def owed(root: Path) -> dict:
         # re-stamp nudge. The enforcement halves must fail closed and direct a repair.
         return {"baselined": False, "corrupt": True, "error": str(exc), "owed": [],
                 "grandfathered": 0, "covered": len(covered), "terminal": len(terminal),
-                "dead_breakdown_ids": dead_ids, **_no_velocity_demand()}
+                "dead_breakdown_ids": dead_ids, "unreadable": degraded,
+                **_no_velocity_demand()}
     if baseline is None:
         # No stamp, so no date to scope the velocity demand to. Reporting every retro on disk
         # would be the unclearable tail again; the baseline nudge below stands on its own.
         return {"baselined": False, "corrupt": False, "owed": sorted(uncovered),
                 "grandfathered": 0, "covered": len(covered), "terminal": len(terminal),
-                "dead_breakdown_ids": dead_ids, **_no_velocity_demand()}
+                "dead_breakdown_ids": dead_ids, "unreadable": degraded,
+                **_no_velocity_demand()}
     forgiven = {sdlc_md.norm_id(x) for x in baseline["grandfathered"]}
     owed_units = [(cid, t) for (cid, t) in uncovered if sdlc_md.norm_id(cid) not in forgiven]
     vel = velocity_owed(root, str(baseline.get("stamped") or ""))
     return {"baselined": True, "corrupt": False, "owed": sorted(owed_units),
             "grandfathered": len(uncovered) - len(owed_units),
             "covered": len(covered), "terminal": len(terminal),
-            "dead_breakdown_ids": dead_ids,
+            "dead_breakdown_ids": dead_ids, "unreadable": degraded,
             # The close's OTHER half: a retro whose accuracy and velocity write never ran.
             "velocity_owed": vel["owed"], "velocity_overrides": vel["overrides"],
             "velocity_undated": vel["undated"]}

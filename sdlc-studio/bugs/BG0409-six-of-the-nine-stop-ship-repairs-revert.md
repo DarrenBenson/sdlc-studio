@@ -1,6 +1,7 @@
 # BG0409: Six of the nine stop-ship repairs revert with no test going red, and two of the tests written to hold them assert a different thing than they claim
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first, each fix verified by applying its mutant)
 > **Severity:** High
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

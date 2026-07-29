@@ -309,17 +309,21 @@ class DeclaredIdsCoverTheCensusTests(unittest.TestCase):
         artefact this census never asks about must not select this module."""
         sys.path.insert(0, str(SCRIPTS))
         import gate  # noqa: PLC0415 - imported here so the module loads without the skill root
-        read_map = gate.suite_read_map(str(REPO)) or {}
-        readers = {m for m, paths in read_map.items() if "sdlc-studio" in paths}
+        # The CONTENT readers, from the rule's own subtraction. Deriving this from the raw read
+        # map counted a module that only probes the workspace exists, so this test skipped
+        # itself on a suspension that had already been repaired.
+        readers = gate.content_readers(str(REPO)).get("sdlc-studio", set())
         scopes = gate.listing_only_scopes(str(REPO))
-        if len(readers) > 1:
-            # Another module reads this entry without declaring it, so unanimity correctly
-            # withholds the narrowing. The declaration is still the right one to hold; the
-            # SAVING is suspended, and that is a fact about the repository, not about this
-            # module. Filed as a follow-up rather than asserted away.
+        undeclared = {m for m in readers
+                      if "GATE_LISTING_ONLY" not in (REPO / m).read_text(encoding="utf-8")}
+        if undeclared:
+            # Another module reads this entry for CONTENT without declaring it, so unanimity
+            # correctly withholds the narrowing. The declaration is still the right one to
+            # hold; the SAVING is suspended, and that is a fact about the repository, not
+            # about this module. Filed as a follow-up rather than asserted away.
             self.assertNotIn("sdlc-studio", scopes)
-            self.skipTest(f"{len(readers)} modules read `sdlc-studio`; unanimity withholds the "
-                          f"narrowing until the other declares or stops reading it")
+            self.skipTest(f"{sorted(undeclared)} read `sdlc-studio` for content; unanimity "
+                          f"withholds the narrowing until each declares or stops reading it")
         self.assertIsNotNone(scopes.get("sdlc-studio"))
         filed = "sdlc-studio/bugs/BG9999-an-artefact-this-census-never-asks-about.md"
         self.assertFalse(gate.is_test_relevant([filed], str(REPO), structural={filed}))

@@ -1806,5 +1806,39 @@ class NoSuppliedFieldIsDiscardedTests(unittest.TestCase):
         self.assertNotIn("## Proposed Fix", body)
 
 
+class LandedProseCannotForgeADeclarationTests(unittest.TestCase):
+    """The landing path skipped the escaping every renderer beside it applies.
+
+    Both halves below shipped as repairs with NO test - `test_file_finding.py` was not in the
+    commit at all - so each reverted cleanly under the full suite. The fixes were right and held
+    by nothing, which is the same as not having them once someone refactors."""
+
+    BASE = {"summary": "S", "impact": "I", "acs": ["a criterion"], "priority": "High",
+            "ctype": "enhancement", "severity": "High", "points": 3}
+
+    def test_a_metadata_shaped_line_in_landed_prose_does_not_parse_as_a_declaration(self) -> None:
+        """A CR's `steps` has no home in the CR renderer, so it LANDS - and landed raw, a line
+        shaped like `> **Points:** 99` was read back by `extract_field` as a real declaration
+        the head never made. Forgery through the one path that skipped `_prose_safe`."""
+        body = ff._render("cr", "CR-9999", "a title", "2026-07-29",
+                          {**self.BASE, "steps": "first do this\n> **Points:** 99\nthen that"})
+        self.assertIn("first do this", body, "the author's words were dropped, not escaped")
+        self.assertIn("then that", body)
+        self.assertIsNone(sdlc_md.extract_field(body, "Points"),
+                          "landed prose forged a Points declaration the filer never made")
+
+    def test_a_heading_merely_mentioned_in_prose_does_not_suppress_the_section(self) -> None:
+        """The already-homed test read the WHOLE body, so a finding whose prose discussed
+        `## Impact` was refused as already-homed - with a false message and no remedy. A project
+        that files bugs about its own renderers writes that prose constantly."""
+        marker = "THE IMPACT ITSELF"
+        body = ff._render("bug", "BG-9999", "a title", "2026-07-29",
+                          {**self.BASE, "steps": "s", "fix": "f",
+                           "summary": "the renderer emits `## Impact` in the wrong place",
+                           "impact": marker})
+        self.assertIn(marker, body, "a heading named in prose swallowed the real section")
+        self.assertIn("## Impact", body)
+
+
 if __name__ == "__main__":
     unittest.main()

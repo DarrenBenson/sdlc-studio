@@ -4498,23 +4498,25 @@ class WorkspaceRelevanceGranularityTests(unittest.TestCase):
             self.assertTrue(any("listing-only" in m for m in matched), matched)
 
     def test_the_repo_s_own_workspace_narrows_only_when_every_reader_agrees(self) -> None:
-        """The rule, asserted against the REAL repository - which is currently NOT narrowed.
+        """The rule, asserted against the REAL repository.
 
-        `test_root_census.py` declares `sdlc-studio` listing-only; `test_lessons.py` reads the
-        same entry (an `is_dir()` on the workspace root) and declares nothing. Honouring one
-        module's declaration tree-wide would silence the other module's read, so unanimity
-        withholds the narrowing - correctly, and at the cost of the saving.
+        The electorate comes from `gate.content_readers`, the same subtraction the rule itself
+        makes. Re-deriving it here from the raw read map is what made this test assert the
+        SUSPENSION as though it were the rule: two modules named `sdlc-studio`, one of them only
+        probing that it exists, and counting the prober held the narrowing off the whole repo.
 
         Asserted as the RULE rather than as the current answer, so this test says something
         true whichever way the repository's declarations go."""
         root = str(REPO)
-        read_map = gate.suite_read_map(root) or {}
-        readers = {m for m, paths in read_map.items() if "sdlc-studio" in paths}
+        readers = gate.content_readers(root).get("sdlc-studio", set())
         declared = set(gate.listing_only_scopes(root))
-        if len(readers) > 1:
+        declarers = {m for m in readers
+                     if "GATE_LISTING_ONLY" in (REPO / m).read_text(encoding="utf-8")}
+        if readers - declarers:
             self.assertNotIn("sdlc-studio", declared,
-                             f"{len(readers)} modules read this entry and it is narrowed anyway "
-                             f"- one module's declaration is silencing another's read")
+                             f"{len(readers)} modules read this entry for content and it is "
+                             f"narrowed anyway - one module's declaration is silencing "
+                             f"another's read")
         # Whichever way that went, a file the suites genuinely OPEN stays relevant.
         self.assertTrue(gate.is_test_relevant(["sdlc-studio/trd.md"], root, structural=set()),
                         "a file the suites genuinely open must stay relevant")
@@ -4854,6 +4856,100 @@ class FalseGreenPathsAreClosedTests(unittest.TestCase):
             self.assertTrue(
                 gate.is_test_relevant([".githooks/pre-commit"], str(root), structural=set()),
                 "a plain content edit to a hook the suite READS answered `no`")
+
+    def test_a_directory_under_a_protected_tree_cannot_be_declared(self) -> None:
+        """The PREFIX half on its own. The test above declares a FILE under a protected tree, so
+        the `isdir` check rejects it too and either guard alone keeps that fixture green - both
+        mutants survived individually, and only removing both reddened anything.
+
+        A DIRECTORY under a protected tree is the case only the prefix check can refuse: it is a
+        real directory, so `isdir` passes it, and the absolute floor is the sole thing standing
+        between a declaration and a content read going blind."""
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            root = self._repo(tmp, "('sdlc-studio',)")
+            lib = root / ".githooks" / "lib"
+            lib.mkdir(parents=True)
+            (lib / "shared.sh").write_text("# shared\n", encoding="utf-8")
+            suite = root / ".claude/skills/sdlc-studio/scripts/tests"
+            (suite / "test_hooklib.py").write_text(
+                "from pathlib import Path\n"
+                "REPO = Path(__file__).resolve().parents[5]\n"
+                "GATE_LISTING_ONLY = ('.githooks/lib',)\n"
+                "LIB = REPO / '.githooks' / 'lib'\n"
+                "def test_lib():\n"
+                # The DIRECTORY must be what the module is measured as reading, or `rel not in
+                # paths` rejects the declaration before either guard under test is reached and
+                # the case asserts nothing. Naming a file inside it attributes the file.
+                "    assert list(LIB.glob('*.sh'))\n", encoding="utf-8")
+            scopes = gate.listing_only_scopes(str(root))
+            self.assertNotIn(".githooks/lib", scopes,
+                             "a directory under the content-read floor was declared away")
+            self.assertTrue(
+                gate.is_test_relevant([".githooks/lib/shared.sh"], str(root), structural=set()),
+                "a content edit under a protected tree the suite READS answered `no`")
+
+    def test_a_declared_plain_file_outside_any_protected_tree_is_still_refused(self) -> None:
+        """The ISDIR half on its own. A file outside every protected tree passes the prefix
+        check, so this is the case only `isdir` can refuse - 'listing-only' is meaningless for a
+        file, which has no listing, and honouring it would be a pure content-blindness switch."""
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            root = self._repo(tmp, "('sdlc-studio',)")
+            note = root / "sdlc-studio" / "NOTES.md"
+            note.write_text("# notes\n", encoding="utf-8")
+            suite = root / ".claude/skills/sdlc-studio/scripts/tests"
+            (suite / "test_notes.py").write_text(
+                "from pathlib import Path\n"
+                "REPO = Path(__file__).resolve().parents[5]\n"
+                "GATE_LISTING_ONLY = ('sdlc-studio/NOTES.md',)\n"
+                "NOTE = REPO / 'sdlc-studio' / 'NOTES.md'\n"
+                "def test_note():\n"
+                "    assert NOTE.read_text()\n", encoding="utf-8")
+            self.assertNotIn("sdlc-studio/NOTES.md", gate.listing_only_scopes(str(root)),
+                             "a plain file was accepted as a listing-only directory")
+
+    def test_an_existence_probe_does_not_veto_a_listing_only_declaration(self) -> None:
+        """BG0400. Unanimity is right, and it was counting the wrong readers.
+
+        `(repo / "sdlc-studio").is_dir()` asks whether the checkout has a workspace at all. No
+        file under that directory can change the answer - filing, editing or deleting an
+        artefact leaves it exactly as it was - so the module asking it is not a CONTENT reader
+        and has no stake in a listing-only narrowing. Counting it as one outvoted a real
+        declaration and made every artefact-only commit pay the full unit suites."""
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            root = self._repo(tmp, "({'path': 'sdlc-studio', 'ids': ('BG0288',)},)")
+            suite = root / ".claude/skills/sdlc-studio/scripts/tests"
+            (suite / "test_shape.py").write_text(
+                "from pathlib import Path\n"
+                "REPO = Path(__file__).resolve().parents[5]\n"
+                "def test_shape():\n"
+                "    assert (REPO / 'sdlc-studio').is_dir()\n", encoding="utf-8")
+            self.assertEqual({"sdlc-studio": frozenset({"BG0288"})},
+                             gate.listing_only_scopes(str(root)),
+                             "an existence probe outvoted the declaration of a real reader")
+            self.assertIn("sdlc-studio", gate.test_relevant_paths(str(root)),
+                          "the prober lost its path entirely - deleting the tree would now "
+                          "skip the suite that asserts the tree is there")
+
+    def test_a_module_that_also_reads_the_contents_keeps_its_veto(self) -> None:
+        """The discriminating half. Probing AND globbing the same tree is a content read: the
+        stronger evidence wins, or the subtraction becomes a way to launder a real dependency
+        by adding an `exists()` call beside it."""
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            root = self._repo(tmp, "({'path': 'sdlc-studio', 'ids': ('BG0288',)},)")
+            suite = root / ".claude/skills/sdlc-studio/scripts/tests"
+            (suite / "test_shape.py").write_text(
+                "from pathlib import Path\n"
+                "REPO = Path(__file__).resolve().parents[5]\n"
+                "WS = REPO / 'sdlc-studio'\n"
+                "def test_shape():\n"
+                "    assert WS.is_dir()\n"
+                "    assert list(WS.glob('*'))\n", encoding="utf-8")
+            self.assertEqual({}, gate.listing_only_scopes(str(root)),
+                             "a module that globs the tree lost its vote to its own exists()")
 
     def test_an_unanswered_change_kind_still_runs_the_suites(self) -> None:
         """`structural=None` means the caller could not say. The id scope was answering a

@@ -79,16 +79,61 @@ _SLUG_RE = re.compile(r"[^a-z0-9]+")
 # -----------------------------------------------------------------------------
 
 
+#: Reads this module DEGRADED rather than performed, live only inside `degradation_log()`.
+#: `None` means nobody is collecting, which is the default: the swallow is correct for a
+#: scanner and only a caller making a SAFETY decision needs to hear about it.
+_DEGRADED: "list | None" = None
+
+
+@contextlib.contextmanager
+def degradation_log():
+    """Collect every read this module swallowed, for the length of one sweep.
+
+    `read_text_safe` and `walk_glob` are deliberately forgiving: one unreadable artefact must
+    not abort a walk over a thousand. That is right for a census and WRONG for a guard, because
+    a helper that degrades silently converts every guard above it into a fail-open guard. The
+    release tag check read an unreadable delivery tree as an empty one and reported "no close is
+    owed" - a positive falsehood, from the only live guard on a release.
+
+    So the swallow stays and gains a witness. Opt-in and scoped, like `corpus_cache`: a caller
+    that is about to decide something wraps the read, asks what degraded, and refuses on a
+    non-empty answer. Nesting is a no-op so an inner sweep cannot steal the outer one's list."""
+    global _DEGRADED  # noqa: PLW0603 - the log IS module state; the scope is the guard
+    if _DEGRADED is not None:
+        yield _DEGRADED
+        return
+    _DEGRADED = []
+    try:
+        yield _DEGRADED
+    finally:
+        _DEGRADED = None
+
+
+def record_degraded(path, reason: str) -> None:
+    """Note that a read of `path` was swallowed. A no-op when nobody is collecting."""
+    if _DEGRADED is not None:
+        _DEGRADED.append({"path": str(path), "reason": reason})
+
+
+def degradations() -> list:
+    """What has degraded inside the open `degradation_log`, or [] when none is open."""
+    return list(_DEGRADED or [])
+
+
 def read_text_safe(path, default: str = "") -> str:
     """Read a file as UTF-8, returning `default` when it is unreadable OR not valid UTF-8 (a
     half-written or binary-corrupted artefact from a crashed session). One bad file must never
     crash a scanner that walks the tree - it is NAMED by whatever consumes the default (a
     status-less census entry, an empty body), not allowed to abort the whole pass. The read/parse
     counterpart to `iter_artifact_files`, for the direct `read_text` sites that do not go through
-    the enumerator."""
+    the enumerator.
+
+    The default is also RECORDED in any open `degradation_log`, so a caller deciding something
+    can tell "the file said nothing" from "I could not read the file"."""
     try:
         return Path(path).read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError):
+    except (OSError, UnicodeDecodeError) as exc:
+        record_degraded(path, f"unreadable: {exc.__class__.__name__}")
         return default
 
 
@@ -839,10 +884,32 @@ def slug(value: str) -> str:
 
 
 def walk_glob(dir_path: Path, pattern: str) -> list[Path]:
-    """Sorted files in dir_path matching glob `pattern` ([] if the dir is absent)."""
+    """Sorted files in dir_path matching glob `pattern` ([] if the dir is absent).
+
+    A directory that EXISTS but cannot be listed also yields [] - `Path.glob` swallows the
+    permission error itself - so the two are indistinguishable to a caller, and "I could not
+    look" was being read as "there is nothing there". The empty result stands, because one
+    unreadable directory must not abort a walk over the rest, but it is recorded in any open
+    `degradation_log` so a caller making a safety decision can refuse instead."""
     if not dir_path.exists():
         return []
+    if _DEGRADED is not None and not _listable(dir_path):
+        record_degraded(dir_path, "directory could not be listed")
+        return []
     return sorted(p for p in dir_path.glob(pattern) if p.is_file())
+
+
+def _listable(dir_path: Path) -> bool:
+    """Whether the directory's entries can actually be enumerated.
+
+    Probed only when someone is collecting degradations - `os.scandir` on every glob would be a
+    second syscall per directory on the hot census path for an answer nobody reads."""
+    try:
+        with os.scandir(dir_path) as entries:
+            next(iter(entries), None)
+        return True
+    except OSError:
+        return False
 
 
 # -----------------------------------------------------------------------------

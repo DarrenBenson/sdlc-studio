@@ -1,6 +1,7 @@
 # BG0410: The mutation run's temp-file sink stopped the hang by orphaning the child, and leaks an fd and a temp file whenever Popen fails
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first, each fix verified by applying its mutant)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py

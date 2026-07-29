@@ -139,6 +139,18 @@ def _close_owed_units(root: Path | str) -> "tuple[list[str], str | None]":
         return [], ("the close-owed baseline is unreadable, which silently disarms the "
                     "close-down check - restore `sdlc-studio/.close-owed-baseline.json` from "
                     "git; do NOT re-stamp it, which would forgive whatever it was hiding")
+    # The scan itself degraded. `read_text_safe` and `walk_glob` swallow by design - one bad
+    # artefact must not abort a walk over a thousand - and that silence reached here as an EMPTY
+    # tree, which reads identically to a clean one. `chmod 000 sdlc-studio/stories` turned a
+    # correct refusal into "no close is owed": the same fail-open this function was rewritten to
+    # close, one frame down the stack, because the fix caught only what `owed()` RAISED.
+    unreadable = report.get("unreadable") or []
+    if unreadable:
+        shown = ", ".join(str(d.get("path")) for d in unreadable[:5])
+        return [], (f"{len(unreadable)} path(s) in the delivery tree could not be read "
+                    f"({shown}{', +more' if len(unreadable) > 5 else ''}), so whether any unit "
+                    f"owes a close is UNKNOWN - an unreadable tree is indistinguishable from an "
+                    f"empty one, and tagging on it would assert a clean record nobody scanned")
     # No baseline is the one honest pass: the rule was never adopted here, so there is no
     # history to hold this project to. Distinguished from unreadable, which is the whole point.
     if not report.get("baselined"):

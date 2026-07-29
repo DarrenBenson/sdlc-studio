@@ -3059,6 +3059,19 @@ class KilledMutantsCarryTheirKillerTests(unittest.TestCase):
         self.assertEqual("tests.test_x.C.test_y",
                          mut._killing_test("ERROR: test_y (tests.test_x.C)"))
 
+    def test_an_already_qualified_unittest_name_is_not_doubled(self) -> None:
+        """Python 3.11+ prints the FULLY-QUALIFIED name in the parentheses, and joining blindly
+        produced `...C.test_y.test_y` - a node id that resolves to nothing.
+
+        Only the pre-3.11 form was asserted, so the mutant returning `f"{ctx}.{meth}"`
+        unconditionally survived the whole suite - on an interpreter that emits nothing BUT the
+        3.11+ form, which is to say the fix was held by nothing on the only version in use."""
+        mut = _load()
+        self.assertEqual("tests.test_x.C.test_y",
+                         mut._killing_test("FAIL: test_y (tests.test_x.C.test_y)"))
+        self.assertEqual("tests.test_x.C.test_y",
+                         mut._killing_test("ERROR: test_y (tests.test_x.C.test_y)"))
+
     def test_output_naming_no_test_attributes_nothing(self) -> None:
         """None is honest and is not an error: a runner this cannot parse, a suite printing
         nothing, or a kill by collection failure all genuinely name no test. A fabricated
@@ -3123,6 +3136,105 @@ class KilledMutantsCarryTheirKillerTests(unittest.TestCase):
             "summary": {"applied": 1, "killed": 1, "survived": 0},
             "tests_run": ["tests/t.py::C::test_x"]})
         self.assertEqual(["tests/t.py::C::test_x"], rows[0]["killed_by"])
+
+    def test_the_producer_emits_the_killer_not_only_the_consumer_reading_it(self) -> None:
+        """The companion above hand-writes the `killed_by` key it then asserts, so it holds the
+        CONSUMER and nothing holds the producer: dropping `row["killed_by"] = [killer]` survived
+        the full suite. That is the re-implements-the-code-and-asserts-it-against-itself pattern
+        BG0401 was filed for, in the test written to replace two source-greps.
+
+        So run the real gate over a real mutant and read the key off the row IT emitted."""
+        import shutil
+        import tempfile as _tf
+        mut = _load()
+        d = Path(_tf.mkdtemp(prefix="killer_producer_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        src = d / "m.py"
+        src.write_text("def f(a, b):\n    return a + b\n", encoding="utf-8")
+        golden = d / "golden.txt"
+        golden.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        # Green on the original, red on ANY mutant. Compared whole rather than grepped for one
+        # line: the budget picks whichever mutant it likes, and a grep for the line it did not
+        # touch stays green - the test then asserts nothing, which is how it first passed.
+        cmd = (f"cmp -s {src} {golden} && exit 0; "
+               f"echo 'FAILED tests/t.py::C::test_add'; exit 1")
+        report = mut.run_gate(d, [src], cmd, max_mutations=1, write_report=False)
+        killed = [m for m in report.get("mutations", []) if m.get("verdict") == "killed"]
+        self.assertTrue(killed, f"no mutant was killed, so nothing is asserted: {report}")
+        self.assertEqual(["tests/t.py::C::test_add"], killed[0].get("killed_by"),
+                         "the gate emitted no killer for a mutant its own runner named")
+
+
+class TheRunLeavesNothingBehindTests(unittest.TestCase):
+    """BG0410. Replacing the pipe with a temp-file sink cured the hang and moved the defect.
+
+    With a pipe, a backgrounded child held the parent to the timeout, which then killed the
+    whole session. With a file, `wait()` returns as soon as the direct child exits - so the
+    kill hung off a branch the change had made unreachable, and every mutant leaked its
+    orphans. `run_gate` calls `_run_tests` once per mutant."""
+
+    def setUp(self) -> None:
+        self.mut = _load()
+        self.mut._RUN_TIMEOUT = 5
+
+    def test_a_backgrounded_child_is_reaped_on_the_normal_exit_path(self) -> None:
+        """Not on timeout - on the ordinary return, which is the path a backgrounded child
+        now takes. The direct child having exited says nothing about what it launched."""
+        import time
+        d = Path(tempfile.mkdtemp(prefix="reap_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        marker = d / "MARKER"
+        started = time.monotonic()
+        verdict = self.mut._run_tests(
+            f"(sleep 4; touch {marker}) & echo 'FAILED tests/t.py::C::t'; exit 1", d)
+        self.assertEqual("fail", verdict)
+        self.assertLess(time.monotonic() - started, 3.0, "the run waited on the background child")
+        time.sleep(5)
+        self.assertFalse(marker.exists(),
+                         "the backgrounded child outlived the run and ran to completion")
+
+    def test_a_construction_failure_leaks_no_descriptor_and_no_temp_file(self) -> None:
+        """`mkstemp` and `Popen` sat OUTSIDE the try, so any Popen failure - a nonexistent cwd
+        is enough - leaked both, once per call."""
+        before_fds = len(os.listdir("/proc/self/fd")) if os.path.isdir("/proc/self/fd") else None
+        before_tmp = len(list(Path(tempfile.gettempdir()).glob("mutation_run_*")))
+        for _ in range(5):
+            with self.assertRaises(OSError):
+                self.mut._run_tests("true", Path("/nonexistent/definitely/not/a/repo"))
+        self.assertEqual(before_tmp,
+                         len(list(Path(tempfile.gettempdir()).glob("mutation_run_*"))),
+                         "a failed run left its sink behind")
+        if before_fds is not None:
+            self.assertEqual(before_fds, len(os.listdir("/proc/self/fd")),
+                             "a failed run leaked its sink descriptor")
+
+    def test_the_timeout_still_bounds_a_genuinely_hanging_command(self) -> None:
+        """Moving the kill into `finally` must not let the timeout branch block on a second
+        unbounded `wait()` first - that restores the full-runtime hang the bound exists for."""
+        import time
+        started = time.monotonic()
+        verdict = self.mut._run_tests("sleep 30", Path("."))
+        elapsed = time.monotonic() - started
+        self.assertEqual("error", verdict)
+        self.assertLess(elapsed, 15.0,
+                        f"took {elapsed:.1f}s against a 5s bound - the kill runs after a "
+                        f"blocking wait rather than before it")
+
+    def test_the_retained_transcript_is_bounded_by_the_constant_that_documents_it(self) -> None:
+        """`_OUTPUT_CAP` had ONE occurrence in the file - its own definition - while
+        `_read_tail` hardcoded the same number. Two sources of truth, one decorative, and the
+        docstring asserted an effect the constant did not have.
+
+        Asserted by CHANGING the constant and observing the bound move. Comparing the two
+        numbers cannot work: they were equal, which is exactly why the split was invisible."""
+        d = Path(tempfile.mkdtemp(prefix="cap_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        log = d / "run.log"
+        log.write_text("x" * 5000 + "TAIL", encoding="utf-8")
+        self.mut._OUTPUT_CAP = 64
+        tail = self.mut._read_tail(str(log))
+        self.assertEqual(64, len(tail), "the cap the constant declares is not the cap applied")
+        self.assertTrue(tail.endswith("TAIL"), "the tail was dropped instead of the head")
 
 
 if __name__ == "__main__":

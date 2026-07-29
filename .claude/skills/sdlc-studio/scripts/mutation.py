@@ -930,12 +930,18 @@ _FAILED_NODE = re.compile(r"^(?:FAILED|ERROR)\s+(?P<node>[^\s(][^\s]*(?:::|\.)[^
 _UNITTEST_FAIL = re.compile(r"^(?:FAIL|ERROR):\s+(?P<meth>\w+)\s+\((?P<ctx>[^)]+)\)", re.M)
 
 
-def _read_tail(path: str, cap: int = 512 * 1024) -> str:
+def _read_tail(path: str, cap: int | None = None) -> str:
     """The last `cap` bytes of a run's transcript, or "" when it cannot be read.
 
     The tail, because every runner prints its failure summary at the end, and bounded because a
-    verbose suite's full output is unbounded and is held only to find one node id."""
+    verbose suite's full output is unbounded and is held only to find one node id.
+
+    `cap` defaults to `_OUTPUT_CAP`, read at CALL time rather than captured as a default
+    argument. Captured, the two are equal-by-coincidence: the constant could be edited with no
+    effect here and no test could tell, which is how `_OUTPUT_CAP` came to be a decorative
+    definition with a docstring claiming a bound it did not impose."""
     import os  # noqa: PLC0415 - local, matching this module's convention
+    cap = _OUTPUT_CAP if cap is None else cap
     try:
         size = os.path.getsize(path)
         with open(path, "rb") as handle:
@@ -966,8 +972,12 @@ def _killing_test(output: str) -> str | None:
 def _run_tests(test_cmd: str, cwd: Path) -> str:
     """One test run -> 'pass' | 'fail' | 'error' (the runner itself broke).
 
-    The command runs in its own session and the whole process GROUP is killed on
-    timeout - a compound command's grandchildren must not outlive the gate.
+    The command runs in its own session and the whole process GROUP is killed on EVERY exit
+    path - timeout, normal return and exception alike. A compound command's grandchildren must
+    not outlive the gate, and the direct child having exited says nothing about what it
+    launched: `run_gate` calls this once per mutant, so one backgrounded fixture that survives
+    becomes N orphans per run, and against the dev-server case it binds a port that makes every
+    subsequent mutant's verdict garbage.
 
     The environment is `_suite_env()`: no bytecode cache (a same-length mutant would
     otherwise run the ORIGINAL bytecode and be recorded as survived) and the marker that
@@ -979,10 +989,7 @@ def _run_tests(test_cmd: str, cwd: Path) -> str:
     # nobody can act on: `US0507`'s prune-candidate consumer needs the test that did the
     # killing, and with the streams thrown away it took its refusal branch against every real
     # report - a capability unreachable because the only producer never recorded the key.
-    import tempfile  # noqa: PLC0415 - local, only this path captures
-    sink_fd, sink = tempfile.mkstemp(prefix="mutation_run_", suffix=".log")
-    proc = subprocess.Popen(test_cmd, shell=True, cwd=cwd, start_new_session=True, env=env,  # nosec B602 - operator-authored test command, same trust boundary as verify_ac's Verify lines
-                            stdout=sink_fd, stderr=subprocess.STDOUT)
+    #
     # A TEMP FILE, not a pipe. Any pipe ties the read to EOF, which needs every inheritor of
     # stdout to exit - so with `start_new_session=True` a suite that backgrounds anything (a dev
     # server, an xdist worker, an `&`-launched fixture) blocked the full timeout PER MUTANT, and
@@ -990,21 +997,53 @@ def _run_tests(test_cmd: str, cwd: Path) -> str:
     # excusing the mutant. A file has no such semantics: `wait()` returns when the direct child
     # exits, exactly as it did before output was captured at all. The tail is read afterwards,
     # bounded, because a runner's failure summary is at the end.
+    #
+    # Both the file and the process are created INSIDE the try. Outside it, any Popen failure
+    # (a nonexistent cwd is enough) leaked the descriptor and the temp file on every call.
+    import tempfile  # noqa: PLC0415 - local, only this path captures
+    sink_fd = pgid = None
+    sink = ""
+
+    def reap() -> None:
+        """Kill the whole session. Safe to call twice; a no-op once it is already gone.
+
+        The group id is the CHILD'S PID, captured while it is alive, never `os.getpgid` after
+        the fact: `wait()` reaps the process, so a later lookup raises `ProcessLookupError`, the
+        suppression swallows it and nothing is killed. `start_new_session=True` makes the child
+        its own session and group leader, so its pid IS the group id."""
+        if pgid is not None:
+            with contextlib.suppress(ProcessLookupError, PermissionError, OSError):
+                os.killpg(pgid, signal.SIGKILL)
+
     try:
-        rc = proc.wait(timeout=_RUN_TIMEOUT)
-    except subprocess.TimeoutExpired:
+        sink_fd, sink = tempfile.mkstemp(prefix="mutation_run_", suffix=".log")
+        proc = subprocess.Popen(test_cmd, shell=True, cwd=cwd, start_new_session=True, env=env,  # nosec B602 - operator-authored test command, same trust boundary as verify_ac's Verify lines
+                                stdout=sink_fd, stderr=subprocess.STDOUT)
+        pgid = proc.pid
         try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except (ProcessLookupError, PermissionError):
-            pass
-        proc.wait()
-        _LAST_RUN_OUTPUT[0] = _read_tail(sink)
-        return "error"
+            rc = proc.wait(timeout=_RUN_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            # Kill BEFORE the second wait. Waiting first blocks for the command's full natural
+            # runtime, which is the hang the timeout exists to bound.
+            reap()
+            proc.wait()
+            return "error"
     finally:
-        _LAST_RUN_OUTPUT[0] = _read_tail(sink)
-        with contextlib.suppress(OSError):
-            os.close(sink_fd)
-            os.unlink(sink)
+        # UNCONDITIONAL, not only on timeout. Killing the group is what collects whatever the
+        # command backgrounded, and with the pipe gone the timeout branch is exactly the path a
+        # backgrounded child no longer reaches - so hanging the cleanup off it left the orphan
+        # running on every normal exit, once per mutant.
+        reap()
+        if sink:
+            _LAST_RUN_OUTPUT[0] = _read_tail(sink)
+        # Separate suppressions: sharing one meant a raising close silently skipped the unlink,
+        # so the failure that most needs the file removed is the one that kept it.
+        if sink_fd is not None:
+            with contextlib.suppress(OSError):
+                os.close(sink_fd)
+        if sink:
+            with contextlib.suppress(OSError):
+                os.unlink(sink)
     if rc == 0:
         return "pass"
     if rc in (126, 127):  # not executable / command not found

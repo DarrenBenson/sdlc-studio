@@ -1,6 +1,7 @@
 # BG0408: The release tag guard still fails OPEN: the swallow moved one frame down into the delivery scan, and an unreadable tree reports a clean release
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first, each fix verified by applying its mutant)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/scripts/close_owed.py, .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py

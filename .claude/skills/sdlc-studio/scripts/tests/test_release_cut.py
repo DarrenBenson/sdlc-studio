@@ -4,6 +4,7 @@ empties [Unreleased], and a tag is refused unless the gate was recorded green on
 from __future__ import annotations
 
 import importlib.util
+import os
 import sys
 import tempfile
 import unittest
@@ -160,20 +161,51 @@ class TagRefusesAnOwedCloseTests(unittest.TestCase):
         self.assertIn("refusing the tag", reason)
 
     def test_a_raising_helper_refuses_rather_than_reporting_clean(self) -> None:
-        """The other swallowed state: nothing was judged, reported as though all was well."""
-        real = self.mod._close_owed_units
-        self.addCleanup(setattr, self.mod, "_close_owed_units", real)
-        root = self._root()
+        """The other swallowed state: nothing was judged, reported as though all was well.
+
+        The helper is made to RAISE, not merely pointed at a path hoped to raise. The first
+        version of this test called the real function against `/nonexistent/...`, which does not
+        raise - it returns `{'baselined': False, ...}` - so the test exercised the no-baseline
+        branch, never asserted `unknown`, and the mutant restoring `except: return [], None`
+        survived the full suite."""
+        import close_owed
+        real_owed = close_owed.owed
+        self.addCleanup(setattr, close_owed, "owed", real_owed)
 
         def boom(_root):
-            return real("/nonexistent/definitely/not/a/repo")
+            raise RuntimeError("the report could not be produced")
 
-        self.mod._close_owed_units = boom
+        close_owed.owed = boom
+        units, unknown = self.mod._close_owed_units(self._root())
+        self.assertEqual([], units)
+        self.assertIsNotNone(unknown, "a raising helper reported a clean close-owed answer")
+        self.assertIn("UNKNOWN", unknown)
+        self.assertIn("could not be produced", unknown)
+
+    def test_an_unreadable_delivery_tree_refuses_rather_than_reporting_clean(self) -> None:
+        """The fourth state, and the one the previous repair missed.
+
+        `read_text_safe` and `walk_glob` swallow their own I/O errors, so `owed()` never raised
+        and the new `except` never fired: an unreadable tree returned an empty unit list, which
+        is indistinguishable from a clean one. `chmod 000 sdlc-studio/stories` turned a correct
+        refusal into "no close is owed" - the same fail-open, one frame down the stack."""
+        root = self._root()
+        units, unknown = self.mod._close_owed_units(root)
+        self.assertIn("US0001", units, "the fixture is not owed a close - nothing is asserted")
+
+        stories = root / "sdlc-studio" / "stories"
+        os.chmod(stories, 0o000)
+        self.addCleanup(os.chmod, stories, 0o755)
+        if os.access(stories, os.R_OK):        # running as root: the mode cannot be enforced
+            self.skipTest("cannot make a directory unreadable for this user")
+
         units, unknown = self.mod._close_owed_units(root)
         self.assertEqual([], units)
-        # Either the helper answered honestly (no baseline there) or it refused; what it must
-        # never do is report owed-units it did not compute.
-        self.assertFalse(units)
+        self.assertIsNotNone(unknown, "an unreadable delivery tree read as a clean one")
+        self.assertIn("could not be read", unknown)
+        allowed, reason = self.mod.tag_check(root, "abc123")
+        self.assertFalse(allowed, "a tag was allowed over a delivery tree nobody could scan")
+        self.assertIn("refusing the tag", reason)
 
     def test_an_unbaselined_project_is_not_refused_on_its_history(self) -> None:
         """The one state that legitimately passes, and the reason `corrupt` had to be told

@@ -8244,6 +8244,30 @@ class CloseRecordsNoSuiteVerdictTests(unittest.TestCase):
                          "the close recorded a SUITE verdict it did not earn - `gate.main` runs "
                          "no test suite, so any green it writes there is fabricated")
 
+    def test_the_close_leaves_no_suite_verdict_on_disk_however_it_is_written(self) -> None:
+        """The PROPERTY, which the companion above does not check.
+
+        That test asserts `recorded_verdicts == []` on a stub, so it catches ONE spelling: a
+        reintroduction as a direct `write_text` to the file `gate.suite_decision` actually reads
+        survived the whole suite, while this class's docstring claimed a differently-spelled
+        reintroduction would be caught. The record is on the filesystem, so that is where the
+        absence has to be asserted."""
+        import gate as real_gate
+        sprint = _load()
+        root, gate = self._repo(), _stub_gate([])
+        verdict_file = root / real_gate.SUITE_VERDICT_REL
+        self.assertFalse(verdict_file.exists(), "the fixture starts with a verdict already on disk")
+        with unittest.mock.patch.dict(sys.modules, {"gate": gate}), \
+                contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()):
+            sprint._close_gate(root, "RETRO0001", json.loads(
+                (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8")))
+        self.assertFalse(
+            verdict_file.exists(),
+            f"the close wrote {real_gate.SUITE_VERDICT_REL} - the record the commit hook reads "
+            f"to decide whether to run the suites at all. The close runs no suite, so whatever "
+            f"green it writes there is over the working tree, not over a measurement")
+
     def test_the_close_gate_runs_no_suite_lane(self) -> None:
         """The premise itself, checked rather than assumed - which is what was missing the
         first time. If a suite lane is ever added to `run_gate`, this test says so and the

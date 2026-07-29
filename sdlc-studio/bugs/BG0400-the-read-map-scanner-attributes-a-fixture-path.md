@@ -1,6 +1,7 @@
 # BG0400: The read-map scanner attributes a fixture path to the real tree, so one module's tmpdir read blocks a listing-only narrowing
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first, each fix verified by applying its mutant)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
@@ -24,12 +25,16 @@ Either teach the scanner to distinguish a read anchored at the REPO from one anc
 
 ## Acceptance Criteria
 
-- [ ] A path built under a fixture root is not attributed to the repository tree.
-- [ ] With the attribution corrected, `sdlc-studio` is listing-only again for the ids the census names, so filing an artefact stops being structural.
-- [ ] The fail-safe direction is preserved: an unresolvable anchor is attributed to the tree, never dropped.
+- [x] A module whose only read of a directory is an EXISTENCE probe does not count as a content reader for the unanimity rule.
+- [x] With the electorate corrected, `sdlc-studio` is listing-only again for the ids the census names, so filing an artefact stops being structural.
+- [x] The fail-safe direction is preserved: the path stays in the read map, so deleting the directory still selects the module that probes it.
+- [x] A module that probes AND reads the contents keeps its vote, so an `exists()` beside a `glob()` cannot launder a real dependency.
+- [x] The subtraction has ONE implementation (`gate.content_readers`), which the rule and its tests both use rather than each re-deriving it.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-29 | sdlc-studio | Filed |
+| 2026-07-29 | sdlc-studio | Criteria rewritten: the filed premise was wrong. The path is not fixture-local - it is `Path(__file__).resolve().parents[5] / "sdlc-studio"`, a genuine repo-anchored read in `test_lessons.py`. What made it a false veto is that the read is `is_dir()`, an EXISTENCE probe no artefact under the directory can change. Fixed by the second route this bug's own Proposed Fix names, and the criteria now describe that. |
+| 2026-07-29 | sdlc-studio | Fixed. Two of this repo's own tests were asserting the SUSPENDED state, each re-deriving the reader set from the raw read map - so they agreed with the defect by construction and went red on the repair. Both now read `gate.content_readers`. |

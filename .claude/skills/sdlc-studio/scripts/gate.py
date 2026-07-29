@@ -2018,19 +2018,37 @@ _READ_METHODS = frozenset({
 _READ_FUNCS = frozenset({"open", "listdir", "scandir", "walk"})
 
 
-def _read_targets(tree: ast.AST):
-    """Yield the AST node of every path expression the module reads on disk."""
+#: Probes that ask only whether a path IS THERE. Applied to a DIRECTORY, no file under it can
+#: change the answer: creating, editing or deleting an artefact leaves `is_dir()` exactly as it
+#: was. Such a read is still recorded - deleting the directory must run the suite that probes it
+#: - but it does not make the module a CONTENT reader, which is what the listing-only unanimity
+#: rule asks about. Without the distinction, one `(repo / "sdlc-studio").is_dir()` guard in one
+#: module outvoted a real declaration and every artefact-only commit paid the full suites.
+_EXISTENCE_PROBES = frozenset({"exists", "is_file", "is_dir"})
+
+
+def _read_targets(tree: ast.AST, existence_only: bool | None = None):
+    """Yield the AST node of every path expression the module reads on disk.
+
+    `existence_only=True` yields only the existence probes, `False` only the reads that depend
+    on content or listing, `None` (the default) yields both."""
+    def wanted(is_probe: bool) -> bool:
+        return existence_only is None or existence_only is is_probe
+
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
         fn = node.func
         if isinstance(fn, ast.Attribute) and fn.attr in _READ_METHODS:
-            yield fn.value
+            if wanted(fn.attr in _EXISTENCE_PROBES):
+                yield fn.value
         elif isinstance(fn, ast.Name) and fn.id in _READ_FUNCS and node.args:
-            yield node.args[0]
+            if wanted(False):
+                yield node.args[0]
         elif (isinstance(fn, ast.Attribute) and fn.attr in _READ_FUNCS
               and isinstance(fn.value, ast.Name) and fn.value.id == "os" and node.args):
-            yield node.args[0]
+            if wanted(False):
+                yield node.args[0]
 
 
 def _module_read_paths(src: str, module_path: str, root: str) -> set[str]:
@@ -2098,6 +2116,77 @@ def _module_read_paths(src: str, module_path: str, root: str) -> set[str]:
         got = _anchored_path(target, env, module_path)
         if got and got[0] == "ABS":
             _record(got[1], want_dir=True, out=out)
+    return out
+
+
+def _existence_only_dirs(src: str, module_path: str, root: str) -> set[str]:
+    """Directories this module probes for EXISTENCE and never reads the contents or listing of.
+
+    A read of `sdlc-studio` is not one thing. `(repo / "sdlc-studio").is_dir()` asks a question
+    about the shape of the checkout; `SKILL_DIR.glob("*.md")` asks about what is inside. Only
+    the second can be falsified by filing an artefact, so only the second should be able to
+    outvote a listing-only declaration - and conflating them cost this repo the whole saving
+    US0554 delivered: one existence guard in one module made every artefact-only commit
+    structural, and a commit touching no code paid 313 seconds of unit suites.
+
+    Returned as the subtraction rather than as the whole read set, so the fail-safe direction is
+    untouched: the path stays in `_module_read_paths`, so DELETING the directory still runs this
+    module's suite. What changes is only whether the module counts as a content reader."""
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return set()
+    env: dict[str, str] = {}
+    for _ in range(3):
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                    and isinstance(node.targets[0], ast.Name)):
+                got = _anchored_path(node.value, env, module_path)
+                if got and got[0] == "ABS":
+                    env[node.targets[0].id] = got[1]
+
+    def dirs(existence_only: bool) -> set[str]:
+        found: set[str] = set()
+        for target in _read_targets(tree, existence_only=existence_only):
+            got = _anchored_path(target, env, module_path)
+            if not (got and got[0] == "ABS" and got[1].startswith(root + os.sep)):
+                continue
+            if os.path.exists(got[1]) and not os.path.isdir(got[1]):
+                continue
+            found.add(os.path.relpath(got[1], root).replace(os.sep, "/"))
+        return found
+
+    # A directory read BOTH ways is a content read: the stronger evidence wins, so a module
+    # that probes and then globs the same tree keeps its vote.
+    return dirs(True) - dirs(False)
+
+
+def content_readers(root: str = ".") -> dict:
+    """`path -> the modules whose read of it depends on its CONTENTS or its listing`.
+
+    The electorate the listing-only unanimity rule counts. A module that only probes whether a
+    directory exists is not in it: no file under the directory can change that answer, so it has
+    no stake in whether the directory is read for content, and letting it vote suspended a
+    correct declaration for the whole repository.
+
+    THE one place that subtraction is made. Both this rule's tests previously re-derived the
+    reader set from the raw read map, which is how they came to assert the suspension itself -
+    a test that re-implements the thing it checks agrees with it by construction."""
+    root = os.path.abspath(root)
+    read_map = suite_read_map(root)
+    if read_map is None:
+        return {}
+    out: dict = {}
+    for module, paths in read_map.items():
+        try:
+            with open(os.path.join(root, module), encoding="utf-8") as handle:
+                probe_only = _existence_only_dirs(handle.read(), os.path.join(root, module), root)
+        except OSError:
+            probe_only = set()
+        for rel in paths:
+            if rel.rstrip("/") in probe_only:
+                continue
+            out.setdefault(rel.rstrip("/"), set()).add(module)
     return out
 
 
@@ -2249,10 +2338,7 @@ def listing_only_scopes(root: str = ".") -> dict:
     # declaration is one module's statement about its OWN read; honouring it tree-wide let it
     # silence a second module's CONTENT read of the same directory, which the second module
     # never agreed to and cannot see.
-    readers: dict = {}
-    for module, paths in read_map.items():
-        for rel in paths:
-            readers.setdefault(rel.rstrip("/"), set()).add(module)
+    readers = content_readers(root)
     declarers: dict = {}
     out: dict = {}
     for module, paths in read_map.items():
