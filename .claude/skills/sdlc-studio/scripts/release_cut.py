@@ -97,7 +97,9 @@ def tag_check(root: Path | str, commit: str) -> tuple[bool, str]:
     # detector, which is the exact failure the lane was built to close. The tag is where the
     # rule is unambiguously right; blocking every mid-sprint push on a trunk-based repo would
     # train the bypass instead.
-    owed = _close_owed_units(root)
+    owed, unknown = _close_owed_units(root)
+    if unknown:
+        return False, f"refusing the tag: {unknown}"
     if owed:
         return False, (f"{len(owed)} delivery unit(s) reached a terminal status with no retro "
                        f"behind them ({', '.join(owed[:8])}"
@@ -107,23 +109,41 @@ def tag_check(root: Path | str, commit: str) -> tuple[bool, str]:
     return True, f"gate green on {commit} matches the tagged commit, and no close is owed"
 
 
-def _close_owed_units(root: Path | str) -> list[str]:
-    """Delivery units owing a close, or [] when the question cannot be asked.
+def _close_owed_units(root: Path | str) -> "tuple[list[str], str | None]":
+    """`(units owing a close, refusal reason)` - and it FAILS CLOSED.
 
-    [] on ANY failure is deliberate here and is the opposite of the usual rule: this is the last
-    gate before a tag, so a crash in a reporting helper must not become a refusal nobody can
-    clear. The gate lane above is the blocking one; this is a second, narrower net."""
+    The original version returned `[]` on every failure, justified as "a crash in a reporting
+    helper must not become a refusal nobody can clear" and as being "a second, narrower net"
+    behind a blocking gate lane. Both halves were wrong. There is no gate lane above: the
+    `close-owed` lane binds only under `--require-close`, which nothing passes, so this IS the
+    only enforcement point. And `[]` collapsed three different states into "clean":
+
+    * no baseline stamped - genuinely nothing to judge, the one case that may pass;
+    * baseline UNREADABLE - `gate._close_owed` treats this as a loud blocking refusal, in terms
+      ("refusing to pass a close gate over an unreadable baseline that silently disarms the
+      close-down"), and here it read as clean;
+    * the helper raised - nothing was judged, reported as though everything had been.
+
+    So deleting or truncating one tracked file (`sdlc-studio/.close-owed-baseline.json`) turned
+    the release guard off and made the tag assert a positive falsehood. A guard whose failure
+    mode is silence is the class this project files bugs about; this one is the guard on the
+    release."""
     try:
         import close_owed  # noqa: PLC0415 - deferred; only the tag path pays for it
         report = close_owed.owed(Path(root))
-        # `owed` is [(id, type)]. Only meaningful once a baseline is stamped: without one it
-        # lists every terminal unit ever, which would refuse a first tag on history nobody
-        # adopted the rule for.
-        if not report.get("baselined"):
-            return []
-        return [str(row[0]) for row in (report.get("owed") or [])]
-    except Exception:  # noqa: BLE001 - see the docstring
-        return []
+    except Exception as exc:  # noqa: BLE001 - reported, never swallowed
+        return [], (f"the close-owed report could not be produced ({exc!r}), so whether any "
+                    f"delivery unit owes a close is UNKNOWN - refusing rather than tagging on "
+                    f"an unanswered question")
+    if report.get("corrupt"):
+        return [], ("the close-owed baseline is unreadable, which silently disarms the "
+                    "close-down check - restore `sdlc-studio/.close-owed-baseline.json` from "
+                    "git; do NOT re-stamp it, which would forgive whatever it was hiding")
+    # No baseline is the one honest pass: the rule was never adopted here, so there is no
+    # history to hold this project to. Distinguished from unreadable, which is the whole point.
+    if not report.get("baselined"):
+        return [], None
+    return [str(row[0]) for row in (report.get("owed") or [])], None
 
 
 def _cmd_cut(args: argparse.Namespace) -> int:

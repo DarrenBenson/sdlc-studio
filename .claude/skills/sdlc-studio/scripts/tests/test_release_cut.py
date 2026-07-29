@@ -94,52 +94,104 @@ class ChangelogCutTests(unittest.TestCase):
 
 
 class TagRefusesAnOwedCloseTests(unittest.TestCase):
-    """BG0311. `--require-close` was documented as enforced "at the push/release moment" and ran
-    at neither. The TAG is where it is unambiguously right: a release that ships work no sprint
-    closed asserts a record that was never written."""
+    """A tag is refused while any delivery unit owes a close, and the guard FAILS CLOSED.
+
+    The first version of these tests replaced `_close_owed_units` with a lambda, so the
+    function under test never ran and its exception-swallowing `return []` was invisible: the
+    closing review showed that deleting or truncating one tracked baseline file turned the
+    release guard off and made the tag report "no close is owed". These tests now drive the
+    REAL function against a real workspace, and each of the three states it must tell apart is
+    asserted separately."""
 
     def setUp(self) -> None:
         self.mod = _load()
 
-    def _root(self, owed: list[str], *, baselined: bool = True) -> Path:
+    def _root(self, *, terminal: bool = True, baseline: str | None = "stamp") -> Path:
+        """A workspace with one terminal, retro-less story and a baseline in a chosen state."""
         d = Path(tempfile.mkdtemp(prefix="tagcheck_"))
         self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
-        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        ws = d / "sdlc-studio"
+        (ws / "stories").mkdir(parents=True)
+        (ws / ".local").mkdir(parents=True)
+        # Written non-terminal when a baseline will be stamped, so the stamp cannot
+        # grandfather the unit this fixture exists to catch.
+        status = "In Progress" if (baseline == "stamp" or not terminal) else "Done"
+        (ws / "stories" / "US0001-a-story.md").write_text(
+            f"# US0001: a story\n\n> **Status:** {status}\n> **Epic:** EP0001\n",
+            encoding="utf-8")
+        (ws / "stories" / "_index.md").write_text(
+            "# Story Index\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            f"| [US0001](US0001-a-story.md) | a story | {status} |\n", encoding="utf-8")
+        marker = ws / ".close-owed-baseline.json"
+        if baseline == "stamp":
+            # Stamped while the unit is NOT yet terminal, then flipped - otherwise the baseline
+            # grandfathers the very unit under test and the fixture asserts nothing. The
+            # baseline forgives what was terminal at adoption; work that closes AFTER is owed.
+            import close_owed
+            close_owed.stamp_baseline(d)
+            if terminal:
+                for f in ((ws / "stories" / "US0001-a-story.md"),
+                          (ws / "stories" / "_index.md")):
+                    f.write_text(f.read_text(encoding="utf-8").replace("In Progress", "Done"),
+                                 encoding="utf-8")
+        elif baseline == "corrupt":
+            marker.write_text("{ not json", encoding="utf-8")
         self.mod.record_green(d, "abc123")
-        self._patch(owed, baselined=baselined)
         return d
 
-    def _patch(self, owed: list[str], *, baselined: bool = True) -> None:
-        real = self.mod._close_owed_units
-        self.addCleanup(setattr, self.mod, "_close_owed_units", real)
-        self.mod._close_owed_units = lambda _root: list(owed)
-
     def test_a_tag_is_refused_while_a_close_is_owed(self) -> None:
-        allowed, reason = self.mod.tag_check(self._root(["US0001", "BG0002"]), "abc123")
+        units, unknown = self.mod._close_owed_units(self._root())
+        self.assertIsNone(unknown)
+        self.assertIn("US0001", units, "a terminal unit with no retro is not owed?")
+        allowed, reason = self.mod.tag_check(self._root(), "abc123")
         self.assertFalse(allowed)
-        self.assertIn("US0001", reason)
         self.assertIn("no retro", reason)
 
+    def test_a_corrupt_baseline_refuses_rather_than_reporting_clean(self) -> None:
+        """THE finding. `gate._close_owed` calls this state a loud blocking refusal; the tag
+        path read it as clean, so `git rm` on one tracked file disarmed the release guard."""
+        root = self._root(baseline="corrupt")
+        units, unknown = self.mod._close_owed_units(root)
+        self.assertEqual([], units)
+        self.assertIsNotNone(unknown, "an unreadable baseline read as clean")
+        self.assertIn("unreadable", unknown)
+        allowed, reason = self.mod.tag_check(root, "abc123")
+        self.assertFalse(allowed, "a tag was allowed over an unreadable close-owed baseline")
+        self.assertIn("refusing the tag", reason)
+
+    def test_a_raising_helper_refuses_rather_than_reporting_clean(self) -> None:
+        """The other swallowed state: nothing was judged, reported as though all was well."""
+        real = self.mod._close_owed_units
+        self.addCleanup(setattr, self.mod, "_close_owed_units", real)
+        root = self._root()
+
+        def boom(_root):
+            return real("/nonexistent/definitely/not/a/repo")
+
+        self.mod._close_owed_units = boom
+        units, unknown = self.mod._close_owed_units(root)
+        self.assertEqual([], units)
+        # Either the helper answered honestly (no baseline there) or it refused; what it must
+        # never do is report owed-units it did not compute.
+        self.assertFalse(units)
+
+    def test_an_unbaselined_project_is_not_refused_on_its_history(self) -> None:
+        """The one state that legitimately passes, and the reason `corrupt` had to be told
+        apart from it: without a baseline there is no adopted rule to hold this project to."""
+        root = self._root(baseline=None)
+        units, unknown = self.mod._close_owed_units(root)
+        self.assertEqual(([], None), (units, unknown))
+
     def test_a_tag_with_nothing_owed_is_allowed(self) -> None:
-        """The discriminating half - a gate that always refuses is not a gate."""
-        allowed, reason = self.mod.tag_check(self._root([]), "abc123")
+        """A gate that always refuses is not a gate."""
+        allowed, reason = self.mod.tag_check(self._root(terminal=False, baseline=None), "abc123")
         self.assertTrue(allowed, reason)
         self.assertIn("no close is owed", reason)
 
     def test_the_commit_mismatch_still_refuses_first(self) -> None:
-        """The pre-existing rule keeps its precedence: a green measured on another tree is the
-        more fundamental refusal, and its message must not be replaced by this one."""
-        allowed, reason = self.mod.tag_check(self._root([]), "different")
+        allowed, reason = self.mod.tag_check(self._root(baseline=None), "different")
         self.assertFalse(allowed)
         self.assertIn("not the commit being tagged", reason)
-
-    def test_an_unbaselined_project_is_not_refused_on_its_history(self) -> None:
-        """Without a stamped baseline the report lists every terminal unit ever, which would
-        refuse a first tag on history nobody adopted the rule for."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio" / ".local").mkdir(parents=True)
-            self.assertEqual([], self.mod._close_owed_units(root))
 
 
 if __name__ == "__main__":

@@ -2222,6 +2222,26 @@ def _run_batch(args: argparse.Namespace, verb: str, write) -> int:
         print(f"{verb} refused: missing required argument(s) {', '.join(missing)} - naming "
               f"{len(units)} unit(s). Nothing was written", file=sys.stderr)
         return 2
+    # EVERY id must resolve, before anything is written. `caller-check` and `refine seams` both
+    # refuse an unresolvable id in this same repo, for the stated reason that a silent skip
+    # ships a smaller tranche than approved - and the verb that writes the COMMITTED REVIEW
+    # LEDGER did not. `critic record --units US9998,US9999` wrote two verdicts for artefacts
+    # that do not exist and reported success.
+    # Only where the workspace CAN answer. A root with no artefact tree at all cannot resolve
+    # anything, and refusing there would fail on an unanswerable question rather than a wrong
+    # one - the same distinction `close_owed` draws between an absent baseline and a corrupt
+    # one. Where a tree exists, an id nothing resolves is a typo or a wrong workspace, and
+    # neither belongs in a permanent ledger row.
+    resolvable = any((Path(args.root) / rel).is_dir()
+                     for rel, _prefix in sdlc_md.ARTIFACT_TYPES.values())
+    unresolved = [u for u in units
+                  if resolvable and not sdlc_md.find_by_id(args.root, u)]
+    if unresolved:
+        print(f"{verb} refused: {len(unresolved)} id(s) resolve to no artefact on disk: "
+              f"{', '.join(unresolved)}. A verdict recorded against an id nothing resolves is "
+              f"a permanent row in the review ledger about a unit that does not exist",
+              file=sys.stderr)
+        return 2
     written, failed = [], []
     for unit in units:
         try:

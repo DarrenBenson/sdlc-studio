@@ -1162,11 +1162,22 @@ def _land_unhomed(body: str, f: dict) -> str:
     Appended rather than refused, because the content is the point and an author who supplied
     it is right to expect it. Inserted BEFORE the revision history so the document keeps its
     shape."""
+    # A HEADING, at the start of a line - not the substring anywhere in the document. Reading
+    # it loosely meant a finding whose prose merely MENTIONED `## Impact` was refused as
+    # already-homed, with a message that was false and no remedy; this project files bugs
+    # about its own renderers constantly, so that case is the normal one.
+    headings = {ln.strip() for ln in body.splitlines() if ln.startswith("## ")}
     missing = [(key, heading) for key, heading in _LANDABLE
-               if str(f.get(key) or "").strip() and f"## {heading}" not in body]
+               if str(f.get(key) or "").strip() and f"## {heading}" not in headings]
     if not missing:
         return body
-    extra = "".join(f"## {heading}\n\n{f[key]}\n\n" for key, heading in missing)
+    # ESCAPED, exactly as `_render_sections` escapes the fields it homes. This landed the raw
+    # value while the renderers next to it apply `_prose_safe`, so a CR whose `steps` contained
+    # a metadata-shaped line (`> **Points:** 99`) had it read back by `extract_field` as a real
+    # declaration - the injection `_prose_safe` exists to stop, through the one path that
+    # skipped it.
+    extra = "".join(f"## {heading}\n\n{_prose_safe(str(f[key]))}\n\n"
+                    for key, heading in missing)
     marker = "## Revision History"
     return body.replace(marker, extra + marker, 1) if marker in body else body + "\n" + extra
 

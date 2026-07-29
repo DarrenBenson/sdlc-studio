@@ -2274,7 +2274,7 @@ def listing_only_scopes(root: str = ".") -> dict:
             for entry in entries:
                 if isinstance(entry, dict):
                     rel = str(entry.get("path", "")).strip().strip("/")
-                    ids = _declared_ids(entry.get("ids"))
+                    ids = _declared_ids(entry.get("ids"), root, str(entry.get("path", "")).strip().strip("/"))
                 else:
                     rel = str(entry).strip().strip("/")
                     ids = None
@@ -2282,6 +2282,15 @@ def listing_only_scopes(root: str = ".") -> dict:
                 # reads narrows nothing, and letting it through would be a way to exempt a
                 # tree by writing its name down.
                 if not rel or rel not in paths or rel in protected:
+                    continue
+                # UNDER a protected tree counts as protected. `rel in protected` was an exact
+                # string test, so declaring `.githooks/pre-commit` walked straight past a floor
+                # written to be absolute - and "listing-only" is meaningless for a FILE, which
+                # has no listing, so a file declaration is a pure content-blindness switch.
+                if any(rel == d or rel.startswith(d.rstrip("/") + "/")
+                       for d in (str(x).rstrip("/") for x in protected)):
+                    continue
+                if not os.path.isdir(os.path.join(root, rel)):
                     continue
                 declarers.setdefault(rel, set()).add(module)
                 if rel in out:
@@ -2301,12 +2310,42 @@ def listing_only_scopes(root: str = ".") -> dict:
             if readers.get(rel, set()) <= declarers.get(rel, set())}
 
 
-def _declared_ids(value) -> "frozenset | None":
-    """The id set a declaration names, or None when it names none this module can read."""
+def _declared_ids(value, root: str | None = None, rel: str | None = None) -> "frozenset | None":
+    """The id set a declaration names, or None - meaning the WHOLE directory - when it names
+    none this module can trust.
+
+    The fail-safe list used to cover every malformed shape and miss the likeliest one: a
+    well-formed but WRONG id. `ids: ('BG288',)` for `BG0288` is a perfectly good tuple of a
+    perfectly good string, and it narrowed the tree to an id that matches nothing - so a
+    structural change to the very artefact the declaring module asserts about answered
+    `test-relevant: no`. A false green, from a typo.
+
+    So every declared id must RESOLVE to a file under the declared directory. One that does not
+    voids the whole narrowing rather than being dropped: a declaration half of which is wrong is
+    a declaration nobody has checked, and the safe reading of it is the un-narrowed one."""
     if not isinstance(value, (list, tuple, set, frozenset)):
         return None
     ids = {str(i).strip().replace("-", "").upper() for i in value if str(i).strip()}
-    return frozenset(ids) or None
+    if not ids:
+        return None
+    if root is None or rel is None:
+        return frozenset(ids)
+    base = os.path.join(root, rel)
+    present = set()
+    for dirpath, _dirnames, filenames in os.walk(base):
+        for name in filenames:
+            got = _path_artefact_id(os.path.join(dirpath, name))
+            if got:
+                present.add(got)
+    unresolved = ids - present
+    if unresolved:
+        # Reported through the same channel a wrong declaration already uses: the narrowing is
+        # withheld, so the cost is a slower gate rather than an unrun suite.
+        sdlc_md.debug("gate._declared_ids",
+                      ValueError(f"{rel}: declared id(s) {sorted(unresolved)} resolve to no "
+                                 f"artefact - the narrowing is withheld"))
+        return None
+    return frozenset(ids)
 
 
 def listing_only_paths(root: str = ".") -> set[str]:
@@ -2365,7 +2404,10 @@ def is_test_relevant(paths, root: str = ".", structural=None) -> bool:
             continue
         if structural is not None and str(p).strip() not in structural:
             continue
-        if _in_scope(p, scopes):
+        # `structural is None` means the CALLER COULD NOT SAY. The id scope must not answer a
+        # question nobody asked: applying it here turned the documented fail-safe ("an
+        # unanswered question runs the suites") into a "no" for every unscoped id.
+        if structural is None or _in_scope(p, scopes):
             return True
     return False
 

@@ -4785,6 +4785,85 @@ class DeclarationScopedToItsDeclarerTests(unittest.TestCase):
         self.assertIn(".githooks", gate.CONTENT_READ_DIRS)
 
 
+class FalseGreenPathsAreClosedTests(unittest.TestCase):
+    """The three ways the listing-only narrowing could answer `test-relevant: no` for a file
+    that CAN change a test outcome, all found by the closing review of RUN-01KYNKDP.
+
+    This is the catastrophic class for a test-selection mechanism: every other defect in that
+    sprint made the gate slower or noisier, and these made it blind."""
+
+    @staticmethod
+    def _repo(tmp: Path, decl: str, *, extra: str = "") -> Path:
+        suite = tmp / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"
+        suite.mkdir(parents=True)
+        ws = tmp / "sdlc-studio"
+        (ws / "bugs").mkdir(parents=True)
+        (ws / "bugs" / "BG0288-named.md").write_text("# named\n", encoding="utf-8")
+        (suite / "test_census.py").write_text(
+            "from pathlib import Path\n"
+            "REPO = Path(__file__).resolve().parents[5]\n"
+            f"GATE_LISTING_ONLY = {decl}\n"
+            "WS = REPO / 'sdlc-studio'\n"
+            f"{extra}"
+            "def test_census():\n"
+            "    assert list(WS.glob('**/BG0288*.md'))\n", encoding="utf-8")
+        return tmp
+
+    def test_a_declared_id_that_resolves_to_nothing_withholds_the_narrowing(self) -> None:
+        """A typo is the likeliest wrong declaration and was the one shape the fail-safe list
+        missed: `BG288` for `BG0288` is a good tuple of a good string that matches nothing, so
+        the tree narrowed to an id no file carries."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d), "({'path': 'sdlc-studio', 'ids': ('BG288',)},)"))
+            self.assertEqual({"sdlc-studio": None}, gate.listing_only_scopes(root),
+                             "a declared id matching no artefact still narrowed the tree")
+            added = "sdlc-studio/bugs/BG0288-named.md"
+            self.assertTrue(gate.is_test_relevant([added], root, structural={added}),
+                            "a structural change to the artefact the module asserts about "
+                            "answered `no` - a false green from a typo")
+
+    def test_a_resolvable_id_still_narrows(self) -> None:
+        """The discriminating half - a validation that voids every declaration is not a fix."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d), "({'path': 'sdlc-studio', 'ids': ('BG0288',)},)"))
+            self.assertEqual({"sdlc-studio": frozenset({"BG0288"})},
+                             gate.listing_only_scopes(root))
+            other = "sdlc-studio/bugs/BG0002-new.md"
+            self.assertFalse(gate.is_test_relevant([other], root, structural={other}))
+
+    def test_declaring_a_file_cannot_make_it_listing_only(self) -> None:
+        """A file has no listing, so a file declaration is a pure content-blindness switch.
+        `rel in protected` was an exact-string test, so a path UNDER a protected tree walked
+        past a floor written to be absolute."""
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            root = self._repo(tmp, "('sdlc-studio',)")
+            hooks = root / ".githooks"
+            hooks.mkdir()
+            (hooks / "pre-commit").write_text("#!/bin/sh\n", encoding="utf-8")
+            suite = root / ".claude/skills/sdlc-studio/scripts/tests"
+            (suite / "test_hooks.py").write_text(
+                "from pathlib import Path\n"
+                "REPO = Path(__file__).resolve().parents[5]\n"
+                "GATE_LISTING_ONLY = ('.githooks/pre-commit',)\n"
+                "HOOK = REPO / '.githooks' / 'pre-commit'\n"
+                "def test_hook():\n"
+                "    assert HOOK.read_text()\n", encoding="utf-8")
+            scopes = gate.listing_only_scopes(str(root))
+            self.assertNotIn(".githooks/pre-commit", scopes)
+            self.assertTrue(
+                gate.is_test_relevant([".githooks/pre-commit"], str(root), structural=set()),
+                "a plain content edit to a hook the suite READS answered `no`")
+
+    def test_an_unanswered_change_kind_still_runs_the_suites(self) -> None:
+        """`structural=None` means the caller could not say. The id scope was answering a
+        question nobody asked, turning the documented fail-safe into a `no`."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d), "({'path': 'sdlc-studio', 'ids': ('BG0288',)},)"))
+            self.assertTrue(gate.is_test_relevant(["sdlc-studio/bugs/BG0999-new.md"], root),
+                            "an unanswered question answered itself `no`")
+
+
 class LaneCostAttributionTests(unittest.TestCase):
     """US0533 (CR0465). The gate reported one total and named its dominant lane, which says
     where the worst of the cost went but not what the second and third lanes cost - and that is
@@ -4853,12 +4932,13 @@ class LaneCostAttributionTests(unittest.TestCase):
         self.assertEqual("", f" [{secs:.1f}s]" if isinstance(secs, (int, float)) else "")
 
 
-class CloseVerdictReuseTests(unittest.TestCase):
-    """US0553. `suite_decision` already knew how to reuse a green verdict over an unchanged
-    surface (US0493), and the commit hook already records one after a green run. The close did
-    not: it runs the FULL gate as step 4 of seven and recorded nothing the hook could read, so
-    the first commit after it re-earned a verdict the close had just paid for. The mechanism was
-    there; nothing called it from the close - a caller, not a capability."""
+class SuiteVerdictReuseTests(unittest.TestCase):
+    """The commit hook's suite verdict and the reuse decision it feeds (US0493).
+
+    Renamed from `CloseVerdictReuseTests` when US0553 was reverted: the CLOSE has no business
+    writing here, because `gate.main` runs no test suite and any green it recorded was
+    fabricated. These tests cover the mechanism itself, whose one honest writer is
+    `.githooks/commit-msg` after it has actually run the suites."""
 
     @staticmethod
     def _repo(tmp: Path) -> Path:

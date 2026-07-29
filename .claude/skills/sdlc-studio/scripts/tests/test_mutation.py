@@ -3067,22 +3067,62 @@ class KilledMutantsCarryTheirKillerTests(unittest.TestCase):
         self.assertIsNone(mut._killing_test("the suite exploded"))
         self.assertIsNone(mut._killing_test(""))
 
-    def test_the_run_loop_records_the_key_on_a_kill(self) -> None:
-        """The producer emits it, which is the whole finding - a parser nothing calls would
-        leave the consumer refusing exactly as before."""
-        import inspect
-        src = inspect.getsource(_load())
-        self.assertIn('row["test"] = killer', src,
-                      "the run loop does not attach the killing test to a killed mutant")
-        self.assertIn("_killing_test(_LAST_RUN_OUTPUT[0])", src)
+    def test_a_kill_carries_its_killer_end_to_end(self) -> None:
+        """BEHAVIOURAL, replacing two source-greps the closing review refuted: they asserted
+        `'row["test"] = killer' in inspect.getsource(...)`, which stayed green when the
+        assignment was made dead (`if killer and False:`). A grep is not evidence."""
+        mut = _load()
+        import shutil
+        import tempfile as _tf
+        d = Path(_tf.mkdtemp(prefix="kill_e2e_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        (d / "src").mkdir()
+        (d / "src" / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+        # A runner that fails and names a node id, exactly as pytest does.
+        cmd = "echo 'FAILED tests/t.py::C::test_x - AssertionError'; exit 1"
+        self.assertEqual("fail", mut._run_tests(cmd, d))
+        self.assertEqual("tests/t.py::C::test_x",
+                         mut._killing_test(mut._LAST_RUN_OUTPUT[0]),
+                         "the runner's output did not reach the attribution")
 
-    def test_the_runner_output_is_captured_not_discarded(self) -> None:
-        """The precondition. With the streams sent to DEVNULL there is nothing to parse, and
-        the attribution above could only ever be None."""
-        import inspect
-        src = inspect.getsource(_load()._run_tests)
-        self.assertIn("subprocess.PIPE", src)
-        self.assertNotIn("stdout=subprocess.DEVNULL", src)
+    def test_a_backgrounded_child_does_not_hang_the_run(self) -> None:
+        """A pipe ties the read to EOF, so a suite that backgrounds anything held it open and
+        blocked the FULL timeout per mutant - and the verdict then flipped from `survived`, an
+        actionable finding, to `error`, which silently excuses the mutant."""
+        import time
+        mut = _load()
+        mut._RUN_TIMEOUT = 5
+        started = time.monotonic()
+        verdict = mut._run_tests("sleep 30 & echo 'FAILED tests/t.py::C::test_x'; exit 1",
+                                 Path("."))
+        elapsed = time.monotonic() - started
+        self.assertLess(elapsed, 4.0, f"took {elapsed:.1f}s - the run is waiting on a "
+                                      f"background child rather than on the suite")
+        self.assertEqual("fail", verdict, "the verdict flipped to `error`, excusing the mutant")
+
+    def test_a_unittest_summary_line_is_not_mistaken_for_a_node_id(self) -> None:
+        """The defect this whole guard exists for: `^(?:FAILED|ERROR)\\s+(\\S+)` matched
+        unittest's own footer, so every killed mutant under this repo's own runner was
+        attributed to the literal string `(failures=2)`."""
+        mut = _load()
+        self.assertIsNone(mut._killing_test("FAILED (failures=2)"))
+        self.assertIsNone(mut._killing_test("FAILED to open optional cache, continuing"))
+
+    def test_the_evidence_satisfies_its_consumer(self) -> None:
+        """The point of BG0357. Shipping only a scalar `test` left `tools/test_census.py`
+        refusing every real report, so the capability stayed unreachable after the fix."""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "census_probe", Path(__file__).resolve().parents[5] / "tools" / "test_census.py")
+        census = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(census)
+        rows = census.mutant_rows({
+            "mutations": [{"file": "src/m.py", "line": 1, "class": "no-op",
+                           "verdict": "killed", "killed_by": ["tests/t.py::C::test_x"],
+                           "test": "tests/t.py::C::test_x"}],
+            "summary": {"applied": 1, "killed": 1, "survived": 0},
+            "tests_run": ["tests/t.py::C::test_x"]})
+        self.assertEqual(["tests/t.py::C::test_x"], rows[0]["killed_by"])
 
 
 if __name__ == "__main__":

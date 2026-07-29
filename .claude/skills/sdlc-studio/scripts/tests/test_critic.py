@@ -2771,6 +2771,56 @@ class CallerCheckBatchTests(_BatchBase):
         self.assertIn("over 3 unit(s)", out)
 
 
+class GhostIdsAreRefusedTests(_BatchBase):
+    """A verdict may not be written against an id nothing resolves.
+
+    `caller-check` and `refine seams` both refuse an unresolvable id, for the stated reason
+    that a silent skip ships a smaller tranche than approved. The verb that writes the
+    COMMITTED REVIEW LEDGER did not: `critic record --units US9998,US9999` wrote two verdicts
+    for artefacts that do not exist and exited 0."""
+
+    def _with_tree(self) -> None:
+        d = self.root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "US0001-real.md").write_text("# US0001: real\n\n> **Status:** Review\n",
+                                          encoding="utf-8")
+
+    def test_a_verdict_for_a_nonexistent_id_is_refused(self) -> None:
+        self._with_tree()
+        rc, out, err = self._run(["record", "--units", "US9998,US9999", "--verdict", "approve",
+                                  "--reviewer", "qa", "--author", "builder"])
+        self.assertEqual(2, rc, "two verdicts were written for artefacts that do not exist")
+        self.assertIn("US9998", err)
+        self.assertIsNone(self.mod.verdict_for(self.root, "US9998"))
+
+    def test_one_bad_id_refuses_the_whole_batch_before_any_write(self) -> None:
+        """A partial batch is the state the exit codes exist to distinguish; here nothing
+        should be written at all, because the caller's list is wrong."""
+        self._with_tree()
+        rc, _out, err = self._run(["record", "--units", "US0001,US9999", "--verdict", "approve",
+                                   "--reviewer", "qa", "--author", "builder"])
+        self.assertEqual(2, rc)
+        self.assertIn("US9999", err)
+        self.assertIsNone(self.mod.verdict_for(self.root, "US0001"),
+                          "a good id in a bad batch was written anyway")
+
+    def test_a_resolvable_id_is_still_recorded(self) -> None:
+        self._with_tree()
+        rc, _out, err = self._run(["record", "--unit", "US0001", "--verdict", "approve",
+                                   "--reviewer", "qa", "--author", "builder"])
+        self.assertEqual(0, rc, err)
+        self.assertEqual("APPROVE", self.mod.verdict_for(self.root, "US0001")["verdict"])
+
+    def test_a_workspace_that_cannot_resolve_is_not_refused(self) -> None:
+        """Fail-open only on an UNANSWERABLE question. A root with no artefact tree resolves
+        nothing, so refusing there would fail on the absence of a workspace rather than on a
+        wrong id - the distinction `close_owed` draws between an absent and a corrupt
+        baseline."""
+        rc, _out, err = self._run(["record", "--unit", "US0001", "--verdict", "approve",
+                                   "--reviewer", "qa", "--author", "builder"])
+        self.assertEqual(0, rc, err)
+
+
 class ArgumentCompletenessTests(_BatchBase):
     """US0557. `critic signoff` needs `--author` and `close --apply-signoff` needs
     `--principal`; both were learned from a refusal, and the first cost nineteen spawns before

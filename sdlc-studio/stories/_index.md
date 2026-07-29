@@ -11,11 +11,12 @@
 | Ready | 39 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 11 |
+| Review | 10 |
 | Done | 507 |
 | Won't Implement | 1 |
 | Deferred | 0 |
 | Superseded | 1 |
+| Blocked | 1 |
 | **Total** | **559** |
 
 ## All Stories
@@ -463,7 +464,7 @@
 | [US0550](US0550-a-run-with-no-goal-recorded-falls-back.md) | A run with no goal recorded falls back to the id alone rather than inventing a slug | Done | EP0187 | 2026-07-28 | 2026-07-28 |
 | [US0551](US0551-blockers-sharing-a-cause-and-a-remedy-are.md) | Blockers sharing a cause and a remedy are filed as one artefact listing the units it covers | Done | EP0188 | 2026-07-28 | 2026-07-28 |
 | [US0552](US0552-the-close-reports-how-many-blockers-it-filed.md) | The close reports how many blockers it filed and how many distinct causes they represent, so a fan-out is visible when it happens | Done | EP0188 | 2026-07-28 | 2026-07-28 |
-| [US0553](US0553-a-close-phase-commit-over-an-unchanged-test.md) | A close-phase commit over an unchanged test-relevant surface reuses the gate verdict the close itself earned, rather than re-running the suites | Review | EP0189 | 2026-07-29 | 2026-07-29 |
+| [US0553](US0553-a-close-phase-commit-over-an-unchanged-test.md) | A close-phase commit over an unchanged test-relevant surface reuses the gate verdict the close itself earned, rather than re-running the suites | Blocked | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0554](US0554-a-listing-only-declaration-names-the-ids-its.md) | A listing-only declaration names the ids its structural read depends on, so filing an artefact stops triggering the full suites | Review | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0555](US0555-sprint-close-dry-run-reports-every-unmet-prerequisite.md) | sprint close --dry-run reports every unmet prerequisite of all seven steps in one read-only pass, retro content included, and writes nothing | Review | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0556](US0556-critic-evidence-record-and-signoff-each-record-a.md) | critic evidence, record and signoff each record a whole batch in one invocation, with the open run as the default scope | Review | EP0189 | 2026-07-29 | 2026-07-29 |

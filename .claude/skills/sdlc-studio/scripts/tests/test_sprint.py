@@ -8206,601 +8206,69 @@ class CloseSelfInvalidationTests(unittest.TestCase):
         self.assertIn("could not be attributed", detail)
 
 
-class CloseVerdictReuseTests(unittest.TestCase):
-    """US0553. The close runs the FULL suites as step 4 of seven and then commits. It recorded
-    that green only into its own close-private ledger, so the commit hook - which reads
-    `gate-suite-verdict.json` - knew nothing about it and the first commit of the close paid
-    for the suites again, seconds later, over the same script tree.
+class CloseRecordsNoSuiteVerdictTests(unittest.TestCase):
+    """US0553 is REVERTED, and this is the guard that it stays reverted.
 
-    Nothing here is a new decision: `suite_decision` has known how to reuse a green since
-    US0493. What was missing was a caller, which is why these tests assert the CALL and not
-    the reuse logic - a mechanism that reaches no caller is inert however well it is tested."""
+    It recorded `status=green, mode=full` into the record `gate.suite_decision` reads, on the
+    premise that the close had just run the full suites. `gate.main` runs seventeen lanes and
+    not one of them runs a test suite - the suites are run by `.githooks/commit-msg`. The close
+    therefore stamped a full-suite green over whatever sat in the working tree, and the next
+    commit read it and ran no tests: a false green written by the mechanism built to refuse
+    false greens.
+
+    Asserted as the PROPERTY - the close writes no suite verdict - rather than as the absence
+    of a call, so a differently-spelled reintroduction is caught too."""
 
     def _repo(self) -> Path:
-        (d := Path(tempfile.mkdtemp(prefix="close_verdict_"))).joinpath(
-            "sdlc-studio", ".local").mkdir(parents=True)
+        d = Path(tempfile.mkdtemp(prefix="no_suite_verdict_"))
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
         (d / "sdlc-studio" / "reviews").mkdir(parents=True)
         (d / "sdlc-studio" / "reviews" / "LATEST.md").write_text("# anchor\n", encoding="utf-8")
         (d / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
-            "run_id": "RUN-VERDICT", "batch": ["US0001"], "outcome": "running",
+            "run_id": "RUN-NOVERDICT", "batch": ["US0001"], "outcome": "running",
             "started_at": "2026-07-29T09:00:00Z",
             "close_output": ["sdlc-studio/reviews/LATEST.md"]}), encoding="utf-8")
         self.addCleanup(shutil.rmtree, d, ignore_errors=True)
         return d
 
-    def _run(self, sprint, root, gate):
+    def test_a_passing_close_writes_no_suite_verdict(self) -> None:
+        sprint = _load()
+        root, gate = self._repo(), _stub_gate([])
         with unittest.mock.patch.dict(sys.modules, {"gate": gate}), \
                 contextlib.redirect_stdout(io.StringIO()), \
                 contextlib.redirect_stderr(io.StringIO()):
-            return sprint._close_gate(root, "RETRO0001", json.loads(
+            ok, _detail, _ = sprint._close_gate(root, "RETRO0001", json.loads(
                 (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8")))
-
-    def test_the_close_gate_step_records_the_verdict_it_earned(self) -> None:
-        sprint = _load()
-        root, gate = self._repo(), _stub_gate([])
-        ok, _, _ = self._run(sprint, root, gate)
         self.assertTrue(ok)
-        self.assertEqual(1, len(gate.recorded_verdicts),
-                         "the close ran the full suites and recorded no verdict the hook reads")
-        recorded = gate.recorded_verdicts[0]
-        self.assertEqual("green", recorded["status"])
-        self.assertEqual("full", recorded["mode"],
-                         "a boundary declines a SELECTED green, so the close must not claim one")
-        self.assertEqual("RUN-VERDICT", recorded["run"],
-                         "the verdict is attributed to the run that earned it")
+        self.assertEqual([], gate.recorded_verdicts,
+                         "the close recorded a SUITE verdict it did not earn - `gate.main` runs "
+                         "no test suite, so any green it writes there is fabricated")
 
-    def test_a_refused_gate_records_no_verdict(self) -> None:
-        """The discriminating half. A close that FAILED its gate must leave nothing behind for
-        the next commit to reuse, or one red close would buy a green for the commit after it."""
-        sprint = _load()
-        root, gate = self._repo(), _stub_gate([("conformance", "US0001: no critic verdict")])
-        ok, _, _ = self._run(sprint, root, gate)
-        self.assertFalse(ok)
-        self.assertEqual([], gate.recorded_verdicts)
+    def test_the_close_gate_runs_no_suite_lane(self) -> None:
+        """The premise itself, checked rather than assumed - which is what was missing the
+        first time. If a suite lane is ever added to `run_gate`, this test says so and the
+        revert can be revisited on evidence."""
+        import gate as real_gate
+        lanes = set(real_gate.DEFAULT_CHECKS)
+        self.assertFalse(
+            {n for n in lanes if "suite" in n or "unittest" in n or "pytest" in n},
+            f"a gate lane now looks like a test-suite runner: {sorted(lanes)} - if the gate "
+            f"genuinely runs the suites, the close may record a verdict again")
 
-    def test_a_reused_close_verdict_records_nothing_new(self) -> None:
-        """When the close's own retry path short-circuits, no suites ran, so there is no fresh
-        green to record - re-stamping one would launder an old verdict as a new measurement."""
+    def test_the_close_scoped_verdict_reuse_is_untouched(self) -> None:
+        """The close's OWN gate verdict reuse (US0501) is correct and close-scoped; only the
+        SUITE verdict was fabricated. Reverting one must not take the other."""
         sprint = _load()
         root, gate = self._repo(), _stub_gate([])
-        self.assertTrue(self._run(sprint, root, gate)[0])
-        gate.recorded_verdicts.clear()
-        gate.main = lambda argv=None: self.fail("the retry must not re-run the gate")
-        ok, detail, _ = self._run(sprint, root, gate)
+        with unittest.mock.patch.dict(sys.modules, {"gate": gate}), \
+                contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()):
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json")
+                               .read_text(encoding="utf-8"))
+            sprint._close_gate(root, "RETRO0001", state)
+            ok, detail, _ = sprint._close_gate(root, "RETRO0001", state)
         self.assertTrue(ok)
         self.assertIn("REUSED", detail)
-        self.assertEqual([], gate.recorded_verdicts)
-
-
-class UlidUnitsAreNotFailedOpenTests(unittest.TestCase):
-    """BG0354. BG0318 closed the v2-only id grammar in `conformance.py`; the same hole survived
-    in `reachable_end_state`, where a unit whose id carries no comparable number was SKIPPED -
-    reported as reaching Done when the sign-off gate may well cap it. A fail-open in the one
-    report that tells an operator how far a batch can get."""
-
-    def _root(self) -> Path:
-        d = Path(tempfile.mkdtemp(prefix="ulid_"))
-        (d / "sdlc-studio").mkdir(parents=True)
-        (d / "sdlc-studio" / ".config.yaml").write_text(
-            "review:\n  two_role_after: 192\n", encoding="utf-8")
-        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
-        return d
-
-    def test_a_ulid_unit_is_reported_as_capped_not_skipped(self) -> None:
-        sprint = _load()
-        res = sprint.reachable_end_state(self._root(), [{"id": "US-01JQK3F8"}])
-        self.assertEqual(sprint.END_STATE_REVIEW, res["state"],
-                         "a unit the cutoff cannot be compared against was reported as "
-                         "reaching Done - the fail-open direction")
-        # `norm_id` strips the dash, so the reported id is the normalised form.
-        self.assertEqual(["US01JQK3F8"], res["units"])
-
-    def test_a_numbered_unit_below_the_cutoff_still_reaches_done(self) -> None:
-        """The discriminating half - a report that always caps is not a report."""
-        sprint = _load()
-        res = sprint.reachable_end_state(self._root(), [{"id": "US0001"}])
-        self.assertEqual(sprint.END_STATE_DONE, res["state"])
-
-    def test_a_numbered_unit_past_the_cutoff_is_capped(self) -> None:
-        sprint = _load()
-        res = sprint.reachable_end_state(self._root(), [{"id": "US0500"}])
-        self.assertEqual(sprint.END_STATE_REVIEW, res["state"])
-
-
-class InertMechanismsAreReachedTests(unittest.TestCase):
-    """BG0385. Five units of RUN-01KYMJEM built `goal_panel`, `judge_defects_against_goal`,
-    both ends of the bookend content review and `prediction_miss` - green tests, killed
-    mutants, and NOTHING called any of them. The per-clause verdict the close recorded was
-    assembled by hand, so the panel's author-exclusion never fired once.
-
-    These tests assert the CALL from the command, not the function. A unit test on the
-    mechanism is what all five already had."""
-
-    def _repo(self, *, goal="one thing; and another thing") -> Path:
-        d = Path(tempfile.mkdtemp(prefix="inert_"))
-        (d / "sdlc-studio" / ".local").mkdir(parents=True)
-        (d / "sdlc-studio" / "bugs").mkdir(parents=True)
-        (d / "sdlc-studio" / "stories").mkdir(parents=True)
-        (d / "sdlc-studio" / "stories" / "US0001-a-unit.md").write_text(
-            "# US0001: a unit\n\n> **Status:** Review\n", encoding="utf-8")
-        (d / "sdlc-studio" / "bugs" / "BG0001-an-open-defect.md").write_text(
-            "# BG0001: an open defect that mentions another thing\n\n"
-            "> **Status:** Open\n> **Severity:** P1\n", encoding="utf-8")
-        (d / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
-            "run_id": "RUN-INERT", "batch": ["US0001"], "outcome": "running",
-            "sprint_goal": goal, "started_at": "2026-07-29T09:00:00Z"}), encoding="utf-8")
-        (d / "sdlc-studio" / ".local" / "goal-review.json").write_text(json.dumps({
-            "rounds": [{"goal": goal, "seats": [
-                {"seat": "qa", "achievable": "yes", "done_means": "x", "one_increment": "yes"}]}]
-        }), encoding="utf-8")
-        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
-        return d
-
-    def test_the_close_reaches_the_goal_panel_and_reports_per_clause(self) -> None:
-        sprint = _load()
-        root = self._repo()
-        lines = sprint.close_goal_judgement(root, json.loads(
-            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8")))
-        joined = "\n".join(lines)
-        self.assertIn("goal panel", joined, "the panel is still unreachable from the close")
-        self.assertIn("one thing", joined, "the verdict is reported per CLAUSE")
-        self.assertIn("another thing", joined)
-
-    def test_the_close_reaches_the_defect_judgement(self) -> None:
-        sprint = _load()
-        root = self._repo()
-        joined = "\n".join(sprint.close_goal_judgement(root, json.loads(
-            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))))
-        self.assertIn("defects vs goal", joined)
-        self.assertIn("BLOCKING BG0001", joined,
-                      "a P1 blocks whatever the clause reasoning says, and the close must say so")
-
-    def test_the_close_reaches_the_caller_check_over_the_batch(self) -> None:
-        """AC2. The repo's own check for this defect class, never once run over a batch - which
-        is why BG0385 was found by an operator's question rather than by the tool."""
-        sprint = _load()
-        root = self._repo()
-        joined = "\n".join(sprint.close_goal_judgement(root, json.loads(
-            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))))
-        self.assertIn("caller-check", joined)
-        self.assertIn("of 1 ship a mechanism", joined, "the scope is named, not inferred")
-
-    def test_the_plan_records_the_content_review_and_the_close_scores_it(self) -> None:
-        """Both ends of the bookend, through the CLI, plus the prediction miss that only exists
-        because both ends were reached."""
-        sprint = _load()
-        root = self._repo()
-        sprint.record_content_review(root, "plan", "one thing; and another thing", "yes")
-        sprint.record_content_review(root, "close", "one thing; and another thing", "partial",
-                                     missing="the second clause did not land")
-        reviews = sprint.content_reviews(root)
-        self.assertEqual("yes", reviews["plan"]["answer"])
-        self.assertEqual("partial", reviews["close"]["answer"])
-        miss = sprint.prediction_miss(root)
-        self.assertIsNotNone(miss, "with both ends recorded the miss must be reportable")
-        self.assertIn("PREDICTION MISS", miss)
-        self.assertIn(miss, "\n".join(sprint.close_goal_judgement(root, json.loads(
-            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8")))))
-
-    def test_the_plan_cli_takes_the_content_review(self) -> None:
-        """The flag exists on the command that should ask the question - which is what "wired"
-        means. A helper nobody can invoke is the state this bug records."""
-        sprint = _load()
-        parser = sprint.build_parser()
-        plan = parser._subparsers._group_actions[0].choices["plan"]   # noqa: SLF001
-        close = parser._subparsers._group_actions[0].choices["close"]  # noqa: SLF001
-        for name, sub in (("plan", plan), ("close", close)):
-            with self.subTest(command=name):
-                flags = {opt for a in sub._actions for opt in a.option_strings}  # noqa: SLF001
-                self.assertIn("--content-review", flags)
-                self.assertIn("--content-missing", flags)
-
-    def test_the_panel_refuses_a_goal_with_no_clauses_rather_than_inventing_one(self) -> None:
-        """The reporting lane must degrade, never crash a close: the mechanisms inform a
-        sign-off, and a reporting lane that can block one is a lane that gets switched off."""
-        sprint = _load()
-        root = self._repo(goal="")
-        lines = sprint.close_goal_judgement(root, json.loads(
-            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8")))
-        self.assertNotIn("goal panel:", "\n".join(lines),
-                         "no clauses means no panel, not a panel over nothing")
-
-
-class LaneSeamScopeTests(unittest.TestCase):
-    """BG0391. `lane_dispatch` computed seams over the ids passed to THAT call, and the shipped
-    docs dispatch one unit at a time (`lane brief --units <id>`). So the seam map worked only
-    when the whole batch was briefed in one command - which is the case where a lane is not the
-    one-unit reader the whole design is premised on."""
-
-    def _repo(self) -> Path:
-        d = Path(tempfile.mkdtemp(prefix="lane_seam_"))
-        (d / "sdlc-studio" / ".local").mkdir(parents=True)
-        stories = d / "sdlc-studio" / "stories"
-        stories.mkdir(parents=True)
-        for uid in ("US0001", "US0002"):
-            (stories / f"{uid}-x.md").write_text(
-                f"# {uid}: x\n\n> **Status:** Ready\n> **Affects:** src/shared.py\n\n"
-                f"## Acceptance Criteria\n\n### AC1: it works\n\n"
-                f"- **Then** something observable happens\n- **Verify:** shell true\n",
-                encoding="utf-8")
-        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
-        return d
-
-    def test_a_single_unit_brief_names_its_seams_with_the_open_batch(self) -> None:
-        sprint = _load()
-        root = self._repo()
-        sprint.run_state.open_run(root, batch=["US0001", "US0002"])
-        dispatch = sprint.lane_dispatch(root, ["US0002"])
-        seams = dispatch["briefs"][0]["seams"]
-        self.assertTrue(seams, "a one-unit brief saw no seam with the rest of the batch")
-        self.assertEqual([["US0001", "US0002"]], [s["units"] for s in seams])
-
-    def test_the_brief_still_carries_only_its_own_seams(self) -> None:
-        """Widening the SCOPE must not widen the brief: a lane reads one unit, and handing it
-        a pair it is not in is noise that gets skipped."""
-        sprint = _load()
-        root = self._repo()
-        stories = root / "sdlc-studio" / "stories"
-        (stories / "US0003-y.md").write_text(
-            "# US0003: y\n\n> **Status:** Ready\n> **Affects:** src/other.py\n\n"
-            "## Acceptance Criteria\n\n### AC1: it works\n\n"
-            "- **Then** something observable happens\n- **Verify:** shell true\n",
-            encoding="utf-8")
-        sprint.run_state.open_run(root, batch=["US0001", "US0002", "US0003"])
-        dispatch = sprint.lane_dispatch(root, ["US0003"])
-        self.assertEqual([], dispatch["briefs"][0]["seams"],
-                         "US0003 shares no file, so it must be handed no pair")
-
-
-class BlockerGroupingTests(unittest.TestCase):
-    """BG0394. The group key was (stage, id-stripped remedy) while the cause and the filed
-    artefact's summary came from `blockers[0]`. Two blockers with different details and the
-    same remedy merged, the second detail never reached the artefact - and the close printed
-    that they were "listed inside the artefact that covers them" while one of them was not."""
-
-    def test_two_blockers_with_different_details_are_not_merged(self) -> None:
-        sprint = _load()
-        groups = sprint.group_blockers([
-            {"stage": "gate", "detail": "markdown lane red", "remedy": "run the gate"},
-            {"stage": "gate", "detail": "neutrality guard red", "remedy": "run the gate"}])
-        self.assertEqual(2, len(groups), "two different things to fix became one artefact")
-        self.assertEqual({"markdown lane red", "neutrality guard red"},
-                         {g["cause"] for g in groups})
-
-    def test_blockers_differing_only_in_the_unit_still_group(self) -> None:
-        """The property the grouping exists for, and the one the fix must not cost: one owed
-        sign-off across twenty-three units is ONE thing to fix, not twenty-three artefacts."""
-        sprint = _load()
-        groups = sprint.group_blockers([
-            {"stage": "sign-off", "detail": "US0001: no critic verdict",
-             "remedy": "record a verdict for US0001"},
-            {"stage": "sign-off", "detail": "US0002: no critic verdict",
-             "remedy": "record a verdict for US0002"}])
-        self.assertEqual(1, len(groups))
-        self.assertEqual(["US0001", "US0002"], groups[0]["units"])
-
-    def test_every_member_is_kept_on_its_group(self) -> None:
-        """The artefact renders from `group['blockers']`, so every merged detail has to be
-        there to be listed - the claim the close prints depends on it."""
-        sprint = _load()
-        groups = sprint.group_blockers([
-            {"stage": "sign-off", "detail": "US0001: no critic verdict",
-             "remedy": "record a verdict for US0001"},
-            {"stage": "sign-off", "detail": "US0002: no critic verdict",
-             "remedy": "record a verdict for US0002"}])
-        self.assertEqual(2, len(groups[0]["blockers"]))
-        self.assertEqual({"US0001: no critic verdict", "US0002: no critic verdict"},
-                         {b["detail"] for b in groups[0]["blockers"]})
-
-
-class ContentReviewSurvivesThePlanTests(unittest.TestCase):
-    """BG0392. `record_content_review` needed no open run and wrote onto the blank state;
-    `open_run` treats a state with no `run_id` as spent and replaces it. The natural order -
-    review the plan, then write it - wiped the prediction without a word, and `prediction_miss`
-    was permanently None: a bookend with one end, which is a question nobody ever checks."""
-
-    def _root(self) -> Path:
-        d = Path(tempfile.mkdtemp(prefix="content_review_"))
-        (d / "sdlc-studio" / ".local").mkdir(parents=True)
-        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
-        return d
-
-    def test_recording_with_no_run_open_is_refused(self) -> None:
-        sprint = _load()
-        with self.assertRaises(ValueError) as caught:
-            sprint.record_content_review(self._root(), "plan", "a goal", "yes")
-        self.assertIn("no run is open", str(caught.exception))
-
-    def test_a_plan_review_survives_a_re_plan_of_the_open_run(self) -> None:
-        """The property the refusal buys: recorded against an OPEN run, a re-plan accumulates
-        rather than blanking, so the prediction is still there at the close."""
-        sprint = _load()
-        root = self._root()
-        _load().run_state.open_run(root, batch=["US0001"])
-        sprint.record_content_review(root, "plan", "a goal", "yes")
-        _load().run_state.open_run(root, batch=["US0001", "US0002"])
-        self.assertIsNotNone(sprint.content_reviews(root)["plan"],
-                             "the re-plan destroyed the plan-side review")
-
-    def test_the_miss_is_reportable_once_both_ends_exist(self) -> None:
-        sprint = _load()
-        root = self._root()
-        _load().run_state.open_run(root, batch=["US0001"])
-        sprint.record_content_review(root, "plan", "a goal", "yes")
-        sprint.record_content_review(root, "close", "a goal", "partial", missing="clause 2")
-        self.assertIn("PREDICTION MISS", sprint.prediction_miss(root) or "")
-
-
-class StaleLaneMarkersAreReportedTests(unittest.TestCase):
-    """BG0395. The stale-marker warning was filtered to the units in the CURRENT dispatch, so a
-    lane that died on US0001 was never mentioned when the operator briefed US0002 - which is
-    the restart case the marker exists for. Nothing else read the markers, and `close_run` left
-    them set, so a run could be signed off with one standing."""
-
-    def _root(self) -> Path:
-        d = Path(tempfile.mkdtemp(prefix="in_flight_"))
-        (d / "sdlc-studio" / ".local").mkdir(parents=True)
-        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
-        _load().run_state.open_run(d, batch=["US0001", "US0002"])
-        _load().run_state.update(d, sprint_goal="a goal")
-        return d
-
-    def test_a_stale_marker_naming_another_unit_is_still_reported(self) -> None:
-        sprint = _load()
-        root = self._root()
-        _load().run_state.record_lane_start(root, "US0001")
-        rows = _load().run_state.lanes_in_flight(root)
-        self.assertEqual(["US0001"], [r["unit"] for r in rows])
-        # The brief path warns on EVERY row it is handed, rather than intersecting with the
-        # dispatch - asserted on the set the warning iterates, which is where the filter was.
-        self.assertNotIn("US0002", [r["unit"] for r in rows])
-        self.assertTrue(rows, "a marker for a unit outside this dispatch must still be seen")
-
-    def test_the_close_reports_a_unit_still_marked_in_flight(self) -> None:
-        sprint = _load()
-        root = self._root()
-        _load().run_state.record_lane_start(root, "US0001")
-        joined = "\n".join(sprint.close_goal_judgement(root, sprint.run_state.read(root)))
-        self.assertIn("IN FLIGHT at close: US0001", joined)
-
-    def test_a_run_with_no_stale_marker_says_nothing(self) -> None:
-        """A warning on every close is a warning nobody reads."""
-        sprint = _load()
-        root = self._root()
-        joined = "\n".join(sprint.close_goal_judgement(root, sprint.run_state.read(root)))
-        self.assertNotIn("IN FLIGHT", joined)
-
-
-class CloseDryRunTests(unittest.TestCase):
-    """US0555. `close` runs seven steps and stops at the first unmet prerequisite; RUN-01KYMJEM
-    took three attempts, two of them stopping on a refusal, and each restart re-ran the steps
-    before it. `preflight` reports every prerequisite at once and always did - but it cannot
-    judge the retro's CONTENT before a retro exists, and that is precisely the class that
-    refused. The dry run performs the action steps against a scratch copy so it can."""
-
-    @staticmethod
-    def _steps(result: dict) -> dict:
-        return {s["step"]: s for s in result["steps"]}
-
-    def _repo(self) -> Path:
-        d = Path(tempfile.mkdtemp(prefix="close_dry_"))
-        (d / "sdlc-studio" / ".local").mkdir(parents=True)
-        (d / "sdlc-studio" / "reviews").mkdir(parents=True)
-        (d / "sdlc-studio" / "reviews" / "LATEST.md").write_text("# anchor\n", encoding="utf-8")
-        (d / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
-            "run_id": "RUN-DRY", "batch": ["US0001"], "outcome": "running",
-            "sprint_goal": "a goal", "started_at": "2026-07-29T09:00:00Z"}), encoding="utf-8")
-        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
-        return d
-
-    @staticmethod
-    def _fingerprint(root: Path) -> list[tuple[str, int, float]]:
-        return sorted((str(p.relative_to(root)), p.stat().st_size, p.stat().st_mtime)
-                      for p in root.rglob("*") if p.is_file())
-
-    def _broken_retro(self, root: Path, retro_id: str = "RETRO9001") -> str:
-        """A retro that EXISTS and whose content is wrong - an undecided finding. Since US0558
-        the scaffold passes its own validator, so a content refusal has to be constructed
-        rather than assumed; a test that relied on the scaffold failing would now be asserting
-        the defect US0558 removed."""
-        (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / "retros" / f"{retro_id}-broken.md").write_text(
-            f"# {retro_id}: a sprint\n\n## Delivered\n\n- US0001 - shipped\n\n"
-            "## What went well\n\n- it went well\n\n## What was hard / what stalled\n\n"
-            "- it was hard\n\n## Lessons\n\n- a real lesson, learned the hard way\n\n"
-            "## Actions raised\n\n| Finding | Disposition |\n| --- | --- |\n"
-            "| a finding nobody decided | |\n", encoding="utf-8")
-        return retro_id
-
-    def test_every_refusing_step_is_reported_not_only_the_first(self) -> None:
-        """The property the whole story is for: a close stops at its first refusal, a dry run
-        must not. Refusals from two different stages, in one pass."""
-        sprint = _load()
-        root = self._repo()
-        retro_id = self._broken_retro(root)
-        pre = sprint.close_preflight(root, retro_id)
-        self.assertGreater(len(pre["blockers"]), 1,
-                           "the fixture must produce several prerequisite gaps, or this test "
-                           "cannot tell 'every one' from 'the first one'")
-        result = sprint.close_dry_run(root, retro_id)
-        stages = [s["step"] for s in result["blockers"]]
-        # EVERY prerequisite the preflight found, by count and not merely by presence - a
-        # report that kept the first of each stage would still name the stages.
-        self.assertEqual([b["stage"] for b in pre["blockers"]], stages[:len(pre["blockers"])],
-                         "the dry run dropped prerequisite refusals the preflight had found")
-        self.assertIn("retro-validate", stages,
-                      "the undecided finding is a CONTENT gap, and it is reported in the same "
-                      "pass as the prerequisites above rather than on the next attempt")
-        self.assertGreater(len(result["blockers"]), len(pre["blockers"]),
-                           "the chain steps add refusals of their own; the pass covers both")
-
-    def test_retro_content_defects_are_reported_in_the_same_pass(self) -> None:
-        """What `preflight` cannot do. With no `--retro` given there is no retro to validate,
-        so a read-only pass says NOTHING about its content - not "fine", nothing. The dry run
-        scaffolds one in the copy and judges what `close` would actually mint, so the content
-        step has a verdict in the same pass as the prerequisites."""
-        sprint = _load()
-        root = self._repo()
-        pre = sprint.close_preflight(root, None)
-        self.assertNotIn("retro-validate", {b["stage"] for b in pre["blockers"]},
-                         "the preflight cannot reach the content class - that is the premise")
-        self.assertNotIn("retro-validate", {b["stage"] for b in pre["blockers"]})
-        steps = self._steps(sprint.close_dry_run(root))
-        self.assertEqual("ok", steps["retro-scaffold"]["status"])
-        self.assertIn("RETRO", steps["retro-scaffold"]["detail"])
-        self.assertIn(steps["retro-validate"]["status"], ("ok", "refuse"),
-                      "the content step is EVALUATED, which is the whole difference from a "
-                      "read-only preflight that cannot reach it at all")
-
-    def test_a_retro_whose_content_is_wrong_refuses_before_one_is_written(self) -> None:
-        """The discriminating half of the same property: the verdict tracks the content rather
-        than always reading ok. Since US0558 a scaffolded retro passes, so a test that only
-        watched the scaffold would pass whatever this step did."""
-        sprint = _load()
-        root = self._repo()
-        retro_id = self._broken_retro(root)
-        steps = self._steps(sprint.close_dry_run(root, retro_id))
-        self.assertEqual("refuse", steps["retro-validate"]["status"])
-        self.assertIn("not dispositioned", steps["retro-validate"]["detail"])
-
-    def test_the_dry_run_writes_nothing(self) -> None:
-        sprint = _load()
-        root = self._repo()
-        before = self._fingerprint(root)
-        sprint.close_dry_run(root)
-        self.assertEqual(before, self._fingerprint(root),
-                         "a preview that wrote to the real tree is a close, not a preview")
-
-    def test_the_scratch_copy_is_removed(self) -> None:
-        sprint = _load()
-        result = sprint.close_dry_run(self._repo())
-        self.assertIsNotNone(result["scratch"])
-        self.assertFalse(Path(result["scratch"]).exists(),
-                         "a dry run per close would otherwise leave a 14MB copy behind each time")
-
-    def test_a_clean_dry_run_predicts_a_close_that_does_not_refuse(self) -> None:
-        """`clean` has to mean something a caller can act on, so it is asserted against the
-        report rather than inferred: no refusal AND no unevaluated step."""
-        sprint = _load()
-        self.assertTrue(sprint._dry_run_result(
-            [{"step": "gate", "status": "ok", "detail": "", "remedy": ""}], None)["clean"])
-        self.assertFalse(sprint._dry_run_result(
-            [{"step": "gate", "status": "refuse", "detail": "", "remedy": ""}], None)["clean"])
-
-    def test_an_unevaluated_step_is_never_reported_as_passing(self) -> None:
-        """The direction this must fail in. A step whose probe blew up in the scratch copy has
-        said nothing about the real close; calling that a pass is the one way a preview could
-        actively mislead."""
-        sprint = _load()
-        result = sprint._dry_run_result(
-            [{"step": "handoff", "status": "unevaluated", "detail": "boom", "remedy": ""}], None)
-        self.assertFalse(result["clean"], "an unanswered step is not a passing one")
-        self.assertEqual([], result["blockers"])
-        self.assertEqual(1, len(result["unevaluated"]))
-        report = sprint.dry_run_report(result)
-        self.assertIn("UNEVALUATED", report)
-        self.assertNotIn("CLEAN", report)
-
-    def test_a_step_that_raises_in_the_copy_is_unevaluated_not_ok(self) -> None:
-        sprint = _load()
-        root = self._repo()
-
-        def explode(*_a, **_kw):
-            raise RuntimeError("the probe blew up")
-
-        with unittest.mock.patch.object(sprint, "_close_reconcile", explode):
-            steps = self._steps(sprint.close_dry_run(root))
-        self.assertEqual("unevaluated", steps["reconcile"]["status"])
-        self.assertIn("blew up", steps["reconcile"]["detail"])
-
-    def test_the_report_names_every_step_and_its_remedy(self) -> None:
-        sprint = _load()
-        result = sprint.close_dry_run(self._repo())
-        report = sprint.dry_run_report(result)
-        self.assertIn("nothing was written", report)
-        for step in sprint.DRY_RUN_ACTION_STEPS:
-            self.assertIn(step, report, f"{step} is missing from the report")
-
-
-class CloseCostReportTests(unittest.TestCase):
-    """US0559. The close's own cost was recalled, never reported: RUN-01KYMJEM's `~32 minutes`
-    was reconstructed afterwards from a timings file and a memory of how many attempts there
-    had been. A reduction judged against an impression is not a reduction anyone can check."""
-
-    def _root(self, runs: list[dict]) -> Path:
-        d = Path(tempfile.mkdtemp(prefix="close_cost_"))
-        (d / "sdlc-studio" / ".local").mkdir(parents=True)
-        (d / "sdlc-studio" / ".local" / "test-execution.json").write_text(
-            json.dumps({"runs": runs}), encoding="utf-8")
-        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
-        return d
-
-    @staticmethod
-    def _row(at, **kw):
-        row = {"at": at, "moment": "close", "mode": "full", "seconds": 400.0,
-               "verdict": "pass", "surface": "H", "run_id": "RUN-COST", "reused_from": None}
-        row.update(kw)
-        return row
-
-    def test_the_close_reports_its_gate_seconds_and_elapsed(self) -> None:
-        sprint = _load()
-        root = self._root([self._row("2026-07-29T10:00:00+00:00", seconds=398.0),
-                           self._row("2026-07-29T10:12:00+00:00", seconds=427.0)])
-        cost = sprint.close_cost(root, "RUN-COST")
-        self.assertEqual(825.0, cost["gate_seconds"])
-        self.assertEqual(2, cost["measured_runs"])
-        self.assertEqual(720, cost["elapsed_seconds"])
-        line = sprint.close_cost_line(cost)
-        self.assertIn("825s", line)
-        self.assertIn("12m00s", line)
-
-    def test_the_close_cost_is_recorded_on_the_run(self) -> None:
-        """Read back off the ledger the close writes, so a later close can be compared with
-        this one rather than with a number somebody remembers."""
-        sprint = _load()
-        root = self._root([self._row("2026-07-29T10:00:00+00:00", run_id="RUN-OTHER"),
-                           self._row("2026-07-29T10:05:00+00:00", seconds=100.0)])
-        self.assertEqual(100.0, sprint.close_cost(root, "RUN-COST")["gate_seconds"],
-                         "another run's close is not this run's cost")
-        self.assertEqual(500.0, sprint.close_cost(root)["gate_seconds"],
-                         "unscoped, every recorded close counts")
-
-    def test_a_reused_verdict_is_reported_as_a_saving(self) -> None:
-        sprint = _load()
-        root = self._root([
-            self._row("2026-07-29T10:00:00+00:00", seconds=400.0),
-            self._row("2026-07-29T10:10:00+00:00", mode="reuse", seconds=0.0,
-                      reused_from="2026-07-29T10:00:00+00:00")])
-        cost = sprint.close_cost(root, "RUN-COST")
-        self.assertEqual(1, cost["reused_runs"])
-        self.assertEqual(400.0, cost["reused_seconds"], "the saving is the run it reused")
-        self.assertEqual(400.0, cost["gate_seconds"], "a reuse cost nothing and adds nothing")
-        self.assertIn("saving about 400s", sprint.close_cost_line(cost))
-
-    def test_an_unmeasured_component_is_never_reported_as_zero(self) -> None:
-        """The direction this must fail in. A close whose seconds were never recorded would
-        otherwise report the cheapest close on file."""
-        sprint = _load()
-        root = self._root([self._row("2026-07-29T10:00:00+00:00", seconds=None),
-                           self._row("2026-07-29T10:04:00+00:00", seconds=None)])
-        cost = sprint.close_cost(root, "RUN-COST")
-        self.assertIsNone(cost["gate_seconds"], "no measurement is not zero seconds")
-        self.assertEqual(0, cost["measured_runs"])
-        self.assertEqual(2, len(cost["unmeasured"]))
-        self.assertIn("UNMEASURED", sprint.close_cost_line(cost))
-
-    def test_a_close_with_no_gate_event_says_so_rather_than_reporting_zero(self) -> None:
-        sprint = _load()
-        line = sprint.close_cost_line(sprint.close_cost(self._root([]), "RUN-COST"))
-        self.assertIn("UNMEASURED, not zero", line)
-
-    def test_a_single_event_has_no_span_and_reports_none(self) -> None:
-        """One event is a moment, not a duration. Reporting 0m00s would read as an instant
-        close - the same false cheapness an unmeasured component would produce."""
-        sprint = _load()
-        root = self._root([self._row("2026-07-29T10:00:00+00:00")])
-        self.assertIsNone(sprint.close_cost(root, "RUN-COST")["elapsed_seconds"])
-        self.assertNotIn("elapsed", sprint.close_cost_line(sprint.close_cost(root, "RUN-COST")))
 
 
 class CloseRetryTests(unittest.TestCase):

@@ -910,11 +910,40 @@ def _viability(path: Path, mutated: str) -> str | None:
 #: `_run_tests` contract every caller depends on. A single slot: the run loop is sequential.
 _LAST_RUN_OUTPUT = [""]
 
+#: How much of one run's transcript is kept. Enough for any runner's failure summary, bounded
+#: so a verbose suite cannot hold an unbounded string in memory for the length of a run.
+_OUTPUT_CAP = 512 * 1024
+
 #: How a failing test names itself. pytest's summary line and unittest's FAIL/ERROR header are
 #: both matched - a parser knowing one runner would attribute nothing for the other, which is
 #: the same silence this fix exists to end.
-_FAILED_NODE = re.compile(r"^(?:FAILED|ERROR)\s+(\S+)", re.M)
-_UNITTEST_FAIL = re.compile(r"^(?:FAIL|ERROR):\s+(\S+)\s+\(([^)]+)\)", re.M)
+# pytest's summary line. The node id must LOOK like one - a path or a dotted name carrying a
+# `::` or a `.` - because `^(?:FAILED|ERROR)\s+(\S+)` also matches unittest's own summary
+# footer `FAILED (failures=2)`, and this repo's gate runs unittest. Every killed mutant was
+# being attributed to the literal string `(failures=2)`: a fabricated attribution, in the
+# function whose contract is that it must never fabricate one.
+_FAILED_NODE = re.compile(r"^(?:FAILED|ERROR)\s+(?P<node>[^\s(][^\s]*(?:::|\.)[^\s]*)", re.M)
+# unittest's per-failure header. Python 3.11+ prints the fully-qualified name in the
+# parentheses (`FAIL: test_y (tests.test_x.C.test_y)`); older versions print the class only
+# (`FAIL: test_y (tests.test_x.C)`). Joining blindly produced `...C.test_y.test_y`, a node id
+# that resolves to nothing.
+_UNITTEST_FAIL = re.compile(r"^(?:FAIL|ERROR):\s+(?P<meth>\w+)\s+\((?P<ctx>[^)]+)\)", re.M)
+
+
+def _read_tail(path: str, cap: int = 512 * 1024) -> str:
+    """The last `cap` bytes of a run's transcript, or "" when it cannot be read.
+
+    The tail, because every runner prints its failure summary at the end, and bounded because a
+    verbose suite's full output is unbounded and is held only to find one node id."""
+    import os  # noqa: PLC0415 - local, matching this module's convention
+    try:
+        size = os.path.getsize(path)
+        with open(path, "rb") as handle:
+            if size > cap:
+                handle.seek(size - cap)
+            return handle.read().decode("utf-8", "replace")
+    except OSError:
+        return ""
 
 
 def _killing_test(output: str) -> str | None:
@@ -925,10 +954,12 @@ def _killing_test(output: str) -> str | None:
     consumer treats an unattributed kill as unattributed rather than assuming one."""
     m = _FAILED_NODE.search(output or "")
     if m:
-        return m.group(1)
+        return m.group("node")
     m = _UNITTEST_FAIL.search(output or "")
     if m:
-        return f"{m.group(2)}.{m.group(1)}"
+        ctx, meth = m.group("ctx"), m.group("meth")
+        # Do not double the method when the runner already qualified it.
+        return ctx if ctx.split(".")[-1] == meth else f"{ctx}.{meth}"
     return None
 
 
@@ -948,21 +979,32 @@ def _run_tests(test_cmd: str, cwd: Path) -> str:
     # nobody can act on: `US0507`'s prune-candidate consumer needs the test that did the
     # killing, and with the streams thrown away it took its refusal branch against every real
     # report - a capability unreachable because the only producer never recorded the key.
+    import tempfile  # noqa: PLC0415 - local, only this path captures
+    sink_fd, sink = tempfile.mkstemp(prefix="mutation_run_", suffix=".log")
     proc = subprocess.Popen(test_cmd, shell=True, cwd=cwd, start_new_session=True, env=env,  # nosec B602 - operator-authored test command, same trust boundary as verify_ac's Verify lines
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                            errors="replace")
+                            stdout=sink_fd, stderr=subprocess.STDOUT)
+    # A TEMP FILE, not a pipe. Any pipe ties the read to EOF, which needs every inheritor of
+    # stdout to exit - so with `start_new_session=True` a suite that backgrounds anything (a dev
+    # server, an xdist worker, an `&`-launched fixture) blocked the full timeout PER MUTANT, and
+    # the verdict then flipped from `survived` - an actionable finding - to `error`, silently
+    # excusing the mutant. A file has no such semantics: `wait()` returns when the direct child
+    # exits, exactly as it did before output was captured at all. The tail is read afterwards,
+    # bounded, because a runner's failure summary is at the end.
     try:
-        out, _ = proc.communicate(timeout=_RUN_TIMEOUT)
-        rc = proc.returncode
-        _LAST_RUN_OUTPUT[0] = out or ""
+        rc = proc.wait(timeout=_RUN_TIMEOUT)
     except subprocess.TimeoutExpired:
         try:
             os.killpg(proc.pid, signal.SIGKILL)
         except (ProcessLookupError, PermissionError):
             pass
         proc.wait()
-        _LAST_RUN_OUTPUT[0] = ""
+        _LAST_RUN_OUTPUT[0] = _read_tail(sink)
         return "error"
+    finally:
+        _LAST_RUN_OUTPUT[0] = _read_tail(sink)
+        with contextlib.suppress(OSError):
+            os.close(sink_fd)
+            os.unlink(sink)
     if rc == 0:
         return "pass"
     if rc in (126, 127):  # not executable / command not found
@@ -1067,6 +1109,11 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
                 if verdict == "killed":
                     killer = _killing_test(_LAST_RUN_OUTPUT[0])
                     if killer:
+                        # `killed_by` (a LIST) and `test` (the scalar) - the consumer in
+                        # `tools/test_census.py` reads `killed_by`, and shipping only `test`
+                        # left it refusing every real report, which was the whole defect this
+                        # was meant to fix.
+                        row["killed_by"] = [killer]
                         row["test"] = killer
                 records.append(row)
         finally:

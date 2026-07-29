@@ -4204,17 +4204,20 @@ def _close_gate(root, retro_id, state):
                          verdict="pass" if rc == 0 else "fail", surface=surface,
                          run_id=(state or {}).get("run_id"))
     if rc == 0:
-        # US0553. The close has just run the FULL suites and earned a green over this tree.
-        # `suite_decision` already knew how to reuse one and the commit hook already writes one
-        # after its own green - but nothing wrote one HERE, so the first commit of the close
-        # re-earned a verdict the close had paid for seconds earlier. Recorded into the same
-        # record the hook reads, not a close-private one, or it proves nothing to the next
-        # commit. `mode="full"` because that is what ran: a boundary declines a selected green,
-        # and claiming full coverage the run did not have would be the false green this whole
-        # mechanism exists to refuse.
-        with contextlib.suppress(OSError):
-            gate.record_suite_verdict(str(root), run=str((state or {}).get("run_id") or "close"),
-                                      status="green", mode="full")
+        # US0553 STOOD HERE AND IS REVERTED. It recorded `status=green, mode=full` into the
+        # record `gate.suite_decision` reads, on the premise that "the close has just run the
+        # FULL suites". It has not: `gate.main` runs seventeen lanes - conformance, reconcile,
+        # validate, integrity and the rest - and NOT ONE of them runs a test suite. The suites
+        # are run by `.githooks/commit-msg`, which is the only honest writer of that record.
+        #
+        # So the close stamped a full-suite green over whatever sat in the working tree, and the
+        # next commit read it and skipped the suites. A false green, written by the mechanism
+        # built to refuse false greens. The premise was never checked before the code was built
+        # on it.
+        #
+        # Nothing replaces it. The close's own gate verdict is already reused through
+        # `reusable_close_verdict`, which is close-scoped and correct; the SUITE verdict has one
+        # writer, and it is the hook that runs the suites.
         return True, f"gate --require-retro {retro_id} --require-review: PASS", ""
     split = close_blocker_split(root, state, out)
     if not split["attributed"]:
