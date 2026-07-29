@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 11 |
+| Open | 15 |
 | In Progress | 0 |
 | Fixed | 313 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **407** |
+| **Total** | **411** |
 
 ## All Bugs
 
@@ -125,6 +125,10 @@
 | [BG0405](BG0405-lane-dispatch-raises-an-unhandled-traceback-on-an.md) | lane_dispatch raises an unhandled traceback on an unreadable run state, where a brief used to be issued | Open | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0406](BG0406-three-units-delivered-nothing-bg0372-writes-no-velocity.md) | Three units delivered nothing: BG0372 writes no velocity column, BG0359's detector is inert and would be wrong, and BG0357's consumer key was wrong | Open | High | 2026-07-29 | 2026-07-29 |
 | [BG0407](BG0407-the-listing-only-unanimity-rule-is-satisfied-vacuously.md) | The listing-only unanimity rule is satisfied vacuously by the 59 of 170 suite modules whose reads are not statically visible | Open | Medium | 2026-07-29 | 2026-07-29 |
+| [BG0408](BG0408-the-release-tag-guard-still-fails-open-the.md) | The release tag guard still fails OPEN: the swallow moved one frame down into the delivery scan, and an unreadable tree reports a clean release | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0409](BG0409-six-of-the-nine-stop-ship-repairs-revert.md) | Six of the nine stop-ship repairs revert with no test going red, and two of the tests written to hold them assert a different thing than they claim | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0410](BG0410-the-mutation-run-s-temp-file-sink-stopped.md) | The mutation run's temp-file sink stopped the hang by orphaning the child, and leaks an fd and a temp file whenever Popen fails | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0411](BG0411-a-declared-gate-id-resolves-against-any-filename.md) | A declared gate id resolves against any filename matching the id pattern, and a withheld narrowing is announced only under SDLC_DEBUG | Open | Medium | 2026-07-29 | 2026-07-29 |
 
 ## Archived Releases
 
