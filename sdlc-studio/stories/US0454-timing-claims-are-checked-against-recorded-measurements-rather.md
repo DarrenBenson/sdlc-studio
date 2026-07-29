@@ -1,6 +1,6 @@
 # US0454: Timing claims are checked against recorded measurements rather than restated from memory
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** RFC0056
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the checker runs
 - **Then** it fails, naming the claim, the bound it asserts and the measured value that contradicts it
 - **Verify:** pytest tools/tests/test_check_spec_claims.py::TimingClaimTests::test_a_timing_claim_contradicted_by_measurement_fails
+- **Verified:** yes (2026-07-29)
 
 ### AC2: an absent measurement is unverifiable, never a pass
 
@@ -30,6 +31,7 @@
 - **When** the checker runs
 - **Then** it reports the claim as unverifiable and says so plainly, rather than treating a missing measurement as agreement
 - **Verify:** pytest tools/tests/test_check_spec_claims.py::TimingClaimTests::test_absent_measurement_is_unverifiable_not_a_pass
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

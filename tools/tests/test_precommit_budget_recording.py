@@ -94,8 +94,10 @@ class BudgetRecordingTests(unittest.TestCase):
             p = root / "tools" / name
             p.write_text(PASS_SH, encoding="utf-8")
             p.chmod(0o755)
-        for name in ("check_links.py", "validate_skill.py", "check_versions.py",
-                     "check_budgets.py", "check_neutrality.py"):
+        # DERIVED from the hook - see tools/tests/hookutil.py. Four files carried a
+        # hand-copied version of this and one added lane reddened 41 tests at once.
+        from hookutil import hook_tool_scripts
+        for name in [*hook_tool_scripts()]:
             (root / "tools" / name).write_text(PASS_PY, encoding="utf-8")
         scripts = root / ".claude" / "skills" / "sdlc-studio" / "scripts"
         # `gate.py` and the pending-floor lane are stubbed: this fixture is not a whole

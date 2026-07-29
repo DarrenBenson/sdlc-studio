@@ -132,5 +132,95 @@ class VersionTests(unittest.TestCase):
         self.assertEqual(check_versions.main(["--root", str(repo)]), 0)
 
 
+class DiscoveredHomesTests(unittest.TestCase):
+    """US0452. The guard held a hand-maintained list of spec files, and the list had not been
+    extended in two files' worth of drift: `sdlc-studio/trd.md` and `sdlc-studio/tsd.md` were
+    never reached. Coverage now follows the REPO, so a home is covered on the day it declares a
+    version rather than on the day someone remembers this list exists."""
+
+    def _repo(self, extra: dict | None = None) -> Path:
+        import subprocess
+        d = Path(tempfile.mkdtemp(prefix="versions_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        (d / "package.json").write_text('{"version": "5.0.0"}', encoding="utf-8")
+        (d / "README.md").write_text("# r\n\n**Version:** 5.0.0\n", encoding="utf-8")
+        # The two fixed homes main also demands: without them every assertion about the
+        # DISCOVERED set would be made against a run that failed for an unrelated reason.
+        skill = d / check_versions.SKILL_DIR
+        (skill / "templates").mkdir(parents=True)
+        (skill / "templates" / "version.yaml").write_text(
+            "skill_version: 5.0.0\n", encoding="utf-8")
+        (skill / "SKILL.md").write_text(
+            "---\nname: sdlc-studio\nmetadata:\n  version: 5.0.0\n---\n# s\n",
+            encoding="utf-8")
+        ws = d / "sdlc-studio"
+        ws.mkdir()
+        for name in ("prd.md", "trd.md", "tsd.md"):
+            (ws / name).write_text(f"# {name}\n\n**Version:** 5.0.0\n", encoding="utf-8")
+        for rel, body in (extra or {}).items():
+            (d / rel).parent.mkdir(parents=True, exist_ok=True)
+            (d / rel).write_text(body, encoding="utf-8")
+        subprocess.run(["git", "-C", str(d), "init", "-q"], check=True)
+        subprocess.run(["git", "-C", str(d), "add", "-A"], check=True)
+        return d
+
+    def test_every_declared_version_home_is_checked(self) -> None:
+        """trd.md and tsd.md - the two the four-entry list never reached."""
+        root = self._repo()
+        homes = check_versions.discover_spec_homes(root)
+        self.assertIn("sdlc-studio/trd.md", homes)
+        self.assertIn("sdlc-studio/tsd.md", homes)
+
+    def test_a_new_version_home_is_covered_without_editing_the_guard(self) -> None:
+        """The whole point: a NEW file declaring a disagreeing version fails the guard with no
+        change made to the guard itself."""
+        root = self._repo({"sdlc-studio/architecture.md": "# a\n\n**Version:** 4.1.0\n"})
+        self.assertIn("sdlc-studio/architecture.md",
+                      check_versions.discover_spec_homes(root))
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+            rc = check_versions.main(["--root", str(root)])
+        self.assertNotEqual(rc, 0, "a new home declaring 4.1.0 did not fail the guard")
+        self.assertIn("architecture.md", err.getvalue(), "the drifting file was not named")
+
+    def test_failed_discovery_refuses_to_report_clean(self) -> None:
+        """A scan that could not list its own scope has checked nothing, and reporting success
+        is the loudest possible lie - it passes trivially exactly when the checkout is wrong."""
+        root = self._repo()
+        real = check_versions.tracked_markdown
+
+        def boom(_root):
+            raise check_versions.DiscoveryFailed("git could not enumerate the tree")
+
+        check_versions.tracked_markdown = boom
+        try:
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+                rc = check_versions.main(["--root", str(root)])
+        finally:
+            check_versions.tracked_markdown = real
+        self.assertEqual(rc, 1, "a failed discovery reported a clean scan over nothing")
+        self.assertIn("nothing was scanned", err.getvalue())
+
+    def test_a_superseded_document_is_not_a_home(self) -> None:
+        """A superseded appendix declaring an old version is HISTORY, not drift. Holding it to
+        the current version would force a maintainer to falsify the record to go green, which
+        is the one thing a truth guard must never demand."""
+        root = self._repo({"sdlc-studio/personas.md":
+                           "# p\n\n**Version:** 2.0.0\n**Status:** Superseded (historical)\n"})
+        self.assertNotIn("sdlc-studio/personas.md",
+                         check_versions.discover_spec_homes(root))
+        with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(0, check_versions.main(["--root", str(root)]))
+
+    def test_an_artefact_quoting_a_version_is_not_a_home(self) -> None:
+        """A bug REPORTING a version mismatch quotes a version. Holding it to the current one
+        would make filing that bug impossible."""
+        root = self._repo({"sdlc-studio/bugs/BG0001-x.md":
+                           "# BG0001\n\n**Version:** 1.2.3\n"})
+        self.assertNotIn("sdlc-studio/bugs/BG0001-x.md",
+                         check_versions.discover_spec_homes(root))
+
+
 if __name__ == "__main__":
     unittest.main()

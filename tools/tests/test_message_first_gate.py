@@ -48,9 +48,14 @@ _GIT_ENV_VARS = (
 #: This is the anti-loss and anti-duplication guard of AC2: the move must neither drop a
 #: check nor run one twice. `gate` is an inline if/else block rather than a `run "..."`
 #: lane, and it prints the same verdict line, so it counts here too.
+#: The lanes the hook pair runs, in order. DELIBERATELY hand-maintained, unlike the tool-file
+#: list below: this tuple IS the record of what the gate does, so adding a lane should require
+#: saying so here. A derived version of this would assert only that the hook agrees with
+#: itself.
 EXPECTED_LANES = (
-    "style", "links", "skill-spec", "versions", "budgets", "neutrality", "action-pins",
-    "floor-pending", "gate", "markdown", "markdown-payload", "skill-tests", "tool-tests",
+    "style", "links", "skill-spec", "versions", "spec-claims", "budgets", "neutrality",
+    "action-pins", "floor-pending", "gate", "markdown", "markdown-payload",
+    "skill-tests", "tool-tests",
 )
 
 #: The hooks' verdict lines: `  ok   <key>` / `  FAIL <key>` (no colour when captured).
@@ -158,8 +163,12 @@ class _GateFixture(unittest.TestCase):
             style.write_text(f"#!/usr/bin/env bash\nsleep {self.CHEAP_COST_SECONDS}\nexit 0\n",
                              encoding="utf-8")
             style.chmod(0o755)
-        for name in ("check_links.py", "validate_skill.py", "check_versions.py",
-                     "check_budgets.py", "check_neutrality.py"):
+        # DERIVED from the hook, never hand-listed. This was a copy of the lane set, and a
+        # lane added to the hook then ran against a fixture that had no such file - 27 tests
+        # red at once, for a reason that had nothing to do with any of them. The fourth
+        # hand-maintained mirror of a real list found in this sprint.
+        from hookutil import hook_tool_scripts
+        for name in hook_tool_scripts():
             (root / "tools" / name).write_text(PASS_PY, encoding="utf-8")
 
         # The skill-tests lane: costly, and it says it ran. `Ran N tests` is the line the

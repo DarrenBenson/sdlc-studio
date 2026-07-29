@@ -59,8 +59,8 @@ def _lane_keys(hook: Path = HOOK) -> list[str]:
 #: reducing coverage.
 #: `gate` is deliberately absent: it is an inline if/else block, not a `run "..."` lane.
 EXPECTED_LANES = {
-    "style", "links", "skill-spec", "versions", "budgets", "neutrality", "action-pins",
-    "floor-pending", "markdown", "markdown-payload",
+    "style", "links", "skill-spec", "versions", "spec-claims", "budgets", "neutrality",
+    "action-pins", "floor-pending", "markdown", "markdown-payload",
 }
 
 #: The lanes that cost real wall-clock, and that therefore may not run until every cheap

@@ -1,6 +1,6 @@
 # US0452: The version guard reaches every authoritative home, discovered rather than hand-enumerated
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** RFC0056
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the guard runs
 - **Then** it checks every discovered declaration against the authoritative version and names each one that disagrees
 - **Verify:** pytest tools/tests/test_check_versions.py::DiscoveredHomesTests::test_every_declared_version_home_is_checked
+- **Verified:** yes (2026-07-29)
 
 ### AC2: a new version home is covered without editing the guard
 
@@ -30,6 +31,7 @@
 - **When** the guard runs with no change made to the guard itself
 - **Then** it fails and names that file, because coverage follows the repo rather than a list somebody must maintain
 - **Verify:** pytest tools/tests/test_check_versions.py::DiscoveredHomesTests::test_a_new_version_home_is_covered_without_editing_the_guard
+- **Verified:** yes (2026-07-29)
 
 ### AC3: discovery that fails refuses to report a clean scan
 
@@ -37,6 +39,7 @@
 - **When** the guard runs
 - **Then** it exits non-zero saying it could not scan, never reporting a clean pass over nothing
 - **Verify:** pytest tools/tests/test_check_versions.py::DiscoveredHomesTests::test_failed_discovery_refuses_to_report_clean
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

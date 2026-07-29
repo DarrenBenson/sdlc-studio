@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 4 |
-| Ready | 39 |
+| Ready | 36 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 9 |
+| Review | 12 |
 | Done | 512 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -363,9 +363,9 @@
 | [US0449](US0449-the-batch-and-refine-minting-paths-resolve-the.md) | The batch and refine minting paths resolve the persona the same way, so the commands that mint most stories are covered too | Done | EP0166 | 2026-07-27 | 2026-07-27 |
 | [US0450](US0450-the-prd-target-users-section-names-the-registry.md) | The PRD Target Users section names the registry's Primary, Secondary and Negative personas and points at the registry | Done | EP0166 | 2026-07-27 | 2026-07-27 |
 | [US0451](US0451-personas-md-is-labelled-a-legacy-appendix-whose.md) | personas.md is labelled a legacy appendix whose still-true content is folded into or pointed at the registry | Done | EP0166 | 2026-07-27 | 2026-07-27 |
-| [US0452](US0452-the-version-guard-reaches-every-authoritative-home-discovered.md) | The version guard reaches every authoritative home, discovered rather than hand-enumerated | Ready | EP0167 | 2026-07-27 | 2026-07-27 |
-| [US0453](US0453-countable-claims-in-the-trd-and-tsd-are.md) | Countable claims in the TRD and TSD are checked against a census of what the repo actually ships | Ready | EP0167 | 2026-07-27 | 2026-07-27 |
-| [US0454](US0454-timing-claims-are-checked-against-recorded-measurements-rather.md) | Timing claims are checked against recorded measurements rather than restated from memory | Ready | EP0167 | 2026-07-27 | 2026-07-27 |
+| [US0452](US0452-the-version-guard-reaches-every-authoritative-home-discovered.md) | The version guard reaches every authoritative home, discovered rather than hand-enumerated | Review | EP0167 | 2026-07-27 | 2026-07-27 |
+| [US0453](US0453-countable-claims-in-the-trd-and-tsd-are.md) | Countable claims in the TRD and TSD are checked against a census of what the repo actually ships | Review | EP0167 | 2026-07-27 | 2026-07-27 |
+| [US0454](US0454-timing-claims-are-checked-against-recorded-measurements-rather.md) | Timing claims are checked against recorded measurements rather than restated from memory | Review | EP0167 | 2026-07-27 | 2026-07-27 |
 | [US0455](US0455-one-availability-contract-the-prd-clause-the-tsd.md) | One availability contract: the PRD clause, the TSD NFR row and ADR-004 all state the fail-loud sync behaviour, and the branch taken is recorded as a decision | Ready | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0456](US0456-the-tsd-s-per-script-test-contract-stops.md) | The TSD's per-script test contract stops being prose: a sweep of scripts and scripts/lib derives the exception list, and the shipped document is held to it | Ready | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0457](US0457-adr-011-states-the-breakdown-gate-s-real.md) | ADR-011 states the breakdown gate's real firing rule, and carries a dated amendment marker so a reader of the block sees it | Ready | EP0168 | 2026-07-27 | 2026-07-27 |

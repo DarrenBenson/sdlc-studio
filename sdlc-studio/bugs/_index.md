@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 10 |
+| Open | 11 |
 | In Progress | 0 |
 | Fixed | 326 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **419** |
+| **Total** | **420** |
 
 ## All Bugs
 
@@ -137,6 +137,7 @@
 | [BG0417](BG0417-transition-done-never-checks-the-two-role-rule.md) | transition -> Done never checks the two-role rule: the verb that writes the status the Definition of Done defines a bar for does not consult that bar, and only a later gate run reports it | Open | High | 2026-07-29 | 2026-07-29 |
 | [BG0418](BG0418-the-close-swallows-the-retro-validator-s-own.md) | The close swallows the retro validator's own warning, so a scaffold with six unreplaced demonstration rows reports as 'valid' to the operator | Open | High | 2026-07-29 | 2026-07-29 |
 | [BG0419](BG0419-four-delivered-units-are-held-by-verifiers-that.md) | Four delivered units are held by verifiers that pass with the delivered mechanism removed, and two whole production surfaces are one edit from inert | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0420](BG0420-test-fixtures-mirror-real-lists-by-hand-so.md) | Test fixtures mirror real lists by hand, so adding one chain step or one gate lane turns dozens of unrelated tests red for a reason none of them is about | Open | Medium | 2026-07-29 | 2026-07-29 |
 
 ## Archived Releases
 
