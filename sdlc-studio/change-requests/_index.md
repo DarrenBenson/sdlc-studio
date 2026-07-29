@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 2 |
 | Approved | 0 |
-| In Progress | 32 |
+| In Progress | 33 |
 | Complete | 444 |
 | Rejected | 1 |
 | Deferred | 0 |
@@ -319,7 +319,7 @@
 | [CR-0495](CR0495-file-and-close-fans-one-systemic-blocker-into.md) | file-and-close fans one systemic blocker into one change request per unit, so a single owed sign-off filled the discovery backlog with 23 identical artefacts | Complete | High | Improvement | 2026-07-28 | EP0188 |
 | [CR-0496](CR0496-a-project-config-decision-is-invisible-to-the.md) | A project-config decision is invisible to the forward-port check, so 'in sync' reads as 'everything is mirrored' when the reasoning stayed behind | Proposed | Medium | enhancement | 2026-07-28 | -- |
 | [CR-0497](CR0497-the-v5-upgrade-grandfathers-a-project-s-history.md) | The v5 upgrade grandfathers a project's history silently, so every exemption it grants is a number with no record of what it forgave or why | Proposed | High | enhancement | 2026-07-28 | -- |
-| [CR-0498](CR0498-the-close-ceremony-costs-more-than-the-work.md) | The close ceremony costs more than the work it certifies: measured at ~32 minutes of gate and 57 process spawns to sign off 19 units | Proposed | High | enhancement | 2026-07-29 | -- |
+| [CR-0498](CR0498-the-close-ceremony-costs-more-than-the-work.md) | The close ceremony costs more than the work it certifies: measured at ~32 minutes of gate and 57 process spawns to sign off 19 units | In Progress | High | enhancement | 2026-07-29 | EP0189 |
 
 ## Archived Releases
 

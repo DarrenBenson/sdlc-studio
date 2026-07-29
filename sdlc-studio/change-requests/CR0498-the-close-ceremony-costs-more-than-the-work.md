@@ -1,10 +1,11 @@
 # CR-0498: The close ceremony costs more than the work it certifies: measured at ~32 minutes of gate and 57 process spawns to sign off 19 units
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0189
 > **Priority:** High
 > **Type:** enhancement
 > **Size:** L
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/templates/core/retro.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/templates/reviews/retro.md, .claude/skills/sdlc-studio/scripts/tests/test_root_census.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
 > **Evidence:** RUN-01KYMJEM close: 5 commits, gate-timings.json total [368, 371, 398, 427], 57 critic.py spawns (38 wasted), 3 close attempts, 3 retro validate round-trips
 > **Date:** 2026-07-29
 > **Created-by:** sdlc-studio file

@@ -1,17 +1,17 @@
 # Epic Index
 
-**Last Updated:** 2026-07-28
+**Last Updated:** 2026-07-29
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 13 |
+| Draft | 14 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 175 |
-| **Total** | **188** |
+| **Total** | **189** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -211,3 +211,4 @@
 | [EP0186](EP0186-the-goal-review-is-a-bookend-asked-of.md) | The goal review is a bookend: asked of the content at plan, and of the outcome at close | Done | -- | -- | 2026-07-28 | 2026-07-28 |
 | [EP0187](EP0187-a-sprint-carries-its-goal-in-its-name.md) | A sprint carries its goal in its name | Done | -- | -- | 2026-07-28 | 2026-07-28 |
 | [EP0188](EP0188-the-bounded-exit-files-one-artefact-per-cause.md) | The bounded exit files one artefact per cause, not one per unit | Done | -- | -- | 2026-07-28 | 2026-07-28 |
+| [EP0189](EP0189-the-close-costs-less-than-the-work-it.md) | The close costs less than the work it certifies: earn the gate verdict once, record a batch in one call, and refuse in one pass | Draft | -- | -- | 2026-07-29 | 2026-07-29 |
