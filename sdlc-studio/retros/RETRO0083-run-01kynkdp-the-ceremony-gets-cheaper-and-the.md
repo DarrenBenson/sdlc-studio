@@ -34,8 +34,9 @@
   close refusals in one 2-minute pass; the previous run took three serial attempts of about
   400 seconds each to find the same class. `caller-check` over the batch is now a close step
   rather than a question an operator has to think of asking.
-- **Every efficiency claim is a measurement, not an impression.** Gate 427s to 319s. Reconcile
-  22.3s to 1.3s, with 777,732 file opens removed. 57 critic spawns to 3.
+- **Every efficiency claim is a measurement.** Reconcile 22.3s to 1.3s, with 777,732 file
+  opens removed. 57 critic spawns to 3. The GATE figure was over-claimed on first writing
+  and is corrected here: ~390-427s before, 326s median after (about 70-100s, of which ~21s is the reconcile lane). The 427 -> 319 pair first quoted here took the worst before-run against a good after-run; corrected at the close review.
 - **Three findings did not reproduce and were recorded as not reproducing** (BG0368, BG0373,
   and half of BG0371). In each case the finding's own Proposed Fix named something that WAS
   missing - always an assertion - and that is what shipped.
@@ -94,6 +95,22 @@ sprints fits noise.
   drop, not an overrun, so the estimate held: the batch was sized correctly and the one unit
   that did not ship was refused on evidence grounds rather than on capacity.
 
+**Corrections, recorded rather than quietly edited.**
+
+The mutation count was written as 41. `sdlc-studio/.local/mutation-runs.json` holds 24 for
+this range, and the three commit messages claim 42 - three numbers, none agreeing. The
+count matters more than most: it is the evidence that the tests are not vacuous, and the
+closing review then applied 39 mutants of its own and found 8 SURVIVORS. Four of this
+sprint's repairs (BG0368, BG0385, BG0392's CLI half, BG0395) can be reverted with no test
+in the suite going red.
+
+The gate figure in this retro was
+first written as `427s -> 319s`, which paired the worst before-run with a good after-run.
+The recorded totals give a median of 326s over the last ten runs against 390-427s before.
+The saving is real and about 70-100s; the number as first stated was not. Caught by the
+operator asking whether the optimisation had been over-claimed, which is the question a
+self-reported measurement always needs.
+
 ## Actions raised
 
 **Are there any CRs or Bugs you want to raise in this project to address any of the
@@ -129,9 +146,9 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 
 ## Metrics
 
-- Gate: 427s at the previous close to 319s here · Reconcile detect: 22.3s to 1.3s · Close
+- Gate: ~390-427s before to 326s median after (a cherry-picked 427->319 pair was corrected) · Reconcile detect: 22.3s to 1.3s · Close
   refusal discovery: three serial ~400s attempts to one 2m read-only pass · Critic spawns per
-  close: 57 to 3 · Open bugs: 37 to 2 · Mutants applied and killed: 41
+  close: 57 to 3 · Open bugs: 37 to 2 · Mutants: 24 applied and killed per the register (the figure first written here was 41 - unsupported, and corrected at the close review). Independent review then applied 39 more, of which 8 SURVIVED
 
 ## Handoff
 

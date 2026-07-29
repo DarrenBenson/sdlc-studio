@@ -33,7 +33,7 @@ neither; the two-role rule holds. The 36 bugs are Fixed, which is terminal for t
 
 | Instrument | Before | After |
 | --- | --- | --- |
-| Pre-commit gate | 427s | 319s |
+| Pre-commit gate | ~390-427s | **326s median** - a 427->319 pair was over-claimed and is corrected here |
 | `reconcile detect` | 22.3s (777,732 file opens) | 1.3s |
 | Close refusal discovery | 3 serial attempts, ~400s each | 1 read-only pass, 2m, all 15 named |
 | `critic` spawns per close | 57 | 3 |

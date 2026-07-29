@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 2 |
+| Proposed | 3 |
 | Approved | 0 |
 | In Progress | 33 |
 | Complete | 444 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **498** |
+| **Total** | **499** |
 
 ## All Changes
 
@@ -320,6 +320,7 @@
 | [CR-0496](CR0496-a-project-config-decision-is-invisible-to-the.md) | A project-config decision is invisible to the forward-port check, so 'in sync' reads as 'everything is mirrored' when the reasoning stayed behind | Proposed | Medium | enhancement | 2026-07-28 | -- |
 | [CR-0497](CR0497-the-v5-upgrade-grandfathers-a-project-s-history.md) | The v5 upgrade grandfathers a project's history silently, so every exemption it grants is a number with no record of what it forgave or why | Proposed | High | enhancement | 2026-07-28 | -- |
 | [CR-0498](CR0498-the-close-ceremony-costs-more-than-the-work.md) | The close ceremony costs more than the work it certifies: measured at ~32 minutes of gate and 57 process spawns to sign off 19 units | In Progress | High | enhancement | 2026-07-29 | EP0189 |
+| [CR-0499](CR0499-a-sprint-is-never-asked-whether-it-produced.md) | A sprint is never asked whether it produced a SHIPPABLE increment: the release definition-of-done encodes mechanism, not outcome | Proposed | High | Improvement | 2026-07-29 | -- |
 
 ## Archived Releases
 
