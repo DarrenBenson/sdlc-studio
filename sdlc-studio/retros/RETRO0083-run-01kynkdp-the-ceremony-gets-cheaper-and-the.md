@@ -69,6 +69,15 @@
 - **A speed-up test measures the wrong memo unless each is isolated.** Four mutants survived
   the corpus-cache work because the read-count test credited the by-id index for work the file
   memo underneath it was doing. Only per-memo tests could tell them apart.
+- **A fixture authored to match a fix cannot refuse it.** Every one of the three units that
+  delivered nothing had green tests: BG0359's fixtures each had a single table, so the header
+  never had to be re-pinned; BG0372's asserted a constant and a hand-written header the writer
+  never emits; BG0357's fed the parser a synthetic string and never a real transcript. The
+  author of a fix should not also be the sole author of its fixture.
+- **Speed is where the discipline broke, not where the code broke.** The performance work is
+  real and independently verified. The evidence discipline failed in exactly the units written
+  fastest and last: four unverified premises, a mutation count overstated by 71%, and a gate
+  figure taken from a cherry-picked pair.
 
 ## Carried lessons
 
@@ -129,6 +138,11 @@ that repaired eleven findings reads as eleven fixed, not eleven declined.
 | RV0024's fifteen review-residue bugs | fixed-in: US0553-US0559 and the four bug commits of this run |
 | The older measurement, corpus-truth and spec-drift backlog | fixed-in: RUN-01KYNKDP |
 | Renaming the RFC index's `Spawned CRs` header to match its epic-holding cells | declined: a cross-file change touching the shipped template and three test files, for no behavioural gain - the detector reads a set of accepted spellings instead |
+| Five adversarial reviews returned REJECT; 9 stop-ships | fixed-in: commit 06c806d7~1 |
+| US0553's premise was false - the close runs no suites | fixed-in: reverted, US0553 Blocked |
+| 8 of 39 mutants survived; 4 repairs revert with no test going red | BG0401 |
+| Three units delivered nothing (BG0372, BG0359, BG0357's key) | BG0406 |
+| The release DoD encodes mechanism, not outcome | CR0499 |
 | Filling the 31 unfilled scaffolds with reconstructed content | declined: inventing what an author would have said is the false-evidence class this project files bugs about; each blank now states the absence |
 
 <!-- file one with: scripts/file_finding.py · check with: scripts/retro.py dispose --id RETROxxxx -->

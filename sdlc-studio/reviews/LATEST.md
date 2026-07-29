@@ -39,6 +39,35 @@ neither; the two-role rule holds. The 36 bugs are Fixed, which is terminal for t
 | `critic` spawns per close | 57 | 3 |
 | Open bugs | 37 | 2 |
 
+## The closing review, and what it changed
+
+Five independent adversarial reviewers, none of which wrote this code, returned **five
+REJECTs** over ~32 majors. **Eight of 39 mutants they applied SURVIVED.** Nothing here was
+caught by 5,163 green tests.
+
+**Nine stop-ships are fixed** (commit `06c806d7~1`) - every one a guard that failed SILENTLY,
+which is the direction this project's design says a guard must never fail:
+
+| Defect | Was |
+| --- | --- |
+| `_close_gate` stamped a full-suite green | the next commit skipped its tests |
+| `release_cut._close_owed_units` swallowed everything | one `git rm` disarmed the release guard |
+| A wrong-but-well-formed declared id | narrowed the tree to nothing - a false green from a typo |
+| Declaring a FILE | walked past the content-read floor |
+| `structural=None` | answered the unanswered question `no` |
+| `_land_unhomed` interpolated raw prose | a CR's `steps` could forge a metadata line |
+| `critic record --units <ghost>` | wrote verdicts to the committed ledger, exit 0 |
+| `_killing_test` matched unittest's own footer | every kill attributed to `(failures=2)` |
+| The mutation pipe tied the read to EOF | 600s hang per mutant, SURVIVED flipped to error |
+
+**US0553 is REVERTED, not repaired.** Its premise - that `sprint close` runs the full suites at
+step 4 - is false: `gate.main` runs seventeen lanes and not one runs a suite. A test now asserts
+the premise, so the decision can be revisited on evidence rather than belief.
+
+**Seven bugs and one CR are filed** (BG0401-BG0407, CR0499) for what remains. They are filed
+rather than carried in this document because `judge_defects_against_goal` reads OPEN bugs: until
+they exist as artefacts, the release judgement they should inform reports zero blocking.
+
 ## Known divergences
 
 **US0554's saving is SUSPENDED, by this sprint's own later repair.** BG0398 is correct: a
