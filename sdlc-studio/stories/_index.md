@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 8 |
+| Draft | 4 |
 | Ready | 39 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 10 |
+| Review | 14 |
 | Done | 507 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -471,10 +471,10 @@
 | [US0557](US0557-a-batch-invocation-missing-a-required-argument-is.md) | A batch invocation missing a required argument is refused once before any unit is written, naming every argument the command needs | Review | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0558](US0558-a-retro-created-by-the-scaffold-and-filled.md) | A retro created by the scaffold and filled in as its template demonstrates passes retro validate without a rejection round-trip | Review | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0559](US0559-the-close-reports-its-own-cost-gate-seconds.md) | The close reports its own cost - gate seconds and elapsed - so the next reduction is measured against a number rather than an impression | Review | EP0189 | 2026-07-29 | 2026-07-29 |
-| [US0560](US0560-a-delivery-batch-reaching-the-commit-threshold-has.md) | A delivery batch reaching the commit threshold has a defined review point, and the adversarial pass takes that batch's units as its surface | Draft | EP0190 | 2026-07-29 | 2026-07-29 |
-| [US0561](US0561-a-batch-review-finding-is-filed-as-a.md) | A batch-review finding is filed as a delivery unit against the batch that caused it, so its cost is priced where the work was | Draft | EP0190 | 2026-07-29 | 2026-07-29 |
-| [US0562](US0562-sprint-close-refuses-a-batch-containing-units-no.md) | sprint close REFUSES a batch containing units no independent review has covered, and names them | Draft | EP0190 | 2026-07-29 | 2026-07-29 |
-| [US0563](US0563-the-shipped-lifecycle-states-the-batch-boundary-cadence.md) | The shipped lifecycle states the batch-boundary cadence: doctrine, definition-of-done and help, so a consuming project inherits the placement | Draft | EP0190 | 2026-07-29 | 2026-07-29 |
+| [US0560](US0560-a-delivery-batch-reaching-the-commit-threshold-has.md) | A delivery batch reaching the commit threshold has a defined review point, and the adversarial pass takes that batch's units as its surface | Review | EP0190 | 2026-07-29 | 2026-07-29 |
+| [US0561](US0561-a-batch-review-finding-is-filed-as-a.md) | A batch-review finding is filed as a delivery unit against the batch that caused it, so its cost is priced where the work was | Review | EP0190 | 2026-07-29 | 2026-07-29 |
+| [US0562](US0562-sprint-close-refuses-a-batch-containing-units-no.md) | sprint close REFUSES a batch containing units no independent review has covered, and names them | Review | EP0190 | 2026-07-29 | 2026-07-29 |
+| [US0563](US0563-the-shipped-lifecycle-states-the-batch-boundary-cadence.md) | The shipped lifecycle states the batch-boundary cadence: doctrine, definition-of-done and help, so a consuming project inherits the placement | Review | EP0190 | 2026-07-29 | 2026-07-29 |
 | [US0564](US0564-a-unit-typed-as-a-repair-requires-mutation.md) | A unit typed as a repair requires mutation evidence over its own changed lines before it can reach a terminal status | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0565](US0565-the-gate-is-the-survivor-count-over-those.md) | The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0566](US0566-feature-work-keeps-the-cheaper-bar-and-a.md) | Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt | Draft | EP0191 | 2026-07-29 | 2026-07-29 |

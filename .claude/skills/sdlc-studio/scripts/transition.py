@@ -14,6 +14,7 @@ Subcommand:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import re
 import sys
@@ -825,7 +826,7 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
     block = _triage_gate(root, type_, text, from_canon, target_canon, triaged_by)
     if block:
         blocks.append(block)
-    # Plan-review gate (US0090): a story with spec-derived ACs cannot REACH implementation
+    # Plan-review gate: a story with spec-derived ACs cannot REACH implementation
     # without a recorded independent plan-review verdict. Fires on entry to any state that
     # implies the plan was built - In Progress, Review, or Done - so a direct Ready->Done
     # close cannot smuggle an unreviewed plan into the terminal state. Dry-run included
@@ -950,6 +951,48 @@ def _post_write_sync_and_record(root, type_, path, new_text, result, current, ne
     return result
 
 
+RETRACTED = sdlc_md.RETRACTED_DEPTH
+
+
+def _retract_depth(text: str) -> str:
+    """Rewrite a live `Verification depth` into a stated retraction, keeping what it claimed.
+
+    Never INVENTS the field: a unit that claimed no depth has nothing to retract, and writing
+    one would manufacture a record of a claim nobody made. Idempotent - retracting a retraction
+    would nest the old value inside itself on every subsequent reopen."""
+    current = (sdlc_md.extract_field(text, "Verification depth") or "").strip()
+    if not current or sdlc_md.depth_retracted(text):
+        return text
+    return _upsert_field(text, "Verification depth",
+                         f"{RETRACTED} on reopen (was: {current}) - re-verify before a "
+                         f"terminal status; the previous evidence was withdrawn, not lost")
+
+
+def _invalidate_verify_report(root: Path, uid: str) -> None:
+    """Drop the unit's entry from the verify-report so its overturned green cannot be read
+    as current. Best-effort: an absent or unparseable report means there is no stale green to
+    withdraw, and a reopen must never fail because a cache could not be written."""
+    report = root / _REPORT_REL
+    data = sdlc_md.read_json(report, {})
+    # A valid-JSON report of the WRONG SHAPE (a list, a string) parses fine and then has no
+    # `.get`. Reading it defensively rather than trusting the shape: a reopen must never fail
+    # because a cache could not be read, which is what this function's docstring promises.
+    stories = data.get("stories") if isinstance(data, dict) else None
+    if not isinstance(stories, dict):
+        return
+    want = sdlc_md.norm_id(uid)
+    doomed = [k for k in stories
+              if sdlc_md.norm_id(sdlc_md.extract_record_id(str(k)) or "") == want]
+    if not doomed:
+        return
+    for k in doomed:
+        stories[k] = {**(stories[k] if isinstance(stories[k], dict) else {}),
+                      "verified": 0, "stale": 1,
+                      "invalidated_by": "reopen - re-run verify_ac"}
+    with contextlib.suppress(OSError):
+        sdlc_md.atomic_write(report, json.dumps(data, indent=2) + "\n")
+
+
 def transition(repo_root: Path | str, artifact_id: str, new_status: str,
                dry_run: bool = False, force: bool = False,
                metrics: dict | None = None, triaged_by: str | None = None,
@@ -1001,11 +1044,22 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
         raise ValueError(f"{path.name} has no `Status` field to transition")
     for fname, fval in triage_fields.items():
         new_text = _upsert_field(new_text, fname, fval)
+    reopened = (sdlc_md.is_terminal_status(type_, from_canon or "")
+                and not sdlc_md.is_terminal_status(type_, target_canon or ""))
+    if reopened:
+        new_text = _retract_depth(new_text)
     result = {"id": sdlc_md.extract_record_id(path.stem), "type": type_,
               "from": current, "to": new_status, "index_synced": False, "epic": None,
               "warning": gate_warn}
     if dry_run:
         return result
+    if reopened:
+        # A reopen is a human overturning a machine verdict. Retracting the depth (above) is
+        # only half: `_built_not_closed` and every other reader of "are this unit's ACs green"
+        # consult the verify-report, and the vacuous tests that earned the withdrawn green
+        # still pass. Invalidating the entry forces a re-run rather than leaving the overturned
+        # verdict readable as current.
+        _invalidate_verify_report(root, result["id"])
     if force:
         # `--force` advertised the bypass as recorded and recorded nothing, so a forced close of
         # a red-AC story was byte-indistinguishable from a verified one. A force that waived

@@ -131,8 +131,10 @@ def _stubbed_close(record: list | None = None):
     possible. The stub records the step name, which is what proves the boundary ran the
     chain in the ceremony's order rather than skipping it.
     """
-    names = ("retro_validate", "retro_extract", "lessons_summary", "gate", "handoff",
-             "reconcile")
+    # DERIVED from the chain, never hand-copied. This list had already drifted (it omitted
+    # `review-anchor`), so adding a step left it unstubbed and reddened every rolling test at
+    # once. A list of the thing under test, maintained beside it, goes stale silently.
+    names = tuple(s.replace("-", "_") for s in sprint._CLOSE_CHAIN)
     saved = {n: getattr(sprint, f"_close_{n}") for n in names}
 
     def make(n):

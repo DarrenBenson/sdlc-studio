@@ -3665,8 +3665,12 @@ def _close_retro(root: Path, rid: str = "RETRO0001", with_index: bool = True,
             f"| [{disp}]({stem}.md) | widget sprint | 2026-07-16 |\n", encoding="utf-8")
 
 
-_CLOSE_STEP_NAMES = ("retro-validate", "retro-extract", "lessons-summary",
-                     "gate", "handoff", "reconcile")
+#: DERIVED from the module, never hand-copied. The hand-maintained duplicate had already
+#: drifted (it omitted `review-anchor`), and adding a step to the chain then reddened 17
+#: close tests at once because the new step ran unpatched against fixtures that cannot
+#: satisfy it. A list of the thing under test, maintained beside the thing under test, is a
+#: list that goes stale silently.
+_CLOSE_STEP_NAMES = tuple(_load()._CLOSE_CHAIN)
 
 
 def _patch_close_steps(mod, fail_at=None, remedy="fix it", record=None):
@@ -3707,7 +3711,8 @@ class CloseChainTests(unittest.TestCase):
                     contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
                 rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
             self.assertNotEqual(rc, 0)
-            self.assertEqual(calls, ["retro-validate", "retro-extract", "lessons-summary"])
+            self.assertEqual(calls, [*_CLOSE_STEP_NAMES[:_CLOSE_STEP_NAMES.index("lessons-summary") + 1]],
+                             "the chain did not run every step up to the failing one, in order")
             self.assertIn("STOPPED", err.getvalue())
             self.assertIn("run lessons summary", err.getvalue())   # the remedy, named
 
@@ -3903,7 +3908,7 @@ class CloseRetroScaffoldTests(unittest.TestCase):
                     contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
                 rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
             self.assertEqual(rc, 0, err.getvalue())
-            self.assertEqual(calls[0], "retro-validate")     # reached and ran the chain
+            self.assertEqual(calls[0], _CLOSE_STEP_NAMES[0])  # reached and ran the chain
             self.assertNotIn("scaffolded", out.getvalue().lower())
 
     def test_heals_missing_index_row_for_existing_retro(self) -> None:
@@ -5705,7 +5710,7 @@ class ClosePreflightTests(unittest.TestCase):
         self.addCleanup(setattr, gate_mod, "run_gate", gate_mod.run_gate)
         for name in ("verdict_for", "evidence_for", "signoff_for",
                      "is_independent_signoff", "sprint_review_for",
-                     "sprint_covers_independently"):
+                     "sprint_covers_independently", "is_independent"):
             self.addCleanup(setattr, critic_mod, name, getattr(critic_mod, name))
         gate_mod.run_gate = lambda *a, **k: {"ok": not lanes, "checks": [
             {"check": c, "status": "fail", "blocking": True, "detail": f"{c} detail"}
@@ -5717,11 +5722,22 @@ class ClosePreflightTests(unittest.TestCase):
         cfg.write_text("review:\n  two_role_after: 100\n", encoding="utf-8")
         verdicts = verdicts or {}
         critic_mod.verdict_for = lambda r, u, phase="delivery": verdicts.get(u)
-        critic_mod.evidence_for = lambda r, u: [{"x": 1}] if u in evidence else []
+        # A REALISTIC row: `evidence_for` returns one dict of `_EVIDENCE_COLS`, never a list
+        # of placeholders. The old `[{"x": 1}]` was truthy, which was all any test asked of it -
+        # so a reader that actually inspected the row could not be tested through this fixture.
+        critic_mod.evidence_for = lambda r, u: (
+            {"unit": u, "reviewer": "reviewer-a", "author": "author-b",
+             "date": "2026-07-29", "findings": "probed the guard paths"}
+            if u in evidence else None)
         critic_mod.signoff_for = lambda r, u: {"principal": "p"} if u in signoffs else None
         critic_mod.is_independent_signoff = lambda r, u, s: u in signoffs
         critic_mod.sprint_review_for = lambda r, u: None
         critic_mod.sprint_covers_independently = lambda r, u, rev: u in covered
+        # The coverage step consults BOTH predicates: `sprint_covers_independently` for the
+        # verdict-and-distinct half and `is_independent` for the PRE_GATE grandfather half.
+        # These fixtures assert the pre-flight's COMPOSITION, so independence semantics are
+        # stubbed true here and tested directly in BatchBoundaryReviewTests.
+        critic_mod.is_independent = lambda rec: True
         batch = list(units or ["US0101"])
         # Real artefacts behind the batch ids: the sign-off brief refuses an id with no unit,
         # and a fixture naming units that do not exist would fail for that reason rather than
@@ -5788,7 +5804,7 @@ class ClosePreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",))
+                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",))
             rid = self._retro(root)
             res = mod.close_preflight(root, rid)
             self.assertTrue(res["ready"], res["blockers"])
@@ -5826,7 +5842,7 @@ class ClosePreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",))
+                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",))
             rid = self._retro(root)
             self.assertTrue(mod.close_preflight(root, rid)["ready"])
             import critic as critic_mod
@@ -5942,7 +5958,7 @@ class ClosePreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",))
+                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",))
             rid = self._retro(root)
             self.assertTrue(mod.close_preflight(root, rid)["ready"])
             out, err = io.StringIO(), io.StringIO()
@@ -5967,7 +5983,10 @@ class ClosePreflightTests(unittest.TestCase):
         """
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            mod = self._mod(root, units=["US0101"])      # no verdict: the pre-flight is not ready
+            # Covered but with no verdict: the pre-flight is NOT ready (the sign-off half is
+            # unmet), while the chain's own coverage step passes - so what this test measures
+            # is the pre-flight's non-blocking property and not a different step's refusal.
+            mod = self._mod(root, units=["US0101"], evidence=("US0101",), covered=("US0101",))
             rid = self._retro(root)
             self.assertFalse(mod.close_preflight(root, rid)["ready"])
             reached = []
@@ -7214,7 +7233,7 @@ class ClosePreflightDriftTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as h:
             root = Path(d)
             mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",))
+                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",))
             rid = self._retro(root)
             with unittest.mock.patch.dict(os.environ, {"HOME": h}):
                 # otherwise ready: without the drift this close has nothing outstanding
@@ -9855,6 +9874,352 @@ class CloseCostReportTests(unittest.TestCase):
         root = self._root([self._row("2026-07-29T10:00:00+00:00")])
         self.assertIsNone(sprint.close_cost(root, "RUN-COST")["elapsed_seconds"])
         self.assertNotIn("elapsed", sprint.close_cost_line(sprint.close_cost(root, "RUN-COST")))
+
+
+class BatchBoundaryReviewTests(unittest.TestCase):
+    """US0560/US0561 (CR0500). The review belongs at the DELIVERY batch boundary, not the close.
+    RUN-01KYNKDP delivered in 5h and closed in 6h35m, and about 82% of that close was repair
+    generated by a close-time review - every finding it made was close work by definition."""
+
+    def _repo(self):
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        return root
+
+    def _rs(self):
+        from lib import run_state
+        return run_state
+
+    def test_a_batch_span_is_recorded_on_the_run_state(self) -> None:
+        root, rs = self._repo(), self._rs()
+        rs.start_batch(root, ["US0001", "BG0002"])
+        span = rs.open_batch(root)
+        self.assertIsNotNone(span, "no batch span was opened")
+        self.assertEqual(span["units"], ["US0001", "BG0002"])
+        self.assertIsNone(span["reviewed_at"], "a fresh span is already marked reviewed")
+
+    def test_coverage_reads_per_unit_and_batch_level_records(self) -> None:
+        import critic
+        root = self._repo()
+        critic.record_sprint_review(root, ["US0001"], "reviewer-a", "author-b",
+                                    "APPROVE", "probed the guard paths")
+        cov = sprint.review_coverage(root, ["US0001", "US0002"])
+        self.assertTrue(cov["US0001"]["covered"], "a recorded independent pass did not count")
+        self.assertFalse(cov["US0002"]["covered"], "an unreviewed unit was counted as covered")
+
+    def test_a_self_review_is_not_coverage(self) -> None:
+        """The whole two-role rule in one assertion: the context that wrote the code cannot
+        clear its own gate. `record_sprint_review` refuses to write one at all."""
+        import critic
+        root = self._repo()
+        with self.assertRaises(ValueError):
+            critic.record_sprint_review(root, ["US0001"], "same-agent", "same-agent",
+                                        "APPROVE", "looks fine to me")
+        self.assertFalse(sprint.review_coverage(root, ["US0001"])["US0001"]["covered"])
+
+    def test_a_per_unit_self_verdict_is_not_coverage_either(self) -> None:
+        """The path that CAN write a self-review. `record_verdict` does not refuse
+        reviewer == author - it records the pair and leaves independence to the gate reading
+        it - so the coverage predicate has to do that reading. Caught by mutation: deleting
+        the guard changed nothing, because the sibling test only exercised the sprint-review
+        path, which refuses at write time and so could never reach the guard."""
+        import critic
+        root = self._repo()
+        critic.record_verdict(root, "US0001", "APPROVE", reviewer="same-agent",
+                              author="same-agent", issues="none")
+        self.assertFalse(sprint.review_coverage(root, ["US0001"])["US0001"]["covered"],
+                         "a unit signed off by its own author was counted as reviewed")
+
+    def test_an_independent_per_unit_verdict_IS_coverage(self) -> None:
+        """The positive control for the guard above: it must reject a self-verdict without
+        rejecting every per-unit verdict, or the coverage step becomes unsatisfiable."""
+        import critic
+        root = self._repo()
+        critic.record_verdict(root, "US0001", "APPROVE", reviewer="reviewer-a",
+                              author="author-b", issues="probed")
+        self.assertTrue(sprint.review_coverage(root, ["US0001"])["US0001"]["covered"])
+
+    def test_a_review_does_not_cover_a_later_batch(self) -> None:
+        """The surface is THAT batch's units. Reviewing batch 1 must not silently clear the
+        units of a batch that had not been written when the review ran."""
+        import critic
+        root = self._repo()
+        critic.record_sprint_review(root, ["US0001"], "reviewer-a", "author-b",
+                                    "APPROVE", "batch 1 probed")
+        self.assertEqual(sprint.uncovered_units(root, ["US0001", "US0009"]), ["US0009"])
+
+    def test_review_batch_records_and_closes_the_span(self) -> None:
+        root, rs = self._repo(), self._rs()
+        rs.start_batch(root, ["US0001"])
+        args = argparse.Namespace(root=root, units=None, reviewer="reviewer-a",
+                                  author="author-b", verdict="APPROVE",
+                                  findings="probed the refusal paths", base="",
+                                  open_units=None, format="text")
+        with contextlib.redirect_stdout(io.StringIO()):
+            rc = sprint.cmd_review_batch(args)
+        self.assertEqual(rc, 0)
+        self.assertIsNone(rs.open_batch(root), "the span stayed open after being reviewed")
+        self.assertTrue(sprint.review_coverage(root, ["US0001"])["US0001"]["covered"])
+
+    def test_the_documented_open_invocation_parses(self) -> None:
+        """Through the REAL parser, not a hand-built Namespace. The sibling tests constructed
+        `argparse.Namespace` directly and so could never see that `--reviewer/--author/--findings`
+        were `required=True` - which made the documented `--open` form exit 2 and left the entire
+        span mechanism unreachable from any documented CLI form. Found by an independent
+        reviewer running the invocation printed in help/sprint.md verbatim."""
+        root, rs = self._repo(), self._rs()
+        parser = sprint.build_parser()
+        args = parser.parse_args(["review-batch", "--open", "US0001,US0002", "--root", str(root)])
+        with contextlib.redirect_stdout(io.StringIO()):
+            rc = args.func(args)
+        self.assertEqual(rc, 0, "the documented --open invocation was refused")
+        self.assertEqual(rs.open_batch(root)["units"], ["US0001", "US0002"])
+
+    def test_recording_a_review_still_demands_its_evidence(self) -> None:
+        """The other half of that fix: relaxing the parser must not let a review be recorded
+        without a reviewer, an author or findings. The demand moves to the command, where the
+        open/review distinction can actually be made."""
+        root = self._repo()
+        parser = sprint.build_parser()
+        args = parser.parse_args(["review-batch", "--units", "US0001", "--root", str(root)])
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+            rc = args.func(args)
+        self.assertEqual(rc, 2)
+        for flag in ("--reviewer", "--author", "--findings"):
+            self.assertIn(flag, err.getvalue())
+
+    def test_a_recorded_REJECT_does_not_cover_a_unit(self) -> None:
+        """`review_coverage` reimplemented the independence half and forgot the VERDICT half,
+        so a recorded REJECT cleared the coverage gate while the tool printed 'it clears no
+        unit's gate'. The existing `critic.sprint_covers_independently` had the whole rule;
+        the second copy is what drifted. Found by an independent reviewer."""
+        import critic
+        root = self._repo()
+        critic.record_sprint_review(root, ["US0001"], "reviewer-a", "author-b",
+                                    "REJECT", "this batch is broken")
+        self.assertFalse(sprint.review_coverage(root, ["US0001"])["US0001"]["covered"],
+                         "a REJECTED batch cleared the coverage gate")
+        self.assertEqual(sprint.uncovered_units(root, ["US0001"]), ["US0001"])
+
+    def test_a_per_unit_REJECT_is_not_covered_either(self) -> None:
+        import critic
+        root = self._repo()
+        critic.record_verdict(root, "US0001", "REJECT", reviewer="reviewer-a",
+                              author="author-b", issues="broken")
+        self.assertFalse(sprint.review_coverage(root, ["US0001"])["US0001"]["covered"])
+
+    def test_the_exclusion_line_does_not_claim_a_false_batch_total(self) -> None:
+        """F7. `points` is the PRICED subtotal - unpriced units are skipped before it is
+        accumulated - so `priced + removed` was never "the batch" whenever anything was
+        unpriced. Both the arithmetic and the whole sentence were surviving mutants."""
+        out = sprint.exclusion_line({"built_not_closed": ["US0002"], "built_points": 3,
+                                     "points": 5, "unpriced": ["US0003"]})
+        self.assertIn("removes 3 point(s)", out)
+        self.assertIn("1 unit(s) with no points at all", out,
+                      "the unpriced unit was folded into a total that does not add up")
+        self.assertNotIn("batch's 8", out, "the false batch total is still claimed")
+
+    def test_the_exclusion_line_is_silent_when_nothing_is_excluded(self) -> None:
+        """The other direction of the same branch: no exclusion, no arithmetic claim."""
+        out = sprint.exclusion_line({"built_not_closed": ["US0002"], "built_points": 0,
+                                     "points": 5, "unpriced": []})
+        self.assertIn("US0002", out)
+        self.assertNotIn("removes", out)
+
+    def test_the_pre_gate_grandfather_marker_is_not_coverage(self) -> None:
+        """M4 from the guard review. `sprint_covers_independently` tests only non-empty-and-
+        distinct; `critic.is_independent` rejects PRE_GATE explicitly. The new gate used the
+        first, so a migration sentinel the project's OWN independence predicate refuses cleared
+        it. Both predicates must agree."""
+        import critic
+        root = self._repo()
+        critic.record_verdict(root, "US0001", "APPROVE", reviewer="reviewer-a",
+                              author=critic.PRE_GATE, issues="grandfathered")
+        self.assertFalse(sprint.review_coverage(root, ["US0001"])["US0001"]["covered"],
+                         "the pre-gate grandfather marker cleared the coverage gate")
+
+    def test_an_empty_batch_names_the_drops_that_emptied_it(self) -> None:
+        """M3 from the guard review: the empty-batch branch was untested in BOTH directions,
+        and `sprint batch drop` is a one-command escape from the refusal. It still passes -
+        there is nothing left to review - but the drops are named, so the escape is on the
+        record instead of reading as "no batch on the run state"."""
+        root = self._repo()
+        state = {"batch": [], "batch_changes": [{"action": "drop", "id": "US0001",
+                                                 "reason": "inconvenient"}]}
+        ok, detail, _ = sprint._close_review_coverage(root, "RETRO0001", state)
+        self.assertTrue(ok, "an empty batch has nothing to review and must not deadlock")
+        self.assertIn("US0001", detail, "the drop that emptied the batch is not named")
+        self.assertIn("emptied", detail)
+
+    def test_a_genuinely_empty_batch_says_so(self) -> None:
+        root = self._repo()
+        ok, detail, _ = sprint._close_review_coverage(root, "RETRO0001", {"batch": []})
+        self.assertTrue(ok)
+        self.assertIn("no batch on the run state", detail)
+
+    def test_close_batch_refuses_when_no_span_is_open(self) -> None:
+        """M10: `close_batch`'s docstring calls this the misattribution it exists to stop, and
+        nothing tested it. Recording a review against no batch would attribute the pass to
+        whichever span happened to be last."""
+        root, rs = self._repo(), self._rs()
+        with self.assertRaises(ValueError):
+            rs.close_batch(root, reviewer="a", author="b", verdict="APPROVE")
+        rs.start_batch(root, ["US0001"])
+        rs.close_batch(root, reviewer="a", author="b", verdict="APPROVE")
+        with self.assertRaises(ValueError):
+            rs.close_batch(root, reviewer="a", author="b", verdict="APPROVE")
+
+    def test_findings_raised_against_a_batch_are_recorded_on_it(self) -> None:
+        root, rs = self._repo(), self._rs()
+        rs.start_batch(root, ["US0001"])
+        rs.note_finding(root, "BG0500")
+        self.assertIn("BG0500", rs.open_batch(root)["findings_raised"])
+
+    def test_a_finding_raised_with_no_open_batch_attaches_to_nothing(self) -> None:
+        """An absence is stated by the caller, never guessed here: attributing to the last
+        CLOSED span would price a close-time finding as batch work, inverting the measurement."""
+        root, rs = self._repo()  , self._rs()
+        rs.start_batch(root, ["US0001"])
+        rs.close_batch(root, reviewer="reviewer-a", author="author-b", verdict="APPROVE")
+        self.assertIsNone(rs.note_finding(root, "BG0501"))
+        self.assertNotIn("BG0501", rs.batches(root)[-1].get("findings_raised") or [])
+
+
+class TheCloseCertifiesRatherThanReviewsTests(unittest.TestCase):
+    """US0562. The close asserts that coverage EXISTS; it does not perform the review."""
+
+    def _repo(self, batch, reviewed=()):
+        import critic
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        for u in reviewed:
+            critic.record_sprint_review(root, [u], "reviewer-a", "author-b",
+                                        "APPROVE", "probed")
+        return root, {"batch": list(batch)}
+
+    def test_the_close_refuses_and_names_uncovered_units(self) -> None:
+        root, state = self._repo(["US0001", "US0002"], reviewed=["US0001"])
+        ok, detail, _ = sprint._close_review_coverage(root, "RETRO0001", state)
+        self.assertFalse(ok, "the close passed a batch carrying an unreviewed unit")
+        self.assertIn("US0002", detail, "the refusal did not name the uncovered unit")
+        self.assertNotIn("US0001,", detail, "a covered unit was named as uncovered")
+
+    def test_the_refusal_names_the_remedy(self) -> None:
+        root, state = self._repo(["US0001"])
+        ok, _, remedy = sprint._close_review_coverage(root, "RETRO0001", state)
+        self.assertFalse(ok)
+        self.assertIn("review-batch", remedy, "the refusal is not actionable from its own text")
+        self.assertIn("reviewer must differ", remedy)
+
+    def test_a_covered_batch_passes(self) -> None:
+        """The check must not become a blanket refusal nobody can satisfy."""
+        root, state = self._repo(["US0001", "US0002"], reviewed=["US0001", "US0002"])
+        ok, detail, _ = sprint._close_review_coverage(root, "RETRO0001", state)
+        self.assertTrue(ok, f"a fully covered batch was refused: {detail}")
+
+    def test_the_close_reports_where_findings_were_raised(self) -> None:
+        """The goal 'defects are found inside the sprint' is only falsifiable if the split is
+        recorded. It is reported whether or not the step refuses."""
+        from lib import run_state
+        root, state = self._repo(["US0001"], reviewed=["US0001"])
+        run_state.start_batch(root, ["US0001"])
+        run_state.note_finding(root, "BG0777")
+        ok, detail, _ = sprint._close_review_coverage(root, "RETRO0001", state)
+        self.assertTrue(ok)
+        self.assertIn("finding placement", detail)
+        self.assertIn("1 raised at a batch boundary", detail)
+
+    def test_every_chain_step_is_previewed_by_the_dry_run(self) -> None:
+        """`close_dry_run` prints "N step(s) UNEVALUATED. An unevaluated step is not a passing
+        one" - a completeness claim it cannot make while a step is missing from its table. The
+        new blocking step was absent, so the preview reported 0 unevaluated and stayed silent
+        about the step the chain then refused at. Pinned structurally so the next added step
+        cannot repeat it. `gate` is the one legitimate omission: it is run separately."""
+        previewed = set(sprint.DRY_RUN_ACTION_STEPS) | {"gate"}
+        self.assertEqual(set(sprint._CLOSE_CHAIN) - previewed, set(),
+                         "a chain step is invisible to `close --dry-run`, which asserts it "
+                         "evaluated all of them")
+
+    def test_preflight_reports_uncovered_units(self) -> None:
+        """Preflight promises EVERY unmet prerequisite and says the close is one more run once
+        they are cleared. It cannot say that while a blocking chain step is absent from it."""
+        root, state = self._repo(["US0001", "US0002"], reviewed=["US0001"])
+        blockers = sprint.coverage_blockers(root, state)
+        self.assertEqual(len(blockers), 1)
+        self.assertEqual(blockers[0]["stage"], "review-coverage")
+        self.assertIn("US0002", blockers[0]["detail"])
+        self.assertIn("review-batch", blockers[0]["remedy"])
+
+    def test_preflight_reports_nothing_when_the_batch_is_covered(self) -> None:
+        root, state = self._repo(["US0001"], reviewed=["US0001"])
+        self.assertEqual([], sprint.coverage_blockers(root, state))
+
+    def test_close_preflight_actually_calls_the_coverage_check(self) -> None:
+        """The call SITE, proven by execution rather than by reading the source. The first
+        attempt asserted the string `_coverage_blocker(state)` appeared in `close_preflight`'s
+        source - which the closure's own `def` line supplied, so deleting the call left the
+        test green. Caught by mutation. A sentinel raised from the patched function escapes
+        before the expensive gate block, so this stays cheap."""
+        class _Reached(Exception):
+            pass
+
+        def _boom(root, state):
+            raise _Reached()
+
+        root, _ = self._repo(["US0001"])
+        from lib import run_state
+        run_state.update(root, run_id="RUN-TEST", sprint_goal="a goal",
+                         sprint_goal_verdict={"verdict": "achieved"}, batch=["US0001"])
+        real = sprint.coverage_blockers
+        sprint.coverage_blockers = _boom
+        try:
+            with self.assertRaises(_Reached), contextlib.redirect_stdout(io.StringIO()):
+                sprint.close_preflight(root, None)
+        finally:
+            sprint.coverage_blockers = real
+
+    def test_the_documented_invocations_actually_parse(self) -> None:
+        """US0563 AC3 said help documents `review-batch` "in runnable invocation form" and
+        verified it by grepping for the string. The string was present the whole time the
+        command exited 2. A verifier that cannot fail when the claim is false is not a verifier -
+        this project's own recorded scar. Every documented invocation is now PARSED."""
+        import shlex
+        repo = Path(__file__).resolve().parents[5]
+        docs = [repo / ".claude/skills/sdlc-studio/help/sprint.md",
+                repo / ".claude/skills/sdlc-studio/reference-doctrine.md"]
+        parser = sprint.build_parser()
+        found = 0
+        for doc in docs:
+            if not doc.is_file():
+                continue
+            text = doc.read_text(encoding="utf-8").replace("\\\n", " ")
+            for line in text.splitlines():
+                stripped = line.strip().lstrip("`").strip()
+                if "sprint.py review-batch" not in stripped:
+                    continue
+                argv = shlex.split(stripped[stripped.index("sprint.py") + len("sprint.py"):])
+                argv = [a for a in argv if a and not a.startswith("#")]
+                if not argv or argv[0] != "review-batch":
+                    continue
+                found += 1
+                with self.subTest(doc=doc.name, argv=" ".join(argv)):
+                    try:
+                        parser.parse_args(argv)
+                    except SystemExit as exc:
+                        self.fail(f"{doc.name} documents an invocation that does not parse "
+                                  f"(exit {exc.code}): sprint.py {' '.join(argv)}")
+        self.assertGreaterEqual(found, 1, "no documented review-batch invocation was found "
+                                          "to check - the verifier would pass vacuously")
+
+    def test_the_step_is_first_in_the_chain(self) -> None:
+        """Refusing here costs seconds; refusing after the retro scaffold and a full gate run
+        costs minutes. Placement is the fix, in the chain as well as in the lifecycle."""
+        self.assertEqual(sprint._CLOSE_CHAIN[0], "review-coverage")
 
 
 if __name__ == "__main__":

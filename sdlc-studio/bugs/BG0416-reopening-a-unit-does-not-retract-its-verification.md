@@ -1,6 +1,7 @@
 # BG0416: Reopening a unit does not retract its verification-depth claim, so the planner reads it as BUILT-NOT-CLOSED and forecasts it at zero points
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; each repair verified by applying its own mutant and watching it redden, bytecode purged, python3 -B)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -11,44 +12,49 @@
 
 ## Summary
 
-A reopen retracts the status and leaves the evidence claim standing.
+**The filed diagnosis was wrong about the mechanism, and the corrected one is worse.** Both are recorded below; the original is kept rather than rewritten, because a finding that names the wrong cause and is then quietly edited is how a wrong premise gets built on.
 
-BG0372 and BG0359 were reopened at the last close for the strongest possible reason: each was marked Fixed while delivering nothing. The reopen moved Status back to Open and wrote the finding into the revision history. It did not touch `Verification depth`, so each file still asserts it was verified to a functional tier by tests that ran red first - the exact claim the reopen exists to withdraw.
+**As filed:** the planner reads the surviving `Verification depth` field and concludes the unit is built.
 
-The planner then reads that field and concludes the unit is built and merely unclosed, so it excludes it from the build forecast. Planning a 150-point batch produces a 142-point forecast, and the eight-point gap is invisible unless a reader notices the exclusion line and knows why those three ids are on it.
+**As checked:** `_built_not_closed` never reads that field. It reads `_verifiers_all_green`, which reads the unit's entry in `sdlc-studio/.local/verify-report.json`. The exclusion is driven entirely by the unit's executable ACs passing.
 
-The direction of the error is the bad one. A unit reopened for delivering nothing is not cheaper than an unstarted one; it is more expensive, because someone must first work out what the previous attempt actually did. The forecast prices it at zero.
+That makes the defect sharper. BG0372 was reopened because its tests "asserted a constant and a hand-written header the writer never emits" - a green that a human judged meaningless. Those tests still pass. So the planner reads a green verdict that a reviewer has already overturned, and prices the unit at zero.
 
-This is the same shape as the retro points figure this run had to correct three times: a status changed in one place and a derived claim left standing in another, with every reader downstream trusting the stale half.
+**A reopen is a human overturning a machine verdict, and nothing in the machine hears it.** The verify-report is not invalidated, so every downstream reader of "are this unit's ACs green" keeps getting the answer the reopen rejected. The forecast is the reader that happened to be looking; it will not be the only one.
+
+The verification-depth half of the original filing is still true as a fact - BG0372 stands at Open while asserting it was verified to a functional tier - it is simply not the cause of the exclusion. It stays in scope as hygiene, and because a retracted depth is the natural place to record that a green is no longer trusted.
 
 ## Steps to Reproduce
 
-1. Open BG0372: Status is Open, the revision history records the reopen, and `Verification depth` still reads `functional (tests red-first)`.
-2. Put BG0372 in a worklist and run `sprint plan` - it appears under `excluded from the build forecast (BUILT-NOT-CLOSED, close them)`.
-3. Compare the worklist's point total against the forecast's: the reopened units contribute nothing.
+1. Open BG0372: Status is Open, the revision history records the reopen, `Verification depth` still reads `functional (tests red-first)`, and its four `Verify:` lines point at `VelocityCarriesTheOverheadSplitTests` - the tests the reopen recorded as asserting nothing.
+2. Run those tests: they pass. The verify-report records the unit green.
+3. Put BG0372 in a worklist and run `sprint plan` - it appears under `excluded from the build forecast (BUILT-NOT-CLOSED, close them)`.
+4. Read `_built_not_closed` in sprint.py: it consults `_verifiers_all_green` and the status, and never reads `Verification depth`. The filed diagnosis does not hold.
 
 ## Proposed Fix
 
-1. **A reopen retracts the evidence with the status.** Moving a unit out of a terminal status clears `Verification depth` - or rewrites it to a stated retraction naming the reopen - so no reader can find an unretracted claim on a unit whose delivery was withdrawn.
-2. **The planner does not infer BUILT from a field alone.** A unit at Open is not built, whatever evidence field survives on it; the BUILT-NOT-CLOSED exclusion applies only to units actually at a built-but-unclosed status.
-3. **The exclusion is loud when it moves the total.** The plan already names the excluded ids; it should also state the points they remove, so a forecast that differs from the batch total explains itself in the same line.
-4. A test reopens a unit carrying a verification depth and asserts both that the claim does not survive and that the planner prices the unit at its full points.
+1. **A reopen retracts the evidence with the status.** Moving a unit out of a terminal status rewrites `Verification depth` to a stated retraction naming the reopen, so no reader finds an unretracted claim on a unit whose delivery was withdrawn. This also makes the existing `_bug_depth_gate` refuse a second trip to Fixed without fresh evidence, which is the behaviour that should already follow.
+2. **A reopen invalidates the unit's verify-report entry.** The green the reopen overturned must not be readable as current by anything. The verifiers have to be re-run after the reopen for the unit to read green again.
+3. **The planner does not price a retracted unit as built.** `_built_not_closed` refuses on a retracted depth regardless of what the verify-report says, so the two mechanisms cannot disagree.
+4. **The exclusion is loud when it moves the total.** The plan already names the excluded ids; it should also state the points they remove, so a forecast below the batch total explains the difference in the same line.
 
 ## Acceptance Criteria
 
-- [ ] Moving a unit out of a terminal status clears or explicitly retracts its verification-depth claim, so no reopened unit carries an unretracted one.
-- [ ] The planner treats a unit at a non-terminal status as unbuilt regardless of any surviving evidence field, so a reopened unit is forecast at its full points.
+- [ ] Moving a unit out of a terminal status rewrites its `Verification depth` to a stated retraction naming the reopen, so no reopened unit carries an unretracted claim.
+- [ ] A reopen invalidates the unit's verify-report entry, so the green a reviewer overturned cannot be read as current by any downstream reader.
+- [ ] `_built_not_closed` refuses to call a unit built when its verification depth is retracted, whatever the verify-report holds, so the two cannot disagree.
 - [ ] The plan states the points removed by any build-forecast exclusion, so a forecast below the batch total explains the difference in the same line.
-- [ ] A test reopens a unit carrying a verification depth and asserts both the retraction and the restored forecast; BG0372, BG0359 and BG0402 are corrected on disk.
+- [ ] A test reopens a unit whose verifiers pass and asserts BOTH the retraction AND that the planner prices it at full points - the mutant that reverts either half must redden it. BG0372, BG0359 and BG0402 are corrected on disk.
 
 ## Impact
 
-Reopening is the mechanism this project uses to withdraw a false completion claim, and it is the mechanism that most needs to leave nothing behind. Leaving the verification depth in place means the artefact simultaneously records 'this delivered nothing' and 'this was verified functionally' - and a tool reading the second one prices the sprint wrong.
+Reopening is how this project withdraws a false completion claim, and it is the mechanism that most needs to leave nothing behind. What it currently leaves behind is the green verdict itself: the tests a reviewer judged vacuous keep passing, keep being recorded as passing, and keep being read as "this unit is built".
 
-Here the effect is a forecast 5% low on a sprint whose whole goal is that its own measurements can be trusted. In a consuming project the same field is what a reviewer reads to decide whether a fix was evidenced at all.
+Here the effect is a forecast 5% low on a sprint whose whole goal is that its own measurements can be trusted. The general effect is worse - it means the reopen mechanism, the one control that exists to overturn a false green, does not actually reach the green.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-29 | sdlc-studio | Filed |
+| 2026-07-29 | Claude Opus 5 (RUN-01KYPZ1G) | DIAGNOSIS CORRECTED before any code was written. The filing blamed the surviving `Verification depth` field; `_built_not_closed` never reads it. The exclusion comes from `_verifiers_all_green` reading the unit's verify-report entry, and BG0372's vacuous tests still pass - so the planner reads a green a reviewer had already overturned. The original wording is kept above rather than replaced. Acceptance criteria restated against the real mechanism; the depth-retraction half stays in scope as hygiene and as the place a withdrawn green is recorded. |

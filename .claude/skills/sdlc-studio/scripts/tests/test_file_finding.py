@@ -1840,5 +1840,211 @@ class LandedProseCannotForgeADeclarationTests(unittest.TestCase):
         self.assertIn("## Impact", body)
 
 
+class TheFilerCannotMintAFenceItsOwnGateRefusesTests(unittest.TestCase):
+    """BG0412. `file_finding` wrote an author's fenced block through verbatim, so a finding
+    whose evidence quotes a command block arrived with a bare ``` opener - which markdownlint
+    MD040 refuses. The deterministic filer produced artefacts the deterministic gate rejected,
+    and the only way past was to hand-edit the file the filer exists to stop you hand-writing.
+    Two of this run's own findings hit it."""
+
+    BASE = {"summary": "s", "severity": "Medium", "points": 2, "affects": "a.py",
+            "evidence": "e", "acs": ["one"], "steps": "s", "fix": "f"}
+
+    def _fenced(self, block: str) -> str:
+        return ff._render("bug", "BG-9999", "a title", "2026-07-29",
+                          {**self.BASE, "summary": f"before\n\n{block}\n\nafter"})
+
+    def test_an_unlabelled_opening_fence_is_given_a_language(self) -> None:
+        body = self._fenced("```\ngit status\n```")
+        self.assertIn("```text\ngit status\n```", body,
+                      "the bare opener survived: MD040 refuses this artefact")
+
+    def test_the_closing_fence_is_never_given_a_language(self) -> None:
+        """A language on a closer is not a closer (CommonMark 4.5), so a naive
+        'label every fence line' fix releases the block early and turns the illustration
+        beneath it into live document content."""
+        body = self._fenced("```\ngit status\n```")
+        self.assertNotIn("```text\ngit status\n```text", body)
+        opener, closer = [i for i, ln in enumerate(body.splitlines())
+                          if ln.strip().startswith("```")][:2]
+        lines = body.splitlines()
+        self.assertEqual(lines[closer].strip(), "```", "the closer was labelled")
+        self.assertEqual(lines[opener].strip(), "```text")
+
+    def test_a_fence_that_already_declares_a_language_is_untouched(self) -> None:
+        body = self._fenced("```python\nx = 1\n```")
+        self.assertIn("```python\nx = 1\n```", body)
+        self.assertNotIn("```text", body)
+
+    def test_the_authors_content_is_preserved_verbatim(self) -> None:
+        """Only the missing language is supplied - nothing inside the block is rewritten,
+        including lines that would otherwise be normalised as prose."""
+        body = self._fenced("```\nsome_snake_case and > **Points:** 99\n```")
+        self.assertIn("some_snake_case and > **Points:** 99", body,
+                      "content inside a fence was rewritten by a prose normaliser")
+
+    def test_a_longer_opening_run_keeps_its_own_length(self) -> None:
+        """A ````markdown wrapper's inner ``` is CONTENT, not a second opener - labelling it
+        would corrupt an illustration of markdown itself, which this repo files constantly."""
+        body = self._fenced("````markdown\n```\ninner\n```\n````")
+        self.assertIn("````markdown\n```\ninner\n```\n````", body,
+                      "the inner fence of a longer-run block was treated as an opener")
+
+    def test_labelling_keeps_the_openers_own_run_length(self) -> None:
+        """A four-backtick block wrapping a three-backtick illustration, UNLABELLED. Rewriting
+        the opener to a fixed ``` makes the inner fence close the outer block, so the rest of
+        the illustration escapes into the document. Caught by mutation: the sibling test used a
+        ````markdown opener, which already carries an info string and is never labelled, so
+        nothing covered the run length of a fence this function actually rewrites."""
+        body = self._fenced("````\n```\ninner\n```\n````")
+        self.assertIn("````text\n```\ninner\n```\n````", body)
+        opener = next(ln for ln in body.splitlines() if ln.strip().endswith("text"))
+        self.assertEqual(opener.strip(), "````text",
+                         "the outer fence was rewritten at a different run length")
+
+    def test_a_tilde_fence_is_labelled_too(self) -> None:
+        body = self._fenced("~~~\nplain\n~~~")
+        self.assertIn("~~~text\nplain\n~~~", body)
+
+    def test_a_fence_inside_an_indented_code_block_is_content(self) -> None:
+        """The correctness defect an independent reviewer found. `fence_step` has no notion of
+        a four-space indented code block, so a literal ``` inside one was taken for a real
+        fence. That desynchronised the state machine TWICE over: the author's content was
+        rewritten, and the genuine bare opener further down was consumed as that block's closer
+        and left bare - so the function corrupted the document AND still failed MD040 on the
+        input that motivated it."""
+        block = ("    ```\n    literal opener only\n\nreal block:\n\n"
+                 "```\nlive content\n```")
+        body = self._fenced(block)
+        self.assertIn("    ```\n    literal opener only", body,
+                      "content inside an indented code block was rewritten")
+        self.assertIn("```text\nlive content\n```", body,
+                      "the real bare opener was consumed as the indented block's closer")
+
+    def test_line_endings_are_preserved(self) -> None:
+        """A CRLF document came back with a single LF spliced into the opener line."""
+        out = sdlc_md.normalise_fence_languages("intro\r\n```\r\nx\r\n```\r\n")
+        self.assertEqual(out, "intro\r\n```text\r\nx\r\n```\r\n")
+
+    def test_an_indented_fence_keeps_its_indent(self) -> None:
+        """A surviving mutant: dropping the indent when labelling would de-indent a fence
+        inside a list item and break the list. Nothing covered it."""
+        out = sdlc_md.normalise_fence_languages("- item\n\n  ```\n  x\n  ```\n")
+        self.assertEqual(out, "- item\n\n  ```text\n  x\n  ```\n")
+
+    def test_a_filed_artefact_passes_the_real_markdown_lane(self) -> None:
+        """The lane-level assertion, not the unit one. A unit test can only assert the shape
+        this fix chose; markdownlint is the thing that actually refused two of this run's
+        findings, so the guard has to be the tool itself or a new rule can silently reopen it."""
+        import shutil
+        import subprocess
+        mdl = shutil.which("markdownlint") or str(
+            Path(__file__).resolve().parents[5] / "node_modules/.bin/markdownlint")
+        if not Path(mdl).exists():
+            self.skipTest("markdownlint not installed - CI enforces this lane")
+        body = self._fenced("```\ngit status\n```")
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "BG-9999-a-title.md"
+            p.write_text(body, encoding="utf-8")
+            r = subprocess.run([mdl, "--disable", "MD013", "MD041", "--", str(p)],
+                               capture_output=True, text=True, check=False)
+        self.assertNotIn("MD040", r.stdout + r.stderr,
+                         f"the filer minted an artefact its own gate refuses:\n{r.stdout}{r.stderr}")
+
+    def test_an_unclosed_fence_is_left_alone(self) -> None:
+        """An opener with no closer is malformed markdown either way; supplying a language
+        would make a broken block look deliberate rather than leave it visibly broken."""
+        body = self._fenced("```\nnever closed")
+        self.assertIn("```\nnever closed", body)
+        self.assertNotIn("```text", body)
+
+
+class AFindingIsPricedWhereTheWorkWasTests(unittest.TestCase):
+    """US0561 (CR0500). A finding raised while a delivery batch is open is that batch's work.
+    Without the stamp, every finding reads as close overhead whenever it was actually raised,
+    and the claim 'defects are found inside the sprint' cannot be checked at all."""
+
+    FIELDS = {"title": "a defect", "summary": "s", "severity": "Medium", "points": 2,
+              "affects": "a.py", "evidence": "e", "acs": ["one"], "steps": "s", "fix": "f"}
+
+    def _repo(self):
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (root / "a.py").write_text("x = 1\n", encoding="utf-8")   # the declared Affects resolves
+        return root
+
+    def _file(self, root):
+        with contextlib.redirect_stdout(io.StringIO()):
+            f = dict(self.FIELDS)
+            res = ff.file_finding(root, "bug", f.pop("title"), f)
+        return Path(res["path"]).read_text(encoding="utf-8")
+
+    def test_a_finding_records_the_open_batch(self) -> None:
+        from lib import run_state
+        root = self._repo()
+        run_state.start_batch(root, ["US0001"])
+        text = self._file(root)
+        stamped = sdlc_md.extract_field(text, "Raised-in-batch") or ""
+        self.assertTrue(stamped and "none open" not in stamped,
+                        f"the finding was not attributed to the open batch: {stamped!r}")
+        self.assertIn("BG0001", run_state.open_batch(root)["findings_raised"],
+                      "the batch span does not carry the finding raised against it")
+
+    def test_the_filer_attributes_through_the_real_path(self) -> None:
+        """M11 from the guard review: making `_attribute_to_open_batch` always return None
+        SURVIVED, because no test covered attribution THROUGH the filer - only the run_state
+        helper underneath it. This asserts the span itself gained the id."""
+        from lib import run_state
+        root = self._repo()
+        run_state.start_batch(root, ["US0001"])
+        self._file(root)
+        self.assertIn("BG0001", run_state.open_batch(root)["findings_raised"],
+                      "the filer did not record the finding against the open batch")
+
+    def test_filing_is_not_ten_seconds_slower_for_the_attribution(self) -> None:
+        """The attribution took the SAME advisory lock the filer already holds. flock is
+        per open-file-description, so the process contended with itself for the whole 10s
+        timeout on every filing - and `allocation_lock` then proceeds UNSERIALISED, losing
+        the very serialisation it exists for. Measured, because a comment cannot fail."""
+        import time
+        from lib import run_state
+        root = self._repo()
+        run_state.start_batch(root, ["US0001"])
+        start = time.monotonic()
+        self._file(root)
+        elapsed = time.monotonic() - start
+        self.assertLess(elapsed, 3.0,
+                        f"filing took {elapsed:.1f}s - the attribution is re-entering the "
+                        f"allocation lock the filer already holds")
+
+    def test_filing_never_fabricates_a_run_state(self) -> None:
+        """`_mutate` persists whatever its callback returns, so seeding a blank record minted
+        a run state on the first filing in a project that had never opened one - breaking
+        `read`'s "never fabricated" invariant and letting `sprint close` proceed against a
+        phantom running run with a null id."""
+        root = self._repo()
+        state = root / "sdlc-studio" / ".local" / "run-state.json"
+        self.assertFalse(state.exists())
+        self._file(root)
+        self.assertFalse(state.exists(),
+                         "filing a finding minted a run state in a project with no run")
+
+    def test_no_open_batch_is_stated_not_guessed(self) -> None:
+        """An absence stated is evidence; an absence omitted is indistinguishable from an
+        attribution nobody made. Attributing to the last CLOSED span would price a close-time
+        finding as batch work and invert the very measurement this exists to take."""
+        from lib import run_state
+        root = self._repo()
+        run_state.start_batch(root, ["US0001"])
+        run_state.close_batch(root, reviewer="reviewer-a", author="author-b", verdict="APPROVE")
+        text = self._file(root)
+        stamped = sdlc_md.extract_field(text, "Raised-in-batch") or ""
+        self.assertIn("none open", stamped,
+                      f"a finding raised outside any batch was attributed to one: {stamped!r}")
+
+
 if __name__ == "__main__":
     unittest.main()

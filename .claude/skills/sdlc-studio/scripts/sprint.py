@@ -69,7 +69,6 @@ def carry_forward_close_record(root, carried=None) -> dict:
     return {"policy": policy, "carried": items, "carried_count": len(items)}
 
 
-
 PRIORITY_FIELD = {"bug": "Severity", "cr": "Priority", "story": "Priority"}
 # One weight scale across types (documented in reference-sprint.md): bug Severity and
 # CR/story Priority - including the P1-P4 form - map onto the same rank, so a merged
@@ -1220,6 +1219,12 @@ def _built_not_closed(root: Path, uid: str, text: str) -> bool:
     status = (sdlc_md.extract_field(text, "Status") or "").strip()
     if status in _CLOSED_STATUSES:
         return False
+    if sdlc_md.depth_retracted(text):
+        # A reopen withdrew this unit's evidence. The verify-report may still read green -
+        # BG0372's vacuous tests kept passing after the review judged them meaningless - so the
+        # retraction has to outrank it, or the two mechanisms disagree and the louder one is
+        # the stale one.
+        return False
     return _verifiers_all_green(root, uid)
 
 
@@ -1286,6 +1291,7 @@ def _token_forecast(root: Path, batch: list[dict], goal: str = "done") -> dict:
     units: dict[str, dict] = {}
     unpriced: list[str] = []
     built_not_closed: list[str] = []
+    built_points = 0
     total_points = 0
     gate = effort_gate(root)   # the compulsion in force for this whole plan
     for it in batch:
@@ -1293,8 +1299,11 @@ def _token_forecast(root: Path, batch: list[dict], goal: str = "done") -> dict:
         uid = sdlc_md.norm_id(it["id"])
         if _built_not_closed(root, uid, text):
             # Green verifiers, not yet closed: a close-candidate, not work to build. Kept out of
-            # the total so a delivered-but-open unit does not inflate the build forecast.
+            # the total so a delivered-but-open unit does not inflate the build forecast. The
+            # points it removes are carried too: a forecast below the batch total has to explain
+            # the difference where it is printed, not leave a reader to work it out.
             built_not_closed.append(uid)
+            built_points += sdlc_md.read_points(text) or 0
             continue
         points = it.get("points")
         if points is None:  # priority/manual order never stamped one - read it here
@@ -1326,7 +1335,7 @@ def _token_forecast(root: Path, batch: list[dict], goal: str = "done") -> dict:
             "fixed_unmeasured": fixed_info["unmeasured"], "fixed_basis": fixed_info["reason"],
             "rung": rung, "rung_unmeasured": rung_unmeasured,
             # Units already built (green verifiers) but not yet closed: a close, not a build.
-            "built_not_closed": built_not_closed,
+            "built_not_closed": built_not_closed, "built_points": built_points,
             "all_built": bool(built_not_closed and not per_unit and not unpriced),
         "scope": FORECAST_SCOPE, "excludes": list(FORECAST_EXCLUDES),
             "whole_sprint_excess": whole_sprint_excess(root),
@@ -2673,7 +2682,7 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         # parallel worktree build could take. Offered only when it genuinely does; the plan
         # states the mode and why the alternative was or was not available.
         "delivery_mode": delivery_mode_offer(root, batch) if batch else None,
-        # A report-only file-disjoint partition of the batch into lanes (US0349). Additive: it
+        # A report-only file-disjoint partition of the batch into lanes. Additive: it
         # informs how the work would split across teams/worktrees, and feeds NO selection or
         # ordering decision - delivery_mode above owns the parallel/sequential choice.
         "lane_partition": lane_partition(root, batch) if batch else None,
@@ -2794,7 +2803,7 @@ def build_authoring_plan(repo_root: Path | str, prd_path: str) -> dict:
 def pre_plan_blocker_sweep(repo_root: Path | str) -> dict:
     """Pre-plan step: surface units whose blockers have cleared so newly-unblocked work is
     eligible for the batch, mirroring the reconcile-before-plan gate. Advisory and fail-safe -
-    it proposes Blocked -> Ready candidates and never transitions or blocks planning (US0050)."""
+    it proposes Blocked -> Ready candidates and never transitions or blocks planning."""
     try:
         return blocker_sweep.sweep(repo_root)
     except Exception:  # noqa: BLE001 - the sweep is advisory; never break planning on its failure
@@ -3058,7 +3067,7 @@ def _render_delivery_mode(data: dict) -> None:
 
 
 def _render_lane_partition(data: dict) -> None:
-    """The report-only file-disjoint lanes (US0349), for every batch. Additive - it drives no
+    """The report-only file-disjoint lanes, for every batch. Additive - it drives no
     plan decision; it shows how the batch would split across teams or worktrees, and names any
     unit that could not be placed because it declared no Affects."""
     lp = data.get("lane_partition")
@@ -3478,6 +3487,28 @@ def _render_fixed_term(tf: dict) -> None:
               f"= {point_subtotal:,} tokens")
 
 
+def exclusion_line(tf: dict) -> str:
+    """The BUILT-NOT-CLOSED exclusion sentence, including the points it removes.
+
+    A forecast below the batch total has to explain the difference where it is printed. The
+    first version claimed "of the batch's N" using `priced + removed`, which is FALSE whenever
+    any unit carries no points: `points` is the PRICED subtotal - `_token_forecast` skips an
+    unpriced unit before accumulating it - so the two do not add to the batch. The unpriced
+    units are named rather than folded into a total that does not add up."""
+    built = tf.get("built_not_closed") or []
+    removed = tf.get("built_points") or 0
+    priced = tf.get("points", 0)
+    unpriced_n = len(tf.get("unpriced") or [])
+    tail = ""
+    if removed:
+        tail = (f" - this removes {removed} point(s), so the forecast prices {priced} "
+                f"point(s) of a batch carrying {priced + removed} priced point(s)")
+        if unpriced_n:
+            tail += f" plus {unpriced_n} unit(s) with no points at all"
+    return (f"excluded from the build forecast (BUILT-NOT-CLOSED, close them): "
+            f"{', '.join(built)}{tail}")
+
+
 def _render_token_forecast(data: dict) -> None:
     """LEAD WITH WHAT SPRINTS HAVE ACTUALLY COST. The forecast follows, as a range, and it STATES
     ITS RATE AND WHERE THAT RATE CAME FROM - a bare number would read as a fact, when it is a
@@ -3498,8 +3529,7 @@ def _render_token_forecast(data: dict) -> None:
         # forecast so a delivered-but-open unit is not priced as new work. Printed BEFORE the
         # tokens guard so a batch whose only unbuilt units are unpriced (tokens == 0) still shows
         # its close-candidates rather than rendering nothing.
-        print(f"  excluded from the build forecast (BUILT-NOT-CLOSED, close them): "
-              f"{', '.join(built)}")
+        print(f"  {exclusion_line(tf)}")
     marginal_unmeasured = tf.get("marginal_unmeasured")
     # Nothing to render only when there is genuinely nothing to say: no cost, no unmeasured
     # marginal to name, and no unpriced units to surface.
@@ -4318,9 +4348,167 @@ def _close_lesson_repeats(root) -> bool:
     return True
 
 
+def review_coverage(root, units: list[str]) -> dict:
+    """Per unit: is it covered by an INDEPENDENT adversarial pass, and by what.
+
+    Three records can cover a unit, and every one of them proves independence the same way -
+    the reviewer is not the author. A per-unit critic verdict, a recorded adversarial evidence
+    pass, or a batch/sprint-level review naming the unit. A self-review covers NOTHING: it is
+    the context that wrote the code agreeing with itself, which is the whole failure the
+    two-role rule exists to stop.
+
+    The surface is the units passed in - the BATCH's units - not the run's whole set. A review
+    recorded over batch 1 therefore leaves batch 2 uncovered, which is the point: the review
+    happens at the cadence the work lands on.
+    """
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    out: dict[str, dict] = {}
+    for raw in units:
+        uid = sdlc_md.norm_id(raw)
+        if not uid:
+            continue
+        by = None
+        for label, getter, verdicted in (("per-unit verdict", critic.verdict_for, True),
+                                         ("adversarial evidence", critic.evidence_for, False),
+                                         ("batch review", critic.sprint_review_for, True)):
+            try:
+                rec = getter(root, uid)
+            except Exception as exc:  # noqa: BLE001 - a missing ledger is "not covered"
+                sdlc_md.debug("sprint.review_coverage", exc)
+                rec = None
+            if not rec:
+                continue
+            if not verdicted:
+                # An EVIDENCE row carries no verdict column at all - recording the pass IS the
+                # claim. Judging it by a verdict it cannot have made the whole lane dead code.
+                # Independence is still proven, by the same ids the other two are held to.
+                row = rec[0] if isinstance(rec, list) else rec
+                if not isinstance(row, dict):
+                    continue
+                reviewer = critic._id(str(row.get("reviewer") or ""))
+                author = critic._id(str(row.get("author") or ""))
+                if not reviewer or not author or reviewer == author:
+                    continue
+                if author == critic.PRE_GATE:
+                    continue
+                by = label
+                break
+            # `sprint_covers_independently` is THE predicate: an APPROVE whose reviewer and
+            # author are both recorded and distinct. Reimplementing the independence half here
+            # and forgetting the verdict half let a recorded REJECT clear this gate while the
+            # tool printed "it clears no unit's gate" - the exact drift a second copy of a rule
+            # produces, in the function whose docstring claimed to avoid it.
+            if not critic.sprint_covers_independently(root, uid, rec):
+                continue
+            # ...and the grandfather marker is not independence. `critic.is_independent`
+            # rejects PRE_GATE explicitly; `sprint_covers_independently` only tests
+            # non-empty-and-distinct, so a migration sentinel cleared this gate. Both
+            # predicates have to agree before a unit counts as reviewed.
+            if not critic.is_independent(rec):
+                continue
+            by = label
+            break
+        out[uid] = {"covered": by is not None, "by": by}
+    return out
+
+
+def uncovered_units(root, units: list[str]) -> list[str]:
+    """The units in `units` no independent review covers, in the order given."""
+    cov = review_coverage(root, units)
+    return [u for u, rec in cov.items() if not rec["covered"]]
+
+
+def _close_review_coverage(root, retro, state):
+    """Close step: REFUSE while any unit in the run's batch carries no independent review.
+
+    This is the whole placement change. The close asserts that coverage EXISTS; it does not
+    perform the review. A close that performs it turns every finding into close work by
+    definition, which is how the previous run spent longer closing than delivering.
+
+    First in the chain, deliberately: it is a cheap read, and refusing here costs seconds
+    instead of refusing after the full gate run. It does NOT precede the retro - `cmd_close`
+    resolves (and scaffolds) the retro before the chain starts, so a first close still mints
+    one. Stated exactly, because an independent reviewer caught the stronger claim being false.
+    """
+    batch = [u for u in (sdlc_md.norm_id(x) for x in (state.get("batch") or [])) if u]
+    placement = _finding_placement(root)
+    if not batch:
+        dropped = [c.get("id") for c in (state.get("batch_changes") or [])
+                   if c.get("action") == "drop" and c.get("id")]
+        why = ("no batch on the run state" if not dropped else
+               f"the batch is EMPTY because {len(dropped)} unit(s) were dropped from it "
+               f"({', '.join(str(d) for d in dropped[:8])}"
+               f"{', ...' if len(dropped) > 8 else ''}) - nothing is left to review, but a "
+               f"batch emptied by drops is not a batch that passed review")
+        return True, f"{why}; {placement}", ""
+    missing = uncovered_units(root, batch)
+    covered = f"{len(batch) - len(missing)}/{len(batch)} unit(s) covered by an independent pass"
+    if not missing:
+        return True, f"{covered}; {placement}", ""
+    detail = (f"  {covered}\n"
+              f"  {len(missing)} unit(s) in this batch are covered by NO independent review: "
+              f"{', '.join(missing)}\n"
+              f"  {placement}\n"
+              f"  The close certifies that a review happened; it does not perform one.")
+    remedy = ("review the uncovered units at their delivery batch boundary and record it - "
+              f"`sprint.py review-batch --units {','.join(missing[:6])}"
+              f"{',...' if len(missing) > 6 else ''} --reviewer <who> --author <who> "
+              "--verdict APPROVE --findings '<what was probed>'`. A self-review does not clear "
+              "this: the reviewer must differ from the author.")
+    return False, detail, remedy
+
+
+def _finding_placement(root) -> str:
+    """Where this run's findings were raised: at a batch boundary, or at the close.
+
+    The Sprint Goal this mechanism serves says defects are found INSIDE the sprint. That claim
+    is only falsifiable if the split is recorded, so it is reported whether or not the coverage
+    step refuses."""
+    try:
+        spans = run_state.batches(root)
+    except Exception as exc:  # noqa: BLE001 - a reporting clause must never fail a close
+        sdlc_md.debug("sprint._finding_placement", exc)
+        return "finding placement: UNREADABLE"
+    raised = sum(len(s.get("findings_raised") or []) for s in spans)
+    reviewed = sum(1 for s in spans if s.get("reviewed_at"))
+    # BOTH numbers, or the claim is not falsifiable. The first version printed only the
+    # in-batch count beside a sentence naming "the number this run drives to zero" - which was
+    # the OTHER number, and it appeared nowhere. The line read identically for 0 close-time
+    # findings and for 10,000.
+    outside = _findings_outside_batches(root, spans)
+    return (f"finding placement: {raised} raised at a batch boundary, {outside} raised "
+            f"outside one, across {reviewed}/{len(spans)} reviewed batch(es). A finding "
+            f"raised outside a batch is close work - {outside} is the number this run "
+            f"drives to zero")
+
+
+def _findings_outside_batches(root, spans) -> int:
+    """Findings this run raised that no batch span claims. Counted from the run's own
+    artefacts rather than inferred, so the figure cannot be a constant."""
+    try:
+        import run_state  # noqa: PLC0415
+        state = run_state.read(root)
+    except Exception as exc:  # noqa: BLE001 - a reporting clause never fails a close
+        sdlc_md.debug("sprint._findings_outside_batches", exc)
+        return 0
+    claimed = {sdlc_md.norm_id(f) for s in spans for f in (s.get("findings_raised") or [])}
+    started = state.get("started_at") or ""
+    outside = 0
+    for type_ in ("bug", "cr"):
+        for path in sdlc_md.artifact_files(type_, Path(root)):
+            uid = sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or "")
+            if not uid or uid in claimed:
+                continue
+            text = sdlc_md.read_text_safe(path)
+            raised_in = (sdlc_md.extract_field(text, "Raised-in-batch") or "")
+            if raised_in.startswith("none open") and started:
+                outside += 1
+    return outside
+
+
 # Chain order is the ceremony's order; cmd_close resolves each step through globals() at
 # call time so a test can patch one step without rebuilding the table.
-_CLOSE_CHAIN = ("retro-validate", "retro-extract", "lessons-summary",
+_CLOSE_CHAIN = ("review-coverage", "retro-validate", "retro-extract", "lessons-summary",
                 "gate", "handoff", "reconcile", "review-anchor")
 
 #: The machine-maintained status block inside the review anchor. DELIMITED, because the anchor is
@@ -4508,7 +4696,7 @@ def _prefill_retro(root, path, batch, state) -> None:
     text = text.replace("{{goal}}", state.get("sprint_goal") or "-")
     sdlc_md.atomic_write(p, text)
     # A run accepted over its standing appetite records the over-commitment in the retro, so a
-    # later reader asking why it overran finds the trace (US0360). No-op for a within-appetite run.
+    # later reader asking why it overran finds the trace. No-op for a within-appetite run.
     import retro  # noqa: PLC0415 - deferred, like the chain's other retro imports
     retro.record_overage_in_retro(root, p)
 
@@ -4962,7 +5150,7 @@ def _derive_parent_requests(root, scope_ids=None) -> list[str]:
 
 
 def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -> int:
-    """The close tail (US0237): derive parent epics terminal, write the run's velocity row,
+    """The close tail: derive parent epics terminal, write the run's velocity row,
     and run a final reconcile. The per-unit cascade ticks each epic's breakdown checkbox but
     does not set the epic's own Status, so the derivation happens here - scoped to the
     parents of THIS run's units, never the whole repo. Idempotent: an already-terminal epic
@@ -5174,6 +5362,32 @@ def _draw_report(root, retro_id) -> None:
               f"unaffected; draw it with `sprint.py report --id {retro_id}`", file=sys.stderr)
 
 
+def coverage_blockers(root, state) -> list:
+    """The review-coverage chain step, asked READ-ONLY, as a list of preflight blockers.
+
+    Module-level rather than a closure so it can be tested by CALLING it. The first test of
+    this asserted the call site's text appeared in `close_preflight`'s source - which the
+    closure's own `def` line supplied, so deleting the call left the test green."""
+    batch = [u for u in (sdlc_md.norm_id(x) for x in (state.get("batch") or [])) if u]
+    if not batch:
+        return []
+    try:
+        missing = uncovered_units(root, batch)
+    except Exception as exc:  # noqa: BLE001 - a read-only report never fails the preflight
+        sdlc_md.debug("sprint.coverage_blockers", exc)
+        return []
+    if not missing:
+        return []
+    return [{"stage": "review-coverage",
+             "detail": (f"{len(missing)} of {len(batch)} unit(s) are covered by no independent "
+                        f"review: {', '.join(missing[:8])}"
+                        f"{', ...' if len(missing) > 8 else ''}"),
+             "remedy": ("review them at their delivery batch boundary and record it with "
+                        "`sprint.py review-batch --reviewer <who> --author <who> --verdict "
+                        "APPROVE --findings '<what was probed>'` - a self-review does not "
+                        "clear it")}]
+
+
 def close_preflight(root, retro_id: str | None = None) -> dict:
     """Every unmet close prerequisite, in ONE read-only pass.
 
@@ -5198,6 +5412,7 @@ def close_preflight(root, retro_id: str | None = None) -> dict:
     def block(stage: str, detail: str, remedy: str) -> None:
         blockers.append({"stage": stage, "detail": detail, "remedy": remedy})
 
+
     try:
         state = run_state.read(root)
     except run_state.RunStateError as exc:
@@ -5214,6 +5429,8 @@ def close_preflight(root, retro_id: str | None = None) -> dict:
     if not state.get("sprint_goal_verdict"):
         block("goal-verdict", "the Sprint Goal is unjudged",
               '`sprint.py goal-verdict --verdict achieved|partial|missed --note "..."`')
+    for entry in coverage_blockers(root, state):
+        block(entry["stage"], entry["detail"], entry["remedy"])
 
     # The retro: reported, never scaffolded. `close` mints one when omitted; that is an action.
     if retro_id:
@@ -5362,8 +5579,8 @@ def _render_preflight(data: dict) -> None:
 #: it is read-only already and the preflight has just run it against the real tree, so running
 #: it again in the copy would double the one genuinely expensive step of a preview whose whole
 #: point is to be cheap.
-DRY_RUN_ACTION_STEPS = ("retro-validate", "retro-extract", "lessons-summary",
-                        "handoff", "reconcile", "review-anchor")
+DRY_RUN_ACTION_STEPS = ("review-coverage", "retro-validate", "retro-extract",
+                        "lessons-summary", "handoff", "reconcile", "review-anchor")
 
 
 def close_dry_run(root, retro_id: str | None = None) -> dict:
@@ -5711,7 +5928,7 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
 def appetite_overage_line(root: Path | str) -> str | None:
     """One line stating an accepted over-appetite as the over-commitment it was - N units against a
     standing appetite of M, on each axis actually raised - or None for an ordinary run. Read by the
-    close (US0360) and the retro, so the overage cannot be reported as the raised ceiling."""
+    close and the retro, so the overage cannot be reported as the raised ceiling."""
     over = run_state.appetite_overage(root)
     if not over:
         return None
@@ -5723,6 +5940,66 @@ def appetite_overage_line(root: Path | str) -> str | None:
         parts.append(f"{m['accepted']:g}min against a standing {m['standing']:g}min")
     return "OVER APPETITE - this batch was " + "; ".join(parts) + " (the ceiling was raised to "\
            "accept it, and the run is reported against the standing appetite, not that ceiling)"
+
+
+def cmd_review_batch(args: argparse.Namespace) -> int:
+    """Record the independent pass over the open delivery batch and close its span.
+
+    Delegates the independence proof to `critic.record_sprint_review`, which already refuses a
+    missing reviewer, a missing author, a reviewer equal to the author, an empty findings text
+    and a verdict that is neither APPROVE nor REJECT. A second implementation of those rules
+    would be a second place for them to drift."""
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    root = args.root
+    if args.open_units:
+        ids = [u.strip() for u in args.open_units.replace(",", " ").split() if u.strip()]
+        run_state.start_batch(root, ids)
+        print(f"delivery batch OPENED over {len(ids)} unit(s): {', '.join(ids)}")
+        return 0
+    missing = [f"--{f}" for f in ("reviewer", "author", "findings")
+               if not (getattr(args, f, None) or "").strip()]
+    if missing:
+        print(f"review-batch refused: {', '.join(missing)} required to RECORD a review "
+              f"(they are not needed by --open, which starts a span). Independence is proven, "
+              f"never assumed, and an empty adversarial pass is not evidence.", file=sys.stderr)
+        return 2
+    span = run_state.open_batch(root)
+    if args.units:
+        units = [u.strip() for u in args.units.replace(",", " ").split() if u.strip()]
+    elif span:
+        units = list(span.get("units") or [])
+    else:
+        print("review-batch refused: no delivery batch is open and --units was not given - a "
+              "review must name the units it covers, never guess them", file=sys.stderr)
+        return 2
+    if not units:
+        print("review-batch refused: the open batch names no units", file=sys.stderr)
+        return 2
+    try:
+        path = critic.record_sprint_review(root, units, args.reviewer, args.author,
+                                           args.verdict, args.findings, base=args.base or "")
+    except ValueError as exc:
+        print(f"review-batch refused: {exc}", file=sys.stderr)
+        return 2
+    span_units = {sdlc_md.norm_id(u) for u in (span.get("units") or [])} if span else set()
+    reviewed_units = {sdlc_md.norm_id(u) for u in units}
+    if span and span_units <= reviewed_units:
+        run_state.close_batch(root, reviewer=args.reviewer, author=args.author,
+                              verdict=args.verdict, findings=args.findings)
+    elif span:
+        # The review named fewer units than the span holds. Closing it would stamp the span
+        # reviewed by a pass that never looked at part of it, count it in the reviewed
+        # numerator, and - because `open_batch` then returns None - silently drop the
+        # attribution of every finding filed afterwards. The record stands; the span does not.
+        print(f"  note: the open batch holds {len(span_units)} unit(s) this review did not "
+              f"name ({', '.join(sorted(span_units - reviewed_units))}), so the span stays "
+              f"OPEN. The review is recorded against the units it actually covered.")
+    verdict = (args.verdict or "").upper()
+    print(f"batch review recorded ({verdict}) over {len(units)} unit(s) -> {path}")
+    if verdict == "REJECT":
+        print("  REJECT: the batch was reviewed and rejected. It clears no unit's gate - fix "
+              "the findings and record a fresh pass.")
+    return 0
 
 
 def cmd_batch(args: argparse.Namespace) -> int:
@@ -6154,7 +6431,7 @@ def cmd_close(args: argparse.Namespace) -> int:
     if trend:
         print(f"close: {trend}")
     # An OVER-APPETITE batch is reported as the over-commitment it was, not as the raised ceiling
-    # (US0360). Placed above every refusal so a close that stops later still states it.
+    # Placed above every refusal so a close that stops later still states it.
     overage = appetite_overage_line(root)
     if overage:
         print(f"close: {overage}")
@@ -6519,7 +6796,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
         resolved = data["capacity"]["appetite"]
         # Record the ACCEPTED appetite AND the STANDING one it was measured against (the sprint
         # capacity), so an over-appetite batch accepted with --appetite-units does not read as
-        # though it fitted (US0359). The overage the close and retro report is derived from this.
+        # though it fitted. The overage the close and retro report is derived from this.
         std = capacity(args.root)
         appetite = run_state.appetite_record(
             accepted_units=resolved["units"], accepted_minutes=resolved["minutes"],
@@ -7818,6 +8095,32 @@ def build_parser() -> argparse.ArgumentParser:
     bt.add_argument("--format", choices=("text", "json"), default="text")
     bt.add_argument("--root", default=".", help="Repo root (default: .)")
     bt.set_defaults(func=cmd_batch)
+
+    rb = sub.add_parser(
+        "review-batch",
+        help="Record the INDEPENDENT adversarial pass over the open delivery batch, and close "
+             "the span. This is the review point: a batch reaching the project's commit "
+             "threshold is reviewed HERE, so a finding is delivery work in the batch that "
+             "caused it rather than close overhead. `sprint close` refuses a batch carrying "
+             "units no such pass covered. Reviewer and author must differ - a self-review "
+             "clears nothing.")
+    rb.add_argument("--units", default=None,
+                    help="comma-separated unit ids (default: the open batch span's units)")
+    # NOT required at the parser: `--open` starts a span and uses none of them, so requiring
+    # them made the documented open invocation exit 2 and left the whole span mechanism
+    # unreachable from any documented CLI form. They are required for a REVIEW, and refused
+    # in the command where that distinction can actually be made.
+    rb.add_argument("--reviewer", default=None, help="who ran the adversarial pass")
+    rb.add_argument("--author", default=None, help="who wrote the code being reviewed")
+    rb.add_argument("--verdict", default="APPROVE", help="APPROVE or REJECT")
+    rb.add_argument("--findings", default=None,
+                    help="what was probed and what was found - an empty pass is not evidence")
+    rb.add_argument("--base", default="", help="the git base the review's diff was taken from")
+    rb.add_argument("--open", dest="open_units", default=None,
+                    help="instead of reviewing: OPEN a new batch span over these unit ids")
+    rb.add_argument("--format", choices=("text", "json"), default="text")
+    rb.add_argument("--root", default=".", help="Repo root (default: .)")
+    rb.set_defaults(func=cmd_review_batch)
 
     ln = sub.add_parser(
         "lane",

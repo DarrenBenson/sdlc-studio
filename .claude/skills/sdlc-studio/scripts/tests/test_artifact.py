@@ -2406,5 +2406,28 @@ class SuppliedContentLandsTests(unittest.TestCase):
         self.assertTrue(refuses, "no type refuses, so the check cannot be failing on anything")
 
 
+class ArtifactNewNormalisesFencesTooTests(unittest.TestCase):
+    """M15 from the guard review: the `artifact.py` half of the fence fix was entirely
+    uncovered - every test exercised `file_finding._render` only, so deleting the call here
+    survived. Two writers inherit the normaliser; two writers need holding."""
+
+    def test_a_bare_fence_in_an_artifact_body_is_labelled(self) -> None:
+        import sys
+        from pathlib import Path as _P
+        sys.path.insert(0, str(_P(__file__).resolve().parent.parent / "lib"))
+        import sdlc_md as _md
+        body = "# X\n\n> **Status:** Open\n\n## Summary\n\n```\ngit status\n```\n"
+        self.assertIn("```text\ngit status\n```", _md.normalise_fence_languages(body))
+
+    def test_the_writer_calls_it(self) -> None:
+        """The call SITE, not the helper. Asserted by source because `artifact new` needs a
+        full workspace; the helper's own behaviour is covered above and in test_file_finding."""
+        import inspect
+        src = inspect.getsource(artifact)
+        self.assertIn("normalise_fence_languages", src,
+                      "artifact.py does not normalise fences, so it can mint an artefact "
+                      "markdownlint MD040 refuses")
+
+
 if __name__ == "__main__":
     unittest.main()

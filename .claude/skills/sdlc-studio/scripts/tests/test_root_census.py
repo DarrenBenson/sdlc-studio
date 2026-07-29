@@ -316,14 +316,24 @@ class DeclaredIdsCoverTheCensusTests(unittest.TestCase):
         scopes = gate.listing_only_scopes(str(REPO))
         undeclared = {m for m in readers
                       if "GATE_LISTING_ONLY" not in (REPO / m).read_text(encoding="utf-8")}
-        if undeclared:
-            # Another module reads this entry for CONTENT without declaring it, so unanimity
-            # correctly withholds the narrowing. The declaration is still the right one to
-            # hold; the SAVING is suspended, and that is a fact about the repository, not
-            # about this module. Filed as a follow-up rather than asserted away.
-            self.assertNotIn("sdlc-studio", scopes)
-            self.skipTest(f"{sorted(undeclared)} read `sdlc-studio` for content; unanimity "
-                          f"withholds the narrowing until each declares or stops reading it")
+        # A module whose read set could not be MEASURED is an unanswered question, and an
+        # unanswered question withholds a narrowing rather than granting it. On this repository
+        # 59 of 170 suite modules measure empty, so the narrowing is withheld here and the
+        # saving is SUSPENDED - a fact about the repository's static readability, not about
+        # this module's declaration, which is still the right one to hold. The rule and its
+        # cost are asserted; the cost is not asserted away.
+        blind = gate.unmeasurable_modules(str(REPO))
+        if undeclared or blind:
+            self.assertNotIn("sdlc-studio", scopes,
+                             "the narrowing was granted while a reader had not agreed to it")
+            notes = " ".join(gate.withheld_narrowings(str(REPO)))
+            self.assertIn("sdlc-studio", notes,
+                          "the narrowing is withheld and nothing says so - the cost is "
+                          "unattributable and reads as a gate that never got faster")
+            self.skipTest(
+                f"withheld: {len(undeclared)} content reader(s) have not declared it and "
+                f"{len(blind)} module(s) could not be measured. The saving returns when those "
+                f"reads are made statically visible.")
         self.assertIsNotNone(scopes.get("sdlc-studio"))
         filed = "sdlc-studio/bugs/BG9999-an-artefact-this-census-never-asks-about.md"
         self.assertFalse(gate.is_test_relevant([filed], str(REPO), structural={filed}))

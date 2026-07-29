@@ -111,6 +111,10 @@ SUPPLIED = "supplied"
 # through `.get(...) or []` because a run opened BEFORE these existed has no such key on disk
 # and must not raise.
 REVIEW_ROUNDS = "review_rounds"
+# A DELIVERY BATCH span: the unit set committed together, and the independent review that
+# covered it. The review belongs HERE, at the cadence the project already commits on, so a
+# finding is delivery work in the batch that caused it rather than close overhead.
+BATCHES = "batches"
 CEILING_OVERRIDES = "review_ceiling_overrides"
 
 # The sentinel for "this round's token cost was not measured", which is NOT the same fact as
@@ -386,7 +390,10 @@ def _blank() -> dict:
             "reopened": [],
             # Likewise `batch_changes`: the drop/add ledger is part of the shape from the start, so
             # a reader never has to test for its presence - it is [] until the batch is first mutated.
-            "batch_changes": []}
+            "batch_changes": [],
+            # Likewise `batches`: the delivery-batch spans and their reviews, [] until the first
+            # boundary, so no reader has to test for the key's presence.
+            BATCHES: []}
 
 
 def _mutate(repo_root: Path | str, fn) -> dict:
@@ -1189,3 +1196,99 @@ def close_run(repo_root: Path | str, outcome: str, handoff: str | None = None) -
     # a closed run that only ever existed there is a sprint whose evidence expires.
     archive(repo_root, state)
     return state
+
+
+def batches(repo_root: Path | str) -> list[dict]:
+    """The run's delivery-batch spans, oldest first.
+
+    An open span is `{units, opened_at, reviewed_at, reviewer, author, verdict,
+    findings_raised}`; closing one adds `findings`, the reviewer's own text. The shape is
+    documented in full because a docstring that lists all-but-one key reads as exhaustive."""
+    raw = read(repo_root).get(BATCHES)
+    return list(raw) if isinstance(raw, list) else []
+
+
+def open_batch(repo_root: Path | str) -> dict | None:
+    """The batch span still awaiting its review, or None.
+
+    Only the LAST span can be open: a batch is closed by being reviewed, and the next one opens
+    after it. Returning the last unreviewed span rather than the first means a reader always
+    gets the batch work is currently landing in."""
+    spans = batches(repo_root)
+    return spans[-1] if spans and not spans[-1].get("reviewed_at") else None
+
+
+def start_batch(repo_root: Path | str, units: list[str], now: str | None = None) -> dict:
+    """Open a delivery-batch span over `units`. Idempotent on an already-open span: the units
+    are merged in, because a batch that grows mid-flight is a batch, not a second one."""
+    stamp = now or sdlc_md.now_iso8601()
+
+    def apply(state: dict) -> dict:
+        state = state or _blank()
+        spans = list(state.get(BATCHES) or [])
+        ids = [sdlc_md.norm_id(u) for u in units if sdlc_md.norm_id(u)]
+        if spans and not spans[-1].get("reviewed_at"):
+            spans[-1] = {**spans[-1], "units": _union(spans[-1].get("units"), ids)}
+        else:
+            # `_union` on the fresh path too: a merge deduped and a first call did not, so the
+            # same argument gave two different unit lists depending on whether a span was open.
+            spans.append({"units": _union([], ids), "opened_at": stamp, "reviewed_at": None,
+                          "reviewer": None, "author": None, "verdict": None,
+                          "findings_raised": []})
+        state[BATCHES] = spans
+        return state
+
+    return _mutate(repo_root, apply)
+
+
+def close_batch(repo_root: Path | str, *, reviewer: str, author: str, verdict: str,
+                findings: str = "", now: str | None = None) -> dict:
+    """Close the open span with the independent review that covered it.
+
+    Refuses when nothing is open: recording a review against no batch would attribute a pass to
+    whatever span happened to be last, which is exactly the misattribution this exists to stop."""
+    stamp = now or sdlc_md.now_iso8601()
+
+    def apply(state: dict) -> dict:
+        state = state or _blank()
+        spans = list(state.get(BATCHES) or [])
+        if not spans or spans[-1].get("reviewed_at"):
+            raise ValueError("no delivery batch is open - `sprint review-batch` reviews the "
+                             "span that work landed in, and there is none to review")
+        spans[-1] = {**spans[-1], "reviewed_at": stamp, "reviewer": reviewer,
+                     "author": author, "verdict": (verdict or "").upper(),
+                     "findings": findings}
+        state[BATCHES] = spans
+        return state
+
+    return _mutate(repo_root, apply)
+
+
+def note_finding(repo_root: Path | str, finding_id: str) -> str | None:
+    """Attribute a filed finding to the open delivery batch. Returns the batch's `opened_at`
+    key, or None when no batch is open - the caller states the absence rather than guessing."""
+    fid = sdlc_md.norm_id(finding_id)
+    if not fid:
+        return None
+    # No run, no attribution, and NOTHING WRITTEN. `_mutate` persists whatever `apply` returns,
+    # so seeding a blank record here minted a run state on the first filing in a project that
+    # had never opened one - breaking `read`'s "never fabricated" invariant and letting the
+    # close proceed against a phantom `running` run with a null id.
+    if not read(repo_root).get(BATCHES):
+        return None
+    holder: list[str | None] = [None]
+
+    def apply(state: dict) -> dict:
+        if not state:
+            return state
+        spans = list(state.get(BATCHES) or [])
+        if not spans or spans[-1].get("reviewed_at"):
+            return state
+        raised = _union(spans[-1].get("findings_raised"), [fid])
+        spans[-1] = {**spans[-1], "findings_raised": raised}
+        state[BATCHES] = spans
+        holder[0] = spans[-1].get("opened_at")
+        return state
+
+    _mutate(repo_root, apply)
+    return holder[0]

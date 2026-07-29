@@ -1,6 +1,7 @@
 # BG0411: A declared gate id resolves against any filename matching the id pattern, and a withheld narrowing is announced only under SDLC_DEBUG
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; each repair verified by applying its own mutant and watching it redden, bytecode purged, python3 -B)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py

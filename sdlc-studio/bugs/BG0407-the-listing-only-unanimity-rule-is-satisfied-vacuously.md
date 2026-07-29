@@ -1,6 +1,7 @@
 # BG0407: The listing-only unanimity rule is satisfied vacuously by the 59 of 170 suite modules whose reads are not statically visible
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; each repair verified by applying its own mutant and watching it redden, bytecode purged, python3 -B)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py

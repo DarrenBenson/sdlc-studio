@@ -1,6 +1,6 @@
 # US0561: A batch-review finding is filed as a delivery unit against the batch that caused it, so its cost is priced where the work was
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0500
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new
@@ -12,13 +12,26 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** a maintainer trying to tell whether the review placement actually changed anything
+**I want** a finding raised while a batch is open to record that batch on the artefact
+**So that** the sprint can report WHERE its defects were found instead of asserting it, and the cost lands on the batch that caused it
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done.
+### AC1: A finding filed while a batch is open records that batch and run on the artefact, so its cost is attributable to the batch that caused it rather than to the close
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::AFindingIsPricedWhereTheWorkWasTests::test_a_finding_records_the_open_batch
+- **Verified:** yes (2026-07-29)
+
+### AC2: The batch span carries the ids raised against it, so the batch can be read back as work-plus-findings rather than work alone
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BatchBoundaryReviewTests::test_findings_raised_against_a_batch_are_recorded_on_it
+- **Verified:** yes (2026-07-29)
+
+### AC3: A finding filed with NO open batch is recorded as such rather than silently attributed to the last one - an absence is stated, never guessed
+
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::AFindingIsPricedWhereTheWorkWasTests::test_no_open_batch_is_stated_not_guessed
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

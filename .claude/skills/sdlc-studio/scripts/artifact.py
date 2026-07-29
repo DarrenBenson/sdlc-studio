@@ -89,7 +89,7 @@ def _alloc_ids(root: Path, type_: str) -> tuple[str, str]:
 
 def _create_status(type_: str, root: Path) -> str:
     """The status a freshly-filed artefact starts in. Findings (bug/cr/rfc) land in `inbox`
-    under schema v3 (EP0014), so a different seat triages them into the workflow proper;
+    under schema v3, so a different seat triages them into the workflow proper;
     every other type - and all types under v2 - keeps its per-type SPEC create status."""
     if type_ in sdlc_md.FINDING_TYPES and _schema_v3(root):
         return sdlc_md.INBOX_STATUS
@@ -387,7 +387,7 @@ def _sizing_line(type_: str, f: dict) -> str:
     creators writing different shapes for the same type). The wrong sizing flag for the type is
     WARNED, never silently dropped (LL0008/BG0149 - a story's `--points` used to vanish)."""
     delivery = type_ in ("story", "bug")
-    # UPGRADE PATH (US0128): a project that has NOT opted into the two-backlog workflow keeps the
+    # UPGRADE PATH: a project that has NOT opted into the two-backlog workflow keeps the
     # pre-two-backlog sizing flow - a CR created with legacy `--points` (and no `--size`) writes
     # `Points`, which the grooming gate still tolerates, rather than being warned-and-dropped into
     # an unsized state that creation would then refuse. Scoped to a CR: the CR is the request an
@@ -964,7 +964,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     # (a not-yet-created file alongside an existing one is legitimate); names the closest basename.
     file_finding.check_affects_resolvable(root, f.get("affects"), type_)
     f["date"] = f.get("date") or date.today().isoformat()
-    f["_root"] = str(root)   # so the renderer can read the project's enforcement (US0128)
+    f["_root"] = str(root)   # so the renderer can read the project's enforcement
     # A bug or a CR created here is a unit `sprint plan` will be asked to plan, and this is a
     # documented create path - not a side door. So it answers to the SAME grooming demand as the
     # finding filer, from the same authority: the body about to be written is judged by the
@@ -1050,7 +1050,9 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
             # path, so the control has a writer - not just prose. Inserted after Created-by.
             body = re.sub(r"(^> \*\*Created-by:\*\*.*$)",
                           rf"\1\n> **Provenance:** {prov}", body, count=1, flags=re.MULTILINE)
-        sdlc_md.atomic_write(path, body)
+        # Same reason as file_finding._render: a body carrying author prose can hold a
+        # bare ``` opener, and MD040 refuses it. Recognising a block needs the whole body.
+        sdlc_md.atomic_write(path, sdlc_md.normalise_fence_languages(body))
         if consolidate and type_ in sdlc_md.FINDING_TYPES:
             triage_noise.record_creation(root)  # count this minted finding (session budget)
         index_created = _ensure_index(root, type_, f["date"])  # greenfield first run
@@ -1809,7 +1811,7 @@ def retitle(repo_root: Path | str, artifact_id: str, new_title: str,
             f"cannot be updated. Run `reconcile.py apply --scope {rel.split('/')[-1]}` to add "
             f"the row first, then retitle. Nothing was written.")
 
-    # --- surface 4: inbound references (US0399) ---
+    # --- surface 4: inbound references ---
     cl = _load_check_links(root)
     if cl is None:
         raise RetitleBlocked("references",

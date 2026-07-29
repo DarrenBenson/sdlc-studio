@@ -27,10 +27,26 @@ A story or bug is Done when:
 - [ ] Its documentation landed in the same unit (help + reference for any new command/flag)
 - [ ] The paperwork shipped in the same commit as the code (changelog fragment, status, index)
 
+## Delivery batch
+
+The review point. A batch of work reaching the project's commit threshold is done when:
+
+- [ ] An independent review has covered THIS batch's units, and its reviewer is not its author
+- [ ] Every finding it raised is filed against this batch, so the cost is priced where the work
+      was rather than carried into the close
+- [ ] A repair written in response to a finding is itself covered by a later batch review, never
+      shipped self-reviewed
+
+> The review belongs here, not at the close. A review that runs at the close makes every defect
+> it finds close work by definition, and the close then costs more than the delivery it
+> certifies - which is the fastest way to make a team stop closing at all.
+
 ## Sprint
 
 A sprint is done when its close-down is complete:
 
+- [ ] Every unit in the batch is covered by an independent review, ASSERTED not performed here
+      [check: close.review-coverage]
 - [ ] The batch retro exists and validates [check: close.retro]
 - [ ] Lessons are extracted, revalidated, and the committed summary is current [check: close.lessons]
 - [ ] The unified review is at least as new as every artefact [check: close.review]

@@ -27,7 +27,7 @@ T = TypeVar("T")
 # First `# Heading` of a document.
 H1_RE = re.compile(r"^#\s+(.+)$", re.M)
 # Artifact ID prefix at the start of a filename stem. CR/RFC display with a
-# dash (CR-0001); the others do not. The optional dash matches both.
+# dash; the others do not. The optional dash matches both.
 # Case-insensitive: some repos name files lowercase (`cr0001.md`) while indexes
 # use uppercase (`CR-0001`) — both must parse to the same ID.
 # Two id eras coexist (schema v3): the v2 sequential form (`US0001`, `CR-0007`)
@@ -1447,7 +1447,6 @@ def artifact_files(type_: str, repo_root: Path) -> list[Path]:
     return [p for p, _ in iter_artifact_files(type_, repo_root)]
 
 
-
 def fence_step(stripped: str, fence: tuple[str, int] | None) -> tuple[tuple[str, int] | None, bool]:
     """Advance a CommonMark fenced-block state machine by one already-stripped line.
 
@@ -1477,6 +1476,76 @@ def fence_step(stripped: str, fence: tuple[str, int] | None) -> tuple[tuple[str,
         return None, True
     # a shorter fence, a different character, or a run carrying an info string: all content
     return fence, True
+
+
+RETRACTED_DEPTH = "RETRACTED"
+
+
+def depth_retracted(text: str) -> bool:
+    """True when a unit's `Verification depth` was withdrawn by a reopen.
+
+    Lives here because THREE copies of this predicate existed - one public and callerless in
+    `transition`, one inlined inside `_retract_depth`, one in `sprint` justified by a
+    no-sibling-import rule. Both modules already import this library, so the rule costs nothing
+    and there is one place for it to be wrong."""
+    return (extract_field(text, "Verification depth") or "").strip().upper().startswith(RETRACTED_DEPTH)
+
+
+def normalise_fence_languages(text: str, default: str = "text") -> str:
+    """Supply `default` as the info string of every unlabelled fenced block that CLOSES.
+
+    A generator rendering an author's prose cannot control whether they fenced their evidence,
+    and markdownlint MD040 refuses a bare ``` opener. Without this the deterministic filer mints
+    artefacts the deterministic gate rejects, and the only way past is to hand-edit the file the
+    filer exists to stop anyone hand-writing.
+
+    Four things it deliberately does NOT do, each a live defect if got wrong:
+
+    * A CLOSER is never labelled. "The closing code fence may be followed only by spaces"
+      (CommonMark 4.5), so a language on it stops it closing, releasing the block early and
+      turning the illustration below into live document content.
+    * A block already carrying an info string is untouched - the author's language wins.
+    * An UNCLOSED opener is left bare. It is malformed either way, and labelling it makes a
+      broken block look deliberate instead of leaving it visibly broken.
+    * A fence marker inside a FOUR-SPACE INDENTED code block is content, not a fence. Missing
+      this desynchronised the state machine: the literal ``` in an indented illustration was
+      taken for a real opener, so author content was rewritten AND the genuine bare fence
+      further down was consumed as that block's closer and left unlabelled - failing the very
+      lint this exists to satisfy, while corrupting the document on the way past.
+
+    Known limit, stated rather than silently wrong: a fence inside a BLOCKQUOTE (`> ```) is not
+    labelled. MD040 still flags it, which is visible and fixable; guessing at quoted content is
+    not. Line endings are preserved, so a CRLF document does not come back mixed.
+    """
+    lines = text.split("\n")
+    fence: "tuple[str, int] | None" = None
+    opener: int | None = None
+    label: list = []
+    for i, raw in enumerate(lines):
+        line = raw[:-1] if raw.endswith("\r") else raw
+        stripped = line.lstrip()
+        indent = len(line) - len(stripped)
+        # Outside a fenced block, four spaces (or a tab) means an INDENTED CODE BLOCK, whose
+        # contents are literal. A ``` in there is text an author wrote, not a fence.
+        if fence is None and (indent >= 4 or line.startswith("\t")):
+            continue
+        new_fence, is_fence_line = fence_step(stripped, fence)
+        if is_fence_line:
+            if fence is None and new_fence is not None:          # an opener
+                opener = i if not stripped[new_fence[1]:].strip() else None
+            elif fence is not None and new_fence is None:        # a closer
+                if opener is not None:
+                    label.append((opener, fence[0], fence[1]))
+                opener = None
+            # else: a fence line INSIDE an open block, which is content
+        fence = new_fence
+    for i, marker, run in label:
+        raw = lines[i]
+        eol = "\r" if raw.endswith("\r") else ""
+        line = raw[:-1] if eol else raw
+        pad = line[:len(line) - len(line.lstrip())]
+        lines[i] = f"{pad}{marker * run}{default}{eol}"
+    return "\n".join(lines)
 
 
 # A CommonMark code span: an opening backtick run closed by a run of EQUAL length. Deliberately
@@ -2217,6 +2286,8 @@ DOR_DOD_CHECK_IDS = {
     "story.verify-ac": "the story's executable ACs pass (verify_ac; the transition -> Done gate)",
     "review.critic-approve": "an independent critic APPROVE is recorded (conformance critiqued)",
     "review.two-role": "adversarial evidence + reviewer-of-record sign-off (review.two_role_after)",
+    "close.review-coverage": "every unit in the batch is covered by an independent review "
+                             "(sprint close's first chain step - asserted, never performed there)",
     "close.retro": "the batch retro exists and validates (gate --require-retro)",
     "close.lessons": "open lessons revalidated and the summary current (the gate's lessons lanes)",
     "close.review": "reviews/LATEST.md at least as new as every artefact (gate --require-review)",

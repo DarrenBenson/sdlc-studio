@@ -999,7 +999,12 @@ def _stamp(f: dict) -> str:
     """The provenance stamp plus the typed authorship of record. `Raised-by` is resolved from
     `--author` at creation (defaulting to the invoking agent), so a filed artefact never opens
     failing the schema-v3 authorship rule."""
-    return _STAMP + f"> **Raised-by:** {f.get('_raised_by') or sdlc_md.DEFAULT_AGENT_AUTHOR}\n"
+    stamp = _STAMP + f"> **Raised-by:** {f.get('_raised_by') or sdlc_md.DEFAULT_AGENT_AUTHOR}\n"
+    if f.get("_batch"):
+        # WHERE this finding was raised, so its cost is priced against the batch that caused it
+        # rather than read as close overhead. An absence is stated, not omitted.
+        stamp += f"> **Raised-in-batch:** {f['_batch']}\n"
+    return stamp
 
 
 def _rev_author(f: dict) -> str:
@@ -1156,6 +1161,38 @@ _LANDABLE = (
 )
 
 
+def _open_batch_key(root) -> str | None:
+    """The open delivery batch's key, READ-ONLY - safe to call while the allocation lock is
+    held, because it takes no lock of its own.
+
+    Best-effort: a project with no run state, or a corrupt one, still files findings. A filer
+    that refused because a ledger could not be read would make the attribution more important
+    than the finding."""
+    try:
+        from lib import run_state  # noqa: PLC0415 - deferred sibling, as elsewhere here
+        span = run_state.open_batch(root)
+        return span.get("opened_at") if span else None
+    except Exception as exc:  # noqa: BLE001 - attribution must never block a filing
+        sdlc_md.debug("file_finding._open_batch_key", exc)
+        return None
+
+
+def _attribute_to_open_batch(root, finding_id: str) -> str | None:
+    """Record this finding against the open delivery batch, OUTSIDE the allocation lock.
+
+    Kept separate from the read above because it WRITES, and writing takes the same advisory
+    lock the filer holds while allocating the id. Calling it from inside that lock made the
+    process contend with itself for the full 10-second timeout on every filing, and
+    `allocation_lock` proceeds unserialised once the timeout expires - so the fast path was
+    ten seconds slower and the slow path lost the serialisation the lock exists for."""
+    try:
+        from lib import run_state  # noqa: PLC0415 - deferred sibling, as elsewhere here
+        return run_state.note_finding(root, finding_id)
+    except Exception as exc:  # noqa: BLE001 - attribution must never block a filing
+        sdlc_md.debug("file_finding._attribute_to_open_batch", exc)
+        return None
+
+
 def _land_unhomed(body: str, f: dict) -> str:
     """Append a section for every supplied prose field this type's renderer has no home for.
 
@@ -1208,7 +1245,10 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
     body = _render_sections(type_, disp_id, title, today, f, status)
     body = _land_unhomed(body, f)
     _refuse_dropped(body, f)
-    return body
+    # Last, over the WHOLE body: a fenced block can only be recognised across the lines that
+    # open and close it, which no per-field normaliser sees. Without it the filer mints
+    # artefacts markdownlint MD040 refuses.
+    return sdlc_md.normalise_fence_languages(body)
 
 
 def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
@@ -1404,6 +1444,9 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
                 child_id = sdlc_md.norm_id(result["id"])
                 if child_id not in existing:
                     sdlc_md.write_decomposed(parent_path, [*existing, child_id])
+        # OUTSIDE the lock, deliberately - the batch record is not part of the id allocation,
+        # and writing it takes the same advisory lock. See `_attribute_to_open_batch`.
+        _attribute_to_open_batch(root, result.get("id") or "")
     if warnings:
         result["duplicate_warnings"] = warnings
     return result
@@ -1450,6 +1493,12 @@ def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields:
     # NAME (the typed triple is the `Raised-by` field's job), so an unattributed filing still
     # names whoever raised it - the invoking agent - rather than a literal or a blank cell.
     fields = {**fields, "_raised_by": raised_by, "author": sdlc_md.authorship_name(raised_by)}
+    # US0561: a finding raised while a delivery batch is open is that batch's work, so its
+    # cost is priced where the work was rather than as close overhead. The absence is STATED,
+    # never guessed: with no batch open the field says so, because silently attributing to the
+    # last-closed span is exactly the misattribution this exists to remove.
+    batch_key = _open_batch_key(root)
+    fields = {**fields, "_batch": batch_key or "none open - raised outside a delivery batch"}
     sdlc_md.atomic_write(path, _render(type_, disp_id, title, today, fields, create_status))
     triage_noise.record_creation(root)  # count this minted finding against the session budget
     # One shared header-driven row builder for both create paths: read the index's

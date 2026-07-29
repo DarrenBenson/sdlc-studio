@@ -64,9 +64,14 @@ def _load_alias():
 autosprint, sprint_at_load = _load_alias()
 run_state = sprint_at_load.run_state
 
-#: The chain steps that delegate to another module, stubbed green. `handoff` and
-#: `review-anchor` are deliberately absent: they run for real.
-_DELEGATING = ("retro_validate", "retro_extract", "lessons_summary", "gate", "reconcile")
+#: The chain steps that delegate to another module, stubbed green - DERIVED from the chain
+#: minus the two that deliberately run for real, so a step added to the ceremony is stubbed by
+#: default instead of silently reddening this suite. `handoff` and `review-anchor` are the
+#: stated exceptions; keeping them as an exclusion list rather than an inclusion list is what
+#: makes the intent survive a new step.
+_RUNS_FOR_REAL = ("handoff", "review_anchor")
+_DELEGATING = tuple(s.replace("-", "_") for s in sprint_at_load._CLOSE_CHAIN
+                    if s.replace("-", "_") not in _RUNS_FOR_REAL)
 
 _INDEXES = (("bugs", "Bugs"), ("stories", "Stories"), ("epics", "Epics"),
             ("change-requests", "Change Requests"), ("retros", "Retros"),
@@ -266,9 +271,11 @@ class PrimaryPathTests(unittest.TestCase):
             self.assertEqual(closed["sprint_goal_verdict"]["verdict"], "achieved")
             # every step ran, in the ceremony's order, and the batch it sealed is the one
             # the plan approved
-            for i, name in enumerate(("retro-validate", "retro-extract", "lessons-summary",
-                                      "gate", "handoff", "reconcile", "review-anchor"), start=1):
-                self.assertIn(f"close [{i}/7] {name}: ok", out)
+            # DERIVED: the ceremony's own order, so a step added to the chain is asserted
+            # rather than silently dropped from this check.
+            chain = sprint_at_load._CLOSE_CHAIN
+            for i, name in enumerate(chain, start=1):
+                self.assertIn(f"close [{i}/{len(chain)}] {name}: ok", out)
             self.assertEqual(closed["batch"], ["BG0001", "BG0002"])
 
     def test_a_failing_unit_stops_the_loop_and_is_named(self) -> None:
@@ -286,13 +293,15 @@ class PrimaryPathTests(unittest.TestCase):
                 rc, out = _close(root, rid)
 
             self.assertEqual(rc, 1, out)
-            self.assertIn("close STOPPED at retro-extract [2/7]", out)
+            chain = sprint_at_load._CLOSE_CHAIN
+            self.assertIn(f"close STOPPED at retro-extract "
+                          f"[{chain.index('retro-extract') + 1}/{len(chain)}]", out)
             self.assertIn("retro-extract failed", out)
             self.assertIn("fix the fixture failure", out)
             # the steps after the failure are neither run nor reported
             for i, name in enumerate(("lessons-summary", "gate", "handoff", "reconcile",
                                       "review-anchor"), start=3):
-                self.assertNotIn(f"close [{i}/7] {name}", out)
+                self.assertNotIn(f"close [{i}/{len(sprint_at_load._CLOSE_CHAIN)}] {name}", out)
             # ...and the state agrees with the report: the run is still open, unsealed
             state = run_state.read(root)
             self.assertEqual(state["outcome"], "running")

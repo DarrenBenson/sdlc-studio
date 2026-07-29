@@ -1,7 +1,7 @@
 # BG0359: Nothing keeps the RFC index's spawned-work column true once it has been backfilled
 
 > **Status:** Open
-> **Verification depth:** functional (tests red-first)
+> **Verification depth:** RETRACTED on reopen (was: functional (tests red-first)) - re-verify before a terminal status; the previous evidence was withdrawn, not lost
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, sdlc-studio/rfcs/_index.md, .claude/skills/sdlc-studio/templates/indexes/rfc.md

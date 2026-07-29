@@ -28,6 +28,10 @@ def _load(name, rel):
 
 tr = _load("transition", "transition.py")
 rc = _load("reconcile", "reconcile.py")
+transition = tr
+sprint = _load("sprint", "sprint.py")
+sys.path.insert(0, str(DIR / "lib"))
+import sdlc_md  # noqa: E402
 
 
 def _repo(root: Path) -> Path:
@@ -2305,6 +2309,117 @@ class CriteriaFloorAtTheVerbTests(unittest.TestCase):
                               for u in tr.requirements(root, "BG0001", "Fixed"))
                 self.assertEqual(refused, not validate._has_criteria(text),
                                  f"verb and validator disagree for {criteria!r}")
+
+
+class AReopenRetractsTheGreenItOverturnsTests(unittest.TestCase):
+    """BG0416. A reopen is a human overturning a machine verdict, and nothing in the machine
+    heard it. BG0372 was reopened because its tests asserted a constant and a header the writer
+    never emits - and those tests still passed, so the verify-report still recorded it green and
+    the planner still priced it as BUILT-NOT-CLOSED at zero points. The reopen must reach the
+    evidence, not only the status."""
+
+    def _reopened(self, depth: str | None = "functional (tests red-first)"):
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        _bug_repo(root, depth)
+        p = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
+        p.write_text(p.read_text(encoding="utf-8").replace(
+            "> **Status:** In Progress", "> **Status:** Fixed"), encoding="utf-8")
+        local = root / "sdlc-studio" / ".local"
+        local.mkdir(parents=True, exist_ok=True)
+        (local / "verify-report.json").write_text(json.dumps(
+            {"stories": {"BG0001-x": {"verified": 3, "failed": 0, "stale": 0}}}), encoding="utf-8")
+        return root, p, local / "verify-report.json"
+
+    def test_reopening_retracts_the_verification_depth(self) -> None:
+        root, p, _ = self._reopened()
+        transition.transition(root, "BG0001", "Open")
+        depth = sdlc_md.extract_field(p.read_text(encoding="utf-8"), "Verification depth") or ""
+        self.assertTrue(depth.upper().startswith("RETRACTED"),
+                        f"the withdrawn claim survived the reopen: {depth!r}")
+        self.assertIn("functional", depth, "the retraction dropped what was being retracted")
+
+    def test_the_invalidation_reaches_a_v3_id(self) -> None:
+        """`split("-")[0]` on a v3 stem `US-01KYQ84R-v3-unit` yields `US`, so the entry never
+        matched and the invalidation silently no-opped. `init` mints v3 ids by default, so EVERY
+        new consuming project got the no-op while this repo's legacy-shaped fixture passed.
+        Found by an independent reviewer; the sibling test picked the one stem shape that worked."""
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        local = root / "sdlc-studio" / ".local"
+        local.mkdir(parents=True)
+        report = local / "verify-report.json"
+        report.write_text(json.dumps({"stories": {
+            "US-01KYQ84R-v3-unit": {"verified": 3, "failed": 0, "stale": 0}}}), encoding="utf-8")
+        transition._invalidate_verify_report(root, "US-01KYQ84R")
+        entry = json.loads(report.read_text(encoding="utf-8"))["stories"]["US-01KYQ84R-v3-unit"]
+        self.assertEqual(entry["verified"], 0, "a v3 unit's stale green survived the reopen")
+        self.assertEqual(entry["stale"], 1)
+
+    def test_reopening_invalidates_the_verify_report_entry(self) -> None:
+        """The green a reviewer overturned must not stay readable as current."""
+        root, _, report = self._reopened()
+        transition.transition(root, "BG0001", "Open")
+        entry = json.loads(report.read_text(encoding="utf-8"))["stories"].get("BG0001-x")
+        self.assertFalse(entry and entry.get("verified", 0) > 0 and not entry.get("stale", 0),
+                         "the verify-report still reports the reopened unit green")
+
+    def test_the_planner_prices_a_reopened_unit_at_full_points(self) -> None:
+        """The reader that was actually wrong. `_built_not_closed` must not call it built."""
+        root, p, _ = self._reopened()
+        transition.transition(root, "BG0001", "Open")
+        self.assertFalse(
+            sprint._built_not_closed(root, "BG0001", p.read_text(encoding="utf-8")),
+            "a reopened unit is still excluded from the build forecast")
+
+    def test_a_retracted_depth_alone_defeats_a_green_verify_report(self) -> None:
+        """The two mechanisms must not be able to disagree: even with the report left green,
+        a retracted depth is enough. Without this the fix rests on the invalidation alone."""
+        root, p, report = self._reopened()
+        transition.transition(root, "BG0001", "Open")
+        report.write_text(json.dumps(
+            {"stories": {"BG0001-x": {"verified": 3, "failed": 0, "stale": 0}}}), encoding="utf-8")
+        self.assertFalse(
+            sprint._built_not_closed(root, "BG0001", p.read_text(encoding="utf-8")),
+            "a re-greened report outvoted the retraction")
+
+    def test_a_unit_with_no_depth_claim_is_not_given_one(self) -> None:
+        """A reopen retracts what was claimed; it never invents a claim that was never made."""
+        root, p, _ = self._reopened(depth=None)
+        transition.transition(root, "BG0001", "Open")
+        self.assertIsNone(
+            sdlc_md.extract_field(p.read_text(encoding="utf-8"), "Verification depth"),
+            "the reopen invented a verification-depth field")
+
+    def test_moving_between_two_non_terminal_statuses_retracts_nothing(self) -> None:
+        """The predicate is LEAVING a terminal status, not ARRIVING at a non-terminal one.
+        Caught by mutation: the sibling negative control moved to Fixed, which is terminal, so
+        a predicate reading only the target passed it. Reading only the target would wipe the
+        evidence on every ordinary move through a working status."""
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        _bug_repo(root, "functional (tests red-first)")   # starts at In Progress
+        transition.transition(root, "BG0001", "Open")     # non-terminal -> non-terminal
+        p = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
+        depth = sdlc_md.extract_field(p.read_text(encoding="utf-8"), "Verification depth") or ""
+        self.assertFalse(depth.upper().startswith("RETRACTED"),
+                         "a move between two open statuses retracted a live claim")
+
+    def test_an_ordinary_forward_transition_retracts_nothing(self) -> None:
+        """In Progress -> Fixed is not a reopen. The guard must fire on leaving a terminal
+        status, not on touching a unit that has a depth."""
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        _bug_repo(root, "functional (tests red-first)")
+        transition.transition(root, "BG0001", "Fixed")
+        p = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
+        depth = sdlc_md.extract_field(p.read_text(encoding="utf-8"), "Verification depth") or ""
+        self.assertFalse(depth.upper().startswith("RETRACTED"),
+                         "a forward transition retracted a live claim")
 
 
 if __name__ == "__main__":

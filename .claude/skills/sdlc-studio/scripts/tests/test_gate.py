@@ -5249,5 +5249,144 @@ class ListingOnlyIdScopeTests(unittest.TestCase):
             self.assertTrue(gate.is_test_relevant(["sdlc-studio/trd.md"], root, structural=set()))
 
 
+class SilenceWithholdsTheNarrowingTests(unittest.TestCase):
+    """BG0407. `listing_only_scopes` built its electorate from `suite_read_map`, which cannot
+    see a path assembled at run time - 59 of 170 modules here measure an EMPTY read set. Such a
+    module was not counted as a reader, so its content read was silenced by another module's
+    declaration. The contradiction was inside one file: `select_tests` reads an empty read map
+    as an unanswered question and always includes the module; `listing_only_scopes` read the
+    identical silence as 'not a reader, so the declaration is unanimous'."""
+
+    @staticmethod
+    def _repo(tmp: Path, *, dynamic_reader: bool) -> str:
+        suite = tmp / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"
+        suite.mkdir(parents=True)
+        ws = tmp / "sdlc-studio"
+        (ws / "bugs").mkdir(parents=True)
+        (ws / "bugs" / "BG0288-named.md").write_text("# named\n", encoding="utf-8")
+        (suite / "test_census.py").write_text(
+            "from pathlib import Path\n"
+            "REPO = Path(__file__).resolve().parents[5]\n"
+            "GATE_LISTING_ONLY = ('sdlc-studio',)\n"
+            "WS = REPO / 'sdlc-studio'\n"
+            "def test_census():\n"
+            "    assert list(WS.glob('**/*.md'))\n", encoding="utf-8")
+        if dynamic_reader:
+            # The module BG0407 is about: it reads the SAME tree for CONTENT, but assembles the
+            # path at run time from an imported constant, so the static scanner measures it
+            # empty and it never appears in the electorate.
+            (suite / "test_dynamic.py").write_text(
+                "from pathlib import Path\n"
+                "import os\n"
+                "BASE = os.environ.get('WS_DIR', 'sdlc-studio')\n"
+                "def test_content():\n"
+                "    REPO = Path(__file__).resolve().parents[5]\n"
+                "    assert (REPO / BASE / 'bugs' / 'BG0288-named.md').read_text()\n",
+                encoding="utf-8")
+        return str(tmp)
+
+    def test_an_unmeasurable_module_withholds_the_narrowing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), dynamic_reader=True)
+            self.assertEqual({}, gate.listing_only_scopes(root),
+                             "a module whose read set could not be measured was counted as a "
+                             "non-reader, so its content read was silenced by another "
+                             "module's declaration")
+
+    def test_with_every_module_measurable_the_narrowing_still_applies(self) -> None:
+        """The positive control. Withholding on silence must not become withholding always -
+        that would delete the mechanism rather than fix it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), dynamic_reader=False)
+            self.assertIn("sdlc-studio", gate.listing_only_scopes(root),
+                          "a declaration every reader agrees with was withheld anyway")
+
+    def test_the_two_readings_of_silence_agree(self) -> None:
+        """AC2, asserted directly: what `select_tests` treats as unanswered,
+        `listing_only_scopes` must also treat as unanswered. Both derive the set the same way."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), dynamic_reader=True)
+            unattributable = {m for m, paths in gate.suite_read_map(root).items() if not paths}
+            self.assertTrue(unattributable, "fixture did not produce an unmeasurable module")
+            self.assertEqual(unattributable, set(gate.unmeasurable_modules(root)),
+                             "the two readings of an empty read map disagree")
+
+    def test_the_withheld_cost_is_reported_not_silent(self) -> None:
+        """AC3: say how many modules were unmeasurable when the narrowing is withheld, so the
+        cost is attributable and someone can make those reads visible."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), dynamic_reader=True)
+            notes = gate.withheld_narrowings(root)
+            joined = " ".join(notes)
+            self.assertTrue(notes, "the narrowing was withheld with no report at all")
+            self.assertIn("sdlc-studio", joined)
+            self.assertRegex(joined, r"\b1\b", "the count of unmeasurable modules is not named")
+
+
+class ADeclaredIdMustNameARealArtefactTests(unittest.TestCase):
+    """BG0411. `_declared_ids` required a declared id to RESOLVE, but resolved it by matching
+    the id pattern against any BASENAME under the directory. One stray `BG288-repro.png` - a
+    screenshot, an attachment, a scratch note - makes a typo'd `BG288` resolve and restores the
+    false green in full. The check validated a filename pattern, not the artefact it claims to
+    require."""
+
+    @staticmethod
+    def _repo(tmp: Path, decl: str, *, stray: str | None = None) -> str:
+        suite = tmp / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"
+        suite.mkdir(parents=True)
+        ws = tmp / "sdlc-studio"
+        (ws / "bugs").mkdir(parents=True)
+        (ws / "bugs" / "BG0288-named.md").write_text(
+            "# BG0288: named\n\n> **Status:** Open\n", encoding="utf-8")
+        if stray:
+            (ws / stray).parent.mkdir(parents=True, exist_ok=True)
+            (ws / stray).write_bytes(b"\x89PNG not an artefact")
+        (suite / "test_census.py").write_text(
+            "from pathlib import Path\n"
+            "REPO = Path(__file__).resolve().parents[5]\n"
+            f"GATE_LISTING_ONLY = {decl}\n"
+            "WS = REPO / 'sdlc-studio'\n"
+            "def test_census():\n"
+            "    assert list(WS.glob('**/BG0288*.md'))\n", encoding="utf-8")
+        return str(tmp)
+
+    TYPO = "({'path': 'sdlc-studio', 'ids': ('BG288',)},)"
+
+    def test_a_typod_id_withholds_the_narrowing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), self.TYPO)
+            self.assertEqual({"sdlc-studio": None}, gate.listing_only_scopes(root),
+                             "an unresolvable id narrowed the tree instead of voiding")
+
+    def test_a_stray_non_artefact_does_not_restore_the_narrowing(self) -> None:
+        """The defect itself. A file merely MATCHING the id filename pattern must not satisfy
+        a declaration that says it requires the artefact."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), self.TYPO, stray="BG288-repro.png")
+            self.assertEqual({"sdlc-studio": None}, gate.listing_only_scopes(root),
+                             "a stray screenshot resolved a typo'd id and restored a false green")
+            added = "sdlc-studio/bugs/BG0288-named.md"
+            self.assertTrue(gate.is_test_relevant([added], root, structural={added}),
+                            "the declaring module's own artefact answered `not relevant`")
+
+    def test_a_real_artefact_still_resolves(self) -> None:
+        """Positive control: requiring a real artefact must not refuse every declaration."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), "({'path': 'sdlc-studio', 'ids': ('BG0288',)},)")
+            self.assertEqual({"sdlc-studio": frozenset({"BG0288"})},
+                             gate.listing_only_scopes(root))
+
+    def test_the_withheld_narrowing_is_reported_without_sdlc_debug(self) -> None:
+        """A declaration that has STOPPED working should be as visible as one that never
+        worked. It was reported only through `sdlc_md.debug`, a no-op without SDLC_DEBUG=1,
+        so the author saw only a gate that never got faster."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), self.TYPO)
+            os.environ.pop("SDLC_DEBUG", None)
+            notes = " ".join(gate.withheld_narrowings(root))
+            self.assertIn("BG288", notes, "the unresolvable id is not named")
+            self.assertIn("sdlc-studio", notes, "the declaration is not named")
+
+
 if __name__ == "__main__":
     unittest.main()

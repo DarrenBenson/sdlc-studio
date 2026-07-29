@@ -1,7 +1,7 @@
 # BG0372: The overhead ratio never reaches the velocity record, so the measurement is taken and discarded
 
 > **Status:** Open
-> **Verification depth:** functional (tests red-first)
+> **Verification depth:** RETRACTED on reopen (was: functional (tests red-first)) - re-verify before a terminal status; the previous evidence was withdrawn, not lost
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py

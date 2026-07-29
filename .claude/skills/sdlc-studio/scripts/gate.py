@@ -2308,7 +2308,37 @@ def _path_artefact_id(path: str) -> str | None:
     return match.group("id").replace("-", "") if match else None
 
 
-def listing_only_scopes(root: str = ".") -> dict:
+def unmeasurable_modules(root: str = ".") -> set:
+    """Suite modules whose measured read set is EMPTY.
+
+    THE one place that silence is interpreted, so the two readers of it cannot disagree. An
+    empty read set means the static scanner learned nothing about what the module reads - a
+    path assembled at run time from an imported constant is invisible to it - and that is an
+    UNANSWERED question, not an answer of "it reaches nothing".
+
+    `select_tests` already read it that way and always included such a module. `listing_only_scopes`
+    read the identical silence as "not a reader, so the declaration is unanimous", which silenced
+    the content read of the one module the mechanism could not see. Both now call this.
+    """
+    read_map = suite_read_map(root)
+    if read_map is None:
+        return set()
+    return {mod for mod, paths in read_map.items() if not paths}
+
+
+def withheld_narrowings(root: str = ".") -> list:
+    """Every listing-only narrowing that was NOT applied, and why, in plain sentences.
+
+    A declaration that has STOPPED working must be as visible as one that never worked. Both
+    causes were previously reported only through `sdlc_md.debug` - a no-op without SDLC_DEBUG=1 -
+    so the author saw a gate that silently never got faster and no reason for it, and
+    the cost of an unmeasurable reader was attributable to nobody."""
+    notes: list = []
+    listing_only_scopes(root, _notes=notes)
+    return notes
+
+
+def listing_only_scopes(root: str = ".", _notes: "list | None" = None) -> dict:
     """Each listing-only directory mapped to the ids its structural read depends on.
 
     `None` means the whole directory, which is what a bare-string declaration has always
@@ -2358,12 +2388,9 @@ def listing_only_scopes(root: str = ".") -> dict:
                 continue
             entries = declared if isinstance(declared, (list, tuple)) else [declared]
             for entry in entries:
-                if isinstance(entry, dict):
-                    rel = str(entry.get("path", "")).strip().strip("/")
-                    ids = _declared_ids(entry.get("ids"), root, str(entry.get("path", "")).strip().strip("/"))
-                else:
-                    rel = str(entry).strip().strip("/")
-                    ids = None
+                raw_ids = entry.get("ids") if isinstance(entry, dict) else None
+                rel = (str(entry.get("path", "")) if isinstance(entry, dict)
+                       else str(entry)).strip().strip("/")
                 # Declared AND measured: a declaration about a directory this module never
                 # reads narrows nothing, and letting it through would be a way to exempt a
                 # tree by writing its name down.
@@ -2378,6 +2405,9 @@ def listing_only_scopes(root: str = ".") -> dict:
                     continue
                 if not os.path.isdir(os.path.join(root, rel)):
                     continue
+                # Resolved only HERE, after every filter that can discard the entry - an entry
+                # immediately thrown away used to pay a full directory walk first.
+                ids = _declared_ids(raw_ids, root, rel, _notes)
                 declarers.setdefault(rel, set()).add(module)
                 if rel in out:
                     # Two modules reading the same tree: the union of what they depend on,
@@ -2392,11 +2422,34 @@ def listing_only_scopes(root: str = ".") -> dict:
     # module's narrowing must never speak for another's read: a tree-wide honouring made a
     # second module's content read of the same directory invisible, so an edit it asserts over
     # answered `test-relevant: no` while its own assertion would have failed.
-    return {rel: ids for rel, ids in out.items()
-            if readers.get(rel, set()) <= declarers.get(rel, set())}
+    # The electorate includes every module whose read could not be MEASURED. Its silence is an
+    # unanswered question, so it withholds the narrowing rather than granting it.
+    unmeasurable = unmeasurable_modules(root)
+    kept = {}
+    for rel, ids in out.items():
+        declared_by = declarers.get(rel, set())
+        missing = (readers.get(rel, set()) | unmeasurable) - declared_by
+        if not missing:
+            kept[rel] = ids
+            continue
+        if _notes is not None:
+            blind = sorted(missing & unmeasurable)
+            content = sorted(missing - unmeasurable)
+            why = []
+            if blind:
+                why.append(f"{len(blind)} module(s) whose reads could not be measured "
+                           f"({', '.join(os.path.basename(m) for m in blind[:4])}"
+                           f"{', ...' if len(blind) > 4 else ''})")
+            if content:
+                why.append(f"{len(content)} module(s) that read it for CONTENT without declaring")
+            _notes.append(
+                f"listing-only narrowing WITHHELD for {rel}: " + "; ".join(why)
+                + ". The gate runs more than it needs to until those reads are made visible.")
+    return kept
 
 
-def _declared_ids(value, root: str | None = None, rel: str | None = None) -> "frozenset | None":
+def _declared_ids(value, root: str | None = None, rel: str | None = None,
+                  notes: "list | None" = None) -> "frozenset | None":
     """The id set a declaration names, or None - meaning the WHOLE directory - when it names
     none this module can trust.
 
@@ -2421,17 +2474,34 @@ def _declared_ids(value, root: str | None = None, rel: str | None = None) -> "fr
     for dirpath, _dirnames, filenames in os.walk(base):
         for name in filenames:
             got = _path_artefact_id(os.path.join(dirpath, name))
-            if got:
+            # A filename PATTERN is not an artefact. One stray `BG288-repro.png` - a
+            # screenshot, an attachment, a scratch note - made a typo'd id resolve and restored
+            # the false green in full. The file has to actually be the artefact the declaration
+            # says it depends on.
+            if got and _is_artefact_file(os.path.join(dirpath, name)):
                 present.add(got)
     unresolved = ids - present
     if unresolved:
-        # Reported through the same channel a wrong declaration already uses: the narrowing is
-        # withheld, so the cost is a slower gate rather than an unrun suite.
-        sdlc_md.debug("gate._declared_ids",
-                      ValueError(f"{rel}: declared id(s) {sorted(unresolved)} resolve to no "
-                                 f"artefact - the narrowing is withheld"))
+        # On the NORMAL output path, not through `debug`. A declaration that has stopped
+        # working must be at least as visible as one that never worked; reported only under
+        # SDLC_DEBUG it was strictly less visible.
+        if notes is not None:
+            notes.append(
+                f"listing-only narrowing WITHHELD for {rel}: declared id(s) "
+                f"{', '.join(sorted(unresolved))} name no artefact under it. A declaration "
+                f"half of which is wrong is a declaration nobody has checked, so the whole "
+                f"narrowing is voided rather than partly honoured.")
         return None
     return frozenset(ids)
+
+
+def _is_artefact_file(path: str) -> bool:
+    """True when `path` is a markdown artefact, not merely a file whose NAME carries an id.
+
+    Deliberately structural rather than a full parse: the declaration's contract is that the id
+    names something the suites can read, and a non-markdown file cannot be it. Kept cheap because
+    it runs once per file under a declared directory."""
+    return str(path).lower().endswith(".md") and os.path.isfile(path)
 
 
 def listing_only_paths(root: str = ".") -> set[str]:
@@ -2870,7 +2940,7 @@ def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
     # empty, because a path built from an IMPORTED constant is invisible to the static reader.
     # Counting silence as "unreachable" is exactly how a selection reported itself resolved while
     # excluding the module the change actually reddened. Always include the unattributable.
-    _unattributable = {mod for mod, paths in suite_read_map(root).items() if not paths}
+    _unattributable = unmeasurable_modules(root)
     selected |= (_unattributable & set(modules))
     result["resolved"] = True
     result["selectors"] = sorted(selected)

@@ -739,5 +739,68 @@ class BatchMutationTests(unittest.TestCase):
         self.assertNotIn("US0002", batch, "only the dropped unit left the gated batch")
 
 
+class DeliveryBatchSpanTests(unittest.TestCase):
+    """The batch-span API shipped with ZERO tests of its own - it was covered only incidentally
+    through `note_finding`, and four of its documented contracts were surviving mutants. Every
+    contract these docstrings make a point of is pinned here."""
+
+    def _root(self):
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        return root
+
+    def test_open_batch_returns_the_LAST_span_not_the_first(self) -> None:
+        """Work lands in the current batch. Returning `spans[0]` would attribute every later
+        finding to the first batch of the run - and survived, untested."""
+        root = self._root()
+        run_state.start_batch(root, ["US0001"])
+        run_state.close_batch(root, reviewer="a", author="b", verdict="APPROVE")
+        run_state.start_batch(root, ["US0002"])
+        self.assertEqual(run_state.open_batch(root)["units"], ["US0002"])
+
+    def test_start_batch_merges_into_an_open_span(self) -> None:
+        """A batch that grows mid-flight is a batch, not a second one. Always appending would
+        leave the first span open forever and split one batch's findings across two records."""
+        root = self._root()
+        run_state.start_batch(root, ["US0001"])
+        run_state.start_batch(root, ["US0002"])
+        self.assertEqual(len(run_state.batches(root)), 1, "a second span was opened")
+        self.assertEqual(run_state.open_batch(root)["units"], ["US0001", "US0002"])
+
+    def test_start_batch_opens_a_new_span_after_a_review(self) -> None:
+        """The other half: merging must not swallow the NEXT batch into a reviewed one."""
+        root = self._root()
+        run_state.start_batch(root, ["US0001"])
+        run_state.close_batch(root, reviewer="a", author="b", verdict="APPROVE")
+        run_state.start_batch(root, ["US0002"])
+        self.assertEqual(len(run_state.batches(root)), 2)
+
+    def test_close_batch_normalises_the_verdict(self) -> None:
+        """Readers compare against APPROVE/REJECT. Storing it un-uppercased made the comparison
+        case-dependent, and survived."""
+        root = self._root()
+        run_state.start_batch(root, ["US0001"])
+        run_state.close_batch(root, reviewer="a", author="b", verdict="approve")
+        self.assertEqual(run_state.batches(root)[-1]["verdict"], "APPROVE")
+
+    def test_close_batch_refuses_with_nothing_open(self) -> None:
+        root = self._root()
+        with self.assertRaises(ValueError):
+            run_state.close_batch(root, reviewer="a", author="b", verdict="APPROVE")
+
+    def test_note_finding_never_fabricates_a_run(self) -> None:
+        root = self._root()
+        self.assertIsNone(run_state.note_finding(root, "BG0001"))
+        self.assertFalse(run_state.path(root).exists(),
+                         "attributing a finding minted a run state in a project with no run")
+
+    def test_units_are_deduped_and_keep_first_order(self) -> None:
+        root = self._root()
+        run_state.start_batch(root, ["US0002", "US0001", "US0002"])
+        self.assertEqual(run_state.open_batch(root)["units"], ["US0002", "US0001"])
+
+
 if __name__ == "__main__":
     unittest.main()
