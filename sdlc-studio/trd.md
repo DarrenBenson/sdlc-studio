@@ -721,8 +721,11 @@ tokens.
 
 **Consequences:**
 
-- Positive: keeps the script layer pure stdlib; no secret management in the skill;
-  sync degrades gracefully when `gh` is absent.
+- Positive: keeps the script layer pure stdlib; no secret management in the skill.
+- Sync FAILS LOUD, by design: with `gh` absent `github_sync.py` aborts non-zero (127)
+  and names the missing CLI. It does NOT degrade gracefully - a silent no-op would let a
+  caller mistake an unsynced workspace for a synced one. Callers handle the non-zero
+  exit. See D0071.
 - Positive: idempotent, unit-testable sync logic with `gh` mocked.
 - Negative: `gh` must be installed and authenticated; output-format changes in `gh`
   could require parser updates.

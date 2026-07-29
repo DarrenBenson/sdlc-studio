@@ -116,7 +116,7 @@ tests, not as documentation.
 - A clean install and `init` that seeds config plus a doctrine-aligned agent-instructions starter
 - Generate mode that produces specs detailed enough to rebuild the system elsewhere
 - No third-party Python dependencies; soft runtime tools only when their own Verify lines need them
-- Offline-capable core pipeline; sync and remote-ID checks degrade gracefully when `gh` is absent
+- Offline-capable core pipeline; sync FAILS LOUD when `gh` is absent (non-zero, names the missing CLI) rather than degrading silently
 - Clear guidance on what each command needs and produces (`{type} help`)
 
 ### Pain Points

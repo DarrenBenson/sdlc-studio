@@ -414,8 +414,11 @@ human and agent, across machines and git states - filing concurrently.
 
 ### Availability
 
-Offline-capable: the core pipeline needs no network. Sync and remote-ID checks
-degrade gracefully when `gh`/remotes are absent.
+Offline-capable: the core pipeline needs no network. Sync FAILS LOUD rather than
+degrading: with `gh` absent, `github_sync.py` aborts non-zero (127) and names the
+missing CLI, so a caller never mistakes a silent no-op for a completed sync. Callers
+must handle that non-zero exit. Graceful degradation is deliberately NOT implemented -
+see D0071.
 
 ---
 
