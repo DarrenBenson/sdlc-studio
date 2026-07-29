@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 2 |
+| Open | 9 |
 | In Progress | 0 |
 | Fixed | 315 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **400** |
+| **Total** | **407** |
 
 ## All Bugs
 
@@ -118,6 +118,13 @@
 | [BG0398](BG0398-listing-only-paths-never-checks-that-the-declared.md) | listing_only_paths never checks that the declared read IS a listing, and applies one module's declaration globally | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0399](BG0399-file-finding-discards-a-cr-s-steps-and.md) | file_finding discards a CR's steps and fix fields, so BG0384's defect is still live in the other filer | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0400](BG0400-the-read-map-scanner-attributes-a-fixture-path.md) | The read-map scanner attributes a fixture path to the real tree, so one module's tmpdir read blocks a listing-only narrowing | Open | Medium | 2026-07-29 | 2026-07-29 |
+| [BG0401](BG0401-four-of-this-sprint-s-repairs-can-be.md) | Four of this sprint's repairs can be fully reverted with no test going red: the guard is the delivery, and the guard is inert | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0402](BG0402-close-goal-judgement-compares-seat-names-against-a.md) | close_goal_judgement compares seat NAMES against a critic author id, so 'author excluded' is printed over a panel that excluded nobody | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0403](BG0403-group-blockers-keyed-on-the-detail-files-one.md) | group_blockers keyed on the detail files one CR per unit again, and cannot see a v3 id at all | Open | Medium | 2026-07-29 | 2026-07-29 |
+| [BG0404](BG0404-close-cost-with-no-run-id-reports-every.md) | close_cost with no run id reports every close ever recorded as this one: 6x on seconds, 143x on elapsed | Open | Medium | 2026-07-29 | 2026-07-29 |
+| [BG0405](BG0405-lane-dispatch-raises-an-unhandled-traceback-on-an.md) | lane_dispatch raises an unhandled traceback on an unreadable run state, where a brief used to be issued | Open | Medium | 2026-07-29 | 2026-07-29 |
+| [BG0406](BG0406-three-units-delivered-nothing-bg0372-writes-no-velocity.md) | Three units delivered nothing: BG0372 writes no velocity column, BG0359's detector is inert and would be wrong, and BG0357's consumer key was wrong | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0407](BG0407-the-listing-only-unanimity-rule-is-satisfied-vacuously.md) | The listing-only unanimity rule is satisfied vacuously by the 59 of 170 suite modules whose reads are not statically visible | Open | Medium | 2026-07-29 | 2026-07-29 |
 
 ## Archived Releases
 
