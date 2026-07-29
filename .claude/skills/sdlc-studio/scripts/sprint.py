@@ -5887,17 +5887,38 @@ def close_goal_judgement(root, state: dict, seats: list | None = None) -> list[s
 
     # 1. The per-clause verdict, from the panel that REFUSES the author.
     if clauses:
-        author = (state or {}).get("author") or _signoff_author(root, batch[0]) if batch else None
+        # The author and the seats must be in ONE namespace or the exclusion is theatre:
+        # `_recorded_goal_seats` returns seat NAMES and `_signoff_author` an author id, so
+        # comparing them excluded nobody while the report said "author excluded". An author
+        # that cannot be identified now REFUSES the panel rather than producing one wearing a
+        # claim the record cannot support.
         recorded = _recorded_goal_seats(root)
-        try:
-            panel = critic.goal_panel(root, clauses, [s for s in recorded if s != author],
-                                      str(author or "the authoring session"),
-                                      verdicts=_recorded_clause_verdicts(root, clauses))
-        except ValueError as exc:
-            lines.append(f"goal panel: not run - {exc}")
+        author = str((state or {}).get("author") or "").strip()
+        if not author and batch:
+            author = str(_signoff_author(root, batch[0]) or "").strip()
+        if not author:
+            lines.append("goal panel: NOT RUN - no author is identified on this run, so the "
+                         "panel cannot prove it excluded them. A verdict from a panel that "
+                         "may contain the author is the thing this judgement exists to refuse")
+            panel = None
         else:
-            lines.append(f"goal panel: {panel['verdict']} over {len(clauses)} clause(s), "
-                         f"{len(panel['panel'])} seat(s), author excluded")
+            seats = [s for s in recorded if critic._id(s) != critic._id(author)]  # noqa: SLF001
+            excluded = len(recorded) - len(seats)
+            try:
+                panel = critic.goal_panel(root, clauses, seats, author,
+                                          verdicts=_recorded_clause_verdicts(root, clauses))
+            except ValueError as exc:
+                lines.append(f"goal panel: not run - {exc}")
+                panel = None
+        if panel is None:
+            pass
+        else:
+            # SAY how many were excluded, so "author excluded" is a count a reader can check
+            # rather than a claim they have to believe.
+            note = (f", {excluded} seat(s) excluded as the author" if excluded
+                    else ", no seat matched the author")
+            lines.append(f"goal panel: {panel['verdict'] or 'UNANSWERED'} over "
+                         f"{len(clauses)} clause(s), {len(panel['panel'])} seat(s){note}")
             for row in panel["clauses"]:
                 unanswered = (f" ({len(row['unanswered'])} seat(s) silent)"
                               if row["unanswered"] else "")

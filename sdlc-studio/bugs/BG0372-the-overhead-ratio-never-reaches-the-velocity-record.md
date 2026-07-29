@@ -1,6 +1,6 @@
 # BG0372: The overhead ratio never reaches the velocity record, so the measurement is taken and discarded
 
-> **Status:** Fixed
+> **Status:** Open
 > **Verification depth:** functional (tests red-first)
 > **Severity:** Low
 > **Points:** 2
@@ -60,3 +60,4 @@ Add the ratio and its unattributed remainder to the velocity row written at clos
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 (RUN-01KYKVZM review carry-forward) | Filed |
+| 2026-07-29 | Claude Opus 5 | REOPENED at the closing review. The fix added `overhead_ratio` and `unattributed_s` to `VELOCITY_COLUMNS` and to the row dict, and touched neither `VELOCITY_HEADER` nor the row emitter - so nothing reaches the file the measurement exists to survive in. `unattributed_s` is also 0.0 by construction (`delivery` is defined as `total - overhead`, so the residue is identically zero) and `_overhead_terms` blanks two of three components, computing a different number from the close report. The two tests asserted a constant and a hand-written header the writer never emits. Marked Fixed while delivering nothing; the residue is BG0406. |

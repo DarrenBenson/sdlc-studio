@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 9 |
+| Open | 11 |
 | In Progress | 0 |
-| Fixed | 315 |
+| Fixed | 313 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -76,7 +76,7 @@
 | [BG0356](BG0356-validate-and-verify-ac-disagree-about-whether-a.md) | validate and verify_ac disagree about whether a bug's Verify line executes | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0357](BG0357-mutation-py-records-no-per-test-attribution-so.md) | mutation.py records no per-test attribution, so the prune-candidate consumer can never run | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0358](BG0358-a-declared-proof-obligation-can-go-unmet-and.md) | A declared proof obligation can go unmet and the sprint still closes clean | Fixed | High | 2026-07-28 | 2026-07-28 |
-| [BG0359](BG0359-nothing-keeps-the-rfc-index-s-spawned-work.md) | Nothing keeps the RFC index's spawned-work column true once it has been backfilled | Fixed | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0359](BG0359-nothing-keeps-the-rfc-index-s-spawned-work.md) | Nothing keeps the RFC index's spawned-work column true once it has been backfilled | Open | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0360](BG0360-verify-ac-cannot-resolve-a-bug-id-so.md) | verify_ac cannot resolve a bug id, so no bug can prove its own acceptance criteria | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0361](BG0361-d0074-s-recorded-waiver-still-covers-nothing-and.md) | D0074's recorded waiver still covers nothing, and record-time validation would accept the same shape again | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0362](BG0362-a-retro-whose-batch-line-is-prose-yields.md) | A retro whose Batch line is prose yields an empty sprint report - the latest sprint reads zero units | Fixed | Medium | 2026-07-28 | 2026-07-28 |
@@ -89,7 +89,7 @@
 | [BG0369](BG0369-the-conformance-waiver-report-is-blanked-when-the.md) | The conformance waiver report is blanked when the diff contains no stories, hiding a waived unit rather than reporting it | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0370](BG0370-us0516-s-stated-absence-escape-hatch-defeats-the.md) | US0516's stated-absence escape hatch defeats the criteria floor US0514 and US0515 establish | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0371](BG0371-the-repeated-lesson-report-rests-on-a-single.md) | The repeated-lesson report rests on a single unpinned call, so a lesson violated twice can report once | Fixed | Low | 2026-07-28 | 2026-07-28 |
-| [BG0372](BG0372-the-overhead-ratio-never-reaches-the-velocity-record.md) | The overhead ratio never reaches the velocity record, so the measurement is taken and discarded | Fixed | Low | 2026-07-28 | 2026-07-28 |
+| [BG0372](BG0372-the-overhead-ratio-never-reaches-the-velocity-record.md) | The overhead ratio never reaches the velocity record, so the measurement is taken and discarded | Open | Low | 2026-07-28 | 2026-07-28 |
 | [BG0373](BG0373-the-review-currency-carve-out-repaired-in-bg0336.md) | The review-currency carve-out repaired in BG0336 remains story-shaped, so a bug or change request takes a different path | Fixed | Low | 2026-07-28 | 2026-07-28 |
 | [BG0374](BG0374-the-markdownlint-path-fixed-in-bg0341-still-cannot.md) | The markdownlint path fixed in BG0341 still cannot see every tracked markdown file | Fixed | Low | 2026-07-28 | 2026-07-28 |
 | [BG0375](BG0375-the-lane-contract-refusal-governing-475-units-is.md) | The lane_contract refusal governing 475 units is asserted by no test, so a silent revert reddens nothing | Fixed | High | 2026-07-28 | 2026-07-28 |

@@ -1,6 +1,6 @@
 # BG0359: Nothing keeps the RFC index's spawned-work column true once it has been backfilled
 
-> **Status:** Fixed
+> **Status:** Open
 > **Verification depth:** functional (tests red-first)
 > **Severity:** Medium
 > **Points:** 3
@@ -69,3 +69,4 @@ Derive the column in reconcile from the RFC files, preserving a cell the derivat
 | --- | --- | --- |
 | 2026-07-28 | Claude Fable 5 (RUN-01KYKVZM delivery, split from BG0319) | Filed |
 | 2026-07-29 | Claude Opus 5 | The column is now DERIVED-CHECKED rather than swept: `spawned_column_drift` compares each request's cell against `children_of` and reports either direction of disagreement. The header rename the finding notes as a cross-file change is deliberately NOT made - the detector reads a set of accepted spellings instead, so this project keeps its header and any project naming the column differently is covered on the day it does. |
+| 2026-07-29 | Claude Opus 5 | REOPENED at the closing review. `spawned_column_drift` pins its header from the FIRST table in the file, and every discovery index opens with a `## Summary` table - so the column is never found and the detector is inert on every real index. Unblinded it would also be WRONG: `children_of` has no reader for the `RFC:` field this repo uses, so it reports 16 true cells as drift and its remedy says to blank them. Every fixture had a single table, which is why the tests passed. Marked Fixed while delivering nothing; the residue is BG0406. |

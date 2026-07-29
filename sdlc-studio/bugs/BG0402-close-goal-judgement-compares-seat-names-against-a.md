@@ -30,19 +30,45 @@ Separately, a seat's answer is mapped `achieved if polarity in ('yes','y','true'
 
 Resolve both sides into ONE namespace before comparing, and refuse rather than warn when the author cannot be identified - an exclusion that cannot be performed must not be claimed. Use `verdict_polarity` for the seat answer so a `no` is recorded as `missed`, not `partial`. And do not fan a whole-goal plan-time answer across clauses: a clause with no per-clause verdict is UNANSWERED, which the panel already knows how to report.
 
-## Acceptance Criteria
-
-- [ ] The author and the seats are compared in one namespace, and a seat that IS the author is excluded in the shipped configuration.
-- [ ] An author that cannot be identified refuses the panel rather than producing one labelled `author excluded`.
-- [ ] A seat answering `no` is recorded as `missed`, via `verdict_polarity` rather than a second polarity mapping.
-- [ ] A clause no seat answered per-clause is reported UNANSWERED rather than inheriting a whole-goal plan-time answer.
-
 ## Impact
 
 The author-exclusion is the reason a goal panel is evidence rather than self-assessment. Printing `author excluded` when nothing was excluded is a claim the record cannot support, made at the moment an operator is deciding whether to sign off - and a seat's `no` reaching the close as `partial` understates the one answer that should stop it.
+
+## Acceptance Criteria
+
+### AC1: an unprovable exclusion refuses rather than claiming one
+
+- **Given** a run on which no author can be identified
+- **When** the close's goal judgement runs
+- **Then** the panel is NOT RUN and says why, instead of producing a verdict labelled "author excluded" over a panel that excluded nobody
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertMechanismsAreReachedTests::test_a_panel_that_cannot_prove_the_exclusion_refuses
+- **Verified:** yes (2026-07-29)
+
+### AC2: with an author recorded, the panel runs and reports per clause
+
+- **Given** a run whose author is recorded and a multi-clause goal
+- **When** the judgement runs
+- **Then** the panel returns a per-clause verdict, so the refusal above is a condition on the mechanism rather than a refusal of it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertMechanismsAreReachedTests::test_the_close_reaches_the_goal_panel_and_reports_per_clause
+- **Verified:** yes (2026-07-29)
+
+### AC3: a seat answering "no" is recorded as missed - NOT YET FIXED
+
+- **Given** a seat whose recorded answer is `no`
+- **When** the clause verdicts are derived
+- **Then** it is recorded `missed` via `verdict_polarity`, not `partial` via a second polarity mapping in the same module
+- **Verify:** manual - open, not yet delivered
+
+### AC4: a plan-time whole-goal answer is not fanned across clauses - NOT YET FIXED
+
+- **Given** one plan-time answer about the whole goal
+- **When** the per-clause verdicts are assembled
+- **Then** a clause no seat answered per-clause reads UNANSWERED, which the panel already knows how to report
+- **Verify:** manual - open, not yet delivered
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-29 | sdlc-studio | Filed |
+| 2026-07-29 | Claude Opus 5 | Exclusion half FIXED: the author and the seats are now compared through `critic._id`, the count of excluded seats is reported so the claim is checkable, and a run whose author cannot be identified REFUSES the panel. The two remaining halves - a seat's `no` recorded as `partial` while `verdict_polarity` sits unused, and one plan-time answer fanned across every clause - are NOT fixed and this bug stays open for them. |
