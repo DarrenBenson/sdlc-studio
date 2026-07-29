@@ -4192,6 +4192,17 @@ def _close_gate(root, retro_id, state):
                          verdict="pass" if rc == 0 else "fail", surface=surface,
                          run_id=(state or {}).get("run_id"))
     if rc == 0:
+        # US0553. The close has just run the FULL suites and earned a green over this tree.
+        # `suite_decision` already knew how to reuse one and the commit hook already writes one
+        # after its own green - but nothing wrote one HERE, so the first commit of the close
+        # re-earned a verdict the close had paid for seconds earlier. Recorded into the same
+        # record the hook reads, not a close-private one, or it proves nothing to the next
+        # commit. `mode="full"` because that is what ran: a boundary declines a selected green,
+        # and claiming full coverage the run did not have would be the false green this whole
+        # mechanism exists to refuse.
+        with contextlib.suppress(OSError):
+            gate.record_suite_verdict(str(root), run=str((state or {}).get("run_id") or "close"),
+                                      status="green", mode="full")
         return True, f"gate --require-retro {retro_id} --require-review: PASS", ""
     split = close_blocker_split(root, state, out)
     if not split["attributed"]:
@@ -5896,6 +5907,10 @@ def cmd_close(args: argparse.Namespace) -> int:
     # the sign-off fan-out: the operator is about to decide, and a repeat is evidence for that
     # decision. Never blocking - see `_close_lesson_repeats`.
     _close_lesson_repeats(root)
+    # What this close itself cost, on BOTH paths and before the decision, so the next reduction
+    # is measured against a number rather than an impression. Read from the execution ledger:
+    # an unrecorded component reads as UNMEASURED, never as zero seconds.
+    print(close_cost_line(close_cost(root, (state or {}).get("run_id"))))
     # `--apply-signoff`: the operator has already reviewed the brief and decided - fan their
     # recorded approval into per-unit sign-offs + Done transitions, then the tail. Replaces the
     # brief print (the brief is what you read to DECIDE; here the decision is made).
@@ -7752,6 +7767,80 @@ def record_execution_run(root, *, moment: str, mode: str, seconds: float | None,
               file=sys.stderr)
         return {**row, "error": str(exc)}
     return row
+
+
+def close_cost(root, run_id: str | None = None) -> dict:
+    """What THIS run's close cost, read from the execution ledger rather than recalled.
+
+    `{"gate_seconds", "gate_runs", "measured_runs", "reused_runs", "reused_seconds",
+    "elapsed_seconds", "unmeasured"}`.
+
+    Every figure is a measurement or it is absent. A row whose `seconds` is null is counted in
+    `unmeasured` and contributes nothing to the total - reading it as zero would let a close
+    that never recorded its cost report the cheapest close on file, which is the direction a
+    cost report must never fail in.
+
+    `reused_runs` is counted separately and its seconds are the seconds of the run whose
+    verdict it reused, so a saving reads as a saving. A reuse that cannot be traced back to a
+    measured run adds to `unmeasured` rather than to zero.
+
+    `elapsed_seconds` spans the first close event to the last, which is what a close costs an
+    operator waiting on it. A close with a single event has no span to measure and reports
+    None, never 0.0."""
+    rows = [r for r in read_execution_ledger(root)
+            if r.get("moment") == "close" and (run_id is None or r.get("run_id") == run_id)]
+    by_at = {r.get("at"): r for r in rows if r.get("at")}
+    gate_seconds = 0.0
+    reused_seconds = 0.0
+    unmeasured: list[str] = []
+    measured_runs = reused_runs = 0
+    for row in rows:
+        seconds = row.get("seconds")
+        if row.get("mode") == "reuse":
+            reused_runs += 1
+            source = by_at.get(row.get("reused_from")) or {}
+            if isinstance(source.get("seconds"), (int, float)):
+                reused_seconds += float(source["seconds"])
+            else:
+                unmeasured.append(f"a reuse at {row.get('at')} whose source run is not on the "
+                                  f"ledger, so the seconds it saved are unknown")
+            continue
+        if isinstance(seconds, (int, float)):
+            gate_seconds += float(seconds)
+            measured_runs += 1
+        else:
+            unmeasured.append(f"a gate run at {row.get('at')} recorded no seconds")
+    stamps = sorted(r["at"] for r in rows if r.get("at"))
+    # The shared strict parser rather than a fifth hand-rolled one - it returns None for a
+    # timestamp it cannot read, which is the answer a cost report needs (unmeasured, not zero).
+    elapsed = (run_state._elapsed_seconds(stamps[0], stamps[-1])  # noqa: SLF001
+               if len(stamps) > 1 else None)
+    return {"gate_seconds": round(gate_seconds, 1) if measured_runs else None,
+            "gate_runs": len(rows) - reused_runs, "measured_runs": measured_runs,
+            "reused_runs": reused_runs,
+            "reused_seconds": round(reused_seconds, 1) if reused_seconds else None,
+            "elapsed_seconds": elapsed, "unmeasured": unmeasured}
+
+
+def close_cost_line(cost: dict) -> str:
+    """One line an operator reads at the close, or a stated absence of measurement."""
+    if not cost.get("gate_runs") and not cost.get("reused_runs"):
+        return "close cost: no gate event recorded for this run - UNMEASURED, not zero"
+    parts = []
+    if cost.get("gate_seconds") is not None:
+        parts.append(f"{cost['gate_seconds']:.0f}s of gate over "
+                     f"{cost['measured_runs']} run(s)")
+    if cost.get("reused_runs"):
+        saved = (f", saving about {cost['reused_seconds']:.0f}s"
+                 if cost.get("reused_seconds") else "")
+        parts.append(f"{cost['reused_runs']} verdict(s) reused{saved}")
+    if cost.get("elapsed_seconds") is not None:
+        parts.append(f"{cost['elapsed_seconds'] // 60}m{cost['elapsed_seconds'] % 60:02d}s elapsed")
+    line = "close cost: " + ("; ".join(parts) if parts else "no measured component")
+    if cost.get("unmeasured"):
+        line += (f" ({len(cost['unmeasured'])} component(s) UNMEASURED: "
+                 f"{cost['unmeasured'][0]})")
+    return line
 
 
 def recorded_test_strategy(root) -> dict | None:

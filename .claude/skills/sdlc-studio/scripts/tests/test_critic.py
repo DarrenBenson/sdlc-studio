@@ -1,7 +1,10 @@
 """Unit tests for critic.py - committed critic-verdict record (CR0023). RED first."""
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
+import json
 import sys
 import tempfile
 import shutil
@@ -10,6 +13,8 @@ from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parent.parent / "critic.py"
 REPO_ROOT = Path(__file__).resolve().parents[5]
+sys.path.insert(0, str(SCRIPT.parent))
+from lib.sdlc_md import norm_id as sdlc_md_norm  # noqa: E402
 
 
 def _load():
@@ -90,10 +95,20 @@ class CliTests(unittest.TestCase):
 
     def test_cli_record_requires_author(self) -> None:
         # The authoring seat is mandatory: independence you cannot verify is none at all.
+        # Asserted as the PROPERTY - refused, named, nothing written - rather than as the
+        # SystemExit argparse used to raise. US0557 moved the check off argparse so one
+        # refusal can name every missing argument at once; a test pinned to the mechanism
+        # would have called that regression.
         with tempfile.TemporaryDirectory() as d:
             mod = _load()
-            with self.assertRaises(SystemExit):
-                mod.main(["record", "--unit", "US0017", "--verdict", "approve", "--root", d])
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                    contextlib.suppress(SystemExit):
+                rc = mod.main(["record", "--unit", "US0017", "--verdict", "approve", "--root", d])
+                self.assertNotEqual(rc, 0)
+            self.assertIn("--author", out.getvalue() + err.getvalue())
+            self.assertIsNone(mod.verdict_for(Path(d), "US0017"),
+                              "a refused record must write nothing")
 
     def test_cli_SprintReview_records_and_covers(self) -> None:
         # US0247: the sprint-review CLI records a batch verdict readable as coverage per unit.
@@ -2500,6 +2515,150 @@ class GoalPanelTests(unittest.TestCase):
             _load().goal_panel(".", ["one clause"], [], "builder")
         with self.assertRaises(ValueError):
             _load().goal_panel(".", [], ["qa"], "builder")
+
+
+class _BatchBase(unittest.TestCase):
+    """A workspace with an open run, so `--from-run` has a batch to read."""
+
+    UNITS = ("US0001", "US0002", "US0003")
+
+    def setUp(self) -> None:
+        self.mod = _load()
+        self.root = Path(tempfile.mkdtemp(prefix="critic_batch_"))
+        self.addCleanup(shutil.rmtree, self.root, ignore_errors=True)
+        (self.root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (self.root / "sdlc-studio" / "reviews").mkdir(parents=True)
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            json.dumps({"run_id": "RUN-BATCH", "batch": list(self.UNITS), "outcome": "running"}),
+            encoding="utf-8")
+
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = self.mod.main([*argv, "--root", str(self.root)])
+        return rc, out.getvalue(), err.getvalue()
+
+
+class BatchFormTests(_BatchBase):
+    """US0556. Recording the evidence, the verdict and the sign-off for nineteen units took
+    fifty-seven invocations of this script - each paying interpreter start, imports and a
+    read-modify-write to record one line. Thirty-eight of them were spent discovering a
+    required argument, one unit at a time."""
+
+    def test_each_verb_records_every_named_unit_in_one_invocation(self) -> None:
+        rc, out, err = self._run(["evidence", "--units", "US0001,US0002,US0003",
+                                  "--reviewer", "qa", "--author", "builder",
+                                  "--findings", "probed the boundary"])
+        self.assertEqual(0, rc, err)
+        for unit in self.UNITS:
+            self.assertIsNotNone(self.mod.evidence_for(self.root, unit), f"{unit} unrecorded")
+        rc, _, err = self._run(["record", "--units", "US0001,US0002,US0003",
+                                "--verdict", "approve", "--reviewer", "qa", "--author", "builder"])
+        self.assertEqual(0, rc, err)
+        for unit in self.UNITS:
+            self.assertEqual("APPROVE", self.mod.verdict_for(self.root, unit)["verdict"])
+        rc, _, err = self._run(["signoff", "--units", "US0001,US0002,US0003",
+                                "--principal", "operator", "--author", "builder"])
+        self.assertEqual(0, rc, err)
+        for unit in self.UNITS:
+            self.assertIsNotNone(self.mod.signoff_for(self.root, unit), f"{unit} unsigned")
+
+    def test_the_open_run_is_the_default_scope_and_an_absent_batch_is_refused(self) -> None:
+        rc, _, err = self._run(["record", "--from-run", "--verdict", "approve",
+                                "--reviewer", "qa", "--author", "builder"])
+        self.assertEqual(0, rc, err)
+        for unit in self.UNITS:
+            self.assertEqual("APPROVE", self.mod.verdict_for(self.root, unit)["verdict"])
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").unlink()
+        rc, _, err = self._run(["record", "--from-run", "--verdict", "approve",
+                                "--reviewer", "qa", "--author", "builder"])
+        self.assertEqual(2, rc, "no open batch must refuse, never default to acting on nothing")
+        self.assertIn("no open run", err.lower())
+
+    def test_every_supplied_id_is_acted_on_and_the_count_is_reported(self) -> None:
+        """BG0386's class: a repeated flag that silently keeps the last value reports a clean
+        batch having looked at one unit. Both spellings must accumulate, and the count the
+        command reports is the count it acted on."""
+        rc, out, err = self._run(["record", "--unit", "US0001", "--unit", "US0002",
+                                  "--units", "US0003", "--verdict", "approve",
+                                  "--reviewer", "qa", "--author", "builder"])
+        self.assertEqual(0, rc, err)
+        for unit in self.UNITS:
+            self.assertIsNotNone(self.mod.verdict_for(self.root, unit),
+                                 f"{unit} was supplied and silently dropped")
+        self.assertIn("3", out, "the count acted on is reported, not assumed")
+
+    def test_a_partial_failure_names_the_units_written_and_exits_non_zero(self) -> None:
+        """A batch that half-succeeded and reported success is worse than one that never ran:
+        the caller reruns nothing and the gap is invisible."""
+        real = self.mod.record_verdict
+
+        def explode(root, unit, *a, **kw):
+            if sdlc_md_norm(unit) == "US0002":
+                raise ValueError("US0002 is unwritable")
+            return real(root, unit, *a, **kw)
+
+        self.mod.record_verdict = explode
+        self.addCleanup(setattr, self.mod, "record_verdict", real)
+        rc, out, err = self._run(["record", "--units", "US0001,US0002,US0003",
+                                  "--verdict", "approve", "--reviewer", "qa",
+                                  "--author", "builder"])
+        self.assertNotEqual(0, rc, "a partial batch must never exit zero")
+        combined = out + err
+        self.assertIn("US0002", combined, "the failing unit is named")
+        self.assertIn("US0001", combined, "so is what WAS written")
+
+    def test_the_single_unit_form_is_unchanged(self) -> None:
+        rc, out, err = self._run(["record", "--unit", "US0001", "--verdict", "approve",
+                                  "--reviewer", "qa", "--author", "builder"])
+        self.assertEqual(0, rc, err)
+        self.assertEqual("APPROVE", self.mod.verdict_for(self.root, "US0001")["verdict"])
+        self.assertIsNone(self.mod.verdict_for(self.root, "US0002"),
+                          "one named unit means one unit")
+
+
+class ArgumentCompletenessTests(_BatchBase):
+    """US0557. `critic signoff` needs `--author` and `close --apply-signoff` needs
+    `--principal`; both were learned from a refusal, and the first cost nineteen spawns before
+    the message was read. A refusal has to arrive once, before anything is written, naming
+    everything the command needs."""
+
+    def test_a_missing_argument_refuses_before_any_unit_is_written(self) -> None:
+        rc, _, err = self._run(["signoff", "--units", "US0001,US0002,US0003",
+                                "--principal", "operator"])
+        self.assertEqual(2, rc, err)
+        for unit in self.UNITS:
+            self.assertIsNone(self.mod.signoff_for(self.root, unit),
+                              f"{unit} was written despite the refusal")
+
+    def test_the_refusal_names_every_missing_argument(self) -> None:
+        rc, _, err = self._run(["signoff", "--units", "US0001,US0002"])
+        self.assertEqual(2, rc)
+        self.assertIn("--principal", err)
+        self.assertIn("--author", err,
+                      "naming only the first missing argument costs a second round-trip")
+
+    def test_every_named_argument_is_one_the_parser_accepts(self) -> None:
+        """A message that sends a caller to a flag the command does not have is a round-trip
+        that ends in a second refusal. Checked against the parser, not against a list."""
+        import argparse
+        import re as _re
+        parser = self.mod.build_parser() if hasattr(self.mod, "build_parser") else None
+        self.assertIsNotNone(parser, "the parser must be reachable to be held to its messages")
+        accepted: dict[str, set[str]] = {}
+        for action in parser._subparsers._group_actions:      # noqa: SLF001 - the only route in
+            for verb, sub in action.choices.items():
+                accepted[verb] = {opt for a in sub._actions for opt in a.option_strings}  # noqa: SLF001
+        for verb in ("record", "evidence", "signoff"):
+            for missing in ([], ["--units", "US0001"]):
+                out, err = io.StringIO(), io.StringIO()
+                with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                        contextlib.suppress(SystemExit):
+                    self.mod.main([verb, *missing, "--root", str(self.root)])
+                for flag in set(_re.findall(r"--[a-z][a-z-]*", out.getvalue() + err.getvalue())):
+                    with self.subTest(verb=verb, flag=flag):
+                        self.assertIn(flag, accepted[verb],
+                                      f"{verb} names {flag}, which its parser does not accept")
 
 
 if __name__ == "__main__":

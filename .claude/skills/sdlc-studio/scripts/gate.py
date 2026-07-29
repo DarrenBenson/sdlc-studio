@@ -2182,23 +2182,44 @@ def test_relevant_paths(root: str = ".") -> set[str]:
 LISTING_DECL = "GATE_LISTING_ONLY"
 
 
-def listing_only_paths(root: str = ".") -> set[str]:
-    """Directories the suites read as a LISTING - which files exist - and never open.
+#: A path's artefact id: the leading id token of the file's basename, as the artefact naming
+#: convention writes it (`BG0399-file-finding-....md`). A file whose name carries none cannot
+#: be matched against an id scope, which is why the caller degrades to structural for it.
+_PATH_ID = re.compile(r"^(?P<id>[A-Z]{2,4}-?\d{3,4})[-.]")
 
-    A census over the artefact workspace answers a question about the tree's SHAPE. Adding,
-    deleting or renaming a file under it can change that answer; editing the prose inside one
-    cannot. Recording such a directory as fully relevant made every artefact commit pay for
-    both suites, because one entry then absorbed the four narrow reads under it.
 
-    Never widened beyond the measurement: a declared path that the module does not actually
-    read is ignored, and the shipped code trees are excluded outright - `scripts/`, `templates/`
-    and `tools/` are imported and asserted over, so no declaration may make them listing-only."""
+def _path_artefact_id(path: str) -> str | None:
+    """The artefact id a path names, or None when its basename carries none."""
+    base = os.path.basename(str(path).strip().replace(os.sep, "/"))
+    match = _PATH_ID.match(base)
+    return match.group("id").replace("-", "") if match else None
+
+
+def listing_only_scopes(root: str = ".") -> dict:
+    """Each listing-only directory mapped to the ids its structural read depends on.
+
+    `None` means the whole directory, which is what a bare-string declaration has always
+    meant and what a declaration naming no readable ids falls back to. A `frozenset` narrows
+    it: only a structural change to an artefact whose id is in the set can change the
+    declaring module's answer.
+
+    Two declaration shapes, and the narrower one is opt-in::
+
+        GATE_LISTING_ONLY = ("sdlc-studio",)                             # whole directory
+        GATE_LISTING_ONLY = ({"path": "sdlc-studio", "ids": ("BG0288",)},)  # these ids only
+
+    The fail-safe direction is preserved throughout, because this is a narrowing and a
+    narrowing that goes wrong makes a real change look irrelevant. An unparseable declaration,
+    an unreadable `ids` value and an empty id set all degrade to the whole directory - slower
+    than intended, never blind. The same reasoning governs the path side: a directory the
+    module does not actually read is ignored, and the shipped code trees are excluded
+    outright, since `scripts/`, `templates/` and `tools/` are imported and asserted over."""
     root = os.path.abspath(root)
     read_map = suite_read_map(root)
     if read_map is None:
-        return set()
+        return {}
     protected = {p.rstrip("/") for p in LEGACY_TEST_RELEVANT} | {s.rstrip("/") for s in TEST_SUITE_DIRS}
-    out: set[str] = set()
+    out: dict = {}
     for module, paths in read_map.items():
         try:
             with open(os.path.join(root, module), encoding="utf-8") as handle:
@@ -2214,14 +2235,49 @@ def listing_only_paths(root: str = ".") -> set[str]:
                 declared = ast.literal_eval(node.value)
             except ValueError:
                 continue
-            for entry in (declared if isinstance(declared, (list, tuple)) else [declared]):
-                rel = str(entry).strip().strip("/")
+            entries = declared if isinstance(declared, (list, tuple)) else [declared]
+            for entry in entries:
+                if isinstance(entry, dict):
+                    rel = str(entry.get("path", "")).strip().strip("/")
+                    ids = _declared_ids(entry.get("ids"))
+                else:
+                    rel = str(entry).strip().strip("/")
+                    ids = None
                 # Declared AND measured: a declaration about a directory this module never
                 # reads narrows nothing, and letting it through would be a way to exempt a
                 # tree by writing its name down.
-                if rel and rel in paths and rel not in protected:
-                    out.add(rel)
+                if not rel or rel not in paths or rel in protected:
+                    continue
+                if rel in out:
+                    # Two modules reading the same tree: the union of what they depend on,
+                    # and a single whole-directory declaration wins over any id set. One
+                    # module's narrowing must never speak for another's read - the defect
+                    # BG0398 records about applying a declaration globally.
+                    prior = out[rel]
+                    out[rel] = None if prior is None or ids is None else prior | ids
+                else:
+                    out[rel] = ids
     return out
+
+
+def _declared_ids(value) -> "frozenset | None":
+    """The id set a declaration names, or None when it names none this module can read."""
+    if not isinstance(value, (list, tuple, set, frozenset)):
+        return None
+    ids = {str(i).strip().replace("-", "").upper() for i in value if str(i).strip()}
+    return frozenset(ids) or None
+
+
+def listing_only_paths(root: str = ".") -> set[str]:
+    """Directories the suites read as a LISTING - which files exist - and never open.
+
+    A census over the artefact workspace answers a question about the tree's SHAPE. Adding,
+    deleting or renaming a file under it can change that answer; editing the prose inside one
+    cannot. Recording such a directory as fully relevant made every artefact commit pay for
+    both suites, because one entry then absorbed the four narrow reads under it.
+
+    The set only - see `listing_only_scopes` for which ids each entry's read depends on."""
+    return set(listing_only_scopes(root))
 
 
 def _minimal(entries: set[str], keep_under: set[str] | None = None) -> set[str]:
@@ -2250,15 +2306,40 @@ def is_test_relevant(paths, root: str = ".", structural=None) -> bool:
     that matches only listing-only entries is relevant just when it is structural: the census
     reading that directory sees a file appear or vanish, and sees nothing at all when the words
     inside one change. Omit it and every path is treated as structural, which is the old
-    behaviour and the safe direction - an unanswered question runs the suites."""
+    behaviour and the safe direction - an unanswered question runs the suites.
+
+    A listing-only entry may narrow further by naming the ids its read depends on, in which
+    case a structural change is relevant only for those ids. A path whose basename carries no
+    id cannot be judged against that set and stays relevant, the same direction
+    `structural=None` degrades in."""
     relevant = test_relevant_paths(root)
-    listing = {p.rstrip("/") for p in listing_only_paths(root)}
+    scopes = {p.rstrip("/"): ids for p, ids in listing_only_scopes(root).items()}
+    listing = set(scopes)
     content = relevant - listing
     structural = None if structural is None else {str(p).strip() for p in structural}
     for p in paths:
         if _matches_relevant(p, content):
             return True
-        if _matches_relevant(p, listing) and (structural is None or str(p).strip() in structural):
+        if not _matches_relevant(p, listing):
+            continue
+        if structural is not None and str(p).strip() not in structural:
+            continue
+        if _in_scope(p, scopes):
+            return True
+    return False
+
+
+def _in_scope(path: str, scopes: dict) -> bool:
+    """Whether a structural change to `path` can change any declaration that covers it.
+
+    True for every entry that named no ids. For a scoped entry it asks whether the path's own
+    artefact id is one it named - and an unidentifiable path answers True, because a scope
+    cannot rule out what it cannot recognise."""
+    ident = _path_artefact_id(path)
+    for entry, ids in scopes.items():
+        if not _matches_relevant(path, {entry}):
+            continue
+        if ids is None or ident is None or ident in ids:
             return True
     return False
 

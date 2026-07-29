@@ -4510,5 +4510,225 @@ class WorkspaceRelevanceGranularityTests(unittest.TestCase):
                         "a file the suites genuinely open must stay relevant")
 
 
+class CloseVerdictReuseTests(unittest.TestCase):
+    """US0553. `suite_decision` already knew how to reuse a green verdict over an unchanged
+    surface (US0493), and the commit hook already records one after a green run. The close did
+    not: it runs the FULL gate as step 4 of seven and recorded nothing the hook could read, so
+    the first commit after it re-earned a verdict the close had just paid for. The mechanism was
+    there; nothing called it from the close - a caller, not a capability."""
+
+    @staticmethod
+    def _repo(tmp: Path) -> Path:
+        """A tracked git tree - `surface_hash` reads `git ls-files` and returns None for a
+        directory git cannot enumerate, so an untracked fixture would make every assertion
+        here a comparison of two Nones."""
+        suite = tmp / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"
+        suite.mkdir(parents=True)
+        (suite / "test_thing.py").write_text(
+            "from pathlib import Path\n"
+            "REPO = Path(__file__).resolve().parents[5]\n"
+            "SRC = REPO / 'sdlc-studio' / 'trd.md'\n"
+            "def test_thing():\n"
+            "    assert SRC.read_text()\n", encoding="utf-8")
+        ws = tmp / "sdlc-studio"
+        ws.mkdir(parents=True)
+        (ws / "trd.md").write_text("# trd\n", encoding="utf-8")
+        (ws / ".local").mkdir()
+        gitutil.git(["init", "-q"], cwd=tmp)
+        gitutil.git(["add", "-A"], cwd=tmp)
+        gitutil.git(["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "c"], cwd=tmp)
+        return tmp
+
+    def test_a_recorded_green_carries_the_hash_of_the_tree_it_verified(self) -> None:
+        """The gate-side half of the contract. That the CLOSE makes this call is asserted in
+        `test_sprint.py::CloseVerdictReuseTests` - naming that here would be a test whose name
+        promises a caller it never exercises."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d)))
+            self.assertIsNone(gate.read_suite_verdict(root), "nothing recorded yet")
+            gate.record_suite_verdict(root, run="RUN-CLOSE", status="green", mode="full")
+            recorded = gate.read_suite_verdict(root)
+            self.assertEqual("green", recorded["status"])
+            self.assertEqual("full", recorded["mode"])
+            digest = gate.surface_hash(root)
+            self.assertIsNotNone(digest, "an unhashable fixture would make the next line vacuous")
+            self.assertEqual(digest, recorded["surface_hash"],
+                             "the verdict must carry the hash of the tree it verified")
+
+    def test_a_close_phase_commit_over_an_unchanged_surface_reuses_the_verdict(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d)))
+            gate.record_suite_verdict(root, run="RUN-CLOSE", status="green", mode="full")
+            decision = gate.suite_decision(root)
+            self.assertFalse(decision["run"], decision["reason"])
+            self.assertEqual("reuse", decision["mode"])
+            self.assertEqual("RUN-CLOSE", decision["reused"])
+
+    def test_a_moved_surface_refuses_the_reuse(self) -> None:
+        """The half that stops the saving becoming a blind spot, and the reason the reason
+        string matters: a refusal has to say the surface moved, not report a match."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            gate.record_suite_verdict(str(root), run="RUN-CLOSE", status="green", mode="full")
+            src = root / ".claude/skills/sdlc-studio/scripts/tests/test_thing.py"
+            src.write_text(src.read_text() + "\ndef test_more():\n    assert True\n",
+                           encoding="utf-8")
+            decision = gate.suite_decision(str(root))
+            self.assertTrue(decision["run"])
+            self.assertNotEqual("reuse", decision["mode"])
+            self.assertIn("surface", decision["reason"].lower())
+
+    def test_a_verdict_from_a_selected_run_is_not_reused_at_a_boundary(self) -> None:
+        """A green from a SELECTED run is evidence about the tests that ran, not the suite.
+        A close is a boundary, so it must decline that verdict rather than inherit it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d)))
+            gate.record_suite_verdict(root, run="RUN-PARTIAL", status="green", mode="selected")
+            decision = gate.suite_decision(root, boundary="close")
+            self.assertTrue(decision["run"], "a boundary cannot inherit a selected green")
+            self.assertNotEqual("reuse", decision["mode"])
+
+    def test_a_red_verdict_is_never_reused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d)))
+            gate.record_suite_verdict(root, run="RUN-RED", status="red", mode="full")
+            decision = gate.suite_decision(root)
+            self.assertTrue(decision["run"])
+            self.assertNotEqual("reuse", decision["mode"])
+
+
+class ListingOnlyIdScopeTests(unittest.TestCase):
+    """US0554. A listing-only declaration was a DIRECTORY, so a module whose structural read
+    depends on four named ids made every new file anywhere under that tree structural - and
+    filing an artefact is most of what a sprint close does. A declaration may now name the ids
+    it depends on; naming none keeps the whole directory, which is what every existing
+    declaration means and the direction a wrong one has to fail in."""
+
+    @staticmethod
+    def _repo(tmp: Path, decl: str) -> Path:
+        suite = tmp / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"
+        suite.mkdir(parents=True)
+        ws = tmp / "sdlc-studio"
+        (ws / "bugs").mkdir(parents=True)
+        (ws / "bugs" / "BG0288-named.md").write_text("# named\n", encoding="utf-8")
+        (ws / "bugs" / "BG0001-other.md").write_text("# other\n", encoding="utf-8")
+        (ws / "trd.md").write_text("# trd\n", encoding="utf-8")
+        (suite / "test_census.py").write_text(
+            "from pathlib import Path\n"
+            "REPO = Path(__file__).resolve().parents[5]\n"
+            f"GATE_LISTING_ONLY = {decl}\n"
+            "WS = REPO / 'sdlc-studio'\n"
+            "TRD = REPO / 'sdlc-studio' / 'trd.md'\n"
+            "def test_census():\n"
+            "    assert list(WS.glob('**/BG0288*.md'))\n"
+            "    assert TRD.read_text()\n", encoding="utf-8")
+        return tmp
+
+    #: The mapping form: the directory read as a listing, plus the ids that read depends on.
+    SCOPED = "({'path': 'sdlc-studio', 'ids': ('BG0288',)},)"
+
+    def test_a_declaration_parses_its_directory_and_its_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d), self.SCOPED))
+            self.assertIn("sdlc-studio", gate.listing_only_paths(root),
+                          "the mapping form still declares its directory listing-only")
+            self.assertEqual({"sdlc-studio": frozenset({"BG0288"})},
+                             gate.listing_only_scopes(root))
+
+    def test_a_malformed_id_set_is_refused_rather_than_partially_honoured(self) -> None:
+        """A declaration nobody can read must not become a narrowing nobody intended. It
+        degrades to the whole directory - the meaning it had before ids existed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d), "({'path': 'sdlc-studio', 'ids': 17},)"))
+            self.assertIn("sdlc-studio", gate.listing_only_paths(root))
+            self.assertEqual({"sdlc-studio": None}, gate.listing_only_scopes(root),
+                             "an unreadable id set falls back to the whole directory")
+            added = "sdlc-studio/bugs/BG0002-new.md"
+            self.assertTrue(gate.is_test_relevant([added], root, structural={added}))
+
+    def test_an_unnamed_id_is_not_structural(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d), self.SCOPED))
+            added = "sdlc-studio/bugs/BG0002-new.md"
+            self.assertFalse(
+                gate.is_test_relevant([added], root, structural={added}),
+                "filing an artefact the declaring module never reads cannot change its answer")
+
+    def test_a_named_id_stays_structural(self) -> None:
+        """The other half, and the one that stops the narrowing becoming an exemption."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d), self.SCOPED))
+            added = "sdlc-studio/bugs/BG0288-named.md"
+            self.assertTrue(gate.is_test_relevant([added], root, structural={added}))
+
+    def test_a_declaration_with_no_ids_keeps_the_whole_directory_structural(self) -> None:
+        """The form every existing declaration uses. The narrowing is opt-in, so a module
+        that omits its ids is slower than it needs to be rather than wrong."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d), "('sdlc-studio',)"))
+            self.assertEqual({"sdlc-studio": None}, gate.listing_only_scopes(root))
+            added = "sdlc-studio/bugs/BG0002-new.md"
+            self.assertTrue(gate.is_test_relevant([added], root, structural={added}))
+
+    def test_an_empty_id_tuple_falls_back_to_the_whole_directory(self) -> None:
+        """An empty set is not "depends on nothing" - read that way it would exempt the entire
+        tree, which is the opposite of what a narrowing may do. It means the same as omitting
+        the key: the whole directory."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d), "({'path': 'sdlc-studio', 'ids': ()},)"))
+            self.assertEqual({"sdlc-studio": None}, gate.listing_only_scopes(root))
+            added = "sdlc-studio/bugs/BG0002-new.md"
+            self.assertTrue(gate.is_test_relevant([added], root, structural={added}))
+
+    def test_two_modules_reading_one_tree_take_the_union_of_their_ids(self) -> None:
+        """One module's narrowing must never speak for another's read - the class BG0398
+        records. Two scoped declarations union; a bare one beside a scoped one wins outright,
+        because the module that named no ids depends on all of them."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), self.SCOPED)
+            suite = root / ".claude/skills/sdlc-studio/scripts/tests"
+            second = suite / "test_other_census.py"
+            second.write_text(
+                "from pathlib import Path\n"
+                "REPO = Path(__file__).resolve().parents[5]\n"
+                "GATE_LISTING_ONLY = ({'path': 'sdlc-studio', 'ids': ('BG0001',)},)\n"
+                "WS = REPO / 'sdlc-studio'\n"
+                "def test_other():\n"
+                "    assert list(WS.glob('**/BG0001*.md'))\n", encoding="utf-8")
+            self.assertEqual({"sdlc-studio": frozenset({"BG0288", "BG0001"})},
+                             gate.listing_only_scopes(str(root)))
+            second.write_text(second.read_text().replace(
+                "({'path': 'sdlc-studio', 'ids': ('BG0001',)},)", "('sdlc-studio',)"),
+                encoding="utf-8")
+            self.assertEqual({"sdlc-studio": None}, gate.listing_only_scopes(str(root)),
+                             "a module that named no ids depends on all of them")
+
+    def test_a_structural_file_carrying_no_id_stays_relevant_under_a_scoped_directory(self) -> None:
+        """An id is how a path is matched against the scope. A file whose name carries none
+        cannot be judged, and an unanswered question runs the suites - the same direction
+        `structural=None` degrades in."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d), self.SCOPED))
+            added = "sdlc-studio/notes/scratch.md"
+            self.assertTrue(gate.is_test_relevant([added], root, structural={added}))
+
+    def test_a_body_edit_is_still_irrelevant_whichever_id_it_is(self) -> None:
+        """The id scope narrows the STRUCTURAL half only. Editing prose could never change a
+        listing, and that must stay true for a named id as much as an unnamed one."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d), self.SCOPED))
+            for path in ("sdlc-studio/bugs/BG0288-named.md", "sdlc-studio/bugs/BG0001-other.md"):
+                with self.subTest(path=path):
+                    self.assertFalse(gate.is_test_relevant([path], root, structural=set()))
+
+    def test_a_narrower_read_under_a_scoped_directory_keeps_its_content_relevance(self) -> None:
+        """The trap `_minimal` set for BG0383, re-checked against the scoped form: a file the
+        suite genuinely OPENS must survive underneath the census that only counts."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d), self.SCOPED))
+            self.assertIn("sdlc-studio/trd.md", gate.test_relevant_paths(root))
+            self.assertTrue(gate.is_test_relevant(["sdlc-studio/trd.md"], root, structural=set()))
+
+
 if __name__ == "__main__":
     unittest.main()

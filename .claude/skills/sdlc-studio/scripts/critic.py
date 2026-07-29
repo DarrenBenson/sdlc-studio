@@ -2070,6 +2070,96 @@ def cmd_brief(args: argparse.Namespace) -> int:
     return 0
 
 
+class BatchRefused(ValueError):
+    """A batch invocation refused before anything was written."""
+
+
+def batch_units(args: argparse.Namespace, verb: str) -> list[str]:
+    """The units one invocation acts on, from `--unit`, `--units` or the open run.
+
+    Every supplied spelling accumulates and the result keeps its order without repeats. That
+    is deliberate and it is BG0386's defect stated as a contract: a repeated flag that keeps
+    only its last value answers about one unit while reporting on a batch, and the caller has
+    no way to see the difference.
+
+    `--from-run` reads the open run's approved batch. A run that is not open REFUSES; it never
+    degrades to the empty batch, because acting on nothing and reporting success is the same
+    false clean the count above exists to prevent."""
+    supplied: list[str] = []
+    for value in (getattr(args, "unit", None) or []):
+        supplied.extend(str(value).split(","))
+    for value in (getattr(args, "units", None) or []):
+        supplied.extend(str(value).split(","))
+    if getattr(args, "from_run", False):
+        state = run_state.read(args.root) or {}
+        batch = [str(u).strip() for u in (state.get("batch") or []) if str(u).strip()]
+        if not batch:
+            raise BatchRefused(
+                f"{verb} refused: --from-run was given but there is no open run with an "
+                f"approved batch to read. Name the units with --units, or open a run first")
+        supplied.extend(batch)
+    seen: set[str] = set()
+    units = [u for u in (s.strip() for s in supplied) if u and not (u in seen or seen.add(u))]
+    if not units:
+        raise BatchRefused(f"{verb} refused: name the unit(s) with --unit/--units, or "
+                           f"--from-run to take the open run's batch")
+    return units
+
+
+#: What each batch verb cannot write without. Held here rather than left to argparse alone so
+#: the refusal can name EVERY missing argument in one message: a caller who learns one flag per
+#: refusal pays a round-trip per flag, which is how one sign-off cost nineteen spawns.
+BATCH_REQUIRED: dict = {
+    "record": (("author", "--author"),),
+    "evidence": (("reviewer", "--reviewer"), ("author", "--author")),
+    "signoff": (("principal", "--principal"), ("author", "--author")),
+}
+
+
+def missing_arguments(args: argparse.Namespace, verb: str) -> list[str]:
+    """Every required argument of `verb` this invocation did not supply, in one list."""
+    return [flag for attr, flag in BATCH_REQUIRED.get(verb, ())
+            if not str(getattr(args, attr, "") or "").strip()]
+
+
+def _run_batch(args: argparse.Namespace, verb: str, write) -> int:
+    """Resolve the batch, refuse ONCE for anything missing, then write every unit.
+
+    Both refusals happen before the first write, so a bad invocation costs one message rather
+    than a half-written batch. After that a per-unit failure is reported and the remaining
+    units still run - stopping at the first would leave the caller unable to tell what landed -
+    and the exit code is non-zero, because a partially written batch reported as success is a
+    gap nobody looks for again."""
+    try:
+        units = batch_units(args, verb)
+    except BatchRefused as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    if missing := missing_arguments(args, verb):
+        print(f"{verb} refused: missing required argument(s) {', '.join(missing)} - naming "
+              f"{len(units)} unit(s). Nothing was written", file=sys.stderr)
+        return 2
+    written, failed = [], []
+    for unit in units:
+        try:
+            write(unit)
+        except (ValueError, OSError) as exc:
+            failed.append(unit)
+            print(f"{verb} refused for {unit}: {exc}", file=sys.stderr)
+        else:
+            written.append(unit)
+    print(f"{verb}: {len(written)} unit(s) written"
+          + (f" ({', '.join(written)})" if written else "")
+          + (f"; {len(failed)} REFUSED ({', '.join(failed)})" if failed else ""))
+    if not failed:
+        return 0
+    # Two different facts, two different codes. Nothing written is a REFUSAL (2) - the code
+    # the single-unit form has always returned for a self-signoff or a bad identity, and the
+    # one a caller keys on. Something written alongside a refusal is a PARTIAL batch (1),
+    # which is neither: the caller has to look at what landed before deciding what to re-run.
+    return 2 if not written else 1
+
+
 def cmd_record(args: argparse.Namespace) -> int:
     if getattr(args, "from_verdict", None):
         if args.verdict or args.issues:
@@ -2089,15 +2179,19 @@ def cmd_record(args: argparse.Namespace) -> int:
         print("record refused: give --verdict, or --from-verdict FILE|- with the "
               "reviewer's returned block", file=sys.stderr)
         return 2
-    path = record_verdict(args.root, args.unit, args.verdict, args.reviewer,
-                          args.author, args.issues, args.phase)
-    note = "" if _id(args.author) != _id(args.reviewer) else "  (WARNING: self-review - blocked at the gate)"
-    print(f"recorded {sdlc_md.norm_id(args.unit)} {args.verdict.upper()} "
-          f"[{args.phase}] -> {path}{note}")
-    drift = _seat_drift_warning(args.root, args.reviewer)
-    if drift:
+
+    def write(unit: str) -> None:
+        path = record_verdict(args.root, unit, args.verdict, args.reviewer,
+                              args.author, args.issues, args.phase)
+        note = ("" if _id(args.author) != _id(args.reviewer)
+                else "  (WARNING: self-review - blocked at the gate)")
+        print(f"recorded {sdlc_md.norm_id(unit)} {args.verdict.upper()} "
+              f"[{args.phase}] -> {path}{note}")
+
+    rc = _run_batch(args, "record", write)
+    if drift := _seat_drift_warning(args.root, args.reviewer):
         print(f"WARNING: {drift}", file=sys.stderr)
-    return 0
+    return rc
 
 
 def cmd_evidence(args: argparse.Namespace) -> int:
@@ -2116,13 +2210,12 @@ def cmd_evidence(args: argparse.Namespace) -> int:
             print(f"evidence refused: {exc}", file=sys.stderr)
             return 2
         findings = f"{verdict}: {issues or 'none'}"
-    try:
-        path = record_evidence(args.root, args.unit, args.reviewer, args.author, findings or "")
-    except ValueError as exc:
-        print(f"evidence refused: {exc}", file=sys.stderr)
-        return 2
-    print(f"evidence recorded for {sdlc_md.norm_id(args.unit)} -> {path}")
-    return 0
+
+    def write(unit: str) -> None:
+        path = record_evidence(args.root, unit, args.reviewer, args.author, findings or "")
+        print(f"evidence recorded for {sdlc_md.norm_id(unit)} -> {path}")
+
+    return _run_batch(args, "evidence", write)
 
 
 def cmd_signoff(args: argparse.Namespace) -> int:
@@ -2133,15 +2226,14 @@ def cmd_signoff(args: argparse.Namespace) -> int:
     except ValueError as exc:
         print(f"signoff refused: {exc}", file=sys.stderr)
         return 2
-    try:
-        path = record_signoff(args.root, args.unit, args.principal, args.author,
+
+    def write(unit: str) -> None:
+        path = record_signoff(args.root, unit, args.principal, args.author,
                               delegate=args.delegate, boundary=args.boundary,
                               note=fields.get("note", ""))
-    except ValueError as exc:
-        print(f"signoff refused: {exc}", file=sys.stderr)
-        return 2
-    print(f"sign-off recorded for {sdlc_md.norm_id(args.unit)} -> {path}")
-    return 0
+        print(f"sign-off recorded for {sdlc_md.norm_id(unit)} -> {path}")
+
+    return _run_batch(args, "signoff", write)
 
 
 def cmd_sprint_review(args: argparse.Namespace) -> int:
@@ -2227,14 +2319,19 @@ def cmd_supersede(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="SDLC Studio critic-verdict record.")
     sub = parser.add_subparsers(dest="cmd", required=True)
-    r = sub.add_parser("record", help="Record a critic verdict for a unit.")
-    r.add_argument("--unit", required=True)
+    r = sub.add_parser("record", help="Record a critic verdict for one unit or a batch.")
+    r.add_argument("--unit", action="append", metavar="ID",
+                   help="a unit id; repeatable, and a comma-separated list is accepted")
+    r.add_argument("--units", action="append", metavar="ID[,ID...]",
+                   help="unit ids for a whole batch in one invocation; repeatable")
+    r.add_argument("--from-run", dest="from_run", action="store_true",
+                   help="take the open run's approved batch as the scope; refused when no run is open")
     r.add_argument("--verdict", choices=("approve", "reject", "APPROVE", "REJECT"),
                    help="the verdict; or use --from-verdict to parse the reviewer's block")
     r.add_argument("--from-verdict", dest="from_verdict", metavar="FILE|-",
                    help="parse VERDICT/ISSUES/BLOCKING from a file (or stdin with -), refusing a malformed block")
     r.add_argument("--reviewer", default="independent-critic")
-    r.add_argument("--author", required=True,
+    r.add_argument("--author",
                    help="Authoring seat / delegation id that produced the diff (must differ from --reviewer).")
     r.add_argument("--issues", default="")
     r.add_argument("--phase", choices=PHASES, default="delivery",
@@ -2262,9 +2359,14 @@ def build_parser() -> argparse.ArgumentParser:
     cc.set_defaults(func=cmd_caller_check)
     e = sub.add_parser("evidence", help="Record the adversarial pass as evidence "
                                         "(findings, reviewer seat, author) - distinct from the verdict.")
-    e.add_argument("--unit", required=True)
-    e.add_argument("--reviewer", required=True, help="the seat that ran the adversarial pass")
-    e.add_argument("--author", required=True)
+    e.add_argument("--unit", action="append", metavar="ID",
+                   help="a unit id; repeatable, and a comma-separated list is accepted")
+    e.add_argument("--units", action="append", metavar="ID[,ID...]",
+                   help="unit ids for a whole batch in one invocation; repeatable")
+    e.add_argument("--from-run", dest="from_run", action="store_true",
+                   help="take the open run's approved batch as the scope; refused when no run is open")
+    e.add_argument("--reviewer", help="the seat that ran the adversarial pass")
+    e.add_argument("--author")
     e.add_argument("--findings", default="",
                    help="what was probed and found; or use --from-verdict")
     e.add_argument("--from-verdict", dest="from_verdict", metavar="FILE|-",
@@ -2273,10 +2375,15 @@ def build_parser() -> argparse.ArgumentParser:
     e.set_defaults(func=cmd_evidence)
     so = sub.add_parser("signoff", help="Record the reviewer-of-record sign-off "
                                         "(independent principal; optional named delegate with chain).")
-    so.add_argument("--unit", required=True)
-    so.add_argument("--principal", required=True,
+    so.add_argument("--unit", action="append", metavar="ID",
+                    help="a unit id; repeatable, and a comma-separated list is accepted")
+    so.add_argument("--units", action="append", metavar="ID[,ID...]",
+                    help="unit ids for a whole batch in one invocation; repeatable")
+    so.add_argument("--from-run", dest="from_run", action="store_true",
+                    help="take the open run's approved batch as the scope; refused when no run is open")
+    so.add_argument("--principal",
                     help="the reviewer of record (the operator by default)")
-    so.add_argument("--author", required=True)
+    so.add_argument("--author")
     so.add_argument("--delegate", default=None,
                     help="a named delegate signing on the principal's behalf")
     so.add_argument("--boundary", default=None,

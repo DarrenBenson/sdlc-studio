@@ -54,6 +54,15 @@ therefore names two distinct roles:
   evidence, with approve/hold/delegate paths - an uninformed signature is approval
   theatre.
 
+All three verbs take a whole batch in one invocation: `--units ID,ID` names them,
+`--from-run` takes the open run's approved batch, and a repeated `--unit`
+accumulates rather than keeping only its last value. One invocation per verb
+replaces one per unit, and a missing required argument is refused ONCE, before
+anything is written, naming every argument the verb needs. A batch where nothing
+was written exits 2 (a refusal); one where some units landed and others did not
+exits 1 and names both sets, because a partly written batch reported as whole is a
+gap nobody goes back to.
+
 With `review.two_role_after: <id>` set in `.config.yaml`, the conformance `critiqued`
 stage requires BOTH records (evidence + an independent sign-off) for units past the
 cutoff - forward-only, so existing projects keep today's behaviour until they adopt.

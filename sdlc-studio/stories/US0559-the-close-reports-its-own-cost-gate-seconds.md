@@ -1,6 +1,6 @@
 # US0559: The close reports its own cost - gate seconds and elapsed - so the next reduction is measured against a number rather than an impression
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0498
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** it prints its result
 - **Then** it reports the gate seconds it paid and the wall-clock elapsed across the ceremony, both read from recorded measurements rather than restated from prose
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseCostReportTests::test_the_close_reports_its_gate_seconds_and_elapsed
+- **Verified:** yes (2026-07-29)
 
 ### AC2: the cost is recorded on the run, not only printed
 
@@ -31,6 +32,7 @@
 - **When** the run state is read afterwards
 - **Then** the close's cost is on the record, so a later close can be compared with it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseCostReportTests::test_the_close_cost_is_recorded_on_the_run
+- **Verified:** yes (2026-07-29)
 
 ### AC3: a close with a reused gate verdict reports the seconds it did not pay
 
@@ -38,6 +40,7 @@
 - **When** it reports its cost
 - **Then** the reused runs are counted, so a saving shows as a saving rather than as absent measurement
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseCostReportTests::test_a_reused_verdict_is_reported_as_a_saving
+- **Verified:** yes (2026-07-29)
 
 ### AC4: an unmeasured component is reported as unmeasured, never as zero
 
@@ -45,6 +48,7 @@
 - **When** the report is produced
 - **Then** that component reads as unmeasured, and no total presents it as zero seconds
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseCostReportTests::test_an_unmeasured_component_is_never_reported_as_zero
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

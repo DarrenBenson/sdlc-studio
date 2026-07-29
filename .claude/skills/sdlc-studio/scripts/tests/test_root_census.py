@@ -33,7 +33,14 @@ RECORD = REPO / "sdlc-studio" / "reviews" / "root-census.md"
 # `gate.listing_only_paths` can tell the two apart - without it this one glob made every
 # artefact commit in the repo pay for both unit suites. The narrower reads this module also
 # performs (RECORD, below) are measured separately and stay fully relevant.
-GATE_LISTING_ONLY = ("sdlc-studio",)
+#
+# `ids` narrows it the rest of the way. The glob only ever asks about the follow-up ids the
+# census record names, so every OTHER artefact filed under the workspace - which is most of
+# what a sprint close writes - cannot change this module's answer. Left as a bare directory,
+# one id's worth of dependency made every filing in the repository structural.
+# `DeclaredIdsCoverTheCensusTests` holds this list against the record, so an id added to the
+# census and not to this line fails rather than going quietly unprotected.
+GATE_LISTING_ONLY = ({"path": "sdlc-studio", "ids": ("BG0288",)},)
 # The census is a fact about the skill's OWN source tree, so it is only meaningful where that
 # tree is under development - detected by the repo's guard directory sitting beside the
 # workspace. A project that merely installed the skill has no census to hold, and holding it
@@ -257,6 +264,58 @@ class RootCensusTests(unittest.TestCase):
                     for opt in named:
                         self.assertIn(f'"{opt}"', src,
                                       f"{script}: the census names {opt}, which it never declares")
+
+
+@unittest.skipUnless(DEV_TREE, "no skill source tree here, so there is no census to hold")
+class DeclaredIdsCoverTheCensusTests(unittest.TestCase):
+    """US0554. `GATE_LISTING_ONLY` now names the ids this module's glob depends on, which makes
+    every OTHER filing under the workspace irrelevant to it. That is only safe while the list
+    stays true: an id added to the census record and not to the declaration would be an id
+    whose artefact could vanish without the suite that checks it ever running. Held here so the
+    omission fails loudly rather than becoming a silent hole in the narrowing."""
+
+    @staticmethod
+    def _declared_ids() -> set:
+        ids: set = set()
+        for entry in GATE_LISTING_ONLY:
+            if isinstance(entry, dict):
+                ids |= {str(i).replace("-", "").upper() for i in (entry.get("ids") or ())}
+        return ids
+
+    @staticmethod
+    def _census_ids() -> set:
+        """Every artefact id `_artefact_on_disk` can be asked about - the ids named in the
+        reason of an unanchored row, which is the only place the glob is reached from."""
+        return {i.replace("-", "").upper()
+                for _script, klass, reason in read_record() if klass == "unanchored"
+                for i in _ARTEFACT_ID.findall(reason)}
+
+    def test_every_census_id_is_named_by_the_declaration(self) -> None:
+        missing = sorted(self._census_ids() - self._declared_ids())
+        self.assertFalse(
+            missing,
+            f"the census names {missing}, which GATE_LISTING_ONLY does not: a structural "
+            f"change to one of those artefacts would not select this module. Add them to the "
+            f"`ids` tuple, or drop the tuple to go back to the whole directory")
+
+    def test_the_declaration_names_no_id_the_census_does_not(self) -> None:
+        """The other direction is not a safety hole - a stale id only makes the narrowing less
+        effective - but it is how the list rots into decoration nobody trusts."""
+        stale = sorted(self._declared_ids() - self._census_ids())
+        self.assertFalse(stale, f"declared but the census no longer names it: {stale}")
+
+    def test_the_declaration_actually_narrows_this_module(self) -> None:
+        """The point of the whole story, asserted against the real repository: filing an
+        artefact this census never asks about must not select this module."""
+        sys.path.insert(0, str(SCRIPTS))
+        import gate  # noqa: PLC0415 - imported here so the module loads without the skill root
+        scopes = gate.listing_only_scopes(str(REPO))
+        self.assertIsNotNone(
+            scopes.get("sdlc-studio"),
+            "sdlc-studio is declared listing-only for the whole directory, so this module's "
+            "id narrowing reached nothing")
+        filed = "sdlc-studio/bugs/BG9999-an-artefact-this-census-never-asks-about.md"
+        self.assertFalse(gate.is_test_relevant([filed], str(REPO), structural={filed}))
 
 
 if __name__ == "__main__":

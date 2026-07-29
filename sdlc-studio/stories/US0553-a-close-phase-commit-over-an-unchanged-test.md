@@ -1,11 +1,11 @@
 # US0553: A close-phase commit over an unchanged test-relevant surface reuses the gate verdict the close itself earned, rather than re-running the suites
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0498
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .githooks/commit-msg, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .githooks/pre-commit
 > **Epic:** EP0189
 > **Points:** 5
 > **Persona:** Maya Okafor
@@ -32,7 +32,8 @@ the surface hash is US0554 - without it, this reuse fires once and then stops.
 - **Given** `sprint close` runs its gate step and the suites pass
 - **When** the step completes
 - **Then** a green suite verdict is recorded for the tree it verified, carrying that tree's surface hash, in the same record the commit hook reads
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::CloseVerdictReuseTests::test_the_close_gate_step_records_the_verdict_it_earned
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseVerdictReuseTests::test_the_close_gate_step_records_the_verdict_it_earned
+- **Verified:** yes (2026-07-29)
 
 ### AC2: a close-phase commit over that unchanged surface reuses it
 
@@ -40,6 +41,7 @@ the surface hash is US0554 - without it, this reuse fires once and then stops.
 - **When** a close-phase commit follows that touches no script, template or tool
 - **Then** `suite_decision` returns mode `reuse` and the unit suites do not run
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::CloseVerdictReuseTests::test_a_close_phase_commit_over_an_unchanged_surface_reuses_the_verdict
+- **Verified:** yes (2026-07-29)
 
 ### AC3: the reuse is refused whenever the surface moved
 
@@ -47,13 +49,15 @@ the surface hash is US0554 - without it, this reuse fires once and then stops.
 - **When** any file inside the test-relevant surface changes after it was recorded
 - **Then** the decision is not `reuse`, and the stated reason names the surface change rather than reporting a match
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::CloseVerdictReuseTests::test_a_moved_surface_refuses_the_reuse
+- **Verified:** yes (2026-07-29)
 
 ### AC4: the reuse is announced, never silent
 
 - **Given** a commit that reuses a verdict
 - **When** the hook reports its lanes
-- **Then** it names the verdict reused and the tree it was earned on, so a reader can tell a skipped run from a passed one
-- **Verify:** shell grep -q 'reuse' .githooks/commit-msg
+- **Then** the pre-commit hook names the reuse as a SKIP with its reason, so a reader can tell a skipped run from a passed one
+- **Verify:** shell grep -q 'SKIP.*unit suites' .githooks/pre-commit
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

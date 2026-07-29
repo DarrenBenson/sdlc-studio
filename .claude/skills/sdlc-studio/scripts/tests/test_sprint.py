@@ -8067,6 +8067,18 @@ def _stub_gate(lanes: list[tuple[str, str]], *, surface: str = "HASH"):
     mod.surface_files = lambda root=".": []
     mod.surface_hash = lambda root=".": surface
     mod.calls = lanes
+    # US0553: the close records the green it earned into the record the COMMIT HOOK reads, so
+    # the commits that follow can reuse it. Captured rather than stubbed away, because "the
+    # close calls this" is the whole behaviour - the reuse decision itself already existed and
+    # was simply never reached from here.
+    mod.recorded_verdicts = []
+
+    def record_suite_verdict(root=".", *, run, status="green", mode="full", digest=None):
+        mod.recorded_verdicts.append({"root": str(root), "run": str(run),
+                                      "status": status, "mode": mode})
+        return Path(root) / "sdlc-studio" / ".local" / "gate-suite-verdict.json"
+
+    mod.record_suite_verdict = record_suite_verdict
     return mod
 
 
@@ -8194,6 +8206,153 @@ class CloseSelfInvalidationTests(unittest.TestCase):
         self.assertIn("could not be attributed", detail)
 
 
+class CloseVerdictReuseTests(unittest.TestCase):
+    """US0553. The close runs the FULL suites as step 4 of seven and then commits. It recorded
+    that green only into its own close-private ledger, so the commit hook - which reads
+    `gate-suite-verdict.json` - knew nothing about it and the first commit of the close paid
+    for the suites again, seconds later, over the same script tree.
+
+    Nothing here is a new decision: `suite_decision` has known how to reuse a green since
+    US0493. What was missing was a caller, which is why these tests assert the CALL and not
+    the reuse logic - a mechanism that reaches no caller is inert however well it is tested."""
+
+    def _repo(self) -> Path:
+        (d := Path(tempfile.mkdtemp(prefix="close_verdict_"))).joinpath(
+            "sdlc-studio", ".local").mkdir(parents=True)
+        (d / "sdlc-studio" / "reviews").mkdir(parents=True)
+        (d / "sdlc-studio" / "reviews" / "LATEST.md").write_text("# anchor\n", encoding="utf-8")
+        (d / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
+            "run_id": "RUN-VERDICT", "batch": ["US0001"], "outcome": "running",
+            "started_at": "2026-07-29T09:00:00Z",
+            "close_output": ["sdlc-studio/reviews/LATEST.md"]}), encoding="utf-8")
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        return d
+
+    def _run(self, sprint, root, gate):
+        with unittest.mock.patch.dict(sys.modules, {"gate": gate}), \
+                contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()):
+            return sprint._close_gate(root, "RETRO0001", json.loads(
+                (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8")))
+
+    def test_the_close_gate_step_records_the_verdict_it_earned(self) -> None:
+        sprint = _load()
+        root, gate = self._repo(), _stub_gate([])
+        ok, _, _ = self._run(sprint, root, gate)
+        self.assertTrue(ok)
+        self.assertEqual(1, len(gate.recorded_verdicts),
+                         "the close ran the full suites and recorded no verdict the hook reads")
+        recorded = gate.recorded_verdicts[0]
+        self.assertEqual("green", recorded["status"])
+        self.assertEqual("full", recorded["mode"],
+                         "a boundary declines a SELECTED green, so the close must not claim one")
+        self.assertEqual("RUN-VERDICT", recorded["run"],
+                         "the verdict is attributed to the run that earned it")
+
+    def test_a_refused_gate_records_no_verdict(self) -> None:
+        """The discriminating half. A close that FAILED its gate must leave nothing behind for
+        the next commit to reuse, or one red close would buy a green for the commit after it."""
+        sprint = _load()
+        root, gate = self._repo(), _stub_gate([("conformance", "US0001: no critic verdict")])
+        ok, _, _ = self._run(sprint, root, gate)
+        self.assertFalse(ok)
+        self.assertEqual([], gate.recorded_verdicts)
+
+    def test_a_reused_close_verdict_records_nothing_new(self) -> None:
+        """When the close's own retry path short-circuits, no suites ran, so there is no fresh
+        green to record - re-stamping one would launder an old verdict as a new measurement."""
+        sprint = _load()
+        root, gate = self._repo(), _stub_gate([])
+        self.assertTrue(self._run(sprint, root, gate)[0])
+        gate.recorded_verdicts.clear()
+        gate.main = lambda argv=None: self.fail("the retry must not re-run the gate")
+        ok, detail, _ = self._run(sprint, root, gate)
+        self.assertTrue(ok)
+        self.assertIn("REUSED", detail)
+        self.assertEqual([], gate.recorded_verdicts)
+
+
+class CloseCostReportTests(unittest.TestCase):
+    """US0559. The close's own cost was recalled, never reported: RUN-01KYMJEM's `~32 minutes`
+    was reconstructed afterwards from a timings file and a memory of how many attempts there
+    had been. A reduction judged against an impression is not a reduction anyone can check."""
+
+    def _root(self, runs: list[dict]) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="close_cost_"))
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        (d / "sdlc-studio" / ".local" / "test-execution.json").write_text(
+            json.dumps({"runs": runs}), encoding="utf-8")
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        return d
+
+    @staticmethod
+    def _row(at, **kw):
+        row = {"at": at, "moment": "close", "mode": "full", "seconds": 400.0,
+               "verdict": "pass", "surface": "H", "run_id": "RUN-COST", "reused_from": None}
+        row.update(kw)
+        return row
+
+    def test_the_close_reports_its_gate_seconds_and_elapsed(self) -> None:
+        sprint = _load()
+        root = self._root([self._row("2026-07-29T10:00:00+00:00", seconds=398.0),
+                           self._row("2026-07-29T10:12:00+00:00", seconds=427.0)])
+        cost = sprint.close_cost(root, "RUN-COST")
+        self.assertEqual(825.0, cost["gate_seconds"])
+        self.assertEqual(2, cost["measured_runs"])
+        self.assertEqual(720, cost["elapsed_seconds"])
+        line = sprint.close_cost_line(cost)
+        self.assertIn("825s", line)
+        self.assertIn("12m00s", line)
+
+    def test_the_close_cost_is_recorded_on_the_run(self) -> None:
+        """Read back off the ledger the close writes, so a later close can be compared with
+        this one rather than with a number somebody remembers."""
+        sprint = _load()
+        root = self._root([self._row("2026-07-29T10:00:00+00:00", run_id="RUN-OTHER"),
+                           self._row("2026-07-29T10:05:00+00:00", seconds=100.0)])
+        self.assertEqual(100.0, sprint.close_cost(root, "RUN-COST")["gate_seconds"],
+                         "another run's close is not this run's cost")
+        self.assertEqual(500.0, sprint.close_cost(root)["gate_seconds"],
+                         "unscoped, every recorded close counts")
+
+    def test_a_reused_verdict_is_reported_as_a_saving(self) -> None:
+        sprint = _load()
+        root = self._root([
+            self._row("2026-07-29T10:00:00+00:00", seconds=400.0),
+            self._row("2026-07-29T10:10:00+00:00", mode="reuse", seconds=0.0,
+                      reused_from="2026-07-29T10:00:00+00:00")])
+        cost = sprint.close_cost(root, "RUN-COST")
+        self.assertEqual(1, cost["reused_runs"])
+        self.assertEqual(400.0, cost["reused_seconds"], "the saving is the run it reused")
+        self.assertEqual(400.0, cost["gate_seconds"], "a reuse cost nothing and adds nothing")
+        self.assertIn("saving about 400s", sprint.close_cost_line(cost))
+
+    def test_an_unmeasured_component_is_never_reported_as_zero(self) -> None:
+        """The direction this must fail in. A close whose seconds were never recorded would
+        otherwise report the cheapest close on file."""
+        sprint = _load()
+        root = self._root([self._row("2026-07-29T10:00:00+00:00", seconds=None),
+                           self._row("2026-07-29T10:04:00+00:00", seconds=None)])
+        cost = sprint.close_cost(root, "RUN-COST")
+        self.assertIsNone(cost["gate_seconds"], "no measurement is not zero seconds")
+        self.assertEqual(0, cost["measured_runs"])
+        self.assertEqual(2, len(cost["unmeasured"]))
+        self.assertIn("UNMEASURED", sprint.close_cost_line(cost))
+
+    def test_a_close_with_no_gate_event_says_so_rather_than_reporting_zero(self) -> None:
+        sprint = _load()
+        line = sprint.close_cost_line(sprint.close_cost(self._root([]), "RUN-COST"))
+        self.assertIn("UNMEASURED, not zero", line)
+
+    def test_a_single_event_has_no_span_and_reports_none(self) -> None:
+        """One event is a moment, not a duration. Reporting 0m00s would read as an instant
+        close - the same false cheapness an unmeasured component would produce."""
+        sprint = _load()
+        root = self._root([self._row("2026-07-29T10:00:00+00:00")])
+        self.assertIsNone(sprint.close_cost(root, "RUN-COST")["elapsed_seconds"])
+        self.assertNotIn("elapsed", sprint.close_cost_line(sprint.close_cost(root, "RUN-COST")))
+
+
 class CloseRetryTests(unittest.TestCase):
     """US0501: RUN-01KYHVWK's close took four attempts, each paying a full gate, to record a
     decision already made. A retry over an unchanged test-relevant surface reuses the verdict
@@ -8227,6 +8386,12 @@ class CloseRetryTests(unittest.TestCase):
 
         mod.main = main
         mod.surface_files = lambda root=".": list(self.SURFACE)
+        # US0553: the close stamps the green it earned where the commit hook reads it. Captured
+        # here too so this suite exercises the real call rather than a gate module that happens
+        # not to have it.
+        mod.recorded_verdicts = []
+        mod.record_suite_verdict = lambda root=".", **kw: (
+            mod.recorded_verdicts.append(kw), Path(root))[1]
         return mod
 
     def _attempt(self, sprint, root, gate):

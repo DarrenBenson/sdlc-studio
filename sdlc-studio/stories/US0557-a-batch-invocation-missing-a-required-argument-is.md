@@ -1,6 +1,6 @@
 # US0557: A batch invocation missing a required argument is refused once before any unit is written, naming every argument the command needs
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0498
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new
@@ -24,6 +24,7 @@
 - **When** it runs against a batch of several units
 - **Then** it refuses before writing any unit, and no artefact in the batch has changed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ArgumentCompletenessTests::test_a_missing_argument_refuses_before_any_unit_is_written
+- **Verified:** yes (2026-07-29)
 
 ### AC2: the refusal names every argument the command needs, not only the first missing one
 
@@ -31,6 +32,7 @@
 - **When** it is refused
 - **Then** both are named in that one message, so a second round-trip is not needed to discover the second
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ArgumentCompletenessTests::test_the_refusal_names_every_missing_argument
+- **Verified:** yes (2026-07-29)
 
 ### AC3: the message the refusal prints matches the argument the parser actually reads
 
@@ -38,6 +40,7 @@
 - **When** its refusal message names an argument
 - **Then** that name is the one the parser accepts, so a message cannot send a caller to a flag the command does not have
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ArgumentCompletenessTests::test_every_named_argument_is_one_the_parser_accepts
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 
