@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 4 |
-| Ready | 31 |
+| Ready | 30 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 17 |
+| Review | 18 |
 | Done | 512 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -367,7 +367,7 @@
 | [US0453](US0453-countable-claims-in-the-trd-and-tsd-are.md) | Countable claims in the TRD and TSD are checked against a census of what the repo actually ships | Review | EP0167 | 2026-07-27 | 2026-07-27 |
 | [US0454](US0454-timing-claims-are-checked-against-recorded-measurements-rather.md) | Timing claims are checked against recorded measurements rather than restated from memory | Review | EP0167 | 2026-07-27 | 2026-07-27 |
 | [US0455](US0455-one-availability-contract-the-prd-clause-the-tsd.md) | One availability contract: the PRD clause, the TSD NFR row and ADR-004 all state the fail-loud sync behaviour, and the branch taken is recorded as a decision | Review | EP0168 | 2026-07-27 | 2026-07-27 |
-| [US0456](US0456-the-tsd-s-per-script-test-contract-stops.md) | The TSD's per-script test contract stops being prose: a sweep of scripts and scripts/lib derives the exception list, and the shipped document is held to it | Ready | EP0168 | 2026-07-27 | 2026-07-27 |
+| [US0456](US0456-the-tsd-s-per-script-test-contract-stops.md) | The TSD's per-script test contract stops being prose: a sweep of scripts and scripts/lib derives the exception list, and the shipped document is held to it | Review | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0457](US0457-adr-011-states-the-breakdown-gate-s-real.md) | ADR-011 states the breakdown gate's real firing rule, and carries a dated amendment marker so a reader of the block sees it | Review | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0458](US0458-the-trd-s-shipped-surface-enumerations-are-derived.md) | The TRD's shipped-surface enumerations are derived from the code and the router, and the stale CR0132 caveat is refused by name | Review | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0459](US0459-the-token-budget-premise-is-replaced-by-the.md) | The token-budget premise is replaced by the measured one everywhere it is asserted: transcript-measured, and a lower bound because delegated spend is supplied not measured | Review | EP0168 | 2026-07-27 | 2026-07-27 |

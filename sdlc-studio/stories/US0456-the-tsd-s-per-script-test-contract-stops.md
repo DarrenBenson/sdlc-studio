@@ -1,6 +1,6 @@
 # US0456: The TSD's per-script test contract stops being prose: a sweep of scripts and scripts/lib derives the exception list, and the shipped document is held to it
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0428
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** a new module with no partner test is added at the top level, and separately under `lib/`, and the sweep runs with no edit to the sweep
 - **Then** both new modules appear in the reported exception set, `tests/` modules and `lib/__init__.py` are excluded by a rule the test exercises, and no module is dropped by a `scripts/*.py`-shaped glob - the exemption-by-omission that would silently lose `lib/tiers`
 - **Verify:** pytest tools/tests/test_check_script_tests.py::SweepDerivesTheModuleSet::test_new_untested_top_level_and_lib_modules_are_both_reported
+- **Verified:** yes (2026-07-29)
 
 ### AC2: the TSD exception list becomes machine-readable and must match the sweep in both directions
 
@@ -30,6 +31,7 @@
 - **When** the checker compares that parsed list against the sweep's output over a fixture tree
 - **Then** it exits non-zero when the list names a module that now has a dedicated test, and equally when a swept module without one is missing from the list, naming the offending module and the direction in each case
 - **Verify:** pytest tools/tests/test_check_script_tests.py::TsdExceptionListAgreesWithTheSweep::test_the_list_and_the_sweep_disagree_in_either_direction_and_exit_non_zero
+- **Verified:** yes (2026-07-29)
 
 ### AC3: the shipped tsd.md agrees with the shipped scripts tree
 
@@ -37,6 +39,7 @@
 - **When** the checker runs against it
 - **Then** it exits zero, which is true only once the map names exactly the modules the sweep finds - today `carry_forward`, `triage` and `lib/tiers` - and stops listing `refine` and `lib/run_state`, whose dedicated test modules now exist; adding an untested script or editing the list reddens it
 - **Verify:** pytest tools/tests/test_check_script_tests.py::TheShippedDocumentAgrees::test_the_real_tsd_map_matches_the_real_scripts_tree
+- **Verified:** yes (2026-07-29)
 
 ### AC4: the absolute claims are refused by a denylist over the two located passages
 
@@ -44,6 +47,7 @@
 - **When** the checker extracts each passage and applies the denylist
 - **Then** a denied phrase inside either extracted passage exits non-zero naming the phrase and the passage, and a renamed or absent heading exits non-zero saying which passage it could not locate rather than matching nothing and reporting clean
 - **Verify:** pytest tools/tests/test_check_script_tests.py::AbsoluteClaimsAreRefused::test_a_denied_phrase_fails_and_a_renamed_heading_fails_loud
+- **Verified:** yes (2026-07-29)
 
 ### AC5: the checker is a lane in the gate people already run
 
@@ -51,6 +55,7 @@
 - **When** the guard reads both files
 - **Then** `tools/check_script_tests.py` appears as a lane in each, so the checker runs on every commit rather than existing as a binary only its own fixture tests invoke; an unreadable scripts or tests directory makes that lane exit non-zero naming the directory instead of printing a zero-exception result it did not measure
 - **Verify:** pytest tools/tests/test_check_script_tests.py::TheCheckerIsAGateLane::test_the_checker_is_wired_into_npm_lint_and_the_pre_commit_hook
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

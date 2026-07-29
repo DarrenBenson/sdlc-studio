@@ -101,9 +101,10 @@ The skill splits into two tiers (TRD section 3), and each tier gets the test
 approach that fits it.
 
 **Script tier - test-driven, executable.** The deterministic Python helpers are
-the part of the system that can be tested as code, so they are. Every script has a
+the part of the system that can be tested as code, so they are. Nearly every script has a
 matching `test_<script>.py` under `scripts/tests/`, and the contract (TRD section 5,
-rule 8) mandates this. New script behaviour is expected to land with its tests; the
+rule 8) mandates this; the named exceptions are exercised indirectly and are listed in the
+Unit coverage map, where `tools/check_script_tests.py` holds the list to the tree. New script behaviour is expected to land with its tests; the
 release gate refuses to tag until the suite is green.
 
 **Markdown tier - validated by linters, the script suite, the gates, and the eval
@@ -223,9 +224,19 @@ Most scripts and shared-library modules have a dedicated `test_<name>.py`; the s
 contract (TRD section 5, rule 8) mandates one as a convention. It is a convention held in
 review, not an automated build gate: no sweep enumerates the scripts and fails a build on
 a module that arrives without a test. A handful are exercised indirectly under a
-differently-named module rather than a dedicated one - `refine` and `triage` under the
-triage suites, `lib/run_state` under the loop-guard, handoff and sprint-report suites, and
-`lib/tiers` under the planning-tier and routing suites. `autosprint` and `lib/xrepo` now
+differently-named module rather than a dedicated one. That set is MACHINE-READABLE and
+`tools/check_script_tests.py` holds it to the tree in both directions - a module listed here
+that has since gained a dedicated test fails, and a module the sweep finds without one that
+is missing from this list fails too:
+
+```text
+carry_forward
+triage
+lib/tiers
+```
+
+`refine` and `lib/run_state` were on this list and are not any more: both now have dedicated
+test modules. `autosprint` and `lib/xrepo` now
 each have one: `test_autosprint.py` drives the whole primary path through the alias (plan
 opens the run, the worked batch closes it), holds the close chain's stop-on-failure so a
 failed step cannot seal a run, and proves itself against a mutant applied to that loop
@@ -444,9 +455,9 @@ coverage report --omit='*/tests/*' --fail-under=80
 ```
 
 The 80% floor is the **hard gate**; the ~90% figure quoted under Coverage Targets is
-an **aspiration** the per-script test density aims at (every script and every
-shared-library module has a dedicated test module), not the threshold the build
-enforces. Measured coverage currently sits at roughly 82%, above the floor and below
+an **aspiration** the per-script test density aims at (a dedicated test module for every
+script and shared-library module, bar the named exceptions the Unit coverage map lists),
+not the threshold the build enforces. Measured coverage currently sits at roughly 82%, above the floor and below
 the aspiration. [HIGH] To reproduce the report locally with per-line detail:
 
 ```bash
