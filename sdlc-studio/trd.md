@@ -120,7 +120,7 @@ ADR-002.
 
 | Component | Responsibility | Technology |
 | --- | --- | --- |
-| `SKILL.md` router | Always-loaded entry point: philosophy gates, type table, Progressive Loading Guide, the Deterministic Entry Points card, pointers. ~260 lines (CI-budgeted under 500), the only file paid for every invocation. | Markdown + YAML frontmatter |
+| `SKILL.md` router | Always-loaded entry point: philosophy gates, type table, Progressive Loading Guide, the Deterministic Entry Points card, pointers. held under its 500-line ceiling by `tools/check_budgets.py`, the only file paid for every invocation. | Markdown + YAML frontmatter |
 | `help/*.md` (40+ files) | Type-specific command help, prerequisites, output, examples; loaded on demand per `[type]`. | Markdown |
 | `reference-*.md` (50+ files) | Step-by-step workflow detail per domain; loaded only for multi-step workflows. Each is line-budgeted. | Markdown |
 | `templates/` (80+ files) | Document and code templates with `{{placeholder}}` syntax; loaded only when creating artifacts. Includes the persona/seat and stakeholder card schemas. | Markdown / text |
@@ -542,22 +542,28 @@ Both installers support per-target selection, `--global`/`--local`, `--uninstall
 `--list-targets`, `--dry-run`, and a `--version` tag. The Windows installer body
 lives in a function so it works both downloaded and piped via `irm ... | iex`.
 
-The installed copy at `~/.claude/skills/sdlc-studio/` is the back-port source for
-production fixes: fixes land there first, then back-port to this repo (per
-`CLAUDE.md` and project memory).
+This repo is the SOURCE. Fixes land in `.claude/skills/sdlc-studio/` here, and the
+installed copy at `~/.claude/skills/sdlc-studio/` is the derived mirror of it -
+`tools/forward-port.sh` encodes the direction (`SRC` is the repo tree, the target
+defaults to the installed copy). The mirror is a deployment step, not an upstream:
+the installed copy is what every other project on this machine loads, so the window
+between a fix landing here and the mirror running is a window in which a fix believed
+shipped is in force nowhere. `forward-port.sh --check` is the drift gate, and a
+machine that deliberately does not mirror carries `.local/forward-port.pin`, which
+the check reports rather than fails.
 
 ### Environment Strategy
 
 | Environment | Purpose | Characteristics |
 | --- | --- | --- |
 | Development | This repo; edit skill source | Lint + unit tests gate a release tag. |
-| Installed (per-user) | `~/.claude/skills/sdlc-studio/` | Production fix source; back-ported here. |
+| Installed (per-user) | `~/.claude/skills/sdlc-studio/` | Derived mirror of this repo; refreshed by `forward-port.sh`, drift caught by `--check`. |
 | Consuming project | Any repo that installs the skill | Holds its own `sdlc-studio/` workspace and `.local/` state. |
 
 ### Scaling Strategy
 
 Scaling is about context tokens, not machines. Progressive disclosure keeps the
-always-loaded footprint near-constant (`SKILL.md` ~260 lines, CI-budgeted under 500)
+always-loaded footprint near-constant (`SKILL.md` under its 500-line ceiling, enforced by `tools/check_budgets.py`)
 however large the corpus grows. Agentic waves bound concurrency and the appetite
 breaker bounds an unattended run. Read-only scripts run in well under a second; the
 script suite runs several thousand tests in minutes, not seconds (the recorded runs sit
@@ -607,7 +613,7 @@ cross-machine clash is caught at merge (ADR-008).
 
 | Metric | Target | Measurement |
 | --- | --- | --- |
-| Always-loaded context | ~260 lines (`SKILL.md`), hard ceiling 500 | Line count of the router, gated by `check_budgets.py` |
+| Always-loaded context | `SKILL.md` under its hard ceiling of 500 lines | Line count of the router, gated by `check_budgets.py` - the ceiling is the claim, not a snapshot of the current count |
 | Script run time | Sub-second on a typical project | `scripts/tests` suite: minutes, not seconds - see `tools/gate_timing.py estimate` for the live figure |
 | Reconcile / status / gate | Sub-second | Read-only census over the artifact tree |
 | Mutation run | Minutes, by design | One suite run per mutant; not on the fast path |
@@ -642,7 +648,7 @@ invocation. SDLC Studio is large (50+ reference files, 40+ help files, many
 templates and best-practice guides - see the §3 component table). A monolithic skill file would spend a
 large, fixed token cost on every request regardless of the task.
 
-**Decision:** Keep `SKILL.md` as a lean router (~260 lines, CI-budgeted under 500)
+**Decision:** Keep `SKILL.md` as a lean router (CI-budgeted under 500 lines)
 carrying only philosophy gates, the type table, the Progressive Loading Guide, the
 Deterministic Entry Points card, and pointers. Everything else loads on demand via
 the loading guide, which maps each task type to its primary/secondary/decision file

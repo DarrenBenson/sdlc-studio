@@ -152,7 +152,8 @@ the doctrine, while keeping always-loaded context minimal
 ### Background
 
 The agent invoked as `/sdlc-studio [type] [action]`. It parses the command in
-the always-loaded router (`SKILL.md`, ~195 lines), loads the matching
+the always-loaded router (`SKILL.md`, held under its 500-line ceiling by
+`tools/check_budgets.py`), loads the matching
 `help/{type}.md`, gates on philosophy when in generate mode, then follows the
 referenced `reference-{domain}.md` workflow under progressive disclosure -
 loading reference files, templates and decision files only when a step needs
@@ -198,14 +199,17 @@ reset it re-reads `reviews/LATEST.md` to anchor on current state, and recalls
 
 **Role:** Developer of SDLC Studio itself
 **Technical Proficiency:** Expert
-**Primary Goal:** Evolve the skill safely - back-port live fixes, keep scripts
-deterministic and tested, and tag clean releases
+**Primary Goal:** Evolve the skill safely - land fixes in this repo, mirror them out
+to the installed copy, keep scripts deterministic and tested, and tag clean releases
 
 ### Background
 
-Maintains this repo, which is the skill's own source. Production fixes land first
-in the installed copy at `~/.claude/skills/sdlc-studio/`, then back-port here -
-the installed copy is the back-port source (per project memory and `CLAUDE.md`).
+Maintains this repo, which is the skill's own source. Fixes land HERE, and the
+installed copy at `~/.claude/skills/sdlc-studio/` is the derived mirror of it -
+`tools/forward-port.sh` mirrors the repo tree out, and `--check` is the drift gate.
+The mirror is a deployment step, not an upstream: the installed copy is what every
+other project on this machine loads, so a fix that has not been mirrored is in force
+nowhere.
 Keeps `SKILL.md` lean by delegating the command catalogue, flags and reference
 index out to `help/` and `reference-*.md`; adds help files and updates the
 tables when adding commands. Runs markdownlint over all markdown and the unit
@@ -218,20 +222,20 @@ economical.
 - A lint-clean, test-green gate (`npm run lint`; `python3 -m unittest` over `scripts/tests`) before any release
 - A predictable structure: router stays minimal, detail lives in help and reference files
 - `validate.py` to catch skill and instructions hygiene problems early
-- A clear back-port path from the installed production copy into the repo
+- A guarded one-way mirror out to the installed copy, with a drift gate (`forward-port.sh --check`)
 - Style discipline enforced consistently across 40-plus reference files and 70-plus templates
 
 ### Pain Points
 
 - `SKILL.md` bloating as the always-loaded file, eroding the context budget for every consumer
-- Back-port divergence between the installed copy and the repo source
-- Untested markdown command behaviours - the main quality gap, since only the scripts have unit tests
+- The installed mirror silently drifting from the repo, so a fix believed shipped is running nowhere
+- Untested markdown command behaviours - the main quality gap; the scripts and the repo's own `tools/` checkers both carry unit suites, the markdown command surface does not
 - Style and structure drift across a large file set
 - Historical ID collisions documented but easy to reintroduce
 
 ### Typical Tasks
 
-- Back-port production fixes from `~/.claude/skills/sdlc-studio/` into the repo
+- Forward-port the repo's skill tree to `~/.claude/skills/sdlc-studio/` with `tools/forward-port.sh --yes`, never `install.sh`
 - Add a help file under `help/`, update SKILL.md tables, add or update the relevant `reference-*.md`
 - Run markdownlint and the script unit suite; fix failures before tagging
 - Bump `version.yaml` and `metadata.version`; record changes in changelogs
@@ -239,7 +243,7 @@ economical.
 
 ### Quote
 >
-> "Keep the router lean, the scripts tested, and the back-port path honest - then tag it."
+> "Keep the router lean, the scripts tested, and the mirror honest - then tag it."
 
 ---
 
