@@ -137,6 +137,8 @@ plain Python/bash command you can run directly. Do not skip the gate because
 | Links | `python3 tools/check_links.py` | broken markdown anchor links |
 | Skill spec | `python3 tools/validate_skill.py` | SKILL.md frontmatter |
 | Versions | `python3 tools/check_versions.py` | version-string drift across authoritative files |
+| Spec claims | `python3 tools/check_spec_claims.py` | a countable or timing claim in the PRD/TRD/TSD the repo contradicts; an unverifiable marked claim is reported, never skipped |
+| Script tests | `python3 tools/check_script_tests.py` | a script or `lib/` module with no partner test that the TSD's exception list does not declare - and a declared exception that has since gained one |
 | Budgets | `python3 tools/check_budgets.py` | a reference file over its declared line ceiling |
 | Neutrality | `python3 tools/check_neutrality.py` | a private consuming-project name leaking into a tracked file |
 | Skill tests | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` | every shipped skill-script unit test |

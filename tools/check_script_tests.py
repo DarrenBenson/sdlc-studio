@@ -34,16 +34,32 @@ TSD_REL = "sdlc-studio/tsd.md"
 #: Absolute phrasings the tree contradicts. Applied to a LOCATED passage, never to the whole
 #: file: a whole-file search cannot say which passage is wrong, and a passage that has been
 #: renamed away would silently match nothing and report clean.
-DENIED = (
-    "Every script has a matching",
-    "every script and every\nshared-library module has a dedicated test module",
+#: Denied absolute claims, as WHITESPACE-INSENSITIVE, CASE-INSENSITIVE patterns. The first
+#: version was two literal strings, one carrying a hardcoded newline mid-phrase - so any markdown
+#: reflow re-admitted the claim, and lowercasing it walked past. Half the denylist was armed
+#: against one specific line wrap. The AC states the phrase without a newline; the guard must too.
+DENIED_PATTERNS = (
+    (r"every\s+script\s+has\s+a\s+matching", "every script has a matching ..."),
+    (r"every\s+script\s+and\s+every\s+shared-library\s+module\s+has\s+a\s+dedicated"
+     r"\s+test\s+module", "every script and every shared-library module has a dedicated ..."),
+    # The self-contradiction an independent reviewer found: this sentence sat three lines above
+    # the paragraph naming the sweep, and is the exact defect this module exists to remove.
+    (r"no\s+sweep\s+enumerates\s+the\s+scripts", "no sweep enumerates the scripts ..."),
 )
 
 #: passage name -> (heading that opens it, regex that closes it)
 PASSAGES = {
     "Script tier": ("**Script tier - test-driven, executable.**", r"^---\s*$"),
     "coverage aspiration": ("The 80% floor is the **hard gate**", r"^\s*```"),
+    # The map's own paragraph. It carried "no sweep enumerates the scripts" three lines above
+    # the sentence naming this very sweep - the exact defect this module exists to remove,
+    # sitting in the one passage the denylist did not cover.
+    "Unit coverage map": ("#### Unit coverage map", r"^\s*```"),
 }
+
+
+#: A qualifier that makes an absolute claim non-absolute, immediately before the phrase.
+_QUALIFIED = re.compile(r"(nearly|almost|most|not|no longer|bar the|except)\W*$", re.IGNORECASE)
 
 
 class Unreadable(RuntimeError):
@@ -114,9 +130,17 @@ def denied_claims(root: Path) -> list[str]:
         rest = text[i + len(start):]
         m = re.search(end, rest, re.M)
         block = rest[:m.start()] if m else rest
-        for phrase in DENIED:
-            if phrase in block:
-                out.append(f"{name}: {phrase.splitlines()[0]!r} is contradicted by the tree")
+        for pattern, label in DENIED_PATTERNS:
+            for m in re.finditer(pattern, block, re.IGNORECASE):
+                # A QUALIFIER immediately before it makes the claim non-absolute, and only the
+                # absolute form is denied: "Nearly every script has a matching ..." is the
+                # corrected sentence. Scoped by adjacency so a qualifier elsewhere in the
+                # paragraph cannot license the absolute claim.
+                before = block[max(0, m.start() - 20):m.start()]
+                if _QUALIFIED.search(before.rstrip()):
+                    continue
+                out.append(f"{name}: {label!r} is contradicted by the tree")
+                break
     return out
 
 

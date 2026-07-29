@@ -190,7 +190,7 @@ overstating coverage.
 | Coverage Target | 80% statement, blocking CI gate (`coverage report --fail-under=80`); ~90% aspiration [HIGH] |
 | Framework | Python `unittest` (stdlib) |
 | Execution | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` (shipped scripts) and `-s tools/tests` (repo-only checkers); `npm test` runs both |
-| Suite size | Several thousand tests across 90+ modules, and MINUTES rather than seconds - the recorded runs sit around 215-265s for the skill suite and 80-90s for the tools suite. Run the discover command for the live count and `tools/gate_timing.py estimate` for the live duration rather than trusting a pinned number: both drift every sprint, and the cost is why the hook skips the suites for a commit that cannot reach them |
+| Suite size | Several thousand tests across 90+ modules, and MINUTES rather than seconds - the recorded runs sit around 215-265s for the skill suite and 80-90s for the tools suite <!-- measured: skill-tests <= 400s --> <!-- measured: tool-tests <= 200s -->. Run the discover command for the live count and `tools/gate_timing.py estimate` for the live duration rather than trusting a pinned number: both drift every sprint, and the cost is why the hook skips the suites for a commit that cannot reach them |
 | Location | `.claude/skills/sdlc-studio/scripts/tests/test_<script>.py`; `tools/tests/` for the repo-only checkers |
 
 The suite operates on small temporary fixture trees, which is what keeps a
@@ -221,9 +221,10 @@ turn a red gate green.
 #### Unit coverage map
 
 Most scripts and shared-library modules have a dedicated `test_<name>.py`; the script
-contract (TRD section 5, rule 8) mandates one as a convention. It is a convention held in
-review, not an automated build gate: no sweep enumerates the scripts and fails a build on
-a module that arrives without a test. A handful are exercised indirectly under a
+contract (TRD section 5, rule 8) mandates one. It is no longer a convention held only in
+review: `tools/check_script_tests.py` enumerates the scripts - top level and `lib/` both -
+and fails the build on a module that arrives without a test and without an entry below.
+A handful are exercised indirectly under a
 differently-named module rather than a dedicated one. That set is MACHINE-READABLE and
 `tools/check_script_tests.py` holds it to the tree in both directions - a module listed here
 that has since gained a dedicated test fails, and a module the sweep finds without one that

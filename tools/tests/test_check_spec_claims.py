@@ -98,10 +98,22 @@ class GateLaneTests(unittest.TestCase):
     """US0453 AC4: drift is caught at the commit that causes it, not at the next audit."""
 
     def test_the_spec_claim_check_is_a_gate_lane(self) -> None:
-        hook = Path(__file__).resolve().parents[2] / ".githooks" / "pre-commit"
+        """Both gates, and the DOCUMENTED list too. An independent reviewer found `npm run lint`
+        had no `lint:spec-claims` at all and AGENTS.md's guard table documented neither new
+        checker - in a batch about spec truth, the repo's own record of its gates was incomplete.
+        Asserting only that the string appears in the hook missed both."""
+        import json as _json
+        repo = Path(__file__).resolve().parents[2]
+        hook = repo / ".githooks" / "pre-commit"
         self.assertTrue(hook.is_file(), "no pre-commit hook to carry the lane")
         self.assertIn("check_spec_claims.py", hook.read_text(encoding="utf-8"),
                       "the spec-claim check is not run by the gate people actually run")
+        pkg = _json.loads((repo / "package.json").read_text(encoding="utf-8"))["scripts"]
+        self.assertIn("lint:spec-claims", pkg, "no npm lint script for the checker")
+        self.assertIn("lint:spec-claims", pkg["lint"],
+                      "the checker is not chained into `npm run lint`")
+        self.assertIn("check_spec_claims.py", (repo / "AGENTS.md").read_text(encoding="utf-8"),
+                      "AGENTS.md's guard table does not document the checker")
 
     def test_the_checker_exits_non_zero_on_a_contradiction(self) -> None:
         """The lane is only a lane if the command it runs can fail."""
@@ -145,18 +157,47 @@ class TimingClaimTests(unittest.TestCase):
             self._repo("Fast. <!-- measured: total <= 500s -->\n", {"total": [400.0, 420.0]})))
 
     def test_absent_measurement_is_unverifiable_not_a_pass(self) -> None:
-        """The whole point. Treating a missing measurement as agreement is how a timing claim
-        survives every run that never took the measurement it asserts."""
+        """The whole point, and the distinction the first version got wrong: an unmeasured claim
+        must be SAID, and it must not silently read as agreement. It does not FAIL the lane -
+        the timing store is machine-local, so failing on its absence made the lane unusable in
+        CI and a lane nobody can satisfy gets switched off."""
+        import contextlib
+        import io
         root = self._repo("Fast. <!-- measured: total <= 300s -->\n", {})
-        errors = check_spec_claims.check(root)
-        self.assertTrue(errors, "an unmeasured claim was treated as agreement")
-        self.assertIn("UNVERIFIABLE", errors[0])
-        self.assertIn("not agreement", errors[0])
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            errors = check_spec_claims.check(root)
+        self.assertEqual([], errors, "an unmeasurable claim failed rather than being reported")
+        note = err.getvalue()
+        self.assertIn("UNVERIFIABLE", note, "the gap was silent, which IS treating it as a pass")
+        self.assertIn("not agreement", note)
 
-    def test_a_missing_timings_file_is_also_unverifiable(self) -> None:
+    def test_a_missing_timings_file_is_REPORTED_not_failed(self) -> None:
+        """An independent reviewer's finding: the timing store is machine-local and gitignored,
+        so a fresh clone and CI have none. Failing there made the lane unusable, which means it
+        gets switched off - worse than a stated gap. "Never a pass" is honoured by SAYING so."""
+        import contextlib
+        import io
         root = self._repo("Fast. <!-- measured: total <= 300s -->\n", timings=None)
-        self.assertTrue(check_spec_claims.check(root),
-                        "with no timings file at all the claim silently passed")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            errors = check_spec_claims.check(root)
+        self.assertEqual([], errors, "an unmeasurable claim failed a fresh clone")
+        self.assertIn("UNVERIFIABLE", err.getvalue(),
+                      "the gap was neither failed nor reported - that IS treating it as a pass")
+
+    def test_the_shipped_tsd_markers_parse_and_hold(self) -> None:
+        """The reviewer's sharpest point: the timing lane guarded NOTHING, because no marker
+        existed anywhere in the repo. Two now do, and they are checked against the live store."""
+        repo = Path(__file__).resolve().parents[2]
+        text = (repo / "sdlc-studio" / "tsd.md").read_text(encoding="utf-8")
+        markers = list(check_spec_claims._TIMING.finditer(text))
+        self.assertGreaterEqual(len(markers), 2,
+                                "the timing lane still has no shipped marker to check")
+        import contextlib
+        import io
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual([], check_spec_claims.timing_errors(repo, "tsd.md", text))
 
     def test_the_median_is_used_not_the_best_run(self) -> None:
         """A bound justified by the fastest measurement ever taken is a bound nobody
@@ -171,6 +212,67 @@ class TimingClaimTests(unittest.TestCase):
             self._repo("Slow. <!-- measured: total >= 100s -->\n", {"total": [400.0]})))
         self.assertTrue(check_spec_claims.check(
             self._repo("Slow. <!-- measured: total >= 900s -->\n", {"total": [400.0]})))
+
+
+class PathAwareBandTests(unittest.TestCase):
+    """An independent reviewer found FIVE band-shaped claims in the target documents silently
+    unchecked, because their noun (`files`, `modules`) is too generic to register - and
+    registering `files` would match anything. The row already names its own census; read it
+    from there. All five were true, so no active untruth - but all five were unguarded, sitting
+    in the same table rows as the one claim that was."""
+
+    def _repo(self, trd: str, help_files: int = 3) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="pathband_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        (d / SKILL / "help").mkdir(parents=True)
+        for i in range(help_files):
+            (d / SKILL / "help" / f"h{i}.md").write_text("x\n", encoding="utf-8")
+        (d / "sdlc-studio").mkdir(parents=True)
+        (d / "sdlc-studio" / "trd.md").write_text(trd, encoding="utf-8")
+        return d
+
+    def test_a_path_band_the_tree_contradicts_fails(self) -> None:
+        root = self._repo("| `help/*.md` (9+ files) | help pages |\n", help_files=3)
+        errors = check_spec_claims.path_band_errors(root, "trd.md",
+                                                   (root / "sdlc-studio/trd.md").read_text())
+        self.assertTrue(errors, "a 9+ claim over 3 files was not reported")
+        self.assertIn("3", errors[0], "the counted value was not named")
+
+    def test_an_agreeing_path_band_passes(self) -> None:
+        root = self._repo("| `help/*.md` (2+ files) | help pages |\n", help_files=3)
+        self.assertEqual([], check_spec_claims.path_band_errors(
+            root, "trd.md", (root / "sdlc-studio/trd.md").read_text()))
+
+    def test_a_glob_matching_nothing_is_reported_not_skipped(self) -> None:
+        root = self._repo("| `nowhere/*.md` (2+ files) | ghosts |\n")
+        errors = check_spec_claims.path_band_errors(
+            root, "trd.md", (root / "sdlc-studio/trd.md").read_text())
+        self.assertTrue(errors, "a glob matching nothing passed as a clean claim")
+        self.assertIn("matches NOTHING", errors[0])
+
+    def test_a_band_inside_a_fenced_block_is_not_a_claim(self) -> None:
+        """Four false positives an independent reviewer found: a band in a fenced example, a
+        URL, a table row meaning something else, or a historical aside is not a claim about
+        the shipped tree."""
+        root = self._repo("```text\n| `nowhere/*.md` (99+ files) |\n```\n")
+        self.assertEqual([], check_spec_claims.path_band_errors(
+            root, "trd.md", (root / "sdlc-studio/trd.md").read_text()),
+            "a band inside a fenced example was read as a claim")
+
+    def test_a_band_in_a_url_is_not_a_claim(self) -> None:
+        root = self._repo("See https://example.com/`nowhere/*.md`-(99+ files) for detail\n")
+        self.assertEqual([], check_spec_claims.path_band_errors(
+            root, "trd.md", (root / "sdlc-studio/trd.md").read_text()))
+
+    def test_the_real_trd_path_bands_all_resolve_and_hold(self) -> None:
+        """The five the reviewer named, against the live tree."""
+        repo = Path(__file__).resolve().parents[2]
+        text = (repo / "sdlc-studio" / "trd.md").read_text(encoding="utf-8")
+        found = list(check_spec_claims._PATH_BAND.finditer(text))
+        self.assertGreaterEqual(len(found), 5,
+                                f"only {len(found)} path-aware bands parsed - the five the "
+                                f"reviewer named are not all being read")
+        self.assertEqual([], check_spec_claims.path_band_errors(repo, "trd.md", text))
 
 
 if __name__ == "__main__":

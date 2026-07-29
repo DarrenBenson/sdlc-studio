@@ -62,6 +62,71 @@ _BAND = re.compile(
         re.escape(n) for names in _NOUNS.values() for n in sorted(names, key=len, reverse=True)
     ) + r")\b", re.IGNORECASE)
 
+#: A PATH-AWARE band: a row naming its own glob and a count, e.g. `` `help/*.md` (40+ files) ``
+#: or `` `templates/` (80+ files) ``. Five band-shaped claims in the target documents were
+#: silently unchecked because their noun (`files`, `modules`) is too generic to register - and
+#: registering `files` would match anything. The row already names the census; read it from
+#: there rather than from a noun registry that cannot grow to cover it.
+_PATH_BAND = re.compile(
+    r"`(?P<path>[A-Za-z0-9_./*-]+)`\s*\((?P<n>\d+)\s*\+\s*(?P<noun>[a-z]+)\)",
+    re.IGNORECASE)
+
+#: A band inside one of these is not a claim about the shipped tree: a fenced example, a URL, or
+#: a historical aside. Four such were flagged as findings by the first version.
+_FENCE_RE = re.compile(r"^\s*(```|~~~)")
+
+
+def _live_lines(text: str):
+    """Lines outside fenced blocks, so a band in an example is not read as a claim."""
+    fence = None
+    for line in text.splitlines():
+        state, is_fence = fence_step(line.lstrip(), fence)
+        if is_fence or fence is not None:
+            fence = state
+            continue
+        fence = state
+        if "http://" in line or "https://" in line:
+            continue
+        yield line
+
+
+def fence_step(stripped: str, fence):
+    """Minimal CommonMark fence state machine - the same rule the artefact writers use."""
+    marker = "`" if stripped.startswith("```") else ("~" if stripped.startswith("~~~") else None)
+    if marker is None:
+        return fence, False
+    run = len(stripped) - len(stripped.lstrip(marker))
+    if fence is None:
+        return (marker, run), True
+    if marker == fence[0] and run >= fence[1] and not stripped[run:].strip():
+        return None, True
+    return fence, True
+
+
+def path_band_errors(root: Path, rel: str, text: str) -> list:
+    """Every `` `<glob>` (N+ <noun>) `` claim the tree contradicts."""
+    out = []
+    for line in _live_lines(text):
+        for m in _PATH_BAND.finditer(line):
+            path, claimed = m.group("path"), int(m.group("n"))
+            pattern = path.rstrip("/") + "/**/*" if path.endswith("/") else path
+            # A row's glob is written from inside the SKILL tree (`help/*.md`), which is where
+            # a reader of that table stands. Resolved there first, then at the repo root, so
+            # either convention works and neither silently counts zero.
+            counted = 0
+            for base in (root / SKILL_DIR, root):
+                counted = len([p for p in base.glob(pattern) if p.is_file()])
+                if counted:
+                    break
+            if counted == 0:
+                out.append(f"{rel}: {m.group(0)!r} names a path that matches NOTHING on disk - "
+                           f"the claim cannot be checked and is not a claim that passed")
+            elif counted < claimed:
+                out.append(f"{rel}: {m.group(0)!r} claims at least {claimed}, and the tree "
+                           f"holds {counted}")
+    return out
+
+
 #: An explicit marker for a claim the author wants checked but whose prose the pattern above
 #: cannot read: `<!-- derived: scripts >= 60 -->`. Reported as UNCHECKABLE when its census is
 #: unknown or its number unparseable, never skipped.
@@ -111,21 +176,29 @@ def timing_errors(root: Path, rel: str, text: str) -> list[str]:
     performance claim built from a cherry-picked pair.
     """
     out: list[str] = []
+    unverifiable: list[str] = []
     series = recorded_timings(root)
     for m in _TIMING.finditer(text):
         lane, op, bound = m.group(1), m.group(2), float(m.group(3))
         measured = _median(series.get(lane) or []) if isinstance(series.get(lane), list) else None
         if measured is None:
-            out.append(
-                f"{rel}: {m.group(0)!r} is UNVERIFIABLE - no measurement is recorded for lane "
-                f"{lane!r}. An absent measurement is not agreement; it is a claim nobody has "
-                f"checked")
+            # REPORTED, not failed. The timing store is machine-local and gitignored, so a
+            # fresh clone and CI have none - failing there would make the lane unusable and it
+            # would be switched off, which is worse than a stated gap. "Never a pass" is
+            # honoured by saying so; it is not honoured by refusing a commit for lacking a
+            # measurement nobody could have taken. A CONTRADICTED measurement still fails.
+            unverifiable.append(
+                f"{rel}: {m.group(0)!r} is UNVERIFIABLE here - no measurement is recorded for "
+                f"lane {lane!r} (the timing store is machine-local). An absent measurement is "
+                f"not agreement, and this is not a pass - it is a gap, stated")
             continue
         ok = measured <= bound if op == "<=" else measured >= bound
         if not ok:
             out.append(
                 f"{rel}: {m.group(0)!r} asserts {lane} {op} {bound:g}s, and the recorded "
                 f"median is {measured:g}s")
+    for note in unverifiable:
+        print(f"SPEC-CLAIMS note: {note}", file=sys.stderr)
     return out
 
 
@@ -198,6 +271,7 @@ def check(root: Path) -> list[str]:
                     f"{rel}: {claim['raw']!r} claims at least {claim['claimed']} "
                     f"{claim['census']}, and the repo ships {counted}")
         errors.extend(timing_errors(root, rel, text))
+        errors.extend(path_band_errors(root, rel, text))
     return errors
 
 

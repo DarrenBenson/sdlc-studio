@@ -123,11 +123,18 @@ def tracked_markdown(root: Path) -> list[str]:
                              capture_output=True, text=True, check=False)
         if res.returncode == 0:
             return [line for line in res.stdout.splitlines() if line.strip()]
+    # `rglob` on a path that does not exist yields NOTHING and raises nothing, so the fallback
+    # returned [] for an unreadable root - the same fail-open the git path is guarded against,
+    # one layer down. The root has to be a readable directory before a walk means anything.
+    if not root.is_dir():
+        raise DiscoveryFailed(f"{root} is not a readable directory - neither git nor a tree walk "
+                              f"could list the repo, so nothing was scanned")
     try:
-        return [str(p.relative_to(root)) for p in root.rglob("*.md")
-                if ".git/" not in str(p.relative_to(root)) and "node_modules/" not in str(p)]
+        found = [str(p.relative_to(root)) for p in root.rglob("*.md")
+                 if ".git/" not in str(p.relative_to(root)) and "node_modules/" not in str(p)]
     except OSError as exc:
         raise DiscoveryFailed(f"neither git nor a tree walk could list the repo: {exc}") from exc
+    return found
 
 
 def discover_spec_homes(root: Path) -> list[str]:
@@ -162,9 +169,19 @@ def _is_superseded(root: Path, rel: str) -> bool:
         head = (root / rel).read_text(encoding="utf-8")[:4000]
     except OSError:
         return False
-    m = re.search(r"^>?\s*\*\*Status:?\*\*:?\s*(.+)$", head, re.M)
-    return bool(m) and m.group(1).strip().lower().startswith(("superseded", "historical",
-                                                              "archived", "retired"))
+    # The document's OWN status, not any status line in its head. The first version read the
+    # first `**Status:**` within 4000 chars including the BLOCKQUOTED form, so a spec quoting an
+    # artefact header - which tsd.md already does - could silently drop itself as a version home
+    # AND take its drift with it. Only a top-level, non-quoted status speaks for the document.
+    for line in head.splitlines():
+        if line.lstrip().startswith(">"):
+            continue                      # a quoted header describes something else
+        m = re.match(r"\s*\*\*Status:?\*\*:?\s*(.+)$", line)
+        if not m:
+            continue
+        return m.group(1).strip().lower().startswith(("superseded", "historical",
+                                                     "archived", "retired"))
+    return False
 
 
 def from_spec(root: Path, rel: str) -> str | None:

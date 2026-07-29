@@ -38,6 +38,7 @@ _PREMISE = re.compile(r"(?:a\s+)?(?:script|no script)\s+can(?:no|')?t?\s*(?:not)
 #: guard green, which is the one thing a truth guard must never demand.
 _HISTORY = (
     "CHANGELOG.md",
+    "changelog.d/",                        # fragments that BECOME CHANGELOG.md - same class
     "sdlc-studio/change-requests/",
     "sdlc-studio/handoffs/",
     "sdlc-studio/retros/",
@@ -47,21 +48,34 @@ _HISTORY = (
     "sdlc-studio/stories/",                # a story describing the defect must quote it
 )
 
-#: Wording that RETRACTS the premise in the same breath as quoting it. An amendment has to be
-#: able to say what it corrected, and a decision record that cannot quote its own superseded
-#: rationale is a record that hides its history. So the rule is not "the phrase is absent" but
-#: "the phrase is never ASSERTED": a quotation marked as false is allowed, an unmarked one is not.
-_RETRACTED = re.compile(
-    r"(amended|falsif|the original (?:rationale|reason)|was wrong|no longer|corrected)",
+#: Wording that RETRACTS the premise, and it must sit IMMEDIATELY BEFORE it. An amendment has
+#: to be able to say what it corrected, so a marked quotation is allowed - but the first version
+#: allowed any LINE containing one of these words, which an independent reviewer demonstrated is
+#: a working bypass: "A script cannot observe token spend, so the delegated figure is no longer
+#: inferred." asserted the premise and passed. Four common words disarmed the whole sweep.
+_RETRACTOR = re.compile(
+    r"(amended|falsif\w*|the original (?:rationale|reason)|was wrong|corrected|"
+    r"said|stated(?:\s+that)?|claimed|previously|used to (?:say|state)|incorrectly)\W*$",
     re.IGNORECASE)
+#: How far back a retraction may sit. Wide enough for "AMENDED 2026-07-29: the original
+#: rationale said <premise>", narrow enough that a word later in the sentence cannot license it.
+_RETRACTION_WINDOW = 60
 
 
 def _asserts_premise(text: str) -> list[str]:
-    """Lines that ASSERT the premise, ignoring any that retract it in the same sentence."""
+    """Lines that ASSERT the premise, ignoring one RETRACTED immediately before the phrase.
+
+    Adjacency, not line membership. A line-wide allowance means every line carrying the word
+    "corrected" may also assert the thing freely - and three live files were shown to do exactly
+    that with the suite green."""
     bad = []
     for line in text.splitlines():
-        if _PREMISE.search(line) and not _RETRACTED.search(line):
+        for m in _PREMISE.finditer(line):
+            before = line[max(0, m.start() - _RETRACTION_WINDOW):m.start()]
+            if _RETRACTOR.search(before):
+                continue
             bad.append(line.strip()[:120])
+            break
     return bad
 
 
@@ -154,6 +168,17 @@ class ThePremiseIsGoneFromEveryLiveFile(unittest.TestCase):
                          "No script can observe token spend",
                          "a script can't observe token spend"):
             self.assertTrue(_asserts_premise(phrasing), f"not caught: {phrasing!r}")
+
+    def test_a_trailing_retractor_word_does_not_license_an_assertion(self) -> None:
+        """The bypass an independent reviewer demonstrated live in three files. A line-wide
+        allowance let any line containing "no longer", "corrected", "amended" or "falsif"
+        assert the premise freely."""
+        for bypass in (
+                "A script cannot observe token spend, so the delegated figure is no longer inferred.",
+                "No script can observe token spend; this was corrected elsewhere.",
+                "A script cannot observe token spend - amended in a later release."):
+            self.assertTrue(_asserts_premise(bypass),
+                            f"a trailing retractor word licensed an assertion: {bypass!r}")
 
     def test_a_retracted_quotation_is_allowed(self) -> None:
         """The other direction, and it matters as much: an amendment must be able to say what

@@ -202,6 +202,48 @@ class DiscoveredHomesTests(unittest.TestCase):
         self.assertEqual(rc, 1, "a failed discovery reported a clean scan over nothing")
         self.assertIn("nothing was scanned", err.getvalue())
 
+    def test_a_blockquoted_status_does_not_drop_a_live_home(self) -> None:
+        """The first version read the first `**Status:**` within 4000 chars INCLUDING the
+        blockquoted form, so a spec quoting an artefact header - which tsd.md already does -
+        could silently drop itself as a version home and take its drift with it. Only the
+        document's own top-level status speaks for it. Found by an independent reviewer."""
+        root = self._repo({"sdlc-studio/spec.md":
+                           "# spec\n\n**Version:** 4.1.0\n\n"
+                           "Example of an artefact header:\n\n"
+                           "> **Status:** Archived\n"})
+        self.assertIn("sdlc-studio/spec.md", check_versions.discover_spec_homes(root),
+                      "a live document was dropped as a home by a QUOTED status line")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+            rc = check_versions.main(["--root", str(root)])
+        self.assertNotEqual(rc, 0, "its 4.1.0 drift was silenced with it")
+
+    def test_the_real_discovery_failure_path_raises(self) -> None:
+        """The REAL raise site, not an injected exception. The sibling test monkeypatches
+        `tracked_markdown` to raise, so deleting the only genuine `raise DiscoveryFailed`
+        changed nothing - it survived as a mutant. Exercised here through an unreadable tree."""
+        import os
+        import stat
+        root = self._repo()
+        walled = root / "sdlc-studio" / "walled"
+        walled.mkdir(parents=True, exist_ok=True)
+        self.assertTrue(hasattr(check_versions, "DiscoveryFailed"),
+                        "the guard has no failure type at all")
+        # The raise must be reachable from the module, not only from a patched double.
+        import inspect
+        src = inspect.getsource(check_versions.tracked_markdown)
+        self.assertIn("raise DiscoveryFailed", src,
+                      "tracked_markdown cannot report a failed discovery, so a tree it could "
+                      "not read would degrade to a clean scan over nothing")
+        try:
+            os.chmod(root, 0o000)
+            if os.access(root, os.R_OK):
+                self.skipTest("running as a user chmod cannot restrict")
+            with self.assertRaises((check_versions.DiscoveryFailed, OSError)):
+                check_versions.tracked_markdown(root / "nope" / "deeper")
+        finally:
+            os.chmod(root, stat.S_IRWXU)
+
     def test_a_superseded_document_is_not_a_home(self) -> None:
         """A superseded appendix declaring an old version is HISTORY, not drift. Holding it to
         the current version would force a maintainer to falsify the record to go green, which
