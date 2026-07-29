@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 14 |
+| Open | 16 |
 | In Progress | 0 |
 | Fixed | 317 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **414** |
+| **Total** | **416** |
 
 ## All Bugs
 
@@ -132,6 +132,8 @@
 | [BG0412](BG0412-file-finding-writes-fenced-blocks-with-no-language.md) | file_finding writes fenced blocks with no language, so the deterministic filer produces artefacts the commit gate refuses | Open | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0413](BG0413-a-suite-that-loses-90-of-its-tests.md) | A suite that loses 90% of its tests is judged not to have covered its scope and is committed anyway - the scope floor declines to record a timing instead of refusing | Open | High | 2026-07-29 | 2026-07-29 |
 | [BG0414](BG0414-the-retro-s-estimate-vs-actual-block-is.md) | The retro's estimate-vs-actual block is empty on a 148-point sprint: the close never runs the accuracy write it templates a home for | Open | Medium | 2026-07-29 | 2026-07-29 |
+| [BG0415](BG0415-the-gate-budget-is-over-at-457s-against.md) | The gate budget is OVER at 457s against 380s, and sprint plan forecasts execution cost from the 317s baseline it has already breached by 44% | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0416](BG0416-reopening-a-unit-does-not-retract-its-verification.md) | Reopening a unit does not retract its verification-depth claim, so the planner reads it as BUILT-NOT-CLOSED and forecasts it at zero points | Open | Medium | 2026-07-29 | 2026-07-29 |
 
 ## Archived Releases
 

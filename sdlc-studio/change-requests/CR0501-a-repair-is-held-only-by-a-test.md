@@ -1,6 +1,7 @@
 # CR-0501: A repair is held only by a test its own author wrote, and repairs land in guards - mutation must be mandatory on a fix, not optional on a sprint
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0191
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

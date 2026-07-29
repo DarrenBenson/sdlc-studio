@@ -1,5 +1,6 @@
 # BG0350: 25 Done stories carry no independent critic verdict, waived rather than cleared
 
+> **Depends on:** US0560
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 5
