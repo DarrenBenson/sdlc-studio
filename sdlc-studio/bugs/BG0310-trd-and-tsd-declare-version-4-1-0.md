@@ -1,6 +1,7 @@
 # BG0310: TRD and TSD declare version 4.1.0 against shipped 5.0.0 with the v5 architecture absent, and nothing gates spec version
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (executable checks against the specs)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** sdlc-studio/trd.md
@@ -19,6 +20,40 @@ Evidence (trd.md header lines 4-6 and section 1 Coverage (lines 37-39); tsd.md h
 ## Proposed Fix
 
 Run a spec-truth refresh bringing TRD and TSD to 5.0.0 (documenting the goal ladder, plan review, run archive, delegated sign-off, and current baselines/headers), and extend `check_versions.py` or the doc-freshness lane to fail when a spec's declared version trails the shipped version.
+
+## Acceptance Criteria
+
+### AC1: every spec's version tracks the product version
+
+- **Given** the PRD, TRD and TSD
+- **When** the specs are read
+- **Then** each declares the version SKILL.md declares, so the rule the documents state about themselves is one a checker reads
+- **Verify:** shell python3 tools/check_versions.py
+- **Verified:** yes (2026-07-29)
+
+### AC2: a drifted spec is reported
+
+- **Given** a fixture spec declaring an older version
+- **When** the specs are read
+- **Then** the guard reads it, so its discrimination is proven against a fixture rather than resting on the tree happening to be tidy
+- **Verify:** pytest tools/tests/test_spec_versions_tracked.py::SpecVersionsTests::test_a_drifted_spec_is_reported
+- **Verified:** yes (2026-07-29)
+
+### AC3: a spec declaring no version is not a home
+
+- **Given** a spec with no version line
+- **When** the specs are read
+- **Then** it is not held to the rule, so a project that never adopted the convention is not failed by it
+- **Verify:** pytest tools/tests/test_spec_versions_tracked.py::SpecVersionsTests::test_a_spec_declaring_no_version_is_not_a_home
+- **Verified:** yes (2026-07-29)
+
+### AC4: both spellings of the version line are read
+
+- **Given** the plain `**Version:**` the TRD uses and the blockquoted form the TSD uses
+- **When** the specs are read
+- **Then** both resolve, because a reader knowing one spelling would silently exempt the other
+- **Verify:** pytest tools/tests/test_spec_versions_tracked.py::SpecVersionsTests::test_the_blockquoted_form_is_read_too
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

@@ -93,5 +93,54 @@ class ChangelogCutTests(unittest.TestCase):
             self.assertIn("no release gate", reason)
 
 
+class TagRefusesAnOwedCloseTests(unittest.TestCase):
+    """BG0311. `--require-close` was documented as enforced "at the push/release moment" and ran
+    at neither. The TAG is where it is unambiguously right: a release that ships work no sprint
+    closed asserts a record that was never written."""
+
+    def setUp(self) -> None:
+        self.mod = _load()
+
+    def _root(self, owed: list[str], *, baselined: bool = True) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="tagcheck_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        self.mod.record_green(d, "abc123")
+        self._patch(owed, baselined=baselined)
+        return d
+
+    def _patch(self, owed: list[str], *, baselined: bool = True) -> None:
+        real = self.mod._close_owed_units
+        self.addCleanup(setattr, self.mod, "_close_owed_units", real)
+        self.mod._close_owed_units = lambda _root: list(owed)
+
+    def test_a_tag_is_refused_while_a_close_is_owed(self) -> None:
+        allowed, reason = self.mod.tag_check(self._root(["US0001", "BG0002"]), "abc123")
+        self.assertFalse(allowed)
+        self.assertIn("US0001", reason)
+        self.assertIn("no retro", reason)
+
+    def test_a_tag_with_nothing_owed_is_allowed(self) -> None:
+        """The discriminating half - a gate that always refuses is not a gate."""
+        allowed, reason = self.mod.tag_check(self._root([]), "abc123")
+        self.assertTrue(allowed, reason)
+        self.assertIn("no close is owed", reason)
+
+    def test_the_commit_mismatch_still_refuses_first(self) -> None:
+        """The pre-existing rule keeps its precedence: a green measured on another tree is the
+        more fundamental refusal, and its message must not be replaced by this one."""
+        allowed, reason = self.mod.tag_check(self._root([]), "different")
+        self.assertFalse(allowed)
+        self.assertIn("not the commit being tagged", reason)
+
+    def test_an_unbaselined_project_is_not_refused_on_its_history(self) -> None:
+        """Without a stamped baseline the report lists every terminal unit ever, which would
+        refuse a first tag on history nobody adopted the rule for."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self.assertEqual([], self.mod._close_owed_units(root))
+
+
 if __name__ == "__main__":
     unittest.main()

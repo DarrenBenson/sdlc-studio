@@ -1,6 +1,6 @@
 # RFC-0052: The closing review converges on code and never on prose, so a sprint can be unable to clear its own critiqued gate
 
-> **Status:** Superseded
+> **Status:** Accepted
 > **Triage:** DELIVERED - carry-forward (recommendation D) shipped as CR0404/EP0113, claim-inventory (C) as CR0393/EP0109, both RUN-01KY5Y3W; residual structural count-check is a minor follow-up if wanted
 > **Decomposed-into:** CR0404
 > **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py,.claude/skills/sdlc-studio/scripts/critic.py,.claude/skills/sdlc-studio/reference-review.md
@@ -27,10 +27,11 @@ B plus C, with D as the stopping rule. C is the real fix and is cheap: a header 
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Choose between: A: accept that prose findings are advisory - a round returns APPROVE when no LOGIC defect survives, and prose findings are filed as follow-ups rather than blocking the verdict. Honest about what the gate can actually decide, and stops the loop today. Risk: prose is where this project's real defects have lived for nine rounds, so downgrading it wholesale discards the review's best output., B: split the verdict - a round returns a code verdict and a prose verdict separately, and only the code verdict feeds `critiqued`. The prose verdict accumulates as filed findings with no gate power. Keeps the signal, removes the block., C: give prose an oracle. Most of the seven rounds' prose findings were of two mechanical kinds - a claim contradicted by the code it describes, and an enumeration whose header count disagrees with its own body. Both are checkable. A claim-inventory check (CR0393) plus a structural check that a stated count matches the items enumerated would have caught the majority automatically and cheaply, before any reviewer read them. or D: bound the rounds by evidence rather than by ceiling - stop when a round finds nothing that changes BEHAVIOUR, recording the outstanding prose findings on the close. Explicit about what is being accepted. | Open |
+| D1 | Choose between: A: accept that prose findings are advisory - a round returns APPROVE when no LOGIC defect survives, and prose findings are filed as follow-ups rather than blocking the verdict. Honest about what the gate can actually decide, and stops the loop today. Risk: prose is where this project's real defects have lived for nine rounds, so downgrading it wholesale discards the review's best output., B: split the verdict - a round returns a code verdict and a prose verdict separately, and only the code verdict feeds `critiqued`. The prose verdict accumulates as filed findings with no gate power. Keeps the signal, removes the block., C: give prose an oracle. Most of the seven rounds' prose findings were of two mechanical kinds - a claim contradicted by the code it describes, and an enumeration whose header count disagrees with its own body. Both are checkable. A claim-inventory check (CR0393) plus a structural check that a stated count matches the items enumerated would have caught the majority automatically and cheaply, before any reviewer read them. or D: bound the rounds by evidence rather than by ceiling - stop when a round finds nothing that changes BEHAVIOUR, recording the outstanding prose findings on the close. Explicit about what is being accepted. | Resolved: C and D. C shipped as CR0393/EP0109 (claim inventory) and D as CR0404/EP0113 (bound the rounds by evidence), both in RUN-01KY5Y3W. The residual structural count-check is a minor follow-up, not a blocker. |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Filed |
+| 2026-07-29 | Claude Opus 5 | Status corrected Superseded -> Accepted and D1 resolved. The artefact told three contradictory stories: a Superseded status naming no superseder (unlike RFC0019 and RFC0054, which name theirs), a Triage line saying DELIVERED, and the sole decision still Open. A delivered RFC is not a superseded one; the status now matches the triage line, and D1 records which options shipped and where. |

@@ -1798,7 +1798,13 @@ def run_gate(root: str = ".", only: list[str] | None = None,
             bound.append("review-current")
         else:
             downgraded.append("close.review")
-    if require_close:  # push/release guard: no delivery unit may owe a close (bound, blocking)
+    # NOT implied by `--release`. The lane is right and it ran nowhere, but `--release` is a
+    # documented contract consuming projects depend on, and quietly adding a blocking lane to it
+    # changes their gate as well as this one. The enforcement point is the TAG - see
+    # `release_cut.tag_check`, which refuses a tag while any delivery unit owes a close. A tag,
+    # not every push: this project commits straight to main in small green units, so a
+    # mid-sprint push owing a close is normal and blocking it would train the bypass.
+    if require_close:
         registry["close-owed"] = _close_owed
         bound.append("close-owed")
     if release:  # pre-tag: the diff-scoped lanes go back to the WHOLE workspace...

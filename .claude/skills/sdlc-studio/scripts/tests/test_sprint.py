@@ -8272,6 +8272,41 @@ class CloseVerdictReuseTests(unittest.TestCase):
         self.assertEqual([], gate.recorded_verdicts)
 
 
+class UlidUnitsAreNotFailedOpenTests(unittest.TestCase):
+    """BG0354. BG0318 closed the v2-only id grammar in `conformance.py`; the same hole survived
+    in `reachable_end_state`, where a unit whose id carries no comparable number was SKIPPED -
+    reported as reaching Done when the sign-off gate may well cap it. A fail-open in the one
+    report that tells an operator how far a batch can get."""
+
+    def _root(self) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="ulid_"))
+        (d / "sdlc-studio").mkdir(parents=True)
+        (d / "sdlc-studio" / ".config.yaml").write_text(
+            "review:\n  two_role_after: 192\n", encoding="utf-8")
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        return d
+
+    def test_a_ulid_unit_is_reported_as_capped_not_skipped(self) -> None:
+        sprint = _load()
+        res = sprint.reachable_end_state(self._root(), [{"id": "US-01JQK3F8"}])
+        self.assertEqual(sprint.END_STATE_REVIEW, res["state"],
+                         "a unit the cutoff cannot be compared against was reported as "
+                         "reaching Done - the fail-open direction")
+        # `norm_id` strips the dash, so the reported id is the normalised form.
+        self.assertEqual(["US01JQK3F8"], res["units"])
+
+    def test_a_numbered_unit_below_the_cutoff_still_reaches_done(self) -> None:
+        """The discriminating half - a report that always caps is not a report."""
+        sprint = _load()
+        res = sprint.reachable_end_state(self._root(), [{"id": "US0001"}])
+        self.assertEqual(sprint.END_STATE_DONE, res["state"])
+
+    def test_a_numbered_unit_past_the_cutoff_is_capped(self) -> None:
+        sprint = _load()
+        res = sprint.reachable_end_state(self._root(), [{"id": "US0500"}])
+        self.assertEqual(sprint.END_STATE_REVIEW, res["state"])
+
+
 class InertMechanismsAreReachedTests(unittest.TestCase):
     """BG0385. Five units of RUN-01KYMJEM built `goal_panel`, `judge_defects_against_goal`,
     both ends of the bookend content review and `prediction_miss` - green tests, killed

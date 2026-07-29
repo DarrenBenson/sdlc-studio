@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 14 |
+| Open | 7 |
 | In Progress | 0 |
-| Fixed | 303 |
+| Fixed | 310 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -24,11 +24,11 @@
 | [BG0304](BG0304-39-done-stories-ship-a-literal-role-user.md) | 39 Done stories ship a literal {{role}} user-story block that no gate can see | Fixed | High | 2026-07-27 | 2026-07-27 |
 | [BG0305](BG0305-parse-story-s-naive-fence-toggle-executes-verify.md) | parse_story's naive fence toggle executes Verify lines nested inside a double fence | Fixed | High | 2026-07-27 | 2026-07-27 |
 | [BG0306](BG0306-origin-drift-pre-flight-reports-clean-when-the.md) | Origin-drift pre-flight reports clean when the fetch itself fails - even under --strict | Fixed | High | 2026-07-27 | 2026-07-27 |
-| [BG0307](BG0307-retired-review-generate-still-shipped-as-live-surface.md) | Retired 'review generate' still shipped as live surface: PRD feature row names a nonexistent script and the Secondary pe | Open | Medium | 2026-07-27 | 2026-07-27 |
-| [BG0308](BG0308-tsd-calls-the-shipped-forecast-currently-falsified-citing.md) | TSD calls the shipped forecast 'currently falsified', citing a PRD section that says the falsified predictor was replace | Open | Medium | 2026-07-27 | 2026-07-27 |
-| [BG0309](BG0309-trd-and-tsd-both-claim-the-suite-runs.md) | TRD and TSD both claim the suite runs 'in under a minute' - falsified by the repo's own measured ~198s over 4,537 tests | Open | Medium | 2026-07-27 | 2026-07-27 |
-| [BG0310](BG0310-trd-and-tsd-declare-version-4-1-0.md) | TRD and TSD declare version 4.1.0 against shipped 5.0.0 with the v5 architecture absent, and nothing gates spec version | Open | Medium | 2026-07-27 | 2026-07-27 |
-| [BG0311](BG0311-close-owed-push-release-guard-is-enforced-at.md) | Close-owed 'push/release guard' is enforced at neither moment: no pre-push hook, no CI flag, and --release does not bind | Open | Medium | 2026-07-27 | 2026-07-27 |
+| [BG0307](BG0307-retired-review-generate-still-shipped-as-live-surface.md) | Retired 'review generate' still shipped as live surface: PRD feature row names a nonexistent script and the Secondary pe | Fixed | Medium | 2026-07-27 | 2026-07-27 |
+| [BG0308](BG0308-tsd-calls-the-shipped-forecast-currently-falsified-citing.md) | TSD calls the shipped forecast 'currently falsified', citing a PRD section that says the falsified predictor was replace | Fixed | Medium | 2026-07-27 | 2026-07-27 |
+| [BG0309](BG0309-trd-and-tsd-both-claim-the-suite-runs.md) | TRD and TSD both claim the suite runs 'in under a minute' - falsified by the repo's own measured ~198s over 4,537 tests | Fixed | Medium | 2026-07-27 | 2026-07-27 |
+| [BG0310](BG0310-trd-and-tsd-declare-version-4-1-0.md) | TRD and TSD declare version 4.1.0 against shipped 5.0.0 with the v5 architecture absent, and nothing gates spec version | Fixed | Medium | 2026-07-27 | 2026-07-27 |
+| [BG0311](BG0311-close-owed-push-release-guard-is-enforced-at.md) | Close-owed 'push/release guard' is enforced at neither moment: no pre-push hook, no CI flag, and --release does not bind | Fixed | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0312](BG0312-us0437-s-brownfield-classifier-is-manifest-only-source.md) | US0437's brownfield classifier is manifest-only: source without a manifest classifies greenfield, and the verifier canno | Fixed | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0313](BG0313-us0433-ac3-s-verifier-never-evaluates-the-done.md) | US0433 AC3's verifier never evaluates the done-gate nor transitions anything to Deferred: it asserts a run-state proxy f | Fixed | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0314](BG0314-force-claims-recorded-as-an-override-but-no.md) | --force claims 'recorded as an override' but no record of a forced bypass is ever written | Fixed | Medium | 2026-07-27 | 2026-07-27 |
@@ -37,7 +37,7 @@
 | [BG0317](BG0317-skipped-pytest-test-stamps-an-ac-green-on.md) | Skipped pytest test stamps an AC green on the default verify path while batch mode fails it | Fixed | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0318](BG0318-two-role-review-gate-silently-stands-down-for.md) | Two-role review gate silently stands down for every schema-v3 (ULID) unit when review.two_role_after is set | Fixed | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0319](BG0319-rfc-index-spawned-crs-column-is-false-for.md) | RFC index Spawned CRs column is false for at least 8 decomposed RFCs and reconcile cannot see it | Fixed | Medium | 2026-07-27 | 2026-07-27 |
-| [BG0320](BG0320-rfc0052-marked-superseded-with-no-superseder-named-decision.md) | RFC0052 marked Superseded with no superseder named, decision D1 still Open, while its triage line says the work shipped | Open | Medium | 2026-07-27 | 2026-07-27 |
+| [BG0320](BG0320-rfc0052-marked-superseded-with-no-superseder-named-decision.md) | RFC0052 marked Superseded with no superseder named, decision D1 still Open, while its triage line says the work shipped | Fixed | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0321](BG0321-eval-gate-can-print-gate-pass-while-a.md) | Eval gate can print 'gate pass' while a forbidden behaviour was observed - forbidden behaviours are unrecordable | Fixed | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0322](BG0322-pvd-sync-mode-symlink-reports-synced-and-exits.md) | pvd sync --mode symlink reports 'synced' and exits 0 after creating a dangling link to a nonexistent master | Fixed | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0323](BG0323-provenance-check-silently-reports-an-unreadable-artifact-as.md) | provenance check silently reports an unreadable artifact as clean - defeating the census's explicit keep-it-visible cont | Fixed | Medium | 2026-07-27 | 2026-07-27 |
@@ -71,7 +71,7 @@
 | [BG0351](BG0351-the-constitution-lane-is-81-of-the-per.md) | The constitution lane is 81% of the per-commit artefact gate, and the hook documents that gate as ~1s | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0352](BG0352-pytest-cannot-collect-the-scripts-and-tools-suites.md) | pytest cannot collect the scripts and tools suites in one invocation, so no Verify line can span both | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0353](BG0353-telemetry-parse-iso-rejects-a-valid-iso-8601.md) | telemetry._parse_iso rejects a valid ISO-8601 offset stamp, making a whole sprint report unreadable | Fixed | Medium | 2026-07-28 | 2026-07-28 |
-| [BG0354](BG0354-three-more-places-still-enumerate-the-v2-four.md) | Three more places still enumerate the v2 four-digit id, so a v3 ULID unit silently escapes them | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0354](BG0354-three-more-places-still-enumerate-the-v2-four.md) | Three more places still enumerate the v2 four-digit id, so a v3 ULID unit silently escapes them | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0355](BG0355-a-delegated-lane-can-edit-the-tree-and.md) | A delegated lane can edit the tree and stop without returning a result, leaving finished work unrecorded | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0356](BG0356-validate-and-verify-ac-disagree-about-whether-a.md) | validate and verify_ac disagree about whether a bug's Verify line executes | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0357](BG0357-mutation-py-records-no-per-test-attribution-so.md) | mutation.py records no per-test attribution, so the prune-candidate consumer can never run | Open | Medium | 2026-07-28 | 2026-07-28 |

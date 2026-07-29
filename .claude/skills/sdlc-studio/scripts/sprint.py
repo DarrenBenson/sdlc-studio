@@ -2596,7 +2596,12 @@ def reachable_end_state(repo_root: Path | str, batch: list[dict]) -> dict:
     if cutoff is not None:
         for it in batch:
             num = sdlc_md.id_number(it["id"])
-            if num is not None and num > cutoff:
+            # A unit whose id carries no comparable NUMBER - a v3 ULID - cannot be placed
+            # against a numeric cutoff. `num is None and skip` was a FAIL-OPEN: it reported the
+            # unit as reaching Done when the sign-off gate may well cap it, which is the
+            # direction this whole report exists to refuse. An unanswerable comparison is
+            # treated as PAST the cutoff, which is the same way the conformance gate reads it.
+            if num is None or num > cutoff:
                 reached.append(sdlc_md.norm_id(it["id"]))
     if not reached:
         return {"state": END_STATE_DONE, "reason": None, "units": [],

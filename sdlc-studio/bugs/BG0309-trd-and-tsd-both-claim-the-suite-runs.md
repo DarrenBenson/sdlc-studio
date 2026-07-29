@@ -1,6 +1,7 @@
 # BG0309: TRD and TSD both claim the suite runs 'in under a minute' - falsified by the repo's own measured ~198s over 4,537 tests
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (executable checks against the specs)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** sdlc-studio/trd.md
@@ -19,6 +20,16 @@ Evidence (trd.md lines 563 and 610; tsd.md lines 188, 191-192, 367): .config.yam
 ## Proposed Fix
 
 Update both documents to the measured figures (~4,500 tests, ~2.5-3 min) and restate the pre-commit rationale as it actually works: the hook pays the cost only on test-relevant commits and skips otherwise.
+
+## Acceptance Criteria
+
+### AC1: no spec claims the suite runs in under a minute
+
+- **Given** the TRD and TSD performance claims
+- **When** the specs are read
+- **Then** neither says 'under a minute' - the recorded runs are 215-265s and 80-90s, and the hook skips the suites precisely because they are too slow to pay on every commit
+- **Verify:** shell ! grep -q 'under a minute' sdlc-studio/trd.md sdlc-studio/tsd.md
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

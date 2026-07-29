@@ -93,7 +93,12 @@ fi
 if [ "$msg_rc" -ne 0 ]; then
   # Paste-ready trailers for the ids the subject names but no `Refs:` line covers. Ids are
   # normalised (CR-0257 -> CR0257) on both sides so a dashed spelling does not read as a gap.
-  ids() { grep -oE '(US|BG|CR)-?[0-9]{4}' | tr -d '-' | sort -u; }
+  # The SAME grammar the engagement floor reads: the v2 four-or-more digit form AND the v3
+  # `-<short ULID>` form, matched case-sensitively so it stops at the lowercase `-slug`. A
+  # four-digit-only pattern printed a WRONG id for a ULID unit - `BG-01JQK3F8` became `BG01JQ`
+  # - which is a paste-ready hint that produces a trailer naming a different artefact.
+  ids() { grep -oE '(EP|US|PL|BG|TS|WF|RFC|CR|IS)(-[0-9A-HJKMNP-TV-Z]{8,}|-?[0-9]{4,})' \
+            | sed -E 's/^([A-Z]+)-([0-9]+)$/\1\2/' | sort -u; }
   named="$(printf '%s\n' "$subject" | ids)"
   covered="$(grep -iE '^[[:space:]]*Refs:' "$msg_file" | ids)"
   uncovered="$(comm -23 <(printf '%s\n' "$named") <(printf '%s\n' "$covered"))"

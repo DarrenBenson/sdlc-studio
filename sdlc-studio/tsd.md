@@ -1,7 +1,7 @@
 # Test Strategy Document
 
 > **Project:** SDLC Studio
-> **Version:** 4.1.0
+> **Version:** 5.0.0
 > **Last Updated:** 2026-07-17
 > **Status:** Generated (brownfield - awaiting validation)
 >
@@ -189,7 +189,7 @@ overstating coverage.
 | Coverage Target | 80% statement, blocking CI gate (`coverage report --fail-under=80`); ~90% aspiration [HIGH] |
 | Framework | Python `unittest` (stdlib) |
 | Execution | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` (shipped scripts) and `-s tools/tests` (repo-only checkers); `npm test` runs both |
-| Suite size | 2,500+ tests across 90+ modules at the time of writing, under a minute. Run the discover command for the live count rather than trusting a pinned number - it drifts every sprint |
+| Suite size | Several thousand tests across 90+ modules, and MINUTES rather than seconds - the recorded runs sit around 215-265s for the skill suite and 80-90s for the tools suite. Run the discover command for the live count and `tools/gate_timing.py estimate` for the live duration rather than trusting a pinned number: both drift every sprint, and the cost is why the hook skips the suites for a commit that cannot reach them |
 | Location | `.claude/skills/sdlc-studio/scripts/tests/test_<script>.py`; `tools/tests/` for the repo-only checkers |
 
 The suite operates on small temporary fixture trees, which is what keeps a
@@ -334,14 +334,18 @@ untested area described under Test Strategy and Philosophy.
 Not gated as a runtime metric. The performance budget is context tokens, addressed
 structurally by progressive disclosure (always-loaded `SKILL.md` held under 500
 lines by `check_budgets.py`), not by a latency assertion. Script runtime is
-observed (2,500+ tests in under a minute) but not asserted against a threshold. See the
+observed (the recorded suite runs, minutes not seconds) but not asserted against a threshold. See the
 quality-gate table for the NFR mapping.
 
 The **token forecast is not a test-strategy instrument and must not be read as one.**
 `sprint plan` estimates a batch's token cost, `retro accuracy` compares that against
 what telemetry measured, and `retros/VELOCITY.md` records the history. The forecast is
-currently falsified out-of-sample (0.55x; the predictor, not the coefficient, is at
-fault - see PRD section 10). It warns and never gates, nothing auto-recalibrates from
+a POINTS model: complexity was falsified out-of-sample (0.55x - the predictor, not
+the coefficient, was at fault) and Fibonacci points replaced it, clearing a
+pre-registered bar at r = +0.682 pooled. PRD section 10 documents that replacement, and
+this section previously still called the shipped instrument known-broken - so the two
+specs contradicted each other on whether the cost instrument is falsified or validated.
+It warns and never gates, nothing auto-recalibrates from
 it, and a unit with no telemetry is reported **UNMEASURED** and excluded from both
 sides of the ratio, with every report stating how many of the batch it speaks for.
 Silence is not a measurement.
@@ -368,7 +372,7 @@ not-gated rationale. This closes the PRD-to-TSD traceability gap.
 
 | NFR (PRD section 5) | Quality gate | Blocking | Confidence |
 | --- | --- | --- | --- |
-| **Performance** - read path sub-second, writes bounded | Indirect: the suite runs 2,500+ tests in under a minute; a regression that made scripts slow would be visible. No explicit latency threshold is asserted. Treated as observed, not gated. `mutation` is exempt by design (minutes per run). | No | [MEDIUM] |
+| **Performance** - read path sub-second, writes bounded | Indirect: a regression that made scripts slow shows in the gate's own recorded cost, which IS budgeted (`gate.budget_seconds`) and reported per lane. No explicit per-script latency threshold is asserted. Treated as observed, not gated. `mutation` is exempt by design (minutes per run). | No | [MEDIUM] |
 | **Performance** - always-loaded context minimal | `check_budgets.py`: `SKILL.md` must be < 500 lines, each `reference-*.md` within its declared ceiling. Hard gate via `lint:budgets`. | Yes | [HIGH] |
 | **Security** - no network calls except `gh` and project Verify tools | Enforced by the script contract and the test design: `github_sync.py` tested with `gh` mocked; pure-stdlib (no third-party clients). Not gated by a network-egress scanner, but the script tier is scanned by bandit (below). | Partial (by test design, plus the bandit scan) | [HIGH] |
 | **Security** - static analysis of the shipped script tier | `bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q` runs as a CI step; a medium-or-high severity finding fails the build. Covers the shipped scripts only. | Yes | [HIGH] |
@@ -386,6 +390,7 @@ Additional gates that back the NFRs but sit outside the four PRD headings:
 | Link integrity | `check_links.py`: every anchor resolves | Yes |
 | Skill frontmatter | `validate_skill.py`: valid against Agent Skills standard | Yes |
 | Version consistency | `check_versions.py`: all homes agree (CHANGELOG advisory between releases, required at release) | Yes (release) |
+| Close-owed lane | `gate.py --release` binds a blocking `close-owed` lane: no delivery unit may reach a terminal status with no retro behind it. Bound by `--release` rather than left to a flag nobody passes - it was documented as enforced at the push/release moment and ran at neither. A TAG, not every push: this project commits straight to main in small green units, so blocking a mid-sprint push would train the bypass. | Yes (release) |
 | Release version lane | `gate.py --release` binds a blocking `versions` lane that runs `check_versions --strict`, so the pre-tag obligation is ONE command with ONE exit code rather than a gate plus a separate check whose exit code can be dropped. Invoked as a subprocess: `check_versions.py` is a repo-only development tool, so a consuming project reports the lane N/A rather than failing on a tool it never had. | Yes (release) |
 | Neutrality | `check_neutrality.py`: no private consuming-project name in a tracked file | Yes |
 | Coverage floor | `coverage report --omit='*/tests/*' --fail-under=80`: statement coverage of the script tier at or above the 80% floor (the ~90% figure is an aspiration, not this gate) | Yes |
@@ -620,7 +625,7 @@ holds only when someone remembers it.
   <script>.py               # the shipped helpers (census: tools/test_census.py)
   lib/                      # the shared modules; sdlc_md.py is the parsing core
   tests/
-    test_<script>.py        # one module per script; 90+ modules, 2,500+ tests
+    test_<script>.py        # one module per script (live count: the discover command)
 tools/
   check_links.py            # repo-only CI checkers, themselves unit-tested
   validate_skill.py

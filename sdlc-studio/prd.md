@@ -1,7 +1,7 @@
 # Product Requirements Document
 
 **Project:** SDLC Studio
-**Version:** 4.1.0
+**Version:** 5.0.0
 **Last Updated:** 2026-07-14
 **Status:** Generated (brownfield extraction; epics/stories validated and closed out 2026-07-09, commit 841471e)
 
@@ -237,7 +237,7 @@ epic decomposition cite that governing RFC/CR instead.
 | Adversarial audit | Pressure-tests the workspace and its artefacts, seeding its lens set from the ranked lessons registry | Complete | Medium | reference-audit.md, scripts/readiness.py | EP0026 |
 | Triage and noise control | An `inbox` lane for findings under schema v3; duplicate and noise detection on filing | Complete | Medium | scripts/triage_noise.py, scripts/file_finding.py | EP0014 |
 | Decisions ledger and waivers | A recorded decision is the only escape from a gate: `decisions waive --subject rule:<lane>[:<id>]` names a subject and leaves an audit trail | Complete | High | reference-decisions.md, scripts/decisions.py | EP0019 |
-| Repo review / lite on-ramp | `review generate` gives an existing repo a zero-setup taster; the lite profile is the on-ramp | Complete | Medium | scripts/review_generate.py, scripts/lite_profile.py | EP0016 |
+| Repo review / lite on-ramp | `audit --profile repo` gives an existing repo a zero-setup taster; the lite profile is the on-ramp | Complete | Medium | reference-audit.md, scripts/audit_cost.py, scripts/lite_profile.py | EP0016 |
 | PVD (multi-repo) | The Product Vision Document above the PRD; cross-repo `Depends on:` resolution through its manifest | Complete | Low | reference-pvd.md, scripts/pvd.py, scripts/lib/xrepo.py | EP0032 |
 | Id allocation | Deterministic next-id (sequential era) and collision-free ULID minting (v3), remote-aware, serialised by an allocation lock | Complete | High | scripts/next_id.py, scripts/artifact.py | EP0008, EP0012 |
 | Skill self-update / version check | `hint`/`status` compare the installed version against the latest GitHub release over a direct HTTPS GET (`api.github.com`); default on, `version_check.enabled` opt-out, 5s timeout, silent when offline; `skill-update` installs a newer release | Complete | Low | help/skill-update.md, reference-skill-update.md, scripts/version_check.py | EP0008 |

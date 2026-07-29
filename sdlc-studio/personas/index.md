@@ -11,7 +11,7 @@ who the product is *for*; the review seats that critique artefacts are a separat
 ## Secondary (served, never at the Primary's expense)
 
 - [Jonah Reyes](jonah-reyes-team-lead.md) - small-team lead adopting sdlc-studio on an inherited
-  brownfield repo; owns the `review generate` on-ramp, brownfield runbook, and `migrate` adoption path.
+  brownfield repo; owns the `audit --profile repo` on-ramp, brownfield runbook, and `migrate` adoption path.
   Well-formed.
 
 ## Negative (deliberately not designed for)

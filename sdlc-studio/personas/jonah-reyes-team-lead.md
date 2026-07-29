@@ -55,7 +55,7 @@ holding the same rules.
 
 *A short narrative of this persona using the product to reach an End goal.*
 
-Jonah points `review generate` at the inherited repo: it bootstraps the workspace, reviews
+Jonah points `audit --profile repo` at the inherited repo: it bootstraps the workspace, reviews
 architecture, quality, and security read-only, and files its findings as bugs and CRs he can
 triage with the team. Convinced, he runs `prd generate` and validates the extracted blueprint by
 running the tests against the existing implementation, then turns on the reconcile and gate checks

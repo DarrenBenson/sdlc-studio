@@ -82,6 +82,25 @@ def from_readme(root: Path) -> str | None:
     return m.group(1) if m else None
 
 
+#: The specs declare "the document version tracks the product version" and nothing enforced it:
+#: both sat at 4.1.0 after 5.0.0 was cut, and `check_versions` never looked at them.
+SPEC_FILES = ("sdlc-studio/prd.md", "sdlc-studio/trd.md", "sdlc-studio/tsd.md")
+
+
+def from_spec(root: Path, rel: str) -> str | None:
+    """The `Version:` a spec declares, in either the plain or the blockquoted form.
+
+    None when the file has no version line at all - which the caller treats as "not one of the
+    homes" rather than as a mismatch, so a project whose specs carry no version is not held to
+    a rule it never adopted."""
+    try:
+        head = (root / rel).read_text(encoding="utf-8")[:4000]
+    except OSError:
+        return None
+    m = re.search(rf"^>?\s*\*\*Version:?\*\*:?\s*v?{SEMVER}", head, re.M)
+    return m.group(1) if m else None
+
+
 def from_changelog(root: Path) -> str | None:
     try:
         text = (root / "CHANGELOG.md").read_text(encoding="utf-8")
@@ -105,6 +124,12 @@ def main(argv: list[str] | None = None) -> int:
         "SKILL.md metadata.version": from_skill_md(root),
         "README.md": from_readme(root),
     }
+    # The specs are held only when they DECLARE a version. Absent is "not a home"; present and
+    # different is drift, and it is the drift nothing was looking for.
+    for rel in SPEC_FILES:
+        got = from_spec(root, rel)
+        if got is not None:
+            versions[rel] = got
     changelog = from_changelog(root)
 
     errors = [f"{name}: version not found" for name, v in versions.items() if v is None]

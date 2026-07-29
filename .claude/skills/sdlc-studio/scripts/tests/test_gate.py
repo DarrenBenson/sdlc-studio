@@ -4571,6 +4571,43 @@ class CloseCarveOutIsTypeGeneralTests(unittest.TestCase):
                     gate._close_recorded_transition(type_, terminal, other, str(REPO)))
 
 
+class CloseOwedLaneIsOptInTests(unittest.TestCase):
+    """BG0311. The specs documented `--require-close` as a blocking push-or-release guard and
+    it ran at NEITHER moment: the lane bound only when the flag was passed, `--release` did not
+    imply it, no pre-push hook exists and CI ran the plain gate.
+
+    The enforcement point chosen is the TAG (`release_cut.tag_allowed`), not `--release` and not
+    every push. `--release` is a documented contract consuming projects depend on, and quietly
+    adding a blocking lane to it changes their gate as well as this one; blocking every push on
+    a trunk-based repo that commits straight to main in small green units would train the
+    bypass the guard exists to prevent."""
+
+    def test_the_explicit_flag_binds_it(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir()
+            report = gate.run_gate(d, require_close=True, checks=dict(gate.DEFAULT_CHECKS))
+        self.assertIn("close-owed", {c["check"] for c in report["checks"]})
+
+    def test_neither_release_nor_the_ordinary_gate_binds_it(self) -> None:
+        """Asserted so the decision is visible: this is where the rule is NOT enforced, and a
+        later change to either would be a change to a consuming project's gate."""
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir()
+            for kwargs in ({}, {"release": True}):
+                with self.subTest(**kwargs):
+                    report = gate.run_gate(d, checks=dict(gate.DEFAULT_CHECKS), **kwargs)
+                    self.assertNotIn("close-owed", {c["check"] for c in report["checks"]})
+
+    def test_the_lane_is_bound_so_the_flag_cannot_be_deselected(self) -> None:
+        """A verdict printed over a deselected lane is the false assurance this gate refuses."""
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir()
+            report = gate.run_gate(d, require_close=True, skip=["close-owed"],
+                                   checks=dict(gate.DEFAULT_CHECKS))
+        self.assertFalse(report["ok"])
+        self.assertEqual("selection", report["checks"][0]["check"])
+
+
 class ScopedRunIsNotABaselineTests(unittest.TestCase):
     """BG0363. The cost baseline was written on every CLI run, `--only` and `--skip` included.
     A scoped run covers a fraction of the lanes, so recording one LOWERED the number the next

@@ -91,7 +91,39 @@ def tag_check(root: Path | str, commit: str) -> tuple[bool, str]:
         return False, (f"the gate was recorded green on {green}, not the commit being tagged "
                        f"({commit}) - a tag asserting a green measured on a different tree is "
                        f"refused; re-run the gate on {commit}")
-    return True, f"gate green on {commit} matches the tagged commit"
+    # No delivery unit may owe a close at a TAG. The specs documented this as enforced "at the
+    # push/release moment" and it ran at neither: the gate lane bound only when a flag nobody
+    # passed was given, no pre-push hook exists and CI ran the plain gate - a ceremony with no
+    # detector, which is the exact failure the lane was built to close. The tag is where the
+    # rule is unambiguously right; blocking every mid-sprint push on a trunk-based repo would
+    # train the bypass instead.
+    owed = _close_owed_units(root)
+    if owed:
+        return False, (f"{len(owed)} delivery unit(s) reached a terminal status with no retro "
+                       f"behind them ({', '.join(owed[:8])}"
+                       f"{', +more' if len(owed) > 8 else ''}) - a release that ships work no "
+                       f"sprint closed asserts a record that was never written. Close the "
+                       f"sprint, or record the deferral deliberately")
+    return True, f"gate green on {commit} matches the tagged commit, and no close is owed"
+
+
+def _close_owed_units(root: Path | str) -> list[str]:
+    """Delivery units owing a close, or [] when the question cannot be asked.
+
+    [] on ANY failure is deliberate here and is the opposite of the usual rule: this is the last
+    gate before a tag, so a crash in a reporting helper must not become a refusal nobody can
+    clear. The gate lane above is the blocking one; this is a second, narrower net."""
+    try:
+        import close_owed  # noqa: PLC0415 - deferred; only the tag path pays for it
+        report = close_owed.owed(Path(root))
+        # `owed` is [(id, type)]. Only meaningful once a baseline is stamped: without one it
+        # lists every terminal unit ever, which would refuse a first tag on history nobody
+        # adopted the rule for.
+        if not report.get("baselined"):
+            return []
+        return [str(row[0]) for row in (report.get("owed") or [])]
+    except Exception:  # noqa: BLE001 - see the docstring
+        return []
 
 
 def _cmd_cut(args: argparse.Namespace) -> int:

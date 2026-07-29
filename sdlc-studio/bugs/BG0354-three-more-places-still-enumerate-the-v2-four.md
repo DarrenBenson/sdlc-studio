@@ -1,6 +1,7 @@
 # BG0354: Three more places still enumerate the v2 four-digit id, so a v3 ULID unit silently escapes them
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .githooks/commit-msg
@@ -27,6 +28,32 @@ Measured against the current tree, not read. With sdlc-studio/.config.yaml conta
 ## Proposed Fix
 
 See the summary; each cited site names its own remedy.
+
+## Acceptance Criteria
+
+### AC1: a unit the cutoff cannot be compared against is reported as capped
+
+- **Given** a v3 ULID unit and a numeric two-role cutoff
+- **When** it is read
+- **Then** it is reported as reaching Review, not Done - an unanswerable comparison must not be read as clearance, which is the fail-open this closed
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UlidUnitsAreNotFailedOpenTests::test_a_ulid_unit_is_reported_as_capped_not_skipped
+- **Verified:** yes (2026-07-29)
+
+### AC2: a numbered unit below the cutoff still reaches Done
+
+- **Given** a unit whose id number is below the cutoff
+- **When** it is read
+- **Then** it reaches Done, so the report discriminates rather than capping everything
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UlidUnitsAreNotFailedOpenTests::test_a_numbered_unit_below_the_cutoff_still_reaches_done
+- **Verified:** yes (2026-07-29)
+
+### AC3: the commit-msg id hint reads both id eras
+
+- **Given** a subject naming a v3 ULID unit
+- **When** it is read
+- **Then** the paste-ready trailer names the id verbatim rather than a truncated four-digit prefix that resolves to a different, real artefact
+- **Verify:** shell printf 'fix(BG-01JQK3F8): x and US0101\\n' | grep -oE '(EP|US|PL|BG|TS|WF|RFC|CR|IS)(-[0-9A-HJKMNP-TV-Z]{8,}|-?[0-9]{4,})' | grep -qx 'BG-01JQK3F8'
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

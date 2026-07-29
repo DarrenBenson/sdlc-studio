@@ -1,6 +1,7 @@
 # BG0308: TSD calls the shipped forecast 'currently falsified', citing a PRD section that says the falsified predictor was replace
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (executable checks against the specs)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** sdlc-studio/tsd.md
@@ -19,6 +20,16 @@ Evidence (Performance Testing section (line 339) vs prd.md lines 569-587 and 215
 ## Proposed Fix
 
 Rewrite tsd.md line 339 to describe the shipped points-based forecast and its validation, keeping (if wanted) a historical note that the file-complexity predictor was falsified and retired.
+
+## Acceptance Criteria
+
+### AC1: the specs agree on whether the cost instrument is falsified
+
+- **Given** the TSD's forecast section
+- **When** the specs are read
+- **Then** it describes the shipped POINTS model and names what was falsified and replaced, rather than calling the shipped instrument known-broken while the PRD documents its validation
+- **Verify:** shell ! grep -q 'currently falsified out-of-sample' sdlc-studio/tsd.md
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 
