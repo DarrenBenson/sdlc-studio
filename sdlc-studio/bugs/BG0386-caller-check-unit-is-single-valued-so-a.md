@@ -1,6 +1,7 @@
 # BG0386: caller-check --unit is single-valued, so a repeated flag silently checks only the last unit and reports a clean batch
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first)
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -27,9 +28,37 @@ Accept the batch: `--unit` repeatable (`action='append'`), plus a `--units` comm
 
 ## Acceptance Criteria
 
-- [ ] A repeated `--unit` flag checks every named unit, pinned by a test asserting two units with findings both appear.
-- [ ] The command states how many units it checked, so a clean result names the scope it is clean over.
-- [ ] A batch form exists that takes the open run's units without naming them by hand.
+### AC1: a repeated flag checks every named unit
+
+- **Given** `caller-check --unit US0001 --unit US0002`, both of which have findings
+- **When** it runs
+- **Then** both units appear in the output, rather than the last one silently replacing the first
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerCheckBatchTests::test_a_repeated_unit_flag_checks_every_named_unit
+- **Verified:** yes (2026-07-29)
+
+### AC2: the command states the scope it answered over
+
+- **Given** any invocation
+- **When** it reports
+- **Then** it names how many units it checked, so a clean result names the scope it is clean over rather than leaving the reader to infer it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerCheckBatchTests::test_the_command_states_how_many_units_it_checked
+- **Verified:** yes (2026-07-29)
+
+### AC3: a batch form takes the open run's units
+
+- **Given** an open run with an approved batch
+- **When** `caller-check --from-run` runs
+- **Then** every unit of the batch is checked without being named by hand
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerCheckBatchTests::test_the_open_run_is_available_as_a_batch_form
+- **Verified:** yes (2026-07-29)
+
+### AC4: the spelling that already worked still works
+
+- **Given** several ids after a single `--unit` flag, the form the bare `nargs="+"` supported
+- **When** it runs
+- **Then** every id is checked, so the repair does not trade one dropped spelling for another
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerCheckBatchTests::test_several_ids_after_one_flag_still_work
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

@@ -2617,6 +2617,124 @@ class BatchFormTests(_BatchBase):
                           "one named unit means one unit")
 
 
+class BlockingPriorityFloorTests(unittest.TestCase):
+    """BG0387. The floor was the literal tuple `p0/p1/critical/blocker`. This corpus files 104
+    `Severity: High` bugs and 168 `Priority: High` CRs against 2 Critical and 13 P1, and an
+    adversarial reviewer writes `major` - so the floor that exists to block a close on a defect
+    a release cannot carry never fired once on the words this project uses."""
+
+    def test_a_high_severity_defect_blocks_against_this_repos_own_vocabulary(self) -> None:
+        mod = _load()
+        ruling = mod.judge_defects_against_goal(
+            [{"id": "BG0370", "severity": "High"}], ["every seam has an owner"])
+        self.assertEqual(["BG0370"], [d["id"] for d in ruling["blocking"]])
+
+    def test_major_is_the_same_tier_as_high(self) -> None:
+        """The reviewer's word and the filer's word are one severity. An ordering that ranks
+        them makes the cut depend on which one somebody happened to type."""
+        mod = _load()
+        ruling = mod.judge_defects_against_goal([{"id": "X", "priority": "Major"}], ["a clause"])
+        self.assertEqual(["X"], [d["id"] for d in ruling["blocking"]])
+
+    def test_a_decorated_value_is_normalised_before_comparing(self) -> None:
+        """`**High**` compared raw is a value that never matches - half of why it never fired."""
+        mod = _load()
+        for raw in ("**High**", " High (severity) ", "P1", "Sev-1", "high"):
+            with self.subTest(raw=raw):
+                ruling = mod.judge_defects_against_goal([{"id": "X", "severity": raw}], ["c"])
+                self.assertEqual(["X"], [d["id"] for d in ruling["blocking"]], raw)
+
+    def test_below_the_cut_is_still_leavable_and_recorded(self) -> None:
+        """The discriminating half - a floor that blocks everything is not a floor, and a
+        leavable defect must still be recorded rather than dropped."""
+        mod = _load()
+        ruling = mod.judge_defects_against_goal(
+            [{"id": "Y", "severity": "Low"}, {"id": "Z", "severity": "Medium"}], ["c"])
+        self.assertEqual([], ruling["blocking"])
+        self.assertEqual(["Y", "Z"], [d["id"] for d in ruling["leavable"]])
+        self.assertTrue(all(d["why"] for d in ruling["leavable"]), "each records its reasoning")
+
+    def test_the_floor_is_derived_from_one_cut_not_an_enumerated_list(self) -> None:
+        """AC2. Every blocking word comes from the tiers at or above the cut, so a project
+        changes ONE value rather than keeping a list in step with its own vocabulary."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "review:\n  blocking_priority: critical\n", encoding="utf-8")
+            strict = mod.blocking_priorities(root)
+        self.assertIn("critical", strict)
+        self.assertNotIn("high", strict, "raising the cut must narrow the floor")
+        default = mod.blocking_priorities(None)
+        self.assertIn("high", default)
+        self.assertTrue(set(strict) < set(default), "the cut orders the tiers")
+
+    def test_an_unrecognised_cut_falls_back_rather_than_emptying_the_floor(self) -> None:
+        """A floor nobody configured must not silently become no floor at all."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "review:\n  blocking_priority: urgent-ish\n", encoding="utf-8")
+            self.assertEqual(mod.blocking_priorities(None), mod.blocking_priorities(root))
+
+    def test_every_tier_word_is_reachable_by_some_cut(self) -> None:
+        """The tiers ARE the vocabulary, so a word nobody can select is a word that silently
+        means nothing - the enumeration failure this replaced, in a new shape."""
+        mod = _load()
+        for tier in mod.PRIORITY_TIERS:
+            for word in tier:
+                with self.subTest(word=word):
+                    self.assertIn(word, mod.PRIORITY_ORDER)
+
+
+class CallerCheckBatchTests(_BatchBase):
+    """BG0386. `caller-check` declared `--unit` with a bare `nargs="+"`, so a REPEATED
+    `--unit A --unit B` kept only B and argparse said nothing: the command answered about one
+    unit while the caller believed it had answered about the batch. That is not hypothetical -
+    it produced a `caller-unnamed 5 -> 0` that reached a retro and two commit messages before
+    the library call was checked and showed 17 of 23."""
+
+    def _units_with_findings(self) -> None:
+        (self.root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
+        for uid in self.UNITS:
+            (self.root / "sdlc-studio" / "stories" / f"{uid}-mechanism.md").write_text(
+                f"# {uid}: adds a mechanism\n\n> **Status:** Review\n"
+                f"> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py\n\n"
+                "## Acceptance Criteria\n\n### AC1: the function behaves\n\n"
+                "- **Then** the function returns the right value\n", encoding="utf-8")
+
+    def test_a_repeated_unit_flag_checks_every_named_unit(self) -> None:
+        self._units_with_findings()
+        rc, out, err = self._run(["caller-check", "--unit", "US0001", "--unit", "US0002"])
+        self.assertEqual(1, rc, "findings mean a non-zero exit")
+        for uid in ("US0001", "US0002"):
+            self.assertIn(uid, out + err,
+                          f"{uid} was named on the command line and silently dropped")
+
+    def test_the_command_states_how_many_units_it_checked(self) -> None:
+        """A clean result must name the scope it is clean over. The count is the one thing that
+        would have shown, at the moment it was read, that the answer covered a single unit."""
+        self._units_with_findings()
+        _rc, out, _err = self._run(["caller-check", "--unit", "US0001", "--unit", "US0002"])
+        self.assertIn("over 2 unit(s)", out)
+
+    def test_the_open_run_is_available_as_a_batch_form(self) -> None:
+        self._units_with_findings()
+        rc, out, err = self._run(["caller-check", "--from-run"])
+        self.assertIn(f"over {len(self.UNITS)} unit(s)", out,
+                      f"the open run's batch was not read: {err}")
+        self.assertNotEqual(2, rc)
+
+    def test_several_ids_after_one_flag_still_work(self) -> None:
+        """The spelling the bare `nargs="+"` supported. Fixing the repeat must not break it."""
+        self._units_with_findings()
+        _rc, out, _err = self._run(["caller-check", "--unit", "US0001", "US0002", "US0003"])
+        self.assertIn("over 3 unit(s)", out)
+
+
 class ArgumentCompletenessTests(_BatchBase):
     """US0557. `critic signoff` needs `--author` and `close --apply-signoff` needs
     `--principal`; both were learned from a refusal, and the first cost nineteen spawns before

@@ -24,6 +24,8 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import argparse
+
 import contextlib
 import io
 import json
@@ -1069,6 +1071,100 @@ class SeamMapTests(unittest.TestCase):
         """A batch with no seams must not be indistinguishable from one nobody mapped."""
         self.assertIn("nothing to own", " ".join(refine.render_seam_findings([], 0)))
         self.assertIn("every one owned", " ".join(refine.render_seam_findings([], 3)))
+
+
+class SeamOwnershipDefectsTests(unittest.TestCase):
+    """BG0388/BG0389/BG0390/BG0396. The seam map shipped with four ways to report an all-clear
+    over a batch it had not actually judged - the failure direction that matters, since the
+    whole point is to name a pair before review does."""
+
+    @staticmethod
+    def _unit(root: Path, uid: str, affects: str, *, in_criterion: str = "",
+              outside: str = "") -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        crit = f"- **Preserves:** {in_criterion}\n" if in_criterion else ""
+        prose = f"- **Preserves:** {outside}\n" if outside else ""
+        (d / f"{uid}-x.md").write_text(
+            f"# {uid}: x\n\n> **Status:** Ready\n> **Affects:** {affects}\n\n"
+            f"## User Story\n\n**As a** dev\n{prose}\n"
+            f"## Acceptance Criteria\n\n### AC1: it works\n\n{crit}"
+            f"- **Verify:** shell true\n", encoding="utf-8")
+
+    def test_a_preserves_naming_only_the_test_file_does_not_own_the_source_seam(self) -> None:
+        """BG0388. `'critic.py' in 'tests/test_critic.py'` is true, so a substring match let a
+        unit own the seam on its source by naming its own test file.
+
+        The shared path is the BARE `critic.py`: that is what makes it a substring of the test
+        path, and it is the shape the defect actually had. A fixture using `src/critic.py`
+        passes under the naive matcher too and proves nothing - mutation testing caught exactly
+        that here."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "critic.py, tests/test_critic.py",
+                       in_criterion="tests/test_critic.py keeps passing")
+            self._unit(root, "US0002", "critic.py")
+            found = refine.seam_findings(root, ["US0001", "US0002"])
+        self.assertEqual(1, len(found), "the seam on critic.py is still unowned")
+        self.assertIn("critic.py", found[0]["shared"])
+
+    def test_naming_the_shared_source_itself_does_own_it(self) -> None:
+        """The discriminating half - a matcher that never matches is not a fix."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "critic.py, tests/test_critic.py",
+                       in_criterion="critic.py keeps its public contract")
+            self._unit(root, "US0002", "critic.py")
+            self.assertEqual([], refine.seam_findings(root, ["US0001", "US0002"]))
+
+    def test_a_preserves_outside_a_criterion_does_not_own_a_seam(self) -> None:
+        """BG0389. `_SEAM_RE` scanned the whole document, so a line under `## User Story` -
+        or a revision row quoting one - cleared the seam. The field's own contract says IN A
+        CRITERION."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "src/thing.py", outside="src/thing.py stays fast")
+            self._unit(root, "US0002", "src/thing.py")
+            found = refine.seam_findings(root, ["US0001", "US0002"])
+        self.assertEqual(1, len(found), "a declaration outside a criterion owned the seam")
+
+    def test_the_same_file_in_two_accepted_spellings_is_one_seam(self) -> None:
+        """BG0390. `resolve_affects` accepts repo-relative and skill-relative paths and the
+        corpus uses both, but `seam_map` intersected the raw strings - so one file written two
+        ways was not a seam at all."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            skill = root / ".claude" / "skills" / "sdlc-studio" / "scripts"
+            skill.mkdir(parents=True)
+            (skill / "sprint.py").write_text("x = 1\n", encoding="utf-8")
+            self._unit(root, "US0001", ".claude/skills/sdlc-studio/scripts/sprint.py")
+            self._unit(root, "US0002", "scripts/sprint.py")
+            seams = refine.seam_map(root, ["US0001", "US0002"])
+        self.assertEqual(1, len(seams), "two spellings of one file were not seen as a seam")
+
+    def test_two_genuinely_different_files_are_still_not_a_seam(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001", "src/a.py")
+            self._unit(root, "US0002", "src/b.py")
+            self.assertEqual([], refine.seam_map(root, ["US0001", "US0002"]))
+
+    def test_an_unresolvable_id_is_refused_not_skipped(self) -> None:
+        """BG0396. `refine seams --units US9999` printed the all-clear at exit 0. The planner's
+        own reader raises on an id not on disk, for the stated reason that a silent skip ships
+        a smaller tranche than approved; this had re-implemented it without that."""
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            err = io.StringIO()
+            args = argparse.Namespace(units="US9999,US9998", worklist=None, root=str(root),
+                                      format="text")
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = refine.cmd_seams(args)
+        self.assertEqual(2, rc, "an all-clear over units nobody looked at")
+        self.assertIn("US9999", err.getvalue())
 
 
 if __name__ == "__main__":

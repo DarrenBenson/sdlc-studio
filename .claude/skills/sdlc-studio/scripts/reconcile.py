@@ -2294,6 +2294,13 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False,
     return result
 
 
+#: Every key `apply_type` sets when the index is not a fixed point of `apply` - i.e. every way
+#: the derived-index contract can be broken. Held against `apply_type`'s own result shape by a
+#: test, so a new mutating key cannot be added there and forgotten here: that omission is
+#: exactly BG0397, where `fields` joined the report and this lane went on reading four keys.
+ROW_MUTATING_KEYS = ("changes", "appended", "counts_updated", "fields", "pruned")
+
+
 def index_derived_issues(repo_root: Path | str, types=None) -> list[str]:
     """Types whose `_index.md` is NOT a fixed point of `apply` - a hand edit or drift the
     derived-index contract forbids (the index is output of the census, never an input).
@@ -2305,10 +2312,18 @@ def index_derived_issues(repo_root: Path | str, types=None) -> list[str]:
         res = apply_type(t, root, dry_run=True)
         if res.get("refused"):
             out.append(f"{t}: index structurally broken - {res['refused']}")
-        elif res.get("changes") or res.get("appended") or res.get("counts_updated"):
-            n = len(res.get("changes", [])) + len(res.get("appended", []))
-            out.append(f"{t}: index not derived-consistent (apply would change "
-                       f"{n} row(s)/counts) - regenerate with `reconcile apply`, do not hand-edit")
+            continue
+        # DERIVED from what `apply_type` reports it would change, not from a second list of
+        # the kinds someone remembered. `fields` was added to that report and never added
+        # here, so 109 stale index cells sat under a green `index-derived` lane - the lane
+        # asserting the index IS derived was the one that could not see the newest way it
+        # stops being derived.
+        moved = [k for k in ROW_MUTATING_KEYS if res.get(k)]
+        if moved:
+            n = sum(len(res[k]) if isinstance(res[k], list) else 1 for k in moved)
+            out.append(f"{t}: index not derived-consistent (apply would change {n} "
+                       f"row(s)/cell(s)/counts: {', '.join(moved)}) - regenerate with "
+                       f"`reconcile apply`, do not hand-edit")
         elif res.get("stamped"):
             out.append(f"{t}: index Last Updated stamp is behind its own newest row "
                        f"(apply would restamp it {res['stamped']}) - regenerate with "

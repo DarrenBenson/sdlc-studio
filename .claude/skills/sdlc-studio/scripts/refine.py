@@ -897,8 +897,24 @@ _SEAM_RE = re.compile(rf"^\s*[-*]\s*\*\*{SEAM_FIELD}:?\*\*:?\s*(.+?)\s*$", re.I 
 
 
 def seam_declarations(text: str) -> list[str]:
-    """Every `- **Preserves:** ...` line in a unit, as its stated text."""
-    return [m.group(1).strip() for m in _SEAM_RE.finditer(text or "")]
+    """Every `- **Preserves:** ...` line stated IN A CRITERION, as its text.
+
+    In a criterion, which is what this field's contract has always said and what the code did
+    not do: `_SEAM_RE` scanned the whole document under `re.M`, so a Preserves line under
+    `## User Story` - or in a revision-history row quoting one - cleared the seam.
+
+    The criterion blocks come from `critic._ac_blocks_with_bodies`, which is `verify_ac`'s own
+    parser: the same reader that decides which criteria the runner executes decides which ones
+    can own a seam. A second AC parser here would let a unit own a seam from a block the
+    runner cannot see."""
+    import critic  # noqa: PLC0415 - sibling; the Caller field walks criteria the same way
+    found: list[str] = []
+    for _ac_id, body in critic._ac_blocks_with_bodies(text or ""):   # noqa: SLF001
+        for line in body:
+            m = _SEAM_RE.match(line)
+            if m:
+                found.append(m.group(1).strip())
+    return found
 
 
 def _unit_surface(root: Path, uid: str) -> tuple[set[str], str]:
@@ -910,7 +926,19 @@ def _unit_surface(root: Path, uid: str) -> tuple[set[str], str]:
         return set(), ""
     text = sdlc_md.read_text_safe(Path(hit[0]))
     files = {f.strip().strip("`") for f in sdlc_md.affects_files(text)}
-    return {f for f in files if f and not f.endswith(".md")}, text
+    # RESOLVED before intersecting. The corpus writes the same file both repo-relative and
+    # skill-relative - 149 `.claude/skills/.../sprint.py` against 1 `scripts/sprint.py` - and
+    # `resolve_affects` exists precisely because both are accepted. Intersecting the raw
+    # strings meant one file under two spellings was not a seam at all. A path that
+    # resolves to nothing (a file the unit CREATES) keeps its declared spelling, so a
+    # greenfield pair is still a seam when both write it the same way.
+    out: set[str] = set()
+    for f in files:
+        if not f or f.endswith(".md"):
+            continue
+        resolved = sdlc_md.resolve_affects(root, f)
+        out.add(str(resolved.resolve()) if resolved else f)
+    return out, text
 
 
 def seam_map(repo_root: Path | str, units: list[str]) -> list[dict]:
@@ -921,6 +949,7 @@ def seam_map(repo_root: Path | str, units: list[str]) -> list[dict]:
     is not a defect and is never reported as one: it is a pair nobody has been ASKED about,
     which is the state every one of those four contradicting pairs was in.
     """
+    import critic  # noqa: PLC0415 - sibling; its path predicate is the one used below
     root = Path(repo_root)
     ids = [sdlc_md.norm_id(u) for u in (units or []) if sdlc_md.norm_id(u)]
     info = {uid: _unit_surface(root, uid) for uid in ids}
@@ -935,7 +964,12 @@ def seam_map(repo_root: Path | str, units: list[str]) -> list[dict]:
                 declared = " ".join(seam_declarations(info[owner][1])).lower()
                 if not declared:
                     continue
-                if other.lower() in declared or any(s.lower() in declared for s in shared):
+                # PATH BOUNDARIES, not substring. `'critic.py' in 'tests/test_critic.py'` is
+                # true, so a Preserves line naming only a unit's own test file owned the seam
+                # on its source. `critic._verifier_names` documents and fixes this
+                # exact rule three files away; it is reused rather than re-derived.
+                if other.lower() in declared or any(
+                        critic._verifier_names(declared, s) for s in shared):  # noqa: SLF001
                     owners.append(owner)
             seams.append({"units": [a, b], "shared": shared, "owners": owners,
                           "owned": bool(owners)})
@@ -970,11 +1004,27 @@ def cmd_seams(args: argparse.Namespace) -> int:
     """Report the batch's seam map. Read-only."""
     units = [u.strip() for u in (args.units or "").replace(",", " ").split() if u.strip()]
     if not units and getattr(args, "worklist", None):
-        units = [ln.split("#")[0].strip(" -*\t") for ln in
-                 Path(args.worklist).read_text(encoding="utf-8").splitlines()]
-        units = [u for u in units if u]
+        # The PLANNER's reader, not a second one. This re-implemented it without the id
+        # grammar, the dedupe or the refusal, so `US0541 (3 pts)` resolved to nothing and a
+        # worklist of unresolvable ids printed the all-clear at exit 0 - a smaller tranche
+        # than approved, reported as a clean one.
+        import sprint  # noqa: PLC0415 - sibling; imported lazily, as refine's others are
+        try:
+            records, _ = sprint._worklist_units(Path(args.root), args.worklist)  # noqa: SLF001
+        except (OSError, ValueError) as exc:
+            print(f"seams refused: {exc}", file=sys.stderr)
+            return 2
+        units = [r["id"] if isinstance(r, dict) else str(r) for r in records]
     if not units:
         print("seams: name the batch with --units or --worklist", file=sys.stderr)
+        return 2
+    # An id that resolves to nothing is REPORTED, never skipped: a seam map over a batch that
+    # silently shrank is an all-clear about units nobody looked at.
+    unresolved = [u for u in units if not sdlc_md.find_by_id(args.root, u)]
+    if unresolved:
+        print(f"seams refused: {len(unresolved)} id(s) resolve to no artefact on disk: "
+              f"{', '.join(unresolved)}. A seam map over a batch that silently shrank is an "
+              f"all-clear about units nobody looked at", file=sys.stderr)
         return 2
     all_seams = seam_map(args.root, units)
     unowned = [s for s in all_seams if not s["owned"]]

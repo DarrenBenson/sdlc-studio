@@ -8272,6 +8272,105 @@ class CloseVerdictReuseTests(unittest.TestCase):
         self.assertEqual([], gate.recorded_verdicts)
 
 
+class InertMechanismsAreReachedTests(unittest.TestCase):
+    """BG0385. Five units of RUN-01KYMJEM built `goal_panel`, `judge_defects_against_goal`,
+    both ends of the bookend content review and `prediction_miss` - green tests, killed
+    mutants, and NOTHING called any of them. The per-clause verdict the close recorded was
+    assembled by hand, so the panel's author-exclusion never fired once.
+
+    These tests assert the CALL from the command, not the function. A unit test on the
+    mechanism is what all five already had."""
+
+    def _repo(self, *, goal="one thing; and another thing") -> Path:
+        d = Path(tempfile.mkdtemp(prefix="inert_"))
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        (d / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (d / "sdlc-studio" / "stories").mkdir(parents=True)
+        (d / "sdlc-studio" / "stories" / "US0001-a-unit.md").write_text(
+            "# US0001: a unit\n\n> **Status:** Review\n", encoding="utf-8")
+        (d / "sdlc-studio" / "bugs" / "BG0001-an-open-defect.md").write_text(
+            "# BG0001: an open defect that mentions another thing\n\n"
+            "> **Status:** Open\n> **Severity:** P1\n", encoding="utf-8")
+        (d / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
+            "run_id": "RUN-INERT", "batch": ["US0001"], "outcome": "running",
+            "sprint_goal": goal, "started_at": "2026-07-29T09:00:00Z"}), encoding="utf-8")
+        (d / "sdlc-studio" / ".local" / "goal-review.json").write_text(json.dumps({
+            "rounds": [{"goal": goal, "seats": [
+                {"seat": "qa", "achievable": "yes", "done_means": "x", "one_increment": "yes"}]}]
+        }), encoding="utf-8")
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        return d
+
+    def test_the_close_reaches_the_goal_panel_and_reports_per_clause(self) -> None:
+        sprint = _load()
+        root = self._repo()
+        lines = sprint.close_goal_judgement(root, json.loads(
+            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8")))
+        joined = "\n".join(lines)
+        self.assertIn("goal panel", joined, "the panel is still unreachable from the close")
+        self.assertIn("one thing", joined, "the verdict is reported per CLAUSE")
+        self.assertIn("another thing", joined)
+
+    def test_the_close_reaches_the_defect_judgement(self) -> None:
+        sprint = _load()
+        root = self._repo()
+        joined = "\n".join(sprint.close_goal_judgement(root, json.loads(
+            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))))
+        self.assertIn("defects vs goal", joined)
+        self.assertIn("BLOCKING BG0001", joined,
+                      "a P1 blocks whatever the clause reasoning says, and the close must say so")
+
+    def test_the_close_reaches_the_caller_check_over_the_batch(self) -> None:
+        """AC2. The repo's own check for this defect class, never once run over a batch - which
+        is why BG0385 was found by an operator's question rather than by the tool."""
+        sprint = _load()
+        root = self._repo()
+        joined = "\n".join(sprint.close_goal_judgement(root, json.loads(
+            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))))
+        self.assertIn("caller-check", joined)
+        self.assertIn("of 1 ship a mechanism", joined, "the scope is named, not inferred")
+
+    def test_the_plan_records_the_content_review_and_the_close_scores_it(self) -> None:
+        """Both ends of the bookend, through the CLI, plus the prediction miss that only exists
+        because both ends were reached."""
+        sprint = _load()
+        root = self._repo()
+        sprint.record_content_review(root, "plan", "one thing; and another thing", "yes")
+        sprint.record_content_review(root, "close", "one thing; and another thing", "partial",
+                                     missing="the second clause did not land")
+        reviews = sprint.content_reviews(root)
+        self.assertEqual("yes", reviews["plan"]["answer"])
+        self.assertEqual("partial", reviews["close"]["answer"])
+        miss = sprint.prediction_miss(root)
+        self.assertIsNotNone(miss, "with both ends recorded the miss must be reportable")
+        self.assertIn("PREDICTION MISS", miss)
+        self.assertIn(miss, "\n".join(sprint.close_goal_judgement(root, json.loads(
+            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8")))))
+
+    def test_the_plan_cli_takes_the_content_review(self) -> None:
+        """The flag exists on the command that should ask the question - which is what "wired"
+        means. A helper nobody can invoke is the state this bug records."""
+        sprint = _load()
+        parser = sprint.build_parser()
+        plan = parser._subparsers._group_actions[0].choices["plan"]   # noqa: SLF001
+        close = parser._subparsers._group_actions[0].choices["close"]  # noqa: SLF001
+        for name, sub in (("plan", plan), ("close", close)):
+            with self.subTest(command=name):
+                flags = {opt for a in sub._actions for opt in a.option_strings}  # noqa: SLF001
+                self.assertIn("--content-review", flags)
+                self.assertIn("--content-missing", flags)
+
+    def test_the_panel_refuses_a_goal_with_no_clauses_rather_than_inventing_one(self) -> None:
+        """The reporting lane must degrade, never crash a close: the mechanisms inform a
+        sign-off, and a reporting lane that can block one is a lane that gets switched off."""
+        sprint = _load()
+        root = self._repo(goal="")
+        lines = sprint.close_goal_judgement(root, json.loads(
+            (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8")))
+        self.assertNotIn("goal panel:", "\n".join(lines),
+                         "no clauses means no panel, not a panel over nothing")
+
+
 class CloseDryRunTests(unittest.TestCase):
     """US0555. `close` runs seven steps and stops at the first unmet prerequisite; RUN-01KYMJEM
     took three attempts, two of them stopping on a refusal, and each restart re-ran the steps

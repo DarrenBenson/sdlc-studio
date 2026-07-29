@@ -26,9 +26,19 @@
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DefectAgainstGoalTests::test_a_clause_falsifying_defect_blocks_and_others_are_recorded_leavable
 - **Verified:** yes (2026-07-28)
 
+### AC2: the mechanism names its CALLER (BG0385)
+
+- **Caller:** `sprint.close_goal_judgement`, reached from `sprint close` (.claude/skills/sdlc-studio/scripts/sprint.py)
+- **Given** the command that should consume this mechanism
+- **When** it runs
+- **Then** sprint close judges every open defect against the goal's clauses and names each blocking one, rather than leaving the severity to be guessed at sign-off
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertMechanismsAreReachedTests::test_the_close_reaches_the_defect_judgement
+- **Verified:** yes (2026-07-29)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-28 | Claude Opus 5 | Groomed: criteria authored against this story's slice, each with an executable Verify line |
+| 2026-07-29 | Claude Opus 5 | Amended under BG0385: this unit shipped a mechanism with no caller. The criterion above names the caller and is verified end to end from the command, which is what `caller-check` asks for and what would have refused this unit at delivery. |

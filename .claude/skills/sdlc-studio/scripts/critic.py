@@ -746,10 +746,68 @@ def goal_panel(repo_root: Path | str, clauses: list[str], seats: list[str], auth
 #: Priorities that describe a defect a release cannot carry. Read as a FLOOR: a defect at
 #: one of these blocks a close whatever the clause reasoning says, because "the goal was met
 #: anyway" is not an answer to a user who cannot work around it.
-BLOCKING_PRIORITIES = ("p0", "p1", "critical", "blocker")
+#: Priority and severity words ordered MOST SEVERE FIRST, across the vocabularies projects
+#: actually use. One ordering rather than a list of blocking words: a flat list has to remember
+#: every synonym, and the one this shipped with remembered `p0/p1/critical/blocker` while this
+#: corpus files 104 `Severity: High` bugs and an adversarial reviewer writes `major`. Every one
+#: of them was leavable.
+#: TIERS, not a flat order: `high` and `major` are the same severity written by two different
+#: readers (a bug filer and an adversarial reviewer), and an ordering that puts one below the
+#: other makes the cut depend on which word someone happened to type.
+PRIORITY_TIERS = (
+    ("p0", "sev0", "blocker", "critical"),
+    ("p1", "sev1", "high", "major"),
+    ("p2", "sev2", "medium", "moderate", "normal"),
+    ("p3", "sev3", "low", "minor", "trivial", "nice-to-have"),
+)
+PRIORITY_ORDER = tuple(word for tier in PRIORITY_TIERS for word in tier)
+
+#: The default cut, INCLUSIVE: every word at or above it blocks. A project moves the cut with
+#: `review.blocking_priority` in `.config.yaml` - one value to set, rather than a list to keep
+#: in step with its own vocabulary.
+BLOCKING_CUT = "high"
 
 
-def judge_defects_against_goal(defects: list[dict], clauses: list[str]) -> dict:
+def blocking_priorities(repo_root: Path | str | None = None) -> tuple:
+    """Every priority word at or above this project's blocking cut.
+
+    DERIVED from `PRIORITY_ORDER` and one cut, so a project that files High/Medium/Low and one
+    that files P0..P3 are both covered without either being enumerated here. An unrecognised
+    cut falls back to the shipped default rather than to an empty floor: a floor nobody
+    configured must not silently become no floor at all."""
+    cut = BLOCKING_CUT
+    if repo_root is not None:
+        declared = sdlc_md.project_override(repo_root, "review.blocking_priority", None)
+        if declared and _normalise_priority(str(declared)) in PRIORITY_ORDER:
+            cut = _normalise_priority(str(declared))
+    depth = next(i for i, tier in enumerate(PRIORITY_TIERS) if cut in tier)
+    return tuple(word for tier in PRIORITY_TIERS[:depth + 1] for word in tier)
+
+
+_PRIORITY_DECORATION = re.compile(r"[^a-z0-9-]+")
+
+
+def _normalise_priority(value: str) -> str:
+    """`"High (severity)"`, `" **P1** "`, `"Sev-1"` -> the bare word the ordering knows.
+
+    A decorated field value compared raw is a value that never matches, which is half of why
+    the floor never fired."""
+    text = _PRIORITY_DECORATION.sub(" ", str(value or "").strip().lower()).strip()
+    for token in text.split():
+        # Both spellings of a hyphenated tier word: `sev-1` and `sev1`, `nice-to-have` intact.
+        # Trying only one is how half a vocabulary goes unrecognised.
+        for candidate in (token.strip("-"), token.replace("-", "")):
+            if candidate in PRIORITY_ORDER:
+                return candidate
+    return text.split()[0] if text.split() else ""
+
+
+#: Kept as the shipped default for callers that ask for the constant. Derived, never typed.
+BLOCKING_PRIORITIES = blocking_priorities(None)
+
+
+def judge_defects_against_goal(defects: list[dict], clauses: list[str],
+                               repo_root: Path | str | None = None) -> dict:
     """Which open defects BLOCK a close and which can be left, judged against the goal.
 
     `{blocking, leavable}`. A defect blocks when it falsifies a goal clause - it names one, or
@@ -762,16 +820,17 @@ def judge_defects_against_goal(defects: list[dict], clauses: list[str]) -> dict:
     defect at P0/P1 blocks whatever the reasoning says.
     """
     lowered = [c.strip().lower() for c in (clauses or []) if str(c).strip()]
+    floor = blocking_priorities(repo_root)
     blocking, leavable = [], []
     for d in defects or []:
-        priority = str(d.get("priority") or d.get("severity") or "").strip().lower()
+        priority = _normalise_priority(d.get("priority") or d.get("severity") or "")
         named = str(d.get("falsifies") or "").strip().lower()
         clause = next((c for c in lowered if named and (named in c or c in named)), None)
         if clause is None and named:
             clause = named          # names a clause this goal does not carry: still a claim
         if clause:
             blocking.append({**d, "why": f"falsifies the goal clause: {clause}"})
-        elif priority in BLOCKING_PRIORITIES:
+        elif priority in floor:
             blocking.append({**d, "why": f"priority {priority} - a defect a release cannot "
                                          f"carry blocks the close whatever the clause "
                                          f"reasoning says"})
@@ -2046,12 +2105,20 @@ def cmd_caller_check(args: argparse.Namespace) -> int:
     """Report the mechanism units whose criteria name no consumer, or an absent one. Returns 1
     when there is something to report, so a hook or lane can act on it."""
     try:
-        findings = caller_findings(args.root, args.unit)
+        units = batch_units(args, "caller-check")
+        findings = caller_findings(args.root, units)
+    except BatchRefused as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
     except (OSError, ValueError) as exc:
         print(f"caller check refused: {exc}", file=sys.stderr)
         return 2
     for line in render_caller_findings(findings):
         print(line)
+    # The SCOPE, always - a clean result has to name what it is clean over. The false
+    # measurement BG0386 records was a clean answer about one unit read as a clean batch, and
+    # the count is what would have shown the difference at the moment it was read.
+    print(f"caller-check: {len(findings)} finding(s) over {len(units)} unit(s)")
     return 1 if findings else 0
 
 
@@ -2353,8 +2420,16 @@ def build_parser() -> argparse.ArgumentParser:
     cc = sub.add_parser("caller-check",
                         help="Report units adding a mechanism whose criteria name no consuming "
                              "caller, or name one that does not resolve in the tree.")
-    cc.add_argument("--unit", required=True, nargs="+", metavar="ID",
-                    help="the unit ids to check")
+    # `action="extend"` rather than the bare `nargs="+"` this had: with nargs alone a REPEATED
+    # `--unit A --unit B` keeps only B and argparse says nothing, so the command answered about
+    # one unit while reporting on a batch. That produced a false `caller-unnamed 5 -> 0` in a
+    # retro and two commit messages.
+    cc.add_argument("--unit", action="extend", nargs="+", metavar="ID",
+                    help="the unit ids to check; repeatable, and several may follow one flag")
+    cc.add_argument("--units", action="append", metavar="ID[,ID...]",
+                    help="unit ids as a comma-separated list; repeatable")
+    cc.add_argument("--from-run", dest="from_run", action="store_true",
+                    help="check the open run's approved batch; refused when no run is open")
     cc.add_argument("--root", default=".")
     cc.set_defaults(func=cmd_caller_check)
     e = sub.add_parser("evidence", help="Record the adversarial pass as evidence "

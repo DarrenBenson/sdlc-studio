@@ -5811,6 +5811,129 @@ def content_reviews(repo_root: Path | str) -> dict:
             for phase in ("plan", "close")}
 
 
+def _close_shortfall(root, state: dict) -> dict:
+    """The evidence the close-time content question is answered AGAINST.
+
+    Supplied to the seats rather than recalled by them - `record_content_review` takes it for
+    exactly that reason. A judgement made from memory of what shipped is a recollection, and
+    this project has twice recorded a completion claim that reading the evidence would have
+    refused."""
+    batch = [b.get("id") if isinstance(b, dict) else b for b in ((state or {}).get("batch") or [])]
+    batch = [str(b) for b in batch if b]
+    undelivered = []
+    for uid in batch:
+        hit = sdlc_md.find_by_id(root, uid)
+        if not hit:
+            undelivered.append(uid)
+            continue
+        status = (sdlc_md.extract_field(sdlc_md.read_text_safe(hit[0]), "Status") or "").strip()
+        if status.lower() not in ("done", "fixed", "closed", "complete", "verified"):
+            undelivered.append(f"{uid} ({status or 'no status'})")
+    return {"undelivered": undelivered, "defects": [d["id"] for d in _open_defects(root)]}
+
+
+def close_goal_judgement(root, state: dict, seats: list | None = None) -> list[str]:
+    """The close's goal judgement, as lines to print. BG0385's repair.
+
+    RUN-01KYMJEM built `goal_panel`, `judge_defects_against_goal`, both ends of the bookend
+    content review and `prediction_miss` - and shipped all five with no caller. The tests were
+    green, the mutants were killed and not one line of it could run, so the per-clause verdict
+    that close recorded was assembled by hand and the panel's author-exclusion never fired.
+    This is the caller. It reports rather than refuses: the mechanisms inform the operator's
+    sign-off, and a reporting lane that can block a close is a lane that gets switched off.
+    """
+    import critic  # noqa: PLC0415 - deferred, like the chain's other siblings
+    lines: list[str] = []
+    goal = (state or {}).get("sprint_goal") or ""
+    clauses = run_state.goal_clauses(goal)
+    batch = [b.get("id") if isinstance(b, dict) else b for b in ((state or {}).get("batch") or [])]
+    batch = [str(b) for b in batch if b]
+
+    # 1. The per-clause verdict, from the panel that REFUSES the author.
+    if clauses:
+        author = (state or {}).get("author") or _signoff_author(root, batch[0]) if batch else None
+        recorded = _recorded_goal_seats(root)
+        try:
+            panel = critic.goal_panel(root, clauses, [s for s in recorded if s != author],
+                                      str(author or "the authoring session"),
+                                      verdicts=_recorded_clause_verdicts(root, clauses))
+        except ValueError as exc:
+            lines.append(f"goal panel: not run - {exc}")
+        else:
+            lines.append(f"goal panel: {panel['verdict']} over {len(clauses)} clause(s), "
+                         f"{len(panel['panel'])} seat(s), author excluded")
+            for row in panel["clauses"]:
+                unanswered = (f" ({len(row['unanswered'])} seat(s) silent)"
+                              if row["unanswered"] else "")
+                lines.append(f"    {row['verdict'] or 'UNANSWERED'}{unanswered}: "
+                             f"{row['clause'][:100]}")
+
+    # 2. The open defects, judged against those clauses rather than a guessed severity.
+    defects = _open_defects(root)
+    if defects and clauses:
+        ruling = critic.judge_defects_against_goal(defects, clauses)
+        lines.append(f"defects vs goal: {len(ruling['blocking'])} BLOCKING, "
+                     f"{len(ruling['leavable'])} leavable")
+        for d in ruling["blocking"][:8]:
+            lines.append(f"    BLOCKING {d.get('id')}: {d.get('why', '')[:110]}")
+
+    # 3. Every unit shipping a mechanism nothing calls - the check this repo already owned and
+    #    had never run over a batch. The reason BG0385 was found by a question, not a tool.
+    if batch:
+        try:
+            inert = critic.caller_findings(root, batch)
+        except (OSError, ValueError) as exc:
+            lines.append(f"caller-check: not run - {exc}")
+        else:
+            lines.append(f"caller-check: {len(inert)} unit(s) of {len(batch)} ship a mechanism "
+                         f"with no named caller")
+            lines.extend(f"    {line.strip()}" for line in critic.render_caller_findings(inert))
+
+    # 4. The bookend: did the plan's prediction hold?
+    miss = prediction_miss(root)
+    if miss:
+        lines.append(miss)
+    return lines
+
+
+def _recorded_goal_seats(root) -> list[str]:
+    """The seats that reviewed the Sprint Goal at plan time, from the recorded round."""
+    data = sdlc_md.read_json(Path(root) / "sdlc-studio/.local/goal-review.json", {})
+    rounds = data.get("rounds") if isinstance(data, dict) else None
+    latest = (rounds or [{}])[-1] if isinstance(rounds, list) and rounds else {}
+    return [str(s.get("seat")) for s in (latest.get("seats") or []) if s.get("seat")]
+
+
+def _recorded_clause_verdicts(root, clauses: list[str]) -> dict | None:
+    """Per-clause verdicts a seat has already recorded, or None when none has."""
+    data = sdlc_md.read_json(Path(root) / "sdlc-studio/.local/goal-review.json", {})
+    rounds = data.get("rounds") if isinstance(data, dict) else None
+    latest = (rounds or [{}])[-1] if isinstance(rounds, list) and rounds else {}
+    out: dict = {}
+    for seat in latest.get("seats") or []:
+        polarity = str(seat.get("achievable") or "").strip().lower()
+        if not polarity:
+            continue
+        verdict = "achieved" if polarity in ("yes", "y", "true") else "partial"
+        for clause in clauses:
+            out.setdefault(clause, {})[str(seat.get("seat"))] = verdict
+    return out or None
+
+
+def _open_defects(root) -> list[dict]:
+    """Every open bug, as `judge_defects_against_goal` reads them."""
+    out: list[dict] = []
+    for path in sdlc_md.artifact_files("bug", Path(root)):
+        text = sdlc_md.read_text_safe(path)
+        status = (sdlc_md.extract_field(text, "Status") or "").strip().lower()
+        if status not in ("open", "in progress"):
+            continue
+        out.append({"id": sdlc_md.extract_record_id(path.stem),
+                    "title": sdlc_md.extract_h1_title(text) or path.stem,
+                    "priority": (sdlc_md.extract_field(text, "Severity") or "").strip()})
+    return out
+
+
 def prediction_miss(repo_root: Path | str) -> str | None:
     """The plan-time prediction against the close-time judgement, when they disagree.
 
@@ -6043,6 +6166,19 @@ def cmd_close(args: argparse.Namespace) -> int:
     # the sign-off fan-out: the operator is about to decide, and a repeat is evidence for that
     # decision. Never blocking - see `_close_lesson_repeats`.
     _close_lesson_repeats(root)
+    # BG0385: the goal panel, the defect judgement, the close end of the bookend review and
+    # the caller-check, all of which RUN-01KYMJEM built and left with no caller. Reported here,
+    # before the sign-off decision, because that is the decision they exist to inform.
+    if getattr(args, "content_review", None):
+        try:
+            record_content_review(root, "close", (state or {}).get("sprint_goal") or "",
+                                  args.content_review,
+                                  missing=getattr(args, "content_missing", "") or "",
+                                  shortfall=_close_shortfall(root, state))
+        except ValueError as exc:
+            print(f"close: the content review was NOT recorded - {exc}", file=sys.stderr)
+    for line in close_goal_judgement(root, state):
+        print(f"  {line}")
     # What this close itself cost, on BOTH paths and before the decision, so the next reduction
     # is measured against a number rather than an impression. Read from the execution ledger:
     # an unrecorded component reads as UNMEASURED, never as zero seconds.
@@ -6351,6 +6487,23 @@ def cmd_plan(args: argparse.Namespace) -> int:
                               "policy_run_id": state["run_id"]}
         state = run_state.update(args.root, **extra)
         print(f"{run_opened_line(state, appetite)} -> {run_state.path(args.root)}")
+        # BG0385: the PLAN end of the bookend goal review. `goal-review record` asks whether the
+        # goal looks achievable; this asks the different question US0545 specifies - will THIS
+        # content deliver it - and records the answer so the close can score its own judgement
+        # against the prediction. Reported as unanswered rather than assumed, because a bookend
+        # with one end is a question nobody ever checks.
+        if getattr(args, "content_review", None):
+            try:
+                record_content_review(args.root, "plan", state.get("sprint_goal") or "",
+                                      args.content_review,
+                                      missing=getattr(args, "content_missing", "") or "")
+                print(f"  content review (plan): {args.content_review}")
+            except ValueError as exc:
+                print(f"  content review NOT recorded: {exc}", file=sys.stderr)
+        elif state.get("sprint_goal"):
+            print("  content review (plan): UNANSWERED - will this content deliver the goal? "
+                  "Record it with --content-review yes|partial|no (a partial or no must name "
+                  "what is missing), so the close can score its judgement against the prediction")
         if policy:
             _render_policy(policy)
     _render_plan(args, data, queries, worklist, epics)
@@ -7327,6 +7480,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--goal", choices=GOALS,
                    help="the goal rung this run is driven to; recorded on the run state "
                         "(with --write) so the close can say what the run aimed at")
+    p.add_argument("--content-review", dest="content_review",
+                   choices=("yes", "partial", "no"), default=None,
+                   help="the PLAN end of the bookend goal review: will this content deliver the "
+                        "Sprint Goal? A partial or no must name what is missing")
+    p.add_argument("--content-missing", dest="content_missing", default="",
+                   help="what this batch does not cover (required with a partial/no "
+                        "--content-review)")
     p.add_argument("--sprint-goal", dest="sprint_goal", metavar="TEXT",
                    help="the Sprint Goal - ONE product-outcome sentence unifying this batch "
                         "(what the increment is judged against at the closing review). Distinct "
@@ -7392,6 +7552,13 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the batch retro this close validates and gates on. Omit it and close "
                          "SCAFFOLDS one (id + template + index row) via the deterministic path, "
                          "then stops so you fill it and re-run with the id it prints")
+    cl.add_argument("--content-review", dest="content_review",
+                    choices=("yes", "partial", "no"), default=None,
+                    help="the close end of the bookend goal review: did this content deliver "
+                         "the goal? A partial or no must name what is missing")
+    cl.add_argument("--content-missing", dest="content_missing", default="",
+                    help="what the batch did not cover (required with a partial/no "
+                         "--content-review)")
     cl.add_argument("--dry-run", dest="dry_run", action="store_true",
                     help="report EVERY refusal all seven steps would raise, in one pass, and "
                          "write nothing. The action steps run against a scratch copy of the "

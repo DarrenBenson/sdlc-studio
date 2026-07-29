@@ -1,6 +1,7 @@
 # BG0396: cmd_seams silently drops unresolvable ids and re-implements the worklist reader the planner refuses on
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py
@@ -23,8 +24,13 @@ Reuse `_worklist_units` and report unresolved ids.
 
 ## Acceptance Criteria
 
-- [ ] An unresolvable id is reported, not skipped.
-- [ ] The worklist reader is the planner's, not a second one.
+### AC1: an unresolvable id is refused, not skipped
+
+- **Given** `refine seams --units US9999,US9998`, neither of which is on disk
+- **When** the seam map runs
+- **Then** it refuses with exit 2 naming both ids, rather than printing the all-clear over units nobody looked at
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::SeamOwnershipDefectsTests::test_an_unresolvable_id_is_refused_not_skipped
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

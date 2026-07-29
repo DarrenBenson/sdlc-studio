@@ -1,6 +1,7 @@
 # BG0388: The seam owner check matches by naive substring, so a unit's own test file owns the seam over its source
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py
@@ -23,8 +24,21 @@ Match at path boundaries, reusing the sibling's predicate rather than a second r
 
 ## Acceptance Criteria
 
-- [ ] A Preserves line naming only a unit's own test file does not own the seam on its source.
-- [ ] The path-matching predicate is shared with critic rather than re-derived.
+### AC1: a Preserves naming only the test file does not own the source seam
+
+- **Given** a unit declaring `src/critic.py` and `tests/test_critic.py` whose Preserves names only the test file
+- **When** the seam map runs
+- **Then** the seam on the shared source is still reported unowned, because the match is at path boundaries rather than by substring
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::SeamOwnershipDefectsTests::test_a_preserves_naming_only_the_test_file_does_not_own_the_source_seam
+- **Verified:** yes (2026-07-29)
+
+### AC2: the predicate is the sibling's, not a second reading
+
+- **Given** a Preserves line that names the shared source itself
+- **When** the seam map runs
+- **Then** the seam IS owned - the same `critic._verifier_names` predicate decides both, so a matcher that never matches is not mistaken for a fix
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::SeamOwnershipDefectsTests::test_naming_the_shared_source_itself_does_own_it
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

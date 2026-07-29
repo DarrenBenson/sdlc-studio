@@ -26,9 +26,19 @@
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::GoalPanelTests::test_a_panel_including_the_author_is_refused
 - **Verified:** yes (2026-07-28)
 
+### AC2: the mechanism names its CALLER (BG0385)
+
+- **Caller:** `sprint.close_goal_judgement`, reached from `sprint close` (.claude/skills/sdlc-studio/scripts/sprint.py)
+- **Given** the command that should consume this mechanism
+- **When** it runs
+- **Then** sprint close calls goal_panel over the Sprint Goal's clauses and prints the per-clause verdict, with the authoring session excluded from the panel
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertMechanismsAreReachedTests::test_the_close_reaches_the_goal_panel_and_reports_per_clause
+- **Verified:** yes (2026-07-29)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-28 | Claude Opus 5 | Groomed: criteria authored against this story's slice, each with an executable Verify line |
+| 2026-07-29 | Claude Opus 5 | Amended under BG0385: this unit shipped a mechanism with no caller. The criterion above names the caller and is verified end to end from the command, which is what `caller-check` asks for and what would have refused this unit at delivery. |

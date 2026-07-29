@@ -3506,6 +3506,76 @@ class RelationshipCellsAreNotOverwrittenTests(unittest.TestCase):
         self.assertEqual(reconcile._file_field_values(text)["status"], "Fixed")
 
 
+class IndexDerivedSeesFieldDriftTests(unittest.TestCase):
+    """BG0397. `apply_type` gained a `fields` result (the projected index cells) and
+    `index_derived_issues` went on testing four keys, so the ONE lane whose job is to assert
+    the index is derived was green over 109 stale cells. It is the sole backing of gate.py's
+    `index-derived` check, so the commit gate asserted it too."""
+
+    def _repo(self, d: Path, severity: str) -> Path:
+        bugs = d / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True)
+        (bugs / "BG0001-a-bug.md").write_text(
+            "# BG0001: a bug\n\n> **Status:** Open\n> **Severity:** High\n", encoding="utf-8")
+        (bugs / "_index.md").write_text(
+            "# Bug Index\n\n**Last Updated:** 2026-07-29\n\n## Summary\n\n"
+            "| Status | Count |\n| --- | --- |\n| Open | 1 |\n| **Total** | **1** |\n\n"
+            "## All Bugs\n\n| ID | Title | Status | Severity |\n| --- | --- | --- | --- |\n"
+            f"| [BG0001](BG0001-a-bug.md) | a bug | Open | {severity} |\n", encoding="utf-8")
+        return d
+
+    def test_a_stale_index_cell_fails_the_index_derived_lane(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), severity="Low")   # the file says High
+            issues = reconcile.index_derived_issues(root, types=["bug"])
+        self.assertTrue(issues, "a stale Severity cell left the derived-index lane green")
+        self.assertIn("fields", issues[0], "the report names WHICH way it is underived")
+
+    def test_a_derived_index_still_passes(self) -> None:
+        """The discriminating half - a lane that always fails is not a lane."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d), severity="High")
+            self.assertEqual([], reconcile.index_derived_issues(root, types=["bug"]))
+
+    def test_the_lane_checks_every_key_that_makes_apply_write(self) -> None:
+        """The derivation, taken from `apply_type`'s own WRITE CONDITION rather than restated.
+
+        "The index is not a fixed point of apply" means exactly "apply would write", so the
+        keys in that `if` are the authority - a second hand-kept list beside it is how `fields`
+        was forgotten in the first place. A key added to the write condition and not to
+        `ROW_MUTATING_KEYS` reddens here, which is the property the enumeration cannot have.
+
+        `apply_type`'s other list-valued results are deliberately NOT in scope: `dead_rows`,
+        `prune_unapplied` and `summary_missing` are report-only by design, because removing
+        history is a judgement call and never mechanical.
+        """
+        import ast
+        import inspect
+        tree = ast.parse(inspect.getsource(reconcile.apply_type))
+        writers: set[str] = set()
+        for node in ast.walk(tree):
+            # `if (result["a"] or result["b"] ...) and not dry_run:` - the guard on the write.
+            if not isinstance(node, ast.If):
+                continue
+            src = ast.unparse(node.test)
+            if "not dry_run" not in src:
+                continue
+            writers |= {n.slice.value for n in ast.walk(node.test)
+                        if isinstance(n, ast.Subscript)
+                        and isinstance(n.value, ast.Name) and n.value.id == "result"
+                        and isinstance(n.slice, ast.Constant)}
+        self.assertTrue(writers, "the write condition could not be read - this guard is inert")
+        # `stamped` is handled by its own branch in the lane, with its own message.
+        missing = sorted(writers - set(reconcile.ROW_MUTATING_KEYS) - {"stamped"})
+        self.assertFalse(
+            missing,
+            f"apply_type WRITES the index when {missing} is set and index_derived_issues never "
+            f"looks at it - add it to ROW_MUTATING_KEYS. That omission is BG0397 recurring")
+        self.assertIn("fields", reconcile.ROW_MUTATING_KEYS,
+                      "`fields` is applied by its own writer, outside the condition above, so "
+                      "it has to be named explicitly - and it is the one that was missed")
+
+
 class CorpusReadOnceTests(unittest.TestCase):
     """US0531/US0532 (CR0465). Every sweep detector walks the artefact tree, and several resolve
     an id or list a request's children unit by unit - each of those a fresh walk that opens and
