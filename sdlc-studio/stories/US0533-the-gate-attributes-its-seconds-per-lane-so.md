@@ -1,6 +1,6 @@
 # US0533: The gate attributes its seconds per lane, so a lane that becomes the dominant cost is visible without profiling it by hand
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0465
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

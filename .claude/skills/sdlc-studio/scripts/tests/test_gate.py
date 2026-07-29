@@ -5023,9 +5023,17 @@ class LaneCostAttributionTests(unittest.TestCase):
     def test_an_untimed_lane_prints_no_seconds_rather_than_zero(self) -> None:
         """Untimed is not instant. A lane stamped `0.0s` because nobody measured it would send
         a reader looking for cost anywhere but the lane that has it."""
-        row = {"check": "x", "status": "pass", "blocking": False, "detail": "d"}
-        secs = row.get("seconds")
-        self.assertEqual("", f" [{secs:.1f}s]" if isinstance(secs, (int, float)) else "")
+        # Through gate's OWN renderer, not a copy of its formatting expression. The previous
+        # form re-implemented the conditional inline and asserted it against itself, so no
+        # change to gate.py could redden it - a test that measures only its own arithmetic.
+        self.assertEqual("", gate.lane_stamp({"check": "x", "status": "pass", "detail": "d"}),
+                         "an unmeasured lane was stamped")
+        self.assertEqual("", gate.lane_stamp({"check": "x", "seconds": None}),
+                         "an explicit null was read as a number")
+        # The POSITIVE CONTROL: without it, a renderer that stamps nothing at all passes.
+        self.assertEqual(" [1.2s]", gate.lane_stamp({"check": "x", "seconds": 1.25}))
+        self.assertEqual(" [0.0s]", gate.lane_stamp({"check": "x", "seconds": 0.0}),
+                         "a MEASURED zero is a measurement and must still print")
 
 
 class SuiteVerdictReuseTests(unittest.TestCase):

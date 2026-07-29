@@ -1,6 +1,7 @@
 # BG0414: The retro's estimate-vs-actual block is empty on a 148-point sprint: the close never runs the accuracy write it templates a home for
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; the close step, its ordering and its dry-run preview each verified by applying their own mutant)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/templates/reviews/retro.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py

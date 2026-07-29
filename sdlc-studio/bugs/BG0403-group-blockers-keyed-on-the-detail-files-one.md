@@ -1,6 +1,7 @@
 # BG0403: group_blockers keyed on the detail files one CR per unit again, and cannot see a v3 id at all
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; both halves - the shared id grammar and the done-gate cause - verified by applying their own mutants, plus a BG0394 regression mutant)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

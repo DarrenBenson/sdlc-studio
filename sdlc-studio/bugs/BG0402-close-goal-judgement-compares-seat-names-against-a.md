@@ -1,6 +1,7 @@
 # BG0402: close_goal_judgement compares seat NAMES against a critic author id, so 'author excluded' is printed over a panel that excluded nobody
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; both remaining halves - the duplicate polarity mapping and the fanned whole-goal answer - verified by applying their own mutants)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

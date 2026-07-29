@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 15 |
+| Open | 10 |
 | In Progress | 0 |
-| Fixed | 321 |
+| Fixed | 326 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -119,10 +119,10 @@
 | [BG0399](BG0399-file-finding-discards-a-cr-s-steps-and.md) | file_finding discards a CR's steps and fix fields, so BG0384's defect is still live in the other filer | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0400](BG0400-the-read-map-scanner-attributes-a-fixture-path.md) | The read-map scanner attributes a fixture path to the real tree, so one module's tmpdir read blocks a listing-only narrowing | Fixed | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0401](BG0401-four-of-this-sprint-s-repairs-can-be.md) | Four of this sprint's repairs can be fully reverted with no test going red: the guard is the delivery, and the guard is inert | Open | High | 2026-07-29 | 2026-07-29 |
-| [BG0402](BG0402-close-goal-judgement-compares-seat-names-against-a.md) | close_goal_judgement compares seat NAMES against a critic author id, so 'author excluded' is printed over a panel that excluded nobody | Open | High | 2026-07-29 | 2026-07-29 |
-| [BG0403](BG0403-group-blockers-keyed-on-the-detail-files-one.md) | group_blockers keyed on the detail files one CR per unit again, and cannot see a v3 id at all | Open | Medium | 2026-07-29 | 2026-07-29 |
-| [BG0404](BG0404-close-cost-with-no-run-id-reports-every.md) | close_cost with no run id reports every close ever recorded as this one: 6x on seconds, 143x on elapsed | Open | Medium | 2026-07-29 | 2026-07-29 |
-| [BG0405](BG0405-lane-dispatch-raises-an-unhandled-traceback-on-an.md) | lane_dispatch raises an unhandled traceback on an unreadable run state, where a brief used to be issued | Open | Medium | 2026-07-29 | 2026-07-29 |
+| [BG0402](BG0402-close-goal-judgement-compares-seat-names-against-a.md) | close_goal_judgement compares seat NAMES against a critic author id, so 'author excluded' is printed over a panel that excluded nobody | Fixed | High | 2026-07-29 | 2026-07-29 |
+| [BG0403](BG0403-group-blockers-keyed-on-the-detail-files-one.md) | group_blockers keyed on the detail files one CR per unit again, and cannot see a v3 id at all | Fixed | Medium | 2026-07-29 | 2026-07-29 |
+| [BG0404](BG0404-close-cost-with-no-run-id-reports-every.md) | close_cost with no run id reports every close ever recorded as this one: 6x on seconds, 143x on elapsed | Fixed | Medium | 2026-07-29 | 2026-07-29 |
+| [BG0405](BG0405-lane-dispatch-raises-an-unhandled-traceback-on-an.md) | lane_dispatch raises an unhandled traceback on an unreadable run state, where a brief used to be issued | Fixed | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0406](BG0406-three-units-delivered-nothing-bg0372-writes-no-velocity.md) | Three units delivered nothing: BG0372 writes no velocity column, BG0359's detector is inert and would be wrong, and BG0357's consumer key was wrong | Open | High | 2026-07-29 | 2026-07-29 |
 | [BG0407](BG0407-the-listing-only-unanimity-rule-is-satisfied-vacuously.md) | The listing-only unanimity rule is satisfied vacuously by the 59 of 170 suite modules whose reads are not statically visible | Fixed | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0408](BG0408-the-release-tag-guard-still-fails-open-the.md) | The release tag guard still fails OPEN: the swallow moved one frame down into the delivery scan, and an unreadable tree reports a clean release | Fixed | High | 2026-07-29 | 2026-07-29 |
@@ -131,7 +131,7 @@
 | [BG0411](BG0411-a-declared-gate-id-resolves-against-any-filename.md) | A declared gate id resolves against any filename matching the id pattern, and a withheld narrowing is announced only under SDLC_DEBUG | Fixed | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0412](BG0412-file-finding-writes-fenced-blocks-with-no-language.md) | file_finding writes fenced blocks with no language, so the deterministic filer produces artefacts the commit gate refuses | Fixed | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0413](BG0413-a-suite-that-loses-90-of-its-tests.md) | A suite that loses 90% of its tests is judged not to have covered its scope and is committed anyway - the scope floor declines to record a timing instead of refusing | Open | High | 2026-07-29 | 2026-07-29 |
-| [BG0414](BG0414-the-retro-s-estimate-vs-actual-block-is.md) | The retro's estimate-vs-actual block is empty on a 148-point sprint: the close never runs the accuracy write it templates a home for | Open | Medium | 2026-07-29 | 2026-07-29 |
+| [BG0414](BG0414-the-retro-s-estimate-vs-actual-block-is.md) | The retro's estimate-vs-actual block is empty on a 148-point sprint: the close never runs the accuracy write it templates a home for | Fixed | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0415](BG0415-the-gate-budget-is-over-at-457s-against.md) | The gate budget is OVER at 457s against 380s, and sprint plan forecasts execution cost from the 317s baseline it has already breached by 44% | Open | High | 2026-07-29 | 2026-07-29 |
 | [BG0416](BG0416-reopening-a-unit-does-not-retract-its-verification.md) | Reopening a unit does not retract its verification-depth claim, so the planner reads it as BUILT-NOT-CLOSED and forecasts it at zero points | Fixed | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0417](BG0417-transition-done-never-checks-the-two-role-rule.md) | transition -> Done never checks the two-role rule: the verb that writes the status the Definition of Done defines a bar for does not consult that bar, and only a later gate run reports it | Open | High | 2026-07-29 | 2026-07-29 |

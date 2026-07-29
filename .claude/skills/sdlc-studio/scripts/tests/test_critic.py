@@ -2865,5 +2865,44 @@ class ArgumentCompletenessTests(_BatchBase):
                                       f"{verb} names {flag}, which its parser does not accept")
 
 
+class ASignoffSkipsAUnitThatDeliveredNothingTests(unittest.TestCase):
+    """BG0406's tooling half. `critic signoff --from-run` takes the run's APPROVED BATCH as its
+    scope and wrote a row for every id in it without consulting status. Closing RUN-01KYNKDP
+    wrote three such rows: two bugs reopened precisely because they delivered nothing, and a
+    story reverted to Blocked. The note was batch-scoped so it stated no falsehood about those
+    units - but the ROW reads as approval of work that does not exist, which is the same defect
+    as a status asserting a repair that did not happen."""
+
+    def _repo(self, status: str):
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        bugs = root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True)
+        (bugs / "BG0001-a-bug.md").write_text(
+            f"# BG0001: a bug\n\n> **Status:** {status}\n> **Severity:** Medium\n",
+            encoding="utf-8")
+        return root
+
+    def test_a_non_terminal_unit_is_skipped_and_named(self) -> None:
+        root = self._repo("Open")
+        state = _load()._unit_status(root, "BG0001")
+        self.assertEqual(state, {"status": "Open", "terminal": False})
+
+    def test_a_terminal_unit_is_not_skipped(self) -> None:
+        """The positive control: skipping the non-terminal must not skip everything, or the
+        sign-off verb stops working and the guard reads as a clean run."""
+        root = self._repo("Fixed")
+        state = _load()._unit_status(root, "BG0001")
+        self.assertTrue(state["terminal"])
+
+    def test_an_unreadable_unit_says_it_cannot_say(self) -> None:
+        """None means "cannot say", and the caller proceeds. Refusing a sign-off because a file
+        could not be read would make the status check more important than the sign-off."""
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        self.assertIsNone(_load()._unit_status(Path(td.name), "BG9999"))
+
+
 if __name__ == "__main__":
     unittest.main()

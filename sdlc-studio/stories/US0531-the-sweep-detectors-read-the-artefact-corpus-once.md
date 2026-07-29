@@ -1,6 +1,6 @@
 # US0531: The sweep detectors read the artefact corpus once per run and share it, so the cost is paid once rather than per unit
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0465
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

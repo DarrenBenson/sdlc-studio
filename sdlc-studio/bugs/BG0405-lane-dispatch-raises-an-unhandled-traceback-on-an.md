@@ -1,6 +1,7 @@
 # BG0405: lane_dispatch raises an unhandled traceback on an unreadable run state, where a brief used to be issued
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; each half verified by applying its own mutant, bytecode purged, python3 -B)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

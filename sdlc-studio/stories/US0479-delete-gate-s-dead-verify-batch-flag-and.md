@@ -1,6 +1,6 @@
 # US0479: Delete gate's dead --verify-batch flag and the documentation claiming it does something
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0437
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

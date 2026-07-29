@@ -9835,8 +9835,16 @@ class CloseCostReportTests(unittest.TestCase):
                            self._row("2026-07-29T10:05:00+00:00", seconds=100.0)])
         self.assertEqual(100.0, sprint.close_cost(root, "RUN-COST")["gate_seconds"],
                          "another run's close is not this run's cost")
-        self.assertEqual(500.0, sprint.close_cost(root)["gate_seconds"],
-                         "unscoped, every recorded close counts")
+        # CORRECTED (BG0404). This asserted "unscoped, every recorded close counts" - which is
+        # the defect, not the contract. `cmd_close` proceeds on any truthy state, and a state
+        # carrying no run_id then reported the whole ledger as this close's own cost: 6x on
+        # seconds and 143x on elapsed, in the one report whose purpose is measurement honesty.
+        # A run with no id has no cost of its own, and saying so is the only honest answer.
+        unscoped = sprint.close_cost(root)
+        self.assertIsNone(unscoped["gate_seconds"],
+                          "a run with no id reported every close on the ledger as its own")
+        self.assertTrue(any("not attributable" in u.lower() for u in unscoped["unmeasured"]),
+                        "the absence was not stated")
 
     def test_a_reused_verdict_is_reported_as_a_saving(self) -> None:
         sprint = _load()
@@ -10220,6 +10228,307 @@ class TheCloseCertifiesRatherThanReviewsTests(unittest.TestCase):
         """Refusing here costs seconds; refusing after the retro scaffold and a full gate run
         costs minutes. Placement is the fix, in the chain as well as in the lifecycle."""
         self.assertEqual(sprint._CLOSE_CHAIN[0], "review-coverage")
+
+
+class CloseCostIsAttributableTests(unittest.TestCase):
+    """BG0404. `close_cost` filtered on `run_id is None or r['run_id'] == run_id`, so a None
+    run id SHORT-CIRCUITED the filter and summed every close ever recorded as this one's -
+    over-reporting by 6x on seconds and 143x on elapsed, in the one report whose stated purpose
+    is measurement honesty."""
+
+    def _ledger(self, root, rows):
+        dest = root / sprint.EXECUTION_LEDGER_REL
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(json.dumps({"runs": rows}), encoding="utf-8")
+
+    def _root(self):
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        return Path(td.name)
+
+    ROWS = [
+        {"moment": "close", "run_id": "RUN-A", "at": "2026-07-01T00:00:00Z", "seconds": 100.0},
+        {"moment": "close", "run_id": "RUN-B", "at": "2026-07-02T00:00:00Z", "seconds": 200.0},
+        {"moment": "close", "run_id": "RUN-C", "at": "2026-07-03T00:00:00Z",
+         "mode": "reuse", "reused_from": "2026-07-01T00:00:00Z"},
+    ]
+
+    def test_no_run_id_reports_not_attributable_not_the_whole_ledger(self) -> None:
+        root = self._root()
+        self._ledger(root, self.ROWS)
+        cost = sprint.close_cost(root, None)
+        self.assertIsNone(cost["gate_seconds"],
+                          "a run with no id reported the whole ledger as its own cost")
+        self.assertEqual(cost["gate_runs"], 0)
+        self.assertTrue(any("not attributable" in u.lower() for u in cost["unmeasured"]),
+                        f"the absence was not stated: {cost['unmeasured']}")
+
+    def test_a_reuse_resolves_against_another_runs_row(self) -> None:
+        """A reuse saves seconds a PREVIOUS run paid for, so resolving it against rows already
+        filtered to THIS run could only ever fail. A measured 100s saving was reported as
+        unknown with its source row two lines above it in the same file."""
+        root = self._root()
+        self._ledger(root, self.ROWS)
+        cost = sprint.close_cost(root, "RUN-C")
+        self.assertEqual(cost["reused_runs"], 1)
+        self.assertEqual(cost["reused_seconds"], 100.0,
+                         "the reuse's saving was not resolved from the source run's row")
+        self.assertEqual(cost["unmeasured"], [])
+
+    def test_an_untraceable_reuse_is_still_unmeasured_not_zero(self) -> None:
+        root = self._root()
+        self._ledger(root, [{"moment": "close", "run_id": "RUN-C", "at": "2026-07-03T00:00:00Z",
+                             "mode": "reuse", "reused_from": "1999-01-01T00:00:00Z"}])
+        cost = sprint.close_cost(root, "RUN-C")
+        # None, not 0.0 - this module's standing convention that unmeasured is not zero. A
+        # saving that cannot be traced is unknown, and reporting it as zero would understate
+        # the reuse rather than admit the gap.
+        self.assertIsNone(cost["reused_seconds"],
+                          "an untraceable reuse was read as a measured zero")
+        self.assertEqual(cost["reused_runs"], 1)
+        self.assertTrue(cost["unmeasured"], "an untraceable reuse was silently swallowed")
+
+    def test_a_named_run_sums_only_its_own_rows(self) -> None:
+        root = self._root()
+        self._ledger(root, self.ROWS)
+        self.assertEqual(sprint.close_cost(root, "RUN-A")["gate_seconds"], 100.0)
+
+
+class AnUnreadableRunStateReportsRatherThanRaisesTests(unittest.TestCase):
+    """BG0405. `run_state.read` RAISES on an unparseable file by design - unreadable is not the
+    same fact as absent. Two callers documented as never blocking sat above their own guards, so
+    a corrupt run state produced a traceback where a brief (and a close judgement) used to be."""
+
+    def _corrupt(self):
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        local = root / "sdlc-studio" / ".local"
+        local.mkdir(parents=True)
+        (local / "run-state.json").write_text("{ this is not json", encoding="utf-8")
+        return root
+
+    def test_a_lane_brief_is_still_issued(self) -> None:
+        root = self._corrupt()
+        res = sprint.lane_dispatch(root, ["US0001"])
+        self.assertIn("scope_note", res)
+        self.assertIn("UNKNOWN", (res["scope_note"] or ""),
+                      "the degraded seam scope was not reported")
+
+    def test_a_readable_state_still_widens_the_scope(self) -> None:
+        """The positive control: degrading on a corrupt file must not degrade always."""
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        from lib import run_state
+        run_state.update(root, run_id="RUN-X", batch=["US0009"])
+        res = sprint.lane_dispatch(root, ["US0001"])
+        self.assertIsNone(res["scope_note"], "a readable run state was reported as degraded")
+
+    def test_the_goal_judgement_reports_rather_than_raises(self) -> None:
+        root = self._corrupt()
+        lines = sprint.close_goal_judgement(root, {"sprint_goal": "a goal"})
+        self.assertTrue(any("UNREADABLE" in l for l in lines),
+                        "the unreadable run state was not reported at all")
+
+
+class BlockerGroupingSurvivesBothIdErasTests(unittest.TestCase):
+    """BG0403. BG0394 put the detail in the group key so two blockers with different causes
+    stop merging, and destroyed the property the grouping exists for in two ways: the local id
+    pattern knew only the v2 four-digit form, and a done-gate refusal quotes the unit's OWN
+    failing criterion - so one owed action fanned into one change request per unit, the exact
+    fan-out CR0495 was raised to stop."""
+
+    def _signoff(self, units):
+        return [{"stage": "sign-off", "detail": f"{u}: no critic verdict recorded",
+                 "remedy": f"record an independent verdict for {u}"} for u in units]
+
+    def test_three_v2_units_are_one_group(self) -> None:
+        groups = sprint.group_blockers(self._signoff(["US0001", "US0002", "US0003"]))
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(groups[0]["units"], ["US0001", "US0002", "US0003"])
+
+    def test_three_v3_units_are_one_group_and_are_named(self) -> None:
+        """The v3 half. The local pattern matched neither, so three identical blockers made
+        three groups, each with `units: []` - and the per-unit criteria the same change added
+        were therefore empty, so the artefact named none of the units it covered."""
+        ids = ["US-01JQK3F8", "US-01JQK3F9", "US-01JQK3FA"]
+        groups = sprint.group_blockers(self._signoff(ids))
+        self.assertEqual(len(groups), 1, "v3 ids did not group")
+        self.assertEqual(groups[0]["units"], ["US01JQK3F8", "US01JQK3F9", "US01JQK3FA"],
+                         "the group names none of the v3 units it covers")
+
+    def test_a_done_gate_refusal_is_one_group_across_units(self) -> None:
+        """The cause is what is OWED - the gate refuses - and it is the same owed action for
+        every unit. The per-unit criterion stays in the detail for the artefact's body."""
+        blockers = [{"stage": "done-gate",
+                     "cause": "the Done transition's AC-verify gate refuses",
+                     "detail": f"{u}: AC{i} 'a different criterion each time' failed",
+                     "remedy": "clear the gate this names, then re-run"}
+                    for i, u in enumerate(("US0001", "US0002", "US0003"))]
+        groups = sprint.group_blockers(blockers)
+        self.assertEqual(len(groups), 1, "one owed action fanned into one artefact per unit")
+        self.assertEqual(len(groups[0]["blockers"]), 3,
+                         "the per-unit details were lost, not merely un-keyed")
+
+    def test_genuinely_different_causes_stay_apart(self) -> None:
+        """BG0394's property, which this must not undo: merging unrelated blockers hides one
+        behind another, and the second detail never reaches the filed artefact."""
+        groups = sprint.group_blockers([
+            {"stage": "gate", "detail": "the validate lane failed", "remedy": "same remedy"},
+            {"stage": "gate", "detail": "the review-current lane failed", "remedy": "same remedy"}])
+        self.assertEqual(len(groups), 2)
+
+    def test_the_masking_uses_the_shared_grammar(self) -> None:
+        """AC4: a third id era is covered on the day it is declared, not on the day someone
+        remembers this local copy exists."""
+        from lib import sdlc_md as _md  # noqa: PLC0415 - deferred, as elsewhere in this file
+        self.assertIs(sprint._UNIT_IN_DETAIL, _md.ID_SEARCH_RE)
+
+
+class AGoalClauseIsNotAnsweredByGuessworkTests(unittest.TestCase):
+    """BG0402's two remaining halves. `_recorded_clause_verdicts` carried a SECOND polarity
+    mapping that read everything not-yes as `partial` - so a seat answering NO, the strongest
+    signal a review can give, was recorded as a partial success while `verdict_polarity` sat
+    unused in the same module. It then FANNED one plan-time whole-goal answer across every
+    clause, manufacturing per-clause evidence nobody gave."""
+
+    def _review(self, seats):
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (root / "sdlc-studio" / ".local" / "goal-review.json").write_text(
+            json.dumps({"rounds": [{"seats": seats}]}), encoding="utf-8")
+        return root
+
+    def test_a_whole_goal_answer_is_not_fanned_across_clauses(self) -> None:
+        root = self._review([{"seat": "qa", "achievable": "yes"}])
+        self.assertIsNone(sprint._recorded_clause_verdicts(root, ["clause a", "clause b"]),
+                          "one plan-time answer about the whole goal was copied onto every "
+                          "clause as per-clause evidence")
+
+    def test_a_seat_answering_no_is_recorded_missed_not_partial(self) -> None:
+        root = self._review([{"seat": "qa", "clauses": {"clause a": "no"}}])
+        got = sprint._recorded_clause_verdicts(root, ["clause a"])
+        self.assertEqual(got, {"clause a": {"qa": "missed"}},
+                         "a seat's NO was softened to a partial success")
+
+    def test_a_seat_answering_yes_is_recorded_achieved(self) -> None:
+        root = self._review([{"seat": "qa", "clauses": {"clause a": "yes"}}])
+        self.assertEqual(sprint._recorded_clause_verdicts(root, ["clause a"]),
+                         {"clause a": {"qa": "achieved"}})
+
+    def test_an_unclear_answer_leaves_the_clause_unanswered(self) -> None:
+        """Not a verdict either way. The panel already knows how to report UNANSWERED, and
+        inventing one from an unreadable answer is the class this bug is about."""
+        root = self._review([{"seat": "qa", "clauses": {"clause a": "maybe, hard to say"}}])
+        self.assertIsNone(sprint._recorded_clause_verdicts(root, ["clause a"]))
+
+    def test_a_clause_no_seat_answered_is_absent(self) -> None:
+        root = self._review([{"seat": "qa", "clauses": {"clause a": "yes"}}])
+        got = sprint._recorded_clause_verdicts(root, ["clause a", "clause b"])
+        self.assertNotIn("clause b", got, "an unanswered clause was given a verdict")
+
+    def test_the_one_polarity_reading_is_used(self) -> None:
+        """AC3 asserted structurally: the seat's answer goes through `verdict_polarity`, so a
+        third spelling of "no" is understood everywhere at once or nowhere."""
+        root = self._review([{"seat": "qa", "clauses": {"clause a": "N"}}])
+        self.assertEqual(sprint.verdict_polarity("N"), "no")
+        self.assertEqual(sprint._recorded_clause_verdicts(root, ["clause a"]),
+                         {"clause a": {"qa": "missed"}})
+
+
+class TheCloseAsksTheEstimateQuestionTests(unittest.TestCase):
+    """BG0414. The retro template reserves a block for the estimate-versus-actual comparison
+    and its prose asserts the question is asked every sprint. Nothing ran it, so the largest
+    sprint on record contributed no row to the calibration every later forecast is drawn from -
+    and an empty block reads as "no comparison to make", indistinguishable from "never run"."""
+
+    def test_the_accuracy_write_is_a_close_step(self) -> None:
+        self.assertIn("retro-accuracy", sprint._CLOSE_CHAIN,
+                      "the close still does not ask the question its own template promises")
+        self.assertTrue(hasattr(sprint, "_close_retro_accuracy"))
+
+    def test_it_runs_after_the_retro_is_validated(self) -> None:
+        """Order matters: writing a generated block into a retro that has not passed its own
+        content check would put derived content on top of a malformed document."""
+        chain = list(sprint._CLOSE_CHAIN)
+        self.assertLess(chain.index("retro-validate"), chain.index("retro-accuracy"))
+
+    def test_the_dry_run_previews_it(self) -> None:
+        """`close --dry-run` asserts it evaluated every step; a step missing from its table
+        makes that claim false by omission."""
+        self.assertIn("retro-accuracy", sprint.DRY_RUN_ACTION_STEPS)
+
+    def test_a_failing_write_stops_the_close_and_says_why(self) -> None:
+        import retro as retro_mod
+        real = retro_mod.main
+        retro_mod.main = lambda argv: (_ for _ in ()).throw(SystemExit(2))
+        try:
+            ok, _detail, remedy = sprint._close_retro_accuracy(".", "RETRO0001", {})
+        finally:
+            retro_mod.main = real
+        self.assertFalse(ok, "a failed accuracy write passed the close silently")
+        self.assertIn("accuracy", remedy)
+
+
+class TheCommandActuallyReachesTheseMechanismsTests(unittest.TestCase):
+    """BG0401. Three of RUN-01KYNKDP's repairs could be fully reverted with no test going red,
+    because every test called the delivered FUNCTION and none asserted the CALL from the
+    command. `for line in close_goal_judgement(...)` -> `for line in []` unwired the goal panel,
+    the defect judgement, the prediction miss and the whole batch caller-check, silently.
+
+    The pattern here is a sentinel: patch the mechanism to raise, run the command, and assert
+    the sentinel escapes. It cannot pass if the call site is deleted, and unlike a source grep
+    it proves the line RUNS rather than that it is present."""
+
+    def _run(self, mod, root):
+        import contextlib as _ctx
+        with _ctx.redirect_stdout(io.StringIO()), _ctx.redirect_stderr(io.StringIO()):
+            return mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+
+    def _repo(self):
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        _close_state(root)
+        _close_story(root)
+        _close_retro(root)
+        return root
+
+    def test_the_close_reaches_the_goal_judgement(self) -> None:
+        class _Reached(Exception):
+            pass
+
+        root = self._repo()
+        mod = _load()
+        real = mod.close_goal_judgement
+        mod.close_goal_judgement = lambda *a, **k: (_ for _ in ()).throw(_Reached())
+        try:
+            with _patch_close_steps(mod):
+                with self.assertRaises(_Reached):
+                    self._run(mod, root)
+        finally:
+            mod.close_goal_judgement = real
+
+    def test_the_judgement_is_not_reached_when_the_chain_stops(self) -> None:
+        """The negative control. Without it the sentinel could be firing from somewhere other
+        than the close's own reporting, and the test would prove nothing about placement."""
+        class _Reached(Exception):
+            pass
+
+        root = self._repo()
+        mod = _load()
+        real = mod.close_goal_judgement
+        mod.close_goal_judgement = lambda *a, **k: (_ for _ in ()).throw(_Reached())
+        try:
+            with _patch_close_steps(mod, fail_at="retro-validate"):
+                rc = self._run(mod, root)     # stops early; must NOT reach the judgement
+            self.assertNotEqual(rc, 0)
+        finally:
+            mod.close_goal_judgement = real
 
 
 if __name__ == "__main__":

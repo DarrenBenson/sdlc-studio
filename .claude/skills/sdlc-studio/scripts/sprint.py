@@ -2137,8 +2137,20 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
     # never found a pair - the feature worked only when the whole batch was briefed at once,
     # which is the case where a lane is not the one-unit reader the design is premised on. The
     # brief below still filters to the unit it is for.
-    scope = list(dict.fromkeys([*(run_state.read(root).get("batch") or []),
-                                *(unit_ids or [])]))
+    # `run_state.read` RAISES on an unparseable file, by design - unreadable is not the same
+    # fact as absent. But the seam computation below is guarded precisely because a seam read
+    # must never block a dispatch, and this read sat ABOVE that guard, so a corrupt run state
+    # produced an unhandled traceback where a brief used to be issued. The scope degrades to
+    # the units asked for, and the degradation is reported rather than silent.
+    scope_note = None
+    try:
+        approved = run_state.read(root).get("batch") or []
+    except Exception as exc:  # noqa: BLE001 - a brief must be issued even so
+        sdlc_md.debug("sprint.lane_dispatch.scope", exc)
+        approved, scope_note = [], ("the run state could not be read, so the seam scope is the "
+                                    "units named here rather than the approved batch - UNKNOWN, "
+                                    "not empty")
+    scope = list(dict.fromkeys([*approved, *(unit_ids or [])]))
     seams = _batch_seams(root, scope)
     briefs: list[dict] = []
     refused: list[dict] = []
@@ -2153,7 +2165,8 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
                        "proof": lane_proof(root, contract["id"]),
                        "seams": [s for s in seams if contract["id"] in s["units"]],
                        "carried_lessons": carried})
-    return {"briefs": briefs, "refused": refused, "seams": seams, "carried_lessons": carried}
+    return {"briefs": briefs, "refused": refused, "seams": seams, "carried_lessons": carried,
+            "scope_note": scope_note}
 
 
 def _batch_seams(root: Path, unit_ids: list[str]) -> list[dict]:
@@ -3941,6 +3954,27 @@ def _close_retro_extract(root, retro_id, state):
     return True, "lessons lifted into the project log (idempotent by content)", ""
 
 
+def _close_retro_accuracy(root, retro_id, state):
+    """Write the retro's estimate-versus-actual block, so the question is asked every sprint.
+
+    The template reserves a block for this and its prose asserts the comparison is always
+    taken; nothing ran it, so the largest sprint on record contributed no row to the
+    calibration the next plan's forecast is drawn from - and an empty block reads as "no
+    comparison to make", which is indistinguishable from "the comparison was never run".
+
+    NEVER BLOCKING on a nil result: a batch with no recorded forecast has nothing to compare and
+    says so. It blocks only when the write itself fails, which means the retro or the ledger is
+    malformed and the operator needs to know before the close records anything else.
+    """
+    import retro  # noqa: PLC0415
+    rc, out = _run_cli(retro.main, ["--root", str(root), "accuracy", "--id", retro_id, "--write"])
+    if rc != 0:
+        return False, out, (f"`retro.py accuracy --id {retro_id} --write` must succeed - the "
+                            f"estimate-versus-actual block is the sprint's row in the "
+                            f"calibration every later forecast is drawn from")
+    return True, "estimate-versus-actual written to the retro and to VELOCITY.md", ""
+
+
 def _close_lessons_summary(root, retro_id, state):
     rc, out = _run_cli(lessons.main, ["--root", str(root), "summary"])
     if rc != 0:
@@ -4508,7 +4542,8 @@ def _findings_outside_batches(root, spans) -> int:
 
 # Chain order is the ceremony's order; cmd_close resolves each step through globals() at
 # call time so a test can patch one step without rebuilding the table.
-_CLOSE_CHAIN = ("review-coverage", "retro-validate", "retro-extract", "lessons-summary",
+_CLOSE_CHAIN = ("review-coverage", "retro-validate", "retro-extract", "retro-accuracy",
+                "lessons-summary",
                 "gate", "handoff", "reconcile", "review-anchor")
 
 #: The machine-maintained status block inside the review anchor. DELIMITED, because the anchor is
@@ -5548,6 +5583,11 @@ def _done_gate_preflight(root: Path, state: dict) -> list[dict]:
             # have refused cleanly for an unrelated reason - a pre-flight must never be able to
             # turn a clean refusal into a traceback. Matches the retro branch above.
             out.append({"stage": "done-gate",
+                        # The CAUSE is what is owed - the done gate refuses - and it is the
+                        # same owed action for every unit. The per-unit criterion stays in
+                        # `detail` for the artefact's body, where it belongs; keying on it
+                        # filed one change request per unit for one thing to fix.
+                        "cause": "the Done transition's AC-verify gate refuses",
                         "detail": f"{unit}: {str(exc).strip().splitlines()[0]}",
                         "remedy": "clear the gate this names (commonly `verify_ac.py run "
                                   "--story <id>`), then re-run"})
@@ -5580,7 +5620,8 @@ def _render_preflight(data: dict) -> None:
 #: it again in the copy would double the one genuinely expensive step of a preview whose whole
 #: point is to be cheap.
 DRY_RUN_ACTION_STEPS = ("review-coverage", "retro-validate", "retro-extract",
-                        "lessons-summary", "handoff", "reconcile", "review-anchor")
+                        "retro-accuracy", "lessons-summary", "handoff", "reconcile",
+                        "review-anchor")
 
 
 def close_dry_run(root, retro_id: str | None = None) -> dict:
@@ -6065,7 +6106,10 @@ def _lane_pairs(values: list[str] | None, flag: str) -> dict:
     return out
 
 
-_UNIT_IN_DETAIL = re.compile(r"\b((?:US|BG|CR|EP|RFC)-?\d{3,})\b")
+#: Unit ids inside a blocker's prose, masked out before the cause is keyed. THE SHARED
+#: grammar, not a local copy: the local pattern knew only the v2 four-digit form, so a v3
+#: ULID id was neither masked nor collected and a third era would need this edited again.
+_UNIT_IN_DETAIL = sdlc_md.ID_SEARCH_RE
 
 
 #: The two ends of the bookend goal review. At PLAN the seats judge whether the chosen content
@@ -6224,14 +6268,31 @@ def close_goal_judgement(root, state: dict, seats: list | None = None) -> list[s
             lines.extend(f"    {line.strip()}" for line in critic.render_caller_findings(inert))
 
     # 4. The bookend: did the plan's prediction hold?
-    miss = prediction_miss(root)
+    # Same class as the in-flight read below: `prediction_miss` reaches `content_reviews`,
+    # which reads the run state, and this function never blocks a close.
+    try:
+        miss = prediction_miss(root)
+    except Exception as exc:  # noqa: BLE001 - this judgement never blocks a close
+        sdlc_md.debug("sprint.close_goal_judgement.prediction", exc)
+        miss = ("prediction check: UNREADABLE - the run state could not be parsed, so whether "
+                "the plan-time content review held is UNKNOWN, not clear")
     if miss:
         lines.append(miss)
 
     # 5. Any lane still marked in flight. `close_run` leaves these markers set, so a run can be
     #    signed off while a marker says a lane never returned - and the working tree may carry
     #    work nobody attributed. Reported at the one moment somebody is reading.
-    for row in run_state.lanes_in_flight(root):
+    # `lanes_in_flight` reaches `run_state.read`, which RAISES on an unparseable file. This
+    # function is documented as never blocking a close, so it reports the unreadable state
+    # rather than raising out of it - an absence stated, not a traceback.
+    try:
+        in_flight = run_state.lanes_in_flight(root)
+    except Exception as exc:  # noqa: BLE001 - this judgement never blocks a close
+        sdlc_md.debug("sprint.close_goal_judgement.in_flight", exc)
+        in_flight = []
+        lines.append("IN FLIGHT at close: UNREADABLE - the run state could not be parsed, so "
+                     "whether any lane never returned is UNKNOWN, not none")
+    for row in in_flight:
         lines.append(f"IN FLIGHT at close: {row['unit']} was briefed at {row['started_at']} and "
                      f"never returned - its work may be in this tree unattributed")
     return lines
@@ -6246,17 +6307,37 @@ def _recorded_goal_seats(root) -> list[str]:
 
 
 def _recorded_clause_verdicts(root, clauses: list[str]) -> dict | None:
-    """Per-clause verdicts a seat has already recorded, or None when none has."""
+    """Per-clause verdicts a seat has actually recorded PER CLAUSE, or None when none has.
+
+    Two things this deliberately no longer does.
+
+    It does not FAN a whole-goal answer across every clause. A plan-time seat answers one
+    question about the goal entire; copying that answer onto each clause manufactures per-clause
+    evidence nobody gave, and it does so most confidently exactly where the goal has several
+    clauses and the seat was thinking about one of them. A clause no seat answered per-clause
+    reads UNANSWERED, which the panel already knows how to report.
+
+    It does not carry a second polarity mapping. `verdict_polarity` is the one reading of a
+    seat's answer; the local copy here mapped everything that was not yes to `partial`, so a
+    seat answering NO - the strongest signal a review can give - was recorded as a partial
+    success while `verdict_polarity` sat unused two hundred lines above.
+    """
     data = sdlc_md.read_json(Path(root) / "sdlc-studio/.local/goal-review.json", {})
     rounds = data.get("rounds") if isinstance(data, dict) else None
     latest = (rounds or [{}])[-1] if isinstance(rounds, list) and rounds else {}
     out: dict = {}
     for seat in latest.get("seats") or []:
-        polarity = str(seat.get("achievable") or "").strip().lower()
-        if not polarity:
-            continue
-        verdict = "achieved" if polarity in ("yes", "y", "true") else "partial"
+        per_clause = seat.get("clauses")
+        if not isinstance(per_clause, dict):
+            continue          # a whole-goal answer is not a per-clause one
         for clause in clauses:
+            answer = per_clause.get(clause)
+            if answer is None:
+                continue
+            polarity = verdict_polarity(answer)
+            if polarity == "unclear":
+                continue      # an unclear answer is not a verdict; the clause stays unanswered
+            verdict = "achieved" if polarity == "yes" else "missed"
             out.setdefault(clause, {})[str(seat.get("seat"))] = verdict
     return out or None
 
@@ -6310,7 +6391,8 @@ def group_blockers(blockers: list[dict]) -> list[dict]:
     groups: dict[tuple, dict] = {}
     for b in blockers:
         remedy = _UNIT_IN_DETAIL.sub("<unit>", str(b.get("remedy") or "")).strip()
-        cause = _UNIT_IN_DETAIL.sub("<unit>", str(b.get("detail") or "")).strip()
+        raw_cause = b.get("cause") or b.get("detail") or ""
+        cause = _UNIT_IN_DETAIL.sub("<unit>", str(raw_cause)).strip()
         # The DETAIL is part of the key, not only the remedy. Two blockers that share a remedy
         # and differ in what is actually wrong are two things to fix: keyed on the remedy alone
         # they merged, the second detail never reached the filed artefact, and the close said
@@ -6320,7 +6402,9 @@ def group_blockers(blockers: list[dict]) -> list[dict]:
                                     "remedy": b.get("remedy"), "blockers": [], "units": []})
         g["blockers"].append(b)
         for m in _UNIT_IN_DETAIL.finditer(f"{b.get('detail', '')} {b.get('remedy', '')}"):
-            uid = sdlc_md.norm_id(m.group(1))
+            # group(0): the shared grammar is unanchored and uncaptured, unlike the local
+            # pattern it replaced. Reading group(1) raised IndexError on every match.
+            uid = sdlc_md.norm_id(m.group(0))
             if uid not in g["units"]:
                 g["units"].append(uid)
     return list(groups.values())
@@ -8469,9 +8553,23 @@ def close_cost(root, run_id: str | None = None) -> dict:
     `elapsed_seconds` spans the first close event to the last, which is what a close costs an
     operator waiting on it. A close with a single event has no span to measure and reports
     None, never 0.0."""
-    rows = [r for r in read_execution_ledger(root)
-            if r.get("moment") == "close" and (run_id is None or r.get("run_id") == run_id)]
-    by_at = {r.get("at"): r for r in rows if r.get("at")}
+    ledger = read_execution_ledger(root)
+    close_rows = [r for r in ledger if r.get("moment") == "close"]
+    if run_id is None:
+        # `run_id is None` short-circuited the filter and summed EVERY close ever recorded as
+        # this one's cost - over-reporting by 6x on seconds and 143x on elapsed. A run with no
+        # id has no cost of its own to report; saying so is the only honest answer, and it is
+        # the direction a cost report must fail in.
+        return {"gate_seconds": None, "gate_runs": 0, "measured_runs": 0, "reused_runs": 0,
+                "reused_seconds": None, "elapsed_seconds": None,
+                "unmeasured": ["this run carries no run id, so no close row can be attributed "
+                               "to it - the cost is NOT ATTRIBUTABLE, which is not zero and is "
+                               "not the whole ledger"]}
+    rows = [r for r in close_rows if r.get("run_id") == run_id]
+    # The reuse lookup spans the WHOLE ledger, not this run's rows: a reuse saves seconds a
+    # PREVIOUS run paid for, so resolving it against rows already filtered to this run could
+    # only ever fail. A measured saving was reported as unknown with its source two lines above.
+    by_at = {r.get("at"): r for r in close_rows if r.get("at")}
     gate_seconds = 0.0
     reused_seconds = 0.0
     unmeasured: list[str] = []

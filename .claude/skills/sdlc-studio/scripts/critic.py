@@ -2331,12 +2331,45 @@ def cmd_signoff(args: argparse.Namespace) -> int:
         return 2
 
     def write(unit: str) -> None:
+        # A sign-off row against a NON-TERMINAL unit reads as approval of work that does not
+        # exist. Closing RUN-01KYNKDP wrote three: two bugs reopened precisely because they
+        # delivered nothing, and a story reverted to Blocked. `--from-run` takes the approved
+        # BATCH as its scope and never consulted status. Skipped and NAMED, because a silent
+        # skip would be the same defect pointing the other way.
+        state = _unit_status(args.root, unit)
+        if state and not state["terminal"]:
+            print(f"sign-off SKIPPED for {sdlc_md.norm_id(unit)}: its status is "
+                  f"{state['status']!r}, which is not terminal - a sign-off row against a unit "
+                  f"that delivered nothing reads as approval of work that does not exist",
+                  file=sys.stderr)
+            return
         path = record_signoff(args.root, unit, args.principal, args.author,
                               delegate=args.delegate, boundary=args.boundary,
                               note=fields.get("note", ""))
         print(f"sign-off recorded for {sdlc_md.norm_id(unit)} -> {path}")
 
     return _run_batch(args, "signoff", write)
+
+
+def _unit_status(root, unit: str) -> dict | None:
+    """`{"status", "terminal"}` for a unit, or None when it cannot be read.
+
+    None means "cannot say", and the caller proceeds: refusing a sign-off because a file could
+    not be read would make the status check more important than the sign-off it guards."""
+    try:
+        found = sdlc_md.find_by_id(Path(root), unit)
+        if not found:
+            return None
+        path, type_ = found
+        text = sdlc_md.read_text_safe(path)
+        vocab = sdlc_md.status_vocab(type_, Path(root))
+        status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
+        if not status:
+            return None
+        return {"status": status, "terminal": sdlc_md.is_terminal_status(type_, status)}
+    except Exception as exc:  # noqa: BLE001 - cannot say is not the same as not terminal
+        sdlc_md.debug("critic._unit_status", exc)
+        return None
 
 
 def cmd_sprint_review(args: argparse.Namespace) -> int:

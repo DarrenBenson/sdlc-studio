@@ -295,17 +295,17 @@ class WaiverInForceIsAlwaysReportedTests(unittest.TestCase):
     waiver scoped to a bug or a change request emitted nothing at all and sat silently in
     force, which is the outcome the story exists to prevent."""
 
-    def _repo(self, scope: str) -> Path:
+    def _repo(self, scope: str, status: str = "Draft") -> Path:
         d = Path(tempfile.mkdtemp(prefix="waiver_"))
         self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
         ws = d / "sdlc-studio"
         (ws / "stories").mkdir(parents=True)
         (ws / "stories" / "US0001-a-story.md").write_text(
-            "# US0001: a story\n\n> **Status:** Draft\n> **Epic:** EP0001\n",
+            f"# US0001: a story\n\n> **Status:** {status}\n> **Epic:** EP0001\n",
             encoding="utf-8")
         (ws / "stories" / "_index.md").write_text(
             "# Story Index\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
-            "| [US0001](US0001-a-story.md) | a story | Draft |\n", encoding="utf-8")
+            f"| [US0001](US0001-a-story.md) | a story | {status} |\n", encoding="utf-8")
         # Six columns: `list_decisions` reads id, decision, rationale, status, supersedes, date.
         (ws / "decisions.md").write_text(
             "# Decisions\n\n| ID | Decision | Rationale | Status | Supersedes | Date |\n"
@@ -338,11 +338,20 @@ class WaiverInForceIsAlwaysReportedTests(unittest.TestCase):
         """The discriminating half: a waiver already attributed per unit must not appear twice,
         or the new line becomes noise on every run and gets read past."""
         mod = _load()
-        result = mod.detect_conformance(self._repo(":US0001"))
+        # DONE, not Draft. The lane judges delivered units, so a Draft fixture carried no
+        # waiver at all - which is why the assertion below could sit behind a condition that
+        # was never true and nobody noticed for a whole sprint.
+        result = mod.detect_conformance(self._repo(":US0001", status="Done"))
         carried = [w for u in result["units"] for w in (u["waived"] or [])]
-        if carried:
-            self.assertEqual([], result["waivers_unattributed"],
-                             "a waiver reported per unit was reported unattributed as well")
+        # The POSITIVE CONTROL first. The only assertion used to sit behind `if carried:`,
+        # which is False for this fixture - so the test iterated to nothing and passed however
+        # the code behaved. An assertion guarded by a condition the fixture cannot meet is not
+        # a guard; it is a comment that runs.
+        self.assertTrue(carried,
+                        "the fixture carries no per-unit waiver, so the discriminating "
+                        "assertion below would never run")
+        self.assertEqual([], result["waivers_unattributed"],
+                         "a waiver reported per unit was reported unattributed as well")
 
 
 try:

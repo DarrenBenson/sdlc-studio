@@ -3093,6 +3093,19 @@ def cmd_record_suite_verdict(args: argparse.Namespace) -> int:
 # --- end suite decision ------------------------------------------------------------
 
 
+def lane_stamp(check: dict) -> str:
+    """One lane's seconds as it is printed beside its name, or "" when it was not timed.
+
+    A separate function so a test can assert what the gate PRINTS instead of re-implementing
+    the conditional and asserting it against itself - which is what the guard here used to do,
+    and why no change to this file could redden it.
+
+    Untimed is not instant: a lane stamped `0.0s` because nobody measured it sends a reader
+    looking for cost anywhere but the lane that has it."""
+    secs = check.get("seconds")
+    return f" [{secs:.1f}s]" if isinstance(secs, (int, float)) else ""
+
+
 def cmd_gate(args: argparse.Namespace) -> int:
     if getattr(args, "test_relevant", None) is not None:
         return cmd_test_relevant(args)
@@ -3118,9 +3131,7 @@ def cmd_gate(args: argparse.Namespace) -> int:
             # where the worst of the cost went; it does not tell them what the second and third
             # lanes cost, which is what a decision about where to spend effort needs. A lane
             # that was not timed prints nothing rather than 0.0s - untimed is not instant.
-            secs = c.get("seconds")
-            stamp = f" [{secs:.1f}s]" if isinstance(secs, (int, float)) else ""
-            print(f"  [{mark}] {c['check']}{stamp}: {c['detail']}")
+            print(f"  [{mark}] {c['check']}{lane_stamp(c)}: {c['detail']}")
         # The gate's own cost, every run. A regression in gate time is absorbed silently
         # otherwise - nobody notices thirty seconds becoming forty - and the dominant lane
         # is what makes the number something a reader can act on rather than bisect.

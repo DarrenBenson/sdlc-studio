@@ -720,9 +720,17 @@ class EveryTypeDirectoryGetsItsIndexTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()), \
                     contextlib.redirect_stderr(io.StringIO()):
                 init.init(root, dry_run=False)
-            missing = [rel for rel, _p in sdlc_md.ARTIFACT_TYPES.values()
-                       if (root / "sdlc-studio" / rel).is_dir()
-                       and not (root / "sdlc-studio" / rel / "_index.md").exists()]
+            # `rel` ALREADY carries the `sdlc-studio/` prefix, so joining it under
+            # `root / "sdlc-studio"` stated `<root>/sdlc-studio/sdlc-studio/epics` - never a
+            # directory, so the predicate was False for every type and `missing` was
+            # unconditionally empty. Skipping an index entirely SURVIVED this guard.
+            present = [rel for rel, _p in sdlc_md.ARTIFACT_TYPES.values()
+                       if (root / rel).is_dir()]
+            missing = [rel for rel in present
+                       if not (root / rel / "_index.md").exists()]
+        # The positive control: without it a path typo makes this pass over an empty set again.
+        self.assertTrue(present, "no type directory was created at all - the guard would pass "
+                                 "vacuously over an empty set")
         self.assertFalse(missing, f"directories created with no index: {missing}")
 
     def test_the_two_derivations_read_the_same_table(self) -> None:

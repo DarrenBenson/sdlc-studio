@@ -1,6 +1,6 @@
 # US0556: critic evidence, record and signoff each record a whole batch in one invocation, with the open run as the default scope
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0498
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new

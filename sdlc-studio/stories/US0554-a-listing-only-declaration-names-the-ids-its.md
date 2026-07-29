@@ -1,6 +1,6 @@
 # US0554: A listing-only declaration names the ids its structural read depends on, so filing an artefact stops triggering the full suites
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0498
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new

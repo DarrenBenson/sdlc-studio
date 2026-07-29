@@ -1,6 +1,7 @@
 # BG0404: close_cost with no run id reports every close ever recorded as this one: 6x on seconds, 143x on elapsed
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; each half verified by applying its own mutant, bytecode purged, python3 -B)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
