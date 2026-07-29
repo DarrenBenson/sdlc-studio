@@ -167,9 +167,9 @@ with the agent's built-in tools.
 
 A third architectural element sits over both: `gate.py` composes the deterministic
 checks into **lanes**, each returning PASS / warn / FAIL, and the whole into one
-exit code. The default sweep runs conformance, reconcile, index-derived, validate,
-constitution, integrity, duplicate-id, provenance, doc-coverage, engagement-floor,
-disclosure, doc-freshness, mutation and hook-enabled. Bound lanes attach to a
+exit code. The default sweep runs `batch-size`, `changelog-fragments`, `conformance`, `constitution`, `disclosure`, `doc-coverage`, `doc-freshness`, `duplicate-id`, `engagement-floor`, `hook-enabled`, `index-derived`, `integrity`, `mutation`, `provenance`, `reconcile`, `validate` and `window`
+(the registry is `gate.DEFAULT_CHECKS`; this list is held to it by
+`tools/tests/test_trd_surface_derivation.py`). Bound lanes attach to a
 specific obligation and cannot be skipped or excluded away: `--require-retro` (the
 retro's content, plus the lessons summary and validity), `--require-review` (review
 currency, not presence), `--require-handoff`, and `--release`, which EXECUTES every
@@ -218,10 +218,8 @@ and the script CLI surface.
 
 `/sdlc-studio [type] [action] [flags]`. The router parses `type` and `action`,
 loads `help/{type}.md`, and follows the matching `reference-{domain}.md` workflow.
-Types: `init`, `pvd`, `prd`, `trd`, `tsd`, `persona`, `consult`, `chat`, `epic`,
-`story`, `code`, `test-spec`, `test-automation`, `test-env`, `bug`, `cr`, `rfc`,
-`project`, `sprint`, `handoff`, `plan`, `decisions`, `reconcile`, `gate`, `deploy`,
-`mutation`, `skill-update`, `status`, `hint`, `help`. (`sprint` was named
+Types are the router's own Type Reference table in `SKILL.md`, held to it by
+`tools/tests/test_trd_surface_derivation.py` rather than restated here: `audit`, `bug`, `chat`, `code`, `consult`, `cr`, `decisions`, `deploy`, `epic`, `gate`, `handoff`, `help`, `hint`, `init`, `issue`, `lessons`, `migrate`, `mutation`, `persona`, `plan`, `prd`, `project`, `pvd`, `reconcile`, `refine`, `repo`, `retro`, `review`, `rfc`, `skill-update`, `sprint`, `status`, `story`, `test-automation`, `test-env`, `test-spec`, `trd`, `triage`, `tsd`. (`sprint` was named
 `autosprint` before v4.0; the old name is retired.) The error-handling contract
 (missing prerequisites, existing files, id collision, open questions, unknown
 language) is in `SKILL.md`.
@@ -277,8 +275,9 @@ between installed copies.
 ### Error / report format
 
 Scripts that emit machine-readable output use JSON. The verifier writes a report to
-`.local/verify-report.json`; reconcile emits a drift report (with drift kinds
-`status-mismatch`, `missing-row`, `orphan-row`, `count-mismatch`, `missing-index`);
+`.local/verify-report.json`; reconcile emits a drift report whose drift kinds are
+`reconcile.DRIFT_KINDS` - `missing-index`, `index-status-column`, `missing-row`, `status-mismatch`, `orphan-row`, `dead-row-link`, `count-mismatch`, `breakdown-unticked`, `breakdown-ticked-early`, `epic-points-stale`, `link-asymmetry`, `undecomposed`, `request-derivable`, `linked-epics`, `stale-index-stamp`, `index-field`, `spawned-column` -
+held to that tuple by `tools/tests/test_trd_surface_derivation.py`;
 status emits the four-pillar census. There is no single canonical error envelope;
 failures surface as a non-zero exit plus a stderr message. [MEDIUM]
 
@@ -289,8 +288,7 @@ not a bare finding. The contract is that the `fix` is specific enough to act on
 out-of-vocab status surfaces as a `count-mismatch` whose `fix` should name the
 offending status and point at `validate` / the `status_vocab` config, not the
 generic "recompute the counts" (which sends the agent to `apply`, where it cannot
-be resolved). The `count-mismatch` finding does not yet meet this bar; closing it
-is CR0132. A generic fix hint whose remedy is in another tool is a dead end - the
+be resolved). A generic fix hint whose remedy is in another tool is a dead end - the
 finding must be self-diagnosing. [MEDIUM]
 
 ---
@@ -698,7 +696,7 @@ views stale and inconsistent.
 
 **Decision:** Treat the artifact files on disk as the sole source of truth. Indexes
 and statuses are derived. `reconcile.py` builds a census from disk and reports drift
-(`status-mismatch`, `missing-row`, `orphan-row`, `count-mismatch`, `missing-index`);
+(`reconcile.DRIFT_KINDS`: `missing-index`, `index-status-column`, `missing-row`, `status-mismatch`, `orphan-row`, `dead-row-link`, `count-mismatch`, `breakdown-unticked`, `breakdown-ticked-early`, `epic-points-stale`, `link-asymmetry`, `undecomposed`, `request-derivable`, `linked-epics`, `stale-index-stamp`, `index-field`, `spawned-column`);
 the agent applies fixes and the judgement-call transitions. Doctrine adds
 "ship the paperwork in the same commit as the code".
 
