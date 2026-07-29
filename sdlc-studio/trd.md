@@ -963,7 +963,8 @@ makes them advisory.
 
 ### ADR-011: The breakdown gate lives in `plan`, the command people actually run
 
-**Status:** Accepted
+**Status:** Accepted, AMENDED 2026-07-24 by D0062 - the gate is goal-aware; see the
+exemption in the Decision below.
 
 **Context:** The `--goal design` rung has been specified for months to produce a
 reviewable, estimated backlog. It has never once been invoked. Backlogs reach `sprint plan`
@@ -989,10 +990,26 @@ a declared dependency is no longer the only way to see a collision. `sprint.brea
 judgement` downgrades the lane to a report; an absent config BLOCKS and an unknown mode
 falls back to enforce.
 
+**Amended by D0062 (2026-07-24): the gate is GOAL-AWARE, and `design` is the only
+exemption.** An ungroomed batch is accepted at `--goal design`, whose whole purpose is to
+produce the grooming, and refused at every other rung. The exemption is deliberately narrow
+in the fail-safe direction: an ABSENT goal, an EMPTY goal and a goal outside the ladder all
+BLOCK, so the escape cannot open merely because the rung could not be read. The exempt set
+is derived from `sprint._ungroomed_blocks_at` by
+`tools/tests/test_adr011_agreement.py`, so adding or removing an exemption in the code
+reddens the guard rather than leaving this paragraph unchallenged. The set this ADR
+declares is machine-readable, so the comparison is exact rather than a search for a rung
+name that appears somewhere in the prose:
+<!-- exempt-rungs: design -->
+
 **Consequences:**
 
 - Positive: a plan is never false authority over work nobody has sized. Enforcement sits in
   the command that is actually invoked, which is the only place enforcement survives.
+- The COUNTERWEIGHT to the `design` exemption is a close-side report, not trust: a design
+  rung's close renders `sprint.grooming_report` through `sprint.render_grooming_report`,
+  stating how many units the rung actually groomed and saying so loudest when it groomed
+  none. An exemption with no report behind it is an exemption nobody audits.
 - Positive: a shared file is a fact where a `Depends on:` edge is only a declaration. On its
   first run the cluster check caught two false-parallel pairs in this repo's own backlog,
   one of which was the change that introduced it.
@@ -1080,6 +1097,7 @@ falls back to enforce.
 | 2026-07-14 | 4.1.0 | The v4 architecture: the gate tier (§3), the two id eras (§6), story-only executable verifiers (§6), the run/appetite and measurement state files (§6), the falsified cost model (§10), and five new ADRs - ADR-007 the engagement floor, ADR-008 ULID identity, ADR-009 the generated team, ADR-010 the learning loop, ADR-011 the breakdown gate. Corrected the component counts, the router's line figure (~195 was stale; it is ~260) and the test count |
 | 2026-07-24 | 4.1.0 | Spec-truth reconcile (mutation): added the `mutation-runs.json` per-target ledger to the state-file inventory and corrected the `mutation-report.json` row, which claimed a freshness guarantee the report now only provides as the ledger's fallback. Corrected the performance section's superseded whole-blob STALE rule. Findings table in US0385 |
 | 2026-07-24 | 4.1.0 | Doc-drift residuals (CR0365). §6 Migrations claimed `SKILL.md`'s type table points an `upgrade` type at `reference-upgrade.md`; there is no such row, so the sentence now names the `migrate` and `skill-update` types it does carry and the Progressive Loading Guide row that actually reaches the file. The two remaining exact component counts (§1 "58 scripts", ADR-001 "52 reference files, 41 help files" - actual 69, 54 and 44) are restated as growth-tolerant bands, matching §3's existing convention. This section was headed `## Changelog`, which no tooling reads - `artifact.py revision` and `flow.py` both look for `## Revision History`, as tsd.md already uses - so it is renamed and the TRD's history becomes machine-readable. Dispositions for all twelve residuals in US0369 |
+| 2026-07-29 | 5.0.0 | Spec-truth pass (US0457, US0458, US0459, US0460). ADR-011 records its D0062 amendment (2026-07-24): the breakdown gate is GOAL-AWARE and `design` is the only exemption, with an absent, empty or unknown goal BLOCKING - the ADR previously read as an unconditional refusal while the code already exempted one rung. The counterweight the close really emits (`grooming_report` rendered on the design rung) is named in the Consequences. Four enumerations - the router type list, the default sweep lanes and both drift-kind passages - now cite their shipped definitions and are held to them; the `count-mismatch`/CR0132 caveat goes, justified by CR0132 resolving Complete. The falsified 'a script cannot observe token spend' premise is replaced everywhere it was asserted by the measured one: transcript-measured but a LOWER BOUND, because delegated spend is supplied rather than observed. The porting doctrine is corrected to the direction `tools/forward-port.sh` implements - this repo is the source, the installed copy is the derived mirror - and the bare router line counts are replaced by the budgeted ceiling and its checker. Each claim is now held by a guard in `tools/tests/`. |
 
 ---
 
