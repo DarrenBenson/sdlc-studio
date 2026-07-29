@@ -4520,6 +4520,115 @@ class WorkspaceRelevanceGranularityTests(unittest.TestCase):
                         "a file the suites genuinely open must stay relevant")
 
 
+class CloseCarveOutIsTypeGeneralTests(unittest.TestCase):
+    """BG0373. BG0336 fixed the direction-blindness of the review-currency carve-out, and the
+    concern here is that the repair still reasons in stories - so the hand-edited status change
+    it was filed about stays reachable through a bug or a change request.
+
+    It does not reproduce: `_artifact_type_of` derives the type from `ARTIFACT_TYPES` and
+    `_close_recorded_transition` reads `status_vocab`, `terminal_statuses` and `_IMPL_TARGETS`
+    per type. Verified rather than assumed - and the property is asserted ACROSS TYPES here,
+    which is what the finding actually asked for and what was genuinely missing: a story-only
+    fixture cannot tell a type-general rule from one that happens to work for stories."""
+
+    #: (type, from, to, is a close-recorded transition). One row per delivery type, each with
+    #: its own vocabulary, and each paired with the hand-flip that must NOT be exempt.
+    CASES = (
+        ("story", "Review", "Done", True),
+        ("story", "Draft", "Done", False),
+        ("bug", "In Progress", "Fixed", True),
+        ("bug", "Open", "Fixed", False),
+        ("cr", "In Progress", "Complete", True),
+        ("cr", "Proposed", "Complete", False),
+    )
+
+    def test_the_carve_out_reads_every_delivery_type(self) -> None:
+        for type_, frm, to, expected in self.CASES:
+            with self.subTest(type=type_, frm=frm, to=to):
+                self.assertEqual(
+                    expected, gate._close_recorded_transition(type_, frm, to, str(REPO)),
+                    f"{type_}: {frm} -> {to} was judged wrongly; the carve-out must read the "
+                    f"type's own vocabulary, not a story's")
+
+    def test_every_declared_type_resolves_from_its_directory(self) -> None:
+        """The other half of the generality: a type whose path does not resolve gets
+        `type_ = None`, and the carve-out then refuses - safe, but it means the exemption
+        silently stops working for that type rather than being wrong loudly."""
+        from lib import sdlc_md as _md
+        for type_, (dirname, _prefix) in _md.ARTIFACT_TYPES.items():
+            with self.subTest(type=type_):
+                probe = Path(REPO) / dirname / "X0001-probe.md"
+                self.assertEqual(type_, gate._artifact_type_of(Path(REPO), probe))
+
+    def test_a_reopen_is_never_exempt_for_any_type(self) -> None:
+        """Terminal to anything is a reopen, and terminal to terminal is a re-labelling. Both
+        are changes a reviewer judges, for every type."""
+        for type_, terminal, other in (("story", "Done", "In Progress"),
+                                       ("bug", "Fixed", "In Progress"),
+                                       ("cr", "Complete", "In Progress")):
+            with self.subTest(type=type_):
+                self.assertFalse(
+                    gate._close_recorded_transition(type_, terminal, other, str(REPO)))
+
+
+class ScopedRunIsNotABaselineTests(unittest.TestCase):
+    """BG0363. The cost baseline was written on every CLI run, `--only` and `--skip` included.
+    A scoped run covers a fraction of the lanes, so recording one LOWERED the number the next
+    full run is judged against - and that run then read as a regression against a figure that
+    never measured the same thing."""
+
+    @staticmethod
+    def _lane(_root):
+        return {"count": 0, "blocking": False, "detail": "d"}
+
+    def _root(self, tmp: str) -> str:
+        (Path(tmp) / "sdlc-studio").mkdir()
+        return tmp
+
+    def test_a_scoped_run_does_not_write_the_baseline(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            gate.record_gate_cost(root, 300.0)
+            gate.run_gate(root, only=["a"], checks={"a": self._lane, "b": self._lane},
+                          record_cost=True)
+            self.assertEqual(300.0, gate.read_gate_cost_baseline(root),
+                             "a scoped run overwrote the full-run baseline")
+
+    def test_a_skipped_run_does_not_write_the_baseline_either(self) -> None:
+        """`--skip` narrows the run exactly as `--only` does - a fix covering one is the
+        enumerated-list shape this repo's carried lessons already name."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            gate.record_gate_cost(root, 300.0)
+            gate.run_gate(root, skip=["b"], checks={"a": self._lane, "b": self._lane},
+                          record_cost=True)
+            self.assertEqual(300.0, gate.read_gate_cost_baseline(root))
+
+    def test_a_full_run_still_writes_it(self) -> None:
+        """The discriminating half: a baseline nothing writes is a baseline nobody has."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            gate.record_gate_cost(root, 300.0)
+            gate.run_gate(root, checks={"a": self._lane}, record_cost=True)
+            self.assertNotEqual(300.0, gate.read_gate_cost_baseline(root))
+
+    def test_a_scoped_run_is_not_compared_with_the_baseline_and_says_so(self) -> None:
+        """The same defect read from the other side, and the more misleading of the two: a
+        fraction of the lanes measured against a full baseline reports a saving nobody made,
+        and it looks like good news."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            gate.record_gate_cost(root, 300.0)
+            report = gate.run_gate(root, only=["a"], checks={"a": self._lane},
+                                   record_cost=True)
+            detail = report["cost"]["detail"]
+        self.assertTrue(report["cost"]["scoped"])
+        self.assertFalse(report["cost"]["recorded"])
+        self.assertIn("SCOPED", detail, "a scoped run must SAY it is not the baseline")
+        self.assertNotIn("faster than", detail)
+        self.assertNotIn("slower than", detail)
+
+
 class VerifyBatchRemovalTests(unittest.TestCase):
     """US0479. The removed batching flag was parsed, passed to `run_gate` and read by nothing.
     `--release` implies batching and assigns the verify lane itself, so the flag promised a

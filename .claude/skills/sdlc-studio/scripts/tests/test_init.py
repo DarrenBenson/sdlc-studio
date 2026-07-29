@@ -702,5 +702,40 @@ class IssueTypeTests(unittest.TestCase):
                 self.assertTrue((repo / "sdlc-studio" / w).is_dir(), w)
 
 
+class EveryTypeDirectoryGetsItsIndexTests(unittest.TestCase):
+    """BG0368. US0529 made `init` create the issues directory AND its index, because a
+    directory with no index is not a usable artefact type; US0530 then derived the whole tree
+    from the shipped type list. The bug is that the derivation might create directories only,
+    leaving every newly covered type in the state US0529 had just established as broken.
+
+    It does not reproduce: `index_types()` and `tree_dirs()` derive from one table and step 2
+    creates an index per type. Verified rather than assumed, and PINNED here - the pairing is
+    the property, and nothing asserted it, so the two could drift apart again in silence."""
+
+    def test_every_derived_type_directory_carries_an_index(self) -> None:
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                init.init(root, dry_run=False)
+            missing = [rel for rel, _p in sdlc_md.ARTIFACT_TYPES.values()
+                       if (root / "sdlc-studio" / rel).is_dir()
+                       and not (root / "sdlc-studio" / rel / "_index.md").exists()]
+        self.assertFalse(missing, f"directories created with no index: {missing}")
+
+    def test_the_two_derivations_read_the_same_table(self) -> None:
+        """The pairing, at its source. A directory list and an index list that derive
+        separately are two lists, and the second is the one that gets forgotten."""
+        self.assertEqual(list(sdlc_md.ARTIFACT_TYPES), init.index_types())
+        dirs = set(init.tree_dirs())
+        for type_ in init.index_types():
+            with self.subTest(type=type_):
+                self.assertIn(sdlc_md.ARTIFACT_TYPES[type_][0].split("/")[-1],
+                              {d.split("/")[-1] for d in dirs},
+                              f"{type_} gets an index but no directory")
+
+
 if __name__ == "__main__":
     unittest.main()

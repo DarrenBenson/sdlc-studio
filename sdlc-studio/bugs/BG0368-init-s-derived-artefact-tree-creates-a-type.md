@@ -1,6 +1,7 @@
 # BG0368: init's derived artefact tree creates a type's directory without its index, regressing what US0529 fixed for issues
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (premise re-measured; pairing pinned)
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/init.py, .claude/skills/sdlc-studio/scripts/tests/test_init.py
@@ -22,7 +23,21 @@ Derive the index alongside the directory from the same type list, so a type adde
 
 ## Acceptance Criteria
 
-No acceptance criterion could be derived from this finding's evidence: none of its prose fields carries fewer than 5 words of substance, so nothing here states what fixed would look like. Whoever picks this up agrees the contract with the author before starting - this is a stated gap, not a criterion to tick.
+### AC1: every derived type directory carries an index
+
+- **Given** a freshly initialised project
+- **When** the tree is derived
+- **Then** no type directory exists without its `_index.md`, so no type arrives in the state a directory-with-no-index was established as being
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::EveryTypeDirectoryGetsItsIndexTests::test_every_derived_type_directory_carries_an_index
+- **Verified:** yes (2026-07-29)
+
+### AC2: both derivations read the same table
+
+- **Given** `index_types()` and `tree_dirs()`
+- **When** the tree is derived
+- **Then** each type in the shipped table yields both a directory and an index, because two lists deriving separately is how the second comes to be forgotten
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::EveryTypeDirectoryGetsItsIndexTests::test_the_two_derivations_read_the_same_table
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 
@@ -30,3 +45,4 @@ No acceptance criterion could be derived from this finding's evidence: none of i
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 | Severity Medium -> Low: artifact.py creates a missing index on demand, verified on a fresh init: no user is blocked, so this is tidiness not breakage. Severity corrected DOWN after testing rather than asserting. |
 | 2026-07-28 | Claude Opus 5 (RUN-01KYKVZM review carry-forward) | Filed |
+| 2026-07-29 | Claude Opus 5 | DID NOT REPRODUCE, and recorded as such rather than quietly closed. `index_types()` and `tree_dirs()` already derive from one table and step 2 creates an index per type; a fresh `init` leaves no type directory without its index. The premise was checked before any repair was attempted. What was genuinely missing is a guard: nothing asserted the pairing, so the two derivations could drift apart in silence. That guard is the delivery. |

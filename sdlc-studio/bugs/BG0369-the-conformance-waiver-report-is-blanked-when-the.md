@@ -1,6 +1,7 @@
 # BG0369: The conformance waiver report is blanked when the diff contains no stories, hiding a waived unit rather than reporting it
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py
@@ -22,7 +23,29 @@ Scope the waiver report to the units in the diff whatever their type, and emit a
 
 ## Acceptance Criteria
 
-No acceptance criterion could be derived from this finding's evidence: none of its prose fields carries fewer than 5 words of substance, so nothing here states what fixed would look like. Whoever picks this up agrees the contract with the author before starting - this is a stated gap, not a criterion to tick.
+### AC1: a waiver no judged unit carries is reported
+
+- **Given** a waiver scoped to a bug, while this lane judges stories
+- **When** the conformance lane reports
+- **Then** it is reported as in force and unattributed, rather than producing no line at all and sitting silently active
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::WaiverInForceIsAlwaysReportedTests::test_a_waiver_no_judged_unit_carries_is_reported
+- **Verified:** yes (2026-07-29)
+
+### AC2: the printed report names it, with its decision
+
+- **Given** the same waiver and a text report
+- **When** the conformance lane reports
+- **Then** the line names the stage, the decision and the fact that no judged unit carries it, so a reader can go and read the decision
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::WaiverInForceIsAlwaysReportedTests::test_the_report_names_it
+- **Verified:** yes (2026-07-29)
+
+### AC3: a waiver already attributed per unit is not reported twice
+
+- **Given** a waiver a judged story does carry
+- **When** the conformance lane reports
+- **Then** it appears in the per-unit report only, because a line that fires on every run becomes noise and gets read past
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::WaiverInForceIsAlwaysReportedTests::test_a_waiver_a_judged_unit_does_carry_is_not_double_reported
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

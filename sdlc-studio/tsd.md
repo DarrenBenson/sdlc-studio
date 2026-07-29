@@ -64,7 +64,11 @@ a pass.
 
 ### In Scope
 
-- Unit tests for the 58 scripts and the six-module `lib/` (the script tier).
+- Unit tests for every script under `scripts/` and every module of its shared `lib/`
+  (the script tier). Stated as the SET, never as a count: this line is the only
+  inventory bounding the unit-test scope, and a pinned number is true on the day it is
+  written and wrong after. The census is `tools/test_census.py`; the TRD restated its
+  own component counts as growth-tolerant bands for the same reason.
 - Static and lint checks over all markdown (house style, links, frontmatter, line
   budgets, version consistency, neutrality, action pins).
 - Integration-style tests that run scripts against fixture workspaces in temporary
@@ -613,8 +617,8 @@ holds only when someone remembers it.
 
 ```text
 .claude/skills/sdlc-studio/scripts/
-  <script>.py               # 58 shipped helpers
-  lib/                      # 6 shared modules; sdlc_md.py is the parsing core
+  <script>.py               # the shipped helpers (census: tools/test_census.py)
+  lib/                      # the shared modules; sdlc_md.py is the parsing core
   tests/
     test_<script>.py        # one module per script; 90+ modules, 2,500+ tests
 tools/
@@ -646,6 +650,7 @@ package.json                # lint and test entry points
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Generate mode (brownfield extraction) | Initial TSD reverse-engineered from the skill's actual test setup |
+| 2026-07-29 | 5.0.0 | Scope §1 pinned the script tier at 58 scripts and a six-module `lib/` against a tree carrying 70 and 5 - about a fifth short, in the only inventory bounding the unit-test scope. Restated as the SET, with the census named. `tools/tests/test_spec_counts_are_not_pinned.py` now holds both specs to it, comparing against the census rather than against a second number written in the guard. |
 | 2026-07-14 | Generate mode (v4 refresh) | Added the mutation gate (assertion integrity), the eval scenarios (flow conformance), the artefact and release gates with their bound lanes, the story-only rule for executable verifiers, verification depth on a terminal bug status, and the enforced pre-commit hook. Corrected the lint chain (six checks was stale; it is eight), the suite size (181 was stale; it is 2151), the script count (10 was stale; it is 58), and the link-check scope |
 | 2026-07-17 | Spec-truth alignment | Recorded the blocking 80% CI coverage gate (`coverage report --fail-under=80`) and reconciled it with the ~90% aspiration - correcting the stale "coverage is not wired into CI" claim in Coverage Targets and Coverage Measurement. Recorded the blocking bandit security scan (`bandit -r ... -ll -x '*/tests/*' -q`) in Security Testing, the NFR mapping, the tools table, and both quality-gate tables - correcting the stale "no dedicated security scanner is wired" claim |
 | 2026-07-24 | Spec-truth reconcile (mutation) | Reconciled the mutation entries against `mutation.py` and `gate.py`: the Output row now names the per-target ledger beside the report, the Gate row and the gate-lane table carry the per-file covered / STALE / uncovered verdict in place of the superseded whole-blob rev-or-edit rule, and the test-tier map names the ledger's bound and provenance. Corrected the pre-commit blockquote's "executably enforced" over an advisory lane. The findings table, including the claims checked and left unchanged, is recorded in US0385 |

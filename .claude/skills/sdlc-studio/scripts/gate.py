@@ -1688,7 +1688,7 @@ def record_gate_cost(root: str, seconds: float) -> None:
 
 
 def _cost_report(root: str, results: list[dict], elapsed: float,
-                 record: bool = False) -> dict:
+                 record: bool = False, scoped: bool = False) -> dict:
     """This run's cost, its budget, the lane that dominated it and the direction of travel.
 
     The DOMINANT lane is what makes this actionable: a total over budget with no lane named
@@ -1707,7 +1707,13 @@ def _cost_report(root: str, results: list[dict], elapsed: float,
         detail = f"{elapsed:.1f}s of a {budget:g}s budget"
     if dominant is not None:
         detail += f"; dominant lane: {dominant['check']} at {dominant['seconds']:.1f}s"
-    if baseline is None:
+    if scoped:
+        # No comparison either. A fraction of the lanes measured against a full-run baseline
+        # reports a saving nobody made - the same defect as recording it, read from the other
+        # side, and the more misleading of the two because it looks like good news.
+        detail += ("; SCOPED run - not compared with the baseline and not recorded as it "
+                   "(it measures fewer lanes)")
+    elif baseline is None:
         detail += "; no baseline recorded yet, so this run becomes it"
     else:
         delta = elapsed - baseline
@@ -1717,9 +1723,15 @@ def _cost_report(root: str, results: list[dict], elapsed: float,
         else:
             detail += (f"; {pct:.0f}% {'slower' if delta > 0 else 'faster'} than the "
                        f"{baseline:.1f}s baseline")
-    if record:
+    # A SCOPED run never becomes the baseline. `--only`/`--skip` cover a fraction of the lanes,
+    # so recording one lowers the number the next FULL run is compared against, and that run
+    # then reads as a regression against a figure that never measured the same thing. Stated in
+    # the detail rather than silently skipped, or a reader cannot tell a scoped run from a
+    # cheap one.
+    if record and not scoped:
         record_gate_cost(root, elapsed)
     return {"seconds": round(elapsed, 3), "budget": budget, "over": over,
+            "scoped": scoped, "recorded": bool(record and not scoped),
             "dominant": dominant["check"] if dominant is not None else None,
             "dominant_seconds": (round(dominant["seconds"], 3)
                                  if dominant is not None else None),
@@ -1892,7 +1904,7 @@ def run_gate(root: str = ".", only: list[str] | None = None,
     ok = all(r["status"] == "pass" for r in results if r["blocking"])
     return {"ok": ok, "checks": results,
             "cost": _cost_report(root, results, time.monotonic() - run_started,
-                                 record=record_cost)}
+                                 record=record_cost, scoped=bool(only or skip))}
 
 
 def _split(v: str | None) -> list[str] | None:

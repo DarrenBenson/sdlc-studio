@@ -1,6 +1,7 @@
 # BG0371: The repeated-lesson report rests on a single unpinned call, so a lesson violated twice can report once
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first)
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py
@@ -22,10 +23,25 @@ Accumulate violations against the run rather than sampling them at close, and ha
 
 ## Acceptance Criteria
 
-No acceptance criterion could be derived from this finding's evidence: none of its prose fields carries fewer than 5 words of substance, so nothing here states what fixed would look like. Whoever picks this up agrees the contract with the author before starting - this is a stated gap, not a criterion to tick.
+### AC1: the report and the proposals act on one pinned read
+
+- **Given** a violation recorded between the report and the proposal path
+- **When** the close reports repeats
+- **Then** a caller that reads once and passes the same list to both gets one answer, rather than the report naming a count the proposal never saw
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RepeatReadIsPinnedTests::test_the_report_and_the_proposals_read_the_same_counts
+- **Verified:** yes (2026-07-29)
+
+### AC2: an unpinned read is still the run's accumulated history
+
+- **Given** further violations appended to the record
+- **When** the close reports repeats
+- **Then** the count grows with them, because the violations file is append-only and a count is the run's history rather than one call's view
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RepeatReadIsPinnedTests::test_an_unpinned_call_still_reads_the_accumulated_record
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 (RUN-01KYKVZM review carry-forward) | Filed |
+| 2026-07-29 | Claude Opus 5 | Half the premise did not reproduce and is recorded as such: violations are appended to a JSONL and `repeats` reads all of them, so a count IS the run's history and not one call's view. The half that did reproduce is the one the finding's own Proposed Fix named last - the report and the proposal path each took their own read, so a violation landing between them answered one question two ways. Both now accept a pinned `found`, and the close reads once. |

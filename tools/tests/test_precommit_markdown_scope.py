@@ -158,5 +158,48 @@ class RealRepoCoverageTests(unittest.TestCase):
                             "the fixture file must actually violate a rule")
 
 
+class NpmLaneSeesEverythingTheHookDoesTests(unittest.TestCase):
+    """BG0374. BG0341 derived the HOOK's set from `git ls-files` and left the npm lanes as the
+    root glob plus one hand-added dot-directory - so `npm run lint`, which CI runs, was still
+    blind to the three tracked files under `.github/` that started all this. Two lanes with two
+    enumerations is the same defect waiting to recur on whichever one is not updated next."""
+
+    SCRIPT = REPO / "tools" / "lint-md.sh"
+
+    def test_the_npm_lanes_delegate_to_the_derived_enumeration(self) -> None:
+        import json
+        scripts = json.loads((REPO / "package.json").read_text(encoding="utf-8"))["scripts"]
+        for lane in ("lint:md", "lint:fix"):
+            with self.subTest(lane=lane):
+                self.assertIn("tools/lint-md.sh", scripts[lane],
+                              f"{lane} still names a glob of its own; a glob cannot enter a "
+                              f"dot-directory, which is the whole defect")
+                self.assertNotIn("**/*.md", scripts[lane])
+
+    def test_the_script_reads_the_tracked_set(self) -> None:
+        """Executable lines only - the header explains the defect by quoting the glob, and a
+        check that reads comments would refuse the explanation along with the bug."""
+        code = "\n".join(line for line in self.SCRIPT.read_text(encoding="utf-8").splitlines()
+                         if not line.lstrip().startswith("#"))
+        self.assertIn("git ls-files", code, "the set must be DERIVED, not enumerated")
+        self.assertNotIn("**/*.md", code)
+
+    def test_every_tracked_markdown_file_is_covered_by_one_lane(self) -> None:
+        """The property, measured against the repository rather than asserted about the code.
+        A file in neither partition is a file no lane lints."""
+        out = subprocess.run(["git", "-C", str(REPO), "ls-files", "-z", "--", "*.md"],
+                             capture_output=True, text=True, check=False)
+        tracked = [f for f in out.stdout.split("\0") if f]
+        self.assertTrue(tracked, "git ls-files returned nothing - this check proves nothing")
+        covered = [f for f in tracked if not f.startswith(".claude/worktrees/")]
+        self.assertTrue(any(f.startswith(".github/") for f in covered),
+                        "the .github/ files this bug is about are not in the tracked set - the "
+                        "fixture for this regression has gone, so the check is inert")
+        payload = [f for f in covered if f.startswith(".claude/")]
+        root = [f for f in covered if not f.startswith(".claude/")]
+        self.assertEqual(sorted(covered), sorted(root + payload),
+                         "a tracked markdown file falls into neither lane")
+
+
 if __name__ == "__main__":
     unittest.main()

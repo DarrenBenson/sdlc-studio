@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 23 |
+| Open | 14 |
 | In Progress | 0 |
-| Fixed | 294 |
+| Fixed | 303 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -49,8 +49,8 @@
 | [BG0329](BG0329-test-relevance-measurement-records-only-paths-that-exist.md) | Test-relevance measurement records only paths that exist, so a commit deleting a suite-read file outside the legacy dirs | Fixed | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0330](BG0330-reconcile-s-type-lists-omit-the-issue-type.md) | reconcile's type lists omit the issue type, so the issues index is never reconciled by any path | Fixed | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0331](BG0331-gate-py-s-reconcile-lane-enumerates-two-drift.md) | gate.py's reconcile lane enumerates two drift sources and exempts the five sweep-level detectors, re-creating the bug it | Fixed | Medium | 2026-07-27 | 2026-07-27 |
-| [BG0332](BG0332-test-scope-pinned-to-a-58-script-inventory.md) | Test scope pinned to a 58-script inventory when the tier ships 70 | Open | Low | 2026-07-27 | 2026-07-27 |
-| [BG0333](BG0333-product-seat-calibrates-against-an-end-goal-maya.md) | Product seat calibrates against an End goal Maya's card does not contain | Open | Low | 2026-07-27 | 2026-07-27 |
+| [BG0332](BG0332-test-scope-pinned-to-a-58-script-inventory.md) | Test scope pinned to a 58-script inventory when the tier ships 70 | Fixed | Low | 2026-07-27 | 2026-07-27 |
+| [BG0333](BG0333-product-seat-calibrates-against-an-end-goal-maya.md) | Product seat calibrates against an End goal Maya's card does not contain | Fixed | Low | 2026-07-27 | 2026-07-27 |
 | [BG0334](BG0334-ep0163-init-stage-ac-verifiers-under-assert-their.md) | EP0163 init-stage AC verifiers under-assert their own ACs (US0442, US0438), and stage_agents silently skips a missing te | Fixed | Low | 2026-07-27 | 2026-07-27 |
 | [BG0335](BG0335-manual-acs-missing-evidence-fails-open-on-any.md) | _manual_acs_missing_evidence fails open on any exception, silently disarming the manual-evidence Done gate | Fixed | Medium | 2026-07-27 | 2026-07-27 |
 | [BG0336](BG0336-review-currency-close-bookkeeping-carve-out-is-direction.md) | Review-currency close-bookkeeping carve-out is direction-blind: any hand-edited Status flip, including to Done, is exemp | Fixed | Medium | 2026-07-27 | 2026-07-27 |
@@ -80,18 +80,18 @@
 | [BG0360](BG0360-verify-ac-cannot-resolve-a-bug-id-so.md) | verify_ac cannot resolve a bug id, so no bug can prove its own acceptance criteria | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0361](BG0361-d0074-s-recorded-waiver-still-covers-nothing-and.md) | D0074's recorded waiver still covers nothing, and record-time validation would accept the same shape again | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0362](BG0362-a-retro-whose-batch-line-is-prose-yields.md) | A retro whose Batch line is prose yields an empty sprint report - the latest sprint reads zero units | Fixed | Medium | 2026-07-28 | 2026-07-28 |
-| [BG0363](BG0363-gate-py-records-a-cost-baseline-on-every.md) | gate.py records a cost baseline on every CLI run including scoped ones, so the trend compares unlike runs | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0363](BG0363-gate-py-records-a-cost-baseline-on-every.md) | gate.py records a cost baseline on every CLI run including scoped ones, so the trend compares unlike runs | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0364](BG0364-two-more-modules-hand-roll-the-strict-timestamp.md) | Two more modules hand-roll the strict timestamp parser BG0353 just fixed in telemetry | Open | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0365](BG0365-the-carried-lessons-set-has-three-representations-and.md) | The carried-lessons set has three representations and the read gate may read a different one from the one the retro writes | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0366](BG0366-overhead-ratio-computes-delivery-by-subtraction-so-unmeasured.md) | _overhead_ratio computes delivery by subtraction, so unmeasured overhead is reported as delivery | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0367](BG0367-the-ac-less-baseline-is-not-one-way.md) | The AC-less baseline is not one-way, so a newly filed unit can be added to it and exempt itself | Open | Medium | 2026-07-28 | 2026-07-28 |
-| [BG0368](BG0368-init-s-derived-artefact-tree-creates-a-type.md) | init's derived artefact tree creates a type's directory without its index, regressing what US0529 fixed for issues | Open | Low | 2026-07-28 | 2026-07-28 |
-| [BG0369](BG0369-the-conformance-waiver-report-is-blanked-when-the.md) | The conformance waiver report is blanked when the diff contains no stories, hiding a waived unit rather than reporting it | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0368](BG0368-init-s-derived-artefact-tree-creates-a-type.md) | init's derived artefact tree creates a type's directory without its index, regressing what US0529 fixed for issues | Fixed | Low | 2026-07-28 | 2026-07-28 |
+| [BG0369](BG0369-the-conformance-waiver-report-is-blanked-when-the.md) | The conformance waiver report is blanked when the diff contains no stories, hiding a waived unit rather than reporting it | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0370](BG0370-us0516-s-stated-absence-escape-hatch-defeats-the.md) | US0516's stated-absence escape hatch defeats the criteria floor US0514 and US0515 establish | Fixed | High | 2026-07-28 | 2026-07-28 |
-| [BG0371](BG0371-the-repeated-lesson-report-rests-on-a-single.md) | The repeated-lesson report rests on a single unpinned call, so a lesson violated twice can report once | Open | Low | 2026-07-28 | 2026-07-28 |
-| [BG0372](BG0372-the-overhead-ratio-never-reaches-the-velocity-record.md) | The overhead ratio never reaches the velocity record, so the measurement is taken and discarded | Open | Low | 2026-07-28 | 2026-07-28 |
-| [BG0373](BG0373-the-review-currency-carve-out-repaired-in-bg0336.md) | The review-currency carve-out repaired in BG0336 remains story-shaped, so a bug or change request takes a different path | Open | Low | 2026-07-28 | 2026-07-28 |
-| [BG0374](BG0374-the-markdownlint-path-fixed-in-bg0341-still-cannot.md) | The markdownlint path fixed in BG0341 still cannot see every tracked markdown file | Open | Low | 2026-07-28 | 2026-07-28 |
+| [BG0371](BG0371-the-repeated-lesson-report-rests-on-a-single.md) | The repeated-lesson report rests on a single unpinned call, so a lesson violated twice can report once | Fixed | Low | 2026-07-28 | 2026-07-28 |
+| [BG0372](BG0372-the-overhead-ratio-never-reaches-the-velocity-record.md) | The overhead ratio never reaches the velocity record, so the measurement is taken and discarded | Fixed | Low | 2026-07-28 | 2026-07-28 |
+| [BG0373](BG0373-the-review-currency-carve-out-repaired-in-bg0336.md) | The review-currency carve-out repaired in BG0336 remains story-shaped, so a bug or change request takes a different path | Fixed | Low | 2026-07-28 | 2026-07-28 |
+| [BG0374](BG0374-the-markdownlint-path-fixed-in-bg0341-still-cannot.md) | The markdownlint path fixed in BG0341 still cannot see every tracked markdown file | Fixed | Low | 2026-07-28 | 2026-07-28 |
 | [BG0375](BG0375-the-lane-contract-refusal-governing-475-units-is.md) | The lane_contract refusal governing 475 units is asserted by no test, so a silent revert reddens nothing | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0376](BG0376-five-stories-caller-criteria-are-verified-by-a.md) | Five stories' caller criteria are verified by a test class that never reads the story, so the criterion cannot fail | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0377](BG0377-four-of-the-five-caller-declarations-added-at.md) | Four of the five Caller declarations added at review resolve only on the documentation filename, not on the caller they name | Fixed | Medium | 2026-07-28 | 2026-07-28 |

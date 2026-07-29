@@ -85,9 +85,14 @@ asked for, each defended by someone in the room.
 ## Scenario
 
 A "richer sprint-report theming" story is proposed with five acceptance criteria. Lena checks it
-against the Primary persona, Maya Okafor, the solo founder-engineer whose End goal is "ship my
-product without drowning in process I have to police myself." Four ACs serve that - the report she
-reads at sprint close must be honest and zero-effort; the fifth, a configurable colour scheme for
-the report page, serves no persona. She cuts it to a follow-up, sharpens AC1 to "the report renders
-from the retro record with no flags Maya has to remember", and marks the story Ready against Maya's
-goal.
+against the Primary persona, Maya Okafor, quoting End goal 2 from her card verbatim: "Never lose
+the thread - know the true state of the work after any session, reset, or compaction." Four ACs
+serve that - the report she reads at sprint close must be honest and zero-effort; the fifth, a
+configurable colour scheme for the report page, serves no persona. She cuts it to a follow-up,
+sharpens AC1 to "the report renders from the retro record with no flags Maya has to remember", and
+marks the story Ready against that goal, naming its number so a reader can check the trace.
+
+The quotation is verbatim and numbered on purpose. This seat's first Craft Goal is that every story
+traces to a REAL End goal, "not a guess" - and this example previously demonstrated the behaviour
+by tracing to a sentence Maya's card does not contain. A worked example is how a seat is learned,
+so an example that does the thing the seat refuses teaches the refusal away.

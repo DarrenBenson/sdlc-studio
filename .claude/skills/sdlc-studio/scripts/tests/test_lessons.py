@@ -1861,5 +1861,60 @@ class CarriedSetOneTruthTests(unittest.TestCase):
             self.assertFalse(sprint.carried_lessons(root)["available"])
 
 
+class RepeatReadIsPinnedTests(unittest.TestCase):
+    """BG0371. The close reports a carried lesson violated again, and the proposal path acts on
+    the same repeat counts - each taking its OWN read. A violation recorded between the two
+    answered one question two ways, and the proposal inherited whichever view it happened to
+    see. The violations file is genuinely append-only and accumulates, which was the half of
+    the finding that did not reproduce; the unpinned pair was the half that did."""
+
+    def _root(self) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="repeats_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        (d / "sdlc-studio" / "retros").mkdir(parents=True)
+        # The project log the carried set and the violation recorder both read: an id naming no
+        # still-valid lesson is refused, which is the right refusal and makes the log part of
+        # the fixture rather than an optional extra.
+        (d / lessons.DEFAULT_PROJECT_FILE).write_text(
+            "# Project lessons\n\n## L-0001: a lesson worth carrying\n\n"
+            "- **Gist:** do not do the thing\n", encoding="utf-8")
+        # The BULLET shape under `## Carried`, which is the form that carries an ID - the
+        # numbered-section shape parses a title only, so `repeats` could never match it.
+        (d / lessons.CARRIED_FILE).write_text(
+            "# Carried lessons\n\n## Carried\n\n"
+            "- **L-0001: a lesson worth carrying** - do not do the thing\n", encoding="utf-8")
+        for _ in range(3):
+            lessons.record_violation(d, "L-0001", "US0001", note="violated again")
+        return d
+
+    def test_the_report_and_the_proposals_read_the_same_counts(self) -> None:
+        root = self._root()
+        found = lessons.repeats(root)
+        self.assertTrue(found, "the fixture must produce a repeat, or this proves nothing")
+        before = lessons.repeat_report(root, found=found)
+        # A violation lands BETWEEN the two consumers - the race the pin exists for.
+        lessons.record_violation(root, "L-0001", "US0002", note="one more")
+        pinned = lessons.proposals(root, found=found)
+        unpinned = lessons.proposals(root)
+        self.assertIn(str(found[0]["count"]), before)
+        for row in pinned:
+            with self.subTest(lesson=row["id"]):
+                self.assertEqual(found[0]["count"], row["count"],
+                                 "the pinned proposal read a count the report never saw")
+        if unpinned:
+            self.assertNotEqual(unpinned[0]["count"], found[0]["count"],
+                                "the unpinned read must see the later violation - otherwise "
+                                "this test cannot tell a pin from a coincidence")
+
+    def test_an_unpinned_call_still_reads_the_accumulated_record(self) -> None:
+        """The half that did not reproduce, pinned so it stays true: the violations file is
+        append-only, so a count is the run's history and not one call's view."""
+        root = self._root()
+        self.assertEqual(3, lessons.repeats(root)[0]["count"])
+        lessons.record_violation(root, "L-0001", "US0003")
+        self.assertEqual(4, lessons.repeats(root)[0]["count"])
+
+
 if __name__ == "__main__":
     unittest.main()

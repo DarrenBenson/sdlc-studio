@@ -588,9 +588,16 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
     # Units carrying at least one waived stage. Counted separately from `conformant`, so
     # waived debt is never invisible: the lane passes it and still says how much it passed.
     waived_n = sum(1 for u in units if u["waived"])
+    # Waivers no judged unit carries. This lane's units are STORIES, so a waiver scoped to a
+    # bug or a change request - or to nothing that resolves - produced no report line at all
+    # and sat silently in force, which is exactly the outcome the report exists to prevent.
+    attributed = {(w["stage"], w["decision"]) for u in units for w in (u["waived"] or [])}
+    waivers_unattributed = [w for w in waivers
+                            if (w["stage"], w["decision"]) not in attributed]
     return {
         "generated_at": sdlc_md.now_iso8601(),
         "units": units,
+        "waivers_unattributed": waivers_unattributed,
         # Repo-wide failures, listed once. The gate counts these alongside per-unit
         # non-conformance, so attributing them once REPORTS better without enforcing less.
         "globals": globals_,
@@ -617,6 +624,7 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
                     "ungroomed": ungroomed_n,
                     # Debt this lane passed on a recorded decision rather than on evidence.
                     "waived": waived_n,
+                    "waived_unattributed": len(waivers_unattributed),
                     "global_failures": len(globals_)},
     }
 
@@ -766,6 +774,15 @@ def cmd_check(args: argparse.Namespace) -> int:
         for (stage, did), ids in sorted(waived_groups.items()):
             print(f"  WAIVED {stage}: {len(ids)} unit(s) by {did} "
                   f"({_elide(ids)}) - see sdlc-studio/decisions.md")
+        # A waiver this lane's units do not carry is still IN FORCE. The per-unit report above
+        # is built from stories, so a waiver scoped to a bug or a change request - or one whose
+        # scope resolves to nothing at all - produced no line, and a rule the project waived sat
+        # silently active. That is the outcome the waiver report exists to prevent, so an
+        # unattributed waiver is named rather than omitted.
+        for row in result.get("waivers_unattributed") or []:
+            print(f"  WAIVED {row['stage']}: in force by {row['decision']}, scoped to "
+                  f"{row['scope'] or 'every unit'} - NOT carried by any unit this lane judges "
+                  f"(it judges stories), so it is reported here rather than left silent")
         tally: dict[str, int] = {}
         for u in result["units"]:
             if not u["conformant"]:

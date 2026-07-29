@@ -1246,10 +1246,16 @@ def repeats(repo_root, carried_path=None, violations_path=None) -> list[dict]:
     return sorted(grouped.values(), key=lambda r: (-r["count"], r["id"]))
 
 
-def repeat_report(repo_root, carried_path=None, violations_path=None) -> str:
+def repeat_report(repo_root, carried_path=None, violations_path=None,
+                  found: list[dict] | None = None) -> str:
     """The close's repeat report, or "" when nothing repeated. Names the lesson AND every unit, so
-    the reader can go and look rather than take the count on trust."""
-    found = repeats(repo_root, carried_path, violations_path)
+    the reader can go and look rather than take the count on trust.
+
+    `found` PINS the read. The report and the proposal path both act on the repeat counts, and
+    each taking its own read meant a violation recorded between them gave two answers to one
+    question - the report naming a count the proposal had not seen, or the reverse. A caller
+    that reads once and passes the same list to both cannot produce that disagreement."""
+    found = repeats(repo_root, carried_path, violations_path) if found is None else found
     if not found:
         return ""
     lines = [f"{len(found)} carried lesson(s) were violated anyway - a repeat is evidence the "
@@ -1304,7 +1310,8 @@ def _proposal_evidence(rep: dict) -> str:
 
 
 def proposals(repo_root, type_: str = "cr", threshold: int | None = None,
-              carried_path=None, violations_path=None) -> list[dict]:
+              carried_path=None, violations_path=None,
+              found: list[dict] | None = None) -> list[dict]:
     """The carried lessons repeated often enough to be worth a guard, each with its evidence.
 
     A lesson already DECLINED at this repeat count or higher is not offered again - the operator
@@ -1316,7 +1323,9 @@ def proposals(repo_root, type_: str = "cr", threshold: int | None = None,
     for d in declines:
         declined_at[d["id"]] = max(declined_at.get(d["id"], 0), d.get("count") or 0)
     out = []
-    for rep in repeats(repo_root, carried_path, violations_path):
+    # The SAME read the report used when the caller pins it - see `repeat_report`. Two reads of
+    # one question is how the report and the proposal come to disagree about a count.
+    for rep in (repeats(repo_root, carried_path, violations_path) if found is None else found):
         if rep["count"] <= limit or rep["count"] <= declined_at.get(rep["id"], 0):
             continue
         out.append({

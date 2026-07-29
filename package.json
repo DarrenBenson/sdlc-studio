@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "lint": "npm run lint:md && npm run lint:style && npm run lint:links && npm run lint:skill && npm run lint:versions && npm run lint:budgets && npm run lint:neutrality && npm run lint:action-pins",
-    "lint:md": "markdownlint '**/*.md' --ignore node_modules && markdownlint --config .claude/skills/sdlc-studio/.markdownlint.json '.claude/**/*.md'",
+    "lint:md": "bash tools/lint-md.sh",
     "lint:style": "bash tools/lint-style.sh",
     "lint:links": "python3 tools/check_links.py",
     "lint:skill": "python3 tools/validate_skill.py",
@@ -15,7 +15,7 @@
     "lint:neutrality": "python3 tools/check_neutrality.py",
     "lint:action-pins": "bash tools/check_action_pins.sh",
     "lint:corpus": "python3 tools/lint_corpus.py",
-    "lint:fix": "markdownlint '**/*.md' --ignore node_modules --fix; markdownlint --config .claude/skills/sdlc-studio/.markdownlint.json '.claude/**/*.md' --fix",
+    "lint:fix": "bash tools/lint-md.sh --fix",
     "test": "npm run test:skill && npm run test:tools",
     "test:skill": "bash tools/skill-tests.sh",
     "test:tools": "python3 -m unittest discover -s tools/tests"

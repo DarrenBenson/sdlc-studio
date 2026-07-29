@@ -1,6 +1,7 @@
 # BG0374: The markdownlint path fixed in BG0341 still cannot see every tracked markdown file
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first)
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/lint-style.sh, package.json
@@ -22,7 +23,29 @@ Derive the linted set from the tracked set rather than from globs, as the corpus
 
 ## Acceptance Criteria
 
-No acceptance criterion could be derived from this finding's evidence: none of its prose fields carries fewer than 5 words of substance, so nothing here states what fixed would look like. Whoever picks this up agrees the contract with the author before starting - this is a stated gap, not a criterion to tick.
+### AC1: both markdown lanes read one derived enumeration
+
+- **Given** `npm run lint:md` and `lint:fix`
+- **When** it runs
+- **Then** each delegates to `tools/lint-md.sh` and names no glob of its own, because a glob cannot enter a dot-directory - which is the whole defect
+- **Verify:** pytest tools/tests/test_precommit_markdown_scope.py::NpmLaneSeesEverythingTheHookDoesTests::test_the_npm_lanes_delegate_to_the_derived_enumeration
+- **Verified:** yes (2026-07-29)
+
+### AC2: the linted set is derived from the tracked set
+
+- **Given** the shared script's executable lines
+- **When** it runs
+- **Then** it reads `git ls-files` and names no glob, so a newly tracked directory is covered without list maintenance
+- **Verify:** pytest tools/tests/test_precommit_markdown_scope.py::NpmLaneSeesEverythingTheHookDoesTests::test_the_script_reads_the_tracked_set
+- **Verified:** yes (2026-07-29)
+
+### AC3: every tracked markdown file falls into a lane
+
+- **Given** this repository's tracked markdown, measured rather than asserted about
+- **When** it runs
+- **Then** every file is in one of the two partitions and the `.github/` files this bug is about are present, so the check cannot pass by having lost its own fixture
+- **Verify:** pytest tools/tests/test_precommit_markdown_scope.py::NpmLaneSeesEverythingTheHookDoesTests::test_every_tracked_markdown_file_is_covered_by_one_lane
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

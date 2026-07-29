@@ -1,6 +1,7 @@
 # BG0333: Product seat calibrates against an End goal Maya's card does not contain
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first)
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** sdlc-studio/personas/seats/product.md
@@ -19,6 +20,24 @@ Evidence (Scenario section, lines 87-93): product.md:88-89 quotes the fabricated
 ## Proposed Fix
 
 Correct the Scenario to quote one of Maya's actual End Goals verbatim from her card (or add the quoted sentence to her card if it is the intended goal).
+
+## Acceptance Criteria
+
+### AC1: every End goal a seat quotes appears on a persona card
+
+- **Given** each seat card's worked example
+- **When** the guard runs
+- **Then** the quotation is found verbatim on a persona card, so a seat demanding a trace to a real goal cannot demonstrate the behaviour by tracing to a guess
+- **Verify:** pytest tools/tests/test_seat_examples_quote_real_goals.py::SeatExampleGoalsTests::test_every_quoted_end_goal_appears_on_a_persona_card
+- **Verified:** yes (2026-07-29)
+
+### AC2: the guard cannot pass by having stopped matching
+
+- **Given** the seat corpus
+- **When** the guard runs
+- **Then** at least one quoted goal is found and the persona corpus is non-trivial, so an inert scan cannot read as a clean one
+- **Verify:** pytest tools/tests/test_seat_examples_quote_real_goals.py::SeatExampleGoalsTests::test_the_persona_corpus_is_readable
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

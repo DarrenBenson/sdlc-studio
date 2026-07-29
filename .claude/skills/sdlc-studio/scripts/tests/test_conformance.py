@@ -282,7 +282,67 @@ class CliTests(unittest.TestCase):
             # reporting a failure differently never enforces less.
             self.assertEqual(set(data["summary"]),
                              {"total", "conformant", "nonconformant", "exempt", "ungroomed",
-                              "global_failures", "judged", "advisory", "waived"})
+                              "global_failures", "judged", "advisory", "waived",
+                              # A waiver no judged unit carries is still in force. This lane
+                              # judges STORIES, so one scoped to a bug or a change request
+                              # produced no line at all and sat silent.
+                              "waived_unattributed"})
+
+
+class WaiverInForceIsAlwaysReportedTests(unittest.TestCase):
+    """BG0369. US0525 has the lane read recorded waivers and report a waived unit as waived,
+    naming the decision. The report is built from this lane's UNITS, which are stories - so a
+    waiver scoped to a bug or a change request emitted nothing at all and sat silently in
+    force, which is the outcome the story exists to prevent."""
+
+    def _repo(self, scope: str) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="waiver_"))
+        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
+        ws = d / "sdlc-studio"
+        (ws / "stories").mkdir(parents=True)
+        (ws / "stories" / "US0001-a-story.md").write_text(
+            "# US0001: a story\n\n> **Status:** Draft\n> **Epic:** EP0001\n",
+            encoding="utf-8")
+        (ws / "stories" / "_index.md").write_text(
+            "# Story Index\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0001](US0001-a-story.md) | a story | Draft |\n", encoding="utf-8")
+        # Six columns: `list_decisions` reads id, decision, rationale, status, supersedes, date.
+        (ws / "decisions.md").write_text(
+            "# Decisions\n\n| ID | Decision | Rationale | Status | Supersedes | Date |\n"
+            "| --- | --- | --- | --- | --- | --- |\n"
+            f"| D0001 | waiver: rule:conformance:verified{scope} | grandfathered | accepted "
+            "| - | 2026-07-29 |\n", encoding="utf-8")
+        return d
+
+    def test_a_waiver_no_judged_unit_carries_is_reported(self) -> None:
+        mod = _load()
+        result = mod.detect_conformance(self._repo(":BG0042"))
+        rows = result["waivers_unattributed"]
+        self.assertTrue(rows, "a waiver scoped to a bug produced no report line at all")
+        self.assertEqual("D0001", rows[0]["decision"])
+        self.assertEqual(1, result["summary"]["waived_unattributed"])
+
+    def test_the_report_names_it(self) -> None:
+        import contextlib
+        import io
+        mod = _load()
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            mod.main(["--root", str(self._repo(":BG0042")), "check"])
+        printed = out.getvalue()
+        self.assertIn("WAIVED verified", printed)
+        self.assertIn("D0001", printed)
+        self.assertIn("NOT carried by any unit this lane judges", printed)
+
+    def test_a_waiver_a_judged_unit_does_carry_is_not_double_reported(self) -> None:
+        """The discriminating half: a waiver already attributed per unit must not appear twice,
+        or the new line becomes noise on every run and gets read past."""
+        mod = _load()
+        result = mod.detect_conformance(self._repo(":US0001"))
+        carried = [w for u in result["units"] for w in (u["waived"] or [])]
+        if carried:
+            self.assertEqual([], result["waivers_unattributed"],
+                             "a waiver reported per unit was reported unattributed as well")
 
 
 try:

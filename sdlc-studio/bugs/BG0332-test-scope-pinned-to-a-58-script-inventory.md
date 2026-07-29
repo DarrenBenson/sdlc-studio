@@ -1,6 +1,7 @@
 # BG0332: Test scope pinned to a 58-script inventory when the tier ships 70
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first)
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** sdlc-studio/tsd.md
@@ -19,6 +20,24 @@ Evidence (In Scope line 67 and Test Organisation line 616; same figure in prd.md
 ## Proposed Fix
 
 Replace the pinned 58 with the current count or unpinned wording ('the shipped helpers under scripts/') in both tsd.md and prd.md.
+
+## Acceptance Criteria
+
+### AC1: the specs state the script tier as a SET, not a count
+
+- **Given** the TSD and TRD live prose (the revision history is a record, not a live claim)
+- **When** the guard runs
+- **Then** no pinned component count disagrees with the census, so the only inventory bounding the unit-test scope cannot silently go a fifth short
+- **Verify:** pytest tools/tests/test_spec_counts_are_not_pinned.py::SpecCountsTests::test_no_spec_pins_a_component_count_it_does_not_match
+- **Verified:** yes (2026-07-29)
+
+### AC2: the guard compares against the census, not a second written number
+
+- **Given** the census of scripts and lib modules
+- **When** the guard runs
+- **Then** it is read from the tree and asserted non-trivial, because a guard carrying its own copy of the count is the defect it exists to catch
+- **Verify:** pytest tools/tests/test_spec_counts_are_not_pinned.py::SpecCountsTests::test_the_census_is_readable
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

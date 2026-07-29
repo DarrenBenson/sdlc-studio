@@ -4294,7 +4294,10 @@ def _close_lesson_repeats(root) -> bool:
     close. Returns True iff it printed."""
     import lessons  # noqa: PLC0415 - deferred, like the chain's other sibling imports
     try:
-        text = lessons.repeat_report(root)
+        # ONE read, passed to both consumers. The report and the proposal path each took their
+        # own, so a violation recorded between them answered one question two ways.
+        found = lessons.repeats(root)
+        text = lessons.repeat_report(root, found=found)
     except Exception as exc:  # noqa: BLE001 - a reporting lane must never fail a close
         sdlc_md.debug("sprint._close_lesson_repeats", exc)
         return False

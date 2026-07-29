@@ -645,7 +645,13 @@ VELOCITY_COLUMNS = (
     ("retro", "id"), ("date", "date"), ("units", "units"), ("measured", "measured"),
     ("forecast", "forecast"), ("points", "points"), ("estimate", "estimate"),
     ("actual", "actual_tokens"), ("ratio", "ratio"), ("oversized", "oversized"),
-    ("wall", "wall_time_s"), ("constants", "constants"), ("sample", "sample"),
+    ("wall", "wall_time_s"),
+    # The overhead split, so the instrument that computes it once per sprint stops forgetting
+    # it. `overhead` is the ratio of overhead time to delivery time and `unattributed` is the
+    # measured span neither side accounts for; both are absent rather than zero when the run
+    # could not attribute them, because a 0 here would read as a sprint with no overhead.
+    ("overhead", "overhead_ratio"), ("unattributed", "unattributed_s"),
+    ("constants", "constants"), ("sample", "sample"),
     ("model", "model"), ("note", "note"), ("source", "source"),
 )
 #: A sprint whose rated units were delivered by more than one model. Its ratio is not recorded.
@@ -1068,6 +1074,10 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
             "ratio": None if mixed else (round(est_sum / act_sum, 2) if act_sum else None),
             "refused": refused,
             "wall_time_s": sum(walls) if walls else None,
+            # The overhead split, read from the report that computes it rather than recomputed
+            # here - two readings of one question is how they come to disagree. Absent when the
+            # run could not attribute it, never 0.
+            **_overhead_terms(root, batch_ids(text)),
             # The velocity, and the rate it implies. Both derived here from what was recorded;
             # neither is a constant anybody wrote down.
             "points": pts_sum,
@@ -2019,6 +2029,28 @@ def _actual_source(res: dict, actual, existing=None) -> str | None:
     return existing or None
 
 
+def _overhead_terms(root, unit_ids) -> dict:
+    """`{overhead_ratio, unattributed_s}` for this batch, or both absent.
+
+    Read from `sprint_report`, which owns the computation. Never recomputed: two readings of
+    one question is how they come to disagree, and this one is written to the file the next
+    sprint plans from. Any failure yields ABSENCE, because a reporting figure must not break a
+    close and a zero would read as a sprint with no overhead."""
+    try:
+        import sprint_report  # noqa: PLC0415 - deferred; validate must not pay for it
+        ov = sprint_report._overhead_ratio(  # noqa: SLF001 - the module's own computation
+            Path(root), list(unit_ids or []), {}, {})
+    except Exception as exc:  # noqa: BLE001 - a reporting term never fails a close
+        sdlc_md.debug("retro._overhead_terms", exc)
+        return {}
+    if not ov.get("measured"):
+        return {}
+    total, overhead, delivery = ov.get("total_s"), ov.get("overhead_s"), ov.get("delivery_s")
+    unattributed = (round(total - overhead - delivery, 1)
+                    if None not in (total, overhead, delivery) else None)
+    return {"overhead_ratio": ov.get("ratio"), "unattributed_s": unattributed}
+
+
 def record_velocity(root, res: dict) -> Path:
     """Upsert this retro's row into the history. Keyed by retro id, so re-running a sprint's
     accuracy report corrects its row rather than double-counting the sprint.
@@ -2072,6 +2104,14 @@ def record_velocity(root, res: dict) -> Path:
            "actual_tokens": (b["actual_tokens"] if res["n_measured"]
                              else (b.get("sprint_actual_tokens") or b["actual_tokens"])),
            "ratio": b["ratio"], "wall_time_s": b["wall_time_s"],
+           # The overhead ratio and the span neither delivery nor overhead accounts for. The
+           # ratio reached the close report and stopped there, and VELOCITY.md is the only file
+           # a figure survives in to be compared across sprints - so the measurement answered
+           # its question once per sprint and forgot. Absent (not 0) when unattributable: this
+           # file is read as evidence, and a zero would be evidence of a sprint with no
+           # overhead at all.
+           "overhead_ratio": b.get("overhead_ratio"),
+           "unattributed_s": b.get("unattributed_s"),
            "constants": res.get("constants"), "sample": res.get("sample"),
            "model": model_cell(res)}
     history = velocity_history(root)

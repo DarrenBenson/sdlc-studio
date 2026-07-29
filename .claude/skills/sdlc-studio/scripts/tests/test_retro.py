@@ -3091,6 +3091,43 @@ class OverAppetiteReportTests(RetroBase):
         self.assertIsNone(retro.appetite_overage_note(str(self.root)))
 
 
+class VelocityCarriesTheOverheadSplitTests(unittest.TestCase):
+    """BG0372. US0523/US0524 compute a delivery-against-overhead ratio and report it at the
+    close. Nothing wrote it to `VELOCITY.md`, which is the only file a figure survives in to be
+    compared across sprints - so the instrument answered its question once per sprint and
+    forgot it. A measurement that exists to show a TREND, whose trend cannot be assembled."""
+
+    def test_the_history_reads_an_overhead_column(self) -> None:
+        """The columns are the contract between the writer and the planner that reads back."""
+        keys = {key for _prefix, key in retro.VELOCITY_COLUMNS}
+        self.assertIn("overhead_ratio", keys)
+        self.assertIn("unattributed_s", keys)
+
+    def test_the_column_header_is_matched_by_the_reader(self) -> None:
+        header = ("| Retro | Date | Units | Measured | Forecast | Points | Estimate | Actual | "
+                  "Ratio | Oversized | Wall | Overhead | Unattributed | Constants | Sample | "
+                  "Model | Note | Source |")
+        idx = retro._velocity_index(header)
+        self.assertIsNotNone(idx, "the header row is not recognised at all")
+        self.assertIn("overhead_ratio", idx)
+        self.assertIn("unattributed_s", idx)
+
+    def test_an_unattributable_run_records_absence_not_zero(self) -> None:
+        """The direction this must fail in. A 0 in this file reads as a sprint with no overhead
+        at all, and the file is read as evidence by the next plan."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            terms = retro._overhead_terms(root, ["US0001"])
+        self.assertNotIn("overhead_ratio", terms,
+                         "an unattributable run must record ABSENCE, never a zero")
+
+    def test_a_broken_report_never_fails_the_close(self) -> None:
+        """A reporting term is not worth a refused close."""
+        with mock.patch.object(retro.sdlc_md, "debug", lambda *a, **k: None):
+            self.assertEqual({}, retro._overhead_terms("/nonexistent/path", ["US0001"]))
+
+
 class ScaffoldPassesItsValidatorTests(unittest.TestCase):
     """US0558. The shipped template omitted `## Carried lessons` entirely and left every
     other checked section as a `{{placeholder}}`, so a freshly scaffolded retro failed its own
