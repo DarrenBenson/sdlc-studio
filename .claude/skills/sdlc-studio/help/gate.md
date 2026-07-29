@@ -178,12 +178,6 @@ failing AC sends you to debug a verifier that works. Unproven still fails the ga
 `--allow-external` to run them once you trust the content; the AC then goes green or red on its
 own merits.
 
-### Speed
-
-`--verify-batch` runs jest **once** and resolves jest verifiers from the cached result, instead of
-a cold start per AC. Worth it on any JS project with more than a handful of jest ACs - a slow
-pre-tag command is one people route around.
-
 A green `--release` is the *mechanical* half of the pre-tag checklist. The judgement items still
 belong to the operator - see `templates/workflows/release-gate.md`.
 

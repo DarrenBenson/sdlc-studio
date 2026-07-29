@@ -8371,6 +8371,171 @@ class InertMechanismsAreReachedTests(unittest.TestCase):
                          "no clauses means no panel, not a panel over nothing")
 
 
+class LaneSeamScopeTests(unittest.TestCase):
+    """BG0391. `lane_dispatch` computed seams over the ids passed to THAT call, and the shipped
+    docs dispatch one unit at a time (`lane brief --units <id>`). So the seam map worked only
+    when the whole batch was briefed in one command - which is the case where a lane is not the
+    one-unit reader the whole design is premised on."""
+
+    def _repo(self) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="lane_seam_"))
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        stories = d / "sdlc-studio" / "stories"
+        stories.mkdir(parents=True)
+        for uid in ("US0001", "US0002"):
+            (stories / f"{uid}-x.md").write_text(
+                f"# {uid}: x\n\n> **Status:** Ready\n> **Affects:** src/shared.py\n\n"
+                f"## Acceptance Criteria\n\n### AC1: it works\n\n"
+                f"- **Then** something observable happens\n- **Verify:** shell true\n",
+                encoding="utf-8")
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        return d
+
+    def test_a_single_unit_brief_names_its_seams_with_the_open_batch(self) -> None:
+        sprint = _load()
+        root = self._repo()
+        sprint.run_state.open_run(root, batch=["US0001", "US0002"])
+        dispatch = sprint.lane_dispatch(root, ["US0002"])
+        seams = dispatch["briefs"][0]["seams"]
+        self.assertTrue(seams, "a one-unit brief saw no seam with the rest of the batch")
+        self.assertEqual([["US0001", "US0002"]], [s["units"] for s in seams])
+
+    def test_the_brief_still_carries_only_its_own_seams(self) -> None:
+        """Widening the SCOPE must not widen the brief: a lane reads one unit, and handing it
+        a pair it is not in is noise that gets skipped."""
+        sprint = _load()
+        root = self._repo()
+        stories = root / "sdlc-studio" / "stories"
+        (stories / "US0003-y.md").write_text(
+            "# US0003: y\n\n> **Status:** Ready\n> **Affects:** src/other.py\n\n"
+            "## Acceptance Criteria\n\n### AC1: it works\n\n"
+            "- **Then** something observable happens\n- **Verify:** shell true\n",
+            encoding="utf-8")
+        sprint.run_state.open_run(root, batch=["US0001", "US0002", "US0003"])
+        dispatch = sprint.lane_dispatch(root, ["US0003"])
+        self.assertEqual([], dispatch["briefs"][0]["seams"],
+                         "US0003 shares no file, so it must be handed no pair")
+
+
+class BlockerGroupingTests(unittest.TestCase):
+    """BG0394. The group key was (stage, id-stripped remedy) while the cause and the filed
+    artefact's summary came from `blockers[0]`. Two blockers with different details and the
+    same remedy merged, the second detail never reached the artefact - and the close printed
+    that they were "listed inside the artefact that covers them" while one of them was not."""
+
+    def test_two_blockers_with_different_details_are_not_merged(self) -> None:
+        sprint = _load()
+        groups = sprint.group_blockers([
+            {"stage": "gate", "detail": "markdown lane red", "remedy": "run the gate"},
+            {"stage": "gate", "detail": "neutrality guard red", "remedy": "run the gate"}])
+        self.assertEqual(2, len(groups), "two different things to fix became one artefact")
+        self.assertEqual({"markdown lane red", "neutrality guard red"},
+                         {g["cause"] for g in groups})
+
+    def test_blockers_differing_only_in_the_unit_still_group(self) -> None:
+        """The property the grouping exists for, and the one the fix must not cost: one owed
+        sign-off across twenty-three units is ONE thing to fix, not twenty-three artefacts."""
+        sprint = _load()
+        groups = sprint.group_blockers([
+            {"stage": "sign-off", "detail": "US0001: no critic verdict",
+             "remedy": "record a verdict for US0001"},
+            {"stage": "sign-off", "detail": "US0002: no critic verdict",
+             "remedy": "record a verdict for US0002"}])
+        self.assertEqual(1, len(groups))
+        self.assertEqual(["US0001", "US0002"], groups[0]["units"])
+
+    def test_every_member_is_kept_on_its_group(self) -> None:
+        """The artefact renders from `group['blockers']`, so every merged detail has to be
+        there to be listed - the claim the close prints depends on it."""
+        sprint = _load()
+        groups = sprint.group_blockers([
+            {"stage": "sign-off", "detail": "US0001: no critic verdict",
+             "remedy": "record a verdict for US0001"},
+            {"stage": "sign-off", "detail": "US0002: no critic verdict",
+             "remedy": "record a verdict for US0002"}])
+        self.assertEqual(2, len(groups[0]["blockers"]))
+        self.assertEqual({"US0001: no critic verdict", "US0002: no critic verdict"},
+                         {b["detail"] for b in groups[0]["blockers"]})
+
+
+class ContentReviewSurvivesThePlanTests(unittest.TestCase):
+    """BG0392. `record_content_review` needed no open run and wrote onto the blank state;
+    `open_run` treats a state with no `run_id` as spent and replaces it. The natural order -
+    review the plan, then write it - wiped the prediction without a word, and `prediction_miss`
+    was permanently None: a bookend with one end, which is a question nobody ever checks."""
+
+    def _root(self) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="content_review_"))
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        return d
+
+    def test_recording_with_no_run_open_is_refused(self) -> None:
+        sprint = _load()
+        with self.assertRaises(ValueError) as caught:
+            sprint.record_content_review(self._root(), "plan", "a goal", "yes")
+        self.assertIn("no run is open", str(caught.exception))
+
+    def test_a_plan_review_survives_a_re_plan_of_the_open_run(self) -> None:
+        """The property the refusal buys: recorded against an OPEN run, a re-plan accumulates
+        rather than blanking, so the prediction is still there at the close."""
+        sprint = _load()
+        root = self._root()
+        _load().run_state.open_run(root, batch=["US0001"])
+        sprint.record_content_review(root, "plan", "a goal", "yes")
+        _load().run_state.open_run(root, batch=["US0001", "US0002"])
+        self.assertIsNotNone(sprint.content_reviews(root)["plan"],
+                             "the re-plan destroyed the plan-side review")
+
+    def test_the_miss_is_reportable_once_both_ends_exist(self) -> None:
+        sprint = _load()
+        root = self._root()
+        _load().run_state.open_run(root, batch=["US0001"])
+        sprint.record_content_review(root, "plan", "a goal", "yes")
+        sprint.record_content_review(root, "close", "a goal", "partial", missing="clause 2")
+        self.assertIn("PREDICTION MISS", sprint.prediction_miss(root) or "")
+
+
+class StaleLaneMarkersAreReportedTests(unittest.TestCase):
+    """BG0395. The stale-marker warning was filtered to the units in the CURRENT dispatch, so a
+    lane that died on US0001 was never mentioned when the operator briefed US0002 - which is
+    the restart case the marker exists for. Nothing else read the markers, and `close_run` left
+    them set, so a run could be signed off with one standing."""
+
+    def _root(self) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="in_flight_"))
+        (d / "sdlc-studio" / ".local").mkdir(parents=True)
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        _load().run_state.open_run(d, batch=["US0001", "US0002"])
+        _load().run_state.update(d, sprint_goal="a goal")
+        return d
+
+    def test_a_stale_marker_naming_another_unit_is_still_reported(self) -> None:
+        sprint = _load()
+        root = self._root()
+        _load().run_state.record_lane_start(root, "US0001")
+        rows = _load().run_state.lanes_in_flight(root)
+        self.assertEqual(["US0001"], [r["unit"] for r in rows])
+        # The brief path warns on EVERY row it is handed, rather than intersecting with the
+        # dispatch - asserted on the set the warning iterates, which is where the filter was.
+        self.assertNotIn("US0002", [r["unit"] for r in rows])
+        self.assertTrue(rows, "a marker for a unit outside this dispatch must still be seen")
+
+    def test_the_close_reports_a_unit_still_marked_in_flight(self) -> None:
+        sprint = _load()
+        root = self._root()
+        _load().run_state.record_lane_start(root, "US0001")
+        joined = "\n".join(sprint.close_goal_judgement(root, sprint.run_state.read(root)))
+        self.assertIn("IN FLIGHT at close: US0001", joined)
+
+    def test_a_run_with_no_stale_marker_says_nothing(self) -> None:
+        """A warning on every close is a warning nobody reads."""
+        sprint = _load()
+        root = self._root()
+        joined = "\n".join(sprint.close_goal_judgement(root, sprint.run_state.read(root)))
+        self.assertNotIn("IN FLIGHT", joined)
+
+
 class CloseDryRunTests(unittest.TestCase):
     """US0555. `close` runs seven steps and stops at the first unmet prerequisite; RUN-01KYMJEM
     took three attempts, two of them stopping on a refusal, and each restart re-ran the steps

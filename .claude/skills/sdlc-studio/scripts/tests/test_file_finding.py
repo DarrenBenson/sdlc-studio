@@ -1743,5 +1743,68 @@ class AuthoredCriteriaSurviveTests(unittest.TestCase):
         self.assertNotIn("- [ ] - [ ]", block)
 
 
+class NoSuppliedFieldIsDiscardedTests(unittest.TestCase):
+    """BG0399. The CR renderer emitted Summary, Impact and Acceptance Criteria and nothing
+    else, so a `steps` or `fix` supplied at filing reached no section and was discarded without
+    a word. `artifact.py` was repaired for this class; this filer was not - and the field it
+    ate was the Proposed Fix of a change request about wasted time.
+
+    A field accepted at the CLI and dropped by the renderer is content the author believes they
+    filed, which is the one failure a filer must not have."""
+
+    #: Every field any renderer REQUIRES, so a type is never skipped for want of a key - the
+    #: field under test is overridden with its own marker.
+    BASE = {"summary": "S", "impact": "I", "acs": ["a criterion"], "steps": "generic steps",
+            "fix": "generic fix", "priority": "High", "ctype": "enhancement",
+            "severity": "High", "points": 3}
+
+    def _body(self, type_: str, **extra) -> str:
+        return ff._render(type_, f"{type_.upper()}-9999", "a title", "2026-07-29",
+                          {**self.BASE, **extra})
+
+    def test_a_crs_steps_and_fix_reach_the_document(self) -> None:
+        body = self._body("cr", steps="REPRODUCE LIKE THIS", fix="REMEDY LIKE THIS")
+        self.assertIn("REPRODUCE LIKE THIS", body)
+        self.assertIn("REMEDY LIKE THIS", body)
+        self.assertIn("## Steps to Reproduce", body)
+        self.assertIn("## Proposed Fix", body)
+
+    def test_a_landed_section_precedes_the_revision_history(self) -> None:
+        """Appended content must keep the document's shape, or every consumer that reads to
+        the history gets a surprise."""
+        body = self._body("cr", fix="REMEDY LIKE THIS")
+        self.assertLess(body.index("## Proposed Fix"), body.index("## Revision History"))
+
+    def test_a_field_the_type_already_homes_is_not_duplicated(self) -> None:
+        body = self._body("bug", steps="REPRODUCE LIKE THIS", fix="REMEDY LIKE THIS")
+        self.assertEqual(1, body.count("## Steps to Reproduce"))
+        self.assertEqual(1, body.count("## Proposed Fix"))
+
+    def test_an_rfcs_impact_reaches_the_document(self) -> None:
+        """The third renderer, checked by the same rule rather than by remembering it exists -
+        the omission this bug is about was one renderer nobody re-read."""
+        body = ff._render("rfc", "RFC-9999", "a title", "2026-07-29",
+                          {**self.BASE, "options": ["A", "B"], "impact": "THE IMPACT"})
+        self.assertIn("THE IMPACT", body)
+
+    def test_every_landable_field_reaches_every_type(self) -> None:
+        """DERIVED over the types and the fields, so a renderer added later is covered without
+        anyone remembering to add a case."""
+        for type_ in ("bug", "cr", "rfc"):
+            for key, heading in ff._LANDABLE:
+                with self.subTest(type=type_, field=key):
+                    marker = f"UNIQUE-{key.upper()}-MARKER"
+                    body = ff._render(type_, f"{type_.upper()}-9999", "a title", "2026-07-29",
+                                      {**self.BASE, "options": ["A", "B"], key: marker})
+                    self.assertIn(marker, body, f"{type_} discards {key}")
+                    self.assertIn(f"## {heading}", body)
+
+    def test_an_unsupplied_field_adds_no_empty_section(self) -> None:
+        body = ff._render("cr", "CR-9999", "a title", "2026-07-29",
+                          {k: v for k, v in self.BASE.items() if k not in ("steps", "fix")})
+        self.assertNotIn("## Steps to Reproduce", body)
+        self.assertNotIn("## Proposed Fix", body)
+
+
 if __name__ == "__main__":
     unittest.main()

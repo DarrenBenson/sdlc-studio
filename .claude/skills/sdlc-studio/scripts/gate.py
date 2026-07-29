@@ -1729,7 +1729,7 @@ def _cost_report(root: str, results: list[dict], elapsed: float,
 def run_gate(root: str = ".", only: list[str] | None = None,
              skip: list[str] | None = None, checks: dict | None = None,
              require_retro: str | None = None, release: bool = False,
-             allow_external: bool = False, verify_batch: bool = False,
+             allow_external: bool = False,
              require_lessons: bool = False, require_handoff: str | None = None,
              require_review: bool = False, require_close: bool = False,
              conformance_scope: "set[str] | None" = None,
@@ -1800,7 +1800,7 @@ def run_gate(root: str = ".", only: list[str] | None = None,
         # `--release` IMPLIES batching. It is the only run that executes every criterion in the
         # workspace, so it is the one run where a cold start per criterion is unaffordable -
         # a measured ~15 minutes of process spawns alone made the lane unrunnable
-        # and therefore unrun. `--verify-batch` remains available for a scoped run.
+        # and therefore unrun. A scoped run keeps the per-criterion path.
         registry["verify"] = (lambda r, _x=allow_external:
                               _verify_acs(r, allow_external=_x, batch=True))
         bound.append("verify")
@@ -2175,6 +2175,12 @@ def test_relevant_paths(root: str = ".") -> set[str]:
                     keep_under=listing_only_paths(root))
 
 
+#: Directories read at directory level for their CONTENTS, never as a listing. No declaration
+#: may make one of these listing-only: an edit inside them changes what a suite asserts, and a
+#: declaration is a narrowing, so the floor has to be stated rather than inferred.
+CONTENT_READ_DIRS = (".githooks",)
+
+
 #: The module-level name a test declares to say "I read this directory's LISTING, not the
 #: contents of the files in it". Opt-in, so the default stays fully relevant: a module that
 #: declares nothing is treated exactly as before, and a wrong declaration is a test defect that
@@ -2218,7 +2224,18 @@ def listing_only_scopes(root: str = ".") -> dict:
     read_map = suite_read_map(root)
     if read_map is None:
         return {}
-    protected = {p.rstrip("/") for p in LEGACY_TEST_RELEVANT} | {s.rstrip("/") for s in TEST_SUITE_DIRS}
+    protected = ({p.rstrip("/") for p in LEGACY_TEST_RELEVANT}
+                 | {s.rstrip("/") for s in TEST_SUITE_DIRS}
+                 | {d.rstrip("/") for d in CONTENT_READ_DIRS})
+    # Who READS each directory, so a declaration can be held to covering all of them. A
+    # declaration is one module's statement about its OWN read; honouring it tree-wide let it
+    # silence a second module's CONTENT read of the same directory, which the second module
+    # never agreed to and cannot see.
+    readers: dict = {}
+    for module, paths in read_map.items():
+        for rel in paths:
+            readers.setdefault(rel.rstrip("/"), set()).add(module)
+    declarers: dict = {}
     out: dict = {}
     for module, paths in read_map.items():
         try:
@@ -2248,6 +2265,7 @@ def listing_only_scopes(root: str = ".") -> dict:
                 # tree by writing its name down.
                 if not rel or rel not in paths or rel in protected:
                     continue
+                declarers.setdefault(rel, set()).add(module)
                 if rel in out:
                     # Two modules reading the same tree: the union of what they depend on,
                     # and a single whole-directory declaration wins over any id set. One
@@ -2257,7 +2275,12 @@ def listing_only_scopes(root: str = ".") -> dict:
                     out[rel] = None if prior is None or ids is None else prior | ids
                 else:
                     out[rel] = ids
-    return out
+    # UNANIMITY. A directory is listing-only only when every module that reads it says so. One
+    # module's narrowing must never speak for another's read: a tree-wide honouring made a
+    # second module's content read of the same directory invisible, so an edit it asserts over
+    # answered `test-relevant: no` while its own assertion would have failed.
+    return {rel: ids for rel, ids in out.items()
+            if readers.get(rel, set()) <= declarers.get(rel, set())}
 
 
 def _declared_ids(value) -> "frozenset | None":
@@ -2865,7 +2888,6 @@ def cmd_gate(args: argparse.Namespace) -> int:
     report = run_gate(args.root, only=_split(args.only), skip=_split(args.skip),
                       require_retro=getattr(args, "require_retro", None), release=release,
                       allow_external=getattr(args, "allow_external", False),
-                      verify_batch=getattr(args, "verify_batch", False),
                       require_lessons=getattr(args, "require_lessons", False),
                       require_handoff=getattr(args, "require_handoff", None),
                       require_review=getattr(args, "require_review", False),
@@ -2941,9 +2963,6 @@ def build_parser() -> argparse.ArgumentParser:
                    help="--release: run shell-backed verifiers on stories stamped "
                         "`Provenance: external` too (off by default - the trust boundary; "
                         "those verifiers are otherwise reported BLOCKED, never green)")
-    p.add_argument("--verify-batch", dest="verify_batch", action="store_true",
-                   help="--release: run jest once and resolve jest verifiers from the cached "
-                        "result, instead of a cold start per AC")
     p.add_argument("--test-relevant", dest="test_relevant", nargs="*", metavar="PATH",
                    help="Answer whether the given repo-relative paths (or the paths on "
                         "stdin) can change a test outcome, and exit 0 when any can. The "

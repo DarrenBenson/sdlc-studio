@@ -79,8 +79,7 @@ under `--release` (`--skip verify`, or an `--only` that omits it) is **refused**
 release verdict is printed over an unexamined AC layer. A verifier the trust boundary refused to
 run - a shell-backed verb on a story stamped `Provenance: external` - is reported **BLOCKED and
 unproven**, never red, since an unrun verifier is not evidence about the code; it still fails the
-lane, and `--allow-external` runs it once the content is trusted. `--verify-batch` runs jest once
-and resolves jest verifiers from the cached result rather than a cold start per AC.
+lane, and `--allow-external` runs it once the content is trusted.
 
 ### `close_owed.py`
 

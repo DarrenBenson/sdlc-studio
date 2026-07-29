@@ -1,6 +1,7 @@
 # BG0394: Blocker grouping merges different causes and files a CR naming one unit's remedy for many
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -23,8 +24,29 @@ Key on the detail as well, list every member detail in the filed artefact, and t
 
 ## Acceptance Criteria
 
-- [ ] Two blockers with different details are not merged into one artefact.
-- [ ] A grouped artefact lists every blocker it covers, and its criterion covers all of them.
+### AC1: two blockers with different details are not merged
+
+- **Given** two blockers sharing a remedy and differing in what is actually wrong
+- **When** it runs
+- **Then** they stay two groups, so the second detail cannot vanish from the filed artefact while the close claims it is listed inside it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BlockerGroupingTests::test_two_blockers_with_different_details_are_not_merged
+- **Verified:** yes (2026-07-29)
+
+### AC2: blockers differing only in the unit still group
+
+- **Given** one owed sign-off across several units
+- **When** it runs
+- **Then** they remain ONE group, because that is the property the grouping exists for and the fix must not cost it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BlockerGroupingTests::test_blockers_differing_only_in_the_unit_still_group
+- **Verified:** yes (2026-07-29)
+
+### AC3: a grouped artefact can list every blocker it covers
+
+- **Given** a group of several blockers
+- **When** it runs
+- **Then** every member is kept on the group, so the artefact renders all of them and its criteria cover every unit rather than closing when one is done
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BlockerGroupingTests::test_every_member_is_kept_on_its_group
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

@@ -2123,7 +2123,14 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
     # a lane reads one unit - so the neighbouring property a lane must not regress is the one
     # thing it can never learn by reading its own brief's unit. Thirteen of seventeen round-one
     # majors in RUN-01KYKVZM were seam defects for exactly this reason.
-    seams = _batch_seams(root, list(unit_ids or []))
+    # Against the OPEN RUN's approved batch, not this invocation's ids. The shipped docs
+    # dispatch one unit at a time (`lane brief --units <id>`), so a seam map scoped to the call
+    # never found a pair - the feature worked only when the whole batch was briefed at once,
+    # which is the case where a lane is not the one-unit reader the design is premised on. The
+    # brief below still filters to the unit it is for.
+    scope = list(dict.fromkeys([*(run_state.read(root).get("batch") or []),
+                                *(unit_ids or [])]))
+    seams = _batch_seams(root, scope)
     briefs: list[dict] = []
     refused: list[dict] = []
     for uid in unit_ids or []:
@@ -5632,10 +5639,18 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
              "affects": str(retro_path.relative_to(Path(root))),
              "summary": (f"Deferred at the close of {run_id} by an explicit file-and-close "
                          f"decision. The close prerequisite was not met and was recorded as "
-                         f"outstanding rather than fixed inline or waived. Blocker: "
-                         f"{b['detail']}. Remedy when picked up: {b['remedy']}.{scope}"),
-             "acs": [f"the deferred prerequisite is met: {b['remedy']}",
-                     "the close-owed record for this blocker is cleared"],
+                         f"outstanding rather than fixed inline or waived. Remedy when picked "
+                         f"up: {b['remedy']}.{scope}\n\nEvery blocker this artefact "
+                         f"covers:\n" + "\n".join(
+                             f"- [{m.get('stage')}] {m.get('detail')}"
+                             for m in group["blockers"])),
+             # EVERY member's detail, and a criterion over EVERY unit. The close prints that
+             # the merged blockers "are listed inside the artefact that covers them"; keyed on
+             # the first member alone that sentence was false, and a criterion naming one
+             # unit's remedy closed the artefact while the rest were still owed.
+             "acs": ([f"the deferred prerequisite is met: {b['remedy']}"]
+                     + [f"the prerequisite is met for {u}" for u in covers]
+                     + ["the close-owed record for every blocker listed above is cleared"]),
              "impact": (f"{run_id} closed with this work outstanding; until it is done, the "
                         f"sprint's record is complete but its ceremony debt is real")})
         filed.append((res["id"], b))
@@ -5788,6 +5803,16 @@ def record_content_review(repo_root: Path | str, phase: str, goal: str, answer: 
     """
     if phase not in ("plan", "close"):
         raise ValueError(f"phase must be 'plan' or 'close', got {phase!r}")
+    # REFUSED with no run open. `run_state.open_run` treats a state carrying no `run_id` as
+    # spent and blanks it, so a review recorded before the plan is written lands on a record
+    # the very next call replaces - silently, and `prediction_miss` is then permanently None.
+    # Refusing is the sibling behaviour `record_lane_start` already has, and it is the right
+    # direction: a review nobody can read later was not recorded, whatever the file said.
+    if not (run_state.read(repo_root) or {}).get("run_id"):
+        raise ValueError(
+            "no run is open, so this review would be written where the next `sprint plan "
+            "--write` destroys it. Open the run first - the review belongs to a run, and one "
+            "recorded against no run cannot be scored at its close")
     a = str(answer or "").strip().lower()
     if a not in CONTENT_ANSWERS:
         raise ValueError(f"answer must be one of {', '.join(CONTENT_ANSWERS)}, got {answer!r}")
@@ -5893,6 +5918,13 @@ def close_goal_judgement(root, state: dict, seats: list | None = None) -> list[s
     miss = prediction_miss(root)
     if miss:
         lines.append(miss)
+
+    # 5. Any lane still marked in flight. `close_run` leaves these markers set, so a run can be
+    #    signed off while a marker says a lane never returned - and the working tree may carry
+    #    work nobody attributed. Reported at the one moment somebody is reading.
+    for row in run_state.lanes_in_flight(root):
+        lines.append(f"IN FLIGHT at close: {row['unit']} was briefed at {row['started_at']} and "
+                     f"never returned - its work may be in this tree unattributed")
     return lines
 
 
@@ -5969,8 +6001,12 @@ def group_blockers(blockers: list[dict]) -> list[dict]:
     groups: dict[tuple, dict] = {}
     for b in blockers:
         remedy = _UNIT_IN_DETAIL.sub("<unit>", str(b.get("remedy") or "")).strip()
-        key = (b.get("stage"), remedy)
         cause = _UNIT_IN_DETAIL.sub("<unit>", str(b.get("detail") or "")).strip()
+        # The DETAIL is part of the key, not only the remedy. Two blockers that share a remedy
+        # and differ in what is actually wrong are two things to fix: keyed on the remedy alone
+        # they merged, the second detail never reached the filed artefact, and the close said
+        # they were "listed inside the artefact that covers them" while one of them was not.
+        key = (b.get("stage"), remedy, cause)
         g = groups.setdefault(key, {"cause": cause, "stage": b.get("stage"),
                                     "remedy": b.get("remedy"), "blockers": [], "units": []})
         g["blockers"].append(b)
@@ -6004,13 +6040,15 @@ def cmd_lane(args: argparse.Namespace) -> int:
         # Ready, and a restart cannot tell a delivered unit from an untouched one - the revision
         # row is written BEFORE the work, so it cannot answer this. Reported to the operator on
         # the next brief rather than discovered when a restarted lane redoes work already there.
-        stale = run_state.lanes_in_flight(root)
-        for row in stale:
-            if row["unit"] in [b["id"] for b in dispatch["briefs"]]:
-                print(f"WARNING {row['unit']} was briefed at {row['started_at']} and never "
-                      f"returned - the working tree MAY ALREADY CARRY its work. Check the diff "
-                      f"before starting: a lane redoing a repair that is already present is how "
-                      f"a partial edit reached a commit.", file=sys.stderr)
+        # EVERY stale marker, not only those naming a unit in THIS dispatch. Filtering to the
+        # briefed set meant a lane that died on US0001 went unmentioned when the operator
+        # briefed US0002 - which is the restart case the marker exists for, and the only case
+        # in which the operator has not already noticed.
+        for row in run_state.lanes_in_flight(root):
+            print(f"WARNING {row['unit']} was briefed at {row['started_at']} and never "
+                  f"returned - the working tree MAY ALREADY CARRY its work. Check the diff "
+                  f"before starting: a lane redoing a repair that is already present is how "
+                  f"a partial edit reached a commit.", file=sys.stderr)
         for b in dispatch["briefs"]:
             run_state.record_lane_start(root, b["id"])
         if getattr(args, "format", "text") == "json":

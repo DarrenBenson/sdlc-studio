@@ -1,6 +1,7 @@
 # BG0393: goal_panel returns a verdict when no seat answered, and silently discards a verdict under a mismatched clause key
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -23,8 +24,29 @@ Overall None when no clause is answered; raise on a verdicts key matching no cla
 
 ## Acceptance Criteria
 
-- [ ] A panel nobody answered returns no verdict.
-- [ ] A verdicts key matching no clause is refused rather than dropped.
+### AC1: a panel nobody answered returns no verdict
+
+- **Given** a panel of seats where no clause was answered
+- **When** it runs
+- **Then** the overall verdict is None, not `partial` - the function refuses an empty seat list for this exact reason and must not reach the same place by another route
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::UnansweredPanelTests::test_a_panel_nobody_answered_returns_no_verdict
+- **Verified:** yes (2026-07-29)
+
+### AC2: a partly answered panel still reports
+
+- **Given** one clause answered and one silent
+- **When** it runs
+- **Then** the answered clause keeps its verdict and the silent one is None, so silence does not blank a real judgement
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::UnansweredPanelTests::test_a_partly_answered_panel_still_reports
+- **Verified:** yes (2026-07-29)
+
+### AC3: a verdicts key matching no clause is refused
+
+- **Given** a verdicts key differing from the clause by case or whitespace
+- **When** it runs
+- **Then** the panel is refused, rather than dropping the seat's verdict without a word and turning a `missed` into a `partial`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::UnansweredPanelTests::test_a_verdict_key_matching_no_clause_is_refused
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

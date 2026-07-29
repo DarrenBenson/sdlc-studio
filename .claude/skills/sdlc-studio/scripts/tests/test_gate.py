@@ -3660,9 +3660,9 @@ class ReleaseGateCostTests(unittest.TestCase):
         self.assertLessEqual(gate.VERIFY_LANE_BUDGET_S, 600)
 
     def test_a_scoped_run_does_not_silently_batch(self) -> None:
-        """The negative control. Without --release the lane keeps its per-AC behaviour unless
-        --verify-batch is asked for, so this test proves the assertion above is about
-        --release and not about the lane always reporting True."""
+        """The negative control. Without --release the lane keeps its per-AC behaviour, so
+        this test proves the assertion above is about --release and not about the lane always
+        reporting True."""
         seen = {}
 
         def spy(root, timeout=None, allow_external=False, batch=False):
@@ -3678,7 +3678,7 @@ class ReleaseGateCostTests(unittest.TestCase):
         finally:
             gate._verify_acs = original
         self.assertNotEqual(seen.get("batch"), True,
-                            "only --release (or --verify-batch) may batch")
+                            "only --release may batch")
 
     def test_a_non_conformant_unit_anywhere_still_fails_the_release_gate(self) -> None:
         """AC2. The speedup must not narrow what is judged. A red AC in ANY story fails the
@@ -4497,17 +4497,146 @@ class WorkspaceRelevanceGranularityTests(unittest.TestCase):
             matched = gate._matched_entries([added], root, structural={added})
             self.assertTrue(any("listing-only" in m for m in matched), matched)
 
-    def test_the_repo_s_own_workspace_is_no_longer_wholly_relevant(self) -> None:
-        """The live case. A change request body is the cheapest possible commit and it was
-        paying about 334 seconds."""
-        if not _in_dev_repo():
-            self.skipTest("no dev repo here, so there is no workspace to measure")
+    def test_the_repo_s_own_workspace_narrows_only_when_every_reader_agrees(self) -> None:
+        """The rule, asserted against the REAL repository - which is currently NOT narrowed.
+
+        `test_root_census.py` declares `sdlc-studio` listing-only; `test_lessons.py` reads the
+        same entry (an `is_dir()` on the workspace root) and declares nothing. Honouring one
+        module's declaration tree-wide would silence the other module's read, so unanimity
+        withholds the narrowing - correctly, and at the cost of the saving.
+
+        Asserted as the RULE rather than as the current answer, so this test says something
+        true whichever way the repository's declarations go."""
         root = str(REPO)
-        self.assertIn("sdlc-studio", gate.listing_only_paths(root))
-        self.assertFalse(gate.is_test_relevant(
-            ["sdlc-studio/change-requests/CR0001-x.md"], root, structural=set()))
+        read_map = gate.suite_read_map(root) or {}
+        readers = {m for m, paths in read_map.items() if "sdlc-studio" in paths}
+        declared = set(gate.listing_only_scopes(root))
+        if len(readers) > 1:
+            self.assertNotIn("sdlc-studio", declared,
+                             f"{len(readers)} modules read this entry and it is narrowed anyway "
+                             f"- one module's declaration is silencing another's read")
+        # Whichever way that went, a file the suites genuinely OPEN stays relevant.
         self.assertTrue(gate.is_test_relevant(["sdlc-studio/trd.md"], root, structural=set()),
                         "a file the suites genuinely open must stay relevant")
+
+
+class VerifyBatchRemovalTests(unittest.TestCase):
+    """US0479. The removed batching flag was parsed, passed to `run_gate` and read by nothing.
+    `--release` implies batching and assigns the verify lane itself, so the flag promised a
+    behaviour no invocation of the gate has ever produced - a documented option that is accepted
+    and ignored is worse than an absent one, because it is chosen.
+
+    The option string is BUILT rather than written, so `tools/tests/test_dead_flag_docs.py` can
+    assert it appears in no tracked skill file without this test being its own counter-example
+    and without that guard needing an exemption that would blunt it."""
+
+    REMOVED_FLAG = "--verify" + "-batch"
+
+    def test_the_dead_flag_and_its_parameter_are_gone(self) -> None:
+        import contextlib
+        import inspect
+        import io
+        self.assertNotIn("verify_batch", inspect.signature(gate.run_gate).parameters,
+                         "run_gate still declares a parameter nothing reads")
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+            gate.build_parser().parse_args([self.REMOVED_FLAG])
+        self.assertNotEqual(0, caught.exception.code)
+
+    def test_release_still_batches_and_a_scoped_run_registers_no_verify_lane(self) -> None:
+        """Removing the flag must change no gate behaviour, which is the whole claim: the
+        release run batches because `--release` assigns the lane that way, and a scoped run
+        registers no verify lane at all."""
+        seen = {}
+
+        def spy(root, timeout=None, allow_external=False, batch=False):
+            seen["batch"] = batch
+            return {"count": 0, "blocking": True, "detail": "spy"}
+
+        original = gate._verify_acs
+        gate._verify_acs = spy
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                (Path(d) / "sdlc-studio").mkdir()
+                gate.run_gate(root=d, release=True)
+                self.assertTrue(seen.get("batch"), "the release lane must still batch")
+                seen.clear()
+                gate.run_gate(root=d, release=False)
+        finally:
+            gate._verify_acs = original
+        self.assertNotIn("batch", seen, "a scoped run registers no verify lane at all")
+
+
+class DeclarationScopedToItsDeclarerTests(unittest.TestCase):
+    """BG0398. A declaration is ONE module's statement about its OWN read, and it was honoured
+    tree-wide - so a second module's content read of the same directory went silent, and an
+    edit it asserts over answered `test-relevant: no` while its own assertion would have
+    failed. `.githooks` was unprotected too, though it is a directory-level content read."""
+
+    @staticmethod
+    def _repo(tmp: Path, second: str) -> Path:
+        suite = tmp / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"
+        suite.mkdir(parents=True)
+        docs = tmp / "docs"
+        docs.mkdir()
+        (docs / "guide.md").write_text("# guide\n", encoding="utf-8")
+        (suite / "test_census.py").write_text(
+            "from pathlib import Path\n"
+            "REPO = Path(__file__).resolve().parents[5]\n"
+            "GATE_LISTING_ONLY = ('docs',)\n"
+            "DOCS = REPO / 'docs'\n"
+            "def test_census():\n"
+            "    assert list(DOCS.glob('*.md'))\n", encoding="utf-8")
+        (suite / "test_other.py").write_text(second, encoding="utf-8")
+        return tmp
+
+    #: A second module that READS the same directory and declares nothing.
+    UNDECLARED = ("from pathlib import Path\n"
+                  "REPO = Path(__file__).resolve().parents[5]\n"
+                  "DOCS = REPO / 'docs'\n"
+                  "def test_other():\n"
+                  "    assert list(DOCS.iterdir())\n")
+    #: The same module, agreeing.
+    DECLARED = ("from pathlib import Path\n"
+                "REPO = Path(__file__).resolve().parents[5]\n"
+                "GATE_LISTING_ONLY = ('docs',)\n"
+                "DOCS = REPO / 'docs'\n"
+                "def test_other():\n"
+                "    assert list(DOCS.iterdir())\n")
+
+    def test_one_modules_declaration_does_not_silence_anothers_read(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d), self.UNDECLARED))
+            self.assertNotIn("docs", gate.listing_only_paths(root),
+                             "the undeclared reader's view was overridden by its neighbour")
+            added = "docs/new.md"
+            self.assertTrue(gate.is_test_relevant([added], root, structural={added}))
+
+    def test_a_directory_every_reader_declares_is_still_narrowed(self) -> None:
+        """The discriminating half: unanimity is a condition, not a refusal of the feature."""
+        with tempfile.TemporaryDirectory() as d:
+            root = str(self._repo(Path(d), self.DECLARED))
+            self.assertIn("docs", gate.listing_only_paths(root))
+            self.assertFalse(gate.is_test_relevant(["docs/guide.md"], root, structural=set()))
+
+    def test_a_content_read_directory_can_never_be_declared_listing_only(self) -> None:
+        """`.githooks` is read at directory level for its CONTENTS. A declaration is a
+        narrowing, so its floor has to be stated rather than inferred."""
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            root = self._repo(tmp, self.DECLARED)
+            hooks = root / ".githooks"
+            hooks.mkdir()
+            (hooks / "pre-commit").write_text("#!/bin/sh\n", encoding="utf-8")
+            suite = root / ".claude/skills/sdlc-studio/scripts/tests"
+            (suite / "test_hooks.py").write_text(
+                "from pathlib import Path\n"
+                "REPO = Path(__file__).resolve().parents[5]\n"
+                "GATE_LISTING_ONLY = ('.githooks',)\n"
+                "H = REPO / '.githooks'\n"
+                "def test_hooks():\n"
+                "    assert list(H.iterdir())\n", encoding="utf-8")
+            self.assertNotIn(".githooks", gate.listing_only_paths(str(root)))
+        self.assertIn(".githooks", gate.CONTENT_READ_DIRS)
 
 
 class LaneCostAttributionTests(unittest.TestCase):

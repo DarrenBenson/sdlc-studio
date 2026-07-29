@@ -1143,10 +1143,66 @@ def _decision_question(title: str, options) -> str:
     return f"Whether to {subject[0].lower() + subject[1:] if subject else subject}"
 
 
+#: Prose fields a caller can supply, and the section each is rendered under. Every filer must
+#: LAND every one of these somewhere, or refuse: a field accepted at the CLI and dropped by the
+#: renderer is content the author believes they filed. `artifact.py` was fixed for this class;
+#: this renderer still had no home for a CR's `steps` or `fix`, so both were discarded in
+#: silence - which is how the remedy of a change request about wasted time was itself lost.
+_LANDABLE = (
+    ("steps", "Steps to Reproduce"),
+    ("fix", "Proposed Fix"),
+    ("impact", "Impact"),
+    ("recommendation", "Recommendation"),
+)
+
+
+def _land_unhomed(body: str, f: dict) -> str:
+    """Append a section for every supplied prose field this type's renderer has no home for.
+
+    Appended rather than refused, because the content is the point and an author who supplied
+    it is right to expect it. Inserted BEFORE the revision history so the document keeps its
+    shape."""
+    missing = [(key, heading) for key, heading in _LANDABLE
+               if str(f.get(key) or "").strip() and f"## {heading}" not in body]
+    if not missing:
+        return body
+    extra = "".join(f"## {heading}\n\n{f[key]}\n\n" for key, heading in missing)
+    marker = "## Revision History"
+    return body.replace(marker, extra + marker, 1) if marker in body else body + "\n" + extra
+
+
+def _refuse_dropped(body: str, f: dict) -> None:
+    """Backstop: raise if any supplied prose field still reaches nothing.
+
+    The lander above should make this unreachable. It exists because "the renderer covers every
+    field" is exactly the belief that was false, and a filer that silently drops content is
+    worse than one that stops."""
+    lost = [key for key, _h in _LANDABLE
+            if str(f.get(key) or "").strip() and _probe(f[key]) not in _probe(body)]
+    if lost:
+        raise ValueError(
+            f"refusing to file: the supplied field(s) {', '.join(lost)} reach no section of "
+            f"this document, so filing would discard content the author supplied")
+
+
+def _probe(value) -> str:
+    """Alphanumerics only - compares CONTENT across any escaping the renderer applied."""
+    return "".join(c for c in str(value).lower() if c.isalnum())
+
+
 def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
             status: str | None = None) -> str:
     """A structured artifact body (required sections populated). `status` overrides the
     per-type create status (schema v3 files findings into `inbox`); None keeps the default."""
+    body = _render_sections(type_, disp_id, title, today, f, status)
+    body = _land_unhomed(body, f)
+    _refuse_dropped(body, f)
+    return body
+
+
+def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
+                     status: str | None = None) -> str:
+    """The per-type layout. `_render` is the only caller; it lands anything this misses."""
     f = {**f, **{k: _prose_safe(f[k]) for k in ("summary", "steps", "fix", "recommendation", "impact")
                  if isinstance(f.get(k), str)}}
     if isinstance(f.get("acs"), list):

@@ -1,6 +1,6 @@
 # US0479: Delete gate's dead --verify-batch flag and the documentation claiming it does something
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0437
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** `gate --verify-batch` is parsed and `run_gate`'s signature is inspected
 - **Then** the parse exits non-zero as an unrecognised option and `run_gate` no longer declares `verify_batch`, so nothing can pass a value nothing reads
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::VerifyBatchRemovalTests::test_the_dead_flag_and_its_parameter_are_gone
+- **Verified:** yes (2026-07-29)
 
 ### AC2: the release lane still batches and a scoped run still registers no verify lane
 
@@ -30,6 +31,7 @@
 - **When** `run_gate` runs with release=True and then release=False
 - **Then** the release run requests batching and the scoped run registers no verify lane at all (registry["verify"] is assigned only at gate.py:1610 inside `if release:`), so removing the flag changed no gate behaviour - and the existing test's message asserting `only --release (or --verify-batch) may batch` is corrected in the same edit rather than left naming a flag that no longer exists
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::VerifyBatchRemovalTests::test_release_still_batches_and_a_scoped_run_registers_no_verify_lane
+- **Verified:** yes (2026-07-29)
 
 ### AC3: nothing tracked under the skill tree still documents the flag
 
@@ -37,6 +39,7 @@
 - **When** each tracked text file is read and searched for the option string
 - **Then** there is no occurrence, and the same scan is asserted to FIND a control string that is present, so a scan that silently matched nothing cannot read as a pass - and this workspace assertion lives in tools/tests as a pytest node id like every other repo-state check, because a `shell` verifier is unresolvable to verify_ac.py's staleness sweep
 - **Verify:** pytest tools/tests/test_dead_flag_docs.py::VerifyBatchDocsTests::test_no_tracked_skill_file_mentions_the_removed_flag
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

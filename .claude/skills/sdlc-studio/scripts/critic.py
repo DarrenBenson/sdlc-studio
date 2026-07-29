@@ -704,6 +704,16 @@ def goal_panel(repo_root: Path | str, clauses: list[str], seats: list[str], auth
             f"author is the author marking their own homework, which is the one thing this "
             f"judgement exists to prevent. Convene seats outside the authoring context")
     supplied = verdicts or {}
+    # A key matching no clause is REFUSED, not dropped. `supplied.get(clause)` is keyed by the
+    # stripped clause text, so a key differing by case or a trailing space took a seat's
+    # `missed` and silently made it an unanswered `partial` - the same class as an unrecognised
+    # verdict word, which this function already refuses rather than ignores.
+    unmatched = [k for k in supplied if k not in clauses]
+    if unmatched:
+        raise ValueError(
+            f"goal panel refused: verdict key(s) {unmatched!r} match no clause of this goal "
+            f"({clauses!r}) - a key that matches nothing drops the verdict behind it without "
+            f"a word, which is how a `missed` becomes a `partial`")
     out: list[dict] = []
     for clause in clauses:
         given = supplied.get(clause) or {}
@@ -737,10 +747,16 @@ def goal_panel(repo_root: Path | str, clauses: list[str], seats: list[str], auth
         out.append({"clause": clause, "verdict": verdict, "seats": rows,
                     "evidence": [r["evidence"] for r in rows if r["evidence"]],
                     "unanswered": [r["seat"] for r in rows if not r["verdict"]]})
-    return {"author": author, "panel": panel, "clauses": out,
-            "verdict": ("achieved" if out and all(c["verdict"] == "achieved" for c in out)
-                        else "missed" if out and all(c["verdict"] == "missed" for c in out)
-                        else "partial")}
+    # None when NOTHING was answered. This function raises on an empty seat list precisely
+    # because "an empty panel returns a verdict nobody gave", and then returned `partial` for a
+    # panel where no seat answered a single clause - which is the same verdict nobody gave,
+    # reached by a different route.
+    answered = [c for c in out if c["verdict"]]
+    overall = (None if not answered
+               else "achieved" if all(c["verdict"] == "achieved" for c in out)
+               else "missed" if all(c["verdict"] == "missed" for c in out)
+               else "partial")
+    return {"author": author, "panel": panel, "clauses": out, "verdict": overall}
 
 
 #: Priorities that describe a defect a release cannot carry. Read as a FLOOR: a defect at

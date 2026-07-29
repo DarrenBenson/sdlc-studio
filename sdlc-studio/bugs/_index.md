@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 29 |
+| Open | 23 |
 | In Progress | 0 |
-| Fixed | 287 |
+| Fixed | 294 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **399** |
+| **Total** | **400** |
 
 ## All Bugs
 
@@ -108,15 +108,16 @@
 | [BG0388](BG0388-the-seam-owner-check-matches-by-naive-substring.md) | The seam owner check matches by naive substring, so a unit's own test file owns the seam over its source | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0389](BG0389-preserves-is-honoured-anywhere-in-a-unit-s.md) | Preserves is honoured anywhere in a unit's document, not in a criterion as its docstring states | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0390](BG0390-the-seam-map-misses-a-shared-file-written.md) | The seam map misses a shared file written in the two Affects spellings this repo accepts | Fixed | Medium | 2026-07-28 | 2026-07-28 |
-| [BG0391](BG0391-the-lane-brief-s-seam-map-is-scoped.md) | The lane brief's seam map is scoped to the invocation, so the documented one-unit dispatch never shows a seam | Open | Medium | 2026-07-28 | 2026-07-28 |
-| [BG0392](BG0392-open-run-destroys-the-plan-side-content-review.md) | open_run destroys the plan-side content review, so a prediction miss can never be reported | Open | High | 2026-07-28 | 2026-07-28 |
-| [BG0393](BG0393-goal-panel-returns-a-verdict-when-no-seat.md) | goal_panel returns a verdict when no seat answered, and silently discards a verdict under a mismatched clause key | Open | Medium | 2026-07-28 | 2026-07-28 |
-| [BG0394](BG0394-blocker-grouping-merges-different-causes-and-files-a.md) | Blocker grouping merges different causes and files a CR naming one unit's remedy for many | Open | Medium | 2026-07-28 | 2026-07-28 |
-| [BG0395](BG0395-the-in-flight-lane-warning-fires-only-for.md) | The in-flight lane warning fires only for a unit re-briefed in the same command | Open | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0391](BG0391-the-lane-brief-s-seam-map-is-scoped.md) | The lane brief's seam map is scoped to the invocation, so the documented one-unit dispatch never shows a seam | Fixed | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0392](BG0392-open-run-destroys-the-plan-side-content-review.md) | open_run destroys the plan-side content review, so a prediction miss can never be reported | Fixed | High | 2026-07-28 | 2026-07-28 |
+| [BG0393](BG0393-goal-panel-returns-a-verdict-when-no-seat.md) | goal_panel returns a verdict when no seat answered, and silently discards a verdict under a mismatched clause key | Fixed | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0394](BG0394-blocker-grouping-merges-different-causes-and-files-a.md) | Blocker grouping merges different causes and files a CR naming one unit's remedy for many | Fixed | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0395](BG0395-the-in-flight-lane-warning-fires-only-for.md) | The in-flight lane warning fires only for a unit re-briefed in the same command | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0396](BG0396-cmd-seams-silently-drops-unresolvable-ids-and-re.md) | cmd_seams silently drops unresolvable ids and re-implements the worklist reader the planner refuses on | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0397](BG0397-index-derived-issues-never-consults-the-new-field.md) | index_derived_issues never consults the new field drift, so the gate lane asserting the index is derived is green over it | Fixed | High | 2026-07-28 | 2026-07-28 |
-| [BG0398](BG0398-listing-only-paths-never-checks-that-the-declared.md) | listing_only_paths never checks that the declared read IS a listing, and applies one module's declaration globally | Open | Medium | 2026-07-28 | 2026-07-28 |
-| [BG0399](BG0399-file-finding-discards-a-cr-s-steps-and.md) | file_finding discards a CR's steps and fix fields, so BG0384's defect is still live in the other filer | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0398](BG0398-listing-only-paths-never-checks-that-the-declared.md) | listing_only_paths never checks that the declared read IS a listing, and applies one module's declaration globally | Fixed | Medium | 2026-07-28 | 2026-07-28 |
+| [BG0399](BG0399-file-finding-discards-a-cr-s-steps-and.md) | file_finding discards a CR's steps and fix fields, so BG0384's defect is still live in the other filer | Fixed | High | 2026-07-29 | 2026-07-29 |
+| [BG0400](BG0400-the-read-map-scanner-attributes-a-fixture-path.md) | The read-map scanner attributes a fixture path to the real tree, so one module's tmpdir read blocks a listing-only narrowing | Open | Medium | 2026-07-29 | 2026-07-29 |
 
 ## Archived Releases
 

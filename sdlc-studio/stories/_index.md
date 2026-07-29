@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 40 |
+| Ready | 39 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 10 |
+| Review | 11 |
 | Done | 507 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -389,7 +389,7 @@
 | [US0476](US0476-rfc0009-records-its-partial-supersession-by-rfc0038-to.md) | RFC0009 records its partial supersession by RFC0038, to the RFC0034 convention, element by element | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
 | [US0477](US0477-reconcile-derives-the-epic-index-s-stories-and.md) | reconcile derives the epic index's Stories and Deps cells from the census and syncs them | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
 | [US0478](US0478-the-mint-path-writes-the-canonical-epic-row.md) | The mint path writes the canonical epic row, and the shipped template declares the same columns | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
-| [US0479](US0479-delete-gate-s-dead-verify-batch-flag-and.md) | Delete gate's dead --verify-batch flag and the documentation claiming it does something | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
+| [US0479](US0479-delete-gate-s-dead-verify-batch-flag-and.md) | Delete gate's dead --verify-batch flag and the documentation claiming it does something | Review | EP0172 | 2026-07-27 | 2026-07-27 |
 | [US0480](US0480-validate-ratchets-the-footprint-and-criterion-warnings-against.md) | validate ratchets the footprint and criterion warnings against a recorded set of tolerated instances | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
 | [US0481](US0481-sprint-plan-validates-the-units-in-its-batch.md) | sprint plan validates the units in its batch, not only their index rows | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
 | [US0482](US0482-the-baselined-duplicate-verify-groups-are-split-into.md) | The baselined duplicate Verify groups are split into discriminating selectors | Ready | EP0174 | 2026-07-27 | 2026-07-27 |

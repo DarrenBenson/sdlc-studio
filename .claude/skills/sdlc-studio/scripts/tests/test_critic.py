@@ -2617,6 +2617,42 @@ class BatchFormTests(_BatchBase):
                           "one named unit means one unit")
 
 
+class UnansweredPanelTests(unittest.TestCase):
+    """BG0393. `goal_panel` raises on an empty seat list precisely because "an empty panel
+    returns a verdict nobody gave" - and then returned `partial` for a panel where no seat
+    answered a single clause, which is the same verdict nobody gave by a different route.
+    Worse, verdicts were keyed by the stripped clause text, so a key differing by case or a
+    trailing space dropped a seat's `missed` without a word and it became `partial`."""
+
+    def test_a_panel_nobody_answered_returns_no_verdict(self) -> None:
+        mod = _load()
+        panel = mod.goal_panel(".", ["c1", "c2"], ["qa", "arch"], "author")
+        self.assertIsNone(panel["verdict"], "a verdict nobody gave was reported as partial")
+        self.assertTrue(all(c["verdict"] is None for c in panel["clauses"]))
+        self.assertEqual(["qa", "arch"], panel["clauses"][0]["unanswered"])
+
+    def test_a_partly_answered_panel_still_reports(self) -> None:
+        """The discriminating half: silence on one clause must not blank a real verdict."""
+        mod = _load()
+        panel = mod.goal_panel(".", ["c1", "c2"], ["qa"], "author",
+                               verdicts={"c1": {"qa": "achieved"}})
+        self.assertEqual("partial", panel["verdict"])
+        self.assertEqual("achieved", panel["clauses"][0]["verdict"])
+        self.assertIsNone(panel["clauses"][1]["verdict"])
+
+    def test_a_verdict_key_matching_no_clause_is_refused(self) -> None:
+        mod = _load()
+        with self.assertRaises(ValueError) as caught:
+            mod.goal_panel(".", ["c1"], ["qa"], "author", verdicts={"C1 ": {"qa": "missed"}})
+        self.assertIn("match no clause", str(caught.exception))
+
+    def test_a_unanimous_panel_still_reports_its_verdict(self) -> None:
+        mod = _load()
+        panel = mod.goal_panel(".", ["c1"], ["qa", "arch"], "author",
+                               verdicts={"c1": {"qa": "missed", "arch": "missed"}})
+        self.assertEqual("missed", panel["verdict"])
+
+
 class BlockingPriorityFloorTests(unittest.TestCase):
     """BG0387. The floor was the literal tuple `p0/p1/critical/blocker`. This corpus files 104
     `Severity: High` bugs and 168 `Priority: High` CRs against 2 Critical and 13 P1, and an

@@ -105,7 +105,6 @@ re-runnable, so a refusal at a later gate never loses the earlier steps.
 | `--skip` | Gate: skip these checks (comma-separated) | none |
 | `--release` | Gate: the pre-tag form - the standard gate plus an executing pass over every story's `Verify:` expression, as one exit code (read-only: no back-annotation, no report rewrite). Deselecting the `verify` lane under it is refused | off |
 | `--allow-external` | Gate `--release`: also run shell-backed verifiers on stories stamped `Provenance: external` (otherwise reported BLOCKED and unproven, never green) | off |
-| `--verify-batch` | Gate `--release`: run jest once and resolve jest verifiers from the cached result | off |
 | `--root` | Repo root for scripts (gate, reconcile, doc_coverage, ...); a global flag accepted **before** the subcommand on every root-dealing script (`transition --root X set ...`), and **after** the verb wherever the subcommand itself takes a root (`transition set ... --root X`) | . |
 | `--format` | Output format where supported: `text` or `json` | text |
 
