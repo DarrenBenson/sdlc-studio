@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 11 |
+| Open | 12 |
 | In Progress | 0 |
 | Fixed | 326 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **420** |
+| **Total** | **421** |
 
 ## All Bugs
 
@@ -138,6 +138,7 @@
 | [BG0418](BG0418-the-close-swallows-the-retro-validator-s-own.md) | The close swallows the retro validator's own warning, so a scaffold with six unreplaced demonstration rows reports as 'valid' to the operator | Open | High | 2026-07-29 | 2026-07-29 |
 | [BG0419](BG0419-four-delivered-units-are-held-by-verifiers-that.md) | Four delivered units are held by verifiers that pass with the delivered mechanism removed, and two whole production surfaces are one edit from inert | Open | High | 2026-07-29 | 2026-07-29 |
 | [BG0420](BG0420-test-fixtures-mirror-real-lists-by-hand-so.md) | Test fixtures mirror real lists by hand, so adding one chain step or one gate lane turns dozens of unrelated tests red for a reason none of them is about | Open | Medium | 2026-07-29 | 2026-07-29 |
+| [BG0421](BG0421-twenty-one-open-questions-reached-a-terminal-status.md) | Twenty-one Open Questions reached a terminal status unanswered, and are now owned here rather than given rulings nobody made | Open | Medium | 2026-07-29 | 2026-07-29 |
 
 ## Archived Releases
 

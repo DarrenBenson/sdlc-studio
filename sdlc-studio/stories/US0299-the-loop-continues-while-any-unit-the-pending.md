@@ -60,10 +60,10 @@ its own stop while such a unit remains
 
 ## Open Questions
 
-- [ ] CR0378 speaks only of the pending question, not of file collisions. Whether a shared-file
+- [x] CR0378 speaks only of the pending question, not of file collisions. Whether a shared-file -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   cluster (`_shared_file_clusters`) should also count a unit as blocked by a deferred decision
   is unstated - Owner: operator
-- [ ] Which surface performs the refused stop is unstated. CR0378 names "an agent-initiated
+- [x] Which surface performs the refused stop is unstated. CR0378 names "an agent-initiated -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   stop"; `sprint.py` already carries `_boundary_stop` and `loop_guard` carries the budget exit,
   and the request does not say whether one, both or a new stop entry point is in scope -
   Owner: implementer

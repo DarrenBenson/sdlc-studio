@@ -207,7 +207,7 @@ Not applicable – story does not change runtime behaviour. The script is read-o
 
 ## Open Questions
 
-- [ ] Reconcile `last_modified` signal (mtime vs git log) between the script and `reference-review.md` step 4. - Owner: Darren Benson
+- [x] Reconcile `last_modified` signal (mtime vs git log) between the script and `reference-review.md` step 4. - Owner: Darren Benson -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
 
 ---
 

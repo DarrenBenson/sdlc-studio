@@ -58,11 +58,11 @@ record rather than inferred
 
 ## Open Questions
 
-- [ ] CR0378 says the elapsed a run reports must mark any idle gap, but not where the deduction
+- [x] CR0378 says the elapsed a run reports must mark any idle gap, but not where the deduction -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   belongs: the run-state elapsed, `retro._elapsed_hours`, or the sprint report's velocity line.
   AC3 is written against the reported figure; the implementation picks the seam and the Verify
   line follows it - Owner: implementer
-- [ ] Whether an excluded idle gap is also shown as its own figure (waited N minutes) or only
+- [x] Whether an excluded idle gap is also shown as its own figure (waited N minutes) or only -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   removed from the denominator is unstated. Showing it keeps the stop's cost visible, which is
   this story's stated purpose - Owner: operator
 

@@ -74,11 +74,11 @@ baseline exists to prevent.
 
 ## Open Questions
 
-- [ ] CR0284 asks for a flag "when a token total is supplyable" but does not define supplyable.
+- [x] CR0284 asks for a flag "when a token total is supplyable" but does not define supplyable. -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   This story demands the ROW and treats a row with a blank Actual plus a recorded reason as a
   complete close. Whether a present row whose Actual is blank while the harness COULD have been
   read should also be flagged is unresolved - Owner: operator
-- [ ] CR0284 names a "recorded-override escape" without naming its form. AC3 assumes the override
+- [x] CR0284 names a "recorded-override escape" without naming its form. AC3 assumes the override -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   is recorded in the retro itself, so it travels with the record rather than in a command flag -
   Owner: operator
 

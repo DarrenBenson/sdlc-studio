@@ -76,7 +76,7 @@ pass because it happened to cite a test path.
 
 ## Open Questions
 
-- [ ] CR0347 says the analysis must include "the test files a unit will touch". A path named in
+- [x] CR0347 says the analysis must include "the test files a unit will touch". A path named in -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   AC prose but in no Verify line is not covered here, because prose has no grammar to parse and a
   path-shaped token in a sentence is as often an example as a target - Owner: operator
 

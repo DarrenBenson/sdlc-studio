@@ -60,12 +60,12 @@ wrong goal at the close
 
 ## Open Questions
 
-- [ ] CR0354 does not say how a seat verdict reaches the planner: a `.local/` inputs file in the
+- [x] CR0354 does not say how a seat verdict reaches the planner: a `.local/` inputs file in the -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   shape of `wsjf-inputs.json`, a `sprint.py` subcommand, or a flag. The ACs are written against
   the recorded verdict, whichever surface writes it - Owner: implementer
-- [ ] CR0354 does not say whether a plan with NO Sprint Goal stated is also refused. AC3 fires
+- [x] CR0354 does not say whether a plan with NO Sprint Goal stated is also refused. AC3 fires -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   only on a stated goal; a goalless plan keeps today's behaviour - Owner: operator
-- [ ] Whether the seat verdict rots on a clock the way `wsjf-inputs.json` does (advisory 7-day
+- [x] Whether the seat verdict rots on a clock the way `wsjf-inputs.json` does (advisory 7-day -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   window, warn only) is unstated - Owner: operator
 
 ## Revision History

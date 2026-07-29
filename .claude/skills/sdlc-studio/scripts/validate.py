@@ -332,6 +332,16 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
     # already held to it at every status above and `epic` is a container whose criteria are its
     # breakdown, so this names the one type the floor was missing rather than sweeping the
     # product types.
+    # Open Questions on a TERMINAL artefact, for every type. The same helper the transition
+    # gate calls, so the two cannot disagree about what a resolved question is - two readings
+    # of one rule is two rules, and the looser one wins.
+    if _terminal:
+        for item in sdlc_md.unresolved_questions(text, repo_root):
+            add(SEVERITY_ERROR, "open-question",
+                f"{_canon} artefact still asks an Open Question: {item} - record the ruling "
+                f"under a `## Resolved Questions` heading, or file it as a follow-up artefact "
+                f"and cite the id")
+
     if type_ == "bug" and _terminal and not _has_criteria(text):
         key = sdlc_md.norm_id(rec) if rec else None
         known = bool(key) and key in _read_baseline(repo_root, _CRITERIA_BASELINE)

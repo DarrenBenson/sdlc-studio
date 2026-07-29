@@ -100,9 +100,9 @@ None for small projects (no archive until a threshold/release). Backward compati
 
 ## Open Questions
 
-- [ ] Grouping key: release vs date vs threshold-N. -- Owner: design
-- [ ] Archive the artifact **files** too (into `archive/{release}/`), or only the index rows? -- Owner: design
-- [ ] **Promote to an RFC?** This has >=2 viable approaches (release-cascade vs archive-junction vs threshold-collapse) and cross-cutting impact - it may warrant an RFC to weigh them before building.
+- [x] Grouping key: release vs date vs threshold-N. -- Owner: design -- RULED MOOT: CR0019 is Superseded, so this design alternative was never chosen and cannot now be; see D0011 and the superseding record.
+- [x] Archive the artifact **files** too (into `archive/{release}/`), or only the index rows? -- Owner: design -- RULED MOOT: CR0019 is Superseded, so this design alternative was never chosen and cannot now be; see D0011 and the superseding record.
+- [x] **Promote to an RFC?** This has >=2 viable approaches (release-cascade vs archive-junction vs threshold-collapse) and cross-cutting impact - it may warrant an RFC to weigh them before building. -- RULED MOOT: CR0019 is Superseded, so this design alternative was never chosen and cannot now be; see D0011 and the superseding record.
 
 ## Revision History
 

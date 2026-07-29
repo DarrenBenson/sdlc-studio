@@ -2422,5 +2422,73 @@ class AReopenRetractsTheGreenItOverturnsTests(unittest.TestCase):
                          "a forward transition retracted a live claim")
 
 
+class OpenQuestionsGateTests(unittest.TestCase):
+    """US0465, at the VERB. Defence at the validate layer alone is weaker than the rule reads:
+    the transition performs the change and the refusal arrives later, from a different tool,
+    phrased as a validation error - leaving the tree in the state the rule forbids."""
+
+    def _repo(self, status, body):
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        (sd / "US0001-x.md").write_text(
+            f"# US0001: x\n\n> **Status:** {status}\n\n"
+            f"## Acceptance Criteria\n\n### AC1\n- **Verify:** manual - checked\n"
+            f"  - **Verified:** yes (2026-07-29)\n\n{body}", encoding="utf-8")
+        (sd / "_index.md").write_text(
+            "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
+            f"| {status} | 1 |\n| Done | 0 |\n\n## All\n\n| ID | Title | Status |\n"
+            f"| --- | --- | --- |\n| [US0001](US0001-x.md) | x | {status} |\n", encoding="utf-8")
+        return root, sd / "US0001-x.md"
+
+    def test_a_terminal_move_is_refused_while_a_question_is_unchecked(self) -> None:
+        root, path = self._repo("Review", "## Open Questions\n\n- [ ] should we do X?\n")
+        before = path.read_text(encoding="utf-8")
+        with self.assertRaises(ValueError) as ctx:
+            transition.transition(root, "US0001", "Done")
+        msg = str(ctx.exception)
+        self.assertIn("Open Question", msg)
+        # BOTH routes named, or the refusal costs a round-trip to discover what yes looks like.
+        self.assertIn("Resolved Questions", msg, "the ruling route is not named")
+        self.assertIn("follow-up", msg, "the follow-up-artefact route is not named")
+        # ...and NOTHING was written.
+        self.assertEqual(before, path.read_text(encoding="utf-8"),
+                         "the artefact was modified by a refused transition")
+
+    def test_a_ruling_or_a_resolvable_follow_up_id_is_accepted_and_a_dangling_id_is_not(self) -> None:
+        # Route 1: a ruling recorded on the item.
+        root, _ = self._repo("Review", "## Open Questions\n\n- [x] X, ruled by D0001\n")
+        transition.transition(root, "US0001", "Done")
+
+        # Route 2: a follow-up id that RESOLVES.
+        root2, _ = self._repo("Review", "## Open Questions\n\n- [x] X, filed as BG0002\n")
+        bugs = root2 / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True)
+        (bugs / "BG0002-follow-up.md").write_text(
+            "# BG0002: follow up\n\n> **Status:** Open\n", encoding="utf-8")
+        transition.transition(root2, "US0001", "Done")
+
+        # Refused: a tick citing an id nothing holds.
+        root3, _ = self._repo("Review", "## Open Questions\n\n- [x] X, filed as BG9999\n")
+        with self.assertRaises(ValueError) as ctx:
+            transition.transition(root3, "US0001", "Done")
+        self.assertIn("resolves to no artefact", str(ctx.exception))
+
+    def test_a_non_terminal_move_is_unaffected(self) -> None:
+        """The bar is the TERMINAL status. A question is legitimate while work is in flight,
+        and refusing it there would make the gate unusable."""
+        root, _ = self._repo("Ready", "## Open Questions\n\n- [ ] should we do X?\n")
+        transition.transition(root, "US0001", "In Progress")
+
+    def test_force_still_overrides_and_the_refusal_says_so(self) -> None:
+        root, _ = self._repo("Review", "## Open Questions\n\n- [ ] should we do X?\n")
+        with self.assertRaises(ValueError) as ctx:
+            transition.transition(root, "US0001", "Done")
+        self.assertIn("--force", str(ctx.exception))
+        transition.transition(root, "US0001", "Done", force=True)
+
+
 if __name__ == "__main__":
     unittest.main()

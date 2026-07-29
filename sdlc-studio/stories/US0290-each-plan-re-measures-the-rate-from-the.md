@@ -91,7 +91,7 @@ is that the token half informs and the wall-clock/unit-count appetite is what br
 
 ## Open Questions
 
-- [ ] CR0284 names the RETRO0028 result specifically. The record now holds further out-of-sample
+- [x] CR0284 names the RETRO0028 result specifically. The record now holds further out-of-sample -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   rows, so whether AC4 should quote that single row or the whole out-of-sample series is a
   presentation choice made at delivery; either satisfies "not presented as calibrated" -
   Owner: operator

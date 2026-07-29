@@ -1491,6 +1491,97 @@ def depth_retracted(text: str) -> bool:
     return (extract_field(text, "Verification depth") or "").strip().upper().startswith(RETRACTED_DEPTH)
 
 
+#: The heading an artefact records its open questions under, and the heading a RULING moves
+#: them to. Matched at any depth, because the templates differ by type.
+_OPEN_Q_RE = re.compile(r"^#+\s*Open Questions\s*$(.*?)(?=^#+\s|\Z)", re.M | re.S)
+_RESOLVED_Q_RE = re.compile(r"^#+\s*Resolved Questions\s*$(.*?)(?=^#+\s|\Z)", re.M | re.S)
+_Q_ITEM_RE = re.compile(r"^\s*[-*]\s*\[( |x|X)\]\s*(.+)$", re.M)
+
+
+def unresolved_questions(text: str, repo_root=None) -> list:
+    """The Open Questions a TERMINAL artefact must not still be carrying.
+
+    THE one implementation, so `validate` and the transition gate cannot disagree about what a
+    resolved question is - two readings of one rule is two rules, and the looser one wins.
+
+    A question is RESOLVED by either route the templates offer, and by nothing else:
+
+    * a **ruling**, recorded by moving the item under a `Resolved Questions` heading, or
+    * a **follow-up artefact**, cited by id on the item and RESOLVING in the workspace.
+
+    An item ticked with no destination is refused. That is the whole point: the escape hatch
+    cannot be a tick pointing at nothing, which is how sixteen artefacts reached a terminal
+    status carrying questions nobody had answered.
+
+    `repo_root` is needed to resolve a cited id. Without it a cited id is accepted on its shape
+    alone - a caller that cannot look up ids is not a reason to invent a stricter answer, but it
+    IS reported by the caller that can.
+    """
+    m = _OPEN_Q_RE.search(text or "")
+    if not m:
+        return []
+    offending = []
+    for state, body in _Q_ITEM_RE.findall(m.group(1)):
+        item = body.strip()
+        if not item or _DECLARES_NONE_RE.match(item) or "{{" in item:
+            # A `{{question}}` placeholder is an UNFILLED TEMPLATE, not an unanswered question.
+            # It is a real defect and validate's placeholder rule owns it; reporting it here as
+            # well would double-report it and - worse - refuse a transition for the wrong
+            # reason, naming two routes out that neither apply.
+            #
+            # `- [ ] None - behaviour fully extracted from scripts/x.py` is the template
+            # saying there ARE no questions. Reading it as an unanswered one would force ten
+            # already-correct artefacts to be "fixed", which is a guard manufacturing work.
+            continue
+        if _RULING_RE.search(item) or _decision_cited(item, repo_root):
+            # A ruling recorded ON THE ITEM is the same fact as one moved under a heading, and
+            # a decision row is the project's own form for a ruling. Demanding the heading
+            # would be demanding a layout, not an answer.
+            continue
+        if state == " ":
+            offending.append(item)
+            continue
+        cited = [c for c in ID_SEARCH_RE.findall(item)]
+        if not cited:
+            offending.append(f"{item} (ticked with no ruling and no follow-up id)")
+            continue
+        if repo_root is not None and not any(find_by_id(repo_root, c) for c in cited):
+            offending.append(f"{item} (cites {', '.join(cited)}, which resolves to no artefact)")
+    return offending
+
+
+#: `None`, `None - <why>`, `n/a`: the template's way of saying there are no questions.
+_DECLARES_NONE_RE = re.compile(r"^(none|n/?a)\b", re.IGNORECASE)
+
+#: A ruling recorded on the item itself, in the forms this corpus actually uses.
+_RULING_RE = re.compile(r"\b(ruled by|ruled:|settled in|resolved by|decided:)\b", re.IGNORECASE)
+
+#: A decision row id - the project's own form for a recorded ruling.
+_DECISION_ID_RE = re.compile(r"\bD\d{4}\b")
+
+
+def _decision_cited(item: str, repo_root) -> bool:
+    """True when the item cites a decision row that EXISTS.
+
+    A decision id is a ruling; an id pointing at no row is not, which is the same standard the
+    follow-up-artefact route is held to."""
+    ids = _DECISION_ID_RE.findall(item)
+    if not ids:
+        return False
+    if repo_root is None:
+        return True
+    try:
+        rows = (Path(repo_root) / "sdlc-studio" / "decisions.md").read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return any(re.search(rf"^\|\s*{d}\s*\|", rows, re.M) for d in ids)
+
+
+def questions_are_resolved(text: str, repo_root=None) -> bool:
+    """Convenience inverse of `unresolved_questions`, for a caller that wants a verdict."""
+    return not unresolved_questions(text, repo_root)
+
+
 def normalise_fence_languages(text: str, default: str = "text") -> str:
     """Supply `default` as the info string of every unlabelled fenced block that CLOSES.
 

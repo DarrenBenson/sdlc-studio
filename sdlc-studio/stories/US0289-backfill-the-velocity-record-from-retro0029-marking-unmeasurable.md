@@ -73,11 +73,11 @@ re-derived from today's constants is not a record of a prediction.
 
 ## Open Questions
 
-- [ ] CR0284 asks for rows "where totals are recoverable" without saying from what. Harness
+- [x] CR0284 asks for rows "where totals are recoverable" without saying from what. Harness -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   capture is session-cumulative and several closed runs predate the baseline it needs, so which
   historical totals are genuinely recoverable is a per-retro judgement made at delivery; a row is
   written either way, and AC3 governs the ones that are not - Owner: operator
-- [ ] Retros before RETRO0029 are out of scope here. Whether the window should later extend back
+- [x] Retros before RETRO0029 are out of scope here. Whether the window should later extend back -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   to RETRO0001 or be declared closed is not decided - Owner: operator
 
 ## Revision History

@@ -1,6 +1,6 @@
 # US0465: No artefact reaches a terminal status carrying unchecked Open Questions, and the 16 that already did are swept
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0438
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** `validate.py check` runs over each
 - **Then** each unchecked item is reported as an error quoting its text, and the clean story passes, so the finding is the item and not merely the presence of a heading
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::OpenQuestionsTests::test_a_terminal_artefact_with_unchecked_questions_is_flagged
+- **Verified:** yes (2026-07-29)
 
 ### AC2: AC2: the terminal transition refuses, naming both ways out
 
@@ -30,6 +31,7 @@
 - **When** `transition.py` moves it to Done
 - **Then** the move is refused, nothing is written to the file or the index, and the refusal names both routes - a ruling recorded under Resolved Questions, or the question filed as a follow-up artefact
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::OpenQuestionsGateTests::test_a_terminal_move_is_refused_while_a_question_is_unchecked
+- **Verified:** yes (2026-07-29)
 
 ### AC3: AC3: both resolution routes are accepted, and a tick with no destination is not
 
@@ -37,6 +39,7 @@
 - **When** each is validated and transitioned
 - **Then** the first two pass and the third is refused, so the escape hatch cannot be a tick pointing at nothing
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::OpenQuestionsGateTests::test_a_ruling_or_a_resolvable_follow_up_id_is_accepted_and_a_dangling_id_is_not
+- **Verified:** yes (2026-07-29)
 
 ### AC4: AC4: the gate is type-general and both callers agree from one helper
 
@@ -44,6 +47,7 @@
 - **When** the offending items are computed through validate and through the transition gate
 - **Then** both return identical items for every fixture because both call one helper in `lib/sdlc_md.py`, and every terminal status is derived from the map rather than from an enumerated Done, so a CR reaching Superseded is held to the same rule as a story reaching Done
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::OpenQuestionsTests::test_validate_and_the_gate_agree_across_every_type_and_terminal_status
+- **Verified:** yes (2026-07-29)
 
 ### AC5: AC5: the whole workspace is swept, not just the stories
 
@@ -51,6 +55,7 @@
 - **When** the check is run over `sdlc-studio/stories`, `sdlc-studio/epics`, `sdlc-studio/change-requests`, `sdlc-studio/bugs` and `sdlc-studio/rfcs`
 - **Then** none remains: each question carries a recorded ruling or a follow-up artefact id that resolves, and the sweep enumerates the directories from the type map rather than a list of the 16 filenames, so an offender in a type nobody thought about is still caught
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::OpenQuestionsTests::test_no_terminal_artefact_in_the_workspace_carries_an_unresolved_question
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

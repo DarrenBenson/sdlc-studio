@@ -76,7 +76,7 @@ can be checked without building a plan.
 
 ## Open Questions
 
-- [ ] CR0347 does not say how to tell a path to a file the unit will legitimately create from a
+- [x] CR0347 does not say how to tell a path to a file the unit will legitimately create from a -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   typo or a stale rename. Both read as unresolvable on disk, so AC1 reports the path and leaves
   the judgement to the reader rather than guessing - Owner: operator
 

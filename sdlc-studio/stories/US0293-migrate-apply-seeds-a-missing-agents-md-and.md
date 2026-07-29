@@ -77,7 +77,7 @@ call (project sections must survive), so it stays a reported needs-human item.
 
 ## Open Questions
 
-- [x] The marked remainder is NOT reported as a separate needs-human item. The seed leaves the
+- [x] The marked remainder is NOT reported as a separate needs-human item. The seed leaves the -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   judgement placeholders visibly unfilled in the file it writes, and the report names the file it
   created; no hygiene rule covers "Project specifics", so a follow-on finding would have nothing
   to key on. Recorded as the built behaviour, not as a ruling - a rule that reads the seeded

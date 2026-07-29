@@ -52,12 +52,12 @@ as partial at the close
 
 ## Open Questions
 
-- [ ] CR0354 asks for "a goal that no seat can judge achievable" to be reported, which is a seat
+- [x] CR0354 asks for "a goal that no seat can judge achievable" to be reported, which is a seat -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   judgement, while "unreachable by construction" is mechanical. This story specifies only the
   mechanical half: the derived reachable end state. Whether the goal's own prose is then
   compared against it mechanically, or left to the seat consult in US0297, is unstated -
   Owner: operator
-- [ ] Which other gates feed the derivation is unstated. Only the two-role rule is named in
+- [x] Which other gates feed the derivation is unstated. Only the two-role rule is named in -- NOT ANSWERED; owned by BG0421 (the delivery made a choice, nobody recorded whether it was the right one)
   CR0354; `require_ac_verification` and the AC-verify Done gate could also cap the reachable
   state - Owner: implementer
 

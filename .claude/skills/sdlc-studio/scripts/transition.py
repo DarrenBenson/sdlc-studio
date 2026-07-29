@@ -765,6 +765,23 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
                 f"cannot be checked by anything downstream. Add a criterion (a `Verify:` "
                 f"line makes it executable), or state the absence deliberately. "
                 f"Override with --force")
+    # Open Questions, at the VERB and for EVERY type. An artefact must not reach a terminal
+    # status still asking a question nobody answered - sixteen did, and every one of them
+    # reads as settled work. Both routes out are named in the refusal, because a gate that
+    # says only "no" costs a round-trip to discover what yes looks like. One helper, shared
+    # with `validate`, so the two cannot disagree about what resolved means.
+    if (not force and target_canon
+            and sdlc_md.is_terminal_status(type_, target_canon)):
+        open_qs = sdlc_md.unresolved_questions(text, root)
+        if open_qs:
+            listed = "; ".join(open_qs[:4]) + (" ..." if len(open_qs) > 4 else "")
+            blocks.append(
+                f"{len(open_qs)} unresolved Open Question(s) - {listed}. A terminal artefact "
+                f"must not still be asking: either record the ruling by moving the item under "
+                f"a `## Resolved Questions` heading, or file the question as a follow-up "
+                f"artefact and cite its id on the item. A tick with no destination is refused, "
+                f"because that is how a question stops being visible without being answered. "
+                f"Override with --force")
     if type_ == "bug" and not force:
         block = _bug_depth_gate(text, target_canon)
         if block:

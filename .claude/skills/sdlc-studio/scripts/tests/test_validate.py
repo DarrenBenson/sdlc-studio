@@ -2279,5 +2279,133 @@ class VerifierAuthorityAgreementTests(unittest.TestCase):
                     self.assertEqual(refused, not executes)
 
 
+class OpenQuestionsTests(unittest.TestCase):
+    """US0465. Sixteen artefacts reached a terminal status still asking questions nobody had
+    answered, and every one read as settled work. The rule is one helper in `lib/sdlc_md.py`,
+    called by BOTH `validate` and the transition gate, because two readings of one rule is two
+    rules and the looser one wins."""
+
+    def _story(self, root, status, body):
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        p = d / "US0001-x.md"
+        p.write_text(f"# US0001: x\n\n> **Status:** {status}\n\n"
+                     f"## Acceptance Criteria\n\n- [ ] something\n\n{body}", encoding="utf-8")
+        return p
+
+    def test_a_terminal_artefact_with_unchecked_questions_is_flagged(self) -> None:
+        from lib import sdlc_md
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        p = self._story(root, "Done",
+                        "## Open Questions\n\n- [ ] should we do X?\n- [ ] and Y?\n")
+        items = sdlc_md.unresolved_questions(p.read_text(encoding="utf-8"), root)
+        self.assertEqual(2, len(items), f"the items themselves were not reported: {items}")
+        self.assertIn("should we do X?", items[0],
+                      "the finding quotes no question text - it reports a heading, not an item")
+        # ...and a clean story passes, so the finding is the ITEM and not the heading.
+        p2 = self._story(root, "Done", "## Open Questions\n\n- [x] X, ruled by D0001\n")
+        self.assertEqual([], sdlc_md.unresolved_questions(p2.read_text(encoding="utf-8"), root))
+
+    def test_a_none_placeholder_is_not_a_question(self) -> None:
+        """`- [ ] None - behaviour fully extracted from scripts/x.py` is the template saying
+        there ARE none. Reading it as unanswered flagged nine already-correct artefacts, which
+        is a guard manufacturing work."""
+        from lib import sdlc_md
+        for wording in ("None", "None - behaviour fully extracted from `scripts/x.py`", "n/a"):
+            self.assertEqual([], sdlc_md.unresolved_questions(
+                f"## Open Questions\n\n- [ ] {wording}\n", None), f"flagged: {wording!r}")
+
+    def test_an_unfilled_template_placeholder_is_not_a_question(self) -> None:
+        """`- [ ] {{question}}` is an unfilled template, and validate's placeholder rule already
+        owns it. Reporting it here double-reports it and refuses a transition for the wrong
+        reason, naming two routes out that neither apply. Found by the full suite, not by a
+        mutant: a scaffolded epic fixture reddened three directories away."""
+        from lib import sdlc_md
+        self.assertEqual([], sdlc_md.unresolved_questions(
+            "## Open Questions\n\n- [ ] {{question}} - Owner: {{question_owner}}\n", None))
+
+    def test_a_ruling_on_the_item_resolves_it(self) -> None:
+        """A ruling recorded ON the item is the same fact as one moved under a heading.
+        Demanding the heading would be demanding a layout, not an answer."""
+        from lib import sdlc_md
+        for wording in ("Ruled by D0052: the seed lands in apply()",
+                        "Settled in the build: each finding cites a heading",
+                        "Resolved by delivery: the flag is read at plan time"):
+            self.assertEqual([], sdlc_md.unresolved_questions(
+                f"## Open Questions\n\n- [x] {wording}\n", None), f"flagged: {wording!r}")
+
+    def test_a_tick_with_no_destination_is_refused(self) -> None:
+        """The escape hatch cannot be a tick pointing at nothing - that is how a question stops
+        being visible without being answered."""
+        from lib import sdlc_md
+        items = sdlc_md.unresolved_questions("## Open Questions\n\n- [x] should we do X?\n", None)
+        self.assertEqual(1, len(items))
+        self.assertIn("no ruling and no follow-up id", items[0])
+
+    def test_validate_and_the_gate_agree_across_every_type_and_terminal_status(self) -> None:
+        """ONE helper, so the two callers cannot disagree. Every type in the terminal-status map,
+        in each of its terminal statuses - a CR reaching Superseded is held like a story
+        reaching Done, because the status set is DERIVED from the map."""
+        from lib import sdlc_md
+        body = "## Open Questions\n\n- [ ] unanswered\n"
+        checked = 0
+        for type_, statuses in sdlc_md.TERMINAL_STATUS.items():
+            for status in statuses:
+                self.assertTrue(sdlc_md.is_terminal_status(type_, status),
+                                f"{type_}/{status} is not read as terminal by its own map")
+                self.assertEqual(["unanswered"], sdlc_md.unresolved_questions(body, None),
+                                 f"the helper answered differently for {type_}/{status}")
+                checked += 1
+        self.assertGreater(checked, 8, "the map yielded almost nothing to check")
+
+    def test_validate_ITSELF_reports_the_finding_not_only_the_helper(self) -> None:
+        """Through `validate`, because the sibling tests call the helper directly and so
+        survived a mutant that removed validate's reporting entirely. A rule nothing invokes
+        is a rule nothing enforces."""
+        import contextlib
+        import io
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        self._story(root, "Done", "## Open Questions\n\n- [ ] should we do X?\n")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            validate.main(["--root", str(root), "check"])
+        out = buf.getvalue()
+        self.assertIn("open-question", out,
+                      f"validate did not report the finding at all:\n{out}")
+        self.assertIn("should we do X?", out, "the reported finding quotes no question text")
+
+    def test_no_terminal_artefact_in_the_workspace_carries_an_unresolved_question(self) -> None:
+        """The sweep, over the REAL workspace, with the directories derived from the type map
+        rather than a list of filenames - so an offender in a type nobody thought about is
+        still caught."""
+        from lib import sdlc_md
+        repo = Path(__file__).resolve().parents[5]
+        offenders = {}
+        swept = 0
+        for type_ in sdlc_md.TERMINAL_STATUS:
+            entry = sdlc_md.ARTIFACT_TYPES.get(type_)
+            if not entry:
+                continue
+            for path in (repo / entry[0]).glob("*.md"):
+                if path.name.startswith("_"):
+                    continue
+                text = path.read_text(encoding="utf-8")
+                status = (sdlc_md.extract_field(text, "Status") or "").strip()
+                if not sdlc_md.is_terminal_status(type_, status):
+                    continue
+                swept += 1
+                items = sdlc_md.unresolved_questions(text, repo)
+                if items:
+                    offenders[path.name] = items
+        self.assertGreater(swept, 100, "the sweep read almost nothing - it proves nothing")
+        self.assertEqual({}, offenders,
+                         f"terminal artefacts still carry unresolved questions: "
+                         f"{sorted(offenders)}")
+
+
 if __name__ == "__main__":
     unittest.main()
