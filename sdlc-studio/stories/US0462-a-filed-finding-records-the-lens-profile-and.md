@@ -1,6 +1,6 @@
 # US0462: A filed finding records the lens, profile and a resolvable audit run, validated against a register that has a real writer
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0435
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

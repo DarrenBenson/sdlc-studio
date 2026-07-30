@@ -1,6 +1,6 @@
 # US0568: The 108 findings that hide a run id in prose are backfilled across all five run ids, with the lens honestly unknown rather than guessed
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-30
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

@@ -1,6 +1,6 @@
 # US0464: Every lens pack on disk names its detector or declares manual with a reason, the column is read by header name, and the detector set covers the runners this repo ships
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0435
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

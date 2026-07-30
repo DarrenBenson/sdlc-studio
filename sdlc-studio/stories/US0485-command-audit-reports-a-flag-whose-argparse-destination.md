@@ -1,6 +1,6 @@
 # US0485: command_audit reports a flag whose argparse destination no line ever reads
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0448
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the detector runs
 - **Then** it reports that flag, naming the module and the destination - the analysis follows the value into the callee rather than counting the sites that mention it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::DeadFlagTests::test_a_flag_whose_value_is_never_consumed_is_reported
+- **Verified:** yes (2026-07-30)
 
 ### AC2: it is proven on verify_batch as gate.py carries it today
 
@@ -30,6 +31,7 @@
 - **When** the detector runs over that fixture
 - **Then** it reports verify_batch, so the defence is validated against the exact shape that motivated it; this holds whether or not US0479 has deleted the flag, because the fixture pins the three lines
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::DeadFlagTests::test_the_detector_catches_verify_batch_from_a_pinned_fixture
+- **Verified:** yes (2026-07-30)
 
 ### AC3: a defaulted lookup whose value IS consumed is not reported
 
@@ -37,6 +39,7 @@
 - **When** the detector runs
 - **Then** it does not report that flag - the discriminator is consumption, not the access pattern, which is what made the first specification unable to catch verify_batch
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::DeadFlagTests::test_a_consumed_defaulted_lookup_is_not_reported
+- **Verified:** yes (2026-07-30)
 
 ### AC4: the detector runs where it can be seen
 
@@ -44,6 +47,7 @@
 - **When** it runs
 - **Then** the dead-flag report is one of its lanes, because a detector nothing invokes cannot stop a flag shipping
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::DeadFlagTests::test_the_detector_is_wired_into_the_gate
+- **Verified:** yes (2026-07-30)
 
 ## Revision History
 

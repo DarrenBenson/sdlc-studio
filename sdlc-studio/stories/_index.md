@@ -11,8 +11,8 @@
 | Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 30 |
-| Done | 512 |
+| Review | 19 |
+| Done | 523 |
 | Won't Implement | 1 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -372,10 +372,10 @@
 | [US0458](US0458-the-trd-s-shipped-surface-enumerations-are-derived.md) | The TRD's shipped-surface enumerations are derived from the code and the router, and the stale CR0132 caveat is refused by name | Review | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0459](US0459-the-token-budget-premise-is-replaced-by-the.md) | The token-budget premise is replaced by the measured one everywhere it is asserted: transcript-measured, and a lower bound because delegated spend is supplied not measured | Review | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0460](US0460-the-porting-doctrine-is-stated-in-one-direction.md) | The porting doctrine is stated in one direction across the TRD and personas.md: the repo is source, the installed copy is the derived mirror | Review | EP0168 | 2026-07-27 | 2026-07-27 |
-| [US0461](US0461-verify-ac-lint-ratchet-refuses-a-duplicate-group.md) | verify_ac lint --ratchet refuses a duplicate group the baseline does not record with a reason, and the pinned pre-commit lane set gains it | Review | EP0169 | 2026-07-27 | 2026-07-27 |
-| [US0462](US0462-a-filed-finding-records-the-lens-profile-and.md) | A filed finding records the lens, profile and a resolvable audit run, validated against a register that has a real writer | Review | EP0169 | 2026-07-27 | 2026-07-27 |
-| [US0463](US0463-readiness-py-detector-owed-flags-a-lens-filed.md) | readiness.py detector-owed flags a lens filed in two separate audit runs and files the sized unit that will build the check | Review | EP0169 | 2026-07-27 | 2026-07-27 |
-| [US0464](US0464-every-lens-pack-on-disk-names-its-detector.md) | Every lens pack on disk names its detector or declares manual with a reason, the column is read by header name, and the detector set covers the runners this repo ships | Review | EP0169 | 2026-07-27 | 2026-07-27 |
+| [US0461](US0461-verify-ac-lint-ratchet-refuses-a-duplicate-group.md) | verify_ac lint --ratchet refuses a duplicate group the baseline does not record with a reason, and the pinned pre-commit lane set gains it | Done | EP0169 | 2026-07-27 | 2026-07-27 |
+| [US0462](US0462-a-filed-finding-records-the-lens-profile-and.md) | A filed finding records the lens, profile and a resolvable audit run, validated against a register that has a real writer | Done | EP0169 | 2026-07-27 | 2026-07-27 |
+| [US0463](US0463-readiness-py-detector-owed-flags-a-lens-filed.md) | readiness.py detector-owed flags a lens filed in two separate audit runs and files the sized unit that will build the check | Done | EP0169 | 2026-07-27 | 2026-07-27 |
+| [US0464](US0464-every-lens-pack-on-disk-names-its-detector.md) | Every lens pack on disk names its detector or declares manual with a reason, the column is read by header name, and the detector set covers the runners this repo ships | Done | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0465](US0465-no-artefact-reaches-a-terminal-status-carrying-unchecked.md) | No artefact reaches a terminal status carrying unchecked Open Questions, and the 16 that already did are swept | Review | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0466](US0466-the-ungroomed-ac-marker-routes-to-the-shape.md) | The ungroomed AC marker routes to the shape and the verifier guidance, help/refine.md ships, and the help-page gap is a derived lane | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
 | [US0467](US0467-status-names-the-open-run-id-rung-sprint.md) | status names the open run - id, rung, Sprint Goal, batch and remaining - from the run state, with remaining derived from the same predicate the handoff uses | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
@@ -387,17 +387,17 @@
 | [US0473](US0473-the-in-flight-sprint-controls-are-documented-as.md) | The in-flight sprint controls are documented as runnable invocations, with coverage derived from the parser and the reference section pinned structurally | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0474](US0474-review-prep-derives-the-rv-record-and-stamps.md) | review_prep derives the RV record and stamps the covered units from one recorded sprint-review APPROVE, without touching operator prose | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0475](US0475-the-sprint-close-derives-the-review-record-ahead.md) | The sprint close derives the review record ahead of the gate, and the review-current lane demonstrably clears on a git fixture | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
-| [US0476](US0476-rfc0009-records-its-partial-supersession-by-rfc0038-to.md) | RFC0009 records its partial supersession by RFC0038, to the RFC0034 convention, element by element | Review | EP0172 | 2026-07-27 | 2026-07-27 |
-| [US0477](US0477-reconcile-derives-the-epic-index-s-stories-and.md) | reconcile derives the epic index's Stories and Deps cells from the census and syncs them | Review | EP0172 | 2026-07-27 | 2026-07-27 |
-| [US0478](US0478-the-mint-path-writes-the-canonical-epic-row.md) | The mint path writes the canonical epic row, and the shipped template declares the same columns | Review | EP0172 | 2026-07-27 | 2026-07-27 |
+| [US0476](US0476-rfc0009-records-its-partial-supersession-by-rfc0038-to.md) | RFC0009 records its partial supersession by RFC0038, to the RFC0034 convention, element by element | Done | EP0172 | 2026-07-27 | 2026-07-27 |
+| [US0477](US0477-reconcile-derives-the-epic-index-s-stories-and.md) | reconcile derives the epic index's Stories and Deps cells from the census and syncs them | Done | EP0172 | 2026-07-27 | 2026-07-27 |
+| [US0478](US0478-the-mint-path-writes-the-canonical-epic-row.md) | The mint path writes the canonical epic row, and the shipped template declares the same columns | Done | EP0172 | 2026-07-27 | 2026-07-27 |
 | [US0479](US0479-delete-gate-s-dead-verify-batch-flag-and.md) | Delete gate's dead --verify-batch flag and the documentation claiming it does something | Done | EP0172 | 2026-07-27 | 2026-07-27 |
 | [US0480](US0480-validate-ratchets-the-footprint-and-criterion-warnings-against.md) | validate ratchets the footprint and criterion warnings against a recorded set of tolerated instances | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
 | [US0481](US0481-sprint-plan-validates-the-units-in-its-batch.md) | sprint plan validates the units in its batch, not only their index rows | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
 | [US0482](US0482-the-baselined-duplicate-verify-groups-are-split-into.md) | The baselined duplicate Verify groups are split into discriminating selectors | Ready | EP0174 | 2026-07-27 | 2026-07-27 |
 | [US0483](US0483-the-falsified-token-observation-premise-is-replaced-wherever.md) | The falsified token-observation premise is replaced wherever the tracked tree asserts it | Won't Implement | EP0174 | 2026-07-27 | 2026-07-27 |
-| [US0484](US0484-reconcile-reports-a-supersession-only-one-side-of.md) | reconcile reports a supersession only one side of the pair records | Review | EP0175 | 2026-07-27 | 2026-07-27 |
-| [US0485](US0485-command-audit-reports-a-flag-whose-argparse-destination.md) | command_audit reports a flag whose argparse destination no line ever reads | Review | EP0175 | 2026-07-27 | 2026-07-27 |
-| [US0486](US0486-every-progressive-loading-guide-cell-that-presents-a.md) | Every Progressive Loading Guide cell that presents a path resolves | Review | EP0175 | 2026-07-27 | 2026-07-27 |
+| [US0484](US0484-reconcile-reports-a-supersession-only-one-side-of.md) | reconcile reports a supersession only one side of the pair records | Done | EP0175 | 2026-07-27 | 2026-07-27 |
+| [US0485](US0485-command-audit-reports-a-flag-whose-argparse-destination.md) | command_audit reports a flag whose argparse destination no line ever reads | Done | EP0175 | 2026-07-27 | 2026-07-27 |
+| [US0486](US0486-every-progressive-loading-guide-cell-that-presents-a.md) | Every Progressive Loading Guide cell that presents a path resolves | Done | EP0175 | 2026-07-27 | 2026-07-27 |
 | [US0487](US0487-a-sprint-charter-is-a-first-class-artefact.md) | A sprint charter is a first-class artefact: goal, scope rule and appetite, with a tool-allocated id and an index row | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
 | [US0488](US0488-sprint-next-materialises-the-head-charter-against-the.md) | sprint next materialises the head charter against the backlog as it is at that moment, and stops when its scope resolves to nothing | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
 | [US0489](US0489-the-queue-is-inspectable-and-editable-show-the.md) | The queue is inspectable and editable: show the next charter with its goal and resolved contents, insert, cancel, clear and reorder | Ready | EP0176 | 2026-07-27 | 2026-07-27 |
@@ -479,7 +479,7 @@
 | [US0565](US0565-the-gate-is-the-survivor-count-over-those.md) | The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0566](US0566-feature-work-keeps-the-cheaper-bar-and-a.md) | Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0567](US0567-the-shipped-doctrine-states-that-a-fix-s.md) | The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
-| [US0568](US0568-the-108-findings-that-hide-a-run-id.md) | The 108 findings that hide a run id in prose are backfilled across all five run ids, with the lens honestly unknown rather than guessed | Review | EP0169 | 2026-07-30 | 2026-07-30 |
+| [US0568](US0568-the-108-findings-that-hide-a-run-id.md) | The 108 findings that hide a run id in prose are backfilled across all five run ids, with the lens honestly unknown rather than guessed | Done | EP0169 | 2026-07-30 | 2026-07-30 |
 
 ## Archived Releases
 

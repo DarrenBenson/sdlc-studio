@@ -1,6 +1,6 @@
 # US0478: The mint path writes the canonical epic row, and the shipped template declares the same columns
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0436
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** an epic is minted through `artifact.py new --type epic` and its appended row is compared cell by cell with the derived row for the same epic
 - **Then** they are identical (Stories `0`, Deps left at the not-stated placeholder) and `reconcile detect` reports no epic-index drift for it, so a new epic is not born drifted the way row_from_header's unrecognised-column `--` branch mints one today
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::EpicRowAgreementTests::test_the_minted_row_equals_the_derived_row
+- **Verified:** yes (2026-07-30)
 
 ### AC2: wiring a story updates the epic's Stories cell on both mint paths
 
@@ -30,6 +31,7 @@
 - **When** a story naming that epic is minted singly, and again through `new_batch`
 - **Then** the Stories cell reflects the new count on each path and `reconcile detect` is immediately silent, so the index is not stale until someone remembers to reconcile - and the batch path is asserted separately, because it is the path that skipped the wiring before
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::EpicRowAgreementTests::test_wiring_a_story_updates_the_stories_cell_on_both_mint_paths
+- **Verified:** yes (2026-07-30)
 
 ### AC3: the shipped template declares the canonical columns
 
@@ -37,6 +39,7 @@
 - **When** the template's data-table header is parsed from the file and compared with the canonical column definition imported from source
 - **Then** the two lists are equal, with neither restated as a literal in the test - so whichever column set is chosen, the template and the tooling cannot disagree again
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::EpicRowAgreementTests::test_the_template_header_equals_the_canonical_column_definition
+- **Verified:** yes (2026-07-30)
 
 ## Revision History
 

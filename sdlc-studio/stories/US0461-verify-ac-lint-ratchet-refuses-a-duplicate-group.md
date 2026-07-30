@@ -1,6 +1,6 @@
 # US0461: verify_ac lint --ratchet refuses a duplicate group the baseline does not record with a reason, and the pinned pre-commit lane set gains it
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0433
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

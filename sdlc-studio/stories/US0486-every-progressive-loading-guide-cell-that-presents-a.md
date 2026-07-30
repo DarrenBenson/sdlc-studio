@@ -1,6 +1,6 @@
 # US0486: Every Progressive Loading Guide cell that presents a path resolves
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0449
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

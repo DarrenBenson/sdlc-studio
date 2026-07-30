@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 6 |
+| Proposed | 7 |
 | Approved | 0 |
 | In Progress | 35 |
 | Complete | 444 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **504** |
+| **Total** | **505** |
 
 ## All Changes
 
@@ -326,6 +326,7 @@
 | [CR-0502](CR0502-the-mutation-lane-asks-for-evidence-on-a.md) | the mutation lane asks for evidence on a changed surface the mutation runner refuses to mutate | Proposed | Medium | Improvement | 2026-07-30 | -- |
 | [CR-0503](CR0503-an-adversarial-review-can-be-run-outside-the.md) | an adversarial review can be run outside the seat ceremony, losing every standing practice, and nothing detects that it was | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0504](CR0504-closing-review-is-doing-the-work-development-should.md) | closing review is doing the work development should have done, and the same five defect classes recur every sprint | Proposed | High | Improvement | 2026-07-30 | -- |
+| [CR-0505](CR0505-a-sprint-has-no-compulsory-checklist-and-no.md) | a sprint has no compulsory checklist and no report document, so what was dropped, what crept in and what is carried are known only to whoever ran it | Proposed | High | Feature | 2026-07-30 | -- |
 
 ## Archived Releases
 

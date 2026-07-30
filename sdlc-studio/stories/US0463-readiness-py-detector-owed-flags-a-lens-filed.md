@@ -1,6 +1,6 @@
 # US0463: readiness.py detector-owed flags a lens filed in two separate audit runs and files the sized unit that will build the check
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0435
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

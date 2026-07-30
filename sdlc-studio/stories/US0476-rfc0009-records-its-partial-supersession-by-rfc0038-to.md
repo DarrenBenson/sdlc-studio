@@ -1,6 +1,6 @@
 # US0476: RFC0009 records its partial supersession by RFC0038, to the RFC0034 convention, element by element
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0434
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

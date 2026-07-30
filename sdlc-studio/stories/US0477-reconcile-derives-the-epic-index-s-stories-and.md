@@ -1,6 +1,6 @@
 # US0477: reconcile derives the epic index's Stories and Deps cells from the census and syncs them
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0436
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** `reconcile detect` runs and then `reconcile apply`, then detect again
 - **Then** the first reports `epic-index-derivable` found `--` expected 3 and apply writes 3; the second is written as `0`, a derived fact rather than a placeholder; the second pass is silent - pinning the zero case once, so the sibling story's mint-agreement check has a deterministic answer
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicIndexDerivedTests::test_the_stories_cell_is_censused_and_zero_stories_writes_zero
+- **Verified:** yes (2026-07-30)
 
 ### AC2: Deps has three states and absence is never rewritten as None
 
@@ -30,6 +31,7 @@
 - **When** the detector and apply run over all three
 - **Then** the first cell becomes the two ids in file order, the second becomes the declared-none value already in use on EP0001's row, and the third is left untouched and NOT reported as drift, following the rule detect_linked_epics already states - a placeholder over an absent declaration is honest, and stamping 157 rows from absence of evidence would reproduce the defect CR0436 was filed for
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicIndexDerivedTests::test_deps_has_three_states_and_an_absent_section_is_not_drift
+- **Verified:** yes (2026-07-30)
 
 ### AC3: only the target cell is rewritten, on a shifted column and an escaped pipe
 
@@ -37,6 +39,7 @@
 - **When** apply writes the derived cells
 - **Then** the column is located by header and the row split on unescaped pipes only, so every other cell survives byte-identical - the data-loss failure apply_linked_epics already documents as load-bearing on both halves
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicIndexDerivedTests::test_apply_rewrites_only_the_derived_cell_on_a_shifted_or_escaped_row
+- **Verified:** yes (2026-07-30)
 
 ### AC4: the canonical epic columns are one importable answer
 
@@ -44,6 +47,7 @@
 - **When** the epic column set and the per-cell derivation are read from the single definition this story adds to lib/sdlc_md.py
 - **Then** both consult it rather than each carrying its own list, so the sibling mint story has an API to agree with instead of re-deriving the same rules a second time
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicIndexDerivedTests::test_the_derivation_and_the_row_writer_read_one_column_definition
+- **Verified:** yes (2026-07-30)
 
 ### AC5: the committed index holds derived data, over every row
 
@@ -51,6 +55,7 @@
 - **When** the sweep runs over every row in the index, and again over a copy with one row's Stories cell mutated
 - **Then** the committed tree reports nothing, every epic with stories on disk shows its censused count, every epic with none shows 0, no epic lacking a Dependencies section has an invented Deps cell, and the mutated copy fails - the sweep is over all rows, not a sample, and is shown able to go red
 - **Verify:** pytest tools/tests/test_epic_index_derived.py::EpicIndexRepoTests::test_every_row_is_derived_and_a_mutated_row_fails
+- **Verified:** yes (2026-07-30)
 
 ## Revision History
 
