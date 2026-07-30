@@ -158,6 +158,29 @@ def discover_spec_homes(root: Path) -> list[str]:
                                 if (root / s).is_file() and not _is_superseded(root, s)})
 
 
+def _outside_fences(text: str):
+    """The lines of `text` that are not inside a fenced code block.
+
+    Shared by both readers below, so a documentation example cannot be mistaken for the
+    document's own metadata in either direction: a fenced `**Status:** Superseded` must not
+    drop the file as a version home, and a fenced `**Version:** 9.9.9` must not be read as its
+    version. Any fence marker length is honoured, and an unclosed fence swallows the rest -
+    which is the safe direction, since the alternative is reading displayed text as asserted.
+    """
+    fence = None
+    for line in text.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith(("```", "~~~")):
+            marker = stripped[0] * 3
+            if fence is None:
+                fence = marker
+            elif stripped.startswith(fence):
+                fence = None
+            continue
+        if fence is None:
+            yield line
+
+
 def _is_superseded(root: Path, rel: str) -> bool:
     """True for a document that records what was true THEN.
 
@@ -173,7 +196,12 @@ def _is_superseded(root: Path, rel: str) -> bool:
     # first `**Status:**` within 4000 chars including the BLOCKQUOTED form, so a spec quoting an
     # artefact header - which tsd.md already does - could silently drop itself as a version home
     # AND take its drift with it. Only a top-level, non-quoted status speaks for the document.
-    for line in head.splitlines():
+    #
+    # A FENCED status line is displayed, not asserted, for the same reason a quoted one is. That
+    # half was missed, and it is the direction that regresses: before this skip existed, every
+    # spec was checked unconditionally, so a documentation example could not cost a version home.
+    # A guard that skips more than it used to is worse than the no-guard state it replaced.
+    for line in _outside_fences(head):
         if line.lstrip().startswith(">"):
             continue                      # a quoted header describes something else
         m = re.match(r"\s*\*\*Status:?\*\*:?\s*(.+)$", line)
@@ -194,7 +222,12 @@ def from_spec(root: Path, rel: str) -> str | None:
         head = (root / rel).read_text(encoding="utf-8")[:4000]
     except OSError:
         return None
-    m = re.search(rf"^>?\s*\*\*Version:?\*\*:?\s*v?{SEMVER}", head, re.M)
+    # Fences stripped for the same reason as in `_is_superseded`: a documented artefact-header
+    # example must not be read as the document's own version. This direction is the milder of
+    # the two - it reports a wrong version rather than silently dropping a home - but it is the
+    # same defect and is closed in the same place rather than left for the next reviewer.
+    m = re.search(rf"^>?\s*\*\*Version:?\*\*:?\s*v?{SEMVER}",
+                  "\n".join(_outside_fences(head)), re.M)
     return m.group(1) if m else None
 
 

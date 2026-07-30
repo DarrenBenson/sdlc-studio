@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 36 |
+| Open | 35 |
 | In Progress | 0 |
-| Fixed | 334 |
+| Fixed | 335 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -163,7 +163,7 @@
 | [BG0443](BG0443-critic-is-independent-returns-true-when-no-reviewer.md) | critic.is_independent returns True when no reviewer is recorded at all, so an unreviewed row satisfies the predicate four gates depend on | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0444](BG0444-the-pre-gate-independence-hole-was-closed-in.md) | the PRE_GATE independence hole was closed in sprint.py only, so conformance.py still clears a unit on the migration sentinel | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0445](BG0445-the-test-census-lane-skips-any-path-containing.md) | the test-census lane skips any path containing `worktrees`, so it censuses zero files and reports an all-clear precisely where this repo runs its reviewers | Open | Medium | 2026-07-30 | 2026-07-30 |
-| [BG0446](BG0446-a-fenced-markdown-example-holding-an-unquoted-status.md) | a fenced markdown example holding an unquoted Status line drops a spec as a version home and silently swallows its real version drift | Open | Critical | 2026-07-30 | 2026-07-30 |
+| [BG0446](BG0446-a-fenced-markdown-example-holding-an-unquoted-status.md) | a fenced markdown example holding an unquoted Status line drops a spec as a version home and silently swallows its real version drift | Fixed | Critical | 2026-07-30 | 2026-07-30 |
 | [BG0447](BG0447-the-availability-guard-tests-for-gh-as-a.md) | the availability guard tests for `gh` as a bare substring, so `nightly`, `highlighted` and `though` all satisfy the half of the contract that names the tool | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0448](BG0448-eight-bugs-stand-at-the-terminal-status-fixed.md) | eight bugs stand at the terminal status Fixed carrying no Verify line and no ticked criterion, and a ninth is Fixed while two of its own ACs are titled NOT YET FIXED | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0449](BG0449-the-plan-s-grooming-gate-reported-ok-in.md) | the plan's grooming gate reported ok in enforcing blocking mode over four stories that carry the ungroomed banner and three placeholders each | Open | High | 2026-07-30 | 2026-07-30 |

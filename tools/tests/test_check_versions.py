@@ -263,6 +263,42 @@ class DiscoveredHomesTests(unittest.TestCase):
         self.assertNotIn("sdlc-studio/bugs/BG0001-x.md",
                          check_versions.discover_spec_homes(root))
 
+    def test_a_fenced_status_example_does_not_drop_a_home_and_hide_its_drift(self) -> None:
+        """BG0446, the one REGRESSION this batch introduced.
+
+        Before `_is_superseded` existed, every spec was checked unconditionally, so no
+        documentation example could cost a version home. The skip closed the blockquoted case
+        and left the fenced one, and a spec DOCUMENTING an artefact header - ordinary technical
+        writing, which these specs already do - was then read as declaring ITSELF superseded:
+        dropped as a home, taking its real drift with it, exit 0.
+
+        Asserted as a CONTROL PAIR. The drift is identical in both halves; only the presence of
+        the example differs. Without the control half, a guard that had stopped checking
+        anything at all would also pass.
+        """
+        drifted = "# TSD\n\n> **Version:** 1.2.3\n\ntext\n"
+        example = ("# TSD\n\n```markdown\n**Status:** Superseded\n```\n\n"
+                   "> **Version:** 1.2.3\n\ntext\n")
+        for label, body in (("control, no example", drifted), ("with the example", example)):
+            with self.subTest(case=label):
+                root = self._repo({"sdlc-studio/tsd.md": body})
+                self.assertIn("sdlc-studio/tsd.md", check_versions.discover_spec_homes(root),
+                              "the spec was dropped as a version home")
+                with contextlib.redirect_stderr(io.StringIO()), \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(1, check_versions.main(["--root", str(root)]),
+                                     "real version drift was not reported")
+
+    def test_a_fenced_version_example_is_not_read_as_the_documents_version(self) -> None:
+        """The mirror image, closed in the same place. Milder - it reports a WRONG version
+        rather than silently dropping a home - but it is the same defect, and leaving it would
+        hand the next reviewer the other half of a fix that was already being made."""
+        root = self._repo({"sdlc-studio/tsd.md":
+                           "# TSD\n\n```markdown\n**Version:** 9.9.9\n```\n\n"
+                           "> **Version:** 5.0.0\n"})
+        self.assertEqual("5.0.0", check_versions.from_spec(root, "sdlc-studio/tsd.md"),
+                         "a documented example was read as the document's own version")
+
 
 if __name__ == "__main__":
     unittest.main()

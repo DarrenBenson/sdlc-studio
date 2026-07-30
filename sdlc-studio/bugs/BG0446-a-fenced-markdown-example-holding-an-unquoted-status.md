@@ -1,6 +1,6 @@
 # BG0446: a fenced markdown example holding an unquoted Status line drops a spec as a version home and silently swallows its real version drift
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Critical
 > **Points:** 2
 > **Affects:** tools/check_versions.py, tools/tests/test_check_versions.py
@@ -54,11 +54,25 @@ Pin it with a control pair rather than a single assertion: a test that a spec ca
 
 While there: `from_spec` reads the same 4000-character head with the same fence-blindness, so a fenced `**Version:** 9.9.9` example is a candidate for the mirror-image defect - a documentation example being read as the file's real version. Check it in the same slice.
 
+> **Verification depth:** functional - proven by a control pair executed against the live tsd.md and pinned as a fixture: identical drift, exit=1 without the example and exit=0 with it before the fix, exit=1 in both after. Three mutants KILLED, including a straight revert.
+
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `check_versions._is_superseded` reads a file's first 4000 characters, skips blockquoted lines, and returns on the first non-quoted `**Status:**` it finds.
-- [ ] Following the recorded steps no longer reproduces the defect: Executed at d7a1ad8f, 2026-07-30, as a control pair against the live `sdlc-studio/tsd.md`, restored byte-identical afterwards.
-- [ ] The proposed fix lands, pinned by a test: Strip fenced code blocks before scanning for the document's own status, exactly as the blockquote form is already skipped.
+### AC1: a fenced Status example no longer drops a version home or hides its drift
+
+- **Given** a spec carrying real version drift, once with and once without a fenced artefact-header example in its head
+- **When** check_versions runs over each
+- **Then** both report the drift - asserted as a control pair, because the drift is identical in both halves and only the example differs; without the control half a guard that had stopped checking anything would also pass
+- **Verify:** pytest tools/tests/test_check_versions.py::DiscoveredHomesTests::test_a_fenced_status_example_does_not_drop_a_home_and_hide_its_drift
+- **Verified:** yes (2026-07-30)
+
+### AC2: a fenced Version example is not read as the document's own version
+
+- **Given** a spec whose head documents an artefact header showing a different version
+- **When** from_spec reads it
+- **Then** the document's real version is returned - the mirror image of the same defect, milder because it reports a wrong version rather than dropping a home, closed in the same place rather than left for the next reviewer
+- **Verify:** pytest tools/tests/test_check_versions.py::DiscoveredHomesTests::test_a_fenced_version_example_is_not_read_as_the_documents_version
+- **Verified:** yes (2026-07-30)
 
 ## Revision History
 
