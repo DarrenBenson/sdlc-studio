@@ -1,172 +1,99 @@
 # Latest review anchor
 
 <!-- close-status:begin -->
-> **RUN-01KYNKDP closed stopped.** 47 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> **RUN-01KYPZ1G closing.** 36 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
-> **Retro:** RETRO0083 · **Goal verdict:** partial (per clause) · **Outcome:** delivered 47 of 48
-> · **Sign-off:** RECORDED 2026-07-29, operator as reviewer of record, as a knowingly PARTIAL increment
+> **Goal verdict:** partial (clause 1 achieved, clauses 2 and 3 fail)
+> · **Delivered:** 36 units / 128 points of a 44-unit 158-point plan
+> · **Dropped:** 11 units / 40 points, each with a recorded reason
 
-## The close is done, and it cost more than the sprint
+## The close found four stop-ships, one of them in the instrument the close is read from
 
-**5h to deliver, 6h35m to close.** Only about 70 minutes of that close - roughly 18% - was gate
-and suite time. The rest was repair: nine stop-ships, eight test classes restored after a bad
-revert, then four more bugs found by re-reviewing those repairs.
+Seven independent reviewers ran against this batch: three Three Amigos seats using
+the shipped `critic brief --seat` prompts, three round-2 reviewers judging the
+repairs from the previous round, and one first pass over US0465 - the single unit
+of 44 that carried no review record at all. **All seven returned REJECT.**
 
-The cause is not the test count. **The adversarial review runs at the close**, so every defect it
-finds is close work by definition. Filed as **CR0500**: the review belongs at the delivery batch
-boundary this project already commits on, so a finding is delivery work in the batch that caused
-it and the close only certifies that coverage exists. Read it before planning the next sprint -
-it changes the shape of the run, not just a script.
+Every finding below was reproduced by the author before being filed. Two reviewer
+claims did NOT reproduce and were refuted rather than filed.
 
-**Two independent review rounds, both REJECT.** Round one: five reviewers, ~32 majors, 8 of 39
-mutants surviving; nine stop-ships fixed. Round two reviewed those repairs and rejected again -
-9 of 21 mutants surviving, plus defects the repairs had introduced. Its four material findings
-are fixed, each verified by applying its mutant rather than by a green suite:
+**Three stop-ships are fixed** (`52fbb34b`, `02dc0cc7`), each mutation-verified:
 
 | Fixed | What it was |
 | --- | --- |
-| BG0408 | The release guard STILL failed open - the previous fix caught only what `owed()` raised, and an unreadable tree returns quietly. `chmod 000` turned a refusal into "no close is owed" |
-| BG0410 | The mutation sink cured the hang by ORPHANING the child; the group was reaped only on a branch the fix made unreachable. Plus an fd/temp leak and a dead constant |
-| BG0409 | Six repairs reverted with no test going red - both `file_finding` halves shipped with no test at all |
-| BG0400 | An existence probe outvoted a real declaration, so every artefact-only commit paid ~313s of unit suites. Filing an artefact is no longer test-relevant |
+| BG0441 | `review_coverage` laundered a REJECT into coverage. The unit failed the verdict lane and fell into the evidence lane, which carries no verdict column BY DESIGN and so could not see it had been rejected. `conformance.py` had the rule right, so the newer gate was strictly weaker than the one beside it and the two disagreed silently |
+| BG0450 | The unresolved-questions gate had three live escapes - a heading suffix, a second section, a self-citation - and AC4's verifier was a tautology. The mutant reducing the gate to a bare `Done` comparison **survived all 5489 tests** and was a live CLI escape |
+| BG0453 | The same unguarded run-state read that rounds one and two each failed to close, still live in a third branch. On the return path it discarded a verification that had already run |
 
-Full suite green at **5,190 tests**.
+**BG0441 is the one that matters for reading any earlier number in this file.** The
+ten units closed on 2026-07-30 under waivers D0077-D0086 were all reported *covered*
+by that gate. The hand-recorded waivers are the only thing that stopped it clearing
+them. Coverage on the repaired gate is **5 of 36** - that is the honest figure, and
+it is low because seven reviewers rejected, not because reviews are missing.
 
-## Left open, knowingly
+## Corrections to what this file previously claimed
 
-BG0401, BG0402 (two halves, recorded as criteria), BG0406, BG0411, BG0412. None writes a false
-claim into evidence a decision is read from, and none disarms a guard - that was the bar for
-shipping them. **BG0372 and BG0359 were REOPENED**: both were marked Fixed while delivering
-nothing.
+The product seat checked this document against the tree. Three of its claims were
+false and are corrected here rather than quietly dropped:
 
-**The gate budget is OVER: 458s against 380s, +44% since the 2026-07-26 baseline.** First item of
-the next batch, with BG0412 (the filer writes fences its own gate refuses).
+- **"Open bugs went from 37 to 2"** was false when written (14 at that commit) and is
+  false now. **36 bugs are Open.** The document contradicted itself seven lines later.
+- **"Left open, knowingly: BG0401, BG0402, BG0406, BG0411, BG0412"** was false for three
+  of five: BG0402, BG0411 and BG0412 are Fixed.
+- **"Sign-off on the 12 stories is the operator's ... Done is not reachable from here"**
+  and **"BG0400 first in the next batch"** are both stale; ten reached Done, BG0400 is Fixed.
 
-## Where the pipeline is
+## Carried as known issues, on the operator's ruling
 
-RUN-01KYNKDP delivered **45 of its 48 units and 138 of 148 points** (corrected from 47 and 143,
-which counted BG0372 and BG0359 - both later reopened for delivering nothing; the sign-off note
-on the record quotes the pre-correction figure): two efficiency epics, a dead
-flag removed, and **36 bugs - the entire open bug backlog except two, both of which are named
-rather than absorbed.** Open bugs went from 37 to 2.
+Ten findings (BG0442-BG0449, BG0451, BG0452). None is a stop-ship; each carries an
+executed reproduction. The ones worth knowing about:
 
-**Sign-off owed.** The 12 stories stand at Review pending an adversarial pass by a context that
-did not write them and the operator's sign-off as reviewer of record. The author records
-neither; the two-role rule holds. The 36 bugs are Fixed, which is terminal for their type.
+- **BG0442** - the sprint goal's own headline metric is a hard-coded 0, killed by its own
+  repair's function-local import. The line reads "N raised outside one, and `outside` is
+  the number this run drives to zero" over a number the code cannot compute.
+- **BG0451** - `start_batch` mints a null-id run, and the next `sprint plan` then silently
+  DESTROYS the batch span. The same fabrication was rated stop-ship one round earlier
+  against `note_finding`; that repair guarded one writer and left its sibling.
+- **BG0448** - eight bugs stand at the terminal status `Fixed` carrying 31 unticked
+  criteria and no `Verify:` line between them; `validate` reports `errors=0` over them.
+  BG0402 is at `Fixed` while two of its own ACs are titled "NOT YET FIXED".
+- **BG0449** - the plan's grooming gate reported `ungroomed: [] ok: true` in enforcing,
+  blocking mode over the four Draft stories it later dropped as ungroomed.
 
-## What RUN-01KYNKDP changed
+## Scope: this run discovered a new plan
 
-- **EP0189 (from CR0498)** - the close ceremony costs less than the work it certifies.
-  `close --dry-run` reports every refusal of all seven steps in ONE read-only pass against a
-  scratch copy, retro content included; `critic record|evidence|signoff` each take a whole batch;
-  a missing argument is refused once, before any write; the retro scaffold passes its own
-  validator; the close records the gate verdict it earned and reports its own cost.
-- **EP0181** - `reconcile detect` reads the artefact corpus once per sweep rather than once per
-  lookup, and the gate prints each lane's own seconds.
-- **The whole RV0024 review residue (15 bugs)** plus the older backlog: measurement defects,
-  corpus truth, and four specs describing a product other than this one.
-
-## The measurements, not the impressions
-
-| Instrument | Before | After |
-| --- | --- | --- |
-| Pre-commit gate | ~390-427s | **326s median** - a 427->319 pair was over-claimed and is corrected here |
-| `reconcile detect` | 22.3s (777,732 file opens) | 1.3s |
-| Close refusal discovery | 3 serial attempts, ~400s each | 1 read-only pass, 2m, all 15 named |
-| `critic` spawns per close | 57 | 3 |
-| Open bugs | 37 | 2 |
-
-## The closing review, and what it changed
-
-Five independent adversarial reviewers, none of which wrote this code, returned **five
-REJECTs** over ~32 majors. **Eight of 39 mutants they applied SURVIVED.** Nothing here was
-caught by 5,163 green tests.
-
-**Nine stop-ships are fixed** (commit `06c806d7~1`) - every one a guard that failed SILENTLY,
-which is the direction this project's design says a guard must never fail:
-
-| Defect | Was |
-| --- | --- |
-| `_close_gate` stamped a full-suite green | the next commit skipped its tests |
-| `release_cut._close_owed_units` swallowed everything | one `git rm` disarmed the release guard |
-| A wrong-but-well-formed declared id | narrowed the tree to nothing - a false green from a typo |
-| Declaring a FILE | walked past the content-read floor |
-| `structural=None` | answered the unanswered question `no` |
-| `_land_unhomed` interpolated raw prose | a CR's `steps` could forge a metadata line |
-| `critic record --units <ghost>` | wrote verdicts to the committed ledger, exit 0 |
-| `_killing_test` matched unittest's own footer | every kill attributed to `(failures=2)` |
-| The mutation pipe tied the read to EOF | 600s hang per mutant, SURVIVED flipped to error |
-
-**US0553 is REVERTED, not repaired.** Its premise - that `sprint close` runs the full suites at
-step 4 - is false: `gate.main` runs seventeen lanes and not one runs a suite. A test now asserts
-the premise, so the decision can be revisited on evidence rather than belief.
-
-**Seven bugs and one CR are filed** (BG0401-BG0407, CR0499) for what remains. They are filed
-rather than carried in this document because `judge_defects_against_goal` reads OPEN bugs: until
-they exist as artefacts, the release judgement they should inform reports zero blocking.
-
-## Known issues carried from the 2026-07-30 batch {#known-issues-2026-07-30}
-
-11 units (47 pts, EP0169/EP0172/EP0175) delivered green, then reviewed by five independent
-adversarial reviewers. **All five returned REJECT: 14 MAJOR findings.** Four MAJORs had reached the
-tracked tree and are repaired and committed (BG0426-BG0428) - including a story count of `7` written
-into a row whose true count is 18, because the census compared the `Epic` field whole while every
-other reader of that field extracts the id first.
-
-The remaining **11 bugs (26 pts) are carried as known issues, not stop-ships** (BG0429-BG0439).
-None corrupts data or blocks a release; each is a guard weaker than its documentation, or a
-false-positive risk in a lane, and each is filed with an executed reproduction. The closest to a
-stop-ship is **BG0436**: `resolve_affects` never consults the installed skill dir despite its
-docstring saying it does, so `detector-owed --file` raises an uncaught traceback on any project that
-did not vendor the skill in-tree. It needs an owed lens plus `--file` to fire, which is why it is
-carried rather than held - but it is the first thing to fix, since it affects every consumer and not
-this repo.
-
-**The pattern matters more than the list.** Five defect classes account for all 14 findings, each
-attested two or three times in this one batch: a new reader of a shared field diverging from the
-idiom every other reader uses; a test that can agree with the code by construction; prose promising
-what no code path implements; no shape census of the real corpus before writing a parser; and a new
-gate lane not carrying the guards its siblings carry. None needed a reviewer to find - they needed a
-census, a grep, or a reading of the code against its own docstring. Filed as **CR0504**, with
-**CR0503** for the separate defect that the seat-based review ceremony is entirely optional and was
-bypassed on this very batch.
+**48 unplanned artefacts against 44 planned units - a ratio of 1.09.** More work was
+filed during the run than the run planned to deliver. Ten of the 48 were delivered
+inside it; 38 remain open. That ratio is invisible in the tooling today and had to be
+derived by hand, twice - the first count of 56 wrongly included seven units belonging
+to the previous run's batch. It is exactly what CR0505 / EP0192 exists to report.
 
 ## Known divergences
 
-**US0554's saving is SUSPENDED, by this sprint's own later repair.** BG0398 is correct: a
-listing-only declaration is one module's statement about its own read, and honouring it
-tree-wide silenced a second module's content read. Applying unanimity means this repo - which
-has two readers of the `sdlc-studio` entry and one declarer - correctly withholds the narrowing.
-The second reader's dependency is a fixture path the static scanner over-attributes to the real
-tree. Filed as **BG0400** rather than papered over with a declaration that would not be true.
+**The gate budget is OVER: 467s against 380s, +47% since the 2026-07-26 baseline.**
+Reported here with one measured number, because three records previously disagreed
+(458s, 457s, 455s) and none of them was checkable.
 
-**91 seams, 72 of them unowned.** Same shape as the previous run: the batch is heavily
-concentrated in `sprint.py`, `gate.py` and `critic.py` by design (the planner withheld parallel
-delivery for exactly that reason). Reported rather than omitted.
+**The seat ceremony was bypassed, then bypassed again.** CR0503 was filed on 2026-07-30
+for the review ceremony being entirely optional; hours later, in the same session, the
+same author again hand-wrote briefs instead of using `critic brief --seat`. The operator
+caught it by asking. Both attestations are recorded on CR0503. Running the shipped
+briefs is what produced this review round - the claim-inventory pass they carry, and the
+hand-written prompts did not, is the only practice in the ceremony aimed at prose.
 
-**BG0350 was dropped, deliberately.** Closing it needs verdicts for an adversarial review that
-did not happen. Recording them would manufacture the evidence the gate exists to demand.
-
-## The finding that outlives the batch
-
-Eight of the fifteen residue bugs were ONE shape: a guard that answered a narrower question than
-it claimed, and reported the narrow answer as the broad one. `caller-check --unit` kept the last
-value. `index_derived_issues` read four of five keys. The seam owner matched by substring. The
-waiver report was built from stories only. Each returned a clean verdict over something it had
-not looked at - and each had passing tests.
-
-Three further findings did NOT reproduce (BG0368, BG0373, half of BG0371). Checking cost
-minutes; repairing them would have meant changing correct code. In every case the finding's own
-Proposed Fix named the thing that WAS missing - an assertion - and that is what shipped.
+**`tools/tests` is RED from any worktree** (BG0445): the census matches its skip list
+against the absolute path, so a checkout under `.claude/worktrees/` censuses zero files.
+Green in the main checkout, inert in the environment this repo runs its reviewers in.
 
 ## Next steps
 
-1. **Sign-off on the 12 stories is the operator's** - the adversarial pass has not been run by an
-   independent context, so Done is not reachable from here.
-2. **BG0400 first in the next batch.** Until it lands, every artefact-only commit pays the full
-   suites - the saving US0554 delivered is real code sitting behind a measurement defect.
-3. **BG0350 remains open** and will stay open until someone independent of the run consuming the
-   result can do the pass.
-4. **CR0496 and CR0497 are still unrefined** in the discovery backlog, along with 35 other items.
+1. **BG0442 first in the next batch.** A goal metric that cannot be computed is worse
+   than an absent one: it reports the good outcome.
+2. **BG0451 second** - it loses data, and its shape (any writer defaulting a missing
+   state to blank mints a phantom run) is one change, not a rule to remember.
+3. **EP0192 (CR0505)** is groomed and ready: the compulsory close checklist and sprint
+   report. This run is its case study - the delivered figures, the drops, the scope-creep
+   ratio and the known-issue rulings were all derived by hand here.
+4. **CR0496 and CR0497 remain unrefined** in the discovery backlog.
