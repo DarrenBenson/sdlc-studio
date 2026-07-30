@@ -1390,6 +1390,7 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "breakdown-ticked-early": "an epic breakdown checkbox is ticked over a still-live unit (masks unfinished work) - run `reconcile apply` to untick it, or finish the unit",
         "epic-points-stale": "an epic's derived point total no longer equals the sum of its stories' points - run `reconcile apply` to recompute it (the total is DERIVED, never hand-set; the epic's own coarse estimate is its T-shirt `Size`, not points)",
         "link-asymmetry": "a request/child link is declared on one side only - add the missing half (the child's `Parent:` or the request's `Decomposed-into:`) so it resolves both ways, or fix the id that resolves to nothing; a decomposition writes BOTH sides",
+        "supersession-asymmetry": "a supersession is recorded on one side of the pair only - add the missing half (the superseder's `Supersedes:` or the superseded artefact's `Superseded by:`) so a reader arriving from either direction sees it, or record the pair in sdlc-studio/.supersession-waivers.json with the reason it is legitimate asymmetry (a partial supersession is); the tolerated set may only shrink",
         "undecomposed": "a discovery item accepted into the workflow has no children - decompose it into the units that deliver it (refine a request into epics/stories; triage an Issue into bugs), or close it if it is not going ahead; a still-Proposed/Draft/Open item is pre-triage intake and is not flagged",
         "linked-epics": "the request index's Linked Epics cell disagrees with the file's `Decomposed-into` - run `reconcile apply` to census it from the files; a request that was never decomposed keeps its placeholder and is not flagged",
         "stale-index-stamp": "the index's `**Last Updated:**` header is older than the newest date on its own rows, so it claims a freshness it does not have - run `reconcile apply` to restamp it from the rows (the stamp is derived, never hand-set; a header AHEAD of the rows is just an index nothing has been added to and is not flagged)",
@@ -2292,6 +2293,97 @@ def child_parent(source) -> str | None:
         m = ID_SEARCH_RE.search(epic)
         return m.group(0) if m else None
     return change_request_ref(text)
+
+
+# -----------------------------------------------------------------------------
+# Supersession: one grammar for every spelling the corpus carries
+# -----------------------------------------------------------------------------
+#
+# A supersession is a fact about a PAIR, and each side records it in its own field. Nine distinct
+# spellings are in the corpus, measured rather than assumed - the specification for this named six,
+# and the three it missed are the free prose ones a field-name allowlist would have read as an
+# absence. An unrecognised spelling is the dangerous failure here: it makes a recorded supersession
+# look unrecorded, which is a report of drift that does not exist.
+#
+# So the label is matched on the VERB, not on an enumerated set of field names, and the direction
+# is read from that verb: `Supersedes` names what this artefact replaces, `Superseded by` names
+# what replaces it. The template ships a COMBINED `Supersedes / Superseded by:` field carrying
+# both verbs, so its direction comes from the value instead; recording both directions for it
+# manufactured a reversed phantom pair for every one of the fifteen in the corpus.
+
+#: `> **Superseded by:** X`, `> **Supersedes (in part):** X`, and the dated prose forms
+#: `> **Superseded 2026-07-04 by [CR-0142](...).**` - the label is whatever sits inside the bold
+#: run, and it qualifies on containing the verb.
+SUPERSESSION_FIELD_RE = re.compile(
+    r"(?m)^>?[^\S\n]*\*\*([^*]*[Ss]upersed[^*]*?)\*\*[^\S\n]*(.*)$")
+
+# A partial-supersession sentence names decision and workstream rows (`decisions **D5** and
+# workstreams **WS3**`), which are not artefacts - a pair built from one points at nothing. No
+# filter for them here: `ID_SEARCH_RE`'s prefix set does not include `D` or `WS`, so they never
+# reach this code. A filter was written anyway and a mutant proved it unfireable - a guard that
+# cannot fire reads as protection and provides none. `test_the_id_grammar_excludes_decision_rows`
+# pins the premise instead, so a `D` prefix added to the id grammar reddens rather than silently
+# turning `D5` into a supersession counterpart.
+
+#: Values meaning "nothing declared". The template's placeholder, and the en dash a hand edit left.
+SUPERSESSION_EMPTY = ("", "-", "--", "–", "—", "none", "n/a")
+
+#: Directions a declaration can carry. `AMBIGUOUS` is a real answer and not a failure: a combined
+#: field whose value names an id but no verb states a pairing without saying which way round, and
+#: guessing would invent half a supersession.
+SUPERSEDES, SUPERSEDED_BY, SUPERSESSION_AMBIGUOUS = "supersedes", "superseded-by", "ambiguous"
+
+
+def supersession_direction(label: str, value: str = "") -> str:
+    """Which way round a declaration points, read from its verb.
+
+    The combined template field carries both verbs, so it defers to the value's verb; a value
+    with neither is AMBIGUOUS rather than assumed.
+    """
+    low = label.lower()
+    forward, backward = "supersedes" in low or "supersede " in low, "superseded" in low
+    if forward and backward:
+        vlow = value.lower()
+        if "superseded" in vlow:
+            return SUPERSEDED_BY
+        if "supersede" in vlow:
+            return SUPERSEDES
+        return SUPERSESSION_AMBIGUOUS
+    if backward:
+        return SUPERSEDED_BY
+    if forward:
+        return SUPERSEDES
+    return SUPERSESSION_AMBIGUOUS
+
+
+def supersession_declarations(source, own: str | None = None) -> list[dict]:
+    """Every supersession this artefact declares: `[{label, direction, ids, partial, value}]`.
+
+    `ids` are normalised (`CR-0132` and `CR0132` are one id) and never include the artefact's own
+    id or a decision row. A declaration naming no id is still RETURNED, with an empty `ids` - a
+    dated `> **Superseded 2026-06-22:** accepted by operator override` is a record of the event,
+    and dropping it would report the artefact as declaring nothing at all.
+    """
+    text = source.read_text(encoding="utf-8") if isinstance(source, Path) else source
+    mine = norm_id(own) if own else None
+    out: list[dict] = []
+    for label, value in SUPERSESSION_FIELD_RE.findall(text):
+        label, value = label.strip(), value.strip()
+        whole = f"{label} {value}"
+        ids: list[str] = []
+        for m in ID_SEARCH_RE.finditer(whole):
+            rec = norm_id(m.group(0))
+            if rec != mine and rec not in ids:
+                ids.append(rec)
+        # An UNFILLED field declares nothing; a filled one whose prose sits inside the bold run
+        # declares plenty. Both have an empty value, so the label decides: a bare field name ends
+        # in `:`, whereas `> **Superseded by the sdlc-studio.com website.**` is the whole sentence.
+        if not ids and label.endswith(":") and value.lower() in SUPERSESSION_EMPTY:
+            continue
+        out.append({"label": label, "value": value, "ids": ids,
+                    "direction": supersession_direction(label, value),
+                    "partial": "part" in label.lower()})
+    return out
 
 
 _PAREN_RUN_RE = re.compile(r"\([^)]*\)")

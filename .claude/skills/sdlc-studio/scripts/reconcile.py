@@ -88,6 +88,7 @@ DRIFT_KINDS = (
     "stale-index-stamp",
     "index-field",
     "spawned-column",
+    "supersession-asymmetry",
 )
 
 # Statuses that do NOT imply a backing file yet. An UNLINKED index row in one of
@@ -1323,6 +1324,128 @@ def link_asymmetry_drift(repo_root: Path | str) -> list[dict]:
     return drift
 
 
+#: The tolerated set of one-sided supersessions, and the reason each is tolerated. A RATCHET, on
+#: the same terms as `.verify-lint-baseline.json`: the set may only shrink, and an entry with no
+#: reason is not an entry. Introducing this kind against a corpus already carrying ten one-sided
+#: pairs would otherwise turn a blocking lane red across a repository nobody had broken, which is
+#: how a guard gets switched off in its first week.
+SUPERSESSION_WAIVERS_REL = ("sdlc-studio", ".supersession-waivers.json")
+
+#: How a waived pair is keyed: the superseding id, then the superseded one. Direction is part of
+#: the key on purpose - waiving `A>B` must not also waive the reversed claim `B>A`, which is a
+#: different assertion about which design won.
+def supersession_key(superseder: str, superseded: str) -> str:
+    return f"{_norm_id(superseder)}>{_norm_id(superseded)}"
+
+
+def read_supersession_waivers(repo_root: Path | str) -> dict:
+    """`{state, pairs, detail}` - a three-state read, never a bare dict.
+
+    An unreadable or malformed waiver file must not read as "nothing is waived": that turns every
+    tolerated pair into a fresh finding and buries the real one. `state` is `ok` (a file that
+    parsed), `absent` (no file - nothing waived, which is the honest starting state) or `corrupt`.
+    """
+    path = Path(repo_root).joinpath(*SUPERSESSION_WAIVERS_REL)
+    if not path.is_file():
+        return {"state": "absent", "pairs": {}, "detail": f"no {path.name}"}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return {"state": "corrupt", "pairs": {}, "detail": f"{path.name}: {exc}"}
+    pairs = data.get("pairs") if isinstance(data, dict) else None
+    if not isinstance(pairs, dict):
+        return {"state": "corrupt", "pairs": {},
+                "detail": f"{path.name}: no `pairs` object"}
+    # An entry with no stated reason is dropped: an unexplained waiver is a silent exemption, and
+    # this is the one place the difference between "judged legitimate" and "forgotten" is recorded.
+    kept = {k: v for k, v in pairs.items()
+            if isinstance(v, dict) and str(v.get("reason") or "").strip()}
+    return {"state": "ok", "pairs": kept, "detail": f"{len(kept)} waived pair(s)"}
+
+
+def supersession_asymmetry_drift(repo_root: Path | str) -> list[dict]:
+    """A supersession one side of the pair records and the other does not.
+
+    A superseded design that never records it keeps reading as live from that direction, which is
+    the direction a reader arrives from when they follow a link INTO it. So the pair is checked
+    from both ends: the superseding artefact must say what it replaces, and the superseded one must
+    say what replaced it.
+
+    Detect-only, like `link_asymmetry_drift`: which side is authoritative is a judgement, and an
+    auto-written mirror would be this tool asserting a design decision it cannot make. A partial
+    supersession - one artefact replacing some decisions of another that stays live in the rest - is
+    legitimate asymmetry rather than drift, so it is waivable by the same mechanism.
+    """
+    root = Path(repo_root)
+    index = _artefact_index(root)
+    waivers = read_supersession_waivers(root)
+    drift: list[dict] = []
+    seen: set[str] = set()
+
+    # First pass: what each artefact declares, in both directions.
+    forward: dict[str, set[str]] = {}     # A -> the ids A says it supersedes
+    backward: dict[str, set[str]] = {}    # A -> the ids A says superseded it
+    for rnorm, (rid, rtype, rtext) in index.items():
+        for dec in sdlc_md.supersession_declarations(rtext, rid):
+            if dec["direction"] == sdlc_md.SUPERSEDES:
+                forward.setdefault(rnorm, set()).update(dec["ids"])
+            elif dec["direction"] == sdlc_md.SUPERSEDED_BY:
+                backward.setdefault(rnorm, set()).update(dec["ids"])
+            elif dec["ids"]:
+                # A declaration naming an id whose direction cannot be read states half a pairing
+                # and does not say which half. Reported rather than guessed at: assuming a
+                # direction here would invent the very asymmetry this detector looks for.
+                _emit_supersession(drift, seen, waivers, rid, rtype, dec["ids"][0],
+                                   f"{rid} declares a supersession naming {dec['ids'][0]} whose "
+                                   f"direction cannot be read from `{dec['label']}`"
+                                   f" - say `Supersedes:` or `Superseded by:`", ambiguous=True)
+
+    # Second pass: every declared pair, judged from the side that declared it.
+    for anorm, targets in sorted(forward.items()):
+        aid, atype, _ = index[anorm]
+        for bnorm in sorted(targets):
+            if bnorm not in index:
+                _emit_supersession(drift, seen, waivers, aid, atype, bnorm,
+                                   f"{aid} says it supersedes {bnorm}, which resolves to no "
+                                   f"artefact")
+                continue
+            bid = index[bnorm][0]
+            if anorm not in backward.get(bnorm, set()):
+                _emit_supersession(drift, seen, waivers, aid, atype, bnorm,
+                                   f"{aid} says it supersedes {bid}, but {bid} does not record "
+                                   f"being superseded by {aid} - it still reads as live")
+    for bnorm, sources in sorted(backward.items()):
+        bid, btype, _ = index[bnorm]
+        for anorm in sorted(sources):
+            if anorm not in index:
+                _emit_supersession(drift, seen, waivers, bid, btype, anorm,
+                                   f"{bid} says it was superseded by {anorm}, which resolves to "
+                                   f"no artefact")
+                continue
+            aid = index[anorm][0]
+            if bnorm not in forward.get(anorm, set()):
+                _emit_supersession(drift, seen, waivers, bid, btype, anorm,
+                                   f"{bid} records being superseded by {aid}, but {aid} does not "
+                                   f"say it supersedes {bid}")
+    return drift
+
+
+def _emit_supersession(drift: list, seen: set, waivers: dict, subject_id: str, subject_type: str,
+                       counterpart: str, why: str, *, ambiguous: bool = False) -> None:
+    """One finding per ORDERED pair, waivers applied. Both ends of a pair report the same fact, so
+    without the de-duplication a symmetric-looking corpus would report each gap twice."""
+    a, b = (subject_id, counterpart) if not ambiguous else (subject_id, counterpart)
+    key = supersession_key(a, b)
+    reverse = supersession_key(b, a)
+    if key in seen or reverse in seen:
+        return
+    if key in waivers["pairs"] or reverse in waivers["pairs"]:
+        return
+    seen.add(key)
+    drift.append({"type": subject_type, "id": subject_id, "kind": "supersession-asymmetry",
+                  "file_status": None, "index_status": None, "fix": why})
+
+
 def _requires_children(type_: str, status: str) -> bool:
     """True when a discovery item of this type+status has been ACCEPTED into the workflow and so
     must have been decomposed. A discovery item is intake until someone accepts it: the create
@@ -1725,6 +1848,7 @@ def _detect_all(repo_root: Path, scope: str | None) -> tuple[dict, list[dict]]:
     # two-backlog workflow - an unenforced project is not told its childless CRs are drift.
     if scope is None:
         all_drift.extend(link_asymmetry_drift(repo_root))
+        all_drift.extend(supersession_asymmetry_drift(repo_root))
         all_drift.extend(detect_linked_epics(repo_root)["drift"])
         all_drift.extend(spawned_column_drift(repo_root))
         if sdlc_md.two_backlog_enforced(repo_root):

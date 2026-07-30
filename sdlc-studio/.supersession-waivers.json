@@ -1,0 +1,49 @@
+{
+  "_comment": "Tolerated one-sided supersessions. A RATCHET on the same terms as .verify-lint-baseline.json: an entry needs a stated reason, and the set may only shrink. Remove an entry by writing the missing declaration on the side that lacks it.",
+  "pairs": {
+    "BG0174>CR0255": {
+      "reason": "PRE-EXISTING at this kind's introduction (US0484). The supersession is recorded on one side only and the missing half is real DEBT, not judged-legitimate asymmetry: the superseding artefact never wrote down what it replaced, so a reader arriving at the superseded one from that direction still sees it as live. Recorded so the ratchet can be enforced from here; the SET MAY ONLY SHRINK, and removing an entry by writing the missing declaration is the only permitted direction.",
+      "note": "CR0255 records being superseded by BG0174, but BG0174 does not say it supersedes CR0255"
+    },
+    "BG0184>CR0331": {
+      "reason": "PRE-EXISTING at this kind's introduction (US0484). The supersession is recorded on one side only and the missing half is real DEBT, not judged-legitimate asymmetry: the superseding artefact never wrote down what it replaced, so a reader arriving at the superseded one from that direction still sees it as live. Recorded so the ratchet can be enforced from here; the SET MAY ONLY SHRINK, and removing an entry by writing the missing declaration is the only permitted direction.",
+      "note": "CR0331 records being superseded by BG0184, but BG0184 does not say it supersedes CR0331"
+    },
+    "BG0185>CR0332": {
+      "reason": "PRE-EXISTING at this kind's introduction (US0484). The supersession is recorded on one side only and the missing half is real DEBT, not judged-legitimate asymmetry: the superseding artefact never wrote down what it replaced, so a reader arriving at the superseded one from that direction still sees it as live. Recorded so the ratchet can be enforced from here; the SET MAY ONLY SHRINK, and removing an entry by writing the missing declaration is the only permitted direction.",
+      "note": "CR0332 records being superseded by BG0185, but BG0185 does not say it supersedes CR0332"
+    },
+    "BG0269>BG0271": {
+      "reason": "PRE-EXISTING at this kind's introduction (US0484). The supersession is recorded on one side only and the missing half is real DEBT, not judged-legitimate asymmetry: the superseding artefact never wrote down what it replaced, so a reader arriving at the superseded one from that direction still sees it as live. Recorded so the ratchet can be enforced from here; the SET MAY ONLY SHRINK, and removing an entry by writing the missing declaration is the only permitted direction.",
+      "note": "BG0271 records being superseded by BG0269, but BG0269 does not say it supersedes BG0271"
+    },
+    "CR0132>CR0139": {
+      "reason": "PRE-EXISTING at this kind's introduction (US0484). The supersession is recorded on one side only and the missing half is real DEBT, not judged-legitimate asymmetry: the superseding artefact never wrote down what it replaced, so a reader arriving at the superseded one from that direction still sees it as live. Recorded so the ratchet can be enforced from here; the SET MAY ONLY SHRINK, and removing an entry by writing the missing declaration is the only permitted direction.",
+      "note": "CR0139 records being superseded by CR0132, but CR0132 does not say it supersedes CR0139"
+    },
+    "CR0142>CR0049": {
+      "reason": "PRE-EXISTING at this kind's introduction (US0484). The supersession is recorded on one side only and the missing half is real DEBT, not judged-legitimate asymmetry: the superseding artefact never wrote down what it replaced, so a reader arriving at the superseded one from that direction still sees it as live. Recorded so the ratchet can be enforced from here; the SET MAY ONLY SHRINK, and removing an entry by writing the missing declaration is the only permitted direction.",
+      "note": "CR0142 says it supersedes CR0049, but CR0049 does not record being superseded by CR0142 - it still reads as live"
+    },
+    "CR0142>US0034": {
+      "reason": "PRE-EXISTING at this kind's introduction (US0484). The supersession is recorded on one side only and the missing half is real DEBT, not judged-legitimate asymmetry: the superseding artefact never wrote down what it replaced, so a reader arriving at the superseded one from that direction still sees it as live. Recorded so the ratchet can be enforced from here; the SET MAY ONLY SHRINK, and removing an entry by writing the missing declaration is the only permitted direction.",
+      "note": "CR0142 says it supersedes US0034, but US0034 does not record being superseded by CR0142 - it still reads as live"
+    },
+    "CR0256>CR0255": {
+      "reason": "PRE-EXISTING at this kind's introduction (US0484). The supersession is recorded on one side only and the missing half is real DEBT, not judged-legitimate asymmetry: the superseding artefact never wrote down what it replaced, so a reader arriving at the superseded one from that direction still sees it as live. Recorded so the ratchet can be enforced from here; the SET MAY ONLY SHRINK, and removing an entry by writing the missing declaration is the only permitted direction.",
+      "note": "CR0255 records being superseded by CR0256, but CR0256 does not say it supersedes CR0255"
+    },
+    "CR0335>CR0341": {
+      "reason": "PRE-EXISTING at this kind's introduction (US0484). The supersession is recorded on one side only and the missing half is real DEBT, not judged-legitimate asymmetry: the superseding artefact never wrote down what it replaced, so a reader arriving at the superseded one from that direction still sees it as live. Recorded so the ratchet can be enforced from here; the SET MAY ONLY SHRINK, and removing an entry by writing the missing declaration is the only permitted direction.",
+      "note": "CR0341 records being superseded by CR0335, but CR0335 does not say it supersedes CR0341"
+    },
+    "RFC0035>CR0273": {
+      "reason": "PRE-EXISTING at this kind's introduction (US0484). The supersession is recorded on one side only and the missing half is real DEBT, not judged-legitimate asymmetry: the superseding artefact never wrote down what it replaced, so a reader arriving at the superseded one from that direction still sees it as live. Recorded so the ratchet can be enforced from here; the SET MAY ONLY SHRINK, and removing an entry by writing the missing declaration is the only permitted direction.",
+      "note": "CR0273 records being superseded by RFC0035, but RFC0035 does not say it supersedes CR0273"
+    },
+    "RFC0055>RFC0019": {
+      "reason": "PRE-EXISTING at this kind's introduction (US0484). The supersession is recorded on one side only and the missing half is real DEBT, not judged-legitimate asymmetry: the superseding artefact never wrote down what it replaced, so a reader arriving at the superseded one from that direction still sees it as live. Recorded so the ratchet can be enforced from here; the SET MAY ONLY SHRINK, and removing an entry by writing the missing declaration is the only permitted direction.",
+      "note": "RFC0019 records being superseded by RFC0055, but RFC0055 does not say it supersedes RFC0019"
+    }
+  }
+}

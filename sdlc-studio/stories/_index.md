@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 4 |
-| Ready | 22 |
+| Ready | 21 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 27 |
+| Review | 28 |
 | Done | 512 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -395,7 +395,7 @@
 | [US0481](US0481-sprint-plan-validates-the-units-in-its-batch.md) | sprint plan validates the units in its batch, not only their index rows | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
 | [US0482](US0482-the-baselined-duplicate-verify-groups-are-split-into.md) | The baselined duplicate Verify groups are split into discriminating selectors | Ready | EP0174 | 2026-07-27 | 2026-07-27 |
 | [US0483](US0483-the-falsified-token-observation-premise-is-replaced-wherever.md) | The falsified token-observation premise is replaced wherever the tracked tree asserts it | Won't Implement | EP0174 | 2026-07-27 | 2026-07-27 |
-| [US0484](US0484-reconcile-reports-a-supersession-only-one-side-of.md) | reconcile reports a supersession only one side of the pair records | Ready | EP0175 | 2026-07-27 | 2026-07-27 |
+| [US0484](US0484-reconcile-reports-a-supersession-only-one-side-of.md) | reconcile reports a supersession only one side of the pair records | Review | EP0175 | 2026-07-27 | 2026-07-27 |
 | [US0485](US0485-command-audit-reports-a-flag-whose-argparse-destination.md) | command_audit reports a flag whose argparse destination no line ever reads | Review | EP0175 | 2026-07-27 | 2026-07-27 |
 | [US0486](US0486-every-progressive-loading-guide-cell-that-presents-a.md) | Every Progressive Loading Guide cell that presents a path resolves | Review | EP0175 | 2026-07-27 | 2026-07-27 |
 | [US0487](US0487-a-sprint-charter-is-a-first-class-artefact.md) | A sprint charter is a first-class artefact: goal, scope rule and appetite, with a tool-allocated id and an index row | Ready | EP0176 | 2026-07-27 | 2026-07-27 |

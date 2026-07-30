@@ -22,6 +22,9 @@ assert _spec and _spec.loader
 reconcile = importlib.util.module_from_spec(_spec)
 sys.modules["reconcile"] = reconcile
 _spec.loader.exec_module(reconcile)
+#: The same module object the tests below import locally - reconcile has already resolved it, so
+#: this cannot become a second copy with its own idea of the grammar.
+sdlc_md = reconcile.sdlc_md
 
 INDEX = (
     "# Stories\n\n"
@@ -3834,6 +3837,263 @@ class CorpusReadOnceTests(unittest.TestCase):
         self.assertTrue(all(v is not None for v in plain.values()))
         self.assertTrue(any(v is None for v in trusted.values()), "the elision must happen")
         self.assertEqual(plain, again, "the trusted call must not poison the ordinary memo")
+
+
+#: Every supersession spelling THIS CORPUS carries, measured with `supersession_declarations` and
+#: pinned here. The story's AC said six; there are eleven, and the five it missed are the free-prose
+#: and dated forms - exactly the ones a field-name allowlist reads as an absence, which turns a
+#: recorded supersession into a report of drift that does not exist. Two id forms are covered
+#: because the corpus uses both (`CR-0132` and `CR0132`), one of them inside a markdown link.
+CORPUS_SPELLINGS = (
+    ("> **Superseded-by:** CR0132", "superseded-by", ["CR0132"]),
+    ("> **Superseded by:** CR-0132", "superseded-by", ["CR0132"]),
+    ("> **Superseded by:** [RFC-0012](../rfcs/RFC0012-progressive-disclosure-indexes.md)",
+     "superseded-by", ["RFC0012"]),
+    ("> **Supersedes:** CR0019", "supersedes", ["CR0019"]),
+    ("> **Partially superseded by:** [RFC-0038](RFC0038-x.md) decisions **D5**",
+     "superseded-by", ["RFC0038"]),
+    ("> **Supersedes (in part):** [RFC-0034](RFC0034-x.md) decisions **D1**",
+     "supersedes", ["RFC0034"]),
+    ("> **Superseded 2026-07-04 by [CR-0142](CR0142-retire.md).**", "superseded-by", ["CR0142"]),
+    ("> **Superseded 2026-06-22:** accepted by operator override", "superseded-by", []),
+    ("> **Superseded (2026-07-04, operator-approved at sprint planning).** Same defect class",
+     "superseded-by", []),
+    ("**Superseded by RFC0055 (guided init).** This RFC's first-mile loop is realised",
+     "superseded-by", ["RFC0055"]),
+    ("> **Superseded by the sdlc-studio.com website.**", "superseded-by", []),
+    ("> **Supersedes / Superseded by:** supersedes CR0019", "supersedes", ["CR0019"]),
+)
+
+
+def _artefact(root: Path, kind: str, rec: str, body: str) -> None:
+    d = root / "sdlc-studio" / kind
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"{rec}-x.md").write_text(f"# {rec}: a thing\n\n> **Status:** Done\n{body}\n",
+                                   encoding="utf-8")
+
+
+class SupersessionTests(unittest.TestCase):
+    """A supersession only one side of the pair records (US0484).
+
+    The asymmetry matters in one specific direction: a superseded design that never records it
+    keeps reading as LIVE to a reader who arrives at it from a link, which is the direction most
+    readers arrive from. The detector is detect-only for the same reason `link_asymmetry_drift` is -
+    which side is authoritative is a judgement about which design won.
+    """
+
+    def setUp(self) -> None:
+        self.root = Path(tempfile.mkdtemp(prefix="supersede_"))
+        self.addCleanup(__import__("shutil").rmtree, self.root, ignore_errors=True)
+
+    def _drift(self):
+        return reconcile.supersession_asymmetry_drift(self.root)
+
+    def _waive(self, **pairs) -> None:
+        (self.root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (self.root / "sdlc-studio" / ".supersession-waivers.json").write_text(
+            json.dumps({"pairs": {k.replace("__", ">"): {"reason": v}
+                                  for k, v in pairs.items()}}), encoding="utf-8")
+
+    def test_a_one_sided_supersession_is_reported(self) -> None:
+        """AC1. And it names WHICH side is missing: without that the reader has to open both
+        artefacts to find out where to write.
+
+        MUTANT: check only the forward direction. The corpus's asymmetry runs the other way in ten
+        of its eleven pairs - the superseded artefact records it and the superseder does not - so a
+        forward-only detector reports almost none of the real thing.
+        """
+        _artefact(self.root, "change-requests", "CR0100", "> **Supersedes:** CR0090")
+        _artefact(self.root, "change-requests", "CR0090", "")
+        drift = self._drift()
+        self.assertEqual(1, len(drift), drift)
+        self.assertEqual("supersession-asymmetry", drift[0]["kind"])
+        self.assertIn("CR0090 does not record being superseded by CR0100", drift[0]["fix"])
+        # ...and the mirror case, where the superseded side is the one that recorded it.
+        _artefact(self.root, "change-requests", "CR0080", "> **Superseded by:** CR0070")
+        _artefact(self.root, "change-requests", "CR0070", "")
+        fixes = [d["fix"] for d in self._drift()]
+        self.assertTrue(any("CR0070 does not say it supersedes CR0080" in f for f in fixes),
+                        f"the backward direction went unreported: {fixes}")
+
+    def test_every_corpus_spelling_and_id_form_is_recognised(self) -> None:
+        """AC2, against the ELEVEN spellings measured in the corpus rather than the six the AC
+        named. Each is asserted for direction AND for the ids it names, so a spelling that parses
+        into the wrong direction fails here rather than producing a reversed pair.
+
+        MUTANT: match the label against a set of known field names. Five of these carry the verb in
+        free prose (`Superseded 2026-07-04 by ...`, `Superseded by RFC0055 (guided init).`) and
+        would be read as no declaration at all - which reports a recorded supersession as drift.
+        """
+        for text, direction, ids in CORPUS_SPELLINGS:
+            with self.subTest(spelling=text[:60]):
+                got = sdlc_md.supersession_declarations(text, "CR9999")
+                self.assertEqual(1, len(got), f"not recognised as one declaration: {got}")
+                self.assertEqual(direction, got[0]["direction"])
+                self.assertEqual(ids, got[0]["ids"])
+
+    def test_the_template_placeholder_is_not_a_declaration(self) -> None:
+        """The control on the test above. The combined field ships empty in fourteen artefacts; if
+        the placeholder parsed as a declaration naming nothing, every one would be a finding."""
+        for value in ("--", "-", "–", "", "None"):
+            with self.subTest(value=value):
+                self.assertEqual(
+                    [], sdlc_md.supersession_declarations(
+                        f"> **Supersedes / Superseded by:** {value}", "CR9999"))
+
+    def test_the_id_grammar_excludes_decision_rows(self) -> None:
+        """A partial supersession names decision rows (`decisions **D5** and workstreams **WS3**`),
+        which are not artefacts. Nothing filters them out, because the id grammar cannot produce
+        one - and that premise is pinned HERE rather than defended by a filter.
+
+        A filter was written for this and a mutant proved it could never fire: removing it changed
+        no test. So the premise is asserted directly - and asserted on the property that actually
+        does the work, which is NOT the prefix set. Adding `D|WS` to the prefixes still matches
+        nothing, because an id needs four digits and a decision row has one or two. That digit
+        floor is the load-bearing half, so it is what is pinned.
+        """
+        self.assertEqual([], sdlc_md.ID_SEARCH_RE.findall("decisions D5 and workstreams WS3"))
+        self.assertEqual([], sdlc_md.ID_SEARCH_RE.findall("CR12 and US999"),
+                         "an id shorter than four digits matched - a two-digit decision row could "
+                         "then be read as an artefact whatever the prefix set says")
+        self.assertTrue(sdlc_md.ID_SEARCH_RE.findall("CR0132"), "the control: a real id matches")
+        got = sdlc_md.supersession_declarations(
+            "> **Supersedes (in part):** [RFC-0034](RFC0034-x.md) decisions **D1** and **D5**",
+            "RFC0038")
+        self.assertEqual(["RFC0034"], got[0]["ids"],
+                         "a decision row was read as a supersession counterpart")
+
+    def test_an_artefact_does_not_supersede_ITSELF(self) -> None:
+        """A body mentioning its own id near the verb - `RFC-0038 replaced the model those rest
+        on` - must not become a self-pair. Reported, that is a finding nobody can act on."""
+        got = sdlc_md.supersession_declarations(
+            "> **Supersedes (in part):** [RFC-0034](x.md) - RFC-0038 replaces the token model",
+            "RFC0038")
+        self.assertEqual(["RFC0034"], got[0]["ids"])
+        _artefact(self.root, "rfcs", "RFC0038", "> **Supersedes:** RFC-0038")
+        self.assertEqual([], self._drift(), "an artefact was reported as superseding itself")
+
+    def test_a_direction_that_cannot_be_read_is_reported_not_guessed(self) -> None:
+        """A combined field naming an id with no verb in its value states half a pairing without
+        saying which half.
+
+        MUTANT: default it to one direction. That invents the asymmetry this detector looks for -
+        it would report the counterpart as missing a declaration it was never asked for.
+        """
+        got = sdlc_md.supersession_declarations(
+            "> **Supersedes / Superseded by:** CR0090", "CR0100")
+        self.assertEqual(sdlc_md.SUPERSESSION_AMBIGUOUS, got[0]["direction"])
+        _artefact(self.root, "change-requests", "CR0100",
+                  "> **Supersedes / Superseded by:** CR0090")
+        _artefact(self.root, "change-requests", "CR0090", "")
+        drift = self._drift()
+        self.assertEqual(1, len(drift))
+        self.assertIn("direction cannot be read", drift[0]["fix"])
+
+    def test_a_symmetric_pair_is_not_reported(self) -> None:
+        """AC5. The detector must not manufacture work."""
+        _artefact(self.root, "change-requests", "CR0100", "> **Supersedes:** CR0090")
+        _artefact(self.root, "change-requests", "CR0090", "> **Superseded by:** CR0100")
+        self.assertEqual([], self._drift())
+
+    def test_a_partial_supersession_is_waivable(self) -> None:
+        """AC4. A partial supersession is legitimate asymmetry, not drift - and it is waived by the
+        same mechanism as anything else, so there is one place to look for an exemption."""
+        _artefact(self.root, "rfcs", "RFC0038",
+                  "> **Supersedes (in part):** [RFC-0034](RFC0034-x.md) decisions **D1** and **D5**")
+        _artefact(self.root, "rfcs", "RFC0034", "")
+        self.assertEqual(1, len(self._drift()), "the unwaived pair must report first")
+        self._waive(RFC0038__RFC0034="only D1 and D5 are replaced; D2-D4 remain live and "
+                                     "underpin the superseding model")
+        self.assertEqual([], self._drift())
+
+    def test_a_waiver_is_DIRECTIONAL(self) -> None:
+        """MUTANT: key the waiver on an unordered pair. `A supersedes B` and `B supersedes A` are
+        different claims about which design won, and waiving one must not waive the other."""
+        _artefact(self.root, "change-requests", "CR0100", "> **Supersedes:** CR0090")
+        _artefact(self.root, "change-requests", "CR0090", "")
+        self._waive(CR0100__CR0090="judged legitimate")
+        self.assertEqual([], self._drift())
+        self.assertEqual("CR0100>CR0090", reconcile.supersession_key("CR-0100", "CR0090"),
+                         "the key must normalise the hyphenated id form")
+
+    def test_a_waiver_with_no_stated_reason_does_not_waive(self) -> None:
+        """An unexplained exemption is indistinguishable from a forgotten one. This file is the one
+        place that difference is recorded, so an entry without a reason is not an entry."""
+        _artefact(self.root, "change-requests", "CR0100", "> **Supersedes:** CR0090")
+        _artefact(self.root, "change-requests", "CR0090", "")
+        (self.root / "sdlc-studio" / ".supersession-waivers.json").write_text(
+            json.dumps({"pairs": {"CR0100>CR0090": {"reason": "   "}}}), encoding="utf-8")
+        self.assertEqual(1, len(self._drift()), "a reasonless waiver silently exempted a pair")
+
+    def test_a_CORRUPT_waiver_file_is_not_read_as_nothing_waived(self) -> None:
+        """MUTANT: swallow the parse error and return an empty set. Every tolerated pair would then
+        report at once and bury whatever was genuinely new in the same run."""
+        (self.root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        p = self.root / "sdlc-studio" / ".supersession-waivers.json"
+        p.write_text("{not json", encoding="utf-8")
+        self.assertEqual("corrupt", reconcile.read_supersession_waivers(self.root)["state"])
+        p.write_text(json.dumps({"waivers": {}}), encoding="utf-8")
+        self.assertEqual("corrupt", reconcile.read_supersession_waivers(self.root)["state"],
+                         "a document with no `pairs` object must not read as a clean empty set")
+        p.unlink()
+        self.assertEqual("absent", reconcile.read_supersession_waivers(self.root)["state"])
+
+    def test_an_id_that_resolves_to_no_artefact_is_reported(self) -> None:
+        _artefact(self.root, "change-requests", "CR0100", "> **Supersedes:** CR7777")
+        drift = self._drift()
+        self.assertEqual(1, len(drift))
+        self.assertIn("resolves to no artefact", drift[0]["fix"])
+
+    def test_each_pair_is_reported_ONCE(self) -> None:
+        """Both ends describe the same gap. Reported from each end, a repo would show double the
+        findings it has and the waiver set would need two entries per pair to clear one."""
+        _artefact(self.root, "change-requests", "CR0100", "> **Supersedes:** CR0090")
+        _artefact(self.root, "change-requests", "CR0090", "> **Supersedes:** CR0100")
+        self.assertEqual(1, len(self._drift()), "the reciprocal claim reported twice")
+
+
+class SupersessionLiveCorpusTests(unittest.TestCase):
+    """The kind is introduced against a corpus that already carries eleven of them."""
+
+    REPO = Path(__file__).resolve().parents[5]
+
+    def test_the_existing_pairs_are_waived_or_repaired(self) -> None:
+        """AC3. Introducing a blocking kind that reddens a repository nobody had broken is how a
+        guard gets switched off in its first week, so every pre-existing pair is accounted for.
+
+        The count is pinned: a twelfth pair appearing later must redden this rather than be
+        absorbed, and a waiver removed by writing the missing declaration must lower it.
+        """
+        waivers = reconcile.read_supersession_waivers(self.REPO)
+        self.assertEqual("ok", waivers["state"], waivers["detail"])
+        self.assertEqual(11, len(waivers["pairs"]),
+                         "the tolerated set changed - it may only SHRINK, and it shrinks by "
+                         "writing the missing declaration, never by deleting the entry")
+        for key, entry in waivers["pairs"].items():
+            with self.subTest(pair=key):
+                self.assertRegex(key, r"^[A-Z]+\d{4}>[A-Z]+\d{4}$")
+                self.assertGreater(len(entry["reason"]), 40,
+                                   "a waiver's reason must say why, not just that")
+
+    def test_the_live_corpus_reports_no_unwaived_asymmetry(self) -> None:
+        self.assertEqual([], reconcile.supersession_asymmetry_drift(self.REPO))
+
+    def test_the_detector_actually_finds_the_waived_pairs_when_they_are_NOT_waived(self) -> None:
+        """The control that makes the test above mean something. A clean result is otherwise
+        equally consistent with a detector that scans nothing."""
+        with unittest.mock.patch.object(
+                reconcile, "read_supersession_waivers",
+                return_value={"state": "absent", "pairs": {}, "detail": "patched"}):
+            found = reconcile.supersession_asymmetry_drift(self.REPO)
+        self.assertEqual(11, len(found),
+                         f"the waived set and what the detector finds disagree: {len(found)}")
+
+    def test_the_kind_is_registered_in_the_vocabulary_and_the_remediation_registry(self) -> None:
+        self.assertIn("supersession-asymmetry", reconcile.DRIFT_KINDS)
+        hint = sdlc_md.REMEDIATION["reconcile"]["supersession-asymmetry"]
+        self.assertIn("one side", hint)
+        self.assertIn(".supersession-waivers.json", hint,
+                      "the hint must name where a legitimate asymmetry is recorded")
 
 
 if __name__ == "__main__":

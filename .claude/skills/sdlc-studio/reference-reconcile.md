@@ -34,6 +34,24 @@ not one:
 Without the second pass the index goes on advertising an artefact that is not there, and
 nothing in the gate notices: the census walks files, and this file is gone.
 
+A supersession is checked the same way, from both ends (`supersession-asymmetry`). The
+superseding artefact must say what it replaces and the superseded one must say what replaced
+it, because a superseded design that never records it keeps reading as **live** from the
+direction a reader arrives from. The declaration is matched on its verb rather than on a list
+of field names: `Supersedes` names what this artefact replaces, `Superseded by` names what
+replaced it, and the template's combined field takes its direction from its value. A verb-based
+grammar is the point - the free-prose spellings a corpus accumulates (`Superseded 2026-07-04 by
+[CR-0142](...)`) carry the fact in the label itself, and a field-name allowlist reads every one
+of them as an absence, reporting a recorded supersession as drift.
+
+Detect-only, for the same reason `link-asymmetry` is: which side is authoritative is a
+judgement about which design won. Legitimate asymmetry is recorded in
+`sdlc-studio/.supersession-waivers.json` - a **partial** supersession (one artefact replacing
+named decisions of another that stays live in the rest) is the usual case. That file is a
+ratchet: an entry needs a stated reason, the set may only shrink, and an entry is removed by
+writing the missing declaration. A corrupt or `pairs`-less file reads as **corrupt**, never as
+"nothing waived", so a malformed waiver cannot bury a real finding under every tolerated one.
+
 `apply` never prunes a phantom row by default. A missing file can equally be a bad
 checkout, an in-flight rename, or a file not yet staged, and the row may be the artefact's
 last trace - so apply **warns** (loudly, on stderr, naming the row and the dead link) and
