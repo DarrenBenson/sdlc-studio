@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 4 |
+| Proposed | 5 |
 | Approved | 0 |
 | In Progress | 35 |
 | Complete | 444 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **502** |
+| **Total** | **503** |
 
 ## All Changes
 
@@ -324,6 +324,7 @@
 | [CR-0500](CR0500-the-adversarial-review-runs-at-the-close-so.md) | The adversarial review runs at the close, so every defect it finds becomes close work - it belongs at the delivery cadence | In Progress | High | Improvement | 2026-07-29 | EP0190 |
 | [CR-0501](CR0501-a-repair-is-held-only-by-a-test.md) | A repair is held only by a test its own author wrote, and repairs land in guards - mutation must be mandatory on a fix, not optional on a sprint | In Progress | High | Improvement | 2026-07-29 | EP0191 |
 | [CR-0502](CR0502-the-mutation-lane-asks-for-evidence-on-a.md) | the mutation lane asks for evidence on a changed surface the mutation runner refuses to mutate | Proposed | Medium | Improvement | 2026-07-30 | -- |
+| [CR-0503](CR0503-an-adversarial-review-can-be-run-outside-the.md) | an adversarial review can be run outside the seat ceremony, losing every standing practice, and nothing detects that it was | Proposed | High | Improvement | 2026-07-30 | -- |
 
 ## Archived Releases
 
