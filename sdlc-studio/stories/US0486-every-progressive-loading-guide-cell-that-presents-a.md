@@ -1,6 +1,6 @@
 # US0486: Every Progressive Loading Guide cell that presents a path resolves
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0449
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the check runs
 - **Then** it reports that cell and the missing path
 - **Verify:** pytest tools/tests/test_check_links.py::LoadingGuideTests::test_a_cell_naming_a_missing_path_is_reported
+- **Verified:** yes (2026-07-30)
 
 ### AC2: anchored cells keep their existing file-and-anchor checking
 
@@ -30,6 +31,7 @@
 - **When** the new check runs
 - **Then** they remain checked as file-and-anchor references; only templated forms and script invocations are classified out, so the guide's strongest existing coverage is not exempted away
 - **Verify:** pytest tools/tests/test_check_links.py::LoadingGuideTests::test_anchored_cells_remain_fully_checked
+- **Verified:** yes (2026-07-30)
 
 ### AC3: the cells the current pass cannot see are covered
 
@@ -37,6 +39,7 @@
 - **When** the check runs
 - **Then** each is resolved as a path, which is the coverage this story exists to add
 - **Verify:** pytest tools/tests/test_check_links.py::LoadingGuideTests::test_bare_and_non_markdown_cells_are_covered
+- **Verified:** yes (2026-07-30)
 
 ### AC4: the guard is shown to redden on the real router
 
@@ -44,6 +47,7 @@
 - **When** one cell is mutated to name a file that does not exist
 - **Then** the check fails on it, proving this is a regression guard that can go red rather than an assertion that is true the moment it is written
 - **Verify:** pytest tools/tests/test_check_links.py::LoadingGuideTests::test_the_guard_reddens_on_a_mutated_cell
+- **Verified:** yes (2026-07-30)
 
 ## Revision History
 

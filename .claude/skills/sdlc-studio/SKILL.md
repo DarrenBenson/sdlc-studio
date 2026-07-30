@@ -192,12 +192,12 @@ lines, honour its Reading Guide instead of a whole-file read:
 
 | Flag | Modules Loaded |
 | --- | --- |
-| `trd create --with-diagrams` | modules/trd/c4-diagrams.md |
-| `trd create --with-containers` | modules/trd/container-design.md |
+| `trd create --with-diagrams` | `templates/modules/trd/c4-diagrams.md` |
+| `trd create --with-containers` | `templates/modules/trd/container-design.md` |
 | `trd create --full` | All TRD modules |
-| `epic --perspective engineering` | modules/epic/engineering-view.md |
-| `epic --perspective product` | modules/epic/product-view.md |
-| `epic --perspective test` | modules/epic/test-view.md |
+| `epic --perspective engineering` | `templates/modules/epic/engineering-view.md` |
+| `epic --perspective product` | `templates/modules/epic/product-view.md` |
+| `epic --perspective test` | `templates/modules/epic/test-view.md` |
 
 **Reference file mapping:**
 

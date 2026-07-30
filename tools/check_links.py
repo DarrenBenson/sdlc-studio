@@ -350,6 +350,95 @@ def check_root_docs(repo_root: Path) -> list[str]:
     return sorted(broken)
 
 
+#: A cell whose content is a TEMPLATE rather than a path (`help/{type}.md`, `{domain}`).
+_TEMPLATED = re.compile(r"\{[^}]*\}")
+#: A cell that is a command to run, not a file to load.
+_INVOCATION = re.compile(r"\b(python3|bash|npm|rg)\b")
+#: A path-shaped token: a relative path ending in an extension the skill actually ships.
+_PATH_CELL = re.compile(r"^([A-Za-z0-9_./-]+\.(?:md|py|yaml|yml|sh|json))(#[A-Za-z0-9_-]+)?$")
+
+
+def loading_guide_cells(skill_root: Path) -> list[dict]:
+    """Every Progressive Loading Guide cell that PRESENTS A PATH, classified.
+
+    `{cell, path, anchor, kind}` where `kind` is `anchored`, `bare`, `templated`, `invocation` or
+    `prose`. Only the first two name a resolvable file; the rest are classified OUT explicitly so
+    an exemption is a decision on the page rather than a pattern that quietly matched nothing.
+
+    The existing link passes match `[text](file.md#anchor)` forms, so they are blind to a BARE cell
+    and to any non-`.md` path - which is how five cells shipped naming `modules/trd/c4-diagrams.md`
+    when the tree holds `templates/modules/trd/c4-diagrams.md`. A remembered prefix the tree does
+    not use is exactly the class this reads for.
+    """
+    skill = Path(skill_root)
+    text = (skill / "SKILL.md").read_text(encoding="utf-8")
+    # The HEADING, not the first mention of the phrase. `find` on the bare phrase matched a
+    # sentence in the intro instead, so the block ended at the next heading and the sweep read
+    # ZERO cells while reporting clean - a check that matches nothing is the failure this whole
+    # story is about, reproduced in the checker for it.
+    m = re.search(r"^#{2,3} .*Progressive Loading Guide.*$", text, re.M)
+    if not m:
+        raise ValueError("no Progressive Loading Guide HEADING in SKILL.md - the section was "
+                         "renamed, and a check that matches nothing reports clean")
+    block = text[m.end():]
+    nxt = re.search(r"^#{2} ", block, re.M)
+    if nxt:
+        block = block[:nxt.start()]
+    if not block.strip():
+        raise ValueError("the Progressive Loading Guide section is empty - refusing to report "
+                         "clean over nothing")
+    out: list[dict] = []
+    for line in block.splitlines():
+        if not line.startswith("|") or re.match(r"^\|[\s:|-]+\|$", line):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        for cell in cells[1:]:                      # column 0 is the task/flag label
+            if not cell or cell == "-":
+                continue
+            bare = cell.strip("`").strip()
+            if _TEMPLATED.search(bare):
+                out.append({"cell": cell, "path": None, "anchor": None, "kind": "templated"})
+                continue
+            if _INVOCATION.search(bare):
+                out.append({"cell": cell, "path": None, "anchor": None, "kind": "invocation"})
+                continue
+            link = re.match(r"^\[[^\]]+\]\(([^)]+)\)$", bare)
+            target = link.group(1) if link else bare
+            m = _PATH_CELL.match(target)
+            if not m:
+                out.append({"cell": cell, "path": None, "anchor": None, "kind": "prose"})
+                continue
+            out.append({"cell": cell, "path": m.group(1), "anchor": m.group(2),
+                        "kind": "anchored" if m.group(2) else "bare"})
+    return out
+
+
+def check_loading_guide(skill_root: Path) -> list[str]:
+    """Every guide cell naming a path that is not on disk.
+
+    NOT APPLICABLE when the root has no `SKILL.md` or no guide section - a consuming project need
+    not have one, and this binary runs against theirs. `loading_guide_cells` still RAISES when asked
+    directly, and `test_the_live_guide_has_a_heading` pins that THIS repository has the section, so
+    a rename here reddens a test rather than quietly becoming not-applicable. That is the seam:
+    absent-by-design is a no-op, absent-by-accident is a failure, and the two are told apart by who
+    is asking rather than by guessing.
+    """
+    skill = Path(skill_root)
+    if not (skill / "SKILL.md").is_file():
+        return []
+    if not re.search(r"^#{2,3} .*Progressive Loading Guide.*$",
+                     (skill / "SKILL.md").read_text(encoding="utf-8"), re.M):
+        return []
+    errors = []
+    for c in loading_guide_cells(skill):
+        if not c["path"]:
+            continue
+        if not (skill / c["path"]).exists():
+            errors.append(f"SKILL.md loading guide: {c['cell']} names {c['path']!r}, which is not "
+                          f"on disk - a reader told to load it gets nothing")
+    return errors
+
+
 def main(argv: list[str] | None = None) -> int:
     """Parse arguments, run the check, and report."""
     p = argparse.ArgumentParser(
@@ -384,7 +473,7 @@ def main(argv: list[str] | None = None) -> int:
     workspace = Path(args.workspace) if args.workspace else repo_root / "sdlc-studio"
     allow = set(DEFAULT_ALLOW) | set(args.allow)
     body_allow = set(DEFAULT_BODY_ALLOW) | set(args.allow_body)
-    broken = (check(root, allow) + check_root_docs(repo_root)
+    broken = (check(root, allow) + check_loading_guide(root) + check_root_docs(repo_root)
               + check_index_links(workspace) + check_body_links(workspace, body_allow))
     if broken:
         print(f"Broken markdown links ({len(broken)}):")

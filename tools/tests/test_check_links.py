@@ -6,6 +6,7 @@ Run from the repo root:
 from __future__ import annotations
 
 import importlib.util
+import shutil
 import sys
 import tempfile
 import unittest
@@ -413,6 +414,185 @@ class NestedFenceTests(unittest.TestCase):
         new_text, changed = check_links.rewrite_inbound_links(text, "old.md", "new.md")
         self.assertEqual(changed, 0)
         self.assertEqual(new_text, text)
+
+
+SKILL = Path(__file__).resolve().parents[2] / ".claude" / "skills" / "sdlc-studio"
+
+
+def _guide_fixture(rows: list[str]) -> Path:
+    """A skill root whose SKILL.md holds only a Progressive Loading Guide."""
+    d = Path(tempfile.mkdtemp(prefix="guide_"))
+    body = ("# Skill\n\n## Progressive Loading Guide\n\n"
+            "| Task Type | Primary Load |\n| --- | --- |\n" + "\n".join(rows) + "\n\n## Next\n")
+    (d / "SKILL.md").write_text(body, encoding="utf-8")
+    return d
+
+
+class LoadingGuideTests(unittest.TestCase):
+    """US0486: every guide cell that PRESENTS a path resolves.
+
+    The existing link passes match `[text](file.md#anchor)`, so they were blind to a bare cell and
+    to any non-`.md` path. Five cells shipped naming `modules/trd/c4-diagrams.md` while the tree
+    holds `templates/modules/trd/c4-diagrams.md` - a remembered prefix the tree does not use.
+    """
+
+    def test_a_cell_naming_a_missing_path_is_reported(self) -> None:
+        """AC1. And the message names the PATH, not just the cell, because the fix is the prefix."""
+        d = _guide_fixture(["| Doing a thing | does/not/exist.md |"])
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        errors = check_links.check_loading_guide(d)
+        self.assertEqual(1, len(errors), f"expected one finding: {errors}")
+        self.assertIn("does/not/exist.md", errors[0])
+        self.assertIn("not on disk", errors[0])
+
+    def test_a_cell_naming_a_present_path_passes(self) -> None:
+        """The positive control: a check that reported every cell would pass the test above."""
+        d = _guide_fixture(["| Doing a thing | there.md |"])
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        (d / "there.md").write_text("# there\n", encoding="utf-8")
+        self.assertEqual([], check_links.check_loading_guide(d))
+
+    def test_anchored_cells_remain_fully_checked(self) -> None:
+        """AC2: only templated forms and script invocations are classified out, so the guide's
+        strongest existing coverage is not exempted away.
+
+        MUTANT: classify an anchored cell as `prose`, or fold `anchored` into the exempt kinds.
+        The live count is asserted, so a reclassification that quietly drops coverage reddens here.
+        """
+        cells = check_links.loading_guide_cells(SKILL)
+        kinds = {}
+        for c in cells:
+            kinds[c["kind"]] = kinds.get(c["kind"], 0) + 1
+        self.assertEqual(29, kinds.get("anchored"),
+                         f"the anchored-cell count changed: {kinds}. The story's AC said 30; the "
+                         f"measured figure is 29, and this pins the measurement rather than the "
+                         f"claim")
+        for c in cells:
+            if c["kind"] == "anchored":
+                self.assertTrue(c["path"], "an anchored cell yielded no path to check")
+                self.assertTrue(c["anchor"], "an anchored cell lost its anchor")
+
+    def test_bare_and_non_markdown_cells_are_covered(self) -> None:
+        """AC3: the bare unanchored cells and the non-markdown ones naming scripts and config.
+
+        The existing patterns match only `.md` links, so every one of these was invisible.
+        """
+        cells = check_links.loading_guide_cells(SKILL)
+        bare = [c for c in cells if c["kind"] == "bare"]
+        self.assertGreater(len(bare), 50, "the bare-cell sweep has stopped sweeping")
+        exts = {Path(c["path"]).suffix for c in cells if c["path"]}
+        self.assertIn(".md", exts)
+        self.assertTrue(exts - {".md"},
+                        "no non-markdown path is checked, so the scripts and config cells are "
+                        "still invisible")
+
+    def test_the_guard_reddens_on_a_mutated_cell(self) -> None:
+        """AC4: the guard can GO RED against the live guide, not merely be true when written.
+
+        A live cell is temporarily repointed at a path that does not exist and the real SKILL.md is
+        restored byte-for-byte afterwards. Without this, every other assertion here could hold
+        because the tree happens to be clean rather than because the check works - and this is the
+        story whose whole subject is a check that was blind to five broken cells.
+        """
+        skill_md = SKILL / "SKILL.md"
+        original = skill_md.read_text(encoding="utf-8")
+        live = [c for c in check_links.loading_guide_cells(SKILL) if c["path"]]
+        self.assertTrue(live, "no path-bearing cell in the live guide to mutate")
+        # A path whose string occurs EXACTLY ONCE in the file. Taking `live[0]` blindly mutated the
+        # first occurrence anywhere in SKILL.md - often an unrelated mention outside the guide - so
+        # the cell was left untouched and the test failed while the guard was working.
+        target = next((c["path"] for c in live if original.count(c["path"]) == 1), None)
+        self.assertIsNotNone(target, "no guide path appears exactly once, so none can be mutated "
+                                     "without also changing an unrelated mention")
+        try:
+            skill_md.write_text(original.replace(target, f"no-such-dir/{target}", 1),
+                                encoding="utf-8")
+            errors = check_links.check_loading_guide(SKILL)
+            self.assertTrue(errors, "a cell repointed at a missing path was not reported - the "
+                                    "guard cannot go red, so it proves nothing when it is green")
+            self.assertTrue(any("no-such-dir" in e for e in errors),
+                            f"reported something else instead: {errors[:2]}")
+        finally:
+            skill_md.write_text(original, encoding="utf-8")
+        self.assertEqual(original, skill_md.read_text(encoding="utf-8"),
+                         "the live SKILL.md was not restored byte-for-byte")
+        self.assertEqual([], check_links.check_loading_guide(SKILL),
+                         "the guide does not resolve after the mutation was reverted")
+
+    def test_templated_and_invocation_cells_are_classified_OUT_explicitly(self) -> None:
+        """An exemption is a decision on the page, not a pattern that quietly matched nothing."""
+        d = _guide_fixture(["| A | help/{type}.md |",
+                            "| B | `python3 scripts/x.py build` |",
+                            "| C | some prose about loading |"])
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        kinds = {c["kind"] for c in check_links.loading_guide_cells(d)}
+        self.assertEqual({"templated", "invocation", "prose"}, kinds)
+        self.assertEqual([], check_links.check_loading_guide(d),
+                         "a templated or invocation cell was treated as a path")
+
+    def test_a_renamed_section_FAILS_LOUD_rather_than_reporting_clean(self) -> None:
+        """MUTANT: match the bare phrase instead of the HEADING.
+
+        This is not hypothetical: the first cut used `text.find("Progressive Loading Guide")`, which
+        matched a sentence in the intro, so the block ended at the next heading and the sweep read
+        ZERO cells while reporting clean - the very failure this story is about, inside its checker.
+        """
+        d = Path(tempfile.mkdtemp(prefix="guide_none_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        (d / "SKILL.md").write_text("# Skill\n\nThe Progressive Loading Guide is below.\n\n"
+                                    "## Something Else\n", encoding="utf-8")
+        with self.assertRaises(ValueError) as ctx:
+            check_links.loading_guide_cells(d)
+        self.assertIn("HEADING", str(ctx.exception))
+
+    def test_the_live_guide_has_a_heading_so_the_checker_is_not_a_no_op_here(self) -> None:
+        """The seam's other half. `check_loading_guide` is a no-op for a root with no guide, because
+        a consuming project need not have one - so THIS repository having the section is what makes
+        the check live, and a rename here must redden rather than quietly become not-applicable.
+        """
+        import re as _re
+        self.assertTrue(_re.search(r"^#{2,3} .*Progressive Loading Guide.*$",
+                                   (SKILL / "SKILL.md").read_text(encoding="utf-8"), _re.M),
+                        "SKILL.md has no Progressive Loading Guide heading, so the guide check is "
+                        "silently not-applicable on the repository that owns it")
+        self.assertTrue(check_links.loading_guide_cells(SKILL),
+                        "the live guide parses to zero cells")
+
+    def test_a_root_with_no_guide_is_not_applicable_rather_than_an_error(self) -> None:
+        """The pre-existing fixtures in this very file are roots with no guide, and the first cut
+        made `main()` RAISE on every one of them."""
+        d = Path(tempfile.mkdtemp(prefix="noguide_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        self.assertEqual([], check_links.check_loading_guide(d), "an absent SKILL.md errored")
+        (d / "SKILL.md").write_text("# Skill\n\n## Something Else\n", encoding="utf-8")
+        self.assertEqual([], check_links.check_loading_guide(d), "a guideless SKILL.md errored")
+
+    def test_an_EMPTY_guide_section_refuses_rather_than_reporting_clean(self) -> None:
+        """MUTANT: drop the empty-block refusal.
+
+        A heading whose table has been emptied is the same hazard as a renamed one - the sweep reads
+        zero cells and reports clean - but it is a DIFFERENT state, so it needs its own fixture: with
+        the heading match correct the block is never empty in the live tree, and nothing else here
+        reaches the branch.
+        """
+        d = Path(tempfile.mkdtemp(prefix="guide_empty_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        (d / "SKILL.md").write_text("# Skill\n\n## Progressive Loading Guide\n\n## Next\n",
+                                    encoding="utf-8")
+        with self.assertRaises(ValueError) as ctx:
+            check_links.loading_guide_cells(d)
+        self.assertIn("empty", str(ctx.exception))
+
+    def test_the_live_guide_resolves(self) -> None:
+        """Against the shipped SKILL.md, because a fixture cannot see a cell that ships broken."""
+        self.assertEqual([], check_links.check_loading_guide(SKILL))
+
+    def test_the_check_is_wired_into_the_command(self) -> None:
+        """A helper `main` never calls is not a lane."""
+        src = TOOLS.read_text(encoding="utf-8")
+        self.assertIn("check_loading_guide(root)", src,
+                      "the guide check is not called from main(), so the binary the gate runs "
+                      "does not perform it")
 
 
 if __name__ == "__main__":
