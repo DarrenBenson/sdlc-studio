@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 14 |
+| Open | 25 |
 | In Progress | 0 |
 | Fixed | 331 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **428** |
+| **Total** | **439** |
 
 ## All Bugs
 
@@ -146,6 +146,17 @@
 | [BG0426](BG0426-the-epic-story-census-could-not-read-the.md) | the epic story census could not read the linked Epic field the shipped template writes, and a wrong count was committed | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0427](BG0427-the-epic-index-sweep-decided-per-row-and.md) | the epic-index sweep decided per row and wrote per epic id, resolved the header by one literal spelling, and read an unparseable dependency row as a declaration of none | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0428](BG0428-a-supersession-waiver-was-keyed-on-whoever-declared.md) | a supersession waiver was keyed on whoever declared it rather than on who superseded whom, and a parenthetical annotation manufactured a phantom waived pair | Fixed | High | 2026-07-30 | 2026-07-30 |
+| [BG0429](BG0429-the-dead-flag-detector-collapses-same-named-functions.md) | the dead-flag detector collapses same-named functions module-wide, so a dead flag reads clean and a live one reads dead | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0430](BG0430-a-namespace-held-in-a-module-global-is.md) | a namespace held in a module global is invisible to the dead-flag detector, so a live flag is reported dead with no cannot-judge reason | Open | Medium | 2026-07-30 | 2026-07-30 |
+| [BG0431](BG0431-one-unresolvable-namespace-escape-demotes-every-flag-in.md) | one unresolvable namespace escape demotes every flag in the module to cannot-judge, and nothing bounds how far that spreads | Open | Medium | 2026-07-30 | 2026-07-30 |
+| [BG0432](BG0432-test-selection-still-misses-eleven-scripts-whose-tests.md) | test selection still misses eleven scripts whose tests load them under a different name | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0433](BG0433-the-duplicate-verifier-ratchet-is-not-enforced-as.md) | the duplicate-verifier ratchet is not enforced as a ratchet, groups on a weaker key than the command it runs, and cannot notice its own flag going away | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0434](BG0434-two-of-the-four-signature-detector-shapes-are.md) | two of the four signature detector shapes are exercised only by a synthetic fixture, and the one real row's path resolves anywhere | Open | Medium | 2026-07-30 | 2026-07-30 |
+| [BG0435](BG0435-the-loading-guide-path-checker-skips-a-whole.md) | the loading-guide path checker skips a whole table whose first column is the path, and nine of twelve broken-path shapes escape it | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0436](BG0436-resolve-affects-never-resolves-against-the-installed-skill.md) | resolve_affects never resolves against the installed skill dir, so detector-owed --file tracebacks on every default install | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0437](BG0437-filing-run-resolves-a-two-id-provenance-line.md) | filing_run resolves a two-id provenance line by document order, so the refusal its criterion promises is nearly unreachable | Open | Medium | 2026-07-30 | 2026-07-30 |
+| [BG0438](BG0438-audit-run-provenance-is-not-durable-the-register.md) | audit-run provenance is not durable: the register and the row accessor disagree, so a seeded run can pass as measured | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0439](BG0439-the-dead-flags-hook-lane-tells-the-operator.md) | the dead-flags hook lane tells the operator it enforces the opposite of what it enforces | Open | Low | 2026-07-30 | 2026-07-30 |
 
 ## Archived Releases
 

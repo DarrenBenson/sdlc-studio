@@ -107,6 +107,32 @@ the premise, so the decision can be revisited on evidence rather than belief.
 rather than carried in this document because `judge_defects_against_goal` reads OPEN bugs: until
 they exist as artefacts, the release judgement they should inform reports zero blocking.
 
+## Known issues carried from the 2026-07-30 batch {#known-issues-2026-07-30}
+
+11 units (47 pts, EP0169/EP0172/EP0175) delivered green, then reviewed by five independent
+adversarial reviewers. **All five returned REJECT: 14 MAJOR findings.** Four MAJORs had reached the
+tracked tree and are repaired and committed (BG0426-BG0428) - including a story count of `7` written
+into a row whose true count is 18, because the census compared the `Epic` field whole while every
+other reader of that field extracts the id first.
+
+The remaining **11 bugs (26 pts) are carried as known issues, not stop-ships** (BG0429-BG0439).
+None corrupts data or blocks a release; each is a guard weaker than its documentation, or a
+false-positive risk in a lane, and each is filed with an executed reproduction. The closest to a
+stop-ship is **BG0436**: `resolve_affects` never consults the installed skill dir despite its
+docstring saying it does, so `detector-owed --file` raises an uncaught traceback on any project that
+did not vendor the skill in-tree. It needs an owed lens plus `--file` to fire, which is why it is
+carried rather than held - but it is the first thing to fix, since it affects every consumer and not
+this repo.
+
+**The pattern matters more than the list.** Five defect classes account for all 14 findings, each
+attested two or three times in this one batch: a new reader of a shared field diverging from the
+idiom every other reader uses; a test that can agree with the code by construction; prose promising
+what no code path implements; no shape census of the real corpus before writing a parser; and a new
+gate lane not carrying the guards its siblings carry. None needed a reviewer to find - they needed a
+census, a grep, or a reading of the code against its own docstring. Filed as **CR0504**, with
+**CR0503** for the separate defect that the seat-based review ceremony is entirely optional and was
+bypassed on this very batch.
+
 ## Known divergences
 
 **US0554's saving is SUSPENDED, by this sprint's own later repair.** BG0398 is correct: a
