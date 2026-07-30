@@ -126,6 +126,33 @@ python3 "$CLAUDE_SKILL_DIR/scripts/file_finding.py" file --type bug \
   distinct run and with it a false detector-owed verdict. Every check runs before an id is
   minted, so a refusal costs no id.
 
+### Which lenses now want a script
+
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/readiness.py" detector-owed
+python3 "$CLAUDE_SKILL_DIR/scripts/readiness.py" detector-owed --format json
+```
+
+A lens filed under **two or more separate registered runs** whose signature declares no mechanical
+detector is **detector-owed**: a judgement the model has now been billed for twice, which a script
+should take over. One whose detector already ships is **detector-exists**, and the report names the
+command to run and skip on rather than re-commissioning it.
+
+Volume inside one run is not evidence - a run finding a class five times is the lens working.
+
+Three exit codes, and the third is the point:
+
+| Code | Verdict |
+| --- | --- |
+| 0 | clean - no lens survived two separate runs unconverted |
+| 1 | at least one detector is owed |
+| 3 | **cannot judge** - findings carry no attribution, or cite a run the register does not hold |
+
+**Cannot-judge is not "nothing owed", and it dominates.** A workspace with three owed lenses and
+forty unreadable findings reports cannot-judge, because otherwise the forty vanish behind a verdict
+that looks like an answer. It is `3` rather than `2` so it cannot be confused with a usage error.
+Expect it on a corpus that predates attribution: unattributed findings are named, not counted.
+
 ### The zero-setup path on an existing repo
 
 `audit --profile repo` is the try-before-you-adopt entry point: point it at a repository

@@ -520,6 +520,156 @@ def resolve_profile(name: str, skill_dir: Path | None = None) -> dict:
     return {"name": name, "source": source, **parsed}
 
 
+# ---------------------------------------------------------------------------
+# detector-owed: a lens the model has now paid for twice wants a script
+# ---------------------------------------------------------------------------
+
+#: Exit codes. `3` for cannot-judge and NOT 2: `cmd_profile` already returns 2 for an unknown
+#: profile and argparse uses 2 for a usage error, so a caller could not tell "I could not judge
+#: this workspace" from "you typed the flag wrong".
+OWED_CLEAN, OWED_FOUND, OWED_CANNOT_JUDGE = 0, 1, 3
+
+#: Where findings live. Both, because a class parked in a bug is where nobody looks.
+FINDING_DIRS = (("bugs", ("BG",)), ("change-requests", ("CR",)))
+
+
+def _finding_attributions(repo_root: Path | str) -> tuple[list[dict], list[str]]:
+    """`(attributed, unattributed_ids)` read from the findings' metadata FIELDS.
+
+    Fields rather than `Raised-by` prose: 108 findings hide a run id in that line, and counting a
+    class from free text is a regex where a field read will do.
+    """
+    root = Path(repo_root)
+    attributed: list[dict] = []
+    unattributed: list[str] = []
+    for rel, prefixes in FINDING_DIRS:
+        d = root / "sdlc-studio" / rel
+        if not d.is_dir():
+            continue
+        for path in sorted(d.glob("*.md")):
+            if path.name == "_index.md":
+                continue
+            rec = sdlc_md.extract_record_id(path.stem)
+            if not rec or not rec[:2] in prefixes:
+                continue
+            text = sdlc_md.read_text_safe(path)
+            lens = (sdlc_md.extract_field(text, "Audit-lens") or "").strip()
+            run = (sdlc_md.extract_field(text, "Audit-run") or "").strip()
+            if lens and run:
+                attributed.append({"id": rec, "lens": lens, "run": run})
+            else:
+                unattributed.append(rec)
+    return attributed, unattributed
+
+
+def _lens_signature(lens_name: str, skill_dir: Path | None = None) -> dict | None:
+    """The pack row for `lens_name`, or None when no pack declares it."""
+    d = skill_dir or SKILL_DIR
+    for name in sorted(set(profile_names(d)) - set(REFERENCE_PROFILES)):
+        try:
+            profile = resolve_profile(name, d)
+        except UnknownProfile:
+            continue
+        for lens in profile["lenses"]:
+            if lens["name"] == lens_name:
+                return {**lens, "profile": name}
+    return None
+
+
+def detector_owed(repo_root: Path | str, skill_dir: Path | None = None) -> dict:
+    """Which lenses have now been paid for twice and want a deterministic detector.
+
+    `{owed, exists, unattributed, unregistered, cannot_judge}`.
+
+    A lens is **owed** when it appears under two or more DISTINCT REGISTERED run ids and its pack
+    signature is not mechanical. Registered matters: without it a one-character typo in a run id
+    manufactures a second distinct run and with it a false verdict, which is the whole reason the
+    register is validated at filing time.
+
+    A recurring lens whose signature IS mechanical is **detector-exists** - the script already
+    ships and a finder should run it, so re-commissioning it would be waste.
+
+    Volume inside ONE run is not evidence: a run finding a class five times is the lens working.
+    """
+    attributed, unattributed = _finding_attributions(repo_root)
+    import audit_cost  # noqa: PLC0415 - local: this reads the register, it does not own it
+    registered = audit_cost.registered_run_ids(repo_root)
+
+    by_lens: dict[str, dict] = {}
+    unregistered: list[dict] = []
+    for rec in attributed:
+        if rec["run"] not in registered:
+            # NOT counted towards a verdict: an id the register does not hold proves nothing, and
+            # counting it would be the typo-manufactured second run the register exists to stop.
+            unregistered.append(rec)
+            continue
+        entry = by_lens.setdefault(rec["lens"], {"runs": {}, "findings": []})
+        entry["runs"].setdefault(rec["run"], registered[rec["run"]])
+        entry["findings"].append(rec["id"])
+
+    owed, exists = [], []
+    for lens_name, entry in sorted(by_lens.items()):
+        if len(entry["runs"]) < 2:
+            continue
+        sig = _lens_signature(lens_name, skill_dir)
+        row = {"lens": lens_name,
+               "profile": (sig or {}).get("profile"),
+               "runs": sorted(entry["runs"]),
+               "provenance": sorted(set(entry["runs"].values())),
+               "findings": sorted(entry["findings"]),
+               "signature": (sig or {}).get("signature", ""),
+               "rationale": (sig or {}).get("signature", "") if not (sig or {}).get("mechanical")
+               else ""}
+        (exists if (sig or {}).get("mechanical") else owed).append(row)
+
+    # CANNOT-JUDGE DOMINATES. A workspace with 3 owed lenses and 40 findings it could not read is
+    # not "3 owed" - the 40 would vanish behind a verdict that looks like an answer.
+    cannot_judge = bool(unattributed or unregistered)
+    return {"owed": owed, "exists": exists,
+            "unattributed": sorted(unattributed), "unregistered": unregistered,
+            "cannot_judge": cannot_judge}
+
+
+def owed_exit_code(result: dict) -> int:
+    """0 clean, 1 owed, 3 cannot-judge - with cannot-judge taking precedence over owed."""
+    if result["cannot_judge"]:
+        return OWED_CANNOT_JUDGE
+    return OWED_FOUND if result["owed"] else OWED_CLEAN
+
+
+def cmd_detector_owed(args: argparse.Namespace) -> int:
+    """Report the lenses a recurring class has now paid for twice."""
+    root = Path(getattr(args, "root", None) or ".")
+    res = detector_owed(root)
+    code = owed_exit_code(res)
+    if args.format == "json":
+        print(json.dumps({**res, "exit_code": code}, indent=2))
+        return code
+    for row in res["owed"]:
+        print(f"detector-owed: {row['lens']} ({row['profile']}) - filed under "
+              f"{len(row['runs'])} runs: {', '.join(row['runs'])}")
+        print(f"  findings: {', '.join(row['findings'])}")
+        if row["rationale"]:
+            print(f"  the pack's own rationale for no detector: {row['rationale']}")
+    for row in res["exists"]:
+        print(f"detector-exists: {row['lens']} recurs, and its detector already ships - run and "
+              f"skip on: {row['signature']}")
+    if res["unattributed"]:
+        print(f"CANNOT JUDGE: {len(res['unattributed'])} finding(s) carry no lens attribution, so "
+              f"a class recurring among them is invisible here: "
+              f"{', '.join(res['unattributed'][:8])}"
+              + (" ..." if len(res["unattributed"]) > 8 else ""))
+    for rec in res["unregistered"]:
+        print(f"CANNOT JUDGE: {rec['id']} cites run {rec['run']!r}, which the register does not "
+              f"hold - it is not counted, because an unregistered id proves nothing")
+    if code == OWED_CANNOT_JUDGE:
+        print("verdict: CANNOT JUDGE - this is NOT 'nothing owed'. Attribute the findings above "
+              "(file_finding --lens/--audit-run) or record their runs, then re-run.")
+    elif code == OWED_CLEAN:
+        print("verdict: clean - no lens has survived two separate audit runs unconverted.")
+    return code
+
+
 def cmd_validate_profiles(args: argparse.Namespace) -> int:
     """Hold every lens of every pack to the signature contract.
 
@@ -875,6 +1025,13 @@ def build_parser() -> argparse.ArgumentParser:
                         "the same rule without running this repository's tests")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_profile)
+    o = sub.add_parser("detector-owed",
+                       help="name the lenses filed under two or more separate audit runs whose "
+                            "signature declares no mechanical detector - a judgement the model "
+                            "has now paid for twice, and that a script should take over. "
+                            "Exits 0 clean, 1 owed, 3 cannot-judge")
+    o.add_argument("--format", choices=("text", "json"), default="text")
+    o.set_defaults(func=cmd_detector_owed)
     sdlc_md.add_global_root(parser)
     return parser
 

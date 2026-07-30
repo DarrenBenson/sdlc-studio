@@ -8,9 +8,9 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 5 |
-| Ready | 26 |
+| Ready | 25 |
 | Planned | 0 |
-| In Progress | 0 |
+| In Progress | 1 |
 | Review | 22 |
 | Done | 512 |
 | Won't Implement | 1 |
@@ -374,7 +374,7 @@
 | [US0460](US0460-the-porting-doctrine-is-stated-in-one-direction.md) | The porting doctrine is stated in one direction across the TRD and personas.md: the repo is source, the installed copy is the derived mirror | Review | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0461](US0461-verify-ac-lint-ratchet-refuses-a-duplicate-group.md) | verify_ac lint --ratchet refuses a duplicate group the baseline does not record with a reason, and the pinned pre-commit lane set gains it | Review | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0462](US0462-a-filed-finding-records-the-lens-profile-and.md) | A filed finding records the lens, profile and a resolvable audit run, validated against a register that has a real writer | Review | EP0169 | 2026-07-27 | 2026-07-27 |
-| [US0463](US0463-readiness-py-detector-owed-flags-a-lens-filed.md) | readiness.py detector-owed flags a lens filed in two separate audit runs and files the sized unit that will build the check | Ready | EP0169 | 2026-07-27 | 2026-07-27 |
+| [US0463](US0463-readiness-py-detector-owed-flags-a-lens-filed.md) | readiness.py detector-owed flags a lens filed in two separate audit runs and files the sized unit that will build the check | In Progress | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0464](US0464-every-lens-pack-on-disk-names-its-detector.md) | Every lens pack on disk names its detector or declares manual with a reason, the column is read by header name, and the detector set covers the runners this repo ships | Review | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0465](US0465-no-artefact-reaches-a-terminal-status-carrying-unchecked.md) | No artefact reaches a terminal status carrying unchecked Open Questions, and the 16 that already did are swept | Review | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0466](US0466-the-ungroomed-ac-marker-routes-to-the-shape.md) | The ungroomed AC marker routes to the shape and the verifier guidance, help/refine.md ships, and the help-page gap is a derived lane | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
