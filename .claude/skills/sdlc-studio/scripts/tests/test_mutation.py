@@ -49,8 +49,7 @@ class T(unittest.TestCase):
         self.assertEqual(target.classify(1), "positive")
         self.assertEqual(target.classify(-1), "other")
 
-if __name__ == "__main__":
-    unittest.main()
+
 '''
 
 VACUOUS_TEST = '''import unittest
@@ -60,8 +59,7 @@ class T(unittest.TestCase):
     def test_classify_runs(self):
         target.classify(1)  # exercises, pins nothing
 
-if __name__ == "__main__":
-    unittest.main()
+
 '''
 
 RED_TEST = '''import unittest
@@ -71,8 +69,7 @@ class T(unittest.TestCase):
     def test_fails(self):
         self.assertEqual(1, 2)  # a red baseline over unmutated code
 
-if __name__ == "__main__":
-    unittest.main()
+
 '''
 
 
@@ -3235,6 +3232,75 @@ class TheRunLeavesNothingBehindTests(unittest.TestCase):
         tail = self.mut._read_tail(str(log))
         self.assertEqual(64, len(tail), "the cap the constant declares is not the cap applied")
         self.assertTrue(tail.endswith("TAIL"), "the tail was dropped instead of the head")
+
+
+class MutationResultCarriesItsTreeTests(unittest.TestCase):
+    """BG0440. `git stash` and `git checkout --` are tree-wide, so a concurrent reviewer's
+    cleanup reverts another's mutant mid-run: a result reported SURVIVED may never have been on
+    disk when its test ran. That is unsound in BOTH directions and nothing in the counts said
+    so, so a shared-tree result read exactly like an isolated one."""
+
+    def _mod(self):
+        import importlib, sys
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        return importlib.import_module("mutation")
+
+    def _git(self, *args, cwd):
+        """Through the CONFINED helper, never raw subprocess: a fixture that inherits the host
+        git config can discover the real repository above it, and the sweep in test_gitutil
+        holds every test module to it."""
+        import gitutil
+        return gitutil.git(list(args), cwd, check=False, text=True)
+
+    def test_the_main_worktree_is_reported_SHARED_not_isolated(self) -> None:
+        mod = self._mod()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._git("init", "-q", cwd=root)
+            got = mod.tree_isolation(root)
+            self.assertIs(got["isolated"], False)
+            self.assertIn("MAIN worktree", got["why"])
+
+    def test_a_linked_worktree_is_reported_ISOLATED(self) -> None:
+        mod = self._mod()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "main"
+            root.mkdir()
+            self._git("init", "-q", cwd=root)
+            (root / "f.txt").write_text("x\n", encoding="utf-8")
+            self._git("add", "-A", cwd=root)
+            self._git("-c", "user.email=t@t", "-c", "user.name=t",
+                      "commit", "-qm", "seed", cwd=root)
+            wt = Path(d) / "wt"
+            res = self._git("worktree", "add", "-q", str(wt), cwd=root)
+            if res.returncode != 0:                      # pragma: no cover - git too old
+                self.skipTest(f"git worktree unavailable: {res.stderr.strip()}")
+            got = mod.tree_isolation(wt)
+            self.assertIs(got["isolated"], True)
+            self.assertIn("linked worktree", got["why"])
+
+    def test_a_tree_git_cannot_describe_is_UNESTABLISHED_not_shared(self) -> None:
+        """An absence is not an answer. Reporting an undescribable checkout as shared would be
+        as wrong as reporting it as isolated - it is simply unknown, and must read that way."""
+        mod = self._mod()
+        with tempfile.TemporaryDirectory() as d:
+            got = mod.tree_isolation(Path(d))
+            self.assertIsNone(got["isolated"])
+            self.assertIn("UNESTABLISHED", got["why"])
+
+    def test_the_qualifier_is_PRINTED_beside_the_counts_not_only_stored(self) -> None:
+        """A field nothing renders is a field nobody reads. The warning has to reach whoever
+        reads the KILLED/SURVIVED numbers, not whoever thinks to open the json."""
+        mod = self._mod()
+        self.assertIn("SHARED TREE", mod.tree_warning_line(
+            {"tree": {"isolated": False, "why": "because"}}))
+        self.assertIn("TREE UNESTABLISHED", mod.tree_warning_line(
+            {"tree": {"isolated": None, "why": "because"}}))
+        # ... and SILENT for a confirmed isolated tree: a warning printed on every run is a
+        # warning that stops being read, which is how the mutation lane's "not run" got skimmed.
+        self.assertIsNone(mod.tree_warning_line({"tree": {"isolated": True, "why": "ok"}}))
+        # A run with no tree field at all is unestablished, never quietly fine.
+        self.assertIn("TREE UNESTABLISHED", mod.tree_warning_line({}))
 
 
 if __name__ == "__main__":

@@ -1509,7 +1509,15 @@ not about the test.
 
 A repair that changes behaviour carries a test asserting that behaviour; where it does not,
 report the missing regression cover as a finding: an unpinned repair is one a later edit
-reverts with the suite still green, and a shipped repair was lost exactly that way."""
+reverts with the suite still green, and a shipped repair was lost exactly that way.
+
+Mutate in an ISOLATED CHECKOUT of your own, never the author's working tree - in this harness,
+`Agent(isolation: 'worktree')`. Do NOT use `git stash` or `git checkout --` to clean up: both
+are tree-wide, so either one silently reverts a concurrent reviewer's mutant mid-run and a
+result reported SURVIVED may never have been on disk when its test ran. Four reviewers were
+once dispatched over one shared tree and a live mutant was left behind in it; it was caught
+only because the tree was otherwise clean, and over uncommitted work it would have been
+indistinguishable from that work."""
 
 # Each practice: (name, instruction-regex, reason-regex). Both must be present in a brief for
 # the practice to count as carried; the reason clause is the half worth keeping. Searched over
@@ -1528,6 +1536,13 @@ _BRIEF_PRACTICES = (
     ("regression cover for a repair",
      r"changes behaviour carries a test[^.]*report the missing regression cover as a finding",
      r"reverts with the suite still green"),
+    # The rule existed in reference-review.md and was enforced author-side only: `mutation.py
+    # run` refuses a target with uncommitted changes, which protects the AUTHOR, and nothing
+    # protected the tree from the REVIEWER. The brief is the one artefact guaranteed to reach a
+    # delegated reviewer, so a practice absent from it is held only by the dispatcher's memory.
+    ("isolated checkout for mutation",
+     r"ISOLATED CHECKOUT[^.]*never the author'?s working tree",
+     r"tree-wide[^.]*silently reverts a concurrent reviewer'?s mutant"),
 )
 
 # The four prose surfaces the claim-inventory first pass must cover. A pass that omits one

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 36 |
+| Open | 34 |
 | In Progress | 0 |
-| Fixed | 336 |
+| Fixed | 338 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -157,12 +157,12 @@
 | [BG0437](BG0437-filing-run-resolves-a-two-id-provenance-line.md) | filing_run resolves a two-id provenance line by document order, so the refusal its criterion promises is nearly unreachable | Open | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0438](BG0438-audit-run-provenance-is-not-durable-the-register.md) | audit-run provenance is not durable: the register and the row accessor disagree, so a seeded run can pass as measured | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0439](BG0439-the-dead-flags-hook-lane-tells-the-operator.md) | the dead-flags hook lane tells the operator it enforces the opposite of what it enforces | Open | Low | 2026-07-30 | 2026-07-30 |
-| [BG0440](BG0440-the-isolated-checkout-rule-is-enforced-author-side.md) | the isolated-checkout rule is enforced author-side only, so `critic brief` issues a reviewer prompt that never states it and nothing notices when parallel reviewers share one tree | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0440](BG0440-the-isolated-checkout-rule-is-enforced-author-side.md) | the isolated-checkout rule is enforced author-side only, so `critic brief` issues a reviewer prompt that never states it and nothing notices when parallel reviewers share one tree | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0441](BG0441-review-coverage-launders-a-recorded-reject-into-coverage.md) | review_coverage launders a recorded REJECT into coverage through the evidence lane, so the gate certifying a close reports a rejected unit as reviewed | Fixed | Critical | 2026-07-30 | 2026-07-30 |
 | [BG0442](BG0442-the-close-s-finding-placement-metric-is-hardcoded.md) | the close's finding-placement metric is hardcoded to zero by its own repair's import, so the number the sprint goal is driven to is a constant the code cannot compute | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0443](BG0443-critic-is-independent-returns-true-when-no-reviewer.md) | critic.is_independent returns True when no reviewer is recorded at all, so an unreviewed row satisfies the predicate four gates depend on | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0444](BG0444-the-pre-gate-independence-hole-was-closed-in.md) | the PRE_GATE independence hole was closed in sprint.py only, so conformance.py still clears a unit on the migration sentinel | Open | High | 2026-07-30 | 2026-07-30 |
-| [BG0445](BG0445-the-test-census-lane-skips-any-path-containing.md) | the test-census lane skips any path containing `worktrees`, so it censuses zero files and reports an all-clear precisely where this repo runs its reviewers | Open | Medium | 2026-07-30 | 2026-07-30 |
+| [BG0445](BG0445-the-test-census-lane-skips-any-path-containing.md) | the test-census lane skips any path containing `worktrees`, so it censuses zero files and reports an all-clear precisely where this repo runs its reviewers | Fixed | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0446](BG0446-a-fenced-markdown-example-holding-an-unquoted-status.md) | a fenced markdown example holding an unquoted Status line drops a spec as a version home and silently swallows its real version drift | Fixed | Critical | 2026-07-30 | 2026-07-30 |
 | [BG0447](BG0447-the-availability-guard-tests-for-gh-as-a.md) | the availability guard tests for `gh` as a bare substring, so `nightly`, `highlighted` and `though` all satisfy the half of the contract that names the tool | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0448](BG0448-eight-bugs-stand-at-the-terminal-status-fixed.md) | eight bugs stand at the terminal status Fixed carrying no Verify line and no ticked criterion, and a ninth is Fixed while two of its own ACs are titled NOT YET FIXED | Open | High | 2026-07-30 | 2026-07-30 |

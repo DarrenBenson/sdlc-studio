@@ -423,6 +423,23 @@ changes**, naming the file, before it applies a single mutant. Commit or stash t
 point the run at an isolated checkout. Reasoning about what edit would turn a test red costs
 nothing and needs no tree at all, which is the right move for a reviewer who has neither.
 
+**The rule is now in the brief, not only here.** It was enforced author-side only for a while,
+which is one direction: the refusal above protects the author, and nothing protected the tree
+from the reviewer. Four reviewers were once dispatched concurrently over one working tree and a
+live mutant was left behind in it, found only because the tree was otherwise clean. So
+`critic.py brief` states the requirement in the prompt every delegated reviewer receives, names
+the concrete mechanism for this harness (`Agent(isolation: 'worktree')`), and forbids `git
+stash` and `git checkout --` by name - both are **tree-wide**, so one reviewer's cleanup reverts
+another's mutant mid-run and a result reported SURVIVED may never have been on disk when its
+test ran. A brief that names the instruction without that reason is refused, like every other
+standing practice.
+
+**And the result carries the tree it was measured in.** `mutation.py run` records whether it ran
+in a linked worktree, the main worktree, or a checkout git cannot describe, and prints the
+qualifier beside the KILLED/SURVIVED counts. An undescribable checkout reads UNESTABLISHED
+rather than shared - an absence is not an answer - and a confirmed isolated tree prints nothing,
+because a warning shown on every run is one that stops being read.
+
 ---
 
 ## Correcting the verdict log {#superseding-a-verdict}

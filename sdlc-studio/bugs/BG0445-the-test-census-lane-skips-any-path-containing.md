@@ -1,6 +1,7 @@
 # BG0445: the test-census lane skips any path containing `worktrees`, so it censuses zero files and reports an all-clear precisely where this repo runs its reviewers
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first: both criteria failed against the unfixed census and pass after)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** tools/test_census.py, tools/tests/test_test_census.py
@@ -33,9 +34,21 @@ Match the skip list against the path RELATIVE to the census root, not the absolu
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `tools/test_census.py` matches its skip list against the ABSOLUTE path parts, and the list contains `worktrees`.
-- [ ] Following the recorded steps no longer reproduces the defect: Observed at d7a1ad8f, 2026-07-30, by the engineering amigo seat running the tools suite from inside its own isolated worktree: The failure is the honest signal...
-- [ ] The proposed fix lands, pinned by a test: Match the skip list against the path RELATIVE to the census root, not the absolute path.
+### AC1: a census root nested under a skipped name still censuses its files
+
+- **Given** a census root beneath a directory named `worktrees` - or any other name in `SKIP_DIRS`, because the same shape was waiting for `node_modules` and `.git`
+- **When** `test_files` walks it
+- **Then** it returns the tests below that root, rather than an empty list an all-clear can be reported over. Asserted for EVERY name in the skip list, not just the one the reviewer happened to hit: an enumerated fix that closes only the reported name silently exempts the rest
+- **Verify:** pytest tools/tests/test_test_census.py::SkipListScopeTests::test_a_root_nested_under_a_skipped_name_still_censuses_its_files
+- **Verified:** yes (2026-07-30)
+
+### AC2: a skipped directory INSIDE the root is still skipped
+
+- **Given** a census root containing a vendored `node_modules/dep/tests/test_vendored.py`
+- **When** `test_files` walks it
+- **Then** the vendored test is still excluded - narrowing the match must not stop the skip list working, or the fix trades an empty census for a census of somebody else's dependencies
+- **Verify:** pytest tools/tests/test_test_census.py::SkipListScopeTests::test_a_skipped_directory_INSIDE_the_root_is_still_skipped
+- **Verified:** yes (2026-07-30)
 
 ## Revision History
 

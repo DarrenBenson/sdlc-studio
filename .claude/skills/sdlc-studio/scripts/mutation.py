@@ -1051,6 +1051,61 @@ def _run_tests(test_cmd: str, cwd: Path) -> str:
     return "fail"
 
 
+def tree_isolation(repo_root: Path | str) -> dict:
+    """Was this run measured in a tree of its own? `{isolated, why}`.
+
+    `isolated` is True, False or None, and None is a real answer rather than a soft False: a
+    checkout git cannot describe is one whose isolation is UNESTABLISHED, and reporting that as
+    shared would be as wrong as reporting it as isolated.
+
+    The rule this exists to make visible: a delegated reviewer mutates in an isolated checkout,
+    never a shared tree. `git stash` and `git checkout --` are tree-wide, so one reviewer's
+    cleanup silently reverts a concurrent reviewer's mutant, and a result reported SURVIVED may
+    never have been on disk when its test ran. That is unsound in BOTH directions, and nothing
+    in the counts says so - which is what this qualifier fixes. A linked worktree has its own
+    `--git-dir` while sharing `--git-common-dir`; the main worktree's two are the same path.
+    """
+    import subprocess  # noqa: PLC0415 - only this path needs it
+    try:
+        res = subprocess.run(["git", "-C", str(repo_root), "rev-parse",
+                              "--absolute-git-dir", "--git-common-dir"],
+                             capture_output=True, text=True, check=False, timeout=15)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return {"isolated": None, "why": f"git could not be run here ({exc}), so whether this "
+                                         f"tree is the author's is UNESTABLISHED"}
+    lines = [ln.strip() for ln in res.stdout.splitlines() if ln.strip()]
+    if res.returncode != 0 or len(lines) < 2:
+        return {"isolated": None,
+                "why": "not a git checkout git can describe, so isolation is UNESTABLISHED - "
+                       "read the counts knowing they may have been measured in a shared tree"}
+    # `--git-common-dir` comes back RELATIVE when git is run from the repo root, so it must be
+    # resolved against the repo, never against this process's cwd. Resolving it against the cwd
+    # made the two paths differ in every fresh checkout, so the MAIN worktree reported itself
+    # isolated - the fail-open direction, and the one the whole qualifier exists to prevent.
+    own = Path(lines[0]).resolve()
+    common = Path(lines[1])
+    common = (common if common.is_absolute() else Path(repo_root) / common).resolve()
+    if own != common:
+        return {"isolated": True, "why": f"a linked worktree ({own.name}), so no concurrent "
+                                         f"reviewer's cleanup could revert a mutant here"}
+    return {"isolated": False,
+            "why": "the MAIN worktree, which is shared by construction: a concurrent reviewer's "
+                   "`git stash` or `git checkout --` reverts mutants tree-wide, so a SURVIVED "
+                   "verdict here is not sound evidence unless nothing else was running"}
+
+
+def tree_warning_line(summary: dict) -> str | None:
+    """The isolation qualifier to print beside the counts, or None for a confirmed isolated
+    tree - the one state nobody needs warning about. A separate function because a field
+    nothing renders is a field nobody reads, and the warning has to reach whoever reads the
+    KILLED/SURVIVED numbers rather than whoever thinks to open the json."""
+    tree = (summary or {}).get("tree") or {}
+    if tree.get("isolated") is True:
+        return None
+    label = "SHARED TREE" if tree.get("isolated") is False else "TREE UNESTABLISHED"
+    return f"  {label}: {tree.get('why') or 'no isolation evidence was recorded for this run'}"
+
+
 def run_gate(repo_root: Path | str, files, test_cmd: str,
              max_mutations: int | None = None,
              classes: tuple = FAULT_CLASSES, write_report: bool = True,
@@ -1163,6 +1218,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
             with contextlib.suppress(ValueError):
                 close_window(root, owner=WINDOW_OWNER_RUN)
     summary = {
+        "tree": tree_isolation(root),
         "applied": len(records),
         "killed": sum(1 for r in records if r["verdict"] == "killed"),
         "survived": sum(1 for r in records if r["verdict"] == "survived"),
@@ -2048,6 +2104,14 @@ def cmd_run(args: argparse.Namespace) -> int:
               f"{s['unviable']} unviable, "
               f"{s['truncated']} truncated, {len(report['unchecked'])} un-checked "
               f"in {report.get('elapsed_s')}s")
+        # Printed with the counts, never below them: a survivor measured in a shared tree is
+        # not the same evidence as one measured in a checkout of its own, and the difference
+        # has to be legible to whoever reads the number rather than inferred by whoever
+        # remembers to ask. Silent only for a confirmed isolated tree, which is the state
+        # nobody needs warning about.
+        warn = tree_warning_line(s)
+        if warn:
+            print(warn)
         sel = report.get("selected_tests")
         if sel is None:
             print("  test selection: UNRESOLVED - the command could not be statically "

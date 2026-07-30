@@ -78,14 +78,25 @@ def _norm(stem: str) -> str:
     return stem.replace("-", "_").lower()
 
 
-def _skipped(path: Path) -> bool:
-    return any(part in SKIP_DIRS for part in path.parts)
+def _skipped(rel: Path) -> bool:
+    """True for a path INSIDE the census root that lies under a skipped directory.
+
+    Takes the path RELATIVE to the root, never the absolute one. The skip list names
+    directories the census should not descend into; matched against the absolute path, a name
+    that merely appears somewhere ABOVE the root skipped every file beneath it. This repo runs
+    its reviewers and parallel delivery agents in `.claude/worktrees/`, so the census counted
+    zero files there and the lane reported an all-clear over nothing - inert in exactly the
+    environment it is relied on. The same shape was waiting for any root under a path
+    containing `node_modules` or `.git`.
+    """
+    return any(part in SKIP_DIRS for part in rel.parts)
 
 
 def test_files(root: Path | str) -> list[Path]:
     """Every `test_*.py` under `root`, as paths relative to it."""
     base = Path(root)
-    return sorted(p.relative_to(base) for p in base.rglob("test_*.py") if not _skipped(p))
+    return sorted(rel for rel in (p.relative_to(base) for p in base.rglob("test_*.py"))
+                  if not _skipped(rel))
 
 
 def dotted(rel: Path | str) -> str:

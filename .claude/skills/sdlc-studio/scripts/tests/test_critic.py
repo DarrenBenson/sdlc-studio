@@ -1537,6 +1537,55 @@ def _norm(text: str) -> str:
     return " ".join(text.split())
 
 
+class BriefStatesTheIsolatedCheckoutRuleTests(unittest.TestCase):
+    """BG0440. The isolated-checkout rule was enforced author-side only: `mutation.run` refuses
+    a target with uncommitted changes, protecting the AUTHOR, and nothing protected the tree
+    from the REVIEWER. The brief is the one artefact guaranteed to reach a delegated reviewer,
+    so a practice absent from it is held only by the dispatcher's memory - and four reviewers
+    dispatched over one shared tree left a live mutant behind in it."""
+
+    def _brief(self, mod, root: Path) -> str:
+        _workspace(root)
+        return mod.brief(root, "US0001", "qa")
+
+    def test_the_brief_demands_an_isolated_checkout_and_says_why(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            text = self._brief(mod, Path(d))
+            self.assertIn("ISOLATED CHECKOUT", text)
+            self.assertIn("never the author", text)
+            self.assertNotIn("isolated checkout for mutation", mod.missing_practices(text))
+
+    def test_the_brief_names_the_MECHANISM_not_only_the_requirement(self) -> None:
+        """A reviewer told an abstract requirement improvises; one told `isolation: 'worktree'`
+        does the thing. The rule already existed in reference-review.md and was still bypassed."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            self.assertIn("worktree", self._brief(mod, Path(d)))
+
+    def test_the_brief_FORBIDS_the_tree_wide_cleanups_by_name(self) -> None:
+        """`git stash` is what a reviewer told only to 'revert afterwards' reaches for, and it
+        is tree-wide: it reverts a concurrent reviewer's mutant, so a SURVIVED verdict may
+        describe a mutant that was never on disk when its test ran."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            text = self._brief(mod, Path(d))
+            self.assertIn("git stash", text)
+            self.assertIn("tree-wide", text)
+
+    def test_the_practice_is_refused_when_its_reason_is_stripped(self) -> None:
+        """The discriminating half. An instruction with no reason is the part a fresh reviewer
+        drops first, so presence of the words alone must not satisfy the guard."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            text = self._brief(mod, Path(d))
+            reasonless = re.sub(r"tree-wide[^.]*silently reverts a concurrent reviewer'?s mutant",
+                                "REDACTED", _norm(text), flags=re.I)
+            self.assertIn("isolated checkout for mutation", mod.missing_practices(reasonless))
+            with self.assertRaises(ValueError):
+                mod.assert_brief_practices(reasonless)
+
+
 class ReviewerBriefTests(unittest.TestCase):
     """US0318 (EP0108): the shipped reviewer brief carries every standing practice, each
     with its reason, and a brief missing any is refused; reference-review.md documents them.

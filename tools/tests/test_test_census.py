@@ -163,6 +163,35 @@ class CensusTests(unittest.TestCase):
                           report["modules"][0]["test_ids"])
 
 
+class SkipListScopeTests(unittest.TestCase):
+    """BG0445. The skip list is about directories INSIDE the census root. Matched against the
+    absolute path, a name appearing anywhere ABOVE the root skipped every file beneath it - so a
+    checkout under `.claude/worktrees/` censused zero files and the lane reported an all-clear
+    over nothing, in exactly the environment this repo runs its reviewers in."""
+
+    def test_a_root_nested_under_a_skipped_name_still_censuses_its_files(self) -> None:
+        for above in sorted(tc.SKIP_DIRS):
+            with self.subTest(above=above), tempfile.TemporaryDirectory() as d:
+                root = _repo(Path(d) / above / "wt-1")
+                found = tc.test_files(root)
+                self.assertTrue(
+                    found,
+                    f"a census root beneath a directory named {above!r} found no test files at "
+                    f"all; a name above the root says nothing about the files below it")
+                self.assertIn(Path("pkg/tests/test_alpha.py"), found)
+
+    def test_a_skipped_directory_INSIDE_the_root_is_still_skipped(self) -> None:
+        """The control. Narrowing the match must not stop the skip list working, or the fix
+        trades an empty census for a census of node_modules."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))
+            buried = root / "node_modules" / "dep" / "tests"
+            buried.mkdir(parents=True)
+            (buried / "test_vendored.py").write_text("import dep\n", encoding="utf-8")
+            self.assertNotIn(Path("node_modules/dep/tests/test_vendored.py"),
+                             tc.test_files(root))
+
+
 class MultipleReportTests(unittest.TestCase):
     """This repo's gate cannot be collected in one pytest run, so nor is its report.
 
