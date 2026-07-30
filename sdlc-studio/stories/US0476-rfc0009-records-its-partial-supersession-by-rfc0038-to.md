@@ -1,6 +1,6 @@
 # US0476: RFC0009 records its partial supersession by RFC0038, to the RFC0034 convention, element by element
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0434
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** each of the five is read from its own file by a separate assertion
 - **Then** removing any single one turns the test red on its own line, so the status token and the index note are verified rather than only recited in a Given - the two elements the round-one AC set left unchecked
 - **Verify:** pytest tools/tests/test_supersession_records.py::RFC0009RecordTests::test_each_of_the_five_supersession_elements_is_present
+- **Verified:** yes (2026-07-30)
 
 ### AC2: every decision the header names as superseded carries the marker on its own row
 
@@ -30,6 +31,7 @@
 - **When** the ids are parsed OUT of the header line and each named row is looked up in the tables
 - **Then** each named row carries a `Superseded by RFC-0038` marker, and naming a sixth id in the header without marking its row turns the test red - the id list is derived from the prose, never hard-coded, so the check cannot pass by agreeing with itself
 - **Verify:** pytest tools/tests/test_supersession_records.py::RFC0009RecordTests::test_every_header_named_decision_row_carries_the_superseded_marker
+- **Verified:** yes (2026-07-30)
 
 ### AC3: the two files agree, read from both sides
 
@@ -37,6 +39,7 @@
 - **When** both declaration sets are read from source and compared
 - **Then** they match, so a later one-sided edit to either file fails here rather than surviving as the exact asymmetry CR0434 was filed for
 - **Verify:** pytest tools/tests/test_supersession_records.py::RFC0009RecordTests::test_rfc0009_and_rfc0038_declare_the_same_pairing
+- **Verified:** yes (2026-07-30)
 
 ## Revision History
 

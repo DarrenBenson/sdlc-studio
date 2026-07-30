@@ -5,7 +5,7 @@
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
-> **Supersedes (in part):** [RFC-0034](RFC0034-sprint-sizing-velocity-and-estimate-calibration-close-the.md) decisions **D1** (canonical size unit) and **D5** (do story points stay?) - this RFC replaces the tokens-canonical plus Effort S/M/L model with modified-Fibonacci story points as the one size vocabulary. RFC-0034's D2-D4 (actual measurement, capacity, retro accuracy) remain live and underpin this model.
+> **Supersedes (in part):** [RFC-0034](RFC0034-sprint-sizing-velocity-and-estimate-calibration-close-the.md) decisions **D1** (canonical size unit) and **D5** (do story points stay?) - this RFC replaces the tokens-canonical plus Effort S/M/L model with modified-Fibonacci story points as the one size vocabulary. RFC-0034's D2-D4 (actual measurement, capacity, retro accuracy) remain live and underpin this model. It also supersedes in part [RFC-0009](RFC0009-code-complexity-signals.md) decisions **D5** and workstreams **WS3**, for the same reason: both rested on the token-canonical budget model this RFC replaces. RFC-0009's complexity metrics themselves are untouched.
 
 ## Summary
 

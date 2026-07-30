@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 4 |
-| Ready | 25 |
+| Ready | 24 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 24 |
+| Review | 25 |
 | Done | 512 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -387,7 +387,7 @@
 | [US0473](US0473-the-in-flight-sprint-controls-are-documented-as.md) | The in-flight sprint controls are documented as runnable invocations, with coverage derived from the parser and the reference section pinned structurally | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0474](US0474-review-prep-derives-the-rv-record-and-stamps.md) | review_prep derives the RV record and stamps the covered units from one recorded sprint-review APPROVE, without touching operator prose | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0475](US0475-the-sprint-close-derives-the-review-record-ahead.md) | The sprint close derives the review record ahead of the gate, and the review-current lane demonstrably clears on a git fixture | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
-| [US0476](US0476-rfc0009-records-its-partial-supersession-by-rfc0038-to.md) | RFC0009 records its partial supersession by RFC0038, to the RFC0034 convention, element by element | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
+| [US0476](US0476-rfc0009-records-its-partial-supersession-by-rfc0038-to.md) | RFC0009 records its partial supersession by RFC0038, to the RFC0034 convention, element by element | Review | EP0172 | 2026-07-27 | 2026-07-27 |
 | [US0477](US0477-reconcile-derives-the-epic-index-s-stories-and.md) | reconcile derives the epic index's Stories and Deps cells from the census and syncs them | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
 | [US0478](US0478-the-mint-path-writes-the-canonical-epic-row.md) | The mint path writes the canonical epic row, and the shipped template declares the same columns | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
 | [US0479](US0479-delete-gate-s-dead-verify-batch-flag-and.md) | Delete gate's dead --verify-batch flag and the documentation claiming it does something | Done | EP0172 | 2026-07-27 | 2026-07-27 |

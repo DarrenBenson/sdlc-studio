@@ -1,12 +1,12 @@
 # RFC-0009: Code-complexity signals for estimation, token budgeting, refactor-first and test risk
 
-> **Status:** Accepted
+> **Status:** Accepted (partially superseded)
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-20
 > **Spans:** sdlc-studio skill (repo_map / a complexity helper, code plan, project plan, TSD/test-spec, autonomous-loop budget)
 > **Related:** RFC0001 (loop budget), RFC0004 (repo_map ranking), RFC0006 (execution model), reference-repo-map.md, reference-code.md, reference-test-best-practices.md
-> **Supersedes / Superseded by:** --
+> **Partially superseded by:** [RFC-0038](RFC0038-simplify-to-fibonacci-story-points-and-real-wsjf.md) decisions **D5** (what consumes the signal) and workstreams **WS3** (complexity-weighted token budget for the autonomous loop) - RFC-0038 replaced the token-canonical budget model those two rest on with modified-Fibonacci story points. Everything else here (the AST-derived complexity metrics themselves, D1-D4, WS1-WS2) remains live.
 
 ## Summary
 
@@ -138,7 +138,7 @@ output advisory.
 | D2 | Core dependency | own stdlib cognitive scorer **[leaning]** / soft-dep lizard for multi-language / required dep | Operator | stdlib-first + lizard soft dep; no embeddable multi-language cognitive lib exists | Resolved |
 | D3 | Refactor-first behaviour | recommend **[leaning]** / block above threshold / silent score only | Operator | recommend, configurable threshold | Resolved |
 | D4 | Unit of measure | function / file / change blast-radius (function + repo_map neighbourhood) **[leaning]** | Design | blast-radius best predicts agent cost | Resolved |
-| D5 | What consumes it | estimation / token budget (RFC0001) / wave sizing / test risk - which first | Operator | phase: estimation + refactor reco first | Resolved |
+| D5 | What consumes it | estimation / token budget (RFC0001) / wave sizing / test risk - which first | Operator | phase: estimation + refactor reco first | Resolved - Superseded by [RFC-0038](RFC0038-simplify-to-fibonacci-story-points-and-real-wsjf.md) |
 | D6 | Refactor-scope guard | how to stop speculative over-refactoring (Beck "make the change easy", scoped) | Design | scope the refactor CR to the change only | Resolved |
 
 ---
@@ -171,7 +171,7 @@ output advisory.
 | --- | --- | --- | --- |
 | WS1 | Complexity computation in repo_map / complexity.py (stdlib + soft dep) | CR (TBD) | D1, D2, D4 |
 | WS2 | `code plan` estimation + refactor-first recommendation | CR (TBD) | WS1, D3, D6 |
-| WS3 | Complexity-weighted token budget for the autonomous loop | CR (TBD) | WS1, RFC0001 |
+| WS3 | Complexity-weighted token budget for the autonomous loop - Superseded by [RFC-0038](RFC0038-simplify-to-fibonacci-story-points-and-real-wsjf.md) | CR (TBD) | WS1, RFC0001 |
 | WS4 | Complexity-driven test risk (coverage / scenarios / verify tier) | CR (TBD) | WS1 |
 | WS5 | `project plan` complexity-weighted wave sizing | CR (TBD) | WS1 |
 
