@@ -6,7 +6,7 @@
 <!-- close-status:end -->
 
 > **Goal verdict:** partial (clause 1 achieved, clauses 2 and 3 fail)
-> · **Delivered:** 36 units / 128 points of a 44-unit 158-point plan
+> · **Delivered:** 37 units / 130 points of a 44-unit 158-point plan
 > · **Dropped:** 11 units / 40 points, each with a recorded reason
 
 ## The close found four stop-ships, one of them in the instrument the close is read from
@@ -19,18 +19,42 @@ of 44 that carried no review record at all. **All seven returned REJECT.**
 Every finding below was reproduced by the author before being filed. Two reviewer
 claims did NOT reproduce and were refuted rather than filed.
 
-**Three stop-ships are fixed** (`52fbb34b`, `02dc0cc7`), each mutation-verified:
+## The only review that matters
+
+The operator's standard, and the one this close is judged against: **an increment that adds
+value and does not make anything worse.** Not a gold-plated solution. Against that standard the
+twelve findings sort cleanly, with `git log -S` deciding each case rather than judgement:
+
+| Class | Findings |
+| --- | --- |
+| **REGRESSION** - this batch made it worse than before | **BG0446 only.** FIXED (`67cf88c6`) |
+| New, but better than not having it | BG0447 (a weak guard where there was NO guard), BG0442, BG0451 |
+| Pre-existing - revealed by the review, not caused by the batch | BG0443, BG0444, BG0445, BG0448, BG0449, BG0452 |
+
+BG0446 was the one capability that got worse: before `_is_superseded` existed, `check_versions`
+checked every spec unconditionally, so no documentation example could cost a version home. Fixed,
+with the mirror-image defect closed in the same place, pinned by a control pair.
+
+**CR0507** is filed against this close itself: it asks twenty questions when it should ask two.
+Nine chain steps, eleven flags, twenty unmet prerequisites on a run whose work was finished and
+green - and the previous run spent 5h delivering and 6h35m closing. A close that costs more than
+the sprint it certifies is the reason a future close gets skipped. **CR0508** closes the smaller
+loop underneath it: `verify_ac.selector_resolves` already ships and no writer calls it, so a
+Verify line naming a test that does not exist is accepted at write time.
+
+**Four stop-ships are fixed** (`52fbb34b`, `02dc0cc7`, `67cf88c6`), each mutation-verified:
 
 | Fixed | What it was |
 | --- | --- |
 | BG0441 | `review_coverage` laundered a REJECT into coverage. The unit failed the verdict lane and fell into the evidence lane, which carries no verdict column BY DESIGN and so could not see it had been rejected. `conformance.py` had the rule right, so the newer gate was strictly weaker than the one beside it and the two disagreed silently |
 | BG0450 | The unresolved-questions gate had three live escapes - a heading suffix, a second section, a self-citation - and AC4's verifier was a tautology. The mutant reducing the gate to a bare `Done` comparison **survived all 5489 tests** and was a live CLI escape |
 | BG0453 | The same unguarded run-state read that rounds one and two each failed to close, still live in a third branch. On the return path it discarded a verification that had already run |
+| BG0446 | Before this batch, `check_versions` checked every spec unconditionally. `_is_superseded` closed the blockquoted case and left the fenced one, so a spec documenting an artefact header dropped ITSELF as a version home and took its real drift with it, exit 0 |
 
 **BG0441 is the one that matters for reading any earlier number in this file.** The
 ten units closed on 2026-07-30 under waivers D0077-D0086 were all reported *covered*
 by that gate. The hand-recorded waivers are the only thing that stopped it clearing
-them. Coverage on the repaired gate is **5 of 36** - that is the honest figure, and
+them. Coverage on the repaired gate is **0 of 37** - that is the honest figure, and
 it is low because seven reviewers rejected, not because reviews are missing.
 
 ## Corrections to what this file previously claimed
@@ -47,7 +71,7 @@ false and are corrected here rather than quietly dropped:
 
 ## Carried as known issues, on the operator's ruling
 
-Ten findings (BG0442-BG0449, BG0451, BG0452). None is a stop-ship; each carries an
+Eleven findings (BG0442-BG0445, BG0447-BG0449, BG0451, BG0452), sorted above. None is a stop-ship; each carries an
 executed reproduction. The ones worth knowing about:
 
 - **BG0442** - the sprint goal's own headline metric is a hard-coded 0, killed by its own

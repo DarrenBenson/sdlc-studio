@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 7 |
+| Proposed | 8 |
 | Approved | 0 |
 | In Progress | 37 |
 | Complete | 444 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **507** |
+| **Total** | **508** |
 
 ## All Changes
 
@@ -329,6 +329,7 @@
 | [CR-0505](CR0505-a-sprint-has-no-compulsory-checklist-and-no.md) | a sprint has no compulsory checklist and no report document, so what was dropped, what crept in and what is carried are known only to whoever ran it | In Progress | High | Feature | 2026-07-30 | EP0192 |
 | [CR-0506](CR0506-a-reject-whose-findings-were-all-repaired-has.md) | a REJECT whose findings were all repaired has no route back to covered, so a fully repaired batch reads identically to one nobody reviewed | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0507](CR0507-closing-a-sprint-asks-twenty-questions-when-it.md) | closing a sprint asks twenty questions when it should ask two, and the ceremony now costs more than the work it certifies | Proposed | High | Improvement | 2026-07-30 | -- |
+| [CR-0508](CR0508-a-verify-selector-naming-a-test-that-does.md) | a Verify selector naming a test that does not exist is accepted at write time, though the predicate that would refuse it already ships | Proposed | High | Improvement | 2026-07-30 | -- |
 
 ## Archived Releases
 
