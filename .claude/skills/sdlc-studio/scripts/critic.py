@@ -91,7 +91,12 @@ def record_verdict(repo_root: Path | str, unit: str, verdict: str,
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists():
         path.write_text(_header(phase), encoding="utf-8")
-    row = (f"| {sdlc_md.norm_id(unit)} | {verdict.upper()} | {_clean(reviewer)} | "
+    # BOTH ids floored to `-`, not just the author. The reviewer had no floor, which is what let
+    # an empty value reach the ledger; `is_independent` then read `"" != "alice"` as True and the
+    # row passed as independently reviewed. Flooring here means the empty case is visible in the
+    # log as well as refused by the predicate - a reader can see the cell is blank rather than
+    # meeting a row that merely looks unremarkable.
+    row = (f"| {sdlc_md.norm_id(unit)} | {verdict.upper()} | {_clean(reviewer) or '-'} | "
            f"{_clean(author) or '-'} | "
            f"{sdlc_md.now_date()} | {_clean(issues) or '-'} |\n")
     _write_verdict_row(path, row)
@@ -603,11 +608,14 @@ def is_independent_signoff(repo_root: Path | str, unit: str, signoff: dict | Non
     differ from the recorded author, and not be an authoring-session reviewer id."""
     if not signoff:
         return False
-    principal = _id(signoff.get("principal", ""))
-    author = _id(signoff.get("author", ""))
-    if not principal or not author or principal == author:
+    # The shared half through the ONE authority; the trust-boundary half stays here, because it
+    # is what makes a SIGN-OFF different from a review - a principal the authoring session
+    # controls is a delegate the author controls, which is the whole point of the boundary.
+    # PRE_GATE is refused here too, and was not before: a sign-off attributed to the migration
+    # sentinel is not a sign-off anybody made.
+    if not independence(signoff.get("principal", ""), signoff.get("author", ""))[0]:
         return False
-    return principal not in _session_reviewer_ids(repo_root, unit)
+    return _id(signoff.get("principal", "")) not in _session_reviewer_ids(repo_root, unit)
 
 
 # --- Sprint-level review (one full-diff pass covers a batch) ---------------------------
@@ -1268,8 +1276,11 @@ def sprint_covers_independently(repo_root: Path | str, unit: str, review: dict |
     two-role gate satisfied at sprint scope - the per-unit sign-off is still required separately."""
     if not review or (review.get("verdict") or "").upper() != APPROVE:
         return False
-    reviewer, author = _id(review.get("reviewer", "")), _id(review.get("author", ""))
-    return bool(reviewer) and bool(author) and reviewer != author
+    # Through the ONE authority. This predicate used to test only non-empty-and-distinct, so it
+    # accepted the PRE_GATE sentinel that `is_independent` refuses; `sprint.review_coverage`
+    # compensated by AND-ing the second predicate on and `conformance` did not, which is how the
+    # same rule cleared Done in one module and refused it in the other.
+    return independence(review.get("reviewer", ""), review.get("author", ""))[0]
 
 
 def signoff_brief(repo_root: Path | str, units: list[str], gate_note: str | None = None,
@@ -1347,22 +1358,60 @@ def _id(value: str) -> str:
     return "" if out == "-" else out.casefold()
 
 
+def same_identity(a: str, b: str) -> bool:
+    """True when two recorded ids name the same identity, under this module's normalisation.
+
+    Public because callers need it for questions that are NOT independence - "is this seat the
+    author?" when excluding the author from a goal panel, for instance. Without it those callers
+    reached into `_id`, and a caller holding the authority's private parts is a caller one step
+    from rebuilding the authority's judgement slightly differently.
+    """
+    return _id(a) == _id(b)
+
+
+def independence(reviewer: str, author: str) -> tuple[bool, str]:
+    """THE independence test: `(independent, reason)` for a reviewer/author pair.
+
+    One authority, because there were four - `is_independent`, `sprint_covers_independently`,
+    `is_independent_signoff`, and a fourth hand-rolled inline in `sprint.py` reaching into this
+    module's private `_id`. Correctness depended on each caller remembering which combination to
+    AND, nothing checked that the four agreed, and twice they did not: one required a non-empty
+    reviewer and one did not (so an empty reviewer cleared the Done gate, since "" != "alice"),
+    and one refused the PRE_GATE sentinel while the module that actually gates Done accepted it.
+    A rule living in two implementations is a rule with two answers.
+
+    Every clause fails CLOSED and says which one failed, so a caller can report the reason
+    rather than a bare False.
+    """
+    rev, auth = _id(reviewer or ""), _id(author or "")
+    if not auth:
+        return False, "no author is recorded, so there is nobody the reviewer had to differ from"
+    if not rev:
+        # The clause that was missing. An empty reviewer is not equal to a recorded author, so
+        # `reviewer != author` alone returned True and the row passed as independently reviewed.
+        return False, "no reviewer is recorded, so nothing was independently reviewed"
+    if auth == PRE_GATE:
+        return False, (f"the author is the {PRE_GATE} migration sentinel, which grandfathers a "
+                       f"unit closed before the gate - it is not independence, and is_pre_gate "
+                       f"is the separate test for it")
+    if rev == auth:
+        return False, f"reviewer and author are the same identity ({rev}) - a self-review"
+    return True, ""
+
+
 def is_independent(verdict: dict | None) -> bool:
     """True when a verdict was authored and reviewed by distinct identities.
 
-    Independence is the floor, not a persona feature: it holds for generic workers too.
-    A verdict with no recorded author, or whose reviewer id equals its author id
-    (a self-review), is NOT independent and must not clear the Done gate. The
-    grandfather marker PRE_GATE is not real independence either - it is handled
-    separately by is_pre_gate, so this stays a truthful test.
+    Independence is the floor, not a persona feature: it holds for generic workers too. A
+    verdict with no recorded reviewer or author, or whose reviewer id equals its author id (a
+    self-review), is NOT independent and must not clear the Done gate. PRE_GATE is not real
+    independence either - `is_pre_gate` is the separate test for it.
+
+    Delegates to `independence`, which is the one authority.
     """
     if not verdict:
         return False
-    author = _id(verdict.get("author", ""))
-    reviewer = _id(verdict.get("reviewer", ""))
-    if author == PRE_GATE:
-        return False
-    return bool(author) and reviewer != author
+    return independence(verdict.get("reviewer", ""), verdict.get("author", ""))[0]
 
 
 #: The explicit token for a repair that executed NO plan - the repair-plan gate is off, or a

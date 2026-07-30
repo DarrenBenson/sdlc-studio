@@ -4476,11 +4476,11 @@ def review_coverage(root, units: list[str]) -> dict:
                 row = rec[0] if isinstance(rec, list) else rec
                 if not isinstance(row, dict):
                     continue
-                reviewer = critic._id(str(row.get("reviewer") or ""))
-                author = critic._id(str(row.get("author") or ""))
-                if not reviewer or not author or reviewer == author:
-                    continue
-                if author == critic.PRE_GATE:
+                # Through the ONE authority, not a fourth hand-rolled copy reaching into a
+                # sibling module's private `_id`. The copy happened to agree; nothing checked
+                # that it did, and two of the other three did not agree with each other.
+                if not critic.independence(str(row.get("reviewer") or ""),
+                                           str(row.get("author") or ""))[0]:
                     continue
                 by = label
                 break
@@ -4576,8 +4576,13 @@ def _finding_placement(root) -> str:
 def _findings_outside_batches(root, spans) -> int:
     """Findings this run raised that no batch span claims. Counted from the run's own
     artefacts rather than inferred, so the figure cannot be a constant."""
+    # NO function-local `import run_state`. The module is `lib/run_state.py`, already bound at
+    # module scope; the local statement shadowed that binding and always raised ImportError,
+    # because lib/run_state.py opens with a relative import no top-level import can satisfy. The
+    # blanket except then returned 0 and the diagnostic went to `sdlc_md.debug`, a no-op unless
+    # SDLC_DEBUG=1 - so this was unreachable code returning a constant, silently, on every run,
+    # under a line reading "the number this run drives to zero".
     try:
-        import run_state  # noqa: PLC0415
         state = run_state.read(root)
     except Exception as exc:  # noqa: BLE001 - a reporting clause never fails a close
         sdlc_md.debug("sprint._findings_outside_batches", exc)
@@ -6323,7 +6328,7 @@ def close_goal_judgement(root, state: dict, seats: list | None = None) -> list[s
                          "may contain the author is the thing this judgement exists to refuse")
             panel = None
         else:
-            seats = [s for s in recorded if critic._id(s) != critic._id(author)]  # noqa: SLF001
+            seats = [s for s in recorded if not critic.same_identity(s, author)]
             excluded = len(recorded) - len(seats)
             try:
                 panel = critic.goal_panel(root, clauses, seats, author,

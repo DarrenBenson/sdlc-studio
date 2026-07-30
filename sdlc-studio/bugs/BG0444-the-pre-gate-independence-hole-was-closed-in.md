@@ -1,6 +1,7 @@
 # BG0444: the PRE_GATE independence hole was closed in sprint.py only, so conformance.py still clears a unit on the migration sentinel
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; the caller sweep found four hand-rolled sites neither report named)
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -32,8 +33,29 @@ One seam, not a second conjunction. There are currently FOUR independence predic
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `sprint.review_coverage` ANDs `critic.is_independent` onto `critic.sprint_covers_independently`, with a comment explaining why: the latter tests only...
-- [ ] The proposed fix lands, pinned by a test: One seam, not a second conjunction.
+### AC1: the PRE_GATE sentinel is refused by EVERY predicate, not just one
+
+- **Given** a row whose author is the `PRE_GATE` migration sentinel
+- **When** each independence predicate judges it
+- **Then** all refuse - `sprint_covers_independently` tested only non-empty-and-distinct, so `sprint.review_coverage` compensated by AND-ing a second predicate on and `conformance.py` did not. The same row cleared Done in one module and was refused in the other
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::OneIndependenceAuthorityTests::test_the_PRE_GATE_sentinel_is_refused_by_EVERY_predicate
+- **Verified:** yes (2026-07-30)
+
+### AC2: the predicates AGREE across every pair of identities
+
+- **Given** empty, floored, self-reviewing, escaped and sentinel identities
+- **When** the authority and each predicate judge the same pair
+- **Then** they return the same answer for every case - the property the four never had. A caller can no longer be wrong by picking one, which is the shape that produced this bug rather than the instance
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::OneIndependenceAuthorityTests::test_the_predicates_AGREE_across_every_pair
+- **Verified:** yes (2026-07-30)
+
+### AC3: no module rebuilds the test from the authority's private parts
+
+- **Given** every shipped script
+- **When** the sweep runs
+- **Then** none hand-rolls the comparison. Adding the missing AND to `conformance.py` would have fixed this instance and left the shape; there is now ONE authority, `critic.independence`, returning the reason as well as the verdict, plus a public `same_identity` for the callers asking a different question
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::OneIndependenceAuthorityTests::test_NO_module_hand_rolls_the_independence_comparison
+- **Verified:** yes (2026-07-30)
 
 ## Revision History
 

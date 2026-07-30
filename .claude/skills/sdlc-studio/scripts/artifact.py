@@ -1480,9 +1480,10 @@ def cmd_close(args: argparse.Namespace) -> int:
                   "(or none of reviewer/author for the plain close)", file=sys.stderr)
             return 2
         import critic
-        if critic._id(reviewer) == critic._id(author):
-            print("error: reviewer == author - independence is the floor; a self-review "
-                  "never clears the critiqued gate, so nothing was written", file=sys.stderr)
+        independent, why = critic.independence(reviewer, author)
+        if not independent:
+            print(f"error: {why} - independence is the floor, so nothing was written",
+                  file=sys.stderr)
             return 2
     if depth and not args.dry_run:
         transition.annotate(args.root, args.id, "Verification depth", depth)

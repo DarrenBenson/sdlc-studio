@@ -1,6 +1,7 @@
 # BG0443: critic.is_independent returns True when no reviewer is recorded at all, so an unreviewed row satisfies the predicate four gates depend on
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; the caller sweep found four hand-rolled sites neither report named)
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -34,9 +35,29 @@ Require the reviewer: `return bool(author) and bool(reviewer) and reviewer != au
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `critic.is_independent` ends `return bool(author) and reviewer != author`.
-- [ ] Following the recorded steps no longer reproduces the defect: Executed at d7a1ad8f, 2026-07-30: End-to-end through the writer, `record_verdict(root,'US0001','APPROVE',reviewer='',author='alice')` writes the row `| US0001...
-- [ ] The proposed fix lands, pinned by a test: Require the reviewer: `return bool(author) and bool(reviewer) and reviewer != author`.
+### AC1: an empty reviewer is NOT independent
+
+- **Given** a verdict row recording an author and no reviewer
+- **When** independence is tested
+- **Then** it is refused, naming the missing clause - `bool(author) and reviewer != author` returned True because `"" != "alice"`, and four gate consumers used that predicate alone. A guard that fails OPEN is the direction this project's design says a guard must never fail
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::OneIndependenceAuthorityTests::test_an_empty_reviewer_is_NOT_independent
+- **Verified:** yes (2026-07-30)
+
+### AC2: the WRITER floors an empty reviewer, so the row cannot reach the ledger
+
+- **Given** `record_verdict` called with an empty reviewer
+- **When** the row is written
+- **Then** the cell is floored to `-` as the author's already was, and the predicate refuses the row it wrote - the predicate alone is not enough, because the writer is what made the bad row reachable in the first place
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::OneIndependenceAuthorityTests::test_the_writer_FLOORS_an_empty_reviewer_so_it_cannot_reach_the_ledger
+- **Verified:** yes (2026-07-30)
+
+### AC3: the empty reviewer is refused by EVERY predicate, not only the one that had the hole
+
+- **Given** the same reviewer-less row, and a sign-off with no principal
+- **When** each independence predicate judges it
+- **Then** all refuse - the hole was in `is_independent`, and the question this closes is whether its siblings shared it. Fixing one door in a corridor of four is how the PRE_GATE half of this same shape survived a previous repair
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::OneIndependenceAuthorityTests::test_an_empty_reviewer_is_refused_by_EVERY_predicate
+- **Verified:** yes (2026-07-30)
 
 ## Revision History
 

@@ -169,6 +169,51 @@ def _acs_missing_evidence(text: str) -> tuple[list[str], list[str], str | None]:
     return bare_manual, bare_unspecified, None
 
 
+def _two_role_gate(root: Path, rid: str) -> str | None:
+    """The two-role bar, asked by the verb that WRITES `Status: Done`. Block reason, or None.
+
+    The Definition of Done states this clause and `conformance.py` implements it properly - but
+    conformance is a lane that runs later, over a status a different tool has already written.
+    Nothing at the moment of the write said no, so a unit could be moved to Done with no
+    independent review whatsoever and the only trace was a report somebody had to run and read.
+    That is the cause behind 25 Done stories carrying no independent verdict: they did not slip
+    past a gate, the gate they are said to have passed was never asked.
+
+    Delegates to `conformance` for the predicate AND the vocabulary - a second copy of the
+    two-role rule is a second place for it to drift, which is the defect one rung down that this
+    same sprint fixed for the independence predicates. Forward-only: a project with no
+    `review.two_role_after`, and any unit at or below the cutoff, is unaffected byte-for-byte.
+
+    Fails CLOSED on an unreadable config or ledger. A gate that cannot establish the bar has not
+    cleared it, and this gate exists precisely because silence was being read as a pass.
+    """
+    try:
+        import conformance  # noqa: PLC0415 - deferred; transition is on every hot path
+        cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "review.two_role_after"))
+        if not conformance.two_role_applies_to(rid, cutoff):
+            return None
+        import critic  # noqa: PLC0415
+        sprint_covers = critic.sprint_covers_independently(
+            root, rid, critic.sprint_review_for(root, rid))
+        missing = []
+        if not (bool(critic.evidence_for(root, rid)) or sprint_covers):
+            missing.append("the adversarial pass is not recorded as EVIDENCE (`critic.py "
+                           "evidence --from-verdict`, or a sprint-level review covering it)")
+        if not critic.is_independent_signoff(root, rid, critic.signoff_for(root, rid)):
+            missing.append("no independent reviewer-of-record SIGN-OFF is recorded (`critic.py "
+                           "signoff` from a principal the author does not control)")
+    except Exception as exc:  # noqa: BLE001 - see the docstring: unreadable is not cleared
+        return (f"the two-role gate could not be established ({type(exc).__name__}: {exc}) - "
+                f"an unreadable bar is not a passed one")
+    if not missing:
+        return None
+    # Both halves in ONE refusal, named separately: an absent adversarial pass and an absent
+    # sign-off need different actions from different people, and a round-trip per half is the
+    # cost the ladder elsewhere in this module already avoids.
+    return (f"{rid} is past `review.two_role_after`, so Done needs both halves and "
+            + "; and ".join(missing))
+
+
 def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
     """Definition-of-Done safety net on the hand-driven path. A story may not reach
     Done with executable ACs that are red or never run - the 0/7 a hand-driving agent shipped.
@@ -798,6 +843,12 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             else:
                 gate_warn = f"depth-parity advisory: {parity}"
     if type_ == "story" and not force and target_canon == "Done":
+        # Asked HERE, by the verb that writes the status, rather than only by a lane that runs
+        # afterwards. `--force` still overrides and is still recorded, on the same terms as
+        # every other forceable close gate - a two-role bypass must be at least as visible.
+        two_role = _two_role_gate(root, sdlc_md.norm_id(artifact_id))
+        if two_role:
+            blocks.append(f"{two_role}. Override with --force")
         block = _done_verify_gate(root, path, text)
         if block:
             # the gate is hard by default; `quality.done_requires_verified: false`
@@ -1176,9 +1227,10 @@ def cmd_set(args: argparse.Namespace) -> int:
                   file=sys.stderr)
             return 2
         import critic
-        if critic._id(reviewer) == critic._id(author):
-            print("error: reviewer == author - independence is the floor; a self-review "
-                  "never clears the critiqued gate, so nothing was written", file=sys.stderr)
+        independent, why = critic.independence(reviewer, author)
+        if not independent:
+            print(f"error: {why} - independence is the floor, so nothing was written",
+                  file=sys.stderr)
             return 2
     # Parse the per-attempt list ONCE, up front: a malformed --attempt is a usage error, not a
     # per-id block, so it must fail fast (rc 2) before any id is touched, not be caught and

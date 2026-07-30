@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 34 |
+| Open | 30 |
 | In Progress | 0 |
-| Fixed | 338 |
+| Fixed | 342 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -134,7 +134,7 @@
 | [BG0414](BG0414-the-retro-s-estimate-vs-actual-block-is.md) | The retro's estimate-vs-actual block is empty on a 148-point sprint: the close never runs the accuracy write it templates a home for | Fixed | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0415](BG0415-the-gate-budget-is-over-at-457s-against.md) | The gate budget is OVER at 457s against 380s, and sprint plan forecasts execution cost from the 317s baseline it has already breached by 44% | Open | High | 2026-07-29 | 2026-07-29 |
 | [BG0416](BG0416-reopening-a-unit-does-not-retract-its-verification.md) | Reopening a unit does not retract its verification-depth claim, so the planner reads it as BUILT-NOT-CLOSED and forecasts it at zero points | Fixed | Medium | 2026-07-29 | 2026-07-29 |
-| [BG0417](BG0417-transition-done-never-checks-the-two-role-rule.md) | transition -> Done never checks the two-role rule: the verb that writes the status the Definition of Done defines a bar for does not consult that bar, and only a later gate run reports it | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0417](BG0417-transition-done-never-checks-the-two-role-rule.md) | transition -> Done never checks the two-role rule: the verb that writes the status the Definition of Done defines a bar for does not consult that bar, and only a later gate run reports it | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0418](BG0418-the-close-swallows-the-retro-validator-s-own.md) | The close swallows the retro validator's own warning, so a scaffold with six unreplaced demonstration rows reports as 'valid' to the operator | Open | High | 2026-07-29 | 2026-07-29 |
 | [BG0419](BG0419-four-delivered-units-are-held-by-verifiers-that.md) | Four delivered units are held by verifiers that pass with the delivered mechanism removed, and two whole production surfaces are one edit from inert | Open | High | 2026-07-29 | 2026-07-29 |
 | [BG0420](BG0420-test-fixtures-mirror-real-lists-by-hand-so.md) | Test fixtures mirror real lists by hand, so adding one chain step or one gate lane turns dozens of unrelated tests red for a reason none of them is about | Open | Medium | 2026-07-29 | 2026-07-29 |
@@ -159,9 +159,9 @@
 | [BG0439](BG0439-the-dead-flags-hook-lane-tells-the-operator.md) | the dead-flags hook lane tells the operator it enforces the opposite of what it enforces | Open | Low | 2026-07-30 | 2026-07-30 |
 | [BG0440](BG0440-the-isolated-checkout-rule-is-enforced-author-side.md) | the isolated-checkout rule is enforced author-side only, so `critic brief` issues a reviewer prompt that never states it and nothing notices when parallel reviewers share one tree | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0441](BG0441-review-coverage-launders-a-recorded-reject-into-coverage.md) | review_coverage launders a recorded REJECT into coverage through the evidence lane, so the gate certifying a close reports a rejected unit as reviewed | Fixed | Critical | 2026-07-30 | 2026-07-30 |
-| [BG0442](BG0442-the-close-s-finding-placement-metric-is-hardcoded.md) | the close's finding-placement metric is hardcoded to zero by its own repair's import, so the number the sprint goal is driven to is a constant the code cannot compute | Open | High | 2026-07-30 | 2026-07-30 |
-| [BG0443](BG0443-critic-is-independent-returns-true-when-no-reviewer.md) | critic.is_independent returns True when no reviewer is recorded at all, so an unreviewed row satisfies the predicate four gates depend on | Open | High | 2026-07-30 | 2026-07-30 |
-| [BG0444](BG0444-the-pre-gate-independence-hole-was-closed-in.md) | the PRE_GATE independence hole was closed in sprint.py only, so conformance.py still clears a unit on the migration sentinel | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0442](BG0442-the-close-s-finding-placement-metric-is-hardcoded.md) | the close's finding-placement metric is hardcoded to zero by its own repair's import, so the number the sprint goal is driven to is a constant the code cannot compute | Fixed | High | 2026-07-30 | 2026-07-30 |
+| [BG0443](BG0443-critic-is-independent-returns-true-when-no-reviewer.md) | critic.is_independent returns True when no reviewer is recorded at all, so an unreviewed row satisfies the predicate four gates depend on | Fixed | High | 2026-07-30 | 2026-07-30 |
+| [BG0444](BG0444-the-pre-gate-independence-hole-was-closed-in.md) | the PRE_GATE independence hole was closed in sprint.py only, so conformance.py still clears a unit on the migration sentinel | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0445](BG0445-the-test-census-lane-skips-any-path-containing.md) | the test-census lane skips any path containing `worktrees`, so it censuses zero files and reports an all-clear precisely where this repo runs its reviewers | Fixed | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0446](BG0446-a-fenced-markdown-example-holding-an-unquoted-status.md) | a fenced markdown example holding an unquoted Status line drops a spec as a version home and silently swallows its real version drift | Fixed | Critical | 2026-07-30 | 2026-07-30 |
 | [BG0447](BG0447-the-availability-guard-tests-for-gh-as-a.md) | the availability guard tests for `gh` as a bare substring, so `nightly`, `highlighted` and `though` all satisfy the half of the contract that names the tool | Open | High | 2026-07-30 | 2026-07-30 |

@@ -404,6 +404,119 @@ def _bug_repo(root: Path, depth: str | None, prod: bool = False) -> Path:
     return root
 
 
+class TheVerbEnforcesTheBarItWritesTests(unittest.TestCase):
+    """BG0417. The Definition of Done states the two-role clause and `conformance.py` implements
+    it - but conformance is a lane that runs LATER, over a status a different tool has already
+    written. `transition.py`, the verb that writes `Status: Done`, never consulted it: no call,
+    no config read, no reference to the evidence half anywhere in the module. So a unit could be
+    moved to Done with no independent review at all, and the only trace was a report somebody had
+    to run and read. That is the cause behind 25 Done stories carrying no independent verdict:
+    they did not slip past a gate, the gate they are said to have passed was never asked."""
+
+    def _repo(self, root: Path, *, cutoff: int | None = 0, sid: str = "US0001") -> None:
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True, exist_ok=True)
+        (sd / f"{sid}-x.md").write_text(
+            f"# {sid}: s\n\n> **Status:** Review\n\n## Acceptance Criteria\n\n"
+            f"### AC1\n- **Verify:** manual a human looked\n- **Verified:** yes (2026-01-01)\n",
+            encoding="utf-8")
+        (sd / "_index.md").write_text(
+            "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Review | 1 |\n"
+            "| Done | 0 |\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            f"| [{sid}]({sid}-x.md) | s | Review |\n", encoding="utf-8")
+        if cutoff is not None:
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                f"review:\n  two_role_after: {cutoff}\n", encoding="utf-8")
+
+    def test_a_past_cutoff_unit_with_NEITHER_half_is_refused_and_both_are_named(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root)
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "US0001", "Done")
+            msg = str(cm.exception)
+            self.assertIn("EVIDENCE", msg)
+            self.assertIn("SIGN-OFF", msg,
+                          "an absent adversarial pass and an absent sign-off need different "
+                          "actions from different people, so both must be named")
+
+    def test_a_unit_with_a_SIGN_OFF_and_no_evidence_is_still_refused(self) -> None:
+        """The bug's own reproduction: US0479 had a genuine operator sign-off, no adversarial
+        pass at all, and was one `transition set` away from Done."""
+        import critic
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root)
+            critic.record_signoff(root, "US0001", principal="the operator", author="builder",
+                                  note="looks right")
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "US0001", "Done")
+            self.assertIn("EVIDENCE", str(cm.exception))
+
+    def test_a_unit_with_BOTH_halves_is_allowed_through(self) -> None:
+        """The control. A gate nothing can satisfy is not a gate, it is a wall - and the whole
+        sprint this landed in is about gates that report a verdict they never established."""
+        import critic
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root)
+            critic.record_evidence(root, "US0001", reviewer="reviewer-a", author="builder",
+                                   findings="probed the parser")
+            critic.record_signoff(root, "US0001", principal="the operator", author="builder",
+                                  note="approved")
+            tr.transition(root, "US0001", "Done")          # does not raise
+            self.assertIn("Done", (root / "sdlc-studio" / "stories" / "US0001-x.md")
+                          .read_text(encoding="utf-8"))
+
+    def test_a_project_that_declares_NO_cutoff_is_unaffected(self) -> None:
+        """Forward-only by design: a project that never adopted the two-role rule is not
+        retro-fitted with it by an upgrade."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, cutoff=None)
+            tr.transition(root, "US0001", "Done")          # does not raise
+
+    def test_a_unit_AT_OR_BELOW_the_cutoff_is_unaffected(self) -> None:
+        """The other half of forward-only: the cutoff is sequential, so US0001 under a cutoff
+        of 500 is pre-gate work and keeps today's behaviour byte-for-byte."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, cutoff=500)
+            tr.transition(root, "US0001", "Done")          # does not raise
+
+    def test_force_still_overrides_and_the_bypass_is_recorded(self) -> None:
+        """`--force` stays available and stays visible: a two-role bypass must be at least as
+        recorded as every other forceable close gate."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root)
+            tr.transition(root, "US0001", "Done", force=True)
+            self.assertIn("Done", (root / "sdlc-studio" / "stories" / "US0001-x.md")
+                          .read_text(encoding="utf-8"))
+
+    def test_an_unreadable_bar_is_NOT_a_passed_one(self) -> None:
+        """Fails CLOSED. This gate exists because silence was being read as a pass, so a gate
+        that cannot establish the bar must refuse rather than wave the unit through."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root)
+            real = tr._two_role_gate
+            try:
+                import critic
+                broken = critic.evidence_for
+
+                def boom(*a, **k):
+                    raise RuntimeError("the ledger is unreadable")
+
+                critic.evidence_for = boom
+                with self.assertRaises(ValueError) as cm:
+                    tr.transition(root, "US0001", "Done")
+                self.assertIn("could not be established", str(cm.exception))
+            finally:
+                critic.evidence_for = broken
+                tr._two_role_gate = real
+
+
 class PositionalSetFormTests(unittest.TestCase):
     """CR0423/US0446: `transition.py set <ID> <STATUS>` (the natural first attempt) is accepted,
     mapping onto --id/--status; mixing the positional and flag form for one value is refused."""

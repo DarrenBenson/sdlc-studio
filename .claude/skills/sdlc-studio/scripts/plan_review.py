@@ -243,9 +243,9 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 def cmd_record(args: argparse.Namespace) -> int:
-    if critic._id(args.author) == critic._id(args.reviewer):
-        print("WARNING: reviewer == author - a self-review never clears the gate",
-              file=sys.stderr)
+    independent, why = critic.independence(args.reviewer, args.author)
+    if not independent:
+        print(f"WARNING: {why} - this never clears the gate", file=sys.stderr)
     path = record_review(args.root, args.id, args.verdict, args.reviewer, args.author,
                          args.notes)
     print(f"recorded plan-review {args.verdict.upper()} for {args.id} "

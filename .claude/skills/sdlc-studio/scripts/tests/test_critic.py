@@ -1586,6 +1586,104 @@ class BriefStatesTheIsolatedCheckoutRuleTests(unittest.TestCase):
                 mod.assert_brief_practices(reasonless)
 
 
+class OneIndependenceAuthorityTests(unittest.TestCase):
+    """BG0443 + BG0444. There were FOUR independence predicates - `is_independent`,
+    `sprint_covers_independently`, `is_independent_signoff` and a fourth hand-rolled inline in
+    sprint.py reaching into critic's private `_id`. Correctness depended on each caller
+    remembering which combination to AND, nothing checked the four agreed, and twice they did
+    not: one required a non-empty reviewer and one did not, and one refused PRE_GATE while the
+    module that actually gates Done accepted it."""
+
+    def test_an_empty_reviewer_is_NOT_independent(self) -> None:
+        """BG0443. `bool(author) and reviewer != author` is True for an empty reviewer, because
+        '' != 'alice'. A guard that fails OPEN is the direction this project says it must never
+        fail, and four gate consumers used that predicate alone."""
+        mod = _load()
+        self.assertFalse(mod.is_independent(
+            {"verdict": "APPROVE", "reviewer": "", "author": "alice"}))
+        ok, why = mod.independence("", "alice")
+        self.assertFalse(ok)
+        self.assertIn("no reviewer", why)
+
+    def test_an_empty_reviewer_is_refused_by_EVERY_predicate(self) -> None:
+        """BG0443's own discriminating case, distinct from the caller sweep: the hole was in
+        `is_independent`, and the question is whether its SIBLINGS ever shared it. They must all
+        refuse the same row, or the fix has closed one door in a corridor of four."""
+        mod = _load()
+        row = {"verdict": "APPROVE", "reviewer": "", "author": "alice"}
+        self.assertFalse(mod.is_independent(row))
+        with tempfile.TemporaryDirectory() as d:
+            self.assertFalse(mod.sprint_covers_independently(Path(d), "US0001", row))
+            self.assertFalse(mod.is_independent_signoff(
+                Path(d), "US0001", {"principal": "", "author": "alice"}))
+
+    def test_the_PRE_GATE_sentinel_is_refused_by_EVERY_predicate(self) -> None:
+        """BG0444. `sprint_covers_independently` tested only non-empty-and-distinct, so it
+        accepted the migration sentinel. sprint.py compensated by AND-ing a second predicate on;
+        conformance.py did not, so the same row cleared Done in one module and not the other."""
+        mod = _load()
+        row = {"verdict": "APPROVE", "reviewer": "bob", "author": mod.PRE_GATE}
+        self.assertFalse(mod.is_independent(row))
+        with tempfile.TemporaryDirectory() as d:
+            self.assertFalse(mod.sprint_covers_independently(Path(d), "US0001", row))
+            self.assertFalse(mod.is_independent_signoff(
+                Path(d), "US0001", {"principal": "bob", "author": mod.PRE_GATE}))
+
+    def test_the_predicates_AGREE_across_every_pair(self) -> None:
+        """The property the four never had. Whatever the authority says, each predicate says -
+        so a caller can no longer be wrong by picking one."""
+        mod = _load()
+        cases = [("", ""), ("", "alice"), ("alice", ""), ("alice", "alice"),
+                 ("alice", "bob"), ("bob", mod.PRE_GATE), (mod.PRE_GATE, "bob"),
+                 ("Dani\\_Okafor", "dani_okafor"), ("-", "alice"), ("alice", "-")]
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for reviewer, author in cases:
+                want = mod.independence(reviewer, author)[0]
+                with self.subTest(reviewer=reviewer, author=author):
+                    self.assertIs(mod.is_independent(
+                        {"verdict": "APPROVE", "reviewer": reviewer, "author": author}), want)
+                    self.assertIs(mod.sprint_covers_independently(
+                        root, "US0001", {"verdict": "APPROVE", "reviewer": reviewer,
+                                         "author": author}), want)
+
+    def test_the_writer_FLOORS_an_empty_reviewer_so_it_cannot_reach_the_ledger(self) -> None:
+        """The predicate alone is not enough: the writer is what made the bad row reachable.
+        `record_verdict` floored the author to `-` and gave the reviewer no such floor."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod.record_verdict(root, "US0001", "APPROVE", reviewer="", author="alice")
+            written = mod.verdicts_path(root).read_text(encoding="utf-8")
+            self.assertIn("| - |", written, "the empty reviewer cell was not floored")
+            self.assertFalse(mod.is_independent(mod.verdict_for(root, "US0001")))
+
+    def test_NO_module_hand_rolls_the_independence_comparison(self) -> None:
+        """The shape that produced both bugs, pinned. A module comparing reviewer to author
+        itself is a fifth predicate nobody is checking against the other four."""
+        import ast
+        scripts = Path(__file__).resolve().parents[1]
+        offenders = []
+        for path in sorted(scripts.glob("*.py")):
+            if path.name == "critic.py":
+                continue                      # the authority itself
+            try:
+                tree = ast.parse(path.read_text(encoding="utf-8"))
+            except (OSError, SyntaxError):
+                continue
+            for node in ast.walk(tree):
+                # `critic._id(...)` - reaching into the authority's private normaliser is how a
+                # caller builds its own comparison out of the authority's parts.
+                if (isinstance(node, ast.Attribute) and node.attr == "_id"
+                        and isinstance(node.value, ast.Name) and node.value.id == "critic"):
+                    offenders.append(f"{path.name}:{node.lineno}")
+        offenders = sorted(set(offenders))
+        self.assertEqual(
+            offenders, [],
+            "these lines rebuild the independence test from critic's private parts instead of "
+            f"calling `critic.independence`: {offenders}")
+
+
 class ReviewerBriefTests(unittest.TestCase):
     """US0318 (EP0108): the shipped reviewer brief carries every standing practice, each
     with its reason, and a brief missing any is refused; reference-review.md documents them.

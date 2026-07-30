@@ -1,6 +1,7 @@
 # BG0417: transition -> Done never checks the two-role rule: the verb that writes the status the Definition of Done defines a bar for does not consult that bar, and only a later gate run reports it
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; 5/5 mutants killed over the gate, the cutoff and the fail-closed path)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py
@@ -39,12 +40,37 @@ It is also the exact shape this project files bugs about most often, and which i
 
 ## Acceptance Criteria
 
-- [ ] `transition -> Done` refuses a unit past `review.two_role_after` that is missing either two-role half, reusing conformance's predicate rather than a second copy of the rule.
-- [ ] The refusal names which half is unmet, using the same vocabulary conformance reports, so the remedy and its owner are clear from the message.
-- [ ] `--force` can still bypass it and records what was waived on the artefact and the revision row, exactly as the existing force-override machinery does.
-- [ ] A pre-cutoff unit and a project with no `review.two_role_after` configured are byte-for-byte unaffected - the rule is forward-only.
-- [ ] A test transitions a past-cutoff unit that has a sign-off and NO evidence and asserts the refusal; the mutant that drops the evidence half must redden it.
-- [ ] The D0074 waiver is restated against what actually happened, or the units behind it are re-reviewed - it must not read as 'waived past a gate' when no gate was ever asked.
+### AC1: the verb that WRITES Done enforces the bar, naming which half is missing
+
+- **Given** a story past `review.two_role_after` with neither the adversarial evidence nor an independent sign-off
+- **When** `transition set <id> Done` runs
+- **Then** it refuses and names BOTH halves separately - an absent adversarial pass and an absent sign-off need different actions from different people. The bar was stated in the Definition of Done and enforced by a lane running later over a status a different tool had already written; nothing at the moment of the write said no
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TheVerbEnforcesTheBarItWritesTests::test_a_past_cutoff_unit_with_NEITHER_half_is_refused_and_both_are_named
+- **Verified:** yes (2026-07-30)
+
+### AC2: a sign-off with no adversarial pass is still refused
+
+- **Given** the bug's own reproduction: a unit with a genuine operator sign-off and no evidence at all
+- **When** it is moved to Done
+- **Then** it is refused on the evidence half - ten such units were one `transition set` away from Done
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TheVerbEnforcesTheBarItWritesTests::test_a_unit_with_a_SIGN_OFF_and_no_evidence_is_still_refused
+- **Verified:** yes (2026-07-30)
+
+### AC3: forward-only, in both directions
+
+- **Given** a project declaring no cutoff, and a unit at or below one that is declared
+- **When** each is moved to Done
+- **Then** neither is affected - the rule is forward-only by design, and a project that never adopted it is not retro-fitted by an upgrade. Paired with a control proving a unit carrying both halves passes: a gate nothing can satisfy is a wall, not a gate
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TheVerbEnforcesTheBarItWritesTests::test_a_unit_AT_OR_BELOW_the_cutoff_is_unaffected
+- **Verified:** yes (2026-07-30)
+
+### AC4: an unreadable bar is not a passed one
+
+- **Given** a ledger the gate cannot read
+- **When** Done is attempted
+- **Then** it refuses, naming the failure - this gate exists because silence was being read as a pass, so failing open would reproduce the defect it closes. `--force` remains available and remains recorded, on the same terms as every other forceable close gate
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TheVerbEnforcesTheBarItWritesTests::test_an_unreadable_bar_is_NOT_a_passed_one
+- **Verified:** yes (2026-07-30)
 
 ## Impact
 

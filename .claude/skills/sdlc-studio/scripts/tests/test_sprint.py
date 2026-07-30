@@ -10175,6 +10175,55 @@ class BatchBoundaryReviewTests(unittest.TestCase):
         self.assertNotIn("BG0501", rs.batches(root)[-1].get("findings_raised") or [])
 
 
+class FindingPlacementIsMeasuredNotConstantTests(unittest.TestCase):
+    """BG0442. `_findings_outside_batches` opened with a function-local `import run_state`. The
+    module is `lib/run_state.py`, already bound at module scope, and the local statement shadowed
+    that binding and always raised ImportError - lib/run_state.py opens with a relative import no
+    top-level import can satisfy. A blanket `except Exception` returned 0 and the diagnostic went
+    to `sdlc_md.debug`, a no-op unless SDLC_DEBUG=1. So this was unreachable code returning a
+    constant, silently, on every default run, printed under the words "the number this run drives
+    to zero" - the metric read identically for 0 close-time findings and for 10,000."""
+
+    def _root(self, *, bugs=()):
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d, True)
+        root = Path(d)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        from lib import run_state as rs
+        rs.open_run(root, goal="a goal", batch=["US0001"])
+        for bid, stamp in bugs:
+            (root / "sdlc-studio" / "bugs" / f"{bid}-x.md").write_text(
+                f"# {bid}: x\n\n> **Status:** Open\n> **Raised-in-batch:** {stamp}\n",
+                encoding="utf-8")
+        return root, rs
+
+    def test_a_finding_raised_outside_every_batch_is_COUNTED(self) -> None:
+        root, rs = self._root(bugs=[("BG0500", "none open 2026-07-30T00:00:00Z")])
+        self.assertEqual(sprint._findings_outside_batches(root, rs.batches(root)), 1)
+
+    def test_the_count_is_ZERO_when_nothing_was_raised_outside(self) -> None:
+        """The control that makes the test above mean something: a function returning a
+        constant passes any single-value assertion, which is how this went unnoticed."""
+        root, rs = self._root()
+        self.assertEqual(sprint._findings_outside_batches(root, rs.batches(root)), 0)
+
+    def test_a_finding_CLAIMED_by_a_batch_is_not_counted_outside_it(self) -> None:
+        root, rs = self._root(bugs=[("BG0500", "none open 2026-07-30T00:00:00Z")])
+        rs.start_batch(root, ["US0001"])
+        rs.note_finding(root, "BG0500")
+        self.assertEqual(sprint._findings_outside_batches(root, rs.batches(root)), 0,
+                         "a finding a batch span claims is batch work, not close work")
+
+    def test_the_reported_LINE_carries_the_computed_number(self) -> None:
+        """A number computed and not rendered is a number nobody reads. The line is the whole
+        point: it is what makes the sprint goal's central claim falsifiable."""
+        root, rs = self._root(bugs=[("BG0500", "none open 2026-07-30T00:00:00Z"),
+                                    ("BG0501", "none open 2026-07-30T00:00:00Z")])
+        line = sprint._finding_placement(root)
+        self.assertIn("2 raised outside one", line)
+
+
 class TheCloseCertifiesRatherThanReviewsTests(unittest.TestCase):
     """US0562. The close asserts that coverage EXISTS; it does not perform the review."""
 
