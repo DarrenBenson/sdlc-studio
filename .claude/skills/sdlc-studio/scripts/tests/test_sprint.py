@@ -10019,6 +10019,76 @@ class BatchBoundaryReviewTests(unittest.TestCase):
                               author="author-b", issues="broken")
         self.assertFalse(sprint.review_coverage(root, ["US0001"])["US0001"]["covered"])
 
+    def test_a_REJECT_is_not_laundered_into_coverage_by_the_evidence_lane(self) -> None:
+        """The shape the two tests above CANNOT reach, and the one the corpus actually holds.
+
+        Both of them build a repo carrying a verdict and no evidence row, so the REJECT fails
+        lane one and every remaining lane misses - covered comes back False for the wrong
+        reason, and the branch that laundered it is never executed. Add the evidence row and
+        the REJECT falls through into a lane that carries no verdict column by design, cannot
+        see that the unit was rejected, and reports it covered. Every reviewed-and-rejected
+        unit in this workspace has exactly that shape.
+        """
+        import critic
+        root = self._repo()
+        critic.record_verdict(root, "US0001", "REJECT", reviewer="reviewer-a",
+                              author="author-b", issues="the repairs are not re-reviewed")
+        critic.record_evidence(root, "US0001", reviewer="reviewer-a", author="author-b",
+                               findings="an adversarial pass that returned REJECT")
+        got = sprint.review_coverage(root, ["US0001"])["US0001"]
+        self.assertFalse(got["covered"],
+                         f"a REJECT was laundered into coverage by the {got['by']} lane")
+        self.assertEqual(sprint.uncovered_units(root, ["US0001"]), ["US0001"])
+
+    def test_an_evidence_row_still_covers_a_unit_that_was_never_rejected(self) -> None:
+        """The control, without which the fix above is indistinguishable from deleting the
+        evidence lane. Absence of a verdict must still fall through - that is what the other
+        lanes are for. Only a verdict that EXISTS and is not an APPROVE stops the search."""
+        import critic
+        root = self._repo()
+        critic.record_evidence(root, "US0001", reviewer="reviewer-a", author="author-b",
+                               findings="an adversarial pass with nothing blocking")
+        got = sprint.review_coverage(root, ["US0001"])["US0001"]
+        self.assertTrue(got["covered"], "the evidence lane stopped covering an unrejected unit")
+        self.assertEqual(got["by"], "adversarial evidence")
+
+    def test_an_APPROVE_beside_an_evidence_row_is_still_covered(self) -> None:
+        """The second control: the new guard must not treat a POSITIVE verdict as a stop."""
+        import critic
+        root = self._repo()
+        critic.record_verdict(root, "US0001", "APPROVE", reviewer="reviewer-a",
+                              author="author-b", issues="none")
+        critic.record_evidence(root, "US0001", reviewer="reviewer-a", author="author-b",
+                               findings="an adversarial pass")
+        self.assertTrue(sprint.review_coverage(root, ["US0001"])["US0001"]["covered"])
+
+    def test_an_unreadable_verdict_ledger_does_not_manufacture_a_rejection(self) -> None:
+        """The third control, added because its mutant SURVIVED the first three.
+
+        The new guard reads the verdict ledger. If that read raises, answering "rejected" would
+        invent a verdict nobody gave and hold a unit on a filesystem error - a guard failing
+        CLOSED on the wrong evidence. The unit must instead be judged by the lanes, which
+        report on their own terms. Reached through `review_coverage` rather than by calling the
+        helper directly: a library test is not a lane test, and the lane is what gates the close.
+        """
+        import critic
+        root = self._repo()
+        critic.record_evidence(root, "US0001", reviewer="reviewer-a", author="author-b",
+                               findings="an adversarial pass")
+        real = critic.verdict_for
+
+        def boom(*_a, **_k):
+            raise OSError("permission denied reading the verdict ledger")
+
+        critic.verdict_for = boom
+        try:
+            got = sprint.review_coverage(root, ["US0001"])["US0001"]
+        finally:
+            critic.verdict_for = real
+        self.assertTrue(got["covered"],
+                        "an unreadable ledger was treated as a REJECT, inventing a verdict")
+        self.assertEqual(got["by"], "adversarial evidence")
+
     def test_the_exclusion_line_does_not_claim_a_false_batch_total(self) -> None:
         """F7. `points` is the PRICED subtotal - unpriced units are skipped before it is
         accumulated - so `priced + removed` was never "the batch" whenever anything was

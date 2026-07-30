@@ -2293,6 +2293,32 @@ class OpenQuestionsTests(unittest.TestCase):
                      f"## Acceptance Criteria\n\n- [ ] something\n\n{body}", encoding="utf-8")
         return p
 
+    #: Type -> (directory, id) for the non-story types whose terminal status is not `Done`.
+    _TYPES = {"bug": ("bugs", "BG0001"), "cr": ("change-requests", "CR0001")}
+
+    def _artifact(self, root, type_, status, body):
+        """A minimal artefact of `type_`, so the gate can be driven for a type whose terminal
+        status is not Done. Returns its id."""
+        folder, uid = self._TYPES[type_]
+        d = root / "sdlc-studio" / folder
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{uid}-x.md").write_text(
+            f"# {uid}: x\n\n> **Status:** {status}\n\n"
+            f"## Acceptance Criteria\n\n- [ ] something\n\n{body}", encoding="utf-8")
+        return uid
+
+    def _transition(self, transition, root, uid, status):
+        """Drive the real transition command. Returns (moved, combined output)."""
+        import contextlib
+        import io
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            try:
+                rc = transition.main(["--root", str(root), "set", uid, status])
+            except SystemExit as exc:  # argparse-style exit is still a refusal
+                rc = exc.code if isinstance(exc.code, int) else 1
+        return rc == 0, buf.getvalue()
+
     def test_a_terminal_artefact_with_unchecked_questions_is_flagged(self) -> None:
         from lib import sdlc_md
         td = tempfile.TemporaryDirectory()
@@ -2360,6 +2386,75 @@ class OpenQuestionsTests(unittest.TestCase):
                 checked += 1
         self.assertGreater(checked, 8, "the map yielded almost nothing to check")
 
+    def test_a_heading_with_a_suffix_still_hides_nothing(self) -> None:
+        """BG0450, escape 1. `^#+\\s*Open Questions\\s*$` anchored the heading to end-of-line,
+        so `## Open Questions (deferred)` was a different heading and the whole section went
+        unscanned. One token of author edit turned the gate off, and the artefact read CLEAN
+        rather than refused - which is the direction that matters."""
+        from lib import sdlc_md
+        text = ("# US0001: x\n\n> **Status:** Done\n\n"
+                "## Open Questions (deferred)\n\n- [ ] should the retry budget be per-run?\n")
+        items = sdlc_md.unresolved_questions(text, None)
+        self.assertEqual(["should the retry budget be per-run?"], items,
+                         "a suffix on the heading hid the section from the detector")
+
+    def test_a_second_open_questions_section_is_scanned_too(self) -> None:
+        """BG0450, escape 2. `search` reads ONE section. An artefact whose first section is
+        fully resolved and whose second carries the live question passed the gate, because the
+        second was never read. Independently found by the QA seat with a positive control."""
+        from lib import sdlc_md
+        text = ("# US0001: x\n\n> **Status:** Done\n\n"
+                "## Open Questions\n\n- [x] settled - ruled by D0001\n\n"
+                "## Notes\n\nprose\n\n"
+                "## Open Questions\n\n- [ ] should the census rewrite archived indexes?\n")
+        items = sdlc_md.unresolved_questions(text, None)
+        self.assertEqual(["should the census rewrite archived indexes?"], items,
+                         "only the first Open Questions section was scanned")
+
+    def test_a_tick_citing_only_itself_is_not_a_follow_up(self) -> None:
+        """BG0450, escape 3. `find_by_id` proves an id RESOLVES, and an artefact always
+        resolves to itself, so self-citation satisfied the follow-up route in full - the exact
+        'tick pointing at nothing' the docstring promises cannot happen. The control matters as
+        much as the case: citing a DIFFERENT artefact must still be accepted, or this fix has
+        merely broken the escape hatch."""
+        from lib import sdlc_md
+        head = "# US0001: x\n\n> **Status:** Done\n\n## Open Questions\n\n"
+        items = sdlc_md.unresolved_questions(head + "- [x] deferred? See US0001.\n", None)
+        self.assertEqual(1, len(items), "an artefact citing itself passed as resolved")
+        self.assertIn("citing only itself", items[0])
+        self.assertEqual([], sdlc_md.unresolved_questions(
+            head + "- [x] deferred, filed as BG0450\n", None),
+            "a genuine follow-up elsewhere was refused - the escape hatch is broken")
+
+    def test_the_GATE_refuses_every_terminal_status_not_only_Done(self) -> None:
+        """What the test above only appears to prove, and the mutant it could not catch.
+
+        Its loop body is `unresolved_questions(body, None)` - arguments that depend on neither
+        `type_` nor `status` - so it is ONE call repeated two dozen times, and it never invokes
+        the gate. Reducing the gate to `target_canon == "Done"` therefore survived all 5489
+        tests while being a live CLI escape: a bug reached Fixed and a CR reached Superseded
+        carrying unanswered questions, which is the one thing this story's title forbids.
+
+        So drive the gate itself, for a type whose terminal status is NOT Done.
+        """
+        from lib import sdlc_md
+        import transition
+        for type_, status, other in (("bug", "Fixed", "Open"),
+                                     ("cr", "Superseded", "Proposed")):
+            with self.subTest(type_=type_, status=status):
+                self.assertTrue(sdlc_md.is_terminal_status(type_, status))
+                self.assertNotEqual(status, "Done",
+                                    "this test is pointless unless the status is not Done")
+                td = tempfile.TemporaryDirectory()
+                self.addCleanup(td.cleanup)
+                root = Path(td.name)
+                uid = self._artifact(root, type_, other,
+                                     "## Open Questions\n\n- [ ] should we do X?\n")
+                ok, msg = self._transition(transition, root, uid, status)
+                self.assertFalse(ok, f"{type_} reached {status} carrying an open question")
+                self.assertIn("should we do X?", msg,
+                              "the refusal does not quote the question that caused it")
+
     def test_validate_ITSELF_reports_the_finding_not_only_the_helper(self) -> None:
         """Through `validate`, because the sibling tests call the helper directly and so
         survived a mutant that removed validate's reporting entirely. A rule nothing invokes
@@ -2405,6 +2500,26 @@ class OpenQuestionsTests(unittest.TestCase):
         self.assertEqual({}, offenders,
                          f"terminal artefacts still carry unresolved questions: "
                          f"{sorted(offenders)}")
+        # POSITIVE CONTROL. Without it a clean sweep is equally consistent with a detector that
+        # scans nothing, and it was: `return offending` -> `return []` and a heading regex
+        # changed to `Open Queries` BOTH survived this test. `swept` counts terminal ARTEFACTS,
+        # not questions found, so it cannot tell the two apart. Plant an offender in each of
+        # the three escape shapes and require the detector to find every one.
+        planted = {
+            "a plain unchecked question": "## Open Questions\n\n- [ ] planted, unanswered?\n",
+            "a heading carrying a suffix":
+                "## Open Questions (deferred)\n\n- [ ] planted, unanswered?\n",
+            "a SECOND Open Questions section":
+                "## Open Questions\n\n- [x] answered - ruled by D0001\n\n## Notes\n\ntext\n\n"
+                "## Open Questions\n\n- [ ] planted, unanswered?\n",
+            "a tick citing only the artefact itself":
+                "## Open Questions\n\n- [x] planted? See US0001.\n",
+        }
+        for label, body in planted.items():
+            with self.subTest(shape=label):
+                text = f"# US0001: x\n\n> **Status:** Done\n\n{body}"
+                self.assertTrue(sdlc_md.unresolved_questions(text, repo),
+                                f"the sweep is blind to {label} - a clean corpus proves nothing")
 
 
 if __name__ == "__main__":

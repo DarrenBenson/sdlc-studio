@@ -1694,9 +1694,29 @@ def depth_retracted(text: str) -> bool:
 
 #: The heading an artefact records its open questions under, and the heading a RULING moves
 #: them to. Matched at any depth, because the templates differ by type.
-_OPEN_Q_RE = re.compile(r"^#+\s*Open Questions\s*$(.*?)(?=^#+\s|\Z)", re.M | re.S)
+#: A SUFFIX after the heading text does not make it a different heading. `## Open Questions
+#: (deferred)` anchored to `$` was invisible to the detector, so one token of author edit
+#: turned the gate off for the whole section - and read as a clean artefact, not a refusal.
+_OPEN_Q_RE = re.compile(r"^#+\s*Open Questions\b[^\n]*$(.*?)(?=^#+\s|\Z)", re.M | re.S)
 _RESOLVED_Q_RE = re.compile(r"^#+\s*Resolved Questions\s*$(.*?)(?=^#+\s|\Z)", re.M | re.S)
 _Q_ITEM_RE = re.compile(r"^\s*[-*]\s*\[( |x|X)\]\s*(.+)$", re.M)
+
+
+def _own_id_of(text: str) -> str:
+    """The id an artefact's own title line declares, or "" when it declares none.
+
+    Read from the text rather than taken as an argument, so every existing caller gets the
+    self-citation refusal without a signature change. "" is the honest answer for a fragment
+    with no title - the caller then applies no self-citation rule at all, rather than guessing
+    an id and refusing a legitimate follow-up on it.
+    """
+    for line in (text or "").splitlines():
+        if line.startswith("#"):
+            m = ID_SEARCH_RE.search(line)
+            return norm_id(m.group(0)) if m else ""
+        if line.strip():
+            break
+    return ""
 
 
 def unresolved_questions(text: str, repo_root=None) -> list:
@@ -1718,11 +1738,15 @@ def unresolved_questions(text: str, repo_root=None) -> list:
     alone - a caller that cannot look up ids is not a reason to invent a stricter answer, but it
     IS reported by the caller that can.
     """
-    m = _OPEN_Q_RE.search(text or "")
-    if not m:
+    # EVERY such section, not the first. `search` read one, so a second `## Open Questions`
+    # anywhere below it was never scanned - and an artefact carrying its unanswered question
+    # there reached a terminal status with the detector reporting clean.
+    sections = [m.group(1) for m in _OPEN_Q_RE.finditer(text or "")]
+    if not sections:
         return []
+    own = extract_record_id(_own_id_of(text or "") or "") or ""
     offending = []
-    for state, body in _Q_ITEM_RE.findall(m.group(1)):
+    for state, body in _Q_ITEM_RE.findall("\n".join(sections)):
         item = body.strip()
         if not item or _DECLARES_NONE_RE.match(item) or "{{" in item:
             # A `{{question}}` placeholder is an UNFILLED TEMPLATE, not an unanswered question.
@@ -1746,8 +1770,17 @@ def unresolved_questions(text: str, repo_root=None) -> list:
         if not cited:
             offending.append(f"{item} (ticked with no ruling and no follow-up id)")
             continue
-        if repo_root is not None and not any(find_by_id(repo_root, c) for c in cited):
-            offending.append(f"{item} (cites {', '.join(cited)}, which resolves to no artefact)")
+        # An artefact citing ITSELF answers nothing. `find_by_id` only proves an id resolves,
+        # and an artefact always resolves to itself, so self-citation satisfied the follow-up
+        # route in full - which is precisely the "tick pointing at nothing" this docstring
+        # promises cannot happen. A follow-up is somewhere ELSE by definition.
+        elsewhere = [c for c in cited if not own or norm_id(c) != own]
+        if not elsewhere:
+            offending.append(f"{item} (ticked citing only itself, which is not a follow-up)")
+            continue
+        if repo_root is not None and not any(find_by_id(repo_root, c) for c in elsewhere):
+            offending.append(f"{item} (cites {', '.join(elsewhere)}, "
+                             "which resolves to no artefact)")
     return offending
 
 

@@ -22,7 +22,7 @@
 - **Given** a Done story with two unchecked items under an Open Questions heading, and a story whose items are all checked
 - **When** `validate.py check` runs over each
 - **Then** each unchecked item is reported as an error quoting its text, and the clean story passes, so the finding is the item and not merely the presence of a heading
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::OpenQuestionsTests::test_a_terminal_artefact_with_unchecked_questions_is_flagged
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::OpenQuestionsTests::test_validate_ITSELF_reports_the_finding_not_only_the_helper
 - **Verified:** yes (2026-07-29)
 
 ### AC2: AC2: the terminal transition refuses, naming both ways out
@@ -46,7 +46,7 @@
 - **Given** fixture artefacts of every type in `sdlc_md.TERMINAL_STATUS` - epic, story, bug, cr, rfc, issue, test-spec, workflow - in each of their terminal statuses
 - **When** the offending items are computed through validate and through the transition gate
 - **Then** both return identical items for every fixture because both call one helper in `lib/sdlc_md.py`, and every terminal status is derived from the map rather than from an enumerated Done, so a CR reaching Superseded is held to the same rule as a story reaching Done
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::OpenQuestionsTests::test_validate_and_the_gate_agree_across_every_type_and_terminal_status
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::OpenQuestionsTests::test_the_GATE_refuses_every_terminal_status_not_only_Done
 - **Verified:** yes (2026-07-29)
 
 ### AC5: AC5: the whole workspace is swept, not just the stories

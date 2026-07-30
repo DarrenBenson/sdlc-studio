@@ -4401,6 +4401,23 @@ def _close_lesson_repeats(root) -> bool:
     return True
 
 
+def _no_negative_verdict(root, uid: str, critic) -> bool:
+    """True unless a per-unit verdict exists and is not an APPROVE.
+
+    Split out so the rule reads as one sentence at its call site. A ledger that cannot be read
+    answers True - the unit is then judged by the lanes, which report "not covered" on their own
+    terms; treating an unreadable ledger as a rejection would manufacture a verdict nobody gave.
+    """
+    try:
+        rec = critic.verdict_for(root, uid)
+    except Exception as exc:  # noqa: BLE001 - a missing ledger is "no verdict", not "rejected"
+        sdlc_md.debug("sprint._no_negative_verdict", exc)
+        return True
+    if not rec:
+        return True
+    return str(rec.get("verdict") or "").strip().upper() == "APPROVE"
+
+
 def review_coverage(root, units: list[str]) -> dict:
     """Per unit: is it covered by an INDEPENDENT adversarial pass, and by what.
 
@@ -4419,6 +4436,16 @@ def review_coverage(root, units: list[str]) -> dict:
     for raw in units:
         uid = sdlc_md.norm_id(raw)
         if not uid:
+            continue
+        # A recorded NEGATIVE verdict is TERMINAL for the unit: no later lane reconsiders it.
+        # The lanes below are tried in order and `continue` on a miss, so a REJECT used to fail
+        # lane one and fall straight into the evidence lane - which carries no verdict column by
+        # design and therefore cannot see that the unit was rejected. The REJECT was not
+        # overridden by a better verdict; it was overridden by a lane that cannot hold one.
+        # Absence of a verdict must still fall through (that is what the other lanes are FOR);
+        # only a verdict that exists and is not an APPROVE stops here.
+        if not _no_negative_verdict(root, uid, critic):
+            out[uid] = {"covered": False, "by": None}
             continue
         by = None
         for label, getter, verdicted in (("per-unit verdict", critic.verdict_for, True),
