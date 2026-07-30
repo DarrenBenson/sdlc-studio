@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 4 |
+| Draft | 9 |
 | Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 1 |
-| **Total** | **568** |
+| **Total** | **573** |
 
 ## All Stories
 
@@ -480,6 +480,11 @@
 | [US0566](US0566-feature-work-keeps-the-cheaper-bar-and-a.md) | Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0567](US0567-the-shipped-doctrine-states-that-a-fix-s.md) | The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0568](US0568-the-108-findings-that-hide-a-run-id.md) | The 108 findings that hide a run id in prose are backfilled across all five run ids, with the lens honestly unknown rather than guessed | Done | EP0169 | 2026-07-30 | 2026-07-30 |
+| [US0569](US0569-the-sprint-report-is-derived-from-the-tree.md) | the sprint report is DERIVED from the tree: planned against delivered, and scope creep as a number | Draft | EP0192 | 2026-07-30 | 2026-07-30 |
+| [US0570](US0570-a-unit-dropped-or-held-mid-sprint-records.md) | a unit dropped or held mid-sprint records the reason, so the report names it instead of losing it with the session | Draft | EP0192 | 2026-07-30 | 2026-07-30 |
+| [US0571](US0571-a-known-issue-carried-past-the-close-records.md) | a known issue carried past the close records its stop-ship ruling and who made it | Draft | EP0192 | 2026-07-30 | 2026-07-30 |
+| [US0572](US0572-the-close-refuses-on-an-unanswered-compulsory-item.md) | the close REFUSES on an unanswered compulsory item and names which one | Draft | EP0192 | 2026-07-30 | 2026-07-30 |
+| [US0573](US0573-an-uncommitted-changed-surface-is-reported-as-that.md) | an uncommitted changed surface is reported as that REASON, naming the isolated-checkout and register routes to measured evidence | Draft | EP0193 | 2026-07-30 | 2026-07-30 |
 
 ## Archived Releases
 

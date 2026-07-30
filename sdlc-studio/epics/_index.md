@@ -1,17 +1,17 @@
 # Epic Index
 
-**Last Updated:** 2026-07-29
+**Last Updated:** 2026-07-30
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 16 |
+| Draft | 18 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 175 |
-| **Total** | **191** |
+| **Total** | **193** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -214,3 +214,5 @@
 | [EP0189](EP0189-the-close-costs-less-than-the-work-it.md) | The close costs less than the work it certifies: earn the gate verdict once, record a batch in one call, and refuse in one pass | Draft | 7 | -- | 2026-07-29 | 2026-07-29 |
 | [EP0190](EP0190-the-review-happens-inside-the-sprint-batch-boundary.md) | The review happens inside the sprint: batch-boundary adversarial passes, so a finding is delivery work not close overhead | Draft | 4 | -- | 2026-07-29 | 2026-07-29 |
 | [EP0191](EP0191-a-repair-is-held-by-a-mutant-it.md) | A repair is held by a mutant it kills: mutation is mandatory on a fix, gated on survivors at the transition | Draft | 4 | -- | 2026-07-29 | 2026-07-29 |
+| [EP0192](EP0192-the-sprint-report-is-one-derived-artefact-and.md) | The sprint report is one derived artefact, and the close refuses without it | Draft | 4 | -- | 2026-07-30 | 2026-07-30 |
+| [EP0193](EP0193-the-mutation-lane-tells-an-uncommitted-surface-apart.md) | The mutation lane tells an uncommitted surface apart from an untested one | Draft | 1 | -- | 2026-07-30 | 2026-07-30 |
