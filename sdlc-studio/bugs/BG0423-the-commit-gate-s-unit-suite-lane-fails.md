@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .githooks/pre-commit, .githooks/commit-msg, tools/skill-tests.sh
-> **Evidence:** RUN-01KYPZ1G, two occurrences. (1) Commit of the US0462 review repairs: `git commit` reported a skill-tests failure and 'Commit blocked'; `bash tools/skill-tests.sh` run standalone immediately afterwards reported `Ran 5392 tests ... OK`; the identical `git commit -F` then succeeded as 31913621. (2) Commit of US0463 AC5: same shape, blocked once, succeeded on retry as 263c2072. In both cases the full suite had been run green by hand minutes before, and `reconcile detect` reported drift_items=0.
+> **Evidence:** RUN-01KYPZ1G, two occurrences. (1) Commit of the US0462 review repairs: `git commit` reported a skill-tests failure and 'Commit blocked'; `bash tools/skill-tests.sh` run standalone immediately afterwards reported `Ran 5392 tests ... OK`; the identical `git commit -F` then succeeded as 31913621. (2) Commit of US0463 AC5: same shape, blocked once, succeeded on retry as 263c2072. (3) Commit of US0568: blocked once with the suite lane reporting a failure, then succeeded unchanged as 812391cc - THREE occurrences in one session, so this is a rate and not a coincidence. In both cases the full suite had been run green by hand minutes before, and `reconcile detect` reported drift_items=0.
 > **Created:** 2026-07-30
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
