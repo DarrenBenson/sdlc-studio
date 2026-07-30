@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 5 |
+| Draft | 4 |
 | Ready | 25 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 23 |
+| Review | 24 |
 | Done | 512 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -479,7 +479,7 @@
 | [US0565](US0565-the-gate-is-the-survivor-count-over-those.md) | The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0566](US0566-feature-work-keeps-the-cheaper-bar-and-a.md) | Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0567](US0567-the-shipped-doctrine-states-that-a-fix-s.md) | The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
-| [US0568](US0568-the-108-findings-that-hide-a-run-id.md) | The 108 findings that hide a run id in prose are backfilled across all five run ids, with the lens honestly unknown rather than guessed | Draft | EP0169 | 2026-07-30 | 2026-07-30 |
+| [US0568](US0568-the-108-findings-that-hide-a-run-id.md) | The 108 findings that hide a run id in prose are backfilled across all five run ids, with the lens honestly unknown rather than guessed | Review | EP0169 | 2026-07-30 | 2026-07-30 |
 
 ## Archived Releases
 

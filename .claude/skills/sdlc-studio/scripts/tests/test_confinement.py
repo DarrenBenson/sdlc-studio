@@ -33,6 +33,13 @@ def _fixture(root: Path) -> None:
     for sub in ("stories", "epics", "change-requests", "bugs"):
         (sd / sub).mkdir(parents=True)
     (sd / "prd.md").write_text("# PRD\n", encoding="utf-8")
+    # A finding whose provenance PROSE names an audit run, for the backfill writer's case.
+    # Deliberately a CR, not a bug: the artifact.py and file_finding.py cases both MINT a bug and
+    # declare `BG0001` as their target, so seeding the bugs directory would push their ids up and
+    # break two unrelated cases. Nothing here mints a CR.
+    (sd / "change-requests" / "CR0009-x.md").write_text(
+        "# CR-0009: a finding from an audit\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
+        "> **Raised-by:** Claude (adversarial audit wf_fixture1); agent\n", encoding="utf-8")
     (sd / "epics" / "EP0001-x.md").write_text("# EP0001: e\n\n> **Status:** Ready\n", encoding="utf-8")
     (sd / "stories" / "US0001-x.md").write_text(
         "# US0001: s\n\n> **Status:** Ready\n> **Epic:** [EP0001](../epics/EP0001-x.md)\n\n"
@@ -166,6 +173,15 @@ WRITER_CASES: dict[str, WriterCase] = {
     "telemetry.py": WriterCase(
         argv=("record", "--id", "US0001", "--type", "story", "--tokens", "10"),
         targets=frozenset({"sdlc-studio/retros/evidence/actuals-*.jsonl"}),
+    ),
+    "backfill_audit_runs.py": WriterCase(
+        # A real confinement case rather than an allowlist entry: this script rewrites tracked
+        # ARTEFACTS, which is the write worth confining. The fixture story carries a run id in
+        # its Raised-by line, so `apply` stamps that one file and seeds the register - and
+        # nothing else in the tree may move.
+        argv=("apply",),
+        targets=frozenset({"sdlc-studio/change-requests/CR0009-x.md",
+                           "sdlc-studio/retros/evidence/audit-cost-*.jsonl"}),
     ),
     "audit_cost.py": WriterCase(
         argv=("record", "--lenses", "7", "--rounds", "3", "--votes", "3",

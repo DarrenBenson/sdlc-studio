@@ -8,6 +8,8 @@
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5; agent; audit-process-retro wf_9903a6e6-53a
+> **Audit-lens:** unknown
+> **Audit-run:** wf_9903a6e6-53a
 > **Delivered-by:** claude-opus-4-8
 
 ## Summary

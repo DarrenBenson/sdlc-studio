@@ -520,6 +520,13 @@ _LINE_BREAK_RE = re.compile("[" + "".join(re.escape(c) for c in _LINE_BREAK_NAME
 # be a single line or it escapes that construct. The prose fields (summary, steps, fix, impact,
 # recommendation) are deliberately absent: they are written into a section body, where more than
 # one line is the point.
+#: The `Audit-lens` value meaning "nobody attributed this". A BACKFILLED finding carries it, and
+#: `detector-owed` counts it as unattributable rather than as a lens of that name - 108 findings
+#: sharing one placeholder across five runs would otherwise read as a detector owed on every one.
+#: Declared here because two modules must agree on it: the writer that stamps it and the reader
+#: that decides whether a finding is attributed.
+LENS_UNKNOWN = "unknown"
+
 SINGLE_LINE_FIELDS: tuple[str, ...] = (
     "title", "author", "epic", "persona", "tranche", "priority", "ctype", "severity",
     "points", "size", "affects", "provenance", "date", "theme", "note",

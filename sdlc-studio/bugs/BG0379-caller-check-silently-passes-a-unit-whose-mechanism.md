@@ -8,6 +8,8 @@
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Opus 5 (round 3 review of RUN-01KYKVZM, run wf_95377bad); agent; skill v5.0.0
+> **Audit-lens:** unknown
+> **Audit-run:** wf_95377bad
 
 ## Summary
 

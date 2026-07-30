@@ -529,8 +529,15 @@ def resolve_profile(name: str, skill_dir: Path | None = None) -> dict:
 #: this workspace" from "you typed the flag wrong".
 OWED_CLEAN, OWED_FOUND, OWED_CANNOT_JUDGE = 0, 1, 3
 
-#: Where findings live. Both, because a class parked in a bug is where nobody looks.
-FINDING_DIRS = (("bugs", ("BG",)), ("change-requests", ("CR",)))
+#: Where findings live. All three, because a class parked in a bug is where nobody looks - and
+#: because the RFC template renders the same attribution fields, so a reader scanning fewer
+#: directories than the writer stamps would make an attributed RFC invisible to every verdict.
+FINDING_DIRS = (("bugs", ("BG",)), ("change-requests", ("CR",)), ("rfcs", ("RFC",)))
+
+#: The lens value a BACKFILLED finding carries, meaning "nobody attributed this". Read from the
+#: shared library rather than re-typed here: the writer that stamps it and this reader must agree,
+#: and a second copy is how they would come to disagree.
+LENS_UNKNOWN = sdlc_md.LENS_UNKNOWN
 
 
 def _finding_attributions(repo_root: Path | str) -> tuple[list[dict], list[str]]:
@@ -550,12 +557,18 @@ def _finding_attributions(repo_root: Path | str) -> tuple[list[dict], list[str]]
             if path.name == "_index.md":
                 continue
             rec = sdlc_md.extract_record_id(path.stem)
-            if not rec or not rec[:2] in prefixes:
+            # `RFC` is three characters where `BG`/`CR` are two, so the prefix is matched by
+            # `startswith` rather than by a fixed slice - a `rec[:2]` test silently drops every RFC.
+            if not rec or not any(rec.startswith(x) for x in prefixes):
                 continue
             text = sdlc_md.read_text_safe(path)
             lens = (sdlc_md.extract_field(text, "Audit-lens") or "").strip()
             run = (sdlc_md.extract_field(text, "Audit-run") or "").strip()
-            if lens and run:
+            # An EXPLICITLY UNKNOWN lens is unattributable, not a lens named "unknown". The
+            # backfill stamps that placeholder on 108 findings across five runs, so treating it as
+            # a real name would group all of them under one lens and report a detector owed on
+            # every run - a false verdict manufactured by a placeholder.
+            if lens and run and lens.lower() != LENS_UNKNOWN:
                 attributed.append({"id": rec, "lens": lens, "run": run})
             else:
                 unattributed.append(rec)
@@ -666,7 +679,7 @@ def existing_detector_units(repo_root: Path | str) -> dict:
             if path.name == "_index.md":
                 continue
             rec = sdlc_md.extract_record_id(path.stem)
-            if not rec or rec[:2] not in prefixes:
+            if not rec or not any(rec.startswith(x) for x in prefixes):
                 continue
             lens = (sdlc_md.extract_field(sdlc_md.read_text_safe(path),
                                           "Detector-for-lens") or "").strip()

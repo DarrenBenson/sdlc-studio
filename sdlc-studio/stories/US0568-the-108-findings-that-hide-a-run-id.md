@@ -1,6 +1,6 @@
 # US0568: The 108 findings that hide a run id in prose are backfilled across all five run ids, with the lens honestly unknown rather than guessed
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-30
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -11,23 +11,57 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator closing out an audit
+**I want** the run that raised each existing finding readable as a field rather than buried in a sentence
+**So that** a class recurring across runs can be counted from the record instead of reconstructed from prose, without anybody inventing the lens nobody attributed
 
 ## Acceptance Criteria
 
-- **AC1:** All five run ids are seeded, not three, and a test pins the count against the live corpus so a sixth id appearing later fails rather than being silently skipped.
-- **AC2:** Every one of the 108 artefacts carries the run metadata field, and the closing sweep - no run id in prose absent from the metadata field - passes against the real tree rather than a fixture, because a fixture-only sweep is what let four artefacts hide.
-- **AC3:** Each seeded register row is stamped `backfilled`, and a test asserts an owed verdict resting only on backfilled rows is reported differently from one resting on recorded rows.
-- **AC4:** The canonical form of the suffixed id is pinned by a test that fails if the writer normalises it and the scanner does not.
-- **AC5:** The lens is recorded as explicitly unknown on every backfilled artefact, and the story states that lens data begins with the next real run - so nothing in the record claims a lens nobody attributed.
+### AC1: all five run ids are seeded, with the counts pinned
+
+- **Given** the live corpus, whose findings attribute to FIVE run ids and not the three the request named
+- **When** the backfill scans it
+- **Then** every one is seeded and the per-run finding counts are pinned, so a sixth id appearing later reddens the test rather than being silently skipped - the two the request missed were the two with the fewest findings, which a spot check would have missed the same way
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backfill_audit_runs.py::TheLiveCorpusAgreesTests::test_all_FIVE_run_ids_are_seeded_with_the_counts_pinned
+- **Verified:** yes (2026-07-30)
+
+### AC2: the closing sweep passes against the REAL tree
+
+- **Given** every finding whose `Raised-by` prose names a run
+- **When** the sweep runs over the live repository rather than a fixture
+- **Then** none names a run in prose that its metadata field does not carry, because a fixture-only sweep is exactly what let four artefacts hide
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backfill_audit_runs.py::TheLiveCorpusAgreesTests::test_the_live_sweep_is_clean
+- **Verified:** yes (2026-07-30)
+
+### AC3: a seeded row is stamped backfilled, never recorded
+
+- **Given** a run id lifted from prose rather than measured by this project
+- **When** it is seeded into the register
+- **Then** it carries `backfilled`, so no verdict can rest on an unverifiable string while reading as though it rested on a measurement
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backfill_audit_runs.py::ApplyStampsAndSeedsTests::test_a_seeded_run_is_BACKFILLED_never_recorded
+- **Verified:** yes (2026-07-30)
+
+### AC4: the filing run is read from the prose, never guessed
+
+- **Given** the twelve findings naming two ids, in the shape `adversarial audit <A> carry-over, run <B>`
+- **When** the filing run is resolved
+- **Then** it is `<B>`, which the sentence says outright, and a line the prose does NOT disambiguate is refused rather than resolved by order - the carry-over id comes FIRST, so taking `ids[0]` would attribute twelve findings to the wrong run
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backfill_audit_runs.py::FilingRunIsReadNotGuessedTests::test_the_carry_over_shape_is_resolved_by_the_PROSE_not_by_order
+- **Verified:** yes (2026-07-30)
+
+### AC5: the lens is explicitly unknown, and counts as unattributed
+
+- **Given** 108 findings whose prose carries a run but no lens
+- **When** each is stamped
+- **Then** the lens is recorded as explicitly unknown, and `detector-owed` counts that placeholder as unattributable rather than as a lens of that name - 108 findings sharing one placeholder across five runs would otherwise read as a detector owed on every one of them, a verdict manufactured out of nothing
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backfill_audit_runs.py::TheLiveCorpusAgreesTests::test_the_backfilled_corpus_does_NOT_read_as_detector_owed
+- **Verified:** yes (2026-07-30)
 
 ## Summary
 
 Split out of US0462, where it was AC5 inside a 3-point story and was self-contradicting in two separate ways.
 
-**It named three run ids and there are five.** 108 artefacts (68 bugs, 40 CRs) carry a `wf_` id in their `Raised-by` prose: `wf_804ef18d` (108 mentions), `wf_9903a6e6-53a` (50), `wf_d141ccb5` (24), `wf_b62b2ed2` (6) and `wf_95377bad` (2). The last two were unnamed, so BG0375, BG0376, BG0377 and BG0379 would have stayed unbackfilled - and the AC's own closing sweep, that no artefact carries a run id in prose absent from its metadata field, would then have FAILED on the real corpus. The AC could not pass itself.
+**It named three run ids and there are five.** 108 artefacts (68 bugs, 40 CRs) carry a `wf_` id in their `Raised-by` prose: `wf_9903a6e6-53a` (50 findings), `wf_804ef18d` (42), `wf_d141ccb5` (12), `wf_b62b2ed2` (3) and `wf_95377bad` (1). Those per-run figures are the corrected ones: an earlier count of raw mentions read 108/50/24/6/2, which double-counted findings citing a run more than once and mis-assigned the twelve carry-over cases. The last two were unnamed, so BG0375, BG0376, BG0377 and BG0379 would have stayed unbackfilled - and the AC's own closing sweep, that no artefact carries a run id in prose absent from its metadata field, would then have FAILED on the real corpus. The AC could not pass itself.
 
 **Its stated purpose was falsified by its own mechanism.** The justification was that the backfill exercises `detector-owed` against a real corpus 'rather than only reaching its cannot-judge state'. But `detector-owed` groups by LENS, the backfill supplies RUN IDS, and `Raised-by` prose carries no lens at all. Every backfilled finding therefore lands in cannot-judge - exactly the state the AC claimed to move the corpus out of. Deriving 108 lenses is model judgement over 108 artefacts, not a mechanical pass, and pretending otherwise is how a 3-point estimate absorbs a migration.
 

@@ -8,6 +8,8 @@
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Opus 5 (independent re-review of 343da768, run wf_b62b2ed2); agent; skill v5.0.0
+> **Audit-lens:** unknown
+> **Audit-run:** wf_b62b2ed2
 
 ## Summary
 

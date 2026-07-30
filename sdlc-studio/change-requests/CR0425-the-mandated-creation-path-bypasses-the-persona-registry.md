@@ -10,6 +10,8 @@
 > **Date:** 2026-07-27
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 (adversarial audit wf_804ef18d); agent; skill v5.0.0
+> **Audit-lens:** unknown
+> **Audit-run:** wf_804ef18d
 
 ## Summary
 

@@ -8,6 +8,8 @@
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 (adversarial audit wf_804ef18d carry-over, run wf_d141ccb5); agent; skill v5.0.0
+> **Audit-lens:** unknown
+> **Audit-run:** wf_d141ccb5
 
 ## Summary
 

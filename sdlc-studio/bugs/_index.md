@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 13 |
+| Open | 14 |
 | In Progress | 0 |
 | Fixed | 326 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **422** |
+| **Total** | **423** |
 
 ## All Bugs
 
@@ -140,6 +140,7 @@
 | [BG0420](BG0420-test-fixtures-mirror-real-lists-by-hand-so.md) | Test fixtures mirror real lists by hand, so adding one chain step or one gate lane turns dozens of unrelated tests red for a reason none of them is about | Open | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0421](BG0421-twenty-one-open-questions-reached-a-terminal-status.md) | Twenty-one Open Questions reached a terminal status unanswered, and are now owned here rather than given rulings nobody made | Open | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0422](BG0422-the-code-is-mostly-right-and-the-evidence.md) | The code is mostly right and the EVIDENCE is what fails: five consecutive REJECTs, and four fifths of the findings were the author's own tests unable to fail | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0423](BG0423-the-commit-gate-s-unit-suite-lane-fails.md) | The commit gate's unit-suite lane fails on the first attempt and passes on an identical retry, twice in one session, costing a full 8-minute gate run each time | Open | Medium | 2026-07-30 | 2026-07-30 |
 
 ## Archived Releases
 

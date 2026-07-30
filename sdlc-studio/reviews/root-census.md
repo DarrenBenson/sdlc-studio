@@ -51,10 +51,10 @@ script joins the family classified rather than silently.
 
 | Classification | Scripts |
 | --- | --- |
-| anchored | 64 |
+| anchored | 65 |
 | unanchored | 1 |
 | non-root | 5 |
-| **total** | **70** |
+| **total** | **71** |
 
 These counts are now PARSED by the guard and held to the measurement. They were not before, which
 is how the block came to claim 5 anchored / 59 unanchored while the family measured otherwise: a
@@ -78,6 +78,7 @@ re-export.
 | `schema_check.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `audit_cost.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `autosprint.py` | unanchored | anchored in behaviour through `sprint.main`, which it re-exports verbatim; the measurement reads call sites in a script's OWN source and cannot see through a re-export, so it reads unanchored here. Measured and covered by BG0288 - the anchor-contract suite calls its `main` and it passes |
+| `backfill_audit_runs.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `backfill_authorship.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `backlog_triage.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `blocker_sweep.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
