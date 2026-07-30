@@ -148,6 +148,19 @@ Three exit codes, and the third is the point:
 | 1 | at least one detector is owed |
 | 3 | **cannot judge** - findings carry no attribution, or cite a run the register does not hold |
 
+File a unit for each owed class instead of describing it:
+
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/readiness.py" detector-owed --file
+python3 "$CLAUDE_SKILL_DIR/scripts/readiness.py" detector-owed --file --dry-run
+```
+
+Each unit names both runs and both findings as the evidence its detector must catch, and carries a
+`Detector-for-lens` field. **Idempotence matches on that field, not on the title** - so rewording
+the unit does not cause a second one to be filed. Nothing is filed for a detector-exists lens, and
+`--file` refuses outright on a cannot-judge verdict rather than minting units from a workspace it
+has just said it could not read.
+
 **Cannot-judge is not "nothing owed", and it dominates.** A workspace with three owed lenses and
 forty unreadable findings reports cannot-judge, because otherwise the forty vanish behind a verdict
 that looks like an answer. It is `3` rather than `2` so it cannot be confused with a usage error.

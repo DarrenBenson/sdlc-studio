@@ -2409,6 +2409,49 @@ class AuditAttributionUnheldInvariantsTests(unittest.TestCase):
             sdlc_md.check_creator_fields(
                 {"title": "t", "audit_run": "RUN-1\nsecond line"})
 
+    def test_detector_for_lens_reaches_all_THREE_surfaces_that_can_carry_it(self) -> None:
+        """MUTANTS, all three of which survived a first pass because `detector-owed --file` calls
+        `file_finding()` DIRECTLY and so exercises none of them:
+
+        (1) drop `detector_for_lens` from `cmd_file`'s hand-enumerated flags dict - the flag is
+            then parsed and silently discarded;
+        (2) drop it from `FIELDS_FILE_KEYS` - `load_fields_file` RAISES on an unknown key, so a
+            fields-file carrying it is refused outright;
+        (3) drop it from `SINGLE_LINE_FIELDS` - it escapes the one choke point every creation path
+            already runs.
+
+        Three surfaces can carry this field and only the programmatic one was held.
+        """
+        self.assertIn("detector_for_lens", ff.FIELDS_FILE_KEYS)
+        self.assertIn("detector_for_lens", sdlc_md.SINGLE_LINE_FIELDS)
+        with self.assertRaises(ValueError):
+            sdlc_md.check_creator_fields({"title": "t", "detector_for_lens": "a\nb"})
+
+        root = self._root()
+        fp = root / "det.json"
+        fp.write_text(json.dumps({"title": "build the detector", **BUG}), encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()):
+            rc = ff.main(["file", "--type", "bug", "--root", str(root),
+                          "--fields-file", str(fp), "--detector-for-lens", "correctness"])
+        self.assertEqual(0, rc)
+        body = _bugs(root)[0].read_text(encoding="utf-8")
+        self.assertEqual("correctness", sdlc_md.extract_field(body, "Detector-for-lens"),
+                         "--detector-for-lens was parsed and silently dropped by cmd_file")
+
+        # And through the fields-file document itself, which the allowlist gates separately.
+        fp2 = root / "det2.json"
+        fp2.write_text(json.dumps({"title": "build another detector", **BUG,
+                                   "detector_for_lens": "architecture"}), encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()):
+            rc2 = ff.main(["file", "--type", "bug", "--root", str(root),
+                           "--fields-file", str(fp2)])
+        self.assertEqual(0, rc2, "a fields-file carrying the key was refused outright")
+        bodies = [b.read_text(encoding="utf-8") for b in _bugs(root)]
+        self.assertIn("architecture",
+                      [sdlc_md.extract_field(b, "Detector-for-lens") for b in bodies])
+
     def test_a_LOW_severity_finding_says_so_rather_than_dropping_the_attribution(self) -> None:
         """The v3 silent drop. A Low-severity finding consolidates into a shared CR that carries no
         per-finding lens, so the attribution was validated pre-mint - run checked against the

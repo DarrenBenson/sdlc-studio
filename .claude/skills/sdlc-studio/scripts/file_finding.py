@@ -703,7 +703,7 @@ COMMON_FIELDS_FILE_KEYS: tuple[str, ...] = (
 #: prose-heavy audit finding has to use.
 FIELDS_FILE_KEYS: tuple[str, ...] = (*COMMON_FIELDS_FILE_KEYS,
                                      "mutation_run", "mutation_target", "evidence",
-                                     "lens", "profile", "audit_run")
+                                     "lens", "profile", "audit_run", "detector_for_lens")
 
 #: The `--fields-file` spelling that means "read the document from stdin" - the family
 #: convention, so no writer grows its own.
@@ -1138,6 +1138,19 @@ def _audit_attribution_lines(f: dict) -> str:
             + (f"> **Audit-run:** {run}\n" if run else ""))
 
 
+def _detector_for_lens_line(f: dict) -> str:
+    """The `Detector-for-lens` metadata line: this unit exists to BUILD a detector for that lens.
+
+    Deliberately OUTSIDE the lens/profile/run triple. The unit is about one lens across TWO runs,
+    so it has no single `--audit-run`; under all-or-none it would have to file with none of the
+    three, and `detector-owed`'s own output would then be unattributable and invisible to the next
+    run. A distinct field also makes the idempotence check EXACT - matching on a title substring
+    would re-file the same unit the moment anyone reworded it.
+    """
+    lens = str(f.get("detector_for_lens") or "").strip()
+    return f"> **Detector-for-lens:** {lens}\n" if lens else ""
+
+
 def check_audit_attribution(repo_root: Path | str, fields: dict) -> dict:
     """Resolve a lens / profile / audit-run attribution before anything is minted, or refuse.
 
@@ -1382,7 +1395,7 @@ def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
         points = f"> **Points:** {f['points']}\n" if f.get("points") is not None else ""
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Open'}\n> **Severity:** {f['severity']}\n"
-                f"{points}{_affects_line(f)}{_evidence_line(f)}{_mutation_link_lines(f)}{_audit_attribution_lines(f)}"
+                f"{points}{_affects_line(f)}{_evidence_line(f)}{_mutation_link_lines(f)}{_audit_attribution_lines(f)}{_detector_for_lens_line(f)}"
                 f"> **Created:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Steps to Reproduce\n\n{f['steps']}\n\n"
@@ -1401,7 +1414,7 @@ def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Proposed'}\n> **Priority:** {f['priority']}\n"
                 f"> **Type:** {f['ctype']}\n{_size_line(f)}{_affects_line(f)}{_evidence_line(f)}"
-                f"{_mutation_link_lines(f)}{_audit_attribution_lines(f)}"
+                f"{_mutation_link_lines(f)}{_audit_attribution_lines(f)}{_detector_for_lens_line(f)}"
                 f"> **Date:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Impact\n\n{f['impact']}\n\n"
@@ -1412,7 +1425,7 @@ def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
     decision = _decision_question(title, f["options"])
     return (f"# {disp_id}: {title}\n\n"
             f"> **Status:** {status or 'Draft'}\n{_size_line(f)}{_affects_line(f)}{_evidence_line(f)}"
-            f"{_mutation_link_lines(f)}{_audit_attribution_lines(f)}"
+            f"{_mutation_link_lines(f)}{_audit_attribution_lines(f)}{_detector_for_lens_line(f)}"
             f"> **Date:** {today}\n{_stamp(f)}\n"
             f"## Summary\n\n{f['summary']}\n\n"
             f"## Design Options\n\n{options}\n\n"
@@ -1645,7 +1658,8 @@ def cmd_file(args: argparse.Namespace) -> int:
              # calls `file_finding()` directly still passes.
              "lens": getattr(args, "lens", None),
              "profile": getattr(args, "profile", None),
-             "audit_run": getattr(args, "audit_run", None)}
+             "audit_run": getattr(args, "audit_run", None),
+             "detector_for_lens": getattr(args, "detector_for_lens", None)}
     flags = {k: v for k, v in flags.items() if v is not None}
     if args.ac:
         flags["acs"] = args.ac
@@ -1765,6 +1779,11 @@ def build_parser() -> argparse.ArgumentParser:
                    help="the lens pack --lens belongs to (default: DERIVED, since a lens name "
                         "resolves to exactly one pack). Supplied, a lens/profile mismatch is "
                         "refused - which is what an existence check per field cannot catch")
+    f.add_argument("--detector-for-lens", dest="detector_for_lens",
+                   help="this unit exists to BUILD the mechanical detector for that lens. Stamped "
+                        "as `Detector-for-lens` and OUTSIDE the lens/run pair, because the unit "
+                        "spans two runs and so has no single one; it is what makes "
+                        "`detector-owed --file` idempotent on an exact field rather than a title")
     f.add_argument("--audit-run", dest="audit_run",
                    help="the audit run that raised this finding, as recorded in the audit-cost "
                         "ledger by `audit_cost.py record --run-id`. Requires --lens. A run the "

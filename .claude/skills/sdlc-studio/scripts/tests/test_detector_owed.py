@@ -244,5 +244,117 @@ class DetectorOwedCliTests(unittest.TestCase):
         self.assertEqual("json", args.format)
 
 
+def _seed_cr_index(root: Path) -> None:
+    """A minimal valid change-request index, so the filer has somewhere to write a row."""
+    d = root / "sdlc-studio" / "change-requests"
+    d.mkdir(parents=True, exist_ok=True)
+    header = "| ID | Title | Status | Priority | Type | Date | Linked Epics |"
+    sep = "|" + " --- |" * (header.count("|") - 1)
+    (d / "_index.md").write_text(
+        "# Index\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
+        "| Proposed | 0 |\n| Complete | 0 |\n| **Total** | **0** |\n\n"
+        f"## All\n\n{header}\n{sep}\n", encoding="utf-8")
+
+
+class DetectorOwedFilingTests(unittest.TestCase):
+    """AC5: each owed class gets exactly one sized delivery unit, FILED rather than described."""
+
+    def setUp(self) -> None:
+        self.root = _workspace()
+        self.addCleanup(shutil.rmtree, self.root, ignore_errors=True)
+        _seed_cr_index(self.root)
+        # The pack file a filed unit declares in its Affects. Real, because the filer REFUSES a
+        # footprint that resolves nowhere - a fictional one mis-groups the unit in the planner's
+        # collision analysis while the command still exits 0.
+        packs = self.root / ".claude" / "skills" / "sdlc-studio" / "templates" / "audit-profiles"
+        packs.mkdir(parents=True, exist_ok=True)
+        (packs / "code.md").write_text("# code pack\n", encoding="utf-8")
+
+    def _owed_fixture(self) -> None:
+        _register(self.root, "RUN-A", "RUN-B")
+        _finding(self.root, "BG0001", lens=MANUAL_LENS, run="RUN-A")
+        _finding(self.root, "BG0002", lens=MANUAL_LENS, run="RUN-B")
+
+    def test_an_owed_class_is_filed_once_and_never_twice(self) -> None:
+        """AC5.
+
+        MUTANTS. (1) Remove the existing-unit check, so the second run files a duplicate - caught
+        by asserting the artefact COUNT is unchanged and no new id was allocated, not merely that
+        the report says something. (2) Match idempotence on a title substring instead of the
+        `Detector-for-lens` field - caught by REWORDING the filed unit's title between the two
+        runs, which is exactly what a human does and what a substring match cannot survive.
+        """
+        self._owed_fixture()
+        res = audit.detector_owed(self.root)
+        self.assertEqual(1, len(res["owed"]), "precondition: the lens must be owed")
+
+        first = audit.file_owed_detectors(self.root, res)
+        self.assertEqual(1, len(first))
+        self.assertTrue(first[0]["created"], f"nothing was filed: {first}")
+        filed_id = first[0]["id"]
+        crs = sorted((self.root / "sdlc-studio" / "change-requests").glob("CR*.md"))
+        self.assertEqual(1, len(crs), "exactly one unit per owed class")
+
+        body = crs[0].read_text(encoding="utf-8")
+        self.assertEqual(MANUAL_LENS, audit.sdlc_md.extract_field(body, "Detector-for-lens"),
+                         "the filed unit does not name the lens it exists to build a detector for")
+        for needle in ("RUN-A", "RUN-B", "BG0001", "BG0002"):
+            self.assertIn(needle, body,
+                          f"the unit does not name {needle} as the evidence the detector "
+                          f"must catch")
+
+        # REWORD the title, which is what kills a substring-matched idempotence check.
+        crs[0].write_text(body.replace("Build the mechanical detector for the",
+                                       "Write a script that finds the"), encoding="utf-8")
+
+        second = audit.file_owed_detectors(self.root, audit.detector_owed(self.root))
+        self.assertEqual(1, len(second))
+        self.assertFalse(second[0]["created"], "the same unit was filed a second time")
+        self.assertEqual(filed_id, second[0]["id"], "the existing unit was not recognised")
+        self.assertEqual(1, len(list((self.root / "sdlc-studio" / "change-requests")
+                                    .glob("CR*.md"))),
+                         "a duplicate unit was minted for a class already covered")
+
+    def test_nothing_is_filed_for_a_detector_that_already_EXISTS(self) -> None:
+        """MUTANT: file for every recurring lens rather than only the owed ones. Re-commissioning
+        a script that already ships is the waste this whole verb exists to prevent."""
+        _register(self.root, "RUN-A", "RUN-B")
+        _finding(self.root, "BG0001", lens=MECHANICAL_LENS, run="RUN-A")
+        _finding(self.root, "BG0002", lens=MECHANICAL_LENS, run="RUN-B")
+        res = audit.detector_owed(self.root)
+        self.assertTrue(res["exists"], "precondition: the lens must be detector-exists")
+        self.assertEqual([], audit.file_owed_detectors(self.root, res))
+        self.assertEqual([], list((self.root / "sdlc-studio" / "change-requests").glob("CR*.md")))
+
+    def test_filing_is_REFUSED_on_a_cannot_judge_verdict(self) -> None:
+        """A workspace the verb has just said it cannot read must not have units minted from it.
+
+        MUTANT: file regardless of the verdict. On this repository that would mint from a corpus
+        where 923 of 980 findings carry no attribution at all.
+        """
+        self._owed_fixture()
+        _finding(self.root, "BG0003")                     # unattributable, so cannot-judge
+        args = type("A", (), {"root": str(self.root), "format": "text",
+                              "file": True, "dry_run": False})()
+        with contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()) as err:
+            code = audit.cmd_detector_owed(args)
+        self.assertEqual(audit.OWED_CANNOT_JUDGE, code)
+        self.assertIn("refusing to file", err.getvalue())
+        self.assertEqual([], list((self.root / "sdlc-studio" / "change-requests").glob("CR*.md")),
+                         "a unit was minted off a verdict the verb could not stand behind")
+
+    def test_dry_run_mints_nothing(self) -> None:
+        self._owed_fixture()
+        rows = audit.file_owed_detectors(self.root, audit.detector_owed(self.root), dry_run=True)
+        self.assertEqual([{"lens": MANUAL_LENS, "id": None, "created": False}], rows)
+        self.assertEqual([], list((self.root / "sdlc-studio" / "change-requests").glob("CR*.md")))
+
+    def test_the_file_and_dry_run_flags_reach_the_parser(self) -> None:
+        args = audit.build_parser().parse_args(["detector-owed", "--file", "--dry-run"])
+        self.assertTrue(args.file)
+        self.assertTrue(args.dry_run)
+
+
 if __name__ == "__main__":
     unittest.main()

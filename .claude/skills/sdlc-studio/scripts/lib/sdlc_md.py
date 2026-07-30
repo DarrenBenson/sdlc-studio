@@ -526,7 +526,7 @@ SINGLE_LINE_FIELDS: tuple[str, ...] = (
     # The audit attribution. `audit_run` is the sharp one: it is free-form, so a newline or a
     # markdown link in it lands verbatim in a tracked artefact and can red the repo's own links
     # guard. One guard at one choke point, so every creation path inherits the refusal.
-    "lens", "profile", "audit_run",
+    "lens", "profile", "audit_run", "detector_for_lens",
 )
 # List fields whose every item renders as ONE bullet. An `acs` item is the sharpest of them: a
 # break in it injects a sibling `- **Verify:** <command>` line into the AC block, which the

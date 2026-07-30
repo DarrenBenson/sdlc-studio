@@ -1,6 +1,6 @@
 # US0463: readiness.py detector-owed flags a lens filed in two separate audit runs and files the sized unit that will build the check
 
-> **Status:** In Progress
+> **Status:** Review
 > **Delivers:** CR0435
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -60,16 +60,21 @@
 - **And** that field sits **outside** US0462's attribution triple deliberately: the unit is about one lens across **two** runs, so it has no single `--audit-run` and must file with none of the three - meaning without a distinct field `detector-owed`'s own output would be unattributable and invisible to the next run
 
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_detector_owed.py::DetectorOwedFilingTests::test_an_owed_class_is_filed_once_and_never_twice
+- **Verified:** yes (2026-07-30)
 
 ## Notes
 
-**AC5 IS NOT DELIVERED - this story is deliberately partial.** AC1 to AC4 ship: the verb reports,
-classifies, and exits 0/1/3 with cannot-judge dominating. Filing one sized unit per owed class needs
-a `Detector-for-lens` metadata field in `file_finding.py`, and that field must sit OUTSIDE the
-lens/profile/run triple - the unit is about one lens across two runs, so it has no single
+**AC5 is now delivered.** It was held back deliberately for one commit, because filing one sized
+unit per owed class needs a `Detector-for-lens` field and that field had to sit OUTSIDE the
+lens/profile/run triple: the unit is about one lens across two runs, so it has no single
 `--audit-run` and under all-or-none would have to file with none of the three, leaving
-`detector-owed`'s own output unattributable and invisible to the next run. `verify_ac run --id
-US0463` therefore reports 4 of 5, which is the true state rather than a rounded-up one.
+`detector-owed`'s own output unattributable and invisible to the next run.
+
+Idempotence matches on that field, never on a title substring - the test rewords the filed unit's
+title between the two runs, which is what a human does and what a substring match cannot survive.
+`--file` refuses on a cannot-judge verdict rather than minting units from a workspace the verb has
+just said it cannot read, and nothing is filed for a detector-exists lens: re-commissioning a script
+that already ships is the waste this verb exists to prevent.
 
 **This story depends on US0464 as well as US0462, which was not stated.** AC3 needs "a lens whose pack
 signature parses as mechanical", and today **only `process.md` carries a Signature column at all** -

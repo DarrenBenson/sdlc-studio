@@ -643,11 +643,112 @@ def owed_exit_code(result: dict) -> int:
     return OWED_FOUND if result["owed"] else OWED_CLEAN
 
 
+def _pack_rel_path(profile: str | None) -> str:
+    """The lens pack's path as a consuming project sees it, for a filed unit's `Affects`."""
+    base = ".claude/skills/sdlc-studio/templates/audit-profiles"
+    return f"{base}/{profile}.md" if profile else base
+
+
+def existing_detector_units(repo_root: Path | str) -> dict:
+    """`{lens: id}` for every unit already filed to build a lens's detector.
+
+    Matched on the `Detector-for-lens` FIELD, never on a title substring: a reworded title would
+    otherwise re-file the same unit on the next close-out, and the wording of a title is exactly
+    the thing a human edits.
+    """
+    root = Path(repo_root)
+    out: dict = {}
+    for rel, prefixes in FINDING_DIRS:
+        d = root / "sdlc-studio" / rel
+        if not d.is_dir():
+            continue
+        for path in sorted(d.glob("*.md")):
+            if path.name == "_index.md":
+                continue
+            rec = sdlc_md.extract_record_id(path.stem)
+            if not rec or rec[:2] not in prefixes:
+                continue
+            lens = (sdlc_md.extract_field(sdlc_md.read_text_safe(path),
+                                          "Detector-for-lens") or "").strip()
+            if lens:
+                out.setdefault(lens, rec)
+    return out
+
+
+def file_owed_detectors(repo_root: Path | str, result: dict, dry_run: bool = False) -> list:
+    """File one sized CR per owed lens that has none, and report what already existed.
+
+    Returns a row per owed lens: `{lens, id, created}`. NOTHING is filed for a detector-exists
+    lens - that script already ships, and re-commissioning it is the waste this verb prevents.
+    """
+    import file_finding  # noqa: PLC0415 - local: this files through the filer, it is not one
+    root = Path(repo_root)
+    existing = existing_detector_units(root)
+    rows = []
+    for owed in result["owed"]:
+        lens = owed["lens"]
+        if lens in existing:
+            rows.append({"lens": lens, "id": existing[lens], "created": False})
+            continue
+        if dry_run:
+            rows.append({"lens": lens, "id": None, "created": False})
+            continue
+        runs = ", ".join(owed["runs"])
+        findings = ", ".join(owed["findings"])
+        title = f"Build the mechanical detector for the {lens} lens"
+        res = file_finding.file_finding(root, "cr", title, {
+            "priority": "Medium", "ctype": "Improvement", "size": "M",
+            # The pack file that must gain the signature, as a path relative to the audited root.
+            # `SKILL_DIR.name` alone produced `sdlc-studio/templates/...`, which resolves nowhere:
+            # the skill lives under `.claude/skills/`, and a fictional footprint mis-groups the
+            # unit in the planner's collision analysis while the command still exits 0.
+            "affects": _pack_rel_path(owed.get("profile")),
+            "detector_for_lens": lens,
+            "summary": (
+                f"The `{lens}` lens has now been filed under {len(owed['runs'])} separate audit "
+                f"runs ({runs}) and its pack still declares no mechanical detector, so the same "
+                f"judgement has been paid for twice.\n\n"
+                f"The pack's own stated reason for having none: {owed['rationale'] or 'not stated'}"
+                f"\n\nThe findings that prove the recurrence: {findings}. Those are the cases the "
+                f"detector must catch - a detector that cannot fire on them is decoration."),
+            "impact": (
+                f"Every future run re-derives this judgement from scratch. Recurrence is the "
+                f"evidence that it is derivable, and a script that finds the class costs nothing "
+                f"per run once written."),
+            "acs": [
+                f"A detector for `{lens}` exists and its command is recorded as that lens's "
+                f"signature, so `profile --validate` holds it to a target that resolves.",
+                f"The detector fires on each finding that raised this unit ({findings}); one that "
+                f"cannot is not evidence.",
+                f"`detector-owed` reports `{lens}` as detector-exists rather than owed once the "
+                f"signature lands, so this unit cannot be filed a second time."],
+        })
+        # The id is re-derived FROM THE WRITTEN PATH rather than taken from the filer's return
+        # value. The filer reports a display form (`CR-0001`) while a later scan of the tree reads
+        # the record id from the filename (`CR0001`), so the two paths disagreed on identity - and
+        # identity is the whole basis of an idempotence check. Deriving both the same way makes
+        # them agree by construction instead of by coincidence.
+        rec = sdlc_md.extract_record_id(Path(res["path"]).stem) or res["id"]
+        rows.append({"lens": lens, "id": rec, "created": True})
+    return rows
+
+
 def cmd_detector_owed(args: argparse.Namespace) -> int:
     """Report the lenses a recurring class has now paid for twice."""
     root = Path(getattr(args, "root", None) or ".")
     res = detector_owed(root)
     code = owed_exit_code(res)
+    filed = None
+    if getattr(args, "file", False):
+        # Only when a verdict is trustworthy. Filing off a cannot-judge verdict would mint units
+        # from a workspace the verb has just said it cannot read.
+        if code == OWED_CANNOT_JUDGE:
+            print("refusing to file: the verdict is CANNOT JUDGE, so an owed list minted from it "
+                  "would rest on a workspace this verb has just said it cannot read",
+                  file=sys.stderr)
+            return code
+        filed = file_owed_detectors(root, res, dry_run=getattr(args, "dry_run", False))
+        res = {**res, "filed": filed}
     if args.format == "json":
         print(json.dumps({**res, "exit_code": code}, indent=2))
         return code
@@ -671,6 +772,13 @@ def cmd_detector_owed(args: argparse.Namespace) -> int:
     for rec in res["unregistered"]:
         print(f"CANNOT JUDGE: {rec['id']} cites run {rec['run']!r}, which the register does not "
               f"hold - it is not counted, because an unregistered id proves nothing")
+    for row in (filed or []):
+        if row["created"]:
+            print(f"filed {row['id']} to build the detector for {row['lens']}")
+        elif row["id"]:
+            print(f"already filed: {row['id']} covers {row['lens']} - nothing minted")
+        else:
+            print(f"would file a unit for {row['lens']} (dry run)")
     if code == OWED_CANNOT_JUDGE:
         print("verdict: CANNOT JUDGE - this is NOT 'nothing owed'. Attribute the findings above "
               "(file_finding --lens/--audit-run) or record their runs, then re-run.")
@@ -1039,6 +1147,13 @@ def build_parser() -> argparse.ArgumentParser:
                             "signature declares no mechanical detector - a judgement the model "
                             "has now paid for twice, and that a script should take over. "
                             "Exits 0 clean, 1 owed, 3 cannot-judge")
+    o.add_argument("--file", action="store_true",
+                   help="mint one sized CR per owed lens through file_finding.py, stamped "
+                        "`Detector-for-lens`. Idempotent on that field, so a second close-out "
+                        "reports the existing unit and mints nothing. Refuses on a cannot-judge "
+                        "verdict rather than filing off a workspace it could not read")
+    o.add_argument("--dry-run", action="store_true",
+                   help="with --file, name what would be filed and mint nothing")
     o.add_argument("--format", choices=("text", "json"), default="text")
     o.set_defaults(func=cmd_detector_owed)
     sdlc_md.add_global_root(parser)
