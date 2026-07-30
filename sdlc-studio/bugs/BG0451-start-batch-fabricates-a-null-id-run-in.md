@@ -1,6 +1,6 @@
 # BG0451: start_batch fabricates a null-id run in a project with no run, and the next sprint plan then silently destroys the batch span it wrote
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Critical
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
@@ -43,11 +43,33 @@ The deeper issue is worth settling in the same slice: `_mutate` persists whateve
 
 Pin BOTH halves. A test that `start_batch` refuses with no run, and a test that an existing span SURVIVES a subsequent `open_run` - the second is the one that catches the data loss, and no test currently covers it.
 
+> **Verification depth:** functional - both halves executed directly against the library and the fabrication reproduced before the fix. Two mutants KILLED (a straight revert, and the refusal message stripped, which proves the test asserts WHY rather than merely that it raised). The shared fixture was itself encoding the buggy contract - it started batches against no run - so it was corrected, which is why the guard had nothing to fail against before.
+
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `run_state.start_batch`'s apply does `state = state or _blank()`, so opening a delivery batch in a project that has never opened a run MINTS a run state of...
-- [ ] Following the recorded steps no longer reproduces the defect: Executed at d7a1ad8f, 2026-07-30, by an independent round-2 reviewer in an isolated worktree.
-- [ ] The proposed fix lands, pinned by a test: Apply the guard that `note_finding` already carries: refuse to open a batch when no run is open, naming the absence, rather than seeding a blank state.
+### AC1: starting a batch with no run open is refused, and nothing is written
+
+- **Given** a project that has never opened a run
+- **When** `start_batch` is called
+- **Then** it refuses naming the reason, and `read` still returns {} - both halves asserted, because a guard that raises AFTER writing would pass a test checking only the exception; the previous behaviour minted a run whose id was null, breaking read's documented never-fabricated invariant
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DeliveryBatchSpanTests::test_starting_a_batch_with_no_run_open_is_REFUSED_and_writes_nothing
+- **Verified:** yes (2026-07-30)
+
+### AC2: a batch span survives the next plan of the same run
+
+- **Given** an open run carrying a batch span
+- **When** the run is re-planned
+- **Then** the span is unchanged - this was the data-loss half and no test covered it: `_is_spent` read the null id as spent, so the next `sprint plan --write` replaced the state and took the span with it, leaving every finding's `Raised-in-batch` key pointing at nothing
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DeliveryBatchSpanTests::test_a_span_SURVIVES_the_next_plan_of_the_same_run
+- **Verified:** yes (2026-07-30)
+
+### AC3: the sibling guard on note_finding still holds, proven on its own runless fixture
+
+- **Given** a project with no run, built by the test itself rather than inherited
+- **When** a finding is attributed
+- **Then** it returns None and writes no file - the shared fixture now opens a run, so this test builds its own; the two guards are siblings and the second was introduced by the commit that repaired the first
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DeliveryBatchSpanTests::test_note_finding_never_fabricates_a_run
+- **Verified:** yes (2026-07-30)
 
 ## Revision History
 

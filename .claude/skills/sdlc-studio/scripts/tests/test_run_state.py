@@ -749,7 +749,43 @@ class DeliveryBatchSpanTests(unittest.TestCase):
         self.addCleanup(td.cleanup)
         root = Path(td.name)
         (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        # A run is OPENED first. These tests previously started a batch against no run at all,
+        # which is what let the fabrication in `start_batch` go unnoticed: the fixture encoded
+        # the buggy contract, so the guard that should have existed had nothing to fail.
+        run_state.open_run(root, goal="a goal", batch=["US0001"])
         return root
+
+    def test_starting_a_batch_with_no_run_open_is_REFUSED_and_writes_nothing(self) -> None:
+        """BG0451. `state = state or _blank()` minted a run whose id was null - breaking `read`'s
+        documented never-fabricated invariant - and `_is_spent` then read that null id as spent,
+        so the next `open_run` (`sprint plan --write`) replaced the state and took the span with
+        it. Silently. Every finding attributed to that span pointed at nothing afterwards.
+
+        A batch is scoped to a run by definition, so this is a command to refuse, not a state to
+        mint. Both halves asserted: the refusal, and that NOTHING was written - a guard that
+        raises after writing would pass a test checking only the exception.
+        """
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        self.assertEqual({}, run_state.read(root), "the fixture already had a run")
+        with self.assertRaises(run_state.RunStateError) as ctx:
+            run_state.start_batch(root, ["US0001", "US0002"])
+        self.assertIn("no run is open", str(ctx.exception))
+        self.assertEqual({}, run_state.read(root),
+                         "a run state was fabricated despite the refusal")
+
+    def test_a_span_SURVIVES_the_next_plan_of_the_same_run(self) -> None:
+        """The data-loss half, which no test covered. The span must outlive a re-plan: a
+        re-planned run is the same run, and the batch record is what every filed finding's
+        `Raised-in-batch` key points at."""
+        root = self._root()
+        run_state.start_batch(root, ["US0001", "US0002"])
+        before = [s.get("units") for s in (run_state.read(root).get("batches") or [])]
+        run_state.open_run(root, goal="a goal", batch=["US0001", "US0003"])
+        after = [s.get("units") for s in (run_state.read(root).get("batches") or [])]
+        self.assertEqual(before, after, "the re-plan destroyed the batch span")
 
     def test_open_batch_returns_the_LAST_span_not_the_first(self) -> None:
         """Work lands in the current batch. Returning `spans[0]` would attribute every later
@@ -791,7 +827,13 @@ class DeliveryBatchSpanTests(unittest.TestCase):
             run_state.close_batch(root, reviewer="a", author="b", verdict="APPROVE")
 
     def test_note_finding_never_fabricates_a_run(self) -> None:
-        root = self._root()
+        # Builds its OWN runless root: `_root` now opens a run, because `start_batch` refuses
+        # without one (BG0451). This test's whole subject is the no-run case, so it must not
+        # inherit a fixture that has one - the two guards are siblings and both are needed.
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
         self.assertIsNone(run_state.note_finding(root, "BG0001"))
         self.assertFalse(run_state.path(root).exists(),
                          "attributing a finding minted a run state in a project with no run")

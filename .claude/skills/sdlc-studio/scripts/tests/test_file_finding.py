@@ -1986,6 +1986,7 @@ class AFindingIsPricedWhereTheWorkWasTests(unittest.TestCase):
     def test_a_finding_records_the_open_batch(self) -> None:
         from lib import run_state
         root = self._repo()
+        run_state.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
         run_state.start_batch(root, ["US0001"])
         text = self._file(root)
         stamped = sdlc_md.extract_field(text, "Raised-in-batch") or ""
@@ -2000,6 +2001,7 @@ class AFindingIsPricedWhereTheWorkWasTests(unittest.TestCase):
         helper underneath it. This asserts the span itself gained the id."""
         from lib import run_state
         root = self._repo()
+        run_state.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
         run_state.start_batch(root, ["US0001"])
         self._file(root)
         self.assertIn("BG0001", run_state.open_batch(root)["findings_raised"],
@@ -2013,6 +2015,7 @@ class AFindingIsPricedWhereTheWorkWasTests(unittest.TestCase):
         import time
         from lib import run_state
         root = self._repo()
+        run_state.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
         run_state.start_batch(root, ["US0001"])
         start = time.monotonic()
         self._file(root)
@@ -2039,6 +2042,7 @@ class AFindingIsPricedWhereTheWorkWasTests(unittest.TestCase):
         finding as batch work and invert the very measurement this exists to take."""
         from lib import run_state
         root = self._repo()
+        run_state.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
         run_state.start_batch(root, ["US0001"])
         run_state.close_batch(root, reviewer="reviewer-a", author="author-b", verdict="APPROVE")
         text = self._file(root)

@@ -9902,6 +9902,7 @@ class BatchBoundaryReviewTests(unittest.TestCase):
 
     def test_a_batch_span_is_recorded_on_the_run_state(self) -> None:
         root, rs = self._repo(), self._rs()
+        rs.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
         rs.start_batch(root, ["US0001", "BG0002"])
         span = rs.open_batch(root)
         self.assertIsNotNone(span, "no batch span was opened")
@@ -9960,6 +9961,7 @@ class BatchBoundaryReviewTests(unittest.TestCase):
 
     def test_review_batch_records_and_closes_the_span(self) -> None:
         root, rs = self._repo(), self._rs()
+        rs.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
         rs.start_batch(root, ["US0001"])
         args = argparse.Namespace(root=root, units=None, reviewer="reviewer-a",
                                   author="author-b", verdict="APPROVE",
@@ -9978,6 +9980,10 @@ class BatchBoundaryReviewTests(unittest.TestCase):
         span mechanism unreachable from any documented CLI form. Found by an independent
         reviewer running the invocation printed in help/sprint.md verbatim."""
         root, rs = self._repo(), self._rs()
+        # A run is open, because the documented invocation is issued mid-sprint and a delivery
+        # batch is scoped to a run (BG0451). Without this the fixture exercised a state the
+        # command cannot legitimately be in, which is how `start_batch` came to mint one.
+        rs.open_run(root, goal="a goal", batch=["US0001"])
         parser = sprint.build_parser()
         args = parser.parse_args(["review-batch", "--open", "US0001,US0002", "--root", str(root)])
         with contextlib.redirect_stdout(io.StringIO()):
@@ -10145,6 +10151,7 @@ class BatchBoundaryReviewTests(unittest.TestCase):
         root, rs = self._repo(), self._rs()
         with self.assertRaises(ValueError):
             rs.close_batch(root, reviewer="a", author="b", verdict="APPROVE")
+        rs.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
         rs.start_batch(root, ["US0001"])
         rs.close_batch(root, reviewer="a", author="b", verdict="APPROVE")
         with self.assertRaises(ValueError):
@@ -10152,6 +10159,7 @@ class BatchBoundaryReviewTests(unittest.TestCase):
 
     def test_findings_raised_against_a_batch_are_recorded_on_it(self) -> None:
         root, rs = self._repo(), self._rs()
+        rs.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
         rs.start_batch(root, ["US0001"])
         rs.note_finding(root, "BG0500")
         self.assertIn("BG0500", rs.open_batch(root)["findings_raised"])
@@ -10160,6 +10168,7 @@ class BatchBoundaryReviewTests(unittest.TestCase):
         """An absence is stated by the caller, never guessed here: attributing to the last
         CLOSED span would price a close-time finding as batch work, inverting the measurement."""
         root, rs = self._repo()  , self._rs()
+        rs.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
         rs.start_batch(root, ["US0001"])
         rs.close_batch(root, reviewer="reviewer-a", author="author-b", verdict="APPROVE")
         self.assertIsNone(rs.note_finding(root, "BG0501"))
@@ -10205,6 +10214,7 @@ class TheCloseCertifiesRatherThanReviewsTests(unittest.TestCase):
         recorded. It is reported whether or not the step refuses."""
         from lib import run_state
         root, state = self._repo(["US0001"], reviewed=["US0001"])
+        run_state.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
         run_state.start_batch(root, ["US0001"])
         run_state.note_finding(root, "BG0777")
         ok, detail, _ = sprint._close_review_coverage(root, "RETRO0001", state)

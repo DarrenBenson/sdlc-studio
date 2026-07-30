@@ -1222,6 +1222,19 @@ def start_batch(repo_root: Path | str, units: list[str], now: str | None = None)
     """Open a delivery-batch span over `units`. Idempotent on an already-open span: the units
     are merged in, because a batch that grows mid-flight is a batch, not a second one."""
     stamp = now or sdlc_md.now_iso8601()
+    # A batch is scoped to a RUN by definition, so opening one without a run is a command to be
+    # refused, never a state to be minted. `state = state or _blank()` seeded a run whose id was
+    # null, which breaks `read`'s documented never-fabricated invariant AND loses data: `_is_spent`
+    # reads a null id as spent, so the next `open_run` - that is, `sprint plan --write` - replaced
+    # the state and took the span with it, silently. Every finding attributed to that span then
+    # pointed at nothing.
+    #
+    # This is the SECOND instance of one shape in two consecutive review rounds, and the second
+    # was introduced by the commit that repaired the first (`note_finding` carries the same guard).
+    if not read(repo_root).get("run_id"):
+        raise RunStateError(
+            "no run is open, so there is no batch to open one against - a delivery batch is "
+            "scoped to a run. Run `sprint plan --write` first.")
 
     def apply(state: dict) -> dict:
         state = state or _blank()
