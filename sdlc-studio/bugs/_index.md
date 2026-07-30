@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 36 |
 | In Progress | 0 |
-| Fixed | 333 |
+| Fixed | 334 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **452** |
+| **Total** | **453** |
 
 ## All Bugs
 
@@ -170,6 +170,7 @@
 | [BG0450](BG0450-the-unresolved-questions-gate-is-escapable-by-a.md) | the unresolved-questions gate is escapable by a heading suffix, a second section, or a self-citation, and the AC claiming it is type-general is verified by a tautology | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0451](BG0451-start-batch-fabricates-a-null-id-run-in.md) | start_batch fabricates a null-id run in a project with no run, and the next sprint plan then silently destroys the batch span it wrote | Open | Critical | 2026-07-30 | 2026-07-30 |
 | [BG0452](BG0452-verifiers-all-green-splits-the-artefact-key-on.md) | _verifiers_all_green splits the artefact key on a hyphen, so it is blind to v3 ids and its forecast exclusions never fire in any new project | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0453](BG0453-sprint-lane-return-tracebacks-on-an-unreadable-run.md) | sprint lane return tracebacks on an unreadable run state AFTER running the unit's acceptance criteria, discarding the verification result - the third occurrence of a finding rejected twice | Fixed | Critical | 2026-07-30 | 2026-07-30 |
 
 ## Archived Releases
 

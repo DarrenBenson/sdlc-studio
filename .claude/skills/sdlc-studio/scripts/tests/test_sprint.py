@@ -10719,16 +10719,87 @@ class TheLaneCommandIssuesABriefOverACorruptStateTests(unittest.TestCase):
         self.assertIn("UNKNOWN", err.getvalue(),
                       "the unreadable run state was not reported at all")
 
+    def test_lane_RETURN_does_not_traceback_and_keeps_the_verification_result(self) -> None:
+        """BG0453. The third occurrence of one defect. BG0405 guarded `lane_dispatch`; round
+        two rejected it because the same unguarded read sat in `cmd_lane`; that repair guarded
+        the BRIEF branch and left the RETURN branch, twenty lines below.
+
+        The return path is the worst of the three: `lane_return` has already RUN the unit's
+        acceptance criteria before this read, so a raise discards a completed verification and
+        the operator cannot tell from the traceback whether the unit passed.
+        """
+        root = self._corrupt()
+        mod = _load()
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(["--root", str(root), "lane", "return", "--units", "BG0001",
+                           "--claimed", "done"])
+        self.assertIn(rc, (0, 1, 2), f"the command raised instead of reporting (rc={rc})")
+        self.assertIn("BG0001", out.getvalue() + err.getvalue(),
+                      "the verification result was discarded rather than reported")
+
+    def test_no_run_state_call_in_cmd_lane_bypasses_the_guard(self) -> None:
+        """The test that stops a FOURTH occurrence, over the call SITES rather than over any
+        one command's output.
+
+        Each previous round fixed the line the reviewer named instead of the class they
+        described, so each repair left a sibling. A behavioural test per branch cannot catch
+        the branch nobody thought to write a test for; this one fails the moment a bare
+        `run_state.` call is added to `cmd_lane` without routing through `_lane_run_state`.
+        """
+        import ast
+        import inspect
+        import textwrap
+        mod = _load()
+        tree = ast.parse(textwrap.dedent(inspect.getsource(mod.cmd_lane)))
+
+        # Every `run_state.x(...)` must sit inside a lambda handed to `_lane_run_state`. Read
+        # with AST rather than by grepping lines: the guarded form spans several lines and puts
+        # the call inside a lambda, so a line-wise check cannot tell a routed call from a bare
+        # one - the first version of this test failed on its own correct subject.
+        guarded, wrapped = set(), []
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                    and node.func.id == "_lane_run_state"):
+                wrapped.append(node)
+                for arg in node.args:
+                    for inner in ast.walk(arg):
+                        if isinstance(inner, ast.Call):
+                            guarded.add(id(inner))
+        bare = []
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                    and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id == "run_state"
+                    and id(node) not in guarded):
+                bare.append(f"line {node.lineno}: run_state.{node.func.attr}(...)")
+        self.assertEqual([], bare,
+                         "these run_state calls in cmd_lane bypass the best-effort guard, so an "
+                         "unreadable run state stops the command or discards its work: "
+                         f"{bare}")
+        self.assertGreaterEqual(len(wrapped), 3,
+                                "fewer than three guarded run-state calls remain in cmd_lane - "
+                                "this test would otherwise pass over a function that had simply "
+                                "stopped touching the run state, proving nothing")
+
     def test_recording_a_lane_start_cannot_withhold_the_brief(self) -> None:
         """The third read in the same command. It writes, so it fails differently - and a
-        recording failure must not swallow the brief that was already composed."""
-        import inspect
-        src = inspect.getsource(_load().cmd_lane)
-        self.assertIn("record_lane_start", src)
-        guarded = src[src.index("record_lane_start") - 400:]
-        self.assertIn("except Exception", guarded,
-                      "record_lane_start is unguarded, so an unreadable run state still loses "
-                      "the brief at the last step")
+        recording failure must not swallow the brief that was already composed.
+
+        Now asserted BEHAVIOURALLY. The previous version searched a 400-character window after
+        the words `record_lane_start` for `except Exception`, which an independent reviewer
+        rightly called out: the window reached the end of the function, so it could not tell
+        WHICH read was guarded, and it passed only because a sibling test happened to fire.
+        Structure is covered by the call-site test above; this one covers the behaviour.
+        """
+        root = self._corrupt()
+        mod = _load()
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = mod.main(["--root", str(root), "lane", "brief", "--units", "BG0001"])
+        self.assertIn(rc, (0, 1, 2), f"the command raised instead of reporting (rc={rc})")
+        self.assertIn("BG0001", out.getvalue(),
+                      "the brief was withheld because the lane start could not be recorded")
 
 
 if __name__ == "__main__":

@@ -6456,6 +6456,25 @@ def group_blockers(blockers: list[dict]) -> list[dict]:
     return list(groups.values())
 
 
+def _lane_run_state(label: str, call, fallback, warning: str):
+    """Run one run-state call for `lane`, best-effort. Returns `fallback` if it raises.
+
+    Every run-state read in `cmd_lane` goes through here. The rule they all share is the same:
+    the run state is BOOKKEEPING for this command, never its purpose, so an unreadable state
+    must degrade the command's knowledge and say so - it must never stop the command or discard
+    its work. Three consecutive review rounds each found one more unguarded copy of that rule
+    open-coded in this function, so it is stated once, in one place, and a test asserts no call
+    site bypasses it. Fixing the line a reviewer names, rather than the class they describe, is
+    what produced the second and third occurrences.
+    """
+    try:
+        return call()
+    except Exception as exc:  # noqa: BLE001 - bookkeeping never fails the command it serves
+        sdlc_md.debug(f"sprint.cmd_lane.{label}", exc)
+        print(f"WARNING {warning}", file=sys.stderr)
+        return fallback
+
+
 def cmd_lane(args: argparse.Namespace) -> int:
     """`sprint lane brief|return`: the two ends of a delegated unit of delivery.
 
@@ -6488,26 +6507,20 @@ def cmd_lane(args: argparse.Namespace) -> int:
         # command, so the artefact's own reproduction still produced a traceback and issued no
         # brief - and the test written for it exercised the library function, not the command it
         # names. A library test is not a lane test.
-        try:
-            in_flight = run_state.lanes_in_flight(root)
-        except Exception as exc:  # noqa: BLE001 - a brief must be issued even so
-            sdlc_md.debug("sprint.cmd_lane.in_flight", exc)
-            in_flight = []
-            print("WARNING the run state could not be read, so whether any lane never returned "
-                  "is UNKNOWN, not none - check the diff before starting", file=sys.stderr)
+        in_flight = _lane_run_state(
+            "in_flight", lambda: run_state.lanes_in_flight(root), [],
+            "the run state could not be read, so whether any lane never returned is UNKNOWN, "
+            "not none - check the diff before starting")
         for row in in_flight:
             print(f"WARNING {row['unit']} was briefed at {row['started_at']} and never "
                   f"returned - the working tree MAY ALREADY CARRY its work. Check the diff "
                   f"before starting: a lane redoing a repair that is already present is how "
                   f"a partial edit reached a commit.", file=sys.stderr)
         for b in dispatch["briefs"]:
-            try:
-                run_state.record_lane_start(root, b["id"])
-            except Exception as exc:  # noqa: BLE001 - recording must not withhold the brief
-                sdlc_md.debug("sprint.cmd_lane.record_lane_start", exc)
-                print(f"WARNING {b['id']}'s lane start could not be recorded (the run state is "
-                      f"unreadable), so a restart will not know this lane was briefed",
-                      file=sys.stderr)
+            _lane_run_state(
+                "record_lane_start", lambda b=b: run_state.record_lane_start(root, b["id"]), None,
+                f"{b['id']}'s lane start could not be recorded (the run state is unreadable), "
+                f"so a restart will not know this lane was briefed")
         if getattr(args, "format", "text") == "json":
             print(json.dumps(dispatch, indent=2))
         else:
@@ -6528,7 +6541,19 @@ def cmd_lane(args: argparse.Namespace) -> int:
     # Cleared on RETURN, whatever the outcome: a blocked return is still a lane that came back,
     # and leaving the marker set would warn about a unit nobody is mid-way through.
     for res in results:
-        run_state.record_lane_return(root, res["unit"])
+        # Guarded like its two siblings above. This one matters MOST, not least: by the time it
+        # runs, `lane_return` has already executed the unit's acceptance criteria, so a raise
+        # here discards a completed verification and the operator cannot tell from the traceback
+        # whether the unit passed. Three review rounds each found one more unguarded copy of
+        # this read in this function, because each repair fixed the line the reviewer named
+        # rather than the class they described - hence one helper, and a test over the call
+        # sites rather than over any single command's output.
+        _lane_run_state(
+            "record_lane_return", lambda res=res: run_state.record_lane_return(root, res["unit"]),
+            None,
+            f"{res['unit']}'s lane return could not be recorded (the run state is unreadable), "
+            f"so it may still be reported as briefed and never returned. Its acceptance "
+            f"criteria HAVE been run and their result is reported below")
     if getattr(args, "format", "text") == "json":
         print(json.dumps(results, indent=2))
     else:
