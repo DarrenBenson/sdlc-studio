@@ -520,6 +520,92 @@ _LINE_BREAK_RE = re.compile("[" + "".join(re.escape(c) for c in _LINE_BREAK_NAME
 # be a single line or it escapes that construct. The prose fields (summary, steps, fix, impact,
 # recommendation) are deliberately absent: they are written into a section body, where more than
 # one line is the point.
+#: THE CANONICAL EPIC-INDEX COLUMNS. One importable answer, because two consulted their own list:
+#: the shipped `templates/indexes/epic.md` declared `Owner`/`Target` while every one of this
+#: repository's 191 live rows carries `Deps`/`Created`/`Updated`. The live set wins - 191 rows of
+#: evidence against a template nobody had reconciled - and both the derivation and the row writer
+#: read this rather than restating it, so they cannot disagree about what a row is.
+EPIC_INDEX_COLUMNS: tuple[str, ...] = (
+    "ID", "Title", "Status", "Stories", "Deps", "Created", "Updated",
+)
+
+#: The cells this module DERIVES from the tree rather than accepting as typed.
+EPIC_DERIVED_COLUMNS: tuple[str, ...] = ("Stories", "Deps")
+
+#: A cell whose value the artefact has not stated. Distinct from `DEPS_DECLARED_NONE`: "nobody
+#: said" and "the epic says there are none" are different facts, and rewriting the first as the
+#: second invents a declaration.
+CELL_NOT_STATED = "--"
+#: The value already in use on EP0001's row for an epic that DECLARES it has no dependencies.
+DEPS_DECLARED_NONE = "None"
+
+
+def epic_story_count(repo_root, epic_id: str) -> int:
+    """How many story files name `epic_id` in their `Epic` field. A census, never a stored total."""
+    d = Path(repo_root) / "sdlc-studio" / "stories"
+    if not d.is_dir():
+        return 0
+    n = 0
+    for path in sorted(d.glob("*.md")):
+        if path.name == "_index.md":
+            continue
+        rec = extract_record_id(path.stem)
+        if not rec or not rec.startswith("US"):
+            continue
+        if (extract_field(read_text_safe(path), "Epic") or "").strip() == epic_id:
+            n += 1
+    return n
+
+
+def epic_declared_deps(repo_root, epic_id: str) -> list | None:
+    """The epic ids its `Blocked By` table names, in FILE ORDER.
+
+    THREE states, and the third is why this returns None rather than an empty list:
+      - `["EP0001", "EP0002"]` - the section names dependencies;
+      - `[]`                   - the section exists and names none, so the epic has DECLARED none;
+      - `None`                 - there is no `## Dependencies` section at all, so nobody has said.
+    Collapsing the last two would rewrite an absence as a declaration the epic never made.
+    """
+    found = find_by_id(Path(repo_root), epic_id)
+    if not found:
+        return None
+    # `find_by_id` returns (path, type), not a path. Unpacked rather than passed straight to
+    # `Path()`, which raised on the tuple.
+    text = read_text_safe(Path(found[0]))
+    i = text.find("## Dependencies")
+    if i == -1:
+        return None
+    section = text[i:]
+    nxt = re.search(r"^## (?!Dependencies)", section[3:], re.M)
+    if nxt:
+        section = section[:nxt.start() + 3]
+    out: list[str] = []
+    for line in section.splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if not cells or not cells[0]:
+            continue
+        m = re.match(r"^(EP\d{4}|EP-\d{4})$", cells[0])
+        if m:
+            out.append(cells[0].replace("-", ""))
+    return out
+
+
+def derive_epic_row_cells(repo_root, epic_id: str) -> dict:
+    """`{column: derived value}` for the epic-index cells this module owns.
+
+    `Deps` is ABSENT from the mapping when the epic states no `## Dependencies` section, so a
+    caller writes nothing rather than writing "not stated" over whatever is there.
+    """
+    cells: dict = {"Stories": str(epic_story_count(repo_root, epic_id))}
+    deps = epic_declared_deps(repo_root, epic_id)
+    if deps is None:
+        return cells
+    cells["Deps"] = ", ".join(deps) if deps else DEPS_DECLARED_NONE
+    return cells
+
+
 #: The `Audit-lens` value meaning "nobody attributed this". A BACKFILLED finding carries it, and
 #: `detector-owed` counts it as unattributable rather than as a lens of that name - 108 findings
 #: sharing one placeholder across five runs would otherwise read as a detector owed on every one.
