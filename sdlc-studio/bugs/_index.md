@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 35 |
+| Open | 36 |
 | In Progress | 0 |
 | Fixed | 336 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **454** |
+| **Total** | **455** |
 
 ## All Bugs
 
@@ -172,6 +172,7 @@
 | [BG0452](BG0452-verifiers-all-green-splits-the-artefact-key-on.md) | _verifiers_all_green splits the artefact key on a hyphen, so it is blind to v3 ids and its forecast exclusions never fire in any new project | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0453](BG0453-sprint-lane-return-tracebacks-on-an-unreadable-run.md) | sprint lane return tracebacks on an unreadable run state AFTER running the unit's acceptance criteria, discarding the verification result - the third occurrence of a finding rejected twice | Fixed | Critical | 2026-07-30 | 2026-07-30 |
 | [BG0454](BG0454-the-confinement-write-detector-reads-list-remove-as.md) | the confinement write detector reads list.remove as a filesystem write, so a read-only module is censused as a workspace writer | Open | Low | 2026-07-30 | 2026-07-30 |
+| [BG0455](BG0455-sprint-stop-cannot-tell-an-unbuilt-unit-from.md) | sprint stop cannot tell an unbuilt unit from one the two-role gate holds at Review, so it reports work nobody can do as work that could have proceeded | Open | Medium | 2026-07-30 | 2026-07-30 |
 
 ## Archived Releases
 
