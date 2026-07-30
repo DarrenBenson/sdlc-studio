@@ -1,7 +1,7 @@
 # BG0423: The commit gate's unit-suite lane fails on the first attempt and passes on an identical retry, twice in one session, costing a full 8-minute gate run each time
 
 > **Status:** Open
-> **Severity:** Medium
+> **Severity:** High
 > **Points:** 3
 > **Affects:** .githooks/pre-commit, .githooks/commit-msg, tools/skill-tests.sh
 > **Evidence:** RUN-01KYPZ1G, two occurrences. (1) Commit of the US0462 review repairs: `git commit` reported a skill-tests failure and 'Commit blocked'; `bash tools/skill-tests.sh` run standalone immediately afterwards reported `Ran 5392 tests ... OK`; the identical `git commit -F` then succeeded as 31913621. (2) Commit of US0463 AC5: same shape, blocked once, succeeded on retry as 263c2072. (3) Commit of US0568: blocked once with the suite lane reporting a failure, then succeeded unchanged as 812391cc - THREE occurrences in one session, so this is a rate and not a coincidence. In both cases the full suite had been run green by hand minutes before, and `reconcile detect` reported drift_items=0.
@@ -24,6 +24,36 @@ A race on bytecode. The session purges `__pycache__` before running suites by ha
 
 A verdict cache keyed to the wrong revision. The blocked output carried `suite-verdict: green (full) recorded for <the PREVIOUS commit's sha>`, which suggests the verdict file records against HEAD rather than against the tree being committed. If a stale entry is consulted, the lane could refuse on evidence belonging to a different tree.
 
+## The mechanism, found on the fourth occurrence
+
+The retry does not pass because the flake went away. **The retry passes because it runs no tests
+at all.**
+
+A blocked attempt prints `suite-verdict: green (full) recorded for <sha>` even though a lane has
+just reported a failure. The next attempt then reads that verdict and prints `SKIP unit suites -
+the test-relevant surface is unchanged since the full green verdict of <sha> - reusing it and
+running no tests`, and the commit lands.
+
+So the shape is not "intermittent red, green on retry". It is:
+
+1. attempt one RUNS the suites, a lane reports a failure, and a GREEN verdict is recorded anyway;
+2. attempt two reuses that verdict, skips the suites entirely, and passes.
+
+That is a fail-open in the gate itself. Any genuine suite failure can be committed past by simply
+running `git commit` a second time - which is precisely what an operator does when a gate looks
+flaky, and what this session did four times. The severity is High for that reason, not for the
+eight minutes.
+
+A second defect is visible in the same evidence: the fourth occurrence was a **docs-only** change
+(one bug file), and AGENTS.md states the hook skips the unit suites for a commit touching no
+`scripts/`, `templates/` or `tools/` file. It ran them. So the selection logic and the verdict
+cache are both suspect, and they interact - a needless run is what produces the stale green that
+the next attempt then trusts.
+
+What is still unknown is WHICH test reported the failure, because the lane's output does not
+survive the retry. That is why the first fix below is to make it survive: everything else here was
+read off four blocked commits, and the failing test itself has never once been visible.
+
 ## Steps to Reproduce
 
 1. Make a substantive change touching `scripts/`, so the hook selects the unit suites.
@@ -33,14 +63,16 @@ A verdict cache keyed to the wrong revision. The blocked output carried `suite-v
 
 ## Proposed Fix
 
-1. **Tee the suite output to `sdlc-studio/.local/gate-suite-last.log` first.** Without evidence surviving the retry, every later step is guesswork. This is the whole fix for the first iteration.
-2. Then reproduce with the log in hand and name the failing test.
-3. Check whether `gate-suite-verdict.json` is keyed to the committed tree or to HEAD, and whether a stale entry can be consulted.
-4. Only then decide the repair. Do NOT 'fix' this by adding a retry to the hook: a lane that passes on the second run is not a lane, and a hook that hides its own flake is worse than one that costs eight minutes.
+1. **Refuse to record a green verdict when a lane failed.** This is the fail-open and it is the whole severity: a verdict recorded beside a failure is what the next attempt trusts. Fix this before the diagnosis, because it is a bypass regardless of the cause.
+2. **Tee the suite output to `sdlc-studio/.local/gate-suite-last.log`.** Without evidence surviving the retry, every later step is guesswork. This is the whole fix for the first iteration.
+3. Then reproduce with the log in hand and name the failing test.
+4. Check whether `gate-suite-verdict.json` is keyed to the committed tree or to HEAD, and whether a stale entry can be consulted.
+5. Also check the SELECTION logic: a docs-only commit ran the suites at all, which AGENTS.md says it should skip - a needless run is what produced the stale green the next attempt trusted.
+6. Only then decide the repair. Do NOT 'fix' this by adding a retry to the hook: a lane that passes on the second run is not a lane, and a hook that hides its own flake is worse than one that costs eight minutes.
 
 ## Acceptance Criteria
 
-- [ ] A blocked commit leaves the suite output in `sdlc-studio/.local/`, so the failing test is named after the fact rather than lost with the terminal.
+- [ ] A green suite verdict is NEVER recorded for an attempt in which a lane failed, so a retry cannot reuse one - a test drives a failing lane and asserts no verdict is written. A blocked commit also leaves the suite output in `sdlc-studio/.local/`, so the failing test is named after the fact rather than lost with the terminal.
 - [ ] The flake is reproduced with that log in hand and the failing test is named in this bug before any repair is attempted.
 - [ ] Whether `gate-suite-verdict.json` is keyed to the committed tree or to HEAD is stated, with the answer read from the code rather than assumed.
 - [ ] The repair is not a retry inside the hook: a test asserts the suite lane runs exactly once per commit attempt, so a flake cannot be papered over by re-running it.
