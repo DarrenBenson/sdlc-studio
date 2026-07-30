@@ -1156,40 +1156,73 @@ def check_audit_attribution(repo_root: Path | str, fields: dict) -> dict:
     run = str(fields.get("audit_run") or "").strip()
     if not (lens or profile or run):
         return fields
-    for label, val in (("lens", lens), ("profile", profile), ("audit_run", run)):
-        if val:
-            sdlc_md.require_single_line(label, val)
     import readiness  # noqa: PLC0415 - local: the filer reads the packs, it does not own them
+    packs = sorted(set(readiness.profile_names()) - set(readiness.REFERENCE_PROFILES))
+    # A profile no pack declares is refused FIRST and by name, listing what the resolver does
+    # declare. It used to fall through to the "lens required" branch, which named `--audit-run` -
+    # a flag the operator had not supplied - and named neither the profile nor the packs.
+    if profile and profile not in packs:
+        raise ValueError(
+            f"no pack declares the profile {profile!r} - refusing to stamp a finding against a "
+            f"pack that resolves to nothing. Packs that exist: {', '.join(packs)}")
     if not lens:
         raise ValueError(
-            "--lens is required alongside --audit-run: a class is counted PER LENS per run, so a "
-            "finding stamped with a run and no lens can never take part in the comparison the "
-            "stamp exists for. Supply both, or neither")
+            "--lens is required alongside --audit-run or --profile: a class is counted PER LENS "
+            "per run, so a finding stamped without one can never take part in the comparison the "
+            "stamp exists for. Supply lens and run together, or neither")
     if not run:
         raise ValueError(
             "--audit-run is required alongside --lens: a lens seen once is the lens working and a "
             "lens seen across two runs is a detector owed, so the run is what makes the count "
             "mean anything. Supply both, or neither")
-    packs = sorted(set(readiness.profile_names()) - set(readiness.REFERENCE_PROFILES))
-    owners = [p for p in packs
-              if any(l["name"] == lens for l in readiness.resolve_profile(p)["lenses"])]
+    owners = []
+    unreadable = []
+    for p in packs:
+        # Guarded PER PACK. `resolve_profile` raises for a pack that parses to no lens, and
+        # `reference-audit.md#audit-extend` invites a project to add packs - so a half-written one
+        # is an expected state. Unguarded, an unrelated stub refused every attributed filing in the
+        # project and named a file the operator had never mentioned. Same shape as
+        # `readiness.cmd_validate_profiles`, forty lines away.
+        try:
+            lenses = readiness.resolve_profile(p)["lenses"]
+        except readiness.UnknownProfile:
+            unreadable.append(p)
+            continue
+        if any(l["name"] == lens for l in lenses):
+            owners.append(p)
     if not owners:
+        detail = f". Packs that could not be read: {', '.join(unreadable)}" if unreadable else ""
         raise ValueError(
             f"no pack declares the lens {lens!r} - refusing to stamp a finding with a lens that "
-            f"resolves to nothing. Packs that exist: {', '.join(packs)}")
+            f"resolves to nothing. Packs that exist: {', '.join(packs)}{detail}")
+    if len(owners) > 1:
+        # AMBIGUOUS, so refused rather than resolved alphabetically. Picking `owners[0]` made
+        # supplying `--profile` and omitting it produce DIFFERENT records for the same finding,
+        # from the very check that claims to be stronger than requiring all three.
+        raise ValueError(
+            f"the lens {lens!r} is declared by more than one pack ({', '.join(owners)}), so the "
+            f"profile cannot be derived and the two would disagree with a supplied one. Rename the "
+            f"lens in one pack so it identifies a single one")
     if profile and profile not in owners:
         raise ValueError(
             f"the lens {lens!r} belongs to {', '.join(owners)}, not to {profile!r} - a consistent-"
             f"looking pair naming the wrong pack is exactly what a per-field existence check "
             f"cannot see. Omit --profile and it is derived")
     import audit_cost  # noqa: PLC0415 - local: the filer reads the register, it does not own it
-    if audit_cost.run_row(repo_root, run) is None:
-        known = sorted(audit_cost.registered_run_ids(repo_root))
-        # Built separately rather than inlined: a conditional expression carrying the same quote
-        # character inside an f-string is a 3.12-only construct, and this skill installs onto
-        # whatever Python the consuming project has.
-        hint = ("Registered: " + ", ".join(known) if known else
-                "The register is empty - record the run with `audit_cost.py record --run-id` first")
+    reg = audit_cost.register(repo_root)
+    if run not in reg["runs"]:
+        # The hint depends on WHICH of the three states the register is in. Telling an operator to
+        # record the run again when the register is merely CORRUPT appends a duplicate row to an
+        # already-broken file, and the run they are being told to record is very likely in there.
+        if reg["state"] == "corrupt":
+            hint = (f"The register is UNREADABLE, so this run may well be recorded: {reg['detail']}"
+                    f". Repair the shard by hand - do NOT re-record, which would append a "
+                    f"duplicate to a file that is already broken")
+        elif reg["state"] == "empty":
+            hint = ("The register is empty - record the run with `audit_cost.py record --run-id` "
+                    "first")
+        else:
+            hint = "Registered: " + ", ".join(sorted(reg["runs"]))
         raise ValueError(
             f"no audit run {run!r} in the register ({audit_cost.EVIDENCE}/"
             f"{audit_cost.LEDGER_PREFIX}-*.jsonl) - refusing to stamp a finding with a run nobody "

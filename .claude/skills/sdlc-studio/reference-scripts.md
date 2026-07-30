@@ -201,7 +201,8 @@ lists every script with a one-line summary; open the linked page for the full en
 - `schema_check.py` - One CI-runnable command over the schema-v3 team-schema rules, emitting STABLE rule ids so the
 - `review_prep.py` - `prep`: deterministic inputs for the five-leg review (artifact staleness,
 - `disclosure.py` - Progressive-disclosure + Claude Code best-practice check, **advisory**. Flags reference-/
-- `readiness.py` - Tranche pre-flight readiness (deterministic). `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity; `profile` resolves an audit lens pack for the adversarial `audit` command.
+- `readiness.py` - Tranche pre-flight readiness (deterministic). `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity; `profile` resolves an audit lens pack for the adversarial `audit` command, and `profile --validate` holds every lens to its signature contract; `detector-owed` names the lenses filed under two separate audit runs that still have no mechanical detector (exits 0 clean, 1 owed, 3 cannot-judge).
+- `audit_cost.py` - Audit run cost estimate and its measurement loop. `run` estimates a fan-out before it starts, calibrated from the medians of what has been recorded; `record` appends a finished run's scope, estimate and actuals to the committed ledger under `sdlc-studio/retros/evidence/`. **That row is also the audit-run REGISTER:** `record --run-id` is what makes a run citable by `file_finding --audit-run`, so a close-out that omits it leaves every finding's attribution refused.
 - `critic.py` - The independent-critic verdict ledger. `record` writes a committed verdict to `sdlc-studio/reviews/critic-ve...
 - `persona_resolve.py` - Resolves the worker amigo for a delegated sub-agent, most-specific-first: a project-authored practitioner am...
 

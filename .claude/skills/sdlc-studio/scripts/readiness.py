@@ -593,7 +593,8 @@ def detector_owed(repo_root: Path | str, skill_dir: Path | None = None) -> dict:
     """
     attributed, unattributed = _finding_attributions(repo_root)
     import audit_cost  # noqa: PLC0415 - local: this reads the register, it does not own it
-    registered = audit_cost.registered_run_ids(repo_root)
+    reg = audit_cost.register(repo_root)
+    registered = reg["runs"]
 
     by_lens: dict[str, dict] = {}
     unregistered: list[dict] = []
@@ -624,9 +625,14 @@ def detector_owed(repo_root: Path | str, skill_dir: Path | None = None) -> dict:
 
     # CANNOT-JUDGE DOMINATES. A workspace with 3 owed lenses and 40 findings it could not read is
     # not "3 owed" - the 40 would vanish behind a verdict that looks like an answer.
-    cannot_judge = bool(unattributed or unregistered)
+    # A CORRUPT register is its own cannot-judge cause, and a loud one. Every run then reads as
+    # unregistered, so without this the verdict would be driven by a file nobody could parse -
+    # the exact "reported clean over something that never ran" class this verb exists to refuse.
+    register_unreadable = reg["state"] == "corrupt"
+    cannot_judge = bool(unattributed or unregistered or register_unreadable)
     return {"owed": owed, "exists": exists,
             "unattributed": sorted(unattributed), "unregistered": unregistered,
+            "register_state": reg["state"], "register_detail": reg["detail"],
             "cannot_judge": cannot_judge}
 
 
@@ -659,6 +665,9 @@ def cmd_detector_owed(args: argparse.Namespace) -> int:
               f"a class recurring among them is invisible here: "
               f"{', '.join(res['unattributed'][:8])}"
               + (" ..." if len(res["unattributed"]) > 8 else ""))
+    if res.get("register_state") == "corrupt":
+        print(f"CANNOT JUDGE: the audit-run register is UNREADABLE, so every citation reads as "
+              f"unregistered and no verdict here rests on evidence: {res['register_detail']}")
     for rec in res["unregistered"]:
         print(f"CANNOT JUDGE: {rec['id']} cites run {rec['run']!r}, which the register does not "
               f"hold - it is not counted, because an unregistered id proves nothing")

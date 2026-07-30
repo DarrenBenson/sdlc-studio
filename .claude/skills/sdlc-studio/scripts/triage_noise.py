@@ -285,6 +285,19 @@ def consolidate_low_finding(root, type_: str, title: str, fields: dict, today: s
               f"consolidates into {cr_id} (a shared CR carries no per-finding tranche); file it "
               "as Medium or above to keep an individual, tranche-tagged artefact", file=sys.stderr)
         result["tranche_dropped"] = dropped
+    # The SAME principle, for the audit attribution. It is validated pre-mint - the run checked
+    # against the register, the lens against the packs, the pair cross-checked - and a shared
+    # consolidation CR cannot carry one finding's lens, so it would otherwise be verified and then
+    # vanish without a word. The long tail of Low findings is precisely the population a
+    # recurring-class count is for, so a silent drop here is a hole in every verdict downstream.
+    lens = str(fields.get("lens") or "").strip()
+    run = str(fields.get("audit_run") or "").strip()
+    if lens or run:
+        print(f"warning: audit attribution (lens={lens or 'none'}, run={run or 'none'}) not "
+              f"recorded - this Low-severity finding consolidates into {cr_id}, and a shared CR "
+              f"carries no per-finding lens, so `detector-owed` will not count it. File it as "
+              f"Medium or above to keep an individually attributed artefact", file=sys.stderr)
+        result["attribution_dropped"] = {"lens": lens or None, "audit_run": run or None}
     return result
 
 

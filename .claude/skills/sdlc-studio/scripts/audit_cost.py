@@ -99,12 +99,53 @@ def run_row(repo_root: Path | str, run_id: str) -> dict | None:
 
 def registered_run_ids(repo_root: Path | str) -> dict:
     """`{run_id: provenance}` for every run the register holds. Empty when none is recorded."""
-    out: dict = {}
-    for row in read_ledger(repo_root):
-        rid = str(row.get("run_id") or "").strip()
-        if rid:
-            out[rid] = str(row.get("provenance") or PROVENANCE_RECORDED).strip()
-    return out
+    return register(repo_root)["runs"]
+
+
+def register(repo_root: Path | str) -> dict:
+    """`{"state", "runs", "detail"}` for the audit-run register.
+
+    THREE states, because the remedy differs and none of them may read as the others:
+    `ok`, `empty` (nothing recorded yet - record a run), and `corrupt` (a shard has a line that is
+    not JSON - a human is needed).
+
+    `read_ledger` deliberately SKIPS a malformed line, which is the right trade for the estimator:
+    a median degrades gracefully and one bad line must not cost the whole evidence base. It is the
+    wrong trade for a REGISTER, where absence is a refusal - a truncated shard from a killed writer
+    made every recorded run invisible, indistinguishable from never-recorded, and the refusal then
+    told the operator to record the run again, appending a duplicate row to a file that was already
+    corrupt. So the register reads strictly and says which of the three it found.
+    """
+    runs: dict = {}
+    malformed: list[str] = []
+    for p in _shards(repo_root):
+        try:
+            text = p.read_text(encoding="utf-8")
+        except OSError as exc:
+            malformed.append(f"{p.name}: unreadable ({exc.__class__.__name__})")
+            continue
+        for n, line in enumerate(text.splitlines(), 1):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+            except ValueError as exc:
+                malformed.append(f"{p.name}:{n}: {exc}")
+                continue
+            if not isinstance(rec, dict):
+                malformed.append(f"{p.name}:{n}: not a JSON object")
+                continue
+            rid = str(rec.get("run_id") or "").strip()
+            if rid:
+                runs[rid] = str(rec.get("provenance") or PROVENANCE_RECORDED).strip()
+    if malformed:
+        return {"state": "corrupt", "runs": runs,
+                "detail": f"{len(malformed)} unreadable ledger line(s): {'; '.join(malformed[:3])}"}
+    if not runs:
+        return {"state": "empty", "runs": {},
+                "detail": "no run has been recorded with a --run-id yet"}
+    return {"state": "ok", "runs": runs, "detail": ""}
 
 
 # ---------------------------------------------------------------------------
@@ -293,6 +334,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 def cmd_record(args: argparse.Namespace) -> int:
     row = record(args.root, {
         "run_id": getattr(args, "run_id", None),
+        "provenance": getattr(args, "provenance", None),
         "lenses": args.lenses, "rounds": args.rounds, "votes": args.votes,
         "estimated_agents": args.est_agents, "estimated_tokens": args.est_tokens,
         "actual_agents": args.actual_agents, "actual_tokens": args.actual_tokens,
@@ -337,6 +379,11 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--actual-agents", type=int, required=True, help="agents the run really used")
     c.add_argument("--actual-tokens", type=int, required=True, help="tokens the run really cost")
     c.add_argument("--actual-minutes", type=int, default=None, help="wall minutes the run took")
+    c.add_argument("--provenance", choices=PROVENANCES, default=None,
+                   help="`recorded` (default) for a run this ledger measured, or `backfilled` for "
+                        "a run id asserted from prose written for another purpose. Without a flag "
+                        "there was no operator-reachable way to write the second, so half the "
+                        "provenance vocabulary was library-only")
     c.add_argument("--run-id", default=None,
                    help="the run's id, which makes this row the audit-run REGISTER entry a "
                         "finding's --audit-run is validated against")

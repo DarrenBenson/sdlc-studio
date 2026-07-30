@@ -271,5 +271,142 @@ class LedgerBasisTests(unittest.TestCase):
         self.assertEqual(est["assumptions"]["tokens_per_agent"], audit_cost.TOKENS_PER_AGENT)
 
 
+class AuditRunRegisterTests(unittest.TestCase):
+    """The ledger doubles as the AUDIT-RUN REGISTER (US0462).
+
+    This class exists because the register shipped with all of its coverage in another module's
+    test file: two new public functions and a changed `LEDGER_FIELDS` had no test here at all, and
+    `cmd_record` could stop passing `run_id` with the whole 5,364-test suite green.
+    """
+
+    def test_the_CLI_writes_the_register_entry_not_only_the_library(self) -> None:
+        """MUTANT: delete `"run_id": getattr(args, "run_id", None)` from `cmd_record`.
+
+        The CLI then writes no register entry at all, and every later `--audit-run` is refused -
+        with the whole suite green, because the sibling tests called `record()` directly. This is
+        the same defect as testing `file_finding()` instead of the command, one file over.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rc, _ = _run(["record", "--root", str(root), "--run-id", "RUN-CLI-01", *_ROW])
+            self.assertEqual(0, rc)
+            self.assertEqual({"RUN-CLI-01": audit_cost.PROVENANCE_RECORDED},
+                             audit_cost.registered_run_ids(root),
+                             "the CLI recorded a run that is not a register entry")
+            self.assertIsNotNone(audit_cost.run_row(root, "RUN-CLI-01"))
+
+    def test_the_CLI_can_write_a_BACKFILLED_row(self) -> None:
+        """MUTANT: no `--provenance` flag at all. Half the provenance vocabulary was reachable
+        only by importing the module, which makes `backfilled` a value with no operator-facing
+        writer - the same reader-with-nothing-behind-it shape one level down.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rc, _ = _run(["record", "--root", str(root), "--run-id", "wf_asserted",
+                          "--provenance", "backfilled", *_ROW])
+            self.assertEqual(0, rc)
+            self.assertEqual({"wf_asserted": audit_cost.PROVENANCE_BACKFILLED},
+                             audit_cost.registered_run_ids(root))
+
+    def test_run_id_is_a_declared_ledger_field(self) -> None:
+        """MUTANT: drop `run_id` from `LEDGER_FIELDS`. `record` builds its row from that tuple, so
+        the value is accepted and silently dropped."""
+        self.assertIn("run_id", audit_cost.LEDGER_FIELDS)
+        self.assertIn("provenance", audit_cost.LEDGER_FIELDS)
+
+    def test_a_row_recorded_with_no_run_id_is_not_a_register_entry(self) -> None:
+        """The positive control's partner: the two rows already committed to this repository carry
+        no run id, and they must not become citable by accident."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _run(["record", "--root", str(root), *_ROW])
+            self.assertEqual({}, audit_cost.registered_run_ids(root))
+            self.assertEqual("empty", audit_cost.register(root)["state"])
+
+    def test_an_empty_run_id_never_matches_a_row(self) -> None:
+        """MUTANT: drop `run_row`'s empty-id guard. `""` would then match the first row whose
+        `run_id` is absent, making every unrecorded run look registered."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _run(["record", "--root", str(root), *_ROW])          # a row with NO run id
+            for empty in ("", "   ", None):
+                with self.subTest(empty=empty):
+                    self.assertIsNone(audit_cost.run_row(root, empty))
+
+    def test_a_LEGACY_row_with_no_provenance_key_reads_as_recorded(self) -> None:
+        """MUTANT: drop the `or PROVENANCE_RECORDED` fallback in the register read.
+
+        Dead-looking, because `record()` now always writes the key - so every row IT writes has
+        one. The fallback is load-bearing for rows written BEFORE this field existed: the two rows
+        already committed to this repository have no `provenance` key, and without the default they
+        would read as provenance `""`, which is neither of the two documented values.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            shard = audit_cost.ledger_path(root)
+            shard.parent.mkdir(parents=True, exist_ok=True)
+            shard.write_text(json.dumps({"date": "2026-07-27", "run_id": "RUN-LEGACY",
+                                         "lenses": 7}) + "\n", encoding="utf-8")
+            self.assertEqual({"RUN-LEGACY": audit_cost.PROVENANCE_RECORDED},
+                             audit_cost.registered_run_ids(root),
+                             "a row predating the provenance field read as neither documented "
+                             "value")
+            self.assertIn(audit_cost.registered_run_ids(root)["RUN-LEGACY"],
+                          audit_cost.PROVENANCES)
+
+    def test_the_register_distinguishes_ok_empty_and_CORRUPT(self) -> None:
+        """The fail-open a reviewer demonstrated: `read_ledger` skips a malformed line, which is
+        right for the estimator (a median degrades gracefully) and wrong for a register, where
+        absence is a refusal. A truncated shard made every recorded run invisible - identical to
+        never-recorded - and the refusal then told the operator to record it again, appending a
+        duplicate to an already-broken file.
+
+        MUTANT: route `register` through `read_ledger`, so `corrupt` collapses into `ok`/`empty`.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.assertEqual("empty", audit_cost.register(root)["state"])
+            _run(["record", "--root", str(root), "--run-id", "RUN-OK-01", *_ROW])
+            self.assertEqual("ok", audit_cost.register(root)["state"])
+
+            shard = audit_cost.ledger_path(root)
+            with open(shard, "a", encoding="utf-8") as fh:
+                fh.write("{ this line was never finished\n")
+            state = audit_cost.register(root)
+            self.assertEqual("corrupt", state["state"],
+                             "a truncated shard read as a healthy register")
+            self.assertIn("unreadable", state["detail"])
+            # The rows it COULD read stay usable - corruption is not an excuse to lose evidence.
+            self.assertIn("RUN-OK-01", state["runs"])
+
+    def test_the_estimator_still_tolerates_a_bad_line(self) -> None:
+        """The counterpart, so the strict register read does not leak into the estimator: one
+        corrupt line must not cost the whole evidence base for a median."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _run(["record", "--root", str(root), "--run-id", "RUN-OK-02", *_ROW])
+            with open(audit_cost.ledger_path(root), "a", encoding="utf-8") as fh:
+                fh.write("not json at all\n")
+            self.assertEqual(1, len(audit_cost.read_ledger(root)),
+                             "the estimator's lenient read was made strict")
+
+    def test_the_register_is_written_where_git_TRACKS_it(self) -> None:
+        """MUTANT: move the ledger under `.local/`.
+
+        A previous version asserted only `assertNotIn(".local", parts)`, which passes for a move
+        to any OTHER gitignored directory. The invariant being protected is that the register is
+        TRACKED, so the path is pinned against the committed evidence directory instead of against
+        one spelling of one wrong answer.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _run(["record", "--root", str(root), "--run-id", "RUN-OK-03", *_ROW])
+            written = audit_cost.ledger_path(root)
+            self.assertEqual(("sdlc-studio", "retros", "evidence"),
+                             written.relative_to(root).parts[:3],
+                             "the register left the committed evidence directory")
+            self.assertNotIn(".local", written.parts)
+
+
 if __name__ == "__main__":
     unittest.main()

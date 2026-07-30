@@ -5,7 +5,7 @@
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/readiness.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_readiness.py, .claude/skills/sdlc-studio/reference-audit.md, .claude/skills/sdlc-studio/help/audit.md, .claude/skills/sdlc-studio/reference-scripts.md, CHANGELOG.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/audit_cost.py, .claude/skills/sdlc-studio/scripts/triage_noise.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/readiness.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_audit_cost.py, .claude/skills/sdlc-studio/reference-audit.md, .claude/skills/sdlc-studio/help/audit.md, .claude/skills/sdlc-studio/reference-scripts.md, CHANGELOG.md
 > **Epic:** EP0169
 > **Points:** 3
 

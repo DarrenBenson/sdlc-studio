@@ -293,11 +293,18 @@ above a threshold, get the operator's go-ahead** - never surprise them mid-run. 
 
    ```bash
    python3 "$CLAUDE_SKILL_DIR/scripts/audit_cost.py" record \
+     --run-id "$RUN_ID" \
      --lenses 7 --rounds 3 --votes 3 \
      --est-agents 217 --est-tokens 7800000 \
      --actual-agents 265 --actual-tokens 12400000 --actual-minutes 95 \
      --notes "an outage forced a partial rerun"
    ```
+
+   **`--run-id` is not optional in practice.** That row IS the audit-run register: without it the
+   run is measured but not registered, and every `file_finding --audit-run` in step 5 is then
+   refused. Stamp each finding with `--lens` and `--audit-run "$RUN_ID"` as you file it, so
+   `readiness.py detector-owed` can count a class across runs instead of a later reader
+   reconstructing it from `Raised-by` prose.
 
    The row lands in the committed evidence ledger under `sdlc-studio/retros/evidence/`, sharded
    by day, and the next estimate is calibrated from the medians of what is recorded there. Note

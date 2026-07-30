@@ -10,6 +10,7 @@ import importlib.util
 import io
 import json
 import re
+import shutil
 import sys
 import tempfile
 import unittest
@@ -2243,6 +2244,194 @@ class AuditAttributionTests(unittest.TestCase):
         for key in ("lens", "profile", "audit_run"):
             self.assertIn(key, ff.FIELDS_FILE_KEYS,
                           f"a --fields-file carrying {key!r} would be refused outright")
+
+
+class AuditAttributionUnheldInvariantsTests(unittest.TestCase):
+    """The invariants the first cut ASSERTED IN PROSE and held with nothing.
+
+    Twelve of twenty-four mutants survived the full suite. Every test here names the one it kills.
+    """
+
+    def _root(self) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="attr_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        _seed_index(d, "bug")
+        _seed_index(d, "cr")
+        _seed_index(d, "rfc")
+        for rel in GROOM["affects"].split(", "):
+            _affect(d, rel.strip())
+        return d
+
+    def test_a_refusal_does_not_ADVANCE_THE_ID_SEQUENCE(self) -> None:
+        """MUTANT: relocate `check_audit_attribution` into `_file_finding_locked`, after the id is
+        allocated. The refusal still fires with an identical message and exit code, and an id is
+        burned - so `assertEqual([], _bugs(root))` ("no file was written") cannot see it.
+
+        The first cut's docstring claimed to assert the sequence did not advance. It asserted the
+        absence of a file. This asserts the sequence, via the allocator itself.
+        """
+        import next_id
+        root = self._root()
+        rid = _register(root)
+        before = next_id.allocate_number("bug", root)
+        for bad in ({"lens": "no-such-lens-at-all", "audit_run": rid},
+                    {"lens": LIVE_LENS, "audit_run": "RUN-NOT-REGISTERED"},
+                    {"lens": LIVE_LENS, "profile": "code", "audit_run": rid},
+                    {"lens": LIVE_LENS}):
+            with self.subTest(bad=sorted(bad)):
+                with self.assertRaises(ValueError):
+                    ff.file_finding(root, "bug", "x", {**BUG, **bad})
+        after = next_id.allocate_number("bug", root)
+        self.assertEqual(before, after,
+                         f"the id sequence advanced from {before} to {after} across four "
+                         f"refusals - an id was minted and then thrown away")
+
+    def test_a_CR_and_an_RFC_carry_the_attribution_too(self) -> None:
+        """MUTANTS: delete `_audit_attribution_lines` from the CR template, and from the RFC one.
+        Both survived, because all seven original tests filed a BUG - two of the three replaced
+        call sites were unheld. A CR is what `refine` produces from an audit and where a
+        consolidated Low finding lands, so it is not the minor case.
+        """
+        root = self._root()
+        rid = _register(root)
+        for type_ in ("cr", "rfc"):
+            with self.subTest(type=type_):
+                spec = ({"priority": "High", "ctype": "Improvement",
+                         "summary": "found by an audit lens", "acs": ["it is fixed"],
+                         "impact": "the class recurs", "size": "M",
+                         "affects": "src/thing.py", "date": "2026-07-30"}
+                        if type_ == "cr" else
+                        {"summary": "weigh it", "options": ["do X", "status quo"]})
+                res = ff.file_finding(root, type_, f"an attributed {type_}",
+                                      {**spec, "lens": LIVE_LENS, "audit_run": rid})
+                body = Path(res["path"]).read_text(encoding="utf-8")
+                self.assertEqual(LIVE_LENS, sdlc_md.extract_field(body, "Audit-lens"),
+                                 f"the {type_} template does not render the attribution")
+                self.assertEqual(rid, sdlc_md.extract_field(body, "Audit-run"))
+                self.assertEqual(LIVE_PROFILE, sdlc_md.extract_field(body, "Audit-profile"))
+
+    def test_each_refusal_EXPLAINS_itself_as_its_AC_requires(self) -> None:
+        """MUTANTS: delete either half-attribution refusal (the guards downstream still raise
+        `ValueError`, so `assertRaises(ValueError)` passes); or replace both messages with
+        "a half-stamped attribution"; or strip the register path and hint from the run refusal.
+        All three survived the full suite.
+
+        AC4's Then is "refused EXPLAINING that a class is counted per run"; AC3's is "refused by
+        name POINTING AT THE REGISTER PATH". Those are behaviours, so they are asserted.
+        """
+        root = self._root()
+        rid = _register(root)
+        cases = [
+            ({"lens": LIVE_LENS}, ["--audit-run is required", "detector owed"]),
+            ({"audit_run": rid}, ["--lens is required", "PER LENS"]),
+            ({"lens": LIVE_LENS, "audit_run": "RUN-NOPE"},
+             ["RUN-NOPE", str(cost_evidence()), "typo"]),
+        ]
+        for fields, needles in cases:
+            with self.subTest(fields=sorted(fields)):
+                with self.assertRaises(ValueError) as ctx:
+                    ff.file_finding(root, "bug", "x", {**BUG, **fields})
+                msg = str(ctx.exception)
+                for needle in needles:
+                    self.assertIn(needle, msg,
+                                  f"the refusal does not explain itself: {msg[:160]}")
+
+    def test_profile_ALONE_is_refused_and_an_unknown_profile_is_named(self) -> None:
+        """MUTANTS: (1) narrow the all-or-none trigger to `if not (lens or run)`, so `--profile`
+        alone is accepted, silently discarded, and the filing succeeds unattributed. (2) drop the
+        unknown-profile branch, so a profile no pack declares falls through to a message naming
+        `--audit-run`, a flag the operator never supplied - which is what AC2's "refused by name
+        listing what the resolver does declare" forbids.
+        """
+        root = self._root()
+        with self.assertRaises(ValueError) as ctx:
+            ff.file_finding(root, "bug", "x", {**BUG, "profile": LIVE_PROFILE})
+        self.assertIn("--lens is required", str(ctx.exception))
+        self.assertEqual([], _bugs(root), "a profile-only filing was minted")
+
+        with self.assertRaises(ValueError) as ctx2:
+            ff.file_finding(root, "bug", "x", {**BUG, "profile": "no-such-pack-anywhere"})
+        msg = str(ctx2.exception)
+        self.assertIn("no-such-pack-anywhere", msg)
+        self.assertIn(LIVE_PROFILE, msg, "the refusal does not list the packs that do exist")
+
+    def test_a_stub_pack_elsewhere_does_not_break_an_unrelated_filing(self) -> None:
+        """A half-written pack is an EXPECTED state - `reference-audit.md#audit-extend` invites a
+        project to add packs. Unguarded, `resolve_profile` raised for the stub and refused every
+        attributed filing in the project, naming a file the operator had never mentioned.
+
+        MUTANT: drop the per-pack `try/except UnknownProfile`.
+        """
+        root = self._root()
+        rid = _register(root)
+        packs = Path(ff.__file__).resolve().parent.parent / "templates" / "audit-profiles"
+        stub = packs / "zz-review-stub.md"
+        stub.write_text("# A pack a project started\n\nTBD.\n", encoding="utf-8")
+        self.addCleanup(stub.unlink, missing_ok=True)
+        res = ff.file_finding(root, "bug", "filed while a stub pack sits beside the real ones",
+                              {**BUG, "lens": LIVE_LENS, "audit_run": rid})
+        body = Path(res["path"]).read_text(encoding="utf-8")
+        self.assertEqual(LIVE_LENS, sdlc_md.extract_field(body, "Audit-lens"))
+
+    def test_an_AMBIGUOUS_lens_is_refused_rather_than_resolved_alphabetically(self) -> None:
+        """MUTANT: `profile or owners[0]`.
+
+        Every doc rests on "a lens resolves to exactly one pack" and nothing enforced it. Worse
+        than the silent pick: with two owners, SUPPLYING `--profile zz-dupe` was accepted while
+        OMITTING it stamped `process` - two different records for one finding, from the check that
+        claims to be stronger than requiring all three.
+        """
+        root = self._root()
+        rid = _register(root)
+        packs = Path(ff.__file__).resolve().parent.parent / "templates" / "audit-profiles"
+        dupe = packs / "zz-review-dupe.md"
+        dupe.write_text((packs / f"{LIVE_PROFILE}.md").read_text(encoding="utf-8"),
+                        encoding="utf-8")
+        self.addCleanup(dupe.unlink, missing_ok=True)
+        with self.assertRaises(ValueError) as ctx:
+            ff.file_finding(root, "bug", "x", {**BUG, "lens": LIVE_LENS, "audit_run": rid})
+        self.assertIn("more than one pack", str(ctx.exception))
+        self.assertEqual([], _bugs(root))
+
+    def test_the_three_keys_go_through_the_SHARED_field_guard(self) -> None:
+        """MUTANT: delete a bespoke `require_single_line` loop inside the attribution check - which
+        is what the first cut had, and it survived.
+
+        `check_creator_fields` is the one choke point every creation path already runs, so the keys
+        belong in `SINGLE_LINE_FIELDS` rather than in a second copy of the rule. `audit_run` is the
+        sharp one: it is free-form, so a markdown link in it lands verbatim in a tracked artefact
+        and can red the repo's own links guard.
+        """
+        for key in ("lens", "profile", "audit_run"):
+            self.assertIn(key, sdlc_md.SINGLE_LINE_FIELDS,
+                          f"{key} escapes the shared single-line guard")
+        with self.assertRaises(ValueError):
+            sdlc_md.check_creator_fields(
+                {"title": "t", "audit_run": "RUN-1\nsecond line"})
+
+    def test_a_LOW_severity_finding_says_so_rather_than_dropping_the_attribution(self) -> None:
+        """The v3 silent drop. A Low-severity finding consolidates into a shared CR that carries no
+        per-finding lens, so the attribution was validated pre-mint - run checked against the
+        register, lens against the packs, pair cross-checked - and then discarded without a word.
+
+        `triage_noise` already had the loud precedent for `tranche` (the EP0014 principle); a third
+        field family was added to the filer without extending it. The long tail of Low findings is
+        exactly the population a recurring-class count is for.
+        """
+        import triage_noise
+        root = self._root()
+        rid = _register(root)
+        res = triage_noise.consolidate_low_finding(
+            root, "bug", "a low finding with an attribution",
+            {**BUG, "severity": "Low", "lens": LIVE_LENS, "audit_run": rid}, "2026-07-30")
+        self.assertIn("attribution_dropped", res,
+                      "the attribution was discarded with no record that it had been")
+        self.assertEqual({"lens": LIVE_LENS, "audit_run": rid}, res["attribution_dropped"])
+
+
+def cost_evidence():
+    """The register's directory, as the refusal must name it."""
+    return _load_audit_cost().EVIDENCE
 
 
 class AuditRunRegisterTests(unittest.TestCase):
