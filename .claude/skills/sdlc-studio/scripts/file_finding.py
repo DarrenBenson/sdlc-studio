@@ -698,8 +698,12 @@ COMMON_FIELDS_FILE_KEYS: tuple[str, ...] = (
 #: The filer's own extra keys. `evidence` is deliberately NOT in the common set: it is the finding
 #: filer's record of WHERE a defect was observed, and a key the general creator would accept and
 #: then ignore is the silent-loss class the fields-file refusal exists to end.
+#: `lens`/`profile`/`audit_run` are here because `load_fields_file` RAISES on any key outside this
+#: tuple, and `--fields-file` is the path that does not cross a shell - so it is the one a
+#: prose-heavy audit finding has to use.
 FIELDS_FILE_KEYS: tuple[str, ...] = (*COMMON_FIELDS_FILE_KEYS,
-                                     "mutation_run", "mutation_target", "evidence")
+                                     "mutation_run", "mutation_target", "evidence",
+                                     "lens", "profile", "audit_run")
 
 #: The `--fields-file` spelling that means "read the document from stdin" - the family
 #: convention, so no writer grows its own.
@@ -1117,6 +1121,83 @@ def check_mutation_run(repo_root: Path | str, fields: dict) -> dict:
     return {**fields, "mutation_run": run, "mutation_target": target}
 
 
+def _audit_attribution_lines(f: dict) -> str:
+    """The `Audit-lens` / `Audit-profile` / `Audit-run` metadata lines.
+
+    Beside `Raised-by` rather than inside it: 108 findings already hide a run id in that line's
+    prose, which means counting a class across runs needs a regex over free text instead of a
+    field read. Recorded at filing time because the filer is the only thing that knows.
+    """
+    lens = str(f.get("lens") or "").strip()
+    if not lens:
+        return ""
+    profile = str(f.get("profile") or "").strip()
+    run = str(f.get("audit_run") or "").strip()
+    return (f"> **Audit-lens:** {lens}\n"
+            + (f"> **Audit-profile:** {profile}\n" if profile else "")
+            + (f"> **Audit-run:** {run}\n" if run else ""))
+
+
+def check_audit_attribution(repo_root: Path | str, fields: dict) -> dict:
+    """Resolve a lens / profile / audit-run attribution before anything is minted, or refuse.
+
+    Runs PRE-MINT, beside `check_mutation_run`: a `raise` here happens before the advisory lock is
+    taken and before an id is allocated, so a refusal costs no id and holds no cross-process lock
+    while it parses packs.
+
+    ALL THREE OR NONE, never some - except that `profile` is DERIVED. A lens name resolves to
+    exactly one pack, so demanding the profile is asking for input the operator can get wrong;
+    supplied, it is cross-checked, and a lens/profile MISMATCH is refused, which all-three-or-none
+    cannot catch. A filing carrying none of the three stays legal, because 923 existing findings
+    carry none.
+    """
+    lens = str(fields.get("lens") or "").strip()
+    profile = str(fields.get("profile") or "").strip()
+    run = str(fields.get("audit_run") or "").strip()
+    if not (lens or profile or run):
+        return fields
+    for label, val in (("lens", lens), ("profile", profile), ("audit_run", run)):
+        if val:
+            sdlc_md.require_single_line(label, val)
+    import readiness  # noqa: PLC0415 - local: the filer reads the packs, it does not own them
+    if not lens:
+        raise ValueError(
+            "--lens is required alongside --audit-run: a class is counted PER LENS per run, so a "
+            "finding stamped with a run and no lens can never take part in the comparison the "
+            "stamp exists for. Supply both, or neither")
+    if not run:
+        raise ValueError(
+            "--audit-run is required alongside --lens: a lens seen once is the lens working and a "
+            "lens seen across two runs is a detector owed, so the run is what makes the count "
+            "mean anything. Supply both, or neither")
+    packs = sorted(set(readiness.profile_names()) - set(readiness.REFERENCE_PROFILES))
+    owners = [p for p in packs
+              if any(l["name"] == lens for l in readiness.resolve_profile(p)["lenses"])]
+    if not owners:
+        raise ValueError(
+            f"no pack declares the lens {lens!r} - refusing to stamp a finding with a lens that "
+            f"resolves to nothing. Packs that exist: {', '.join(packs)}")
+    if profile and profile not in owners:
+        raise ValueError(
+            f"the lens {lens!r} belongs to {', '.join(owners)}, not to {profile!r} - a consistent-"
+            f"looking pair naming the wrong pack is exactly what a per-field existence check "
+            f"cannot see. Omit --profile and it is derived")
+    import audit_cost  # noqa: PLC0415 - local: the filer reads the register, it does not own it
+    if audit_cost.run_row(repo_root, run) is None:
+        known = sorted(audit_cost.registered_run_ids(repo_root))
+        # Built separately rather than inlined: a conditional expression carrying the same quote
+        # character inside an f-string is a 3.12-only construct, and this skill installs onto
+        # whatever Python the consuming project has.
+        hint = ("Registered: " + ", ".join(known) if known else
+                "The register is empty - record the run with `audit_cost.py record --run-id` first")
+        raise ValueError(
+            f"no audit run {run!r} in the register ({audit_cost.EVIDENCE}/"
+            f"{audit_cost.LEDGER_PREFIX}-*.jsonl) - refusing to stamp a finding with a run nobody "
+            f"recorded, because a one-character typo would otherwise manufacture a second "
+            f"distinct run id and with it a false detector-owed verdict. {hint}")
+    return {**fields, "lens": lens, "profile": profile or owners[0], "audit_run": run}
+
+
 def _size_line(f: dict) -> str:
     """The `Size` metadata line: the T-shirt size (S/M/L/XL) a CR/RFC carries in place of points.
     Canonicalised through `sdlc_md.check_size` (a `--size m` becomes `M`) and written only when
@@ -1268,7 +1349,7 @@ def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
         points = f"> **Points:** {f['points']}\n" if f.get("points") is not None else ""
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Open'}\n> **Severity:** {f['severity']}\n"
-                f"{points}{_affects_line(f)}{_evidence_line(f)}{_mutation_link_lines(f)}"
+                f"{points}{_affects_line(f)}{_evidence_line(f)}{_mutation_link_lines(f)}{_audit_attribution_lines(f)}"
                 f"> **Created:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Steps to Reproduce\n\n{f['steps']}\n\n"
@@ -1287,7 +1368,7 @@ def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Proposed'}\n> **Priority:** {f['priority']}\n"
                 f"> **Type:** {f['ctype']}\n{_size_line(f)}{_affects_line(f)}{_evidence_line(f)}"
-                f"{_mutation_link_lines(f)}"
+                f"{_mutation_link_lines(f)}{_audit_attribution_lines(f)}"
                 f"> **Date:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Impact\n\n{f['impact']}\n\n"
@@ -1298,7 +1379,7 @@ def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
     decision = _decision_question(title, f["options"])
     return (f"# {disp_id}: {title}\n\n"
             f"> **Status:** {status or 'Draft'}\n{_size_line(f)}{_affects_line(f)}{_evidence_line(f)}"
-            f"{_mutation_link_lines(f)}"
+            f"{_mutation_link_lines(f)}{_audit_attribution_lines(f)}"
             f"> **Date:** {today}\n{_stamp(f)}\n"
             f"## Summary\n\n{f['summary']}\n\n"
             f"## Design Options\n\n{options}\n\n"
@@ -1408,6 +1489,9 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     # ... and refuse an attribution to a mutation run the series does not hold, before an id is
     # allocated: a finding stamped with an unresolvable run claims a provenance nobody can check.
     fields = check_mutation_run(root, fields)
+    # PRE-MINT, beside the mutation guard: before the advisory lock and before an id is
+    # allocated, so a refused attribution costs no id.
+    fields = check_audit_attribution(root, fields)
     # ... and refuse an artefact the PLANNER would then refuse to plan: the body about to be
     # written is judged by `sprint.breakdown` itself. A preview id is enough - the grooming
     # fields the gate reads are in the metadata block, which does not depend on the id.
@@ -1522,7 +1606,13 @@ def cmd_file(args: argparse.Namespace) -> int:
              "author": args.author, "recommendation": args.recommendation,
              "parent": getattr(args, "parent", None),
              "mutation_run": getattr(args, "mutation_run", None),
-             "mutation_target": getattr(args, "mutation_target", None)}
+             "mutation_target": getattr(args, "mutation_target", None),
+             # This dict is hand-enumerated, so a new argparse flag absent from it is parsed and
+             # silently DROPPED - the filing then succeeds unattributed while every test that
+             # calls `file_finding()` directly still passes.
+             "lens": getattr(args, "lens", None),
+             "profile": getattr(args, "profile", None),
+             "audit_run": getattr(args, "audit_run", None)}
     flags = {k: v for k, v in flags.items() if v is not None}
     if args.ac:
         flags["acs"] = args.ac
@@ -1633,6 +1723,20 @@ def build_parser() -> argparse.ArgumentParser:
                         "A run the series does not hold is refused, never stamped")
     f.add_argument("--mutation-target", dest="mutation_target",
                    help="the file the surviving mutant sat in (default: the run's own targets)")
+    f.add_argument("--lens",
+                   help="the audit lens that found this, as a pack declares it. Stamped as "
+                        "`Audit-lens` so a class recurring across runs can be counted from a "
+                        "field rather than a regex over prose. Requires --audit-run; a lens no "
+                        "pack declares is refused before an id is minted")
+    f.add_argument("--profile",
+                   help="the lens pack --lens belongs to (default: DERIVED, since a lens name "
+                        "resolves to exactly one pack). Supplied, a lens/profile mismatch is "
+                        "refused - which is what an existence check per field cannot catch")
+    f.add_argument("--audit-run", dest="audit_run",
+                   help="the audit run that raised this finding, as recorded in the audit-cost "
+                        "ledger by `audit_cost.py record --run-id`. Requires --lens. A run the "
+                        "register does not hold is refused, so a typo cannot manufacture a second "
+                        "distinct run and with it a false detector-owed verdict")
     f.add_argument("--author",
                    help="authorship of record, stamped as `Raised-by`: 'Name; type; version' "
                         "(type is human|persona|agent) or a bare name; defaults to the "

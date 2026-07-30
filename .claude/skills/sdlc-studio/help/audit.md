@@ -100,6 +100,32 @@ names a target that resolves, and an absent one states why no search singles the
 path under `.claude/skills/sdlc-studio/` resolves against the installed skill, so the shipped
 detectors work from any project root.
 
+### Attributing a finding to its lens and run
+
+Record the run first - that ledger row IS the audit-run register:
+
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/audit_cost.py" record --run-id RUN-xxxx \
+  --lenses 5 --est-agents 50 --est-tokens 1000000 \
+  --actual-agents 55 --actual-tokens 1200000
+```
+
+Then file each finding against it:
+
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/file_finding.py" file --type bug \
+  --fields-file finding.json --lens accepted-without-running --audit-run RUN-xxxx
+```
+
+- **`--lens` and `--audit-run` go together or not at all.** A lens seen once is the lens working;
+  a lens seen across two runs is a detector owed. Neither half counts alone, and a finding with
+  neither stays perfectly legal.
+- **`--profile` is optional and derived**, since a lens resolves to exactly one pack. Supply it
+  only to have the pairing cross-checked: a lens/profile mismatch is refused.
+- **An unregistered run id is refused**, so a one-character typo cannot manufacture a second
+  distinct run and with it a false detector-owed verdict. Every check runs before an id is
+  minted, so a refusal costs no id.
+
 ### The zero-setup path on an existing repo
 
 `audit --profile repo` is the try-before-you-adopt entry point: point it at a repository

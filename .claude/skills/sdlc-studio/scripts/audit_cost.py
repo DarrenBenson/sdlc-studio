@@ -63,8 +63,48 @@ LEDGER_PREFIX = "audit-cost"
 
 #: What `record` captures. `actual_minutes` and `notes` are optional and are written as null
 #: when absent rather than filled with a plausible number.
-LEDGER_FIELDS = ("date", "lenses", "rounds", "votes", "estimated_agents", "estimated_tokens",
+LEDGER_FIELDS = ("date", "run_id", "provenance", "lenses", "rounds", "votes",
+                 "estimated_agents", "estimated_tokens",
                  "actual_agents", "actual_tokens", "actual_minutes", "notes")
+
+#: A row this ledger wrote when a run finished: the run happened and was measured here.
+PROVENANCE_RECORDED = "recorded"
+#: A row asserted from prose written for another purpose - a `wf_` id lifted out of a finding's
+#: `Raised-by` line. Kept DISTINCT so no reader mistakes an id nobody minted for a measured run,
+#: mirroring `mutation.PROVENANCE_REGISTERED`.
+PROVENANCE_BACKFILLED = "backfilled"
+PROVENANCES = (PROVENANCE_RECORDED, PROVENANCE_BACKFILLED)
+
+
+def run_row(repo_root: Path | str, run_id: str) -> dict | None:
+    """The ledger row for `run_id`, or None when the register does not hold it.
+
+    THE AUDIT-RUN REGISTER. It is this ledger rather than a new file because a row is already
+    appended per finished run, and it is deliberately NOT under `.local/`: that directory is
+    gitignored, so a register there would be empty on every clone but the one that wrote it while
+    the findings citing it stayed tracked - every run id refused, and a detector-owed verdict of
+    cannot-judge for the whole corpus, permanently, everywhere else.
+
+    A run id is matched exactly. Normalisation belongs to the writer, not to this lookup: a
+    reader that quietly accepted a near-miss would defeat the typo refusal it exists to serve.
+    """
+    if not str(run_id or "").strip():
+        return None
+    wanted = str(run_id).strip()
+    for row in read_ledger(repo_root):
+        if str(row.get("run_id") or "").strip() == wanted:
+            return row
+    return None
+
+
+def registered_run_ids(repo_root: Path | str) -> dict:
+    """`{run_id: provenance}` for every run the register holds. Empty when none is recorded."""
+    out: dict = {}
+    for row in read_ledger(repo_root):
+        rid = str(row.get("run_id") or "").strip()
+        if rid:
+            out[rid] = str(row.get("provenance") or PROVENANCE_RECORDED).strip()
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -112,6 +152,10 @@ def record(repo_root: Path | str, fields: dict) -> dict:
     recorded once and left alone."""
     row = {k: fields.get(k) for k in LEDGER_FIELDS}
     row["date"] = row["date"] or sdlc_md.now_date()
+    # A row this verb writes is a MEASURED run by definition, so it defaults to `recorded`
+    # rather than to null: a null provenance would read as "unknown" on a row whose provenance
+    # is the one thing never in doubt.
+    row["provenance"] = row["provenance"] or PROVENANCE_RECORDED
     path = ledger_path(repo_root)
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "a", encoding="utf-8") as fh:
@@ -248,6 +292,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 def cmd_record(args: argparse.Namespace) -> int:
     row = record(args.root, {
+        "run_id": getattr(args, "run_id", None),
         "lenses": args.lenses, "rounds": args.rounds, "votes": args.votes,
         "estimated_agents": args.est_agents, "estimated_tokens": args.est_tokens,
         "actual_agents": args.actual_agents, "actual_tokens": args.actual_tokens,
@@ -292,6 +337,9 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--actual-agents", type=int, required=True, help="agents the run really used")
     c.add_argument("--actual-tokens", type=int, required=True, help="tokens the run really cost")
     c.add_argument("--actual-minutes", type=int, default=None, help="wall minutes the run took")
+    c.add_argument("--run-id", default=None,
+                   help="the run's id, which makes this row the audit-run REGISTER entry a "
+                        "finding's --audit-run is validated against")
     c.add_argument("--notes", default=None,
                    help="what made this run unusual (an outage, rework, a rerun)")
     c.add_argument("--root", default=".", help="project root holding the evidence ledger")

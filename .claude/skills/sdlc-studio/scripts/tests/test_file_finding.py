@@ -2046,5 +2046,257 @@ class AFindingIsPricedWhereTheWorkWasTests(unittest.TestCase):
                       f"a finding raised outside any batch was attributed to one: {stamped!r}")
 
 
+def _load_audit_cost():
+    spec = importlib.util.spec_from_file_location(
+        "audit_cost", Path(__file__).resolve().parent.parent / "audit_cost.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["audit_cost"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _register(root: Path, run_id: str = "RUN-AUDIT-01") -> str:
+    """One row in the audit-run REGISTER, which is the git-tracked audit-cost ledger."""
+    ac = _load_audit_cost()
+    ac.record(root, {"run_id": run_id, "lenses": 5, "rounds": 3, "votes": 3,
+                     "estimated_agents": 50, "estimated_tokens": 1_000_000,
+                     "actual_agents": 55, "actual_tokens": 1_200_000})
+    return run_id
+
+
+#: A lens that really exists in a shipped pack, and the pack that owns it.
+LIVE_LENS = "accepted-without-running"
+LIVE_PROFILE = "process"
+
+
+def _bugs(root: Path) -> list:
+    return [p for p in (root / "sdlc-studio" / "bugs").glob("*.md") if p.name != "_index.md"]
+
+
+class AuditAttributionTests(unittest.TestCase):
+    """US0462: a finding records the lens, the profile and a resolvable audit run."""
+
+    def test_lens_profile_and_run_are_stamped_as_metadata(self) -> None:
+        """AC1. Read as FIELDS, because 108 findings already hide their run id in `Raised-by`
+        prose and counting a class from that needs a regex over free text."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rid = _register(root)
+            res = ff.file_finding(root, "bug", "a finding with an attribution",
+                                  {**BUG, "lens": LIVE_LENS, "audit_run": rid})
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertEqual(LIVE_LENS, sdlc_md.extract_field(body, "Audit-lens"))
+            self.assertEqual(rid, sdlc_md.extract_field(body, "Audit-run"))
+            # DERIVED, not supplied: the lens resolves to exactly one pack.
+            self.assertEqual(LIVE_PROFILE, sdlc_md.extract_field(body, "Audit-profile"))
+
+    def test_an_undeclared_lens_or_profile_is_refused_before_an_id_is_minted(self) -> None:
+        """AC2, and the mutant that matters is PLACEMENT, not refusal.
+
+        MUTANT: move `check_audit_attribution` from beside `check_mutation_run` to inside
+        `_file_finding_locked` after the mint. The refusal still fires with an identical message
+        and exit code, and an id is burned - so the AC asserts the id sequence did NOT advance,
+        which a refusal-only assertion cannot see.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rid = _register(root)
+            with self.assertRaises(ValueError) as ctx:
+                ff.file_finding(root, "bug", "x",
+                                {**BUG, "lens": "no-such-lens-anywhere", "audit_run": rid})
+            self.assertIn("no-such-lens-anywhere", str(ctx.exception))
+            self.assertEqual([], _bugs(root), "an id was minted for a refused attribution")
+
+            # A profile that exists but does not own the lens: a consistent-looking pair naming
+            # the wrong pack, which a per-field existence check cannot catch.
+            with self.assertRaises(ValueError) as ctx2:
+                ff.file_finding(root, "bug", "x", {**BUG, "lens": LIVE_LENS,
+                                                   "profile": "code", "audit_run": rid})
+            self.assertIn("belongs to", str(ctx2.exception))
+            self.assertEqual([], _bugs(root))
+
+    def test_a_lens_without_a_run_or_a_run_without_a_lens_is_refused(self) -> None:
+        """AC4, all-or-none. THREE fixtures, because the obvious wrong implementation
+        (`if lens and not run and not profile`) passes with only the first two.
+
+        MUTANT: refuse when ANY of the three is absent - the wrong reading. It dies to the
+        none-of-the-three control below, which is the regression guard over 923 existing findings.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rid = _register(root)
+            for label, fields in (
+                    ("lens with no run", {"lens": LIVE_LENS}),
+                    ("run with no lens", {"audit_run": rid}),
+                    ("lens+profile, no run", {"lens": LIVE_LENS, "profile": LIVE_PROFILE})):
+                with self.subTest(label=label):
+                    with self.assertRaises(ValueError):
+                        ff.file_finding(root, "bug", "x", {**BUG, **fields})
+                    self.assertEqual([], _bugs(root))
+
+            # THE CONTROL: none of the three must stay legal.
+            res = ff.file_finding(root, "bug", "an ordinary finding with no attribution", BUG)
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertIsNone(sdlc_md.extract_field(body, "Audit-lens"),
+                              "an unattributed filing gained an empty attribution line")
+
+    def test_the_flags_reach_the_cli_and_the_fields_file_path(self) -> None:
+        """AC5, driven through `main(["file", ...])` and through `--fields-file`.
+
+        MUTANT: delete `"lens": args.lens` from `cmd_file`'s hand-enumerated flags dict. The flag
+        is then parsed and silently DROPPED, the filing succeeds UNATTRIBUTED, and every test
+        above still passes because they call `file_finding()` directly.
+
+        SECOND MUTANT: leave `lens`/`profile`/`audit_run` out of `FIELDS_FILE_KEYS`.
+        `load_fields_file` RAISES on any key outside that tuple, so the one path that does not
+        cross a shell - the path a prose-heavy audit finding must use - would be refused outright.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rid = _register(root)
+            for rel in GROOM["affects"].split(", "):
+                _affect(root, rel.strip())
+
+            doc = {"title": "filed through the command an operator types", **BUG,
+                   "lens": LIVE_LENS, "audit_run": rid}
+            fp = root / "fields.json"
+            fp.write_text(json.dumps(doc), encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                rc = ff.main(["file", "--type", "bug", "--root", str(root),
+                              "--fields-file", str(fp)])
+            self.assertEqual(0, rc, "the CLI refused a well-formed attributed filing")
+            filed = _bugs(root)
+            self.assertEqual(1, len(filed))
+            body = filed[0].read_text(encoding="utf-8")
+            self.assertEqual(LIVE_LENS, sdlc_md.extract_field(body, "Audit-lens"),
+                             "the flag was parsed and silently dropped on the way to the filer")
+            self.assertEqual(rid, sdlc_md.extract_field(body, "Audit-run"))
+
+    def test_the_flags_reach_the_filer_as_ARGPARSE_FLAGS_not_only_via_a_fields_file(self) -> None:
+        """The mutant the sibling AC5 test MISSED, found by mutation and fixed here.
+
+        Deleting `"lens": getattr(args, "lens", None)` from `cmd_file`'s hand-enumerated flags
+        dict SURVIVED the fields-file test above, because `--fields-file` is read by
+        `load_fields_file` and never touches that dict. Two different code paths carry the same
+        three keys, and only one of them was held.
+
+        So this drives `--lens` and `--audit-run` as real command-line FLAGS. An explicit flag
+        overrides the document, which is what makes the combination legal and the assertion sharp.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rid = _register(root)
+            for rel in GROOM["affects"].split(", "):
+                _affect(root, rel.strip())
+            doc = {"title": "filed with the attribution passed as flags", **BUG}
+            fp = root / "flagfields.json"
+            fp.write_text(json.dumps(doc), encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                rc = ff.main(["file", "--type", "bug", "--root", str(root),
+                              "--fields-file", str(fp),
+                              "--lens", LIVE_LENS, "--audit-run", rid])
+            self.assertEqual(0, rc)
+            body = _bugs(root)[0].read_text(encoding="utf-8")
+            self.assertEqual(LIVE_LENS, sdlc_md.extract_field(body, "Audit-lens"),
+                             "--lens was parsed and silently dropped by cmd_file's flags dict")
+            self.assertEqual(rid, sdlc_md.extract_field(body, "Audit-run"),
+                             "--audit-run was parsed and silently dropped by cmd_file's dict")
+
+    def test_a_mismatched_profile_passed_as_a_FLAG_is_still_refused(self) -> None:
+        """MUTANT: drop `"profile": getattr(args, "profile", None)` from `cmd_file`'s flags dict.
+
+        This one survives the sibling flag test, because the profile is DERIVED - dropping it
+        means `--profile` is merely ignored and the correct value fills in anyway. The single
+        observable loss is that a MISMATCH supplied on the command line stops being caught, which
+        is the one thing `--profile` is accepted for at all.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rid = _register(root)
+            for rel in GROOM["affects"].split(", "):
+                _affect(root, rel.strip())
+            fp = root / "mismatch.json"
+            fp.write_text(json.dumps({"title": "a mismatched profile on the flag path", **BUG}),
+                          encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()) as err:
+                rc = ff.main(["file", "--type", "bug", "--root", str(root),
+                              "--fields-file", str(fp), "--lens", LIVE_LENS,
+                              "--profile", "code", "--audit-run", rid])
+            self.assertEqual(1, rc,
+                             "a lens/profile mismatch passed as a flag was accepted, so --profile "
+                             "never reached the guard")
+            self.assertIn("belongs to", err.getvalue())
+            self.assertEqual([], _bugs(root), "an id was minted for a refused attribution")
+
+    def test_the_fields_file_allowlist_names_the_three_keys(self) -> None:
+        """The direct read of the second mutant above: the allowlist is a tuple a reader RAISES
+        on, so a key absent from it is not ignored - the whole document is refused."""
+        for key in ("lens", "profile", "audit_run"):
+            self.assertIn(key, ff.FIELDS_FILE_KEYS,
+                          f"a --fields-file carrying {key!r} would be refused outright")
+
+
+class AuditRunRegisterTests(unittest.TestCase):
+    """US0462 AC3: the register is a real writer's output, not a reader with nothing behind it."""
+
+    def test_an_unregistered_run_id_is_refused_before_an_id_is_minted(self) -> None:
+        """AC3. A ONE-CHARACTER typo is the fixture, because that is the whole point: an
+        unregistered id accepted would manufacture a second distinct run and with it a false
+        detector-owed verdict.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rid = _register(root, "RUN-AUDIT-01")
+            with self.assertRaises(ValueError) as ctx:
+                ff.file_finding(root, "bug", "x",
+                                {**BUG, "lens": LIVE_LENS, "audit_run": rid[:-1]})
+            msg = str(ctx.exception)
+            self.assertIn(rid[:-1], msg)
+            self.assertIn("register", msg)
+            self.assertEqual([], _bugs(root), "an id was minted against an unregistered run")
+
+    def test_the_register_has_a_WRITER_and_it_is_not_under_dot_local(self) -> None:
+        """The dead-path check the design review demanded: for every reader, name its writer.
+
+        A register under `.local/` would have been gitignored - empty on every clone but the one
+        that wrote it, while the findings citing it stayed tracked. That is a reader whose data
+        exists nowhere, which is the defect this story was one edit away from shipping.
+        """
+        ac = _load_audit_cost()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rid = _register(root, "RUN-AUDIT-77")
+            self.assertIsNotNone(ac.run_row(root, rid), "the writer's row is not readable")
+            self.assertEqual({rid: ac.PROVENANCE_RECORDED}, ac.registered_run_ids(root))
+            written = ac.ledger_path(root)
+            self.assertTrue(written.is_file())
+            self.assertNotIn(".local", written.parts,
+                             "the register was written under a gitignored directory, so it is "
+                             "empty on every other clone")
+
+    def test_a_backfilled_row_is_marked_apart_from_a_recorded_one(self) -> None:
+        """MUTANT: write every row as `recorded`. Five historical `wf_` ids were minted by
+        nothing and lifted from prose written for another purpose - laundering them into the same
+        authority as a measured run is what the provenance split exists to stop."""
+        ac = _load_audit_cost()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ac.record(root, {"run_id": "wf_deadbeef", "lenses": 1,
+                             "provenance": ac.PROVENANCE_BACKFILLED})
+            self.assertEqual({"wf_deadbeef": ac.PROVENANCE_BACKFILLED},
+                             ac.registered_run_ids(root))
+            self.assertNotEqual(ac.PROVENANCE_RECORDED, ac.PROVENANCE_BACKFILLED)
+
+
 if __name__ == "__main__":
     unittest.main()

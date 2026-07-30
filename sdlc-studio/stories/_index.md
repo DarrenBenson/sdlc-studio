@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 5 |
-| Ready | 27 |
+| Ready | 26 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 21 |
+| Review | 22 |
 | Done | 512 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -373,7 +373,7 @@
 | [US0459](US0459-the-token-budget-premise-is-replaced-by-the.md) | The token-budget premise is replaced by the measured one everywhere it is asserted: transcript-measured, and a lower bound because delegated spend is supplied not measured | Review | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0460](US0460-the-porting-doctrine-is-stated-in-one-direction.md) | The porting doctrine is stated in one direction across the TRD and personas.md: the repo is source, the installed copy is the derived mirror | Review | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0461](US0461-verify-ac-lint-ratchet-refuses-a-duplicate-group.md) | verify_ac lint --ratchet refuses a duplicate group the baseline does not record with a reason, and the pinned pre-commit lane set gains it | Review | EP0169 | 2026-07-27 | 2026-07-27 |
-| [US0462](US0462-a-filed-finding-records-the-lens-profile-and.md) | A filed finding records the lens, profile and a resolvable audit run, and the existing corpus is backfilled from its Raised-by stamps | Ready | EP0169 | 2026-07-27 | 2026-07-27 |
+| [US0462](US0462-a-filed-finding-records-the-lens-profile-and.md) | A filed finding records the lens, profile and a resolvable audit run, validated against a register that has a real writer | Review | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0463](US0463-readiness-py-detector-owed-flags-a-lens-filed.md) | readiness.py detector-owed flags a lens filed in two separate audit runs and files the sized unit that will build the check | Ready | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0464](US0464-every-lens-pack-on-disk-names-its-detector.md) | Every lens pack on disk names its detector or declares manual with a reason, the column is read by header name, and the detector set covers the runners this repo ships | Review | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0465](US0465-no-artefact-reaches-a-terminal-status-carrying-unchecked.md) | No artefact reaches a terminal status carrying unchecked Open Questions, and the 16 that already did are swept | Review | EP0169 | 2026-07-27 | 2026-07-27 |
