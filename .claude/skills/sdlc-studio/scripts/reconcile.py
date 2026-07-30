@@ -89,6 +89,7 @@ DRIFT_KINDS = (
     "index-field",
     "spawned-column",
     "supersession-asymmetry",
+    "epic-index-derivable",
 )
 
 # Statuses that do NOT imply a backing file yet. An UNLINKED index row in one of
@@ -1226,6 +1227,186 @@ def apply_linked_epics(repo_root: Path | str, dry_run: bool = False) -> dict:
     return {"synced": synced}
 
 
+#: Cells the epic index carries that are DERIVED from the tree rather than authored, and the row
+#: pattern that finds an epic row. One definition (`sdlc_md.EPIC_DERIVED_COLUMNS`) so the
+#: derivation and the mint path cannot disagree about the shape of a row.
+_EPIC_ROW_RE = re.compile(r"^\|\s*\[?(EP\d{3,4})")
+
+
+def _column_index(index_text: str, name: str) -> int | None:
+    """The zero-based cell index of a named column, located by HEADER.
+
+    By header, never by offset: the same failure `apply_linked_epics` records - a hardcoded
+    position wrote an epic id over the Date column and left the real cell untouched, so the row
+    lost data AND re-drifted on the next run.
+    """
+    for line in index_text.splitlines():
+        if line.startswith("| ID |"):
+            cells = _split_row_cells(line)
+            return cells.index(name) if name in cells else None
+    return None
+
+
+#: Cell values meaning "nobody filled this in".
+_EPIC_CELL_PLACEHOLDERS = (sdlc_md.CELL_NOT_STATED, "-", "", "–", "—")
+
+
+def _epic_cell_is_derivable(current: str, expected: str) -> bool:
+    """May `apply` write `expected` over `current`, or must a human rule on it?
+
+    The test is whether the write LOSES anything, not whether the current value is a placeholder.
+    That distinction was learned the hard way: a placeholder-only rule made a minted epic's
+    censused `0` un-updatable, so wiring the first story to it could never move the cell off zero -
+    the derivation had written a real value and then locked itself out of it.
+
+    - A placeholder: fill it. Nothing is lost.
+    - A count the census EXCEEDS: the row was merely stale and the tree holds every story it
+      claims and more, so writing the larger number loses nothing.
+    - A count the census FALLS SHORT of: the row counts stories the tree cannot show. Eight rows
+      here claim counts for epics whose story files exist nowhere, and overwriting them would
+      destroy the only surviving record of that work to tidy a number. Held for a human.
+    - A non-numeric cell (a Deps list) that differs: held. A dependency the tree no longer sees may
+      have been satisfied and removed rather than never declared, and nothing mechanical can tell.
+    """
+    if current in _EPIC_CELL_PLACEHOLDERS:
+        return True
+    if current.isdigit() and expected.isdigit():
+        return int(expected) > int(current)
+    return False
+
+
+def _epic_index_cells(repo_root: Path, text: str | None = None) -> list[dict]:
+    """Every epic row cell the tree can derive, paired with what the row currently carries.
+
+    The split between mechanical drift and a judgement call is made ONCE here, and both callers
+    read it, so the detector and the advisory cannot come to disagree about which is which.
+
+    `text` lets `apply` pass the index it is about to rewrite. Reading the file a second time
+    inside apply meant the column offsets could belong to a different revision of the index than
+    the rows being written - narrow, but it is the exact shape of the failure `apply_linked_epics`
+    records, and passing the text removes the window rather than guarding against it downstream.
+    """
+    index_path = repo_root / "sdlc-studio" / "epics" / "_index.md"
+    if text is None:
+        if not index_path.is_file():
+            return []
+        text = index_path.read_text(encoding="utf-8")
+    columns = {c: _column_index(text, c) for c in sdlc_md.EPIC_DERIVED_COLUMNS}
+    out: list[dict] = []
+    for line in text.splitlines():
+        m = _EPIC_ROW_RE.match(line)
+        if not m:
+            continue
+        rec = m.group(1)
+        cells = _split_row_cells(line)
+        derived = sdlc_md.derive_epic_row_cells(repo_root, rec)
+        for name, col in columns.items():
+            if col is None or col >= len(cells) or name not in derived:
+                continue
+            current, expected = cells[col], derived[name]
+            if current == expected:
+                continue
+            out.append({"id": rec, "column": name, "current": current, "expected": expected,
+                        "derivable": _epic_cell_is_derivable(current, expected)})
+    return out
+
+
+def epic_index_derivable_drift(repo_root: Path | str) -> list[dict]:
+    """Epic index cells holding a PLACEHOLDER the tree can fill (US0477).
+
+    Mechanical only, and that boundary is the whole design. 182 of this repository's rows say `--`
+    where a count is derivable, and filling those is pure gain. Nine rows carry a real count the
+    census contradicts - their epics' story files exist nowhere, not live and not archived - and
+    those are NOT drift: see `epic_index_uncorroborated_advisory`. Reporting them here would leave
+    a blocking lane permanently red on a repository nobody had broken, and the only way to clear it
+    would be to overwrite eight counts downward, destroying the last trace of that work to tidy a
+    number.
+
+    A `Deps` cell has a third state that is not written at all: an epic with no `## Dependencies`
+    section has not declared it has none, and stamping the declared-none value across the 157 rows
+    in that state would manufacture 157 declarations out of an absence. `derive_epic_row_cells`
+    omits the cell entirely there, so it never reaches this loop.
+    """
+    return [{"type": "epic", "id": c["id"], "kind": "epic-index-derivable",
+             "file_status": None, "index_status": None,
+             "column": c["column"], "expected": c["expected"], "current": c["current"],
+             "derivable": True,
+             "fix": f"{c['id']} {c['column']} cell is `{c['current']}`, the tree derives "
+                    f"`{c['expected']}`"}
+            for c in _epic_index_cells(Path(repo_root)) if c["derivable"]]
+
+
+def epic_index_uncorroborated_advisory(repo_root: Path | str) -> list[dict]:
+    """An epic row carrying a real derived-column value the tree cannot corroborate.
+
+    Advisory, never drift, on the same terms as `already_delivered_advisory`: nothing mechanical
+    can settle it. The row says six stories, the census finds none on disk, and which is right
+    depends on whether those files were deleted, archived under an older convention, or never
+    existed. `apply` never acts on it and it never changes an exit code - but it is PRINTED, since
+    a row whose number the tree contradicts is exactly what a reader should be told about.
+    """
+    return [{"id": c["id"], "column": c["column"], "current": c["current"],
+             "expected": c["expected"],
+             "note": f"{c['id']} {c['column']} row says `{c['current']}`, the tree derives "
+                     f"`{c['expected']}` - left alone: rewriting a real value from a census that "
+                     f"cannot corroborate it would drop the only record of it. Correct the row by "
+                     f"hand if the tree is right, or leave it as history"}
+            for c in _epic_index_cells(Path(repo_root)) if not c["derivable"]]
+
+
+def apply_epic_index_derivable(repo_root: Path | str, dry_run: bool = False) -> dict:
+    """Fill the derivable epic cells, and only those. `{synced, held}`.
+
+    `held` is the point: a cell whose real value the census contradicts is counted, named on
+    stderr and left alone. A silent hold would be indistinguishable from a cell that matched.
+    """
+    root = Path(repo_root)
+    index_path = root / "sdlc-studio" / "epics" / "_index.md"
+    if not index_path.is_file():
+        return {"synced": [], "held": []}
+    # ONE read, shared by the decision and the write. The columns and the rows below therefore
+    # belong to the same revision of the index by construction.
+    text = index_path.read_text(encoding="utf-8")
+    cells_found = _epic_index_cells(root, text)
+    fillable = [c for c in cells_found if c["derivable"]]
+    held = [c for c in cells_found if not c["derivable"]]
+    for d in held:
+        print(f"warning: {d['id']} {d['column']} row says `{d['current']}`, the tree derives "
+              f"`{d['expected']}` - left alone: rewriting a real value from a census that cannot "
+              f"corroborate it would drop the only record of it", file=sys.stderr)
+    if not fillable or dry_run:
+        return {"synced": [f"{d['id']}.{d['column']}" for d in fillable],
+                "held": [f"{d['id']}.{d['column']}" for d in held]}
+    columns = {c: _column_index(text, c) for c in sdlc_md.EPIC_DERIVED_COLUMNS}
+    wanted: dict[tuple, str] = {(_norm_id(d["id"]), d["column"]): d["expected"] for d in fillable}
+    lines = text.splitlines(True)
+    synced = []
+    for i, line in enumerate(lines):
+        m = _EPIC_ROW_RE.match(line)
+        if not m:
+            continue
+        rec = _norm_id(m.group(1))
+        cells = _split_row_cells(line)
+        changed = False
+        for name, col in columns.items():
+            value = wanted.get((rec, name))
+            # No bounds check on `col`: `wanted` is built from `_epic_index_cells` over the SAME
+            # text, which only reports a cell whose column resolved and whose row is long enough.
+            # A guard here would be unreachable, and an unreachable guard reads as protection and
+            # provides none - a mutant removing it changed no test, which is how it was found.
+            if value is None:
+                continue
+            cells[col] = value
+            changed = True
+            synced.append(f"{m.group(1)}.{name}")
+        if changed:
+            newline = "\n" if line.endswith("\n") else ""
+            lines[i] = "| " + " | ".join(cells) + " |" + newline
+    if synced:
+        sdlc_md.atomic_write(index_path, "".join(lines))
+    return {"synced": synced, "held": [f"{d['id']}.{d['column']}" for d in held]}
+
+
 def apply_epic_points(repo_root: Path | str, dry_run: bool = False) -> dict:
     """Write each declaring epic's `Derived Point Total` to the sum of its stories' points - the
     same recompute discipline as the summary counts, one level up. Rewrites only the value on the
@@ -1841,6 +2022,7 @@ def _detect_all(repo_root: Path, scope: str | None) -> tuple[dict, list[dict]]:
     if scope in (None, "epics"):
         all_drift.extend(epic_breakdown_drift(repo_root))
         all_drift.extend(epic_points_drift(repo_root))
+        all_drift.extend(epic_index_derivable_drift(repo_root))
     # The request<->child link check and the undecomposed check are cross-type (a CR under an RFC,
     # an epic under a CR), so they run on the default full sweep like the meta indexes, not under a
     # single pipeline scope. link-asymmetry is always on (it only fires on links a project chose to
@@ -1930,6 +2112,8 @@ def cmd_detect(args: argparse.Namespace) -> int:
             print(f"advisory (era): {era_note}")
         for n in delivered_notes:
             print(f"advisory (already-delivered): {n['note']}")
+        for n_ in epic_index_uncorroborated_advisory(repo_root) if args.scope is None else []:
+            print(f"advisory (epic-index-uncorroborated): {n_['note']}")
         print(f"scope={report['scope']} drift_items={len(all_drift)} by_kind={by_kind}")
         hints = sdlc_md.remediation_lines("reconcile", by_kind)
         if hints:
@@ -2808,6 +2992,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
             by_type["breakdown"] = apply_breakdown(repo_root, dry_run=args.dry_run)
             by_type["epic_points"] = apply_epic_points(repo_root, dry_run=args.dry_run)
             by_type["linked_epics"] = apply_linked_epics(repo_root, dry_run=args.dry_run)
+            by_type["epic_index"] = apply_epic_index_derivable(
+                repo_root, dry_run=args.dry_run)
         if args.scope is None and sdlc_md.two_backlog_enforced(repo_root):
             by_type["derivable_requests"] = apply_derivable_requests(
                 repo_root, dry_run=args.dry_run)
@@ -2903,6 +3089,15 @@ def cmd_apply(args: argparse.Namespace) -> int:
         for cid in le["synced"]:
             print(f"{'WOULD sync' if args.dry_run else 'synced'} Linked Epics for {cid}")
             n += 1
+        ei = apply_epic_index_derivable(repo_root, dry_run=args.dry_run)
+        for cell in ei["synced"]:
+            print(f"{'WOULD fill' if args.dry_run else 'filled'} derived epic index cell {cell}")
+            n += 1
+        if ei["held"]:
+            # Counted here as well as warned on stderr: a hold the summary does not mention reads
+            # as a clean sweep to anyone reading stdout.
+            print(f"held {len(ei['held'])} epic index cell(s) whose value the census contradicts "
+                  f"- reported, never rewritten (see the warnings on stderr)")
     # Full-sweep only, and gated exactly as the detector is: an unenforced project closes its
     # requests by assertion, so nothing here may move them.
     if args.scope is None and sdlc_md.two_backlog_enforced(repo_root):

@@ -34,6 +34,24 @@ not one:
 Without the second pass the index goes on advertising an artefact that is not there, and
 nothing in the gate notices: the census walks files, and this file is gone.
 
+The epic index's derived cells work the same way (`epic-index-derivable`). `Stories` is a census
+of the story files naming that epic and `Deps` comes from its `## Dependencies` table, so both are
+derived rather than authored - and `apply` fills them. What it will **not** do is lose anything: a
+placeholder is filled, a count the census EXCEEDS is filled (the row was merely stale), and a count
+the census FALLS SHORT of is reported and left alone, because a row claiming stories the tree cannot
+show is the only surviving record of them. Those are printed as
+`advisory (epic-index-uncorroborated)` and never change an exit code, on the same terms as the
+already-delivered advisory: a blocking lane that can only be cleared by destroying a record is a
+lane that gets switched off.
+
+The direction test is what makes the rule usable rather than merely safe. A newly minted epic's row
+carries a censused `0`, which is a real value - so a placeholder-only rule would lock the derivation
+out of its own cell and the first story wired to that epic could never move it.
+
+`Deps` has a third state that is never written: an epic with no `## Dependencies` section has not
+declared it has none, and stamping the declared-none value across the rows in that state would
+manufacture a declaration out of an absence.
+
 A supersession is checked the same way, from both ends (`supersession-asymmetry`). The
 superseding artefact must say what it replaces and the superseded one must say what replaced
 it, because a superseded design that never records it keeps reading as **live** from the

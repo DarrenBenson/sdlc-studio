@@ -540,21 +540,53 @@ CELL_NOT_STATED = "--"
 DEPS_DECLARED_NONE = "None"
 
 
-def epic_story_count(repo_root, epic_id: str) -> int:
-    """How many story files name `epic_id` in their `Epic` field. A census, never a stored total."""
+#: {(root, signature) -> {epic id -> story count}}. The census is read once per epic row and this
+#: repository has 191 of them over ~600 story files, so the naive per-epic walk read every story
+#: file 191 times - 3.3s on a lane that runs on every commit. Memoised on a signature built from
+#: `stat` rather than from content: a story whose Epic field changes changes its size or mtime, and
+#: a stat per file is two orders of magnitude cheaper than a read per file.
+_EPIC_STORY_CENSUS: dict[tuple, dict[str, int]] = {}
+
+
+def _stories_signature(d: Path) -> tuple:
+    return tuple(sorted((p.name, s.st_mtime_ns, s.st_size)
+                        for p in d.glob("*.md") if (s := p.stat())))
+
+
+def epic_story_census(repo_root) -> dict[str, int]:
+    """{epic id -> how many story files name it in their `Epic` field}, over one pass.
+
+    An epic with no stories is ABSENT from the mapping rather than present as 0: the caller that
+    needs "0" asks for a count, and a mapping that invented a key for every id it had never seen
+    could not be iterated.
+    """
     d = Path(repo_root) / "sdlc-studio" / "stories"
     if not d.is_dir():
-        return 0
-    n = 0
+        return {}
+    key = (str(Path(repo_root).resolve()), _stories_signature(d))
+    cached = _EPIC_STORY_CENSUS.get(key)
+    if cached is not None:
+        return cached
+    counts: dict[str, int] = {}
     for path in sorted(d.glob("*.md")):
         if path.name == "_index.md":
             continue
         rec = extract_record_id(path.stem)
         if not rec or not rec.startswith("US"):
             continue
-        if (extract_field(read_text_safe(path), "Epic") or "").strip() == epic_id:
-            n += 1
-    return n
+        epic = (extract_field(read_text_safe(path), "Epic") or "").strip()
+        if epic:
+            counts[epic] = counts.get(epic, 0) + 1
+    # Bounded: a long-lived process reconciling many trees must not accumulate a census per edit.
+    if len(_EPIC_STORY_CENSUS) > 8:
+        _EPIC_STORY_CENSUS.clear()
+    _EPIC_STORY_CENSUS[key] = counts
+    return counts
+
+
+def epic_story_count(repo_root, epic_id: str) -> int:
+    """How many story files name `epic_id` in their `Epic` field. A census, never a stored total."""
+    return epic_story_census(repo_root).get(epic_id, 0)
 
 
 def epic_declared_deps(repo_root, epic_id: str) -> list | None:
@@ -883,18 +915,30 @@ def find_data_header(lines: list[str]) -> tuple[int, list[str]] | None:
     return found
 
 
-def row_from_header(header: list[str], link: str, title: str, status: str, f: dict) -> str:
+def row_from_header(header: list[str], link: str, title: str, status: str, f: dict,
+                    derived: dict | None = None) -> str:
     """Build an index data row matching the index's own columns - generic across every type,
     so both create paths emit identical rows. `f` supplies priority/type/severity/points/
     author/epic/date; unknown columns get `--`. Every cell is rendered as text: a numeric field
-    (a size) reaches the row as the int the caller supplied, and a cell is markdown."""
+    (a size) reaches the row as the int the caller supplied, and a cell is markdown.
+
+    `derived` supplies cells the TREE decides rather than the caller - `{"Stories": "0"}` from
+    `derive_epic_row_cells`. Without it an epic's Stories cell fell to the unrecognised-column `--`
+    branch, so a freshly minted epic was born drifted against the very derivation that maintains
+    it. Passed in rather than computed here, because this function is type-agnostic and has no root
+    to census; a column absent from `derived` still falls through to `--`, which is what keeps the
+    `Deps` cell honest for an epic that declares no Dependencies section.
+    """
     field_for = {"priority": ("priority", "Medium"), "type": ("ctype", "Feature"),
                  "epic": ("epic", "--"), "severity": ("severity", "--"),
                  "author": ("author", "--"), "points": ("points", "--")}
+    by_derived = {k.strip().lower(): v for k, v in (derived or {}).items()}
     out: list[str] = []
     for h in header:
         hl = h.strip().lower()
-        if hl == "id":
+        if hl in by_derived:
+            out.append(str(by_derived[hl]))
+        elif hl == "id":
             out.append(link)
         elif hl in ("title", "description", "feature", "name", "sprint"):
             out.append(title)
@@ -1391,6 +1435,7 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "epic-points-stale": "an epic's derived point total no longer equals the sum of its stories' points - run `reconcile apply` to recompute it (the total is DERIVED, never hand-set; the epic's own coarse estimate is its T-shirt `Size`, not points)",
         "link-asymmetry": "a request/child link is declared on one side only - add the missing half (the child's `Parent:` or the request's `Decomposed-into:`) so it resolves both ways, or fix the id that resolves to nothing; a decomposition writes BOTH sides",
         "supersession-asymmetry": "a supersession is recorded on one side of the pair only - add the missing half (the superseder's `Supersedes:` or the superseded artefact's `Superseded by:`) so a reader arriving from either direction sees it, or record the pair in sdlc-studio/.supersession-waivers.json with the reason it is legitimate asymmetry (a partial supersession is); the tolerated set may only shrink",
+        "epic-index-derivable": "an epic index cell the tree can derive does not carry it - `reconcile apply` fills a PLACEHOLDER cell from the census; a cell holding a real value the census contradicts is reported and left alone, because rewriting it would drop the only record of it (correct it by hand, or leave it as history)",
         "undecomposed": "a discovery item accepted into the workflow has no children - decompose it into the units that deliver it (refine a request into epics/stories; triage an Issue into bugs), or close it if it is not going ahead; a still-Proposed/Draft/Open item is pre-triage intake and is not flagged",
         "linked-epics": "the request index's Linked Epics cell disagrees with the file's `Decomposed-into` - run `reconcile apply` to census it from the files; a request that was never decomposed keeps its placeholder and is not flagged",
         "stale-index-stamp": "the index's `**Last Updated:**` header is older than the newest date on its own rows, so it claims a freshness it does not have - run `reconcile apply` to restamp it from the rows (the stamp is derived, never hand-set; a header AHEAD of the rows is just an index nothing has been added to and is not flagged)",

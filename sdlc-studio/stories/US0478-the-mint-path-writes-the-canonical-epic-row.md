@@ -1,6 +1,6 @@
 # US0478: The mint path writes the canonical epic row, and the shipped template declares the same columns
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0436
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -44,3 +44,4 @@
 | --- | --- | --- |
 | 2026-07-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-27 | Claude Fable 5 | Groomed: authored from the reviewed breakdown (two adversarial rounds), scope capped to the request per D0069 |
+| 2026-07-30 | Claude Opus 5 | Delivered. Both mint paths pass the derived cells; the shipped template declares the canonical columns; wiring a story refreshes the epic's Stories cell on the single AND batch paths |

@@ -801,6 +801,27 @@ def _wire_story_to_epic(root: Path, epic_id: str, disp: str, title: str,
     return False
 
 
+def _refresh_epic_row(root: Path, epic_id: str) -> list[str]:
+    """Bring the epic's index row back in step with the census after a story is wired to it.
+
+    Minting a story changes a number in ANOTHER artefact's index row. Left to the next
+    `reconcile`, the index is stale from the moment the story lands until somebody remembers -
+    and the whole claim of this tooling is that the index is derived. Delegated to reconcile's
+    applier rather than reimplemented, so the mint path and the sweep write the cell the same way,
+    and so the hold on a value the census contradicts applies here too.
+
+    Errors are swallowed deliberately: a stale count is a smaller failure than a mint that fails
+    after the story file is already on disk.
+    """
+    if not epic_id:
+        return []
+    try:
+        return reconcile.apply_epic_index_derivable(root).get("synced", [])
+    except Exception as exc:  # noqa: BLE001 - never fail a completed mint on a derived cell
+        sdlc_md.debug("artifact._refresh_epic_row", exc)
+        return []
+
+
 # Meta-artifacts: tool-created, outside the status machinery (no status vocab, no
 # transition gate, no conformance stage). A handoff belongs here for the same reason a
 # retro does - it is a generated record OF a run, not a unit of work that moves through one.
@@ -1059,11 +1080,18 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         header = _header_cells(root, type_)
         indexed = False
         if header:
+            # An epic's derived cells come from the tree, not from the caller: minted without
+            # them the Stories cell fell to the unrecognised-column `--` and a new epic was born
+            # drifted against the derivation that maintains it.
             row = sdlc_md.row_from_header(header, f"[{disp}]({file_id}-{slug}.md)", title,
-                                          f["_status"], f)
+                                          f["_status"], f,
+                                          derived=sdlc_md.derive_epic_row_cells(root, disp)
+                                          if type_ == "epic" else None)
             indexed = file_finding.append_index_row(root, type_, row)
         linked = _wire_story_to_epic(root, f["epic"], disp, title, file_id, slug) \
             if (type_ == "story" and f.get("epic")) else None
+        if linked:
+            _refresh_epic_row(root, f["epic"])
         if _parent_path is not None:
             # wire BOTH directions inside the same lock as the mint (two concurrent
             # same-parent spawns must not lose an update on Decomposed-into)
@@ -1186,10 +1214,16 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             header = _header_cells(root, type_)
             link = f"[{p['disp']}]({p['file_id']}-{p['slug']}.md)"
             if header:
-                row = sdlc_md.row_from_header(header, link, it["title"], create_status, f)
+                row = sdlc_md.row_from_header(
+                    header, link, it["title"], create_status, f,
+                    derived=sdlc_md.derive_epic_row_cells(root, p["disp"])
+                    if type_ == "epic" else None)
                 file_finding.append_index_row(root, type_, row)
             if type_ == "story":
                 _wire_story_to_epic(root, it["epic"], p["disp"], it["title"], p["file_id"], p["slug"])
+                # The batch path is the one that skipped this before, so it is wired explicitly
+                # here rather than left to a shared tail nobody notices is missing.
+                _refresh_epic_row(root, it.get("epic", ""))
             created.append({"id": p["disp"], "file_id": p["file_id"], "path": str(p["path"])})
         return {"type": type_, "count": len(created), "template": template,
                 "created": created, "dry_run": False}

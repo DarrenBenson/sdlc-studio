@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 4 |
-| Ready | 21 |
+| Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 28 |
+| Review | 30 |
 | Done | 512 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -388,8 +388,8 @@
 | [US0474](US0474-review-prep-derives-the-rv-record-and-stamps.md) | review_prep derives the RV record and stamps the covered units from one recorded sprint-review APPROVE, without touching operator prose | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0475](US0475-the-sprint-close-derives-the-review-record-ahead.md) | The sprint close derives the review record ahead of the gate, and the review-current lane demonstrably clears on a git fixture | Ready | EP0171 | 2026-07-27 | 2026-07-27 |
 | [US0476](US0476-rfc0009-records-its-partial-supersession-by-rfc0038-to.md) | RFC0009 records its partial supersession by RFC0038, to the RFC0034 convention, element by element | Review | EP0172 | 2026-07-27 | 2026-07-27 |
-| [US0477](US0477-reconcile-derives-the-epic-index-s-stories-and.md) | reconcile derives the epic index's Stories and Deps cells from the census and syncs them | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
-| [US0478](US0478-the-mint-path-writes-the-canonical-epic-row.md) | The mint path writes the canonical epic row, and the shipped template declares the same columns | Ready | EP0172 | 2026-07-27 | 2026-07-27 |
+| [US0477](US0477-reconcile-derives-the-epic-index-s-stories-and.md) | reconcile derives the epic index's Stories and Deps cells from the census and syncs them | Review | EP0172 | 2026-07-27 | 2026-07-27 |
+| [US0478](US0478-the-mint-path-writes-the-canonical-epic-row.md) | The mint path writes the canonical epic row, and the shipped template declares the same columns | Review | EP0172 | 2026-07-27 | 2026-07-27 |
 | [US0479](US0479-delete-gate-s-dead-verify-batch-flag-and.md) | Delete gate's dead --verify-batch flag and the documentation claiming it does something | Done | EP0172 | 2026-07-27 | 2026-07-27 |
 | [US0480](US0480-validate-ratchets-the-footprint-and-criterion-warnings-against.md) | validate ratchets the footprint and criterion warnings against a recorded set of tolerated instances | Ready | EP0173 | 2026-07-27 | 2026-07-27 |
 | [US0481](US0481-sprint-plan-validates-the-units-in-its-batch.md) | sprint plan validates the units in its batch, not only their index rows | Ready | EP0173 | 2026-07-27 | 2026-07-27 |

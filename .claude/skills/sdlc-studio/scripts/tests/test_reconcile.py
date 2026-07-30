@@ -2976,7 +2976,12 @@ class AlreadyDeliveredAdvisoryTests(unittest.TestCase):
             root = Path(d)
             self._unit(root, "epic", "EP0125", self.OPEN_TITLE, "Draft")
             self._unit(root, "epic", "EP0146", self.DONE_TITLE, "Done")
-            reconcile.apply_type("epic", root)     # make the index agree, so drift is genuinely 0
+            # Make the index agree, so drift is genuinely 0 and the exit code below is about the
+            # advisory alone. BOTH appliers: `apply_type` settles the status rows, and the derived
+            # cells are a separate applier - without it these rows carry unfilled `--` counts and
+            # this test fails on somebody else's drift kind rather than on its own subject.
+            reconcile.apply_type("epic", root)
+            reconcile.apply_epic_index_derivable(root)
             buf, err = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
                 rc = reconcile.main(["--root", str(root), "detect"])
@@ -4050,6 +4055,279 @@ class SupersessionTests(unittest.TestCase):
         _artefact(self.root, "change-requests", "CR0100", "> **Supersedes:** CR0090")
         _artefact(self.root, "change-requests", "CR0090", "> **Supersedes:** CR0100")
         self.assertEqual(1, len(self._drift()), "the reciprocal claim reported twice")
+
+
+EPIC_INDEX_HEADER = (
+    "# Epics\n\n"
+    "| Status | Count |\n|---|---|\n| Draft | 1 |\n\n"
+    "| ID | Title | Status | Stories | Deps | Created | Updated |\n"
+    "| --- | --- | --- | --- | --- | --- | --- |\n"
+)
+
+
+class EpicIndexDerivedTests(unittest.TestCase):
+    """The epic index's derived cells (US0477).
+
+    Two definitions of an epic row existed: the shipped `templates/indexes/epic.md` declared
+    `Owner`/`Target` while every one of this repository's live rows carries `Deps`/`Created`/
+    `Updated`. The foundation put one importable answer in `lib/sdlc_md.py`; this is the sweep that
+    reads it.
+
+    The load-bearing rule is what apply does NOT touch. A placeholder is filled from the census; a
+    cell carrying a real value the census contradicts is advisory, never drift and never rewritten.
+    Nine rows here are in that state, eight of them claiming story counts for epics whose files
+    exist nowhere - overwriting those to make the numbers tidy would destroy the last record of
+    that work, and reporting them as drift would leave a blocking lane permanently red.
+    """
+
+    def setUp(self) -> None:
+        self.root = Path(tempfile.mkdtemp(prefix="epicidx_"))
+        self.addCleanup(__import__("shutil").rmtree, self.root, ignore_errors=True)
+        self.epics = self.root / "sdlc-studio" / "epics"
+        self.epics.mkdir(parents=True)
+
+    def _index(self, *rows: str, header: str = EPIC_INDEX_HEADER) -> None:
+        (self.epics / "_index.md").write_text(header + "".join(r + "\n" for r in rows),
+                                              encoding="utf-8")
+
+    def _epic(self, rec: str, deps: str | None = None) -> None:
+        body = [f"# {rec}: an epic", "", "> **Status:** Draft", ""]
+        if deps is not None:
+            body += ["## Dependencies", "", "### Blocked By", "",
+                     "| Dependency | Type | Status | Owner |", "| --- | --- | --- | --- |"]
+            body += deps.splitlines()
+        (self.epics / f"{rec}-x.md").write_text("\n".join(body) + "\n", encoding="utf-8")
+
+    def _story(self, rec: str, epic: str) -> None:
+        d = self.root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{rec}-x.md").write_text(
+            f"# {rec}: a story\n\n> **Status:** Draft\n> **Epic:** {epic}\n", encoding="utf-8")
+
+    def _cells(self, rec: str) -> list[str]:
+        text = (self.epics / "_index.md").read_text(encoding="utf-8")
+        line = next(l for l in text.splitlines() if l.startswith(f"| [{rec}]"))
+        return reconcile._split_row_cells(line)
+
+    def test_the_stories_cell_is_censused_and_zero_stories_writes_zero(self) -> None:
+        """AC1. Zero is a DERIVED FACT, so it is written as `0` - a value a row can carry - rather
+        than left as the placeholder it is indistinguishable from otherwise.
+
+        MUTANT: treat a zero census as "nothing to write". The row then keeps `--` forever, and the
+        sibling mint story's agreement check has no deterministic answer for a childless epic.
+        """
+        self._epic("EP0001")
+        self._epic("EP0002")
+        for s in ("US0001", "US0002", "US0003"):
+            self._story(s, "EP0001")
+        self._index("| [EP0001](EP0001-x.md) | A | Draft | -- | -- | d | d |",
+                    "| [EP0002](EP0002-x.md) | B | Draft | -- | -- | d | d |")
+        drift = reconcile.epic_index_derivable_drift(self.root)
+        by = {(d["id"], d["column"]): d for d in drift}
+        self.assertEqual("3", by[("EP0001", "Stories")]["expected"])
+        self.assertEqual("--", by[("EP0001", "Stories")]["current"])
+        self.assertEqual("0", by[("EP0002", "Stories")]["expected"],
+                         "an epic with no stories must derive the string '0'")
+
+        reconcile.apply_epic_index_derivable(self.root)
+        self.assertEqual("3", self._cells("EP0001")[3])
+        self.assertEqual("0", self._cells("EP0002")[3])
+        # Second pass silent: an apply that re-reports its own work is not idempotent.
+        self.assertEqual([], reconcile.epic_index_derivable_drift(self.root))
+
+    def test_deps_has_three_states_and_an_absent_section_is_not_drift(self) -> None:
+        """AC2. The third state is the point: "nobody said" is not "the epic says there are none",
+        and 157 of this repository's epic files are in it.
+
+        MUTANT: derive `None` for an absent section. Every one of those rows would be stamped with
+        a declaration its epic never made - manufacturing 157 facts out of an absence, which is the
+        defect CR0436 was filed for.
+        """
+        self._epic("EP0001", "| EP0009 | Epic | Done | X |\n| EP0002 | Epic | Done | X |")
+        self._epic("EP0002", "")            # declared, empty
+        self._epic("EP0003", None)          # no section at all
+        self._index("| [EP0001](EP0001-x.md) | A | Draft | -- | -- | d | d |",
+                    "| [EP0002](EP0002-x.md) | B | Draft | -- | -- | d | d |",
+                    "| [EP0003](EP0003-x.md) | C | Draft | -- | -- | d | d |")
+        deps = {d["id"]: d["expected"]
+                for d in reconcile.epic_index_derivable_drift(self.root) if d["column"] == "Deps"}
+        self.assertEqual("EP0009, EP0002", deps.get("EP0001"), "file order is the author's choice")
+        self.assertEqual(sdlc_md.DEPS_DECLARED_NONE, deps.get("EP0002"))
+        self.assertNotIn("EP0003", deps,
+                         "an epic with no Dependencies section had a Deps cell invented for it")
+        reconcile.apply_epic_index_derivable(self.root)
+        self.assertEqual("--", self._cells("EP0003")[4],
+                         "the absent-section row was written anyway")
+        self.assertNotEqual(sdlc_md.CELL_NOT_STATED, sdlc_md.DEPS_DECLARED_NONE,
+                            "the two states must stay distinguishable")
+
+    def test_apply_rewrites_only_the_derived_cell_on_a_shifted_or_escaped_row(self) -> None:
+        """AC3. Both halves are load-bearing, and `apply_linked_epics` records what happens without
+        them: the first version wrote an id over the Date column and left the real cell untouched,
+        so the row lost data AND re-drifted next run.
+
+        MUTANT: split on every `|`. The escaped pipe inside the title shifts every later cell, so
+        the count lands in Deps and the title is truncated.
+        """
+        self._epic("EP0001")
+        self._story("US0001", "EP0001")
+        # Stories sits at cell 5 here, NOT the 3 the canonical index puts it at. The first version
+        # of this fixture only swapped Status and Title, which left Stories at 3 - so a mutant
+        # hardcoding `return 3` passed it, and the header lookup was never exercised at all.
+        header = ("# Epics\n\n| ID | Created | Updated | Deps | Status | Stories | Title |\n"
+                  "| --- | --- | --- | --- | --- | --- | --- |\n")
+        self._index(
+            r"| [EP0001](EP0001-x.md) | 2026-01-01 | 2026-01-02 | -- | Draft | -- | A \| B |",
+            header=header)
+        text = (self.epics / "_index.md").read_text(encoding="utf-8")
+        self.assertEqual(5, reconcile._column_index(text, "Stories"),
+                         "the fixture must put Stories somewhere other than the canonical offset")
+        reconcile.apply_epic_index_derivable(self.root)
+        cells = self._cells("EP0001")
+        self.assertEqual("1", cells[5], "the count did not land in the Stories column")
+        self.assertEqual(r"A \| B", cells[6], "the escaped pipe was not honoured - the title lost "
+                                             "data or shifted every cell after it")
+        self.assertEqual("2026-01-01", cells[1])
+        self.assertEqual("2026-01-02", cells[2])
+        self.assertEqual("--", cells[3], "the Deps cell was written from an absent section")
+        self.assertEqual("Draft", cells[4])
+
+    def test_a_row_SHORTER_than_the_header_is_left_alone(self) -> None:
+        """A truncated row has no cell at the derived column's offset. Writing there would either
+        raise or append a value into whatever cell happens to be last."""
+        self._epic("EP0001")
+        self._story("US0001", "EP0001")
+        self._index("| [EP0001](EP0001-x.md) | A | Draft |")
+        before = (self.epics / "_index.md").read_text(encoding="utf-8")
+        self.assertEqual([], reconcile.epic_index_derivable_drift(self.root))
+        reconcile.apply_epic_index_derivable(self.root)
+        self.assertEqual(before, (self.epics / "_index.md").read_text(encoding="utf-8"),
+                         "a short row was rewritten")
+
+    def test_the_derivation_and_the_row_writer_read_one_column_definition(self) -> None:
+        """AC4. One importable answer, so the sibling mint story has an API to agree with rather
+        than a second copy of the same rules."""
+        self.assertTrue(set(sdlc_md.EPIC_DERIVED_COLUMNS) <= set(sdlc_md.EPIC_INDEX_COLUMNS))
+        # The detector iterates the shared definition, not a private list.
+        self._epic("EP0001")
+        self._index("| [EP0001](EP0001-x.md) | A | Draft | -- | -- | d | d |")
+        found = {d["column"] for d in reconcile.epic_index_derivable_drift(self.root)}
+        self.assertTrue(found <= set(sdlc_md.EPIC_DERIVED_COLUMNS),
+                        f"the detector reported a column outside the definition: {found}")
+        # ...and the column is located by header, so a reordered index still resolves.
+        text = (self.epics / "_index.md").read_text(encoding="utf-8")
+        for name in sdlc_md.EPIC_DERIVED_COLUMNS:
+            self.assertIsNotNone(reconcile._column_index(text, name), name)
+
+    def test_a_STALE_LOW_count_is_filled_because_writing_it_loses_nothing(self) -> None:
+        """The rule is LOSS, not placeholder-ness, and this is the case that forced the
+        distinction: a minted epic's row carries a censused `0`, so a placeholder-only rule locked
+        the derivation out of its own value and the first story wired to that epic could never move
+        the cell.
+
+        MUTANT: hold any non-placeholder value. Every epic ever minted freezes at 0 stories, and
+        the wiring US0478 adds cannot work at all.
+        """
+        self._epic("EP0001")
+        for s in ("US0001", "US0002"):
+            self._story(s, "EP0001")
+        self._index("| [EP0001](EP0001-x.md) | A | Draft | 0 | -- | d | d |")
+        self.assertTrue(reconcile._epic_cell_is_derivable("0", "2"))
+        drift = reconcile.epic_index_derivable_drift(self.root)
+        self.assertEqual([("EP0001", "Stories")], [(d["id"], d["column"]) for d in drift])
+        self.assertEqual([], reconcile.epic_index_uncorroborated_advisory(self.root))
+        reconcile.apply_epic_index_derivable(self.root)
+        self.assertEqual("2", self._cells("EP0001")[3])
+
+    def test_the_direction_of_the_disagreement_decides(self) -> None:
+        """Both halves in one place, so a change to either shows up as a change to a rule.
+
+        Up is staleness, down is a record. A row claiming MORE stories than the tree can show is
+        counting files that are not there; writing the smaller number destroys the only trace of
+        them. A row claiming fewer is simply behind.
+        """
+        self.assertTrue(reconcile._epic_cell_is_derivable("--", "0"), "a placeholder always fills")
+        self.assertTrue(reconcile._epic_cell_is_derivable("6", "7"), "a stale-low count fills")
+        self.assertFalse(reconcile._epic_cell_is_derivable("6", "0"), "a downward rewrite loses")
+        self.assertFalse(reconcile._epic_cell_is_derivable("4", "1"), "a downward rewrite loses")
+        self.assertFalse(reconcile._epic_cell_is_derivable("EP0002", "EP0003"),
+                         "a non-numeric cell cannot be judged mechanically")
+
+    def test_a_real_value_the_census_CONTRADICTS_is_advisory_not_drift(self) -> None:
+        """The boundary the whole design rests on, in both directions.
+
+        MUTANT: report a contradicted cell as drift. The blocking lane goes permanently red on a
+        repository nobody broke, and the only way to clear it is to overwrite the value - which is
+        the data loss this refuses. MUTANT 2: drop the advisory entirely, and the contradiction is
+        never mentioned at all, which is worse than reporting it.
+        """
+        self._epic("EP0001")
+        self._index("| [EP0001](EP0001-x.md) | A | Draft | 6 | -- | d | d |")
+        self.assertEqual([], [d for d in reconcile.epic_index_derivable_drift(self.root)
+                              if d["column"] == "Stories"],
+                         "a contradicted real value was reported as mechanical drift")
+        advisory = reconcile.epic_index_uncorroborated_advisory(self.root)
+        self.assertEqual(1, len(advisory))
+        self.assertEqual(("EP0001", "6", "0"),
+                         (advisory[0]["id"], advisory[0]["current"], advisory[0]["expected"]))
+        with contextlib.redirect_stderr(io.StringIO()):   # the hold warning is asserted below
+            reconcile.apply_epic_index_derivable(self.root)
+        self.assertEqual("6", self._cells("EP0001")[3], "apply overwrote a value it must hold")
+
+    def test_apply_reports_what_it_HELD(self) -> None:
+        """A hold nobody is told about is indistinguishable from a cell that matched."""
+        self._epic("EP0001")
+        self._index("| [EP0001](EP0001-x.md) | A | Draft | 6 | -- | d | d |")
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            res = reconcile.apply_epic_index_derivable(self.root)
+        self.assertEqual(["EP0001.Stories"], res["held"])
+        self.assertIn("EP0001", err.getvalue())
+
+    def test_an_index_with_no_derived_columns_is_a_noop(self) -> None:
+        """A consuming project's index may not carry these columns at all. Locating by header
+        returns None there, and the sweep must write nothing rather than guess an offset."""
+        self._epic("EP0001")
+        header = "# Epics\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+        self._index("| [EP0001](EP0001-x.md) | A | Draft |", header=header)
+        self.assertEqual([], reconcile.epic_index_derivable_drift(self.root))
+        before = (self.epics / "_index.md").read_text(encoding="utf-8")
+        reconcile.apply_epic_index_derivable(self.root)
+        self.assertEqual(before, (self.epics / "_index.md").read_text(encoding="utf-8"))
+
+    def test_a_missing_index_is_a_noop(self) -> None:
+        (self.epics / "_index.md").unlink(missing_ok=True)
+        self.assertEqual([], reconcile.epic_index_derivable_drift(self.root))
+        self.assertEqual([], reconcile.epic_index_uncorroborated_advisory(self.root))
+
+    def test_the_census_memo_sees_a_story_REPARENTED_in_place(self) -> None:
+        """The census is memoised - one pass instead of one per epic row, which took 3.3s off a
+        lane that runs on every commit. The memo must not outlive the data it summarises.
+
+        MUTANT: key the memo on the root alone. A story's `Epic` field changes without any file
+        being added or removed, so a root-keyed memo serves the previous answer and the row is
+        derived from a census that is no longer true. Caught here because the reparent happens in
+        the SAME process, which is the only place a memo can be wrong.
+        """
+        self._epic("EP0001")
+        self._epic("EP0002")
+        self._story("US0001", "EP0001")
+        self.assertEqual({"EP0001": 1}, sdlc_md.epic_story_census(self.root))
+        story = self.root / "sdlc-studio" / "stories" / "US0001-x.md"
+        story.write_text(story.read_text(encoding="utf-8").replace("EP0001", "EP0002"),
+                         encoding="utf-8")
+        self.assertEqual({"EP0002": 1}, sdlc_md.epic_story_census(self.root),
+                         "the memo served a stale census after a story was reparented")
+        self.assertEqual(0, sdlc_md.epic_story_count(self.root, "EP0001"))
+        self.assertEqual(1, sdlc_md.epic_story_count(self.root, "EP0002"))
+
+    def test_the_census_memo_is_still_a_memo(self) -> None:
+        """The control on the test above: an implementation that simply never cached would pass it
+        while costing the 3.3s the memo exists to remove."""
+        self._epic("EP0001")
+        self._story("US0001", "EP0001")
+        first = sdlc_md.epic_story_census(self.root)
+        self.assertIs(first, sdlc_md.epic_story_census(self.root),
+                      "an unchanged tree recomputed the census instead of returning the memo")
 
 
 class SupersessionLiveCorpusTests(unittest.TestCase):

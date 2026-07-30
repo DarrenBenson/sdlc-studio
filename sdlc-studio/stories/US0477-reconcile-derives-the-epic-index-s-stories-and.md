@@ -1,6 +1,6 @@
 # US0477: reconcile derives the epic index's Stories and Deps cells from the census and syncs them
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0436
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -58,3 +58,35 @@
 | --- | --- | --- |
 | 2026-07-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-27 | Claude Fable 5 | Groomed: authored from the reviewed breakdown (two adversarial rounds), scope capped to the request per D0069 |
+| 2026-07-30 | Claude Opus 5 | Wired as the `epic-index-derivable` drift kind, with `apply`. The nine-row question is settled by a RULE, not a decision: a placeholder or a count the census EXCEEDS is filled, a count the census FALLS SHORT of is advisory and left alone - so the eight downward rewrites never happen. 11/11 mutants killed |
+
+## Evidence
+
+The nine-row question this story was held on is answered by a rule, so no operator decision is
+needed to introduce the kind.
+
+`apply` is governed by whether the write LOSES anything, not by whether the cell looks empty:
+
+| Row state | Verdict | Why |
+| --- | --- | --- |
+| Placeholder (`--`) | filled | 182 rows here; nothing is lost |
+| Count the census EXCEEDS (EP0008, 6 -> 7) | filled | the tree holds every story the row claims and more, so the row was merely stale |
+| Count the census FALLS SHORT of (8 rows) | advisory, left alone | the row counts stories the tree cannot show; those files exist nowhere, live or archived, so the number is their only trace |
+| No `## Dependencies` section (157 epics) | never written | an absence is not a declaration that there are none |
+
+Two things the direction test bought that a placeholder-only rule could not. It makes the eight
+downward rewrites impossible rather than merely unchosen, so the kind can block from the day it
+lands. And it keeps the derivation able to update its own output: a minted epic's row carries a
+censused `0`, which is a real value - under a placeholder-only rule the first story wired to that
+epic could never move the cell, which is exactly the failure the sibling story US0478 surfaced.
+
+The uncorroborated rows are printed as `advisory (epic-index-uncorroborated)`, never as drift and
+never silently, on the same terms as `already_delivered_advisory`: a blocking lane that can only be
+cleared by destroying a record is a lane that gets switched off.
+
+Two costs found by measuring rather than assuming. The census re-read every story file once per
+epic row - 191 rows over ~600 files, 3.3s on a lane that runs on every commit - so it is memoised
+on a `stat` signature, and a test proves the memo sees a story reparented in the same process (a
+root-keyed memo would serve the previous answer). And `apply` read the index twice, so the column
+offsets could belong to a different revision than the rows being written; it now reads once, which
+removed both the window and an unreachable bounds guard that a mutant showed changed no test.

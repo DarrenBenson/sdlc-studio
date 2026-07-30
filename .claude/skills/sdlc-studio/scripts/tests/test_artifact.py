@@ -2429,5 +2429,119 @@ class ArtifactNewNormalisesFencesTooTests(unittest.TestCase):
                       "markdownlint MD040 refuses")
 
 
+TEMPLATE_EPIC_INDEX = (SCR.parent / "templates" / "indexes" / "epic.md")
+
+
+class EpicRowAgreementTests(unittest.TestCase):
+    """A minted epic row equals the row the derivation would write (US0478).
+
+    Two definitions of an epic row existed and neither knew about the other: the shipped template
+    declared `Owner`/`Stories`/`Target`, this repository's live index declares
+    `Stories`/`Deps`/`Created`/`Updated`, and `row_from_header` had a branch for none of the four -
+    so every mint filled them with `--` and a freshly minted epic was born drifted against the
+    derivation that maintains it. This is the agreement check; the column definition itself lives
+    in `lib/sdlc_md.py` and is imported here rather than restated.
+    """
+
+    def _canonical_index(self, repo: Path) -> None:
+        header = "| " + " | ".join(sdlc_md.EPIC_INDEX_COLUMNS) + " |"
+        _index(repo, "epic", header)
+
+    def test_the_minted_row_equals_the_derived_row(self) -> None:
+        """AC1, cell by cell against the derivation - not against a literal row, which would only
+        prove the test and the mint agree with each other.
+
+        MUTANT: drop the `derived=` argument at the mint site. Stories falls to the
+        unrecognised-column `--`, the row disagrees with the derivation on its first cell, and
+        `reconcile detect` reports the new epic as drifted the moment it is created.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            self._canonical_index(repo)
+            r = artifact.new(repo, "epic", "an epic", {"affects": "src/a.py", "size": "M"})
+            rec = r["id"]
+            text = (repo / "sdlc-studio" / "epics" / "_index.md").read_text(encoding="utf-8")
+            row = next(l for l in text.splitlines() if l.startswith(f"| [{rec}]"))
+            cells = reconcile._split_row_cells(row)
+            columns = list(sdlc_md.EPIC_INDEX_COLUMNS)
+            derived = sdlc_md.derive_epic_row_cells(repo, rec)
+            for name, value in derived.items():
+                with self.subTest(column=name):
+                    self.assertEqual(value, cells[columns.index(name)],
+                                     f"the minted {name} cell disagrees with the derivation")
+            self.assertEqual("0", cells[columns.index("Stories")],
+                             "a new epic must be minted with a censused zero, not a placeholder")
+            self.assertEqual(sdlc_md.CELL_NOT_STATED, cells[columns.index("Deps")],
+                             "a scaffold declares no Dependencies section, so Deps must stay "
+                             "not-stated rather than claiming the epic has no dependencies")
+            self.assertEqual([], reconcile.epic_index_derivable_drift(repo),
+                             "the freshly minted epic is already drifted")
+
+    def test_wiring_a_story_updates_the_stories_cell_on_both_mint_paths(self) -> None:
+        """AC2, and the two paths are asserted SEPARATELY because the batch path is the one that
+        skipped the wiring.
+
+        MUTANT: refresh on the single path only. The batch path - which is how `refine --into` and
+        every sprint scaffold create stories - leaves the epic's count stale until someone
+        remembers to reconcile, which is the claim this tooling makes and would not be keeping.
+        """
+        for path_name in ("single", "batch"):
+            with self.subTest(mint=path_name), tempfile.TemporaryDirectory() as d:
+                repo = Path(d)
+                self._canonical_index(repo)
+                _index(repo, "story", "| ID | Title | Status | Points | Epic | Created |")
+                ep = artifact.new(repo, "epic", "an epic",
+                                  {"affects": "src/a.py", "size": "M"})["id"]
+                _epic(repo, ep)     # the epic file needs a Story Breakdown to wire into
+                index = repo / "sdlc-studio" / "epics" / "_index.md"
+                columns = list(sdlc_md.EPIC_INDEX_COLUMNS)
+
+                def stories_cell() -> str:
+                    row = next(l for l in index.read_text(encoding="utf-8").splitlines()
+                               if l.startswith(f"| [{ep}]"))
+                    return reconcile._split_row_cells(row)[columns.index("Stories")]
+
+                self.assertEqual("0", stories_cell())
+                fields = {"epic": ep, "affects": "src/a.py", "points": 2}
+                if path_name == "single":
+                    artifact.new(repo, "story", "a story", dict(fields))
+                else:
+                    artifact.new_batch(repo, "story",
+                                       [{"title": "a story", **fields}], dict(fields))
+                self.assertEqual("1", stories_cell(),
+                                 f"the {path_name} mint path left the epic's Stories cell stale")
+                self.assertEqual([], reconcile.epic_index_derivable_drift(repo),
+                                 f"the {path_name} path left the index drifted")
+
+    def test_the_template_header_equals_the_canonical_column_definition(self) -> None:
+        """AC3, with neither side restated as a literal here. Whichever column set is chosen, the
+        shipped template and the tooling cannot disagree again - and a consuming project installs
+        the template, so a template teaching a column set nothing writes teaches it to everyone.
+        """
+        text = TEMPLATE_EPIC_INDEX.read_text(encoding="utf-8")
+        header = next(l for l in text.splitlines()
+                      if l.startswith("| ID |") and "Status" in l)
+        declared = tuple(c.strip() for c in reconcile._split_row_cells(header))
+        self.assertEqual(sdlc_md.EPIC_INDEX_COLUMNS, declared,
+                         "the shipped epic-index template and the canonical column definition "
+                         "declare different columns")
+        # ...and the template's own data row has a cell per column, or it renders a broken table.
+        row = next(l for l in text.splitlines() if l.startswith("| [EP{{epic_id}}]"))
+        self.assertEqual(len(declared), len(reconcile._split_row_cells(row)),
+                         "the template's data row does not have one cell per declared column")
+
+    def test_a_non_epic_mint_is_unaffected(self) -> None:
+        """The control. Passing `derived=` only for an epic means every other type still fills its
+        unrecognised columns with the placeholder, which several index shapes rely on."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Stories | Created |")
+            r = artifact.new(repo, "bug", "a defect", dict(GROOM))
+            text = (repo / "sdlc-studio" / "bugs" / "_index.md").read_text(encoding="utf-8")
+            row = next(l for l in text.splitlines() if l.startswith(f"| [{r['id']}]"))
+            self.assertEqual(sdlc_md.CELL_NOT_STATED, reconcile._split_row_cells(row)[3],
+                             "a bug index that happens to carry a Stories column was censused")
+
+
 if __name__ == "__main__":
     unittest.main()
