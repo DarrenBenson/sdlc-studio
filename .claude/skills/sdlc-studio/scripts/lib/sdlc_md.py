@@ -549,8 +549,21 @@ _EPIC_STORY_CENSUS: dict[tuple, dict[str, int]] = {}
 
 
 def _stories_signature(d: Path) -> tuple:
-    return tuple(sorted((p.name, s.st_mtime_ns, s.st_size)
-                        for p in d.glob("*.md") if (s := p.stat())))
+    """A signature over the stories directory, tolerant of a file that cannot be stat'd.
+
+    `p.stat()` on a dangling symlink raises, and the pre-memo census read every file through
+    `read_text_safe` and tolerated one. An unreadable entry must not abort the whole sweep, so it
+    contributes a sentinel: the census still recomputes, it just cannot be told apart from another
+    unreadable state, which is the safe direction.
+    """
+    out = []
+    for p in sorted(d.glob("*.md")):
+        try:
+            s = p.stat()
+            out.append((p.name, s.st_mtime_ns, s.st_size))
+        except OSError:
+            out.append((p.name, None, None))
+    return tuple(out)
 
 
 def epic_story_census(repo_root) -> dict[str, int]:
@@ -574,9 +587,15 @@ def epic_story_census(repo_root) -> dict[str, int]:
         rec = extract_record_id(path.stem)
         if not rec or not rec.startswith("US"):
             continue
-        epic = (extract_field(read_text_safe(path), "Epic") or "").strip()
-        if epic:
-            counts[epic] = counts.get(epic, 0) + 1
+        # The id is EXTRACTED from the field, not compared to it whole. The shipped story template
+        # writes the LINKED form `> **Epic:** [EP0001: Title](../epics/EP0001-x.md)`, and a strict
+        # equality read counts none of those - which wrote a story count of 7 into a row whose true
+        # count was 18. Every other reader of this field in the family already used this idiom
+        # (transition, verify_ac, sprint, ac_scope, mutation); the census was the one that did not.
+        field = extract_field(read_text_safe(path), "Epic") or ""
+        m = ID_SEARCH_RE.search(field)
+        if m:
+            counts[norm_id(m.group(0))] = counts.get(norm_id(m.group(0)), 0) + 1
     # Bounded: a long-lived process reconciling many trees must not accumulate a census per edit.
     if len(_EPIC_STORY_CENSUS) > 8:
         _EPIC_STORY_CENSUS.clear()
@@ -585,8 +604,12 @@ def epic_story_census(repo_root) -> dict[str, int]:
 
 
 def epic_story_count(repo_root, epic_id: str) -> int:
-    """How many story files name `epic_id` in their `Epic` field. A census, never a stored total."""
-    return epic_story_census(repo_root).get(epic_id, 0)
+    """How many story files name `epic_id` in their `Epic` field. A census, never a stored total.
+
+    Both sides normalised, so `EP-0008` and `EP0008` are one epic on the reading side as well as
+    the counting side.
+    """
+    return epic_story_census(repo_root).get(norm_id(epic_id), 0)
 
 
 def epic_declared_deps(repo_root, epic_id: str) -> list | None:
@@ -595,8 +618,13 @@ def epic_declared_deps(repo_root, epic_id: str) -> list | None:
     THREE states, and the third is why this returns None rather than an empty list:
       - `["EP0001", "EP0002"]` - the section names dependencies;
       - `[]`                   - the section exists and names none, so the epic has DECLARED none;
-      - `None`                 - there is no `## Dependencies` section at all, so nobody has said.
-    Collapsing the last two would rewrite an absence as a declaration the epic never made.
+      - `None`                 - nobody has said: there is no `## Dependencies` section, OR the
+                                 section holds rows this reader cannot parse.
+    Collapsing the last two would rewrite an absence as a declaration the epic never made - which
+    is what the earlier version did, because it returned `[]` for a section full of rows it could
+    not read. `artifact.py new --type epic --template full` emits the template's unrendered
+    `| {{dependency}} | ... |` row, so a freshly minted epic declared "no dependencies" on the
+    strength of a placeholder. An unparseable row is now unknown, not empty.
     """
     found = find_by_id(Path(repo_root), epic_id)
     if not found:
@@ -611,16 +639,46 @@ def epic_declared_deps(repo_root, epic_id: str) -> list | None:
     nxt = re.search(r"^## (?!Dependencies)", section[3:], re.M)
     if nxt:
         section = section[:nxt.start() + 3]
-    out: list[str] = []
+    # Narrow to `### Blocked By` when the epic has one, then to the FIRST contiguous table in
+    # whatever remains. A Dependencies section can hold more than one table - EP0010 carries a
+    # second `| Item | Type | Impact |` table of downstream effects - and reading them all judged
+    # rows that are not dependency declarations at all.
+    blocked = section.find("### Blocked By")
+    if blocked != -1:
+        section = section[blocked:]
+    rows: list[list[str]] = []
     for line in section.splitlines():
-        if not line.startswith("|"):
-            continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if line.lstrip().startswith("|"):
+            rows.append([c.strip() for c in line.strip().strip("|").split("|")])
+        elif rows:
+            break                                     # the first table has ended
+    out: list[str] = []
+    for cells in rows:
         if not cells or not cells[0]:
             continue
-        m = re.match(r"^(EP\d{4}|EP-\d{4})$", cells[0])
-        if m:
-            out.append(cells[0].replace("-", ""))
+        first = cells[0]
+        if set(first) <= set("-: ") or first.lower() in ("dependency", "id", "item"):
+            continue                                  # the table's own header and separator
+        # An explicit `| None |` / `| -- |` row is the author SAYING there are none. It contributes
+        # no dependency and it does not make the section unreadable - four founding epics and
+        # EP0010 declare it exactly that way, and treating it as unparseable would have turned five
+        # real declarations into "nobody has said".
+        if first.lower() in ("none", "n/a", "-", "--", "–", "—"):
+            continue
+        # ONE id per cell. `| EP0002, EP0003 |` yielded EP0002 and dropped EP0003 silently, so a
+        # declared dependency vanished - a cell naming two is not a row this reader can resolve.
+        found_ids = [norm_id(x) for x in ID_SEARCH_RE.findall(first)]
+        epics = [x for x in found_ids if x.startswith("EP")]
+        if len(epics) == 1 and len(found_ids) == 1:
+            out.append(epics[0])                      # bare or linked: `EP0001`, `[EP-0001](...)`
+        else:
+            # A row naming something this reader cannot resolve to an epic and that is not an
+            # explicit none - an unrendered `{{dependency}}`, an external dependency, two ids in
+            # one cell. The section HAS content, so "declares none" is the one answer that is
+            # certainly wrong. `artifact.py new --type epic --template full` emits the template's
+            # unrendered placeholder row, so a freshly minted epic used to declare "no
+            # dependencies" on the strength of `{{dependency}}`.
+            return None
     return out
 
 
@@ -2356,6 +2414,11 @@ def child_parent(source) -> str | None:
 # both verbs, so its direction comes from the value instead; recording both directions for it
 # manufactured a reversed phantom pair for every one of the fifteen in the corpus.
 
+#: `[text](url)` - reduced to its TEXT before ids are scanned, so a link's target contributes no
+#: id and its label still does. Applied before the parenthetical strip, since a link's URL is
+#: itself a parenthetical run.
+_MD_LINK_RE = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+
 #: `> **Superseded by:** X`, `> **Supersedes (in part):** X`, and the dated prose forms
 #: `> **Superseded 2026-07-04 by [CR-0142](...).**` - the label is whatever sits inside the bold
 #: run, and it qualifies on containing the verb.
@@ -2414,9 +2477,19 @@ def supersession_declarations(source, own: str | None = None) -> list[dict]:
     out: list[dict] = []
     for label, value in SUPERSESSION_FIELD_RE.findall(text):
         label, value = label.strip(), value.strip()
-        whole = f"{label} {value}"
+        # A PARENTHETICAL is an annotation, not a counterpart. `decomposed_ids` strips them for
+        # exactly this reason, twenty lines below, and this reader did not - so
+        # a field like `> **Superseded-by:** X (shipped via Y; residual folded into X)` read Y as a
+        # second superseder and manufactured a pair that never existed. It reached the waiver set
+        # with a reason asserting something untrue about an artefact that superseded nothing, and
+        # the entry could only ever have been cleared by writing a false declaration.
+        #
+        # Markdown links are kept: a linked id is how a corpus writes a followable reference, so
+        # the URL is dropped and the link TEXT retained rather than the whole run.
+        scannable = _MD_LINK_RE.sub(r"\1", f"{label} {value}")
+        scannable = _PAREN_RUN_RE.sub(" ", scannable)
         ids: list[str] = []
-        for m in ID_SEARCH_RE.finditer(whole):
+        for m in ID_SEARCH_RE.finditer(scannable):
             rec = norm_id(m.group(0))
             if rec != mine and rec not in ids:
                 ids.append(rec)

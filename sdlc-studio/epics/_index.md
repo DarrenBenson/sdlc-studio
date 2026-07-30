@@ -27,10 +27,10 @@
 | [EP0002](EP0002-decomposition.md) | Decomposition (Epics & Stories) | Done | 4 | EP0001 | 2026-06-20 | 2026-06-20 |
 | [EP0003](EP0003-implementation.md) | Implementation & Planning | Done | 4 | EP0002 | 2026-06-20 | 2026-06-20 |
 | [EP0004](EP0004-testing.md) | Testing Pipeline | Done | 4 | EP0002, EP0003 | 2026-06-20 | 2026-06-20 |
-| [EP0005](EP0005-quality-drift.md) | Quality & Drift Control | Done | 5 | None | 2026-06-20 | 2026-06-20 |
+| [EP0005](EP0005-quality-drift.md) | Quality & Drift Control | Done | 13 | None | 2026-06-20 | 2026-06-20 |
 | [EP0006](EP0006-change-management.md) | Change Management (CR/RFC/Bug) | Done | 4 | EP0001 | 2026-06-20 | 2026-06-20 |
-| [EP0007](EP0007-orchestration.md) | Agentic Orchestration | Done | 4 | EP0002, EP0003, EP0005 | 2026-06-20 | 2026-06-20 |
-| [EP0008](EP0008-tooling-scripts.md) | Tooling & Scripts | Done | 7 | None | 2026-06-20 | 2026-06-20 |
+| [EP0007](EP0007-orchestration.md) | Agentic Orchestration | Done | 10 | EP0002, EP0003, EP0005 | 2026-06-20 | 2026-06-20 |
+| [EP0008](EP0008-tooling-scripts.md) | Tooling & Scripts | Done | 18 | None | 2026-06-20 | 2026-06-20 |
 | [EP0009](EP0009-onboarding-doctrine.md) | Onboarding & Doctrine | Done | 5 | None | 2026-06-20 | 2026-06-20 |
 | [EP0010](EP0010-skill-self-improvement-token-economy-learning-loop-consuming.md) | Skill self-improvement: token economy + learning loop (consuming-repo lessons) | Done | 11 | None | 2026-06-27 | 2026-06-27 |
 | [EP0011](EP0011-executable-mutation-check-gate-assertion-integrity-enforced.md) | Executable mutation-check gate (assertion integrity, enforced) | Done | 4 | -- | 2026-07-04 | 2026-07-04 |

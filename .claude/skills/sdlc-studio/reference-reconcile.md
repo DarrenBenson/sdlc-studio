@@ -38,8 +38,9 @@ The epic index's derived cells work the same way (`epic-index-derivable`). `Stor
 of the story files naming that epic and `Deps` comes from its `## Dependencies` table, so both are
 derived rather than authored - and `apply` fills them. What it will **not** do is lose anything: a
 placeholder is filled, a count the census EXCEEDS is filled (the row was merely stale), and a count
-the census FALLS SHORT of is reported and left alone, because a row claiming stories the tree cannot
-show is the only surviving record of them. Those are printed as
+the census FALLS SHORT of is reported and left alone: in this repository each such row records an
+estimate made before stories were individually tracked, so the number is a claim about delivered
+work that never became story artefacts and nothing mechanical can settle it. Those are printed as
 `advisory (epic-index-uncorroborated)` and never change an exit code, on the same terms as the
 already-delivered advisory: a blocking lane that can only be cleared by destroying a record is a
 lane that gets switched off.

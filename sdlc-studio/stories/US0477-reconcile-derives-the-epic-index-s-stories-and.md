@@ -71,7 +71,7 @@ needed to introduce the kind.
 | --- | --- | --- |
 | Placeholder (`--`) | filled | 182 rows here; nothing is lost |
 | Count the census EXCEEDS (EP0008, 6 -> 7) | filled | the tree holds every story the row claims and more, so the row was merely stale |
-| Count the census FALLS SHORT of (8 rows) | advisory, left alone | the row counts stories the tree cannot show; those files exist nowhere, live or archived, so the number is their only trace |
+| Count the census FALLS SHORT of (6 rows) | advisory, left alone | each equals its epic's `**Estimated Story Count:**` and its unlinked `- [x] US:` stubs - a pre-tracking estimate, not a file count. NOT because the files were deleted: no story file has ever been deleted in this repo's history. That first explanation was wrong and an independent review falsified it |
 | No `## Dependencies` section (157 epics) | never written | an absence is not a declaration that there are none |
 
 Two things the direction test bought that a placeholder-only rule could not. It makes the eight

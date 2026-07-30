@@ -4043,6 +4043,24 @@ class SupersessionTests(unittest.TestCase):
         p.unlink()
         self.assertEqual("absent", reconcile.read_supersession_waivers(self.root)["state"])
 
+    def test_a_CORRUPT_waiver_file_makes_the_DETECTOR_refuse(self) -> None:
+        """The level that matters, and the level the sibling test above does not reach.
+
+        Asserting the reader's return string proved nothing about the sweep: the state was computed
+        and never read, so a malformed file reported every tolerated pair as a fresh finding with
+        nothing saying it could not be parsed - burying whatever was genuinely new. An independent
+        review caught the test asserting one level below its own name.
+        """
+        _artefact(self.root, "change-requests", "CR0100", "> **Supersedes:** CR0090")
+        _artefact(self.root, "change-requests", "CR0090", "")
+        (self.root / "sdlc-studio" / ".supersession-waivers.json").write_text(
+            "{not json", encoding="utf-8")
+        drift = self._drift()
+        self.assertEqual(1, len(drift), "a corrupt waiver file did not produce ONE refusal")
+        self.assertIn("could not be read", drift[0]["fix"])
+        self.assertNotIn("still reads as live", drift[0]["fix"],
+                         "the per-pair findings were reported over an unreadable waiver file")
+
     def test_an_id_that_resolves_to_no_artefact_is_reported(self) -> None:
         _artefact(self.root, "change-requests", "CR0100", "> **Supersedes:** CR7777")
         drift = self._drift()
@@ -4280,7 +4298,12 @@ class EpicIndexDerivedTests(unittest.TestCase):
         self._index("| [EP0001](EP0001-x.md) | A | Draft | 6 | -- | d | d |")
         with contextlib.redirect_stderr(io.StringIO()) as err:
             res = reconcile.apply_epic_index_derivable(self.root)
-        self.assertEqual(["EP0001.Stories"], res["held"])
+        # The line is DERIVED from the file, not hardcoded: pinning the number tests the
+        # fixture's header length rather than the behaviour under test.
+        lines = (self.epics / "_index.md").read_text(encoding="utf-8").splitlines()
+        row_no = next(i for i, l in enumerate(lines, 1) if l.startswith("| [EP0001]"))
+        self.assertEqual([f"EP0001.Stories@L{row_no}"], res["held"],
+                         "the held key must name the ROW, not just the epic")
         self.assertIn("EP0001", err.getvalue())
 
     def test_an_index_with_no_derived_columns_is_a_noop(self) -> None:
@@ -4293,6 +4316,141 @@ class EpicIndexDerivedTests(unittest.TestCase):
         before = (self.epics / "_index.md").read_text(encoding="utf-8")
         reconcile.apply_epic_index_derivable(self.root)
         self.assertEqual(before, (self.epics / "_index.md").read_text(encoding="utf-8"))
+
+    def test_the_census_reads_the_LINK_form_the_shipped_template_writes(self) -> None:
+        """The defect that put a wrong number in the tracked index.
+
+        `templates/core/story.md` writes `> **Epic:** [EP0008: Title](../epics/EP0008-x.md)`, and 34
+        story files here carry it. A strict `field == epic_id` read counted NONE of them, so
+        EP0008's row was written as 7 against a true count of 18 - and because the census also
+        decided the hold, three rows were held as "uncorroborated" that simply had stories the
+        reader could not see.
+
+        MUTANT: compare the field whole instead of extracting the id. Every linked story becomes
+        invisible and apply writes a confidently wrong number.
+        """
+        self._epic("EP0001")
+        d = self.root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "US0001-x.md").write_text(
+            "# US0001\n\n> **Status:** Draft\n> **Epic:** EP0001\n", encoding="utf-8")
+        (d / "US0002-x.md").write_text(
+            "# US0002\n\n> **Status:** Draft\n"
+            "> **Epic:** [EP0001: A Title](../epics/EP0001-x.md)\n", encoding="utf-8")
+        (d / "US0003-x.md").write_text(
+            "# US0003\n\n> **Status:** Draft\n> **Epic:** EP-0001\n", encoding="utf-8")
+        self.assertEqual(3, sdlc_md.epic_story_count(self.root, "EP0001"),
+                         "the bare, linked and hyphenated forms must all count as one epic")
+        self._index("| [EP0001](EP0001-x.md) | A | Draft | -- | -- | d | d |")
+        reconcile.apply_epic_index_derivable(self.root)
+        self.assertEqual("3", self._cells("EP0001")[3])
+
+    def test_a_HELD_row_is_not_overwritten_by_a_SIBLING_row_of_the_same_epic(self) -> None:
+        """The decision is per row, so the write must be too.
+
+        MUTANT: key the write by epic id. A multi-view index - which
+        `_within_table_dup_counts` documents as legitimate - then let one row's fillable verdict act
+        on another row's held cell, so apply printed "left alone" and wrote over that very cell,
+        returning the same key in `synced` AND `held`.
+        """
+        self._epic("EP0001")
+        for s in ("US0001", "US0002", "US0003"):
+            self._story(s, "EP0001")
+        # Two views of the same epic: the first row is held (claims more than the tree shows), the
+        # second is a placeholder and fillable.
+        self._index("| [EP0001](EP0001-x.md) | A | Draft | 9 | -- | d | d |",
+                    "| [EP0001](EP0001-x.md) | A | Done  | -- | -- | d | d |")
+        with contextlib.redirect_stderr(io.StringIO()):
+            res = reconcile.apply_epic_index_derivable(self.root)
+        rows = [l for l in (self.epics / "_index.md").read_text(encoding="utf-8").splitlines()
+                if l.startswith("| [EP0001]")]
+        self.assertEqual("9", reconcile._split_row_cells(rows[0])[3],
+                         "the held row was overwritten by its sibling's verdict")
+        self.assertEqual("3", reconcile._split_row_cells(rows[1])[3])
+        self.assertEqual(set(), set(res["synced"]) & set(res["held"]),
+                         "the same cell was reported both written and held")
+
+    def test_the_column_is_resolved_per_TABLE_and_odd_headers_still_resolve(self) -> None:
+        """`startswith("| ID |")` failed three ways at once, each a silent no-op on a drifted index.
+
+        MUTANT: match the header by that literal. A padded header, a header with no spaces and an
+        indented one all resolve to None - the sweep reports clean and writes nothing - and on a
+        two-table index the first table's offsets get applied to the second table's rows.
+        """
+        for header in ("| ID     | Title | Status | Stories | Deps | Created | Updated |",
+                       "|ID|Title|Status|Stories|Deps|Created|Updated|",
+                       "   | ID | Title | Status | Stories | Deps | Created | Updated |"):
+            with self.subTest(header=header.strip()[:24]):
+                sep = "| " + " | ".join(["---"] * 7) + " |"
+                self._epic("EP0001")
+                self._story("US0001", "EP0001")
+                (self.epics / "_index.md").write_text(
+                    f"# Epics\n\n{header}\n{sep}\n"
+                    "| [EP0001](EP0001-x.md) | A | Draft | -- | -- | d | d |\n", encoding="utf-8")
+                drift = reconcile.epic_index_derivable_drift(self.root)
+                self.assertEqual([("EP0001", "Stories")],
+                                 [(d["id"], d["column"]) for d in drift],
+                                 f"a drifted index read as clean under header {header!r}")
+
+    def test_two_tables_with_DIFFERENT_columns_do_not_lend_each_other_offsets(self) -> None:
+        self._epic("EP0001")
+        self._story("US0001", "EP0001")
+        body = ("# Epics\n\n"
+                "| ID | Title | Status | Stories | Deps | Created | Updated |\n"
+                "| --- | --- | --- | --- | --- | --- | --- |\n"
+                "| [EP0001](EP0001-x.md) | A | Draft | -- | -- | d | d |\n"
+                "\n## Sign-off\n\n"
+                "| ID | Title | Reviewer | Sign-off |\n"
+                "| --- | --- | --- | --- |\n"
+                "| [EP0001](EP0001-x.md) | A | Claude Opus 5 | 2026-07-09 |\n")
+        (self.epics / "_index.md").write_text(body, encoding="utf-8")
+        reconcile.apply_epic_index_derivable(self.root)
+        out = (self.epics / "_index.md").read_text(encoding="utf-8")
+        self.assertIn("| Claude Opus 5 | 2026-07-09 |", out,
+                      "the second table's unrelated columns were overwritten")
+        first = [l for l in out.splitlines() if l.startswith("| [EP0001]")][0]
+        self.assertEqual("1", reconcile._split_row_cells(first)[3])
+
+    def test_an_explicit_None_dependency_row_IS_a_declaration(self) -> None:
+        """Four founding epics and EP0010 write `| None | -- | -- | -- |`, which is the author
+        saying there are none. Reading it as unparseable turned five real declarations into
+        "nobody has said"."""
+        self._epic("EP0001", "| None | -- | -- | -- |")
+        self.assertEqual([], sdlc_md.epic_declared_deps(self.root, "EP0001"))
+
+    def test_an_UNPARSEABLE_dependency_row_is_not_a_declaration_of_none(self) -> None:
+        """The fourth state. `artifact.py new --type epic --template full` emits the template's
+        unrendered `| {{dependency}} | ... |`, so a minted epic declared "no dependencies" on the
+        strength of a placeholder - AC2's own failure mode through a different door.
+
+        MUTANT: return `[]` for a row this reader cannot resolve. `Deps` is then written as the
+        declared-none value from a placeholder, an external dependency, or two ids in one cell.
+        """
+        for row in ("| {{dependency}} | {{type}} | -- | -- |",
+                    "| Payment gateway contract | External | -- | -- |",
+                    "| EP0002, EP0003 | Epic | -- | -- |"):
+            with self.subTest(row=row[:32]):
+                self._epic("EP0050", row)
+                self.assertIsNone(sdlc_md.epic_declared_deps(self.root, "EP0050"),
+                                  "an unresolvable dependency row read as a declaration of none")
+
+    def test_a_second_table_in_the_Dependencies_section_is_not_read_as_dependencies(self) -> None:
+        """EP0010 carries a `| Item | Type | Impact |` table of downstream effects after its
+        Blocked By table. Reading the whole section judged rows that are not declarations."""
+        self._epic("EP0060", "| EP0002 | Epic | Done | X |\n\n"
+                             "### Downstream\n\n"
+                             "| Item | Type | Impact |\n| --- | --- | --- |\n"
+                             "| the release notes | Doc | rewrite |")
+        self.assertEqual(["EP0002"], sdlc_md.epic_declared_deps(self.root, "EP0060"))
+
+    def test_a_dangling_symlink_in_stories_does_not_abort_the_sweep(self) -> None:
+        """The memo added an unguarded `stat()` where the previous reader used `read_text_safe`.
+        A broken symlink aborted the whole `reconcile detect` with FileNotFoundError."""
+        self._epic("EP0001")
+        self._story("US0001", "EP0001")
+        (self.root / "sdlc-studio" / "stories" / "US9999-gone.md").symlink_to(
+            self.root / "sdlc-studio" / "stories" / "nothing-here.md")
+        self.assertEqual(1, sdlc_md.epic_story_count(self.root, "EP0001"))
 
     def test_a_missing_index_is_a_noop(self) -> None:
         (self.epics / "_index.md").unlink(missing_ok=True)
@@ -4344,9 +4502,14 @@ class SupersessionLiveCorpusTests(unittest.TestCase):
         """
         waivers = reconcile.read_supersession_waivers(self.REPO)
         self.assertEqual("ok", waivers["state"], waivers["detail"])
-        self.assertEqual(11, len(waivers["pairs"]),
+        self.assertEqual(10, len(waivers["pairs"]),
                          "the tolerated set changed - it may only SHRINK, and it shrinks by "
                          "writing the missing declaration, never by deleting the entry")
+        # 11 -> 10: BG0174>CR0255 was a PHANTOM. `> **Superseded-by:** CR0256 (discoverability
+        # shipped via BG0174; ...)` had its parenthetical scanned for ids, so a delivery mention
+        # became a second superseder - and the entry asserted something untrue about a bug that
+        # superseded nothing, clearable only by writing a false declaration. Found by an
+        # independent review.
         for key, entry in waivers["pairs"].items():
             with self.subTest(pair=key):
                 self.assertRegex(key, r"^[A-Z]+\d{4}>[A-Z]+\d{4}$")
@@ -4363,8 +4526,19 @@ class SupersessionLiveCorpusTests(unittest.TestCase):
                 reconcile, "read_supersession_waivers",
                 return_value={"state": "absent", "pairs": {}, "detail": "patched"}):
             found = reconcile.supersession_asymmetry_drift(self.REPO)
-        self.assertEqual(11, len(found),
+        self.assertEqual(10, len(found),
                          f"the waived set and what the detector finds disagree: {len(found)}")
+        # Set equality, not just a count: two counts that agree can still be about different
+        # pairs, so a stale waiver for a repaired pair would survive behind a matching number.
+        self.assertEqual(set(reconcile.read_supersession_waivers(self.REPO)["pairs"]),
+                         {reconcile.supersession_key(*self._pair(f["fix"])) for f in found},
+                         "the waived SET and the found set are not the same pairs")
+
+    @staticmethod
+    def _pair(fix: str) -> tuple:
+        import re as _re
+        ids = _re.findall(r"\b(?:US|BG|CR|RFC|EP)\d{4}\b", fix)
+        return (ids[0], ids[1]) if "says it supersedes" in fix else (ids[1], ids[0])
 
     def test_the_kind_is_registered_in_the_vocabulary_and_the_remediation_registry(self) -> None:
         self.assertIn("supersession-asymmetry", reconcile.DRIFT_KINDS)

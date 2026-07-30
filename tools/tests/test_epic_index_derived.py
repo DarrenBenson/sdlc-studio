@@ -35,18 +35,25 @@ def _mod(name: str):
 reconcile = _mod("reconcile")
 sdlc_md = reconcile.sdlc_md
 
-#: The rows whose count the census FALLS SHORT of, pinned with both numbers. Each claims stories
-#: for an epic whose story files exist nowhere - not live, not archived - so writing the censused
-#: number would destroy the only surviving record of that work.
+#: The rows whose count the census FALLS SHORT of, pinned with both numbers.
 #:
-#: EP0008 is deliberately NOT here. Its row said 6 where the tree holds 7, and a census that
-#: EXCEEDS the row loses nothing by being written: the row was merely stale. Distinguishing the two
-#: directions is what lets a minted epic's censused `0` still be updated when its first story
-#: lands - a placeholder-only rule locked the derivation out of its own value.
+#: WHY they are held, corrected after an independent review falsified the first explanation. It is
+#: NOT that their story files were deleted: `git log --diff-filter=DR` over `sdlc-studio/stories/`
+#: shows no story file has ever been deleted or renamed. Each of these six numbers equals its
+#: epic's `**Estimated Story Count:**` and the count of its unlinked `- [x] US:` breakdown stubs,
+#: which EP0001's own file documents as "early placeholder stubs from before stories were
+#: individually tracked - complete in the implementation, not as separate story artefacts". So the
+#: row records an ESTIMATE from before individual tracking, not a count of files. The hold is right;
+#: the reason first written for it was wrong, in this comment and in three other places.
+#:
+#: EP0005, EP0007 and EP0008 were in this set and should never have been. They were held because
+#: the census could not read the `> **Epic:** [EP0008: Title](../epics/...)` link form that the
+#: shipped story template writes and 34 story files here use. EP0008's row was written as `7`
+#: against a true count of 18 - a wrong number committed to the tracked index, justified by a
+#: census that could not see two thirds of the evidence.
 UNCORROBORATED = {
     "EP0001.Stories": ("6", "0"), "EP0002.Stories": ("4", "0"), "EP0003.Stories": ("4", "0"),
-    "EP0004.Stories": ("4", "0"), "EP0005.Stories": ("5", "0"), "EP0006.Stories": ("4", "0"),
-    "EP0007.Stories": ("4", "1"), "EP0009.Stories": ("5", "0"),
+    "EP0004.Stories": ("4", "0"), "EP0006.Stories": ("4", "1"), "EP0009.Stories": ("5", "0"),
 }
 
 

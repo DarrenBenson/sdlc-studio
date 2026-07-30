@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 14 |
 | In Progress | 0 |
-| Fixed | 328 |
+| Fixed | 331 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **425** |
+| **Total** | **428** |
 
 ## All Bugs
 
@@ -143,6 +143,9 @@
 | [BG0423](BG0423-the-commit-gate-s-unit-suite-lane-fails.md) | The commit gate's unit-suite lane fails on the first attempt and passes on an identical retry, twice in one session, costing a full 8-minute gate run each time | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0424](BG0424-test-selection-dropped-a-script-s-own-test.md) | test selection dropped a script's own test module the moment that module measured any read path | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0425](BG0425-main-was-one-line-over-its-own-test.md) | main was one line over its own test-noise ratchet, so the noise gate was enforcing nothing | Fixed | Medium | 2026-07-30 | 2026-07-30 |
+| [BG0426](BG0426-the-epic-story-census-could-not-read-the.md) | the epic story census could not read the linked Epic field the shipped template writes, and a wrong count was committed | Fixed | High | 2026-07-30 | 2026-07-30 |
+| [BG0427](BG0427-the-epic-index-sweep-decided-per-row-and.md) | the epic-index sweep decided per row and wrote per epic id, resolved the header by one literal spelling, and read an unparseable dependency row as a declaration of none | Fixed | High | 2026-07-30 | 2026-07-30 |
+| [BG0428](BG0428-a-supersession-waiver-was-keyed-on-whoever-declared.md) | a supersession waiver was keyed on whoever declared it rather than on who superseded whom, and a parenthetical annotation manufactured a phantom waived pair | Fixed | High | 2026-07-30 | 2026-07-30 |
 
 ## Archived Releases
 

@@ -1233,17 +1233,57 @@ def apply_linked_epics(repo_root: Path | str, dry_run: bool = False) -> dict:
 _EPIC_ROW_RE = re.compile(r"^\|\s*\[?(EP\d{3,4})")
 
 
-def _column_index(index_text: str, name: str) -> int | None:
-    """The zero-based cell index of a named column, located by HEADER.
+#: A markdown table's separator row (`| --- | :-: |`), which is what identifies the line above it
+#: as a header. Matching on the separator rather than on a spelling of the header text is what
+#: makes this tolerant of `|ID|Title|`, `| ID     | Title |` and an indented table alike.
+_TABLE_SEPARATOR_RE = re.compile(r"^\s*\|(?:\s*:?-{3,}:?\s*\|)+\s*$")
 
-    By header, never by offset: the same failure `apply_linked_epics` records - a hardcoded
-    position wrote an epic id over the Date column and left the real cell untouched, so the row
-    lost data AND re-drifted on the next run.
+
+def _table_headers(index_text: str) -> list[tuple[int, list[str]]]:
+    """`(line index, header cells)` for EVERY table in the document, in order.
+
+    Every table, not the first one whose header starts `| ID |`. That spelling test failed three
+    ways at once: a padded header (`| ID     |`), a header with no spaces (`|ID|`) and an indented
+    one all resolved to None, which made the sweep a silent no-op on a fully drifted index; and on
+    a multi-table index it read the FIRST table's offsets and applied them to rows in the second,
+    writing a story count into whatever column happened to sit there.
     """
-    for line in index_text.splitlines():
-        if line.startswith("| ID |"):
-            cells = _split_row_cells(line)
-            return cells.index(name) if name in cells else None
+    lines = index_text.splitlines()
+    out: list[tuple[int, list[str]]] = []
+    for i, line in enumerate(lines):
+        if i + 1 < len(lines) and line.lstrip().startswith("|") \
+                and _TABLE_SEPARATOR_RE.match(lines[i + 1]):
+            out.append((i, _split_row_cells(line)))
+    return out
+
+
+def _column_index_for(index_text: str, name: str, line_no: int) -> int | None:
+    """The offset of column `name` in the table that CONTAINS `line_no`.
+
+    Per table, because a document may hold several and a row belongs to exactly one of them.
+    """
+    target = None
+    for header_line, cells in _table_headers(index_text):
+        if header_line < line_no:
+            target = cells
+        else:
+            break
+    if target is None:
+        return None
+    lowered = [c.strip().lower() for c in target]
+    return lowered.index(name.strip().lower()) if name.strip().lower() in lowered else None
+
+
+def _column_index(index_text: str, name: str) -> int | None:
+    """The offset of `name` in the first table that declares it, or None.
+
+    Kept for the whole-document question ("does this index carry a Stories column at all?"). A
+    per-ROW answer must come from `_column_index_for`.
+    """
+    for _, cells in _table_headers(index_text):
+        lowered = [c.strip().lower() for c in cells]
+        if name.strip().lower() in lowered:
+            return lowered.index(name.strip().lower())
     return None
 
 
@@ -1263,8 +1303,11 @@ def _epic_cell_is_derivable(current: str, expected: str) -> bool:
     - A count the census EXCEEDS: the row was merely stale and the tree holds every story it
       claims and more, so writing the larger number loses nothing.
     - A count the census FALLS SHORT of: the row counts stories the tree cannot show. Eight rows
-      here claim counts for epics whose story files exist nowhere, and overwriting them would
-      destroy the only surviving record of that work to tidy a number. Held for a human.
+      here record an ESTIMATE made before stories were individually tracked (each equals its
+      epic's `**Estimated Story Count:**` and its unlinked `- [x] US:` stubs), so the row is a
+      claim about delivered work that never became story artefacts. No story file has ever been
+      deleted here, so the first explanation written for this - that the files were gone - was
+      simply wrong; the hold is right for the better reason. Held for a human.
     - A non-numeric cell (a Deps list) that differs: held. A dependency the tree no longer sees may
       have been satisfied and removed rather than never declared, and nothing mechanical can tell.
     """
@@ -1291,22 +1334,25 @@ def _epic_index_cells(repo_root: Path, text: str | None = None) -> list[dict]:
         if not index_path.is_file():
             return []
         text = index_path.read_text(encoding="utf-8")
-    columns = {c: _column_index(text, c) for c in sdlc_md.EPIC_DERIVED_COLUMNS}
     out: list[dict] = []
-    for line in text.splitlines():
+    for i, line in enumerate(text.splitlines()):
         m = _EPIC_ROW_RE.match(line)
         if not m:
             continue
         rec = m.group(1)
         cells = _split_row_cells(line)
         derived = sdlc_md.derive_epic_row_cells(repo_root, rec)
-        for name, col in columns.items():
+        for name in sdlc_md.EPIC_DERIVED_COLUMNS:
+            # Resolved against the table THIS row sits in, so a second epic table with different
+            # columns cannot lend its offsets to the first one's rows.
+            col = _column_index_for(text, name, i)
             if col is None or col >= len(cells) or name not in derived:
                 continue
             current, expected = cells[col], derived[name]
             if current == expected:
                 continue
-            out.append({"id": rec, "column": name, "current": current, "expected": expected,
+            out.append({"id": rec, "line": i, "column": name,
+                        "current": current, "expected": expected,
                         "derivable": _epic_cell_is_derivable(current, expected)})
     return out
 
@@ -1316,7 +1362,7 @@ def epic_index_derivable_drift(repo_root: Path | str) -> list[dict]:
 
     Mechanical only, and that boundary is the whole design. 182 of this repository's rows say `--`
     where a count is derivable, and filling those is pure gain. Nine rows carry a real count the
-    census contradicts - their epics' story files exist nowhere, not live and not archived - and
+    census contradicts - the row records a pre-tracking estimate rather than a file count - and
     those are NOT drift: see `epic_index_uncorroborated_advisory`. Reporting them here would leave
     a blocking lane permanently red on a repository nobody had broken, and the only way to clear it
     would be to overwrite eight counts downward, destroying the last trace of that work to tidy a
@@ -1354,6 +1400,16 @@ def epic_index_uncorroborated_advisory(repo_root: Path | str) -> list[dict]:
             for c in _epic_index_cells(Path(repo_root)) if not c["derivable"]]
 
 
+def _epic_cell_key(cell: dict) -> str:
+    """`EP0001.Stories@L12` - the cell's identity, including which ROW it is.
+
+    The line is part of it because one epic may hold several rows (a multi-view index), and one of
+    them can be written while another is held. Keyed by id alone, the same string appeared in both
+    `synced` and `held` and a reader could not tell which row was which.
+    """
+    return f"{cell['id']}.{cell['column']}@L{cell['line'] + 1}"
+
+
 def apply_epic_index_derivable(repo_root: Path | str, dry_run: bool = False) -> dict:
     """Fill the derivable epic cells, and only those. `{synced, held}`.
 
@@ -1375,36 +1431,34 @@ def apply_epic_index_derivable(repo_root: Path | str, dry_run: bool = False) -> 
               f"`{d['expected']}` - left alone: rewriting a real value from a census that cannot "
               f"corroborate it would drop the only record of it", file=sys.stderr)
     if not fillable or dry_run:
-        return {"synced": [f"{d['id']}.{d['column']}" for d in fillable],
-                "held": [f"{d['id']}.{d['column']}" for d in held]}
-    columns = {c: _column_index(text, c) for c in sdlc_md.EPIC_DERIVED_COLUMNS}
-    wanted: dict[tuple, str] = {(_norm_id(d["id"]), d["column"]): d["expected"] for d in fillable}
+        return {"synced": [_epic_cell_key(d) for d in fillable],
+                "held": [_epic_cell_key(d) for d in held]}
+    # Keyed by LINE, not by id. Keying on the id let one row's verdict act on another row carrying
+    # the same epic: a multi-view index (which `_within_table_dup_counts` documents as legitimate)
+    # made apply print "EP0001 ... left alone" and then write over that very cell in the second
+    # table, destroying unrelated columns. The decision is per row, so the write must be too.
+    wanted: dict[int, dict[str, str]] = {}
+    for c in fillable:
+        wanted.setdefault(c["line"], {})[c["column"]] = c["expected"]
     lines = text.splitlines(True)
     synced = []
     for i, line in enumerate(lines):
-        m = _EPIC_ROW_RE.match(line)
-        if not m:
+        by_column = wanted.get(i)
+        if not by_column:
             continue
-        rec = _norm_id(m.group(1))
+        m = _EPIC_ROW_RE.match(line)
         cells = _split_row_cells(line)
-        changed = False
-        for name, col in columns.items():
-            value = wanted.get((rec, name))
-            # No bounds check on `col`: `wanted` is built from `_epic_index_cells` over the SAME
-            # text, which only reports a cell whose column resolved and whose row is long enough.
-            # A guard here would be unreachable, and an unreachable guard reads as protection and
-            # provides none - a mutant removing it changed no test, which is how it was found.
-            if value is None:
+        for name, value in by_column.items():
+            col = _column_index_for(text, name, i)
+            if col is None or col >= len(cells):
                 continue
             cells[col] = value
-            changed = True
-            synced.append(f"{m.group(1)}.{name}")
-        if changed:
-            newline = "\n" if line.endswith("\n") else ""
-            lines[i] = "| " + " | ".join(cells) + " |" + newline
+            synced.append(_epic_cell_key({"id": m.group(1), "column": name, "line": i}))
+        newline = "\n" if line.endswith("\n") else ""
+        lines[i] = "| " + " | ".join(cells) + " |" + newline
     if synced:
         sdlc_md.atomic_write(index_path, "".join(lines))
-    return {"synced": synced, "held": [f"{d['id']}.{d['column']}" for d in held]}
+    return {"synced": synced, "held": [_epic_cell_key(d) for d in held]}
 
 
 def apply_epic_points(repo_root: Path | str, dry_run: bool = False) -> dict:
@@ -1562,6 +1616,17 @@ def supersession_asymmetry_drift(repo_root: Path | str) -> list[dict]:
     waivers = read_supersession_waivers(root)
     drift: list[dict] = []
     seen: set[str] = set()
+    if waivers["state"] == "corrupt":
+        # ONE finding naming the unreadable file, not one per tolerated pair. The state was
+        # computed and never read, so a malformed waiver file reported all eleven tolerated pairs
+        # as fresh findings with nothing saying the file could not be parsed - burying anything
+        # genuinely new, which is the outcome the reader's own docstring says must not happen. The
+        # sibling ratchet refuses on a baseline it cannot read; this now does the same.
+        return [{"type": "meta", "id": None, "kind": "supersession-asymmetry",
+                 "file_status": None, "index_status": None,
+                 "fix": f"the supersession waiver file could not be read ({waivers['detail']}) - "
+                        f"every tolerated pair would report as new, so nothing is judged until it "
+                        f"parses. Fix the JSON, or delete it to start from an empty tolerated set"}]
 
     # First pass: what each artefact declares, in both directions.
     forward: dict[str, set[str]] = {}     # A -> the ids A says it supersedes
@@ -1579,7 +1644,7 @@ def supersession_asymmetry_drift(repo_root: Path | str) -> list[dict]:
                 _emit_supersession(drift, seen, waivers, rid, rtype, dec["ids"][0],
                                    f"{rid} declares a supersession naming {dec['ids'][0]} whose "
                                    f"direction cannot be read from `{dec['label']}`"
-                                   f" - say `Supersedes:` or `Superseded by:`", ambiguous=True)
+                                   f" - say `Supersedes:` or `Superseded by:`")
 
     # Second pass: every declared pair, judged from the side that declared it.
     for anorm, targets in sorted(forward.items()):
@@ -1588,39 +1653,49 @@ def supersession_asymmetry_drift(repo_root: Path | str) -> list[dict]:
             if bnorm not in index:
                 _emit_supersession(drift, seen, waivers, aid, atype, bnorm,
                                    f"{aid} says it supersedes {bnorm}, which resolves to no "
-                                   f"artefact")
+                                   f"artefact", superseder=aid)
                 continue
             bid = index[bnorm][0]
             if anorm not in backward.get(bnorm, set()):
                 _emit_supersession(drift, seen, waivers, aid, atype, bnorm,
                                    f"{aid} says it supersedes {bid}, but {bid} does not record "
-                                   f"being superseded by {aid} - it still reads as live")
+                                   f"being superseded by {aid} - it still reads as live",
+                                   superseder=aid)
     for bnorm, sources in sorted(backward.items()):
         bid, btype, _ = index[bnorm]
         for anorm in sorted(sources):
             if anorm not in index:
                 _emit_supersession(drift, seen, waivers, bid, btype, anorm,
                                    f"{bid} says it was superseded by {anorm}, which resolves to "
-                                   f"no artefact")
+                                   f"no artefact", superseder=anorm)
                 continue
             aid = index[anorm][0]
             if bnorm not in forward.get(anorm, set()):
                 _emit_supersession(drift, seen, waivers, bid, btype, anorm,
                                    f"{bid} records being superseded by {aid}, but {aid} does not "
-                                   f"say it supersedes {bid}")
+                                   f"say it supersedes {bid}", superseder=aid)
     return drift
 
 
 def _emit_supersession(drift: list, seen: set, waivers: dict, subject_id: str, subject_type: str,
-                       counterpart: str, why: str, *, ambiguous: bool = False) -> None:
-    """One finding per ORDERED pair, waivers applied. Both ends of a pair report the same fact, so
-    without the de-duplication a symmetric-looking corpus would report each gap twice."""
-    a, b = (subject_id, counterpart) if not ambiguous else (subject_id, counterpart)
-    key = supersession_key(a, b)
-    reverse = supersession_key(b, a)
-    if key in seen or reverse in seen:
+                       counterpart: str, why: str, *, superseder: str | None = None) -> None:
+    """One finding per pair, waivers applied.
+
+    `superseder` names which of the two REPLACED the other, so the waiver key is always
+    `superseder>superseded` whichever side declared it. It used to be keyed on whoever declared,
+    which put ten of the eleven live pairs in the file the other way round - and a `reverse in
+    waivers` fallback then hid that, so waiving `A supersedes B` also waived the opposite claim
+    about which design won. The key is directional; the lookup is too.
+
+    De-duplication stays direction-agnostic: both ends of one pair report the same fact, and
+    without that a symmetric-looking corpus reports every gap twice.
+    """
+    sup = superseder or subject_id
+    sed = counterpart if sup == subject_id else subject_id
+    key = supersession_key(sup, sed)
+    if key in seen or supersession_key(sed, sup) in seen:
         return
-    if key in waivers["pairs"] or reverse in waivers["pairs"]:
+    if key in waivers["pairs"]:
         return
     seen.add(key)
     drift.append({"type": subject_type, "id": subject_id, "kind": "supersession-asymmetry",
