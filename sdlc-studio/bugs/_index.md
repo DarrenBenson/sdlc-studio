@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 25 |
+| Open | 26 |
 | In Progress | 0 |
 | Fixed | 331 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **439** |
+| **Total** | **440** |
 
 ## All Bugs
 
@@ -157,6 +157,7 @@
 | [BG0437](BG0437-filing-run-resolves-a-two-id-provenance-line.md) | filing_run resolves a two-id provenance line by document order, so the refusal its criterion promises is nearly unreachable | Open | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0438](BG0438-audit-run-provenance-is-not-durable-the-register.md) | audit-run provenance is not durable: the register and the row accessor disagree, so a seeded run can pass as measured | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0439](BG0439-the-dead-flags-hook-lane-tells-the-operator.md) | the dead-flags hook lane tells the operator it enforces the opposite of what it enforces | Open | Low | 2026-07-30 | 2026-07-30 |
+| [BG0440](BG0440-the-isolated-checkout-rule-is-enforced-author-side.md) | the isolated-checkout rule is enforced author-side only, so `critic brief` issues a reviewer prompt that never states it and nothing notices when parallel reviewers share one tree | Open | High | 2026-07-30 | 2026-07-30 |
 
 ## Archived Releases
 
