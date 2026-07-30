@@ -57,7 +57,7 @@ EXPECTED_LANES = (
     "spec-claims",
     "script-tests", "budgets",
     "neutrality",
-    "action-pins", "floor-pending", "gate", "markdown", "markdown-payload",
+    "action-pins", "dead-flags", "floor-pending", "gate", "markdown", "markdown-payload",
     "skill-tests", "tool-tests",
 )
 

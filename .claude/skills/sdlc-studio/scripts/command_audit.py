@@ -24,6 +24,7 @@ under the root) it is a no-op. Pure stdlib.
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 import subprocess
@@ -174,6 +175,571 @@ def _documented_scripts(skill_dir: Path) -> set[str]:
     return {s for s in doc_coverage._scripts(skill_dir) if f"### `{s}.py`" in refscripts}
 
 
+# --- Dead flags -----------------------------------------------------------------------------
+# A flag whose argparse destination nothing ever ACTS ON. The distinction that matters, and the
+# reason an earlier specification for this was cut: counting the sites that mention a destination
+# cannot find the defect. A `verify_batch` flag was mentioned three times in gate.py - defined, read
+# through a defaulted lookup, and forwarded as a keyword argument into `run_gate` - and no line of
+# `run_gate` read the parameter it arrived in. Every mention-counting rule, and every rule that
+# treats `getattr(args, name, default)` as a read, calls that flag live. So the analysis FOLLOWS
+# the value: a read is a consumption only when the value is acted on where it lands, or where it
+# is forwarded to.
+#
+# Bounds, stated rather than hidden. A value assigned to a local name that nothing then reads is
+# counted as consumed (the follow stops at the call boundary, not the assignment). Positionals are
+# not judged: a flag is what this is about, and argparse enforces a positional's presence whether
+# or not the value is read. And three shapes make a module's unread destinations CANNOT-JUDGE
+# rather than dead, because in each of them the value may be read somewhere this analysis cannot
+# see: a namespace handed to a callee that will not resolve, a `getattr` whose attribute name is
+# computed, and a module that declares flags on a parser it never parses. A fabricated verdict is
+# worse than an absent one.
+
+#: `argparse` actions that never bind a destination, so they are not flags to judge.
+_DESTLESS_ACTIONS = ("help", "version")
+
+#: Directories an escaping namespace's callee is resolved against, relative to the analysed file.
+_SIBLING_DIRS = (".", "lib")
+
+
+def _parents(tree: ast.AST) -> dict:
+    """child node -> parent node, so a read can be judged by where it sits."""
+    return {child: parent
+            for parent in ast.walk(tree) for child in ast.iter_child_nodes(parent)}
+
+
+def _functions(tree: ast.AST) -> dict[str, ast.FunctionDef]:
+    return {n.name: n for n in ast.walk(tree)
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+
+
+def _str_arg(node: ast.AST) -> str | None:
+    return node.value if isinstance(node, ast.Constant) and isinstance(node.value, str) else None
+
+
+def _dotted(node: ast.AST) -> str | None:
+    """`a.b.c` as written, or None for anything that is not a plain dotted name."""
+    parts = []
+    while isinstance(node, ast.Attribute):
+        parts.append(node.attr)
+        node = node.value
+    if not isinstance(node, ast.Name):
+        return None
+    parts.append(node.id)
+    return ".".join(reversed(parts))
+
+
+def argparse_dests(tree: ast.AST) -> dict[str, dict]:
+    """Every destination an OPTIONAL `add_argument` binds: `{dest: {line, flag}}`.
+
+    `dest=` wins; otherwise the first long option names it (`--dry-run` binds `dry_run`), as
+    argparse itself derives it. The flag is carried as written, so the report names the switch
+    an operator types rather than reconstructing a spelling from the destination.
+
+    Positionals are skipped. They are not flags, and argparse makes the caller supply one whether
+    or not any line reads the value, so "never consumed" is not a defect there.
+    """
+    out: dict[str, dict] = {}
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "add_argument"):
+            continue
+        kw = {k.arg: k.value for k in node.keywords if k.arg}
+        if _str_arg(kw.get("action")) in _DESTLESS_ACTIONS:
+            continue
+        names = [s for a in node.args if (s := _str_arg(a))]
+        options = [s for s in names if s.startswith("-")]
+        if not options:
+            continue
+        longs = [s for s in options if s.startswith("--")]
+        flag = longs[0] if longs else options[0]
+        dest = _str_arg(kw.get("dest")) or flag.lstrip("-").replace("-", "_")
+        if dest:
+            out.setdefault(dest, {"line": node.lineno, "flag": flag})
+    return out
+
+
+def _initialisers(tree: ast.AST) -> dict:
+    """class name -> its `__init__`, so a namespace handed to a constructor can be followed."""
+    out = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef):
+            init = next((n for n in node.body
+                         if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+                         and n.name == "__init__"), None)
+            if init is not None:
+                out[node.name] = init
+    return out
+
+
+def _enclosing(node: ast.AST, parents: dict):
+    """The function `node` sits in, or the Module."""
+    cur = parents.get(node)
+    while cur is not None and not isinstance(
+            cur, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Module)):
+        cur = parents.get(cur)
+    return cur
+
+
+def _function_values(scope: ast.AST, functions: dict, parents: dict) -> set[str]:
+    """Module functions this scope names as a VALUE rather than calling - a handler table."""
+    return {n.id for n in ast.walk(scope)
+            if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load) and n.id in functions
+            and not (isinstance(p := parents.get(n), ast.Call) and p.func is n)}
+
+
+def _dispatch_targets(tree: ast.AST, functions: dict) -> set[str]:
+    """The verb handlers `args.func(args)` reaches, from `set_defaults(func=...)`.
+
+    Without these the whole family's dispatch is an unresolvable callee, every destination is
+    cannot-judge, and the detector is inert on the corpus it exists for.
+
+    Reading the argument is not always enough: `retro.py` registers its seven verbs from a table
+    (`for name, fn, helptext in (...): p.set_defaults(func=fn)`), so the argument is a loop
+    variable and all thirteen of that module's flags went unjudged. When the argument does not
+    name a function, the handlers are taken to be the functions that scope names as values.
+
+    Kept to the registered handlers rather than to every function named as a value anywhere:
+    a wider set puts a namespace into parameters that never receive one (gate.py's
+    `_conformance(root, ...)`), and a string read as a namespace escapes on its first use -
+    which cost that module's verdict on the one flag that was actually dead.
+    """
+    parents = _parents(tree)
+    out: set[str] = set()
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "set_defaults"):
+            continue
+        for kw in node.keywords:
+            if kw.arg != "func" or not isinstance(kw.value, ast.Name):
+                continue
+            if kw.value.id in functions:
+                out.add(kw.value.id)
+            else:
+                out |= _function_values(_enclosing(node, parents), functions, parents)
+    return out
+
+
+class _Module:
+    """One module's flag analysis. Built once; every question below reads it."""
+
+    def __init__(self, tree: ast.AST, path: Path | None = None) -> None:
+        self.tree = tree
+        self.path = path
+        self.parents = _parents(tree)
+        self.functions = _functions(tree)
+        self.initialisers = _initialisers(tree)
+        self._bound_methods = frozenset(self.initialisers.values())
+        self.dispatch = _dispatch_targets(tree, self.functions)
+        self._read_index: dict[str, list] | None = None
+        self._binds_cache: dict[tuple, bool] = {}
+        self.namespaces: dict[int, set[str]] = {}
+        self._track_namespaces()
+
+    # -- namespace tracking ------------------------------------------------------------------
+    def _track_namespaces(self) -> None:
+        """Which name holds a parsed namespace, PER SCOPE, followed to a fixed point.
+
+        Per scope rather than per module, because a same-named local is not the namespace. Two
+        real ones cost the analysis its verdict when the names were pooled: `args = shlex.split(
+        tail)` in a verifier helper, and a nested `def _git(*args)` inside gate.py - the second
+        made every flag in that module cannot-judge, the dead one included.
+
+        Seeded from `parse_args()` and from the first parameter of each dispatch target, then
+        widened through in-module calls that pass the namespace on.
+        """
+        for node in ast.walk(self.tree):
+            if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call) \
+                    and isinstance(node.value.func, ast.Attribute) \
+                    and node.value.func.attr == "parse_args":
+                scope = self._enclosing_function(node)
+                for t in node.targets:
+                    if isinstance(t, ast.Name):
+                        self.namespaces.setdefault(id(scope), set()).add(t.id)
+        calls = [n for n in ast.walk(self.tree) if isinstance(n, ast.Call)]
+        widened = True
+        while widened:
+            widened = False
+            for call in calls:
+                for fn in self._callees(call) or ():
+                    for param, value in self._bindings(call, fn):
+                        if isinstance(value, ast.Name) and self._is_namespace(value) \
+                                and param not in self.namespaces.get(id(fn), ()):
+                            self.namespaces.setdefault(id(fn), set()).add(param)
+                            widened = True
+
+    def _binds(self, fn: ast.FunctionDef, name: str) -> bool:
+        """Does this function bind `name` itself - as any kind of parameter, or by assignment?
+
+        `*args` counts. A varargs tuple named `args` is not a namespace, and treating it as one
+        read `["git", *args]` as the namespace leaving the module.
+        """
+        key = (id(fn), name)
+        if key not in self._binds_cache:
+            a = fn.args
+            bound = {x.arg for x in a.posonlyargs + a.args + a.kwonlyargs}
+            bound |= {x.arg for x in (a.vararg, a.kwarg) if x is not None}
+            self._binds_cache[key] = name in bound or any(
+                isinstance(n, (ast.Assign, ast.AugAssign, ast.AnnAssign, ast.NamedExpr))
+                and any(isinstance(t, ast.Name) and t.id == name
+                        for t in (n.targets if isinstance(n, ast.Assign) else [n.target]))
+                for n in ast.walk(fn))
+        return self._binds_cache[key]
+
+    def _callees(self, call: ast.Call) -> list | None:
+        """The in-module functions a call can reach, or None when it leaves this module.
+
+        A class counts: `github_sync` hands the whole namespace to `_PushState(args)`, whose
+        `__init__` is where the flags are read.
+        """
+        func = call.func
+        if isinstance(func, ast.Name):
+            if func.id in self.initialisers:
+                return [self.initialisers[func.id]]
+            fn = self.functions.get(func.id)
+            return [fn] if fn is not None else None
+        if isinstance(func, ast.Attribute) and func.attr == "func" \
+                and isinstance(func.value, ast.Name) and self._is_namespace(func.value):
+            return [self.functions[d] for d in sorted(self.dispatch) if d in self.functions]
+        return None
+
+    def _bindings(self, call: ast.Call, fn: ast.FunctionDef):
+        """(parameter name, argument node) for each argument this call binds by name or index."""
+        params = [a.arg for a in fn.args.posonlyargs] + [a.arg for a in fn.args.args]
+        if fn in self._bound_methods:
+            params = params[1:]        # `self` is supplied by the call, not by the caller
+        for i, value in enumerate(call.args):
+            if isinstance(value, ast.Starred):
+                break
+            if i < len(params):
+                yield params[i], value
+        keywords = params + [a.arg for a in fn.args.kwonlyargs]
+        for kw in call.keywords:
+            if kw.arg in keywords:
+                yield kw.arg, kw.value
+
+    # -- consumption -------------------------------------------------------------------------
+    def _forwarded_to(self, node: ast.AST) -> list[tuple]:
+        """(function, parameter) pairs this value is handed straight on to.
+
+        Empty means the value is not a bare forward into a function this module defines, which
+        is read as a consumption: it is being acted on here, or it has left where we can see.
+        """
+        parent = self.parents.get(node)
+        if isinstance(parent, ast.keyword):
+            call, keyword = self.parents.get(parent), parent.arg
+        elif isinstance(parent, ast.Call) and any(a is node for a in parent.args):
+            call, keyword = parent, None
+        else:
+            return []
+        if not isinstance(call, ast.Call):
+            return []
+        out = []
+        for fn in self._callees(call) or ():
+            for param, value in self._bindings(call, fn):
+                if value is node and (keyword is None or param == keyword):
+                    out.append((fn, param))
+        return out
+
+    def _param_consumed(self, fn: ast.FunctionDef, param: str, seen: frozenset) -> bool:
+        """Does anything act on `param` inside `fn`, or inside what `fn` forwards it to?"""
+        key = (fn.name, param)
+        if key in seen:
+            return False        # a forward-only cycle acts on nothing
+        seen = seen | {key}
+        for node in ast.walk(fn):
+            if not (isinstance(node, ast.Name) and node.id == param
+                    and isinstance(node.ctx, ast.Load)):
+                continue
+            forwards = self._forwarded_to(node)
+            if not forwards:
+                return True
+            if any(self._param_consumed(f, p, seen) for f, p in forwards):
+                return True
+        return False
+
+    def _enclosing_function(self, node: ast.AST):
+        return _enclosing(node, self.parents)
+
+    def _is_namespace(self, node: ast.AST) -> bool:
+        """A named namespace in scope here, or an unnamed one read straight off `parse_args()`.
+
+        Resolved outwards through the scope chain, stopping at the first function that binds the
+        name itself - which is what Python does, and what keeps a same-named local out.
+        """
+        if isinstance(node, ast.Name):
+            scope = self._enclosing_function(node)
+            while scope is not None:
+                if node.id in self.namespaces.get(id(scope), ()):
+                    return True
+                if isinstance(scope, ast.Module) or self._binds(scope, node.id):
+                    return False
+                scope = self._enclosing_function(scope)
+            return False
+        return isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
+            and node.func.attr == "parse_args"
+
+    def _reads(self, dest: str) -> list:
+        """Every site that takes `dest` off a namespace, plain or through a defaulted lookup.
+
+        Indexed on first use: a module declaring thirty flags would otherwise walk its whole tree
+        thirty times, and this runs on every commit.
+        """
+        if self._read_index is None:
+            index: dict[str, list] = {}
+            for node in ast.walk(self.tree):
+                name = None
+                if isinstance(node, ast.Attribute) and isinstance(node.ctx, ast.Load) \
+                        and self._is_namespace(node.value):
+                    name = node.attr
+                elif isinstance(node, ast.Call) and isinstance(node.func, ast.Name) \
+                        and node.func.id == "getattr" and len(node.args) >= 2 \
+                        and self._is_namespace(node.args[0]):
+                    name = _str_arg(node.args[1])
+                if name:
+                    index.setdefault(name, []).append(node)
+            self._read_index = index
+        return self._read_index.get(dest, [])
+
+    def parses(self) -> bool:
+        """Does this module parse a namespace at all?
+
+        A module that only DECLARES arguments - the shared `add_*_arg` helpers, which take the
+        caller's parser as a parameter - binds destinations that are read in the module that
+        parses them. Judging them here would report every shared declarator as dead.
+        """
+        return any(isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                   and n.func.attr == "parse_args" for n in ast.walk(self.tree))
+
+    def dynamic_reads(self) -> list[dict]:
+        """`getattr(args, <computed>, ...)` sites - a read of a destination we cannot name.
+
+        The shared prose-fields loader is built this way (`{k: getattr(args, k, None) for k in
+        keys}`), so treating these as no read at all reported live flags as dead.
+        """
+        out = []
+        for node in ast.walk(self.tree):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) \
+                    and node.func.id == "getattr" and len(node.args) >= 2 \
+                    and self._is_namespace(node.args[0]) and _str_arg(node.args[1]) is None:
+                out.append({"line": node.lineno})
+        return out
+
+    def consumed(self, dest: str) -> bool:
+        """True when at least one read of `dest` reaches a line that acts on the value."""
+        return any(not (f := self._forwarded_to(node))
+                   or any(self._param_consumed(fn, p, frozenset()) for fn, p in f)
+                   for node in self._reads(dest))
+
+    # -- namespace escapes -------------------------------------------------------------------
+    def escapes(self) -> list[dict]:
+        """Sites where the whole namespace leaves the functions this module defines."""
+        out = []
+        for node in ast.walk(self.tree):
+            if not (isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)
+                    and self._is_namespace(node)):
+                continue
+            parent = self.parents.get(node)
+            if isinstance(parent, ast.Attribute):
+                continue                                    # `args.x` - a destination read
+            # A test of the namespace's EXISTENCE reads no destination off it. `resolve_boundary`
+            # guards with `args is not None`, and reading that as an escape made every flag in
+            # gate.py cannot-judge - including the dead one this detector exists to catch.
+            if isinstance(parent, (ast.Compare, ast.UnaryOp, ast.BoolOp)):
+                continue
+            if isinstance(parent, (ast.If, ast.IfExp, ast.While, ast.Assert)) \
+                    and parent.test is node:
+                continue
+            call = self.parents.get(parent) if isinstance(parent, ast.keyword) else parent
+            if not (isinstance(call, ast.Call) and call.func is not node):
+                out.append({"line": node.lineno, "callee": None, "param": None})
+                continue
+            if isinstance(call.func, ast.Name) and call.func.id == "getattr":
+                continue                                    # a defaulted destination read
+            if self._callees(call) is not None:
+                continue                                    # in-module; already analysed
+            index = next((i for i, a in enumerate(call.args) if a is node), None)
+            keyword = parent.arg if isinstance(parent, ast.keyword) else None
+            out.append({"line": node.lineno, "callee": _dotted(call.func),
+                        "param": keyword, "index": index})
+        return out
+
+    def escaped_reads(self) -> tuple[set[str], list[dict]]:
+        """(destinations an escape's callee reads, escapes that could not be resolved).
+
+        The universal escape in this family is `sdlc_md.resolve_root(args)`, which reads exactly
+        one destination. Resolving it is what keeps every other destination judgeable.
+        """
+        reads: set[str] = set()
+        unresolved = []
+        for esc in self.escapes():
+            found = self._resolve_escape(esc)
+            if found is None:
+                unresolved.append(esc)
+            else:
+                reads |= found
+        return reads, unresolved
+
+    def _resolve_escape(self, esc: dict) -> set[str] | None:
+        """What the escape's callee reads off the namespace, or None if that is unknowable."""
+        callee, path = esc.get("callee"), self.path
+        if not callee or path is None:
+            return None
+        if "." not in callee:
+            # A bare name this module does not define is a re-export it imported under that name
+            # (`from lib.sdlc_md import resolve_root`, or a module-level alias).
+            alias = _reexport(self.tree, callee)
+            if not alias or esc.get("hops", 0) >= 1:
+                return None
+            return self._resolve_escape({**esc, "callee": alias, "hops": 1})
+        alias, _, name = callee.rpartition(".")
+        if "." in alias:
+            return None
+        target = next((c for d in _SIBLING_DIRS
+                       if (c := path.parent / d / f"{alias}.py").is_file()), None)
+        if target is None:
+            return None
+        try:
+            tree = ast.parse(target.read_text(encoding="utf-8"))
+        except (OSError, SyntaxError):
+            return None
+        fn = _functions(tree).get(name)
+        if fn is None:
+            # One hop through a re-export (`resolve_root = sdlc_md.resolve_root`). Without it the
+            # family's most common flag is unjudgeable in every module that reaches the shared
+            # root resolver through a sibling rather than directly.
+            alias = _reexport(tree, name)
+            if not alias or esc.get("hops", 0) >= 1:
+                return None
+            return self._resolve_escape({**esc, "callee": alias, "hops": 1})
+        params = [a.arg for a in fn.args.posonlyargs] + [a.arg for a in fn.args.args]
+        param = esc.get("param")
+        if param is None:
+            index = esc.get("index")
+            if index is None or index >= len(params):
+                return None
+            param = params[index]
+        elif param not in params:
+            return None
+        return _reads_off_param(tree, fn, param)
+
+
+def _reexport(tree: ast.AST, name: str) -> str | None:
+    """`name = other.thing` at module level - the dotted target, so an escape can follow it."""
+    for node in tree.body if isinstance(tree, ast.Module) else ():
+        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == name
+                                                for t in node.targets):
+            return _dotted(node.value)
+    return None
+
+
+def _reads_off_param(tree: ast.AST, fn: ast.FunctionDef, param: str) -> set[str] | None:
+    """The attribute names read off `param` inside `fn`, or None if `param` goes on elsewhere.
+
+    A namespace the callee passes further on could be read anywhere, so the honest answer there
+    is "unknown" rather than the short list this function can see.
+    """
+    parents = _parents(fn)
+    found = set()
+    for node in ast.walk(fn):
+        if not (isinstance(node, ast.Name) and node.id == param
+                and isinstance(node.ctx, ast.Load)):
+            continue
+        parent = parents.get(node)
+        if isinstance(parent, ast.Attribute):
+            found.add(parent.attr)
+            continue
+        if isinstance(parent, ast.Call) and isinstance(parent.func, ast.Name) \
+                and parent.func.id == "getattr" and len(parent.args) >= 2 \
+                and parent.args[0] is node and (s := _str_arg(parent.args[1])):
+            found.add(s)
+            continue
+        return None
+    return found
+
+
+def dead_flags(source: str, path: Path | None = None) -> dict:
+    """Judge one module's flags. `{dests, dead, unjudged}`, each destination in exactly one.
+
+    A destination is dead when no read of it reaches a line that acts on the value AND nothing
+    this analysis cannot see could be reading it.
+    """
+    tree = ast.parse(source)
+    mod = _Module(tree, path)
+    dests = argparse_dests(tree)
+    external, unresolved = mod.escaped_reads()
+    dynamic = mod.dynamic_reads()
+    declare_only = bool(dests) and not mod.parses()
+    dead, unjudged = [], []
+    for dest, where in sorted(dests.items()):
+        line = where["line"]
+        if mod.consumed(dest) or dest in external:
+            continue
+        if declare_only:
+            reason = "this module declares flags on a parser it never parses, so the value is " \
+                     "read by whichever module parses it"
+        elif dynamic:
+            reason = (f"a getattr with a computed attribute name at line {dynamic[0]['line']} "
+                      f"may read any destination")
+        elif unresolved:
+            esc = unresolved[0]
+            reason = (f"the namespace escapes to "
+                      f"{esc['callee'] or 'a value this module cannot follow'} at line "
+                      f"{esc['line']}, which may read it")
+        else:
+            dead.append({"dest": dest, "line": line, "flag": where["flag"]})
+            continue
+        unjudged.append({"dest": dest, "line": line, "flag": where["flag"], "reason": reason})
+    return {"dests": dests, "dead": dead, "unjudged": unjudged}
+
+
+def scan_dead_flags(repo_root: Path | str = ".") -> dict:
+    """Every module under the skill's scripts/ and the repo's tools/, judged.
+
+    `{applicable, modules, dead, unjudged, summary}`. Test modules are excluded: a fixture
+    deliberately builds a dead flag, so scanning them would report the fixtures as findings.
+    """
+    root = Path(repo_root)
+    skill_dir = doc_coverage._skill_dir(root)
+    if skill_dir is None:
+        return {"applicable": False, "modules": 0, "dead": [], "unjudged": [], "summary": {}}
+    paths = [p for p in sorted((skill_dir / "scripts").rglob("*.py"))
+             if "tests" not in p.parts and "__pycache__" not in p.parts]
+    paths += [p for p in sorted((root / "tools").glob("*.py"))]
+    dead, unjudged, judged = [], [], 0
+    for path in paths:
+        try:
+            result = dead_flags(path.read_text(encoding="utf-8"), path)
+        except (OSError, SyntaxError) as exc:
+            unjudged.append({"module": str(path.relative_to(root)), "dest": None,
+                             "reason": f"unreadable: {exc}"})
+            continue
+        judged += 1
+        rel = str(path.relative_to(root))
+        dead += [{"module": rel, **d} for d in result["dead"]]
+        unjudged += [{"module": rel, **u} for u in result["unjudged"]]
+    return {"applicable": True, "modules": judged, "dead": dead, "unjudged": unjudged,
+            "summary": {"dead": len(dead), "unjudged": len(unjudged), "modules": judged}}
+
+
+def render_dead_flags(result: dict) -> str:
+    """The lane's output: what is dead, then what could not be judged, always both."""
+    if not result["applicable"]:
+        return "dead-flags: not a skill repo (no SKILL.md) - nothing to scan.\n"
+    s = result["summary"]
+    out = [f"dead-flags: {s['modules']} module(s) scanned, {s['dead']} dead flag(s), "
+           f"{s['unjudged']} destination(s) not judged."]
+    for d in result["dead"]:
+        out.append(f"  DEAD {d['module']}:{d['line']} {d['flag']} (dest `{d['dest']}`) "
+                   f"- no line acts on the parsed value")
+    # Named, never silent: a destination nothing could judge is not a destination that passed.
+    for u in result["unjudged"]:
+        out.append(f"  not judged {u['module']}"
+                   + (f":{u['line']}" if u.get("line") else "")
+                   + (f" `{u['dest']}`" if u.get("dest") else "")
+                   + f" - {u['reason']}")
+    return "\n".join(out) + "\n"
+
+
 def render_markdown(result: dict) -> str:
     """The audit document body: a per-spine command table with dispositions, then the script
     tooling table, then a summary. What a cleanup slice reads to decide what moves."""
@@ -249,6 +815,15 @@ def render_markdown(result: dict) -> str:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
+    if args.dead_flags:
+        result = scan_dead_flags(args.root)
+        if args.format == "json":
+            print(json.dumps(result, indent=2))
+        else:
+            print(render_dead_flags(result), end="")
+        # This mode gates on its own: a dead flag is a defect of the same kind as a broken tool,
+        # and a lane that reports one and exits 0 cannot stop it shipping.
+        return 1 if result["applicable"] and result["dead"] else 0
     result = audit(args.root, check_tools=args.check_tools)
     if not result["applicable"]:
         print("command_audit: not a skill repo (no SKILL.md) - nothing to audit.")
@@ -281,6 +856,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="write sdlc-studio/reviews/command-audit.md instead of stdout")
     p.add_argument("--strict", action="store_true",
                    help="exit non-zero when a broken tool is found (with --check-tools)")
+    p.add_argument("--dead-flags", action="store_true",
+                   help="report a flag whose parsed destination no line acts on, and exit "
+                        "non-zero when one is found (skips the command-surface audit)")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_run)
     return p

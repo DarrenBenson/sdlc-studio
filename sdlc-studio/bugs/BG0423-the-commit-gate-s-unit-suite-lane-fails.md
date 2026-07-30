@@ -4,7 +4,7 @@
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .githooks/pre-commit, .githooks/commit-msg, tools/skill-tests.sh
-> **Evidence:** RUN-01KYPZ1G, two occurrences. (1) Commit of the US0462 review repairs: `git commit` reported a skill-tests failure and 'Commit blocked'; `bash tools/skill-tests.sh` run standalone immediately afterwards reported `Ran 5392 tests ... OK`; the identical `git commit -F` then succeeded as 31913621. (2) Commit of US0463 AC5: same shape, blocked once, succeeded on retry as 263c2072. (3) Commit of US0568: blocked once with the suite lane reporting a failure, then succeeded unchanged as 812391cc - THREE occurrences in one session, so this is a rate and not a coincidence. In both cases the full suite had been run green by hand minutes before, and `reconcile detect` reported drift_items=0.
+> **Evidence:** RUN-01KYPZ1G, two occurrences. (1) Commit of the US0462 review repairs: `git commit` reported a skill-tests failure and 'Commit blocked'; `bash tools/skill-tests.sh` run standalone immediately afterwards reported `Ran 5392 tests ... OK`; the identical `git commit -F` then succeeded as 31913621. (2) Commit of US0463 AC5: same shape, blocked once, succeeded on retry as 263c2072. (3) Commit of US0568: blocked once with the suite lane reporting a failure, then succeeded unchanged as 812391cc - THREE occurrences in one session, so this is a rate and not a coincidence. (4) A docs-only amendment. (5) Commit of US0485/BG0424: blocked with `suite-verdict: green (full) recorded for fe1fe2c2` printed in the same run; the failing lane was read rather than retried and turned out to be the test-noise ratchet, deterministic. In each case the full suite had been run green by hand minutes before, and `reconcile detect` reported drift_items=0.
 > **Created:** 2026-07-30
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -50,9 +50,31 @@ A second defect is visible in the same evidence: the fourth occurrence was a **d
 cache are both suspect, and they interact - a needless run is what produces the stale green that
 the next attempt then trusts.
 
-What is still unknown is WHICH test reported the failure, because the lane's output does not
-survive the retry. That is why the first fix below is to make it survive: everything else here was
-read off four blocked commits, and the failing test itself has never once been visible.
+## The failing lane, NAMED on the fifth occurrence
+
+Fifth occurrence, 2026-07-30, committing US0485: the same shape again - the suite lane reported a
+failure and `suite-verdict: green (full) recorded for fe1fe2c2` was printed in the same run.
+
+This time the failure was read before retrying, and it was **not a flake**. It was
+`tools/skill-tests.sh`'s test-noise lane: `a PASSING run printed 130 diagnostic line(s), above the
+baseline of 129`. Deterministic, reproducible by hand, and standing on main since before that
+commit (filed as BG0425). So the first answer to "which test" is: possibly none - the suite itself
+was green (`Ran 5446 tests ... OK`) and the lane that failed was the noise check wrapped around it.
+
+Two things follow, and both narrow this bug:
+
+- **A retry past this would have been a real bypass of a real defect**, not of a flake. The reused
+  verdict does not just hide intermittency; it hides a standing red. That raises the confidence
+  that the earlier four occurrences were also deterministic failures nobody could see.
+- **The earlier occurrences are worth re-reading as noise-lane failures too.** All four followed
+  commits that added tests, and a new test that prints one line is exactly what trips this lane -
+  which would explain a "flake" that appears only on commits carrying new tests and never on a
+  standalone `bash tools/skill-tests.sh` run against a different baseline.
+
+What is still unknown is which lane failed on occurrences one to four, because the output does not
+survive the retry. That is why the first fix below is to make it survive: the mechanism was read
+off four blocked commits, and the failing lane became visible only when one run was read instead of
+retried.
 
 ## Steps to Reproduce
 
@@ -87,3 +109,4 @@ The gate is the project's argument that its records mean something - AGENTS.md c
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-30 | sdlc-studio | Filed |
+| 2026-07-30 | Claude Opus 5 (delivering US0485) | Fifth occurrence. The failing lane NAMED for the first time: the test-noise ratchet, deterministic and standing on main (BG0425) - so a retry past it bypasses a real defect, not a flake |

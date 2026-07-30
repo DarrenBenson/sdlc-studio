@@ -17,14 +17,26 @@ def hook_skill_scripts(*hooks: str) -> list[str]:
 
     A lane may invoke a SKILL script rather than a `tools/` checker - the verify-ratchet lane
     does - and a fixture that stubs only `tools/` leaves that lane running the real script
-    against a fixture workspace. One reader for each shape, both derived from the hook."""
+    against a fixture workspace. One reader for each shape, both derived from the hook.
+
+    Both spellings of the path are read: written out in full, and through the hook's own
+    `$skill` variable. A lane using the variable was invisible here, so the promise above - one
+    reader, so a lane added to the gate reaches every fixture at once - held only for lanes that
+    happened to spell it the long way, and the two that did not were hand-listed in one fixture.
+    """
     names: set = set()
     for hook in (hooks or ("pre-commit", "commit-msg")):
         path = HOOKS / hook
         if not path.is_file():
             continue
-        names.update(re.findall(r"--\s+python3\s+(\.claude/skills/[A-Za-z0-9_./-]+\.py)",
-                                path.read_text(encoding="utf-8")))
+        text = path.read_text(encoding="utf-8")
+        names.update(re.findall(r"--\s+python3\s+(\.claude/skills/[A-Za-z0-9_./-]+\.py)", text))
+        # `skill=".claude/skills/sdlc-studio/scripts"` then `-- python3 "$skill/x.py"`. Read the
+        # assignment from the hook rather than assuming the path.
+        var = re.search(r'^skill="([^"]+)"', text, re.M)
+        if var:
+            names.update(f"{var.group(1)}/{n}" for n in
+                         re.findall(r'--\s+python3\s+"\$skill/([A-Za-z0-9_./-]+\.py)"', text))
     return sorted(names)
 
 

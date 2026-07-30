@@ -275,6 +275,11 @@ run "neutrality" \
   "generalise the name (e.g. to 'a consuming project'); the checker redacts the term, so grep your diff for it" \
   -- python3 tools/check_neutrality.py
 
+run "dead-flags" \
+  "no flag whose parsed destination any line acts on - a documented switch that does nothing" \
+  "consume the value where it lands, or delete the flag and its documentation; a destination the lane cannot judge is printed with the reason it could not (~6s, AST only, no subprocesses)" \
+  -- python3 "$skill/command_audit.py" --dead-flags --root .
+
 run "action-pins" \
   "every GitHub Action is pinned to a full commit SHA (a moved tag cannot inject code into CI)" \
   "pin the flagged Action to its tag's commit SHA: uses: owner/repo@<40-hex> # vN" \

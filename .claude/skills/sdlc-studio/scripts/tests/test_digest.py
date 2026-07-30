@@ -21,6 +21,19 @@ def _load(name: str):
 
 digest = _load("digest")
 
+
+def _quiet_main(argv: list[str]) -> int:
+    """`digest.main` with its report captured.
+
+    A green suite must say nothing: ten uncaptured `main(["build", ...])` calls leaked a
+    `digest: wrote N ...` line each into every passing run, which is ten lines a reader has to
+    skim past before a real error can register. The exit code is still returned and asserted.
+    """
+    import contextlib
+    import io
+    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+        return digest.main(argv)
+
 from unittest import mock
 
 status = _load("status")
@@ -96,7 +109,7 @@ class DigestTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d); _bugs(root)
             self.assertTrue(digest.is_stale(root))   # nothing written yet
-            digest.main(["build", "--root", str(root)])
+            _quiet_main(["build", "--root", str(root)])
             self.assertFalse(digest.is_stale(root))  # fresh
             # close another bug -> the digest is now stale
             (root / "sdlc-studio" / "bugs" / "BG0002-open.md").write_text(
@@ -109,7 +122,7 @@ class DigestReadPathTests(unittest.TestCase):
     def test_status_does_not_reread_closed_originals(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d); _many(root, 501)
-            digest.main(["build", "--root", str(root)])
+            _quiet_main(["build", "--root", str(root)])
             self.assertTrue(digest.enabled(root))         # 501 >= default 500
             with _ReadSpy() as spy:
                 res = status.count_by_status("bug", root)
@@ -125,7 +138,7 @@ class DigestCostTests(unittest.TestCase):
     def test_digest_reads_fewer_originals(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d); _many(root, 501)
-            digest.main(["build", "--root", str(root)])
+            _quiet_main(["build", "--root", str(root)])
             with _ReadSpy() as spy:
                 status.count_by_status("bug", root)
             with_digest = len(_closed_paths(root) & set(spy.reads))
@@ -144,17 +157,17 @@ class DigestDriftTests(unittest.TestCase):
     def test_byte_stable_regeneration(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d); _many(root, 5)
-            digest.main(["build", "--root", str(root)])
+            _quiet_main(["build", "--root", str(root)])
             p = root / "sdlc-studio" / ".local" / "digests.json"
             first = p.read_bytes()
-            digest.main(["build", "--root", str(root)])
+            _quiet_main(["build", "--root", str(root)])
             self.assertEqual(p.read_bytes(), first)        # deterministic, byte-identical
 
     def test_reconcile_flags_and_clears_digest_drift(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d); _many(root, 5)
             self.assertIsNone(reconcile.digest_drift_advisory(root))  # no digest yet -> silent
-            digest.main(["build", "--root", str(root)])
+            _quiet_main(["build", "--root", str(root)])
             self.assertIsNone(reconcile.digest_drift_advisory(root))  # fresh
             # close another bug after the digest was written
             (root / "sdlc-studio" / "bugs" / "BG0006-open.md").write_text(
@@ -163,7 +176,7 @@ class DigestDriftTests(unittest.TestCase):
             adv = reconcile.digest_drift_advisory(root)
             self.assertIsNotNone(adv)
             self.assertIn("digest.py build", adv)
-            digest.main(["build", "--root", str(root)])
+            _quiet_main(["build", "--root", str(root)])
             self.assertIsNone(reconcile.digest_drift_advisory(root))  # regenerated -> clears
 
 
@@ -177,7 +190,7 @@ class DigestIdResolveTests(unittest.TestCase):
             bp.write_text(bp.read_text(encoding="utf-8").replace(
                 "> **Severity:** Low\n",
                 "> **Severity:** Low\n> **Aliases:** BG9001\n"), encoding="utf-8")
-            digest.main(["build", "--root", str(root)])
+            _quiet_main(["build", "--root", str(root)])
             found = sdlc_md.find_by_id(root, "BG0001")
             self.assertIsNotNone(found)
             self.assertEqual(found[0], bp)                 # the full original file
@@ -192,7 +205,7 @@ class DigestThresholdTests(unittest.TestCase):
     def test_below_threshold_is_dormant(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d); _many(root, 3)               # 3 closed, default threshold 500
-            digest.main(["build", "--root", str(root)])   # a digest exists but is under threshold
+            _quiet_main(["build", "--root", str(root)])   # a digest exists but is under threshold
             self.assertFalse(digest.enabled(root))
             self.assertEqual(digest.status_by_id(root), {})
             with _ReadSpy() as spy:
@@ -204,7 +217,7 @@ class DigestThresholdTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _many(root, 3, config="digests:\n  min_closed: 2\n")
-            digest.main(["build", "--root", str(root)])
+            _quiet_main(["build", "--root", str(root)])
             self.assertEqual(digest.min_closed(root), 2)
             self.assertTrue(digest.enabled(root))         # 3 >= 2 -> active
             self.assertEqual(set(digest.status_by_id(root).values()), {"Closed"})

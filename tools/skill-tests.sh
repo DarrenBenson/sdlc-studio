@@ -93,6 +93,13 @@ fi
 # 134 -> 132 (US0277/US0278): the selection-reporting lines made two uncaptured
 # `main(...)` calls in test_mutation.py noisier; capturing their stdout/stderr also
 # retired the SURVIVED/REFUSED lines they had been leaking since before the ratchet.
-TEST_NOISE_BASELINE="${TEST_NOISE_BASELINE:-129}"
+# 129 -> 120 (US0485/BG0425): main was already at 130 - one over its own ratchet - and had been
+# since before this commit, so the lane was red on main and the noise gate was enforcing nothing.
+# It landed because a reused suite-verdict record let a retry skip the suites entirely (BG0423).
+# Measured at HEAD and again with the change to prove the extra line was pre-existing rather than
+# newly added. Ten `main(["build", ...])` calls in test_digest.py were leaking a `digest: wrote N`
+# line each with nothing capturing stdout; capturing them took 130 -> 120, and the ratchet is
+# lowered to match rather than raised to accommodate.
+TEST_NOISE_BASELINE="${TEST_NOISE_BASELINE:-120}"
 
 printf '%s\n' "$out" | python3 "$(dirname "$0")/test_noise.py" --baseline "$TEST_NOISE_BASELINE"

@@ -19,8 +19,15 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 SKILL = ".claude/skills/sdlc-studio"
 
-#: The option string that must appear nowhere.
+#: The option string that must appear nowhere an operator could read it as an offer.
 REMOVED = "--verify-batch"
+
+#: The one file allowed to name it: US0485's dead-flag detector pins gate.py's three
+#: `verify_batch` lines VERBATIM as its fixture, because the defence has to be provable against
+#: the shape that motivated it after the flag is gone. A test fixture is not an offer to run the
+#: flag, which is what this guard is about. Held to that: the file must still contain the fixture
+#: (below), so the allowance cannot decay into a blanket exemption once the fixture changes.
+PINNED_FIXTURE = f"{SKILL}/scripts/tests/test_command_audit.py"
 #: A string that IS present, asserted alongside. A scan that silently matched nothing would
 #: otherwise read exactly like a scan that found the tree clean.
 CONTROL = "--allow-external"
@@ -44,7 +51,7 @@ class VerifyBatchDocsTests(unittest.TestCase):
                 text = path.read_text(encoding="utf-8")
             except (OSError, UnicodeDecodeError):
                 continue
-            if REMOVED in text:
+            if REMOVED in text and str(path.relative_to(REPO)) != PINNED_FIXTURE:
                 offenders.append(str(path.relative_to(REPO)))
             if CONTROL in text:
                 saw_control = True
@@ -55,6 +62,17 @@ class VerifyBatchDocsTests(unittest.TestCase):
         self.assertFalse(
             offenders,
             f"{REMOVED} was removed from the gate but is still documented in: {offenders}")
+
+    def test_the_one_exempt_file_is_exempt_for_the_reason_claimed(self) -> None:
+        """The allowance is not a hole. It stands only while that file really is pinning the
+        removed flag as a detector fixture; the moment it is not, this fails and the exemption
+        comes out rather than quietly covering a fresh mention of the flag."""
+        text = (REPO / PINNED_FIXTURE).read_text(encoding="utf-8")
+        self.assertIn(REMOVED, text,
+                      f"{PINNED_FIXTURE} no longer pins {REMOVED}, so its exemption above is "
+                      f"covering nothing and must be removed")
+        self.assertIn("GATE_FIXTURE", text,
+                      "the exemption is for a pinned dead-flag fixture; that fixture is gone")
 
 
 if __name__ == "__main__":

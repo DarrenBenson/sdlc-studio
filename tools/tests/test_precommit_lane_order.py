@@ -65,7 +65,7 @@ EXPECTED_LANES = {
     "spec-claims",
     "script-tests", "budgets",
     "neutrality",
-    "action-pins", "floor-pending", "markdown", "markdown-payload",
+    "action-pins", "dead-flags", "floor-pending", "markdown", "markdown-payload",
 }
 
 #: The lanes that cost real wall-clock, and that therefore may not run until every cheap

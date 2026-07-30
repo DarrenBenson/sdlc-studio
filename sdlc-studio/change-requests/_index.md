@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-07-29
+**Last Updated:** 2026-07-30
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 4 |
 | Approved | 0 |
 | In Progress | 35 |
 | Complete | 444 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **501** |
+| **Total** | **502** |
 
 ## All Changes
 
@@ -323,6 +323,7 @@
 | [CR-0499](CR0499-a-sprint-is-never-asked-whether-it-produced.md) | A sprint is never asked whether it produced a SHIPPABLE increment: the release definition-of-done encodes mechanism, not outcome | Proposed | High | Improvement | 2026-07-29 | -- |
 | [CR-0500](CR0500-the-adversarial-review-runs-at-the-close-so.md) | The adversarial review runs at the close, so every defect it finds becomes close work - it belongs at the delivery cadence | In Progress | High | Improvement | 2026-07-29 | EP0190 |
 | [CR-0501](CR0501-a-repair-is-held-only-by-a-test.md) | A repair is held only by a test its own author wrote, and repairs land in guards - mutation must be mandatory on a fix, not optional on a sprint | In Progress | High | Improvement | 2026-07-29 | EP0191 |
+| [CR-0502](CR0502-the-mutation-lane-asks-for-evidence-on-a.md) | the mutation lane asks for evidence on a changed surface the mutation runner refuses to mutate | Proposed | Medium | Improvement | 2026-07-30 | -- |
 
 ## Archived Releases
 

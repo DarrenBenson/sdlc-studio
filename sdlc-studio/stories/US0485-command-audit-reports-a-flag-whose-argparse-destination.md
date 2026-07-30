@@ -1,11 +1,11 @@
 # US0485: command_audit reports a flag whose argparse destination no line ever reads
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0448
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py, .claude/skills/sdlc-studio/reference-scripts-review.md, .githooks/pre-commit, package.json, tools/tests/hookutil.py, tools/tests/test_precommit_lane_order.py, tools/tests/test_message_first_gate.py, tools/tests/test_dead_flag_docs.py, AGENTS.md, CHANGELOG.md
 > **Epic:** EP0175
 > **Points:** 5
 
@@ -52,3 +52,29 @@
 | 2026-07-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-27 | Claude Fable 5 | Groomed: acceptance criteria authored against the slice |
 | 2026-07-27 | Claude Fable 5 | ACs repaired against the independent adversarial review |
+| 2026-07-30 | Claude Opus 5 | Delivered. Detector in `command_audit.py --dead-flags`, wired as a gate lane in `.githooks/pre-commit` and the `lint` chain; 37 tests in `test_command_audit.py` green; 14/14 mutants killed (unique anchors, purged bytecode) |
+
+## Evidence
+
+Run against the real `gate.py` at the revision before US0479 deleted the flag
+(`git show d982e31a^:.claude/skills/sdlc-studio/scripts/gate.py`): `--verify-batch` reported
+**dead**, nothing unjudged. That run needs git history, so AC2's contract is pinned as the three
+lines verbatim in `GATE_FIXTURE` instead.
+
+Getting there took four false-positive classes out, each of which named a **live** flag as dead:
+
+| Shape | Reported dead | Verdict now |
+| --- | --- | --- |
+| A positional (`add_argument("cmd", choices=[...])`) | `digest`, `schema_check` | not judged - argparse enforces presence; it also printed a `--cmd` switch that does not exist |
+| A shared declarator (`add_ids_argument`, `add_format_arg`, `add_global_root`) | 4 in `lib/sdlc_md.py` | not judged - the module never parses |
+| A computed `getattr` (`{k: getattr(args, k, None) for k in keys}`) | 4 in `decisions`, `ledger` | not judged - the destination read cannot be named |
+| A namespace read straight off `parse_args()` | `tools/whitepaper_pdf.py --out` | judged clean - `ap.parse_args().out` binds no name |
+
+And three shapes cost the analysis its verdict on the flag that mattered, all found by running it
+against the real corpus rather than the fixture: `args is not None` read as a namespace escape (it
+made every flag in `gate.py` cannot-judge, the dead one included), a nested `def _git(*args)` read
+as the namespace, and a verb table registered by loop variable (`for name, fn, ... :
+set_defaults(func=fn)`), which left all thirteen of `retro.py`'s flags unjudged.
+
+Live corpus: 91 modules, **0 dead**, 8 destinations not judged - each printed with its reason,
+since a destination nobody could judge reads as one that passed. Lane cost ~6s, AST only.

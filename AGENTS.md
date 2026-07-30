@@ -143,6 +143,7 @@ plain Python/bash command you can run directly. Do not skip the gate because
 | Lens signatures | `python3 .claude/skills/sdlc-studio/scripts/readiness.py profile --validate` | an audit lens whose detector does not resolve, or whose absence is declared without a reason. Shipped detectors resolve against the installed skill, so a consuming project's packs pass too |
 | Budgets | `python3 tools/check_budgets.py` | a reference file over its declared line ceiling |
 | Neutrality | `python3 tools/check_neutrality.py` | a private consuming-project name leaking into a tracked file |
+| Dead flags | `python3 .claude/skills/sdlc-studio/scripts/command_audit.py --dead-flags` | a flag whose parsed destination no line acts on - a documented switch that does nothing. It follows the value into the callee rather than counting the sites that mention it, since a mention count cannot tell a forwarded value from a consumed one; a destination it cannot judge is printed with the reason |
 | Skill tests | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` | every shipped skill-script unit test |
 | Tool tests | `python3 -m unittest discover -s tools/tests` | every repo-only `tools/` checker unit test (kept out of the shipped payload) |
 | Drift | `python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect` | index / status / count drift in the dogfooded `sdlc-studio/` workspace |

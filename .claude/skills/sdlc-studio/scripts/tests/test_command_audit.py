@@ -272,5 +272,415 @@ class FixtureAuditTests(unittest.TestCase):
             self.assertEqual(command_audit.main(["--root", d]), 0)
 
 
+#: gate.py's three `verify_batch` lines, verbatim at the revision before US0479 deleted them
+#: (`git show d982e31a^:.claude/skills/sdlc-studio/scripts/gate.py`). Pinned as lines rather than
+#: described as a past state, so this holds after the deletion - and quoted rather than
+#: paraphrased, because a paraphrase would be a fixture of what I believed the bug looked like.
+VERIFY_BATCH_DEFINITION = (
+    '    p.add_argument("--verify-batch", dest="verify_batch", action="store_true",\n'
+    '                   help="--release: run jest once and resolve jest verifiers from the '
+    'cached "\n'
+    '                        "result, instead of a cold start per AC")\n')
+VERIFY_BATCH_FORWARD = '                      verify_batch=getattr(args, "verify_batch", False),\n'
+VERIFY_BATCH_PARAMETER = '             allow_external: bool = False, verify_batch: bool = False,\n'
+
+#: The three lines above, in a module shaped like the one they came from: a `run_gate` whose body
+#: acts on other parameters and never on this one, a `cmd_gate` that forwards it, and a parser.
+GATE_FIXTURE = (
+    "import argparse\n"
+    "\n"
+    "\n"
+    "def run_gate(root: str = '.', only=None,\n"
+    + VERIFY_BATCH_PARAMETER +
+    "             release: bool = False) -> dict:\n"
+    "    checks = {'root': root, 'only': only, 'release': release, 'external': allow_external}\n"
+    "    return checks\n"
+    "\n"
+    "\n"
+    "def cmd_gate(args) -> int:\n"
+    "    report = run_gate(args.root, only=args.only,\n"
+    '                      allow_external=getattr(args, "allow_external", False),\n'
+    + VERIFY_BATCH_FORWARD +
+    '                      release=getattr(args, "release", False))\n'
+    "    print(report)\n"
+    "    return 0\n"
+    "\n"
+    "\n"
+    "def build_parser():\n"
+    "    p = argparse.ArgumentParser()\n"
+    '    p.add_argument("--root", default=".")\n'
+    '    p.add_argument("--only", default="")\n'
+    '    p.add_argument("--release", action="store_true")\n'
+    '    p.add_argument("--allow-external", dest="allow_external", action="store_true")\n'
+    + VERIFY_BATCH_DEFINITION +
+    "    p.set_defaults(func=cmd_gate)\n"
+    "    return p\n"
+    "\n"
+    "\n"
+    "def main(argv=None) -> int:\n"
+    "    args = build_parser().parse_args(argv)\n"
+    "    return args.func(args)\n")
+
+
+class DeadFlagTests(unittest.TestCase):
+    """A flag whose destination nothing acts on (US0485).
+
+    The rule this replaces could not have found the bug it was written for. `--verify-batch` was
+    MENTIONED three times, and one of those was a `getattr(args, ...)` read - so every rule that
+    counts mentions, and every rule that treats a defaulted lookup as a read, called it live. So
+    each test here is about where the value LANDS, not about how it is spelled.
+    """
+
+    def _dead(self, source: str) -> list[str]:
+        return [d["dest"] for d in command_audit.dead_flags(source)["dead"]]
+
+    def _unjudged(self, source: str) -> list[str]:
+        return [u["dest"] for u in command_audit.dead_flags(source)["unjudged"]]
+
+    def test_a_flag_whose_value_is_never_consumed_is_reported(self) -> None:
+        """AC1. The parsed value is forwarded into a callee whose body never reads the parameter
+        it arrives in, and the module is otherwise ordinary.
+
+        MUTANT: stop following the value into the callee and treat a forward as a use. `spare` is
+        then indistinguishable from `wanted`, which is the defect that shipped.
+        """
+        src = ("import argparse\n"
+               "def work(wanted=False, spare=False):\n"
+               "    if wanted:\n"
+               "        print('working')\n"
+               "    return 0\n"
+               "def cmd(args):\n"
+               "    return work(wanted=args.wanted, spare=args.spare)\n"
+               "def main(argv=None):\n"
+               "    p = argparse.ArgumentParser()\n"
+               "    p.add_argument('--wanted', action='store_true')\n"
+               "    p.add_argument('--spare', action='store_true')\n"
+               "    p.set_defaults(func=cmd)\n"
+               "    args = p.parse_args(argv)\n"
+               "    return args.func(args)\n")
+        result = command_audit.dead_flags(src)
+        self.assertEqual(["spare"], [d["dest"] for d in result["dead"]],
+                         "the unconsumed flag was not reported, or the consumed one was")
+        self.assertEqual("--spare", result["dead"][0]["flag"],
+                         "the report must name the switch an operator types")
+        self.assertEqual([], result["unjudged"])
+
+    def test_the_detector_catches_verify_batch_from_a_pinned_fixture(self) -> None:
+        """AC2, on the three lines as gate.py carried them, quoted verbatim.
+
+        Also run against the real module at the revision before US0479's deletion, where it
+        reports `verify_batch` dead and nothing unjudged. That run is evidence, not a test: it
+        needs git history, so the contract is pinned here instead.
+        """
+        result = command_audit.dead_flags(GATE_FIXTURE)
+        self.assertEqual(["verify_batch"], [d["dest"] for d in result["dead"]])
+        self.assertEqual([], result["unjudged"],
+                         "a cannot-judge verdict on this shape would let the flag through")
+        # All three quoted sites are in the fixture, so it cannot pass by having lost one - and
+        # each is asserted against the constant, so an edit to a quote fails on its own line.
+        for site, name in ((VERIFY_BATCH_DEFINITION, "the argparse definition"),
+                           (VERIFY_BATCH_FORWARD, "the defaulted lookup that forwards it"),
+                           (VERIFY_BATCH_PARAMETER, "the run_gate parameter")):
+            with self.subTest(site=name):
+                self.assertIn(site, GATE_FIXTURE, f"{name} is not in the pinned fixture")
+                self.assertIn("verify_batch", site)
+
+    def test_a_consumed_defaulted_lookup_is_not_reported(self) -> None:
+        """AC3. Same access pattern as the dead flag - `getattr(args, name, default)` forwarded as
+        a keyword argument - and here the receiving parameter is acted on.
+
+        MUTANT: report a defaulted lookup as no read, which is what the first specification for
+        this did. Both flags would then be reported, and the detector would be useless.
+        """
+        src = ("import argparse\n"
+               "def work(quiet=False):\n"
+               "    if quiet:\n"
+               "        return 1\n"
+               "    return 0\n"
+               "def cmd(args):\n"
+               "    return work(quiet=getattr(args, 'quiet', False))\n"
+               "def main(argv=None):\n"
+               "    p = argparse.ArgumentParser()\n"
+               "    p.add_argument('--quiet', action='store_true')\n"
+               "    p.set_defaults(func=cmd)\n"
+               "    args = p.parse_args(argv)\n"
+               "    return args.func(args)\n")
+        self.assertEqual([], self._dead(src))
+        self.assertEqual([], self._unjudged(src))
+
+    def test_the_detector_is_wired_into_the_gate(self) -> None:
+        """AC4. Present in the hook AND in the npm chain, invoking the verb that judges.
+
+        MUTANT: drop `--dead-flags` from either invocation. `command_audit.py` without it audits
+        the command surface and exits 0 having judged no flag at all - a lane that is present,
+        green and inert, which is the failure mode the sibling ratchet lane demonstrated.
+        """
+        hook = (_REPO / ".githooks" / "pre-commit").read_text(encoding="utf-8")
+        self.assertIn('run "dead-flags"', hook, "no dead-flags lane in the pre-commit hook")
+        i = hook.find('run "dead-flags"')
+        command = next((ln for ln in hook[i:].splitlines() if ln.strip().startswith("--")), "")
+        self.assertIn("command_audit.py", command, f"the lane runs something else: {command}")
+        self.assertIn("--dead-flags", command,
+                      "the lane does not pass --dead-flags, so it audits the command surface "
+                      "and judges no flag")
+        import json
+        pkg = json.loads((_REPO / "package.json").read_text(encoding="utf-8"))
+        self.assertIn("lint:dead-flags", pkg["scripts"], "no npm script for the lane")
+        self.assertIn("--dead-flags", pkg["scripts"]["lint:dead-flags"])
+        self.assertIn("lint:dead-flags", pkg["scripts"]["lint"],
+                      "the lane exists but the `lint` chain does not run it")
+
+    def test_the_verb_exits_non_zero_on_a_dead_flag_and_zero_when_clean(self) -> None:
+        """A lane that reports a defect and exits 0 cannot stop it shipping."""
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _skill(root, type_ref=["bug"], help_cmds=["bug"], scripts={})
+            with contextlib.redirect_stdout(io.StringIO()) as clean:
+                self.assertEqual(0, command_audit.main(["--root", str(root), "--dead-flags"]))
+            self.assertIn("0 dead flag(s)", clean.getvalue())
+            (root / ".claude" / "skills" / "sdlc-studio" / "scripts" / "dead.py").write_text(
+                GATE_FIXTURE, encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()) as found:
+                self.assertEqual(1, command_audit.main(["--root", str(root), "--dead-flags"]))
+            self.assertIn("--verify-batch", found.getvalue())
+
+    def test_a_positional_is_not_judged_as_a_flag(self) -> None:
+        """`p.add_argument("cmd", choices=["build"])` - argparse makes the caller supply it
+        whether or not a line reads the value, so "never consumed" is not a defect. Reported as
+        dead, it also printed the positional as `--cmd`, a switch that does not exist."""
+        src = ("import argparse\n"
+               "def main(argv=None):\n"
+               "    p = argparse.ArgumentParser()\n"
+               "    p.add_argument('cmd', choices=['build'])\n"
+               "    p.add_argument('--root', default='.')\n"
+               "    args = p.parse_args(argv)\n"
+               "    print(args.root)\n"
+               "    return 0\n")
+        self.assertNotIn("cmd", command_audit.argparse_dests(command_audit.ast.parse(src)))
+        self.assertEqual([], self._dead(src))
+
+    def test_a_namespace_read_straight_off_parse_args_counts(self) -> None:
+        """`build(Path(ap.parse_args().out))` binds no name, and reading it as no namespace at all
+        reported a live flag as dead."""
+        src = ("import argparse\n"
+               "def build(out):\n"
+               "    print(out)\n"
+               "def main():\n"
+               "    ap = argparse.ArgumentParser()\n"
+               "    ap.add_argument('--out', default='x')\n"
+               "    build(ap.parse_args().out)\n"
+               "    return 0\n")
+        self.assertEqual([], self._dead(src))
+
+
+class CannotJudgeTests(unittest.TestCase):
+    """Three shapes where the value may be read somewhere this analysis cannot see.
+
+    Each is reported as NOT JUDGED and named, never as dead and never silently dropped: a
+    fabricated verdict is worse than an absent one, and an absent one that says nothing is
+    indistinguishable from a flag that passed.
+    """
+
+    def _judge(self, source: str, path: Path | None = None) -> dict:
+        return command_audit.dead_flags(source, path)
+
+    def test_a_computed_getattr_makes_unread_destinations_unjudged(self) -> None:
+        """The shared prose loader is `{k: getattr(args, k, None) for k in keys}`, so the
+        destination read cannot be named. Reported dead, it named four live flags in two
+        modules."""
+        src = ("import argparse\n"
+               "def load(fields):\n"
+               "    return {k: v for k, v in fields.items() if v}\n"
+               "def cmd(args):\n"
+               "    return load({k: getattr(args, k, None) for k in ('decision', 'rationale')})\n"
+               "def main(argv=None):\n"
+               "    p = argparse.ArgumentParser()\n"
+               "    p.add_argument('--decision')\n"
+               "    p.add_argument('--rationale')\n"
+               "    p.set_defaults(func=cmd)\n"
+               "    args = p.parse_args(argv)\n"
+               "    return args.func(args)\n")
+        result = self._judge(src)
+        self.assertEqual([], result["dead"])
+        self.assertEqual(["decision", "rationale"], [u["dest"] for u in result["unjudged"]])
+        self.assertIn("computed attribute name", result["unjudged"][0]["reason"])
+
+    def test_a_module_that_declares_but_never_parses_is_unjudged(self) -> None:
+        """The shared `add_*_arg` helpers declare onto the caller's parser; the value is read in
+        whichever module parses it. Judged here, every one of them reads as dead."""
+        src = ("def add_format_arg(parser):\n"
+               "    parser.add_argument('--format', choices=('text', 'json'), default='text')\n")
+        result = self._judge(src)
+        self.assertEqual([], result["dead"])
+        self.assertEqual(["format"], [u["dest"] for u in result["unjudged"]])
+        self.assertIn("never parses", result["unjudged"][0]["reason"])
+
+    def test_an_unresolvable_escape_makes_unread_destinations_unjudged(self) -> None:
+        """The namespace goes to a callee this module cannot follow, which may read anything."""
+        src = ("import argparse\n"
+               "import somewhere_else\n"
+               "def main(argv=None):\n"
+               "    p = argparse.ArgumentParser()\n"
+               "    p.add_argument('--depth', type=int, default=1)\n"
+               "    args = p.parse_args(argv)\n"
+               "    return somewhere_else.run(args)\n")
+        result = self._judge(src)
+        self.assertEqual([], result["dead"])
+        self.assertEqual(["depth"], [u["dest"] for u in result["unjudged"]])
+        self.assertIn("somewhere_else.run", result["unjudged"][0]["reason"])
+
+    def test_an_escape_into_a_SIBLING_module_is_followed_rather_than_given_up_on(self) -> None:
+        """`sdlc_md.resolve_root(args)` is in every module of the family and reads exactly one
+        destination. Unresolved, it makes every unread destination in all ninety-one modules
+        cannot-judge, and the detector reports nothing about anything."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "lib").mkdir()
+            (root / "lib" / "shared.py").write_text(
+                "def resolve_root(args):\n"
+                "    return getattr(args, 'root', None) or '.'\n", encoding="utf-8")
+            mod = root / "tool.py"
+            mod.write_text("import argparse\n"
+                           "from lib import shared\n"
+                           "def main(argv=None):\n"
+                           "    p = argparse.ArgumentParser()\n"
+                           "    p.add_argument('--root', default='.')\n"
+                           "    p.add_argument('--spare', action='store_true')\n"
+                           "    args = p.parse_args(argv)\n"
+                           "    args.root = shared.resolve_root(args)\n"
+                           "    return 0\n", encoding="utf-8")
+            result = self._judge(mod.read_text(encoding="utf-8"), mod)
+            self.assertEqual([], [u["dest"] for u in result["unjudged"]],
+                             "the sibling escape was not followed, so nothing could be judged")
+            self.assertEqual(["spare"], [d["dest"] for d in result["dead"]],
+                             "following the escape must not also excuse the flag it does not read")
+
+    def test_an_existence_TEST_of_the_namespace_is_not_an_escape(self) -> None:
+        """`if args is not None` reads no destination off the namespace. Counted as an escape, it
+        made every flag in gate.py cannot-judge - including the dead one."""
+        src = ("import argparse\n"
+               "def resolve(args=None):\n"
+               "    if args is not None and args:\n"
+               "        return getattr(args, 'boundary', None)\n"
+               "    return None\n"
+               "def main(argv=None):\n"
+               "    p = argparse.ArgumentParser()\n"
+               "    p.add_argument('--boundary')\n"
+               "    p.add_argument('--spare', action='store_true')\n"
+               "    args = p.parse_args(argv)\n"
+               "    print(resolve(args))\n"
+               "    return 0\n")
+        result = self._judge(src)
+        self.assertEqual([], result["unjudged"])
+        self.assertEqual(["spare"], [d["dest"] for d in result["dead"]])
+
+    def test_a_same_named_local_INSIDE_a_namespace_scope_is_not_the_namespace(self) -> None:
+        """A nested `def _git(*args)` and a nested `args = shlex.split(tail)` both reuse the
+        family's name for its namespace, INSIDE a function that really does hold one - so the
+        enclosing scope's answer is the wrong one and the binding here has to win.
+
+        Pooled, the varargs tuple leaving in a list literal read as the namespace escaping, and
+        every flag in gate.py became cannot-judge. The nesting is the point: without it the
+        module scope answers "not a namespace" anyway and the test proves nothing.
+        """
+        src = ("import argparse\n"
+               "import shlex\n"
+               "import subprocess\n"
+               "def cmd(args):\n"
+               "    def _git(*args):\n"
+               "        return subprocess.run(['git', *args], cwd=args_root)\n"
+               "    def _split(tail):\n"
+               "        args = shlex.split(tail)\n"
+               "        return subprocess.run([*args])\n"
+               "    args_root = args.root\n"
+               "    _split('a b')\n"
+               "    return _git('status')\n"
+               "def main(argv=None):\n"
+               "    p = argparse.ArgumentParser()\n"
+               "    p.add_argument('--root', default='.')\n"
+               "    p.add_argument('--spare', action='store_true')\n"
+               "    p.set_defaults(func=cmd)\n"
+               "    args = p.parse_args(argv)\n"
+               "    return args.func(args)\n")
+        result = self._judge(src)
+        self.assertEqual([], result["unjudged"],
+                         "a same-named local was followed as the namespace and escaped")
+        self.assertEqual(["spare"], [d["dest"] for d in result["dead"]])
+
+    def test_a_namespace_handed_to_a_CLASS_is_followed_into_its_init(self) -> None:
+        """`_PushState(args)` reads its flags in `__init__`; unfollowed, a live flag is unjudged
+        and the `self` parameter would have absorbed the argument."""
+        src = ("import argparse\n"
+               "class State:\n"
+               "    def __init__(self, args):\n"
+               "        self.allow = getattr(args, 'allow', False)\n"
+               "def cmd(args):\n"
+               "    st = State(args)\n"
+               "    if st.allow:\n"
+               "        return 1\n"
+               "    return 0\n"
+               "def main(argv=None):\n"
+               "    p = argparse.ArgumentParser()\n"
+               "    p.add_argument('--allow', action='store_true')\n"
+               "    p.set_defaults(func=cmd)\n"
+               "    args = p.parse_args(argv)\n"
+               "    return args.func(args)\n")
+        result = self._judge(src)
+        self.assertEqual([], result["dead"])
+        self.assertEqual([], result["unjudged"])
+
+    def test_a_verb_table_registered_by_LOOP_VARIABLE_resolves(self) -> None:
+        """`for name, fn, help in (...): p.set_defaults(func=fn)` - the argument is a loop
+        variable, so reading it names no handler. Thirteen live flags in one module went unjudged
+        for exactly this."""
+        src = ("import argparse\n"
+               "def cmd_a(args):\n"
+               "    print(args.alpha)\n"
+               "    return 0\n"
+               "def cmd_b(args):\n"
+               "    print(args.beta)\n"
+               "    return 0\n"
+               "def main(argv=None):\n"
+               "    ap = argparse.ArgumentParser()\n"
+               "    sub = ap.add_subparsers(dest='cmd', required=True)\n"
+               "    for name, fn in (('a', cmd_a), ('b', cmd_b)):\n"
+               "        p = sub.add_parser(name)\n"
+               "        p.add_argument('--alpha')\n"
+               "        p.add_argument('--beta')\n"
+               "        p.set_defaults(func=fn)\n"
+               "    args = ap.parse_args(argv)\n"
+               "    return args.func(args)\n")
+        result = self._judge(src)
+        self.assertEqual([], result["dead"])
+        self.assertEqual([], result["unjudged"])
+
+
+class LiveCorpusDeadFlagTests(unittest.TestCase):
+    """The lane's own verdict on this repository, so the contract is a test and not just a run."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.result = command_audit.scan_dead_flags(_REPO)
+
+    def test_no_shipped_flag_is_dead(self) -> None:
+        self.assertTrue(self.result["applicable"])
+        self.assertEqual([], self.result["dead"],
+                         "a shipped flag is documented and does nothing")
+
+    def test_the_scan_actually_reached_the_corpus(self) -> None:
+        """The control. A scan that judged nothing would satisfy the assertion above."""
+        self.assertGreater(self.result["modules"], 50,
+                           "the scan found almost no modules - it is passing by not looking")
+
+    def test_every_unjudged_destination_carries_a_REASON(self) -> None:
+        for u in self.result["unjudged"]:
+            with self.subTest(module=u["module"], dest=u["dest"]):
+                self.assertGreaterEqual(len(u["reason"]), 20,
+                                        "a destination nobody could judge, with no reason given, "
+                                        "reads as one that passed")
+
+
 if __name__ == "__main__":
     unittest.main()

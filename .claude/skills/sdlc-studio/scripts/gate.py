@@ -2951,6 +2951,14 @@ def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
         # read measurement; bailing out after an empty graph lookup sent every such change
         # to the full suite, which is most of `tools/`.
         hits.update(m for m in module_set if _matches_relevant(path, read_map[m]))
+        # THIRD route: the naming convention `check_script_tests.py` enforces repo-wide -
+        # `x.py` is tested by `test_x.py`. Neither route above finds it. A script loaded by
+        # `spec_from_file_location(name, dir / f"{name}.py")` has no import edge and no
+        # resolvable read, so it was reaching its own test module only by that module measuring
+        # EMPTY and being swept in as unattributable. Adding two real path reads to such a test
+        # then quietly dropped it from the selection for changes to the very script it tests.
+        hits |= {m for m in module_set
+                 if os.path.basename(m) == f"test_{os.path.basename(path)}"}
         if hits:
             selected |= hits
             continue
