@@ -49,7 +49,11 @@ ALLOWLIST = {
                                  # reverted a shipped repair mutating a live one) and the standing
                                  # practice that a behaviour-changing repair carries a test. Both
                                  # are doctrine nothing executes, so the reference IS the artefact
-    "reference-sprint.md": 724,  # +EP0130/0146/0150-0155 sprint-engine, +report-only lane partition/export
+    "reference-sprint.md": 740,  # +the compulsory checklist as loop step 9 (EP0192): the one place
+                                 # the whole cycle is stated as a checkable set. Raised 724 -> 740
+                                 # deliberately - the file was AT its +5% tolerance, so the step
+                                 # could not land without saying so here.
+                                 # +EP0130/0146/0150-0155 sprint-engine, +report-only lane partition/export
                                  # +the amend/material goal-review and seat-brief notes (EP0152/0153)
                                  # (Sprint 1 of the three-sprint run). FLAGGED for a structural
                                  # split: it is the largest reference and grows with the engine;

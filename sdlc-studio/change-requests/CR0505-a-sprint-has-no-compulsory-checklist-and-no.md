@@ -5,7 +5,7 @@
 > **Priority:** High
 > **Type:** Feature
 > **Size:** L
-> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/templates/core/sprint-report.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Date:** 2026-07-30
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Darren Benson (operator-directed at the 2026-07-30 close); human; skill v5.0.0
@@ -36,3 +36,4 @@ Sequence this INTO THE NEXT SPRINT at the operator's direction. Build the derive
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-30 | Darren Benson (operator-directed at the 2026-07-30 close) | Raised |
+| 2026-07-30 | sdlc-studio | Planning pass answered the Recommendation's open question. The report is NOT new: `sprint_report.py` already composes delivered points, goal verdict, cost, velocity, mutation, proof, seams and sign-offs from the tree, and the close already draws it before the sign-off brief. The checklist therefore becomes rows of that report, and this request's `Affects` is corrected from `retro.py` plus a `templates/core/sprint-report.md` that does not exist. Building a second close-time document in `retro.py` was the exact drift this request was filed about. The compulsory set was also widened from close-time questions to one row per stage of the whole cycle, and three stories added for the stages the first four left uncovered. |

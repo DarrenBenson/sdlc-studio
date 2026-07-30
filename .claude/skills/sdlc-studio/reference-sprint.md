@@ -288,6 +288,21 @@ independent critic plus the gate - the check's output states this scoping.
    outcome (`goal-reached` / `budget-spent` / `blocked` / `stopped`). A run nobody opened still gets
    a handoff - it says the run was not opened rather than inventing a start time.
 
+9. **The compulsory checklist (a gate, not doctrine).** Every stage above is a ROW of the sprint
+   report, stating `ran`, `not-run` or `waived`; the figures a close otherwise re-derives by hand
+   (planned against delivered, dropped / held / carried over with reasons, scope creep as a ratio,
+   who reviewed what under which seat over how many lenses, impediments, carried known issues, cost)
+   are rows beside them. The checklist IS the report - one document, not two to keep in step - and
+   `sprint close` runs it as a chain step that REFUSES on an unanswered item, naming it. All but one
+   row is derived from the tree; a checklist asking an agent to retype what the tree already holds
+   gets filled in from memory. The exception is the stop-ship ruling on each carried finding, which
+   is a judgement: it lives in the retro's `## Known issues carried` table, an open finding with no
+   row reads UNRULED, and a `stop-ship` ruling holds the close. Closing without an item needs a
+   recorded waiver (`decisions.py waive --subject rule:sprint-checklist:<item>`), on the same terms
+   as a conformance waiver. The sign-off and handoff rows are reported and never held - the close
+   produces them itself, and a gate whose only exit is the step it blocks is a deadlock. A stage
+   added to the cycle with no row fails `sprint_report.cycle_drift()`, so the two cannot part.
+
 ## Definition of Done
 
 A tranche is Done when (aligned to the operator's orchestrator discipline):

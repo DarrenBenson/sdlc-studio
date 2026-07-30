@@ -2945,16 +2945,27 @@ def _drift_warning(drift: dict, batch_paths: set) -> str | None:
     return "\n".join(lines) or None
 
 
-def _preplan_reconcile(args: argparse.Namespace, kinds: list[str]) -> int | None:
+def _preplan_reconcile(args: argparse.Namespace, kinds: list[str],
+                       record: dict | None = None) -> int | None:
     """Reconcile-before-plan: a plan must read a drift-free census (file Status vs its index
     row). Mechanical drift only; semantic staleness still needs the audit. Prints a warning and,
-    under --strict, returns 2 to abort; otherwise None."""
+    under --strict, returns 2 to abort; otherwise None.
+
+    `record`, when given, receives the VERDICT under `preplan_reconcile`. The check ran on every
+    plan and left no trace, so the close could not show that the batch had been selected against
+    a drift-free census - which is the first row of the sprint checklist, and a stage whose
+    evidence does not exist cannot be certified however reliably it happens.
+    """
     drift = []
     for k in kinds:
         try:
             drift += [(k, d) for d in reconcile.detect_type(k, Path(args.root)).get("drift", [])]
         except Exception:  # noqa: BLE001 - reconcile is advisory here, never block planning on its failure
             pass
+    if record is not None:
+        record["preplan_reconcile"] = {"drift": len(drift),
+                                       "kinds": sorted({k for k, _ in drift}),
+                                       "at": sdlc_md.now_iso8601()}
     if drift:
         names = ", ".join(sorted({k for k, _ in drift}))
         print(f"reconcile: {len(drift)} drift item(s) in the {names} index(es) - reconcile before "
@@ -4586,10 +4597,53 @@ def _findings_outside_batches(root, spans) -> int:
     return outside
 
 
+def _close_checklist(root, retro, state):
+    """The compulsory checklist, as a chain step. Refuses on an unanswered item, naming it.
+
+    Placed after the retro and lessons steps and before the gate, because the rows it reads are
+    produced by everything up to here; the two rows the close itself discharges (the sign-off
+    fan-out, the handoff) are reported and never held, or the chain would refuse on the step it
+    is on its way to perform.
+
+    A checklist nothing enforces is the state this was built from: the seat ceremony was
+    compulsory in prose and was skipped twice in one session without a warning being printed.
+    """
+    try:
+        import sprint_report  # noqa: PLC0415 - deferred, like the chain's sibling imports
+        ck = sprint_report.checklist(root, retro)
+    except Exception as exc:  # noqa: BLE001 - a step that cannot check must not report a pass
+        return (False, f"the sprint checklist could not be composed: {type(exc).__name__}: {exc}",
+                "fix the error above, or run `sprint_report.py checklist --id "
+                f"{retro}` to see it directly")
+    if ck["stop_ship"]:
+        # ANSWERED, and the answer stops the ship. Held separately from the unanswered items
+        # because the remedy is the opposite one: an unanswered item needs somebody to look, a
+        # stop-ship ruling needs the defect fixed or the ruling revised by whoever made it.
+        return (False,
+                "known-issues: " + ", ".join(ck["stop_ship"]) + " "
+                + ("is" if len(ck["stop_ship"]) == 1 else "are")
+                + " ruled STOP-SHIP in the retro's carried-issues table",
+                "fix the finding, or have the ruler revise the ruling in the retro - a close "
+                "that proceeds over a stop-ship ruling makes every future ruling a note")
+    if not ck["outstanding"]:
+        pending = (f"; {len(ck['pending_in_close'])} item(s) this close discharges itself"
+                   if ck.get("pending_in_close") else "")
+        return (True, f"{len(ck['items'])} compulsory item(s), none outstanding{pending}", "")
+    named = [r for r in ck["items"] if r["id"] in set(ck["outstanding"])]
+    detail = "\n".join(f"  {r['id']}: {r['title']} - {r['value']}"
+                       + (f"\n      {r['detail']}" if r["detail"] else "") for r in named)
+    return (False,
+            f"{len(named)} compulsory checklist item(s) unanswered:\n{detail}",
+            "answer each item by running the stage it names, or record a waiver naming it and "
+            "why (`decisions.py waive --subject "
+            f"{sprint_report.WAIVER_SUBJECT}:<item> --rationale '<why>'`) - closing without an "
+            "item and forgetting it must be different events in the record")
+
+
 # Chain order is the ceremony's order; cmd_close resolves each step through globals() at
 # call time so a test can patch one step without rebuilding the table.
 _CLOSE_CHAIN = ("review-coverage", "retro-validate", "retro-extract", "retro-accuracy",
-                "lessons-summary",
+                "lessons-summary", "checklist",
                 "gate", "handoff", "reconcile", "review-anchor")
 
 #: The machine-maintained status block inside the review anchor. DELIMITED, because the anchor is
@@ -5666,8 +5720,8 @@ def _render_preflight(data: dict) -> None:
 #: it again in the copy would double the one genuinely expensive step of a preview whose whole
 #: point is to be cheap.
 DRY_RUN_ACTION_STEPS = ("review-coverage", "retro-validate", "retro-extract",
-                        "retro-accuracy", "lessons-summary", "handoff", "reconcile",
-                        "review-anchor")
+                        "retro-accuracy", "lessons-summary", "checklist", "handoff",
+                        "reconcile", "review-anchor")
 
 
 def close_dry_run(root, retro_id: str | None = None) -> dict:
@@ -6771,7 +6825,8 @@ def cmd_plan(args: argparse.Namespace) -> int:
     # reconcile before plan - a plan must be built on a drift-free census.
     kinds = (list(dict.fromkeys(k for k, _ in queries)) if queries
              else list(sdlc_md.ARTIFACT_TYPES))
-    rc = _preplan_reconcile(args, kinds)
+    preplan: dict = {}
+    rc = _preplan_reconcile(args, kinds, record=preplan)
     if rc is not None:
         return rc
     # blocker sweep before plan - newly-unblocked work should be eligible for the batch. Advisory:
@@ -6930,6 +6985,11 @@ def cmd_plan(args: argparse.Namespace) -> int:
         try:
             state = run_state.open_run(args.root, batch=[u["id"] for u in data["batch"]],
                                        goal=getattr(args, "goal", None), plan=str(out))
+            # The pre-plan census verdict, recorded ON THE RUN rather than only printed. The
+            # sprint checklist's first row asks whether this batch was selected against a
+            # drift-free index, and a warning on someone's terminal answers that for nobody.
+            if preplan.get("preplan_reconcile"):
+                state = run_state.update(args.root, **preplan)
         except run_state.DisjointBatchError as exc:
             print(str(exc), file=sys.stderr)
             return 2

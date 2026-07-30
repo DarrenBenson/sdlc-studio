@@ -242,6 +242,16 @@ lists every script with a one-line summary; open the linked page for the full en
   and the skill's cross-project registry; `revalidate` + `summary` are the gated sprint-close loop
 - `sprint.py` - The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf` selects + dependency-orders...; `plan` refuses an ungroomed batch, `breakdown` reports the same census read-only...
 - `autosprint.py` - Deprecated re-exporting alias for `sprint.py` (the old name); prefer `sprint`.
+- `sprint_report.py` - The end-of-sprint page and the compulsory checklist, which are ONE document.
+  `show --id RETROxxxx` composes delivered units and points, cost with rework counted, velocity,
+  estimate-versus-actual, mutation yield, proof and seam coverage from the retro, `retro accuracy`
+  and telemetry. `checklist --id RETROxxxx` prints the compulsory set alone and exits non-zero while
+  any item is outstanding: one row per stage of the cycle plus the figures a close otherwise
+  re-derives by hand (planned against delivered, dropped / held / carried over with reasons, scope
+  creep as a ratio, review attribution by seat and lens count, impediments, carried known issues,
+  cost). Every row is derived except the stop-ship rulings, which are a judgement and live in the
+  retro's `## Known issues carried` table. `cycle_drift()` is the anti-drift guard: a sprint ceremony
+  verb with no checklist row fails it. Read-only
 - `handoff.py` - The run-close handoff guide: a JOIN over the run's own evidence naming every
   remaining item with its pointer (file / AC / check) and a copilot-tail vs judgement tag; emits the
   worklist the next `sprint plan --worklist` reads. `lib/run_state.py` holds the run object it closes

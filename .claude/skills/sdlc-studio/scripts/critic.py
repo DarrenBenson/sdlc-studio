@@ -1445,22 +1445,34 @@ def _declared_reviewers(repo_root: Path | str) -> list[tuple[str, str]]:
     return out
 
 
+def seat_for(repo_root: Path | str, reviewer: str) -> str | None:
+    """The declared seat ROLE this reviewer id stands in, or None for a seat-less reviewer.
+
+    Whole-word matching only: 'production' must not claim the product seat, while any token of
+    the seat holder's name ('sam') is a seat claim. None on a project that declares no
+    personas, because there is no seat to stand in - a headless consumer is not seat-less in
+    the sense a report should report, so callers distinguish the two by asking whether any seat
+    is declared at all.
+    """
+    import re as _re
+    words = set(_re.findall(r"[a-z0-9]+", (reviewer or "").lower()))
+    for role, name in _declared_reviewers(repo_root):
+        if role in words:
+            return role
+        if any(tok in words for tok in _re.findall(r"[a-z0-9]+", name.lower())):
+            return role
+    return None
+
+
 def _seat_drift_warning(repo_root: Path | str, reviewer: str) -> str | None:
     """Advisory when the reviewer names no declared seat - the persona lens
     drifting out of the critic loop must be visible, never silent. Silent on
     projects that declare no personas (headless consumers still work)."""
-    import re as _re
     declared = _declared_reviewers(repo_root)
     if not declared:
         return None
-    # whole-word matching only: 'production' must not claim the product seat,
-    # while any token of the seat holder's name ('sam') is a seat claim
-    words = set(_re.findall(r"[a-z0-9]+", reviewer.lower()))
-    for role, name in declared:
-        if role in words:
-            return None
-        if any(tok in words for tok in _re.findall(r"[a-z0-9]+", name.lower())):
-            return None
+    if seat_for(repo_root, reviewer) is not None:
+        return None
     opts = ", ".join(f"{name} (role: {role})" for role, name in declared)
     return (f"reviewer '{reviewer}' matches no declared seat - the critic "
             f"should run as a review seat's render (declared: {opts}); see "

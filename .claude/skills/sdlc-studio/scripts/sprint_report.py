@@ -27,6 +27,7 @@ Two honesty rules it will not bend:
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import sys
 from pathlib import Path
@@ -278,7 +279,7 @@ def report(root: Path, retro_id: str, *, sprint_tokens: int | None = None,
     mut = _mutation_summary(Path(root), unit_ids)
     execution = _execution_actuals(Path(root), unit_ids)
     overhead = _overhead_ratio(Path(root), unit_ids, execution, mut)
-    return {
+    out = {
         "ok": True, "id": retro_id, "date": acc.get("date", ""),
         "sprint_goal": goal, "sprint_goal_verdict": goal_verdict,
         "flow": _flow_summary(Path(root)),
@@ -314,6 +315,11 @@ def report(root: Path, retro_id: str, *, sprint_tokens: int | None = None,
         "tickets": val.get("filed", []),
         "declined": val.get("declined", []),
     }
+    # The compulsory checklist, composed from the same `out` rather than a second pass: a
+    # checklist that re-derived the delivered points could disagree with the line above it,
+    # and a close cannot be certified by a page that contradicts itself.
+    out["checklist"] = checklist(root, retro_id, unit_ids=unit_ids, rep=out)
+    return out
 
 
 def _spend_line(sp: dict, sprint_tokens: int | None) -> str:
@@ -759,6 +765,660 @@ def _delegated_signoff_lines(rep: dict) -> list[str]:
     return out
 
 
+# --- The compulsory sprint checklist ---------------------------------------------------
+#
+# A sprint's compulsory items were stated nowhere, so nothing could hold them and the close
+# became an interview: what was dropped, what crept in and what is carried were known only to
+# whoever ran it. The set below is not a list somebody thought of. It is one row per STAGE of
+# the cycle this project actually runs, plus the FIGURES a close re-derives every time.
+#
+# All but one row is DERIVED. A checklist that asks an agent to retype what the tree already
+# holds gets filled in with what the agent REMEMBERS, which is the failure the derived index
+# exists to prevent. The exception is the carried known issues: whether an open defect stops
+# the ship is a judgement, so it is recorded in the retro and read back here, and its absence
+# is reported rather than assumed benign.
+
+#: The waiver subject family, read by `decisions.record_waiver` / `waiver_for`. A close may
+#: proceed without one compulsory item, but only on a recorded waiver naming the item and its
+#: reason - on the same terms as a conformance waiver, and through the SAME primitive rather
+#: than a second one that drifts. Scope tail is the item id: `rule:sprint-checklist:<item>`.
+WAIVABLE_RULES = ("rule:sprint-checklist",)
+WAIVER_SUBJECT = "rule:sprint-checklist"
+
+#: A STAGE row is exactly one of these three. Evidence that cannot be READ is `not-run`, with
+#: the reason in `detail`: this checklist certifies that a stage can be SHOWN to have happened,
+#: and an unreadable record shows nothing. That is the conservative direction - the alternative
+#: reports a ceremony as held on the strength of a file nobody could open.
+RAN, NOT_RUN, WAIVED = "ran", "not-run", "waived"
+#: A FIGURE row is answered when its value could be derived, unanswered when it could not.
+ANSWERED, UNANSWERED = "answered", "unanswered"
+
+STAGE, FIGURE = "stage", "figure"
+DERIVED, RECORDED = "derived", "recorded"
+
+#: `sprint` verbs that are NOT a stage of the cycle: the close container itself, and the
+#: mechanics a run uses between stages. EVERY OTHER sprint verb must map to a checklist row -
+#: which is what makes the drift guard non-circular. Add a ceremony verb tomorrow and the guard
+#: fails until it is either given a row or declared here as mechanics; a guard that compared
+#: the checklist against a list derived from the checklist would pass by construction.
+NON_CEREMONY_VERBS = ("close", "boundary", "report", "checklist", "preflight",
+                      "reopen", "stop", "decision", "batch", "lane")
+
+#: The compulsory set. `resolver` is resolved through `globals()` at call time, like the close
+#: chain's steps, so a test can patch one row without rebuilding the table. `command` is the
+#: shipped command that HOLDS the stage, and the drift guard checks it still resolves.
+CHECKLIST = (
+    {"id": "reconciled-before-plan", "kind": STAGE, "authority": DERIVED,
+     "title": "Index drift zero before the plan", "command": "sprint plan",
+     "resolver": "_ck_reconciled"},
+    {"id": "goal-seat-reviewed", "kind": STAGE, "authority": DERIVED,
+     "title": "Sprint Goal stated and seat-reviewed BEFORE the plan",
+     "command": "sprint goal-review", "resolver": "_ck_goal_seat_review"},
+    {"id": "batch-groomed", "kind": STAGE, "authority": DERIVED,
+     "title": "Batch groomed - nothing ungroomed admitted", "command": "sprint breakdown",
+     "resolver": "_ck_batch_groomed"},
+    {"id": "run-opened", "kind": STAGE, "authority": DERIVED,
+     "title": "Batch approved and the run opened", "command": "sprint plan",
+     "resolver": "_ck_run_opened"},
+    {"id": "batch-boundary-review", "kind": STAGE, "authority": DERIVED,
+     "title": "Review at each delivery batch boundary", "command": "sprint review-batch",
+     "resolver": "_ck_batch_boundary_review"},
+    {"id": "closing-review", "kind": STAGE, "authority": DERIVED,
+     "title": "Closing full-diff review", "command": "critic sprint-review",
+     "resolver": "_ck_closing_review"},
+    {"id": "goal-judged", "kind": STAGE, "authority": DERIVED,
+     "title": "Sprint Goal judged", "command": "sprint goal-verdict",
+     "resolver": "_ck_goal_judged"},
+    {"id": "retro", "kind": STAGE, "authority": DERIVED,
+     "title": "Retro written and structurally complete", "command": "retro validate",
+     "resolver": "_ck_retro"},
+    {"id": "lessons", "kind": STAGE, "authority": DERIVED,
+     "title": "Lessons extracted from the batch", "command": "lessons summary",
+     "resolver": "_ck_lessons"},
+    # `discharged_by: close` - a compulsory item the CLOSE ITSELF produces, so it is reported
+    # like every other row but never held against a close that has not got there yet. Without
+    # this the chain refuses on the sign-off it is about to fan out and no close can ever pass:
+    # a gate whose only exit is the step it blocks is not a gate, it is a deadlock. Reject,
+    # fix, RE-REQUEST is the loop a human sprint runs; a gate must leave the re-request
+    # reachable.
+    {"id": "signoff", "kind": STAGE, "authority": DERIVED, "discharged_by": "close",
+     "title": "Reviewer-of-record sign-off", "command": "critic signoff",
+     "resolver": "_ck_signoff"},
+    {"id": "handoff", "kind": STAGE, "authority": DERIVED, "discharged_by": "close",
+     "title": "Handoff, when the run stopped short of its goal", "command": "handoff generate",
+     "resolver": "_ck_handoff"},
+    {"id": "planned-vs-delivered", "kind": FIGURE, "authority": DERIVED,
+     "title": "Planned against delivered", "command": "sprint report",
+     "resolver": "_ck_planned_vs_delivered"},
+    {"id": "not-delivered", "kind": FIGURE, "authority": DERIVED,
+     "title": "Dropped, held and carried over, each with its reason", "command": "sprint batch",
+     "resolver": "_ck_not_delivered"},
+    {"id": "scope-creep", "kind": FIGURE, "authority": DERIVED,
+     "title": "Scope creep, as a count and a ratio", "command": "sprint report",
+     "resolver": "_ck_scope_creep"},
+    {"id": "review-attribution", "kind": FIGURE, "authority": DERIVED,
+     "title": "Who reviewed what, under which seat, over how many lenses",
+     "command": "critic record", "resolver": "_ck_review_attribution"},
+    {"id": "impediments", "kind": FIGURE, "authority": DERIVED,
+     "title": "Blocked units and unresolved operator decisions", "command": "sprint decision",
+     "resolver": "_ck_impediments"},
+    {"id": "known-issues", "kind": FIGURE, "authority": RECORDED,
+     "title": "Known issues carried, each with its stop-ship ruling",
+     "command": "retro validate", "resolver": "_ck_known_issues"},
+    {"id": "cost", "kind": FIGURE, "authority": DERIVED,
+     "title": "Cost, velocity and estimate accuracy", "command": "sprint report",
+     "resolver": "_ck_cost"},
+)
+
+#: The states that leave a compulsory item OUTSTANDING, and so hold the close.
+_OUTSTANDING = (NOT_RUN, UNANSWERED)
+
+
+def _terminal(root: Path, uid: str) -> tuple[str, bool]:
+    """`(status, is_terminal)` for a unit id. `("", False)` when the unit cannot be found -
+    unknown is never terminal, because counting an unreadable unit as delivered is the one
+    error that inflates every figure above it."""
+    found = sdlc_md.find_by_id(root, uid)
+    if not found:
+        return "", False
+    path, type_ = found
+    status = (sdlc_md.extract_field(sdlc_md.read_text_safe(path), "Status") or "").strip()
+    return status, status in sdlc_md.terminal_statuses(type_)
+
+
+def _planned_ids(run: dict | None) -> list[str]:
+    """The batch as APPROVED, reconstructed from the run's own change ledger.
+
+    `batch` holds the batch as it stands NOW: a drop removes from it and an add appends. So the
+    planned set is the current batch, minus everything added during the run, plus everything
+    dropped from it - which is the only way a report can put commitment beside actual without
+    an operator retyping the plan from memory.
+    """
+    if not run:
+        return []
+    ids = [sdlc_md.norm_id(u) for u in (run.get("batch") or [])]
+    added, dropped = set(), []
+    for change in run.get("batch_changes") or []:
+        uid = sdlc_md.norm_id(change.get("id") or "")
+        if not uid:
+            continue
+        if change.get("action") == "add" and not change.get("note"):
+            added.add(uid)
+        elif change.get("action") == "drop":
+            dropped.append(uid)
+    # Rebuilt by filtering rather than mutating in place: the confinement roster's write
+    # detector is deliberately over-inclusive and cannot tell `list.remove` from `os.remove`,
+    # so a read-only module was being censused as a workspace writer.
+    kept = [u for u in ids if u not in added]
+    return kept + [u for u in dropped if u not in kept]
+
+
+def _ck_reconciled(ctx: dict) -> tuple:
+    rec = (ctx["run"] or {}).get("preplan_reconcile")
+    if not isinstance(rec, dict):
+        return (NOT_RUN, "no record",
+                "the run carries no pre-plan reconcile record, so a drift-free census before "
+                "the plan cannot be shown (`sprint plan` records one from v5)")
+    drift = rec.get("drift")
+    if drift:
+        return (RAN, f"{drift} drift item(s)",
+                "the plan read a census that had drifted; selection reads file Status, so a "
+                "stale index misleads it")
+    return (RAN, "drift 0", "")
+
+
+def _ck_goal_seat_review(ctx: dict) -> tuple:
+    # The SPRINT GOAL, not the run's `goal` field - that one holds the pipeline RUNG
+    # (plan/design/done), and reviewing the goal-review record against "done" reported every
+    # sprint as having had its goal reviewed for a different goal.
+    goal = ctx.get("sprint_goal") or (ctx["run"] or {}).get("sprint_goal")
+    if not goal:
+        return (NOT_RUN, "no goal",
+                "the plan recorded no Sprint Goal, so there was nothing for a seat to review; "
+                "the batch is judged as a batch")
+    try:
+        import sprint  # noqa: PLC0415 - deferred, like every sibling read here
+        status = sprint.goal_review_status(ctx["root"], goal)
+    except Exception as exc:  # noqa: BLE001 - a checklist row never fails the report
+        sdlc_md.debug("sprint_report._ck_goal_seat_review", exc)
+        return (NOT_RUN, "unreadable", f"the goal-review record could not be read ({exc})")
+    if not status.get("reviewed"):
+        return (NOT_RUN, "no seat reviewed the goal",
+                str(status.get("reason") or "")
+                or "a goal no seat judged achievable before the plan is a goal the batch was "
+                   "never sized against")
+    seats = status.get("seats") or []
+    detail = ("objections: " + "; ".join(str(o.get("seat")) for o in status["objections"])
+              if status.get("objections") else "")
+    return (RAN, f"{len(seats)} seat(s), {status.get('rounds', 0)} round(s)", detail)
+
+
+def _ck_batch_groomed(ctx: dict) -> tuple:
+    plan = ctx.get("plan") or {}
+    bd = plan.get("breakdown")
+    if not isinstance(bd, dict):
+        return (NOT_RUN, "no plan record",
+                "the plan record is absent or carries no breakdown, so the grooming gate's "
+                "verdict on this batch cannot be shown")
+    ungroomed = bd.get("ungroomed") or []
+    if ungroomed:
+        names = ", ".join(str(u.get("id")) for u in ungroomed[:6])
+        return (RAN, f"{len(ungroomed)} ungroomed admitted",
+                f"the gate flagged {names} and the batch was planned anyway")
+    return (RAN, "0 ungroomed", "")
+
+
+def _ck_run_opened(ctx: dict) -> tuple:
+    run = ctx["run"] or {}
+    if not run.get("run_id"):
+        return (NOT_RUN, "no run",
+                "no run state names this sprint's units, so the batch it was approved with "
+                "cannot be recovered - every planned-against-delivered figure below is blind")
+    return (RAN, f"{run['run_id']} ({len(run.get('batch') or [])} unit(s))", "")
+
+
+def _ck_batch_boundary_review(ctx: dict) -> tuple:
+    try:
+        spans = run_state.batches(ctx["root"])
+    except Exception as exc:  # noqa: BLE001
+        sdlc_md.debug("sprint_report._ck_batch_boundary_review", exc)
+        return (NOT_RUN, "unreadable", f"the batch spans could not be read ({exc})")
+    if not spans:
+        return (NOT_RUN, "no batch spans",
+                "no delivery batch was opened, so every finding this run raised was raised at "
+                "the close - which is close work, not sprint work")
+    done = [s for s in spans if s.get("reviewed_at")]
+    if not done:
+        # A span OPENED is not a review HELD. Reporting `ran` here on the strength of the
+        # span's existence would certify the ceremony by the act of scheduling it.
+        return (NOT_RUN, f"0/{len(spans)} reviewed",
+                "delivery batches were opened and none was independently reviewed, so every "
+                "finding this run raised was raised at the close")
+    if len(done) < len(spans):
+        return (RAN, f"{len(done)}/{len(spans)} reviewed",
+                f"{len(spans) - len(done)} span(s) closed without an independent pass")
+    return (RAN, f"{len(done)}/{len(spans)} reviewed", "")
+
+
+def _ck_closing_review(ctx: dict) -> tuple:
+    reviews = ctx["sprint_reviews"]
+    rounds = ctx["review_rounds"]
+    if not reviews and not rounds:
+        return (NOT_RUN, "none recorded",
+                "no full-diff pass over this batch is recorded; the close certifies that a "
+                "review happened, it does not perform one")
+    return (RAN, f"{len(reviews)} recorded pass(es), {len(rounds)} round(s)", "")
+
+
+def _ck_goal_judged(ctx: dict) -> tuple:
+    if not ctx.get("sprint_goal"):
+        return (NOT_RUN, "no goal to judge",
+                "the plan set no goal, so the run is judged as a batch - `goal-verdict` "
+                "refuses to invent alignment after the fact")
+    gv = ctx.get("goal_verdict")
+    if not gv or not gv.get("verdict"):
+        return (NOT_RUN, "unjudged",
+                "the goal was stated and never judged, which is the state a green unit count "
+                "reads as success from")
+    return (RAN, str(gv["verdict"]), str(gv.get("note") or ""))
+
+
+def _ck_retro(ctx: dict) -> tuple:
+    val = ctx.get("retro_validate") or {}
+    if not val:
+        return (NOT_RUN, "no retro", "no retro was resolved for this close")
+    if val.get("errors"):
+        return (RAN, f"{len(val['errors'])} structural error(s)", "; ".join(val["errors"][:3]))
+    return (RAN, "complete", "")
+
+
+def _ck_lessons(ctx: dict) -> tuple:
+    lessons = (ctx.get("retro_validate") or {}).get("lessons") or []
+    if not lessons:
+        return (NOT_RUN, "none recorded",
+                "a sprint that recorded no lesson either learned nothing or wrote nothing "
+                "down, and only one of those is worth repeating")
+    return (RAN, f"{len(lessons)} recorded", "")
+
+
+def _ck_signoff(ctx: dict) -> tuple:
+    units = ctx["units"]
+    if not units:
+        return (NOT_RUN, "no units", "the batch named no units, so there is nothing to sign off")
+    try:
+        import critic  # noqa: PLC0415
+        signed = [u for u in units if critic.signoff_for(ctx["root"], u)]
+    except Exception as exc:  # noqa: BLE001
+        sdlc_md.debug("sprint_report._ck_signoff", exc)
+        return (NOT_RUN, "unreadable", f"the sign-off log could not be read ({exc})")
+    if not signed:
+        return (NOT_RUN, f"0/{len(units)}",
+                "no reviewer of record has signed any unit of this batch")
+    return (RAN, f"{len(signed)}/{len(units)}",
+            "" if len(signed) == len(units) else
+            f"{len(units) - len(signed)} unit(s) hold at Review until a sign-off lands")
+
+
+def _ck_handoff(ctx: dict) -> tuple:
+    run = ctx["run"] or {}
+    outcome = str(run.get("outcome") or "")
+    if outcome in ("", run_state.RUNNING, run_state.GOAL_REACHED):
+        return (RAN, "not owed",
+                "a run that reached its goal owes a retro, not a handoff"
+                if outcome == run_state.GOAL_REACHED else
+                "the run is still open, so no handoff is owed yet")
+    if not run.get("handoff"):
+        return (NOT_RUN, f"owed ({outcome})",
+                "the run stopped short of its goal and left no handoff, so the tail is "
+                "scattered across hints, the ledger and the retro")
+    return (RAN, str(run["handoff"]), "")
+
+
+def _ck_planned_vs_delivered(ctx: dict) -> tuple:
+    planned = ctx["planned"]
+    if not planned:
+        return (UNANSWERED, "unknown",
+                "no run record names this sprint's units, so what it COMMITTED to cannot be "
+                "recovered - only what it happened to finish")
+    delivered = [u for u in ctx["units"] if _terminal(ctx["root"], u)[1]]
+    pts = ctx.get("delivered_points")
+    return (ANSWERED,
+            f"{len(delivered)}/{len(planned)} unit(s), {pts if pts is not None else 'unknown'} "
+            f"point(s) delivered", "")
+
+
+def _ck_not_delivered(ctx: dict) -> tuple:
+    run = ctx["run"] or {}
+    if not run.get("run_id"):
+        return (UNANSWERED, "unknown", "no run record, so no batch-change ledger to read")
+    dropped = [c for c in (run.get("batch_changes") or []) if c.get("action") == "drop"]
+    held = [sdlc_md.norm_id(u) for u in (run.get("deferred_units") or [])]
+    carried = [u for u in ctx["units"]
+               if not _terminal(ctx["root"], u)[1] and sdlc_md.norm_id(u) not in held]
+    bits = []
+    for c in dropped:
+        bits.append(f"dropped {c.get('id')}: {c.get('reason') or 'NO REASON RECORDED'}")
+    for u in held:
+        bits.append(f"held {u} (operator decision pending)")
+    for u in carried:
+        bits.append(f"carry-over {u} ({_terminal(ctx['root'], u)[0] or 'status unreadable'})")
+    if not bits:
+        return (ANSWERED, "none", "every planned unit was delivered")
+    return (ANSWERED, f"{len(dropped)} dropped, {len(held)} held, {len(carried)} carried over",
+            "; ".join(bits[:12]))
+
+
+def _ck_scope_creep(ctx: dict) -> tuple:
+    planned = ctx["planned"]
+    filed = ctx["filed_in_run"]
+    if not planned:
+        return (UNANSWERED, "unknown",
+                "the planned set is unknown, so a ratio against it would be arithmetic on a "
+                "number nobody can check")
+    ratio = round(len(filed) / len(planned), 2)
+    return (ANSWERED, f"{len(filed)} filed against {len(planned)} planned (ratio {ratio})",
+            ", ".join(filed[:12]) + (f" (+{len(filed) - 12} more)" if len(filed) > 12 else ""))
+
+
+#: A round is at least two reviewers on distinct lenses, whatever the diff size, because the
+#: defects a lone reviewer misses are the ones that reviewer's one lens does not point at.
+MIN_LENSES = 2
+
+
+def _ck_review_attribution(ctx: dict) -> tuple:
+    units = ctx["units"]
+    if not units:
+        return (UNANSWERED, "no units", "the batch named no units")
+    try:
+        import critic  # noqa: PLC0415
+    except Exception as exc:  # noqa: BLE001
+        sdlc_md.debug("sprint_report._ck_review_attribution", exc)
+        return (UNANSWERED, "unreadable", f"the verdict log could not be read ({exc})")
+    covered, rejected, uncovered, reviewers = [], [], [], set()
+    for uid in units:
+        v = critic.verdict_for(ctx["root"], uid)
+        if not v:
+            uncovered.append(uid)
+            continue
+        who = (v.get("reviewer") or "").strip()
+        reviewers.add(who)
+        seat = critic.seat_for(ctx["root"], who) if who else None
+        label = f"{uid} by {who or 'unnamed'} ({seat or 'NO DECLARED SEAT'})"
+        (covered if str(v.get("verdict") or "").strip().upper() == "APPROVE"
+         else rejected).append(label)
+    # The reviewers of the batch as a whole count too: a full-diff pass covers every unit at
+    # once, so counting only per-unit rows would report a two-lens round as one-lens.
+    reviewers |= {str(r.get("reviewer") or "").strip()
+                  for r in ctx["sprint_reviews"] + ctx["review_rounds"]}
+    lenses = len({r for r in reviewers if r})
+    under = lenses < MIN_LENSES
+    value = (f"{len(covered)} covered, {len(rejected)} rejected, {len(uncovered)} uncovered; "
+             f"{lenses} lens(es)" + (" - UNDER-COVERED" if under else ""))
+    detail = "; ".join(covered[:6] + [f"REJECTED {r}" for r in rejected[:6]])
+    if under:
+        detail = (f"a round under {MIN_LENSES} distinct reviewers is recorded as under-covered: "
+                  f"one lens does not point at what it does not point at. " + detail)
+    return (ANSWERED, value, detail)
+
+
+def _ck_impediments(ctx: dict) -> tuple:
+    run = ctx["run"]
+    if run is None:
+        return (UNANSWERED, "unreadable",
+                "no run record could be read, so whether anything was blocked is unknown - "
+                "which is not the same as nothing having been blocked")
+    pending = [d for d in (run.get("pending_decisions") or []) if not d.get("resolution")]
+    blocked = []
+    for uid in ctx["units"]:
+        status = _terminal(ctx["root"], uid)[0]
+        if status.strip().lower() == "blocked":
+            blocked.append(uid)
+    if not pending and not blocked:
+        return (ANSWERED, "none", "nothing blocked and no operator question outstanding")
+    bits = [f"blocked {u}" for u in blocked]
+    bits += [f"open question on {d.get('unit')}: {d.get('question')}" for d in pending]
+    return (ANSWERED, f"{len(blocked)} blocked, {len(pending)} open question(s)",
+            "; ".join(bits[:12]))
+
+
+def _ck_known_issues(ctx: dict) -> tuple:
+    rows = ctx["carried_issues"]
+    open_findings = ctx["open_filed_in_run"]
+    ruled = {r["id"] for r in rows if r["ok"]}
+    unruled = [u for u in open_findings if u not in ruled]
+    stop = [r["id"] for r in rows if r["ok"] and r["ruling"] == "stop-ship"]
+    broken = [f"{r['id'] or '(no id)'}: {r['why']}" for r in rows if not r["ok"]]
+    if not rows and not open_findings:
+        return (ANSWERED, "none carried", "this sprint left no finding open")
+    if unruled or broken:
+        bits = [f"UNRULED {u}" for u in unruled] + broken
+        return (UNANSWERED, f"{len(unruled)} unruled, {len(broken)} malformed row(s)",
+                "; ".join(bits[:12]) + " - an open finding nobody ruled on is not a carried "
+                "issue, it is one nobody looked at")
+    return (ANSWERED, f"{len(rows)} ruled" + (f", {len(stop)} STOP-SHIP" if stop else ""),
+            "; ".join(f"{r['id']} {r['ruling']} by {r['by']}" for r in rows[:12]))
+
+
+def _ck_cost(ctx: dict) -> tuple:
+    spend = ctx.get("spend") or {}
+    if not spend.get("measured_units") and not ctx.get("sprint_actual_tokens"):
+        return (UNANSWERED, "unattributed",
+                "no per-unit telemetry and no harness-tracked sprint total, so what this "
+                "sprint cost is not attributable - which is not zero")
+    return (ANSWERED, f"{spend.get('tokens', 0):,} token(s) over "
+                      f"{spend.get('measured_units', 0)} measured unit(s)", "")
+
+
+def _open_findings(root: Path, run: dict | None) -> tuple[list[str], list[str]]:
+    """`(filed during the run, of those the ones still open)`, by artefact id.
+
+    Joined on the `Raised-in-batch` stamp `file_finding` writes, so a finding counts against
+    the run that produced it rather than against whatever happened to be open when someone
+    last edited the file.
+    """
+    if not run or not run.get("started_at"):
+        return [], []
+    started, ended = run.get("started_at"), run.get("ended_at")
+    filed, still_open = [], []
+    for type_ in ("bug", "cr"):
+        for path in sdlc_md.artifact_files(type_, Path(root)):
+            uid = sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or "")
+            if not uid:
+                continue
+            text = sdlc_md.read_text_safe(path)
+            stamp = (sdlc_md.extract_field(text, "Raised-in-batch") or "").strip()
+            # A stamp naming no batch still carries the moment it was raised, and a raise
+            # inside the window is this run's whether or not a batch span claimed it.
+            when = stamp.split()[-1] if stamp else ""
+            if not when or when < started or (ended and when > ended):
+                continue
+            filed.append(uid)
+            status = (sdlc_md.extract_field(text, "Status") or "").strip()
+            if status not in sdlc_md.terminal_statuses(type_):
+                still_open.append(uid)
+    return sorted(filed), sorted(still_open)
+
+
+def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = None,
+              rep: dict | None = None) -> dict:
+    """The compulsory checklist for a sprint, one row per item. Read-only.
+
+    Every row carries `state`, and only `state` decides whether the close may proceed: a row is
+    OUTSTANDING when it is `not-run` or `unanswered` and no waiver names it. A resolver that
+    raises is reported as outstanding with the exception in `detail` - a checklist row that
+    fails open is a row that certifies the thing it could not check.
+    """
+    root = Path(root)
+    rep = rep if rep is not None else report(root, retro_id)
+    units = unit_ids if unit_ids is not None else list(rep.get("units") or [])
+    run = _run_record(root, units)
+    try:
+        import critic  # noqa: PLC0415
+        sprint_reviews, review_rounds = critic.sprint_reviews(root), run_state.review_rounds(root)
+    except Exception as exc:  # noqa: BLE001 - a report must not die on a log read
+        sdlc_md.debug("sprint_report.checklist.reviews", exc)
+        sprint_reviews, review_rounds = [], []
+    filed, still_open = _open_findings(root, run)
+    ctx = {
+        "root": root, "retro_id": retro_id, "units": units, "run": run,
+        "planned": _planned_ids(run),
+        "plan": sdlc_md.read_json(Path(root) / "sdlc-studio" / ".local" / "sprint-plan.json", {}),
+        "sprint_goal": rep.get("sprint_goal"), "goal_verdict": rep.get("sprint_goal_verdict"),
+        "delivered_points": rep.get("delivered_points"), "spend": rep.get("spend"),
+        "sprint_actual_tokens": rep.get("sprint_actual_tokens"),
+        "sprint_reviews": sprint_reviews, "review_rounds": review_rounds,
+        "filed_in_run": filed, "open_filed_in_run": still_open,
+        "carried_issues": _carried_issues(root, retro_id),
+        "retro_validate": _retro_validate(root, retro_id),
+    }
+    rows = []
+    for item in CHECKLIST:
+        rows.append({**{k: v for k, v in item.items() if k != "resolver"},
+                     **_resolve_item(item, ctx)})
+    unmet = [r for r in rows if r["state"] in _OUTSTANDING]
+    return {"ok": True, "id": retro_id, "items": rows,
+            "outstanding": [r["id"] for r in unmet if not r.get("discharged_by")],
+            "pending_in_close": [r["id"] for r in unmet if r.get("discharged_by") == "close"],
+            # A finding ruled stop-ship is ANSWERED - the answer is that it stops the ship. It
+            # is carried separately because a ruling that changes nothing is a note, and the
+            # ruling that matters most is the one that must be able to stop something.
+            "stop_ship": [i["id"] for i in ctx["carried_issues"]
+                          if i["ok"] and i["ruling"] == retro.STOP_SHIP]}
+
+
+def _resolve_item(item: dict, ctx: dict) -> dict:
+    """One row's state, value and detail. A waiver overrides whatever the resolver found, and
+    is recorded on the row, so closing without an item and forgetting it are different events
+    in the record. An exception is OUTSTANDING, never silently benign."""
+    waiver = _waiver_for(ctx["root"], item["id"])
+    resolver = globals().get(item["resolver"])
+    try:
+        state, value, detail = resolver(ctx)
+    except Exception as exc:  # noqa: BLE001 - one bad row must not cost the other seventeen
+        sdlc_md.debug(f"sprint_report.{item['resolver']}", exc)
+        state = NOT_RUN if item["kind"] == STAGE else UNANSWERED
+        value, detail = "unresolved", f"{type(exc).__name__}: {exc}"
+    if waiver and state in _OUTSTANDING:
+        return {"state": WAIVED, "value": value, "detail": detail, "waiver": waiver}
+    return {"state": state, "value": value, "detail": detail, "waiver": None}
+
+
+def _waiver_for(root: Path, item_id: str) -> str | None:
+    try:
+        import decisions  # noqa: PLC0415
+        return decisions.waiver_for(root, f"{WAIVER_SUBJECT}:{item_id}")
+    except Exception as exc:  # noqa: BLE001 - an unreadable log waives nothing
+        sdlc_md.debug("sprint_report._waiver_for", exc)
+        return None
+
+
+def _carried_issues(root: Path, retro_id: str) -> list[dict]:
+    try:
+        path = retro.find_retro(root, retro_id)
+        return retro.carried_issues(sdlc_md.read_text_safe(path)) if path else []
+    except Exception as exc:  # noqa: BLE001
+        sdlc_md.debug("sprint_report._carried_issues", exc)
+        return []
+
+
+def _retro_validate(root: Path, retro_id: str) -> dict:
+    try:
+        return retro.validate(root, retro_id)
+    except Exception as exc:  # noqa: BLE001
+        sdlc_md.debug("sprint_report._retro_validate", exc)
+        return {}
+
+
+#: Returned by the verb lookup for a script that ships but exposes no `build_parser()`, so its
+#: verbs cannot be enumerated without running it. Distinct from "no such script", because an
+#: absence is not an answer: one is a broken row, the other is a row the guard cannot judge,
+#: and reporting the second as the first would fail a green tree over the checker's own reach.
+UNVERIFIABLE = "unverifiable"
+
+
+def cycle_drift(root: Path | str | None = None) -> dict:
+    """`{unresolved, uncovered, unverifiable}` - how the checklist and the cycle come apart.
+
+    `unresolved`: a checklist row whose holding command no longer resolves to a shipped script
+    and verb, so the row certifies a ceremony that has been renamed or removed.
+    `uncovered`: a `sprint` verb that is neither a checklist row's command nor declared
+    mechanics, so a stage was added to the cycle and the checklist grew no row for it.
+    `unverifiable`: a row whose script ships but publishes no parser to enumerate - reported
+    with its reason, never counted as either green or broken.
+
+    The `uncovered` half is what makes this a drift guard rather than a tautology: it is
+    derived from the SHIPPED CLI, not from the checklist, so the two can genuinely disagree.
+    """
+    scripts = Path(__file__).resolve().parent
+    unresolved, unverifiable, verbs_by_script = [], [], {}
+
+    def verbs(script: str):
+        if script in verbs_by_script:
+            return verbs_by_script[script]
+        found = None
+        if (scripts / f"{script}.py").is_file():
+            found = UNVERIFIABLE
+            try:
+                mod = importlib.import_module(script)
+                if hasattr(mod, "build_parser"):
+                    found = set()
+                    for action in mod.build_parser()._actions:   # noqa: SLF001 - argparse's own
+                        if isinstance(action, argparse._SubParsersAction):  # noqa: SLF001
+                            found |= set(action.choices or {})
+            except Exception as exc:  # noqa: BLE001 - an unimportable script resolves nothing
+                sdlc_md.debug(f"sprint_report.cycle_drift.{script}", exc)
+                found = None
+        verbs_by_script[script] = found
+        return found
+
+    covered = set()
+    for item in CHECKLIST:
+        script, _, verb = item["command"].partition(" ")
+        if script == "sprint" and verb:
+            covered.add(verb)
+        known = verbs(script)
+        if known is None:
+            unresolved.append(f"{item['id']}: `{item['command']}` names no shipped script")
+        elif known == UNVERIFIABLE:
+            unverifiable.append(f"{item['id']}: {script}.py ships but publishes no "
+                                f"build_parser(), so `{item['command']}` cannot be checked")
+        elif verb and verb not in known:
+            unresolved.append(f"{item['id']}: `{item['command']}` names no verb of {script}.py")
+    sprint_verbs = verbs("sprint")
+    sprint_verbs = sprint_verbs if isinstance(sprint_verbs, set) else set()
+    uncovered = sorted(sprint_verbs - covered - set(NON_CEREMONY_VERBS))
+    return {"unresolved": unresolved, "uncovered": uncovered, "unverifiable": unverifiable}
+
+
+def render_checklist(ck: dict) -> str:
+    """The checklist as the report's own section. One line per item, state first, because the
+    column a reader scans is the one that says whether something happened."""
+    lines = ["", "## Sprint checklist", ""]
+    for row in ck["items"]:
+        mark = {RAN: "ran", ANSWERED: "ok", WAIVED: "WAIVED",
+                NOT_RUN: "NOT RUN", UNANSWERED: "UNANSWERED"}[row["state"]]
+        line = f"[{mark}] {row['title']}: {row['value']}"
+        if row.get("waiver"):
+            line += f" (waived by {row['waiver']})"
+        lines.append(line)
+        if row["detail"]:
+            lines.append(f"      {row['detail']}")
+    if ck["outstanding"]:
+        lines += ["", f"{len(ck['outstanding'])} compulsory item(s) OUTSTANDING: "
+                      f"{', '.join(ck['outstanding'])}. The close refuses until each is "
+                      f"answered or waived on the record (`decisions.py waive --subject "
+                      f"{WAIVER_SUBJECT}:<item> --rationale '<why>'`)."]
+    if ck.get("stop_ship"):
+        lines += ["", f"{len(ck['stop_ship'])} carried finding(s) ruled STOP-SHIP: "
+                      f"{', '.join(ck['stop_ship'])}. The close refuses: a ruling that cannot "
+                      f"stop anything is a note."]
+    if ck.get("pending_in_close"):
+        lines += ["", f"{len(ck['pending_in_close'])} item(s) this close will discharge "
+                      f"itself: {', '.join(ck['pending_in_close'])}. Reported, not held - a "
+                      f"gate whose only exit is the step it blocks is a deadlock."]
+    return "\n".join(lines)
+
+
 def render(rep: dict) -> str:
     if not rep.get("ok"):
         return f"sprint report {rep['id']}: unavailable ({'; '.join(rep.get('errors', []))})"
@@ -821,6 +1481,11 @@ def render(rep: dict) -> str:
         lines.append(f"Models: {', '.join(acc['models'])}.")
     lines.extend(_mutation_lines(rep.get("mutation")))
     lines.extend(_execution_lines(rep))
+    if rep.get("checklist"):
+        # The checklist IS the report, not a second document beside it. Two close-time
+        # documents that both claim to record the run is the drift this repo keeps filing bugs
+        # about, so the compulsory set is rendered here rather than in an artefact of its own.
+        lines.append(render_checklist(rep["checklist"]))
     lines.append(f"Tickets raised: {', '.join(rep['tickets']) if rep['tickets'] else 'none'}.")
     lines.append(f"Lessons: {len(rep['lessons'])} recorded.")
     fl = rep.get("flow")
@@ -855,10 +1520,29 @@ def cmd_show(args: argparse.Namespace) -> int:
     return 0 if rep.get("ok") else 1
 
 
+def cmd_checklist(args: argparse.Namespace) -> int:
+    """The compulsory checklist alone, without the cost and velocity page around it.
+
+    Exits non-zero while any compulsory item is outstanding, so the same command answers "is
+    this sprint closeable" for a reader and for the close chain - one authority, not two.
+    """
+    root = Path(args.root)
+    ck = checklist(root, args.id)
+    print(json.dumps(ck, indent=2) if args.format == "json" else render_checklist(ck))
+    return 1 if (ck["outstanding"] or ck["stop_ship"]) else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="The end-of-sprint report: delivered, cost, velocity.")
     p.add_argument("--root", default=".")
     sub = p.add_subparsers(dest="cmd", required=True)
+    c = sub.add_parser("checklist",
+                       help="The compulsory sprint checklist: one row per stage of the cycle "
+                            "plus the figures a close re-derives. Non-zero while any item is "
+                            "outstanding.")
+    c.add_argument("--id", required=True, metavar="RETROxxxx")
+    c.add_argument("--format", choices=["text", "json"], default="text")
+    c.set_defaults(func=cmd_checklist)
     s = sub.add_parser("show", help="Compose and print the sprint report for a retro.")
     s.add_argument("--id", required=True, metavar="RETROxxxx")
     s.add_argument("--tokens", type=int, default=None, help="sprint actual token total (interactive)")

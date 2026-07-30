@@ -48,6 +48,21 @@ not a numbered list, and drop one for each you add (`lessons carry --displaces`)
 - EXAMPLE - replace this. An enumerated list silently exempts what it forgot. <!-- example -->
 - EXAMPLE - replace this. Verify the premise before building on it. <!-- example -->
 
+## Known issues carried
+
+Every finding this sprint leaves OPEN, with the ruling somebody made on it. This is the one
+compulsory close item the tree cannot derive: whether an open defect stops the ship is a
+judgement, so it is recorded here and the sprint checklist reads it back. An open finding
+with no row is reported as UNRULED, because "we carried it" and "nobody looked" must never
+read the same.
+
+Ruling is one of `stop-ship`, `not-stop-ship`, `accepted-risk`, `deferred`. A `stop-ship`
+ruling HOLDS the close, which is the point of being able to make one.
+
+| Issue | Ruling | Ruled by | Date |
+| --- | --- | --- | --- |
+| BG0000 | not-stop-ship | EXAMPLE - replace this row | 2026-01-01 <!-- example --> |
+
 ## Estimate vs actual
 
 **Were the estimates any good?** The plan forecast a token cost per unit; telemetry recorded

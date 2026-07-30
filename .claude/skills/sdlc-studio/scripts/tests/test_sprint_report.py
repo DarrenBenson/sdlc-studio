@@ -205,7 +205,9 @@ class GoalTests(ReportBase):
         self._run_state(["US0900"], verdict={"verdict": "achieved", "note": "x"})
         rep = sr.report(self.root, "RETRO9100")
         self.assertIsNone(rep.get("sprint_goal"))
-        self.assertNotIn("Sprint Goal", sr.render(rep))
+        # The GOAL LINE, not the string: the checklist's goal-review row names the Sprint Goal
+        # in order to report that there was none, which is the opposite of claiming one.
+        self.assertNotIn("Sprint Goal: ", sr.render(rep))
 
 
 def _mutation():
@@ -935,6 +937,455 @@ class ProofObligationCoverageTests(unittest.TestCase):
         """A missing TSD tells you nothing about the risk of the change, so silence here must
         not read as every obligation met."""
         self.assertEqual(sr._proof_lines({"proof": {"available": False}}), [])
+
+
+# --- The compulsory sprint checklist (EP0192 / CR0505) ----------------------------------
+
+def _unit(root: Path, uid: str, status: str, pts: int = 3, type_dir: str = "stories") -> None:
+    """Write (or REWRITE) a unit at a status. Same filename as `_story`, deliberately: a second
+    file for the same id leaves two artefacts with one id, and the resolver then answers with
+    whichever it sorts first - which made a fixture that thought it had set Blocked silently
+    keep Done."""
+    d = root / "sdlc-studio" / type_dir
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"{uid}-s.md").write_text(f"# {uid}: x\n\n> **Status:** {status}\n> **Points:** {pts}\n",
+                                   encoding="utf-8")
+
+
+class ChecklistBase(unittest.TestCase):
+    """A tree with a retro, a run record and whatever each test needs on top."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / "sdlc-studio" / "retros").mkdir(parents=True)
+        (self.root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (self.root / "sdlc-studio" / "retros" / "RETRO9100-t.md").write_text(RETRO,
+                                                                             encoding="utf-8")
+        _story(self.root, "US0001", 3)
+        _story(self.root, "US0002", 5)
+        self.addCleanup(self.tmp.cleanup)
+
+    def _run(self, **fields) -> dict:
+        """Write a run record directly. The checklist reads run state, not the CLI that wrote
+        it, so a fixture that goes through `open_run` would be testing the writer twice."""
+        state = {"schema": 1, "run_id": "RUN-TEST01", "started_at": "2026-01-01T00:00:00Z",
+                 "outcome": "running", "batch": ["US0001", "US0002"], "batch_changes": []}
+        state.update(fields)
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            json.dumps(state), encoding="utf-8")
+        return state
+
+    def _ck(self, **run_fields) -> dict:
+        self._run(**run_fields)
+        return sr.checklist(self.root, "RETRO9100")
+
+    def _row(self, ck: dict, item_id: str) -> dict:
+        return next(r for r in ck["items"] if r["id"] == item_id)
+
+
+class SprintChecklistStageTests(ChecklistBase):
+    """US0574. The compulsory set is the cycle's own stages, so a stage nobody held is visible
+    on the page rather than inferred from its absence."""
+
+    def test_every_stage_carries_a_state_and_none_is_blank(self) -> None:
+        ck = self._ck()
+        stages = [r for r in ck["items"] if r["kind"] == sr.STAGE]
+        self.assertTrue(stages, "the checklist carries no stage rows at all")
+        for row in stages:
+            self.assertIn(row["state"], (sr.RAN, sr.NOT_RUN, sr.WAIVED),
+                          f"{row['id']} has state {row['state']!r}, which is not one of the "
+                          f"three a stage may hold")
+            self.assertTrue(str(row["value"]).strip(),
+                            f"{row['id']} reports an empty value, which reads as 'nothing to "
+                            f"say' - the one thing a stage that never ran must not read as")
+
+    def test_a_stage_that_did_not_run_is_named_not_omitted(self) -> None:
+        # No goal-review record and a run that stopped short with no handoff.
+        ck = self._ck(outcome="blocked", handoff=None)
+        text = sr.render_checklist(ck)
+        self.assertEqual(self._row(ck, "goal-seat-reviewed")["state"], sr.NOT_RUN)
+        self.assertEqual(self._row(ck, "handoff")["state"], sr.NOT_RUN)
+        self.assertIn("goal-seat-reviewed", " ".join(ck["outstanding"]) + " " + text)
+        self.assertIn("Handoff", text)
+        self.assertIn("NOT RUN", text)
+
+    def test_a_batch_span_OPENED_is_not_a_review_HELD(self) -> None:
+        """Certifying the ceremony by the act of scheduling it is the failure mode: a span with
+        no `reviewed_at` is a batch nobody reviewed, however many spans were opened."""
+        unreviewed = self._ck(batches=[{"units": ["US0001"], "opened_at": "2026-01-01T01:00:00Z"}])
+        row = self._row(unreviewed, "batch-boundary-review")
+        self.assertEqual(row["state"], sr.NOT_RUN)
+        self.assertIn("0/1", row["value"])
+        self.assertIn("batch-boundary-review", unreviewed["outstanding"])
+        # ... and the control, so the state depends on the review rather than being constant.
+        reviewed = self._ck(batches=[{"units": ["US0001"], "opened_at": "2026-01-01T01:00:00Z",
+                                      "reviewed_at": "2026-01-01T02:00:00Z"}])
+        self.assertEqual(self._row(reviewed, "batch-boundary-review")["state"], sr.RAN)
+
+    def test_the_stage_set_and_the_cycle_cannot_drift_apart(self) -> None:
+        drift = sr.cycle_drift()
+        self.assertEqual(drift["unresolved"], [],
+                         "a checklist row names a command that no longer ships")
+        self.assertEqual(drift["uncovered"], [],
+                         "a sprint ceremony verb has no checklist row and is not declared "
+                         "mechanics in NON_CEREMONY_VERBS")
+
+    def test_a_new_ceremony_verb_with_no_row_is_CAUGHT(self) -> None:
+        """The guard's own falsifiability: it must fail when the cycle really does gain a
+        stage. Without this the green result above proves only that the guard is quiet."""
+        import sprint as sprint_mod
+        real = sprint_mod.build_parser
+
+        def with_extra_verb():
+            p = real()
+            for action in p._actions:
+                if isinstance(action.choices, dict):
+                    action.choices["retrospective"] = None
+                    break
+            return p
+
+        sprint_mod.build_parser = with_extra_verb
+        try:
+            self.assertIn("retrospective", sr.cycle_drift()["uncovered"])
+        finally:
+            sprint_mod.build_parser = real
+
+    def test_an_unresolvable_command_is_not_reported_as_unverifiable(self) -> None:
+        """A row naming a script that does not exist is BROKEN; a row whose script ships but
+        publishes no parser is UNJUDGED. Reporting the first as the second fails open."""
+        broken = ({"id": "x", "kind": sr.STAGE, "authority": sr.DERIVED, "title": "t",
+                   "command": "no_such_script verb", "resolver": "_ck_retro"},)
+        real = sr.CHECKLIST
+        sr.CHECKLIST = broken
+        try:
+            drift = sr.cycle_drift()
+        finally:
+            sr.CHECKLIST = real
+        self.assertEqual(len(drift["unresolved"]), 1)
+        self.assertEqual(drift["unverifiable"], [])
+
+
+class SprintChecklistReviewRowTests(ChecklistBase):
+    """US0575. An under-covered round must not read like a full one on the page the reviewer of
+    record signs off from."""
+
+    def _verdict(self, unit: str, verdict: str, reviewer: str) -> None:
+        import critic
+        critic.record_verdict(self.root, unit, verdict, reviewer=reviewer, author="builder",
+                              issues="probed")
+
+    def test_the_review_row_names_the_units_the_reviewer_and_the_seat(self) -> None:
+        seats = self.root / "sdlc-studio" / "personas" / "seats"
+        seats.mkdir(parents=True)
+        (seats / "qa.md").write_text("# Priya Raman\n\n<!-- role: qa -->\n", encoding="utf-8")
+        self._verdict("US0001", "APPROVE", "Priya Raman")
+        self._verdict("US0002", "APPROVE", "some contractor")
+        row = self._row(self._ck(), "review-attribution")
+        self.assertIn("US0001", row["detail"])
+        self.assertIn("Priya Raman", row["detail"])
+        self.assertIn("qa", row["detail"])
+        self.assertIn("NO DECLARED SEAT", row["detail"],
+                      "a verdict recorded under no declared seat must be reported as "
+                      "seat-less, never rendered as if it were a seat review")
+
+    def test_a_single_lens_round_is_reported_as_under_covered(self) -> None:
+        self._verdict("US0001", "APPROVE", "lonely reviewer")
+        self._verdict("US0002", "APPROVE", "lonely reviewer")
+        row = self._row(self._ck(), "review-attribution")
+        self.assertIn("1 lens", row["value"])
+        self.assertIn("UNDER-COVERED", row["value"])
+
+    def test_two_distinct_reviewers_are_not_reported_as_under_covered(self) -> None:
+        """The control for the test above: the marker must depend on the count, not be
+        constant. A warning that is always printed is a warning nobody reads."""
+        self._verdict("US0001", "APPROVE", "reviewer one")
+        self._verdict("US0002", "APPROVE", "reviewer two")
+        self.assertNotIn("UNDER-COVERED", self._row(self._ck(), "review-attribution")["value"])
+
+    def test_a_rejected_unit_is_not_counted_as_covered(self) -> None:
+        self._verdict("US0001", "APPROVE", "reviewer one")
+        self._verdict("US0001", "REJECT", "reviewer two")     # the LATEST verdict rejects
+        row = self._row(self._ck(), "review-attribution")
+        self.assertIn("1 rejected", row["value"])
+        self.assertIn("REJECTED US0001", row["detail"])
+        self.assertNotIn("1 covered", row["value"].split(",")[0] + ",")
+
+
+class SprintChecklistImpedimentTests(ChecklistBase):
+    """US0576. A blocker recorded mid-run is lost at the close, so the next run rediscovers
+    it."""
+
+    def test_a_blocked_unit_is_reported_with_its_blocker(self) -> None:
+        _unit(self.root, "US0001", "Blocked")
+        ck = self._ck(pending_decisions=[{"unit": "US0001", "question": "ship it or hold?",
+                                          "resolution": None}])
+        row = self._row(ck, "impediments")
+        self.assertIn("blocked US0001", row["detail"])
+        self.assertIn("1 blocked", row["value"])
+
+    def test_an_unresolved_decision_is_reported_with_its_question(self) -> None:
+        ck = self._ck(pending_decisions=[
+            {"unit": "US0001", "question": "answered already", "resolution": {"choice": "a"}},
+            {"unit": "US0002", "question": "which schema wins?", "resolution": None}])
+        row = self._row(ck, "impediments")
+        self.assertIn("which schema wins?", row["detail"])
+        self.assertNotIn("answered already", row["detail"],
+                         "a resolved decision is not an impediment")
+        self.assertIn("1 open question", row["value"])
+
+    def test_none_and_unreadable_do_not_render_the_same(self) -> None:
+        clean = self._row(self._ck(), "impediments")
+        self.assertEqual(clean["state"], sr.ANSWERED)
+        self.assertEqual(clean["value"], "none")
+        # No run record at all: whether anything was blocked is UNKNOWN, not "nothing was".
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").unlink()
+        blind = self._row(sr.checklist(self.root, "RETRO9100"), "impediments")
+        self.assertEqual(blind["state"], sr.UNANSWERED)
+        self.assertNotEqual(blind["value"], clean["value"])
+
+
+class SprintChecklistDerivedFiguresTests(ChecklistBase):
+    """US0569. A report nobody could have filled in from memory."""
+
+    def test_planned_and_delivered_are_both_derived_and_reported(self) -> None:
+        # Planned US0001-US0003; US0003 dropped and US0004 added mid-run.
+        _unit(self.root, "US0003", "Ready")
+        _unit(self.root, "US0004", "Done")
+        ck = self._ck(batch=["US0001", "US0002", "US0004"],
+                      batch_changes=[{"action": "drop", "id": "US0003", "reason": "descoped"},
+                                     {"action": "add", "id": "US0004"}])
+        row = self._row(ck, "planned-vs-delivered")
+        self.assertEqual(row["state"], sr.ANSWERED)
+        self.assertIn("/3 unit(s)", row["value"],
+                      "planned must be the batch as APPROVED (US0001-US0003), reconstructed "
+                      "from the change ledger - not the batch as it stands now")
+        self.assertIn("8 point(s)", row["value"])
+
+    def test_scope_creep_is_reported_as_a_count_and_a_ratio(self) -> None:
+        bugs = self.root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True)
+        for n in (1, 2, 3, 4):
+            (bugs / f"BG000{n}-x.md").write_text(
+                f"# BG000{n}: x\n\n> **Status:** Open\n"
+                f"> **Raised-in-batch:** none open 2026-01-02T00:00:00Z\n", encoding="utf-8")
+        row = self._row(self._ck(), "scope-creep")
+        self.assertIn("4 filed against 2 planned", row["value"])
+        self.assertIn("ratio 2.0", row["value"],
+                      "the RATIO is the signal - a list of titles is not")
+
+    def test_an_unanswerable_figure_is_unknown_not_zero(self) -> None:
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text("{}",
+                                                                            encoding="utf-8")
+        ck = sr.checklist(self.root, "RETRO9100")
+        for item_id in ("planned-vs-delivered", "scope-creep"):
+            row = self._row(ck, item_id)
+            self.assertEqual(row["state"], sr.UNANSWERED)
+            self.assertIn("unknown", row["value"])
+            self.assertNotIn("0 filed against 0", row["value"])
+
+    def test_every_compulsory_item_is_a_row_of_the_report(self) -> None:
+        """One artefact, not two. Two close-time documents that both claim to record the run
+        is the drift this repo keeps filing bugs about."""
+        self._run()
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertIn("checklist", rep)
+        ids = {r["id"] for r in rep["checklist"]["items"]}
+        self.assertEqual(ids, {i["id"] for i in sr.CHECKLIST})
+        text = sr.render(rep)
+        self.assertIn("## Sprint checklist", text)
+        for item in sr.CHECKLIST:
+            self.assertIn(item["title"], text, f"{item['id']} is not on the rendered page")
+
+
+class SprintChecklistNotDeliveredTests(ChecklistBase):
+    """US0570. Delivered plus dropped plus held plus carried over, with no unit unaccounted
+    for."""
+
+    def test_the_report_names_each_dropped_unit_with_its_reason(self) -> None:
+        row = self._row(self._ck(batch=["US0001"], batch_changes=[
+            {"action": "drop", "id": "US0002", "reason": "the API it needs is not built"}]),
+            "not-delivered")
+        self.assertIn("dropped US0002", row["detail"])
+        self.assertIn("the API it needs is not built", row["detail"])
+
+    def test_held_is_distinguishable_from_dropped_and_delivered(self) -> None:
+        _unit(self.root, "US0001", "Done")
+        _unit(self.root, "US0002", "In Progress")
+        _unit(self.root, "US0003", "Ready")
+        row = self._row(self._ck(batch=["US0001", "US0002"], deferred_units=["US0002"],
+                                 batch_changes=[{"action": "drop", "id": "US0003",
+                                                 "reason": "descoped"}]), "not-delivered")
+        self.assertIn("1 dropped, 1 held", row["value"])
+        self.assertIn("held US0002", row["detail"])
+        self.assertNotIn("carry-over US0002", row["detail"],
+                         "a unit held on an operator decision is not a unit that just did not "
+                         "finish - collapsing the two misreports the run")
+
+    def test_the_planned_set_reconciles_with_no_unit_unaccounted_for(self) -> None:
+        _unit(self.root, "US0001", "Done")
+        _unit(self.root, "US0002", "Review")            # neither delivered nor dropped
+        row = self._row(self._ck(), "not-delivered")
+        self.assertIn("1 carried over", row["value"])
+        self.assertIn("carry-over US0002", row["detail"])
+        self.assertIn("Review", row["detail"])
+
+
+class SprintChecklistKnownIssueTests(ChecklistBase):
+    """US0571. 'Carried' and 'nobody looked' must never read the same."""
+
+    def _open_bug(self, uid: str, status: str = "Open") -> None:
+        bugs = self.root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True, exist_ok=True)
+        (bugs / f"{uid}-x.md").write_text(
+            f"# {uid}: x\n\n> **Status:** {status}\n"
+            f"> **Raised-in-batch:** none open 2026-01-02T00:00:00Z\n", encoding="utf-8")
+
+    def _rulings(self, *rows: str) -> None:
+        path = self.root / "sdlc-studio" / "retros" / "RETRO9100-t.md"
+        path.write_text(path.read_text(encoding="utf-8")
+                        + "\n## Known issues carried\n\n| Issue | Ruling | Ruled by | Date |\n"
+                        + "| --- | --- | --- | --- |\n" + "".join(f"{r}\n" for r in rows),
+                        encoding="utf-8")
+
+    def test_a_carried_issue_records_its_ruling_and_who_made_it(self) -> None:
+        self._open_bug("BG0001")
+        self._rulings("| BG0001 | not-stop-ship | Darren Benson | 2026-01-03 |")
+        row = self._row(self._ck(), "known-issues")
+        self.assertEqual(row["state"], sr.ANSWERED)
+        self.assertIn("BG0001 not-stop-ship by Darren Benson", row["detail"])
+
+    def test_an_unruled_carried_issue_is_reported_as_unruled(self) -> None:
+        self._open_bug("BG0001")
+        self._open_bug("BG0002")
+        self._rulings("| BG0001 | not-stop-ship | Darren Benson | 2026-01-03 |")
+        row = self._row(self._ck(), "known-issues")
+        self.assertEqual(row["state"], sr.UNANSWERED)
+        self.assertIn("UNRULED BG0002", row["detail"])
+        self.assertNotIn("UNRULED BG0001", row["detail"])
+
+    def test_an_anonymous_ruling_does_not_pass_as_a_judgement(self) -> None:
+        """Who ruled is not decoration: an unattributed ruling cannot be questioned, which is
+        exactly what separates a judgement somebody made from one nobody did."""
+        self._open_bug("BG0001")
+        self._rulings("| BG0001 | not-stop-ship |  | 2026-01-03 |")
+        row = self._row(self._ck(), "known-issues")
+        self.assertEqual(row["state"], sr.UNANSWERED)
+        self.assertIn("records no ruler", row["detail"])
+
+    def test_a_ruling_outside_the_vocabulary_is_not_a_ruling(self) -> None:
+        """`| BG0001 | probably fine | ... |` is prose in a ruling column. Accepting it would
+        let any word at all discharge the one item the tree cannot derive."""
+        self._open_bug("BG0001")
+        self._rulings("| BG0001 | probably fine | Darren Benson | 2026-01-03 |")
+        row = self._row(self._ck(), "known-issues")
+        self.assertEqual(row["state"], sr.UNANSWERED)
+        self.assertIn("not one of", row["detail"])
+        self.assertIn("1 malformed", row["value"])
+
+    def test_a_stop_ship_ruling_holds_the_close(self) -> None:
+        import sprint
+        self._open_bug("BG0001")
+        self._rulings("| BG0001 | stop-ship | Darren Benson | 2026-01-03 |")
+        self._run()
+        ck = sr.checklist(self.root, "RETRO9100")
+        self.assertIn("STOP-SHIP", self._row(ck, "known-issues")["value"])
+        ok, detail, _ = sprint._close_checklist(self.root, "RETRO9100", self._run())
+        self.assertFalse(ok, "a stop-ship ruling that stops nothing is a note, not a ruling")
+        self.assertIn("known-issues", detail)
+
+    def test_a_closed_finding_is_not_carried_and_needs_no_ruling(self) -> None:
+        self._open_bug("BG0001", status="Fixed")
+        row = self._row(self._ck(), "known-issues")
+        self.assertEqual(row["state"], sr.ANSWERED)
+        self.assertIn("none carried", row["value"])
+
+
+class SprintChecklistAuthorityTests(ChecklistBase):
+    """US0572. A practice that is compulsory in prose is compulsory in fact."""
+
+    def test_the_close_refuses_on_an_unanswered_item_and_names_it(self) -> None:
+        import sprint
+        state = self._run()
+        ok, detail, remedy = sprint._close_checklist(self.root, "RETRO9100", state)
+        self.assertFalse(ok)
+        outstanding = sr.checklist(self.root, "RETRO9100")["outstanding"]
+        self.assertTrue(outstanding)
+        for item_id in outstanding:
+            self.assertIn(item_id, detail, "the refusal must NAME the item, not count them")
+        self.assertIn("waive", remedy)
+
+    def test_every_compulsory_item_has_exactly_one_authority(self) -> None:
+        ids = [i["id"] for i in sr.CHECKLIST]
+        self.assertEqual(len(ids), len(set(ids)), "a duplicated item id")
+        for item in sr.CHECKLIST:
+            self.assertIn(item["authority"], (sr.DERIVED, sr.RECORDED),
+                          f"{item['id']} has no authority, so it silently passes")
+            self.assertIn(item["kind"], (sr.STAGE, sr.FIGURE))
+            resolver = sr.__dict__.get(item["resolver"])
+            self.assertTrue(callable(resolver),
+                            f"{item['id']} names resolver {item['resolver']!r}, which does not "
+                            f"resolve - an item with no reader is one that always passes")
+
+    def test_waiving_a_compulsory_item_is_recorded_with_a_reason(self) -> None:
+        import decisions
+        state = self._run()
+        before = sr.checklist(self.root, "RETRO9100")["outstanding"]
+        self.assertIn("cost", before)
+        decisions.record_waiver(self.root, f"{sr.WAIVER_SUBJECT}:cost",
+                                "interactive sprint: no per-unit telemetry exists to read")
+        row = self._row(sr.checklist(self.root, "RETRO9100"), "cost")
+        self.assertEqual(row["state"], sr.WAIVED)
+        self.assertTrue(row["waiver"], "the waiver's decision id is not recorded on the row")
+        self.assertNotIn("cost", sr.checklist(self.root, "RETRO9100")["outstanding"])
+        self.assertIsNone(decisions.waiver_for(self.root, f"{sr.WAIVER_SUBJECT}:known-issues"),
+                          "a waiver of one item must not cover its neighbours")
+
+    def test_an_unexplained_waiver_is_REFUSED_at_record_time(self) -> None:
+        import decisions
+        with self.assertRaises(ValueError):
+            decisions.record_waiver(self.root, f"{sr.WAIVER_SUBJECT}:cost", "")
+
+    def test_a_resolver_that_raises_is_OUTSTANDING_never_silently_benign(self) -> None:
+        """A checklist row that fails open certifies the thing it could not check."""
+        real = sr._ck_cost
+
+        def boom(_ctx):
+            raise RuntimeError("the ledger is on fire")
+
+        sr._ck_cost = boom
+        try:
+            self._run()
+            ck = sr.checklist(self.root, "RETRO9100")
+        finally:
+            sr._ck_cost = real
+        row = self._row(ck, "cost")
+        self.assertEqual(row["state"], sr.UNANSWERED)
+        self.assertIn("the ledger is on fire", row["detail"])
+        self.assertIn("cost", ck["outstanding"])
+
+    def test_the_close_does_not_deadlock_on_what_it_is_about_to_do(self) -> None:
+        """The sign-off and the handoff are produced BY the close. Holding the chain on them
+        makes the only exit the step it blocks, which is a deadlock, not a gate."""
+        ck = self._ck(outcome="blocked", handoff=None)
+        self.assertEqual(self._row(ck, "signoff")["state"], sr.NOT_RUN)
+        self.assertNotIn("signoff", ck["outstanding"])
+        self.assertIn("signoff", ck["pending_in_close"])
+        self.assertIn("handoff", ck["pending_in_close"])
+        self.assertIn("discharge", sr.render_checklist(ck))
+
+    def test_the_close_step_PASSES_once_every_item_is_answered_or_waived(self) -> None:
+        """The control for the refusal test: a gate that never passes is not a gate. Waive
+        each outstanding item and the same step must go green."""
+        import decisions
+        import sprint
+        state = self._run()
+        for item_id in sr.checklist(self.root, "RETRO9100")["outstanding"]:
+            decisions.record_waiver(self.root, f"{sr.WAIVER_SUBJECT}:{item_id}",
+                                    "waived for this test's control")
+        ok, detail, _ = sprint._close_checklist(self.root, "RETRO9100", state)
+        self.assertTrue(ok, f"the step still refuses with everything waived: {detail}")
+        self.assertIn("none outstanding", detail)
 
 
 if __name__ == "__main__":

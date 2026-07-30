@@ -50,6 +50,7 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 /sdlc-studio sprint plan --cycles 3 --goal done      # a standing policy: roll 3 cycles, regenerating the plan each time
 /sdlc-studio sprint boundary --retro RETRO0001       # close this cycle down and open the next from the live backlog
 /sdlc-studio sprint report --id RETRO0001             # the end-of-sprint report (the close draws it too)
+/sdlc-studio sprint checklist --id RETRO0001          # the compulsory checklist alone; non-zero while an item is outstanding
 ```
 
 **`/sdlc-studio sprint report --id RETROxxxx`** composes the end-of-sprint report - delivered units
@@ -63,6 +64,27 @@ the session total, since one session can hold several sprints and the meter is c
 with no baseline reports not-attributable rather than a number, and it states plainly when it
 cannot attribute, so `--tokens N` is the manual override and `--elapsed-hours H` supplies the
 elapsed the run-state cannot know. Read-only.
+
+**The compulsory checklist is part of that report, not a second document.** It carries one row per
+STAGE of the cycle - the pre-plan reconcile, the goal's seat review, the grooming gate, the run
+opening, the batch-boundary reviews, the closing review, the goal verdict, the retro, the lessons,
+the sign-off, the handoff - plus the figures a close otherwise re-derives by hand: planned against
+delivered, what was dropped or held or carried over and why, scope creep as a count and a ratio, who
+reviewed what under which seat and over how many lenses, the impediments still standing, the known
+issues carried, and the cost. Every row but one is DERIVED from the tree, because a checklist that
+asks an agent to retype what the tree already holds gets filled in from memory.
+
+The exception is the carried known issues. Whether an open defect stops the ship is a judgement, so
+it is recorded in the retro's `## Known issues carried` table (`| id | ruling | ruled by | date |`,
+ruling one of `stop-ship`, `not-stop-ship`, `accepted-risk`, `deferred`) and read back here. An open
+finding with no row is reported UNRULED: "we carried it" and "nobody looked" must never read the
+same, and a `stop-ship` ruling HOLDS the close, which is the point of being able to make one.
+
+`sprint close` refuses on any unanswered item and names it. To close without one, record a waiver -
+`decisions.py waive --subject rule:sprint-checklist:<item> --rationale "<why>"` - on the same terms
+as a conformance waiver, so closing without an item and forgetting it are different events in the
+record. The sign-off and the handoff rows are reported but never held: the close produces them
+itself, and a gate whose only exit is the step it blocks is a deadlock rather than a gate.
 
 **`--apply-signoff --principal "<you>"`** turns the close's decision brief into an action: instead
 of hand-running `critic signoff` and `transition` for every unit, one command records your

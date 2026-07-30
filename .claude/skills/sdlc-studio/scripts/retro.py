@@ -116,6 +116,22 @@ REQUIRED_SECTIONS = (
 # 252-entry summary again.
 CARRIED_SECTION = "Carried lessons"
 
+# The one compulsory close item that CANNOT be derived. Everything else the sprint checklist
+# asks is already in the tree; a stop-ship ruling is a judgement, so it is recorded here and
+# read back by `sprint_report.checklist`. Not in REQUIRED_SECTIONS for the same reason as
+# CARRIED_SECTION: the demand is conditional on the run having carried anything at all, and a
+# section demanded of every retro in every project is a section people learn to leave empty.
+#
+# Row grammar: `| <artefact id> | <ruling> | <who ruled> | <date> |`. Free prose is REFUSED
+# rather than half-parsed, because "carried" and "nobody looked" reading the same is the whole
+# failure this section exists to end.
+KNOWN_ISSUES_SECTION = "Known issues carried"
+
+#: The rulings a carried issue may hold. `stop-ship` is the one that must be able to stop
+#: something: a ruling that changes nothing is a note.
+STOP_SHIP = "stop-ship"
+KNOWN_ISSUE_RULINGS = (STOP_SHIP, "not-stop-ship", "accepted-risk", "deferred")
+
 # `## Heading` -> body, to the next `##` of the same level.
 SECTION_RE = re.compile(r"^##\s+(.+?)\s*$")
 
@@ -244,6 +260,46 @@ def sections(text: str) -> dict[str, list[str]]:
             continue
         if current is not None:
             out[current].append(line)
+    return out
+
+
+def carried_issues(text: str) -> list[dict]:
+    """The retro's carried known issues, as `{id, ruling, by, date, ok, why}` rows.
+
+    Every row is returned, including the malformed ones, each carrying `ok` and the reason it
+    is not usable. Dropping a bad row would report an issue with a broken ruling as an issue
+    with NO ruling, and those are different facts: one is a typo to fix, the other is a
+    judgement nobody made. The header and separator rows are skipped; an example row the
+    template ships is skipped by its `<!-- example -->` marker, like the bullets above.
+    """
+    body = sections(text or "").get(KNOWN_ISSUES_SECTION)
+    if body is None:
+        return []
+    out: list[dict] = []
+    for line in body:
+        if "<!-- example -->" in line or PLACEHOLDER_RE.search(line):
+            continue
+        cells = sdlc_md.table_cells(line)
+        if not cells or cells[0].lower() in ("issue", "id") or set(cells[0]) <= {"-", ":", " "}:
+            continue
+        uid = sdlc_md.norm_id(ARTEFACT_ID_RE.search(cells[0]).group(1)) \
+            if ARTEFACT_ID_RE.search(cells[0]) else ""
+        ruling = (cells[1] if len(cells) > 1 else "").strip().lower()
+        who = (cells[2] if len(cells) > 2 else "").strip()
+        date = (cells[3] if len(cells) > 3 else "").strip()
+        why = ""
+        if not uid:
+            why = "names no artefact id, so the ruling cannot be joined to a finding"
+        elif ruling not in KNOWN_ISSUE_RULINGS:
+            why = (f"ruling {ruling or '(blank)'!r} is not one of "
+                   f"{', '.join(KNOWN_ISSUE_RULINGS)}")
+        elif not who:
+            # WHO ruled is not decoration: an unattributed ruling cannot be questioned, and the
+            # distinction this section exists for is between a judgement somebody made and one
+            # nobody did. An anonymous row is the second wearing the first's clothes.
+            why = "records no ruler, so nobody can be asked why"
+        out.append({"id": uid, "ruling": ruling, "by": who, "date": date,
+                    "ok": not why, "why": why})
     return out
 
 
