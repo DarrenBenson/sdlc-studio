@@ -1,6 +1,6 @@
 # US0461: verify_ac lint --ratchet refuses a duplicate group the baseline does not record with a reason, and the pinned pre-commit lane set gains it
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0433
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -32,6 +32,7 @@ the machinery rather than build a second shape of ratchet.
 - **When** `verify_ac.py lint --ratchet --bugs` runs
 - **Then** each refuses non-zero naming the shared command and every AC claiming it, a recorded group passes silently, and the scan covers `sdlc-studio/bugs` as `stamps --bugs` already does, so a shared selector cannot be parked in a bug where `duplicate_verifiers` never looked
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RatchetTests::test_an_unbaselined_duplicate_refuses_across_stories_and_bugs
+- **Verified:** yes (2026-07-29)
 
 ### AC2: AC2: a swap that keeps the total flat is still refused
 
@@ -39,6 +40,7 @@ the machinery rather than build a second shape of ratchet.
 - **When** the ratchet runs
 - **Then** the new group is refused on its own identity, because the comparison is over the SET of groups and not a count, so the guard a rising total would have passed does not pass here
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RatchetTests::test_a_swap_that_keeps_the_count_flat_is_still_refused
+- **Verified:** yes (2026-07-29)
 
 ### AC3: AC3: a baseline it cannot trust never reports clean
 
@@ -46,6 +48,7 @@ the machinery rather than build a second shape of ratchet.
 - **When** the ratchet runs over each
 - **Then** each exits non-zero in a distinct not-baselined / corrupt / stale state naming the offending entries and the command to restamp, so the tolerated set only ever shrinks and a fixed group cannot be spent again to admit a new one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RatchetTests::test_no_untrustworthy_baseline_reports_clean
+- **Verified:** yes (2026-07-29)
 
 ### AC4: AC4: an entry cannot silence the ratchet without a reason that resolves
 
@@ -53,6 +56,7 @@ the machinery rather than build a second shape of ratchet.
 - **When** the entry is validated, and separately when `lint --ratchet --stamp` is asked to write it
 - **Then** each is refused by `verify_ac.py` itself rather than accepted, and `--stamp` will not mint an entry with no reason, so the exemption field is machinery in this story and not an assumption made by a later one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::BaselineSchemaTests::test_a_reasonless_unresolvable_or_oversized_entry_is_refused
+- **Verified:** yes (2026-07-29)
 
 ### AC5: AC5: the lane blocks a real commit and the pinned lane set names it
 
@@ -60,6 +64,7 @@ the machinery rather than build a second shape of ratchet.
 - **When** `git commit` is run for real
 - **Then** the commit is refused by the named ratchet lane with the tree unchanged, and `EXPECTED_LANES` in `tools/tests/test_precommit_lane_order.py` carries the new key among the cheap lanes, so `test_no_lane_is_lost_in_the_reorder` stays green on the commit that lands this
 - **Verify:** pytest tools/tests/test_precommit_lane_order.py::LaneOrderTests::test_no_lane_is_lost_in_the_reorder
+- **Verified:** yes (2026-07-29)
 
 ## Revision History
 

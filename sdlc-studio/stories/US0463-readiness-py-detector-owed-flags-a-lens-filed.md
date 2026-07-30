@@ -43,6 +43,8 @@
 - **Given** a workspace holding findings with no lens attribution, including backfilled ones whose lens is explicitly unknown
 - **When** the report runs
 - **Then** it names and counts them and exits in a distinct cannot-judge state separate from both owed and clean, so a workspace it could not read is never reported as having nothing owed
+- **And** the cannot-judge exit code is **3**, not 2: `cmd_profile` already returns 2 for `UnknownProfile` and argparse uses 2 for a usage error, so a caller could not tell "cannot judge this workspace" from "you typed the flag wrong". 0 clean, 1 owed, 3 cannot-judge, following `cmd_check`'s existing pattern of keeping an explicit list and deriving both the printed marker and the exit code from it.
+- **And** cannot-judge **dominates**: a workspace with 3 owed lenses and 40 unattributable findings reports cannot-judge, not owed, or the 40 vanish behind a verdict that looks like an answer. Note the consequence to be stated in the close-out lane rather than discovered: 108 of 923 findings are attributed, so the first real run exits cannot-judge.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_detector_owed.py::DetectorOwedTests::test_unattributed_findings_are_named_not_counted_as_clean
 
 ### AC5: AC5: each owed class gets exactly one sized delivery unit, filed not described
@@ -50,7 +52,17 @@
 - **Given** a detector-owed lens, run twice: once with nothing filed against it, once when a unit already exists
 - **When** `readiness.py detector-owed --file` runs
 - **Then** the first run mints one sized CR through `file_finding.py` naming the lens, both runs and both findings as the evidence the check must catch, and the second run reports the existing unit and mints nothing, so CR0435's third criterion is delivered without filing the same unit every close-out
+- **And** idempotence is matched on a `Detector-for-lens: <name>` metadata field, never a title substring, so a reworded title cannot cause the same unit to be filed twice
+- **And** that field sits **outside** US0462's attribution triple deliberately: the unit is about one lens across **two** runs, so it has no single `--audit-run` and must file with none of the three - meaning without a distinct field `detector-owed`'s own output would be unattributable and invisible to the next run
+
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_detector_owed.py::DetectorOwedFilingTests::test_an_owed_class_is_filed_once_and_never_twice
+
+## Notes
+
+**This story depends on US0464 as well as US0462, which was not stated.** AC3 needs "a lens whose pack
+signature parses as mechanical", and today **only `process.md` carries a Signature column at all** -
+so both the widened classifier and the populated columns are US0464's work. That dependency is as hard
+as the register one, and the delivery order is US0464, then US0462, then the backfill, then this.
 
 ## Revision History
 

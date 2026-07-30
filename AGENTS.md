@@ -139,6 +139,8 @@ plain Python/bash command you can run directly. Do not skip the gate because
 | Versions | `python3 tools/check_versions.py` | version-string drift across authoritative files |
 | Spec claims | `python3 tools/check_spec_claims.py` | a countable or timing claim in the PRD/TRD/TSD the repo contradicts; an unverifiable marked claim is reported, never skipped |
 | Script tests | `python3 tools/check_script_tests.py` | a script or `lib/` module with no partner test that the TSD's exception list does not declare - and a declared exception that has since gained one |
+| Verify ratchet | `python3 .claude/skills/sdlc-studio/scripts/verify_ac.py lint --ratchet --bugs` | a NEW duplicate-verifier group - two ACs sharing a selector, so neither discriminates. The tolerated set in `sdlc-studio/.verify-lint-baseline.json` may only shrink; `--bugs` is load-bearing, since a shared selector parked in a bug is where the scan never looked |
+| Lens signatures | `python3 .claude/skills/sdlc-studio/scripts/readiness.py profile --validate` | an audit lens whose detector does not resolve, or whose absence is declared without a reason. Shipped detectors resolve against the installed skill, so a consuming project's packs pass too |
 | Budgets | `python3 tools/check_budgets.py` | a reference file over its declared line ceiling |
 | Neutrality | `python3 tools/check_neutrality.py` | a private consuming-project name leaking into a tracked file |
 | Skill tests | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` | every shipped skill-script unit test |

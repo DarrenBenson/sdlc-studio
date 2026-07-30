@@ -86,6 +86,20 @@ python3 "$CLAUDE_SKILL_DIR/scripts/readiness.py" profile --name repo
 A name no profile declares is refused, naming the ones that exist - an audit never runs an
 empty lens set.
 
+Hold every lens to its signature contract - each names a detector that resolves, or declares
+`manual` with a reason:
+
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/readiness.py" profile --validate            # every pack
+python3 "$CLAUDE_SKILL_DIR/scripts/readiness.py" profile --name code --validate
+```
+
+Exits non-zero on any breach and names the pack and lens. Run it after appending a lens of your
+own (see `reference-audit.md#audit-extend` for what a signature must satisfy): a mechanical one
+names a target that resolves, and an absent one states why no search singles the class out. A
+path under `.claude/skills/sdlc-studio/` resolves against the installed skill, so the shipped
+detectors work from any project root.
+
 ### The zero-setup path on an existing repo
 
 `audit --profile repo` is the try-before-you-adopt entry point: point it at a repository

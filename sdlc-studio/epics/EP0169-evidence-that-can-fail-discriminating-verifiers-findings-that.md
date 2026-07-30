@@ -3,7 +3,7 @@
 > **Status:** Draft
 > **Parent:** CR0438
 > **Parent:** CR0435
-> **Derived Point Total:** 23
+> **Derived Point Total:** 31
 > **Parent:** CR0433
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -21,6 +21,7 @@ Decomposed from CR0433. Delivers the work CR0433 requested.
 - [ ] [US0463: readiness.py detector-owed flags a lens filed in two separate audit runs and files the sized unit that will build the check](../stories/US0463-readiness-py-detector-owed-flags-a-lens-filed.md)
 - [ ] [US0464: Every lens pack on disk names its detector or declares manual with a reason, the column is read by header name, and the detector set covers the runners this repo ships](../stories/US0464-every-lens-pack-on-disk-names-its-detector.md)
 - [ ] [US0465: No artefact reaches a terminal status carrying unchecked Open Questions, and the 16 that already did are swept](../stories/US0465-no-artefact-reaches-a-terminal-status-carrying-unchecked.md)
+- [ ] [US0568: The 108 findings that hide a run id in prose are backfilled across all five run ids, with the lens honestly unknown rather than guessed](../stories/US0568-the-108-findings-that-hide-a-run-id.md)
 
 ## Acceptance Criteria (Epic Level)
 

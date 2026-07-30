@@ -207,6 +207,30 @@ Supported prefixes: `pytest`, `jest`, `vitest`, `go`, `file`, `grep`,
 - `/sdlc-studio story create` - Generates best-effort `Verify:` lines
   per AC based on story type
 
+## The duplicate-verifier ratchet
+
+Two ACs sharing a Verify selector cannot both discriminate: a regression in either fails both,
+and neither tells you which broke. `lint --ratchet` refuses any shared selector the baseline does
+not already record.
+
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/verify_ac.py" lint --ratchet --bugs
+```
+
+- **`--bugs` is load-bearing.** The scan defaults to stories, and a shared selector parked in a
+  bug is precisely where nobody was looking.
+- **The tolerated set may only shrink.** A recorded group that is no longer duplicated is refused
+  too, or a fixed entry could be spent again to admit a new one and the ratchet would only loosen.
+- **A tolerated entry names exactly the ACs that share the selector**, plus a reason a human
+  wrote. If the selector later spreads to more ACs, the entry no longer describes the group
+  anybody tolerated and the lane refuses it. Only a story or a bug may be named, since only those
+  carry ACs.
+- **`--stamp` records the current groups with an EMPTY reason and exits non-zero**, so a stamp
+  cannot manufacture an exemption nobody decided on. Fill each reason in by hand.
+
+Baseline: `sdlc-studio/.verify-lint-baseline.json`. An absent, unreadable or stale baseline is
+reported as its own state - none of them reads as a clean scan.
+
 ## See Also
 
 - `reference-verify.md` - Full design, DSL table, gated completion

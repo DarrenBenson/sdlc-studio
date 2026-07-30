@@ -25,9 +25,11 @@ Each lens names the **signature** that finds it - the mechanical detector a find
 before reasoning, or a plain statement that none exists. A mechanical signature begins with a
 runnable detector token the pack documents and names only paths that are on disk; where no
 search can single the class out, the signature begins with `manual` - and states why, so a
-reader can tell a detector from a hope. The documented detector token is `python3` (a skill
-script run over the workspace). Reasoning still runs behind every lens - a signature narrows
-where a finder looks, it does not replace the finder.
+reader can tell a detector from a hope. The documented detector tokens are `bash`, `npm`,
+`python3` and `rg` - `npm` only in the form `npm run <script>`, since `npm` alone runs nothing.
+A `python3` or `bash` signature names its path first; an `rg` signature names it last, after the
+pattern, and must name one. Reasoning still runs behind every lens - a signature narrows where a
+finder looks, it does not replace the finder.
 
 | Lens | Adversarial question | Hunts for | Drawn from | Signature |
 | --- | --- | --- | --- | --- |

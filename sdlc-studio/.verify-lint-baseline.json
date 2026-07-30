@@ -1,0 +1,322 @@
+{
+  "groups": {
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::ProseWriterSweepTests::test_the_four_cr0392_writers_are_now_safe": {
+      "acs": [
+        "US0392 AC1",
+        "US0392 AC3"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::AdoptCutoffTests::test_pre_cutoff_story_is_exempt": {
+      "acs": [
+        "US0025 AC1",
+        "US0025 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::FieldsFileMetadataTests::test_metadata_accepted_and_only_prose_hazard_checked": {
+      "acs": [
+        "US0418 AC1",
+        "BG0298 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py -k HookEnabled": {
+      "acs": [
+        "US0113 AC1",
+        "US0113 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::GuidedInitTests::test_agents_stage_drafts_the_instructions": {
+      "acs": [
+        "US0438 AC1",
+        "BG0334 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::GuidedInitTests::test_classifies_greenfield_and_brownfield": {
+      "acs": [
+        "US0437 AC2",
+        "BG0312 AC4"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::GuidedInitTests::test_decompose_and_plan_stages_direct": {
+      "acs": [
+        "US0442 AC1",
+        "BG0334 AC1"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::DriftKindVocabularyTests": {
+      "acs": [
+        "US0120 AC4",
+        "US0124 AC3"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py -k guard": {
+      "acs": [
+        "US0114 AC1",
+        "US0114 AC3"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_shell_hazard_rate.py::MeasuredCatchRateTests::test_the_catch_count_over_the_corpus_is_asserted_as_a_number": {
+      "acs": [
+        "US0362 AC2",
+        "BG0301 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_briefing_is_generated_from_definitions": {
+      "acs": [
+        "US0266 AC2",
+        "US0266 AC3"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DropVersusDeferredDoneGateTests": {
+      "acs": [
+        "US0433 AC3",
+        "BG0313 AC1"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertMechanismsAreReachedTests::test_the_close_reaches_the_defect_judgement": {
+      "acs": [
+        "US0543 AC2",
+        "BG0385 AC1"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertMechanismsAreReachedTests::test_the_close_reaches_the_goal_panel_and_reports_per_clause": {
+      "acs": [
+        "US0542 AC2",
+        "BG0402 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertMechanismsAreReachedTests::test_the_plan_records_the_content_review_and_the_close_scores_it": {
+      "acs": [
+        "US0546 AC2",
+        "US0547 AC2",
+        "BG0385 AC3"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::OverheadReviewTermTests::test_recorded_round_durations_feed_the_overhead_term": {
+      "acs": [
+        "US0535 AC1",
+        "BG0366 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::CriteriaFloorAtTheVerbTests::test_a_decision_terminal_status_needs_no_criteria": {
+      "acs": [
+        "BG0378 AC3",
+        "BG0382 AC1"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py::DerivedStatusTests": {
+      "acs": [
+        "US0122 AC1",
+        "US0122 AC2",
+        "US0122 AC3",
+        "US0127 AC1"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py::PlanRefusesRequestTests": {
+      "acs": [
+        "US0121 AC1",
+        "US0121 AC2",
+        "US0126 AC1"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py::RefineTests": {
+      "acs": [
+        "US0129 AC1",
+        "US0129 AC2",
+        "US0130 AC1"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py::TwoBacklogStatusTests": {
+      "acs": [
+        "US0123 AC1",
+        "US0123 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py::UndecomposedDriftTests": {
+      "acs": [
+        "US0124 AC1",
+        "US0124 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RunStateScopeTests::test_batch_stories_run_and_no_open_run_exits_2": {
+      "acs": [
+        "US0394 AC3",
+        "BG0360 AC3"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest tools/tests/test_lint_style.py::ProvenanceGuardTests": {
+      "acs": [
+        "US0111 AC1",
+        "US0111 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "pytest tools/tests/test_precommit_lane_order.py": {
+      "acs": [
+        "US0268 AC2",
+        "US0268 AC4"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_conformance.SprintReviewCritiquedTests": {
+      "acs": [
+        "US0247 AC1",
+        "US0247 AC2",
+        "US0247 AC3"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell npm run lint:links": {
+      "acs": [
+        "US0045 AC2",
+        "US0046 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_backlog_triage.py -k Duplicate": {
+      "acs": [
+        "US0167 AC1",
+        "US0167 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_close_guard.py": {
+      "acs": [
+        "US0166 AC1",
+        "US0166 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_engagement_floor.py": {
+      "acs": [
+        "BG0251 AC1",
+        "BG0251 AC2",
+        "BG0251 AC4"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_gate.py": {
+      "acs": [
+        "US0165 AC2",
+        "BG0245 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_loop_guard.py": {
+      "acs": [
+        "BG0240 AC2",
+        "BG0240 AC3"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_mutation.py": {
+      "acs": [
+        "BG0245 AC1",
+        "BG0245 AC3",
+        "BG0245 AC4"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_retro.py": {
+      "acs": [
+        "BG0243 AC1",
+        "BG0243 AC2",
+        "BG0243 AC3",
+        "BG0244 AC1",
+        "BG0244 AC2",
+        "BG0244 AC3"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint.py": {
+      "acs": [
+        "BG0242 AC3",
+        "BG0246 AC1",
+        "BG0246 AC2",
+        "BG0246 AC3"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint.py -k TriageInPlan": {
+      "acs": [
+        "US0170 AC1",
+        "US0170 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_verify_ac.py": {
+      "acs": [
+        "BG0241 AC1",
+        "BG0241 AC2",
+        "BG0241 AC3"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 -m unittest discover -s tools/tests -p test_precommit_budget_recording.py": {
+      "acs": [
+        "BG0239 AC1",
+        "BG0239 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 -m unittest discover -s tools/tests -p test_skill_tests_env.py": {
+      "acs": [
+        "BG0242 AC1",
+        "BG0242 AC2"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 -m unittest tools.tests.test_precommit_floor_pending": {
+      "acs": [
+        "BG0251 AC3",
+        "BG0251 AC5"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 .claude/skills/sdlc-studio/scripts/critic.py caller-check --unit US0508 --root .": {
+      "acs": [
+        "US0508 AC3",
+        "BG0376 AC1"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 tools/check_links.py": {
+      "acs": [
+        "US0056 AC2",
+        "US0096 AC3",
+        "US0107 AC2",
+        "US0136 AC1"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    },
+    "shell python3 tools/check_versions.py": {
+      "acs": [
+        "US0108 AC1",
+        "BG0310 AC1"
+      ],
+      "reason": "PRE-EXISTING at the ratchet's introduction (RUN-01KYPZ1G, US0461). These groups were already shared when the guard landed; they are recorded so the ratchet can be enforced from here, and the SET may only shrink. Each is real debt rather than a judged-legitimate case: splitting the selector so each criterion discriminates is owed work, and removing an entry is the only permitted direction."
+    }
+  }
+}

@@ -245,6 +245,16 @@ run "versions" \
   "sync the version in each file named above (or bump them together)" \
   -- python3 tools/check_versions.py
 
+run "verify-ratchet" \
+  "no NEW duplicate-verifier group: two ACs sharing a selector cannot both discriminate" \
+  "split the selector so each criterion discriminates, or record the group with a reason in sdlc-studio/.verify-lint-baseline.json - the tolerated set may only shrink" \
+  -- python3 .claude/skills/sdlc-studio/scripts/verify_ac.py lint --ratchet --bugs
+
+run "lens-signatures" \
+  "every audit lens names a detector that resolves, or declares manual with a real reason" \
+  "fix the signature cell in the pack named above: a mechanical one names a target that exists (path first for python3/bash, last for rg, an npm scripts key for npm run), and an absent one is 'manual - <why no search singles the class out>'" \
+  -- python3 .claude/skills/sdlc-studio/scripts/readiness.py profile --validate
+
 run "spec-claims" \
   "the specs' countable claims agree with a census of what the repo ships" \
   "correct the claim, or add the census the marked claim names - a claim nobody can check is not a claim that passed" \

@@ -53,7 +53,9 @@ _GIT_ENV_VARS = (
 #: saying so here. A derived version of this would assert only that the hook agrees with
 #: itself.
 EXPECTED_LANES = (
-    "style", "links", "skill-spec", "versions", "spec-claims", "script-tests", "budgets",
+    "style", "links", "skill-spec", "versions", "verify-ratchet", "lens-signatures",
+    "spec-claims",
+    "script-tests", "budgets",
     "neutrality",
     "action-pins", "floor-pending", "gate", "markdown", "markdown-payload",
     "skill-tests", "tool-tests",
@@ -171,6 +173,20 @@ class _GateFixture(unittest.TestCase):
         from hookutil import hook_tool_scripts
         for name in hook_tool_scripts():
             (root / "tools" / name).write_text(PASS_PY, encoding="utf-8")
+        # SKILL-script lanes too, derived the same way: a lane may invoke a skill
+        # script rather than a tools/ checker, and stubbing only tools/ leaves it
+        # running the real script against a fixture workspace.
+        from hookutil import hook_skill_scripts
+        from hookutil import seed_verify_baseline
+        seed_verify_baseline(root)
+        for rel in hook_skill_scripts():
+            dest = root / rel
+            # NEVER create the parent: this fixture SYMLINKS the real skill tree
+            # later in the build, and a directory made here makes that symlink
+            # fail. Stub only where a tree already exists and the script does not.
+            if dest.exists() or not dest.parent.is_dir():
+                continue
+            dest.write_text(PASS_PY, encoding="utf-8")
 
         # The skill-tests lane: costly, and it says it ran. `Ran N tests` is the line the
         # hook parses for the scope check, so the stub has to speak the real dialect.

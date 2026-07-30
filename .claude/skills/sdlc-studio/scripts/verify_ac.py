@@ -828,9 +828,12 @@ def duplicate_verifiers(paths) -> list[dict]:
         for block in parse_story(text):
             if not block.verifier:
                 continue
-            expr = " ".join(block.verifier.split())
+            expr = dup_group_key(block.verifier)
             if _is_manual(expr):
                 continue
+            # Grouped on the NORMALISED key, so a case-only twin of an existing selector joins
+            # the group it actually shares a command with instead of forming a group of one
+            # under each spelling and being reported as no duplicate at all.
             seen.setdefault(expr, []).append(f"{rec} {block.ac_id}")
     return [{"verifier": expr, "acs": acs}
             for expr, acs in sorted(seen.items()) if len(acs) > 1]
@@ -2039,6 +2042,194 @@ def cmd_ts_check(args: argparse.Namespace) -> int:
     return 1 if issues else 0
 
 
+#: Where the tolerated duplicate-verifier groups are recorded. A RATCHET: the set may only
+#: shrink, so a group that is fixed cannot be spent again to admit a new one.
+DUP_BASELINE_REL = "sdlc-studio/.verify-lint-baseline.json"
+
+#: The most ACs one tolerated group may cover. A group that grows past this is not the group
+#: that was baselined, whatever its selector says. Applied to the LIVE set as well as the
+#: recorded one - capping only what the entry says about itself checks nothing.
+DUP_ENTRY_AC_CAP = 8
+
+#: Characters of substance a `reason` needs. `-`, `n/a` and `TODO` cleared a
+#: non-blank test while stating nothing, so an exemption could be minted with one keystroke.
+DUP_REASON_MIN = 20
+
+#: Id prefixes that CARRY acceptance criteria. An `acs` entry naming an epic or a CR resolved
+#: happily under a plain existence check and proved nothing, because only a story or a bug has
+#: ACs that can share a selector.
+DUP_AC_UNIT_PREFIXES = ("US", "BG")
+
+#: Padding a `reason` may not count towards its substance.
+_REASON_FILLER = re.compile(r"^(?:n/?a|tbd|todo|none|see above|as above|-+|\.+)$", re.I)
+
+
+def _reason_substance(reason: str) -> str:
+    """The part of a `reason` that carries meaning: punctuation and filler stripped.
+
+    A one-character `-` passed a non-blank check, so the floor is measured on what is left after
+    the padding comes off rather than on the raw length.
+    """
+    text = " ".join((reason or "").split())
+    if _REASON_FILLER.match(text):
+        return ""
+    return re.sub(r"[^0-9a-z]", "", text, flags=re.I)
+
+
+def dup_group_key(verifier: str) -> str:
+    """The identity a tolerated group is recorded under: whitespace normalised, VERB lowercased.
+
+    The SET of groups is what the ratchet compares, never the COUNT. A change that splits one
+    baselined group and introduces a new one leaves the count flat, and a count-based guard
+    passes it - which is the guard a rising total would already have caught, so it adds nothing.
+
+    The verb is lowercased because the DSL lowercases it before dispatch, so `PyTest x` and
+    `pytest x` run the IDENTICAL command. Comparing them case-sensitively made a case-only twin
+    of a baselined selector a group of one under each spelling, reported as no duplicate at all.
+    Only the leading token is folded: the rest is paths and node ids, and those are
+    case-sensitive on every filesystem that matters.
+    """
+    parts = " ".join((verifier or "").split()).split(" ", 1)
+    if not parts or not parts[0]:
+        return ""
+    head = parts[0].lower()
+    return head if len(parts) == 1 else f"{head} {parts[1]}"
+
+
+def read_dup_baseline(repo_root) -> dict:
+    """`{"state", "entries", "detail"}` for the recorded baseline.
+
+    `state` is one of `ok`, `not-baselined`, `corrupt`. Three DISTINCT states, because the
+    remedy differs: an absent baseline wants a first stamp, an unreadable one wants a human,
+    and neither may read as a clean scan. A ratchet that reports clean over a baseline it
+    could not parse is a ratchet nobody is holding.
+    """
+    path = Path(repo_root) / DUP_BASELINE_REL
+    if not path.is_file():
+        return {"state": "not-baselined", "entries": {}, "detail": f"no {DUP_BASELINE_REL}"}
+    # Through the shared reader, which the hygiene sweep requires: a bare `read_text` on an
+    # artefact-workspace path is the class that turns an unreadable file into a crash instead of
+    # a stated absence. Here the DISTINCTION is the whole point - absent and corrupt are
+    # different states with different remedies - so the two are separated explicitly.
+    # `read_text_safe` yields "" for a file it cannot read, and the ABSENT case is already
+    # handled above - so an empty read here means unreadable, and `json.loads("")` lands it in
+    # the same `corrupt` state as malformed content. Both want a human, and neither may pass.
+    try:
+        raw = json.loads(sdlc_md.read_text_safe(path))
+    except ValueError as exc:
+        return {"state": "corrupt", "entries": {}, "detail": f"{DUP_BASELINE_REL}: {exc}"}
+    groups = raw.get("groups") if isinstance(raw, dict) else None
+    if not isinstance(groups, dict):
+        return {"state": "corrupt", "entries": {},
+                "detail": f"{DUP_BASELINE_REL} has no `groups` object"}
+    # Keys normalised on the way IN. The live side arrives already normalised, so applying
+    # `dup_group_key` only there normalised the one side that did not need it: this file is the
+    # side a human hand-edits, and a key with a double space was reported as BOTH new and stale -
+    # two refusals describing one entry, neither naming the real cause.
+    normalised: dict = {}
+    collisions: list[str] = []
+    for key, entry in groups.items():
+        k = dup_group_key(str(key))
+        if k in normalised:
+            collisions.append(k)
+        normalised[k] = entry
+    if collisions:
+        return {"state": "corrupt", "entries": {},
+                "detail": f"{DUP_BASELINE_REL}: {len(collisions)} key(s) collide once normalised "
+                          f"({', '.join(sorted(set(collisions))[:3])}) - two entries for one "
+                          f"group means one of them is silently unused"}
+    return {"state": "ok", "entries": normalised, "detail": ""}
+
+
+def dup_entry_errors(repo_root, verifier: str, entry, live_acs=None) -> list:
+    """Why a baseline entry may not silence the ratchet. Empty means it may.
+
+    An exemption is machinery, not an assumption: it needs a REASON a human wrote, and every
+    AC it names has to resolve, or the entry is a way past the guard rather than a record of a
+    tolerated case.
+
+    `live_acs` is the set of ACs that CURRENTLY share this selector. Pass it: without it the
+    entry is judged only against itself, and an entry baselined at 2 ACs stays green while the
+    selector spreads onto 30 - the exact class `duplicate_verifiers` names ("a whole-file
+    selector spreads - copied onto every AC of a story"). It defaults to None only so a caller
+    validating a baseline with no scan in hand can still check the entry's own shape.
+    """
+    errors = []
+    if not isinstance(entry, dict):
+        return [f"{verifier!r}: entry is not an object"]
+    reason = str(entry.get("reason") or "").strip()
+    if len(_reason_substance(reason)) < DUP_REASON_MIN:
+        errors.append(f"{verifier!r}: `reason` is {len(_reason_substance(reason))} characters of "
+                      f"substance, under the floor of {DUP_REASON_MIN} - `-` and `n/a` are a "
+                      f"silence, not a decision")
+    acs = entry.get("acs")
+    if not isinstance(acs, list) or not acs:
+        errors.append(f"{verifier!r}: no `acs` list naming what the group covers")
+        return errors
+    recorded = {str(r).strip() for r in acs if str(r).strip()}
+    if len(recorded) != len([r for r in acs if str(r).strip()]):
+        errors.append(f"{verifier!r}: names the same AC more than once, which inflates the "
+                      f"recorded set without covering anything")
+    if len(recorded) > DUP_ENTRY_AC_CAP:
+        errors.append(f"{verifier!r}: covers {len(recorded)} ACs, over the cap of "
+                      f"{DUP_ENTRY_AC_CAP} - a group this wide is not the one that was "
+                      f"baselined")
+    for ref in sorted(recorded):
+        unit = str(ref).split()[0] if str(ref).strip() else ""
+        found = sdlc_md.find_by_id(Path(repo_root), unit) if unit else None
+        if not found:
+            errors.append(f"{verifier!r}: names {ref!r}, whose unit resolves to no artefact")
+        elif unit[:2] not in DUP_AC_UNIT_PREFIXES:
+            errors.append(f"{verifier!r}: names {ref!r}, which is not a story or a bug - only a "
+                          f"unit that CARRIES acceptance criteria can be part of a duplicate "
+                          f"group, so an epic or CR id here resolves while proving nothing")
+    # THE LIVE SET IS THE AUTHORITY, not the recorded one. Capping only the recorded list left
+    # the class the ratchet exists to stop wide open: an entry baselined at 2 ACs stayed green
+    # with the selector spread onto 30, because nothing compared the two. A tolerated group is
+    # a specific set of ACs sharing a specific command, so the sets must match exactly.
+    if live_acs is not None:
+        live = {str(a).strip() for a in live_acs}
+        if live != recorded:
+            grew, shrank = sorted(live - recorded), sorted(recorded - live)
+            detail = []
+            if grew:
+                detail.append(f"now also claimed by {', '.join(grew)}")
+            if shrank:
+                detail.append(f"no longer claimed by {', '.join(shrank)}")
+            errors.append(f"{verifier!r}: the baselined set is {len(recorded)} AC(s) and the live "
+                          f"set is {len(live)} ({'; '.join(detail)}) - a tolerated group is a "
+                          f"specific set of ACs, so a selector that has spread since it was "
+                          f"baselined is not the group anybody tolerated")
+    return errors
+
+
+def dup_ratchet(repo_root, paths) -> dict:
+    """The ratchet verdict: `{"ok", "state", "new", "stale", "errors"}`.
+
+    `new` is a duplicate group the baseline does not hold - refused. `stale` is a baselined
+    group whose ACs no longer share a selector - also refused, because a tolerated set that
+    keeps a fixed entry can be spent again to admit a new one, and then the ratchet only ever
+    loosens.
+    """
+    base = read_dup_baseline(repo_root)
+    live = {dup_group_key(d["verifier"]): d for d in duplicate_verifiers(paths)}
+    if base["state"] != "ok":
+        return {"ok": False, "state": base["state"], "new": sorted(live),
+                "stale": [], "errors": [base["detail"]]}
+    entries = base["entries"]
+    errors = []
+    for verifier, entry in sorted(entries.items()):
+        # The LIVE group is handed in, so an entry is judged against what currently shares its
+        # selector rather than only against its own recorded fields.
+        group = live.get(verifier)
+        errors.extend(dup_entry_errors(repo_root, verifier, entry,
+                                       live_acs=group["acs"] if group else None))
+    new = sorted(k for k in live if k not in entries)
+    stale = sorted(k for k in entries if k not in live)
+    return {"ok": not (new or stale or errors), "state": "ok",
+            "new": new, "stale": stale, "errors": errors}
+
+
 def cmd_lint(args: argparse.Namespace) -> int:
     """Flag Verify lines that would fall through to `shell` but look like a
     mis-written runner invocation. Catches the AC↔test drift at author time
@@ -2051,6 +2242,13 @@ def cmd_lint(args: argparse.Namespace) -> int:
     retrospectively blocks a lint run over history without helping anyone."""
     repo_root = resolve_root(args)
     paths = [Path(args.story)] if args.story else list(walk_stories(under_root(repo_root, args.dir)))
+    if getattr(args, "bugs", False) and not args.story:
+        # `sdlc-studio/bugs` too, as `stamps --bugs` already scans it. Without this a shared
+        # selector can be PARKED in a bug, where `duplicate_verifiers` never looked.
+        # `("BG",)`, because `walk_stories` defaults to stories alone - passing the bugs
+        # DIRECTORY without the prefix yields nothing and the scan silently covers no bugs,
+        # which is the exemption-by-omission this flag exists to close.
+        paths += list(walk_stories(under_root(repo_root, "sdlc-studio/bugs"), prefixes=("BG",)))
     flagged = 0
     refused = 0
     for p in paths:
@@ -2089,10 +2287,65 @@ def cmd_lint(args: argparse.Namespace) -> int:
               f"    -> two ACs sharing a selector cannot both discriminate - a regression in "
               f"either fails both, and neither says which")
     print(f"verify-lint: {flagged} suspicious Verify line(s) (advisory)")
+    if getattr(args, "stamp", False):
+        return _stamp_dup_baseline(repo_root, paths)
+    if getattr(args, "ratchet", False):
+        verdict = dup_ratchet(repo_root, paths)
+        if not verdict["ok"]:
+            if verdict["state"] == "not-baselined":
+                print(f"verify-lint RATCHET: {verdict['errors'][0]} - the tolerated set is "
+                      f"unrecorded, so nothing can be held to it. Record it once with "
+                      f"`verify_ac.py lint --ratchet --stamp`, then every later run may only "
+                      f"shrink it.", file=sys.stderr)
+            elif verdict["state"] == "corrupt":
+                print(f"verify-lint RATCHET: {verdict['errors'][0]} - the baseline could not be "
+                      f"parsed, and a ratchet that reports clean over a baseline it cannot read "
+                      f"is a ratchet nobody is holding.", file=sys.stderr)
+            for group in verdict["new"]:
+                print(f"verify-lint RATCHET: REFUSED - {group!r} is shared by more than one AC "
+                      f"and the baseline does not record it. Split the selector so each "
+                      f"criterion discriminates, or record the group with a reason.",
+                      file=sys.stderr)
+            for group in verdict["stale"]:
+                print(f"verify-lint RATCHET: STALE - {group!r} is recorded as tolerated and its "
+                      f"ACs no longer share a selector. Remove the entry: a tolerated set that "
+                      f"keeps a fixed group can spend it again to admit a new one.",
+                      file=sys.stderr)
+            for err in verdict["errors"][1:] if verdict["state"] != "ok" else verdict["errors"]:
+                print(f"verify-lint RATCHET: {err}", file=sys.stderr)
+            return 1
+        print("verify-lint: ratchet clean - no duplicate group the baseline does not record")
     if refused:
         print(f"verify-lint: {refused} markdown-only verifier(s) REFUSED on a story still "
               f"being authored - each proves a sentence was written, not that the behaviour "
               f"exists", file=sys.stderr)
+        return 1
+    return 0
+
+
+def _stamp_dup_baseline(repo_root, paths) -> int:
+    """Record the CURRENT duplicate groups as the tolerated set.
+
+    Refuses to mint an entry with no reason: a stamp that writes a reasonless exemption would
+    make the reason field decoration, and the ratchet's whole value is that an exemption is a
+    decision somebody recorded. The reason is seeded as a placeholder the author must replace,
+    and `--ratchet` refuses it until they do.
+    """
+    live = duplicate_verifiers(paths)
+    groups = {}
+    for d in live:
+        groups[dup_group_key(d["verifier"])] = {
+            "acs": list(d["acs"]),
+            "reason": "",   # deliberately EMPTY - the ratchet refuses it until a human writes one
+        }
+    path = Path(repo_root) / DUP_BASELINE_REL
+    path.parent.mkdir(parents=True, exist_ok=True)
+    sdlc_md.atomic_write(path, json.dumps({"groups": groups}, indent=2) + "\n")
+    print(f"verify-lint: baselined {len(groups)} duplicate group(s) -> {DUP_BASELINE_REL}")
+    if groups:
+        print("verify-lint: every entry carries an EMPTY reason and the ratchet REFUSES it "
+              "until one is written - a stamp that minted a reasonless exemption would make "
+              "the field decoration.", file=sys.stderr)
         return 1
     return 0
 
@@ -2236,6 +2489,17 @@ def build_parser() -> argparse.ArgumentParser:
     ln.add_argument("--root", default=".", help="Repo root --dir is resolved under")
     ln.add_argument("--dir", default="sdlc-studio/stories", help="Stories directory")
     ln.add_argument("--story", "--file", dest="story", help="Single story file (overrides --dir)")
+    ln.add_argument("--bugs", action="store_true",
+                    help="scan sdlc-studio/bugs too, as `stamps --bugs` does - without it a "
+                         "shared selector can be parked in a bug where the scan never looked")
+    ln.add_argument("--ratchet", action="store_true",
+                    help="REFUSE a duplicate-verifier group the baseline does not record, and a "
+                         "recorded group that is no longer duplicated. The tolerated SET may "
+                         "only shrink, so a fixed group cannot be spent to admit a new one")
+    ln.add_argument("--stamp", action="store_true",
+                    help="(with --ratchet) record the current groups as the tolerated set. Each "
+                         "entry is minted with an EMPTY reason and the ratchet refuses it until "
+                         "a human writes one")
     ln.set_defaults(func=cmd_lint)
 
     tc = sub.add_parser("ts-check", help="Validate a test-spec's AC Coverage Matrix")

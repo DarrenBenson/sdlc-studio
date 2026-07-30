@@ -1,23 +1,23 @@
 # Story Index
 
-**Last Updated:** 2026-07-29
+**Last Updated:** 2026-07-30
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 4 |
-| Ready | 29 |
+| Draft | 5 |
+| Ready | 28 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 19 |
+| Review | 20 |
 | Done | 512 |
 | Won't Implement | 1 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 1 |
-| **Total** | **567** |
+| **Total** | **568** |
 
 ## All Stories
 
@@ -372,7 +372,7 @@
 | [US0458](US0458-the-trd-s-shipped-surface-enumerations-are-derived.md) | The TRD's shipped-surface enumerations are derived from the code and the router, and the stale CR0132 caveat is refused by name | Review | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0459](US0459-the-token-budget-premise-is-replaced-by-the.md) | The token-budget premise is replaced by the measured one everywhere it is asserted: transcript-measured, and a lower bound because delegated spend is supplied not measured | Review | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0460](US0460-the-porting-doctrine-is-stated-in-one-direction.md) | The porting doctrine is stated in one direction across the TRD and personas.md: the repo is source, the installed copy is the derived mirror | Review | EP0168 | 2026-07-27 | 2026-07-27 |
-| [US0461](US0461-verify-ac-lint-ratchet-refuses-a-duplicate-group.md) | verify_ac lint --ratchet refuses a duplicate group the baseline does not record with a reason, and the pinned pre-commit lane set gains it | Ready | EP0169 | 2026-07-27 | 2026-07-27 |
+| [US0461](US0461-verify-ac-lint-ratchet-refuses-a-duplicate-group.md) | verify_ac lint --ratchet refuses a duplicate group the baseline does not record with a reason, and the pinned pre-commit lane set gains it | Review | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0462](US0462-a-filed-finding-records-the-lens-profile-and.md) | A filed finding records the lens, profile and a resolvable audit run, and the existing corpus is backfilled from its Raised-by stamps | Ready | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0463](US0463-readiness-py-detector-owed-flags-a-lens-filed.md) | readiness.py detector-owed flags a lens filed in two separate audit runs and files the sized unit that will build the check | Ready | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0464](US0464-every-lens-pack-on-disk-names-its-detector.md) | Every lens pack on disk names its detector or declares manual with a reason, the column is read by header name, and the detector set covers the runners this repo ships | Ready | EP0169 | 2026-07-27 | 2026-07-27 |
@@ -479,6 +479,7 @@
 | [US0565](US0565-the-gate-is-the-survivor-count-over-those.md) | The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0566](US0566-feature-work-keeps-the-cheaper-bar-and-a.md) | Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0567](US0567-the-shipped-doctrine-states-that-a-fix-s.md) | The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
+| [US0568](US0568-the-108-findings-that-hide-a-run-id.md) | The 108 findings that hide a run id in prose are backfilled across all five run ids, with the lens honestly unknown rather than guessed | Draft | EP0169 | 2026-07-30 | 2026-07-30 |
 
 ## Archived Releases
 

@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-07-29
+**Last Updated:** 2026-07-30
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 12 |
+| Open | 13 |
 | In Progress | 0 |
 | Fixed | 326 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **421** |
+| **Total** | **422** |
 
 ## All Bugs
 
@@ -139,6 +139,7 @@
 | [BG0419](BG0419-four-delivered-units-are-held-by-verifiers-that.md) | Four delivered units are held by verifiers that pass with the delivered mechanism removed, and two whole production surfaces are one edit from inert | Open | High | 2026-07-29 | 2026-07-29 |
 | [BG0420](BG0420-test-fixtures-mirror-real-lists-by-hand-so.md) | Test fixtures mirror real lists by hand, so adding one chain step or one gate lane turns dozens of unrelated tests red for a reason none of them is about | Open | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0421](BG0421-twenty-one-open-questions-reached-a-terminal-status.md) | Twenty-one Open Questions reached a terminal status unanswered, and are now owned here rather than given rulings nobody made | Open | Medium | 2026-07-29 | 2026-07-29 |
+| [BG0422](BG0422-the-code-is-mostly-right-and-the-evidence.md) | The code is mostly right and the EVIDENCE is what fails: five consecutive REJECTs, and four fifths of the findings were the author's own tests unable to fail | Open | High | 2026-07-30 | 2026-07-30 |
 
 ## Archived Releases
 

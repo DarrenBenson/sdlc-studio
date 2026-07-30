@@ -3279,5 +3279,353 @@ class FenceInfoStringTests(unittest.TestCase):
         self.assertEqual(v, "shell true")
 
 
+def _ratchet_repo(root, dupes=1, bug_dupe=False, baseline=None, story_status="Ready"):
+    """A workspace with `dupes` stories sharing one selector, optionally a BUG sharing another."""
+    import json as _json
+    sd = root / "sdlc-studio" / "stories"
+    sd.mkdir(parents=True, exist_ok=True)
+    shared = "pytest tests/test_x.py::T::t_shared"
+    for i in range(1, dupes + 2):
+        (sd / f"US000{i}-x.md").write_text(
+            f"# US000{i}: x\n\n> **Status:** {story_status}\n\n"
+            f"## Acceptance Criteria\n\n### AC1\n- **Verify:** {shared}\n", encoding="utf-8")
+    if bug_dupe:
+        bd = root / "sdlc-studio" / "bugs"
+        bd.mkdir(parents=True, exist_ok=True)
+        parked = "pytest tests/test_y.py::T::t_parked"
+        for i in (1, 2):
+            (bd / f"BG000{i}-b.md").write_text(
+                f"# BG000{i}: b\n\n> **Status:** Open\n> **Severity:** Medium\n\n"
+                f"## Acceptance Criteria\n\n### AC1\n- **Verify:** {parked}\n",
+                encoding="utf-8")
+    if baseline is not None:
+        p = root / verify_ac.DUP_BASELINE_REL
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(_json.dumps(baseline), encoding="utf-8")
+    return root
+
+
+class RatchetTests(unittest.TestCase):
+    """US0461. `duplicate_verifiers` reported and never refused, so the shared-selector class
+    could grow indefinitely. The ratchet compares the SET of groups, never the count."""
+
+    def _paths(self, root, bugs=False):
+        paths = list(verify_ac.walk_stories(root / "sdlc-studio" / "stories"))
+        if bugs:
+            # `prefixes=("BG",)`: walk_stories defaults to stories alone, so passing the bugs
+            # directory without it yields NOTHING and the test would prove the opposite of
+            # what it claims.
+            paths += list(verify_ac.walk_stories(root / "sdlc-studio" / "bugs",
+                                                 prefixes=("BG",)))
+        return paths
+
+    def test_an_unbaselined_duplicate_refuses_across_stories_and_bugs(self) -> None:
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = _ratchet_repo(Path(td.name), bug_dupe=True, baseline={"groups": {}})
+        # Stories only: the story group is refused, the parked bug group is INVISIBLE.
+        story_only = verify_ac.dup_ratchet(root, self._paths(root))
+        self.assertFalse(story_only["ok"])
+        self.assertTrue(any("test_x" in g for g in story_only["new"]))
+        self.assertFalse(any("test_y" in g for g in story_only["new"]),
+                         "the bug group was seen without --bugs, so this proves nothing")
+        # With bugs: BOTH are refused - a shared selector cannot be parked where nothing looks.
+        both = verify_ac.dup_ratchet(root, self._paths(root, bugs=True))
+        self.assertTrue(any("test_y" in g for g in both["new"]),
+                        "a shared selector parked in a bug escaped the ratchet")
+
+    def test_the_COMMAND_scans_bugs_when_asked(self) -> None:
+        """Through `cmd_lint`, not by assembling paths here. The sibling test builds its own
+        path list, so dropping the `prefixes=("BG",)` from the command survived - and without
+        that prefix `walk_stories` on the bugs directory yields NOTHING, which is the
+        exemption-by-omission the flag exists to close. Caught by mutation."""
+        import argparse
+        import contextlib
+        import io
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = _ratchet_repo(Path(td.name), bug_dupe=True, baseline={"groups": {}})
+        err = io.StringIO()
+        args = argparse.Namespace(root=str(root), dir="sdlc-studio/stories", story=None,
+                                  bugs=True, ratchet=True, stamp=False)
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+            rc = verify_ac.cmd_lint(args)
+        self.assertEqual(1, rc)
+        self.assertIn("test_y", err.getvalue(),
+                      "the command did not reach the bug group - `--bugs` scanned nothing, "
+                      "which reads exactly like a clean tree")
+
+    def test_a_recorded_group_passes_silently(self) -> None:
+        """The positive control: a ratchet that refuses everything is unusable."""
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = _ratchet_repo(Path(td.name))
+        found = verify_ac.duplicate_verifiers(self._paths(root))
+        # MUTANT: `duplicate_verifiers` stubbed to `return []`. Without this assertion the whole
+        # test passes over an EMPTY baseline against an EMPTY scan - a control that is green when
+        # the detector finds nothing is not a control.
+        self.assertTrue(found, "the fixture produced no duplicate group, so this control would "
+                               "pass with the detector returning nothing")
+        groups = {g["verifier"]: {"acs": g["acs"], "reason": "one indivisible behaviour"}
+                  for g in found}
+        (root / verify_ac.DUP_BASELINE_REL).write_text(
+            json.dumps({"groups": groups}), encoding="utf-8")
+        verdict = verify_ac.dup_ratchet(root, self._paths(root))
+        self.assertTrue(verdict["ok"], f"a recorded group was refused: {verdict}")
+
+    def test_a_swap_that_keeps_the_count_flat_is_still_refused(self) -> None:
+        """The comparison is over the SET. A change that splits one baselined group and adds a
+        new one leaves the count unchanged - and a count-based guard passes it, which is the
+        guard a rising total would already have caught."""
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = _ratchet_repo(Path(td.name))
+        live = verify_ac.duplicate_verifiers(self._paths(root))
+        self.assertEqual(1, len(live), "fixture did not produce exactly one live group")
+        # Baseline records a DIFFERENT single group: same count, different identity.
+        (root / verify_ac.DUP_BASELINE_REL).write_text(json.dumps({"groups": {
+            "pytest tests/test_gone.py::T::t_fixed": {"acs": ["US0001 AC1", "US0002 AC1"],
+                                                      "reason": "historical"}}}),
+            encoding="utf-8")
+        verdict = verify_ac.dup_ratchet(root, self._paths(root))
+        self.assertFalse(verdict["ok"], "a flat-count swap passed the ratchet")
+        self.assertTrue(verdict["new"], "the new group was not named")
+        self.assertTrue(verdict["stale"], "the fixed group was not named as stale")
+
+    def test_no_untrustworthy_baseline_reports_clean(self) -> None:
+        """Three DISTINCT states, because the remedy differs and none may read as clean."""
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        base = Path(td.name)
+        absent = _ratchet_repo(base / "absent")
+        self.assertEqual("not-baselined", verify_ac.dup_ratchet(absent, self._paths(absent))["state"])
+        corrupt = _ratchet_repo(base / "corrupt", baseline=None)
+        p = corrupt / verify_ac.DUP_BASELINE_REL
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("{ not json", encoding="utf-8")
+        self.assertEqual("corrupt", verify_ac.dup_ratchet(corrupt, self._paths(corrupt))["state"])
+        stale = _ratchet_repo(base / "stale", dupes=0, baseline={"groups": {
+            "pytest tests/test_gone.py::T::t": {"acs": ["US0001 AC1"], "reason": "why"}}})
+        v = verify_ac.dup_ratchet(stale, self._paths(stale))
+        self.assertFalse(v["ok"], "a stale entry reported clean")
+        self.assertTrue(v["stale"])
+
+
+class BaselineSchemaTests(unittest.TestCase):
+    """US0461 AC4. An exemption is MACHINERY, not an assumption a later story makes."""
+
+    def _root(self):
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        (sd / "US0001-x.md").write_text(
+            "# US0001: x\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n"
+            "### AC1\n- **Verify:** shell true\n", encoding="utf-8")
+        return root
+
+    def test_a_reasonless_unresolvable_or_oversized_entry_is_refused(self) -> None:
+        root = self._root()
+        reasonless = verify_ac.dup_entry_errors(root, "cmd", {"acs": ["US0001 AC1"], "reason": ""})
+        self.assertTrue(any("substance" in e for e in reasonless),
+                        f"an empty reason was not refused: {reasonless}")
+        dangling = verify_ac.dup_entry_errors(
+            root, "cmd", {"acs": ["US9999 AC1"], "reason": "why"})
+        self.assertTrue(any("resolves to no artefact" in e for e in dangling))
+        oversized = verify_ac.dup_entry_errors(
+            root, "cmd", {"acs": [f"US0001 AC{i}" for i in range(10)],
+                          "reason": "a stated reason with real substance in it"})
+        self.assertTrue(any("over the cap" in e for e in oversized))
+        # MUTANT: `DUP_ENTRY_AC_CAP = 8` -> `1000`. The fixture used to be built from the
+        # production constant (`range(DUP_ENTRY_AC_CAP + 2)`), so the cap could be set to any
+        # value and this test stayed green - it asserted only "over whatever the cap says".
+        # The count above is a LITERAL 10, and the cap's value is pinned here.
+        self.assertEqual(8, verify_ac.DUP_ENTRY_AC_CAP,
+                         "the cap's value changed; a group this wide is not the one baselined")
+        # The positive control: a well-formed entry is accepted, or every entry is refused.
+        self.assertEqual([], verify_ac.dup_entry_errors(
+            root, "cmd", {"acs": ["US0001 AC1"], "reason": "one indivisible behaviour"}))
+
+    def _paths(self, root, bugs=False):
+        """Same walk as the sibling class. `prefixes=("BG",)` is REQUIRED for bugs: the default
+        walks stories alone, so passing the bugs dir without it yields nothing."""
+        paths = list(verify_ac.walk_stories(root / "sdlc-studio" / "stories"))
+        if bugs:
+            paths += list(verify_ac.walk_stories(root / "sdlc-studio" / "bugs",
+                                                prefixes=("BG",)))
+        return paths
+
+    def test_a_bad_entry_refuses_through_the_RATCHET_not_only_the_helper(self) -> None:
+        """MUTANTS this must die to, all of which left 263 tests green:
+        (1) `dup_ratchet`'s verdict changed to `not (new or stale)`, ignoring `errors` entirely;
+        (2) the `dup_entry_errors` loop inside `dup_ratchet` replaced with `pass`.
+
+        The sibling tests call `dup_entry_errors` DIRECTLY, so the whole wiring from entry
+        validation to refusal carried no test at all - AC4's promise is that the refusal happens
+        in `verify_ac.py` itself. This is the author's recurring defect: the helper is asserted
+        and the caller that must consult it is not.
+        """
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = _ratchet_repo(Path(td.name))
+        found = verify_ac.duplicate_verifiers(self._paths(root))
+        self.assertTrue(found, "no duplicate group in the fixture")
+        # Every field correct EXCEPT the reason, so `new`/`stale` are both empty and the verdict
+        # can only be driven by the entry errors.
+        groups = {g["verifier"]: {"acs": g["acs"], "reason": "-"} for g in found}
+        (root / verify_ac.DUP_BASELINE_REL).write_text(
+            json.dumps({"groups": groups}), encoding="utf-8")
+        verdict = verify_ac.dup_ratchet(root, self._paths(root))
+        self.assertEqual([], verdict["new"], "precondition: the group IS recorded")
+        self.assertEqual([], verdict["stale"], "precondition: nothing is stale")
+        self.assertFalse(verdict["ok"],
+                         "a reasonless entry was tolerated by the ratchet even though the helper "
+                         "reports it - the verdict does not consult the entry errors")
+        self.assertTrue(any("substance" in e for e in verdict["errors"]))
+
+    def test_a_bad_entry_refuses_through_the_COMMAND_an_operator_types(self) -> None:
+        """MUTANT: `cmd_lint`'s `--stamp`/ratchet wiring disabled. The command is the surface a
+        gate lane invokes, and a guard reachable only from a helper is not a lane."""
+        import contextlib
+        import io
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = _ratchet_repo(Path(td.name))
+        found = verify_ac.duplicate_verifiers(self._paths(root))
+        groups = {g["verifier"]: {"acs": g["acs"], "reason": "-"} for g in found}
+        (root / verify_ac.DUP_BASELINE_REL).write_text(
+            json.dumps({"groups": groups}), encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()) as err:
+            rc = verify_ac.main(["lint", "--ratchet", "--root", str(root)])
+        self.assertEqual(1, rc, "the command exited 0 over a baseline entry it must refuse")
+        self.assertIn("substance", err.getvalue())
+
+    def test_a_baselined_group_that_has_SPREAD_since_is_refused(self) -> None:
+        """The fail-open a reviewer demonstrated against the live 43-entry baseline: the AC cap was
+        applied only to the entry's RECORDED list, and the recorded list was never compared to the
+        live one. A group baselined at 2 ACs was accepted spread across 30.
+
+        MUTANT: drop the `live_acs` comparison from `dup_entry_errors`, or stop passing
+        `live_acs` from `dup_ratchet`.
+        """
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = _ratchet_repo(Path(td.name), dupes=4)
+        found = verify_ac.duplicate_verifiers(self._paths(root))
+        self.assertGreater(len(found[0]["acs"]), 2, "the fixture must have a group wider than 2")
+        # Record only TWO of the ACs that share the selector; the rest have spread since.
+        groups = {found[0]["verifier"]: {"acs": found[0]["acs"][:2],
+                                        "reason": "recorded when only two ACs shared this"}}
+        (root / verify_ac.DUP_BASELINE_REL).write_text(
+            json.dumps({"groups": groups}), encoding="utf-8")
+        verdict = verify_ac.dup_ratchet(root, self._paths(root))
+        self.assertFalse(verdict["ok"],
+                         "a selector that spread beyond its baselined AC set was tolerated")
+        self.assertTrue(any("has spread since it was baselined" in e for e in verdict["errors"]),
+                        f"refused, but not for the spread: {verdict['errors']}")
+
+    def test_an_epic_or_cr_id_cannot_stand_in_for_the_group_s_acs(self) -> None:
+        """A reviewer silenced a real group with `{"acs": ["EP0169 AC1"], "reason": "-"}`: the id
+        resolved to SOME artefact, and nothing checked it was a unit that carries ACs.
+
+        MUTANT: drop the `DUP_AC_UNIT_PREFIXES` check.
+        """
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = _ratchet_repo(Path(td.name))
+        ed = root / "sdlc-studio" / "epics"
+        ed.mkdir(parents=True, exist_ok=True)
+        (ed / "EP0001-e.md").write_text("# EP0001: e\n\n> **Status:** Active\n", encoding="utf-8")
+        errors = verify_ac.dup_entry_errors(
+            root, "cmd", {"acs": ["EP0001 AC1"],
+                          "reason": "an epic id that happens to resolve on disk"})
+        self.assertTrue(any("not a story or a bug" in e for e in errors),
+                        f"an epic id was accepted as one of a duplicate group's ACs: {errors}")
+
+    def test_a_case_only_twin_of_a_selector_is_one_group_not_two_of_one(self) -> None:
+        """MUTANT: `dup_group_key` stops lowercasing the verb.
+
+        The DSL lowercases the verb before dispatch, so `PyTest x` and `pytest x` run the
+        IDENTICAL command. Grouped case-sensitively they were a group of ONE under each spelling,
+        so `len(acs) > 1` never fired and the pair was reported as no duplicate at all - a way
+        past the ratchet that needed only a shift key.
+        """
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        for i, verb in ((1, "pytest"), (2, "PyTest")):
+            (sd / f"US000{i}-x.md").write_text(
+                f"# US000{i}: x\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n"
+                f"### AC1\n- **Verify:** {verb} tests/test_x.py::T::t\n", encoding="utf-8")
+        found = verify_ac.duplicate_verifiers(self._paths(root))
+        self.assertEqual(1, len(found),
+                         f"a case-only twin was not grouped with the selector it duplicates: "
+                         f"{found}")
+        self.assertEqual(2, len(found[0]["acs"]))
+
+    def test_a_baseline_key_a_human_hand_edited_is_normalised_on_the_way_in(self) -> None:
+        """MUTANT: stop normalising baseline keys on read.
+
+        Normalisation used to be applied ONLY to the live side, which `duplicate_verifiers`
+        already normalises - so it was applied to the one side that did not need it. The baseline
+        is the side a human hand-edits, and a key with a double space was reported as BOTH new and
+        stale: two refusals describing one entry, neither naming the cause.
+        """
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = _ratchet_repo(Path(td.name))
+        found = verify_ac.duplicate_verifiers(self._paths(root))
+        self.assertTrue(found)
+        sloppy = found[0]["verifier"].replace(" ", "  ", 1)   # as a hand edit leaves it
+        self.assertNotEqual(sloppy, found[0]["verifier"], "the fixture did not introduce drift")
+        (root / verify_ac.DUP_BASELINE_REL).write_text(
+            json.dumps({"groups": {sloppy: {"acs": found[0]["acs"],
+                                            "reason": "recorded with an untidy key by hand"}}}),
+            encoding="utf-8")
+        verdict = verify_ac.dup_ratchet(root, self._paths(root))
+        self.assertEqual([], verdict["new"],
+                         "a hand-spaced key read as an unrecorded group")
+        self.assertEqual([], verdict["stale"],
+                         "the same entry was ALSO reported stale, which is the double refusal")
+        self.assertTrue(verdict["ok"], f"refused: {verdict['errors']}")
+
+    def test_two_baseline_keys_that_collide_once_normalised_are_corrupt(self) -> None:
+        """Normalising on read can silently drop an entry when two keys fold together, so that
+        case is refused as corrupt rather than resolved by whichever happened to be last."""
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = _ratchet_repo(Path(td.name))
+        (root / verify_ac.DUP_BASELINE_REL).write_text(
+            json.dumps({"groups": {"pytest a::b": {"acs": ["US0001 AC1"], "reason": "x" * 25},
+                                   "pytest  a::b": {"acs": ["US0002 AC1"], "reason": "y" * 25}}}),
+            encoding="utf-8")
+        base = verify_ac.read_dup_baseline(root)
+        self.assertEqual("corrupt", base["state"],
+                         "one of two colliding entries was silently discarded")
+        self.assertIn("collide", base["detail"])
+
+    def test_stamp_will_not_mint_an_entry_with_a_reason(self) -> None:
+        """`--stamp` mints an EMPTY reason and returns non-zero, so a stamp cannot be used to
+        manufacture an exemption nobody decided on."""
+        import contextlib
+        import io
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = _ratchet_repo(Path(td.name))
+        paths = list(verify_ac.walk_stories(root / "sdlc-studio" / "stories"))
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            rc = verify_ac._stamp_dup_baseline(root, paths)
+        self.assertEqual(1, rc, "a stamp that mints exemptions exited 0")
+        written = json.loads((root / verify_ac.DUP_BASELINE_REL).read_text(encoding="utf-8"))
+        self.assertTrue(written["groups"], "nothing was recorded")
+        for entry in written["groups"].values():
+            self.assertEqual("", entry["reason"],
+                             "the stamp invented a reason no human wrote")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -7,7 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/readiness.py, .claude/skills/sdlc-studio/scripts/tests/test_audit_profiles.py, .claude/skills/sdlc-studio/templates/audit-profiles/code.md, .claude/skills/sdlc-studio/templates/audit-profiles/repo.md, .claude/skills/sdlc-studio/templates/audit-profiles/skill.md, .claude/skills/sdlc-studio/templates/audit-profiles/test.md, .claude/skills/sdlc-studio/templates/audit-profiles/process.md, .claude/skills/sdlc-studio/reference-audit.md, CHANGELOG.md
 > **Epic:** EP0169
-> **Points:** 5
+> **Points:** 8
 
 ## User Story
 
@@ -29,6 +29,9 @@
 - **Given** signatures opening `python3`, `bash tools/lint-style.sh`, `rg`, and `npm run lint:links`, alongside one opening `manual`
 - **When** each is classified
 - **Then** the first four parse as mechanical with the runner's own path argument extracted per runner shape, and only the last is non-mechanical, so a lens whose real detector is `bash tools/lint-style.sh` is not forced to declare that no detector exists
+- **And** `rg` and `npm run` are not added without a caller: no pack row on disk uses either today, so this story authors at least one real pack row per shape. A widened classifier whose only exerciser is its own unit test is the `over-engineering` lens pointed at this change.
+- **And** the `npm run <script>` assertion is that the key exists in `package.json`'s **`scripts` object** - deterministic, and stronger than a path check, because it proves the thing a finder would actually type resolves. Looking the key up anywhere else in `package.json` would pass on a colliding top-level key.
+- **And** `rg <pattern> [path...]` takes an **optional, repeatable** path after a pattern that may be quoted or contain spaces, so extracting "the path" from the string is undecidable. Rather than a third reported state, a mechanical signature must be **runnable as declared** and a pack row whose path does not resolve is refused at authoring time - so "unresolvable" never exists at read time. A state that is reported but not enforced is the class this sprint keeps finding.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_profiles.py::SignatureDetectorSetTests::test_every_shipped_runner_shape_classifies_as_mechanical_and_yields_its_path
 
 ### AC3: AC3: every lens of every pack file carries a signature, and the list is derived
@@ -43,7 +46,21 @@
 - **Given** each lens whose signature classifies as mechanical, across all four runner shapes
 - **When** the path extracted from the signature is resolved against the repo
 - **Then** it exists, so a detector written from memory is caught here rather than by the finder who runs it and gets nothing
+- **And** the rule lives in **shipped code** - `readiness.py`, beside the existing "declares no lens" refusal in `resolve_profile` - with the repo's unit test calling that, not restating it. `process.md`'s own Notes and `reference-audit.md` invite a consuming project to append pack rows "stating its own signature in the same way", and a consuming project never runs this repo's unit tests: a documented, shipped extension point whose contract is enforced only in `test_audit_profiles.py` is enforced nowhere for the people it is documented for.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_profiles.py::SignatureCoverageTests::test_every_mechanical_signature_names_a_path_on_disk
+
+## Notes
+
+**The bulk of this story is authoring 15 lens signatures, which the estimate did not price.** Only
+`process.md` carries a Signature column today; `code.md`, `repo.md`, `skill.md` and `test.md` carry
+4, 3, 4 and 4 lenses respectively, and every one needs either a resolvable on-disk path (AC4) or a
+`manual - <real reason>` stating why no search singles the class out (AC5). Fifteen considered
+judgements is the work here, not the parser change.
+
+**`SIGNATURE_DETECTORS` must stay the single authority.** `process.md`'s Signatures section states in
+prose that "the documented detector token is `python3`". Widening the code to four runners and leaving
+that sentence is a doc that lies; hand-editing both creates a second copy to drift. The sentence is
+derived from the constant, or this pack's own `count-by-hand` lens applies to this very change.
 
 ### AC5: AC5: an absent detector is declared in the documented form with a reason
 

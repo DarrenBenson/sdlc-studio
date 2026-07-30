@@ -25,10 +25,12 @@ executes the pair over a real `git commit` for that.
 from __future__ import annotations
 
 import re
+import json
 import unittest
 from pathlib import Path
 
-GITHOOKS = Path(__file__).resolve().parents[2] / ".githooks"
+REPO = Path(__file__).resolve().parents[2]
+GITHOOKS = REPO / ".githooks"
 HOOK = GITHOOKS / "pre-commit"
 MSG_HOOK = GITHOOKS / "commit-msg"
 
@@ -59,7 +61,9 @@ def _lane_keys(hook: Path = HOOK) -> list[str]:
 #: reducing coverage.
 #: `gate` is deliberately absent: it is an inline if/else block, not a `run "..."` lane.
 EXPECTED_LANES = {
-    "style", "links", "skill-spec", "versions", "spec-claims", "script-tests", "budgets",
+    "style", "links", "skill-spec", "versions", "verify-ratchet", "lens-signatures",
+    "spec-claims",
+    "script-tests", "budgets",
     "neutrality",
     "action-pins", "floor-pending", "markdown", "markdown-payload",
 }
@@ -67,6 +71,40 @@ EXPECTED_LANES = {
 #: The lanes that cost real wall-clock, and that therefore may not run until every cheap
 #: refusal - including the commit-message rules - has had its chance.
 EXPENSIVE_LANES = {"skill-tests", "tool-tests"}
+
+
+class LensSignatureLaneTests(unittest.TestCase):
+    """The lens-signature contract must run in the gate people actually run.
+
+    A rule reachable only from a unit test is enforced for this repo and for nobody else - the
+    packs are SHIPPED, and `reference-audit.md#audit-extend` tells a consuming project the rule is
+    enforced. That claim is only true if the shipped CLI carries it.
+    """
+
+    def test_the_lane_is_in_both_the_hook_and_the_npm_chain(self) -> None:
+        self.assertIn("lens-signatures", _lane_keys(HOOK),
+                      "the lens-signature lane is not in the pre-commit hook")
+        pkg = json.loads((REPO / "package.json").read_text(encoding="utf-8"))
+        self.assertIn("lint:lens-signatures", pkg["scripts"],
+                      "no npm script for the lens-signature lane")
+        self.assertIn("lint:lens-signatures", pkg["scripts"]["lint"],
+                      "the lane exists but the `lint` chain does not run it")
+
+    def test_the_lane_invokes_the_VALIDATE_verb_not_a_bare_profile_resolve(self) -> None:
+        """MUTANT: drop `--validate` from either invocation. `readiness.py profile` without it
+        exits 0 while checking nothing, so the lane would be present, green, and inert - the
+        precise shape a reviewer demonstrated on the sibling ratchet lane, which lost `--bugs`
+        with the whole suite still green.
+        """
+        hook = HOOK.read_text(encoding="utf-8")
+        i = hook.find('run "lens-signatures"')
+        self.assertNotEqual(-1, i)
+        block = hook[i:i + 700]
+        self.assertIn("readiness.py profile --validate", block,
+                      "the hook lane does not pass --validate, so it resolves profiles and "
+                      "asserts nothing")
+        pkg = json.loads((REPO / "package.json").read_text(encoding="utf-8"))
+        self.assertIn("profile --validate", pkg["scripts"]["lint:lens-signatures"])
 
 
 class LaneOrderTests(unittest.TestCase):

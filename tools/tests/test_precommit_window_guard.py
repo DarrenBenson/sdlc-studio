@@ -129,6 +129,20 @@ class WindowGuardTests(unittest.TestCase):
         from hookutil import hook_tool_scripts
         for name in hook_tool_scripts():
             (root / "tools" / name).write_text(PASS_PY, encoding="utf-8")
+        # SKILL-script lanes too, derived the same way: a lane may invoke a skill
+        # script rather than a tools/ checker, and stubbing only tools/ leaves it
+        # running the real script against a fixture workspace.
+        from hookutil import hook_skill_scripts
+        from hookutil import seed_verify_baseline
+        seed_verify_baseline(root)
+        for rel in hook_skill_scripts():
+            dest = root / rel
+            # NEVER create the parent: this fixture SYMLINKS the real skill tree
+            # later in the build, and a directory made here makes that symlink
+            # fail. Stub only where a tree already exists and the script does not.
+            if dest.exists() or not dest.parent.is_dir():
+                continue
+            dest.write_text(PASS_PY, encoding="utf-8")
         scripts = root / ".claude" / "skills" / "sdlc-studio" / "scripts"
         for name in ("engagement_floor.py", "reconcile.py"):
             (scripts / name).write_text(PASS_PY, encoding="utf-8")

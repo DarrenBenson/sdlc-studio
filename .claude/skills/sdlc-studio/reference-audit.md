@@ -136,8 +136,10 @@ repair-without-plan, skipped-preflight.
 
 Each lens names its **signature** - the mechanical detector a finder runs before reasoning,
 or a plain statement that none exists. A mechanical signature opens with a documented
-detector token (`python3`, a skill script run over the workspace) and names only paths on
-disk, so a cell cannot claim a command or a file that is not there; where no search singles
+detector token (`bash`, `npm`, `python3` or `rg` - `npm` only as `npm run <script>`) and names
+only targets that resolve, so a cell cannot claim a command or a file that is not there; a
+`python3` or `bash` signature names its path first and an `rg` one names it last, after the
+pattern, and must name one. Where no search singles
 the class out, the signature opens with `manual` - and states why, which puts the absence
 where a reader can weigh it rather than where it reads like a check and is not one. Three of
 the five are mechanical (a path resolved against the tree, a count against the census, a
@@ -156,6 +158,23 @@ consuming project, so the pack cites only ids that ship.
 
 A profile is just a lens list (artifact/area + the adversarial question). Add a lens by
 appending a row; a project declares extra lenses in its own audit harness prompt.
+
+An appended row states **its own signature in the same way** the shipped rows do: either a
+mechanical detector, or `manual - <why no search singles the class out>`. This is enforced, not
+advised - run `readiness.py profile --validate` and the row is held to it:
+
+- A mechanical signature opens with a documented runner and names a target that RESOLVES. A
+  `python3` or `bash` signature names its path first and needs a file, not a directory; an `rg`
+  signature names its path last, after the pattern, and must name one; `npm run <script>` must
+  name a key in `package.json`'s `scripts`.
+- An absolute path, a `..` escape, or a shell pipeline is refused: each resolves on the machine
+  that wrote it and nowhere else, which is the detector-written-from-memory case.
+- A path under `.claude/skills/sdlc-studio/` is resolved against the INSTALLED SKILL rather than
+  your project root, so a shipped detector is found wherever the skill lives. Your own rows name
+  paths relative to your project.
+- A literal `|` inside a pattern is escaped `\|`, as markdown requires.
+- `manual` needs a real reason: a length floor plus distinct words, so a padded cell cannot read
+  as a considered declaration.
 
 ## Refute Panel {#audit-refute}
 

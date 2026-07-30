@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shlex
 import sys
 from pathlib import Path
 
@@ -91,7 +92,15 @@ _TABLE_DIVIDER_RE = re.compile(r"^\|[\s:|-]+\|$")
 #: Leading tokens a mechanical lens `signature` may open with - a detector a finder can
 #: actually run. A signature that opens with anything else is not mechanical, and the
 #: absent form opens with `manual` (below), which is deliberately not in this set.
-SIGNATURE_DETECTORS = ("python3",)
+#:
+#: THE SINGLE AUTHORITY for what counts as a runner. `process.md`'s Signatures section states
+#: the documented set in prose, and that sentence is DERIVED from this tuple rather than typed
+#: beside it - a hand-kept second copy is the `count-by-hand` lens in that very pack pointed
+#: at this constant.
+SIGNATURE_DETECTORS = ("bash", "npm", "python3", "rg")
+#: `npm` alone runs nothing; only `npm run <script>` does. Kept as a rule rather than folded
+#: into the tuple so a bare `npm` cannot pass as mechanical.
+NPM_RUN = ("npm", "run")
 #: The fixed leading token of a signature that declares no mechanical detector exists.
 #: A `signature` field parses as `mechanical=False` unless its first token is a detector,
 #: so a blank cell, a dash or a hedged sentence is not-mechanical too - but only this token
@@ -114,8 +123,34 @@ def profile_names(skill_dir: Path | None = None) -> list[str]:
     return sorted(packs | set(REFERENCE_PROFILES))
 
 
+#: A cell delimiter is a pipe that is NOT escaped. `\|` is markdown's literal pipe.
+_CELL_SPLIT_RE = re.compile(r"(?<!\\)\|")
+
+
 def _split_row(line: str) -> list[str]:
-    return [c.strip() for c in line.strip().strip("|").split("|")]
+    """A table row's cells, honouring markdown's `\\|` escape for a literal pipe.
+
+    Splitting on every `|` tore a cell in half whenever its content needed one - an `rg`
+    signature with an alternation (`(secret|password)`) became the fragment `rg -ni "(secret`,
+    which then failed validation for "naming no target". The pattern was fine; the parser was
+    eating it. Escaped pipes are unescaped after the split, as a markdown reader does.
+    """
+    cells = _CELL_SPLIT_RE.split(line.strip().strip("|"))
+    return [c.strip().replace("\\|", "|") for c in cells]
+
+
+def _signature_tokens(signature: str) -> list[str]:
+    """`signature` split as a shell would split it, so a QUOTED pattern stays one token.
+
+    `str.split()` was wrong for `rg 'two words' path`: it yields `two` and `words'` as
+    separate tokens, and the path is then not the last one. Falls back to a plain split
+    on an unbalanced quote rather than raising - a malformed cell is a finding for the
+    validator to report, not a crash in the parser.
+    """
+    try:
+        return shlex.split(signature)
+    except ValueError:
+        return signature.split()
 
 
 def _signature_is_mechanical(signature: str) -> bool:
@@ -127,9 +162,227 @@ def _signature_is_mechanical(signature: str) -> bool:
     wants the absence *declared* rather than merely detected holds itself to the `manual`
     form in its own test - the parser only distinguishes a runnable detector from
     everything else.
+
+    MUTANTS THIS MUST DIE TO. (1) `tokens[0] in SIGNATURE_DETECTORS` widened to
+    `any(t in SIGNATURE_DETECTORS for t in tokens)` - caught only by a `manual - ...` reason
+    that MENTIONS a detector token mid-sentence, so the negative fixture must contain one.
+    (2) Dropping the `npm run` rule so a bare `npm` passes. (3) Deleting any single runner
+    from the tuple - caught only by one assertion per runner, never by `all(mechanical)`
+    over the packs.
     """
-    tokens = signature.split()
-    return bool(tokens) and tokens[0] in SIGNATURE_DETECTORS
+    tokens = _signature_tokens(signature)
+    if not tokens or tokens[0] not in SIGNATURE_DETECTORS:
+        return False
+    if tokens[0] == NPM_RUN[0]:
+        return tokens[1:2] == [NPM_RUN[1]]
+    return True
+
+
+def _header_index(columns: list[str]) -> dict[str, int]:
+    """`{header_lower: index}` for a lens table's header row.
+
+    Built from the HEADER row, never from the divider row: a divider is all dashes and colons,
+    so a map built from it is empty and every by-name read silently returns the empty string -
+    a mutant that leaves the packs parsing exactly as the positional read did.
+    """
+    return {c.strip().lower(): i for i, c in enumerate(columns) if c.strip()}
+
+
+def _cell(cells: list[str], index: int | None) -> str:
+    """`cells[index]`, or "" when the column is absent or the row is short."""
+    if index is None or index >= len(cells):
+        return ""
+    return cells[index]
+
+
+#: The shortest reason that counts as stating why no search singles a class out. A bare
+#: `manual`, a dash, or `manual -` is a cell that looks decided and says nothing.
+MIN_ABSENT_REASON = 20
+
+#: The shortest reason that counts once padding is discounted. A length floor alone accepted
+#: `manual - xxxxxxxxxxxxxxxxxxxx`: twenty characters that state nothing. A reason has to carry
+#: DISTINCT words, so the floor is applied to the wording as well as the length.
+MIN_ABSENT_REASON_WORDS = 5
+
+#: Placeholders that are not a reason however long the cell is.
+_REASON_PLACEHOLDER = re.compile(r"\b(tbd|todo|fixme|xxx+|fill this in|later)\b", re.I)
+
+#: The installed skill's own prefix. A shipped pack names its detectors relative to the SKILL,
+#: because the skill is what travels: a consuming project may have it at `.claude/skills/...`
+#: inside the project or at `~/.claude/skills/...` outside it, and a repo-root-relative resolve
+#: finds it in neither case reliably.
+SKILL_PATH_PREFIX = ".claude/skills/sdlc-studio/"
+
+#: Shell metacharacters that make a "path" not a path. `python3 x.py | head` resolves its first
+#: token and silently ignores a pipeline the finder would actually run.
+_SHELL_META = set("|&;><$`")
+
+#: Runners that need a FILE. A search takes a directory tree quite legitimately, so the
+#: directory refusal is scoped to the interpreters rather than applied to every mechanical
+#: signature - `rg tools` is correct and `python3 tools` runs nothing.
+_FILE_RUNNERS = ("bash", "python3")
+
+
+def _resolve_signature_path(value: str, repo_root: Path | str) -> Path | None:
+    """Where `value` actually lives, or None when it is not a resolvable relative path.
+
+    A skill-prefixed path resolves against the INSTALLED SKILL rather than the audited root, so
+    a shipped pack's detector is found wherever the skill is installed. Everything else is
+    relative to the root being audited, which is what a project's own appended row names.
+    """
+    if value.startswith(SKILL_PATH_PREFIX):
+        return SKILL_DIR / value[len(SKILL_PATH_PREFIX):]
+    return Path(repo_root) / value
+
+
+def _path_shape_error(value: str) -> str | None:
+    """Why `value` cannot be a runnable path at all, or None when its shape is fine.
+
+    An existence check alone accepted an absolute path (`Path(root) / "/etc/passwd"` discards the
+    root, so a machine-local path validated here and nowhere else - precisely the written-from-
+    memory class), a `..` escape, a directory where a script is implied, and a shell pipeline
+    whose later stages nothing checked.
+    """
+    if Path(value).is_absolute():
+        return (f"{value!r} is an absolute path - it resolves on the machine that wrote it and "
+                f"nowhere else, which is the detector-from-memory case this check exists for")
+    if ".." in Path(value).parts:
+        return f"{value!r} escapes the root with `..`"
+    if set(value) & _SHELL_META:
+        return (f"{value!r} carries a shell metacharacter, so the command a finder runs is not "
+                f"the single path this check resolved")
+    return None
+
+
+def signature_target(signature: str) -> tuple[str, str] | None:
+    """What a mechanical signature's runner actually invokes, as `(kind, value)`.
+
+    `kind` is `"path"` for `python3`/`bash`/`rg` and `"npm-script"` for `npm run <script>`.
+    None when the signature is not mechanical.
+
+    The shapes differ and one rule cannot serve them. `python3 <path>` and `bash <path>` name
+    the path FIRST. `rg <pattern> [path...]` names it LAST, after a pattern that may be quoted -
+    and the path is optional and repeatable, so "the path" cannot be recovered from an arbitrary
+    `rg` line at all. The contract this enforces instead is that a shipped `rg` signature must
+    END with the path it searches; one that names none yields `""` and the validator refuses it,
+    so "mechanical but unresolvable" cannot be authored rather than being reported later.
+
+    MUTANTS THIS MUST DIE TO. (1) Returning the first token after the runner unconditionally, so
+    `npm run lint:links` yields `run` and `rg pat path` yields `pat` - caught only by asserting
+    the extracted VALUE, never by asserting that a resolution check merely passed.
+    (2) Dropping the `rest[-1]` rule for `rg` back to `rest[0]`.
+    """
+    if not _signature_is_mechanical(signature):
+        return None
+    tokens = _signature_tokens(signature)
+    runner = tokens[0]
+    if runner == NPM_RUN[0]:
+        return "npm-script", tokens[2] if len(tokens) > 2 else ""
+    rest = [t for t in tokens[1:] if not t.startswith("-")]
+    if runner == "rg":
+        # Pattern first, path last. With only one token there is a pattern and no path.
+        return "path", rest[-1] if len(rest) > 1 else ""
+    return "path", rest[0] if rest else ""
+
+
+def _npm_scripts(repo_root: Path | str) -> dict:
+    """`package.json`'s `scripts` object, or empty when absent or unreadable.
+
+    Read from `scripts` SPECIFICALLY, never from the top level: a mutant that looks the key up
+    across the whole document passes on any colliding top-level key (`name`, `version`), which
+    proves nothing about whether `npm run <key>` works.
+    """
+    p = Path(repo_root) / "package.json"
+    if not p.is_file():
+        return {}
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return {}
+    scripts = data.get("scripts") if isinstance(data, dict) else None
+    return scripts if isinstance(scripts, dict) else {}
+
+
+def _absent_reason(signature: str) -> str:
+    """The stated reason after a leading `manual`, with the separator stripped."""
+    rest = signature.strip()[len(SIGNATURE_ABSENT):].strip()
+    return rest.lstrip("-:– ").strip()
+
+
+def signature_errors(lens: dict, repo_root: Path | str) -> list[str]:
+    """Every way one lens's signature breaks the pack contract, as human-readable errors.
+
+    SHIPPED CODE ON PURPOSE, not a repo unit test. `process.md`'s own Notes and
+    `reference-audit.md#audit-extend` invite a consuming project to append pack rows "stating
+    its own signature in the same way", and a consuming project never runs this repository's
+    tests. A contract enforced only in `test_audit_profiles.py` is enforced nowhere for the
+    people it is documented for.
+    """
+    name = lens.get("name") or "?"
+    sig = (lens.get("signature") or "").strip()
+    if not sig:
+        return [f"{name}: carries no signature - a blank cell cannot read as a considered "
+                f"declaration that no detector exists"]
+    # `mechanical` is RE-DERIVED, never trusted. It is a parsed field, and a caller that hands in
+    # a stale or hand-built lens dict used to reach `kind, value = signature_target(...)` with
+    # None and raise TypeError out of the public helper a consuming project is told to use.
+    mechanical = _signature_is_mechanical(sig)
+    if not mechanical:
+        tokens = _signature_tokens(sig)
+        if not tokens or tokens[0] != SIGNATURE_ABSENT:
+            return [f"{name}: signature {sig!r} opens with neither a documented runner "
+                    f"({', '.join(SIGNATURE_DETECTORS)}) nor {SIGNATURE_ABSENT!r}"]
+        reason = _absent_reason(sig)
+        if len(reason) < MIN_ABSENT_REASON:
+            return [f"{name}: declares {SIGNATURE_ABSENT!r} without stating why no search "
+                    f"singles the class out"]
+        # A LENGTH floor alone accepted `manual - xxxxxxxxxxxxxxxxxxxx`: twenty characters that
+        # say nothing. A reason states something, so it needs distinct words, not just bytes.
+        words = {w for w in re.findall(r"[a-z]{2,}", reason.lower())}
+        if len(words) < MIN_ABSENT_REASON_WORDS:
+            return [f"{name}: declares {SIGNATURE_ABSENT!r} with {len(words)} distinct word(s) - "
+                    f"long enough to clear the length floor while stating nothing"]
+        if _REASON_PLACEHOLDER.search(reason):
+            return [f"{name}: the stated reason is a placeholder, not a reason"]
+        return []
+    # Checked on the TOKENS, not the raw string: `|` inside a quoted `rg` pattern is part of the
+    # pattern, while a bare `|` token is a pipeline whose later stages nothing here resolves.
+    # Scanning the raw string would have banned every alternation an `rg` detector needs.
+    shell_tokens = [t for t in _signature_tokens(sig) if t and set(t) <= _SHELL_META]
+    if shell_tokens:
+        return [f"{name}: signature {sig!r} chains on {shell_tokens[0]!r}, so what a finder runs "
+                f"is a shell construct and not the single target this check can resolve"]
+    kind, value = signature_target(sig)
+    if not value:
+        return [f"{name}: signature {sig!r} names a runner but no target - an `rg` signature "
+                f"must end with the path it searches, so an unresolvable detector cannot ship"]
+    if kind == "npm-script":
+        if value not in _npm_scripts(repo_root):
+            return [f"{name}: `npm run {value}` names no key in package.json's `scripts`, so "
+                    f"the command a finder would type does not run"]
+        return []
+    shape = _path_shape_error(value)
+    if shape:
+        return [f"{name}: {shape}"]
+    resolved = _resolve_signature_path(value, repo_root)
+    if resolved is None or not resolved.exists():
+        return [f"{name}: signature names {value!r}, which is not on disk - a detector written "
+                f"from memory, caught here rather than by the finder who runs it and gets "
+                f"nothing"]
+    # A DIRECTORY is the right target for a search and the wrong one for an interpreter. `rg tools`
+    # searches a tree; `python3 tools` runs nothing, yet a bare existence check accepts both.
+    runner = _signature_tokens(sig)[0]
+    if resolved.is_dir() and runner in _FILE_RUNNERS:
+        return [f"{name}: signature names {value!r}, which is a DIRECTORY - `{runner}` needs a "
+                f"file to run, and a directory silently satisfies an existence check"]
+    return []
+
+
+def profile_signature_errors(profile: dict, repo_root: Path | str) -> list[str]:
+    """Every signature error across one resolved profile's lenses, prefixed with its name."""
+    return [f"{profile['name']}: {err}"
+            for lens in profile.get("lenses", [])
+            for err in signature_errors(lens, repo_root)]
 
 
 def _parse_lens_table(lines: list[str]) -> tuple[list[str], list[dict]]:
@@ -140,11 +393,18 @@ def _parse_lens_table(lines: list[str]) -> tuple[list[str], list[dict]]:
     two-column table (the project profile's artifact/lens shape) yields an empty `hunts`, and
     a pack with no provenance column an empty `drawn_from`. `drawn_from` carries the recorded
     failure modes a lens was drawn from, as lesson ids, for the packs that cite them.
-    `signature` is the fifth column, carrying the mechanical detector that finds the lens or
-    a declared absence; it is surfaced as its own field so a lens shipped with the column
-    blank is a parse a test can see rather than a cell dropped on the floor, and `mechanical`
-    records whether that signature names a detector a finder can run. Nothing here judges a
-    row's content; a pack that must declare more is held to it by its own test.
+    `signature` carries the mechanical detector that finds the lens or a declared absence; it
+    is surfaced as its own field so a lens shipped with the column blank is a parse a test can
+    see rather than a cell dropped on the floor, and `mechanical` records whether that
+    signature names a detector a finder can run. Nothing here judges a row's content; a pack
+    that must declare more is held to it by its own test.
+
+    `drawn_from` and `signature` are resolved BY HEADER NAME, never by position. The packs ship
+    at three, four and five columns, and the old `cells[4]` read put a four-column pack's
+    Signature into `drawn_from` and left `signature` empty - which parses as not-mechanical, so
+    a real detector read as an absent one. Position works only while every pack happens to agree
+    on a column order, and `reference-audit.md#audit-extend` invites consuming projects to
+    append rows of their own.
     """
     columns: list[str] = []
     lenses: list[dict] = []
@@ -164,11 +424,12 @@ def _parse_lens_table(lines: list[str]) -> tuple[list[str], list[dict]]:
             continue
         if not columns:  # a table without a divider row is not a lens table
             continue
-        signature = cells[4] if len(cells) > 4 else ""
+        by_name = _header_index(columns)
+        signature = _cell(cells, by_name.get("signature"))
         lenses.append({"name": cells[0],
                        "question": cells[1] if len(cells) > 1 else "",
                        "hunts": cells[2] if len(cells) > 2 else "",
-                       "drawn_from": cells[3] if len(cells) > 3 else "",
+                       "drawn_from": _cell(cells, by_name.get("drawn from")),
                        "signature": signature,
                        "mechanical": _signature_is_mechanical(signature)})
     return columns, lenses
@@ -259,8 +520,38 @@ def resolve_profile(name: str, skill_dir: Path | None = None) -> dict:
     return {"name": name, "source": source, **parsed}
 
 
+def cmd_validate_profiles(args: argparse.Namespace) -> int:
+    """Hold every lens of every pack to the signature contract.
+
+    Scope is `profile_names()` minus `REFERENCE_PROFILES`, DERIVED rather than listed, so a pack
+    added later is held to the rule without anyone remembering to name it here. The two-column
+    `project` reference section declares lenses against artifacts and carries no signature
+    column, so it is out of scope by construction and not by omission.
+    """
+    root = Path(getattr(args, "root", None) or ".")
+    names = ([args.name] if args.name
+             else sorted(set(profile_names()) - set(REFERENCE_PROFILES)))
+    errors: list[str] = []
+    for name in names:
+        try:
+            errors.extend(profile_signature_errors(resolve_profile(name), root))
+        except UnknownProfile as exc:
+            errors.append(f"{name}: {exc}")
+    if args.format == "json":
+        print(json.dumps({"profiles": names, "errors": errors}, indent=2))
+    else:
+        for err in errors:
+            print(f"SIGNATURE: {err}", file=sys.stderr)
+        if not errors:
+            print(f"every lens of {len(names)} pack(s) names a detector that resolves or "
+                  f"declares `manual` with a reason: {', '.join(names)}")
+    return 1 if errors else 0
+
+
 def cmd_profile(args: argparse.Namespace) -> int:
     """Resolve a profile and report its lenses plus the refute threshold."""
+    if getattr(args, "validate", False):
+        return cmd_validate_profiles(args)
     if args.list or not args.name:
         names = profile_names()
         if args.format == "json":
@@ -576,6 +867,12 @@ def build_parser() -> argparse.ArgumentParser:
                                        "list the profiles that exist.")
     p.add_argument("--name", help="profile to resolve (e.g. repo, code, skill, project)")
     p.add_argument("--list", action="store_true", help="list the profiles that exist")
+    p.add_argument("--validate", action="store_true",
+                   help="hold every lens to the signature contract: a signature present, a "
+                        "mechanical one naming a target that resolves, an absent one declared "
+                        "as `manual - <reason>`. Every pack when --name is omitted. Exits 1 on "
+                        "any breach, so a consuming project that appends a pack row can enforce "
+                        "the same rule without running this repository's tests")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_profile)
     sdlc_md.add_global_root(parser)

@@ -12,11 +12,11 @@ there is source to read and no artefact graph yet (vs the default project profil
 Use each row as the `{{lens}}` / `{{lens_question}}` of `audit-finder.md`, one finder
 per lens, looped until-dry; then the shared refute panel and filer.
 
-| Lens | Adversarial question | Hunts for |
-| --- | --- | --- |
-| architecture | Where does the shape of this code fight the problem it solves? | boundaries that leak, a layer everything reaches through, cycles between modules, a seam that cannot be tested, state shared where ownership is unclear |
-| code-quality | What here will be expensive to change, and why? | duplicated logic with drifting copies, functions doing several jobs, dead or unreachable code, error paths that swallow the cause, naming that misdescribes behaviour |
-| defensive-security | How would an attacker or a mistake get through here? | unvalidated input reaching a sink, missing authentication or authorisation on a path that needs it, secrets in the tree, unsafe defaults, dependencies pinned to nothing |
+| Lens | Adversarial question | Hunts for | Signature |
+| --- | --- | --- | --- |
+| architecture | Where does the shape of this code fight the problem it solves? | boundaries that leak, a layer everything reaches through, cycles between modules, a seam that cannot be tested, state shared where ownership is unclear | manual - the repo map indexes symbols but computes no import graph, so a cycle or a leaked boundary is not a state any shipped detector reports |
+| code-quality | What here will be expensive to change, and why? | duplicated logic with drifting copies, functions doing several jobs, dead or unreachable code, error paths that swallow the cause, naming that misdescribes behaviour | manual - cost to change is a prediction about future edits, and naming that misdescribes behaviour is precisely what a text search cannot see |
+| defensive-security | How would an attacker or a mistake get through here? | unvalidated input reaching a sink, missing authentication or authorisation on a path that needs it, secrets in the tree, unsafe defaults, dependencies pinned to nothing | manual - unvalidated input reaching a sink and a missing authorisation check are properties of a call graph no shipped script walks, and the one sub-class that is mechanical (an unpinned dependency) has no detector that travels with this pack |
 
 ## Security posture (binding)
 

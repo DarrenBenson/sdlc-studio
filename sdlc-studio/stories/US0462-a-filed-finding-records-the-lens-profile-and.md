@@ -21,7 +21,7 @@
 
 - **Given** `file_finding.py file --lens accepted-without-running --profile process --audit-run <recorded id>`
 - **When** the finding is filed
-- **Then** the artefact carries all three as metadata fields beside the existing provenance stamp, readable without parsing the `Raised-by` prose the 54 existing findings hide the run in
+- **Then** the artefact carries all three as metadata fields beside the existing provenance stamp, readable without parsing the `Raised-by` prose the 108 existing findings hide the run in
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::AuditAttributionTests::test_lens_profile_and_run_are_stamped_as_metadata
 
 ### AC2: AC2: a lens or profile no pack declares is refused before an id is minted
@@ -33,24 +33,43 @@
 
 ### AC3: AC3: an audit run the register does not hold is refused before an id is minted
 
-- **Given** an `--audit-run` id absent from the recorded audit-run register, which the close-out writes and which mirrors `mutation.series_path`
+- **Given** an `--audit-run` id absent from the recorded audit-run register - the **git-tracked** `audit-cost` ledger under `sdlc-studio/retros/evidence/`, which `audit_cost.py record` already appends one row per finished audit run to, extended with a `run_id` field
 - **When** filing is attempted
 - **Then** it is refused by name pointing at the register path, and nothing is minted, so a one-character typo cannot manufacture a second distinct run id and with it a false detector-owed verdict
+- **And** the register is **not** placed at `mutation.series_path`'s location: that path is `sdlc-studio/.local/`, which `.gitignore` excludes, so on any other clone the register would be empty while the findings stayed tracked - every `--audit-run` refused and `detector-owed` reporting cannot-judge for the whole corpus, permanently, everywhere but the machine that wrote it. The mutation series' **shape** is mirrored; its path is not.
+- **And** a row records its provenance as `recorded` (written by `record` at close-out) or `backfilled` (asserted from prose), mirroring `mutation.PROVENANCE_REGISTERED`, so five unverifiable prose strings are never laundered into the authority AC1 reads as a distinct registered run
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::AuditRunRegisterTests::test_an_unregistered_run_id_is_refused_before_an_id_is_minted
 
-### AC4: AC4: half an attribution is refused
+### AC4: AC4: half an attribution is refused, and the derivable third is derived rather than demanded
 
 - **Given** `--lens` supplied with no `--audit-run`, and `--audit-run` with no `--lens`
 - **When** filing is attempted
 - **Then** both are refused explaining that a class is counted per run, so a half-stamped finding that could never participate in the comparison is never created
+- **And** a filing carrying **none** of the three still succeeds, because 923 existing findings carry none and must stay legal - the rule is all-or-none, never some
+- **And** `--profile` is **optional and derived** from the lens rather than demanded: a lens name resolves to exactly one pack across `profile_names()` (verified - `accepted-without-running` occurs in one pack only), so requiring it is input the operator can get wrong. When supplied it is cross-checked and a lens/profile **mismatch** is refused, which is strictly stronger than all-three-or-none: that rule accepts a consistent-looking pair naming the wrong pack.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::AuditAttributionTests::test_a_lens_without_a_run_or_a_run_without_a_lens_is_refused
 
-### AC5: AC5: the existing corpus is backfilled so the comparison has real data on day one
+### AC5: AC5: the flags reach the command an operator actually types
 
-- **Given** the findings already carrying wf_804ef18d, wf_9903a6e6 or wf_d141ccb5 inside their `Raised-by` line
-- **When** the backfill pass runs and the register is seeded with those three runs
-- **Then** each gains the run metadata field with the lens recorded as explicitly unknown where it cannot be derived, and a sweep asserts no artefact carries a run id in prose that is absent from its metadata field, so the detector-owed report is exercised against a real corpus rather than only reaching its cannot-judge state
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::AuditBackfillTests::test_no_finding_carries_a_run_id_in_prose_that_is_missing_from_metadata
+- **Given** `main(["file", ...])` invoked with the new flags - the argparse surface, not the `file_finding()` function a test can call directly
+- **When** a finding is filed
+- **Then** the attribution is stamped, because `cmd_file` builds its `flags` dict by hand-enumerating every key: a new argparse flag absent from that dict is parsed and silently dropped, the filing succeeds unattributed, and every AC above still passes when tested against the function
+- **And** `lens`, `profile` and `audit_run` are added to `FIELDS_FILE_KEYS`, since `load_fields_file` **raises** on any key outside that allowlist - and `--fields-file` is the path that does not cross a shell, so it is the one a prose-heavy audit finding must use
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::AuditAttributionTests::test_the_flags_reach_the_cli_and_the_fields_file_path
+
+## Notes
+
+**The 108-artefact backfill was AC5 and is now its own unit.** It is a migration over git-tracked
+artefacts across **five** run ids, not three, and it was self-contradicting as written: the sweep
+"no artefact carries a run id in prose that is absent from its metadata field" **fails** on the real
+corpus when the register is seeded with the three named ids, because `wf_b62b2ed2` (BG0375, BG0376,
+BG0377) and `wf_95377bad` (BG0379) carry only unnamed ones.
+
+Its stated rationale was also falsified by its own mechanism: `detector-owed` groups by **lens**, the
+backfill supplies **run ids**, and `Raised-by` prose carries no lens - so the entire backfilled corpus
+lands in cannot-judge, which is the state the AC claimed it would move the corpus out of. Deriving 108
+lenses is model judgement over 108 artefacts, not a mechanical backfill, and it is priced accordingly
+rather than hidden inside a 3-point story.
 
 ## Revision History
 
