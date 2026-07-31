@@ -354,7 +354,19 @@ class _Module:
                 scope = self._enclosing_function(node)
                 for t in node.targets:
                     if isinstance(t, ast.Name):
+                        # A name the enclosing function declares `global` binds at MODULE scope,
+                        # so it must be registered there. Registered against the function, a read
+                        # from a sibling walked the chain out to Module, found nothing, and the
+                        # destination fell straight through to `dead` - a FALSE POSITIVE on a
+                        # blocking lane, with no warning attached, over a mainstream Python
+                        # idiom the detector's own docstring did not list among its bounds.
+                        # BOTH scopes for a `global`, not the module alone. `_is_namespace`
+                        # stops the chain at the first scope that BINDS the name, and the
+                        # declaring function does bind it - so registering only on the module
+                        # would fix the sibling reads and break the declaring function's own.
                         self.namespaces.setdefault(id(scope), set()).add(t.id)
+                        if self._declared_global(scope, t.id):
+                            self.namespaces.setdefault(id(self.tree), set()).add(t.id)
         calls = [n for n in ast.walk(self.tree) if isinstance(n, ast.Call)]
         widened = True
         while widened:
@@ -366,6 +378,18 @@ class _Module:
                                 and param not in self.namespaces.get(id(fn), ()):
                             self.namespaces.setdefault(id(fn), set()).add(param)
                             widened = True
+
+    def _declared_global(self, scope, name: str) -> bool:
+        """Does `scope` declare `name` with a `global` statement? False at module scope, where
+        the question does not arise. Walks the scope's own body only - a `global` inside a
+        NESTED function binds for that function, not for this one."""
+        if scope is None or isinstance(scope, ast.Module):
+            return False
+        for node in ast.walk(scope):
+            if isinstance(node, ast.Global) and name in node.names \
+                    and _enclosing(node, self.parents) is scope:
+                return True
+        return False
 
     def _binds(self, fn: ast.FunctionDef, name: str) -> bool:
         """Does this function bind `name` itself - as any kind of parameter, or by assignment?

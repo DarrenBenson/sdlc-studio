@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 30 |
+| Open | 28 |
 | In Progress | 0 |
-| Fixed | 342 |
+| Fixed | 344 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -147,7 +147,7 @@
 | [BG0427](BG0427-the-epic-index-sweep-decided-per-row-and.md) | the epic-index sweep decided per row and wrote per epic id, resolved the header by one literal spelling, and read an unparseable dependency row as a declaration of none | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0428](BG0428-a-supersession-waiver-was-keyed-on-whoever-declared.md) | a supersession waiver was keyed on whoever declared it rather than on who superseded whom, and a parenthetical annotation manufactured a phantom waived pair | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0429](BG0429-the-dead-flag-detector-collapses-same-named-functions.md) | the dead-flag detector collapses same-named functions module-wide, so a dead flag reads clean and a live one reads dead | Open | High | 2026-07-30 | 2026-07-30 |
-| [BG0430](BG0430-a-namespace-held-in-a-module-global-is.md) | a namespace held in a module global is invisible to the dead-flag detector, so a live flag is reported dead with no cannot-judge reason | Open | Medium | 2026-07-30 | 2026-07-30 |
+| [BG0430](BG0430-a-namespace-held-in-a-module-global-is.md) | a namespace held in a module global is invisible to the dead-flag detector, so a live flag is reported dead with no cannot-judge reason | Fixed | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0431](BG0431-one-unresolvable-namespace-escape-demotes-every-flag-in.md) | one unresolvable namespace escape demotes every flag in the module to cannot-judge, and nothing bounds how far that spreads | Open | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0432](BG0432-test-selection-still-misses-eleven-scripts-whose-tests.md) | test selection still misses eleven scripts whose tests load them under a different name | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0433](BG0433-the-duplicate-verifier-ratchet-is-not-enforced-as.md) | the duplicate-verifier ratchet is not enforced as a ratchet, groups on a weaker key than the command it runs, and cannot notice its own flag going away | Open | High | 2026-07-30 | 2026-07-30 |
@@ -156,7 +156,7 @@
 | [BG0436](BG0436-resolve-affects-never-resolves-against-the-installed-skill.md) | resolve_affects never resolves against the installed skill dir, so detector-owed --file tracebacks on every default install | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0437](BG0437-filing-run-resolves-a-two-id-provenance-line.md) | filing_run resolves a two-id provenance line by document order, so the refusal its criterion promises is nearly unreachable | Open | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0438](BG0438-audit-run-provenance-is-not-durable-the-register.md) | audit-run provenance is not durable: the register and the row accessor disagree, so a seeded run can pass as measured | Open | High | 2026-07-30 | 2026-07-30 |
-| [BG0439](BG0439-the-dead-flags-hook-lane-tells-the-operator.md) | the dead-flags hook lane tells the operator it enforces the opposite of what it enforces | Open | Low | 2026-07-30 | 2026-07-30 |
+| [BG0439](BG0439-the-dead-flags-hook-lane-tells-the-operator.md) | the dead-flags hook lane tells the operator it enforces the opposite of what it enforces | Fixed | Low | 2026-07-30 | 2026-07-30 |
 | [BG0440](BG0440-the-isolated-checkout-rule-is-enforced-author-side.md) | the isolated-checkout rule is enforced author-side only, so `critic brief` issues a reviewer prompt that never states it and nothing notices when parallel reviewers share one tree | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0441](BG0441-review-coverage-launders-a-recorded-reject-into-coverage.md) | review_coverage launders a recorded REJECT into coverage through the evidence lane, so the gate certifying a close reports a rejected unit as reviewed | Fixed | Critical | 2026-07-30 | 2026-07-30 |
 | [BG0442](BG0442-the-close-s-finding-placement-metric-is-hardcoded.md) | the close's finding-placement metric is hardcoded to zero by its own repair's import, so the number the sprint goal is driven to is a constant the code cannot compute | Fixed | High | 2026-07-30 | 2026-07-30 |

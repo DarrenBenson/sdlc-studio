@@ -1,6 +1,7 @@
 # BG0439: the dead-flags hook lane tells the operator it enforces the opposite of what it enforces
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (test red-first against the inverted line; asserted case-insensitively over the lane's own window)
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .githooks/pre-commit
@@ -24,8 +25,13 @@ Insert the missing negation so the lane text matches AGENTS.md and the detector'
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: The lane's `enforces` line reads 'no flag whose parsed destination any line acts on - a documented switch that does nothing', which states the inverse of the...
-- [ ] The proposed fix lands, pinned by a test: Insert the missing negation so the lane text matches AGENTS.md and the detector's actual rule.
+### AC1: the lane states the rule it enforces, not its inverse
+
+- **Given** the pre-commit hook's dead-flags lane
+- **When** its `enforces` line is read
+- **Then** it says a flag whose destination NO line acts on, not one that any line acts on - the printed text is what an operator reads at the moment the lane refuses, and a remedy describing the inverse rule sends the reader to undo the wrong thing
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::DeadFlagTests::test_the_lane_states_the_rule_it_ENFORCES_not_its_inverse
+- **Verified:** yes (2026-07-31)
 
 ## Revision History
 

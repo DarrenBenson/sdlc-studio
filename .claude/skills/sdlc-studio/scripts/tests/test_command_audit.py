@@ -408,6 +408,103 @@ class DeadFlagTests(unittest.TestCase):
         self.assertEqual([], self._dead(src))
         self.assertEqual([], self._unjudged(src))
 
+    def test_a_namespace_held_in_a_MODULE_GLOBAL_is_not_invisible(self) -> None:
+        """BG0430. `_track_namespaces` registered the target of `X = parse_args()` against the
+        ENCLOSING FUNCTION's scope, and `global ARGS` was not modelled. A read from a sibling
+        function walked the chain out to Module, found nothing and returned False - so the read
+        was invisible, no escape was recorded, and the destination fell straight through to
+        `dead`. A FALSE POSITIVE on a blocking lane, with no warning attached, over a mainstream
+        Python idiom the detector's own docstring did not list among its bounds."""
+        source = (
+            "import argparse\n"
+            "ARGS = None\n"
+            "def main():\n"
+            "    global ARGS\n"
+            "    p = argparse.ArgumentParser()\n"
+            "    p.add_argument('--depth')\n"
+            "    ARGS = p.parse_args()\n"
+            "    run()\n"
+            "def run():\n"
+            "    print(ARGS.depth)\n")
+        self.assertNotIn("depth", self._dead(source),
+                         "a flag read through a module-global namespace was reported DEAD")
+
+    def test_the_declaring_function_can_still_read_its_own_global_namespace(self) -> None:
+        """The trap in the fix. `_is_namespace` stops the chain at the first scope that BINDS
+        the name, and the declaring function does bind it - so registering the global on the
+        module ALONE fixes the sibling reads and breaks the declaring function's own."""
+        source = (
+            "import argparse\n"
+            "ARGS = None\n"
+            "def main():\n"
+            "    global ARGS\n"
+            "    p = argparse.ArgumentParser()\n"
+            "    p.add_argument('--depth')\n"
+            "    ARGS = p.parse_args()\n"
+            "    print(ARGS.depth)\n")
+        self.assertNotIn("depth", self._dead(source),
+                         "the declaring function's own read of its global namespace was lost")
+
+    def test_a_genuinely_dead_flag_is_STILL_reported_through_a_global(self) -> None:
+        """The control that keeps the two above honest: widening what counts as a namespace
+        must not make every flag live. A lane that can no longer fail is not a lane."""
+        source = (
+            "import argparse\n"
+            "ARGS = None\n"
+            "def main():\n"
+            "    global ARGS\n"
+            "    p = argparse.ArgumentParser()\n"
+            "    p.add_argument('--depth')\n"
+            "    p.add_argument('--unused')\n"
+            "    ARGS = p.parse_args()\n"
+            "    run()\n"
+            "def run():\n"
+            "    print(ARGS.depth)\n")
+        self.assertIn("unused", self._dead(source),
+                      "the lane no longer detects a genuinely dead flag")
+
+    def test_a_global_declared_in_a_NESTED_function_does_not_leak_outward(self) -> None:
+        """A `global` inside a nested function binds for THAT function. Treating it as the
+        outer function's declaration would register a namespace the outer scope never had."""
+        source = (
+            "import argparse\n"
+            "def outer():\n"
+            "    p = argparse.ArgumentParser()\n"
+            "    p.add_argument('--unused')\n"
+            "    args = p.parse_args()\n"
+            "    def inner():\n"
+            "        global args\n"
+            "    return inner\n"
+            "def sibling():\n"
+            "    print(args.unused)\n")
+        # `sibling` binds nothing, so its read walks the scope chain out to Module. If the
+        # nested `global` leaked outward, `args` would be registered there and that read would
+        # count as consuming `--unused` - the flag would wrongly read LIVE, which is the
+        # false-negative direction. The verdict differs between the two behaviours, which is
+        # what makes this test discriminate; an earlier version bound `args` as a parameter of
+        # `sibling` and so never reached module scope at all, and proved nothing.
+        self.assertIn("unused", self._dead(source),
+                      "a `global` inside a NESTED function leaked outward and made an "
+                      "unrelated read count as consuming the flag")
+
+    def test_the_lane_states_the_rule_it_ENFORCES_not_its_inverse(self) -> None:
+        """BG0439. The lane's `enforces` line read "no flag whose parsed destination any line
+        acts on", which forbids the opposite of the rule: it reads as banning flags that ARE
+        used. This is the text printed to the operator ON FAILURE, so it is read at exactly the
+        moment it has to be right - and a remedy line that describes the inverse rule sends the
+        reader to undo the wrong thing.
+
+        Asserted against the module's OWN description of the rule rather than a string typed
+        here, so the two cannot drift into disagreeing again."""
+        hook = (_REPO / ".githooks" / "pre-commit").read_text(encoding="utf-8")
+        i = hook.find('run "dead-flags"')
+        self.assertNotEqual(i, -1, "no dead-flags lane in the pre-commit hook")
+        window = hook[i:i + 800].lower()
+        self.assertIn("no line acts on", window,
+                      "the lane states the INVERSE of the rule it enforces - it reads as "
+                      "forbidding flags that are used, which is the opposite of a dead flag")
+        self.assertNotIn("destination any line acts on", window)
+
     def test_the_detector_is_wired_into_the_gate(self) -> None:
         """AC4. Present in the hook AND in the npm chain, invoking the verb that judges.
 
