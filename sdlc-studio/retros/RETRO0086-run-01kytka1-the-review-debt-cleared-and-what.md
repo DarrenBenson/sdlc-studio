@@ -10,7 +10,8 @@
 - 13 bugs to Fixed, 30 points - BG0417, BG0429, BG0430, BG0439, BG0440, BG0442, BG0443, BG0444, BG0445, BG0447, BG0449, BG0452, BG0454
 - 7 stories to Done, 27 points - US0453, US0455, US0456, US0460, US0557, US0559, US0563: the units that passed independent adversarial review with no blocking finding, each carrying a recorded verdict, recorded evidence, and the reviewer of record's signature
 - 26 units of standing review debt carry an independent recorded verdict and its evidence, which is the goal's first clause and the thing this batch existed to do
-- 3 repairs found BY the review and closed inside it - BG0456, BG0459 (part), BG0464
+- 5 repairs found BY the review and closed inside it - BG0456, BG0459 (part), BG0464, BG0465, and BG0440's falsified criterion
+- Clause three closed on its second limb: six guards the sprint did not repair now STATE their real limit in their own prose, each with the measured evidence, and the shipped doctrine no longer tells a consuming project that the checklist and the cycle cannot part
 
 ## Blocked / deferred
 

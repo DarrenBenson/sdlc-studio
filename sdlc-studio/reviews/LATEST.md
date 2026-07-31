@@ -5,7 +5,8 @@
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
-> **Goal verdict:** partial - clauses 1 and 2 achieved, clause 3 partial
+> **Goal verdict:** ACHIEVED - all three clauses, clause 3 closed by stating each
+> unrepaired guard's real limit in its own prose
 > · **Delivered:** 20 units / 57 points of a 46-unit 150-point plan
 > · **Carried:** 26 units, each dropped with a recorded reason
 
@@ -43,8 +44,11 @@ as the read-time backstop for the hand append; only the sign-off gate consulted 
 BG0464: the grade of correction required now scales with the direction the mistake fails.
 
 Five gates were repaired to check what they claim (BG0440, BG0456, BG0459 part, BG0464,
-BG0465). The guards behind BG0457, BG0458 and BG0461 still over-claim in their own prose and
-are carried with the claim uncorrected - which is why the goal verdict is partial.
+BG0465). Six that were NOT repaired now state their limit in their own prose with the measured
+evidence - a one-directional set comparison, a substring its own Revision History satisfies, a
+word check an unrelated sentence meets, and four checklist rows that name what they read and
+cannot distinguish. The repairs are carried as BG0457, BG0458 and BG0461; the over-claims are
+not, because a guard saying more than it checks is the defect it exists to prevent.
 
 **The repair of that review's findings was itself rejected.** A rejoinder ruled BG0442 closed
 and BG0452 OVER-CLAIMED: the regression test written for it re-implemented the code it was
