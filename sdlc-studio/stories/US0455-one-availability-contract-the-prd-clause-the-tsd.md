@@ -1,6 +1,6 @@
 # US0455: One availability contract: the PRD clause, the TSD NFR row and ADR-004 all state the fail-loud sync behaviour, and the branch taken is recorded as a decision
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0427
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

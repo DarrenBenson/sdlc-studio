@@ -1,6 +1,6 @@
 # US0453: Countable claims in the TRD and TSD are checked against a census of what the repo actually ships
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0056
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

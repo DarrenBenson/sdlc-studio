@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-07-30
+**Last Updated:** 2026-07-31
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 8 |
+| Proposed | 9 |
 | Approved | 0 |
 | In Progress | 37 |
 | Complete | 444 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 18 |
 | Blocked | 0 |
-| **Total** | **508** |
+| **Total** | **509** |
 
 ## All Changes
 
@@ -330,6 +330,7 @@
 | [CR-0506](CR0506-a-reject-whose-findings-were-all-repaired-has.md) | a REJECT whose findings were all repaired has no route back to covered, so a fully repaired batch reads identically to one nobody reviewed | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0507](CR0507-closing-a-sprint-asks-twenty-questions-when-it.md) | closing a sprint asks twenty questions when it should ask two, and the ceremony now costs more than the work it certifies | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0508](CR0508-a-verify-selector-naming-a-test-that-does.md) | a Verify selector naming a test that does not exist is accepted at write time, though the predicate that would refuse it already ships | Proposed | High | Improvement | 2026-07-30 | -- |
+| [CR-0509](CR0509-a-review-worktree-opens-at-a-stale-base.md) | A review worktree opens at a stale base, so every delegated reviewer's first act is discovering the units under review do not exist yet | Proposed | High | Improvement | 2026-07-31 | -- |
 
 ## Archived Releases
 

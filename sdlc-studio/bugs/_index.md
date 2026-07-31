@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 23 |
+| Open | 30 |
 | In Progress | 0 |
 | Fixed | 350 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **456** |
+| **Total** | **463** |
 
 ## All Bugs
 
@@ -174,6 +174,13 @@
 | [BG0454](BG0454-the-confinement-write-detector-reads-list-remove-as.md) | the confinement write detector reads list.remove as a filesystem write, so a read-only module is censused as a workspace writer | Fixed | Low | 2026-07-30 | 2026-07-30 |
 | [BG0455](BG0455-sprint-stop-cannot-tell-an-unbuilt-unit-from.md) | sprint stop cannot tell an unbuilt unit from one the two-role gate holds at Review, so it reports work nobody can do as work that could have proceeded | Open | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0456](BG0456-a-ruling-verb-short-circuits-the-destination-check.md) | A ruling verb short-circuits the destination check, so a tick citing an artefact nothing holds is accepted - and the corpus-read pin is inert because its fixture never scales | Fixed | High | 2026-07-31 | 2026-07-31 |
+| [BG0457](BG0457-four-spec-agreement-guards-pin-prose-to-prose.md) | Four spec-agreement guards pin prose to prose: a set comparison that cannot fail in the reverse direction, a whole-file substring satisfied by the Revision History row describing the change, a word-presence check an unrelated sentence already satisfies, and a source-substring wiring check a comment satisfies | Open | High | 2026-07-31 | 2026-07-31 |
+| [BG0458](BG0458-five-checklist-rows-report-a-state-they-never.md) | Five checklist rows report a state they never established: planned units read from the retro's Batch rather than the plan, a delivered unit rendered as held, a blind known-issue scan rendered as 'none carried', a lens count that counts reviewer names, and an impediment row that never names the blocker | Open | High | 2026-07-31 | 2026-07-31 |
+| [BG0459](BG0459-a-wholly-unreplaced-retro-scaffold-validates-as-filled.md) | A wholly unreplaced retro scaffold validates as filled-in: three demonstration rows carry no marker, the close discards the EXAMPLES report, and the verifier's `>= 6` threshold tolerates a lost marker | Open | High | 2026-07-31 | 2026-07-31 |
+| [BG0460](BG0460-the-close-dry-run-reports-a-chain-step.md) | The close dry-run reports a chain step as neither refusing nor unevaluated, and its 'all seven steps' claim stands against a ten-step chain | Open | High | 2026-07-31 | 2026-07-31 |
+| [BG0461](BG0461-the-checklist-s-own-drift-guard-certifies-two.md) | The checklist's own drift guard certifies two rows unchecked: `cycle_drift`'s third bucket is non-empty on the shipped tree and asserted by nothing, planned POINTS are computed nowhere, and a waiver records no authoriser | Open | High | 2026-07-31 | 2026-07-31 |
+| [BG0462](BG0462-the-version-guard-s-discovery-test-cannot-tell.md) | The version guard's discovery test cannot tell discovery from the hardcoded fallback that seeds the same two paths, and the gate swallows the UNVERIFIABLE notes it exists to print | Open | High | 2026-07-31 | 2026-07-31 |
+| [BG0463](BG0463-twenty-non-blocking-findings-from-the-run-01kytka1.md) | Twenty non-blocking findings from the RUN-01KYTKA1 batch-boundary review: stale counts, dead code, unmarked truncation, over-claiming docstrings and three tests whose names promise more than they assert | Open | Medium | 2026-07-31 | 2026-07-31 |
 
 ## Archived Releases
 

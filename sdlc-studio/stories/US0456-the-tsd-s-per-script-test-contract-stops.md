@@ -1,6 +1,6 @@
 # US0456: The TSD's per-script test contract stops being prose: a sweep of scripts and scripts/lib derives the exception list, and the shipped document is held to it
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0428
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0557: A batch invocation missing a required argument is refused once before any unit is written, naming every argument the command needs
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0498
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new

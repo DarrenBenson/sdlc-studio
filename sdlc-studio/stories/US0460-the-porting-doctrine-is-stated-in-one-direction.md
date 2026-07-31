@@ -1,6 +1,6 @@
 # US0460: The porting doctrine is stated in one direction across the TRD and personas.md: the repo is source, the installed copy is the derived mirror
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0432
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

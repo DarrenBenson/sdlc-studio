@@ -11,8 +11,8 @@
 | Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 26 |
-| Done | 523 |
+| Review | 20 |
+| Done | 529 |
 | Won't Implement | 1 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -364,14 +364,14 @@
 | [US0450](US0450-the-prd-target-users-section-names-the-registry.md) | The PRD Target Users section names the registry's Primary, Secondary and Negative personas and points at the registry | Done | EP0166 | 2026-07-27 | 2026-07-27 |
 | [US0451](US0451-personas-md-is-labelled-a-legacy-appendix-whose.md) | personas.md is labelled a legacy appendix whose still-true content is folded into or pointed at the registry | Done | EP0166 | 2026-07-27 | 2026-07-27 |
 | [US0452](US0452-the-version-guard-reaches-every-authoritative-home-discovered.md) | The version guard reaches every authoritative home, discovered rather than hand-enumerated | Review | EP0167 | 2026-07-27 | 2026-07-27 |
-| [US0453](US0453-countable-claims-in-the-trd-and-tsd-are.md) | Countable claims in the TRD and TSD are checked against a census of what the repo actually ships | Review | EP0167 | 2026-07-27 | 2026-07-27 |
+| [US0453](US0453-countable-claims-in-the-trd-and-tsd-are.md) | Countable claims in the TRD and TSD are checked against a census of what the repo actually ships | Done | EP0167 | 2026-07-27 | 2026-07-27 |
 | [US0454](US0454-timing-claims-are-checked-against-recorded-measurements-rather.md) | Timing claims are checked against recorded measurements rather than restated from memory | Review | EP0167 | 2026-07-27 | 2026-07-27 |
-| [US0455](US0455-one-availability-contract-the-prd-clause-the-tsd.md) | One availability contract: the PRD clause, the TSD NFR row and ADR-004 all state the fail-loud sync behaviour, and the branch taken is recorded as a decision | Review | EP0168 | 2026-07-27 | 2026-07-27 |
-| [US0456](US0456-the-tsd-s-per-script-test-contract-stops.md) | The TSD's per-script test contract stops being prose: a sweep of scripts and scripts/lib derives the exception list, and the shipped document is held to it | Review | EP0168 | 2026-07-27 | 2026-07-27 |
+| [US0455](US0455-one-availability-contract-the-prd-clause-the-tsd.md) | One availability contract: the PRD clause, the TSD NFR row and ADR-004 all state the fail-loud sync behaviour, and the branch taken is recorded as a decision | Done | EP0168 | 2026-07-27 | 2026-07-27 |
+| [US0456](US0456-the-tsd-s-per-script-test-contract-stops.md) | The TSD's per-script test contract stops being prose: a sweep of scripts and scripts/lib derives the exception list, and the shipped document is held to it | Done | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0457](US0457-adr-011-states-the-breakdown-gate-s-real.md) | ADR-011 states the breakdown gate's real firing rule, and carries a dated amendment marker so a reader of the block sees it | Review | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0458](US0458-the-trd-s-shipped-surface-enumerations-are-derived.md) | The TRD's shipped-surface enumerations are derived from the code and the router, and the stale CR0132 caveat is refused by name | Review | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0459](US0459-the-token-budget-premise-is-replaced-by-the.md) | The token-budget premise is replaced by the measured one everywhere it is asserted: transcript-measured, and a lower bound because delegated spend is supplied not measured | Review | EP0168 | 2026-07-27 | 2026-07-27 |
-| [US0460](US0460-the-porting-doctrine-is-stated-in-one-direction.md) | The porting doctrine is stated in one direction across the TRD and personas.md: the repo is source, the installed copy is the derived mirror | Review | EP0168 | 2026-07-27 | 2026-07-27 |
+| [US0460](US0460-the-porting-doctrine-is-stated-in-one-direction.md) | The porting doctrine is stated in one direction across the TRD and personas.md: the repo is source, the installed copy is the derived mirror | Done | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0461](US0461-verify-ac-lint-ratchet-refuses-a-duplicate-group.md) | verify_ac lint --ratchet refuses a duplicate group the baseline does not record with a reason, and the pinned pre-commit lane set gains it | Done | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0462](US0462-a-filed-finding-records-the-lens-profile-and.md) | A filed finding records the lens, profile and a resolvable audit run, validated against a register that has a real writer | Done | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0463](US0463-readiness-py-detector-owed-flags-a-lens-filed.md) | readiness.py detector-owed flags a lens filed in two separate audit runs and files the sized unit that will build the check | Done | EP0169 | 2026-07-27 | 2026-07-27 |
@@ -468,9 +468,9 @@
 | [US0554](US0554-a-listing-only-declaration-names-the-ids-its.md) | A listing-only declaration names the ids its structural read depends on, so filing an artefact stops triggering the full suites | Done | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0555](US0555-sprint-close-dry-run-reports-every-unmet-prerequisite.md) | sprint close --dry-run reports every unmet prerequisite of all seven steps in one read-only pass, retro content included, and writes nothing | Review | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0556](US0556-critic-evidence-record-and-signoff-each-record-a.md) | critic evidence, record and signoff each record a whole batch in one invocation, with the open run as the default scope | Done | EP0189 | 2026-07-29 | 2026-07-29 |
-| [US0557](US0557-a-batch-invocation-missing-a-required-argument-is.md) | A batch invocation missing a required argument is refused once before any unit is written, naming every argument the command needs | Review | EP0189 | 2026-07-29 | 2026-07-29 |
+| [US0557](US0557-a-batch-invocation-missing-a-required-argument-is.md) | A batch invocation missing a required argument is refused once before any unit is written, naming every argument the command needs | Done | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0558](US0558-a-retro-created-by-the-scaffold-and-filled.md) | A retro created by the scaffold and filled in as its template demonstrates passes retro validate without a rejection round-trip | Review | EP0189 | 2026-07-29 | 2026-07-29 |
-| [US0559](US0559-the-close-reports-its-own-cost-gate-seconds.md) | The close reports its own cost - gate seconds and elapsed - so the next reduction is measured against a number rather than an impression | Review | EP0189 | 2026-07-29 | 2026-07-29 |
+| [US0559](US0559-the-close-reports-its-own-cost-gate-seconds.md) | The close reports its own cost - gate seconds and elapsed - so the next reduction is measured against a number rather than an impression | Done | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0560](US0560-a-delivery-batch-reaching-the-commit-threshold-has.md) | A delivery batch reaching the commit threshold has a defined review point, and the adversarial pass takes that batch's units as its surface | Review | EP0190 | 2026-07-29 | 2026-07-29 |
 | [US0561](US0561-a-batch-review-finding-is-filed-as-a.md) | A batch-review finding is filed as a delivery unit against the batch that caused it, so its cost is priced where the work was | Review | EP0190 | 2026-07-29 | 2026-07-29 |
 | [US0562](US0562-sprint-close-refuses-a-batch-containing-units-no.md) | sprint close REFUSES a batch containing units no independent review has covered, and names them | Review | EP0190 | 2026-07-29 | 2026-07-29 |

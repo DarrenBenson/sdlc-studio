@@ -1,6 +1,6 @@
 # US0559: The close reports its own cost - gate seconds and elapsed - so the next reduction is measured against a number rather than an impression
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0498
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new
