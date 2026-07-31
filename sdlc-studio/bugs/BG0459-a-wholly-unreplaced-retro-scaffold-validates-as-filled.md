@@ -52,3 +52,4 @@ The close must surface the EXAMPLES report rather than discard it. `_run_cli` sw
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-31 | Claude Opus 5 | Filed |
+| 2026-07-31 | Claude Opus 5 | AC1 and AC2 delivered ahead of the rest, because this sprint's own close writes a retro and the defect would have bitten it. The three `## Actions raised` demonstration rows now carry the marker, and the verifier asserts the worked-example count EXACTLY rather than as a `>= 6` floor - a floor cannot catch a marker going missing, which is why the unmarked rows survived. Both mutants confirm it: stripping the marker from an Actions row and from a carried bullet each redden the suite, where the second SURVIVED all 215 tests before. AC3 - the close discarding the validator's report on a zero exit - is NOT delivered and this bug stays open for it. |

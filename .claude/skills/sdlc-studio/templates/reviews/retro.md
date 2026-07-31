@@ -116,9 +116,9 @@ every EXAMPLE row; a row left in place is reported at the close.
 
 | Finding | Disposition |
 | --- | --- |
-| EXAMPLE - replace this. A defect worth its own artefact | BG0123 |
-| EXAMPLE - replace this. A defect repaired inside this sprint | fixed-in: a1b2c3d |
-| EXAMPLE - replace this. A finding not worth acting on | declined: the cost lands on a path this project does not use |
+| EXAMPLE - replace this. A defect worth its own artefact | BG0123 <!-- example --> |
+| EXAMPLE - replace this. A defect repaired inside this sprint | fixed-in: a1b2c3d <!-- example --> |
+| EXAMPLE - replace this. A finding not worth acting on | declined: the cost lands on a path this project does not use <!-- example --> |
 
 <!-- file one with: scripts/file_finding.py · check with: scripts/retro.py dispose --id RETROxxxx -->
 

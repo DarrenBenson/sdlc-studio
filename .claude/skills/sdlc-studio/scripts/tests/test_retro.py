@@ -3183,7 +3183,26 @@ class ScaffoldPassesItsValidatorTests(unittest.TestCase):
         root = self._scaffold()
         text = (root / "sdlc-studio" / "retros" / "RETRO9998-a-sprint.md").read_text("utf-8")
         left = retro.demonstration_leftovers(text)
-        self.assertGreaterEqual(len(left), 6, "every worked example carries the marker")
+        # EVERY line the template presents as a worked example, counted exactly. A `>= 6` floor
+        # tolerates a marker going missing, and one had: the three `## Actions raised` rows
+        # carried none, so a retro with every MARKED line replaced and that table untouched
+        # validated as three dispositioned findings - a fabricated sprint record, complete with
+        # a bug id nobody filed and a commit hash, passing as a clean close. A floor cannot
+        # catch that, because the defect is a line the detector never sees.
+        marked = [ln for ln in text.splitlines() if retro.DEMO_MARKER in ln]
+        self.assertEqual(len(marked), len(left),
+                         "a marked line the detector did not report")
+        self.assertEqual(10, len(left),
+                         "the shipped template's worked-example count changed - if a demo row "
+                         "was added or removed, update this number; if a MARKER was dropped, "
+                         "the row is invisible to the close and that is the defect")
+        demo_rows = [ln for ln in text.splitlines()
+                     if ln.startswith("| EXAMPLE - replace this.")]
+        self.assertEqual(3, len(demo_rows), "the three demonstrated dispositions")
+        for row in demo_rows:
+            self.assertIn(retro.DEMO_MARKER, row,
+                          "an Actions-raised demonstration row with no marker is invisible to "
+                          "the close, so the whole disposition table reads as filled in")
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
             rc = retro.main(["--root", str(root), "validate", "--id", "RETRO9998"])
