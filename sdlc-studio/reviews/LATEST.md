@@ -42,9 +42,17 @@ pass". `record_supersession` refuses to write that record and `_is_principal_sup
 as the read-time backstop for the hand append; only the sign-off gate consulted it. Fixed in
 BG0464: the grade of correction required now scales with the direction the mistake fails.
 
-Four gates were repaired to check what they claim (BG0440, BG0456, BG0459 part, BG0464). The
-guards behind BG0457, BG0458 and BG0461 still over-claim in their own prose and are carried
-with the claim uncorrected - which is why the goal verdict is partial rather than achieved.
+Five gates were repaired to check what they claim (BG0440, BG0456, BG0459 part, BG0464,
+BG0465). The guards behind BG0457, BG0458 and BG0461 still over-claim in their own prose and
+are carried with the claim uncorrected - which is why the goal verdict is partial.
+
+**The delivered bugs got their own closing review** and it rejected two of thirteen. BG0442's
+verifier accepted a hardcoded constant in the very function the bug was about - one fixture,
+one single-value assertion, and the mutant survived all 623 tests of its module. BG0452's
+sweep named `handoff.py` in its own Summary and its own Affects and never touched it. Both
+repaired under BG0465; repairing the second showed why the original sweep had gone round it -
+`extract_record_id` covers `ARTIFACT_TYPES` and only those, so `stem_record_id` now answers
+for handoffs, retros and reviews.
 
 ## What the next session should know
 
