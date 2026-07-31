@@ -4617,6 +4617,12 @@ class DeferredOperatorDecisions(unittest.TestCase):
                                .read_text(encoding="utf-8"))
             self.assertEqual(state["pending_decisions"], [])
             self.assertEqual(state["resolved_decisions"][0]["resolution"]["choice"], "oauth")
+            # BOTH lists. `defer` writes `pending_decisions` AND `deferred_units`; only one had
+            # a remover, so an answered question left the unit "deferred" for ever and the
+            # close reported it held on an operator decision while counting it delivered.
+            self.assertEqual(state["deferred_units"], [],
+                             "the unit is still recorded as deferred after its question was "
+                             "answered - the two lists have come apart")
 
     def test_decision_refuses_cleanly_on_a_corrupt_run_state(self) -> None:
         # round-1 MINOR: RunStateError escaped as a traceback where close refuses cleanly

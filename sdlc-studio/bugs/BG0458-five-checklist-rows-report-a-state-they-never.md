@@ -1,6 +1,7 @@
 # BG0458: Five checklist rows report a state they never established: planned units read from the retro's Batch rather than the plan, a delivered unit rendered as held, a blind known-issue scan rendered as 'none carried', a lens count that counts reviewer names, and an impediment row that never names the blocker
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (all seven repairs mutation-verified: each defect restored as its own mutant, `assert count(old)==1`, `__pycache__` purged, `python3 -B`, reverted byte-identical. Four survived the first pass and were pinned before the second; one survivor exposed that a test was named for a branch it never reached, and another that my own fix double-counted a unit across two headings)
 > **Severity:** High
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -62,14 +63,49 @@ Count lenses with `seat_for`, which is already called. Name the blocker in the i
 
 ## Acceptance Criteria
 
-- [ ] The not-delivered row is derived from the run's PLANNED set, so a planned unit absent from the retro Batch is named rather than absorbed into 'every planned unit was delivered'
-- [ ] A unit whose deferral decision was resolved and which then shipped is not rendered as held, and is not counted both held and delivered
-- [ ] The known-issues row distinguishes a scan that saw nothing from a scan that could not see: an unreadable or absent run record renders UNANSWERED and holds the close, rather than ANSWERED 'none carried'
-- [ ] The lens count counts SEATS via `seat_for`, so two reviewers sharing one seat report one lens and are marked UNDER-COVERED
-- [ ] The impediment row names the recorded blocker, and renders 'blocked with no recorded blocker' when a blocked unit has none
+### AC1: the not-delivered row is derived from the PLAN, not the retro
+
+- **Given** a planned unit the retro's Batch never lists
+- **When** the row is composed
+- **Then** it is named as UNACCOUNTED rather than absorbed into "every planned unit was delivered", and carry-over is measured against the planned set so an unplanned unit is not reported as a broken promise; the two buckets are disjoint, because a unit reported twice under two headings makes the counts stop adding up
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SprintChecklistNotDeliveredTests::test_a_PLANNED_unit_the_retro_never_lists_is_named_not_absorbed
+- **Verified:** yes (2026-07-31)
+
+### AC2: held is a live state, and `decision resolve` clears it
+
+- **Given** a unit deferred on an operator decision whose question is later answered, and which then ships
+- **When** the row is composed
+- **Then** it is not reported held, because `decision resolve` now removes it from `deferred_units` as well as from `pending_decisions` - `defer` writes both lists and only one had a remover, so the close reported a unit held on a decision while counting it delivered on the same page
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SprintChecklistNotDeliveredTests::test_a_unit_whose_decision_was_ANSWERED_and_which_shipped_is_not_held
+- **Verified:** yes (2026-07-31)
+
+### AC3: the known-issues row distinguishes an empty scan from a blind one
+
+- **Given** a run record carrying no start time, and separately a retro that cannot be located
+- **When** the row is composed
+- **Then** each reports UNANSWERED "unreadable" and says which, rather than ANSWERED "none carried" - the sibling impediments row draws exactly this distinction on the same page, so the honest treatment already existed and this row contradicted it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SprintChecklistKnownIssuesBlindnessTests::test_the_carried_table_reports_BLINDNESS_rather_than_an_empty_table
+- **Verified:** yes (2026-07-31)
+
+### AC4: lenses are counted by SEAT
+
+- **Given** two different reviewers both standing in the qa seat
+- **When** the review row is composed
+- **Then** it reports one lens and marks the round UNDER-COVERED, because a lens is a point of view rather than a person; two reviewers with NO declared seat still count separately, since under-reporting coverage is no better than over-reporting it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SprintChecklistReviewRowTests::test_two_reviewers_sharing_ONE_SEAT_are_one_lens
+- **Verified:** yes (2026-07-31)
+
+### AC5: the impediment row names the blocker, and names its absence
+
+- **Given** a blocked unit carrying a recorded blocker, and separately one carrying none
+- **When** the row is composed
+- **Then** the first names what it waits on and the second says NO RECORDED BLOCKER, because an operator told a unit is blocked and not what to unstick has been told half of it, and an impediment nobody can act on is the worse case rather than an equivalent one
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SprintChecklistImpedimentTests::test_a_blocked_unit_with_NO_recorded_blocker_is_named_as_such
+- **Verified:** yes (2026-07-31)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-31 | Claude Opus 5 | Filed |
+| 2026-07-31 | Claude Opus 5 | All five findings repaired, plus the root cause behind the second: `decision resolve` now clears `deferred_units`. The scope statements added to these rows earlier are removed, since the rows now do what they said. Mutation found four unpinned repairs on the first pass, and two defects in the repairs themselves - a test named for a branch it never reached, and carry-over double-counting a unit the retro never listed. |

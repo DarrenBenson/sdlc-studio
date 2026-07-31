@@ -1090,16 +1090,11 @@ class SprintChecklistReviewRowTests(ChecklistBase):
                       "seat-less, never rendered as if it were a seat review")
 
     def test_a_single_lens_round_is_reported_as_under_covered(self) -> None:
-        """Named for a lens count the row does not compute: it counts distinct reviewer NAMES,
-        so two reviewers sharing one seat read as two. The row now says so on its face (BG0458);
-        this asserts the count it does make and the marker that depends on it."""
+        """One reviewer, one lens, and the under-covered marker follows from the count."""
         self._verdict("US0001", "APPROVE", "lonely reviewer")
         self._verdict("US0002", "APPROVE", "lonely reviewer")
         row = self._row(self._ck(), "review-attribution")
-        self.assertIn("1 distinct reviewer(s)", row["value"])
-        self.assertIn("counted by NAME, not by seat", row["value"],
-                      "the row must state the limit it has, or a reader takes the number for "
-                      "a lens count - which is what US0575 AC2 asks for and this is not")
+        self.assertIn("1 lens", row["value"])
         self.assertIn("UNDER-COVERED", row["value"])
 
     def test_two_distinct_reviewers_are_not_reported_as_under_covered(self) -> None:
@@ -1108,6 +1103,33 @@ class SprintChecklistReviewRowTests(ChecklistBase):
         self._verdict("US0001", "APPROVE", "reviewer one")
         self._verdict("US0002", "APPROVE", "reviewer two")
         self.assertNotIn("UNDER-COVERED", self._row(self._ck(), "review-attribution")["value"])
+
+    def test_two_reviewers_sharing_ONE_SEAT_are_one_lens(self) -> None:
+        """The discriminator the row was named for and did not make. It counted distinct
+        reviewer NAMES, so two people in seat `qa` reported "2 lens(es)" and escaped the
+        under-covered mark - contradicting the row's own title, the constant `MIN_LENSES` and
+        the shipped doctrine. A lens is a point of view, not a person."""
+        seats = self.root / "sdlc-studio" / "personas" / "seats"
+        seats.mkdir(parents=True)
+        (seats / "qa.md").write_text("# Priya Raman\n\n<!-- role: qa -->\n", encoding="utf-8")
+        # Two DIFFERENT reviewers, both standing in the qa seat - the shape this repo's own
+        # delegated reviews take ("qa seat (independent, isolated worktree)").
+        self._verdict("US0001", "APPROVE", "qa seat alpha")
+        self._verdict("US0002", "APPROVE", "qa seat beta")
+        row = self._row(self._ck(), "review-attribution")
+        self.assertIn("1 lens", row["value"],
+                      "two reviewers in one seat were counted as two lenses")
+        self.assertIn("UNDER-COVERED", row["value"])
+
+    def test_two_reviewers_with_NO_seat_are_not_collapsed_into_one(self) -> None:
+        """The other side of it. A reviewer with no declared seat is not interchangeable with
+        another seat-less reviewer, so they must not fold into a single anonymous lens - that
+        would under-report coverage instead of over-reporting it, which is no better."""
+        self._verdict("US0001", "APPROVE", "contractor one")
+        self._verdict("US0002", "APPROVE", "contractor two")
+        row = self._row(self._ck(), "review-attribution")
+        self.assertIn("2 lens", row["value"])
+        self.assertNotIn("UNDER-COVERED", row["value"])
 
     def test_a_rejected_unit_is_not_counted_as_covered(self) -> None:
         self._verdict("US0001", "APPROVE", "reviewer one")
@@ -1118,17 +1140,81 @@ class SprintChecklistReviewRowTests(ChecklistBase):
         self.assertNotIn("1 covered", row["value"].split(",")[0] + ",")
 
 
+class SprintChecklistKnownIssuesBlindnessTests(ChecklistBase):
+    """US0571. The row is the one RECORDED-authority item on the page, and it failed OPEN: an
+    empty scan and a scan that could not run rendered identically as ANSWERED "none carried",
+    over a workspace with open findings on disk. The impediments row draws exactly that
+    distinction beside it, so the honest treatment already existed and this one contradicted
+    it."""
+
+    def _bug(self, uid: str, stamp: str) -> None:
+        d = self.root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{uid}-x.md").write_text(
+            f"# {uid}: x\n\n> **Status:** Open\n> **Raised-in-batch:** {stamp}\n",
+            encoding="utf-8")
+
+    def test_a_run_record_with_no_start_time_reports_UNREADABLE_not_none(self) -> None:
+        self._bug("BG0500", "none open 2026-06-01T00:00:00Z")
+        ck = self._ck(started_at=None)
+        row = self._row(ck, "known-issues")
+        self.assertEqual("unreadable", row["value"],
+                         "a scan that could not date any finding reported 'none carried'")
+        self.assertIn(row["state"], ("UNANSWERED", "unanswered"))
+        self.assertIn("UNKNOWN", row["detail"].upper())
+
+    def test_a_missing_retro_makes_the_whole_row_unreadable(self) -> None:
+        """Deleting the retro takes out the run-record join as well as the carried table, so
+        this exercises the row end to end and NOT the carried-table branch alone - which is why
+        it is named for what it does. The branch itself is pinned below."""
+        (self.root / "sdlc-studio" / "retros" / "RETRO9100-t.md").unlink()
+        row = self._row(self._ck(), "known-issues")
+        self.assertEqual("unreadable", row["value"])
+
+    def test_the_carried_table_reports_BLINDNESS_rather_than_an_empty_table(self) -> None:
+        """The branch on its own. `retro.find_retro` answers None rather than raising, so the
+        reader returned [] for a retro it could not locate - dressing "we could not look" as
+        "there was nothing to see" one layer above the exception handler, where the end-to-end
+        test above cannot see it."""
+        self.assertIsNone(sr._carried_issues(self.root, "RETRO-NOSUCH"),
+                          "a retro that cannot be located read as an empty carried table")
+        self.assertEqual([], sr._carried_issues(self.root, "RETRO9100"),
+                         "the control: a retro that IS found with no rows is empty, not blind")
+
+    def test_a_scan_that_RAN_and_found_nothing_still_says_so(self) -> None:
+        """The control: the repair must not turn every clean sprint into 'unreadable'."""
+        row = self._row(self._ck(), "known-issues")
+        self.assertEqual("none carried", row["value"])
+        self.assertIn("the scan ran", row["detail"])
+
+
 class SprintChecklistImpedimentTests(ChecklistBase):
     """US0576. A blocker recorded mid-run is lost at the close, so the next run rediscovers
     it."""
 
     def test_a_blocked_unit_is_reported_with_its_blocker(self) -> None:
+        """Named for the blocker and asserting only the unit id, which is how the row shipped
+        naming who was blocked and never by what. `Blocked By` / `Depends on` is a shipped read
+        convention; an operator told a unit is blocked and not what to unstick has been told
+        half of it."""
         _unit(self.root, "US0001", "Blocked")
+        path = self.root / "sdlc-studio" / "stories" / "US0001-s.md"
+        path.write_text(path.read_text(encoding="utf-8").replace(
+            "> **Status:** Blocked", "> **Status:** Blocked\n> **Blocked By:** US0002"),
+            encoding="utf-8")
         ck = self._ck(pending_decisions=[{"unit": "US0001", "question": "ship it or hold?",
                                           "resolution": None}])
         row = self._row(ck, "impediments")
         self.assertIn("blocked US0001", row["detail"])
+        self.assertIn("US0002", row["detail"], "the recorded blocker is not named")
         self.assertIn("1 blocked", row["value"])
+
+    def test_a_blocked_unit_with_NO_recorded_blocker_is_named_as_such(self) -> None:
+        """The absent case, which is the worse one: an impediment nobody can act on must not
+        render identically to one with a known cause."""
+        _unit(self.root, "US0001", "Blocked")
+        row = self._row(self._ck(), "impediments")
+        self.assertIn("NO RECORDED BLOCKER", row["detail"])
 
     def test_an_unresolved_decision_is_reported_with_its_question(self) -> None:
         ck = self._ck(pending_decisions=[
@@ -1219,7 +1305,11 @@ class SprintChecklistNotDeliveredTests(ChecklistBase):
         _unit(self.root, "US0001", "Done")
         _unit(self.root, "US0002", "In Progress")
         _unit(self.root, "US0003", "Ready")
+        # BOTH lists, because `decision defer` writes both. A fixture carrying only
+        # `deferred_units` models a state the writer cannot produce.
         row = self._row(self._ck(batch=["US0001", "US0002"], deferred_units=["US0002"],
+                                 pending_decisions=[{"unit": "US0002", "question": "which?",
+                                                     "resolution": None}],
                                  batch_changes=[{"action": "drop", "id": "US0003",
                                                  "reason": "descoped"}]), "not-delivered")
         self.assertIn("1 dropped, 1 held", row["value"])
@@ -1227,6 +1317,48 @@ class SprintChecklistNotDeliveredTests(ChecklistBase):
         self.assertNotIn("carry-over US0002", row["detail"],
                          "a unit held on an operator decision is not a unit that just did not "
                          "finish - collapsing the two misreports the run")
+
+    def test_a_unit_whose_decision_was_ANSWERED_and_which_shipped_is_not_held(self) -> None:
+        """`deferred_units` is append-only and `decision resolve` had no remover, so a unit
+        whose question was answered and which then shipped rendered "held (operator decision
+        pending)" AND was counted delivered on the same page. Held is a live state: the
+        decision must still be outstanding and the unit must still be unfinished."""
+        _unit(self.root, "US0001", "Done")
+        row = self._row(self._ck(batch=["US0001"], deferred_units=["US0001"],
+                                 pending_decisions=[]), "not-delivered")
+        self.assertNotIn("held US0001", row["detail"],
+                         "a resolved-and-shipped unit is still being reported as held")
+        self.assertEqual("none", row["value"],
+                         "the unit shipped and its question was answered, so there is nothing "
+                         "outstanding to report")
+
+    def test_a_PLANNED_unit_the_retro_never_lists_is_named_not_absorbed(self) -> None:
+        """The row read the retro's Batch, so a planned unit that never reached the retro was
+        invisible to it and the page asserted "every planned unit was delivered" while
+        planned-vs-delivered beside it read 1/2. A unit nobody can account for is the one thing
+        this row exists to surface."""
+        _unit(self.root, "US0001", "Done")
+        _unit(self.root, "US0002", "Ready")
+        self._run(batch=["US0001", "US0002"])
+        # The retro lists ONLY US0001; the run planned both.
+        ck = sr.checklist(self.root, "RETRO9100", unit_ids=["US0001"])
+        row = self._row(ck, "not-delivered")
+        self.assertIn("US0002", row["detail"])
+        self.assertNotEqual("none", row["value"],
+                            "a planned unit missing from the retro was absorbed into "
+                            "'every planned unit was delivered'")
+
+    def test_carry_over_is_measured_against_the_PLAN_not_the_retro(self) -> None:
+        """A unit the retro lists but the run never planned is scope creep, and it has its own
+        row. Reading the retro's Batch for this one folded it into commitment-versus-actual,
+        so an unplanned unit that did not finish read as a broken promise."""
+        _unit(self.root, "US0001", "Done")
+        _unit(self.root, "US0002", "In Progress")     # in the retro, never planned
+        self._run(batch=["US0001"])
+        ck = sr.checklist(self.root, "RETRO9100", unit_ids=["US0001", "US0002"])
+        row = self._row(ck, "not-delivered")
+        self.assertNotIn("carry-over US0002", row["detail"],
+                         "an unplanned unit is being reported against the plan")
 
     def test_the_planned_set_reconciles_with_no_unit_unaccounted_for(self) -> None:
         _unit(self.root, "US0001", "Done")

@@ -863,8 +863,7 @@ CHECKLIST = (
      "title": "Planned against delivered", "command": "sprint report",
      "resolver": "_ck_planned_vs_delivered"},
     {"id": "not-delivered", "kind": FIGURE, "authority": DERIVED,
-     "title": "Dropped, held and carried over - dropped units carry a reason",
-     "command": "sprint batch",
+     "title": "Dropped, held and carried over, each with its reason", "command": "sprint batch",
      "resolver": "_ck_not_delivered"},
     {"id": "scope-creep", "kind": FIGURE, "authority": DERIVED,
      "title": "Scope creep, as a count and a ratio", "command": "sprint report",
@@ -1105,9 +1104,31 @@ def _ck_not_delivered(ctx: dict) -> tuple:
     if not run.get("run_id"):
         return (UNANSWERED, "unknown", "no run record, so no batch-change ledger to read")
     dropped = [c for c in (run.get("batch_changes") or []) if c.get("action") == "drop"]
-    held = [sdlc_md.norm_id(u) for u in (run.get("deferred_units") or [])]
-    carried = [u for u in ctx["units"]
-               if not _terminal(ctx["root"], u)[1] and sdlc_md.norm_id(u) not in held]
+    dropped_ids = {sdlc_md.norm_id(c.get("id") or "") for c in dropped}
+    # HELD is a live state, not a log entry. `deferred_units` is append-only and `decision
+    # resolve` never removes from it, so a unit whose decision was answered and which then
+    # shipped rendered "held (operator decision pending)" AND counted delivered on the same
+    # page. A unit is held only while a decision on it is genuinely outstanding.
+    pending = {sdlc_md.norm_id(d.get("unit") or "")
+               for d in (run.get("pending_decisions") or []) if not d.get("resolution")}
+    held = [sdlc_md.norm_id(u) for u in (run.get("deferred_units") or [])
+            if sdlc_md.norm_id(u) in pending and not _terminal(ctx["root"], u)[1]]
+    # Carried is measured against the PLANNED set, not the retro's Batch. Reading the retro
+    # made a planned unit that never reached it invisible here, so the row asserted "every
+    # planned unit was delivered" while planned-vs-delivered above read 1/2 on the same page.
+    seen = {sdlc_md.norm_id(u) for u in ctx["units"]}
+    # DISJOINT, or a unit is reported twice under two headings and the counts stop adding up -
+    # the shape an independent seat found in the dropped-versus-carried pair. A planned unit
+    # the retro never lists is UNACCOUNTED; one it lists but nobody finished is CARRIED.
+    unaccounted = [u for u in (ctx["planned"] or [])
+                   if sdlc_md.norm_id(u) not in seen
+                   and sdlc_md.norm_id(u) not in dropped_ids]
+    unaccounted_ids = {sdlc_md.norm_id(u) for u in unaccounted}
+    carried = [u for u in (ctx["planned"] or ctx["units"])
+               if not _terminal(ctx["root"], u)[1]
+               and sdlc_md.norm_id(u) not in held
+               and sdlc_md.norm_id(u) not in dropped_ids
+               and sdlc_md.norm_id(u) not in unaccounted_ids]
     bits = []
     for c in dropped:
         bits.append(f"dropped {c.get('id')}: {c.get('reason') or 'NO REASON RECORDED'}")
@@ -1115,13 +1136,15 @@ def _ck_not_delivered(ctx: dict) -> tuple:
         bits.append(f"held {u} (operator decision pending)")
     for u in carried:
         bits.append(f"carry-over {u} ({_terminal(ctx['root'], u)[0] or 'status unreadable'})")
+    for u in unaccounted:
+        bits.append(f"UNACCOUNTED {u} (planned, and the retro does not list it)")
     if not bits:
-        return (ANSWERED, "none",
-                "every unit the RETRO lists was delivered - this row reads the retro's "
-                "Batch, not the run's planned set, so a planned unit absent from the retro "
-                "is invisible to it; read it beside planned-vs-delivered above")
-    return (ANSWERED, f"{len(dropped)} dropped, {len(held)} held, {len(carried)} carried over",
-            "; ".join(bits[:12]))
+        return (ANSWERED, "none", "every planned unit was delivered")
+    more = len(bits) - 12
+    return (ANSWERED,
+            f"{len(dropped)} dropped, {len(held)} held, {len(carried)} carried over"
+            + (f", {len(unaccounted)} UNACCOUNTED" if unaccounted else ""),
+            "; ".join(bits[:12]) + (f" (+{more} more)" if more > 0 else ""))
 
 
 def _ck_scope_creep(ctx: dict) -> tuple:
@@ -1150,6 +1173,19 @@ def _ck_review_attribution(ctx: dict) -> tuple:
     except Exception as exc:  # noqa: BLE001
         sdlc_md.debug("sprint_report._ck_review_attribution", exc)
         return (UNANSWERED, "unreadable", f"the verdict log could not be read ({exc})")
+    def _lens(who: str) -> str:
+        """The LENS a reviewer looks through: their seat, or - failing that - themselves.
+
+        A lens is a point of view, and two reviewers sharing seat `qa` bring one. Counting
+        distinct NAMES reported them as two and let a single-lens round escape the
+        under-covered mark, contradicting this row's own title, `MIN_LENSES`, and the shipped
+        doctrine. The fallback matters as much: a reviewer with no declared seat is not
+        interchangeable with another seat-less reviewer, so they count separately rather than
+        collapsing into one anonymous lens.
+        """
+        seat = critic.seat_for(ctx["root"], who) if who else None
+        return f"seat:{seat}" if seat else f"who:{who}"
+
     covered, rejected, uncovered, reviewers = [], [], [], set()
     for uid in units:
         v = critic.verdict_for(ctx["root"], uid)
@@ -1166,13 +1202,13 @@ def _ck_review_attribution(ctx: dict) -> tuple:
     # once, so counting only per-unit rows would report a two-lens round as one-lens.
     reviewers |= {str(r.get("reviewer") or "").strip()
                   for r in ctx["sprint_reviews"] + ctx["review_rounds"]}
-    lenses = len({r for r in reviewers if r})
+    lenses = len({_lens(r) for r in reviewers if r})
     under = lenses < MIN_LENSES
     value = (f"{len(covered)} covered, {len(rejected)} rejected, {len(uncovered)} uncovered; "
-             f"{lenses} distinct reviewer(s) - counted by NAME, not by seat, so two "
-             f"reviewers sharing one seat read as two lenses"
-             + (" - UNDER-COVERED" if under else ""))
-    detail = "; ".join(covered[:6] + [f"REJECTED {r}" for r in rejected[:6]])
+             f"{lenses} lens(es)" + (" - UNDER-COVERED" if under else ""))
+    shown = covered[:6] + [f"REJECTED {r}" for r in rejected[:6]]
+    dropped_from_view = (len(covered) - len(covered[:6])) + (len(rejected) - len(rejected[:6]))
+    detail = "; ".join(shown) + (f" (+{dropped_from_view} more)" if dropped_from_view else "")
     if under:
         detail = (f"a round under {MIN_LENSES} distinct reviewers is recorded as under-covered: "
                   f"one lens does not point at what it does not point at. " + detail)
@@ -1193,10 +1229,23 @@ def _ck_impediments(ctx: dict) -> tuple:
             blocked.append(uid)
     if not pending and not blocked:
         return (ANSWERED, "none", "nothing blocked and no operator question outstanding")
-    # The BLOCKER is not read here, though `Blocked By` / `Depends on` is a shipped read
-    # convention - so this names who is blocked and never by what, and cannot distinguish
-    # a blocked unit carrying a recorded blocker from one carrying none.
-    bits = [f"blocked {u} (blocker not read)" for u in blocked]
+    # The BLOCKER, read through the same convention the blocker sweep uses. "Blocked" on its
+    # own tells an operator that something stopped and not what to go and unstick, and a
+    # blocked unit RECORDING no blocker is a different and worse fact - it is an impediment
+    # nobody can act on, so it is named rather than rendered identically to a known one.
+    def _blocker(uid: str) -> str:
+        try:
+            import blocker_sweep  # noqa: PLC0415
+            found = sdlc_md.find_by_id(ctx["root"], uid)   # (path, type), not a bare path
+            path = found[0] if found else None
+            refs = blocker_sweep._referents(sdlc_md.read_text_safe(path)) if path else []
+        except Exception as exc:  # noqa: BLE001 - a report must not die on one unreadable unit
+            sdlc_md.debug("sprint_report._ck_impediments", exc)
+            return f"blocked {uid} (blocker UNREADABLE)"
+        return (f"blocked {uid} by {', '.join(refs)}" if refs
+                else f"blocked {uid} with NO RECORDED BLOCKER - nothing says what to unstick")
+
+    bits = [_blocker(u) for u in blocked]
     bits += [f"open question on {d.get('unit')}: {d.get('question')}" for d in pending]
     return (ANSWERED, f"{len(blocked)} blocked, {len(pending)} open question(s)",
             "; ".join(bits[:12]))
@@ -1205,15 +1254,24 @@ def _ck_impediments(ctx: dict) -> tuple:
 def _ck_known_issues(ctx: dict) -> tuple:
     rows = ctx["carried_issues"]
     open_findings = ctx["open_filed_in_run"]
+    # BLINDNESS FIRST. Either source coming back None means the scan could not run, and a scan
+    # that saw nothing must never render as a workspace with nothing to see. The impediments
+    # row draws exactly this distinction on the same page; this one used to contradict it.
+    if rows is None or open_findings is None:
+        why = ("the retro's carried-issues table could not be read" if rows is None
+               else "the run record carries no start time, so no finding could be dated to "
+                    "this run")
+        return (UNANSWERED, "unreadable",
+                f"{why} - so whether this sprint leaves an open finding is UNKNOWN, which is "
+                f"not the same as leaving none")
     ruled = {r["id"] for r in rows if r["ok"]}
     unruled = [u for u in open_findings if u not in ruled]
     stop = [r["id"] for r in rows if r["ok"] and r["ruling"] == "stop-ship"]
     broken = [f"{r['id'] or '(no id)'}: {r['why']}" for r in rows if not r["ok"]]
     if not rows and not open_findings:
         return (ANSWERED, "none carried",
-                "no finding was FOUND open - this scan cannot distinguish an empty result "
-                "from a scan that could not run, so read it as 'nothing seen' rather than "
-                "'nothing there'; the impediments row above does draw that distinction")
+                "the scan ran and this sprint left no finding open - a scan that could NOT "
+                "run reports unreadable above, so this row means what it says")
     if unruled or broken:
         bits = [f"UNRULED {u}" for u in unruled] + broken
         return (UNANSWERED, f"{len(unruled)} unruled, {len(broken)} malformed row(s)",
@@ -1241,7 +1299,11 @@ def _open_findings(root: Path, run: dict | None) -> tuple[list[str], list[str]]:
     last edited the file.
     """
     if not run or not run.get("started_at"):
-        return [], []
+        # None, not []. An empty result and a scan that could not run are different facts, and
+        # returning [] for both let the known-issues row render ANSWERED "none carried" over a
+        # workspace with open findings on disk - a gate reporting green over something it never
+        # looked at, which is the one thing the checklist exists to stop.
+        return None, None
     started, ended = run.get("started_at"), run.get("ended_at")
     filed, still_open = [], []
     for type_ in ("bug", "cr"):
@@ -1306,7 +1368,7 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
             # A finding ruled stop-ship is ANSWERED - the answer is that it stops the ship. It
             # is carried separately because a ruling that changes nothing is a note, and the
             # ruling that matters most is the one that must be able to stop something.
-            "stop_ship": [i["id"] for i in ctx["carried_issues"]
+            "stop_ship": [i["id"] for i in (ctx["carried_issues"] or [])
                           if i["ok"] and i["ruling"] == retro.STOP_SHIP]}
 
 
@@ -1339,10 +1401,13 @@ def _waiver_for(root: Path, item_id: str) -> str | None:
 def _carried_issues(root: Path, retro_id: str) -> list[dict]:
     try:
         path = retro.find_retro(root, retro_id)
-        return retro.carried_issues(sdlc_md.read_text_safe(path)) if path else []
+        # A retro that cannot be LOCATED is blindness, not an empty table: `find_retro` answers
+        # None rather than raising, so returning [] here dressed "we could not look" as "there
+        # was nothing to see" one layer above the exception handler.
+        return retro.carried_issues(sdlc_md.read_text_safe(path)) if path else None
     except Exception as exc:  # noqa: BLE001
         sdlc_md.debug("sprint_report._carried_issues", exc)
-        return []
+        return None  # unreadable, NOT empty - the caller must be able to tell them apart
 
 
 def _retro_validate(root: Path, retro_id: str) -> dict:

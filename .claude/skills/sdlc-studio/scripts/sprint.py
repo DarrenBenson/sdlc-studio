@@ -8062,7 +8062,14 @@ def cmd_decision(args) -> int:
                            "resolved_at": sdlc_md.now_iso8601()}
     del pending[idx]
     resolved = list(state.get("resolved_decisions") or []) + [entry]
-    run_state.update(root, pending_decisions=pending, resolved_decisions=resolved)
+    # ...and out of `deferred_units` too. `defer` writes BOTH lists and only one had a remover,
+    # so a unit whose question was answered stayed "deferred" for ever: the close then reported
+    # it held on an operator decision while counting it delivered on the same page. A list that
+    # is only ever appended to is a log, and this one is read as a state.
+    still_deferred = [u for u in (state.get("deferred_units") or [])
+                      if sdlc_md.norm_id(u) != sdlc_md.norm_id(entry.get("unit") or "")]
+    run_state.update(root, pending_decisions=pending, resolved_decisions=resolved,
+                     deferred_units=still_deferred)
     if not pending:
         # The last question is answered, so the run can work again: close the idle interval
         # here, at the moment it could have resumed, rather than estimating it later.
