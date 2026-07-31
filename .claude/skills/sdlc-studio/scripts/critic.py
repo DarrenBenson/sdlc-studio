@@ -169,12 +169,28 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery"):
     A superseded row is skipped: it records an event that a named authoriser has ruled did
     not happen, so acting on it would be acting on a known-false fact. A unit whose only row
     is superseded therefore has NO verdict, which is different from having an approval.
+
+    EXCEPT a NEGATIVE one, which needs a PRINCIPAL-grade supersession to retire. The grade
+    required scales with the direction the mistake fails. Retiring an approval weakly loses an
+    approval, and a gate with one fewer approval refuses - it fails closed. Retiring a REJECT
+    weakly deletes the one record that blocks the unit, and the gate then reports it covered by
+    an independent pass. `record_supersession` refuses to write such a record, but a hand
+    append walks round the tool, and a plain truthiness test on the flag honoured it: an author
+    could retire the review blocking their own work with one line naming themselves as
+    authoriser and `-` as boundary. `_is_principal_superseded` was already written as the
+    read-time backstop for exactly that, and only the sign-off gate consulted it - so the two
+    gates enforced different independence rules, and the weaker one was the one guarding the
+    honesty check.
     """
     target = sdlc_md.norm_id(unit)
     latest = None
     for v in read_verdicts(repo_root, phase):
-        if sdlc_md.norm_id(v["unit"]) == target and not v.get("superseded"):
-            latest = v
+        if sdlc_md.norm_id(v["unit"]) != target:
+            continue
+        if v.get("superseded") and ((v.get("verdict") or "").upper() != REJECT
+                                    or _is_principal_superseded(repo_root, unit, v)):
+            continue
+        latest = v
     return latest
 
 

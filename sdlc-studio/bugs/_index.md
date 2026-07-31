@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 30 |
 | In Progress | 0 |
-| Fixed | 350 |
+| Fixed | 351 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **463** |
+| **Total** | **464** |
 
 ## All Bugs
 
@@ -181,6 +181,7 @@
 | [BG0461](BG0461-the-checklist-s-own-drift-guard-certifies-two.md) | The checklist's own drift guard certifies two rows unchecked: `cycle_drift`'s third bucket is non-empty on the shipped tree and asserted by nothing, planned POINTS are computed nowhere, and a waiver records no authoriser | Open | High | 2026-07-31 | 2026-07-31 |
 | [BG0462](BG0462-the-version-guard-s-discovery-test-cannot-tell.md) | The version guard's discovery test cannot tell discovery from the hardcoded fallback that seeds the same two paths, and the gate swallows the UNVERIFIABLE notes it exists to print | Open | High | 2026-07-31 | 2026-07-31 |
 | [BG0463](BG0463-twenty-non-blocking-findings-from-the-run-01kytka1.md) | Twenty non-blocking findings from the RUN-01KYTKA1 batch-boundary review: stale counts, dead code, unmarked truncation, over-claiming docstrings and three tests whose names promise more than they assert | Open | Medium | 2026-07-31 | 2026-07-31 |
+| [BG0464](BG0464-the-coverage-gate-fails-open-on-a-hand.md) | The coverage gate fails open on a hand-appended supersession: an author retires the REJECT blocking their own work with one line, and the close reports the unit covered by an independent pass | Fixed | Critical | 2026-07-31 | 2026-07-31 |
 
 ## Archived Releases
 

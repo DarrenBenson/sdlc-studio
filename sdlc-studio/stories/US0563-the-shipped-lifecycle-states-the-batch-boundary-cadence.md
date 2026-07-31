@@ -1,6 +1,6 @@
 # US0563: The shipped lifecycle states the batch-boundary cadence: doctrine, definition-of-done and help, so a consuming project inherits the placement
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0500
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new

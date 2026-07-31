@@ -2058,6 +2058,57 @@ class SupersededGateTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
 
+    def test_a_HAND_APPENDED_author_supersession_cannot_retire_a_blocking_REJECT(self) -> None:
+        """The fail-open in the honesty gate itself. `record_supersession` refuses to WRITE an
+        author-authorised, boundary-less correction, but the log is a text file and a hand
+        append walks round the tool - which is precisely why `_is_principal_superseded` exists
+        as the read-time backstop. Only the sign-off gate consulted it. `verdict_for` tested the
+        flag for plain truthiness, so one appended line naming the row's own author as
+        authoriser and `-` as boundary deleted the REJECT from every reader downstream, and the
+        close then reported the unit "covered by an independent pass".
+
+        The grade required now scales with the direction the mistake fails: retiring an APPROVE
+        weakly costs an approval and the gate refuses, but retiring a REJECT weakly removes the
+        only record that blocks the unit.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0001", "reject", reviewer="independent-qa",
+                               author="the-author", issues="a real defect")
+            row = mod.read_verdicts(root)[-1]
+            path = mod.verdicts_path(root)
+            path.write_text(
+                path.read_text(encoding="utf-8") + "\n" + mod._SUPERSEDE_PREFIX
+                + f"unit=US0001 row-date={row['date']} row-verdict=REJECT "
+                  "row-reviewer=independent-qa row-author=the-author "
+                  "authorised-by=the-author boundary=- reason=inconvenient "
+                  "recorded=2026-07-31\n", encoding="utf-8")
+            marked = mod.read_verdicts(root)[-1]
+            self.assertTrue(marked["superseded"], "the hand append did parse - if this fails "
+                                                  "the test proves nothing about the gate")
+            self.assertFalse(mod._is_principal_superseded(root, "US0001", marked),
+                             "the backstop must judge this correction non-principal")
+            live = mod.verdict_for(root, "US0001")
+            self.assertIsNotNone(live, "an author retired the REJECT blocking their own work")
+            self.assertEqual("REJECT", live["verdict"])
+
+    def test_a_PRINCIPAL_supersession_still_retires_a_reject(self) -> None:
+        """The other half, or the repair is just a refusal to correct anything. A genuine
+        principal - not the author, and having done no review work on the unit - retires the
+        row exactly as before."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0002", "reject", reviewer="independent-qa",
+                               author="the-author", issues="filed against the wrong unit")
+            date = mod.read_verdicts(root)[-1]["date"]
+            mod.record_supersession(root, "US0002", date=date, reviewer="independent-qa",
+                                    reason="filed against the wrong unit",
+                                    authorised_by="Darren Benson (operator)",
+                                    boundary="operator console")
+            self.assertIsNone(mod.verdict_for(root, "US0002"))
+
     def test_verdict_for_skips_the_superseded_row_and_falls_back(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
