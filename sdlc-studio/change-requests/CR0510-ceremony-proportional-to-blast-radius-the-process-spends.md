@@ -61,19 +61,95 @@ What breaks if nothing changes: the backlog grows faster than it clears, plans u
 - [ ] The review tier is derived from the diff, persisted on the verdict and read by conformance, with a test-only change deriving Tier B rather than the no-review tier
 - [ ] A reviewer is scoped to the changed hunks, and a defect in untouched code is reported as pre-existing rather than blocking the unit beside it
 - [ ] Every finding carries a disposition, only TRACKED mints an artefact, and a trivial correction has a legal path that does not require one
-- [ ] The unit suites run once per push rather than once per commit, and the measured per-commit gate is below the 380s budget without the budget being raised again
+- [ ] The test selection pre-commit computes REACHES the suite runners, so `total.tests` stops reading the full count on every run
 - [ ] Re-running the author-retires-their-own-REJECT scenario still fails under the new tiering, proving the lighter process did not lose the defect that justified the heavy one
+
+## Review correction
+
+An independent design review falsified four of this CR's recommendations before
+any of it was built. Recorded here rather than quietly edited out, because a
+request carrying advice a review has disproved is the defect this CR is about.
+
+**The headline is a two-line bug, not a design.** `.githooks/commit-msg`
+deletes the pre-commit handover at line 158 and reads the computed test
+selectors out of that same file at line 200. `selectors` is therefore ALWAYS
+empty, the run records `verdict-mode full`, and neither suite runner accepts a
+selector anyway. Confirmed in telemetry: `total.tests` reads 6,152 to 6,174 on
+all ten recorded runs, which is the whole suite every time. Several hundred
+lines of selection logic - `select_tests`, `suite_read_map`, `_import_graph`,
+`test_relevant_paths` - run, produce an answer, and the answer is discarded.
+The 479s of suite time in a 557s gate is the cost of a mitigation this project
+already designed, shipped and disconnected.
+
+**Moving the suites to pre-push is WRONG and this CR originally recommended
+it.** The tree is 207 commits ahead of origin and has not pushed in five days,
+so a pre-push hook would fire once per five days over a 207-commit window,
+and the GitHub workflow has not run in that time either. The correct action is
+to ADD the push boundary that `gate.BOUNDARIES` already declares, keep the
+suites per commit but SELECTED, and push far more often.
+
+**A round cap of 2 binds nothing.** `critic.review_ceiling`,
+`review_round_guard`, `classify_finding`, `escalation_for` and
+`round_cost_report` all exist and have no callers outside their own module and
+tests. Rounds increment only in `record_sprint_review`; a rejoinder increments
+nothing and `critic.PHASES` has no rejoinder phase, so the three-level
+recursion measured above would have passed a cap of 2 untouched. Worse,
+`classify_finding` can only ever return FRESH because every recorded round has
+`repaired: []` and `tokens: null` - so the one instrument that distinguishes a
+fresh finding from a defect the repair itself introduced is blind. Feed the
+meters first, then make the rule conditional on classification rather than on
+a count.
+
+**Tier C defined by path is provably wrong in this repo.** `test_relevant_paths`
+already measures that the suites read the hooks, the workflow, `install.sh`,
+`package.json`, the reference docs, the help pages and the shipped artefacts.
+Prose here IS executable surface. A deriver must also distinguish "git could
+not say" from "nothing changed": `changed_paths` returns `[]` on a clean tree,
+and `conformance` re-judges every Done unit on every commit, so a naive
+deriver would silently band the whole corpus C.
+
+**Capping bug criteria at three leaves three fake criteria.** The skeleton
+backlog is manufactured by `file_finding.derived_criteria`, which paraphrases
+the finding's own prose into checkbox criteria that satisfy `count_acs`, the
+engagement floor and conformance's `specified` stage. Ten of the 29 open bugs
+carry only these. Fix it at the source rather than counting the output.
+
+**One cause not previously named**: `capacity` was raised from 1M to 15M
+tokens because every plan reported OVER BUDGET and the instrument had become a
+constant. The plan gate is effectively off, and the 26 units carried out of
+RUN-01KYTKA1 are its output - a larger source of carried work than any review
+round.
 
 ## Recommendation
 
-All of them, in that order, and land the first and fourth before anything else so the rest is measurable against a quieter baseline.
+REVISED after the review above.
 
-The sequencing matters more than the content. The switch-on costs almost nothing because the code exists. The gate split is the largest immediate saving and is reversible by deleting one file. Both are independent of the tier work, which is the only part needing real design.
+Land these three first, in order, because each makes the next measurable and
+none depends on the tier design:
 
-One verification is non-negotiable and belongs in every unit's criteria: re-run the scenario where an author retires the REJECT blocking their own work, and confirm Tier A still catches it. If the lighter process cannot find the defect that justified the heavy one, the tiering is wrong and must be reverted rather than argued for.
+1. **Reconnect the test selection** - move the handover delete after the
+   selector read, and pass the selectors to both suite runners. Two lines plus
+   a runner argument, and it is the single highest-value repair here.
+2. **Add the push boundary** that `gate.BOUNDARIES` already declares, keep the
+   suites per commit, and push far more often. Do NOT move them.
+3. **Feed the round instruments** - `tokens` and `repaired` at every
+   `record_sprint_review` call site, and count rejoinders as rounds. Land the
+   meters, run one sprint, read the numbers before capping anything.
+
+Then switch on `triage_noise`, wire `claimed_proof_gaps`, and fix
+`derived_criteria` at source. Build the band deriver as a REPORTING lane wired
+to nothing for a sprint, and only let ceremony read it once its bands can be
+compared against a human's.
+
+One verification is non-negotiable and belongs in every unit's criteria:
+re-run the scenario where an author retires the REJECT blocking their own
+work, and confirm the highest band still catches it. If the lighter process
+cannot find the defect that justified the heavy one, the tiering is wrong and
+must be reverted rather than argued for.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-31 | Claude Opus 5 | Raised |
+| 2026-07-31 | Claude Opus 5 | REVISED after an independent design review falsified four recommendations. The headline is now a two-line ordering bug in `.githooks/commit-msg` that discards the test selection the pre-commit already computes, confirmed in telemetry: `total.tests` reads the full suite on all ten recorded runs. Moving the suites to pre-push was WRONG - the tree is 207 commits unpushed, so that hook would fire once per five days. A round cap of 2 binds nothing because rejoinders increment no counter and the classification instruments are unfed. Tier C by path is disproved by this repo's own `test_relevant_paths` measurement. Capping bug criteria leaves the derived ones intact; `derived_criteria` is the source. |
