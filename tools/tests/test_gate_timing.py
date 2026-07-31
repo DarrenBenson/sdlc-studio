@@ -310,8 +310,10 @@ class ScopeTests(unittest.TestCase):
                 gt.scope_ok(root, "total", 1171, loader_error=True, selected=True)["ok"])
 
     def test_a_selected_count_is_recorded_in_its_OWN_series(self) -> None:
-        """Mixed into the full counts a selected run would drag the peak down until the floor
-        stopped protecting anything - the floor would erode itself, one cheap commit at a time."""
+        """The peak is a `max`, so one selected count mixed in is harmless today. The history is
+        a rolling window, though, so a stretch of selected commits evicts every full count and
+        the peak collapses to a subset's - the floor then judging full runs against a fraction.
+        Separated at the source rather than relying on the window never filling."""
         import argparse
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -322,6 +324,30 @@ class ScopeTests(unittest.TestCase):
             self.assertIn("total.selected.tests", data)
             self.assertNotIn(1171, data.get("total.tests", []),
                              "a selected count landed in the full series and will erode the peak")
+
+    def test_the_budget_reports_the_series_the_run_ACTUALLY_used(self) -> None:
+        """A budget line naming a number this commit did not pay is worse than none, because it
+        is believed. Reading `total` unconditionally reported the last FULL run after a cheap
+        one: the first selected commit ran in 226s and the line said `OVER - 554s`."""
+        import argparse
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "gate_budget:\n  seconds: 380\n", encoding="utf-8")
+            gt.record(root, "total", 554)
+            rep = gt.budget_report(root)
+            self.assertIn("554", rep["detail"])
+            gt.record(root, "total.selected", 226)
+            rep = gt.budget_report(root)
+            self.assertIn("226", rep["detail"],
+                          "the budget reports a full run's duration after a selected commit")
+            self.assertIn("selected run", rep["detail"],
+                          "a selected total is reported without saying so, so its drift reads "
+                          "as like-for-like against the full-run baseline")
+            gt.record(root, "total", 540)
+            self.assertIn("540", gt.budget_report(root)["detail"],
+                          "the report stayed on the selected series after a full run")
 
     def test_a_loader_error_is_refused_even_at_a_full_count(self) -> None:
         """The filed reproduction. A module that fails to import is a FACT, not a threshold, so it

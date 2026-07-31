@@ -44,6 +44,12 @@ def record(root: Path, suite: str, seconds: float) -> dict:
     runs = [float(x) for x in data.get(suite, []) if isinstance(x, (int, float))]
     runs.append(round(float(seconds), 1))
     data[suite] = runs[-HISTORY:]
+    # Which series the most recent per-commit TOTAL went into. Written here, where the fact is
+    # known, so the budget report reads what actually happened rather than inferring it from
+    # two series' lengths - an inference that cannot tell "selected ran last" from "selected
+    # ran once, a while ago".
+    if suite in ("total", "total.selected"):
+        data["total.last_series"] = "selected" if suite == "total.selected" else "full"
     path = root / REL
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
@@ -148,6 +154,16 @@ def budget_config(root: Path) -> dict | None:
     return block if isinstance(block, dict) else None
 
 
+def _ran_selected(root: Path) -> bool:
+    """Did the most recent run record a SELECTED total rather than a full one?
+
+    Read from the marker `record` writes at the moment it writes the total, because that is
+    where the fact is known. A repo that has never run selected has no marker and reads False,
+    so the report behaves exactly as it did before.
+    """
+    return _load(root).get("total.last_series") == "selected"
+
+
 def budget_report(root: Path) -> dict | None:
     """Compare the latest recorded per-commit total against the declared budget.
 
@@ -162,12 +178,23 @@ def budget_report(root: Path) -> dict | None:
         budget = float(block.get("seconds"))
     except (TypeError, ValueError):
         return None
-    measured = latest(root, "total")
+    # Read the series this commit ACTUALLY ran in. A selected run records into
+    # `total.selected`, so reading `total` unconditionally reported the last FULL run's
+    # duration after a cheap commit - the first selected commit ran in 226s and the line said
+    # `OVER - 554s`, which is a measurement describing a different commit. A budget report that
+    # names a number this run did not pay is worse than none, because it is believed.
+    selected = latest(root, "total.selected")
+    full = latest(root, "total")
+    measured, series = (selected, "selected") if _ran_selected(root) else (full, "full")
     if measured is None:
         return None
     baseline = block.get("baseline_seconds")
     when = block.get("baseline_date")
     detail = f"{measured:.0f}s of a {budget:.0f}s budget"
+    if series == "selected":
+        # Named, because a selected total is not comparable with the full-run baseline below
+        # and a reader must not take the drift figure for a like-for-like one.
+        detail += " [selected run]"
     if baseline is not None and when:
         # The TREND, not just the instantaneous value. Reporting only "under budget" is how
         # test_gate.py grew 28% in two days without anyone noticing: it was under every ceiling
@@ -197,9 +224,12 @@ def cmd_scope(args: argparse.Namespace) -> int:
     root = Path(args.root)
     selected = bool(getattr(args, "selected", False))
     verdict = scope_ok(root, args.suite, args.tests, args.loader_error, selected=selected)
-    # A selected run's counts go in their own series. Mixed into the full ones they would drag
-    # the peak down until the floor stopped protecting anything, which is the failure this
-    # separation exists to prevent rather than a tidiness preference.
+    # A selected run's counts go in their own series. The peak is a `max`, so one selected
+    # count mixed in is harmless TODAY - but the history is a rolling window of HISTORY runs,
+    # so a stretch of selected commits evicts every full count and the peak collapses to a
+    # selected one. The floor would then be judging full runs against a subset's count, which
+    # is the erosion this separation prevents. Stated as the eviction it is, rather than as an
+    # immediate drag it is not.
     suffix = ".selected" if selected else ""
     record(root, f"{args.suite}{suffix}.tests", args.tests)
     if not verdict["ok"]:
