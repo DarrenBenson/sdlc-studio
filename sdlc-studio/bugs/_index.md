@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 30 |
+| Open | 31 |
 | In Progress | 0 |
 | Fixed | 352 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **465** |
+| **Total** | **466** |
 
 ## All Bugs
 
@@ -183,6 +183,7 @@
 | [BG0463](BG0463-twenty-non-blocking-findings-from-the-run-01kytka1.md) | Twenty non-blocking findings from the RUN-01KYTKA1 batch-boundary review: stale counts, dead code, unmarked truncation, over-claiming docstrings and three tests whose names promise more than they assert | Open | Medium | 2026-07-31 | 2026-07-31 |
 | [BG0464](BG0464-the-coverage-gate-fails-open-on-a-hand.md) | The coverage gate fails open on a hand-appended supersession: an author retires the REJECT blocking their own work with one line, and the close reports the unit covered by an independent pass | Fixed | Critical | 2026-07-31 | 2026-07-31 |
 | [BG0465](BG0465-a-rendering-path-pinned-by-one-single-value.md) | A rendering path pinned by one single-value assertion accepts a hardcoded constant, and a sweep that named handoff.py in its own Affects never touched it | Fixed | High | 2026-07-31 | 2026-07-31 |
+| [BG0466](BG0466-a-v3-id-carries-no-ordinal-so-every.md) | A v3 id carries no ordinal, so every v3 artefact scores 0 against the provenance cutoff and is exempted as pre-adoption legacy; and the run-scoping discriminator on the finding-placement count is unguarded | Open | High | 2026-07-31 | 2026-07-31 |
 
 ## Archived Releases
 

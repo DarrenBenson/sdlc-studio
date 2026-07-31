@@ -55,12 +55,12 @@ Add `stem_record_id` to the shared library: the same two key schemas as `extract
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FindingPlacementIsMeasuredNotConstantTests::test_BOTH_rendered_numbers_move_with_their_own_input
 - **Verified:** yes (2026-07-31)
 
-### AC2: the handoff locator resolves both key schemas
+### AC2: the handoff locator resolves both key schemas, through the production entry points
 
 - **Given** a v2 handoff key and a v3 `HO-<ulid>-slug` key
 - **When** the document is located by id
 - **Then** both resolve, because `split("-")[0]` yields the bare prefix `HO` for the v3 form and `extract_record_id` returns None for a family outside `ARTIFACT_TYPES` - so reaching for either alone is a defect, and the shared `stem_record_id` is the one idiom that answers for every family
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::RefreshReadsBothKeySchemasTests::test_a_v3_handoff_key_resolves_to_its_document
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::RefreshReadsBothKeySchemasTests::test_a_v3_handoff_key_resolves_through_refresh_and_the_gate
 - **Verified:** yes (2026-07-31)
 
 ## Revision History
@@ -68,4 +68,5 @@ Add `stem_record_id` to the shared library: the same two key schemas as `extract
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-31 | Claude Opus 5 | Filed |
+| 2026-07-31 | Claude Opus 5 | The rejoinder review ruled AC1 CLOSED and AC2 OVER-CLAIMED. AC2's first verifier RE-IMPLEMENTED `refresh`'s locator inline - under a docstring claiming it did not - so the repaired line had zero cover and the seat's mutant survived the whole module: the same defect BG0442 was filed for, reproduced inside BG0442's own repair. The test now drives `handoff.refresh` and `gate._handoff_present`. Two further readers of the same artefact family were carrying the identical defect: `gate._handoff_present` globbed a hyphen-stripped stem, so a linked v3 handoff reported MISSING from a blocking close lane, and its link check searched for the stripped form too. Both fixed. The provenance comment claimed the sweep stopped v3 artefacts reading as legacy; it does not, because `id_number` returns None for a ULID - corrected to what the code does, with the real change (a hyphenated v2 key now ranked) pinned by a test, and the v3 exemption filed as BG0466. |
 | 2026-07-31 | Claude Opus 5 | Both blocking halves repaired. AC3 (no `split("-")[0]` id parse remains) holds by census over the shipped scripts and is covered by AC2's mutation; `provenance.py` routes through `extract_record_id`, correct there because it walks `ARTIFACT_TYPES`. |

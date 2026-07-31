@@ -1398,13 +1398,27 @@ def _handoff_present(root: str, handoff_id: str) -> dict:
     rr = Path(root)
     stem = str(handoff_id).replace("-", "").upper()
     d = rr / "sdlc-studio" / "handoffs"
-    hits = sorted(d.glob(f"{stem}*.md")) if d.is_dir() else []
+    # Match on the document's own PARSED key, not on a glob built by stripping hyphens out of
+    # the id. `HO-<ulid>` stripped to `HO<ulid>` globs `HO<ulid>*.md` and matches nothing on
+    # disk, so this lane reported "missing handoff" - blocking - over a handoff that existed
+    # and was linked from its retro. The same defect BG0452 swept out of three readers, in a
+    # fourth wearing a different idiom, in the one place whose verdict stops a close.
+    norm = sdlc_md.norm_id(str(handoff_id))
+    hits = sorted(p for p in d.glob("*.md")
+                  if p.is_file()
+                  and sdlc_md.norm_id(sdlc_md.stem_record_id(p.stem) or "") == norm
+                  ) if d.is_dir() else []
     if not hits:
         return {"count": 1, "blocking": True,
                 "detail": f"missing handoff {handoff_id} - a run that stopped short of its "
                           f"goal owes one (`handoff generate --outcome <how it ended>`)"}
     retros = rr / "sdlc-studio" / "retros"
-    disp = f"{stem[:2]}-{stem[2:]}" if stem.startswith("HO") else stem
+    # Both derived from the document that was actually FOUND. Built from the hyphen-stripped
+    # id instead, the link pattern searched for `HO<ulid>` while the retro links
+    # `HO-<ulid>-slug.md`, so a correctly linked v3 handoff reported "exists but no retro
+    # links it" - the refusal one step further down the same lane.
+    disp = sdlc_md.stem_record_id(hits[0].stem) or str(handoff_id)
+    stem = hits[0].stem
     # A LINK, not a mention. A substring scan for the id passes on a retro whose prose
     # DENIES the handoff exists ("we never wrote HO-0001") - it would certify the very
     # absence it is meant to catch. The check is the markdown link shape the writer emits

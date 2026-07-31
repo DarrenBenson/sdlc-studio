@@ -660,31 +660,42 @@ class RefreshReadsBothKeySchemasTests(unittest.TestCase):
     one still carrying the defect, which is why a sweep is stated as a set of call sites and
     then checked, rather than declared done."""
 
-    def _find(self, root, handoff_id):
-        """`refresh`'s locator, exercised through the module rather than re-implemented."""
-        from lib import sdlc_md as _md  # noqa: PLC0415
-        norm = _md.norm_id(handoff_id)
-        return next((p for p in sorted((root / "sdlc-studio" / "handoffs").glob("*.md"))
-                     if p.is_file()
-                     and _md.norm_id(_md.stem_record_id(p.stem) or "") == norm), None)
-
-    def test_a_v3_handoff_key_resolves_to_its_document(self) -> None:
+    def test_a_v3_handoff_key_resolves_through_refresh_and_the_gate(self) -> None:
+        """Driven through the PRODUCTION entry points, because the first attempt at this test
+        re-implemented `refresh`'s locator inline - under a docstring claiming it did not - so
+        the repaired line had zero cover and the mutant that found the defect survived the whole
+        module. That is the same defect BG0442 was filed for, reproduced inside BG0442's own
+        repair commit. A verifier that does not execute the code its criterion is about tests
+        its own copy of the answer."""
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
-            hd = root / "sdlc-studio" / "handoffs"
-            hd.mkdir(parents=True)
-            for stem, uid in (("HO0001-a-run", "HO0001"),
-                              ("HO-01JQZ0000000000000000000-a-run",
-                               "HO-01JQZ0000000000000000000")):
-                (hd / f"{stem}.md").write_text(f"# {uid}: x\n", encoding="utf-8")
-            for stem, uid in (("HO0001-a-run", "HO0001"),
-                              ("HO-01JQZ0000000000000000000-a-run",
-                               "HO-01JQZ0000000000000000000")):
-                with self.subTest(key=uid):
-                    got = self._find(root, uid)
-                    self.assertIsNotNone(got, f"{uid!r} matched no document - the locator is "
-                                              f"splitting the key on its first hyphen")
-                    self.assertEqual(f"{stem}.md", got.name)
+            _handoff_index(root)
+            _story(root, 1, status="Done")
+            _story(root, 2, status="In Progress")
+            run_state.open_run(root, batch=["US0001", "US0002"], goal="done")
+            rec = handoff.generate(root, title="a run", batch=["US0001", "US0002"],
+                                   outcome=run_state.BLOCKED)
+
+            # Re-key the document to the v3 schema the product now mints by default.
+            v3 = "HO-01JQZ0000000000000000000"
+            old = Path(rec["path"])
+            new = old.with_name(f"{v3}-a-run.md")
+            new.write_text(old.read_text(encoding="utf-8").replace(rec["id"], v3),
+                           encoding="utf-8")
+            old.unlink()
+
+            self.assertIsNotNone(handoff.refresh(root, v3, batch=["US0001", "US0002"]),
+                                 "refresh could not find a v3-keyed handoff - the locator is "
+                                 "splitting the stem on its first hyphen")
+
+            # ...and the gate lane that BLOCKS a close on a missing handoff sees it too.
+            retro = _retro(root)
+            retro.write_text(retro.read_text(encoding="utf-8")
+                             + f"\n[{v3}](../handoffs/{new.name})\n", encoding="utf-8")
+            got = gate._handoff_present(root, v3)
+            self.assertEqual(0, got["count"],
+                             f"the gate reports a linked handoff missing: {got['detail']}")
+            self.assertIn("linked", got["detail"])
 
 
 class WorklistTests(unittest.TestCase):

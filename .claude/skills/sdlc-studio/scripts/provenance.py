@@ -94,8 +94,13 @@ def check(repo_root: Path | str, types: list[str] | None = None) -> dict:
         # checker can NAME it. Re-reading here swallowed the OSError and reported the
         # file clean, and crashed outright on a non-UTF-8 one.
         for p, text in sdlc_md.iter_artifact_files(t, root):
-            # The SHARED parser: `split("-")[0]` on a v3 key yields the bare type prefix,
-            # so the id number came back 0 and every v3 artefact read as pre-adoption legacy.
+            # The SHARED parser, so the id is read the one way. What this actually changes:
+            # a HYPHENATED v2 key `BG-9007-slug` used to split to `BG`, whose id number is
+            # None, so it scored 0 and was exempted as pre-adoption legacy; it now scores 9007
+            # and is checked. It does NOT change the v3 case - `id_number` returns None for a
+            # ULID by design, so a v3 artefact still scores 0 and is still exempt. An ordinal
+            # cutoff cannot rank an id that carries no ordinal, which is a real hole and a
+            # different one; it is filed rather than papered over with a comment here.
             aid = sdlc_md.extract_record_id(p.stem) or p.stem
             idn = sdlc_md.id_number(aid) or 0  # number is in the id prefix, not the slug
             if idn <= cutoff:  # legacy, pre-adoption: exempt

@@ -88,6 +88,23 @@ class CheckTests(unittest.TestCase):
             self.assertIn("US0005", ids)
             self.assertNotIn("US0010", ids)
 
+    def test_a_HYPHENATED_v2_key_is_ranked_by_its_number_not_exempted(self) -> None:
+        """BG0465. The id was read with `stem.split("-")[0]`, so `BG-9007-slug` parsed to the
+        bare prefix `BG`, whose id number is None. It scored 0, fell under any cutoff, and was
+        exempted as pre-adoption legacy - an unstamped artefact the check reported clean.
+
+        The v3 case is deliberately NOT asserted here: `id_number` returns None for a ULID by
+        design, so a v3 artefact still scores 0 and is still exempt. Writing that in as though
+        the sweep fixed it is the over-claim an independent seat caught in the comment beside
+        this code."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _story(repo, "US-9007-x.md", UNSTAMPED.replace("US0005", "US-9007"))
+            r = prov.check(repo, ["story"])
+            self.assertIn("US-9007", [f["id"] for f in r["findings"]],
+                          "a hyphenated v2 key was exempted - its id is being split on the "
+                          "first hyphen, so it carries no number to rank")
+
     def test_advisory_by_default(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
