@@ -1,6 +1,6 @@
 # Bug Index
 
-**Last Updated:** 2026-07-30
+**Last Updated:** 2026-07-31
 
 ## Summary
 
@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 23 |
 | In Progress | 0 |
-| Fixed | 349 |
+| Fixed | 350 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **455** |
+| **Total** | **456** |
 
 ## All Bugs
 
@@ -173,6 +173,7 @@
 | [BG0453](BG0453-sprint-lane-return-tracebacks-on-an-unreadable-run.md) | sprint lane return tracebacks on an unreadable run state AFTER running the unit's acceptance criteria, discarding the verification result - the third occurrence of a finding rejected twice | Fixed | Critical | 2026-07-30 | 2026-07-30 |
 | [BG0454](BG0454-the-confinement-write-detector-reads-list-remove-as.md) | the confinement write detector reads list.remove as a filesystem write, so a read-only module is censused as a workspace writer | Fixed | Low | 2026-07-30 | 2026-07-30 |
 | [BG0455](BG0455-sprint-stop-cannot-tell-an-unbuilt-unit-from.md) | sprint stop cannot tell an unbuilt unit from one the two-role gate holds at Review, so it reports work nobody can do as work that could have proceeded | Open | Medium | 2026-07-30 | 2026-07-30 |
+| [BG0456](BG0456-a-ruling-verb-short-circuits-the-destination-check.md) | A ruling verb short-circuits the destination check, so a tick citing an artefact nothing holds is accepted - and the corpus-read pin is inert because its fixture never scales | Fixed | High | 2026-07-31 | 2026-07-31 |
 
 ## Archived Releases
 

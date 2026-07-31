@@ -1758,30 +1758,64 @@ def unresolved_questions(text: str, repo_root=None) -> list:
             # saying there ARE no questions. Reading it as an unanswered one would force ten
             # already-correct artefacts to be "fixed", which is a guard manufacturing work.
             continue
+        defect = _citation_defect(item, own, repo_root)
         if _RULING_RE.search(item) or _decision_cited(item, repo_root):
             # A ruling recorded ON THE ITEM is the same fact as one moved under a heading, and
             # a decision row is the project's own form for a ruling. Demanding the heading
             # would be demanding a layout, not an answer.
+            #
+            # But a ruling that NAMES a destination is held to that destination, exactly as the
+            # follow-up route is. The verb used to skip the check outright, so `resolved by
+            # BG9999` - a ruling citing an artefact nothing in the workspace holds - was
+            # accepted while the identical citation without the verb was refused. Four words of
+            # prose bought an exemption from the one thing being checked, which is the
+            # tick-pointing-at-nothing this whole helper exists to refuse.
+            if defect:
+                offending.append(defect)
             continue
         if state == " ":
             offending.append(item)
             continue
-        cited = [c for c in ID_SEARCH_RE.findall(item)]
-        if not cited:
+        if not ID_SEARCH_RE.findall(item):
             offending.append(f"{item} (ticked with no ruling and no follow-up id)")
             continue
-        # An artefact citing ITSELF answers nothing. `find_by_id` only proves an id resolves,
-        # and an artefact always resolves to itself, so self-citation satisfied the follow-up
-        # route in full - which is precisely the "tick pointing at nothing" this docstring
-        # promises cannot happen. A follow-up is somewhere ELSE by definition.
-        elsewhere = [c for c in cited if not own or norm_id(c) != own]
-        if not elsewhere:
-            offending.append(f"{item} (ticked citing only itself, which is not a follow-up)")
-            continue
-        if repo_root is not None and not any(find_by_id(repo_root, c) for c in elsewhere):
-            offending.append(f"{item} (cites {', '.join(elsewhere)}, "
-                             "which resolves to no artefact)")
+        if defect:
+            offending.append(defect)
     return offending
+
+
+def _citation_defect(item: str, own: str, repo_root) -> str:
+    """Why an item's cited destination answers nothing, or "" when it answers.
+
+    ONE destination check, consulted by BOTH routes out of an open question, so a ruling and a
+    follow-up cannot be held to different standards - two readings of one rule is two rules,
+    and the looser one wins.
+    """
+    # The decision route SETTLES the item when it holds, before any follow-up analysis. A
+    # ruling that names a real decision row has named its destination, and an artefact citing
+    # its own id ALONGSIDE that row - "RULED MOOT: CR0019 is Superseded, see D0011" - is
+    # describing what was ruled, not offering itself as its own follow-up. Running the
+    # self-citation check first reported three such items across the live corpus.
+    decision_ids = _DECISION_ID_RE.findall(item)
+    if decision_ids:
+        if _decision_cited(item, repo_root):
+            return ""
+        if _decisions_table(repo_root) is not None:
+            return (f"{item} (cites decision row {', '.join(decision_ids)}, "
+                    "which the decisions table does not hold)")
+        return ""
+    cited = ID_SEARCH_RE.findall(item)
+    if not cited:
+        return ""
+    # An artefact citing ITSELF answers nothing. `find_by_id` only proves an id resolves, and an
+    # artefact always resolves to itself, so self-citation satisfied the follow-up route in
+    # full. A follow-up is somewhere ELSE by definition.
+    elsewhere = [c for c in cited if not own or norm_id(c) != own]
+    if not elsewhere:
+        return f"{item} (ticked citing only itself, which is not a follow-up)"
+    if repo_root is not None and not any(find_by_id(repo_root, c) for c in elsewhere):
+        return f"{item} (cites {', '.join(elsewhere)}, which resolves to no artefact)"
+    return ""
 
 
 #: `None`, `None - <why>`, `n/a`: the template's way of saying there are no questions.
@@ -1794,6 +1828,23 @@ _RULING_RE = re.compile(r"\b(ruled by|ruled:|settled in|resolved by|decided:)\b"
 _DECISION_ID_RE = re.compile(r"\bD\d{4}\b")
 
 
+def _decisions_table(repo_root) -> str | None:
+    """The decisions table's text, or None when this project keeps none.
+
+    An absent table is not a failed lookup, and the two must not be conflated. A project that
+    records no decision rows must not have every `ruled by D0001` refused on the strength of a
+    file it never had - that is a guard manufacturing work. A table that EXISTS and does not
+    hold the cited id is a dangling citation, which is a real defect, and separating the two is
+    the only way to report the second without inventing the first.
+    """
+    if repo_root is None:
+        return None
+    try:
+        return (Path(repo_root) / "sdlc-studio" / "decisions.md").read_text(encoding="utf-8")
+    except OSError:
+        return None
+
+
 def _decision_cited(item: str, repo_root) -> bool:
     """True when the item cites a decision row that EXISTS.
 
@@ -1802,12 +1853,9 @@ def _decision_cited(item: str, repo_root) -> bool:
     ids = _DECISION_ID_RE.findall(item)
     if not ids:
         return False
-    if repo_root is None:
+    rows = _decisions_table(repo_root)
+    if rows is None:
         return True
-    try:
-        rows = (Path(repo_root) / "sdlc-studio" / "decisions.md").read_text(encoding="utf-8")
-    except OSError:
-        return False
     return any(re.search(rf"^\|\s*{d}\s*\|", rows, re.M) for d in ids)
 
 

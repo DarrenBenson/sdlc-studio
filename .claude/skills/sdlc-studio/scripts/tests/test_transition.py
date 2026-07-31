@@ -2650,6 +2650,66 @@ class OpenQuestionsGateTests(unittest.TestCase):
             transition.transition(root3, "US0001", "Done")
         self.assertIn("resolves to no artefact", str(ctx.exception))
 
+    def test_a_ruling_VERB_does_not_buy_an_exemption_from_the_id_it_cites(self) -> None:
+        """US0465 AC3, the fourth escape in the family. `_RULING_RE` matched before either
+        destination check ran, so `resolved by BG9999` - a ruling naming an artefact nothing in
+        the workspace holds - was ACCEPTED, while the identical citation without the verb was
+        refused. Four words of prose bought an exemption from the one thing being checked.
+
+        The unticked case matters as much as the ticked one: the verb branch sat above the
+        `state == " "` check too, so an open box wearing a ruling verb was accepted as well.
+        """
+        for body in ("- [x] deferred, resolved by BG9999\n",
+                     "- [ ] settled in BG9999\n",
+                     "- [x] ruled: see CR9999\n"):
+            with self.subTest(item=body.strip()):
+                root, path = self._repo("Review", f"## Open Questions\n\n{body}")
+                before = path.read_text(encoding="utf-8")
+                with self.assertRaises(ValueError) as ctx:
+                    transition.transition(root, "US0001", "Done")
+                self.assertIn("resolves to no artefact", str(ctx.exception))
+                self.assertEqual(before, path.read_text(encoding="utf-8"),
+                                 "a refused transition still wrote to the artefact")
+
+    def test_a_ruling_citing_a_decision_row_the_table_does_not_hold_is_refused(self) -> None:
+        """The same hole on the decision route. `_decision_cited` already tested for a row that
+        EXISTS, but `_RULING_RE` matched first for the natural phrasing, so its existence check
+        was unreachable for `ruled by D9999` - dead code standing beside the defect it was
+        written to prevent."""
+        root, _ = self._repo("Review", "## Open Questions\n\n- [x] X, ruled by D9999\n")
+        (root / "sdlc-studio" / "decisions.md").write_text(
+            "# Decisions\n\n| ID | Decision | Status |\n| --- | --- | --- |\n"
+            "| D0001 | something else | accepted |\n", encoding="utf-8")
+        with self.assertRaises(ValueError) as ctx:
+            transition.transition(root, "US0001", "Done")
+        self.assertIn("decisions table does not hold", str(ctx.exception))
+
+    def test_a_project_keeping_NO_decisions_table_is_not_held_to_one(self) -> None:
+        """An absent table is not a failed lookup. Refusing a cited decision row because the
+        project never kept a decisions file is a guard manufacturing work, and it is a different
+        fact from a table that exists and does not hold the id.
+
+        The item deliberately carries NO ruling verb. Written as `ruled by D0001` this test
+        passes whether the carve-out is present or not - `_RULING_RE` matches first and settles
+        the item, masking the branch entirely - and a mutation run caught it doing exactly that.
+        A bare citation is the only shape that reaches `_decision_cited`'s absent-table answer.
+        """
+        root, _ = self._repo("Review", "## Open Questions\n\n- [x] X, see D0001\n")
+        self.assertFalse((root / "sdlc-studio" / "decisions.md").exists())
+        transition.transition(root, "US0001", "Done")
+
+    def test_a_valid_decision_row_settles_the_item_even_beside_its_own_id(self) -> None:
+        """A ruling that names a real decision row has named its destination. An artefact citing
+        its own id ALONGSIDE that row - "RULED MOOT: CR0019 is Superseded, see D0011" - is
+        describing what was ruled, not offering itself as its own follow-up. Ordering the
+        self-citation check first reported three such items across the live corpus."""
+        root, _ = self._repo(
+            "Review", "## Open Questions\n\n- [x] RULED MOOT: US0001 is Superseded; see D0011\n")
+        (root / "sdlc-studio" / "decisions.md").write_text(
+            "# Decisions\n\n| ID | Decision | Status |\n| --- | --- | --- |\n"
+            "| D0011 | the ruling | accepted |\n", encoding="utf-8")
+        transition.transition(root, "US0001", "Done")
+
     def test_a_non_terminal_move_is_unaffected(self) -> None:
         """The bar is the TERMINAL status. A question is legitimate while work is in flight,
         and refusing it there would make the gate unusable."""

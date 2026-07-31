@@ -3682,13 +3682,23 @@ class CorpusReadOnceTests(unittest.TestCase):
         return len([p for p in seen if p.endswith(".md")])
 
     def _sweep(self, root: Path, n_units: int):
+        """A sweep whose LOOKUP COUNT scales with the corpus, which is what a real detector
+        pass does: it visits every unit, not one unit six times.
+
+        A fixed lookup count is why the pin below was inert for its whole life. With a constant
+        six lookups, an uncached run reads `6 x N` and a cached run reads `N`: both are linear
+        in N, so doubling the corpus doubles BOTH and the ratio is 2.0 whether the cache exists
+        or not. Neutering `corpus_cache` cost a 9x read increase and moved the asserted ratio
+        by nothing at all. Scaling the lookups makes the uncached case quadratic and the cached
+        case linear, which is the difference the assertion claims to be measuring.
+        """
         from lib import sdlc_md
         self._workspace(root, n_units)
 
         def run() -> None:
             with sdlc_md.corpus_cache():
-                for _ in range(6):     # six detectors, each of which walks the corpus
-                    sdlc_md.find_by_id(root, "US0001")
+                for i in range(1, n_units + 1):     # a detector pass visits every unit
+                    sdlc_md.find_by_id(root, f"US{i:04d}")
                     sdlc_md.children_of(root, "EP0001")
         return run
 
@@ -3704,10 +3714,16 @@ class CorpusReadOnceTests(unittest.TestCase):
                                  f"re-read per lookup")
 
     def test_the_read_count_does_not_scale_with_unit_count(self) -> None:
-        """US0532. The pin. Uncached, doubling the units quadruples the reads, because each of
-        the 2N lookups walks a corpus of 2N files. Cached, doubling the units doubles them -
-        every file is still read, but only once. A return to per-unit reading is then a red
-        test rather than a slower gate nobody attributes."""
+        """US0532. The pin. Uncached, doubling the units roughly QUADRUPLES the reads, because
+        each of the N lookups walks a corpus of N files - the sweep is quadratic. Cached,
+        doubling the units doubles them: every file is still read, but only once, so the sweep
+        is linear. A ceiling between the two therefore separates a cached sweep from an
+        uncached one, and a return to per-unit reading is a red test rather than a slower gate
+        nobody attributes.
+
+        The lookups must scale with the corpus for that to hold. They did not until BG0456: a
+        constant six lookups makes BOTH cases linear, so the ratio sat at 2.0 with the cache
+        live and at 2.0 with it neutered, and this assertion passed over a 9x regression."""
         with tempfile.TemporaryDirectory() as d1, tempfile.TemporaryDirectory() as d2:
             small = self._count_reads(self._sweep(Path(d1), 20))
             large = self._count_reads(self._sweep(Path(d2), 40))
@@ -3715,6 +3731,37 @@ class CorpusReadOnceTests(unittest.TestCase):
         self.assertLess(ratio, 3.0,
                         f"reads grew {ratio:.1f}x when the corpus doubled - that is per-unit "
                         f"reading, not per-run")
+
+    def test_the_sweep_fixture_ISSUES_a_lookup_per_unit(self) -> None:
+        """BG0456. The precondition the ratio pin above silently depends on, asserted directly.
+
+        A ratio test cannot report why it is inert. With a constant lookup count both the cached
+        and the uncached sweep are linear in the corpus, so the ratio is 2.0 either way and the
+        assertion holds over a total loss of the cache - which is how it passed for its whole
+        life. What makes the ratio meaningful is that the lookups THEMSELVES scale, and that is
+        a different fact from the ratio, so it needs its own assertion rather than a share of
+        one. Shrink the fixture back to a fixed count and this reddens immediately, naming the
+        cause, while the ratio test goes on passing and says nothing."""
+        from lib import sdlc_md
+        counts = {}
+        for n in (20, 40):
+            with tempfile.TemporaryDirectory() as d:
+                real = sdlc_md.find_by_id
+                seen = []
+
+                def counting(root, rid, _real=real, _seen=seen):
+                    _seen.append(rid)
+                    return _real(root, rid)
+
+                sdlc_md.find_by_id = counting
+                try:
+                    self._sweep(Path(d), n)()
+                finally:
+                    sdlc_md.find_by_id = real
+                counts[n] = len(seen)
+        self.assertEqual(counts[20], 20, f"{counts[20]} lookups over 20 units")
+        self.assertEqual(counts[40], 40, f"{counts[40]} lookups over 40 units - a fixture whose "
+                                         f"lookup count does not scale makes the ratio pin inert")
 
     def test_a_repeated_file_walk_reads_the_corpus_once(self) -> None:
         """The file memo on its own. The sweep test above passes on the child index alone, so
