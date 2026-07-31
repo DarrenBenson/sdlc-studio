@@ -1674,7 +1674,8 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
     def _enforced(check_id: str) -> bool:
         return dor is None or check_id in dor
     downgraded = [] if dor is None else sorted(
-        c for c in ("grooming.affects", "grooming.points", "grooming.split")
+        c for c in ("grooming.affects", "grooming.points", "grooming.split",
+                    "grooming.acs")
         if c not in dor)
     ungroomed: list[dict] = []
     oversized: list[dict] = []
@@ -1725,8 +1726,20 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
         else:
             sized = points is not None
             size_field = "Points"
+        # ACCEPTANCE CRITERIA. The gate asked only for Affects and Points, so a story whose
+        # criteria are still the grooming placeholder - the literal banner the template writes,
+        # or the bare `{{role}}/{{capability}}` scaffold - was certified GROOMED as long as it
+        # declared files and a size. Four such stories and 15 points were planned into a sprint
+        # on that green, in enforcing blocking mode, whose entire purpose is to refuse them.
+        # `conformance.story_is_ungroomed` already reads both shapes and already had this right;
+        # nothing asked it. Stories only: a bug or CR carries no user-story scaffold.
+        import conformance  # noqa: PLC0415 - deferred; one definition of "ungroomed", never a second
+        placeholder_ac = (it["type"] == "story" and _enforced("grooming.acs")
+                          and conformance.story_is_ungroomed(sdlc_md.read_text_safe(it["path"])))
         missing = (([] if declared or not _enforced("grooming.affects") else ["Affects"])
-                   + ([] if sized or not _enforced("grooming.points") else [size_field]))
+                   + ([] if sized or not _enforced("grooming.points") else [size_field])
+                   + (["Acceptance Criteria (still the grooming placeholder)"]
+                      if placeholder_ac else []))
         # All declared paths unresolvable = a fictional Affects. Named so the author can
         # fix the typo. Not applied when Affects is absent (that is the plainer "Affects" miss).
         if declared and len(unresolvable) == len(declared) and _enforced("grooming.affects"):

@@ -473,7 +473,14 @@ class AffectsRequiredAtRefineTests(unittest.TestCase):
             sprint = loader.load_script("sprint")
             bd = sprint.breakdown(root, [{"id": res["stories"][0], "type": "story",
                                           "path": str(story)}], skip_personas=True)
-            self.assertEqual(bd["ungroomed"], [], "planner refused a story refine called plannable")
+            # FOR AFFECTS, which is this test's subject and what the comment above says. A
+            # refined skeleton IS ungroomed on its criteria - that is the whole point of
+            # `refine --into`, whose output carries `{{placeholder}}` ACs for a human to
+            # author - so asserting the list is EMPTY asserted the opposite of the shipped
+            # contract, and the grooming gate had to be blind to criteria for it to hold.
+            missing = [m for u in bd["ungroomed"] for m in u["missing"]]
+            self.assertNotIn("Affects", missing,
+                             "planner refused a story refine called plannable, FOR AFFECTS")
 
     @unittest.skipUnless(HAVE_YAML, "PyYAML not installed - the recorded opt-out is unreadable")
     def test_the_opt_out_warns_instead_of_refusing(self) -> None:

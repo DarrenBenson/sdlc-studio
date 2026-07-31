@@ -1,6 +1,7 @@
 # BG0449: the plan's grooming gate reported ok in enforcing blocking mode over four stories that carry the ungroomed banner and three placeholders each
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (3/3 mutants killed; verified against the four real skeleton stories the gate had certified)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -38,8 +39,37 @@ This is the recorded lesson about skeleton stories arriving from `refine --into`
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `sprint-plan.json` records the breakdown gate as `mode: enforce, blocking: true, ungroomed: [], ok: true`, and lists US0564, US0565, US0566 and US0567 among...
-- [ ] Following the recorded steps no longer reproduces the defect: Measured at d7a1ad8f, 2026-07-30: All four were subsequently DROPPED from the batch as ungroomed, which is how the gate's failure became visible: the drop...
+### AC1: the grooming banner is REFUSED by the enforcing gate
+
+- **Given** a story declaring Affects and Points whose criteria are the template's literal ungroomed banner
+- **When** the breakdown gate runs in enforcing mode
+- **Then** it refuses and names the unit - the gate asked only for Affects and Points, so a story that declared files and a size was certified GROOMED however empty its criteria were, in the mode whose entire purpose is to refuse it. Four such stories and 15 points were planned into a sprint on that green
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheGroomingGateReadsTheCRITERIATests::test_the_BANNER_shape_is_refused
+- **Verified:** yes (2026-07-31)
+
+### AC2: the placeholder scaffold is refused too
+
+- **Given** a story whose criteria are the bare `{{role}}` / `{{capability}}` scaffold with the banner removed
+- **When** the gate runs
+- **Then** it refuses - either shape alone can be edited away: the banner is deleted by hand during grooming, and the scaffold is what remains if someone removes the banner without doing the work. `conformance.story_is_ungroomed` already read both and nothing asked it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheGroomingGateReadsTheCRITERIATests::test_the_PLACEHOLDER_scaffold_is_refused_too
+- **Verified:** yes (2026-07-31)
+
+### AC3: a genuinely groomed story still passes
+
+- **Given** a story with a real criterion and a Verify line
+- **When** the gate runs
+- **Then** it passes - the control the original tests apparently were, since "the gate passes a groomed plan" is satisfied just as well by a gate that always passes
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheGroomingGateReadsTheCRITERIATests::test_a_GROOMED_story_still_passes
+- **Verified:** yes (2026-07-31)
+
+### AC4: the new check can be stood down like every sibling
+
+- **Given** a project whose Definition of Ready names only `grooming.affects`
+- **When** the gate runs
+- **Then** the criteria check is reported downgraded rather than enforced. It reuses the EXISTING `grooming.acs` id, which the shipped Definition of Ready template already declares - minting a new id for a rule that already had one is the divergent-vocabulary defect this sprint keeps closing, and the shipped-default guard caught it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheGroomingGateReadsTheCRITERIATests::test_the_check_is_named_in_the_DoR_downgrade_list
+- **Verified:** yes (2026-07-31)
 
 ## Revision History
 

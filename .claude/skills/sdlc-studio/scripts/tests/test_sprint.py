@@ -10278,6 +10278,72 @@ class ArtefactKeysAreReadWithONEIdiomTests(unittest.TestCase):
             self.assertIsNone(sprint._retro_path(root, "RETRO9999"))
 
 
+class TheGroomingGateReadsTheCRITERIATests(unittest.TestCase):
+    """BG0449. `sprint-plan.json` recorded `mode: enforce, blocking: true, ungroomed: [],
+    ok: true` and listed four stories as GROOMED while each carried the template's literal
+    ungroomed banner and three `{{role}}/{{capability}}/{{benefit}}` placeholders. The gate
+    asked only for Affects and Points, so a story that declared files and a size was certified
+    groomed however empty its criteria were - in the mode whose entire purpose is to refuse
+    them. Four stories and 15 points were planned into a sprint on that green.
+    `conformance.story_is_ungroomed` already read both shapes; nothing asked it."""
+
+    def _story(self, d: Path, sid: str, ac: str) -> dict:
+        sd = d / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True, exist_ok=True)
+        (sd / "x.py").write_text("", encoding="utf-8")
+        path = sd / f"{sid}-x.md"
+        path.write_text(
+            f"# {sid}: s\n\n> **Status:** Draft\n> **Points:** 3\n"
+            f"> **Affects:** sdlc-studio/stories/x.py\n\n"
+            f"## Acceptance Criteria\n\n{ac}\n", encoding="utf-8")
+        return {"id": sid, "type": "story", "path": str(path)}
+
+    _BANNER = ("> **Ungroomed - acceptance criteria are a grooming placeholder** - author each "
+               "criterion while grooming.")
+    _SCAFFOLD = "### AC1: {{define}}\n\n- **Given** {{context}}\n- **When** {{action}}\n"
+    _REAL = "### AC1: it behaves\n\n- **Given** a thing\n- **Verify:** shell true\n"
+
+    def test_the_BANNER_shape_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bd = sprint.breakdown(root, [self._story(root, "US0001", self._BANNER)])
+            self.assertFalse(bd["ok"])
+            self.assertEqual([u["id"] for u in bd["ungroomed"]], ["US0001"])
+            self.assertIn("Acceptance Criteria", " ".join(bd["ungroomed"][0]["missing"]))
+
+    def test_the_PLACEHOLDER_scaffold_is_refused_too(self) -> None:
+        """Either shape alone can be edited away: the banner is removed by hand during
+        grooming, and the scaffold is what remains if someone deletes the banner without doing
+        the work. A gate reading only one of them checks something other than grooming."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bd = sprint.breakdown(root, [self._story(root, "US0002", self._SCAFFOLD)])
+            self.assertFalse(bd["ok"])
+            self.assertEqual([u["id"] for u in bd["ungroomed"]], ["US0002"])
+
+    def test_a_GROOMED_story_still_passes(self) -> None:
+        """The control the original tests apparently were: a gate that always passes satisfies
+        "the gate passes a groomed plan" just as well as a correct one does."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bd = sprint.breakdown(root, [self._story(root, "US0003", self._REAL)])
+            self.assertTrue(bd["ok"], f"a groomed story was refused: {bd['ungroomed']}")
+            self.assertEqual(bd["groomed"], ["US0003"])
+
+    def test_the_check_is_named_in_the_DoR_downgrade_list(self) -> None:
+        """Every other grooming check can be stood down by a project's Definition of Ready, and
+        one that cannot is a rule with no opt-out where its siblings all have one."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            dor = root / "sdlc-studio" / "definition-of-ready.md"
+            dor.parent.mkdir(parents=True, exist_ok=True)
+            dor.write_text("# Definition of Ready\n\n## Story\n\n- [ ] grooming.affects\n",
+                           encoding="utf-8")
+            bd = sprint.breakdown(root, [self._story(root, "US0004", self._BANNER)])
+            self.assertIn("grooming.acs", bd.get("downgraded") or [],
+                          "the new check cannot be stood down, unlike every sibling")
+
+
 class TheCloseCertifiesRatherThanReviewsTests(unittest.TestCase):
     """US0562. The close asserts that coverage EXISTS; it does not perform the review."""
 
