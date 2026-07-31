@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0265: A floor tolerates the failure it was written to catch.**
+- **L-0264: The grade of authority a correction needs should scale with the direction its mistake fails.**
+- **L-0263: A whole-file substring assertion over a document that also carries a Revision History is satisfied by the Revision History row describing...**
+- **L-0262: A guard that reads a document and compares it against a projection of itself can never fail in the reverse direction.**
+- **L-0261: A ratio or threshold test cannot report its own inertness, so the property that makes it meaningful needs its own assertion.**
 - **L-0260: **A speed-up test measures the wrong memo unless each is isolated.** Four mutants survived the corpus-cache work because the read-count...**
 - **L-0259: **Verify the premise before repairing it, and record it when it does not hold.** Three findings this sprint did not reproduce.**
 - **L-0258: **A guard that answers a narrower question than it claims reports the narrow answer as the broad one.** Eight of RV0024's residue bugs were...**
