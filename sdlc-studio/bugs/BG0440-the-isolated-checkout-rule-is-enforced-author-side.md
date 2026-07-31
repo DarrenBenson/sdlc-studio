@@ -63,16 +63,17 @@ Also worth checking during refine: whether the brief should refuse outright when
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::MutationResultCarriesItsTreeTests::test_a_tree_git_cannot_describe_is_UNESTABLISHED_not_shared
 - **Verified:** yes (2026-07-30)
 
-### AC4: the main worktree is not reported as isolated
+### AC4: a relative `--git-common-dir` cannot make a shared tree read as isolated
 
-- **Given** any ordinary checkout, where `--git-common-dir` comes back relative to the repo
+- **Given** a genuinely shared main worktree - one with another worktree attached to it - where `--git-common-dir` comes back relative to the repo
 - **When** isolation is established
-- **Then** it reports SHARED, not isolated - resolving that relative path against the process cwd made every fresh checkout look isolated, which is the fail-open direction and the one this qualifier exists to prevent
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::MutationResultCarriesItsTreeTests::test_the_main_worktree_is_reported_SHARED_not_isolated
-- **Verified:** yes (2026-07-30)
+- **Then** it reports SHARED, because that relative path is resolved against the repo and not against the process cwd; resolving it against the cwd made the two paths differ in every checkout, so every main worktree read as a linked one, which is the fail-open direction and the one this qualifier exists to prevent
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::MutationResultCarriesItsTreeTests::test_a_main_worktree_with_OTHERS_attached_is_reported_SHARED
+- **Verified:** yes (2026-07-31)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-30 | sdlc-studio agent (Claude Opus 5) | Filed |
+| 2026-07-31 | sdlc-studio agent (Claude Opus 5) | AC4 restated: the private-clone correction landed after it was written, so "any ordinary checkout reports SHARED" had become false against the shipped behaviour, and its verifier named a renamed test that selected nothing. Both now name the shared case the criterion actually defends. |
