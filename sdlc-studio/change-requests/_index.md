@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 10 |
+| Proposed | 11 |
 | Approved | 0 |
 | In Progress | 33 |
 | Complete | 445 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 21 |
 | Blocked | 0 |
-| **Total** | **510** |
+| **Total** | **511** |
 
 ## All Changes
 
@@ -332,6 +332,7 @@
 | [CR-0508](CR0508-a-verify-selector-naming-a-test-that-does.md) | a Verify selector naming a test that does not exist is accepted at write time, though the predicate that would refuse it already ships | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0509](CR0509-a-review-worktree-opens-at-a-stale-base.md) | A review worktree opens at a stale base, so every delegated reviewer's first act is discovering the units under review do not exist yet | Proposed | High | Improvement | 2026-07-31 | -- |
 | [CR-0510](CR0510-ceremony-proportional-to-blast-radius-the-process-spends.md) | Ceremony proportional to blast radius: the process spends gate-grade rigour on prose-grade changes, and the machinery that would stop it is built and switched off | Proposed | High | Improvement | 2026-07-31 | -- |
+| [CR-0511](CR0511-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Proposed | Low | Improvement | 2026-07-31 | -- |
 
 ## Archived Releases
 

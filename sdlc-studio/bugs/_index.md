@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 29 |
 | In Progress | 0 |
-| Fixed | 355 |
+| Fixed | 356 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **467** |
+| **Total** | **468** |
 
 ## All Bugs
 
@@ -185,6 +185,7 @@
 | [BG0465](BG0465-a-rendering-path-pinned-by-one-single-value.md) | A rendering path pinned by one single-value assertion accepts a hardcoded constant, and a sweep that named handoff.py in its own Affects never touched it | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0466](BG0466-a-v3-id-carries-no-ordinal-so-every.md) | A v3 id carries no ordinal, so every v3 artefact scores 0 against the provenance cutoff and is exempted as pre-adoption legacy; and the run-scoping discriminator on the finding-placement count is unguarded | Open | High | 2026-07-31 | 2026-07-31 |
 | [BG0467](BG0467-the-commit-gate-s-test-selection-reached-nothing.md) | The commit gate's test selection reached nothing: the handover was deleted before it was read, so every commit ran the whole suite | Fixed | High | 2026-07-31 | 2026-07-31 |
+| [BG0468](BG0468-three-high-severity-advisories-reach-the-tree-through.md) | Three high-severity advisories reach the tree through the markdown lint chain, and surfaced only because 208 commits were finally pushed | Fixed | High | 2026-07-31 | 2026-07-31 |
 
 ## Archived Releases
 
