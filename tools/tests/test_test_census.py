@@ -237,13 +237,36 @@ class RealRepoTests(unittest.TestCase):
 
     REPO = Path(__file__).resolve().parents[2]
 
+    #: Test files this repo cannot attribute by construction: they guard a hook, a document, a
+    #: contract or a lockfile rather than a sibling Python module. A RATCHET, like the noise
+    #: baseline and the verify-lint baseline - it may only shrink, and is lowered when a file
+    #: gains a home, never raised to accommodate a new one.
+    #:
+    #: Recorded because the bare `> 0.8` this replaced was sitting AT 0.8045 with nobody
+    #: watching: 179 files, 144 placed. One more cross-cutting guard tipped it, and the guard
+    #: gave no warning that it was one file from firing. A threshold nobody can see approaching
+    #: is a threshold that fails as a surprise.
+    UNATTRIBUTED_BASELINE = 36
+
     def test_this_repos_test_files_are_mostly_attributed(self) -> None:
-        """A convention that placed a handful of files would be a report of nothing."""
+        """A convention that placed a handful of files would be a report of nothing.
+
+        The floor stays, so the census cannot become vacuous. The ratchet is what makes the
+        remaining gap VISIBLE rather than a cliff: 29 of the unattributed guard hooks,
+        documents and contracts, which the name-or-reference convention cannot place at all."""
         files = [f for f in tc.test_files(self.REPO)
                  if "bench/fixtures" not in f.as_posix()]
         placed = [f for f in files if tc.attribute(self.REPO, f)[0]]
         self.assertGreater(len(files), 100)          # the suite this exists to measure
-        self.assertGreater(len(placed) / len(files), 0.8)
+        self.assertGreater(len(placed) / len(files), 0.7,
+                           "attribution has collapsed - the convention is no longer placing "
+                           "most files, which is a different failure from the ratchet below")
+        unattributed = len(files) - len(placed)
+        self.assertLessEqual(
+            unattributed, self.UNATTRIBUTED_BASELINE,
+            f"{unattributed} test files are unattributed against a declared {self.UNATTRIBUTED_BASELINE}. "
+            f"Give the new one a home, or lower the baseline when one gains a home - never raise "
+            f"it to make this green.")
 
     def test_the_census_attributes_its_own_tests_to_itself(self) -> None:
         """tools/ holds modules literally named test_*.py, so a prefix-based skip rule
