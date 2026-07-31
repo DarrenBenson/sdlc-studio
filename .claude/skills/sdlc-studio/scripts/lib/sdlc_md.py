@@ -1061,6 +1061,28 @@ def extract_record_id(stem: str) -> str | None:
     return m.group(1) if m else None
 
 
+#: A leading id token for ANY artefact family, including the ones outside `ARTIFACT_TYPES`.
+#: Same two key schemas as `ID_RE`, but a generic type prefix.
+_STEM_ID_RE = re.compile(r"^([A-Za-z]{1,6}(?:" + _V3_SUFFIX + r"|-?\d{4,}))")
+
+
+def stem_record_id(stem: str) -> str | None:
+    """The id at the start of a filename stem, for any artefact family. None when there is none.
+
+    `extract_record_id` answers this for the types in `ARTIFACT_TYPES` and ONLY those, so it
+    returns None for a handoff, a retro or a review - families that live in the workspace and
+    carry the same two key schemas. A caller reaching for it on those got None and read that as
+    "no such document".
+
+    That gap is why three readers hand-rolled `stem.split("-")[0]` instead, which yields the
+    bare type prefix `HO` for a v3 key `HO-<ulid>-slug`, so the id never matched and the reader
+    was blind to every key the product now mints by default. One idiom that covers every family
+    is the fix; a fourth hand-rolled copy was not.
+    """
+    m = _STEM_ID_RE.match(stem or "")
+    return m.group(1) if m else None
+
+
 def extract_ac_id(line: str) -> tuple[str, str] | None:
     """(ac_id, title) from an `### AC1: Title` heading or a `- **AC1:**` bullet."""
     m = AC_HEADING_RE.match(line)

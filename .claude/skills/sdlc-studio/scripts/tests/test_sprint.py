@@ -10217,11 +10217,45 @@ class FindingPlacementIsMeasuredNotConstantTests(unittest.TestCase):
 
     def test_the_reported_LINE_carries_the_computed_number(self) -> None:
         """A number computed and not rendered is a number nobody reads. The line is the whole
-        point: it is what makes the sprint goal's central claim falsifiable."""
-        root, rs = self._root(bugs=[("BG0500", "none open 2026-07-30T00:00:00Z"),
-                                    ("BG0501", "none open 2026-07-30T00:00:00Z")])
-        line = sprint._finding_placement(root)
-        self.assertIn("2 raised outside one", line)
+        point: it is what makes the sprint goal's central claim falsifiable.
+
+        TWO fixtures with different counts, because one is not a test. The sibling control
+        above says in terms that "a function returning a constant passes any single-value
+        assertion" and this test then made exactly that assertion: replacing the call with the
+        literal `2` survived all 623 tests of this file, at every scope an independent seat
+        tried. The control was placed on the helper and the defect was in the rendering path,
+        which is the half this test owns."""
+        counts = {}
+        for n in (1, 3):
+            bugs = [(f"BG050{i}", "none open 2026-07-30T00:00:00Z") for i in range(n)]
+            root, _ = self._root(bugs=bugs)
+            counts[n] = sprint._finding_placement(root)
+        self.assertIn("1 raised outside one", counts[1])
+        self.assertIn("3 raised outside one", counts[3])
+        self.assertNotIn("3 raised outside one", counts[1],
+                         "the rendered number does not move with the computed one")
+
+    def test_BOTH_rendered_numbers_move_with_their_own_input(self) -> None:
+        """The line carries two numbers and each needs its own control. Pinning one leaves the
+        other free to be a constant: hardcoding `raised` to 0 survived its own selector, and
+        hardcoding `outside` survived the whole module - the same defect twice, on the two
+        halves of one sentence. Varying the batch-raised count while holding the outside count
+        fixed separates them."""
+        rendered = {}
+        for n_in in (0, 2):
+            root, rs = self._root(bugs=[("BG0509", "none open 2026-07-30T00:00:00Z")])
+            rs.start_batch(root, ["US0001"])
+            for i in range(n_in):
+                bug = root / "sdlc-studio" / "bugs" / f"BG051{i}-x.md"
+                bug.write_text(f"# BG051{i}: x\n\n> **Status:** Open\n"
+                               "> **Raised-in-batch:** 2026-07-30T00:00:00Z\n", encoding="utf-8")
+                rs.note_finding(root, f"BG051{i}")
+            rendered[n_in] = sprint._finding_placement(root)
+        self.assertIn("0 raised at a batch boundary", rendered[0])
+        self.assertIn("2 raised at a batch boundary", rendered[2])
+        # ...and the OTHER number held still across both, so neither is standing in for the other
+        for line in rendered.values():
+            self.assertIn("1 raised outside one", line)
 
 
 class ArtefactKeysAreReadWithONEIdiomTests(unittest.TestCase):

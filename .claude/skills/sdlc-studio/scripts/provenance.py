@@ -94,7 +94,9 @@ def check(repo_root: Path | str, types: list[str] | None = None) -> dict:
         # checker can NAME it. Re-reading here swallowed the OSError and reported the
         # file clean, and crashed outright on a non-UTF-8 one.
         for p, text in sdlc_md.iter_artifact_files(t, root):
-            aid = p.stem.split("-")[0]
+            # The SHARED parser: `split("-")[0]` on a v3 key yields the bare type prefix,
+            # so the id number came back 0 and every v3 artefact read as pre-adoption legacy.
+            aid = sdlc_md.extract_record_id(p.stem) or p.stem
             idn = sdlc_md.id_number(aid) or 0  # number is in the id prefix, not the slug
             if idn <= cutoff:  # legacy, pre-adoption: exempt
                 continue
@@ -127,7 +129,7 @@ def remake(repo_root: Path | str, types: list[str] | None = None, dry_run: bool 
     changed, failed = [], []
     for t in (types or list(sdlc_md.ARTIFACT_TYPES)):
         for p, text in sdlc_md.iter_artifact_files(t, root):
-            aid = p.stem.split("-")[0]
+            aid = sdlc_md.extract_record_id(p.stem) or p.stem
             idn = sdlc_md.id_number(aid) or 0
             if idn <= cutoff:  # legacy, pre-adoption: exempt (mirror check)
                 continue

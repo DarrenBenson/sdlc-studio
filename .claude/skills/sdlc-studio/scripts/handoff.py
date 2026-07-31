@@ -708,7 +708,12 @@ def refresh(repo_root: Path | str, handoff_id: str, batch: list[str] | None = No
     root = Path(repo_root)
     norm = sdlc_md.norm_id(handoff_id)
     path = next((p for p in sorted((root / "sdlc-studio" / "handoffs").glob("*.md"))
-                 if p.is_file() and sdlc_md.norm_id(p.stem.split("-")[0]) == norm), None)
+                 # `split("-")[0]` on a v3 key `HO-<ulid>-slug` yields `HO`, so the comparison
+                 # never matched and the reader was blind to every v3 handoff. `stem_record_id`
+                 # is the shared parse for families outside `ARTIFACT_TYPES` - which handoffs
+                 # are, so `extract_record_id` returns None here and would be a second defect.
+                 if p.is_file()
+                 and sdlc_md.norm_id(sdlc_md.stem_record_id(p.stem) or "") == norm), None)
     if path is None:
         return None
     existing = path.read_text(encoding="utf-8")

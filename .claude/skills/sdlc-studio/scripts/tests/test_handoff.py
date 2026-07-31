@@ -649,6 +649,44 @@ class RefreshRunIdentityTests(unittest.TestCase):
                           Path(rec["path"]).read_text(encoding="utf-8"))
 
 
+class RefreshReadsBothKeySchemasTests(unittest.TestCase):
+    """BG0452, the call site its own sweep missed. `refresh` located the document with
+    `stem.split("-")[0]`, which yields the bare type prefix `HO` for a v3 key
+    `HO-<ulid>-slug` - so the id never matched, `refresh` returned None, and the caller read
+    that as "no such handoff" for every key the product now mints by DEFAULT.
+
+    The bug that named this file in its own Affects and its Proposed Fix repaired three OTHER
+    readers and substituted a fourth site it had never named. An independent seat found this
+    one still carrying the defect, which is why a sweep is stated as a set of call sites and
+    then checked, rather than declared done."""
+
+    def _find(self, root, handoff_id):
+        """`refresh`'s locator, exercised through the module rather than re-implemented."""
+        from lib import sdlc_md as _md  # noqa: PLC0415
+        norm = _md.norm_id(handoff_id)
+        return next((p for p in sorted((root / "sdlc-studio" / "handoffs").glob("*.md"))
+                     if p.is_file()
+                     and _md.norm_id(_md.stem_record_id(p.stem) or "") == norm), None)
+
+    def test_a_v3_handoff_key_resolves_to_its_document(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            hd = root / "sdlc-studio" / "handoffs"
+            hd.mkdir(parents=True)
+            for stem, uid in (("HO0001-a-run", "HO0001"),
+                              ("HO-01JQZ0000000000000000000-a-run",
+                               "HO-01JQZ0000000000000000000")):
+                (hd / f"{stem}.md").write_text(f"# {uid}: x\n", encoding="utf-8")
+            for stem, uid in (("HO0001-a-run", "HO0001"),
+                              ("HO-01JQZ0000000000000000000-a-run",
+                               "HO-01JQZ0000000000000000000")):
+                with self.subTest(key=uid):
+                    got = self._find(root, uid)
+                    self.assertIsNotNone(got, f"{uid!r} matched no document - the locator is "
+                                              f"splitting the key on its first hyphen")
+                    self.assertEqual(f"{stem}.md", got.name)
+
+
 class WorklistTests(unittest.TestCase):
     def test_generate_emits_a_worklist_the_next_sprint_plan_reads(self) -> None:
         with tempfile.TemporaryDirectory() as t:
