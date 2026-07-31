@@ -1,6 +1,6 @@
 # CR-0451: The cost of using sdlc-studio is dominated by the per-commit gate, not by the work - and that is an adoption blocker
 
-> **Status:** In Progress
+> **Status:** Superseded
 > **Decomposed-into:** EP0177
 > **Priority:** High
 > **Type:** Improvement
@@ -38,3 +38,4 @@ Who: every consuming project, and the product's core claim. sdlc-studio is adopt
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (measured over RUN-01KYHVWK, 30 commits) | Raised |
 | 2026-07-28 | Darren Benson (operator) | Two policy rules added: boundary-only full runs, and skip when the relevant surface is unchanged since the last green run |
+| 2026-07-31 | Claude Opus 5 | Superseded by CR0510, which absorbs this and carries one artefact on the project's own process cost rather than five. The measurement here stands and is quoted there; filing a fifth CR on the same subject would have been the exact failure it describes. |

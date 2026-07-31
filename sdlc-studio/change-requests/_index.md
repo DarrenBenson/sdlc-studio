@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 9 |
+| Proposed | 10 |
 | Approved | 0 |
-| In Progress | 36 |
+| In Progress | 33 |
 | Complete | 445 |
 | Rejected | 1 |
 | Deferred | 0 |
-| Superseded | 18 |
+| Superseded | 21 |
 | Blocked | 0 |
-| **Total** | **509** |
+| **Total** | **510** |
 
 ## All Changes
 
@@ -272,11 +272,11 @@
 | [CR-0448](CR0448-command-audit-reports-a-flag-whose-destination-is.md) | command_audit reports a flag whose destination is never read - and is proven on verify_batch | In Progress | Medium | Improvement | 2026-07-27 | EP0175 |
 | [CR-0449](CR0449-the-progressive-loading-guide-s-path-cells-resolve.md) | The Progressive Loading Guide's path cells resolve | In Progress | Medium | Improvement | 2026-07-27 | EP0175 |
 | [CR-0450](CR0450-a-delegated-agent-that-stalls-silently-is-indistinguishable.md) | A delegated agent that stalls silently is indistinguishable from a slow one, and the doctrine has no detection rule | In Progress | High | Improvement | 2026-07-27 | EP0177 |
-| [CR-0451](CR0451-the-cost-of-using-sdlc-studio-is-dominated.md) | The cost of using sdlc-studio is dominated by the per-commit gate, not by the work - and that is an adoption blocker | In Progress | High | Improvement | 2026-07-27 | EP0177 |
+| [CR-0451](CR0451-the-cost-of-using-sdlc-studio-is-dominated.md) | The cost of using sdlc-studio is dominated by the per-commit gate, not by the work - and that is an adoption blocker | Superseded | High | Improvement | 2026-07-27 | EP0177 |
 | [CR-0452](CR0452-a-review-agent-mutation-testing-in-the-live.md) | A review agent mutation-testing in the live working tree can silently revert the author's code | In Progress | High | Improvement | 2026-07-27 | EP0177 |
-| [CR-0453](CR0453-the-plan-time-test-strategy-governs-proof-per.md) | The plan-time test strategy governs proof per unit but not execution cost, and is printed rather than recorded | In Progress | High | Improvement | 2026-07-28 | EP0177 |
+| [CR-0453](CR0453-the-plan-time-test-strategy-governs-proof-per.md) | The plan-time test strategy governs proof per unit but not execution cost, and is printed rather than recorded | Superseded | High | Improvement | 2026-07-28 | EP0177 |
 | [CR-0454](CR0454-the-sprint-close-invalidates-itself-its-own-output.md) | The sprint close invalidates itself: its own output makes the review stale and each retry pays a full suite | In Progress | High | Improvement | 2026-07-28 | EP0177 |
-| [CR-0455](CR0455-nothing-ever-asks-whether-a-test-still-earns.md) | Nothing ever asks whether a test still earns its place, so the suite only grows | In Progress | Medium | Improvement | 2026-07-28 | EP0177 |
+| [CR-0455](CR0455-nothing-ever-asks-whether-a-test-still-earns.md) | Nothing ever asks whether a test still earns its place, so the suite only grows | Superseded | Medium | Improvement | 2026-07-28 | EP0177 |
 | [CR-0456](CR0456-validate-py-cannot-be-pointed-at-one-artefact.md) | validate.py cannot be pointed at one artefact, so checking a single story reads 1,548 files | Complete | Medium | Improvement | 2026-07-28 | EP0180 |
 | [CR-0457](CR0457-init-never-creates-sdlc-studio-issues-so-the.md) | init never creates sdlc-studio/issues/, so the issue type is unusable on a new project | Complete | Medium | Improvement | 2026-07-28 | EP0180 |
 | [CR-0458](CR0458-audit-filed-bugs-arrive-with-no-acceptance-criteria.md) | Audit-filed bugs arrive with no Acceptance Criteria, so a delivery lane has nothing to deliver against | Complete | Medium | Improvement | 2026-07-28 | EP0178 |
@@ -331,6 +331,7 @@
 | [CR-0507](CR0507-closing-a-sprint-asks-twenty-questions-when-it.md) | closing a sprint asks twenty questions when it should ask two, and the ceremony now costs more than the work it certifies | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0508](CR0508-a-verify-selector-naming-a-test-that-does.md) | a Verify selector naming a test that does not exist is accepted at write time, though the predicate that would refuse it already ships | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0509](CR0509-a-review-worktree-opens-at-a-stale-base.md) | A review worktree opens at a stale base, so every delegated reviewer's first act is discovering the units under review do not exist yet | Proposed | High | Improvement | 2026-07-31 | -- |
+| [CR-0510](CR0510-ceremony-proportional-to-blast-radius-the-process-spends.md) | Ceremony proportional to blast radius: the process spends gate-grade rigour on prose-grade changes, and the machinery that would stop it is built and switched off | Proposed | High | Improvement | 2026-07-31 | -- |
 
 ## Archived Releases
 

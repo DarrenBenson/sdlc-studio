@@ -1,6 +1,6 @@
 # CR-0453: The plan-time test strategy governs proof per unit but not execution cost, and is printed rather than recorded
 
-> **Status:** In Progress
+> **Status:** Superseded
 > **Decomposed-into:** EP0177
 > **Priority:** High
 > **Type:** Improvement
@@ -35,3 +35,4 @@ Who: every project running a sprint, and the release decision itself - this is c
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Fable 5 (operator-raised, measured on RUN-01KYHVWK) | Raised |
+| 2026-07-31 | Claude Opus 5 | Superseded by CR0510, which absorbs this and carries one artefact on the project's own process cost rather than five. The measurement here stands and is quoted there; filing a fifth CR on the same subject would have been the exact failure it describes. |

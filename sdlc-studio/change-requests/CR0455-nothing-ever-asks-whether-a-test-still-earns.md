@@ -1,6 +1,6 @@
 # CR-0455: Nothing ever asks whether a test still earns its place, so the suite only grows
 
-> **Status:** In Progress
+> **Status:** Superseded
 > **Decomposed-into:** EP0177
 > **Priority:** Medium
 > **Type:** Improvement
@@ -29,3 +29,4 @@ Who: this project first, and any consuming project that follows the same discipl
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Fable 5 (operator-raised, measured on RUN-01KYHVWK) | Raised |
+| 2026-07-31 | Claude Opus 5 | Superseded by CR0510, which absorbs this and carries one artefact on the project's own process cost rather than five. The measurement here stands and is quoted there; filing a fifth CR on the same subject would have been the exact failure it describes. |
