@@ -78,6 +78,7 @@ ruling HOLDS the close, which is the point of being able to make one.
 | BG0438 | not-stop-ship | operator (bugs may carry forward) | 2026-07-31 |
 | BG0448 | not-stop-ship | operator (bugs may carry forward) | 2026-07-31 |
 | CR0509 | not-stop-ship | operator (bugs may carry forward) | 2026-07-31 |
+| BG0466 | not-stop-ship | operator (bugs may carry forward) - raised by the rejoinder review after this table was first written, which is the checklist doing its job | 2026-07-31 |
 
 ## Estimate vs actual
 

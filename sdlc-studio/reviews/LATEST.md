@@ -46,6 +46,14 @@ Five gates were repaired to check what they claim (BG0440, BG0456, BG0459 part, 
 BG0465). The guards behind BG0457, BG0458 and BG0461 still over-claim in their own prose and
 are carried with the claim uncorrected - which is why the goal verdict is partial.
 
+**The repair of that review's findings was itself rejected.** A rejoinder ruled BG0442 closed
+and BG0452 OVER-CLAIMED: the regression test written for it re-implemented the code it was
+meant to exercise, under a docstring saying it did not, so the repaired line had no cover and
+the mutant that found the defect survived the whole module. The same defect the sprint was
+about, inside its own repair. Two further readers of that artefact family carried it too - one
+in a lane whose verdict blocks a close, where a linked handoff reported MISSING. Fixed; the
+v3 provenance exemption behind it is BG0466, carried.
+
 **The delivered bugs got their own closing review** and it rejected two of thirteen. BG0442's
 verifier accepted a hardcoded constant in the very function the bug was about - one fixture,
 one single-value assertion, and the mutant survived all 623 tests of its module. BG0452's
@@ -63,7 +71,7 @@ for handoffs, retros and reviews.
   baseline, worse at the end of this sprint than at the start. BG0415, ruled accepted-risk.
 - **A review worktree opens at a stale base.** Seven reviewers for seven hit it; they noticed
   only because `critic.py brief` refused an unknown id. One measured the suite red on a
-  188-commit-stale tree and reported it; on main it is green (5587 pytest / 5586 unittest).
+  188-commit-stale tree and reported it; on main it is green (5590 under both).
   CR0509.
 - **A unit standing at Review is not nearly-done.** 101 points were planned as if the remaining
   work were a signature. The review established it was repair. That is the estimating lesson.
