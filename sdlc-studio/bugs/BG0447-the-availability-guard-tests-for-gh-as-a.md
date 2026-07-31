@@ -1,6 +1,7 @@
 # BG0447: the availability guard tests for `gh` as a bare substring, so `nightly`, `highlighted` and `though` all satisfy the half of the contract that names the tool
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first, both directions; BG0454's fix exposed a false allowlist exemption the rotted-entry guard then caught)
 > **Severity:** High
 > **Points:** 2
 > **Affects:** tools/tests/test_availability_contract.py
@@ -34,9 +35,21 @@ Two sibling findings from the same reviewer belong in the same slice, since they
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `states_fail_loud` returns `bool(_STATES_FAIL_LOUD.search(passage)) and "gh" in passage.lower()`.
-- [ ] Following the recorded steps no longer reproduces the defect: Executed at d7a1ad8f, 2026-07-30: The round-2 reviewer demonstrated the consequence by gutting the live documents in an isolated worktree: replacing the...
-- [ ] The proposed fix lands, pinned by a test: Match `gh` as a token, not a substring - a word boundary, or better, the actual form the contract uses (a backticked `gh`, or `gh` followed by a subcommand).
+### AC1: the `gh` half matches the TOOL, not two letters
+
+- **Given** a passage stating the fail-loud contract about something else entirely, containing `nightly`, `highlighted`, `though`, `walkthrough`, `high` or `eight`
+- **When** the guard judges it
+- **Then** it is refused - `"gh" in passage.lower()` is a substring test on one of the commonest letter pairs in English, so the half ADDED to make this guard discriminate discriminated no better than the whole-file letter match its own round-1 REJECT was about
+- **Verify:** pytest tools/tests/test_availability_contract.py::AvailabilityContractAgrees::test_the_gh_half_matches_the_TOOL_not_two_letters
+- **Verified:** yes (2026-07-31)
+
+### AC2: the forms the docs actually use are still accepted
+
+- **Given** the tool named bare, backticked, possessive and parenthesised
+- **When** the guard judges each
+- **Then** all are accepted - word-bounding must not trade a guard that cannot discriminate for one that fails on correct documentation
+- **Verify:** pytest tools/tests/test_availability_contract.py::AvailabilityContractAgrees::test_the_gh_half_still_accepts_the_forms_the_docs_USE
+- **Verified:** yes (2026-07-31)
 
 ## Revision History
 

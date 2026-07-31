@@ -48,14 +48,28 @@ _STATES_FAIL_LOUD = re.compile(
     r"aborts?\s+non-zero|non-zero\s+exit|does\s+not\s+degrade)", re.IGNORECASE)
 
 
+#: `gh` as the TOOL, not as two letters. `"gh" in passage.lower()` is a substring test on one of
+#: the commonest letter pairs in English prose, so it was satisfied by `nightly`, `highlighted`,
+#: `though`, `walkthrough` or `high` - and this guard's own round-1 REJECT was that a whole-file
+#: letter match cannot discriminate. The repair reintroduced the identical defect in the half
+#: added to fix it. Word-bounded, and the backticked form the docs actually use counts.
+_NAMES_GH = re.compile(r"(?<![\w-])gh(?![\w-])", re.IGNORECASE)
+
+
+def names_gh(passage: str) -> bool:
+    """True when the passage names the `gh` CLI as a word, not as two letters inside another."""
+    return bool(_NAMES_GH.search(passage))
+
+
 def states_fail_loud(passage: str) -> bool:
     """True when the passage states the contract, and it must name `gh` in the same passage.
 
     Both halves matter: a passage may say something aborts without saying WHAT, and a passage
     naming `gh` proves nothing about the abort. Requiring both in the same located block is what
-    stops an unrelated sentence elsewhere in the file satisfying it.
+    stops an unrelated sentence elsewhere in the file satisfying it - and the `gh` half must be
+    a WORD match, or the second half discriminates no better than the first one did.
     """
-    return bool(_STATES_FAIL_LOUD.search(passage)) and "gh" in passage.lower()
+    return bool(_STATES_FAIL_LOUD.search(passage)) and names_gh(passage)
 
 
 #: A negation IMMEDIATELY before the claim, within a short window. Scoped by adjacency rather
@@ -164,6 +178,28 @@ class AvailabilityContractAgrees(unittest.TestCase):
             self.assertTrue(states_fail_loud(passage),
                             f"{where} does not state the fail-loud contract - it must say the "
                             f"sync aborts/fails-loud AND name `gh`, in this passage: {passage!r}")
+
+    def test_the_gh_half_matches_the_TOOL_not_two_letters(self) -> None:
+        """BG0447. `"gh" in passage.lower()` is a substring test on one of the commonest letter
+        pairs in English, so the half added to make this guard discriminate discriminated no
+        better than the whole-file letter match its own round-1 REJECT was about. Every word
+        below contains the letters and names no tool."""
+        for word in ("nightly", "highlighted", "though", "walkthrough", "high", "eight"):
+            with self.subTest(word=word):
+                self.assertFalse(
+                    states_fail_loud(f"The {word} run aborts non-zero on any error."),
+                    f"{word!r} satisfied the `gh` half - the guard is matching letters, not "
+                    f"the tool")
+
+    def test_the_gh_half_still_accepts_the_forms_the_docs_USE(self) -> None:
+        """The control. Word-bounding must not reject the real thing: the docs write the tool
+        bare, backticked, and possessive, and a guard that refuses those would be traded for
+        one that fails on correct documentation."""
+        for form in ("gh", "`gh`", "the gh CLI", "gh's absence", "(gh)"):
+            with self.subTest(form=form):
+                self.assertTrue(
+                    states_fail_loud(f"Sync aborts non-zero when {form} is unavailable."),
+                    f"{form!r} was rejected - the guard no longer accepts a real mention")
 
     def test_adr_004_block_states_the_same_contract(self) -> None:
         """The THIRD copy, extracted by its own heading - never the whole TRD, or a correct

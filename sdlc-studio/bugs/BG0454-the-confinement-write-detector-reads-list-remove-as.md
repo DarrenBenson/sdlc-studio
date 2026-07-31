@@ -1,6 +1,7 @@
 # BG0454: the confinement write detector reads list.remove as a filesystem write, so a read-only module is censused as a workspace writer
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first, both directions; BG0454's fix exposed a false allowlist exemption the rotted-entry guard then caught)
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_confinement.py
@@ -23,9 +24,29 @@ Narrow the `remove` rule the way the `open` rules are already narrowed: qualify 
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `_write_surface` in `test_confinement.py` keys on the bare attribute name `remove`, so `ids.remove(uid)` on a plain list reports the write surface `{'remove'}`.
-- [ ] Following the recorded steps no longer reproduces the defect: python3 -c "import sys; sys.path.insert(0,'.claude/skills/sdlc-studio/scripts/tests'); from `test_confinement` import `_write_surface`...
-- [ ] The proposed fix lands, pinned by a test: Narrow the `remove` rule the way the `open` rules are already narrowed: qualify it (`os.remove`, `os.unlink`, `shutil.*`) or require path evidence on the...
+### AC1: a list `remove` is not a filesystem write
+
+- **Given** a module whose only `remove` is `ids.remove(uid)` on a plain list, or `seen.remove(x)` on a set
+- **When** the write-surface detector runs
+- **Then** it reports no write surface - keying on the bare attribute name censused a read-only module onto the writer roster, and the remedy the sweep offers is an allowlist entry: an exemption for a module that writes nothing reads exactly like a real one, so the roster's meaning erodes one honest-looking line at a time
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_confinement.py::ConfinementRosterSweepTests::test_a_list_remove_is_not_a_filesystem_write
+- **Verified:** yes (2026-07-31)
+
+### AC2: a qualified `remove` is still detected
+
+- **Given** `os.remove(p)`, `shutil.rmtree(p)` and `p.unlink()`
+- **When** the detector runs
+- **Then** each is still reported - over-inclusion is the right default for this detector and relaxing it for the ONE name a mainstream type shares at the same arity must not lose the real call. `unlink` has no such collision and stays over-included
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_confinement.py::ConfinementRosterSweepTests::test_a_QUALIFIED_remove_is_still_detected
+- **Verified:** yes (2026-07-31)
+
+### AC3: the allowlist entry the false positive justified is retired
+
+- **Given** the confinement allowlist
+- **When** the roster is swept
+- **Then** it carries no entry that no longer writes - `conformance.py` was exempted as "removes only its own scratch file" when its only `remove` was `required.remove("critiqued")` on a list, so the exemption was false from the day it was written. The rotted-entry guard is what caught it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_confinement.py::ConfinementRosterSweepTests::test_allowlist_has_no_rotted_entries
+- **Verified:** yes (2026-07-31)
 
 ## Impact
 

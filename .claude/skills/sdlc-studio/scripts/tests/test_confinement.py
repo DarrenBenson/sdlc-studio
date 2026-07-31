@@ -291,6 +291,17 @@ _WRITE_HELPERS = frozenset({"atomic_write", "roll_jsonl", "insert_after_status",
 #: Filesystem mutators that take a single positional argument as a method. The arity
 #: is what separates `path.replace(other)` from `text.replace(old, new)`.
 _UNARY_MUTATORS = frozenset({"replace", "rename", "unlink", "remove"})
+#: The names in the set above that a MAINSTREAM non-filesystem type also carries at the same
+#: arity, so arity cannot separate them: `list.remove(x)` and `set.remove(x)` are exactly as
+#: shaped as `os.remove(p)`. For these, and ONLY these, the receiver must be a filesystem
+#: module. Over-inclusion is the right default everywhere else in this detector - a false
+#: positive costs one allowlist line - but here it cost a read-only module a place on the
+#: writer roster, and the remedy the sweep offers is an allowlist entry, so an exemption
+#: claiming a write that does not exist would be recorded as if it were real. The roster's
+#: meaning erodes one honest-looking line at a time (BG0454).
+_AMBIGUOUS_MUTATORS = frozenset({"remove"})
+#: The modules whose `remove` IS a filesystem call.
+_FS_MODULES = frozenset({"os", "shutil", "pathlib"})
 _SHUTIL_MUTATORS = frozenset({"copy", "copy2", "copyfile", "copytree", "move", "rmtree"})
 
 
@@ -307,6 +318,17 @@ def _looks_like_mode(value: object) -> bool:
     """
     return (isinstance(value, str) and 0 < len(value) <= 4
             and set(value) <= _MODE_CHARS)
+
+
+def _fs_receiver(node: ast.AST) -> bool:
+    """True when this receiver is a filesystem module - `os`, `shutil`, `pathlib`, or a dotted
+    form ending in one. Used only for the names a mainstream non-filesystem type shares at the
+    same arity, so `ids.remove(uid)` on a plain list is not read as `os.remove`."""
+    if isinstance(node, ast.Name):
+        return node.id in _FS_MODULES
+    if isinstance(node, ast.Attribute):
+        return node.attr in _FS_MODULES
+    return False
 
 
 def _write_surface(source: str) -> set[str]:
@@ -330,7 +352,8 @@ def _write_surface(source: str) -> set[str]:
         if name in _CONTENT_WRITES or name in _WRITE_HELPERS or name in _SHUTIL_MUTATORS:
             found.add(name)
         if (isinstance(func, ast.Attribute) and name in _UNARY_MUTATORS
-                and len(node.args) <= 1 and not node.keywords):
+                and len(node.args) <= 1 and not node.keywords
+                and (name not in _AMBIGUOUS_MUTATORS or _fs_receiver(func.value))):
             found.add(name)
         if name == "open":
             mode = None
@@ -403,7 +426,6 @@ CONFINEMENT_ALLOWLIST: dict[str, str] = {
     "version_check.py": "writes the version-check record it owns",
     "triage_noise.py": "writes the triage-noise report it owns",
     "triage_sampling.py": "writes the triage-sampling report it owns",
-    "conformance.py": "removes only its own scratch file; snapshotted read-only above",
     "mutation.py": "mutates a working copy under a scratch tree by design",
     "pvd.py": "writes scratch artefacts under .local/",
     "verify_ac.py": "copies the tree under test into a scratch dir by design",
@@ -457,6 +479,24 @@ class ConfinementRosterSweepTests(unittest.TestCase):
         # missed write by taking args[0] as the mode.
         self.assertEqual(_write_surface("open('notes.md', 'w')"), {"open:w"})
         self.assertEqual(_write_surface("open('notes.md')"), set())
+
+    def test_a_list_remove_is_not_a_filesystem_write(self) -> None:
+        """BG0454. `remove` keyed on the bare attribute name, so `ids.remove(uid)` on a plain
+        list reported the write surface `{'remove'}` and a read-only module was censused onto
+        the writer roster. The remedy the sweep offers is an allowlist entry - and an entry for
+        a module that writes nothing is a false exemption that reads exactly like a real one,
+        so the roster's meaning erodes one honest-looking line at a time."""
+        self.assertEqual(_write_surface("ids = [1]\nids.remove(1)"), set())
+        self.assertEqual(_write_surface("seen = set()\nseen.remove(x)"), set())
+
+    def test_a_QUALIFIED_remove_is_still_detected(self) -> None:
+        """The control that keeps the narrowing honest: over-inclusion is the right default for
+        this detector, and relaxing it for one name must not lose the real filesystem call."""
+        self.assertEqual(_write_surface("import os\nos.remove(p)"), {"remove"})
+        self.assertEqual(_write_surface("import shutil\nshutil.rmtree(p)"), {"rmtree"})
+        self.assertEqual(_write_surface("p.unlink()"), {"unlink"},
+                         "`unlink` has no mainstream non-filesystem meaning and must stay "
+                         "over-included")
 
     def test_detector_ignores_a_path_open_for_reading(self) -> None:
         # The over-inclusive principle stops at modes that cannot write: a read is a read
