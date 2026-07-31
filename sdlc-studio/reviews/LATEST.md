@@ -5,73 +5,57 @@
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
-> **Goal verdict:** partial (clause 1 achieved, clauses 2 and 3 fail)
-> · **Delivered:** 37 units / 130 points of a 44-unit 158-point plan
-> · **Dropped:** 11 units / 40 points, each with a recorded reason
+> **Goal verdict:** partial - clauses 1 and 2 achieved, clause 3 partial
+> · **Delivered:** 20 units / 57 points of a 46-unit 150-point plan
+> · **Carried:** 26 units, each dropped with a recorded reason
 
-## Landed since: EP0192 - the compulsory sprint checklist
+## Landed: RUN-01KYTKA1 - the standing review debt, cleared honestly
 
-Delivered outside a sprint, at the operator's direction. **Seven stories, 27 points, all at
-Review** - Done needs the reviewer-of-record sign-off, and the author never records their own.
+The batch was 19 gate-honesty bugs plus the 26 units that had been sitting at Review with no
+independent verdict. **13 bugs Fixed and 7 stories Done. 19 stories carry a recorded REJECT
+and 7 bugs were never built** - all 26 carried with reasons, on the operator's ruling that
+bugs may carry forward.
 
-The checklist is rows of the EXISTING `sprint_report.py`, not a second document: one row per
-stage of the cycle (pre-plan reconcile, goal seat review, grooming gate, run opening,
-batch-boundary reviews, closing review, goal verdict, retro, lessons, sign-off, handoff) beside
-the figures this file used to derive by hand (planned against delivered, dropped / held /
-carried over with reasons, scope creep as a ratio, review attribution by seat and lens,
-impediments, carried known issues, cost). `sprint close` gained a `checklist` chain step that
-refuses on an unanswered item and names it; the waiver is `decisions.py waive --subject
-rule:sprint-checklist:<item>`. Stop-ship rulings live in the retro's new `## Known issues
-carried` table - the one row the tree cannot derive.
+**The review is the result.** Seven independent seats across three charters (engineering,
+product, QA), each in its own worktree, none of them the author, applied roughly 180 mutants
+and rejected 19 of the 26 units. Every rejection carries a filed finding with an executed
+reproduction: BG0457 through BG0463, plus CR0509.
 
-Three corrections the planning pass made to the request itself: `sprint_report.py` already
-existed and the four original stories pointed at `retro.py` plus a template that does not
-(building there was the two-document drift CR0505 was filed about); US0570's recording half
-already shipped; and the set only asked close-time questions, so US0574-US0576 were added and
-`cycle_drift()` now fails when a ceremony verb has no row.
+One shape recurs, attested independently by more than one seat - **a guard reporting green
+over something it never checked**:
 
-Evidence: 22 ACs pass, 12/12 mutants killed, blast-radius suite green across 17 modules in
-2m21s. Detail in the commit and in EP0192.
+- a guard comparing a document against a projection of itself, so the reverse direction is
+  structurally unrepresentable (`named = _backticked(block) & types`, then asserting
+  `types - named == set()`)
+- a whole-file substring assertion satisfied by the Revision History row describing the very
+  change being asserted, so both stating passages could be gutted green
+- a ratio invariant to what it measures: neutering the corpus cache cost a ninefold read
+  increase and moved the asserted number by nothing
+- a floor tolerating the failure it was written to catch, so a lost marker was invisible
+- a check written, shipped and unreachable behind an earlier branch
 
-## The RUN-01KYPZ1G close - six stop-ships found, six fixed
+**The one Critical, found by the seat reviewing the machinery that enforces review.**
+`critic.verdict_for` skipped any verdict row whose `superseded` flag was truthy, of any grade,
+so an author could retire the REJECT blocking their own work with one hand-appended line naming
+themselves as authoriser - and the close then reported the unit "covered by an independent
+pass". `record_supersession` refuses to write that record and `_is_principal_superseded` exists
+as the read-time backstop for the hand append; only the sign-off gate consulted it. Fixed in
+BG0464: the grade of correction required now scales with the direction the mistake fails.
 
-Judged against the operator's standard: **an increment that adds value and makes nothing
-worse.** The run ledger records 18 review rounds. `git log -S` sorted the twelve findings
-from the last of them rather than judgement. Two were regressions
-(BG0446, BG0451) and both are fixed; six were pre-existing and revealed rather than caused
-(BG0443-BG0445, BG0448, BG0449, BG0452); the rest are new-but-better, BG0447 being a weak
-guard where there was none.
+Four gates were repaired to check what they claim (BG0440, BG0456, BG0459 part, BG0464). The
+guards behind BG0457, BG0458 and BG0461 still over-claim in their own prose and are carried
+with the claim uncorrected - which is why the goal verdict is partial rather than achieved.
 
-| Fixed | What it was |
-| --- | --- |
-| BG0441 | `review_coverage` laundered a REJECT into coverage through the evidence lane, which carries no verdict column by design |
-| BG0450 | The unresolved-questions gate had three live escapes and a tautological verifier; the mutant reducing it to a bare `Done` comparison survived all 5,489 tests |
-| BG0453 | The same unguarded run-state read that consecutive earlier rounds each failed to close, still live in a further branch, discarding a completed verification |
-| BG0446 | REGRESSION: `_is_superseded` closed the blockquoted case and left the fenced one, so a spec could drop itself as a version home, exit 0 |
-| BG0451 | REGRESSION: `start_batch` minted a null-id run and the next `sprint plan` then destroyed the batch span |
+## What the next session should know
 
-**Coverage on the repaired gate is 0 of 37** - low because seven reviewers rejected, not
-because reviews are missing. The ten units closed on 2026-07-30 under waivers D0077-D0086 were
-all reported *covered* by the broken gate; the hand-recorded waivers are the only thing that
-stopped it clearing them. Full detail, including the three false claims this file previously
-carried, is in RETRO0085.
-
-## Known divergences
-
-- **The gate budget is OVER: 467s against 380s**, +47% since the 2026-07-26 baseline.
-- **`tools/tests` is RED from any worktree** (BG0445): the census matches its skip list against
-  the absolute path, so a checkout under `.claude/worktrees/` censuses zero files. Green in the
-  main checkout, inert in the environment reviewers run in.
-- **The seat ceremony was bypassed twice in one session** after CR0503 was filed about exactly
-  that. Both attestations are on CR0503.
-- **Scope: 48 unplanned artefacts against 44 planned units, a ratio of 1.09.** Derived by hand
-  twice; EP0192 now reports it.
-
-## Next steps
-
-1. **Sign-off on the seven EP0192 stories is the operator's.** They hold at Review.
-2. **BG0442 first in the next batch.** A goal metric that cannot be computed is worse than an
-   absent one: it reports the good outcome.
-3. **CR0507** (the close asks twenty questions where two would do) and **CR0508**
-   (`verify_ac.selector_resolves` ships and no writer calls it) remain unrefined, as do CR0496
-   and CR0497.
+- **`sprint close` reported `ok retro-validate: RETRO0086 valid` over a 100% unreplaced retro
+  scaffold.** Three demonstration rows carried no marker and the close discards the validator's
+  report on a zero exit. The markers are fixed; the discarded report is BG0459 and still open.
+- **The gate budget is over and degrading** - 500-517s against a 380s ceiling, +59% since
+  baseline, worse at the end of this sprint than at the start. BG0415, ruled accepted-risk.
+- **A review worktree opens at a stale base.** Seven reviewers for seven hit it; they noticed
+  only because `critic.py brief` refused an unknown id. One measured the suite red on a
+  188-commit-stale tree and reported it; on main it is green (5587 pytest / 5586 unittest).
+  CR0509.
+- **A unit standing at Review is not nearly-done.** 101 points were planned as if the remaining
+  work were a signature. The review established it was repair. That is the estimating lesson.
