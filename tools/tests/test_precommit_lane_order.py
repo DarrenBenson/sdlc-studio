@@ -163,8 +163,18 @@ class MessageCheckOrderTests(unittest.TestCase):
         msg = _text(MSG_HOOK)
         for fragment in ("gate_timing.py estimate", "record --suite skill-tests",
                          "record --suite tool-tests", "gate_timing.py scope",
-                         "record --suite total", "gate_timing.py budget"):
+                         "gate_timing.py budget"):
             self.assertIn(fragment, msg, f"{fragment!r} did not move with the suites")
+        # The per-commit TOTAL, asserted on the behaviour rather than one spelling. The suite
+        # name is now a variable, because a selected run records into `total.selected` so its
+        # partial count cannot erode the full-run peak the scope floor is judged against. A
+        # literal `record --suite total` would have to be re-typed here every time that
+        # decision moves, which turns this guard into a spelling test.
+        self.assertRegex(msg, r'record --suite (total\b|"\$total_suite")',
+                         "the per-commit total is no longer recorded after the suites")
+        self.assertIn("total.selected", msg,
+                      "a selected run has no separate series, so its partial count will drag "
+                      "the peak down until the scope floor protects nothing")
         self.assertLess(_line_matching(r"gate_timing\.py estimate", MSG_HOOK),
                         _lane_line("skill-tests", MSG_HOOK),
                         "the cost must be announced before it is paid")

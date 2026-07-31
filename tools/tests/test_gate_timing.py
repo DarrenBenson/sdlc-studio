@@ -285,6 +285,44 @@ class ScopeTests(unittest.TestCase):
             gt.record(root, "total.tests", 3400)
             self.assertTrue(gt.scope_ok(root, "total", 3400)["ok"])
 
+    def test_a_SELECTED_run_is_not_judged_against_the_full_peak(self) -> None:
+        """Selection and this floor were in direct conflict the moment selection began working.
+        A selected run legitimately runs a fraction of the suite, so the peak comparison cannot
+        tell it from the truncated run the floor exists to catch - and the first selected commit
+        reported `total NOT recorded - 1171 tests against a peak of 6174`. Left there, the budget
+        series would have stopped being written at exactly the moment the gate got cheaper."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 6174)
+            self.assertFalse(gt.scope_ok(root, "total", 1171)["ok"],
+                             "a truncated FULL run must still be refused")
+            v = gt.scope_ok(root, "total", 1171, selected=True)
+            self.assertTrue(v["ok"], "a selected run is refused, so the budget stops recording")
+            self.assertIn("SELECTED", v["why"])
+
+    def test_a_selected_run_with_a_loader_error_is_still_refused(self) -> None:
+        """Selection relaxes the THRESHOLD, never the fact. A selected run whose module failed to
+        import is exactly as broken as a full one."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 6174)
+            self.assertFalse(
+                gt.scope_ok(root, "total", 1171, loader_error=True, selected=True)["ok"])
+
+    def test_a_selected_count_is_recorded_in_its_OWN_series(self) -> None:
+        """Mixed into the full counts a selected run would drag the peak down until the floor
+        stopped protecting anything - the floor would erode itself, one cheap commit at a time."""
+        import argparse
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 6174)
+            gt.cmd_scope(argparse.Namespace(root=str(root), suite="total", tests=1171,
+                                            loader_error=False, selected=True))
+            data = gt._load(root)
+            self.assertIn("total.selected.tests", data)
+            self.assertNotIn(1171, data.get("total.tests", []),
+                             "a selected count landed in the full series and will erode the peak")
+
     def test_a_loader_error_is_refused_even_at_a_full_count(self) -> None:
         """The filed reproduction. A module that fails to import is a FACT, not a threshold, so it
         is refused regardless of how many tests the remaining modules managed to run - and with no

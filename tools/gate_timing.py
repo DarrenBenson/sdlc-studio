@@ -57,7 +57,8 @@ def record(root: Path, suite: str, seconds: float) -> dict:
 SCOPE_FLOOR = 0.8
 
 
-def scope_ok(root: Path, suite: str, tests: int, loader_error: bool = False) -> dict:
+def scope_ok(root: Path, suite: str, tests: int, loader_error: bool = False,
+             selected: bool = False) -> dict:
     """Did this run actually run its scope, or did it only get invoked?
 
     The budget series is only comparable between runs that did the same work. BG0239: the hook set
@@ -84,6 +85,16 @@ def scope_ok(root: Path, suite: str, tests: int, loader_error: bool = False) -> 
     peak = max(prior) if prior else None
     if loader_error:
         ok, why = False, "a test module failed to import, so the suite ran only part of its scope"
+    elif selected:
+        # A SELECTED run legitimately runs a fraction of the suite, so the peak comparison
+        # cannot tell it from the truncated run this floor exists to catch. Judging it against
+        # the full-suite peak would refuse to record every selected commit, which is how the
+        # budget series would quietly stop being written at the moment selection started
+        # working. The loader-error check above still applies - that is a FACT about the run
+        # rather than a threshold, and a selected run whose module failed to import is exactly
+        # as broken as a full one. Comparability is preserved by the caller recording a
+        # selected total in its OWN series rather than beside the full ones.
+        ok, why = True, f"{tests} tests in a SELECTED run - not compared against the full peak"
     elif peak is None:
         ok, why = True, "no test-count history yet - starting the series"
     elif tests < peak * SCOPE_FLOOR:
@@ -184,8 +195,13 @@ def cmd_scope(args: argparse.Namespace) -> int:
     poison the series. Never raises into a commit.
     """
     root = Path(args.root)
-    verdict = scope_ok(root, args.suite, args.tests, args.loader_error)
-    record(root, f"{args.suite}.tests", args.tests)
+    selected = bool(getattr(args, "selected", False))
+    verdict = scope_ok(root, args.suite, args.tests, args.loader_error, selected=selected)
+    # A selected run's counts go in their own series. Mixed into the full ones they would drag
+    # the peak down until the floor stopped protecting anything, which is the failure this
+    # separation exists to prevent rather than a tidiness preference.
+    suffix = ".selected" if selected else ""
+    record(root, f"{args.suite}{suffix}.tests", args.tests)
     if not verdict["ok"]:
         print(f"gate-budget: total NOT recorded - {verdict['why']}")
     return 0 if verdict["ok"] else 1
@@ -229,6 +245,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--tests", type=int, required=True)
     s.add_argument("--loader-error", action="store_true",
                    help="a test module failed to import, so the scope was truncated")
+    s.add_argument("--selected", action="store_true",
+                   help="the run was a SELECTED subset, so its count is not comparable with the "
+                        "full-suite peak and is recorded in its own series")
     s.set_defaults(func=cmd_scope)
 
     e = sub.add_parser("estimate", help="warn when the expected duration is long")
