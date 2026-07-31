@@ -950,7 +950,12 @@ def _already_satisfied(root: Path, rid: str) -> bool:
     stories = report.get("stories", {})
     items = stories.items() if isinstance(stories, dict) else []
     for stem, e in items:
-        if sdlc_md.norm_id(stem.split("-")[0]) == sdlc_md.norm_id(rid):
+        # `extract_record_id`, not a hyphen split. A v3 key is `CR-0001-add-auth`, so
+        # `split("-")[0]` yields `CR` and the comparison never matches - the reader was blind to
+        # every id the product now ships by default, and silently returned "not verified" for
+        # all of them. One idiom for reading an artefact key, shared with every other reader
+        # (the divergent-reader-of-a-shared-field class).
+        if sdlc_md.norm_id(sdlc_md.extract_record_id(stem) or "") == sdlc_md.norm_id(rid):
             return e.get("verified", 0) > 0 and not e.get("failed", 0) and not e.get("stale", 0)
     return False
 

@@ -1211,7 +1211,12 @@ def _verifiers_all_green(root: Path, uid: str) -> bool:
     stories = report.get("stories", {})
     items = stories.items() if isinstance(stories, dict) else []
     for stem, entry in items:
-        if sdlc_md.norm_id(stem.split("-")[0]) == sdlc_md.norm_id(uid):
+        # `extract_record_id`, not a hyphen split. A v3 key is `CR-0001-add-auth`, so
+        # `split("-")[0]` yields `CR` and the comparison never matches - the reader was blind to
+        # every id the product now ships by default, and silently returned "not verified" for
+        # all of them. One idiom for reading an artefact key, shared with every other reader
+        # (the divergent-reader-of-a-shared-field class).
+        if sdlc_md.norm_id(sdlc_md.extract_record_id(stem) or "") == sdlc_md.norm_id(uid):
             return entry.get("verified", 0) > 0 and not entry.get("failed", 0) and not entry.get("stale", 0)
     return False
 
@@ -4811,19 +4816,29 @@ def _cost_note(root, state) -> str:
 def _retro_path(root, rid: str):
     """The retro file for an id (e.g. `RETRO0047` or `RETRO-0047`), or None if none exists.
 
-    Matches on the file-id head directly: `RETRO`/`REVIEW`/`HANDOFF` are meta prefixes that
-    the artifact ID_RE (EP/US/BG/... only) does not recognise, so `extract_record_id` cannot
-    be used here. A retro filename is always `<file_id>-<slug>.md` with no dash inside the id."""
-    key = rid.strip().upper().replace("-", "")
+    DELEGATES to `retro.find_retro`, which is the shared resolver and says so: "one resolver,
+    shared, so the gate and this script cannot disagree about which file they are talking
+    about". This function used to hand-roll the match, which is the divergent-reader class
+    this project keeps filing bugs about.
+
+    The divergence is LATENT, not observed: the hand-rolled split on the first hyphen accepts
+    only `RETRO0085-slug`, while the shared resolver accepts `RETRO-0085-slug` too, and no
+    file of the second shape exists in this repo today. So this is delegation for the reason
+    the shared resolver's own docstring gives - two readers of one key eventually answer
+    differently - rather than a repair of a failure anyone has seen.
+
+    `extract_record_id` is NOT the answer here, though it is for this bug's two sibling sites:
+    `RETRO` is a meta prefix that ID_RE (EP/US/BG/... only) does not recognise, so reaching for
+    it returns None for every retro there is."""
     d = Path(root) / "sdlc-studio" / "retros"
-    if not key or not d.is_dir():
+    if not rid or not rid.strip() or not d.is_dir():
         return None
-    for p in d.glob("*.md"):
-        if p.name == "_index.md":
-            continue
-        if p.stem.split("-", 1)[0].upper() == key:
-            return p
-    return None
+    try:
+        import retro  # noqa: PLC0415 - deferred, like the chain's other retro imports
+        return retro.find_retro(root, rid)
+    except Exception as exc:  # noqa: BLE001 - a resolver failure is "not found", never a crash
+        sdlc_md.debug("sprint._retro_path", exc)
+        return None
 
 
 def _prefill_retro(root, path, batch, state) -> None:

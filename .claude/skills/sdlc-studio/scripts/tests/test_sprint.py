@@ -10224,6 +10224,60 @@ class FindingPlacementIsMeasuredNotConstantTests(unittest.TestCase):
         self.assertIn("2 raised outside one", line)
 
 
+class ArtefactKeysAreReadWithONEIdiomTests(unittest.TestCase):
+    """BG0452. Three readers hand-rolled an artefact-key parse instead of using the shared one.
+    `stem.split("-")[0]` yields `CR` for a v3 key `CR-0001-add-auth`, so the comparison never
+    matched and the reader silently returned "not verified" for every id the product now ships
+    by DEFAULT. It survived because every existing test used a v2 key: the tests agreed with the
+    code about a shape the product no longer ships. Both schema versions are covered here, which
+    is the durable half - repairing one call site leaves the next reader free to repeat it."""
+
+    def _report(self, root, stem):
+        loc = root / "sdlc-studio" / ".local"
+        loc.mkdir(parents=True, exist_ok=True)
+        (loc / "verify-report.json").write_text(json.dumps(
+            {"stories": {stem: {"verified": 2, "failed": 0, "stale": 0}}}), encoding="utf-8")
+
+    def test_a_v3_key_is_read_by_the_forecast_reader(self) -> None:
+        for stem, uid in (("US0001-login", "US0001"), ("CR-0001-add-auth", "CR-0001"),
+                          ("BG-01234567-x", "BG-01234567")):
+            with self.subTest(stem=stem), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._report(root, stem)
+                self.assertTrue(sprint._verifiers_all_green(root, uid),
+                                f"{stem!r} was not matched to {uid!r} - the reader is splitting "
+                                f"on a hyphen the id itself contains")
+
+    def test_a_v3_key_is_read_by_the_readiness_reader(self) -> None:
+        import readiness
+        for stem, uid in (("US0001-login", "US0001"), ("CR-0001-add-auth", "CR-0001")):
+            with self.subTest(stem=stem), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._report(root, stem)
+                self.assertTrue(readiness._already_satisfied(root, uid))
+
+    def test_the_retro_resolver_takes_BOTH_id_spellings(self) -> None:
+        """And it delegates rather than parsing: `RETRO` is a meta prefix ID_RE does not
+        recognise, so reaching for `extract_record_id` here returns None for every retro there
+        is - the obvious repair for the other two sites is the wrong one for this one."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rd = root / "sdlc-studio" / "retros"
+            rd.mkdir(parents=True)
+            # The FILE is v3-spelled. That is the shape the hand-rolled split could not read -
+            # it yields `RETRO` and matches nothing - and the shape the shared resolver accepts.
+            # No such file exists in this repo today, so the divergence was latent; the test
+            # pins the contract rather than reproducing a failure anyone had seen.
+            target = rd / "RETRO-0047-a-sprint.md"
+            target.write_text("# RETRO-0047: a sprint\n", encoding="utf-8")
+            (rd / "_index.md").write_text("# Retros\n", encoding="utf-8")
+            for spelling in ("RETRO0047", "RETRO-0047", "retro0047"):
+                with self.subTest(spelling=spelling):
+                    self.assertEqual(sprint._retro_path(root, spelling), target,
+                                     f"{spelling!r} did not resolve a v3-named retro file")
+            self.assertIsNone(sprint._retro_path(root, "RETRO9999"))
+
+
 class TheCloseCertifiesRatherThanReviewsTests(unittest.TestCase):
     """US0562. The close asserts that coverage EXISTS; it does not perform the review."""
 

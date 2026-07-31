@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 26 |
+| Open | 25 |
 | In Progress | 0 |
-| Fixed | 346 |
+| Fixed | 347 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -169,7 +169,7 @@
 | [BG0449](BG0449-the-plan-s-grooming-gate-reported-ok-in.md) | the plan's grooming gate reported ok in enforcing blocking mode over four stories that carry the ungroomed banner and three placeholders each | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0450](BG0450-the-unresolved-questions-gate-is-escapable-by-a.md) | the unresolved-questions gate is escapable by a heading suffix, a second section, or a self-citation, and the AC claiming it is type-general is verified by a tautology | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0451](BG0451-start-batch-fabricates-a-null-id-run-in.md) | start_batch fabricates a null-id run in a project with no run, and the next sprint plan then silently destroys the batch span it wrote | Fixed | Critical | 2026-07-30 | 2026-07-30 |
-| [BG0452](BG0452-verifiers-all-green-splits-the-artefact-key-on.md) | _verifiers_all_green splits the artefact key on a hyphen, so it is blind to v3 ids and its forecast exclusions never fire in any new project | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0452](BG0452-verifiers-all-green-splits-the-artefact-key-on.md) | _verifiers_all_green splits the artefact key on a hyphen, so it is blind to v3 ids and its forecast exclusions never fire in any new project | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0453](BG0453-sprint-lane-return-tracebacks-on-an-unreadable-run.md) | sprint lane return tracebacks on an unreadable run state AFTER running the unit's acceptance criteria, discarding the verification result - the third occurrence of a finding rejected twice | Fixed | Critical | 2026-07-30 | 2026-07-30 |
 | [BG0454](BG0454-the-confinement-write-detector-reads-list-remove-as.md) | the confinement write detector reads list.remove as a filesystem write, so a read-only module is censused as a workspace writer | Fixed | Low | 2026-07-30 | 2026-07-30 |
 | [BG0455](BG0455-sprint-stop-cannot-tell-an-unbuilt-unit-from.md) | sprint stop cannot tell an unbuilt unit from one the two-role gate holds at Review, so it reports work nobody can do as work that could have proceeded | Open | Medium | 2026-07-30 | 2026-07-30 |
