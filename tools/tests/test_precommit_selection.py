@@ -100,6 +100,57 @@ class SkipTests(unittest.TestCase):
         self.assertIn("--test-relevant", HOOK.read_text(encoding="utf-8"))
 
 
+class SelectionReachesTheRunnersTests(unittest.TestCase):
+    """The selection was COMPUTED and then discarded, for the whole life of the mechanism.
+
+    `commit-msg` deleted the pre-commit handover and read the selectors out of that same file
+    forty lines later, so `selectors` was always empty, every run recorded `verdict-mode full`,
+    and `total.tests` in the recorded timing history read the full suite on every commit. The
+    selection logic - `select_tests`, `suite_read_map`, `_import_graph`, `test_relevant_paths` -
+    ran, produced an answer, and nothing consumed it. The suites are 86% of the gate.
+
+    These pin the two halves that made it inert: the ordering, and whether a runner handed a
+    selection actually narrows what it runs."""
+
+    def test_the_handover_is_READ_before_it_is_deleted(self) -> None:
+        text = MSG_HOOK.read_text(encoding="utf-8")
+        read_at = text.index("suite-selector=")
+        del_at = text.index('rm -f "$handoff"')
+        self.assertLess(read_at, del_at,
+                        "commit-msg deletes the handover before reading the selection out of "
+                        "it, so `selectors` is always empty and every commit runs everything")
+
+    def test_the_selection_is_PASSED_to_the_skill_runner(self) -> None:
+        text = MSG_HOOK.read_text(encoding="utf-8")
+        self.assertIn("bash tools/skill-tests.sh \"$skill\" $skill_sel", text,
+                      "the skill lane is invoked with no selection argument, so a computed "
+                      "selection cannot narrow it however correct it is")
+
+    def test_a_selected_run_runs_FEWER_tests_than_the_full_suite(self) -> None:
+        """The behaviour, not the wiring. Driving the shipped runner both ways is the only
+        thing that distinguishes a selection that is passed from one that is passed and
+        ignored - which is the state this whole class exists to catch."""
+        skill = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts"
+        one = skill / "tests" / "test_provenance.py"
+        # FAIL rather than skip on an absent module. The first version of this test named a
+        # module that lives under tools/tests, so it skipped - and a skip reads as a pass, so
+        # it reported green against the very mutant it was written to kill.
+        self.assertTrue(one.is_file(),
+                        f"{one} is not present, so this test proves nothing - point it at a "
+                        f"module that exists rather than letting it skip")
+        proc = subprocess.run(["bash", str(REPO / "tools" / "skill-tests.sh"),
+                               str(skill), str(one)],
+                              cwd=REPO, text=True, capture_output=True)
+        ran = [ln for ln in proc.stdout.splitlines() + proc.stderr.splitlines()
+               if ln.startswith("Ran ")]
+        self.assertTrue(ran, f"the runner reported no test count: {proc.stderr[-400:]}")
+        count = int(ran[-1].split()[1])
+        self.assertGreater(count, 0, "a selected run collected nothing")
+        self.assertLess(count, 1000,
+                        f"a one-module selection ran {count} tests - the selection reached "
+                        f"the runner and was ignored, which is the defect this pins")
+
+
 class WiringTests(unittest.TestCase):
     """AC3: US0219's measurement must actually be called by the hook pair, not merely exist."""
 

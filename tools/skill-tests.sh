@@ -55,8 +55,30 @@ unset -v GIT_DIR GIT_COMMON_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_INDEX_VERSION \
   GIT_CEILING_DIRECTORIES GIT_DISCOVERY_ACROSS_FILESYSTEM GIT_PREFIX
 
 skill="${1:-.claude/skills/sdlc-studio/scripts}"
-out="$(python3 -m unittest discover -s "$skill/tests" 2>&1)"
-rc=$?
+shift 2>/dev/null || true
+
+# Optional SELECTION: the test module paths the pre-commit gate resolved from the changed
+# surface. Absent means run everything, because a missing list is an unanswered question and
+# never an answer of "nothing to run" - the same contract `changed_paths` keeps.
+#
+# Passed as dotted module names with the tests directory on PYTHONPATH rather than as file
+# paths: `unittest` refuses a path ("Empty module name"), and running from inside the tests
+# directory instead would change the cwd every fixture resolves its relative paths against.
+#
+# The noise ratchet below is a `count <= baseline` check, so a subset that leaks fewer lines
+# than the full suite passes it. It is never made stricter by selecting less.
+if [ "$#" -gt 0 ]; then
+  mods=""
+  for f in "$@"; do
+    base="${f##*/}"
+    mods="$mods ${base%.py}"
+  done
+  out="$(PYTHONPATH="$skill/tests${PYTHONPATH:+:$PYTHONPATH}" python3 -m unittest $mods 2>&1)"
+  rc=$?
+else
+  out="$(python3 -m unittest discover -s "$skill/tests" 2>&1)"
+  rc=$?
+fi
 
 printf '%s\n' "$out"
 

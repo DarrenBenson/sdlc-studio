@@ -153,8 +153,17 @@ handoff="$(git rev-parse --git-path sdlc-gate-suites 2>/dev/null || true)"
 [ -n "$handoff" ] || handoff="$git_dir/sdlc-gate-suites"
 [ -r "$handoff" ] || exit 0
 precommit_seconds="$(sed -n 's/^precommit_seconds=\([0-9][0-9]*\)$/\1/p' "$handoff" | tail -1)"
+# The SELECTION, read here beside the seconds rather than 40 lines below - where the file had
+# already been deleted. `selectors` was therefore always empty, every run recorded
+# `verdict-mode full`, and `total.tests` read the whole suite on every commit in the recorded
+# history. Several hundred lines of selection logic ran, produced an answer, and the answer
+# was thrown away; the suites are 86% of the gate, so this one ordering paid for it.
+#
+# Absent still means run everything: a missing list is an unanswered question, never an
+# answer of "nothing to run".
+selectors="$(sed -n 's/^suite-selector=//p' "$handoff" 2>/dev/null | tr '\n' ' ')"
 # One-shot: read once, then gone. A record that outlived its commit would charge the next
-# commit-msg-only operation for a suite run nobody asked for.
+# commit-msg-only operation for a suite run nobody asked for. Deleted AFTER both reads.
 rm -f "$handoff" 2>/dev/null
 command -v python3 >/dev/null 2>&1 || exit 0
 
@@ -195,9 +204,16 @@ done
 # silent (an expected diagnostic from a bad-fixture test must be captured and asserted on,
 # not leaked to the console, or a real error hides in the noise). Both read the same run -
 # a guard paid for on every commit has to be cheap, or it gets disabled and guards nothing.
-# The selection pre-commit computed, if it handed one over. Absent means run everything: a
-# missing list is an unanswered question, never an answer of "nothing to run".
-selectors="$(sed -n 's/^suite-selector=//p' "$handoff" 2>/dev/null | tr '\n' ' ')"
+# Split the selection by suite: each runner is handed only the modules under its own tree,
+# because `tools/tests` and the skill tests are discovered from different roots and a path
+# from one means nothing to the other.
+skill_sel=""; tool_sel=""
+for s in $selectors; do
+  case "$s" in
+    tools/tests/*) tool_sel="$tool_sel $s" ;;
+    *) skill_sel="$skill_sel $s" ;;
+  esac
+done
 if [ -n "$selectors" ]; then
   printf '  %snote%s running %s selected test module(s) (the whole suite runs at push, release and close)\n' \
     "$Y" "$N" "$(printf '%s\n' "$selectors" | wc -w)"
@@ -207,7 +223,7 @@ t0=$SECONDS
 run "skill-tests" \
   "every shipped skill script unit test passes, and a green run prints no stray diagnostics" \
   "fix the code or the test named above; re-run: bash tools/skill-tests.sh" \
-  -- bash tools/skill-tests.sh "$skill"
+  -- bash tools/skill-tests.sh "$skill" $skill_sel
 python3 tools/gate_timing.py record --suite skill-tests --seconds "$((SECONDS - t0))" 2>/dev/null
 # Record the green so a later commit over an unchanged surface can reuse it. Without this call
 # no verdict is ever written, read_suite_verdict is always None, and the skip branch is
@@ -224,13 +240,26 @@ t0=$SECONDS
 # this lane ran unscrubbed, and it takes just one tools/ test that builds a git fixture to
 # turn a commit into a clobbered index. Found by the adversarial review of RUN-01KY1WCR,
 # which reproduced the clobber on three victim repos.
+# Same selection contract as the skill lane: dotted module names on PYTHONPATH when the gate
+# resolved a subset, plain discovery when it did not. `unittest` refuses a file path, and
+# running from inside tools/tests would move the cwd these fixtures resolve against.
+if [ -n "$tool_sel" ]; then
+  tool_mods=""
+  for f in $tool_sel; do
+    base="${f##*/}"
+    tool_mods="$tool_mods ${base%.py}"
+  done
+  set -- python3 -m unittest $tool_mods
+else
+  set -- python3 -m unittest discover -s tools/tests
+fi
 run "tool-tests" \
   "every repo-only tools/ checker unit test passes" \
   "fix the code or the test named in the failure above; re-run: python3 -m unittest discover -s tools/tests" \
   -- /usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
      -u GIT_INDEX_VERSION -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
      -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
-     -u GIT_PREFIX python3 -m unittest discover -s tools/tests
+     -u GIT_PREFIX "PYTHONPATH=tools/tests${PYTHONPATH:+:$PYTHONPATH}" "$@"
 python3 tools/gate_timing.py record --suite tool-tests --seconds "$((SECONDS - t0))" 2>/dev/null
 tool_tests=$(printf '%s\n' "$last_run_out" | sed -n 's/^Ran \([0-9]*\) tests\{0,1\} in .*/\1/p' | tail -1)
 printf '%s\n' "$last_run_out" | grep -q '_FailedTest' && loader_error=1
