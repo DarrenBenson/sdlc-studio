@@ -1090,10 +1090,16 @@ class SprintChecklistReviewRowTests(ChecklistBase):
                       "seat-less, never rendered as if it were a seat review")
 
     def test_a_single_lens_round_is_reported_as_under_covered(self) -> None:
+        """Named for a lens count the row does not compute: it counts distinct reviewer NAMES,
+        so two reviewers sharing one seat read as two. The row now says so on its face (BG0458);
+        this asserts the count it does make and the marker that depends on it."""
         self._verdict("US0001", "APPROVE", "lonely reviewer")
         self._verdict("US0002", "APPROVE", "lonely reviewer")
         row = self._row(self._ck(), "review-attribution")
-        self.assertIn("1 lens", row["value"])
+        self.assertIn("1 distinct reviewer(s)", row["value"])
+        self.assertIn("counted by NAME, not by seat", row["value"],
+                      "the row must state the limit it has, or a reader takes the number for "
+                      "a lens count - which is what US0575 AC2 asks for and this is not")
         self.assertIn("UNDER-COVERED", row["value"])
 
     def test_two_distinct_reviewers_are_not_reported_as_under_covered(self) -> None:

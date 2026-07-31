@@ -103,6 +103,11 @@ class Adr011StatesTheFiringRule(unittest.TestCase):
                      argparse.Namespace(goal="not-a-rung")):
             self.assertTrue(sprint._ungroomed_blocks_at(args),
                             f"the gate let an unreadable goal through: {vars(args)}")
+        # SCOPE: word-presence over the whole ADR block, which is weaker than US0457 AC2
+        # reads. `block` already carries "an absent config BLOCKS" for an unrelated reason, so
+        # two of these three words are satisfied before the D0062 fail-safe sentence is even
+        # consulted - deleting that sentence outright survives this file. It pins that the ADR
+        # discusses the case; it does not pin the sentence that decides it. BG0457.
         block = _adr_block().lower()
         for word in ("absent", "empty", "block"):
             self.assertIn(word, block,
@@ -128,6 +133,10 @@ class Adr011StatesTheFiringRule(unittest.TestCase):
         self.assertRegex(text, r"\d", "the report states no count of what the rung groomed")
         # The wiring: the close's review-anchor step must reach it on the design rung.
         import inspect
+        # SCOPE: a SUBSTRING over source text, not a reached call. US0457 AC3 says "removing
+        # the call from the close reddens the guard"; replacing the call with a comment that
+        # merely names it survives, because both spell `grooming_report` in the source. It
+        # pins that the close's source MENTIONS the report. BG0457.
         src = inspect.getsource(sprint._close_review_anchor)
         self.assertIn("grooming_report", src,
                       "the close does not render the grooming report, so the design "

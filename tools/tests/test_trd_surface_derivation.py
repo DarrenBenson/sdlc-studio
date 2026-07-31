@@ -68,6 +68,24 @@ def _block(start: str, end_pattern: str, path: Path = TRD) -> str:
 
 
 class ShippedSurfaceIsDerived(unittest.TestCase):
+    """ONE DIRECTION, and the criteria these verify claim two. Read this before trusting them.
+
+    Every comparison below computes `named = _backticked(block) & <shipped set>` and then
+    asserts `<shipped set> - named == set()`. The intersection makes `named` a subset of the
+    shipped set by construction, so the reverse direction - the document naming something the
+    code does NOT have - is not merely unchecked, it is unrepresentable. What these catch is a
+    document that has fallen BEHIND the code. What they cannot catch is a document that has run
+    ahead of it, or invented a lane outright.
+
+    Measured, not inferred: removing a lane from `gate.DEFAULT_CHECKS`, removing a drift kind
+    from `reconcile.DRIFT_KINDS`, and inserting a fictional `telepathy-lane` into the TRD's
+    gate-tier prose each SURVIVED this whole file when an independent seat tried them.
+
+    US0458's criteria say "fails in either direction", "added to OR REMOVED FROM the registry
+    reddens" and "both equal the shipped set". Those are claims about a guard this is not.
+    Repairing it is BG0457; until then the honest statement of scope lives here, so nobody
+    reads a passing run as more than it is.
+    """
 
     def test_the_trd_type_list_equals_the_router_type_table(self) -> None:
         types = _router_types()

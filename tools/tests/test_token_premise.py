@@ -128,7 +128,16 @@ class TokenPremiseMatchesTheCode(unittest.TestCase):
 
     def test_both_documents_state_the_delegated_lower_bound_reason(self) -> None:
         """The SURVIVING limit, stated rather than vaguely gestured at: delegated spend is
-        supplied, not observed, so the measured total is a lower bound."""
+        supplied, not observed, so the measured total is a lower bound.
+
+        SCOPE, plainly, because US0459 AC2 claims more than this asserts. The two `assertIn`
+        calls below search the WHOLE lowercased file, and each document also carries a Revision
+        History whose row describes this very change - which contains both words. So gutting
+        the passages that actually STATE the premise leaves this green: an independent seat
+        emptied `trd.md` at both stating passages, together and separately, and all three
+        mutants survived. This pins that the words appear SOMEWHERE in the file, which is not
+        the same as pinning the claim, and AC2's "rather than a vaguer restatement" is
+        precisely the distinction it fails to make. Repairing it is BG0457."""
         rs = _load_run_state()
         state = {"delegated_tokens": [{"tokens": 5000, "agent": "a", "note": ""}]}
         self.assertEqual(5000, rs.delegated_total(state),

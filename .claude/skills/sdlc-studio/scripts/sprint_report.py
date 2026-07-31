@@ -863,7 +863,8 @@ CHECKLIST = (
      "title": "Planned against delivered", "command": "sprint report",
      "resolver": "_ck_planned_vs_delivered"},
     {"id": "not-delivered", "kind": FIGURE, "authority": DERIVED,
-     "title": "Dropped, held and carried over, each with its reason", "command": "sprint batch",
+     "title": "Dropped, held and carried over - dropped units carry a reason",
+     "command": "sprint batch",
      "resolver": "_ck_not_delivered"},
     {"id": "scope-creep", "kind": FIGURE, "authority": DERIVED,
      "title": "Scope creep, as a count and a ratio", "command": "sprint report",
@@ -1115,7 +1116,10 @@ def _ck_not_delivered(ctx: dict) -> tuple:
     for u in carried:
         bits.append(f"carry-over {u} ({_terminal(ctx['root'], u)[0] or 'status unreadable'})")
     if not bits:
-        return (ANSWERED, "none", "every planned unit was delivered")
+        return (ANSWERED, "none",
+                "every unit the RETRO lists was delivered - this row reads the retro's "
+                "Batch, not the run's planned set, so a planned unit absent from the retro "
+                "is invisible to it; read it beside planned-vs-delivered above")
     return (ANSWERED, f"{len(dropped)} dropped, {len(held)} held, {len(carried)} carried over",
             "; ".join(bits[:12]))
 
@@ -1165,7 +1169,9 @@ def _ck_review_attribution(ctx: dict) -> tuple:
     lenses = len({r for r in reviewers if r})
     under = lenses < MIN_LENSES
     value = (f"{len(covered)} covered, {len(rejected)} rejected, {len(uncovered)} uncovered; "
-             f"{lenses} lens(es)" + (" - UNDER-COVERED" if under else ""))
+             f"{lenses} distinct reviewer(s) - counted by NAME, not by seat, so two "
+             f"reviewers sharing one seat read as two lenses"
+             + (" - UNDER-COVERED" if under else ""))
     detail = "; ".join(covered[:6] + [f"REJECTED {r}" for r in rejected[:6]])
     if under:
         detail = (f"a round under {MIN_LENSES} distinct reviewers is recorded as under-covered: "
@@ -1187,7 +1193,10 @@ def _ck_impediments(ctx: dict) -> tuple:
             blocked.append(uid)
     if not pending and not blocked:
         return (ANSWERED, "none", "nothing blocked and no operator question outstanding")
-    bits = [f"blocked {u}" for u in blocked]
+    # The BLOCKER is not read here, though `Blocked By` / `Depends on` is a shipped read
+    # convention - so this names who is blocked and never by what, and cannot distinguish
+    # a blocked unit carrying a recorded blocker from one carrying none.
+    bits = [f"blocked {u} (blocker not read)" for u in blocked]
     bits += [f"open question on {d.get('unit')}: {d.get('question')}" for d in pending]
     return (ANSWERED, f"{len(blocked)} blocked, {len(pending)} open question(s)",
             "; ".join(bits[:12]))
@@ -1201,7 +1210,10 @@ def _ck_known_issues(ctx: dict) -> tuple:
     stop = [r["id"] for r in rows if r["ok"] and r["ruling"] == "stop-ship"]
     broken = [f"{r['id'] or '(no id)'}: {r['why']}" for r in rows if not r["ok"]]
     if not rows and not open_findings:
-        return (ANSWERED, "none carried", "this sprint left no finding open")
+        return (ANSWERED, "none carried",
+                "no finding was FOUND open - this scan cannot distinguish an empty result "
+                "from a scan that could not run, so read it as 'nothing seen' rather than "
+                "'nothing there'; the impediments row above does draw that distinction")
     if unruled or broken:
         bits = [f"UNRULED {u}" for u in unruled] + broken
         return (UNANSWERED, f"{len(unruled)} unruled, {len(broken)} malformed row(s)",
@@ -1360,6 +1372,13 @@ def cycle_drift(root: Path | str | None = None) -> dict:
 
     The `uncovered` half is what makes this a drift guard rather than a tautology: it is
     derived from the SHIPPED CLI, not from the checklist, so the two can genuinely disagree.
+
+    SCOPE, because US0574 AC3 claims this closes the drift and it narrows it. `uncovered` walks
+    the `sprint` verbs ONLY, while six of the rows name verbs in `critic`, `retro`, `lessons`
+    and `handoff` - a ceremony added to any of those is not caught. And `unverifiable` is
+    non-empty on the shipped tree today (`retro.py` builds its subparsers inside `main()`
+    rather than publishing a `build_parser()`), so two rows are certified unchecked while a
+    caller asserting only the first two buckets reads green. It narrows the drift; it does not close it.
     """
     scripts = Path(__file__).resolve().parent
     unresolved, unverifiable, verbs_by_script = [], [], {}
