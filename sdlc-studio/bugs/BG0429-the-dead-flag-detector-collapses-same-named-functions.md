@@ -1,6 +1,7 @@
 # BG0429: the dead-flag detector collapses same-named functions module-wide, so a dead flag reads clean and a live one reads dead
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (tests red-first; the live lane still reports 0 dead and the five collided modules now read unjudged rather than silently clean)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py
@@ -26,8 +27,29 @@ Key `_functions` by SCOPE rather than by bare name, and strip `self` for any met
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `_functions` builds one dict keyed by BARE NAME over the whole module, so the last definition BFS reaches wins.
-- [ ] The proposed fix lands, pinned by a test: Key `_functions` by SCOPE rather than by bare name, and strip `self` for any method rather than only for `__init__`.
+### AC1: a module with colliding function names is NOT JUDGED, with the reason
+
+- **Given** two verb handlers each forwarding into a local helper of the same name, one of which reads a flag and one of which does not
+- **When** the dead-flag detector runs
+- **Then** no flag is reported dead and the destinations are reported unjudged, naming the collision - the resolver keys functions by bare name over the whole module, so the last definition the walk reaches wins and a forwarded value resolves into the WRONG body. The reviewer's fixture reported `0 dead flag(s), 0 not judged` for a genuinely dead flag, which is silently clean and worse than either honest answer, and with the helper bodies swapped it reported a LIVE flag as dead
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::DeadFlagTests::test_a_module_with_COLLIDING_function_names_is_not_judged
+- **Verified:** yes (2026-07-31)
+
+### AC2: a module with no collision still reports a dead flag
+
+- **Given** an ordinary module with one unread flag
+- **When** the detector runs
+- **Then** it is still reported dead - refusing to judge a collided module must not become refusing to judge, and a lane that can no longer fail is not a lane
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::DeadFlagTests::test_a_module_with_NO_collision_still_reports_a_dead_flag
+- **Verified:** yes (2026-07-31)
+
+### AC3: the collision helper finds exactly the duplicates
+
+- **Given** a module defining one name twice at module level and another shared between a module function and a class method
+- **When** the helper runs
+- **Then** it returns both and nothing else - asserted on its own so a change to the reporting cannot quietly empty it, which is how a guard becomes green and inert
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::DeadFlagTests::test_collided_names_finds_exactly_the_duplicates
+- **Verified:** yes (2026-07-31)
 
 ## Revision History
 

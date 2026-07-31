@@ -208,8 +208,34 @@ def _parents(tree: ast.AST) -> dict:
 
 
 def _functions(tree: ast.AST) -> dict[str, ast.FunctionDef]:
+    """Every function this module defines, by bare name.
+
+    Keyed by BARE NAME over the whole module, so a name defined twice keeps only the last
+    definition the walk reaches. That is why `collided_names` exists beside this: two ordinary
+    verb handlers each with a local helper of the same name is enough to resolve a forwarded
+    value into the WRONG body, and a class method colliding with a module-level function
+    misjudges too, because `self` absorbs argument index 0. Resolving properly needs a scope
+    key; refusing to judge a collided name is the honest interim, and it is the module's own
+    three-state design - dead, live, or not judged with the reason.
+    """
     return {n.name: n for n in ast.walk(tree)
             if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+
+
+def collided_names(tree: ast.AST) -> set[str]:
+    """Function names this module defines MORE THAN ONCE.
+
+    A call to one of these cannot be resolved to a body by name alone, so anything it forwards
+    into is unjudgeable rather than dead. Reporting it dead is the failure this guards: the
+    reviewer's fixture reported `0 dead flag(s), 0 not judged` for a genuinely dead flag -
+    silently clean, which is worse than either honest answer - and, with the helper bodies
+    swapped, reported a LIVE flag as dead.
+    """
+    seen, twice = set(), set()
+    for n in ast.walk(tree):
+        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            (twice if n.name in seen else seen).add(n.name)
+    return twice
 
 
 def _str_arg(node: ast.AST) -> str | None:
@@ -693,6 +719,7 @@ def dead_flags(source: str, path: Path | None = None) -> dict:
     external, unresolved = mod.escaped_reads()
     dynamic = mod.dynamic_reads()
     declare_only = bool(dests) and not mod.parses()
+    collided = collided_names(tree)
     dead, unjudged = [], []
     for dest, where in sorted(dests.items()):
         line = where["line"]
@@ -704,6 +731,13 @@ def dead_flags(source: str, path: Path | None = None) -> dict:
         elif dynamic:
             reason = (f"a getattr with a computed attribute name at line {dynamic[0]['line']} "
                       f"may read any destination")
+        elif collided:
+            # Ordered AFTER the dynamic/declare-only reasons and BEFORE `dead`: a module whose
+            # names collide cannot be judged by this resolver at all, and a flag reported dead
+            # on a mis-resolved body is a documented switch deleted for the wrong reason.
+            reason = (f"{len(collided)} function name(s) are defined more than once in this "
+                      f"module ({', '.join(sorted(collided)[:4])}), so a forwarded value "
+                      f"cannot be resolved to a body by name alone")
         elif unresolved:
             esc = unresolved[0]
             reason = (f"the namespace escapes to "

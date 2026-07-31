@@ -5,6 +5,7 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import ast
 import importlib.util
 import sys
 import tempfile
@@ -407,6 +408,52 @@ class DeadFlagTests(unittest.TestCase):
                "    return args.func(args)\n")
         self.assertEqual([], self._dead(src))
         self.assertEqual([], self._unjudged(src))
+
+    def test_a_module_with_COLLIDING_function_names_is_not_judged(self) -> None:
+        """BG0429. `_functions` keys by bare name over the whole module, so the last definition
+        the walk reaches wins and a forwarded value resolves into the WRONG body. The reviewer's
+        fixture reported `0 dead flag(s), 0 not judged` for a genuinely dead flag - silently
+        clean, which is worse than either honest answer - and with the helper bodies swapped it
+        reported a LIVE flag as dead. A flag deleted on a mis-resolved body is a documented
+        switch removed for the wrong reason, so a collided module is UNJUDGED with the reason."""
+        source = (
+            "import argparse\n"
+            "def cmd_a(args):\n    return _helper(args)\n"
+            "def _helper(args):\n    return args.alpha\n"
+            "def cmd_b(args):\n    return _helper(args)\n"
+            "def _helper(args):\n    return None\n"
+            "def main():\n"
+            "    p = argparse.ArgumentParser()\n"
+            "    p.add_argument('--alpha')\n"
+            "    p.add_argument('--beta')\n"
+            "    a = p.parse_args()\n"
+            "    cmd_a(a)\n")
+        res = command_audit.dead_flags(source)
+        self.assertEqual([d["dest"] for d in res["dead"]], [],
+                         "a flag was reported DEAD on a body the resolver may have picked wrongly")
+        reasons = {u["dest"]: u["reason"] for u in res["unjudged"]}
+        self.assertIn("beta", reasons)
+        self.assertIn("more than once", reasons["beta"])
+
+    def test_a_module_with_NO_collision_still_reports_a_dead_flag(self) -> None:
+        """The control. Refusing to judge a collided module must not become refusing to judge:
+        a lane that can no longer fail is not a lane."""
+        source = (
+            "import argparse\n"
+            "def cmd_a(args):\n    return args.alpha\n"
+            "def main():\n"
+            "    p = argparse.ArgumentParser()\n"
+            "    p.add_argument('--alpha')\n"
+            "    p.add_argument('--beta')\n"
+            "    a = p.parse_args()\n"
+            "    cmd_a(a)\n")
+        self.assertIn("beta", [d["dest"] for d in command_audit.dead_flags(source)["dead"]])
+
+    def test_collided_names_finds_exactly_the_duplicates(self) -> None:
+        """The helper on its own, so a change to the reporting cannot quietly empty it."""
+        source = ("def a(): pass\ndef b(): pass\ndef a(): pass\n"
+                  "class C:\n    def b(self): pass\n")
+        self.assertEqual(command_audit.collided_names(ast.parse(source)), {"a", "b"})
 
     def test_a_namespace_held_in_a_MODULE_GLOBAL_is_not_invisible(self) -> None:
         """BG0430. `_track_namespaces` registered the target of `X = parse_args()` against the

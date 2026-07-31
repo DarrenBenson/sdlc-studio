@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 25 |
+| Open | 24 |
 | In Progress | 0 |
-| Fixed | 347 |
+| Fixed | 348 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -146,7 +146,7 @@
 | [BG0426](BG0426-the-epic-story-census-could-not-read-the.md) | the epic story census could not read the linked Epic field the shipped template writes, and a wrong count was committed | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0427](BG0427-the-epic-index-sweep-decided-per-row-and.md) | the epic-index sweep decided per row and wrote per epic id, resolved the header by one literal spelling, and read an unparseable dependency row as a declaration of none | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0428](BG0428-a-supersession-waiver-was-keyed-on-whoever-declared.md) | a supersession waiver was keyed on whoever declared it rather than on who superseded whom, and a parenthetical annotation manufactured a phantom waived pair | Fixed | High | 2026-07-30 | 2026-07-30 |
-| [BG0429](BG0429-the-dead-flag-detector-collapses-same-named-functions.md) | the dead-flag detector collapses same-named functions module-wide, so a dead flag reads clean and a live one reads dead | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0429](BG0429-the-dead-flag-detector-collapses-same-named-functions.md) | the dead-flag detector collapses same-named functions module-wide, so a dead flag reads clean and a live one reads dead | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0430](BG0430-a-namespace-held-in-a-module-global-is.md) | a namespace held in a module global is invisible to the dead-flag detector, so a live flag is reported dead with no cannot-judge reason | Fixed | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0431](BG0431-one-unresolvable-namespace-escape-demotes-every-flag-in.md) | one unresolvable namespace escape demotes every flag in the module to cannot-judge, and nothing bounds how far that spreads | Open | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0432](BG0432-test-selection-still-misses-eleven-scripts-whose-tests.md) | test selection still misses eleven scripts whose tests load them under a different name | Open | High | 2026-07-30 | 2026-07-30 |
