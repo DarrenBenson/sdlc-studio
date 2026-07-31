@@ -169,3 +169,18 @@ gate_budget:
   seconds: 380
   baseline_seconds: 317
   baseline_date: 2026-07-26
+
+# Creation-time noise controls, switched on independently of the artefact schema (CR0510).
+# They were reachable only through a schema v3 bump that also switches on plan-review,
+# spec-guard and the inbox status, so adopting a session cap meant adopting four unrelated
+# things - and they had therefore never once run here. Measured over the month before this
+# was set: 801 findings filed, ~26 a day, against a cap of 20 sitting unused; 27 of 29 open
+# bugs were skeletons; and the low-severity fold was being hand-rolled, one artefact in this
+# tree being twenty findings bundled by hand.
+#
+# A cap is a REFUSAL, not a silent drop: the N+1th filing fails loudly and says how to
+# proceed. Start a fresh budget for a genuinely new run with SDLC_TRIAGE_SESSION.
+triage:
+  enabled: true
+  session_cap: 20
+  low_consolidation: true

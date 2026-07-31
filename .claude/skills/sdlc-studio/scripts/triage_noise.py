@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SDLC Studio triage noise controls (schema v3 only - dormant under schema_version: 2).
+"""SDLC Studio triage noise controls (`triage.enabled`, or schema v3 when unstated).
 
 Two creation-time controls keep a flood of agent-filed findings from burying the few that
 matter (EP0014):
@@ -49,6 +49,27 @@ def _cfg(root, key: str, default):
         return default
 
 
+def active(root) -> bool:
+    """Are the triage controls live for this project?
+
+    `triage.enabled` when the project states one, and the schema version otherwise. Two
+    reasons for a knob rather than the schema gate alone.
+
+    The controls are creation-time noise limits and have nothing to do with the artefact
+    schema; they were reachable only through a v3 bump that also switches on plan-review,
+    spec-guard and the inbox status, so adopting a session cap meant adopting four unrelated
+    things. And the gate made them unreachable in practice: this project filed 801 findings in
+    one month with a cap of 20 sitting unused, and hand-rolled the consolidation the fold does
+    automatically - one artefact in this tree is twenty findings bundled by hand.
+
+    An unset knob keeps the previous behaviour exactly, so no consuming project changes.
+    """
+    stated = _cfg(root, "enabled", None)
+    if stated is None:
+        return sdlc_md.is_schema_v3(root)
+    return bool(stated)
+
+
 def session_cap(root) -> int:
     try:
         return int(_cfg(root, "session_cap", 20))
@@ -89,7 +110,7 @@ def session_count(root) -> int:
 def enforce_session_cap(root) -> None:
     """Raise loudly when the session has already filed `session_cap` findings. Call BEFORE
     minting a new finding artefact; a no-op unless the project is schema v3."""
-    if not sdlc_md.is_schema_v3(root):
+    if not active(root):
         return
     cap = session_cap(root)
     if session_count(root) >= cap:
@@ -102,7 +123,7 @@ def enforce_session_cap(root) -> None:
 def record_creation(root) -> int:
     """Count one minted finding against the session budget; returns the new count. No-op
     (returns 0) unless schema v3. Call AFTER a new finding artefact is written."""
-    if not sdlc_md.is_schema_v3(root):
+    if not active(root):
         return 0
     cur = session_count(root)
     p = _state_path(root)
@@ -114,7 +135,7 @@ def record_creation(root) -> int:
 def should_consolidate(root, severity: str | None) -> bool:
     """True when a finding of this severity folds into a consolidation CR instead of its own
     artefact (Low severity, low_consolidation on, schema v3)."""
-    return sdlc_md.is_schema_v3(root) and low_consolidation(root) and is_low(severity)
+    return active(root) and low_consolidation(root) and is_low(severity)
 
 
 def _theme(type_: str, fields: dict) -> str:

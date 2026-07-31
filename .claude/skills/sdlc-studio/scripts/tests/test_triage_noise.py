@@ -145,6 +145,64 @@ class ConsolidationTests(unittest.TestCase):
             self.assertIsNone(res.get("consolidated_into"))          # individual, into inbox
 
 
+class TriageEnabledKnobTests(unittest.TestCase):
+    """CR0510. The controls were reachable only through a schema v3 bump that also switches on
+    plan-review, spec-guard and the inbox status - so adopting a session cap meant adopting four
+    unrelated things, and they had never once run on the project that built them: 801 findings
+    filed in a month against an unused cap of 20, with the low-severity fold hand-rolled."""
+
+    def test_a_v2_project_that_ASKS_gets_the_controls(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio"
+            sd.mkdir(parents=True, exist_ok=True)
+            (sd / ".config.yaml").write_text(
+                "schema_version: 2\ntriage:\n  enabled: true\n  low_consolidation: true\n",
+                encoding="utf-8")
+            self.assertTrue(tn.active(root),
+                            "a v2 project stating triage.enabled still gets no controls, so the "
+                            "knob is decorative and the schema bump is still the only route")
+            self.assertTrue(tn.should_consolidate(root, "low"))
+
+    def test_an_UNSET_knob_keeps_the_previous_behaviour_exactly(self) -> None:
+        """The compatibility half. Every consuming project has no `triage` block, and the change
+        must be invisible to all of them - a knob that silently switches controls on for someone
+        who never asked is a worse defect than the one being fixed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio"
+            sd.mkdir(parents=True, exist_ok=True)
+            (sd / ".config.yaml").write_text("schema_version: 2\n", encoding="utf-8")
+            self.assertFalse(tn.active(root), "an unset knob turned the controls ON under v2")
+            (sd / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+            self.assertTrue(tn.active(root), "an unset knob turned the controls OFF under v3")
+
+    def test_the_knob_can_turn_them_OFF_under_v3(self) -> None:
+        """Both directions, or it is a switch with one position."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio"
+            sd.mkdir(parents=True, exist_ok=True)
+            (sd / ".config.yaml").write_text(
+                "schema_version: 3\ntriage:\n  enabled: false\n", encoding="utf-8")
+            self.assertFalse(tn.active(root))
+            self.assertFalse(tn.should_consolidate(root, "low"))
+
+    def test_the_SHIPPED_repo_config_has_them_on(self) -> None:
+        """This project's own config, not a fixture. The whole point is that it stops being
+        the project that ships a noise control it has never run."""
+        # parents[5], not [4]: tests -> scripts -> sdlc-studio -> skills -> .claude -> root.
+        # The first version was off by one and SKIPPED, which reads as a pass - so it reported
+        # green whether or not this repo had the controls on, which is the only thing it checks.
+        repo = Path(__file__).resolve().parents[5]
+        cfg = repo / "sdlc-studio" / ".config.yaml"
+        self.assertTrue(cfg.is_file(),
+                        f"{cfg} not found - this test skips into a false pass if it cannot "
+                        f"locate the repo, so it fails instead")
+        self.assertTrue(tn.active(repo),
+                        "this repo files ~26 findings a day with the controls switched off")
+
+
 class ConsolidationBulletTests(unittest.TestCase):
     """A consolidation bullet must render a multi-line summary faithfully, not squeeze it onto one
     line. A raw newline embedded in the bullet breaks the summary's later lines OUT of the list
