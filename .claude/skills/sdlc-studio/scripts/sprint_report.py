@@ -81,6 +81,7 @@ def _mutation_row(mut, root: Path, row: dict) -> dict:
     else:
         cost = round(float(elapsed) / len(filed), 1)
     return {"run_id": row.get("run_id"), "at": row.get("at"), "elapsed_s": elapsed,
+            "tree": row.get("tree") or {},
             "applied": row.get("applied"), "killed": row.get("killed"),
             "survived": row.get("survived"), "evidence": bool(row.get("evidence")),
             "outcome": row.get("outcome"),
@@ -374,9 +375,20 @@ def _mutation_lines(m: dict | None) -> list[str]:
     per = (f" - {cur['cost_per_finding_s']}s per finding" if cur["cost_per_finding_s"]
            else f" - {cur['cost_per_finding_note']}")
     equiv = f", {cur['equivalent']} equivalent (excluded)" if cur["equivalent"] else ""
+    # The tree the counts were measured in, BESIDE them. A survivor measured in a tree another
+    # reviewer was cleaning up in is not the same evidence as one measured in a checkout of its
+    # own, and the close is exactly where that difference has to be legible: this is the page
+    # the reviewer of record signs off from. Silent for a confirmed isolated tree.
+    tree = cur.get("tree") or {}
+    qualifier = ""
+    if tree.get("isolated") is False:
+        qualifier = f" MEASURED IN A SHARED TREE: {tree.get('why', '')}"
+    elif tree.get("isolated") is None:
+        qualifier = (f" TREE UNESTABLISHED: {tree.get('why') or 'no isolation evidence was '
+                     'recorded for this run'}")
     return [f"Mutation gate: {cur['elapsed_s']}s, {cur['applied']} applied, "
             f"{cur['killed']} killed, {cur['survived']} survived{equiv}; "
-            f"yield {cur['yield']} filed artefact(s) ({filed}){per}.", *trailing]
+            f"yield {cur['yield']} filed artefact(s) ({filed}){per}.{qualifier}", *trailing]
 
 
 #: Modes that count as having RUN something. `reuse` ran nothing and is counted apart: folding

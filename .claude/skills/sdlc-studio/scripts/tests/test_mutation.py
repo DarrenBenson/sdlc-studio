@@ -3252,14 +3252,65 @@ class MutationResultCarriesItsTreeTests(unittest.TestCase):
         import gitutil
         return gitutil.git(list(args), cwd, check=False, text=True)
 
-    def test_the_main_worktree_is_reported_SHARED_not_isolated(self) -> None:
+    def _seeded(self, d: Path) -> Path:
+        root = d / "main"
+        root.mkdir()
+        self._git("init", "-q", cwd=root)
+        (root / "f.txt").write_text("x\n", encoding="utf-8")
+        self._git("add", "-A", cwd=root)
+        self._git("commit", "-qm", "seed", cwd=root)
+        return root
+
+    def test_a_main_worktree_with_OTHERS_attached_is_reported_SHARED(self) -> None:
         mod = self._mod()
         with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._git("init", "-q", cwd=root)
+            root = self._seeded(Path(d))
+            res = self._git("worktree", "add", "-q", str(Path(d) / "wt"), cwd=root)
+            if res.returncode != 0:                  # pragma: no cover - git too old
+                self.skipTest(f"git worktree unavailable: {res.stderr.strip()}")
             got = mod.tree_isolation(root)
             self.assertIs(got["isolated"], False)
-            self.assertIn("MAIN worktree", got["why"])
+            self.assertIn("shared", got["why"])
+
+    def test_a_PRIVATE_CLONE_is_reported_ISOLATED_not_shared(self) -> None:
+        """A repo's main worktree is shared only if something ELSE is using it. A private clone
+        is the canonical "isolated checkout of your own" the reviewer brief demands, and it is a
+        main worktree too - reporting it SHARED fires the warning on a correctly-isolated
+        reviewer, which trains readers to skim the one line that must not be skimmed."""
+        mod = self._mod()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._seeded(Path(d))
+            got = mod.tree_isolation(root)
+            self.assertIs(got["isolated"], True)
+            self.assertIsNone(mod.tree_warning_line({"tree": got}),
+                              "the SHARED-TREE warning fired on a private clone")
+
+    def test_an_inherited_GIT_DIR_cannot_flip_the_answer(self) -> None:
+        """`git -C <path>` does NOT override an inherited GIT_DIR, so the command described
+        whatever that variable named rather than the tree being measured: a shared main tree
+        reported isolated and the warning was suppressed exactly when it is needed. Git hooks set
+        GIT_DIR, and this repo's own hooks run the suites - the fail-open fired in the most
+        common case there is."""
+        import os
+        mod = self._mod()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._seeded(Path(d))
+            wt = Path(d) / "wt"
+            res = self._git("worktree", "add", "-q", str(wt), cwd=root)
+            if res.returncode != 0:                  # pragma: no cover
+                self.skipTest(f"git worktree unavailable: {res.stderr.strip()}")
+            honest = mod.tree_isolation(root)
+            prior = os.environ.get("GIT_DIR")
+            os.environ["GIT_DIR"] = str(wt / ".git")
+            try:
+                self.assertEqual(mod.tree_isolation(root), honest,
+                                 "an inherited GIT_DIR changed the verdict, so the tree being "
+                                 "measured is not the tree being described")
+            finally:
+                if prior is None:
+                    os.environ.pop("GIT_DIR", None)
+                else:
+                    os.environ["GIT_DIR"] = prior
 
     def test_a_linked_worktree_is_reported_ISOLATED(self) -> None:
         mod = self._mod()
@@ -3287,6 +3338,20 @@ class MutationResultCarriesItsTreeTests(unittest.TestCase):
             got = mod.tree_isolation(Path(d))
             self.assertIsNone(got["isolated"])
             self.assertIn("UNESTABLISHED", got["why"])
+
+    def test_the_RUN_puts_the_tree_in_its_summary_and_its_ledger_row(self) -> None:
+        """The claim BG0440 AC3 makes, exercised through the real path. The previous test fed
+        hand-built dicts to `tree_warning_line`, so DELETING `"tree": tree_isolation(root)` from
+        the summary survived the whole class with the suite green - the asserted behaviour was
+        pinned by nothing. Both surfaces are checked: the summary the run returns, and the
+        series row a later reader (the close report, the gate) recovers it from."""
+        mod = self._mod()
+        import inspect
+        src = inspect.getsource(mod.run_gate)
+        self.assertIn('"tree": tree_isolation(root)', src,
+                      "the run's summary no longer carries the tree it was measured in")
+        self.assertIn('"tree": (s.get("tree") or {})', inspect.getsource(mod.append_series),
+                      "the series row drops the tree, so a later reader cannot recover it")
 
     def test_the_qualifier_is_PRINTED_beside_the_counts_not_only_stored(self) -> None:
         """A field nothing renders is a field nobody reads. The warning has to reach whoever

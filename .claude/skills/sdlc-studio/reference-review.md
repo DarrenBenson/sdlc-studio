@@ -419,8 +419,11 @@ in an author's tree **silently reverted** a shipped repair this way, and the sui
 over the reverted code because nothing pinned the repaired behaviour.
 
 The author-side rule that follows: `scripts/mutation.py run` **refuses a target with uncommitted
-changes**, naming the file, before it applies a single mutant. Commit or stash the work first, or
-point the run at an isolated checkout. Reasoning about what edit would turn a test red costs
+changes**, naming the file, before it applies a single mutant. Commit the work first, or point
+the run at an isolated checkout. `git stash` is fine for an AUTHOR clearing their own tree and
+is forbidden to a delegated REVIEWER - it is tree-wide, so in a shared tree it reverts another
+reviewer's mutant mid-run. That distinction is the whole reason the reviewer works in a
+checkout of its own. Reasoning about what edit would turn a test red costs
 nothing and needs no tree at all, which is the right move for a reviewer who has neither.
 
 **The rule is now in the brief, not only here.** It was enforced author-side only for a while,

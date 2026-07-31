@@ -1065,11 +1065,19 @@ def tree_isolation(repo_root: Path | str) -> dict:
     in the counts says so - which is what this qualifier fixes. A linked worktree has its own
     `--git-dir` while sharing `--git-common-dir`; the main worktree's two are the same path.
     """
+    import os  # noqa: PLC0415
     import subprocess  # noqa: PLC0415 - only this path needs it
+    # `git -C <path>` does NOT override an inherited `GIT_DIR`, so the command described
+    # whatever that variable named rather than the tree being measured: with GIT_DIR pointing at
+    # a linked worktree, the shared main tree reported `isolated: True` and the warning was
+    # suppressed exactly when it is needed. Git hooks set GIT_DIR, and this repo's own hooks run
+    # the suites - so the fail-open fired in the most common case there is.
+    env = {k: v for k, v in os.environ.items()
+           if k not in ("GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE")}
     try:
         res = subprocess.run(["git", "-C", str(repo_root), "rev-parse",
                               "--absolute-git-dir", "--git-common-dir"],
-                             capture_output=True, text=True, check=False, timeout=15)
+                             capture_output=True, text=True, check=False, timeout=15, env=env)
     except (OSError, subprocess.SubprocessError) as exc:
         return {"isolated": None, "why": f"git could not be run here ({exc}), so whether this "
                                          f"tree is the author's is UNESTABLISHED"}
@@ -1088,10 +1096,40 @@ def tree_isolation(repo_root: Path | str) -> dict:
     if own != common:
         return {"isolated": True, "why": f"a linked worktree ({own.name}), so no concurrent "
                                          f"reviewer's cleanup could revert a mutant here"}
+    # A repo's main worktree is shared only if something ELSE is using it. A private clone -
+    # the canonical "isolated checkout of your own" the reviewer brief demands - is a main
+    # worktree too, and reporting it SHARED fires the warning on a correctly-isolated reviewer,
+    # which trains readers to skim the one line that must not be skimmed. The distinguishing
+    # fact is whether this repo has any OTHER worktree attached.
+    others = _linked_worktrees(repo_root, env)
+    if others == 0:
+        return {"isolated": True, "why": "the only worktree of this repository (a private "
+                                         "clone), so no concurrent reviewer shares this tree"}
+    if others is None:
+        return {"isolated": None,
+                "why": "the main worktree, and git could not say whether others are attached - "
+                       "isolation is UNESTABLISHED, so read the counts knowing a concurrent "
+                       "reviewer's tree-wide cleanup may have reverted a mutant"}
     return {"isolated": False,
-            "why": "the MAIN worktree, which is shared by construction: a concurrent reviewer's "
-                   "`git stash` or `git checkout --` reverts mutants tree-wide, so a SURVIVED "
-                   "verdict here is not sound evidence unless nothing else was running"}
+            "why": f"the MAIN worktree with {others} other worktree(s) attached, so it is "
+                   f"shared: a concurrent reviewer's `git stash` or `git checkout --` reverts "
+                   f"mutants tree-wide, and a SURVIVED verdict here is not sound evidence "
+                   f"unless nothing else was running"}
+
+
+def _linked_worktrees(repo_root: Path | str, env: dict) -> int | None:
+    """How many worktrees OTHER than the main one this repository has, or None when git cannot
+    say. None is a real answer: an unanswerable count must not read as zero, which would report
+    a shared tree as private."""
+    import subprocess  # noqa: PLC0415
+    try:
+        res = subprocess.run(["git", "-C", str(repo_root), "worktree", "list", "--porcelain"],
+                             capture_output=True, text=True, check=False, timeout=15, env=env)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if res.returncode != 0:
+        return None
+    return max(0, sum(1 for ln in res.stdout.splitlines() if ln.startswith("worktree ")) - 1)
 
 
 def tree_warning_line(summary: dict) -> str | None:
@@ -1407,6 +1445,11 @@ def append_series(root: Path | str, report: dict, elapsed_s: float) -> dict:
         "evidence": evidence,
         "outcome": ("nothing-to-mutate" if empty else "measured" if evidence else "no-evidence"),
         "no_evidence_reason": reason,
+        # The tree the counts were measured in, RECORDED as well as printed. Without it the fact
+        # was recoverable only from the run's own stdout, so every later reader of the series -
+        # the close report, the gate - saw KILLED/SURVIVED with no way to tell a private
+        # checkout's numbers from a shared tree's.
+        "tree": (s.get("tree") or {}),
     }
     reset = _series_malformed(path)
     path.parent.mkdir(parents=True, exist_ok=True)

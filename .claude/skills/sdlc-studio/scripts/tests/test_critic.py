@@ -1654,8 +1654,15 @@ class OneIndependenceAuthorityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod.record_verdict(root, "US0001", "APPROVE", reviewer="", author="alice")
-            written = mod.verdicts_path(root).read_text(encoding="utf-8")
-            self.assertIn("| - |", written, "the empty reviewer cell was not floored")
+            # The PARSED REVIEWER CELL, not a substring of the row. `assertIn("| - |", ...)` was
+            # satisfied by the trailing ISSUES cell whatever the reviewer held, so dropping the
+            # floor left the test green and the mutant survived the entire skill suite - the one
+            # writer-side behaviour this bug shipped was pinned by nothing.
+            rows = mod.read_verdicts(root)
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["reviewer"], "-",
+                             "the empty reviewer cell was not floored - it reached the ledger "
+                             f"as {rows[0]['reviewer']!r}")
             self.assertFalse(mod.is_independent(mod.verdict_for(root, "US0001")))
 
     def test_NO_module_hand_rolls_the_independence_comparison(self) -> None:
@@ -1664,19 +1671,33 @@ class OneIndependenceAuthorityTests(unittest.TestCase):
         import ast
         scripts = Path(__file__).resolve().parents[1]
         offenders = []
-        for path in sorted(scripts.glob("*.py")):
+        # `scripts/lib/` TOO. The first version globbed `scripts/*.py` only, so the same
+        # hand-rolled predicate placed one directory down was invisible - a sweep that names its
+        # scope narrower than its claim reports the narrow answer as the broad one, which is the
+        # class this repo's own carried lessons name twice.
+        for path in sorted([*scripts.glob("*.py"), *(scripts / "lib").glob("*.py")]):
             if path.name == "critic.py":
                 continue                      # the authority itself
             try:
                 tree = ast.parse(path.read_text(encoding="utf-8"))
             except (OSError, SyntaxError):
                 continue
+            # An ALIASED import evades an Attribute-only match: `from critic import _id as _n`
+            # binds a plain Name, so `_n(a) == _n(b)` is the same hand-rolled predicate wearing a
+            # different shape. Collect the local names any such import binds, then flag calls to
+            # them as well as `critic._id(...)`.
+            aliases = {a.asname or a.name
+                       for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)
+                       and (node.module or "").split(".")[-1] == "critic"
+                       for a in node.names if a.name.startswith("_")}
             for node in ast.walk(tree):
                 # `critic._id(...)` - reaching into the authority's private normaliser is how a
                 # caller builds its own comparison out of the authority's parts.
                 if (isinstance(node, ast.Attribute) and node.attr == "_id"
                         and isinstance(node.value, ast.Name) and node.value.id == "critic"):
                     offenders.append(f"{path.name}:{node.lineno}")
+                elif isinstance(node, ast.Name) and node.id in aliases:
+                    offenders.append(f"{path.name}:{node.lineno} (aliased {node.id})")
         offenders = sorted(set(offenders))
         self.assertEqual(
             offenders, [],

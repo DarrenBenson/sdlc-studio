@@ -410,7 +410,7 @@ class TheVerbEnforcesTheBarItWritesTests(unittest.TestCase):
     written. `transition.py`, the verb that writes `Status: Done`, never consulted it: no call,
     no config read, no reference to the evidence half anywhere in the module. So a unit could be
     moved to Done with no independent review at all, and the only trace was a report somebody had
-    to run and read. That is the cause behind 25 Done stories carrying no independent verdict:
+    to run and read. That is the mechanism behind every Done story carrying no independent verdict (the count of 25 that circulated with this bug is NOT supported by the tree - a claims-lens census found 21, all pre-cutoff):
     they did not slip past a gate, the gate they are said to have passed was never asked."""
 
     def _repo(self, root: Path, *, cutoff: int | None = 0, sid: str = "US0001") -> None:
@@ -435,10 +435,20 @@ class TheVerbEnforcesTheBarItWritesTests(unittest.TestCase):
             with self.assertRaises(ValueError) as cm:
                 tr.transition(root, "US0001", "Done")
             msg = str(cm.exception)
-            self.assertIn("EVIDENCE", msg)
-            self.assertIn("SIGN-OFF", msg,
-                          "an absent adversarial pass and an absent sign-off need different "
-                          "actions from different people, so both must be named")
+            # conformance's OWN vocabulary, which is the point of delegating: the verb and the
+            # lane must name the same halves. The first version re-implemented them inline with
+            # its own strings AND omitted the verdict half, so it was weaker than the lane.
+            # conformance's OWN vocabulary, which is the point: the verb and the lane must
+            # name the same halves, so a rename moves both. The VERDICT half is deliberately
+            # NOT this gate's - it belongs to the `critiqued` stage, and demanding it here
+            # refused work the lane accepts.
+            import conformance
+            for half in (conformance.HALF_EVIDENCE, conformance.HALF_SIGNOFF):
+                self.assertIn(half, msg,
+                              f"{half!r} is not named - each unmet half needs a different "
+                              f"action from a different person, so all must be listed")
+            self.assertNotIn(conformance.HALF_VERDICT, msg,
+                             "the verdict half is the critiqued stage's, not this gate's")
 
     def test_a_unit_with_a_SIGN_OFF_and_no_evidence_is_still_refused(self) -> None:
         """The bug's own reproduction: US0479 had a genuine operator sign-off, no adversarial
@@ -447,11 +457,14 @@ class TheVerbEnforcesTheBarItWritesTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._repo(root)
+            critic.record_verdict(root, "US0001", "APPROVE", reviewer="reviewer-a",
+                                  author="builder", issues="probed")
             critic.record_signoff(root, "US0001", principal="the operator", author="builder",
                                   note="looks right")
             with self.assertRaises(ValueError) as cm:
                 tr.transition(root, "US0001", "Done")
-            self.assertIn("EVIDENCE", str(cm.exception))
+            import conformance
+            self.assertIn(conformance.HALF_EVIDENCE, str(cm.exception))
 
     def test_a_unit_with_BOTH_halves_is_allowed_through(self) -> None:
         """The control. A gate nothing can satisfy is not a gate, it is a wall - and the whole
@@ -460,6 +473,12 @@ class TheVerbEnforcesTheBarItWritesTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._repo(root)
+            # ALL THREE halves. The first version of this control recorded only evidence and a
+            # sign-off, so it passed a story to Done with no independent APPROVE - which
+            # conformance would then have marked non-conformant. A control asserting a weaker
+            # bar than the lane is how the gate came to be weaker than the lane.
+            critic.record_verdict(root, "US0001", "APPROVE", reviewer="reviewer-a",
+                                  author="builder", issues="probed")
             critic.record_evidence(root, "US0001", reviewer="reviewer-a", author="builder",
                                    findings="probed the parser")
             critic.record_signoff(root, "US0001", principal="the operator", author="builder",
@@ -484,15 +503,57 @@ class TheVerbEnforcesTheBarItWritesTests(unittest.TestCase):
             self._repo(root, cutoff=500)
             tr.transition(root, "US0001", "Done")          # does not raise
 
-    def test_force_still_overrides_and_the_bypass_is_recorded(self) -> None:
+    def test_force_still_overrides_and_the_bypass_is_RECORDED(self) -> None:
         """`--force` stays available and stays visible: a two-role bypass must be at least as
-        recorded as every other forceable close gate."""
+        recorded as every other forceable close gate. The recording half is asserted, not just
+        the override - an earlier version of this test named it and checked only that the status
+        moved, so a mutant blanking the bypass list left it green."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._repo(root)
             tr.transition(root, "US0001", "Done", force=True)
-            self.assertIn("Done", (root / "sdlc-studio" / "stories" / "US0001-x.md")
-                          .read_text(encoding="utf-8"))
+            body = (root / "sdlc-studio" / "stories" / "US0001-x.md").read_text(encoding="utf-8")
+            self.assertIn("Done", body)
+            self.assertIn("two_role_after", body,
+                          "the artefact does not record WHICH gate was bypassed, so a forced "
+                          "two-role override is indistinguishable from an ordinary close")
+
+    def test_an_UNREADABLE_CONFIG_refuses_rather_than_disabling_the_gate(self) -> None:
+        """The reviewer's blocking finding, and the sharpest one: `project_override` swallows
+        every config fault by design and returns the default, so a broken `.config.yaml` made
+        the cutoff None, `two_role_applies_to` False, and the gate returned before it ever
+        touched a ledger. Reproduced five ways - malformed YAML, tab indentation, non-UTF-8
+        bytes, `.config.yaml` as a directory, PyYAML absent - each writing `Status: Done`, exit
+        0. That is this gate's own stated principle, silence read as a pass, reproduced one
+        layer up inside the gate written to close it."""
+        for label, blob in (("malformed", b"review:\n\t\ttwo_role_after: [[[\n"),
+                            ("non-utf8", b"review:\n  two_role_after: \xff\xfe\n")):
+            with self.subTest(config=label), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._repo(root, cutoff=None)
+                (root / "sdlc-studio" / ".config.yaml").write_bytes(blob)
+                # The config reader warns loudly about the unparseable file, which is correct
+                # behaviour and pure noise HERE - a green suite must say nothing, or a real
+                # error hides in it. Captured rather than silenced, so the warning still exists
+                # for the operator who meets it.
+                with contextlib.redirect_stderr(io.StringIO()):
+                    with self.assertRaises(ValueError) as cm:
+                        tr.transition(root, "US0001", "Done")
+                self.assertIn("could not be parsed", str(cm.exception))
+
+    def test_a_VALID_config_that_omits_the_rule_is_not_held_to_it(self) -> None:
+        """The control that keeps the refusal above honest. A project whose config PARSES and
+        simply does not declare the two-role rule has not adopted it, and refusing there would
+        hold every project to a rule none of them opted into - the opposite failure, and just
+        as wrong. The distinguishing fact is whether the file can be READ, not whether it
+        happens to mention the key: an unparseable config means you cannot know what it
+        declared, which is why that case refuses and this one does not."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, cutoff=None)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "quality:\n  done_requires_verified: true\n", encoding="utf-8")
+            tr.transition(root, "US0001", "Done")          # does not raise
 
     def test_an_unreadable_bar_is_NOT_a_passed_one(self) -> None:
         """Fails CLOSED. This gate exists because silence was being read as a pass, so a gate

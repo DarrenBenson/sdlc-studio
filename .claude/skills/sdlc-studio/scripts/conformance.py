@@ -279,6 +279,40 @@ def two_role_applies_to(rid: str, two_role_cutoff: int | None) -> bool:
     return rid_num is None or rid_num > two_role_cutoff
 
 
+def critiqued_unmet(root, rid, two_role_cutoff: int | None,
+                    critic_required: bool = True, two_role_only: bool = False) -> list[str]:
+    """The `critiqued` halves left unmet for `rid`, in this module's own vocabulary.
+
+    THE authority for the Done review bar, so the lane and the VERB that writes `Status: Done`
+    ask one question and get one answer. `transition.py` first re-implemented these halves
+    inline against `critic.*` with its own strings while claiming in its docstring to delegate
+    "the predicate AND the vocabulary" - and the copy was WEAKER than this one, omitting the
+    verdict half entirely, so a story reached Done with no independent APPROVE recorded and the
+    lane then marked it non-conformant. Two answers to one question is the drift the docstring
+    said it was avoiding.
+    """
+    verdict = critic.verdict_for(root, rid)
+    sprint_covers = critic.sprint_covers_independently(
+        root, rid, critic.sprint_review_for(root, rid))
+    per_unit_ok = (bool(verdict) and verdict["verdict"] == critic.APPROVE
+                   and (critic.is_independent(verdict) or critic.is_pre_gate(verdict)))
+    verdict_ok = per_unit_ok or (verdict is None and sprint_covers)
+    unmet = []
+    # `two_role_only` is for the callers that enforce the TWO-ROLE clause specifically - the
+    # Done verb, whose bar is that clause. The verdict half is the `critiqued` stage's own
+    # concern and is enforced by this lane; a verb that also demanded it would refuse work this
+    # lane accepts, which is the same two-answers-to-one-question defect pointing the other way.
+    # The vocabulary is shared either way, which is what stops the two drifting.
+    if critic_required and not verdict_ok and not two_role_only:
+        unmet.append(HALF_VERDICT)
+    if two_role_applies_to(rid, two_role_cutoff):
+        if not (bool(critic.evidence_for(root, rid)) or sprint_covers):
+            unmet.append(HALF_EVIDENCE)
+        if not critic.is_independent_signoff(root, rid, critic.signoff_for(root, rid)):
+            unmet.append(HALF_SIGNOFF)
+    return unmet
+
+
 def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
                  two_role_cutoff=None, critic_required=True, dead_stamps=0) -> tuple:
     """The four Done-only conformance stages (verified, reconciled, critiqued, documented),

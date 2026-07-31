@@ -242,11 +242,18 @@ def review_repair_plan(root: Path | str, plan_id: str, verdict: str, reviewer: s
     plan = load_plan(root, plan_id)
     if plan is None:
         raise FileNotFoundError(f"no repair plan {plan_id!r} to review")
-    if _clean(reviewer) == _clean(plan.get("author", "")) or _clean(reviewer) == _clean(author):
-        raise ValueError(
-            f"a plan's author cannot record its own review ({reviewer!r}). The repair-plan "
-            "review is an independent pass; a delegate the author controls does not satisfy "
-            "it (US0312 AC2)")
+    # THE authority, not a fifth hand-rolled copy. This compared `_clean(reviewer)` against the
+    # plan author with its own normaliser and never asked `critic.independence`, so it ACCEPTED
+    # the exact empty-reviewer row the independence work claims to have closed everywhere - a
+    # bad row written, even though the downstream `plan_reviewed` refuses it. Both identities
+    # the review must differ from are checked, which is this gate's own extra clause.
+    for other in (plan.get("author", ""), author):
+        independent, why = critic.independence(reviewer, other)
+        if not independent:
+            raise ValueError(
+                f"the repair-plan review is not independent ({reviewer!r} vs {other!r}): {why}. "
+                "A plan's author cannot record its own review, and a delegate the author "
+                "controls does not satisfy it (US0312 AC2)")
     fp = plan.get("fingerprint", "")
     issues = f"plan={plan_id}; findings-hash={fp}"
     return critic.record_verdict(root, plan_id, verdict, reviewer, author, issues,
