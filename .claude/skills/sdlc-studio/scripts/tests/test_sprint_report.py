@@ -1229,6 +1229,23 @@ class SprintChecklistKnownIssuesBlindnessTests(ChecklistBase):
         self.assertEqual([], sr._carried_issues(self.root, "RETRO9100"),
                          "the control: a retro that IS found with no rows is empty, not blind")
 
+    def test_a_carried_table_that_RAISES_is_blindness_too(self) -> None:
+        """The exception limb, which the missing-retro test does not reach: `find_retro` answers
+        None there rather than raising. Both limbs must report blindness or the row can still be
+        made to say "none carried" while it saw nothing."""
+        import retro as retro_mod
+        real = retro_mod.carried_issues
+
+        def boom(_text):
+            raise ValueError("the table is malformed")
+
+        retro_mod.carried_issues = boom
+        try:
+            self.assertIsNone(sr._carried_issues(self.root, "RETRO9100"),
+                              "an unreadable carried table read as an empty one")
+        finally:
+            retro_mod.carried_issues = real
+
     def test_a_scan_that_RAN_and_found_nothing_still_says_so(self) -> None:
         """The control: the repair must not turn every clean sprint into 'unreadable'."""
         row = self._row(self._ck(), "known-issues")
@@ -1320,6 +1337,16 @@ class SprintChecklistDerivedFiguresTests(ChecklistBase):
         self.assertIn("/13 point(s)", row["value"],
                       "the planned points total is absent or is not summed from the planned "
                       "units' own artefacts")
+
+    def test_planned_points_tells_an_ABSENT_total_from_a_real_zero(self) -> None:
+        """None and 0 are different facts. A sprint whose planned units cannot be resolved has
+        no points total to report; one whose units genuinely carry no points has a total of
+        zero. Collapsing them would let the first read as a sprint that committed to nothing."""
+        self.assertIsNone(sr._planned_points(self.root, ["US9999"]),
+                          "an unresolvable planned set reported a total anyway")
+        _unit(self.root, "US0007", "Ready", pts=0)
+        self.assertEqual(0, sr._planned_points(self.root, ["US0007"]),
+                         "a genuine zero was reported as absent")
 
     def test_scope_creep_is_reported_as_a_count_and_a_ratio(self) -> None:
         bugs = self.root / "sdlc-studio" / "bugs"
@@ -1426,6 +1453,56 @@ class SprintChecklistNotDeliveredTests(ChecklistBase):
         row = self._row(ck, "not-delivered")
         self.assertNotIn("carry-over US0002", row["detail"],
                          "an unplanned unit is being reported against the plan")
+
+    def test_ONE_unit_appears_under_exactly_ONE_heading(self) -> None:
+        """Dropped, held, unaccounted and carried must partition the planned set. A planned,
+        deferred, non-terminal unit the retro does not list was emitted under BOTH held and
+        UNACCOUNTED, so one undelivered unit read "1 held, 1 UNACCOUNTED" beside "1/2 unit(s)"
+        - the arithmetic this row exists to make readable, stating two problems where there was
+        one. The unpinned UNACCOUNTED bucket is what let it through: deleting the bucket
+        entirely survived the whole suite, because the only assertion on it was satisfied by
+        the carry-over bucket already naming the same id."""
+        _unit(self.root, "US0001", "Done")
+        _unit(self.root, "US0002", "In Progress")
+        # PLANNED, DEFERRED on an open question, non-terminal, and absent from the retro.
+        self._run(batch=["US0001", "US0002"], deferred_units=["US0002"],
+                  pending_decisions=[{"unit": "US0002", "question": "which?",
+                                      "resolution": None}])
+        ck = sr.checklist(self.root, "RETRO9100", unit_ids=["US0001"])   # retro omits US0002
+        row = self._row(ck, "not-delivered")
+        self.assertEqual(1, row["detail"].count("US0002"),
+                         f"US0002 is reported more than once: {row['detail']}")
+        self.assertIn("1 held", row["value"])
+        self.assertNotIn("UNACCOUNTED", row["value"],
+                         "a held unit is also being counted as unaccounted")
+
+    def test_a_unit_both_DROPPED_and_deferred_is_reported_once(self) -> None:
+        """The same partition rule at the other boundary. A unit deferred on a question and then
+        dropped from the batch is one departure, not two: rendering "1 dropped, 1 held" for it
+        states two problems where there is one, and dropped is the later and truer fact."""
+        _unit(self.root, "US0002", "In Progress")
+        self._run(batch=["US0001"], deferred_units=["US0002"],
+                  pending_decisions=[{"unit": "US0002", "question": "which?",
+                                      "resolution": None}],
+                  batch_changes=[{"action": "drop", "id": "US0002", "reason": "descoped"}])
+        row = self._row(sr.checklist(self.root, "RETRO9100"), "not-delivered")
+        self.assertIn("1 dropped", row["value"])
+        self.assertIn("0 held", row["value"],
+                      "a dropped unit is also being counted as held")
+        self.assertEqual(1, row["detail"].count("US0002"),
+                         f"US0002 is reported more than once: {row['detail']}")
+
+    def test_the_UNACCOUNTED_bucket_is_what_names_a_unit_the_retro_omits(self) -> None:
+        """The bucket on its own. Its own heading must carry the unit, not merely some heading:
+        deleting it left carry-over naming the same id and every assertion still passed."""
+        _unit(self.root, "US0001", "Done")
+        _unit(self.root, "US0002", "Done")            # TERMINAL, so carry-over cannot claim it
+        self._run(batch=["US0001", "US0002"])
+        ck = sr.checklist(self.root, "RETRO9100", unit_ids=["US0001"])
+        row = self._row(ck, "not-delivered")
+        self.assertIn("UNACCOUNTED US0002", row["detail"],
+                      "a delivered-but-unlisted planned unit is named by no bucket at all")
+        self.assertIn("1 UNACCOUNTED", row["value"])
 
     def test_the_planned_set_reconciles_with_no_unit_unaccounted_for(self) -> None:
         _unit(self.root, "US0001", "Done")
@@ -1591,6 +1668,22 @@ class SprintChecklistAuthorityTests(ChecklistBase):
             decisions.record_waiver(self.root, f"{sr.WAIVER_SUBJECT}:not-a-real-item",
                                     "because I say so", authorised_by="someone")
         self.assertIn("not a checklist item", str(ctx.exception))
+
+    def test_a_PADDED_scope_tail_cannot_record_a_waiver_that_covers_nothing(self) -> None:
+        """The validator stripped the scope tail before checking while the store kept it, so
+        the validator was MORE PERMISSIVE than the store: `rule:sprint-checklist: cost` passed,
+        was written with the space intact, and the lookup - reading the unpadded key - never
+        found it. The waiver recorded cleanly, read as accepted, and covered nothing, which is
+        the exact defect the scope check was added to end."""
+        import decisions
+        self._run()
+        subject = f"{sr.WAIVER_SUBJECT}: cost"
+        decisions.record_waiver(self.root, subject, "no telemetry",
+                                authorised_by="the operator")
+        self.assertIsNotNone(decisions.waiver_for(self.root, f"{sr.WAIVER_SUBJECT}:cost"),
+                             "the padded subject was stored under a key nothing looks up")
+        self.assertNotIn("cost", sr.checklist(self.root, "RETRO9100")["outstanding"],
+                         "the item is still outstanding, so the waiver covered nothing")
 
     def test_a_BARE_rule_waiver_covers_nothing_and_is_refused(self) -> None:
         """The close reads a waiver per ITEM, so a row naming the family alone recorded clean

@@ -133,8 +133,16 @@ def add(root: Path | str, decision: str, rationale: str, status: str = "accepted
 
 def _norm_subject(subject: str | None) -> str:
     """Normalise a waiver subject (lowercase, whitespace-stripped) so `LEG:TSD`, ` leg:tsd `
-    and `leg:tsd` are the one key - lookup cannot miss on case or padding."""
-    return (subject or "").strip().lower()
+    and `leg:tsd` are the one key - lookup cannot miss on case or padding.
+
+    EVERY segment, not just the outer ends. Stripping only the outside left the inner padding
+    in the stored key while the scope validator stripped it before checking, so the validator
+    was more permissive than the store: `rule:sprint-checklist: cost` passed validation, was
+    written with the space intact, and `waiver_for` - looking up the unpadded key - never found
+    it. The waiver recorded cleanly, read as accepted, and covered nothing, which is verbatim
+    the defect the scope check was added to end.
+    """
+    return ":".join(part.strip() for part in (subject or "").strip().lower().split(":"))
 
 
 #: The module-level constant a checker publishes the rules it will honour a waiver for in.

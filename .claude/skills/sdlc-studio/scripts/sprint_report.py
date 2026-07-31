@@ -1150,7 +1150,8 @@ def _ck_not_delivered(ctx: dict) -> tuple:
     pending = {sdlc_md.norm_id(d.get("unit") or "")
                for d in (run.get("pending_decisions") or []) if not d.get("resolution")}
     held = [sdlc_md.norm_id(u) for u in (run.get("deferred_units") or [])
-            if sdlc_md.norm_id(u) in pending and not _terminal(ctx["root"], u)[1]]
+            if sdlc_md.norm_id(u) in pending and not _terminal(ctx["root"], u)[1]
+            and sdlc_md.norm_id(u) not in dropped_ids]
     # Carried is measured against the PLANNED set, not the retro's Batch. Reading the retro
     # made a planned unit that never reached it invisible here, so the row asserted "every
     # planned unit was delivered" while planned-vs-delivered above read 1/2 on the same page.
@@ -1158,9 +1159,14 @@ def _ck_not_delivered(ctx: dict) -> tuple:
     # DISJOINT, or a unit is reported twice under two headings and the counts stop adding up -
     # the shape an independent seat found in the dropped-versus-carried pair. A planned unit
     # the retro never lists is UNACCOUNTED; one it lists but nobody finished is CARRIED.
+    # ...and held, or a deferred unit the retro does not list is emitted under BOTH headings and
+    # one undelivered unit reads "1 held, 1 UNACCOUNTED". Every bucket here excludes the ones
+    # decided before it: dropped wins over held, held over unaccounted, unaccounted over
+    # carried. One unit, one heading, or the counts stop meaning anything.
     unaccounted = [u for u in (ctx["planned"] or [])
                    if sdlc_md.norm_id(u) not in seen
-                   and sdlc_md.norm_id(u) not in dropped_ids]
+                   and sdlc_md.norm_id(u) not in dropped_ids
+                   and sdlc_md.norm_id(u) not in held]
     unaccounted_ids = {sdlc_md.norm_id(u) for u in unaccounted}
     carried = [u for u in (ctx["planned"] or ctx["units"])
                if not _terminal(ctx["root"], u)[1]
