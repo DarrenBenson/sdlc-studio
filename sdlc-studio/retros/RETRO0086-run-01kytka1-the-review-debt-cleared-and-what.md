@@ -162,8 +162,6 @@ sprints fits noise.
 
 **0 of 46 unit(s) measured; 39 of 46 forecast at plan time.**
 
-**Sprint tokens/point: 79,623** (4,538,485 tokens over 57 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
-
 **Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
@@ -226,3 +224,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: not-yet-captured · Duration: one interactive session · Critic rejects: 19 of 26 units reviewed
+
+## Handoff
+
+- [HO-0038](../handoffs/HO0038-no-gate-reports-green-over-something-it-did.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
