@@ -1,6 +1,6 @@
 # US0574: the checklist is one row per STAGE of the sprint cycle, each stating ran, not-run or waived
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0505
 > **Created:** 2026-07-30
 > **Created-by:** sdlc-studio new

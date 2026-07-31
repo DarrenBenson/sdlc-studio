@@ -1,6 +1,6 @@
 # US0572: the close REFUSES on an unanswered compulsory item and names which one
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0505
 > **Created:** 2026-07-30
 > **Created-by:** sdlc-studio new

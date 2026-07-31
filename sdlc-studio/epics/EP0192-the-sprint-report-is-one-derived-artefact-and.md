@@ -1,6 +1,6 @@
 # EP0192: The sprint report is one derived artefact, and the close refuses without it
 
-> **Status:** In Progress
+> **Status:** Done
 > **Derived Point Total:** 27
 > **Parent:** CR0505
 > **Created:** 2026-07-30
@@ -14,13 +14,13 @@ Decomposed from CR0505. Delivers the work CR0505 requested.
 
 ## Story Breakdown
 
-- [ ] [US0569: the sprint report is DERIVED from the tree: planned against delivered, and scope creep as a number](../stories/US0569-the-sprint-report-is-derived-from-the-tree.md)
-- [ ] [US0570: a unit dropped or held mid-sprint records the reason, so the report names it instead of losing it with the session](../stories/US0570-a-unit-dropped-or-held-mid-sprint-records.md)
-- [ ] [US0571: a known issue carried past the close records its stop-ship ruling and who made it](../stories/US0571-a-known-issue-carried-past-the-close-records.md)
-- [ ] [US0572: the close REFUSES on an unanswered compulsory item and names which one](../stories/US0572-the-close-refuses-on-an-unanswered-compulsory-item.md)
-- [ ] [US0574: the checklist is one row per STAGE of the sprint cycle, each stating ran, not-run or waived](../stories/US0574-the-checklist-is-one-row-per-stage-of.md)
-- [ ] [US0575: the review row names who reviewed what, under which seat, over how many lenses](../stories/US0575-the-review-row-names-who-reviewed-what-under.md)
-- [ ] [US0576: impediments survive the close: blocked units and unresolved operator decisions are reported with what is in the way](../stories/US0576-impediments-survive-the-close-blocked-units-and-unresolved.md)
+- [x] [US0569: the sprint report is DERIVED from the tree: planned against delivered, and scope creep as a number](../stories/US0569-the-sprint-report-is-derived-from-the-tree.md)
+- [x] [US0570: a unit dropped or held mid-sprint records the reason, so the report names it instead of losing it with the session](../stories/US0570-a-unit-dropped-or-held-mid-sprint-records.md)
+- [x] [US0571: a known issue carried past the close records its stop-ship ruling and who made it](../stories/US0571-a-known-issue-carried-past-the-close-records.md)
+- [x] [US0572: the close REFUSES on an unanswered compulsory item and names which one](../stories/US0572-the-close-refuses-on-an-unanswered-compulsory-item.md)
+- [x] [US0574: the checklist is one row per STAGE of the sprint cycle, each stating ran, not-run or waived](../stories/US0574-the-checklist-is-one-row-per-stage-of.md)
+- [x] [US0575: the review row names who reviewed what, under which seat, over how many lenses](../stories/US0575-the-review-row-names-who-reviewed-what-under.md)
+- [x] [US0576: impediments survive the close: blocked units and unresolved operator decisions are reported with what is in the way](../stories/US0576-impediments-survive-the-close-blocked-units-and-unresolved.md)
 
 ## The cycle this checklist covers
 

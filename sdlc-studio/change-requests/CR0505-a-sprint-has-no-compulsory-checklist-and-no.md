@@ -1,6 +1,6 @@
 # CR-0505: a sprint has no compulsory checklist and no report document, so what was dropped, what crept in and what is carried are known only to whoever ran it
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0192
 > **Priority:** High
 > **Type:** Feature

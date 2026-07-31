@@ -1,6 +1,6 @@
 # US0569: the sprint report is DERIVED from the tree: planned against delivered, and scope creep as a number
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0505
 > **Created:** 2026-07-30
 > **Created-by:** sdlc-studio new

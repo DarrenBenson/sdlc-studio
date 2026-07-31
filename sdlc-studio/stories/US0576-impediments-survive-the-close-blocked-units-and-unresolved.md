@@ -1,6 +1,6 @@
 # US0576: impediments survive the close: blocked units and unresolved operator decisions are reported with what is in the way
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0505
 > **Created:** 2026-07-30
 > **Created-by:** sdlc-studio new

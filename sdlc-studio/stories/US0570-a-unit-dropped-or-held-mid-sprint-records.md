@@ -1,6 +1,6 @@
 # US0570: a unit dropped or held mid-sprint records the reason, so the report names it instead of losing it with the session
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0505
 > **Created:** 2026-07-30
 > **Created-by:** sdlc-studio new

@@ -11,8 +11,8 @@
 | Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 19 |
-| Done | 530 |
+| Review | 12 |
+| Done | 537 |
 | Won't Implement | 1 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -480,14 +480,14 @@
 | [US0566](US0566-feature-work-keeps-the-cheaper-bar-and-a.md) | Feature work keeps the cheaper bar, and a repair with no mutatable surface RECORDS that rather than being silently exempt | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0567](US0567-the-shipped-doctrine-states-that-a-fix-s.md) | The shipped doctrine states that a fix's author is not sufficient evidence for that fix, so a consuming project inherits the mechanism not only the lesson | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0568](US0568-the-108-findings-that-hide-a-run-id.md) | The 108 findings that hide a run id in prose are backfilled across all five run ids, with the lens honestly unknown rather than guessed | Done | EP0169 | 2026-07-30 | 2026-07-30 |
-| [US0569](US0569-the-sprint-report-is-derived-from-the-tree.md) | the sprint report is DERIVED from the tree: planned against delivered, and scope creep as a number | Review | EP0192 | 2026-07-30 | 2026-07-30 |
-| [US0570](US0570-a-unit-dropped-or-held-mid-sprint-records.md) | a unit dropped or held mid-sprint records the reason, so the report names it instead of losing it with the session | Review | EP0192 | 2026-07-30 | 2026-07-30 |
-| [US0571](US0571-a-known-issue-carried-past-the-close-records.md) | a known issue carried past the close records its stop-ship ruling and who made it | Review | EP0192 | 2026-07-30 | 2026-07-30 |
-| [US0572](US0572-the-close-refuses-on-an-unanswered-compulsory-item.md) | the close REFUSES on an unanswered compulsory item and names which one | Review | EP0192 | 2026-07-30 | 2026-07-30 |
+| [US0569](US0569-the-sprint-report-is-derived-from-the-tree.md) | the sprint report is DERIVED from the tree: planned against delivered, and scope creep as a number | Done | EP0192 | 2026-07-30 | 2026-07-30 |
+| [US0570](US0570-a-unit-dropped-or-held-mid-sprint-records.md) | a unit dropped or held mid-sprint records the reason, so the report names it instead of losing it with the session | Done | EP0192 | 2026-07-30 | 2026-07-30 |
+| [US0571](US0571-a-known-issue-carried-past-the-close-records.md) | a known issue carried past the close records its stop-ship ruling and who made it | Done | EP0192 | 2026-07-30 | 2026-07-30 |
+| [US0572](US0572-the-close-refuses-on-an-unanswered-compulsory-item.md) | the close REFUSES on an unanswered compulsory item and names which one | Done | EP0192 | 2026-07-30 | 2026-07-30 |
 | [US0573](US0573-an-uncommitted-changed-surface-is-reported-as-that.md) | an uncommitted changed surface is reported as that REASON, naming the isolated-checkout and register routes to measured evidence | Draft | EP0193 | 2026-07-30 | 2026-07-30 |
-| [US0574](US0574-the-checklist-is-one-row-per-stage-of.md) | the checklist is one row per STAGE of the sprint cycle, each stating ran, not-run or waived | Review | EP0192 | 2026-07-30 | 2026-07-30 |
-| [US0575](US0575-the-review-row-names-who-reviewed-what-under.md) | the review row names who reviewed what, under which seat, over how many lenses | Review | EP0192 | 2026-07-30 | 2026-07-30 |
-| [US0576](US0576-impediments-survive-the-close-blocked-units-and-unresolved.md) | impediments survive the close: blocked units and unresolved operator decisions are reported with what is in the way | Review | EP0192 | 2026-07-30 | 2026-07-30 |
+| [US0574](US0574-the-checklist-is-one-row-per-stage-of.md) | the checklist is one row per STAGE of the sprint cycle, each stating ran, not-run or waived | Done | EP0192 | 2026-07-30 | 2026-07-30 |
+| [US0575](US0575-the-review-row-names-who-reviewed-what-under.md) | the review row names who reviewed what, under which seat, over how many lenses | Done | EP0192 | 2026-07-30 | 2026-07-30 |
+| [US0576](US0576-impediments-survive-the-close-blocked-units-and-unresolved.md) | impediments survive the close: blocked units and unresolved operator decisions are reported with what is in the way | Done | EP0192 | 2026-07-30 | 2026-07-30 |
 
 ## Archived Releases
 

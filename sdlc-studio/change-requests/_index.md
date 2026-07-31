@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 9 |
 | Approved | 0 |
-| In Progress | 37 |
-| Complete | 444 |
+| In Progress | 36 |
+| Complete | 445 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 18 |
@@ -326,7 +326,7 @@
 | [CR-0502](CR0502-the-mutation-lane-asks-for-evidence-on-a.md) | the mutation lane asks for evidence on a changed surface the mutation runner refuses to mutate | In Progress | Medium | Improvement | 2026-07-30 | EP0193 |
 | [CR-0503](CR0503-an-adversarial-review-can-be-run-outside-the.md) | an adversarial review can be run outside the seat ceremony, losing every standing practice, and nothing detects that it was | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0504](CR0504-closing-review-is-doing-the-work-development-should.md) | closing review is doing the work development should have done, and the same five defect classes recur every sprint | Proposed | High | Improvement | 2026-07-30 | -- |
-| [CR-0505](CR0505-a-sprint-has-no-compulsory-checklist-and-no.md) | a sprint has no compulsory checklist and no report document, so what was dropped, what crept in and what is carried are known only to whoever ran it | In Progress | High | Feature | 2026-07-30 | EP0192 |
+| [CR-0505](CR0505-a-sprint-has-no-compulsory-checklist-and-no.md) | a sprint has no compulsory checklist and no report document, so what was dropped, what crept in and what is carried are known only to whoever ran it | Complete | High | Feature | 2026-07-30 | EP0192 |
 | [CR-0506](CR0506-a-reject-whose-findings-were-all-repaired-has.md) | a REJECT whose findings were all repaired has no route back to covered, so a fully repaired batch reads identically to one nobody reviewed | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0507](CR0507-closing-a-sprint-asks-twenty-questions-when-it.md) | closing a sprint asks twenty questions when it should ask two, and the ceremony now costs more than the work it certifies | Proposed | High | Improvement | 2026-07-30 | -- |
 | [CR-0508](CR0508-a-verify-selector-naming-a-test-that-does.md) | a Verify selector naming a test that does not exist is accepted at write time, though the predicate that would refuse it already ships | Proposed | High | Improvement | 2026-07-30 | -- |

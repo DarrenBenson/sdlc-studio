@@ -1,6 +1,6 @@
 # US0575: the review row names who reviewed what, under which seat, over how many lenses
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0505
 > **Created:** 2026-07-30
 > **Created-by:** sdlc-studio new
