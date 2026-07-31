@@ -223,6 +223,22 @@ def _scope_tail_error(subject: str) -> str | None:
     """The consumer's scope-tail check, for the subjects that carry one. A rule whose checker
     declares no scope grammar is unaffected - only a `rule:conformance:<stage>:<scope>` tail is
     read here, because that is the one a lane resolves against unit ids."""
+    checklist_rule = "rule:sprint-checklist"
+    checklist_stem = checklist_rule + ":"
+    if subject == checklist_rule:
+        # The BARE rule covers nothing: the close reads a waiver per item, so a row naming the
+        # family alone records clean and every item stays outstanding.
+        try:
+            import sprint_report
+        except ImportError:  # pragma: no cover - shipped beside this
+            return None
+        return sprint_report.scope_tail_error("")
+    if subject.startswith(checklist_stem):
+        try:
+            import sprint_report
+        except ImportError:  # pragma: no cover - shipped beside this
+            return None
+        return sprint_report.scope_tail_error(subject[len(checklist_stem):])
     stem = "rule:conformance:"
     if not subject.startswith(stem):
         return None
@@ -237,7 +253,7 @@ def _scope_tail_error(subject: str) -> str | None:
 
 
 def record_waiver(root: Path | str, subject: str, rationale: str,
-                  today: str | None = None) -> dict:
+                  today: str | None = None, authorised_by: str = "") -> dict:
     """Record a machine-detectable waiver: a decision row `waiver: <subject>`, with the human
     reason in the rationale cell. General over any waivable subject (a review leg `leg:tsd`, or
     a rule `rule:engagement-floor`), so a later gate reuses the same primitive.
@@ -265,7 +281,34 @@ def record_waiver(root: Path | str, subject: str, rationale: str,
     err = _scope_tail_error(subject)
     if err:
         raise ValueError(err)
+    # WHO authorised it, not only why. A waiver is somebody deciding a rule does not apply
+    # here; recorded without a name it is a decision with no decider, and the one question a
+    # later reader asks - who agreed to this? - has no answer. Required for the families whose
+    # rule demands it; recorded whenever supplied.
+    who = str(authorised_by or "").strip()
+    if not who and subject.startswith("rule:sprint-checklist"):
+        raise ValueError(
+            f"a waiver of {subject!r} must record WHO authorised it - a compulsory close item "
+            "set aside by nobody in particular is a decision with no decider")
+    rationale = f"{rationale.strip()} [authorised by: {who}]" if who else rationale
     return add(root, f"{WAIVER_PREFIX} {subject}", rationale, today=today)
+
+
+_AUTHORISER_RE = re.compile(r"\[authorised by:\s*(.+?)\s*\]\s*$")
+
+
+def waiver_authoriser(root: Path | str, subject: str) -> str | None:
+    """Who authorised the accepted waiver for `subject`, or None when the row records nobody.
+
+    None is a real answer, not a blank: a waiver recorded before the authoriser was required
+    genuinely names no one, and reporting that as an empty string would let a reader take it
+    for an authoriser whose name happens to be missing."""
+    want = f"{WAIVER_PREFIX} {_norm_subject(subject)}"
+    for rec in list_decisions(root):
+        if rec["status"] == "accepted" and rec["decision"].strip().lower() == want:
+            m = _AUTHORISER_RE.search(rec.get("rationale") or "")
+            return m.group(1) if m else None
+    return None
 
 
 def waiver_for(root: Path | str, subject: str) -> str | None:
@@ -396,7 +439,12 @@ def cmd_waive(args: argparse.Namespace) -> int:
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
-    r = record_waiver(args.root, subject, fields["rationale"])
+    try:
+        r = record_waiver(args.root, subject, fields["rationale"],
+                          authorised_by=getattr(args, "authorised_by", "") or "")
+    except ValueError as exc:
+        print(f"waive refused: {exc}", file=sys.stderr)
+        return 2
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"waived {_norm_subject(subject)} -> {r['id']} ({r['date']})")
     return 0
@@ -453,6 +501,10 @@ def build_parser() -> argparse.ArgumentParser:
     add_fields_file_arg(wv, ("rationale",))
     wv.add_argument("--root", default=".")
     wv.add_argument("--format", choices=("text", "json"), default="text")
+    wv.add_argument("--authorised-by", dest="authorised_by", default="", metavar="WHO",
+                    help="who authorised setting the rule aside. Required for a "
+                         "rule:sprint-checklist waiver: a compulsory close item set aside by "
+                         "nobody in particular is a decision with no decider")
     wv.set_defaults(func=cmd_waive)
     ls = sub.add_parser("list", help="List recorded decisions.")
     ls.add_argument("--status", help="filter by status")

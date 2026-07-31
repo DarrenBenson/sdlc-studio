@@ -1,6 +1,7 @@
 # BG0461: The checklist's own drift guard certifies two rows unchecked: `cycle_drift`'s third bucket is non-empty on the shipped tree and asserted by nothing, planned POINTS are computed nowhere, and a waiver records no authoriser
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (all five repairs mutation-verified: each defect restored as its own mutant, `assert count(old)==1`, `__pycache__` purged, `python3 -B`, reverted byte-identical; all five KILLED)
 > **Severity:** High
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/decisions.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_decisions.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
@@ -52,13 +53,41 @@ Validate a waiver's scope tail against the checklist ids, and record the authori
 
 ## Acceptance Criteria
 
-- [ ] `cycle_drift`'s unverifiable bucket is asserted empty by US0574 AC3's verifier, and `retro.py` publishes a `build_parser()` so `retro validate` is checkable
-- [ ] The uncovered check walks every script the checklist rows name, not `sprint` alone, so a ceremony added to `critic`, `retro`, `lessons` or `handoff` is caught
-- [ ] Planned POINTS are computed and rendered beside the delivered figures, and the reconstruction fixture uses a drop count and an add count that do not cancel
-- [ ] A waiver naming a scope that matches no checklist id is REFUSED rather than recorded, and an accepted waiver records its authoriser
+### AC1: the drift guard's third bucket is empty, and asserted
+
+- **Given** the shipped checklist and its holding scripts
+- **When** `cycle_drift` runs
+- **Then** `unverifiable` is empty and the verifier asserts it, because `retro.py` now publishes a `build_parser()` - it built its subparsers inside `main()`, so two of the eighteen rows were certified unchecked while a caller reading only the first two buckets saw green
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SprintChecklistStageTests::test_every_row_s_script_publishes_a_parser_so_none_is_UNVERIFIABLE
+- **Verified:** yes (2026-07-31)
+
+### AC2: the uncovered check walks every script the rows name
+
+- **Given** a ceremony verb added to `critic`, `retro`, `lessons` or `handoff` with no checklist row
+- **When** the guard runs
+- **Then** it is reported, script-qualified - six of the rows hold a stage outside `sprint`, and walking `sprint` alone meant a ceremony added to any of them grew no row and nothing said so
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SprintChecklistStageTests::test_a_ceremony_verb_added_to_a_NON_sprint_script_is_caught
+- **Verified:** yes (2026-07-31)
+
+### AC3: planned POINTS are reported beside delivered, on a fixture that cannot cancel
+
+- **Given** a run whose approved batch was reconstructed from its change ledger
+- **When** the planned-versus-delivered row is composed
+- **Then** it carries points on both sides, and the fixture uses one drop and no adds so the batch as approved and the batch as it stands are different numbers - one drop plus one add made them both 3, and deleting the reconstruction entirely survived the assertion
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SprintChecklistDerivedFiguresTests::test_planned_POINTS_are_reported_beside_delivered
+- **Verified:** yes (2026-07-31)
+
+### AC4: a waiver names a real item and records who authorised it
+
+- **Given** a waiver naming an item that does not exist, a waiver naming the bare rule, and a waiver naming nobody
+- **When** each is recorded
+- **Then** all three are REFUSED, and an accepted waiver's authoriser reads back - the scope tail was never validated, so a waiver covering nothing recorded cleanly while the close stayed blocked by the item the log said had been waived
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SprintChecklistAuthorityTests::test_a_waiver_records_WHO_authorised_it_and_it_reads_back
+- **Verified:** yes (2026-07-31)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-31 | Claude Opus 5 | Filed |
+| 2026-07-31 | Claude Opus 5 | All findings repaired. `retro.py` publishes `build_parser()`; the guard walks every ceremony script with per-script exemptions that over-report rather than under-report; planned points are summed from the planned units' artefacts; the waiver scope tail is validated against the checklist ids through the consumer's own published check, and an authoriser is required and readable. The scope statements added earlier are removed - the guard now does what it said. |

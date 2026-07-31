@@ -1028,8 +1028,15 @@ class SprintChecklistStageTests(ChecklistBase):
         self.assertEqual(drift["unresolved"], [],
                          "a checklist row names a command that no longer ships")
         self.assertEqual(drift["uncovered"], [],
-                         "a sprint ceremony verb has no checklist row and is not declared "
+                         "a ceremony verb has no checklist row and is not declared "
                          "mechanics in NON_CEREMONY_VERBS")
+        # The THIRD bucket, which this assertion did not make. It was non-empty on the shipped
+        # tree - `retro.py` built its subparsers inside `main()`, so two of the eighteen rows
+        # were certified unchecked - while a caller asserting only the first two read green.
+        # A guard reporting its own blindness into a bucket nobody asserts is not a guard.
+        self.assertEqual(drift["unverifiable"], [],
+                         "a checklist row's script publishes no build_parser(), so the row "
+                         "cannot be checked and the guard is reporting its own blindness")
 
     def test_a_new_ceremony_verb_with_no_row_is_CAUGHT(self) -> None:
         """The guard's own falsifiability: it must fail when the cycle really does gain a
@@ -1047,9 +1054,50 @@ class SprintChecklistStageTests(ChecklistBase):
 
         sprint_mod.build_parser = with_extra_verb
         try:
-            self.assertIn("retrospective", sr.cycle_drift()["uncovered"])
+            # Script-qualified now, because the guard walks every ceremony script and a bare
+            # verb name would not say which one gained a stage.
+            self.assertIn("sprint retrospective", sr.cycle_drift()["uncovered"])
         finally:
             sprint_mod.build_parser = real
+
+    def test_every_row_s_script_publishes_a_parser_so_none_is_UNVERIFIABLE(self) -> None:
+        """The third bucket on its own. It was non-empty on the shipped tree and asserted
+        nowhere: `retro.py` built its subparsers inside `main()`, so two of the eighteen rows
+        were certified unchecked while a caller reading the other two buckets saw green."""
+        self.assertEqual([], sr.cycle_drift()["unverifiable"])
+        # ...and the bucket still WORKS: a row whose script publishes no parser lands in it.
+        import retro as retro_mod
+        real = retro_mod.build_parser
+        del retro_mod.build_parser
+        try:
+            drift = sr.cycle_drift()["unverifiable"]
+            self.assertTrue(any("retro" in d for d in drift),
+                            "a script with no build_parser() is not reported unverifiable, so "
+                            "the empty bucket above proves only that the guard is quiet")
+        finally:
+            retro_mod.build_parser = real
+
+    def test_a_ceremony_verb_added_to_a_NON_sprint_script_is_caught(self) -> None:
+        """The half the guard did not have. Six of the eighteen rows hold a stage in `critic`,
+        `retro`, `lessons` or `handoff`, and `uncovered` walked `sprint` alone - so a ceremony
+        added to any of those grew no row and nothing said so, while the shipped doctrine told
+        a consuming project the two could not part."""
+        import critic as critic_mod
+        real = critic_mod.build_parser
+
+        def with_extra_verb():
+            p = real()
+            for action in p._actions:
+                if isinstance(action.choices, dict):
+                    action.choices["absolution"] = None
+                    break
+            return p
+
+        critic_mod.build_parser = with_extra_verb
+        try:
+            self.assertIn("critic absolution", sr.cycle_drift()["uncovered"])
+        finally:
+            critic_mod.build_parser = real
 
     def test_an_unresolvable_command_is_not_reported_as_unverifiable(self) -> None:
         """A row naming a script that does not exist is BROKEN; a row whose script ships but
@@ -1241,18 +1289,37 @@ class SprintChecklistDerivedFiguresTests(ChecklistBase):
     """US0569. A report nobody could have filled in from memory."""
 
     def test_planned_and_delivered_are_both_derived_and_reported(self) -> None:
-        # Planned US0001-US0003; US0003 dropped and US0004 added mid-run.
+        """ONE drop and NO adds, deliberately. The original fixture dropped one unit and added
+        another, so the batch as it stands (3) and the batch as approved (3) were the same
+        number - and the assertion could not tell the reconstruction from the raw list.
+        Deleting `_planned_ids`' reconstruction entirely survived it. With 1 drop and 0 adds
+        the two readings are 2 and 3, so only the right one passes."""
         _unit(self.root, "US0003", "Ready")
-        _unit(self.root, "US0004", "Done")
-        ck = self._ck(batch=["US0001", "US0002", "US0004"],
-                      batch_changes=[{"action": "drop", "id": "US0003", "reason": "descoped"},
-                                     {"action": "add", "id": "US0004"}])
+        ck = self._ck(batch=["US0001", "US0002"],
+                      batch_changes=[{"action": "drop", "id": "US0003", "reason": "descoped"}])
         row = self._row(ck, "planned-vs-delivered")
         self.assertEqual(row["state"], sr.ANSWERED)
         self.assertIn("/3 unit(s)", row["value"],
                       "planned must be the batch as APPROVED (US0001-US0003), reconstructed "
-                      "from the change ledger - not the batch as it stands now")
-        self.assertIn("8 point(s)", row["value"])
+                      "from the change ledger - not the batch as it stands now (2)")
+        # Points on BOTH sides: US0569 AC1 asks for commitment beside actual, and a row that
+        # states one in units and the other in points leaves the operator doing the arithmetic.
+        self.assertRegex(row["value"], r"\d+/\d+ point\(s\)",
+                         "planned points are not reported beside delivered points")
+
+    def test_planned_POINTS_are_reported_beside_delivered(self) -> None:
+        """US0569 AC1 asks for planned units AND POINTS beside the delivered figures, so an
+        operator can read commitment against actual without arithmetic. Planned points were
+        computed nowhere and appeared nowhere; the row stated one side in units and the other
+        in points."""
+        _unit(self.root, "US0003", "Ready", pts=5)
+        ck = self._ck(batch=["US0001", "US0002"],
+                      batch_changes=[{"action": "drop", "id": "US0003", "reason": "descoped"}])
+        row = self._row(ck, "planned-vs-delivered")
+        # US0001=3 + US0002=5 + US0003=5 planned; only the terminal ones delivered.
+        self.assertIn("/13 point(s)", row["value"],
+                      "the planned points total is absent or is not summed from the planned "
+                      "units' own artefacts")
 
     def test_scope_creep_is_reported_as_a_count_and_a_ratio(self) -> None:
         bugs = self.root / "sdlc-studio" / "bugs"
@@ -1471,7 +1538,8 @@ class SprintChecklistAuthorityTests(ChecklistBase):
         before = sr.checklist(self.root, "RETRO9100")["outstanding"]
         self.assertIn("cost", before)
         decisions.record_waiver(self.root, f"{sr.WAIVER_SUBJECT}:cost",
-                                "interactive sprint: no per-unit telemetry exists to read")
+                                "interactive sprint: no per-unit telemetry exists to read",
+                                authorised_by="the operator")
         row = self._row(sr.checklist(self.root, "RETRO9100"), "cost")
         self.assertEqual(row["state"], sr.WAIVED)
         self.assertTrue(row["waiver"], "the waiver's decision id is not recorded on the row")
@@ -1512,6 +1580,40 @@ class SprintChecklistAuthorityTests(ChecklistBase):
         self.assertIn("handoff", ck["pending_in_close"])
         self.assertIn("discharge", sr.render_checklist(ck))
 
+    def test_a_waiver_naming_NO_REAL_ITEM_is_refused(self) -> None:
+        """The scope tail was never validated, so a waiver of an item that does not exist
+        recorded cleanly and was read by nothing - the close stayed blocked by an item the log
+        said had been waived. Verbatim the defect the conformance scope check already existed
+        to prevent, in the next rule along."""
+        import decisions
+        self._run()
+        with self.assertRaises(ValueError) as ctx:
+            decisions.record_waiver(self.root, f"{sr.WAIVER_SUBJECT}:not-a-real-item",
+                                    "because I say so", authorised_by="someone")
+        self.assertIn("not a checklist item", str(ctx.exception))
+
+    def test_a_BARE_rule_waiver_covers_nothing_and_is_refused(self) -> None:
+        """The close reads a waiver per ITEM, so a row naming the family alone recorded clean
+        while every item stayed outstanding."""
+        import decisions
+        self._run()
+        with self.assertRaises(ValueError):
+            decisions.record_waiver(self.root, sr.WAIVER_SUBJECT, "blanket",
+                                    authorised_by="someone")
+
+    def test_a_waiver_records_WHO_authorised_it_and_it_reads_back(self) -> None:
+        """A waiver is somebody deciding a rule does not apply here. Recorded without a name it
+        is a decision with no decider, and the one question a later reader asks has no answer."""
+        import decisions
+        self._run()
+        with self.assertRaises(ValueError) as ctx:
+            decisions.record_waiver(self.root, f"{sr.WAIVER_SUBJECT}:cost", "no telemetry")
+        self.assertIn("WHO authorised", str(ctx.exception))
+        decisions.record_waiver(self.root, f"{sr.WAIVER_SUBJECT}:cost", "no telemetry",
+                                authorised_by="Darren Benson (operator)")
+        self.assertEqual("Darren Benson (operator)",
+                         decisions.waiver_authoriser(self.root, f"{sr.WAIVER_SUBJECT}:cost"))
+
     def test_the_close_step_PASSES_once_every_item_is_answered_or_waived(self) -> None:
         """The control for the refusal test: a gate that never passes is not a gate. Waive
         each outstanding item and the same step must go green."""
@@ -1520,7 +1622,8 @@ class SprintChecklistAuthorityTests(ChecklistBase):
         state = self._run()
         for item_id in sr.checklist(self.root, "RETRO9100")["outstanding"]:
             decisions.record_waiver(self.root, f"{sr.WAIVER_SUBJECT}:{item_id}",
-                                    "waived for this test's control")
+                                    "waived for this test's control",
+                                    authorised_by="the operator")
         ok, detail, _ = sprint._close_checklist(self.root, "RETRO9100", state)
         self.assertTrue(ok, f"the step still refuses with everything waived: {detail}")
         self.assertIn("none outstanding", detail)

@@ -813,8 +813,24 @@ DERIVED, RECORDED = "derived", "recorded"
 #: which is what makes the drift guard non-circular. Add a ceremony verb tomorrow and the guard
 #: fails until it is either given a row or declared here as mechanics; a guard that compared
 #: the checklist against a list derived from the checklist would pass by construction.
-NON_CEREMONY_VERBS = ("close", "boundary", "report", "checklist", "preflight",
-                      "reopen", "stop", "decision", "batch", "lane")
+#: Verbs of the ceremony scripts that are NOT a stage of the cycle - a query, a repair, or the
+#: close itself. Keyed by script, because the guard walks every script the rows name and a flat
+#: list would exempt `show` everywhere on the strength of one script having it.
+#:
+#: The direction of failure is deliberate. A ceremony verb missing from a row appears in
+#: `uncovered` and the guard fires; a NON-ceremony verb missing from here does the same and
+#: somebody adds it. The list can over-report, never under-report - which is the opposite of
+#: an enumerated list that silently exempts what it forgot.
+NON_CEREMONY_VERBS = {
+    "sprint": ("close", "boundary", "report", "checklist", "preflight",
+               "reopen", "stop", "decision", "batch", "lane"),
+    "critic": ("brief", "caller-check", "correct", "evidence", "show",
+               "signoff-brief", "supersede"),
+    "handoff": ("show",),
+    "lessons": ("add", "carried", "carry", "list", "propose", "prune", "rank",
+                "recall", "repeats", "revalidate", "violated"),
+    "retro": ("accuracy", "collate", "dispose", "estimator", "extract", "velocity"),
+}
 
 #: The compulsory set. `resolver` is resolved through `globals()` at call time, like the close
 #: chain's steps, so a test can patch one row without rebuilding the table. `command` is the
@@ -1094,9 +1110,31 @@ def _ck_planned_vs_delivered(ctx: dict) -> tuple:
                 "recovered - only what it happened to finish")
     delivered = [u for u in ctx["units"] if _terminal(ctx["root"], u)[1]]
     pts = ctx.get("delivered_points")
+    # PLANNED points too, or the row states commitment in units and actual in points and an
+    # operator is left doing the arithmetic the row exists to have done. Summed from the
+    # planned units' own artefacts, so it needs no plan-time forecast - an interactive sprint
+    # records none, and a figure only some sprints can show is a figure nobody relies on.
+    planned_pts = _planned_points(ctx["root"], planned)
     return (ANSWERED,
-            f"{len(delivered)}/{len(planned)} unit(s), {pts if pts is not None else 'unknown'} "
-            f"point(s) delivered", "")
+            f"{len(delivered)}/{len(planned)} unit(s), "
+            f"{pts if pts is not None else 'unknown'}/"
+            f"{planned_pts if planned_pts is not None else 'unknown'} point(s) delivered", "")
+
+
+def _planned_points(root: Path, planned: list) -> int | None:
+    """Summed `Points` of the PLANNED units, from their artefacts. None when not one resolves -
+    an absent total and a genuine zero are different facts, and rendering both as 0 would let a
+    sprint whose units all vanished read as one that committed to nothing."""
+    total, seen = 0, False
+    for uid in planned:
+        hit = sdlc_md.find_by_id(root, uid)
+        if not hit:
+            continue
+        seen = True
+        pts = sdlc_md.read_points(sdlc_md.read_text_safe(hit[0]))
+        if isinstance(pts, int) and pts > 0:
+            total += pts
+    return total if seen else None
 
 
 def _ck_not_delivered(ctx: dict) -> tuple:
@@ -1425,6 +1463,27 @@ def _retro_validate(root: Path, retro_id: str) -> dict:
 UNVERIFIABLE = "unverifiable"
 
 
+def scope_tail_error(scope: str) -> str | None:
+    """Why `scope` names no checklist item, or None when it names one.
+
+    The CONSUMER's own check, published so `decisions.record_waiver` can refuse a waiver that
+    covers nothing rather than re-deriving the grammar here - a second reading of it would be a
+    copy that drifts, and the copy that drifts is the one that accepts what the consumer
+    rejects. Without it `rule:sprint-checklist:not-a-real-item` recorded clean and was read by
+    nothing, so the close stayed blocked by an item the log said had been waived: exactly the
+    defect the conformance scope check was written for, in the next rule along.
+    """
+    scope = (scope or "").strip()
+    known = [item["id"] for item in CHECKLIST]
+    if not scope:
+        return (f"a {WAIVER_SUBJECT} waiver must name the item it covers "
+                f"({', '.join(known)})")
+    if scope not in known:
+        return (f"{scope!r} is not a checklist item, so a waiver of it would cover nothing - "
+                f"known items: {', '.join(known)}")
+    return None
+
+
 def cycle_drift(root: Path | str | None = None) -> dict:
     """`{unresolved, uncovered, unverifiable}` - how the checklist and the cycle come apart.
 
@@ -1438,12 +1497,10 @@ def cycle_drift(root: Path | str | None = None) -> dict:
     The `uncovered` half is what makes this a drift guard rather than a tautology: it is
     derived from the SHIPPED CLI, not from the checklist, so the two can genuinely disagree.
 
-    SCOPE, because US0574 AC3 claims this closes the drift and it narrows it. `uncovered` walks
-    the `sprint` verbs ONLY, while six of the rows name verbs in `critic`, `retro`, `lessons`
-    and `handoff` - a ceremony added to any of those is not caught. And `unverifiable` is
-    non-empty on the shipped tree today (`retro.py` builds its subparsers inside `main()`
-    rather than publishing a `build_parser()`), so two rows are certified unchecked while a
-    caller asserting only the first two buckets reads green. It narrows the drift; it does not close it.
+    All THREE buckets are the guard. `unverifiable` was non-empty on the shipped tree and
+    asserted by nothing, so two rows were certified unchecked while a caller reading the first
+    two saw green; `uncovered` walked `sprint` alone while six rows hold a stage in `critic`,
+    `retro`, `lessons` or `handoff`. Both are closed, and the verifier asserts all three.
     """
     scripts = Path(__file__).resolve().parent
     unresolved, unverifiable, verbs_by_script = [], [], {}
@@ -1467,11 +1524,11 @@ def cycle_drift(root: Path | str | None = None) -> dict:
         verbs_by_script[script] = found
         return found
 
-    covered = set()
+    covered: dict[str, set] = {}
     for item in CHECKLIST:
         script, _, verb = item["command"].partition(" ")
-        if script == "sprint" and verb:
-            covered.add(verb)
+        if verb:
+            covered.setdefault(script, set()).add(verb)
         known = verbs(script)
         if known is None:
             unresolved.append(f"{item['id']}: `{item['command']}` names no shipped script")
@@ -1480,9 +1537,16 @@ def cycle_drift(root: Path | str | None = None) -> dict:
                                 f"build_parser(), so `{item['command']}` cannot be checked")
         elif verb and verb not in known:
             unresolved.append(f"{item['id']}: `{item['command']}` names no verb of {script}.py")
-    sprint_verbs = verbs("sprint")
-    sprint_verbs = sprint_verbs if isinstance(sprint_verbs, set) else set()
-    uncovered = sorted(sprint_verbs - covered - set(NON_CEREMONY_VERBS))
+    # EVERY script the rows name, not `sprint` alone. Six of the rows hold a stage in `critic`,
+    # `retro`, `lessons` or `handoff`, and walking only `sprint` meant a ceremony added to any
+    # of those grew no row and nothing said so.
+    uncovered = []
+    for script in sorted({item["command"].partition(" ")[0] for item in CHECKLIST}):
+        known = verbs(script)
+        if not isinstance(known, set):
+            continue                     # unresolved or unverifiable, already reported above
+        extra = known - covered.get(script, set()) - set(NON_CEREMONY_VERBS.get(script, ()))
+        uncovered += [f"{script} {v}" for v in sorted(extra)]
     return {"unresolved": unresolved, "uncovered": uncovered, "unverifiable": unverifiable}
 
 

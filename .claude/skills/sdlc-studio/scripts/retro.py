@@ -2953,9 +2953,15 @@ def cmd_extract(args) -> int:
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
-    # `argv` is a parameter like the rest of the family: a main that reads `sys.argv` directly
-    # cannot be driven by a caller or a test, which is how this one escaped the anchor contract.
+def build_parser() -> argparse.ArgumentParser:
+    """The parser, PUBLISHED, so a caller can enumerate this script's verbs without running it.
+
+    It was built inline inside `main`, which meant the verbs existed only for the length of one
+    invocation: `sprint_report.cycle_drift` - the guard that checks the compulsory checklist has
+    not drifted from the ceremony it certifies - could not read them, and reported two of its
+    eighteen rows UNVERIFIABLE rather than checked. A guard that cannot see a script is a guard
+    reporting its own blindness, and the rest of the family already publishes this.
+    """
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--root", default=".")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -3034,6 +3040,13 @@ def main(argv: list[str] | None = None) -> int:
                                 "target")
         p.set_defaults(func=fn)
 
+    return ap
+
+
+def main(argv: list[str] | None = None) -> int:
+    # `argv` is a parameter like the rest of the family: a main that reads `sys.argv` directly
+    # cannot be driven by a caller or a test, which is how this one escaped the anchor contract.
+    ap = build_parser()
     args = ap.parse_args(argv)
     # Resolve the root ONCE and write it back, so every verb below anchors on the tree the
     # run belongs to. The family default `.` means "work it out from here", not "the cwd

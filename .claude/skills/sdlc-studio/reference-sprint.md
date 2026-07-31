@@ -301,9 +301,9 @@ independent critic plus the gate - the check's output states this scoping.
    recorded waiver (`decisions.py waive --subject rule:sprint-checklist:<item>`), on the same terms
    as a conformance waiver. The sign-off and handoff rows are reported and never held - the close
    produces them itself, and a gate whose only exit is the step it blocks is a deadlock. A stage
-   added to the cycle with no row fails `sprint_report.cycle_drift()` - which NARROWS the drift
-   rather than closing it: it walks the `sprint` verbs only, so a ceremony added to `critic`,
-   `retro`, `lessons` or `handoff` is not caught, and its unverifiable bucket is non-empty today.
+   added to the cycle with no row fails `sprint_report.cycle_drift()`, which walks every script
+   the rows name and reports a row it could not check as unverifiable rather than green - so
+   the two cannot part without something saying so.
 
 ## Definition of Done
 
