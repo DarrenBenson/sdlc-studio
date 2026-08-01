@@ -4543,8 +4543,9 @@ def review_coverage(root, units: list[str]) -> dict:
                     continue
                 by = label
                 break
-            # `sprint_covers_independently` is THE predicate: an APPROVE whose reviewer and
-            # author are both recorded and distinct. Reimplementing the independence half here
+            # `sprint_covers_independently` is THE predicate: an APPROVE - or a REJECT whose
+            # findings are ALL tagged `[pre-existing]` - whose reviewer and author are both
+            # recorded and distinct. Reimplementing the independence half here
             # and forgetting the verdict half let a recorded REJECT clear this gate while the
             # tool printed "it clears no unit's gate" - the exact drift a second copy of a rule
             # produces, in the function whose docstring claimed to avoid it.

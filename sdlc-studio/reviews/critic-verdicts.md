@@ -582,6 +582,11 @@ One row has been removed since adoption.
 | US0583 | REJECT | independent-critic:qa-seat:a695991e | Claude Opus 5 (authoring session) | 2026-08-01 | - | BG0479 claim\_drift 81% empty-anchor noise over 40 commits; BG0480 fragment and module comment describe the scan \_standing\_prose replaced |
 | US0585 | REJECT | independent-critic:qa-seat:a695991e | Claude Opus 5 (authoring session) | 2026-08-01 | - | BG0481 record\_yield dirties a tracked file on every commit and the accumulated yield understates the real one |
 | US0597 | REJECT | independent-critic:qa-seat:a695991e | Claude Opus 5 (authoring session) | 2026-08-01 | - | BG0482 AC3 ticked Verified with the named evidence file never created and a verifier asserting nothing about before-and-after; premise falsified by BG0479 |
+| US0577 | REJECT | independent-critic:eng+qa+product:a59e647b | Claude Opus 5 (authoring session) | 2026-08-01 | a59e647b23cf | [new] BG0484 F1 critic.py brief never emitted the fingerprint, so the shipped claim was false and AC1's verifier tested the library not the lane; [new] BG0484 F2 --brief accepted any string |
+| US0578 | REJECT | independent-critic:eng+qa+product:a59e647b | Claude Opus 5 (authoring session) | 2026-08-01 | a59e647b23cf | [new] BG0484 F3 the refusal named a remedy no command could perform |
+| US0580 | REJECT | independent-critic:eng+qa+product:a59e647b | Claude Opus 5 (authoring session) | 2026-08-01 | a59e647b23cf | [new] BG0484 F4 the untagged-finding guard was unpinned - deleting it left the whole suite green; [new] BG0484 F5 three docstrings falsified by their own diff |
+| US0579 | APPROVE | independent-critic:eng+qa+product:a59e647b | Claude Opus 5 (authoring session) | 2026-08-01 | a59e647b23cf | none blocking |
+| US0582 | APPROVE | independent-critic:eng+qa+product:a59e647b | Claude Opus 5 (authoring session) | 2026-08-01 | a59e647b23cf | none blocking |
 
 ## Supersessions
 

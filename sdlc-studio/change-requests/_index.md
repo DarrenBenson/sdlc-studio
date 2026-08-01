@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 14 |
+| Proposed | 15 |
 | Approved | 0 |
 | In Progress | 37 |
 | Complete | 445 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 21 |
 | Blocked | 0 |
-| **Total** | **518** |
+| **Total** | **519** |
 
 ## All Changes
 
@@ -340,6 +340,7 @@
 | [CR-0516](CR0516-two-mechanical-tasks-have-no-tool-review-batch.md) | Two mechanical tasks have no tool: review-batch findings cannot survive the shell, and no command reports backlog points | Proposed | Medium | Improvement | 2026-08-01 | -- |
 | [CR-0517](CR0517-run-the-claim-inventory-pass-at-delivery-not.md) | Run the claim-inventory pass at delivery, not at review: every blocking finding of the corrected review loop was prose disagreeing with code in the same diff | In Progress | High | Feature | 2026-08-01 | EP0195 |
 | [CR-0518](CR0518-a-sprint-run-has-a-tool-runbook-it.md) | a sprint run has a tool runbook it is made to read before it plans | Proposed | High | Improvement | 2026-08-01 | -- |
+| [CR-0519](CR0519-a-suite-verdict-is-read-from-a-file.md) | a suite verdict is read from a file, never from a pipe that can swallow the exit code | Proposed | High | Improvement | 2026-08-01 | -- |
 
 ## Archived Releases
 

@@ -193,7 +193,7 @@ WRITER_CASES: dict[str, WriterCase] = {
         # `--brief` is required to record a verdict at all now (US0578); this case is about
         # WHERE critic writes, so it supplies one as a briefed reviewer would.
         argv=("record", "--unit", "US0001", "--verdict", "approve",
-              "--reviewer", "r", "--author", "a", "--brief", "fixture-brief"),
+              "--reviewer", "r", "--author", "a", "--brief", "abcdef123456"),
         targets=frozenset({"sdlc-studio/reviews/critic-verdicts.md"}),
     ),
     "decisions.py": WriterCase(

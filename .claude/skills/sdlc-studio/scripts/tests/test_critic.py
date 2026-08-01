@@ -88,7 +88,7 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
-            rc = mod.main(["record", "--brief", "fixture-brief",
+            rc = mod.main(["record", "--brief", "abcdef123456",
                            "--unit", "US0017", "--verdict", "approve",
                            "--author", "builder", "--root", str(root)])
             self.assertEqual(rc, 0)
@@ -105,7 +105,7 @@ class CliTests(unittest.TestCase):
             out, err = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
                     contextlib.suppress(SystemExit):
-                rc = mod.main(["record", "--brief", "fixture-brief",
+                rc = mod.main(["record", "--brief", "abcdef123456",
                                "--unit", "US0017", "--verdict", "approve", "--root", d])
                 self.assertNotEqual(rc, 0)
             self.assertIn("--author", out.getvalue() + err.getvalue())
@@ -276,7 +276,7 @@ class SeatDriftWarningTests(unittest.TestCase):
         critic = _load()
         err = io.StringIO()
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
-            rc = critic.main(["record", "--brief", "fixture-brief",
+            rc = critic.main(["record", "--brief", "abcdef123456",
                               "--unit", "CR0001", "--verdict", "approve",
                               "--reviewer", reviewer, "--author", "builder",
                               "--root", str(root)])
@@ -388,7 +388,7 @@ class FromVerdictTests(unittest.TestCase):
         f.write_text(block, encoding="utf-8")
         err = io.StringIO()
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
-            rc = mod.main(["record", "--brief", "fixture-brief",
+            rc = mod.main(["record", "--brief", "abcdef123456",
                            "--unit", "US0001", "--reviewer", "Sam seat",
                            "--author", "builder", "--from-verdict", str(f),
                            "--root", str(root)])
@@ -483,7 +483,7 @@ class FromVerdictTests(unittest.TestCase):
             mod = _load()
             with contextlib.redirect_stdout(io.StringIO()), \
                     unittest.mock.patch.object(sys, "stdin", io.StringIO(self.BLOCK)):
-                rc = mod.main(["record", "--brief", "fixture-brief",
+                rc = mod.main(["record", "--brief", "abcdef123456",
                                "--unit", "US0001", "--reviewer", "Sam seat",
                                "--author", "builder", "--from-verdict", "-",
                                "--root", str(root)])
@@ -498,7 +498,7 @@ class FromVerdictTests(unittest.TestCase):
             f.write_text(self.BLOCK, encoding="utf-8")
             err = io.StringIO()
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
-                rc = mod.main(["record", "--brief", "fixture-brief",
+                rc = mod.main(["record", "--brief", "abcdef123456",
                                "--unit", "US0001", "--reviewer", "r",
                                "--author", "a", "--verdict", "approve",
                                "--from-verdict", str(f), "--root", str(root)])
@@ -2782,7 +2782,7 @@ class BatchFormTests(_BatchBase):
         self.assertEqual(0, rc, err)
         for unit in self.UNITS:
             self.assertIsNotNone(self.mod.evidence_for(self.root, unit), f"{unit} unrecorded")
-        rc, _, err = self._run(["record", "--brief", "fixture-brief",
+        rc, _, err = self._run(["record", "--brief", "abcdef123456",
                                 "--units", "US0001,US0002,US0003",
                                 "--verdict", "approve", "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(0, rc, err)
@@ -2795,14 +2795,14 @@ class BatchFormTests(_BatchBase):
             self.assertIsNotNone(self.mod.signoff_for(self.root, unit), f"{unit} unsigned")
 
     def test_the_open_run_is_the_default_scope_and_an_absent_batch_is_refused(self) -> None:
-        rc, _, err = self._run(["record", "--brief", "fixture-brief",
+        rc, _, err = self._run(["record", "--brief", "abcdef123456",
                                 "--from-run", "--verdict", "approve",
                                 "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(0, rc, err)
         for unit in self.UNITS:
             self.assertEqual("APPROVE", self.mod.verdict_for(self.root, unit)["verdict"])
         (self.root / "sdlc-studio" / ".local" / "run-state.json").unlink()
-        rc, _, err = self._run(["record", "--brief", "fixture-brief",
+        rc, _, err = self._run(["record", "--brief", "abcdef123456",
                                 "--from-run", "--verdict", "approve",
                                 "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(2, rc, "no open batch must refuse, never default to acting on nothing")
@@ -2812,7 +2812,7 @@ class BatchFormTests(_BatchBase):
         """BG0386's class: a repeated flag that silently keeps the last value reports a clean
         batch having looked at one unit. Both spellings must accumulate, and the count the
         command reports is the count it acted on."""
-        rc, out, err = self._run(["record", "--brief", "fixture-brief",
+        rc, out, err = self._run(["record", "--brief", "abcdef123456",
                                   "--unit", "US0001", "--unit", "US0002",
                                   "--units", "US0003", "--verdict", "approve",
                                   "--reviewer", "qa", "--author", "builder"])
@@ -2834,7 +2834,7 @@ class BatchFormTests(_BatchBase):
 
         self.mod.record_verdict = explode
         self.addCleanup(setattr, self.mod, "record_verdict", real)
-        rc, out, err = self._run(["record", "--brief", "fixture-brief",
+        rc, out, err = self._run(["record", "--brief", "abcdef123456",
                                   "--units", "US0001,US0002,US0003",
                                   "--verdict", "approve", "--reviewer", "qa",
                                   "--author", "builder"])
@@ -2844,7 +2844,7 @@ class BatchFormTests(_BatchBase):
         self.assertIn("US0001", combined, "so is what WAS written")
 
     def test_the_single_unit_form_is_unchanged(self) -> None:
-        rc, out, err = self._run(["record", "--brief", "fixture-brief",
+        rc, out, err = self._run(["record", "--brief", "abcdef123456",
                                   "--unit", "US0001", "--verdict", "approve",
                                   "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(0, rc, err)
@@ -3023,7 +3023,7 @@ class GhostIdsAreRefusedTests(_BatchBase):
 
     def test_a_verdict_for_a_nonexistent_id_is_refused(self) -> None:
         self._with_tree()
-        rc, out, err = self._run(["record", "--brief", "fixture-brief",
+        rc, out, err = self._run(["record", "--brief", "abcdef123456",
                                   "--units", "US9998,US9999", "--verdict", "approve",
                                   "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(2, rc, "two verdicts were written for artefacts that do not exist")
@@ -3034,7 +3034,7 @@ class GhostIdsAreRefusedTests(_BatchBase):
         """A partial batch is the state the exit codes exist to distinguish; here nothing
         should be written at all, because the caller's list is wrong."""
         self._with_tree()
-        rc, _out, err = self._run(["record", "--brief", "fixture-brief",
+        rc, _out, err = self._run(["record", "--brief", "abcdef123456",
                                    "--units", "US0001,US9999", "--verdict", "approve",
                                    "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(2, rc)
@@ -3044,7 +3044,7 @@ class GhostIdsAreRefusedTests(_BatchBase):
 
     def test_a_resolvable_id_is_still_recorded(self) -> None:
         self._with_tree()
-        rc, _out, err = self._run(["record", "--brief", "fixture-brief",
+        rc, _out, err = self._run(["record", "--brief", "abcdef123456",
                                    "--unit", "US0001", "--verdict", "approve",
                                    "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(0, rc, err)
@@ -3055,7 +3055,7 @@ class GhostIdsAreRefusedTests(_BatchBase):
         nothing, so refusing there would fail on the absence of a workspace rather than on a
         wrong id - the distinction `close_owed` draws between an absent and a corrupt
         baseline."""
-        rc, _out, err = self._run(["record", "--brief", "fixture-brief",
+        rc, _out, err = self._run(["record", "--brief", "abcdef123456",
                                    "--unit", "US0001", "--verdict", "approve",
                                    "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(0, rc, err)
@@ -3425,7 +3425,7 @@ class FindingClassTests(unittest.TestCase):
         buf_out, buf_err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
             rc = critic.main(["record", "--unit", "US0001", "--verdict", "reject",
-                              "--brief", "fixture-brief", "--reviewer", "ada",
+                              "--brief", "abcdef123456", "--reviewer", "ada",
                               "--author", "grace", "--issues", issues, "--root", str(root)])
         return rc, buf_out.getvalue() + buf_err.getvalue()
 
@@ -3475,6 +3475,130 @@ class FindingClassTests(unittest.TestCase):
             self._unit(root)
             rc, out = self._record(root, "none blocking")
         self.assertEqual(0, rc, f"a clean pass was refused for carrying no findings:\n{out}")
+
+
+class ReviewRepairTests(unittest.TestCase):
+    """The five findings an independent seat raised against EP0194's own delivery.
+
+    Four of them were prose or provenance defects rather than broken logic, which is the shape
+    this whole epic exists to catch - and one of them, F1, was a false claim shipped inside it.
+    """
+
+    def _unit(self, root: Path, uid: str = "US0001") -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{uid}-x.md").write_text(
+            f"# {uid}: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
+            f"> **Affects:** src/a.py\n\n## Acceptance Criteria\n\n"
+            f"### AC1: it behaves\n\n- **Then** it behaves\n", encoding="utf-8")
+        seats = root / "sdlc-studio" / "personas" / "seats"
+        seats.mkdir(parents=True, exist_ok=True)
+        for role in ("engineering", "qa", "product"):
+            (seats / f"{role}.md").write_text(
+                f"<!-- role: {role} -->\n# A {role} seat\n\n## Lens\n\nJudge as {role}.\n",
+                encoding="utf-8")
+
+    def test_the_brief_command_emits_the_fingerprint(self) -> None:
+        """F1. MUTANT: stop printing the fingerprint from cmd_brief.
+
+        `brief_fingerprint` was called from ONE site - the `--brief-file` branch of record -
+        and never from the command that ISSUES a brief. So the fingerprint was reachable only
+        from the library, while the changelog and the commit message both said `critic.py
+        brief` emitted it. AC1's own test computed it in-process, which is a library test and
+        cannot see that the LANE is missing. This runs the CLI.
+        """
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            buf_out, buf_err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
+                rc = critic.main(["brief", "--unit", "US0001", "--seat", "engineering",
+                                  "--root", str(root)])
+            err, out = buf_err.getvalue(), buf_out.getvalue()
+        self.assertEqual(0, rc, f"brief refused:\n{err}")
+        expected = critic.brief_fingerprint(out.rstrip("\n"))
+        self.assertIn(expected, err,
+                      "the command that issues a brief does not emit its fingerprint, so "
+                      "nothing a reviewer can run produces the value `record` demands")
+        self.assertIn("--brief", err,
+                      "the fingerprint is printed without saying what to do with it")
+
+    def test_a_made_up_brief_value_is_refused(self) -> None:
+        """F2. MUTANT: delete the _FINGERPRINT_RE check in cmd_record.
+
+        `--brief x` was accepted, so the provenance gate was satisfied by inventing a value -
+        recording provenance for a prompt that was never issued, which is precisely what the
+        field exists to make detectable."""
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            buf_out, buf_err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
+                rc = critic.main(["record", "--unit", "US0001", "--verdict", "approve",
+                                  "--reviewer", "ada", "--author", "grace",
+                                  "--brief", "x", "--root", str(root)])
+            err = buf_err.getvalue() + buf_out.getvalue()
+        self.assertEqual(2, rc, "a value that is not a fingerprint was accepted as provenance")
+        self.assertIn("hex", err, "the refusal does not say what a fingerprint looks like")
+
+    def test_a_well_formed_fingerprint_is_accepted(self) -> None:
+        """The control for the check above: a gate refusing every value discriminates nothing."""
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            buf_out, buf_err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
+                rc = critic.main(["record", "--unit", "US0001", "--verdict", "approve",
+                                  "--reviewer", "ada", "--author", "grace",
+                                  "--brief", "0123456789ab", "--root", str(root)])
+            err = buf_err.getvalue() + buf_out.getvalue()
+        self.assertEqual(0, rc, f"a well-formed fingerprint was refused:\n{err}")
+
+    def test_an_untagged_finding_does_not_cover_a_unit(self) -> None:
+        """F4. MUTANT: delete the `any(f["origin"] != ORIGIN_PRE_EXISTING)` guard.
+
+        Deleting that one line left the ENTIRE suite green, and every historical REJECT row in
+        the shipped log carries untagged findings (they predate US0579). So the mutant would
+        have started covering real units at the Done gate with nothing going red. The
+        behaviour was correct and the cover was absent, which is the same risk as a defect
+        one edit away.
+        """
+        critic = _load()
+        untagged = {"verdict": "REJECT", "reviewer": "ada", "author": "grace",
+                    "issues": "FAIL-OPEN IN THE COVERAGE GATE ITSELF; a second untagged note"}
+        mixed = {"verdict": "REJECT", "reviewer": "ada", "author": "grace",
+                 "issues": "[pre-existing] BG0123 slow gate; an untagged one"}
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.assertFalse(
+                critic.sprint_covers_independently(root, "US0001", untagged),
+                "a REJECT whose findings are all UNTAGGED covered the unit - untagged is not "
+                "the same as pre-existing, and treating it so is a fail-open")
+            self.assertFalse(
+                critic.sprint_covers_independently(root, "US0001", mixed),
+                "one untagged finding beside a pre-existing one still covered the unit")
+            self.assertTrue(
+                critic.sprint_covers_independently(
+                    root, "US0001", {**mixed, "issues": "[pre-existing] BG0123 slow gate"}),
+                "the control failed: an all-pre-existing REJECT must still cover")
+
+    def test_the_coverage_docstring_states_both_shapes(self) -> None:
+        """F5. MUTANT: revert the docstring to "an APPROVE whose reviewer and author...".
+
+        The docstring was TRUE at the base ref and this diff falsified it, inside the unit's
+        own declared Affects. The claim-drift lane shipped in the sibling epic fired on
+        neither this nor the parallel comment in sprint.py, so a guard is warranted rather
+        than a promise to remember.
+        """
+        critic = _load()
+        doc = critic.sprint_covers_independently.__doc__ or ""
+        self.assertIn("pre-existing", doc,
+                      "the docstring does not mention the REJECT shape that now also covers")
+        self.assertIn("UNTAGGED", doc.upper(),
+                      "the docstring does not say an untagged finding never qualifies")
 
 
 if __name__ == "__main__":

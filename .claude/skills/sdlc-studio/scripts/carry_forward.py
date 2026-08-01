@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Carry-forward review policy (EP0113 / CR0404).
 
-A REJECT blocks: `conformance.sprint_covers_independently` accepts a sprint-level review as
-evidence only on an APPROVE, so there is no path that says "these findings are real, they are
-filed as bugs, the sprint carries on". Some teams want the loop to run until it is clean; some
-want the findings on the backlog and the sprint shipped. The project supported only the first
-and did not say so.
+A REJECT carrying anything this unit's diff caused blocks: `sprint_covers_independently`
+accepts a sprint-level review as evidence on an APPROVE, or on a REJECT whose findings are
+ALL tagged `[pre-existing]` (US0580). So there is still no path that says "these findings are
+real, this diff caused them, they are filed as bugs, the sprint carries on". Some teams want
+the loop to run until it is clean; some want the findings on the backlog and the sprint
+shipped. The project supported only the first and did not say so.
 
 This adds the second as a DECLARED policy. Under `review.policy: carry-forward` a REJECT no
 longer blocks, provided every finding is FILED as an artefact or explicitly WAIVED with a

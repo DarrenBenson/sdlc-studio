@@ -65,6 +65,37 @@ _COLS = ("unit", "verdict", "reviewer", "author", "date", "brief", "issues")
 
 
 
+#: What `brief_fingerprint` produces: sha256 truncated to 12 lowercase hex characters.
+_FINGERPRINT_LEN = 12
+_FINGERPRINT_RE = re.compile(r"[0-9a-f]{%d}" % _FINGERPRINT_LEN)
+
+
+def _seats_whose_brief_matches(repo_root, unit: str, fingerprint: str):
+    """Seats whose CURRENT brief for `unit` fingerprints to `fingerprint`.
+
+    Returns None when the question cannot be asked at all - no unit, no seat cards, an
+    unreadable tree. None means UNKNOWN and must not be read as "no match", because reporting
+    a mismatch nobody could have avoided is how a useful note becomes noise.
+    """
+    try:
+        seats = [p.stem for p in
+                 (Path(repo_root) / "sdlc-studio" / "personas" / "seats").glob("*.md")]
+    except OSError:
+        return None
+    if not seats:
+        return None
+    matched, asked = [], False
+    for seat in seats:
+        try:
+            text = brief(repo_root, unit, seat)
+        except (OSError, ValueError):
+            continue
+        asked = True
+        if brief_fingerprint(text) == fingerprint:
+            matched.append(seat)
+    return matched if asked else None
+
+
 def brief_fingerprint(brief_text: str) -> str:
     """A stable short digest of the brief a seat was given.
 
@@ -1420,9 +1451,21 @@ def sprint_review_for(repo_root: Path | str, unit: str):
 
 
 def sprint_covers_independently(repo_root: Path | str, unit: str, review: dict | None) -> bool:
-    """True when a sprint-level review is a valid INDEPENDENT APPROVE covering `unit`: an APPROVE
-    whose reviewer and author are both recorded and distinct. This is the evidence half of the
-    two-role gate satisfied at sprint scope - the per-unit sign-off is still required separately."""
+    """True when a sprint-level review covers `unit` with valid INDEPENDENT evidence.
+
+    Two shapes qualify, and the reviewer and author must be recorded and distinct in both:
+
+      - an APPROVE, and
+      - a REJECT whose findings are ALL tagged `[pre-existing]`, because only what this unit's
+        diff broke may hold its gate (reference-doctrine rule 19). The findings are still
+        reported; they are simply the repository's debt rather than this increment's.
+
+    An UNTAGGED finding never qualifies, and a REJECT with no itemised findings never
+    qualifies - the safe reading of an unexplained REJECT is that the reviewer had a reason
+    they did not write down.
+
+    This is the evidence half of the two-role gate satisfied at sprint scope; the per-unit
+    sign-off is still required separately."""
     if not review:
         return False
     if (review.get("verdict") or "").upper() != APPROVE:
@@ -2394,7 +2437,14 @@ def cmd_brief(args: argparse.Namespace) -> int:
                      else Path(src).read_text(encoding="utf-8"))
             print(rejoinder_brief(args.root, args.unit, args.seat, prior, args.tier))
         else:
-            print(brief(args.root, args.unit, args.seat, args.tier))
+            text = brief(args.root, args.unit, args.seat, args.tier)
+            print(text)
+            # On stderr so the brief itself stays pipeable, and stated as the next command so
+            # a reviewer does not have to know the flag exists.
+            print(f"\nbrief fingerprint: {brief_fingerprint(text)}\n"
+                  f"  record the verdict with:  critic.py record --unit "
+                  f"{sdlc_md.norm_id(args.unit)} --verdict <APPROVE|REJECT> "
+                  f"--brief {brief_fingerprint(text)} ...", file=sys.stderr)
     except (OSError, ValueError) as exc:
         print(f"brief refused: {exc}", file=sys.stderr)
         return 2
@@ -2551,6 +2601,13 @@ def cmd_record(args: argparse.Namespace) -> int:
               "  e.g. --issues \"[regression] verify_ac crashes on an empty Affects; "
               "[pre-existing] BG0123 slow gate\"", file=sys.stderr)
         return 2
+    if brief and not _FINGERPRINT_RE.fullmatch(brief):
+        print(f"record refused: {brief!r} is not a brief fingerprint - expected "
+              f"{_FINGERPRINT_LEN} lowercase hex characters, as `critic.py brief` prints.\n"
+              "  A gate satisfied by any string is met by inventing one, which records "
+              "provenance for a prompt that was never issued - the exact thing this field "
+              "exists to make detectable.", file=sys.stderr)
+        return 2
     required = sdlc_md.project_override(args.root, "review.require_brief_provenance", True)
     if not brief:
         if required:
@@ -2572,6 +2629,19 @@ def cmd_record(args: argparse.Namespace) -> int:
               "prompt that produced it.", file=sys.stderr)
 
     def write(unit: str) -> None:
+        # NOT a refusal. The brief embeds the artefact's own state, so it legitimately changes
+        # when the unit is transitioned or re-verified between briefing and recording. A
+        # mismatch therefore means EITHER staleness OR a fabricated value, and the two are not
+        # separable here, so it is surfaced rather than judged: refusing would reject the
+        # ordinary case, and silence would let an invented value pass unremarked. Per unit,
+        # because `--unit` is repeatable and a batch can span several.
+        if brief:
+            seats = _seats_whose_brief_matches(args.root, unit, brief)
+            if seats is not None and not seats:
+                print(f"NOTE: {brief} matches no brief this repo can currently produce for "
+                      f"{sdlc_md.norm_id(unit)}. Either the unit changed after the seat was "
+                      f"briefed, or the value did not come from `critic.py brief`.",
+                      file=sys.stderr)
         path = record_verdict(args.root, unit, args.verdict, args.reviewer,
                               args.author, args.issues, args.phase, brief)
         note = ("" if _id(args.author) != _id(args.reviewer)
