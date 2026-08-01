@@ -286,9 +286,21 @@ def check(root: Path) -> list[str]:
 # one of them the docstring of the very test asserting 3. Each was decidable from the diff alone
 # and instead cost an adversarial review round.
 #
-# Scope is deliberately narrow. Only ADDED lines are read, and only within this diff: a context
-# line is prose the commit did not write, and a repo-wide scan would find a contradiction
-# somewhere on every commit, which is how a guard becomes noise and then gets switched off.
+# Scope, accurately: the lane reads prose from TWO places, and the second is the surprising one.
+#
+#   1. Prose the diff ADDS. A commit contradicting its own new paperwork.
+#   2. The STANDING changelog.d/ corpus, read whole on every run, whether or not the diff
+#      touches it. This is deliberate - BG0471's shape is a fragment written weeks ago that a
+#      later commit quietly made false, and a diff-only scan cannot see it by construction.
+#
+# The second is why the lane is not cheap and not quiet, and it is the half a reader needs to
+# know about. An earlier version of this comment described only the first and said the scope was
+# "deliberately narrow", which stayed on the page after `_standing_prose` landed in the same
+# sprint - the drift shape this lane exists to catch, in the lane's own paperwork (BG0480).
+#
+# What keeps it from becoming noise is not narrow input but a DISCRIMINATING match: a finding
+# needs a real replacement (an added line carrying the new value) and a shared subject between
+# the prose and the changed code, not merely a shared digit (BG0479).
 
 #: Files whose ADDED lines are read as prose making claims about the change.
 _PROSE_SUFFIXES = (".md", ".rst", ".txt")
@@ -320,16 +332,16 @@ def _diff_files(diff: str):
 
 
 def _diff_hunks(diff: str):
-    """Yield (path, [(header, added, removed), ...]) per file - the hunk-level view.
+    """Yield (path, [(header, added, removed, context), ...]) per file - the hunk-level view.
 
     `_diff_files` aggregates a whole file, which is the right shape for asking whether a file
     was touched and the wrong one for asking what a change replaced.
     """
     path, hunks = None, []
-    hdr, added, removed = None, [], []
+    hdr, added, removed, around = None, [], [], []
     def flush():
         if hdr is not None:
-            hunks.append((hdr, added[:], removed[:]))
+            hunks.append((hdr, added[:], removed[:], around[:]))
     for line in diff.splitlines():
         if line.startswith("diff --git "):
             flush()
@@ -337,16 +349,24 @@ def _diff_hunks(diff: str):
                 yield path, hunks
             parts = line.split(" b/", 1)
             path, hunks = (parts[1].strip() if len(parts) == 2 else ""), []
-            hdr, added, removed = None, [], []
+            hdr, added, removed, around = None, [], [], []
         elif line.startswith("@@"):
             flush()
+            # git puts the enclosing definition after the second `@@`, which is often the only
+            # place the subject's NAME appears in a one-line change.
             hdr, added, removed = line, [], []
+            around = [line.split("@@", 2)[-1]]
         elif line.startswith(("+++ ", "--- ")):
             continue
         elif line.startswith("+") and hdr is not None:
             added.append(line[1:])
         elif line.startswith("-") and hdr is not None:
             removed.append(line[1:])
+        elif line.startswith(" ") and hdr is not None:
+            # A CONTEXT line. `-    return 2` -> `+    return 3` names nothing on its own; the
+            # `def collapse():` it sits under is what the prose refers to. Dropping these made
+            # the subject test unsatisfiable for exactly the change shape it targets.
+            around.append(line[1:])
     flush()
     if path is not None:
         yield path, hunks
@@ -377,6 +397,60 @@ def _standing_prose(root) -> list[tuple[str, str]]:
     return out
 
 
+_IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]{2,}")
+
+# Words that identify nothing. An identifier set that includes `self` or `return` matches
+# almost any prose, which would restore exactly the indiscriminate behaviour the token
+# requirement exists to remove.
+_STOP_TOKENS = frozenset({
+    "self", "return", "import", "from", "none", "true", "false", "and", "not", "for",
+    "the", "this", "that", "with", "def", "class", "elif", "else", "len", "str", "int",
+})
+
+
+def _tokens(text: str) -> set:
+    return {t.lower() for t in _IDENT_RE.findall(text)} - _STOP_TOKENS
+
+
+def _context_tokens(path: str, added, removed, around=()) -> set:
+    """What the changed code is ABOUT: identifiers off the hunk, plus the file's own stem.
+
+    The stem is included because a fragment often names the file rather than the symbol
+    ("check_spec_claims now reads ..."), and that is a genuine reference to the subject.
+    """
+    out = _tokens(" ".join(list(added) + list(removed) + list(around)))
+    stem = path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+    out |= _tokens(stem)
+    return out
+
+
+def _prose_tokens(line: str) -> set:
+    return _tokens(line)
+
+
+#: Below this, a shared prefix stops being evidence of a shared subject: `let` would tie
+#: `letter` to `letting`. At four, `cell` still ties `cells` and nothing accidental survives.
+_STEM_FLOOR = 4
+
+
+def _shares_subject(context: set, prose: set) -> bool:
+    """Whether the prose names something the changed code names.
+
+    Exact equality is too brittle for English: the fixture that pins BG0471's own shape has
+    `def collapse()` in the code and "when the suite collapses" in the prose, which is plainly
+    the same subject and shares no token exactly. So a prefix of at least `_STEM_FLOOR`
+    characters counts, which covers ordinary inflection without letting unrelated words match.
+    """
+    if context & prose:
+        return True
+    for c in context:
+        for p in prose:
+            shorter, longer = (c, p) if len(c) <= len(p) else (p, c)
+            if len(shorter) >= _STEM_FLOOR and longer.startswith(shorter):
+                return True
+    return False
+
+
 def claim_drift(diff: str, root=None) -> list[dict]:
     """Findings where this diff's prose still states a literal this diff's code REPLACED.
 
@@ -393,21 +467,32 @@ def claim_drift(diff: str, root=None) -> list[dict]:
     replaced, prose_added = {}, []
     for path, hunks in _diff_hunks(diff):
         if path.endswith(_PROSE_SUFFIXES):
-            prose_added.extend((path, line) for _h, added, _r in hunks for line in added)
+            prose_added.extend(
+                (path, line) for _h, added, _r, _c in hunks for line in added)
             continue
         # PER HUNK, not per file. A file-wide comparison dilutes to nothing on any real diff:
         # gate_timing.py's own repair mentions 2 in a dozen places, so `2` appeared on both
         # sides and never read as replaced - the replay over commit 67fc683f found zero, which
         # is what sent this design back a second time. A hunk is the smallest unit in which
         # "this line used to say X and now says Y" is a fact rather than an aggregate.
-        for _hdr, added, removed in hunks:
+        for _hdr, added, removed, around in hunks:
             old_nums = {n for line in removed for n in _INT_RE.findall(line)}
             new_nums = {n for line in added for n in _INT_RE.findall(line)}
+            if not new_nums:
+                # Nothing on the added side carries an integer, so `old_nums - new_nums` is the
+                # WHOLE removed set and every number in it reads as replaced - by a value that
+                # does not exist. The finding then prints `carries ''`, naming no code the reader
+                # can act on. Replayed over the 40 commits to 3570c94a this was 191 of 235
+                # findings, 81% of the lane's entire output, and it is what a pure deletion or a
+                # `-RETRIES = 2` / `+RETRIES = LIMIT` hunk produces. There is no replacement to
+                # reason about here, so the correct output is nothing (BG0479).
+                continue
             for gone in old_nums - new_nums:
                 # carry the value it moved TO, so prose that narrates the change honestly
                 # ("was 2, is now 3") can be told from prose still asserting the old one
                 replaced.setdefault(gone, (path, next(
-                    (l.strip() for l in added if _INT_RE.search(l)), ""), new_nums))
+                    (l.strip() for l in added if _INT_RE.search(l)), ""), new_nums,
+                    _context_tokens(path, added, removed, around)))
     # `not replaced` is deliberately not tested: with nothing replaced the intersection
     # below is empty on every line, so the extra clause would be an unreachable guard -
     # the dead-defence shape BG0413 shipped. Mutation caught it here too.
@@ -420,7 +505,17 @@ def claim_drift(diff: str, root=None) -> list[dict]:
     for prose_path, prose_line in prose_added:
         prose_nums = set(_INT_RE.findall(prose_line))
         for stale in prose_nums & set(replaced):
-            code_path, code_line, new_nums = replaced[stale]
+            code_path, code_line, new_nums, context = replaced[stale]
+            if not _shares_subject(context, _prose_tokens(prose_line)):
+                # A shared DIGIT is not a shared subject. `== 6` becoming `== 7` matched two
+                # changelog fragments about the commit gate and about TRD enumerations, neither
+                # of which had anything to do with the column count that changed - they merely
+                # contained the digit. Small integers occur in ordinary prose for ordinary
+                # reasons, so the prose must also name something the changed code names: an
+                # identifier off the hunk, or the file's own stem. This is the difference
+                # between "states the old value of this thing" and "contains this digit"
+                # (BG0479).
+                continue
             if prose_nums & new_nums:
                 # The prose names the NEW value too, so it is narrating the change rather than
                 # asserting the old one - "the exit code was 2 ... it is now 3" is current, and
@@ -493,12 +588,25 @@ def ticked_over_untouched(diff: str) -> list[dict]:
 #: explicitly out of the sprint that ships it - the lane arrives here, so a sprint's worth of
 #: yield cannot exist yet. What must exist is the number, so that decision has something to read
 #: rather than an impression (D0105).
-_YIELD_REL = "sdlc-studio/retros/evidence/claim-drift-yield.json"
+#:
+#: Under `.local/`, following TIMINGS_REL above - the precedent this repo already set for
+#: state a hook writes on every commit. The first version wrote to a TRACKED path, so every
+#: commit left the tree dirty with a modified file the author never touched and the hook
+#: never staged (BG0481).
+_YIELD_REL = "sdlc-studio/.local/claim-drift-yield.json"
+
+#: Where it used to live. Carried over once when the new file is absent, so counts
+#: accumulated before the move are not silently restarted by the move itself.
+_YIELD_LEGACY_REL = "sdlc-studio/retros/evidence/claim-drift-yield.json"
 
 
 def record_yield(root, diff: str) -> dict:
     """Accumulate this run's claim-drift findings into the evidence record."""
     path = Path(root) / _YIELD_REL
+    legacy = Path(root) / _YIELD_LEGACY_REL
+    if not path.exists() and legacy.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(legacy.read_text(encoding="utf-8"), encoding="utf-8")
     try:
         rec = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):

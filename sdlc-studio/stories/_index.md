@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 22 |
+| Draft | 21 |
 | Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 4 |
+| Review | 5 |
 | Done | 549 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -488,7 +488,7 @@
 | [US0574](US0574-the-checklist-is-one-row-per-stage-of.md) | the checklist is one row per STAGE of the sprint cycle, each stating ran, not-run or waived | Done | EP0192 | 2026-07-30 | 2026-07-30 |
 | [US0575](US0575-the-review-row-names-who-reviewed-what-under.md) | the review row names who reviewed what, under which seat, over how many lenses | Done | EP0192 | 2026-07-30 | 2026-07-30 |
 | [US0576](US0576-impediments-survive-the-close-blocked-units-and-unresolved.md) | impediments survive the close: blocked units and unresolved operator decisions are reported with what is in the way | Done | EP0192 | 2026-07-30 | 2026-07-30 |
-| [US0577](US0577-a-recorded-review-verdict-carries-the-provenance-of.md) | A recorded review verdict carries the provenance of the brief it was given, so a hand-written prompt is detectable | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0577](US0577-a-recorded-review-verdict-carries-the-provenance-of.md) | A recorded review verdict carries the provenance of the brief it was given, so a hand-written prompt is detectable | Review | EP0194 | 2026-08-01 | 2026-08-01 |
 | [US0578](US0578-recording-a-verdict-with-no-brief-provenance-is.md) | Recording a verdict with no brief provenance is REFUSED, and the refusal names critic.py brief | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
 | [US0579](US0579-every-finding-on-a-verdict-is-classified-regression.md) | Every finding on a verdict is classified REGRESSION, NEW or PRE-EXISTING, and an unclassified verdict is refused | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
 | [US0580](US0580-only-regression-and-new-hold-a-gate-a.md) | Only REGRESSION and NEW hold a gate: a PRE-EXISTING finding is reported and does not block | Draft | EP0194 | 2026-08-01 | 2026-08-01 |

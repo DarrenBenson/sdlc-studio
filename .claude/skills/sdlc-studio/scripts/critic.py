@@ -38,8 +38,8 @@ PHASES = ("delivery", "plan-review")
 _FILE = {"delivery": "critic-verdicts.md", "plan-review": "plan-review-verdicts.md"}
 # Delivery header is byte-identical to the original (a freshly created delivery log must not
 # change); plan-review has its own title/prose. Both share the row schema.
-_TABLE = ("| Unit | Verdict | Reviewer | Author | Date | Issues |\n"
-          "| --- | --- | --- | --- | --- | --- |\n")
+_TABLE = ("| Unit | Verdict | Reviewer | Author | Date | Brief | Issues |\n"
+          "| --- | --- | --- | --- | --- | --- | --- |\n")
 _HEADERS = {
     "delivery": (
         "# Critic Verdicts\n\n"
@@ -61,8 +61,27 @@ def _header(phase: str) -> str:
 
 
 HEADER = _HEADERS["delivery"]
-_COLS = ("unit", "verdict", "reviewer", "author", "date", "issues")
+_COLS = ("unit", "verdict", "reviewer", "author", "date", "brief", "issues")
 
+
+
+def brief_fingerprint(brief_text: str) -> str:
+    """A stable short digest of the brief a seat was given.
+
+    Recorded beside a verdict so a hand-written prompt is DETECTABLE rather than assumed absent.
+    RUN-01KYX375 measured what that distinction is worth: four hand-written prompts returned
+    eight sprawling repo-wide findings, while the same units re-briefed from this tool returned
+    one precise finding each with zero pre-existing noise - and nothing in the record told the
+    two apart.
+
+    Content-addressed and stable, never clock- or random-seeded: a fingerprint that differs
+    between two identical briefs can never be compared, which would make the field decorative.
+    """
+    import hashlib  # noqa: PLC0415 - local; only this path needs it
+    normalised = " ".join((brief_text or "").split())
+    if not normalised:
+        return ""
+    return hashlib.sha256(normalised.encode("utf-8")).hexdigest()[:12]
 
 def verdicts_path(repo_root: Path | str, phase: str = "delivery") -> Path:
     return Path(repo_root) / "sdlc-studio" / "reviews" / _FILE[phase]
@@ -76,7 +95,7 @@ def _clean(value: str) -> str:
 
 def record_verdict(repo_root: Path | str, unit: str, verdict: str,
                    reviewer: str = "independent-critic", author: str = "",
-                   issues: str = "", phase: str = "delivery") -> Path:
+                   issues: str = "", phase: str = "delivery", brief: str = "") -> Path:
     """Append a critic verdict for a unit (creating the table if absent).
 
     `author` is the authoring seat / delegation instance id that produced the diff
@@ -98,9 +117,47 @@ def record_verdict(repo_root: Path | str, unit: str, verdict: str,
     # meeting a row that merely looks unremarkable.
     row = (f"| {sdlc_md.norm_id(unit)} | {verdict.upper()} | {_clean(reviewer) or '-'} | "
            f"{_clean(author) or '-'} | "
-           f"{sdlc_md.now_date()} | {_clean(issues) or '-'} |\n")
+           f"{sdlc_md.now_date()} | {_clean(brief) or '-'} | {_clean(issues) or '-'} |\n")
+    _ensure_brief_column(path)
     _write_verdict_row(path, row)
     return path
+
+
+def _ensure_brief_column(path: Path) -> None:
+    """Widen a pre-Brief verdict table in place, padding existing rows with `-`.
+
+    The table header is written once, when the log is created, so a log that predates the
+    Brief column keeps a six-column header while new rows carry seven cells - which is not a
+    valid markdown table, and markdownlint MD056 refuses the commit.
+
+    This pads rather than rewrites: every recorded cell keeps its value and its position, and
+    the added cell is `-`, the same ABSENT marker a hand-written prompt records. That is the
+    honest value for these rows, because a verdict taken before the column existed genuinely
+    cannot say which brief produced it. The log stays append-only in the sense that matters -
+    no judgement anybody recorded is altered or removed.
+    """
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if not line.lstrip().startswith("| Unit |"):
+            continue
+        if "| Brief |" in line:
+            return
+        lines[i] = line.replace("| Issues |", "| Brief | Issues |", 1)
+        if i + 1 < len(lines) and set(lines[i + 1].strip()) <= set("|-: "):
+            lines[i + 1] = lines[i + 1].replace("| --- |", "| --- | --- |", 1)
+        for j in range(i + 2, len(lines)):
+            if not lines[j].lstrip().startswith("|"):
+                break
+            cells = sdlc_md.table_cells(lines[j])
+            if len(cells) != 6:
+                continue
+            body = lines[j].rstrip("\n").rstrip()
+            body = body[:-1].rstrip() if body.endswith("|") else body
+            head, _, last = body.rpartition("|")
+            lines[j] = f"{head}| - |{last.rstrip()} |\n"
+        path.write_text("".join(lines), encoding="utf-8")
+        return
 
 
 def _write_verdict_row(path: Path, row: str) -> None:
@@ -147,8 +204,17 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
         cells = sdlc_md.table_cells(line)  # escaped-pipe-aware
         if not cells or cells[0] in ("Unit",):
             continue
-        if len(cells) == 6:
+        if len(cells) == 7:
             out.append(dict(zip(_COLS, cells)))
+        elif len(cells) == 6:  # pre-brief: Unit, Verdict, Reviewer, Author, Date, Issues.
+            # Read, never rewritten. Every verdict recorded before the brief column existed is a
+            # real judgement somebody made, and dropping it to "unparseable" would retire the
+            # adversarial record wholesale. Its brief is ABSENT rather than empty, which is the
+            # same thing a hand-written prompt records - correct, because that is exactly what
+            # those rows cannot distinguish about themselves.
+            older = dict(zip(("unit", "verdict", "reviewer", "author", "date", "issues"), cells))
+            older["brief"] = ""
+            out.append(older)
         elif len(cells) == 5:  # legacy: Unit, Verdict, Reviewer, Date, Issues
             legacy = dict(zip(("unit", "verdict", "reviewer", "date", "issues"), cells))
             legacy["author"] = ""

@@ -3204,5 +3204,127 @@ class ASignoffSkipsAUnitThatDeliveredNothingTests(unittest.TestCase):
         self.assertIsNone(_load()._unit_status(Path(td.name), "BG9999"))
 
 
+class BriefProvenanceTests(unittest.TestCase):
+    """US0577: a verdict carries the provenance of the brief the seat was given.
+
+    RUN-01KYX375 measured both ends of this. Four review prompts were hand-written while
+    `critic.py brief` ships the bounded diff scope, the criteria as law and the claim-inventory
+    pass; they returned eight sprawling repo-wide findings. The same units re-reviewed from the
+    shipped brief returned one precise finding each with zero pre-existing noise. Nothing in the
+    record distinguished the two, so the sprint could not tell a properly briefed review from an
+    invented one.
+
+    Each test names the mutant it must fail on, per LL0050.
+    """
+
+    def _unit(self, root: Path, uid: str = "US0001") -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{uid}-x.md").write_text(
+            f"# {uid}: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
+            f"> **Affects:** src/a.py\n\n## Acceptance Criteria\n\n"
+            f"### AC1: it behaves\n\n- **Then** it behaves\n", encoding="utf-8")
+        # `brief` resolves a seat CARD, so a fixture without one cannot exercise it at all.
+        seats = root / "sdlc-studio" / "personas" / "seats"
+        seats.mkdir(parents=True, exist_ok=True)
+        for role in ("engineering", "qa", "product"):
+            (seats / f"{role}.md").write_text(
+                f"<!-- role: {role} -->\n# A {role} seat\n\n## Lens\n\nJudge as {role}.\n",
+                encoding="utf-8")
+
+    def test_a_verdict_records_the_brief_it_was_given(self) -> None:
+        """MUTANT: drop the fingerprint from the recorded row. This must go red - without it a
+        hand-written prompt and a tool-issued brief are indistinguishable in the record."""
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            fp = critic.brief_fingerprint(critic.brief(root, "US0001", "engineering"))
+            critic.record_verdict(root, "US0001", "APPROVE", reviewer="a seat",
+                                  author="the author", brief=fp)
+            row = critic.verdict_for(root, "US0001")
+        self.assertTrue(row, "no verdict was recorded")
+        self.assertEqual(fp, row.get("brief"), "the verdict does not carry its brief")
+
+    def test_the_fingerprint_identifies_the_brief(self) -> None:
+        """MUTANT: return a constant fingerprint. This must go red, or the field records that
+        SOME brief existed rather than WHICH, and a stale or wrong brief passes as the right one."""
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            eng = critic.brief_fingerprint(critic.brief(root, "US0001", "engineering"))
+            qa = critic.brief_fingerprint(critic.brief(root, "US0001", "qa"))
+        self.assertNotEqual(eng, qa, "two different briefs share one fingerprint")
+        self.assertTrue(eng and qa, "a brief fingerprints to nothing")
+
+    def test_a_hand_written_prompt_records_no_provenance(self) -> None:
+        """MUTANT: default the field to a plausible-looking value. This must go red.
+
+        An absent brief must be visibly absent. A field filled in for a caller that never asked
+        the tool is worse than an empty one, because it asserts a discipline nobody followed."""
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            critic.record_verdict(root, "US0001", "APPROVE", reviewer="a seat",
+                                  author="the author")
+            row = critic.verdict_for(root, "US0001")
+        self.assertFalse(row.get("brief") and row["brief"] != "-",
+                         "an unbriefed verdict records a fingerprint it never had")
+
+    def test_the_fingerprint_is_stable_across_calls(self) -> None:
+        """MUTANT: seed the fingerprint with the clock or a random value. This must go red - a
+        fingerprint that changes between two identical briefs can never be compared, so the
+        field would be decorative."""
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            a = critic.brief_fingerprint(critic.brief(root, "US0001", "engineering"))
+            b = critic.brief_fingerprint(critic.brief(root, "US0001", "engineering"))
+        self.assertEqual(a, b)
+
+    def test_a_pre_brief_log_is_widened_rather_than_broken(self) -> None:
+        """MUTANT: drop the `_ensure_brief_column` call from record_verdict.
+
+        The header is written once, at creation, so an existing log keeps six columns while new
+        rows carry seven - not a valid markdown table, and markdownlint MD056 then refuses the
+        commit. This is the defect that actually blocked a commit, so it is pinned on the SHAPE
+        of the file rather than on the exception: every row must have the same cell count as the
+        header, and the pre-existing verdict must still read back with its recorded values.
+        """
+        critic = _load()
+        from lib.sdlc_md import table_cells
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001")
+            path = root / "sdlc-studio" / "reviews" / "critic-verdicts.md"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "# Critic verdicts\n\n"
+                "| Unit | Verdict | Reviewer | Author | Date | Issues |\n"
+                "| --- | --- | --- | --- | --- | --- |\n"
+                "| US0001 | APPROVE | ada | grace | 2026-01-01 | none |\n",
+                encoding="utf-8")
+            critic.record_verdict(root, "US0002", "REJECT", "ada", "grace",
+                                  issues="one", brief="abc123def456")
+            lines = [l for l in path.read_text(encoding="utf-8").splitlines()
+                     if l.startswith("| ") and not set(l.strip()) <= set("|-: ")]
+        header = table_cells(lines[0])
+        self.assertIn("Brief", header, "the header was not widened for the new column")
+        for row in lines[1:]:
+            self.assertEqual(
+                len(header), len(table_cells(row)),
+                f"row has a different cell count from the header, which is an invalid table:\n{row}")
+        old_row = next(r for r in lines if r.startswith("| US0001 "))
+        cells = table_cells(old_row)
+        self.assertEqual(["US0001", "APPROVE", "ada", "grace", "2026-01-01"], cells[:5],
+                         "the pre-existing verdict's recorded values did not survive widening")
+        self.assertEqual("-", cells[5],
+                         "a verdict predating the column should record an ABSENT brief")
+
+
 if __name__ == "__main__":
     unittest.main()
+

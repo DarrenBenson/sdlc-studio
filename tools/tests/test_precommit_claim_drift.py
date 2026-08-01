@@ -109,18 +109,102 @@ class LaneTests(unittest.TestCase):
                 "csc", REPO / "tools" / "check_spec_claims.py")
             csc = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(csc)
+            # Carries the CONTEXT line a real `git diff` emits. Without it the only tie
+            # between the code and the prose is the digit 2, which is no longer a finding
+            # on its own (BG0479) - so a fixture lacking it would be asserting that the
+            # yield counts noise.
             diff = ("diff --git a/tools/thing.py b/tools/thing.py\n"
-                    "--- a/tools/thing.py\n+++ b/tools/thing.py\n@@ -1,1 +1,1 @@\n"
+                    "--- a/tools/thing.py\n+++ b/tools/thing.py\n@@ -1,2 +1,2 @@\n"
+                    " def collapse():\n"
                     "-    return 2\n+    return 3\n"
                     "diff --git a/changelog.d/BG0001.md b/changelog.d/BG0001.md\n"
                     "--- a/changelog.d/BG0001.md\n+++ b/changelog.d/BG0001.md\n@@ -0,0 +1,1 @@\n"
                     "+- it exits 2 on collapse\n")
             csc.record_yield(root, diff)
             rec = json.loads(
-                (root / "sdlc-studio" / "retros" / "evidence" / "claim-drift-yield.json")
+                (root / "sdlc-studio" / ".local" / "claim-drift-yield.json")
                 .read_text(encoding="utf-8"))
         self.assertGreaterEqual(rec["findings"], 1, "the yield record counts no findings")
         self.assertIn("runs", rec, "the record cannot say how many runs produced that count")
+
+
+class DiscriminationTests(unittest.TestCase):
+    """The two faults a corpus replay found: 81% of findings named no code, and a shared
+    digit was treated as a shared subject (BG0479).
+
+    Both are pinned by asserting on the OUTPUT SET rather than on a count, because a lane
+    that simply stopped firing would satisfy a count assertion while being just as useless.
+    Each case therefore carries its own positive control: the same diff, altered only in the
+    way that should make it fire, must still fire.
+    """
+
+    def _drift(self, diff: str):
+        sys.path.insert(0, str(REPO / "tools"))
+        import check_spec_claims as csc
+        return csc.claim_drift(diff)
+
+    #: The added side carries no integer at all, so every number on the removed side used to
+    #: read as "replaced" - by nothing. This is the `-RETRIES = 2` / `+RETRIES = LIMIT` shape.
+    NO_INT_ADDED = (
+        "diff --git a/tools/retry.py b/tools/retry.py\n"
+        "--- a/tools/retry.py\n+++ b/tools/retry.py\n@@ -1,1 +1,1 @@\n"
+        "-DEFAULT_RETRIES = 2\n+DEFAULT_RETRIES = RETRY_LIMIT\n"
+        "diff --git a/changelog.d/BG0001.md b/changelog.d/BG0001.md\n"
+        "--- a/changelog.d/BG0001.md\n+++ b/changelog.d/BG0001.md\n@@ -0,0 +1,1 @@\n"
+        "+- default_retries stays at 2 for now\n")
+
+    def test_a_finding_never_names_an_empty_code_anchor(self) -> None:
+        """Mutant: delete the `if not new_nums: continue` guard in claim_drift.
+
+        Without it this diff yields a finding whose `code` is the empty string, printing as
+        `... while tools/retry.py in this diff carries ''`. That was 191 of 235 findings over
+        the 40-commit replay - a report naming nothing the reader can act on.
+        """
+        findings = self._drift(self.NO_INT_ADDED)
+        empty = [f for f in findings if not f["code"]]
+        self.assertEqual(
+            empty, [],
+            "a finding was emitted whose code anchor is empty - it names no code to act on")
+
+    def test_a_replacement_that_does_name_a_new_value_still_fires(self) -> None:
+        """Positive control for the guard above: the ONLY change from NO_INT_ADDED is that the
+        added line carries an integer, so there is a real replacement to reason about."""
+        diff = self.NO_INT_ADDED.replace(
+            "+DEFAULT_RETRIES = RETRY_LIMIT", "+DEFAULT_RETRIES = 5")
+        self.assertTrue(
+            self._drift(diff),
+            "a genuine literal replacement stopped being reported - the guard is too broad")
+
+    #: A column-count condition moving 6 -> 7, beside prose about an unrelated subject that
+    #: merely contains the digit 6. This is what fired against changelog.d/BG0467.md.
+    DIGIT_ONLY = (
+        "diff --git a/scripts/critic.py b/scripts/critic.py\n"
+        "--- a/scripts/critic.py\n+++ b/scripts/critic.py\n@@ -1,1 +1,1 @@\n"
+        "-        if len(cells) == 6:\n+        if len(cells) == 7:\n"
+        "diff --git a/changelog.d/BG0002.md b/changelog.d/BG0002.md\n"
+        "--- a/changelog.d/BG0002.md\n+++ b/changelog.d/BG0002.md\n@@ -0,0 +1,1 @@\n"
+        "+- the commit gate left main red for 6 commits\n")
+
+    def test_a_shared_digit_alone_is_not_a_finding(self) -> None:
+        """Mutant: delete the `if not (context & _prose_tokens(prose_line)): continue` clause.
+
+        Without it, prose is flagged for containing the replaced digit even when it names
+        nothing the changed code names. Here the prose is about commits on main and the code
+        is about a table's column count; they share only the character 6.
+        """
+        self.assertEqual(
+            self._drift(self.DIGIT_ONLY), [],
+            "prose sharing only a digit with the changed code was reported as drift")
+
+    def test_prose_naming_the_changed_code_still_fires(self) -> None:
+        """Positive control for the token requirement: same diff, but the prose now names the
+        subject (`cells`), so it is genuinely asserting the old value of this thing."""
+        diff = self.DIGIT_ONLY.replace(
+            "+- the commit gate left main red for 6 commits",
+            "+- a verdict row carries 6 cells")
+        self.assertTrue(
+            self._drift(diff),
+            "prose asserting the old value of the changed symbol stopped being reported")
 
 
 if __name__ == "__main__":

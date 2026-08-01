@@ -1,6 +1,6 @@
 # US0577: A recorded review verdict carries the provenance of the brief it was given, so a hand-written prompt is detectable
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0512
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** that verdict is recorded
 - **Then** the row carries a stable fingerprint of the brief text the tool emitted, so the verdict can be traced to the prompt that produced it rather than asserted to have had one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefProvenanceTests::test_a_verdict_records_the_brief_it_was_given
+- **Verified:** yes (2026-08-01)
 
 ### AC2: two different briefs give two different fingerprints
 
@@ -30,6 +31,7 @@
 - **When** both verdicts are recorded
 - **Then** their fingerprints differ, so the field identifies WHICH brief was used and cannot be satisfied by a constant
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefProvenanceTests::test_the_fingerprint_identifies_the_brief
+- **Verified:** yes (2026-08-01)
 
 ### AC3: a hand-written prompt yields no provenance
 
@@ -37,6 +39,7 @@
 - **When** the row is read back
 - **Then** it carries no brief fingerprint, and the absence is distinguishable from a brief that produced an empty string
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefProvenanceTests::test_a_hand_written_prompt_records_no_provenance
+- **Verified:** yes (2026-08-01)
 
 ## Revision History
 

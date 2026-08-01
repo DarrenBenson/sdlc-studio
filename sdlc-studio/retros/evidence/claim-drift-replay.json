@@ -1,0 +1,40 @@
+{
+  "measurement": "claim_drift yield over the 40 commits ending at HEAD, before and after the scoping rule",
+  "run": "RUN-01KYY52D",
+  "units_covered": [
+    "US0583",
+    "US0584",
+    "US0585",
+    "US0597",
+    "BG0479",
+    "BG0481",
+    "BG0482"
+  ],
+  "corpus": {
+    "commits": 40,
+    "head": "3570c94a5a2e96ab48187029347c1dc13b3fef21",
+    "diff_context_lines": 3
+  },
+  "before": {
+    "source": "tools/check_spec_claims.py at HEAD, before the BG0479 repair",
+    "findings_total": 215,
+    "commits_firing": 11,
+    "findings_with_empty_code_anchor": 135
+  },
+  "after": {
+    "source": "tools/check_spec_claims.py with the no-replacement guard and the shared-subject rule",
+    "findings_total": 74,
+    "commits_firing": 6,
+    "findings_with_empty_code_anchor": 0
+  },
+  "delta": {
+    "findings_total_pct": -65.6,
+    "empty_anchor_pct": -100.0,
+    "commits_firing": -5
+  },
+  "notes": [
+    "The independent QA seat measured 235 findings and 191 empty anchors on the same 40-commit window. This replay measures 215 and 135. Both were taken at 3570c94a, so the difference is the changelog.d corpus _standing_prose reads, which grew between the two runs. The numbers recorded here are the ones this replay produced; the reviewer's are not restated as if they were reproduced.",
+    "The empty-anchor class is eliminated outright rather than reduced, because a finding that cannot name the code it objects to is not actionable by construction.",
+    "This is a yield measurement, not a precision measurement. It says how much output the lane produces, not how much of the remainder is correct. Deciding whether the lane may BLOCK needs the second number and is explicitly out of this run."
+  ]
+}

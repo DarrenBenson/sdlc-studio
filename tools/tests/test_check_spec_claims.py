@@ -295,7 +295,12 @@ class ClaimDriftTests(unittest.TestCase):
         """A unified diff touching one code file and one prose file, as `git diff` emits it."""
         return (
             "diff --git a/tools/thing.py b/tools/thing.py\n"
-            "--- a/tools/thing.py\n+++ b/tools/thing.py\n@@ -1,1 +1,1 @@\n"
+            "--- a/tools/thing.py\n+++ b/tools/thing.py\n@@ -1,2 +1,2 @@\n"
+            # The CONTEXT line a real `git diff` emits. It is where the subject is NAMED:
+            # `-    return 2` / `+    return 3` identifies nothing on its own, and a finding
+            # now needs the prose to name something the changed code names rather than merely
+            # sharing a digit (BG0479).
+            " def collapse():\n"
             f"-{code_before}\n+{code_after}\n"
             "diff --git a/changelog.d/BG0001.md b/changelog.d/BG0001.md\n"
             "--- a/changelog.d/BG0001.md\n+++ b/changelog.d/BG0001.md\n@@ -0,0 +1,1 @@\n"

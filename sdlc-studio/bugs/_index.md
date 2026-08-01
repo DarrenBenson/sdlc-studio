@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 24 |
+| Open | 27 |
 | In Progress | 0 |
-| Fixed | 368 |
+| Fixed | 372 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **475** |
+| **Total** | **482** |
 
 ## All Bugs
 
@@ -193,6 +193,13 @@
 | [BG0473](BG0473-the-stop-s-awaiting-signoff-rule-reads-one.md) | The stop's awaiting-signoff rule reads one half of a two-half gate, so a stop exits clean over work the session could still do | Fixed | High | 2026-08-01 | 2026-08-01 |
 | [BG0474](BG0474-an-artefact-documenting-the-shell-mangling-hazard-is.md) | An artefact documenting the shell-mangling hazard is flagged as a casualty of it, so the defect cannot be written about | Open | Medium | 2026-08-01 | 2026-08-01 |
 | [BG0475](BG0475-decisions-py-writes-a-multi-paragraph-rationale-straight.md) | decisions.py writes a multi-paragraph rationale straight into a markdown table cell, breaking the row | Open | Medium | 2026-08-01 | 2026-08-01 |
+| [BG0476](BG0476-a-test-module-importing-a-sibling-fixture-is.md) | A test module importing a sibling fixture is unimportable under pytest, so the story's own verifier cannot run | Open | High | 2026-08-01 | 2026-08-01 |
+| [BG0477](BG0477-refine-mints-stories-nothing-can-plan-placeholder-acceptance.md) | refine mints stories nothing can plan: placeholder acceptance criteria, unfilled user-story fields, and a persona that is no seat | Open | High | 2026-08-01 | 2026-08-01 |
+| [BG0478](BG0478-artifact-py-new-mints-a-cr-the-commit.md) | artifact.py new mints a CR the commit gate then refuses, so the recommended path is the blocked one | Open | High | 2026-08-01 | 2026-08-01 |
+| [BG0479](BG0479-claim-drift-matches-a-bare-integer-literal-so.md) | claim-drift matches a bare integer literal, so unrelated changelog fragments are reported against any diff that changes a small number | Fixed | High | 2026-08-01 | 2026-08-01 |
+| [BG0480](BG0480-us0583-s-changelog-fragment-and-module-comment-still.md) | US0583's changelog fragment and module comment still describe the narrow scan that _standing_prose replaced | Fixed | High | 2026-08-01 | 2026-08-01 |
+| [BG0481](BG0481-record-yield-dirties-a-tracked-file-on-every.md) | record_yield dirties a tracked file on every commit, and the yield it accumulates is not the real one | Fixed | High | 2026-08-01 | 2026-08-01 |
+| [BG0482](BG0482-us0597-ac3-is-ticked-verified-and-is-not.md) | US0597 AC3 is ticked Verified and is not met: the named evidence file was never created and its verifier asserts nothing about before-and-after | Fixed | High | 2026-08-01 | 2026-08-01 |
 
 ## Archived Releases
 
