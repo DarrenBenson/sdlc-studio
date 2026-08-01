@@ -97,3 +97,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0085](RETRO0085-run-01kypz1g-the-close-found-four-stop-ships.md) | RUN-01KYPZ1G: the close found four stop-ships and the review that mattered was the one nobody ran first | 2026-07-30 | -- | -- |
 | [RETRO-0086](RETRO0086-run-01kytka1-the-review-debt-cleared-and-what.md) | RUN-01KYTKA1: the review debt cleared, and what clearing it found | 2026-07-31 | -- | -- |
 | [RETRO-0087](RETRO0087-the-sprint-run-is-a-controllable-object-end.md) | The sprint run is a controllable object end to end: inspectable and mutable in flight, queued as charters, and closed on evidence that can fail | 2026-08-01 | -- | -- |
+| [RETRO-0088](RETRO0088-run-01kyy52d-the-review-learned-to-discriminate-and.md) | RUN-01KYY52D: the review learned to discriminate, and then failed its own new rule | 2026-08-01 | -- | -- |

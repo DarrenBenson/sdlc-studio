@@ -12,9 +12,9 @@
 | Complete | 445 |
 | Rejected | 1 |
 | Deferred | 0 |
-| Superseded | 21 |
+| Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **520** |
+| **Total** | **521** |
 
 ## All Changes
 
@@ -342,6 +342,7 @@
 | [CR-0518](CR0518-a-sprint-run-has-a-tool-runbook-it.md) | a sprint run has a tool runbook it is made to read before it plans | Proposed | High | Improvement | 2026-08-01 | -- |
 | [CR-0519](CR0519-a-suite-verdict-is-read-from-a-file.md) | a suite verdict is read from a file, never from a pipe that can swallow the exit code | Proposed | High | Improvement | 2026-08-01 | -- |
 | [CR-0520](CR0520-a-criterion-verified-only-through-the-library-is.md) | a criterion verified only through the library is not evidence the feature ships | Proposed | High | Improvement | 2026-08-01 | -- |
+| [CR-0521](CR0521-a-sprint-closes-on-an-amigo-panel-s.md) | a sprint closes on an amigo panel's sign-off, so the operator is informed rather than in the loop | Superseded | High | Feature | 2026-08-01 | -- |
 
 ## Archived Releases
 

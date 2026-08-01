@@ -1,6 +1,7 @@
 # CR-0514: The amigo panel signs off a sprint to completion: a different seat from the one that reviewed it, gated on brief provenance and a converging review loop
 
 > **Status:** Proposed
+> **Supersedes:** CR0521
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

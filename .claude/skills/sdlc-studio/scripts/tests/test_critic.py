@@ -3599,6 +3599,21 @@ class ReviewRepairTests(unittest.TestCase):
                       "the docstring does not mention the REJECT shape that now also covers")
         self.assertIn("UNTAGGED", doc.upper(),
                       "the docstring does not say an untagged finding never qualifies")
+        # All THREE sites, not just the one this test started with. The rule is restated in
+        # two other modules, and pinning only the canonical copy leaves the same drift free to
+        # recur in the places it actually recurred - which is the whole reason a second copy
+        # of a rule is a liability. Flagged by the confirmation pass; cheap, so closed here.
+        scripts = Path(__file__).resolve().parent.parent
+        for rel, needle in (("sprint.py", "sprint_covers_independently` is THE predicate"),
+                            ("carry_forward.py", "sprint_covers_independently`")):
+            text = (scripts / rel).read_text(encoding="utf-8")
+            i = text.find(needle)
+            self.assertGreater(i, 0, f"{rel} no longer restates the coverage rule - if the "
+                                     f"restatement was removed, remove it from this list too")
+            passage = text[i:i + 600]
+            self.assertIn("pre-existing", passage,
+                          f"{rel} still describes coverage as APPROVE-only, which this diff "
+                          f"falsified - the same drift the canonical docstring carried")
 
 
 if __name__ == "__main__":

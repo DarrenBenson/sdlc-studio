@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0278: Two copies of a rule drift apart: the coverage rule was restated in three modules and this diff falsified all three at once.**
+- **L-0277: Reading a command's verdict through a pipe reports the pipe's status.**
+- **L-0276: A premise measured on one instance is an anecdote.**
+- **L-0275: A review that fails every unit carries the same information as one that passes every unit.**
+- **L-0274: A library test cannot see a missing lane: the wiring between entry point and function is exactly the part it does not exercise, and it is...**
 - **L-0273: **Stopping is a delivery decision, and it is cheaper than half-building.** BG0448 was left untouched rather than part-built, because its...**
 - **L-0272: **Check the criterion's verifier can FAIL before ticking it.** Two criteria here were `Verified: yes` over tests that passed at the commit...**
 - **L-0271: **A selected test run cannot tell you the tree is green.** Six commits passed a gate that never ran the test my first commit broke.**
