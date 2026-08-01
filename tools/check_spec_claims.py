@@ -275,11 +275,98 @@ def check(root: Path) -> list[str]:
     return errors
 
 
-def main(argv: list[str] | None = None) -> int:
+
+# ---------------------------------------------------------------------------
+# Claim drift: a diff whose code and whose own prose disagree (US0583).
+# ---------------------------------------------------------------------------
+# Every blocking finding of RUN-01KYX375's corrected review loop was this shape - a changelog
+# fragment or docstring stating a value the code in the SAME diff had moved past. BG0471 is the
+# specimen: the collapse signal moved from exit 2 to exit 3 and two prose sites kept saying 2,
+# one of them the docstring of the very test asserting 3. Each was decidable from the diff alone
+# and instead cost an adversarial review round.
+#
+# Scope is deliberately narrow. Only ADDED lines are read, and only within this diff: a context
+# line is prose the commit did not write, and a repo-wide scan would find a contradiction
+# somewhere on every commit, which is how a guard becomes noise and then gets switched off.
+
+#: Files whose ADDED lines are read as prose making claims about the change.
+_PROSE_SUFFIXES = (".md", ".rst", ".txt")
+
+#: A bare integer, the only claim shape decided mechanically here. A full natural-language claim
+#: check is not mechanisable; a changed literal contradicted by its own prose is, and it covers
+#: every finding the corrected review loop returned.
+_INT_RE = re.compile(r"(?<![\w.])(\d{1,6})(?![\w.])")
+
+
+def _diff_files(diff: str):
+    """Yield (path, added_lines) per file in a unified diff. Added lines only."""
+    path, added = None, []
+    for line in diff.splitlines():
+        if line.startswith("diff --git "):
+            if path is not None:
+                yield path, added
+            parts = line.split(" b/", 1)
+            path, added = (parts[1].strip() if len(parts) == 2 else ""), []
+        elif line.startswith("+++ ") or line.startswith("--- ") or line.startswith("@@"):
+            continue
+        elif line.startswith("+") and path is not None:
+            added.append(line[1:])
+    if path is not None:
+        yield path, added
+
+
+def claim_drift(diff: str) -> list[dict]:
+    """Findings where this diff's code moved past a number its own prose still states.
+
+    ADVISORY by construction: the caller reports these on a channel that does not influence the
+    exit code (D0105), because a new blocking lane on a gate already 40% over its ceiling has to
+    earn its place on measured yield rather than on assertion.
+    """
+    code_added, prose_added = [], []
+    for path, added in _diff_files(diff):
+        target = prose_added if path.endswith(_PROSE_SUFFIXES) else code_added
+        for line in added:
+            target.append((path, line))
+    # `not prose_added` is deliberately NOT tested here: with no prose the loop below runs
+    # zero times and returns [] anyway, so the extra clause would be an unreachable guard -
+    # the dead-defence shape BG0413 shipped and an independent seat then found. Mutation
+    # caught it here before it landed.
+    if not code_added:
+        return []                     # nothing for prose to contradict
+    code_nums = {n for _p, l in code_added for n in _INT_RE.findall(l)}
+    if not code_nums:
+        return []
+    findings = []
+    for prose_path, prose_line in prose_added:
+        prose_nums = set(_INT_RE.findall(prose_line))
+        if not prose_nums or prose_nums & code_nums:
+            continue                  # the prose names no number, or names one the code carries
+        # The prose states a number this diff's code does not. Name the nearest code line so the
+        # author is shown the pair rather than told a number is wrong somewhere.
+        code_path, code_line = code_added[0]
+        findings.append({"prose_file": prose_path, "prose": prose_line.strip(),
+                         "code_file": code_path, "code": code_line.strip()})
+    return findings
+
+def main(argv: list[str] | None = None, stdin_text: str | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="repo root")
+    parser.add_argument("--claim-drift", metavar="DIFF",
+                        help="also report claim drift over a unified diff ('-' reads stdin). "
+                             "ADVISORY: these findings never change the exit code")
     args = parser.parse_args(argv)
     root = Path(args.root)
+    if args.claim_drift:
+        diff = stdin_text if args.claim_drift == "-" and stdin_text is not None else (
+            sys.stdin.read() if args.claim_drift == "-"
+            else Path(args.claim_drift).read_text(encoding="utf-8"))
+        for f in claim_drift(diff):
+            # Reported on its own channel and NOT folded into `errors`: the spec-claim errors
+            # below keep the blocking contract they have today, and this lane is advisory while
+            # its yield is measured (D0105). One script, two severities, stated rather than
+            # discovered by whoever adds the next lane.
+            print(f"CLAIM-DRIFT: {f['prose_file']} says {f['prose']!r} while "
+                  f"{f['code_file']} in this diff carries {f['code']!r}", file=sys.stderr)
     errors = check(root)
     for err in errors:
         print(f"SPEC-CLAIMS: {err}", file=sys.stderr)

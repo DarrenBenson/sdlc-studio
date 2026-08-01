@@ -32,6 +32,7 @@
 - **When** the claim-drift lane runs over the staged diff
 - **Then** it reports the contradiction naming both the code site and the prose site, because this is decidable from the diff alone and currently costs an adversarial review round to find
 - **Verify:** pytest tools/tests/test_check_spec_claims.py::ClaimDriftTests::test_a_changed_literal_contradicting_its_prose_is_flagged
+- **Verified:** yes (2026-08-01)
 
 ### AC2: a diff whose prose agrees produces no finding
 
@@ -39,6 +40,7 @@
 - **When** the lane runs
 - **Then** it reports nothing - the control, so the lane cannot be satisfied by one that always fires
 - **Verify:** pytest tools/tests/test_check_spec_claims.py::ClaimDriftTests::test_agreeing_prose_produces_no_finding
+- **Verified:** yes (2026-08-01)
 
 ### AC3: prose outside the diff is not judged
 
@@ -46,6 +48,7 @@
 - **When** the lane runs over one staged diff
 - **Then** only claims inside that diff are considered, so the lane stays a delivery check and does not become a repo-wide audit that always finds something
 - **Verify:** pytest tools/tests/test_check_spec_claims.py::ClaimDriftTests::test_only_the_staged_diff_is_judged
+- **Verified:** yes (2026-08-01)
 
 ## Revision History
 

@@ -277,3 +277,88 @@ class PathAwareBandTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ClaimDriftTests(unittest.TestCase):
+    """US0583: a diff whose code and whose own prose disagree, caught at delivery.
+
+    Every blocking finding of RUN-01KYX375's corrected review loop was this shape - a changelog
+    or docstring stating a value the code in the same diff had moved past. Each was decidable
+    from the diff alone in seconds and instead cost an adversarial review round. BG0471 is the
+    specimen: the collapse signal moved from exit 2 to exit 3 and two prose sites kept saying 2,
+    one of them the docstring of the very test asserting 3.
+
+    The mutant each test must fail on is named in its own docstring, per LL0050.
+    """
+
+    def _diff(self, code_before: str, code_after: str, prose: str) -> str:
+        """A unified diff touching one code file and one prose file, as `git diff` emits it."""
+        return (
+            "diff --git a/tools/thing.py b/tools/thing.py\n"
+            "--- a/tools/thing.py\n+++ b/tools/thing.py\n@@ -1,1 +1,1 @@\n"
+            f"-{code_before}\n+{code_after}\n"
+            "diff --git a/changelog.d/BG0001.md b/changelog.d/BG0001.md\n"
+            "--- a/changelog.d/BG0001.md\n+++ b/changelog.d/BG0001.md\n@@ -0,0 +1,1 @@\n"
+            f"+{prose}\n")
+
+    def test_a_changed_literal_contradicting_its_prose_is_flagged(self) -> None:
+        """MUTANT: make `claim_drift` return [] unconditionally. This must go red.
+
+        BG0471's shape, reduced: the code moves to 3 and the prose still says 2."""
+        diff = self._diff("    return 2", "    return 3",
+                          "- the check now exits 2 when the suite collapses")
+        found = check_spec_claims.claim_drift(diff)
+        self.assertEqual(1, len(found), f"expected one drift finding, got {found}")
+        self.assertIn("3", found[0]["code"], "the finding does not name the code value")
+        self.assertIn("2", found[0]["prose"], "the finding does not name the prose value")
+        self.assertIn("changelog.d/BG0001.md", found[0]["prose_file"])
+        self.assertIn("tools/thing.py", found[0]["code_file"])
+
+    def test_agreeing_prose_produces_no_finding(self) -> None:
+        """The control. MUTANT: make `claim_drift` return a finding unconditionally - this must
+        go red, so the lane cannot be satisfied by one that always fires."""
+        diff = self._diff("    return 2", "    return 3",
+                          "- the check now exits 3 when the suite collapses")
+        self.assertEqual([], check_spec_claims.claim_drift(diff))
+
+    def test_only_the_staged_diff_is_judged(self) -> None:
+        """MUTANT: widen the scan from the diff to the whole repository. This must go red.
+
+        The lane is a DELIVERY check. A repo-wide scan would find a contradiction somewhere on
+        every commit, which is how a guard becomes noise and then gets switched off."""
+        diff = ("diff --git a/tools/thing.py b/tools/thing.py\n"
+                "--- a/tools/thing.py\n+++ b/tools/thing.py\n@@ -1,1 +1,1 @@\n"
+                "-    return 2\n+    return 3\n")
+        self.assertEqual([], check_spec_claims.claim_drift(diff),
+                         "a diff touching no prose produced a finding")
+
+    def test_an_unchanged_prose_line_is_not_judged(self) -> None:
+        """MUTANT: read context lines as prose. This must go red.
+
+        Only lines the diff ADDS are this unit's claims. A context line is prose the commit did
+        not write, and judging it turns a delivery check into an audit of the file's history."""
+        diff = ("diff --git a/tools/thing.py b/tools/thing.py\n"
+                "--- a/tools/thing.py\n+++ b/tools/thing.py\n@@ -1,2 +1,2 @@\n"
+                "-    return 2\n+    return 3\n"
+                "diff --git a/changelog.d/BG0001.md b/changelog.d/BG0001.md\n"
+                "--- a/changelog.d/BG0001.md\n+++ b/changelog.d/BG0001.md\n@@ -1,2 +1,2 @@\n"
+                " - an older note saying it exits 2\n"
+                "+- an added note that names no number\n")
+        self.assertEqual([], check_spec_claims.claim_drift(diff))
+
+    def test_a_drift_finding_alone_does_not_fail_the_command(self) -> None:
+        """The exit-code contract (D0105). MUTANT: fold drift findings into `errors`. This must
+        go red - the drift lane is ADVISORY while its yield is measured, and the existing
+        spec-claim errors keep the blocking contract they have today."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            diff = self._diff("    return 2", "    return 3",
+                              "- the check now exits 2 when the suite collapses")
+            buf_out, buf_err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
+                rc = check_spec_claims.main(["--root", str(root), "--claim-drift", "-"],
+                                            stdin_text=diff)
+            self.assertEqual(0, rc, "an advisory drift finding blocked the command")
+            self.assertIn("CLAIM-DRIFT", buf_out.getvalue() + buf_err.getvalue(),
+                          "the finding was not reported at all")
