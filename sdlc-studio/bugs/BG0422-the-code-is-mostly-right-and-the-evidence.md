@@ -1,9 +1,10 @@
 # BG0422: The code is mostly right and the EVIDENCE is what fails: five consecutive REJECTs, and four fifths of the findings were the author's own tests unable to fail
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/reference-agentic-lessons.md, .claude/skills/sdlc-studio/lessons/_index.md, .claude/skills/sdlc-studio/best-practices/claude-skill.md
+> **Verification depth:** functional (a documentation unit with NO mutatable surface, recorded rather than left implicit. Its evidence is the guard set that reads these files: lint-style, check_budgets, check_links and markdownlint all green. The budget guard refused a first draft at 768 lines against a 741 ceiling; the content moved to `best-practices/testing.md`, which is its right home under AC2, rather than the ceiling moving to meet it)
+> **Affects:** .claude/skills/sdlc-studio/best-practices/testing.md, .claude/skills/sdlc-studio/reference-agentic-lessons.md, .claude/skills/sdlc-studio/reference-test-best-practices.md, .claude/skills/sdlc-studio/lessons/_index.md
 > **Evidence:** RUN-01KYPZ1G: five independent adversarial reviews, five REJECTs, roughly 30 findings over 86 delivered points. Categorised: about 20 were a test that could not fail (parser bypassed by a hand-built Namespace; a string supplied by the function's own def line; a fixture shape the product never produces; a bug used to test a Review status bugs do not have; an exception TYPE where two guards raise the same type; the helper tested instead of the caller FIVE separate times; assertRegex over a whole file). Three were the fix in the wrong place. Two were a reader requiring a key no writer produces. Two were a filtered test run hiding 17 then 27 failures.
 > **Created:** 2026-07-30
 > **Created-by:** sdlc-studio file
@@ -39,11 +40,11 @@ Two smaller classes are structural and a design review WOULD catch them, which i
 
 ## Acceptance Criteria
 
-- [ ] The lesson is recorded in the cross-project store with all eight mechanisms named individually, because each needs a different habit to catch.
-- [ ] The named-mutant-first rule is stated in the shipped best-practice guidance, so a consuming project inherits the habit and not only the observation.
-- [ ] The rule that a test exercises the surface the user invokes is stated with the five-in-one-sprint count as its evidence.
-- [ ] The honest limit of a pre-implementation design review is recorded - it addresses the structural classes and cannot see an unwritten test - so it is not adopted as a general cure.
-- [ ] The review-before-commit sequencing is stated as a rule, since this sprint built the mechanism for it and then did not follow it.
+- [x] The lesson is recorded in the cross-project store with all eight mechanisms named individually, because each needs a different habit to catch.
+- [x] The named-mutant-first rule is stated in the shipped best-practice guidance, so a consuming project inherits the habit and not only the observation.
+- [x] The rule that a test exercises the surface the user invokes is stated with the five-in-one-sprint count as its evidence.
+- [x] The honest limit of a pre-implementation design review is recorded - it addresses the structural classes and cannot see an unwritten test - so it is not adopted as a general cure.
+- [x] The review-before-commit sequencing is stated as a rule, since this sprint built the mechanism for it and then did not follow it.
 
 ## Impact
 

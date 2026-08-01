@@ -62,6 +62,7 @@ and from per-project memory (project-specific facts).
 | [LL0047](LL0047-a-verifier-the-staleness-sweep-cannot-resolve-is-one-whose-test-can-vanish-unnoticed.md) | A verifier the staleness sweep cannot resolve is one whose test can vanish unnoticed | verification, acceptance-criteria, tooling, staleness |
 | [LL0048](LL0048-pin-a-review-agent-s-diff-by-sha-never-by-the-most-recent-n-commits.md) | Pin a review agent's diff by sha, never by 'the most recent N commits' | review, agents, git, scoping |
 | [LL0049](LL0049-a-long-agent-task-with-no-output-schema-can-stall-silently-check-the-transcript-s-mtime-do-not-wait-for-a-notification.md) | A long agent task with no output schema can stall silently - check the transcript's mtime, do not wait for a notification | agents, orchestration, reliability, review |
+| [LL0050](LL0050-name-the-mutant-before-writing-the-test-in-its-docstring.md) | Name the mutant before writing the test, in its docstring | testing, mutation, evidence, vacuous-test, review |
 
 ## Notes
 

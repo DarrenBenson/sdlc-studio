@@ -63,6 +63,41 @@ check passes for an input the sentence does not describe, so a clause reworded t
 verdict beside it - while keeping the word the assertion pinned - stays green. Driving both
 over one battery fails on the input where they disagree, and names it.
 
+## Name the mutant BEFORE writing the test {#name-the-mutant-first}
+
+A mutation run proves a test can fail. This is the habit that makes it pass first time.
+
+**In the test's docstring, state the production change the test must fail on. Then write the
+test to fail on it.** If the mutant cannot be named, there is nothing to test yet.
+
+The rule is measured, not asserted. One sprint returned five REJECTs across five reviews with
+the production code right in most of them - an evidence problem, not a code-quality one, and
+the two need different remedies. About two thirds of every finding was a test that passes
+identically whether the feature is present or absent, from eight distinct mechanisms:
+
+| Mechanism | What it looks like |
+| --- | --- |
+| Bypassing the surface under test | a hand-built `argparse.Namespace`, hiding a required-flag defect |
+| Asserting text the code supplies for free | a `def` line carrying the call site's own string |
+| A fixture shape the product cannot produce | the state asserted is unreachable in practice |
+| A TYPE lacking the state under test | the assertion is vacuous for that type |
+| An exception type two guards both raise | the test cannot say which one fired |
+| Testing the helper, not the caller | five findings in ONE sprint were this alone |
+| A whole-file assertion | an unrelated sentence satisfies it |
+| A positive control already passing | it proves nothing about the change |
+
+Every one is visible **on the page**, before any mutation run, if the question is asked in that
+order. Two rules follow directly:
+
+- **Test the surface the user invokes** - the command, not the helper it delegates to.
+- **For every reader you add, name its writer.** A reader requiring a key nothing emits is a
+  dead path, and the question costs one line.
+
+**The honest limit of a pre-implementation design review:** it catches the two structural
+classes above (the guard placed in the library while the unguarded read stayed in the command;
+the reader requiring a key no writer emits) and it is cheap. It cannot see a test that does not
+exist yet, so it addresses roughly a third of this and is not a general cure.
+
 ## Mechanisation and its boundary
 
 Per the determinism doctrine ([LL0008](../lessons/_index.md)), heuristic 2 is

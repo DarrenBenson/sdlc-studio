@@ -205,6 +205,22 @@ Per-wave commits create noise (25+ commits for a 10-story epic with 4 waves). Pe
 
 Status updates, story promotions, and reconcile changes should be their own commit, not mixed with feature code. This keeps feature commits clean and makes it easy to revert sdlc-studio bookkeeping without touching code.
 
+### Review BEFORE the commit, not after
+
+The batch-boundary review exists so a defect is priced in the batch that caused it, and the
+close only ASSERTS that coverage exists rather than performing the review. That mechanism is
+correct and it is routinely ignored: one sprint built exactly this and then committed ahead of
+the review anyway, five times. Sequencing is the whole value - a review that runs after the
+commit converts every finding it makes into close work, which is the cost the mechanism was
+built to avoid.
+
+Two habits go with it, both cheap and both learned the expensive way:
+
+- **Run the full suite before every commit, never a filtered subset.** Two commits in one
+  sprint would otherwise have landed 17 and 27 failures.
+- **A test that has not been seen red is not evidence.** See
+  `best-practices/testing.md#name-the-mutant-first`.
+
 ### Don't skip the post-epic commit
 
 Even if the next epic depends on this one and you want to keep going, COMMIT before starting the next epic. Worktree agents branch from HEAD. If HEAD doesn't include the prior epic's code, the next epic's agents can't see it and will fail or reinvent types.

@@ -127,6 +127,8 @@ a mutation the tests do not kill is reported as a **survivor** finding, and the 
 `mutation` lane surfaces the report (advisory). See `reference-scripts.md` and
 `help/mutation.md`.
 
+See `best-practices/testing.md#name-the-mutant-first` for the habit that makes this pass first time.
+
 Cross-reference: `#test-anti-patterns` (over-mocking is the same disease at the unit boundary), `#verification-depth-tiers`, `reference-test-e2e-guidelines.md`.
 
 ---

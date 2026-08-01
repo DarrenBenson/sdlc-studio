@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 22 |
+| Open | 21 |
 | In Progress | 0 |
-| Fixed | 364 |
+| Fixed | 365 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -139,7 +139,7 @@
 | [BG0419](BG0419-four-delivered-units-are-held-by-verifiers-that.md) | Four delivered units are held by verifiers that pass with the delivered mechanism removed, and two whole production surfaces are one edit from inert | Open | High | 2026-07-29 | 2026-07-29 |
 | [BG0420](BG0420-test-fixtures-mirror-real-lists-by-hand-so.md) | Test fixtures mirror real lists by hand, so adding one chain step or one gate lane turns dozens of unrelated tests red for a reason none of them is about | Open | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0421](BG0421-twenty-one-open-questions-reached-a-terminal-status.md) | Twenty-one Open Questions reached a terminal status unanswered, and are now owned here rather than given rulings nobody made | Open | Medium | 2026-07-29 | 2026-07-29 |
-| [BG0422](BG0422-the-code-is-mostly-right-and-the-evidence.md) | The code is mostly right and the EVIDENCE is what fails: five consecutive REJECTs, and four fifths of the findings were the author's own tests unable to fail | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0422](BG0422-the-code-is-mostly-right-and-the-evidence.md) | The code is mostly right and the EVIDENCE is what fails: five consecutive REJECTs, and four fifths of the findings were the author's own tests unable to fail | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0423](BG0423-the-commit-gate-s-unit-suite-lane-fails.md) | The commit gate's unit-suite lane fails on the first attempt and passes on an identical retry, twice in one session, costing a full 8-minute gate run each time | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0424](BG0424-test-selection-dropped-a-script-s-own-test.md) | test selection dropped a script's own test module the moment that module measured any read path | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0425](BG0425-main-was-one-line-over-its-own-test.md) | main was one line over its own test-noise ratchet, so the noise gate was enforcing nothing | Fixed | Medium | 2026-07-30 | 2026-07-30 |
