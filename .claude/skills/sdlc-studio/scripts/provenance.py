@@ -94,16 +94,20 @@ def check(repo_root: Path | str, types: list[str] | None = None) -> dict:
         # checker can NAME it. Re-reading here swallowed the OSError and reported the
         # file clean, and crashed outright on a non-UTF-8 one.
         for p, text in sdlc_md.iter_artifact_files(t, root):
-            # The SHARED parser, so the id is read the one way. What this actually changes:
-            # a HYPHENATED v2 key `BG-9007-slug` used to split to `BG`, whose id number is
-            # None, so it scored 0 and was exempted as pre-adoption legacy; it now scores 9007
-            # and is checked. It does NOT change the v3 case - `id_number` returns None for a
-            # ULID by design, so a v3 artefact still scores 0 and is still exempt. An ordinal
-            # cutoff cannot rank an id that carries no ordinal, which is a real hole and a
-            # different one; it is filed rather than papered over with a comment here.
+            # The SHARED parser, so the id is read the one way. A HYPHENATED v2 key
+            # `BG-9007-slug` used to split to `BG`, whose id number is None, so it scored 0 and
+            # was exempted as pre-adoption legacy; it now scores 9007 and is checked.
+            #
+            # An id carrying NO ordinal at all - a v3 ULID, for which `id_number` returns None
+            # by design - is NOT exempt. `or 0` used to score it 0, putting it under every
+            # cutoff, so the whole family of ids the product now mints by default was exempted
+            # by an accident of parsing and reported identically to a pass. An ordinal cutoff
+            # cannot rank an id that carries no ordinal, and of the two ways to resolve that
+            # only one fails safe: let the stamp check speak. This is the same direction
+            # `reachable_end_state` takes for an unrankable id.
             aid = sdlc_md.extract_record_id(p.stem) or p.stem
-            idn = sdlc_md.id_number(aid) or 0  # number is in the id prefix, not the slug
-            if idn <= cutoff:  # legacy, pre-adoption: exempt
+            idn = sdlc_md.id_number(aid)
+            if idn is not None and idn <= cutoff:  # legacy, pre-adoption: exempt
                 continue
             if text is None:
                 # Never judged, so never clean. Blocking whatever `enforce` says: that
@@ -135,8 +139,11 @@ def remake(repo_root: Path | str, types: list[str] | None = None, dry_run: bool 
     for t in (types or list(sdlc_md.ARTIFACT_TYPES)):
         for p, text in sdlc_md.iter_artifact_files(t, root):
             aid = sdlc_md.extract_record_id(p.stem) or p.stem
-            idn = sdlc_md.id_number(aid) or 0
-            if idn <= cutoff:  # legacy, pre-adoption: exempt (mirror check)
+            idn = sdlc_md.id_number(aid)
+            # Mirrors `check` exactly, including the no-ordinal rule: a backfill that exempted
+            # what the check judges would leave the check permanently red on ids the backfill
+            # refused to touch.
+            if idn is not None and idn <= cutoff:  # legacy, pre-adoption: exempt
                 continue
             if text is None:  # unreadable/non-UTF-8: name it, never skip it silently
                 failed.append(aid)

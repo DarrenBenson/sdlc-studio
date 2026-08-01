@@ -10532,6 +10532,52 @@ class FindingPlacementIsMeasuredNotConstantTests(unittest.TestCase):
         root, rs = self._root()
         self.assertEqual(sprint._findings_outside_batches(root, rs.batches(root)), 0)
 
+    def test_a_finding_PREDATING_the_run_is_not_this_runs_close_work(self) -> None:
+        """BG0466. The predicate was `raised_in.startswith("none open") and started` - `started`
+        only truthy-tested, never compared - so it did not scope by the run window at all.
+        Replacing the whole condition with `True` survived all 624 tests of this module while
+        genuinely changing behaviour: a pre-existing unstamped backlog bug then counted as this
+        run's close work, and the line that says "this run" quietly became "this repo, ever".
+
+        The discriminator is the STAMP against the run's own window, so this test varies only
+        that: two identical unstamped bugs, one created inside the run and one long before it.
+        """
+        root, rs = self._root(bugs=[("BG0500", "none open - raised outside a delivery batch")])
+        (root / "sdlc-studio" / "bugs" / "BG0500-x.md").write_text(
+            "# BG0500: x\n\n> **Status:** Open\n> **Created:** 2020-01-01\n"
+            "> **Raised-in-batch:** none open - raised outside a delivery batch\n",
+            encoding="utf-8")
+        self.assertEqual(sprint._findings_outside_batches(root, rs.batches(root)), 0,
+                         "a bug from years before this run counted as its close work")
+
+    def test_a_finding_raised_DURING_the_run_is_counted(self) -> None:
+        """The other half of the same discriminator, so neither direction can be satisfied by a
+        constant."""
+        root, rs = self._root()
+        (root / "sdlc-studio" / "bugs" / "BG0501-x.md").write_text(
+            "# BG0501: x\n\n> **Status:** Open\n> **Created:** 2099-01-01\n"
+            "> **Raised-in-batch:** none open - raised outside a delivery batch\n",
+            encoding="utf-8")
+        self.assertEqual(sprint._findings_outside_batches(root, rs.batches(root)), 1)
+
+    def test_a_finding_STAMPED_to_a_batch_is_not_close_work_even_unclaimed(self) -> None:
+        """AC3's discriminator, and the mutant that outlived the first attempt at it. Deleting
+        the `none open` test entirely SURVIVED, because every fixture here was either unstamped
+        or claimed by a span - so nothing separated "raised outside a batch" from "raised at
+        all". A finding carrying a real batch timestamp is batch work by its own stamp, whether
+        or not a span happens to claim it."""
+        root, rs = self._root(bugs=[("BG0503", "2026-07-30T12:00:00Z")])
+        self.assertEqual(sprint._findings_outside_batches(root, rs.batches(root)), 0,
+                         "a finding stamped INTO a batch was counted as close work")
+
+    def test_a_finding_with_no_Created_date_is_counted_rather_than_dropped(self) -> None:
+        """The decision at the unanswerable edge, on the record. Of the two ways to be wrong,
+        only one flatters the run being measured: an over-count is visible and arguable, an
+        under-count reads as a clean sprint. So an artefact whose date cannot be established
+        counts."""
+        root, rs = self._root(bugs=[("BG0502", "none open - raised outside a delivery batch")])
+        self.assertEqual(sprint._findings_outside_batches(root, rs.batches(root)), 1)
+
     def test_a_finding_CLAIMED_by_a_batch_is_not_counted_outside_it(self) -> None:
         root, rs = self._root(bugs=[("BG0500", "none open 2026-07-30T00:00:00Z")])
         rs.start_batch(root, ["US0001"])

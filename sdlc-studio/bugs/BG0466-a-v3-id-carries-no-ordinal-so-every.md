@@ -1,8 +1,9 @@
 # BG0466: A v3 id carries no ordinal, so every v3 artefact scores 0 against the provenance cutoff and is exempted as pre-adoption legacy; and the run-scoping discriminator on the finding-placement count is unguarded
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
+> **Verification depth:** functional (criteria red-first on both halves. Four mutants applied singly, purged, restored byte-identical - the `or 0` no-ordinal hole restored, the run window ignored, and the run-scoping predicate replaced with a constant: all KILLED. The predicate mutant SURVIVED a first attempt: every fixture was either unstamped or claimed by a span, so nothing separated `raised outside a batch` from `raised at all`. A finding stamped INTO a batch but unclaimed now pins that distinction - which is AC3 itself)
 > **Affects:** .claude/skills/sdlc-studio/scripts/provenance.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_provenance.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** Rejoinder review of the BG0465 repair (engineering seat, isolated worktree, base 6f91b24b). Both established by driving the production entry points directly rather than by reading.
 > **Created:** 2026-07-31
@@ -41,9 +42,9 @@ For the placement count: pin the discriminator. A test that varies only the stam
 
 ## Acceptance Criteria
 
-- [ ] An unstamped v3 artefact is either checked or REPORTED as exempt with the reason, rather than silently passing the provenance check because its id carries no ordinal to compare against the cutoff
-- [ ] The provenance cutoff's treatment of an id with no ordinal is asserted by a test, so the answer is a decision on the record rather than a consequence of `id_number` returning None
-- [ ] Replacing the run-scoping predicate on the out-of-batch finding count with a constant reddens the suite, so the placement line cannot drift from `this run` to `this repo, ever` with the tests green
+- [x] An unstamped v3 artefact is either checked or REPORTED as exempt with the reason, rather than silently passing the provenance check because its id carries no ordinal to compare against the cutoff
+- [x] The provenance cutoff's treatment of an id with no ordinal is asserted by a test, so the answer is a decision on the record rather than a consequence of `id_number` returning None
+- [x] Replacing the run-scoping predicate on the out-of-batch finding count with a constant reddens the suite, so the placement line cannot drift from `this run` to `this repo, ever` with the tests green
 
 ## Revision History
 

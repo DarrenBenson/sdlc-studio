@@ -4656,7 +4656,20 @@ def _findings_outside_batches(root, spans) -> int:
                 continue
             text = sdlc_md.read_text_safe(path)
             raised_in = (sdlc_md.extract_field(text, "Raised-in-batch") or "")
-            if raised_in.startswith("none open") and started:
+            if not raised_in.startswith("none open"):
+                continue
+            # SCOPED to this run's window. `started` used only to be truthy-tested, never
+            # compared, so the count was every unstamped finding in the repo - the line reading
+            # "this run" was really "this repo, ever", and replacing the whole condition with
+            # `True` changed the number while every test stayed green. A finding created before
+            # the run opened is somebody else's backlog, not this close's work.
+            created = (sdlc_md.extract_field(text, "Created") or "").strip()
+            if not started or not created:
+                # Unanswerable, so COUNTED. This number is one the run is judged against, and
+                # of the two ways to be wrong only one flatters the run being measured. An
+                # over-count is visible and arguable; an under-count reads as a clean sprint.
+                outside += 1
+            elif created[:10] >= started[:10]:
                 outside += 1
     return outside
 

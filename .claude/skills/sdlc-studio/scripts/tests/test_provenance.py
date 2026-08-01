@@ -105,6 +105,40 @@ class CheckTests(unittest.TestCase):
                           "a hyphenated v2 key was exempted - its id is being split on the "
                           "first hyphen, so it carries no number to rank")
 
+    def test_an_id_with_NO_ORDINAL_is_checked_rather_than_exempted(self) -> None:
+        """BG0466. `id_number` returns None for a v3 ULID by design, and `or 0` turned that into
+        a score of 0 - under any cutoff, so every v3 artefact was exempted as pre-adoption
+        legacy. The check reported clean over the whole id family the product now mints by
+        default, and an exemption rendered identically to a pass.
+
+        The decision, recorded here rather than left as a consequence of parsing: an id that
+        carries no ordinal cannot be ranked against an ordinal cutoff, so it is NOT exempt and
+        the stamp check speaks. That is the same direction `reachable_end_state` already takes
+        for an unrankable id - an unanswerable comparison is treated as past the cutoff, never
+        under it, because the other way is the fail-open."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (repo / "sdlc-studio" / ".config.yaml").write_text(
+                "provenance:\n  adopt_after: 9999\n", encoding="utf-8")
+            _story(repo, "US-01JQK3F8AA-x.md", UNSTAMPED.replace("US0005", "US-01JQK3F8AA"))
+            r = prov.check(repo, ["story"])
+            self.assertIn("US-01JQK3F8AA", [f["id"] for f in r["findings"]],
+                          "a v3 id was exempted by an accident of parsing, and the exemption "
+                          "is indistinguishable from a pass")
+
+    def test_a_numbered_id_under_the_cutoff_is_still_exempt(self) -> None:
+        """The positive control. Without it, a change that simply stopped exempting would pass
+        the test above while deleting the legacy carve-out the cutoff exists to provide."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (repo / "sdlc-studio" / ".config.yaml").write_text(
+                "provenance:\n  adopt_after: 9999\n", encoding="utf-8")
+            _story(repo, "US0005-x.md", UNSTAMPED)
+            r = prov.check(repo, ["story"])
+            self.assertNotIn("US0005", [f["id"] for f in r["findings"]])
+
     def test_advisory_by_default(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
