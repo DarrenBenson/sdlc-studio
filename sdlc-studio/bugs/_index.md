@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 27 |
+| Open | 28 |
 | In Progress | 0 |
 | Fixed | 372 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **482** |
+| **Total** | **483** |
 
 ## All Bugs
 
@@ -200,6 +200,7 @@
 | [BG0480](BG0480-us0583-s-changelog-fragment-and-module-comment-still.md) | US0583's changelog fragment and module comment still describe the narrow scan that _standing_prose replaced | Fixed | High | 2026-08-01 | 2026-08-01 |
 | [BG0481](BG0481-record-yield-dirties-a-tracked-file-on-every.md) | record_yield dirties a tracked file on every commit, and the yield it accumulates is not the real one | Fixed | High | 2026-08-01 | 2026-08-01 |
 | [BG0482](BG0482-us0597-ac3-is-ticked-verified-and-is-not.md) | US0597 AC3 is ticked Verified and is not met: the named evidence file was never created and its verifier asserts nothing about before-and-after | Fixed | High | 2026-08-01 | 2026-08-01 |
+| [BG0483](BG0483-claim-drift-reads-append-only-ledgers-as-prose.md) | claim-drift reads append-only ledgers as prose, so verdict rows are matched against the code they name | Open | Medium | 2026-08-01 | 2026-08-01 |
 
 ## Archived Releases
 

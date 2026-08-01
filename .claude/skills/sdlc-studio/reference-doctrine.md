@@ -176,6 +176,27 @@ rules, the agents/services) live in that project's agent-instructions file
     finding is itself covered by a later batch review - repairs are the least-reviewed
     code in any sprint and they land in guards.
 
+19. **A review judges the unit's own diff, and only what the unit broke may block it.**
+    The scope of a review is that unit's declared `Affects` against the run's base ref -
+    `git diff <base>..HEAD -- <the Affects paths>` - and nothing wider. Every finding is
+    then classified by whether this unit caused it: a **regression** (the diff broke
+    something that worked), **new** (the diff introduced a defect that did not exist), or
+    **pre-existing** (already true of the tree at the base ref). Decide which by execution,
+    `git log -S` or a re-probe at the base commit, never by impression.
+
+    **Only regression and new may hold the gate.** A pre-existing finding is reported with
+    its classification and its artefact id, and does not block. Anything already recorded
+    in an open Bug or CR is pre-existing by definition, so cite the id rather than
+    rediscovering it.
+
+    Without the bound, a review of a five-point unit becomes an audit of the repository,
+    and the gate stops being passable by any correct increment. That is not strictness; it
+    is a review that has stopped discriminating, because a verdict that fails every unit
+    carries the same information as one that passes every unit. The scope rule is what
+    makes a REJECT mean something: it says this change made the tree worse, not that the
+    tree has problems. An unjustified REJECT is as much a failure as an unjustified
+    APPROVE, and only a bounded review can tell the two apart.
+
 ## Project constitution {#constitution}
 
 A project may declare its inviolable principles in an optional

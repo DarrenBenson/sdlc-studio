@@ -1,6 +1,6 @@
 # US0579: Every finding on a verdict is classified REGRESSION, NEW or PRE-EXISTING, and an unclassified verdict is refused
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0512
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -33,6 +33,7 @@
 - **When** it is recorded and read back
 - **Then** each finding's `origin` survives the round trip, and the existing `class` axis is untouched by it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::FindingClassTests::test_a_classification_survives_the_round_trip
+- **Verified:** yes (2026-08-01)
 
 ### AC2: an unclassified finding is refused
 
@@ -40,6 +41,7 @@
 - **When** recording is attempted
 - **Then** it exits non-zero naming that finding, because an unsorted finding is the one a close cannot price against the batch that caused it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::FindingClassTests::test_an_unclassified_finding_is_refused
+- **Verified:** yes (2026-08-01)
 
 ### AC3: a verdict with no findings at all is still valid
 
@@ -47,6 +49,7 @@
 - **When** it is recorded
 - **Then** it succeeds, so the rule cannot be satisfied by refusing every clean pass
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::FindingClassTests::test_a_clean_pass_needs_no_classification
+- **Verified:** yes (2026-08-01)
 
 ## Revision History
 

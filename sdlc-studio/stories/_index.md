@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 21 |
+| Draft | 17 |
 | Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 5 |
+| Review | 9 |
 | Done | 549 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -489,11 +489,11 @@
 | [US0575](US0575-the-review-row-names-who-reviewed-what-under.md) | the review row names who reviewed what, under which seat, over how many lenses | Done | EP0192 | 2026-07-30 | 2026-07-30 |
 | [US0576](US0576-impediments-survive-the-close-blocked-units-and-unresolved.md) | impediments survive the close: blocked units and unresolved operator decisions are reported with what is in the way | Done | EP0192 | 2026-07-30 | 2026-07-30 |
 | [US0577](US0577-a-recorded-review-verdict-carries-the-provenance-of.md) | A recorded review verdict carries the provenance of the brief it was given, so a hand-written prompt is detectable | Review | EP0194 | 2026-08-01 | 2026-08-01 |
-| [US0578](US0578-recording-a-verdict-with-no-brief-provenance-is.md) | Recording a verdict with no brief provenance is REFUSED, and the refusal names critic.py brief | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
-| [US0579](US0579-every-finding-on-a-verdict-is-classified-regression.md) | Every finding on a verdict is classified REGRESSION, NEW or PRE-EXISTING, and an unclassified verdict is refused | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
-| [US0580](US0580-only-regression-and-new-hold-a-gate-a.md) | Only REGRESSION and NEW hold a gate: a PRE-EXISTING finding is reported and does not block | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0578](US0578-recording-a-verdict-with-no-brief-provenance-is.md) | Recording a verdict with no brief provenance is REFUSED, and the refusal names critic.py brief | Review | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0579](US0579-every-finding-on-a-verdict-is-classified-regression.md) | Every finding on a verdict is classified REGRESSION, NEW or PRE-EXISTING, and an unclassified verdict is refused | Review | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0580](US0580-only-regression-and-new-hold-a-gate-a.md) | Only REGRESSION and NEW hold a gate: a PRE-EXISTING finding is reported and does not block | Review | EP0194 | 2026-08-01 | 2026-08-01 |
 | [US0581](US0581-a-finding-matching-an-open-bug-or-cr.md) | A finding matching an open Bug or CR is annotated with that id automatically and never blocks | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
-| [US0582](US0582-the-shipped-doctrine-states-the-review-scope-rule.md) | The shipped doctrine states the review scope rule, so a consuming project inherits the bound and not just the ceremony | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0582](US0582-the-shipped-doctrine-states-the-review-scope-rule.md) | The shipped doctrine states the review scope rule, so a consuming project inherits the bound and not just the ceremony | Review | EP0194 | 2026-08-01 | 2026-08-01 |
 | [US0583](US0583-a-staged-diff-changing-a-literal-while-its.md) | A staged diff changing a literal while its own prose still states the old value is flagged, naming both sites, and a diff whose prose agrees produces no finding | Review | EP0195 | 2026-08-01 | 2026-08-01 |
 | [US0584](US0584-a-criterion-ticked-in-a-diff-whose-named.md) | A criterion ticked in a diff whose named surface that diff does not touch is flagged, and one whose surface it does touch is not | Review | EP0195 | 2026-08-01 | 2026-08-01 |
 | [US0585](US0585-the-claim-drift-lane-runs-in-the-commit.md) | The claim-drift lane runs in the commit gate as advisory, and its yield over one sprint is recorded before any decision to make it block | Review | EP0195 | 2026-08-01 | 2026-08-01 |

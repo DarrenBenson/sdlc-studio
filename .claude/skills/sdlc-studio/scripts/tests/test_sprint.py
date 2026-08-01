@@ -11776,5 +11776,72 @@ class TheLaneCommandIssuesABriefOverACorruptStateTests(unittest.TestCase):
                       "the brief was withheld because the lane start could not be recorded")
 
 
+class BlockingScopeTests(unittest.TestCase):
+    """Only what THIS unit's diff broke may hold its gate (reference-doctrine rule 19).
+
+    The failure being fixed is not a gate that was too lenient: it is a gate no correct
+    increment could pass, because every review found something true of the repository and
+    every finding blocked. A verdict that fails every unit carries the same information as one
+    that passes every unit.
+    """
+
+    @staticmethod
+    def _load_critic():
+        spec = importlib.util.spec_from_file_location(
+            "critic", SCRIPT.parent / "critic.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["critic"] = mod
+        spec.loader.exec_module(mod)
+        return mod
+
+    def _review(self, issues, verdict="REJECT"):
+        return {"verdict": verdict, "reviewer": "ada", "author": "grace", "issues": issues}
+
+    def test_a_pre_existing_finding_does_not_block(self) -> None:
+        """MUTANT: treat any REJECT as not covering, as the predicate used to.
+
+        The findings are real and reported; they are simply not this increment's debt."""
+        critic = self._load_critic()
+        review = self._review("[pre-existing] BG0123 the gate is slow; "
+                              "[pre-existing] CR0456 refine leaves placeholders")
+        with tempfile.TemporaryDirectory() as d:
+            covered = critic.sprint_covers_independently(Path(d), "US0001", review)
+        self.assertTrue(
+            covered,
+            "a review whose only findings predate the base ref failed to cover the unit - "
+            "the gate is judging the repository's condition, not this increment")
+
+    def test_a_regression_still_blocks(self) -> None:
+        """The positive control. MUTANT: let every REJECT through as covering.
+
+        Without this the change is satisfied by a gate that simply stopped blocking, which is
+        the failure mode opposite to the one being fixed and no better."""
+        critic = self._load_critic()
+        review = self._review("[regression] verify_ac crashes on empty Affects; "
+                              "[pre-existing] BG0123 the gate is slow")
+        with tempfile.TemporaryDirectory() as d:
+            covered = critic.sprint_covers_independently(Path(d), "US0001", review)
+        self.assertFalse(covered, "a REGRESSION finding did not hold the gate")
+
+    def test_the_two_sets_are_reported_apart(self) -> None:
+        """MUTANT: render one undifferentiated list.
+
+        A reader must be able to tell what held the gate from what was merely noticed, or a
+        pre-existing observation gets repaired at close time as this batch's debt."""
+        sprint = _load()
+        out = sprint.render_finding_sets(
+            "[regression] a broke; [new] b appeared; [pre-existing] BG0123 c was always so")
+        self.assertRegex(out, r"BLOCKING \(2\)")
+        self.assertRegex(out, r"NOT BLOCKING \(1\)")
+        head, _, tail = out.partition("NOT BLOCKING")
+        self.assertIn("a broke", head)
+        self.assertIn("b appeared", head)
+        self.assertNotIn("c was always so", head,
+                         "a pre-existing finding was listed among the blocking set")
+        self.assertIn("c was always so", tail)
+        self.assertIn("base ref", tail,
+                      "the non-blocking set does not state WHY those findings do not block")
+
+
 if __name__ == "__main__":
     unittest.main()

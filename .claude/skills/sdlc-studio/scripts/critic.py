@@ -978,6 +978,73 @@ def review_ceiling(repo_root: Path | str) -> int:
 # repair loop is manufacturing the defects the review is being paid to catch, and those two
 # call for opposite responses. UNCLASSIFIED is neither, and is never quietly folded into
 # FRESH - a regression hidden inside the fresh count is the failure this exists to prevent.
+# The ORIGIN axis: does this finding predate the run's base ref? A DIFFERENT question from the
+# `class` axis below, and deliberately not merged with it. `REPAIR_REGRESSION` means "the repair
+# broke it"; `ORIGIN_REGRESSION` means "this unit's diff broke it". The word appears on both and
+# means different things, so they carry different names and the coverage gate reads `origin`.
+# An independent engineering seat found the collision at goal review; without the separate name
+# a second classifier would have been built on top of one CR0510 reports as effectively dead.
+ORIGIN_REGRESSION = "regression"      # the diff broke something that worked at the base ref
+ORIGIN_NEW = "new"                    # the diff introduced a defect that did not exist
+ORIGIN_PRE_EXISTING = "pre-existing"  # already true of the tree at the base ref
+ORIGINS = (ORIGIN_REGRESSION, ORIGIN_NEW, ORIGIN_PRE_EXISTING)
+
+#: How a finding declares its origin in an `--issues` string: a leading `[origin]` tag on each
+#: semicolon-separated item. The findings channel is free text everywhere it is written, so the
+#: tag rides on the text rather than requiring a second parallel field the writers would have to
+#: keep in step.
+#: The optional `BLOCKING:` prefix is the TOOL's own doing, not the reviewer's: `--from-verdict`
+#: folds the block's BLOCKING section into the issues text, so an item that arrived correctly
+#: tagged reaches the parser behind that label. Refusing it would refuse a compliant reviewer
+#: for something the parser did to their answer.
+_ORIGIN_TAG = re.compile(
+    r"^\s*(?:BLOCKING\s*:\s*)?\[\s*(regression|new|pre[- ]existing)\s*\]\s*(.*)$",
+    re.IGNORECASE | re.DOTALL)
+
+#: What a clean pass says. An APPROVE finding nothing is the common case and must stay legal,
+#: or the rule is satisfiable by a gate that refuses every clean review.
+_NO_FINDINGS = ("", "-", "none", "none blocking", "no findings", "n/a", "na")
+
+
+def parse_findings(issues: str) -> list[dict]:
+    """Split an `--issues` string into findings, each with its declared `origin`.
+
+    An item with no `[origin]` tag comes back with `origin: None`, which is what
+    `unclassified_findings` refuses on. Absent is kept distinct from any real value: guessing
+    an origin is exactly the judgement the classification exists to force somebody to make.
+    """
+    text = (issues or "").strip()
+    if text.lower() in _NO_FINDINGS:
+        return []
+    out = []
+    for chunk in text.split(";"):
+        item = chunk.strip()
+        if not item:
+            continue
+        m = _ORIGIN_TAG.match(item)
+        if m:
+            origin = m.group(1).lower().replace(" ", "-")
+            out.append({"origin": origin, "text": m.group(2).strip()})
+        else:
+            out.append({"origin": None, "text": item})
+    return out
+
+
+def unclassified_findings(issues: str) -> list[str]:
+    """The findings carrying no origin - the ones a close cannot price against a batch."""
+    return [f["text"] for f in parse_findings(issues) if f["origin"] is None]
+
+
+def blocking_findings(issues: str) -> list[dict]:
+    """Only regression and new. A pre-existing finding is reported, never blocking."""
+    return [f for f in parse_findings(issues)
+            if f["origin"] in (ORIGIN_REGRESSION, ORIGIN_NEW)]
+
+
+def non_blocking_findings(issues: str) -> list[dict]:
+    return [f for f in parse_findings(issues) if f["origin"] == ORIGIN_PRE_EXISTING]
+
+
 FRESH = "fresh"
 REPAIR_REGRESSION = "repair-regression"
 UNCLASSIFIED = "unclassified"
@@ -1356,8 +1423,23 @@ def sprint_covers_independently(repo_root: Path | str, unit: str, review: dict |
     """True when a sprint-level review is a valid INDEPENDENT APPROVE covering `unit`: an APPROVE
     whose reviewer and author are both recorded and distinct. This is the evidence half of the
     two-role gate satisfied at sprint scope - the per-unit sign-off is still required separately."""
-    if not review or (review.get("verdict") or "").upper() != APPROVE:
+    if not review:
         return False
+    if (review.get("verdict") or "").upper() != APPROVE:
+        # A REJECT whose findings are ALL pre-existing still covers the unit. Only what this
+        # unit's diff broke may hold its gate; anything already true of the tree is the
+        # repository's debt, not this increment's, and a gate that no correct change can pass
+        # has stopped discriminating (reference-doctrine rule 19).
+        #
+        # Read through `blocking_findings`, so an UNTAGGED finding is not silently treated as
+        # harmless - it counts as neither blocking nor pre-existing here, and `record` refuses
+        # it upstream. The safe reading of "no findings at all on a REJECT" is that the
+        # reviewer rejected for a reason they did not itemise, so that still does not cover.
+        parsed = parse_findings(review.get("issues", ""))
+        if not parsed or blocking_findings(review.get("issues", "")):
+            return False
+        if any(f["origin"] != ORIGIN_PRE_EXISTING for f in parsed):
+            return False
     # Through the ONE authority. This predicate used to test only non-empty-and-distinct, so it
     # accepted the PRE_GATE sentinel that `is_independent` refuses; `sprint.review_coverage`
     # compensated by AND-ing the second predicate on and `conformance` did not, which is how the
@@ -1612,7 +1694,15 @@ def _seat_drift_warning(repo_root: Path | str, reviewer: str) -> str | None:
 
 _RETURN_CONTRACT = """Return EXACTLY (raw data, no wrapper):
 VERDICT: APPROVE or REJECT
-ISSUES: <semicolon-separated findings with file:line evidence, or 'none'>
+ISSUES: <semicolon-separated findings, each one TAGGED with its origin and carrying
+        file:line evidence - or 'none'. Decide the origin by EXECUTION (`git log -S`, or
+        re-probe at the base ref), never by impression:
+          [regression]   this diff broke something that worked at the base ref
+          [new]          this diff introduced a defect that did not exist
+          [pre-existing] already true of the tree, or already recorded in an open Bug/CR
+                         (cite the id) - reported, and it does NOT hold the gate
+        e.g. ISSUES: [regression] verify_ac crashes on empty Affects (verify_ac.py:88);
+                     [pre-existing] BG0123 the gate is slow>
 BLOCKING: <the subset that must be fixed before Done, or 'none'>"""
 
 
@@ -2441,9 +2531,49 @@ def cmd_record(args: argparse.Namespace) -> int:
               "reviewer's returned block", file=sys.stderr)
         return 2
 
+    brief = (getattr(args, "brief", "") or "").strip()
+    if not brief and getattr(args, "brief_file", None):
+        try:
+            brief = brief_fingerprint(Path(args.brief_file).read_text(encoding="utf-8"))
+        except OSError as exc:
+            print(f"record refused: {exc}", file=sys.stderr)
+            return 2
+    if unclassified := unclassified_findings(args.issues):
+        listed = "; ".join(f"  - {f[:90]}" for f in unclassified)
+        print("record refused: these findings carry no origin, and an unsorted finding is the "
+              "one a close cannot price against the batch that caused it:\n"
+              f"{listed}\n"
+              "  Tag each with what THIS unit's diff did, decided by execution (`git log -S`, "
+              "or re-probe at the base ref) rather than by impression:\n"
+              "    [regression]   the diff broke something that worked at the base ref\n"
+              "    [new]          the diff introduced a defect that did not exist\n"
+              "    [pre-existing] already true of the tree - reported, and it does not block\n"
+              "  e.g. --issues \"[regression] verify_ac crashes on an empty Affects; "
+              "[pre-existing] BG0123 slow gate\"", file=sys.stderr)
+        return 2
+    required = sdlc_md.project_override(args.root, "review.require_brief_provenance", True)
+    if not brief:
+        if required:
+            print("record refused: this verdict carries no brief provenance, so nothing "
+                  "distinguishes it from one produced by a hand-written prompt - and a "
+                  "hand-written prompt carries neither the seat charter, nor the bounded diff "
+                  "scope, nor the acceptance criteria as law.\n"
+                  "  Get one:  critic.py brief --unit <id> --seat engineering|product|qa\n"
+                  "  then:     critic.py record ... --brief <the fingerprint it printed>\n"
+                  "  or:       critic.py record ... --brief-file <the saved brief text>\n"
+                  "  Standing the rule down is a DECISION, not an omission: set "
+                  "`review.require_brief_provenance: false` in .config.yaml and it is "
+                  "recorded as such.", file=sys.stderr)
+            return 2
+        # Accepted, but never silently. An omission and a decision must be different events in
+        # the record, or the stand-down is indistinguishable from nobody having noticed.
+        print("NOTE: recording without brief provenance - `review.require_brief_provenance` "
+              "is false for this project, so this verdict is accepted with no evidence of the "
+              "prompt that produced it.", file=sys.stderr)
+
     def write(unit: str) -> None:
         path = record_verdict(args.root, unit, args.verdict, args.reviewer,
-                              args.author, args.issues, args.phase)
+                              args.author, args.issues, args.phase, brief)
         note = ("" if _id(args.author) != _id(args.reviewer)
                 else "  (WARNING: self-review - blocked at the gate)")
         print(f"recorded {sdlc_md.norm_id(unit)} {args.verdict.upper()} "
@@ -2678,6 +2808,13 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--author",
                    help="Authoring seat / delegation id that produced the diff (must differ from --reviewer).")
     r.add_argument("--issues", default="")
+    r.add_argument("--brief", default="",
+                   help="the fingerprint `critic.py brief` printed for the prompt this seat "
+                        "was given. Required by default: a verdict with no provenance cannot "
+                        "be told from one produced by a hand-written prompt")
+    r.add_argument("--brief-file", metavar="PATH",
+                   help="read the brief TEXT from a file and fingerprint it here, for a "
+                        "reviewer who saved the brief rather than its fingerprint")
     r.add_argument("--phase", choices=PHASES, default="delivery",
                    help="delivery (default, the conformance critique gate) or plan-review "
                         "(the pre-implementation AC-vs-spec check); each has its own log")

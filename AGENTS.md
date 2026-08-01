@@ -45,6 +45,7 @@ These block. Everything else in this file is guidance.
 | `transition -> Done` | a story whose executable ACs have not passed, or that is past `review.two_role_after` without both review halves |
 | `transition -> Fixed` | a bug with no parseable `Verification depth` |
 | `sprint close` | units no independent pass covers; an unanswered checklist item |
+| `critic record` | a verdict carrying no brief provenance (`--brief`), unless stood down by a recorded config decision |
 | `critic signoff` | a principal the authoring session controls |
 
 **Enable the hooks once per clone: `bash tools/enable-hooks.sh`.** Without them you are

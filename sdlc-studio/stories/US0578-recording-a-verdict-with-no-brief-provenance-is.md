@@ -1,6 +1,6 @@
 # US0578: Recording a verdict with no brief provenance is REFUSED, and the refusal names critic.py brief
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0512
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** it runs
 - **Then** it exits non-zero and the refusal names `critic.py brief --unit <id> --seat <seat>` as the way to obtain one, because a hand-written prompt silently substitutes an unbounded surface for a unit review
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefProvenanceTests::test_a_verdict_without_provenance_is_refused
+- **Verified:** yes (2026-08-01)
 
 ### AC2: a tool-briefed verdict records without complaint
 
@@ -30,6 +31,7 @@
 - **When** it is recorded
 - **Then** it succeeds silently, so the gate cannot be satisfied by one that refuses everything
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefProvenanceTests::test_a_briefed_verdict_records_cleanly
+- **Verified:** yes (2026-08-01)
 
 ### AC3: the escape is a recorded decision, never an omission
 
@@ -37,6 +39,7 @@
 - **When** an unbriefed verdict is recorded
 - **Then** it is accepted and the stand-down is stated on the output, so switching the rule off and forgetting it are different events in the record
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefProvenanceTests::test_the_stand_down_is_stated_not_silent
+- **Verified:** yes (2026-08-01)
 
 ## Revision History
 

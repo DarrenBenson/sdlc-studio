@@ -88,7 +88,8 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
-            rc = mod.main(["record", "--unit", "US0017", "--verdict", "approve",
+            rc = mod.main(["record", "--brief", "fixture-brief",
+                           "--unit", "US0017", "--verdict", "approve",
                            "--author", "builder", "--root", str(root)])
             self.assertEqual(rc, 0)
             self.assertEqual(mod.verdict_for(root, "US0017")["verdict"], "APPROVE")
@@ -104,7 +105,8 @@ class CliTests(unittest.TestCase):
             out, err = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
                     contextlib.suppress(SystemExit):
-                rc = mod.main(["record", "--unit", "US0017", "--verdict", "approve", "--root", d])
+                rc = mod.main(["record", "--brief", "fixture-brief",
+                               "--unit", "US0017", "--verdict", "approve", "--root", d])
                 self.assertNotEqual(rc, 0)
             self.assertIn("--author", out.getvalue() + err.getvalue())
             self.assertIsNone(mod.verdict_for(Path(d), "US0017"),
@@ -274,7 +276,8 @@ class SeatDriftWarningTests(unittest.TestCase):
         critic = _load()
         err = io.StringIO()
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
-            rc = critic.main(["record", "--unit", "CR0001", "--verdict", "approve",
+            rc = critic.main(["record", "--brief", "fixture-brief",
+                              "--unit", "CR0001", "--verdict", "approve",
                               "--reviewer", reviewer, "--author", "builder",
                               "--root", str(root)])
         return rc, err.getvalue()
@@ -376,7 +379,7 @@ class FromVerdictTests(unittest.TestCase):
 
     BLOCK = ("Some preamble prose from the seat.\n"
              "VERDICT: APPROVE\n"
-             "ISSUES: minor thing at a.py:3; another note\n"
+             "ISSUES: [new] minor thing at a.py:3; [pre-existing] another note\n"
              "BLOCKING: none\n")
 
     def _record(self, root: Path, block: str) -> tuple[int, str]:
@@ -385,7 +388,8 @@ class FromVerdictTests(unittest.TestCase):
         f.write_text(block, encoding="utf-8")
         err = io.StringIO()
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
-            rc = mod.main(["record", "--unit", "US0001", "--reviewer", "Sam seat",
+            rc = mod.main(["record", "--brief", "fixture-brief",
+                           "--unit", "US0001", "--reviewer", "Sam seat",
                            "--author", "builder", "--from-verdict", str(f),
                            "--root", str(root)])
         return rc, err.getvalue()
@@ -404,10 +408,15 @@ class FromVerdictTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             rc, _ = self._record(root, self.BLOCK.replace(
-                "BLOCKING: none", "BLOCKING: the big one at b.py:9"))
+                "BLOCKING: none", "BLOCKING: [regression] the big one at b.py:9"))
             self.assertEqual(rc, 0)
             v = _load().verdict_for(root, "US0001")
-            self.assertIn("BLOCKING: the big one", v["issues"])
+            # The fold now carries the finding's origin through with it, so the label and the
+            # text are no longer adjacent - assert both survive rather than their old spelling.
+            self.assertIn("BLOCKING:", v["issues"])
+            self.assertIn("the big one", v["issues"])
+            self.assertIn("[regression]", v["issues"],
+                          "the folded BLOCKING finding lost its origin")
 
     def test_verdictless_block_refused_loudly(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -436,7 +445,7 @@ class FromVerdictTests(unittest.TestCase):
     def test_lowercase_block_parsed_not_silently_dropped(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            rc, _ = self._record(root, "verdict: reject\nissues: a real finding at a.py:3\n")
+            rc, _ = self._record(root, "verdict: reject\nissues: [new] a real finding at a.py:3\n")
             self.assertEqual(rc, 0)
             v = _load().verdict_for(root, "US0001")
             self.assertEqual(v["verdict"], "REJECT")
@@ -445,8 +454,8 @@ class FromVerdictTests(unittest.TestCase):
     def test_wrapped_issues_with_allcaps_word_not_truncated(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            rc, _ = self._record(root, "VERDICT: APPROVE\nISSUES: first line;\n"
-                                       "NOTE: this continuation belongs to issues\n"
+            rc, _ = self._record(root, "VERDICT: APPROVE\nISSUES: [new] first line;\n"
+                                       "[new] NOTE: this continuation belongs to issues\n"
                                        "BLOCKING: none\n")
             self.assertEqual(rc, 0)
             v = _load().verdict_for(root, "US0001")
@@ -457,7 +466,7 @@ class FromVerdictTests(unittest.TestCase):
                  "VERDICT: APPROVE or REJECT\n"
                  "ISSUES: <semicolon-separated findings>\n"
                  "BLOCKING: <the subset>\n\n"
-                 "VERDICT: REJECT\nISSUES: the actual finding\nBLOCKING: none\n")
+                 "VERDICT: REJECT\nISSUES: [new] the actual finding\nBLOCKING: none\n")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             rc, _ = self._record(root, block)
@@ -474,7 +483,8 @@ class FromVerdictTests(unittest.TestCase):
             mod = _load()
             with contextlib.redirect_stdout(io.StringIO()), \
                     unittest.mock.patch.object(sys, "stdin", io.StringIO(self.BLOCK)):
-                rc = mod.main(["record", "--unit", "US0001", "--reviewer", "Sam seat",
+                rc = mod.main(["record", "--brief", "fixture-brief",
+                               "--unit", "US0001", "--reviewer", "Sam seat",
                                "--author", "builder", "--from-verdict", "-",
                                "--root", str(root)])
             self.assertEqual(rc, 0)
@@ -488,7 +498,8 @@ class FromVerdictTests(unittest.TestCase):
             f.write_text(self.BLOCK, encoding="utf-8")
             err = io.StringIO()
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
-                rc = mod.main(["record", "--unit", "US0001", "--reviewer", "r",
+                rc = mod.main(["record", "--brief", "fixture-brief",
+                               "--unit", "US0001", "--reviewer", "r",
                                "--author", "a", "--verdict", "approve",
                                "--from-verdict", str(f), "--root", str(root)])
             self.assertNotEqual(rc, 0)
@@ -527,7 +538,7 @@ class EvidenceTests(unittest.TestCase):
             root = Path(d)
             mod = _load()
             f = root / "v.txt"
-            f.write_text("VERDICT: REJECT\nISSUES: off-by-one at flow.py:10\nBLOCKING: the off-by-one\n",
+            f.write_text("VERDICT: REJECT\nISSUES: [regression] off-by-one at flow.py:10\nBLOCKING: the off-by-one\n",
                          encoding="utf-8")
             with contextlib.redirect_stdout(io.StringIO()):
                 rc = mod.main(["evidence", "--unit", "US0001", "--reviewer", "qa-seat",
@@ -689,7 +700,7 @@ class RejoinderTests(unittest.TestCase):
     prior verdict quoted verbatim, the refreshed scope, the same return contract."""
 
     PRIOR = ("VERDICT: REJECT\n"
-             "ISSUES: vacuous killing test at test_x.py:10; docstring overclaims\n"
+             "ISSUES: [new] vacuous killing test at test_x.py:10; [new] docstring overclaims\n"
              "BLOCKING: the vacuous killing test\n")
 
     def _workspace(self, root: Path) -> None:
@@ -2771,7 +2782,8 @@ class BatchFormTests(_BatchBase):
         self.assertEqual(0, rc, err)
         for unit in self.UNITS:
             self.assertIsNotNone(self.mod.evidence_for(self.root, unit), f"{unit} unrecorded")
-        rc, _, err = self._run(["record", "--units", "US0001,US0002,US0003",
+        rc, _, err = self._run(["record", "--brief", "fixture-brief",
+                                "--units", "US0001,US0002,US0003",
                                 "--verdict", "approve", "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(0, rc, err)
         for unit in self.UNITS:
@@ -2783,13 +2795,15 @@ class BatchFormTests(_BatchBase):
             self.assertIsNotNone(self.mod.signoff_for(self.root, unit), f"{unit} unsigned")
 
     def test_the_open_run_is_the_default_scope_and_an_absent_batch_is_refused(self) -> None:
-        rc, _, err = self._run(["record", "--from-run", "--verdict", "approve",
+        rc, _, err = self._run(["record", "--brief", "fixture-brief",
+                                "--from-run", "--verdict", "approve",
                                 "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(0, rc, err)
         for unit in self.UNITS:
             self.assertEqual("APPROVE", self.mod.verdict_for(self.root, unit)["verdict"])
         (self.root / "sdlc-studio" / ".local" / "run-state.json").unlink()
-        rc, _, err = self._run(["record", "--from-run", "--verdict", "approve",
+        rc, _, err = self._run(["record", "--brief", "fixture-brief",
+                                "--from-run", "--verdict", "approve",
                                 "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(2, rc, "no open batch must refuse, never default to acting on nothing")
         self.assertIn("no open run", err.lower())
@@ -2798,7 +2812,8 @@ class BatchFormTests(_BatchBase):
         """BG0386's class: a repeated flag that silently keeps the last value reports a clean
         batch having looked at one unit. Both spellings must accumulate, and the count the
         command reports is the count it acted on."""
-        rc, out, err = self._run(["record", "--unit", "US0001", "--unit", "US0002",
+        rc, out, err = self._run(["record", "--brief", "fixture-brief",
+                                  "--unit", "US0001", "--unit", "US0002",
                                   "--units", "US0003", "--verdict", "approve",
                                   "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(0, rc, err)
@@ -2819,7 +2834,8 @@ class BatchFormTests(_BatchBase):
 
         self.mod.record_verdict = explode
         self.addCleanup(setattr, self.mod, "record_verdict", real)
-        rc, out, err = self._run(["record", "--units", "US0001,US0002,US0003",
+        rc, out, err = self._run(["record", "--brief", "fixture-brief",
+                                  "--units", "US0001,US0002,US0003",
                                   "--verdict", "approve", "--reviewer", "qa",
                                   "--author", "builder"])
         self.assertNotEqual(0, rc, "a partial batch must never exit zero")
@@ -2828,7 +2844,8 @@ class BatchFormTests(_BatchBase):
         self.assertIn("US0001", combined, "so is what WAS written")
 
     def test_the_single_unit_form_is_unchanged(self) -> None:
-        rc, out, err = self._run(["record", "--unit", "US0001", "--verdict", "approve",
+        rc, out, err = self._run(["record", "--brief", "fixture-brief",
+                                  "--unit", "US0001", "--verdict", "approve",
                                   "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(0, rc, err)
         self.assertEqual("APPROVE", self.mod.verdict_for(self.root, "US0001")["verdict"])
@@ -3006,7 +3023,8 @@ class GhostIdsAreRefusedTests(_BatchBase):
 
     def test_a_verdict_for_a_nonexistent_id_is_refused(self) -> None:
         self._with_tree()
-        rc, out, err = self._run(["record", "--units", "US9998,US9999", "--verdict", "approve",
+        rc, out, err = self._run(["record", "--brief", "fixture-brief",
+                                  "--units", "US9998,US9999", "--verdict", "approve",
                                   "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(2, rc, "two verdicts were written for artefacts that do not exist")
         self.assertIn("US9998", err)
@@ -3016,7 +3034,8 @@ class GhostIdsAreRefusedTests(_BatchBase):
         """A partial batch is the state the exit codes exist to distinguish; here nothing
         should be written at all, because the caller's list is wrong."""
         self._with_tree()
-        rc, _out, err = self._run(["record", "--units", "US0001,US9999", "--verdict", "approve",
+        rc, _out, err = self._run(["record", "--brief", "fixture-brief",
+                                   "--units", "US0001,US9999", "--verdict", "approve",
                                    "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(2, rc)
         self.assertIn("US9999", err)
@@ -3025,7 +3044,8 @@ class GhostIdsAreRefusedTests(_BatchBase):
 
     def test_a_resolvable_id_is_still_recorded(self) -> None:
         self._with_tree()
-        rc, _out, err = self._run(["record", "--unit", "US0001", "--verdict", "approve",
+        rc, _out, err = self._run(["record", "--brief", "fixture-brief",
+                                   "--unit", "US0001", "--verdict", "approve",
                                    "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(0, rc, err)
         self.assertEqual("APPROVE", self.mod.verdict_for(self.root, "US0001")["verdict"])
@@ -3035,7 +3055,8 @@ class GhostIdsAreRefusedTests(_BatchBase):
         nothing, so refusing there would fail on the absence of a workspace rather than on a
         wrong id - the distinction `close_owed` draws between an absent and a corrupt
         baseline."""
-        rc, _out, err = self._run(["record", "--unit", "US0001", "--verdict", "approve",
+        rc, _out, err = self._run(["record", "--brief", "fixture-brief",
+                                   "--unit", "US0001", "--verdict", "approve",
                                    "--reviewer", "qa", "--author", "builder"])
         self.assertEqual(0, rc, err)
 
@@ -3323,6 +3344,137 @@ class BriefProvenanceTests(unittest.TestCase):
                          "the pre-existing verdict's recorded values did not survive widening")
         self.assertEqual("-", cells[5],
                          "a verdict predating the column should record an ABSENT brief")
+
+    def _record(self, root, extra=()):
+        critic = _load()
+        buf_out, buf_err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
+            rc = critic.main(["record", "--unit", "US0001", "--verdict", "approve",
+                              "--reviewer", "ada", "--author", "grace",
+                              "--root", str(root), *extra])
+        return rc, buf_out.getvalue() + buf_err.getvalue()
+
+    def test_a_verdict_without_provenance_is_refused(self) -> None:
+        """MUTANT: delete the `if required: return 2` branch in cmd_record.
+
+        The seat-brief rule is doctrine everywhere else in this repo, and doctrine is what got
+        skipped - a review round was run from four hand-written prompts while the shipped brief
+        existed. A rule that matters is refused by the command people actually run (LL0027).
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001")
+            rc, out = self._record(root)
+        self.assertEqual(2, rc, "a verdict with no brief provenance was recorded")
+        self.assertIn("critic.py brief", out,
+                      "the refusal does not name the command that produces a brief")
+        self.assertIn("--seat", out,
+                      "the refusal does not show the seat the brief needs")
+
+    def test_a_briefed_verdict_records_cleanly(self) -> None:
+        """The positive control. MUTANT: make the refusal unconditional.
+
+        A gate that refuses everything discriminates no better than one that refuses nothing,
+        so the passing case is half the contract."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001")
+            rc, out = self._record(root, ("--brief", "abc123def456"))
+            recorded = (root / "sdlc-studio" / "reviews" / "critic-verdicts.md").read_text(
+                encoding="utf-8")
+        self.assertEqual(0, rc, f"a briefed verdict was refused:\n{out}")
+        self.assertIn("abc123def456", recorded,
+                      "the fingerprint the reviewer supplied was not recorded")
+
+    def test_the_stand_down_is_stated_not_silent(self) -> None:
+        """MUTANT: drop the NOTE, or honour the config without saying so.
+
+        Switching the rule off and forgetting it are different events, and a record that cannot
+        tell them apart is the one that lets the second masquerade as the first."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "US0001")
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "review:\n  require_brief_provenance: false\n", encoding="utf-8")
+            rc, out = self._record(root)
+        self.assertEqual(0, rc, f"a recorded stand-down did not take effect:\n{out}")
+        self.assertIn("require_brief_provenance", out,
+                      "the stand-down was honoured silently - nothing on the output says the "
+                      "requirement was switched off rather than met")
+
+
+class FindingClassTests(unittest.TestCase):
+    """The ORIGIN axis: did THIS unit's diff cause the finding?
+
+    Held apart from the existing `class` axis (FRESH / REPAIR_REGRESSION), which asks a
+    different question - whether a round-N finding is a regression in round N-1's REPAIR. The
+    word "regression" appears on both and means different things, so a test here that could
+    pass by reading `class` would be pinning the wrong axis.
+    """
+
+    def _unit(self, root: Path, uid: str = "US0001") -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{uid}-x.md").write_text(
+            f"# {uid}: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
+            f"> **Affects:** src/a.py\n\n## Acceptance Criteria\n\n"
+            f"### AC1: it behaves\n\n- **Then** it behaves\n", encoding="utf-8")
+
+    def _record(self, root, issues):
+        critic = _load()
+        buf_out, buf_err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
+            rc = critic.main(["record", "--unit", "US0001", "--verdict", "reject",
+                              "--brief", "fixture-brief", "--reviewer", "ada",
+                              "--author", "grace", "--issues", issues, "--root", str(root)])
+        return rc, buf_out.getvalue() + buf_err.getvalue()
+
+    def test_a_classification_survives_the_round_trip(self) -> None:
+        """MUTANT: drop the origin tag when parsing, or fold it into the text.
+
+        Also asserts the `class` axis is untouched, because merging the two is the specific
+        mistake an engineering seat flagged at goal review."""
+        critic = _load()
+        issues = ("[regression] verify_ac crashes on an empty Affects; "
+                  "[pre-existing] BG0123 the gate is slow")
+        parsed = critic.parse_findings(issues)
+        self.assertEqual([critic.ORIGIN_REGRESSION, critic.ORIGIN_PRE_EXISTING],
+                         [f["origin"] for f in parsed],
+                         "the declared origins did not survive parsing")
+        self.assertEqual("verify_ac crashes on an empty Affects", parsed[0]["text"],
+                         "the tag was left in the finding text")
+        self.assertNotIn("class", parsed[0],
+                         "the origin axis wrote onto the `class` axis - they answer different "
+                         "questions and merging them was the flagged mistake")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            rc, out = self._record(root, issues)
+            recorded = (root / "sdlc-studio" / "reviews" / "critic-verdicts.md").read_text(
+                encoding="utf-8")
+        self.assertEqual(0, rc, f"a fully classified verdict was refused:\n{out}")
+        self.assertIn("[regression]", recorded, "the origin was not recorded")
+        self.assertIn("[pre-existing]", recorded, "the origin was not recorded")
+
+    def test_an_unclassified_finding_is_refused(self) -> None:
+        """MUTANT: delete the `unclassified_findings` refusal from cmd_record."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            rc, out = self._record(root, "[regression] a real one; the gate feels slow")
+        self.assertEqual(2, rc, "a verdict carrying an unsorted finding was recorded")
+        self.assertIn("the gate feels slow", out,
+                      "the refusal does not name WHICH finding is unclassified")
+
+    def test_a_clean_pass_needs_no_classification(self) -> None:
+        """The control. MUTANT: refuse whenever there are no classified findings.
+
+        A rule satisfiable by refusing every clean APPROVE discriminates nothing."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            rc, out = self._record(root, "none blocking")
+        self.assertEqual(0, rc, f"a clean pass was refused for carrying no findings:\n{out}")
 
 
 if __name__ == "__main__":

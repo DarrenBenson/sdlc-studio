@@ -190,8 +190,10 @@ WRITER_CASES: dict[str, WriterCase] = {
         targets=frozenset({"sdlc-studio/retros/evidence/audit-cost-*.jsonl"}),
     ),
     "critic.py": WriterCase(
+        # `--brief` is required to record a verdict at all now (US0578); this case is about
+        # WHERE critic writes, so it supplies one as a briefed reviewer would.
         argv=("record", "--unit", "US0001", "--verdict", "approve",
-              "--reviewer", "r", "--author", "a"),
+              "--reviewer", "r", "--author", "a", "--brief", "fixture-brief"),
         targets=frozenset({"sdlc-studio/reviews/critic-verdicts.md"}),
     ),
     "decisions.py": WriterCase(

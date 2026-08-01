@@ -8606,6 +8606,27 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+
+def render_finding_sets(issues: str) -> str:
+    """Render a verdict's findings as TWO named sets: what held the gate, and what did not.
+
+    A reader needs to tell a finding that blocked from one that was merely noticed. Printing
+    them in one undifferentiated list is how a pre-existing observation gets repaired at close
+    time as though it were this batch's debt - the cost reference-doctrine rule 19 exists to
+    stop. The non-blocking set carries the REASON, so "this does not block" is stated rather
+    than left for the reader to infer from an absence.
+    """
+    import critic  # noqa: PLC0415 - the verdict vocabulary lives there
+    blocking = critic.blocking_findings(issues)
+    passive = critic.non_blocking_findings(issues)
+    out = [f"BLOCKING ({len(blocking)}) - this unit's diff caused these:"]
+    out += [f"  [{f['origin']}] {f['text']}" for f in blocking] or ["  none"]
+    out.append(f"NOT BLOCKING ({len(passive)}) - already true at the base ref, "
+               f"so not this unit's debt:")
+    out += [f"  [{f['origin']}] {f['text']}" for f in passive] or ["  none"]
+    return "\n".join(out)
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     # Resolve the root ONCE and write it back, so every verb below anchors on the tree the

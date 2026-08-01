@@ -1,6 +1,6 @@
 # US0580: Only REGRESSION and NEW hold a gate: a PRE-EXISTING finding is reported and does not block
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0512
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the coverage gate reads it
 - **Then** the unit is covered and the findings are reported with their classification, because anything already true of the tree is not this unit's debt
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BlockingScopeTests::test_a_pre_existing_finding_does_not_block
+- **Verified:** yes (2026-08-01)
 
 ### AC2: a regression still blocks
 
@@ -30,6 +31,7 @@
 - **When** the coverage gate reads it
 - **Then** the unit is NOT covered - the positive control, so the change cannot be satisfied by a gate that stopped blocking
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BlockingScopeTests::test_a_regression_still_blocks
+- **Verified:** yes (2026-08-01)
 
 ### AC3: the blocking set is reported separately from the rest
 
@@ -37,6 +39,7 @@
 - **When** the verdict is rendered
 - **Then** the blocking set names only the first two, and the non-blocking set names the third with its reason, so a reader can tell what held the gate from what was merely noticed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BlockingScopeTests::test_the_two_sets_are_reported_apart
+- **Verified:** yes (2026-08-01)
 
 ## Revision History
 
