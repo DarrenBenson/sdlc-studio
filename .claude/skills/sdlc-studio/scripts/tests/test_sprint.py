@@ -4763,6 +4763,94 @@ class UnblockedWorkBlocksTheStopTests(unittest.TestCase):
             self.assertEqual(mod.blocked_by_pending(root)["unblocked"], ["US0102"])
 
 
+class StopAwaitingSignoffTests(unittest.TestCase):
+    """BG0455: `stop` could not tell an unbuilt unit from one the two-role gate holds.
+
+    A unit at Review on a project past `review.two_role_after` is not buildable by anyone in
+    the authoring session - Done needs a reviewer-of-record sign-off the session is explicitly
+    refused. Stopping RUN-01KYPZ1G named 14 such units as `could have proceeded` and demanded
+    --force, when nothing the run could do would have moved one of them. The cost is not only
+    the friction: --force exists to record what parking a run threw away, so the run record
+    overstated the loss, and reaching for it became a habit when it must stay expensive.
+    `reachable_end_state` already draws this distinction at plan time; `stop` never read it.
+    """
+
+    def _fixture(self, root: Path, statuses: dict) -> None:
+        _close_state(root, batch=sorted(statuses))
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "review:\n  two_role_after: 100\n", encoding="utf-8")
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        for uid, status in statuses.items():
+            (d / f"{uid}-x.md").write_text(
+                f"# {uid}: s\n\n> **Status:** {status}\n> **Priority:** Medium\n"
+                f"> **Affects:** src/a.py\n", encoding="utf-8")
+
+    def test_a_unit_held_at_Review_is_not_reported_as_able_to_proceed(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, {"US0101": "Review", "US0102": "Ready"})
+            out = mod.blocked_by_pending(root)
+        self.assertEqual(["US0102"], out["unblocked"],
+                         "a unit awaiting a signature is counted as work the run declined to do")
+        self.assertEqual(["US0101"], out["awaiting_signoff"])
+
+    def test_a_stop_is_not_refused_when_only_signatures_are_outstanding(self) -> None:
+        """The filed reproduction: the run is finished, and the only thing outstanding is a
+        signature this session is forbidden to give. That is a fact for the operator, not a
+        refusal aimed at the agent."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, {"US0101": "Review", "US0102": "Review"})
+            buf_out, buf_err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
+                rc = mod.cmd_stop(argparse.Namespace(root=str(root), force=False,
+                                                     reason="done bar the signatures"))
+        self.assertEqual(0, rc, buf_err.getvalue())
+        self.assertIn("await", (buf_out.getvalue() + buf_err.getvalue()).lower())
+
+    def test_a_genuinely_unbuilt_unit_still_refuses_the_stop(self) -> None:
+        """The positive control. Without it, a change that simply stopped refusing would pass
+        the test above while removing the guard entirely."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, {"US0101": "Review", "US0102": "Ready"})
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()) as err:
+                rc = mod.cmd_stop(argparse.Namespace(root=str(root), force=False, reason="x"))
+        self.assertEqual(1, rc)
+        self.assertIn("US0102", err.getvalue())
+        self.assertNotIn("US0101", err.getvalue(),
+                         "the held unit is named among the work that could have proceeded")
+
+    def test_without_the_two_role_rule_Review_is_ordinary_remaining_work(self) -> None:
+        """The rule is the PROJECT's, not a property of the status. With no cutoff configured,
+        a unit at Review is work somebody in this session can still finish."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, {"US0101": "Review"})
+            (root / "sdlc-studio" / ".config.yaml").write_text("{}\n", encoding="utf-8")
+            out = mod.blocked_by_pending(root)
+        self.assertEqual(["US0101"], out["unblocked"])
+        self.assertEqual([], out["awaiting_signoff"])
+
+    def test_a_unit_below_the_cutoff_is_not_held(self) -> None:
+        """The cutoff is a number, and it must be read as one - a project sets it precisely so
+        the rule applies to new work and not to everything already on disk."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, {"US0099": "Review"})
+            out = mod.blocked_by_pending(root)
+        self.assertEqual(["US0099"], out["unblocked"])
+        self.assertEqual([], out["awaiting_signoff"])
+
+
 class StopRecordTests(unittest.TestCase):
     """US0300/CR0378: a stop is expensive and its cost was invisible, so nothing pushed back
     on taking one. A parked run looked exactly like a finished one."""

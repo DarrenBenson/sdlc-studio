@@ -1,8 +1,9 @@
 # BG0455: sprint stop cannot tell an unbuilt unit from one the two-role gate holds at Review, so it reports work nobody can do as work that could have proceeded
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
+> **Verification depth:** functional (5 criteria red-first, including two positive controls - a genuinely unbuilt unit still refuses, and a project with no cutoff treats Review as ordinary remaining work. Three mutants applied singly, purged, restored byte-identical - the awaiting set emptied, the numeric cutoff ignored, and every status treated as Review: all KILLED)
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Created:** 2026-07-30
 > **Created-by:** sdlc-studio file
@@ -23,9 +24,9 @@ Read the same rule `reachable_end_state` already applies: a unit at Review, on a
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `sprint stop` refuses while any unit no pending question blocks remains, and names them as able to proceed.
-- [ ] Following the recorded steps no longer reproduces the defect: On a project with `review.two_role_after` set, open a run whose batch holds units at Review with no recorded sign-off, then `sprint.py stop --reason '...'`.
-- [ ] The proposed fix lands, pinned by a test: Read the same rule `reachable_end_state` already applies: a unit at Review, on a project past `review.two_role_after`, with no independent sign-off recorded...
+- [x] The behaviour described is corrected: `sprint stop` refuses while any unit no pending question blocks remains, and names them as able to proceed.
+- [x] Following the recorded steps no longer reproduces the defect: On a project with `review.two_role_after` set, open a run whose batch holds units at Review with no recorded sign-off, then `sprint.py stop --reason '...'`.
+- [x] The proposed fix lands, pinned by a test: Read the same rule `reachable_end_state` already applies: a unit at Review, on a project past `review.two_role_after`, with no independent sign-off recorded...
 
 ## Impact
 

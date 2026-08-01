@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 25 |
+| Open | 24 |
 | In Progress | 0 |
-| Fixed | 361 |
+| Fixed | 362 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -172,7 +172,7 @@
 | [BG0452](BG0452-verifiers-all-green-splits-the-artefact-key-on.md) | _verifiers_all_green splits the artefact key on a hyphen, so it is blind to v3 ids and its forecast exclusions never fire in any new project | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0453](BG0453-sprint-lane-return-tracebacks-on-an-unreadable-run.md) | sprint lane return tracebacks on an unreadable run state AFTER running the unit's acceptance criteria, discarding the verification result - the third occurrence of a finding rejected twice | Fixed | Critical | 2026-07-30 | 2026-07-30 |
 | [BG0454](BG0454-the-confinement-write-detector-reads-list-remove-as.md) | the confinement write detector reads list.remove as a filesystem write, so a read-only module is censused as a workspace writer | Fixed | Low | 2026-07-30 | 2026-07-30 |
-| [BG0455](BG0455-sprint-stop-cannot-tell-an-unbuilt-unit-from.md) | sprint stop cannot tell an unbuilt unit from one the two-role gate holds at Review, so it reports work nobody can do as work that could have proceeded | Open | Medium | 2026-07-30 | 2026-07-30 |
+| [BG0455](BG0455-sprint-stop-cannot-tell-an-unbuilt-unit-from.md) | sprint stop cannot tell an unbuilt unit from one the two-role gate holds at Review, so it reports work nobody can do as work that could have proceeded | Fixed | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0456](BG0456-a-ruling-verb-short-circuits-the-destination-check.md) | A ruling verb short-circuits the destination check, so a tick citing an artefact nothing holds is accepted - and the corpus-read pin is inert because its fixture never scales | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0457](BG0457-four-spec-agreement-guards-pin-prose-to-prose.md) | Four spec-agreement guards pin prose to prose: a set comparison that cannot fail in the reverse direction, a whole-file substring satisfied by the Revision History row describing the change, a word-presence check an unrelated sentence already satisfies, and a source-substring wiring check a comment satisfies | Open | High | 2026-07-31 | 2026-07-31 |
 | [BG0458](BG0458-five-checklist-rows-report-a-state-they-never.md) | Five checklist rows report a state they never established: planned units read from the retro's Batch rather than the plan, a delivered unit rendered as held, a blind known-issue scan rendered as 'none carried', a lens count that counts reviewer names, and an impediment row that never names the blocker | Fixed | High | 2026-07-31 | 2026-07-31 |

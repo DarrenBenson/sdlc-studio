@@ -7579,9 +7579,51 @@ def blocked_by_pending(repo_root: Path | str) -> dict:
             if uid not in blocked and deps[uid] & blocked:
                 blocked.add(uid)
                 changed = True
+    # A unit standing at Review, on a project past `review.two_role_after`, is not work this
+    # session declined to do - Done needs a reviewer-of-record sign-off the authoring session
+    # is explicitly refused. Reporting it as `could have proceeded` pushed the operator to
+    # --force, whose whole purpose is to price what parking a run threw away, so the record
+    # overstated the loss and the expensive escape became a habit. The same rule
+    # `reachable_end_state` applies at plan time, read here rather than restated.
+    awaiting = sorted(u for u in remaining
+                      if u not in blocked and _awaits_signoff(root, u))
     return {"pending": pending, "remaining": remaining,
             "blocked": sorted(blocked),
-            "unblocked": sorted(u for u in remaining if u not in blocked)}
+            "awaiting_signoff": awaiting,
+            "unblocked": sorted(u for u in remaining
+                                if u not in blocked and u not in set(awaiting))}
+
+
+def _awaits_signoff(root: Path, uid: str) -> bool:
+    """Is this unit finished bar a signature this session cannot give?
+
+    True only when all three hold: the project sets a two-role cutoff that still applies, the
+    unit sits past it, and its status is Review. Anything it cannot establish is False - a unit
+    wrongly called awaiting-signoff would be dropped from the stop's refusal, which is the one
+    direction that loses work silently.
+    """
+    try:
+        cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "review.two_role_after"))
+    except ValueError as exc:
+        sdlc_md.debug("sprint._awaits_signoff", exc)
+        return False
+    if cutoff is None:
+        return False
+    dod = sdlc_md.dor_dod_level_checks(root, "done", "story")
+    if dod is not None and "review.two-role" not in dod:
+        return False              # the project stood the sign-off requirement down
+    num = sdlc_md.id_number(uid)
+    if num is None or num <= cutoff:
+        return False
+    hit = sdlc_md.find_by_id(root, uid)
+    if hit is None:
+        return False
+    try:
+        status = sdlc_md.extract_field(hit[0].read_text(encoding="utf-8"), "Status") or ""
+    except OSError as exc:
+        sdlc_md.debug("sprint._awaits_signoff", exc)
+        return False
+    return status.strip().lower() == "review"
 
 
 def run_elapsed(repo_root: Path | str) -> dict:
@@ -7680,9 +7722,18 @@ def cmd_stop(args) -> int:
               f"\"...\" --option \"a|...\" --option \"b|...\"`, or stop deliberately with "
               f"--force, which records what could have proceeded.", file=sys.stderr)
         return 1
+    if out.get("awaiting_signoff"):
+        # Stated, never silent. These units are dropped from the refusal because nothing this
+        # session can do would move them - but "we did not count them" and "there was nothing
+        # there" must not read the same, and the operator is the one who can act on it.
+        print(f"  {len(out['awaiting_signoff'])} unit(s) await a sign-off this session cannot "
+              f"give: {', '.join(out['awaiting_signoff'])}. They are finished bar an "
+              f"independent reviewer-of-record signature, so they are not counted as work "
+              f"this stop threw away.")
     cause = STOP_OPERATOR if forced else STOP_PENDING_DECISION
     stop = {"cause": cause, "detail": (args.reason or "").strip() or None,
             "blocked": out["blocked"], "could_have_proceeded": out["unblocked"],
+            "awaiting_signoff": out.get("awaiting_signoff", []),
             "pending": len(out["pending"]), "stopped_at": sdlc_md.now_iso8601()}
     run_state.update(root, stop=stop)
     if out["pending"]:
