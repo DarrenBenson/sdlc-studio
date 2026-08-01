@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 17 |
-| Ready | 37 |
+| Ready | 35 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 0 |
+| Review | 2 |
 | Done | 558 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -521,8 +521,8 @@
 | [US0607](US0607-best-practices-testing-md-states-the-entry-point.md) | best-practices/testing.md states the entry-point rule beside name-the-mutant-first | Ready | EP0199 | 2026-08-01 | 2026-08-01 |
 | [US0608](US0608-a-stale-repo-wide-unified-review-no-longer.md) | A stale repo-wide unified review no longer hard-blocks a sprint close whose own units are all covered, and is reported as cadence debt instead | Ready | EP0200 | 2026-08-01 | 2026-08-01 |
 | [US0609](US0609-file-and-close-accepts-a-stale-periodic-review.md) | file-and-close accepts a stale periodic review as ceremony debt and files it as a real artefact linked to the run | Ready | EP0200 | 2026-08-01 | 2026-08-01 |
-| [US0610](US0610-tools-run-suite-sh-runs-a-suite-and.md) | tools/run-suite.sh runs a suite and writes exit_code, counts, duration and head_sha to sdlc-studio/.local/suite-verdict.json, printing only the verdict line | Ready | EP0201 | 2026-08-01 | 2026-08-01 |
-| [US0611](US0611-a-greenness-claim-whose-verdict-file-is-absent.md) | A greenness claim whose verdict file is absent or stale against HEAD is refused by the commit gate | Ready | EP0201 | 2026-08-01 | 2026-08-01 |
+| [US0610](US0610-tools-run-suite-sh-runs-a-suite-and.md) | tools/run-suite.sh runs a suite and writes exit_code, counts, duration and head_sha to sdlc-studio/.local/suite-verdict.json, printing only the verdict line | Review | EP0201 | 2026-08-01 | 2026-08-01 |
+| [US0611](US0611-a-greenness-claim-whose-verdict-file-is-absent.md) | A greenness claim whose verdict file is absent or stale against HEAD is refused by the commit gate | Review | EP0201 | 2026-08-01 | 2026-08-01 |
 | [US0612](US0612-a-runbook-ordered-by-sprint-step-names-the.md) | A runbook ordered by SPRINT STEP names the one command that performs each step, its fields-file path, and the hand-rolled shape it replaces | Ready | EP0202 | 2026-08-01 | 2026-08-01 |
 | [US0613](US0613-sprint-plan-and-sprint-run-print-the-runbook.md) | sprint plan and sprint run PRINT the runbook, and a guard fails when a step names a command that no longer exists | Ready | EP0202 | 2026-08-01 | 2026-08-01 |
 | [US0614](US0614-a-points-census-answers-how-much-is-left.md) | A points census answers how much is left by status and by type, so the routine question is not answered by a script written on the spot | Ready | EP0203 | 2026-08-01 | 2026-08-01 |

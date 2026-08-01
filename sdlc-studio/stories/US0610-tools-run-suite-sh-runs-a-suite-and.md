@@ -1,6 +1,6 @@
 # US0610: tools/run-suite.sh runs a suite and writes exit_code, counts, duration and head_sha to sdlc-studio/.local/suite-verdict.json, printing only the verdict line
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0519
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** it finishes
 - **Then** `sdlc-studio/.local/suite-verdict.json` carries suite, exit_code, passed, failed, duration and head_sha, and only the verdict line is printed - so there is nothing worth piping to `tail`
 - **Verify:** pytest tools/tests/test_run_suite.py::VerdictFileTests::test_the_wrapper_writes_the_verdict
+- **Verified:** yes (2026-08-01)
 
 ### AC2: a red run writes a red verdict
 
@@ -30,6 +31,7 @@
 - **When** the wrapper runs
 - **Then** the file records a non-zero exit_code, because a wrapper that always writes zero reproduces the defect it replaces
 - **Verify:** pytest tools/tests/test_run_suite.py::VerdictFileTests::test_a_red_run_writes_a_red_verdict
+- **Verified:** yes (2026-08-01)
 
 ### AC3: the verdict records the HEAD it was taken at
 
@@ -37,6 +39,7 @@
 - **When** it is read
 - **Then** the recorded sha makes a stale verdict distinguishable from a current one
 - **Verify:** pytest tools/tests/test_run_suite.py::VerdictFileTests::test_the_verdict_records_its_head
+- **Verified:** yes (2026-08-01)
 
 ## Revision History
 

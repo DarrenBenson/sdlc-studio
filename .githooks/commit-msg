@@ -140,6 +140,33 @@ if [ "${msg_out:-}" != "" ]; then
   } >&2
 fi
 
+# 1c. A CLAIM OF GREENNESS IS CHECKED AGAINST THE RECORDED VERDICT.
+# A message asserting the suites are green, written while no current verdict exists, is the
+# defect `run-suite.sh` was built for: `npm test | tail` reports TAIL's status, so a red suite
+# reads as green and the claim reaches the log. Scoped to messages that MAKE the claim - it is
+# not a demand that every commit run the suites, which would simply be bypassed.
+# EXITS here rather than setting `fail`. Section 2 below initialises `fail=0`, which would wipe
+# it - and when pre-commit left no handover record this hook exits BEFORE section 2 is reached,
+# so the flag would never be read at all. A lane that sets a variable nobody reads is the
+# library-not-lane defect in a shell script.
+if [ -x "$repo_root/tools/run-suite.sh" ] && \
+   grep -qiE '(both )?suites? (are |were |is )?green|suite green|tests? (are |were |is )?green' \
+        "$msg_file" 2>/dev/null; then
+  if ! verdict_note="$(bash "$repo_root/tools/run-suite.sh" --check 2>&1)"; then
+    {
+      printf '%sCommit refused.%s %scommit-msg: suite-claim%s\n' "$R" "$N" "$B" "$N"
+      printf '  enforces: a message claiming the suite is green is checked against the recorded\n'
+      printf '            verdict. `npm test | tail` reports TAIL of the pipeline, so a red suite\n'
+      printf '            reads as green and the claim reaches the log unchallenged.\n'
+      printf '  %s- detail -%s\n' "$Y" "$N"
+      printf '%s\n' "$verdict_note" | sed 's/^/    /'
+      printf '  %s-> fix:%s run `tools/run-suite.sh all`, or drop the claim from the message.\n' \
+        "$B" "$N"
+    } >&2
+    exit 1
+  fi
+fi
+
 # ---------------------------------------------------------------------------
 # 2. The unit suites, if pre-commit selected them.
 # ---------------------------------------------------------------------------
