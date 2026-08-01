@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 29 |
+| Open | 28 |
 | In Progress | 0 |
-| Fixed | 356 |
+| Fixed | 358 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **468** |
+| **Total** | **469** |
 
 ## All Bugs
 
@@ -130,9 +130,9 @@
 | [BG0410](BG0410-the-mutation-run-s-temp-file-sink-stopped.md) | The mutation run's temp-file sink stopped the hang by orphaning the child, and leaks an fd and a temp file whenever Popen fails | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0411](BG0411-a-declared-gate-id-resolves-against-any-filename.md) | A declared gate id resolves against any filename matching the id pattern, and a withheld narrowing is announced only under SDLC_DEBUG | Fixed | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0412](BG0412-file-finding-writes-fenced-blocks-with-no-language.md) | file_finding writes fenced blocks with no language, so the deterministic filer produces artefacts the commit gate refuses | Fixed | Medium | 2026-07-29 | 2026-07-29 |
-| [BG0413](BG0413-a-suite-that-loses-90-of-its-tests.md) | A suite that loses 90% of its tests is judged not to have covered its scope and is committed anyway - the scope floor declines to record a timing instead of refusing | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0413](BG0413-a-suite-that-loses-90-of-its-tests.md) | A suite that loses 90% of its tests is judged not to have covered its scope and is committed anyway - the scope floor declines to record a timing instead of refusing | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0414](BG0414-the-retro-s-estimate-vs-actual-block-is.md) | The retro's estimate-vs-actual block is empty on a 148-point sprint: the close never runs the accuracy write it templates a home for | Fixed | Medium | 2026-07-29 | 2026-07-29 |
-| [BG0415](BG0415-the-gate-budget-is-over-at-457s-against.md) | The gate budget is OVER at 457s against 380s, and sprint plan forecasts execution cost from the 317s baseline it has already breached by 44% | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0415](BG0415-the-gate-budget-is-over-at-457s-against.md) | The gate budget is OVER at 457s against 380s, and sprint plan forecasts execution cost from the 317s baseline it has already breached by 44% | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0416](BG0416-reopening-a-unit-does-not-retract-its-verification.md) | Reopening a unit does not retract its verification-depth claim, so the planner reads it as BUILT-NOT-CLOSED and forecasts it at zero points | Fixed | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0417](BG0417-transition-done-never-checks-the-two-role-rule.md) | transition -> Done never checks the two-role rule: the verb that writes the status the Definition of Done defines a bar for does not consult that bar, and only a later gate run reports it | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0418](BG0418-the-close-swallows-the-retro-validator-s-own.md) | The close swallows the retro validator's own warning, so a scaffold with six unreplaced demonstration rows reports as 'valid' to the operator | Open | High | 2026-07-29 | 2026-07-29 |
@@ -186,6 +186,7 @@
 | [BG0466](BG0466-a-v3-id-carries-no-ordinal-so-every.md) | A v3 id carries no ordinal, so every v3 artefact scores 0 against the provenance cutoff and is exempted as pre-adoption legacy; and the run-scoping discriminator on the finding-placement count is unguarded | Open | High | 2026-07-31 | 2026-07-31 |
 | [BG0467](BG0467-the-commit-gate-s-test-selection-reached-nothing.md) | The commit gate's test selection reached nothing: the handover was deleted before it was read, so every commit ran the whole suite | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0468](BG0468-three-high-severity-advisories-reach-the-tree-through.md) | Three high-severity advisories reach the tree through the markdown lint chain, and surfaced only because 208 commits were finally pushed | Fixed | High | 2026-07-31 | 2026-07-31 |
+| [BG0469](BG0469-close-owed-reports-a-close-that-already-happened.md) | close_owed reports a close that already happened: a unit raised and Fixed inside a run never joins that run's recorded batch | Open | High | 2026-07-31 | 2026-07-31 |
 
 ## Archived Releases
 

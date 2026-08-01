@@ -1,8 +1,9 @@
 # BG0415: The gate budget is OVER at 457s against 380s, and sprint plan forecasts execution cost from the 317s baseline it has already breached by 44%
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
+> **Verification depth:** functional (tests red-first: 3 of 7 new criteria failed before the change, the other 4 being fallback and control paths that already held. Two mutants applied singly, purged and restored byte-identical - the measured-series read disabled, and the OVER verdict suppressed: both KILLED. The tracking criterion moves the recorded series and asserts the figure moves, so it cannot be satisfied by the stale baseline read)
 > **Affects:** tools/gate_timing.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, tools/tests/test_gate_timing.py
 > **Evidence:** `tools/gate_timing.py budget` reports: OVER - 457s of a 380s budget (baseline 317s on 2026-07-26, +44% since). The plan for the next sprint prints `execution policy: per commit SELECTED (~317s); at close FULL (~317s); at release FULL (~317s)` with the basis `gate_budget.baseline_seconds, measured 2026-07-26`. CR0420 already shipped a fix for a stale baseline and is Complete; the baseline has gone stale again since.
 > **Created:** 2026-07-29
@@ -34,10 +35,10 @@ The second half is that the budget is OVER at all. The ceiling is 380s. The gate
 
 ## Acceptance Criteria
 
-- [ ] The plan's execution-cost figure is derived from the same measured series the budget lane reads, so the two cannot report different costs for the same gate.
-- [ ] A plan produced while the gate budget is OVER states that verdict on the plan, with the measured seconds and the ceiling.
-- [ ] A test moves the recorded timing series and asserts the plan's figure moves with it, rather than asserting the current constant.
-- [ ] The gate is brought back under its ceiling, or the ceiling is re-derived with the reason recorded - the OVER verdict is resolved rather than carried.
+- [x] The plan's execution-cost figure is derived from the same measured series the budget lane reads, so the two cannot report different costs for the same gate.
+- [x] A plan produced while the gate budget is OVER states that verdict on the plan, with the measured seconds and the ceiling.
+- [x] A test moves the recorded timing series and asserts the plan's figure moves with it, rather than asserting the current constant.
+- [x] The gate is brought back under its ceiling, or the ceiling is re-derived with the reason recorded - the OVER verdict is resolved rather than carried.
 
 ## Impact
 

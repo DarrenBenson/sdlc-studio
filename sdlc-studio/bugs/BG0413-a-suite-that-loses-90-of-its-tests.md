@@ -1,8 +1,9 @@
 # BG0413: A suite that loses 90% of its tests is judged not to have covered its scope and is committed anyway - the scope floor declines to record a timing instead of refusing
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
+> **Verification depth:** functional (tests red-first: 12 new criteria failed before the change. Six mutants applied singly, anchor asserted unique, `__pycache__` purged, `python3 -B`, each file restored byte-identical - collapse branch disabled, exit 2 downgraded to 1, stale ack accepted, reasonless ack accepted: all KILLED. The reasonless-ack mutant SURVIVED a first attempt because the caller's truthiness test made the explicit guard unreachable; the caller now tests `is not None`, so the rule has one owner)
 > **Affects:** tools/gate_timing.py, .githooks/commit-msg, tools/tests/test_gate_timing.py
 > **Evidence:** RUN-01KYNKDP close: reverting US0553 replaced a span from `CloseVerdictReuseTests` to `CloseRetryTests` and deleted eight intervening test classes. The suite reported 510 passing against a normal 5,176 and was OK, because deleted tests do not fail. Caught by reading the count, not by any guard. `SCOPE_FLOOR = 0.8` in tools/gate_timing.py would have judged that run as not having covered its scope.
 > **Created:** 2026-07-29
@@ -41,11 +42,11 @@ Separate the two facts and give the loud one a loud consequence.
 
 ## Acceptance Criteria
 
-- [ ] A run whose test count collapses against the historic peak REFUSES the commit rather than only declining to record a timing.
-- [ ] The refusal names the run's count, the historic peak, and the drop, so a reader can tell a collapse from a drift.
-- [ ] The existing 0.8 floor keeps its current generous behaviour for its own purpose, so a legitimate test deletion is not turned into a blocking event.
-- [ ] A deliberate bulk removal has a recorded escape, stated on the record rather than passed silently.
-- [ ] A test asserts the refusal by simulating a collapsed count, not by asserting the constant.
+- [x] A run whose test count collapses against the historic peak REFUSES the commit rather than only declining to record a timing.
+- [x] The refusal names the run's count, the historic peak, and the drop, so a reader can tell a collapse from a drift.
+- [x] The existing 0.8 floor keeps its current generous behaviour for its own purpose, so a legitimate test deletion is not turned into a blocking event.
+- [x] A deliberate bulk removal has a recorded escape, stated on the record rather than passed silently.
+- [x] A test asserts the refusal by simulating a collapsed count, not by asserting the constant.
 
 ## Impact
 

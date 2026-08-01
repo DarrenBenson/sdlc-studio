@@ -5,6 +5,8 @@
 > **Type:** Improvement
 > **Date:** 2026-07-31
 > **Consolidation:** low-severity-bugs
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py
+> **Points:** 3
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Opus 5; human; v1
 

@@ -394,15 +394,20 @@ class ScopeTests(unittest.TestCase):
 
     def test_the_count_is_recorded_even_when_the_run_is_refused(self) -> None:
         """Otherwise one truncated run poisons the series: the peak could never recover, because
-        the counts that would rebuild it are exactly the ones being thrown away."""
+        the counts that would rebuild it are exactly the ones being thrown away.
+
+        Exercised with a DRIFT (2000 of 3400 - under the 0.8 floor, above the collapse
+        threshold), so this stays a test about exit 1 declining a recording. The collapse path
+        records its count too; that is asserted in ScopeCollapseTests.
+        """
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             gt.record(root, "total.tests", 3400)
             with contextlib.redirect_stdout(io.StringIO()):   # captured: a green run is silent
-                rc = gt.main(["--root", str(root), "scope", "--suite", "total", "--tests", "10"])
+                rc = gt.main(["--root", str(root), "scope", "--suite", "total", "--tests", "2000"])
             self.assertEqual(rc, 1)
             data = json.loads((root / gt.REL).read_text(encoding="utf-8"))
-            self.assertEqual(data["total.tests"], [3400, 10])
+            self.assertEqual(data["total.tests"], [3400, 2000])
 
     def test_the_refusal_is_said_out_loud_and_never_raises(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -424,6 +429,159 @@ class ScopeTests(unittest.TestCase):
                 rc = gt.main(["--root", str(root), "scope", "--suite", "total", "--tests", "3400"])
             self.assertEqual(rc, 0)
             self.assertEqual(buf.getvalue(), "")
+
+
+class ScopeCollapseTests(unittest.TestCase):
+    """BG0413: a suite that stops running most of itself must REFUSE, not decline a timing.
+
+    `scope_ok`'s generous 0.8 floor is right for its own purpose - tests are legitimately
+    deleted, and a floor that fires on real deletions trains people to ignore it. But it was
+    the only thing in the repo that could notice a suite had silently stopped running, and its
+    entire consequence was that a number did not reach a JSON file. RUN-01KYNKDP deleted eight
+    test classes, the suite reported 510 passing against a peak of 5,645, and the commit landed.
+    """
+
+    def test_a_collapsed_count_refuses_the_commit_not_merely_the_recording(self) -> None:
+        """The filed reproduction, at its filed magnitude: 510 against a peak of 5,645."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 5645)
+            v = gt.scope_ok(root, "total", 510)
+            self.assertFalse(v["ok"])
+            self.assertTrue(v["collapsed"],
+                            "a 91% loss is graded the same as a noisy timing, so the commit lands")
+
+    def test_a_drift_inside_the_generous_floor_is_not_a_collapse(self) -> None:
+        """AC3: the 0.8 floor keeps its own behaviour. A legitimate deletion must still only
+        decline the recording, or the blocking event trains the bypass it exists to prevent."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 1000)
+            v = gt.scope_ok(root, "total", 700)          # under the 0.8 floor, far above collapse
+            self.assertFalse(v["ok"], "the existing floor stopped judging this a short run")
+            self.assertFalse(v["collapsed"], "an ordinary deletion now BLOCKS a commit")
+
+    def test_the_collapse_boundary_is_bracketed_two_sided(self) -> None:
+        """Behavioural, not a constant assertion: moving the threshold fails here rather than
+        silently widening what counts as survivable."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 1000)
+            self.assertFalse(gt.scope_ok(root, "total", 500)["collapsed"])  # at the threshold
+            self.assertTrue(gt.scope_ok(root, "total", 499)["collapsed"])   # one below it
+
+    def test_the_refusal_names_the_count_the_peak_and_the_drop(self) -> None:
+        """AC2. The old message named neither number, so a reader who saw it could not tell a
+        rounding wobble from a suite that had stopped running."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 5645)
+            why = gt.scope_ok(root, "total", 510)["why"]
+            self.assertIn("510", why)
+            self.assertIn("5645", why)
+            self.assertIn("91%", why, "the drop is not stated, only the two counts")
+
+    def test_a_collapsed_run_exits_distinctly_from_a_declined_recording(self) -> None:
+        """The hook branches on this: exit 1 declines a timing and proceeds, exit 2 blocks."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 5645)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = gt.main(["--root", str(root), "scope", "--suite", "total", "--tests", "510"])
+            self.assertEqual(rc, 2, "a collapse exits as an ordinary declined recording")
+            self.assertIn("BLOCKED", buf.getvalue())
+
+    def test_a_selected_run_is_never_judged_a_collapse(self) -> None:
+        """A selected run legitimately runs a fraction of the suite. Judging it a collapse would
+        block every selected commit - the same conflict the 0.8 floor already had to resolve."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 6174)
+            self.assertFalse(gt.scope_ok(root, "total", 510, selected=True)["collapsed"])
+
+    def test_no_history_cannot_manufacture_a_collapse(self) -> None:
+        """A fresh clone has no peak. Comparing against a peak that does not exist is how a first
+        commit gets blocked by a guard about regressions."""
+        with tempfile.TemporaryDirectory() as d:
+            self.assertFalse(gt.scope_ok(Path(d), "total", 3)["collapsed"])
+
+    def test_an_acked_bulk_removal_is_allowed_and_states_itself(self) -> None:
+        """AC4: a deliberate bulk removal is recorded, not waved through by a generous threshold."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 5645)
+            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / gt.COLLAPSE_ACK).write_text(
+                json.dumps({"tests": 510, "reason": "the legacy suite was split out to its own "
+                                                    "package under US1234"}), encoding="utf-8")
+            v = gt.scope_ok(root, "total", 510)
+            self.assertFalse(v["collapsed"])
+            self.assertIn("acknowledged", v["why"])
+
+    def test_an_ack_for_a_different_count_does_not_license_this_collapse(self) -> None:
+        """An ack is spent on the removal it describes. A stale one left in the tree would license
+        every future collapse silently - the fail-open this escape would otherwise introduce."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 5645)
+            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / gt.COLLAPSE_ACK).write_text(
+                json.dumps({"tests": 510, "reason": "the legacy suite moved out"}),
+                encoding="utf-8")
+            self.assertTrue(gt.scope_ok(root, "total", 120)["collapsed"],
+                            "a stale ack licensed a collapse it does not describe")
+
+    def test_a_reasonless_ack_is_not_an_ack(self) -> None:
+        """An absence stated is evidence; an empty field is the gap this escape would open."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 5645)
+            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / gt.COLLAPSE_ACK).write_text(
+                json.dumps({"tests": 510, "reason": "  "}), encoding="utf-8")
+            self.assertTrue(gt.scope_ok(root, "total", 510)["collapsed"])
+
+    def test_an_unreadable_ack_never_reports_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 5645)
+            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / gt.COLLAPSE_ACK).write_text("{not json", encoding="utf-8")
+            self.assertTrue(gt.scope_ok(root, "total", 510)["collapsed"])
+
+    def test_a_loader_error_still_only_declines_the_recording(self) -> None:
+        """The loader-error branch is a different fact with a different consequence, and it is
+        checked first. Grading it a collapse would block every import failure, which is a build
+        problem the author already sees."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 5645)
+            v = gt.scope_ok(root, "total", 5645, loader_error=True)
+            self.assertFalse(v["ok"])
+            self.assertFalse(v["collapsed"])
+
+    def test_a_zero_count_is_a_collapse_and_says_which_fault_it_is(self) -> None:
+        """`suite_tests` is parsed out of the runner's output, so a changed output format yields
+        0 and blocks every commit. That is the right verdict - nobody can tell "ran nothing" from
+        "counted nothing", and neither shows the scope ran - but the two have different fixes, so
+        the message must not send a reader chasing a deleted test that does not exist."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 5645)
+            v = gt.scope_ok(root, "total", 0)
+            self.assertTrue(v["collapsed"])
+            self.assertIn("output format", v["why"])
+            self.assertNotIn("100% drop", v["why"])
+
+    def test_a_collapsed_count_is_still_recorded_so_the_peak_can_recover(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 5645)
+            with contextlib.redirect_stdout(io.StringIO()):
+                gt.main(["--root", str(root), "scope", "--suite", "total", "--tests", "510"])
+            self.assertEqual(json.loads((root / gt.REL).read_text(encoding="utf-8"))["total.tests"],
+                             [5645, 510])
 
 
 if __name__ == "__main__":

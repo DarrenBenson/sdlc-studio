@@ -62,6 +62,44 @@ def record(root: Path, suite: str, seconds: float) -> dict:
 #: where a chunk of the suite silently did not run at all.
 SCOPE_FLOOR = 0.8
 
+#: Below this fraction of the historic peak the run has not drifted, it has COLLAPSED, and the
+#: commit is BLOCKED rather than merely unrecorded (BG0413). The two thresholds answer different
+#: questions and must not be merged: 0.8 is "is this run comparable enough to time?", which is
+#: deliberately generous because tests are legitimately deleted; this one is "did most of the
+#: suite stop running?", which no other guard in the repo can notice. RUN-01KYNKDP ran 510 of
+#: 5,645 tests - a 91% loss - and landed green, because a deleted test cannot fail.
+COLLAPSE_FLOOR = 0.5
+
+#: A deliberate bulk removal states itself here rather than being waved through: a JSON object
+#: under `sdlc-studio/` carrying the expected post-removal count and the reason for it. It is
+#: spent on the removal it describes - an ack naming a different count licenses nothing - so a
+#: stale file cannot quietly become a standing exemption.
+COLLAPSE_ACK = ".scope-collapse-ack.json"
+
+
+def _collapse_ack(root: Path, tests: int) -> str | None:
+    """The recorded reason a collapse to `tests` was deliberate, or None.
+
+    Refuses an ack it cannot fully establish: unreadable, not an object, naming a different
+    count, or carrying an empty reason. An escape that fails open is not an escape, it is the
+    hole the guard was built to close.
+    """
+    path = Path(root) / "sdlc-studio" / COLLAPSE_ACK
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    reason = str(data.get("reason") or "").strip()
+    if not reason:
+        return None
+    try:
+        acked = int(data.get("tests"))
+    except (TypeError, ValueError):
+        return None
+    return reason if acked == int(tests) else None
+
 
 def scope_ok(root: Path, suite: str, tests: int, loader_error: bool = False,
              selected: bool = False) -> dict:
@@ -108,7 +146,40 @@ def scope_ok(root: Path, suite: str, tests: int, loader_error: bool = False,
                           f"({tests / peak:.0%}, floor {SCOPE_FLOOR:.0%})")
     else:
         ok, why = True, f"{tests} tests against a peak of {int(peak)}"
-    return {"ok": ok, "why": why, "tests": tests, "peak": peak}
+    # Graded SEPARATELY from `ok`, and only where a peak exists to collapse against. A selected
+    # run legitimately runs a fraction of the suite, and a loader error is a different fact with
+    # its own consequence - both are refused above without being called a collapse, because
+    # blocking either would fire on ordinary events and train the bypass.
+    collapsed = False
+    if peak is not None and not selected and not loader_error and tests < peak * COLLAPSE_FLOOR:
+        drop = 1 - tests / peak
+        reason = _collapse_ack(root, tests)
+        # `is not None`, not truthiness. An empty reason is refused by `_collapse_ack` itself,
+        # and a truthy test here would ALSO reject it - which reads as defence in depth but is
+        # not: it makes the explicit guard unreachable, so deleting it changes no behaviour and
+        # no test can tell. Mutation caught exactly that; the emptiness rule now has one owner.
+        if reason is not None:
+            ok = True
+            why = (f"{tests} tests against a peak of {int(peak)} - a {drop:.0%} drop, "
+                   f"acknowledged as deliberate: {reason}")
+        else:
+            collapsed = True
+            ok = False
+            # A count of zero is reported as its own state. It is still a collapse - nobody can
+            # tell "the suite ran nothing" from "nothing could be counted", and neither is
+            # evidence the scope ran - but the two have very different fixes, and a reader
+            # chasing a "100% drop" while the real fault is a changed runner output format
+            # would be looking in the wrong place.
+            cause = ("no test count was parsed from the run at all, so either the suite ran "
+                     "nothing or the runner's output format changed"
+                     if tests == 0 else
+                     f"a {drop:.0%} drop, and a deleted test cannot fail, so most of this "
+                     f"suite may have stopped running")
+            why = (f"{tests} tests ran against a peak of {int(peak)} - {cause}. "
+                   f"If the removal is deliberate, record it in "
+                   f"sdlc-studio/{COLLAPSE_ACK} as "
+                   f'{{"tests": {tests}, "reason": "<why>"}}')
+    return {"ok": ok, "why": why, "tests": tests, "peak": peak, "collapsed": collapsed}
 
 
 def expected(root: Path, suite: str) -> float | None:
@@ -217,9 +288,11 @@ def cmd_record(args: argparse.Namespace) -> int:
 def cmd_scope(args: argparse.Namespace) -> int:
     """Judge whether a run covered its scope, then record its test count.
 
-    Exit 0 = the run is comparable and its total may be recorded; exit 1 = it only got invoked.
-    The count is appended either way, so the peak keeps improving and one truncated run does not
-    poison the series. Never raises into a commit.
+    Exit 0 = the run is comparable and its total may be recorded; exit 1 = it only got invoked;
+    exit 2 = the suite COLLAPSED and the commit must be blocked (BG0413). The count is appended
+    in every case, so the peak keeps improving and one bad run does not poison the series - the
+    counts that would rebuild it are exactly the ones that would otherwise be thrown away.
+    Never raises into a commit; the caller decides what an exit code costs.
     """
     root = Path(args.root)
     selected = bool(getattr(args, "selected", False))
@@ -232,6 +305,9 @@ def cmd_scope(args: argparse.Namespace) -> int:
     # immediate drag it is not.
     suffix = ".selected" if selected else ""
     record(root, f"{args.suite}{suffix}.tests", args.tests)
+    if verdict["collapsed"]:
+        print(f"gate-budget: suite scope COLLAPSED, commit BLOCKED - {verdict['why']}")
+        return 2
     if not verdict["ok"]:
         print(f"gate-budget: total NOT recorded - {verdict['why']}")
     return 0 if verdict["ok"] else 1

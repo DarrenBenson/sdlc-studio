@@ -1,9 +1,22 @@
 # RETRO-0086: RUN-01KYTKA1: the review debt cleared, and what clearing it found
 
 > **Date:** 2026-07-31
-> **Batch:** BG0413, BG0438, BG0442, BG0443, BG0444, BG0447, BG0439, BG0415, BG0417, BG0418, BG0422, BG0423, BG0429, BG0440, BG0448, BG0449, BG0452, BG0430, BG0445, US0452, US0454, US0455, US0457, US0458, US0459, US0532, US0557, US0558, US0559, US0561, US0563, US0570, US0571, US0575, US0576, BG0454, US0453, US0456, US0460, US0465, US0560, US0562, US0569, US0572, US0574, US0555
+> **Batch:** BG0413, BG0438, BG0442, BG0443, BG0444, BG0447, BG0439, BG0415, BG0417, BG0418, BG0422, BG0423, BG0429, BG0440, BG0448, BG0449, BG0452, BG0430, BG0445, US0452, US0454, US0455, US0457, US0458, US0459, US0532, US0557, US0558, US0559, US0561, US0563, US0570, US0571, US0575, US0576, BG0454, US0453, US0456, US0460, US0465, US0560, US0562, US0569, US0572, US0574, US0555, BG0456, BG0458, BG0461, BG0464, BG0465
 > **Goal:** No gate reports green over something it did not check, and the standing review debt goes to zero HONESTLY: every unit at Review carries an independent recorded verdict, every rejection carries a filed finding with an executed reproduction, and every gate this batch touches either checks what it claims or states plainly that it did not.
 > **Delivered:** 20 / 46   **Blocked:** 0
+
+**Batch corrected 2026-07-31.** Five review-repair bugs are added: **BG0456, BG0458, BG0461,
+BG0464, BG0465**. They were raised and Fixed inside this run - they are the repairs the prose
+below already describes by id - but they never entered the recorded batch, because a finding filed
+against a run is not automatically a unit of it. `close_owed detect` therefore reported them as
+owing a close that had already happened.
+
+**Two units are NOT added, and are recorded here rather than absorbed: BG0467 and BG0468.** Both
+were Fixed and committed on 2026-07-31 at 17:57Z and 20:16Z, hours after this run closed at
+09:15:12Z, with no run open. They are not this sprint's work and folding them in would make the
+record say a closed run delivered them. They are ad-hoc delivery - the thing the engagement floor
+exists to refuse - and they are carried into the next sprint as inherited debt, named as what
+they are.
 
 ## Delivered
 

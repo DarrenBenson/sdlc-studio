@@ -1,5 +1,16 @@
 # RETRO-0084: No stop-ship escapes: every defect this sprint creates is found and fixed inside the sprint by a review at each batch boundary, so the close certifies work already reviewed instead of discovering it, and no blocking defect is open at sign-off
 
+**SUPERSEDED by [RETRO-0085](RETRO0085-run-01kypz1g-the-close-found-four-stop-ships.md) on 2026-07-31.**
+This is an abandoned first scaffold for RUN-01KYPZ1G: it carries the same Batch line, the same
+Goal, and no replaced content - every field below is still the template's placeholder. RETRO0085
+is the filled retro for that run. **It records no delivery of its own and writes no VELOCITY
+row**; a row here would double-count RETRO0085's 37 units into the rate the planner quotes.
+
+It is kept rather than deleted because it is the evidence for BG0459: `retro validate` reports
+this file `ok` and demotes the unreplaced-scaffold finding to a warning, and `sprint close`
+discards that warning on a zero exit (BG0418). A wholly empty retro passing the content gate is
+the defect, and this is the specimen.
+
 > **Date:** 2026-07-30
 > **Batch:** BG0402, BG0403, BG0404, BG0405, BG0407, BG0411, BG0412, BG0414, BG0416, US0452, US0453, US0454, US0455, US0456, US0457, US0458, US0459, US0460, US0461, US0462, US0463, US0464, US0465, US0476, US0477, US0478, US0484, US0485, US0486, US0560, US0561, US0562, US0563, BG0441, BG0450, BG0453, BG0446
 > **Goal:** No stop-ship escapes: every defect this sprint creates is found and fixed inside the sprint by a review at each batch boundary, so the close certifies work already reviewed instead of discovering it, and no blocking defect is open at sign-off

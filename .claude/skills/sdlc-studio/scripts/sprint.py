@@ -8628,24 +8628,62 @@ def hook_per_commit_mode(root) -> dict:
     return {"mode": "none", "read": seen, "why": f"{where} runs no test suite"}
 
 
+#: The per-commit timing series the gate records after every run. The planner reads the SAME
+#: file the budget lane reads, so the two cannot report different costs for the same gate.
+GATE_TIMINGS_REL = "sdlc-studio/.local/gate-timings.json"
+
+
+def measured_gate_seconds(root) -> float | None:
+    """The most recent recorded full-run total, or None when nothing is recorded.
+
+    The LATEST run, not a median, matching what the budget lane reports: a median hides a
+    ratchet for as long as it takes half the window to turn over, and the ratchet is the thing
+    worth seeing. Reads `total` rather than `total.selected` - a selected run measures a
+    fraction of the suite and is not comparable with a full-run baseline.
+    """
+    try:
+        data = json.loads((Path(root) / GATE_TIMINGS_REL).read_text(encoding="utf-8"))
+        runs = [float(x) for x in data.get("total", []) if isinstance(x, (int, float))]
+    except (OSError, ValueError, AttributeError):
+        return None
+    return runs[-1] if runs else None
+
+
 def execution_cost(root) -> dict:
     """The measured cost of one full run, or None with the reason it is not known.
 
-    Read from the declared gate budget's baseline: a number a human chose against a
-    measurement and recorded with the date they took it. Never invented, and never defaulted
-    to zero - an unmeasured cost printed as 0 is the cheapest-looking claim a plan can make,
-    and it is made about the largest line in the sprint.
+    Prefers the MEASURED series the gate records over the declared baseline. Both are
+    real measurements; the difference is when they were taken. The baseline is a number a human
+    chose on a stated date, and it goes stale silently - it read 317s while the gate lane, over
+    the same commits, reported 554s against a 380s ceiling. Planning is the only point at which
+    gate cost can be traded against scope, so a plan that quotes the older figure removes the
+    trade, and it errs low, which is the direction that under-prices the ceremony.
+
+    Never invented, and never defaulted to zero - an unmeasured cost printed as 0 is the
+    cheapest-looking claim a plan can make, and it is made about the largest line in the sprint.
     """
-    seconds = config.get(root, "gate_budget.baseline_seconds", None)
     when = config.get(root, "gate_budget.baseline_date", None)
+    declared = config.get(root, "gate_budget.baseline_seconds", None)
     try:
-        seconds = float(seconds)
+        declared = float(declared)
     except (TypeError, ValueError):
+        declared = None
+    measured = measured_gate_seconds(root)
+    if measured is not None:
+        basis = f"the measured per-commit series ({GATE_TIMINGS_REL}, latest run)"
+        if declared is not None:
+            drift = (measured - declared) / declared * 100.0 if declared else 0.0
+            basis += (f"; the declared baseline is {declared:.0f}s"
+                      + (f" on {when}" if when else "") + f", {drift:+.0f}% since")
+        return {"seconds": measured, "basis": basis, "why": ""}
+    if declared is None:
         return {"seconds": None, "basis": None,
-                "why": "no `gate_budget.baseline_seconds` is declared, so a full run has "
-                       "never been measured here - the cost is UNKNOWN, which is not zero"}
-    basis = "gate_budget.baseline_seconds" + (f", measured {when}" if when else "")
-    return {"seconds": seconds, "basis": basis, "why": ""}
+                "why": "no `gate_budget.baseline_seconds` is declared and no run has been "
+                       "recorded, so a full run has never been measured here - the cost is "
+                       "UNKNOWN, which is not zero"}
+    basis = ("gate_budget.baseline_seconds" + (f", measured {when}" if when else "")
+             + " - no recorded run series, so the declared baseline is the only measurement")
+    return {"seconds": declared, "basis": basis, "why": ""}
 
 
 def execution_policy(root) -> dict:
@@ -8664,6 +8702,18 @@ def execution_policy(root) -> dict:
     # `none` costs zero because nothing runs - that IS the measurement. Every other mode
     # costs what a full run costs, or None when nobody has measured one.
     cost_s = {m: (0.0 if declared[m] == "none" else cost["seconds"]) for m in declared}
+    # The BREACH, stated on the plan. The budget lane already computes this verdict
+    # after every commit, where the only thing that can act on it is a human reading past it.
+    # Planning is the moment the cost can still be traded against scope, so the verdict has to
+    # reach the plan or the ceiling is a bound in name.
+    over = None
+    try:
+        ceiling = float(config.get(root, "gate_budget.seconds", None))
+    except (TypeError, ValueError):
+        ceiling = None
+    if ceiling and isinstance(cost["seconds"], (int, float)) and cost["seconds"] > ceiling:
+        over = {"seconds": cost["seconds"], "ceiling": ceiling,
+                "pct": (cost["seconds"] - ceiling) / ceiling * 100.0}
     hook = hook_per_commit_mode(root)
     if hook["mode"] == "unknown":
         divergence = (f"the policy declares per-commit `{declared['per_commit']}` and the "
@@ -8676,7 +8726,7 @@ def execution_policy(root) -> dict:
         divergence = None
     return {"declared": declared, "cost_s": cost_s, "cost_basis": cost["basis"],
             "cost_why": cost["why"], "measured": cost["seconds"] is not None,
-            "hook": hook, "divergence": divergence}
+            "hook": hook, "divergence": divergence, "over_budget": over}
 
 
 #: The plan record. One spelling, written by `plan --write` and read back by the close.
@@ -8878,6 +8928,13 @@ def render_execution_policy(pol: dict) -> list[str]:
     else:
         lines.append(f"  execution cost: NOT MEASURED - "
                      f"{pol.get('cost_why') or 'the record states no cost'}")
+    over = pol.get("over_budget")
+    if over:
+        lines.append(
+            f"  execution cost is OVER the declared ceiling: {over['seconds']:.0f}s measured "
+            f"against a {over['ceiling']:.0f}s budget ({over['pct']:+.0f}%). This is the point "
+            f"at which that cost can still be traded against scope - cut the batch, bring the "
+            f"gate back under, or re-derive the ceiling against the evidence and record why")
     if pol.get("divergence"):
         lines.append(f"  execution policy DIVERGES: {pol['divergence']}")
     return lines

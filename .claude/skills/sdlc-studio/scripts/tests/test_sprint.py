@@ -7913,7 +7913,7 @@ class _ExecutionPolicyFixture(unittest.TestCase):
     """A repo carrying a declared execution policy, a measured baseline and a commit hook."""
 
     def _repo(self, d, *, declared: dict | None = None, baseline: int | None = 317,
-              hook: str | None = _HOOK_SELECTS) -> Path:
+              hook: str | None = _HOOK_SELECTS, measured: list | None = None) -> Path:
         root = Path(d)
         (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
         cfg = ""
@@ -7926,7 +7926,93 @@ class _ExecutionPolicyFixture(unittest.TestCase):
         if hook is not None:
             (root / ".githooks").mkdir(parents=True, exist_ok=True)
             (root / ".githooks" / "pre-commit").write_text(hook, encoding="utf-8")
+        if measured is not None:
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True, exist_ok=True)
+            (local / "gate-timings.json").write_text(
+                json.dumps({"total": measured}), encoding="utf-8")
         return root
+
+
+class ExecutionCostSourceTests(_ExecutionPolicyFixture):
+    """BG0415: the budget lane and the planner disagreed by 44% about the same gate.
+
+    `budget` read the measured series and said 457s of a 380s ceiling; `sprint plan`, pricing
+    the same gate for the same sprint, read `gate_budget.baseline_seconds` and quoted 317s. The
+    error compounds with batch count, and planning is the only point at which gate cost can
+    still be traded against scope, so under-pricing it removes the trade.
+    """
+
+    def test_the_plans_figure_tracks_the_MEASURED_series(self) -> None:
+        """AC3, and the point of the unit: move the series, watch the number move. Asserting the
+        current constant would pass just as well against the stale baseline read."""
+        sprint = _load()
+        seen = []
+        for series in ([300.0, 310.0, 320.0], [540.0, 548.0, 554.0]):
+            with tempfile.TemporaryDirectory() as d:
+                root = self._repo(d, measured=series)
+                seen.append(sprint.execution_cost(root)["seconds"])
+        self.assertEqual(seen, [320.0, 554.0],
+                         "the plan quotes a fixed baseline whatever the gate actually costs")
+
+    def test_the_measured_read_wins_over_the_declared_baseline(self) -> None:
+        """One number, one source. With both present the plan and the budget lane must not be
+        able to report different costs for the same gate."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, baseline=317, measured=[554.0])
+            cost = sprint.execution_cost(root)
+        self.assertEqual(cost["seconds"], 554.0)
+        self.assertIn("measured", cost["basis"])
+
+    def test_the_declared_baseline_is_the_fallback_not_the_source(self) -> None:
+        """A consuming project that records no timing series still gets a priced plan - the
+        baseline remains a real measurement someone took, it is simply the weaker one."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, baseline=317, measured=None)
+            cost = sprint.execution_cost(root)
+        self.assertEqual(cost["seconds"], 317.0)
+        self.assertIn("baseline_seconds", cost["basis"])
+
+    def test_neither_source_is_still_UNKNOWN_and_never_zero(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, baseline=None, measured=None)
+            cost = sprint.execution_cost(root)
+        self.assertIsNone(cost["seconds"])
+        self.assertIn("UNKNOWN", cost["why"])
+
+    def test_an_unreadable_series_falls_back_rather_than_reporting_a_number(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, baseline=317)
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True, exist_ok=True)
+            (local / "gate-timings.json").write_text("{not json", encoding="utf-8")
+            cost = sprint.execution_cost(root)
+        self.assertEqual(cost["seconds"], 317.0, "a corrupt series produced a fabricated cost")
+
+    def test_a_plan_produced_while_the_gate_is_OVER_says_so_with_both_numbers(self) -> None:
+        """AC2. The verdict belongs on the plan, because planning is the moment the cost can
+        still be traded against scope - and an OVER that only a human ever reads is a bound in
+        name only."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, baseline=317, measured=[554.0])
+            text = "\n".join(sprint.render_execution_policy(sprint.execution_policy(root)))
+        self.assertIn("OVER", text)
+        self.assertIn("554", text)
+        self.assertIn("380", text, "the ceiling is not stated, so the breach cannot be judged")
+
+    def test_a_gate_under_its_ceiling_states_no_breach(self) -> None:
+        """The positive control: without it, a renderer that printed OVER unconditionally would
+        pass the test above."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, baseline=317, measured=[300.0])
+            text = "\n".join(sprint.render_execution_policy(sprint.execution_policy(root)))
+        self.assertNotIn("OVER", text)
 
 
 class TestStrategyPolicyTests(_ExecutionPolicyFixture):

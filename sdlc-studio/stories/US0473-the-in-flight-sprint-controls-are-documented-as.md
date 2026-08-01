@@ -5,7 +5,7 @@
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/reference-sprint.md, tools/check_budgets.py, .claude/skills/sdlc-studio/scripts/tests/test_help_structure.py, tools/tests/test_check_budgets.py, changelog.d/{{US-id}}.md
+> **Affects:** .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/reference-sprint.md, tools/check_budgets.py, .claude/skills/sdlc-studio/scripts/tests/test_help_structure.py, tools/tests/test_check_budgets.py, changelog.d/US0473.md
 > **Epic:** EP0171
 > **Points:** 3
 

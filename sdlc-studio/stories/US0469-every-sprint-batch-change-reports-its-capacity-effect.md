@@ -5,7 +5,7 @@
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_batch_capacity.py, changelog.d/{{US-id}}.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_batch_capacity.py, changelog.d/US0469.md
 > **Epic:** EP0171
 > **Points:** 5
 
