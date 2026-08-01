@@ -587,6 +587,12 @@ One row has been removed since adoption.
 | US0580 | REJECT | independent-critic:eng+qa+product:a59e647b | Claude Opus 5 (authoring session) | 2026-08-01 | a59e647b23cf | [new] BG0484 F4 the untagged-finding guard was unpinned - deleting it left the whole suite green; [new] BG0484 F5 three docstrings falsified by their own diff |
 | US0579 | APPROVE | independent-critic:eng+qa+product:a59e647b | Claude Opus 5 (authoring session) | 2026-08-01 | a59e647b23cf | none blocking |
 | US0582 | APPROVE | independent-critic:eng+qa+product:a59e647b | Claude Opus 5 (authoring session) | 2026-08-01 | a59e647b23cf | none blocking |
+| US0577 | APPROVE | independent-critic:confirmation:ab8154e3 | Claude Opus 5 (authoring session) | 2026-08-01 | ab8154e3d666 | none blocking |
+| US0578 | APPROVE | independent-critic:confirmation:ab8154e3 | Claude Opus 5 (authoring session) | 2026-08-01 | ab8154e3d666 | none blocking |
+| US0580 | APPROVE | independent-critic:confirmation:ab8154e3 | Claude Opus 5 (authoring session) | 2026-08-01 | ab8154e3d666 | none blocking |
+| US0583 | APPROVE | independent-critic:confirmation:ada67ca4 | Claude Opus 5 (authoring session) | 2026-08-01 | ada67ca41c5b | none blocking |
+| US0585 | APPROVE | independent-critic:confirmation:ada67ca4 | Claude Opus 5 (authoring session) | 2026-08-01 | ada67ca41c5b | none blocking |
+| US0597 | APPROVE | independent-critic:confirmation:ada67ca4 | Claude Opus 5 (authoring session) | 2026-08-01 | ada67ca41c5b | none blocking |
 
 ## Supersessions
 

@@ -157,7 +157,7 @@ class DiscriminationTests(unittest.TestCase):
         """Mutant: delete the `if not new_nums: continue` guard in claim_drift.
 
         Without it this diff yields a finding whose `code` is the empty string, printing as
-        `... while tools/retry.py in this diff carries ''`. That was 191 of 235 findings over
+        `... while tools/retry.py in this diff carries ''`. That was 135 of 215 findings over
         the 40-commit replay - a report naming nothing the reader can act on.
         """
         findings = self._drift(self.NO_INT_ADDED)

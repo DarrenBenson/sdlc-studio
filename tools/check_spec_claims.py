@@ -482,10 +482,14 @@ def claim_drift(diff: str, root=None) -> list[dict]:
                 # Nothing on the added side carries an integer, so `old_nums - new_nums` is the
                 # WHOLE removed set and every number in it reads as replaced - by a value that
                 # does not exist. The finding then prints `carries ''`, naming no code the reader
-                # can act on. Replayed over the 40 commits to 3570c94a this was 191 of 235
-                # findings, 81% of the lane's entire output, and it is what a pure deletion or a
-                # `-RETRIES = 2` / `+RETRIES = LIMIT` hunk produces. There is no replacement to
-                # reason about here, so the correct output is nothing (BG0479).
+                # can act on. Replayed over the 40 commits to 3570c94a this replay measured
+                # 135 of 215 findings, 63%; the independent seat that raised it measured 191
+                # of 235 on the same window, the gap being the changelog corpus that grew
+                # between the two runs. Both are recorded in the evidence file rather than
+                # reconciled into one, because neither reproduced the other. This is what a
+                # pure deletion, or a `-RETRIES = 2` / `+RETRIES = LIMIT` hunk, produces. There
+                # is no replacement to reason about here, so the correct output is nothing
+                # (BG0479).
                 continue
             for gone in old_nums - new_nums:
                 # carry the value it moved TO, so prose that narrates the change honestly
