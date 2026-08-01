@@ -23,6 +23,7 @@ Each finding here is Low-severity on its own; the batch is triaged, then actione
 ## Consolidated Findings
 
 - **A repo-root file cannot be declared in Affects without a leading ./ and nothing says so**: `affects_files` does not read a bare root-level filename as a path, so `Affects: package-lock.json` parses to nothing and the grooming gate refuses the filing as UNGROOMED. `./package-lock.json` works. The refusal text explains that a prose phrase or bare word counts as no Affects at all, but never says that a legitimate repo-root file needs the `./`, so the author is told what is wrong without being told what to type.
+- **close_preflight's RunStateError early return sets gate_ran but nothing pins it, and close_dry_run crashes on the same corrupt state**: Round-4 review, non-blocking. close_preflight has four returns; three now pin gate_ran and the RunStateError branch does not - hardcoding it to True there SURVIVES the full suite. The behaviour is correct today (a corrupt run state reports gate_ran False), so this is a coverage gap on a correct line rather than a live defect. Separately and pre-existing: with the same corrupt run state, `close_dry_run`'s `state = run_state.read(scratch) or {}` raises RunStateError uncaught, because the enclosing `try` carries only a `finally` and no `except`. cmd_close guards run-state faults before reaching the dry run, so it is unreachable from the CLI and bites only a direct library caller.
 
 ## Revision History
 

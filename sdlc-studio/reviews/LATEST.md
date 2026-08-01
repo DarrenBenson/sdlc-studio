@@ -1,7 +1,7 @@
 # Latest review anchor
 
 <!-- close-status:begin -->
-> **RUN-01KYTKA1 closed stopped.** 20 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> **RUN-01KYX375 closed stopped.** 9 unit(s) in the batch. This was a `plan` rung, not a build - its units end at their own terminal and no Done sign-off is owed.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 

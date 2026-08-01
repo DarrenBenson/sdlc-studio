@@ -130,4 +130,4 @@ it. Compare a fan-out sprint's rate with a single-thread sprint's only with that
 | RETRO0083 | 2026-07-29 | 52 | 0 | 48 | 107 | 6,829,164 | - | - | - | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: no unit carries per-unit telemetry and no sprint total was supplied, so the sprint's token cost is unrecorded rather than 0 | - |
 | RETRO0085 | 2026-07-30 | 44 | 0 | 32 | 115 | 5,168,016 | - | - | - | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | not attributable: no unit carries per-unit telemetry and no sprint total was supplied, so the sprint's token cost is unrecorded rather than 0 | - |
 | RETRO0086 | 2026-07-31 | 46 | 0 | 39 | 57 | 5,675,589 | 4,538,485 | - | 79,623 | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | harness |
-| RETRO0087 | 2026-08-01 | 37 | 0 | 31 | 27 | 5,814,018 | 1,142,349 | - | 42,309 | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | mixed | - | harness |
+| RETRO0087 | 2026-08-01 | 37 | 0 | 31 | 27 | 5,814,018 | 1,142,349 | - | 42,309 | 0 | - | - | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | harness |

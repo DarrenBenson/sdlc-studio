@@ -109,8 +109,21 @@ silently wrong on the path where its helper is absent, broken, or never ran.*
 All three are repaired: the signoff path fails closed and reads critic's now-public
 `is_awaiting_signoff`; the preflight reports `gate_ran` and an unreached gate is `unevaluated`,
 never `ok`; and `tools/tests/test_precommit_scope_collapse_lane.py` drives the real hook and
-kills all three surviving hook mutants. **A round-4 confirmation pass is owed** - the authoring
-session cannot approve its own corrections, which is the rule that produced every finding here.
+kills all three surviving hook mutants.
+
+**Round 4 confirmed all three and APPROVED.** Baselines taken before any mutation and
+re-confirmed identically after (5,676 skill / 593 tools, both green), every claimed mutant
+killed, the short-circuit trap closed by instrumenting the real path, `clean` reachable again
+under the REAL preflight, and the hook mutants killed against the full tools suite and
+attributed to the new module specifically. No new damage: `gate_ran` is purely additive across
+`close_preflight`'s three callers, and all thirteen repo guards exit 0. Two non-blocking
+findings were raised and filed into CR0511 - a coverage gap on the fourth (RunStateError)
+return where `gate_ran` is correct but unpinned, and a pre-existing uncaught `RunStateError`
+in `close_dry_run` that `cmd_close` guards before it can be reached.
+
+**Four review rounds to get nine units past the gate.** That ratio is the honest headline of
+this sprint, and it is not an argument against the reviews - three of the four found real
+defects that the author, the tests and the gate had all missed.
 
 ## What went well
 
@@ -218,6 +231,19 @@ ruling HOLDS the close, which is the point of being able to make one.
 | BG0468 | not-stop-ship | Darren Benson | 2026-08-01 |
 | BG0469 | deferred | Darren Benson | 2026-08-01 |
 | BG0415 | accepted-risk | Darren Benson | 2026-08-01 |
+| BG0462 | deferred | Darren Benson | 2026-08-01 |
+| CR0509 | not-stop-ship | Darren Benson | 2026-08-01 |
+| CR0510 | not-stop-ship | Darren Benson | 2026-08-01 |
+
+**On the three rulings added at close.** CR0509 - a review worktree opening at a stale base -
+was corroborated four times over by this run: every one of the four independent reviewers began
+7 to 9 commits behind and had to fast-forward before the units under review even existed in
+their tree. Two of them said so unprompted in their first paragraph. It is not stop-ship because
+each reviewer detected it and recovered, but it cost real tokens four times and it is the single
+cheapest fix available to the review loop. CR0510 - ceremony proportional to blast radius - is
+likewise not stop-ship and is directly evidenced here: a documentation-only unit paid the same
+~350s gate as a change to the commit hook. BG0462 is deferred: it is a real guard weakness on
+the version-discovery test, unrelated to anything this batch touched.
 
 ## Estimate vs actual
 
@@ -350,3 +376,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: {{tokens}} · Duration: {{duration}} · Critic rejects: {{rejects}}
+
+## Handoff
+
+- [HO-0039](../handoffs/HO0039-the-sprint-run-is-a-controllable-object-end.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

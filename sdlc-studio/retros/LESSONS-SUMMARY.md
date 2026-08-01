@@ -2,6 +2,14 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0273: **Stopping is a delivery decision, and it is cheaper than half-building.** BG0448 was left untouched rather than part-built, because its...**
+- **L-0272: **Check the criterion's verifier can FAIL before ticking it.** Two criteria here were `Verified: yes` over tests that passed at the commit...**
+- **L-0271: **A selected test run cannot tell you the tree is green.** Six commits passed a gate that never ran the test my first commit broke.**
+- **L-0270: **An assertion over the set of every possible value holds nothing.** `assertIn(status, {"ok", "refuse", "unevaluated"})` cannot fail, and...**
+- **L-0269: **A test asserting against a fixture it built itself proves the reader, not the file.** BG0372's criteria passed against a hand-written...**
+- **L-0268: **Two components that measure the same thing will disagree, and both will look green.** BG0415: the budget lane and the planner differed by...**
+- **L-0267: **A guard whose only consequence is a missing record is not a guard.** BG0413's scope floor computed the right verdict for a 91% test loss...**
+- **L-0266: **A plan flagged as over-appetite at plan time is over-appetite.** The velocity record said 107-112 points and the previous sprint...**
 - **L-0265: A floor tolerates the failure it was written to catch.**
 - **L-0264: The grade of authority a correction needs should scale with the direction its mistake fails.**
 - **L-0263: A whole-file substring assertion over a document that also carries a Revision History is satisfied by the Revision History row describing...**
