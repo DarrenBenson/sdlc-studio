@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 17 |
 | Approved | 0 |
-| In Progress | 37 |
-| Complete | 445 |
+| In Progress | 36 |
+| Complete | 446 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 22 |
@@ -338,7 +338,7 @@
 | [CR-0514](CR0514-the-amigo-panel-signs-off-a-sprint-to.md) | The amigo panel signs off a sprint to completion: a different seat from the one that reviewed it, gated on brief provenance and a converging review loop | Proposed | High | Feature | 2026-08-01 | -- |
 | [CR-0515](CR0515-an-agent-customises-content-never-tooling-hand-rolled.md) | An agent customises content, never tooling: hand-rolled work is detected from the run diff, reported at the close, and escapes only by filing the gap | In Progress | High | Feature | 2026-08-01 | EP0196 |
 | [CR-0516](CR0516-two-mechanical-tasks-have-no-tool-review-batch.md) | Two mechanical tasks have no tool: review-batch findings cannot survive the shell, and no command reports backlog points | Proposed | Medium | Improvement | 2026-08-01 | -- |
-| [CR-0517](CR0517-run-the-claim-inventory-pass-at-delivery-not.md) | Run the claim-inventory pass at delivery, not at review: every blocking finding of the corrected review loop was prose disagreeing with code in the same diff | In Progress | High | Feature | 2026-08-01 | EP0195 |
+| [CR-0517](CR0517-run-the-claim-inventory-pass-at-delivery-not.md) | Run the claim-inventory pass at delivery, not at review: every blocking finding of the corrected review loop was prose disagreeing with code in the same diff | Complete | High | Feature | 2026-08-01 | EP0195 |
 | [CR-0518](CR0518-a-sprint-run-has-a-tool-runbook-it.md) | a sprint run has a tool runbook it is made to read before it plans | Proposed | High | Improvement | 2026-08-01 | -- |
 | [CR-0519](CR0519-a-suite-verdict-is-read-from-a-file.md) | a suite verdict is read from a file, never from a pipe that can swallow the exit code | Proposed | High | Improvement | 2026-08-01 | -- |
 | [CR-0520](CR0520-a-criterion-verified-only-through-the-library-is.md) | a criterion verified only through the library is not evidence the feature ships | Proposed | High | Improvement | 2026-08-01 | -- |

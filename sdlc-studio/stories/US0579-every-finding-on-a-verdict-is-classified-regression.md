@@ -1,6 +1,6 @@
 # US0579: Every finding on a verdict is classified REGRESSION, NEW or PRE-EXISTING, and an unclassified verdict is refused
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0512
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

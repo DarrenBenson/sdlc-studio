@@ -14,12 +14,12 @@ Decomposed from CR0512. Delivers the work CR0512 requested.
 
 ## Story Breakdown
 
-- [ ] [US0577: A recorded review verdict carries the provenance of the brief it was given, so a hand-written prompt is detectable](../stories/US0577-a-recorded-review-verdict-carries-the-provenance-of.md)
-- [ ] [US0578: Recording a verdict with no brief provenance is REFUSED, and the refusal names critic.py brief](../stories/US0578-recording-a-verdict-with-no-brief-provenance-is.md)
-- [ ] [US0579: Every finding on a verdict is classified REGRESSION, NEW or PRE-EXISTING, and an unclassified verdict is refused](../stories/US0579-every-finding-on-a-verdict-is-classified-regression.md)
-- [ ] [US0580: Only REGRESSION and NEW hold a gate: a PRE-EXISTING finding is reported and does not block](../stories/US0580-only-regression-and-new-hold-a-gate-a.md)
+- [x] [US0577: A recorded review verdict carries the provenance of the brief it was given, so a hand-written prompt is detectable](../stories/US0577-a-recorded-review-verdict-carries-the-provenance-of.md)
+- [x] [US0578: Recording a verdict with no brief provenance is REFUSED, and the refusal names critic.py brief](../stories/US0578-recording-a-verdict-with-no-brief-provenance-is.md)
+- [x] [US0579: Every finding on a verdict is classified REGRESSION, NEW or PRE-EXISTING, and an unclassified verdict is refused](../stories/US0579-every-finding-on-a-verdict-is-classified-regression.md)
+- [x] [US0580: Only REGRESSION and NEW hold a gate: a PRE-EXISTING finding is reported and does not block](../stories/US0580-only-regression-and-new-hold-a-gate-a.md)
 - [ ] [US0581: A finding matching an open Bug or CR is annotated with that id automatically and never blocks](../stories/US0581-a-finding-matching-an-open-bug-or-cr.md)
-- [ ] [US0582: The shipped doctrine states the review scope rule, so a consuming project inherits the bound and not just the ceremony](../stories/US0582-the-shipped-doctrine-states-the-review-scope-rule.md)
+- [x] [US0582: The shipped doctrine states the review scope rule, so a consuming project inherits the bound and not just the ceremony](../stories/US0582-the-shipped-doctrine-states-the-review-scope-rule.md)
 
 ## Acceptance Criteria (Epic Level)
 

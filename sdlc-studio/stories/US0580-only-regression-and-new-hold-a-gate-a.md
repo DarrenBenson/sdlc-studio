@@ -1,6 +1,6 @@
 # US0580: Only REGRESSION and NEW hold a gate: a PRE-EXISTING finding is reported and does not block
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0512
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

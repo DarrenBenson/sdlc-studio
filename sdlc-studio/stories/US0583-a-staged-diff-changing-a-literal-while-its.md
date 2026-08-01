@@ -1,6 +1,6 @@
 # US0583: A staged diff changing a literal while its own prose still states the old value is flagged, naming both sites, and a diff whose prose agrees produces no finding
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0517
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

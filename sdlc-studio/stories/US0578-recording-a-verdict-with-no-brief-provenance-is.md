@@ -1,6 +1,6 @@
 # US0578: Recording a verdict with no brief provenance is REFUSED, and the refusal names critic.py brief
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0512
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

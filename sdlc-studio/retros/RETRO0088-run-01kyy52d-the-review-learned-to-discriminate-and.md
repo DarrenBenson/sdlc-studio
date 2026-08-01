@@ -146,6 +146,10 @@ sprints fits noise.
 | **Batch (rated units only)** | **0** | **0** | **0** | - | **-** | | **-** | - |
 
 **0 of 9 unit(s) measured; 9 of 9 forecast at plan time.**
+
+**Velocity: 3.21 points/elapsed-hour** (36 points over 11.212h, run-state, ceremony included). This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
+
+  secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 Unmeasured: US0577, US0578, US0579, US0580, US0582, US0583, US0584, US0585, US0597. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
 No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
 
@@ -210,3 +214,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: not-yet-captured (interactive run; captured by `accuracy --tokens-from-harness` at close) · Duration: one interactive session · Critic rejects: 6 unit-level REJECTs across two boundary reviews, all repaired in-batch, both spans then cleared by a fresh pass
+
+## Handoff
+
+- [HO-0040](../handoffs/HO0040-a-review-costs-what-it-should-the-claim.md) - 9 remaining item(s): 0 copilot-tail, 9 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

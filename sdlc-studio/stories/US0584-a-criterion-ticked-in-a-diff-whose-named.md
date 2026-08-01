@@ -1,6 +1,6 @@
 # US0584: A criterion ticked in a diff whose named surface that diff does not touch is flagged, and one whose surface it does touch is not
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0517
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

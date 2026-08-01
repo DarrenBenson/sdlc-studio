@@ -1,6 +1,6 @@
 # CR-0517: Run the claim-inventory pass at delivery, not at review: every blocking finding of the corrected review loop was prose disagreeing with code in the same diff
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0195
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

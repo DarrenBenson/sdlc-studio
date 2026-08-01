@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 21 |
+| Draft | 20 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 176 |
+| Done | 177 |
 | **Total** | **197** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -217,6 +217,6 @@
 | [EP0192](EP0192-the-sprint-report-is-one-derived-artefact-and.md) | The sprint report is one derived artefact, and the close refuses without it | Done | 7 | -- | 2026-07-30 | 2026-07-30 |
 | [EP0193](EP0193-the-mutation-lane-tells-an-uncommitted-surface-apart.md) | The mutation lane tells an uncommitted surface apart from an untested one | Draft | 1 | -- | 2026-07-30 | 2026-07-30 |
 | [EP0194](EP0194-a-unit-review-is-bounded-briefed-by-the.md) | A unit review is bounded, briefed by the tool, and blocks only on what the unit broke | Draft | 6 | -- | 2026-08-01 | 2026-08-01 |
-| [EP0195](EP0195-the-claim-inventory-runs-at-delivery-where-a.md) | The claim inventory runs at delivery, where a stale sentence costs seconds instead of a review round | Draft | 4 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0195](EP0195-the-claim-inventory-runs-at-delivery-where-a.md) | The claim inventory runs at delivery, where a stale sentence costs seconds instead of a review round | Done | 4 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0196](EP0196-hand-rolled-work-is-visible-the-close-names.md) | Hand-rolled work is visible: the close names what an agent did by hand instead of by tool | Draft | 5 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0197](EP0197-the-close-checklist-fires-where-an-item-can.md) | The close checklist fires where an item can still be satisfied, and reads verdicts rather than counts | Draft | 6 | -- | 2026-08-01 | 2026-08-01 |

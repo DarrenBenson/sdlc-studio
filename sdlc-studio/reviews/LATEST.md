@@ -1,3 +1,8 @@
+
+<!-- close-status:begin -->
+> **RUN-01KYY52D closed goal-reached.** 9 unit(s) in the batch. **Sign-off is RECORDED** - nothing is owed on this run.
+> Stamped by `sprint close` - edit the prose below, not this block.
+<!-- close-status:end -->
 > **Review of record:** [RV0025](RV0025-run-01kyy52d-the-review-learned-to-discriminate.md) - RUN-01KYY52D closing review, verdict APPROVE.
 
 ## Landed: RUN-01KYY52D - the review learned to discriminate, and then failed its own new rule

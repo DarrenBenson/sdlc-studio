@@ -1,6 +1,6 @@
 # US0582: The shipped doctrine states the review scope rule, so a consuming project inherits the bound and not just the ceremony
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0512
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

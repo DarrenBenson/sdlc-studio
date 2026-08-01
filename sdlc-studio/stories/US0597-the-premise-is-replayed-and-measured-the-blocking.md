@@ -1,6 +1,6 @@
 # US0597: The premise is replayed and measured: the blocking-finding count before and after, and the lane run over the three diffs that motivated it
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

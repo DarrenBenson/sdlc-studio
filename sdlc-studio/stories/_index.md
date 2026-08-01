@@ -11,8 +11,8 @@
 | Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 9 |
-| Done | 549 |
+| Review | 0 |
+| Done | 558 |
 | Won't Implement | 1 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -488,15 +488,15 @@
 | [US0574](US0574-the-checklist-is-one-row-per-stage-of.md) | the checklist is one row per STAGE of the sprint cycle, each stating ran, not-run or waived | Done | EP0192 | 2026-07-30 | 2026-07-30 |
 | [US0575](US0575-the-review-row-names-who-reviewed-what-under.md) | the review row names who reviewed what, under which seat, over how many lenses | Done | EP0192 | 2026-07-30 | 2026-07-30 |
 | [US0576](US0576-impediments-survive-the-close-blocked-units-and-unresolved.md) | impediments survive the close: blocked units and unresolved operator decisions are reported with what is in the way | Done | EP0192 | 2026-07-30 | 2026-07-30 |
-| [US0577](US0577-a-recorded-review-verdict-carries-the-provenance-of.md) | A recorded review verdict carries the provenance of the brief it was given, so a hand-written prompt is detectable | Review | EP0194 | 2026-08-01 | 2026-08-01 |
-| [US0578](US0578-recording-a-verdict-with-no-brief-provenance-is.md) | Recording a verdict with no brief provenance is REFUSED, and the refusal names critic.py brief | Review | EP0194 | 2026-08-01 | 2026-08-01 |
-| [US0579](US0579-every-finding-on-a-verdict-is-classified-regression.md) | Every finding on a verdict is classified REGRESSION, NEW or PRE-EXISTING, and an unclassified verdict is refused | Review | EP0194 | 2026-08-01 | 2026-08-01 |
-| [US0580](US0580-only-regression-and-new-hold-a-gate-a.md) | Only REGRESSION and NEW hold a gate: a PRE-EXISTING finding is reported and does not block | Review | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0577](US0577-a-recorded-review-verdict-carries-the-provenance-of.md) | A recorded review verdict carries the provenance of the brief it was given, so a hand-written prompt is detectable | Done | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0578](US0578-recording-a-verdict-with-no-brief-provenance-is.md) | Recording a verdict with no brief provenance is REFUSED, and the refusal names critic.py brief | Done | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0579](US0579-every-finding-on-a-verdict-is-classified-regression.md) | Every finding on a verdict is classified REGRESSION, NEW or PRE-EXISTING, and an unclassified verdict is refused | Done | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0580](US0580-only-regression-and-new-hold-a-gate-a.md) | Only REGRESSION and NEW hold a gate: a PRE-EXISTING finding is reported and does not block | Done | EP0194 | 2026-08-01 | 2026-08-01 |
 | [US0581](US0581-a-finding-matching-an-open-bug-or-cr.md) | A finding matching an open Bug or CR is annotated with that id automatically and never blocks | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
-| [US0582](US0582-the-shipped-doctrine-states-the-review-scope-rule.md) | The shipped doctrine states the review scope rule, so a consuming project inherits the bound and not just the ceremony | Review | EP0194 | 2026-08-01 | 2026-08-01 |
-| [US0583](US0583-a-staged-diff-changing-a-literal-while-its.md) | A staged diff changing a literal while its own prose still states the old value is flagged, naming both sites, and a diff whose prose agrees produces no finding | Review | EP0195 | 2026-08-01 | 2026-08-01 |
-| [US0584](US0584-a-criterion-ticked-in-a-diff-whose-named.md) | A criterion ticked in a diff whose named surface that diff does not touch is flagged, and one whose surface it does touch is not | Review | EP0195 | 2026-08-01 | 2026-08-01 |
-| [US0585](US0585-the-claim-drift-lane-runs-in-the-commit.md) | The claim-drift lane runs in the commit gate as advisory, and its yield over one sprint is recorded before any decision to make it block | Review | EP0195 | 2026-08-01 | 2026-08-01 |
+| [US0582](US0582-the-shipped-doctrine-states-the-review-scope-rule.md) | The shipped doctrine states the review scope rule, so a consuming project inherits the bound and not just the ceremony | Done | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0583](US0583-a-staged-diff-changing-a-literal-while-its.md) | A staged diff changing a literal while its own prose still states the old value is flagged, naming both sites, and a diff whose prose agrees produces no finding | Done | EP0195 | 2026-08-01 | 2026-08-01 |
+| [US0584](US0584-a-criterion-ticked-in-a-diff-whose-named.md) | A criterion ticked in a diff whose named surface that diff does not touch is flagged, and one whose surface it does touch is not | Done | EP0195 | 2026-08-01 | 2026-08-01 |
+| [US0585](US0585-the-claim-drift-lane-runs-in-the-commit.md) | The claim-drift lane runs in the commit gate as advisory, and its yield over one sprint is recorded before any decision to make it block | Done | EP0195 | 2026-08-01 | 2026-08-01 |
 | [US0586](US0586-every-skill-script-records-the-artefact-it-touched.md) | Every skill script records the artefact it touched and the action it performed, per run | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
 | [US0587](US0587-an-artefact-changed-in-the-run-diff-with.md) | An artefact changed in the run diff with no tool provenance is reported by name at the close | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
 | [US0588](US0588-a-hand-rolled-action-carrying-a-filed-gap.md) | A hand-rolled action carrying a filed gap id is reported and does not block; one without is outstanding | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
@@ -508,7 +508,7 @@
 | [US0594](US0594-a-unit-whose-ticked-criteria-the-tree-contradicts.md) | A unit whose ticked criteria the tree contradicts is reported outstanding at the close | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0595](US0595-a-waiver-records-whether-it-was-deliberate-or.md) | A waiver records whether it was deliberate or its window had already expired, and the retro counts them apart | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0596](US0596-coverage-is-computed-once-and-two-rows-disagreeing.md) | Coverage is computed once, and two rows disagreeing about it is itself an outstanding item | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
-| [US0597](US0597-the-premise-is-replayed-and-measured-the-blocking.md) | The premise is replayed and measured: the blocking-finding count before and after, and the lane run over the three diffs that motivated it | Review | EP0195 | 2026-08-01 | 2026-08-01 |
+| [US0597](US0597-the-premise-is-replayed-and-measured-the-blocking.md) | The premise is replayed and measured: the blocking-finding count before and after, and the lane run over the three diffs that motivated it | Done | EP0195 | 2026-08-01 | 2026-08-01 |
 
 ## Archived Releases
 

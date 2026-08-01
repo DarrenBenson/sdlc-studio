@@ -1,6 +1,6 @@
 # US0577: A recorded review verdict carries the provenance of the brief it was given, so a hand-written prompt is detectable
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0512
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
