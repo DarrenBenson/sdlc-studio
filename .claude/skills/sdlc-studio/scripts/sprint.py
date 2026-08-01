@@ -5624,7 +5624,10 @@ def close_preflight(root, retro_id: str | None = None) -> dict:
     cannot simply run the chain with a dry-run flag: three of the chain's steps exist to DO
     something, and a preview that performed half a close would be a worse answer than none.
 
-    Returns {"ready": bool, "blockers": [{"stage", "detail", "remedy"}]}.
+    Returns {"ready": bool, "blockers": [{"stage", "detail", "remedy"}],
+    "gate_ran": bool}. `gate_ran` is load-bearing: the dry run reports the gate's
+    verdict from here rather than re-running it, and an early return that never
+    reached the gate must not be reportable as a gate that passed.
     """
     import gate   # noqa: PLC0415 - deferred, so `plan` never pays for the gate import graph
     import retro  # noqa: PLC0415 - deferred, like the planner's retro import
@@ -5638,10 +5641,11 @@ def close_preflight(root, retro_id: str | None = None) -> dict:
     try:
         state = run_state.read(root)
     except run_state.RunStateError as exc:
-        return {"ready": False, "blockers": [{"stage": "run-state", "detail": str(exc),
-                                              "remedy": "repair or remove the run state"}]}
+        return {"ready": False, "gate_ran": False,
+                "blockers": [{"stage": "run-state", "detail": str(exc),
+                              "remedy": "repair or remove the run state"}]}
     if not state:
-        return {"ready": False, "blockers": [{
+        return {"ready": False, "gate_ran": False, "blockers": [{
             "stage": "run-state", "detail": "no run state",
             "remedy": "`sprint plan --write` opens the run this close would end"}]}
     if not state.get("sprint_goal"):
@@ -5672,12 +5676,14 @@ def close_preflight(root, retro_id: str | None = None) -> dict:
     # whole workspace and an out-of-batch unit's debt - a different author, a different epic -
     # blocks a fully delivered in-batch close. The batch is what this close owns.
     batch_scope = {sdlc_md.norm_id(b) for b in (state.get("batch") or [])}
+    gate_ran = False
     try:
         report = gate.run_gate(str(root), require_retro=retro_id, require_review=True,
                                conformance_scope=batch_scope)
     except Exception as exc:  # noqa: BLE001 - a broken lane must not hide the other blockers
         block("gate", f"gate could not run: {exc}", "run `gate.py` directly for detail")
     else:
+        gate_ran = True
         for c in report.get("checks", []):
             if c.get("status") == "fail" and c.get("blocking"):
                 block("gate", f"{c['check']}: {c.get('detail', '')}",
@@ -5702,7 +5708,7 @@ def close_preflight(root, retro_id: str | None = None) -> dict:
               drift["remedy"])
 
     blockers.extend(_signoff_preflight(root, state))
-    return {"ready": not blockers, "blockers": blockers}
+    return {"ready": not blockers, "blockers": blockers, "gate_ran": gate_ran}
 
 
 def _signoff_preflight(root: Path, state: dict) -> list[dict]:
@@ -5866,13 +5872,24 @@ def close_dry_run(root, retro_id: str | None = None) -> dict:
         state = run_state.read(scratch) or {}
         rid = retro_id or _dry_run_retro(scratch, state, note)
         gate_refused = any(b["stage"] == "gate" for b in pre["blockers"])
+        # Did the preflight ACTUALLY reach the gate? It has early returns that come back on a
+        # run-state fault without ever calling `run_gate`, and "no gate blocker" cannot tell
+        # that from a clean pass. Reporting `ok` there stated a fact about the most expensive
+        # step in the chain that was simply untrue - a false positive traded for the false
+        # negative the previous attempt produced. Absent key = did not run.
+        gate_ran = bool(pre.get("gate_ran"))
         for step in DRY_RUN_ACTION_STEPS:
             if step in DRY_RUN_FROM_PREFLIGHT:
                 # Its verdict is the preflight's. A refusal is already on the report as a
-                # blocker, so noting it again would double-count it; a clean preflight means
-                # the gate RAN and passed, which is an `ok` this preview can honestly report.
-                if not gate_refused:
+                # blocker, so noting it again would double-count the same refusal.
+                if gate_refused:
+                    pass
+                elif gate_ran:
                     note(step, "ok", DRY_RUN_FROM_PREFLIGHT[step])
+                else:
+                    note(step, "unevaluated",
+                         "the preflight returned before reaching the gate, so it was not run",
+                         "clear the refusal above, then re-run the dry run")
                 continue
             if rid is None and step.startswith("retro"):
                 note(step, "unevaluated", "no retro to run this step against",
@@ -7647,27 +7664,26 @@ def _awaits_signoff(root: Path, uid: str) -> bool:
     except OSError as exc:
         sdlc_md.debug("sprint._awaits_signoff", exc)
         return False
-    # The SHARED matcher, not a third spelling of it. `== "review"` missed a project using
-    # `In Review`; critic's predicate matches by name for exactly that reason.
+    # ONE import, and critic's own predicate rather than a third spelling of it: `== "review"`
+    # missed a project using `In Review`, which is what critic's name-matching exists to support.
     try:
         import critic  # noqa: PLC0415 - deferred, like the chain's other siblings
-        awaiting = critic._is_awaiting_signoff(status)
-    except Exception as exc:  # noqa: BLE001 - a reporting clause never fails a stop
-        sdlc_md.debug("sprint._awaits_signoff.matcher", exc)
-        awaiting = "review" in status.strip().lower()
-    if not awaiting:
-        return False
-    # And the bar must still be UNMET. A unit whose adversarial evidence and independent
-    # sign-off are both recorded can reach Done right now, so calling it "awaiting a signature
-    # this session cannot give" drops real remaining work out of the stop's refusal - the one
-    # direction this function must never take.
-    try:
-        import critic  # noqa: PLC0415
+        if not critic.is_awaiting_signoff(status):
+            return False
+        # And the bar must still be UNMET. A unit whose adversarial evidence and independent
+        # sign-off are both recorded can reach Done right now, so calling it "awaiting a
+        # signature this session cannot give" drops real remaining work out of the refusal.
         signoff = critic.signoff_for(root, uid)
         if signoff and critic.is_independent_signoff(root, uid, signoff):
             return False
-    except Exception as exc:  # noqa: BLE001
-        sdlc_md.debug("sprint._awaits_signoff.signoff", exc)
+    except Exception as exc:  # noqa: BLE001 - a reporting clause never fails a stop
+        # FALSE, not True. Every other uncertainty path here returns False, and this one used
+        # to fall through to `return True` - so a critic that raised dropped the unit from the
+        # stop's refusal, which is the direction that loses work silently and the exact defect
+        # this function was written to end. An unanswerable question leaves the unit as
+        # ordinary remaining work, where the worst case is a refusal the operator can override.
+        sdlc_md.debug("sprint._awaits_signoff.critic", exc)
+        return False
     return True
 
 

@@ -2454,8 +2454,18 @@ def cmd_signoff(args: argparse.Namespace) -> int:
 
 #: Statuses that mean "delivered, awaiting the reviewer of record" - the state a sign-off EXISTS
 #: to resolve. Matched by name so a project renaming its review status keeps working.
-def _is_awaiting_signoff(status: str) -> bool:
+#:
+#: PUBLIC, because `sprint._awaits_signoff` reads it across a module boundary. It was reached
+#: through the private name behind a broad `except`, so deleting or tightening this predicate
+#: changed that caller's behaviour silently - it fell back to its own copy of the old rule.
+#: One owner, one name, and a caller that breaks loudly if it ever moves.
+def is_awaiting_signoff(status: str) -> bool:
     return "review" in (status or "").strip().lower()
+
+
+def _is_awaiting_signoff(status: str) -> bool:
+    """Deprecated private alias. Use `is_awaiting_signoff`."""
+    return is_awaiting_signoff(status)
 
 
 def _signoff_withheld(root, unit: str) -> str | None:

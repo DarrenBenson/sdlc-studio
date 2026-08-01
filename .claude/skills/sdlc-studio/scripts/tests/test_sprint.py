@@ -4887,6 +4887,59 @@ class StopAwaitingSignoffTests(unittest.TestCase):
             out = mod.blocked_by_pending(root)
         self.assertEqual(["US0101"], out["awaiting_signoff"])
 
+    def test_a_critic_that_RAISES_leaves_the_unit_as_remaining_work(self) -> None:
+        """Round-3 finding. Every uncertainty path in `_awaits_signoff` returns False; the
+        signoff block fell through to `return True`, so a critic that raised DROPPED the unit
+        from the stop's refusal - the direction that loses work silently, and the exact defect
+        BG0455 was filed to end, reintroduced through its own repair.
+
+        The mutant that proves it: making the handler fail-closed SURVIVED the entire
+        5,669-test suite before this test existed."""
+        mod = _load()
+        import critic
+
+        def boom(*_a, **_k):
+            raise RuntimeError("critic is unavailable")
+
+        # Each target must actually be REACHED, or the test proves nothing about it.
+        # `is_independent_signoff` is short-circuited unless a sign-off exists, so that case
+        # supplies one - a control against asserting over a call that never happens.
+        cases = [
+            ("is_awaiting_signoff", {}),
+            ("signoff_for", {}),
+            ("is_independent_signoff", {"signoff_for": lambda *_a, **_k: {"principal": "x"}}),
+        ]
+        for target, extra in cases:
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._fixture(root, {"US0101": "Review"})
+                with contextlib.ExitStack() as stack:
+                    for name, fn in extra.items():
+                        stack.enter_context(unittest.mock.patch.object(critic, name, fn))
+                    stack.enter_context(unittest.mock.patch.object(critic, target, boom))
+                    out = mod.blocked_by_pending(root)
+                self.assertEqual([], out["awaiting_signoff"],
+                                 f"critic.{target} raising dropped the unit from the refusal")
+                self.assertEqual(["US0101"], out["unblocked"],
+                                 f"critic.{target} raising lost real remaining work silently")
+
+    def test_the_matcher_is_criticS_public_one_not_a_local_copy(self) -> None:
+        """The fallback used to be a byte-identical private copy behind a broad `except`, so
+        deleting critic's predicate produced no error and no behaviour change - and tightening
+        it would have left this call site silently on the old broad rule."""
+        import critic
+        self.assertTrue(hasattr(critic, "is_awaiting_signoff"),
+                        "the cross-module caller depends on a private name")
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, {"US0101": "Review"})
+            with unittest.mock.patch.object(critic, "is_awaiting_signoff",
+                                            lambda _s: False):
+                out = mod.blocked_by_pending(root)
+        self.assertEqual([], out["awaiting_signoff"],
+                         "critic's matcher is not consulted, so a local copy is deciding")
+
     def test_a_unit_below_the_cutoff_is_not_held(self) -> None:
         """The cutoff is a number, and it must be read as one - a project sets it precisely so
         the rule applies to new work and not to everything already on disk."""
@@ -10101,7 +10154,7 @@ class CloseChainCoverageTests(CloseDryRunTests):
         root = self._repo()
         with unittest.mock.patch.object(
                 sprint, "close_preflight",
-                lambda *_a, **_k: {"ready": True, "blockers": []}):
+                lambda *_a, **_k: {"ready": True, "blockers": [], "gate_ran": True}):
             steps = self._steps(sprint.close_dry_run(root))
         self.assertEqual("ok", steps.get("gate", {}).get("status"),
                          "a passing gate is not reported, so `clean` is unreachable")
@@ -10115,7 +10168,7 @@ class CloseChainCoverageTests(CloseDryRunTests):
         blocker = {"stage": "gate", "detail": "tests: 3 failing", "remedy": "fix them"}
         with unittest.mock.patch.object(
                 sprint, "close_preflight",
-                lambda *_a, **_k: {"ready": False, "blockers": [blocker]}):
+                lambda *_a, **_k: {"ready": False, "blockers": [blocker], "gate_ran": True}):
             result = sprint.close_dry_run(root)
         gates = [s for s in result["steps"] if s["step"] == "gate"]
         self.assertEqual(1, len(gates), "the gate refusal is reported twice")
@@ -10133,11 +10186,90 @@ class CloseChainCoverageTests(CloseDryRunTests):
         patches = {f"_close_{s.replace('-', '_')}": ok for s in sprint._CLOSE_CHAIN}
         with unittest.mock.patch.object(
                 sprint, "close_preflight",
-                lambda *_a, **_k: {"ready": True, "blockers": []}), \
+                lambda *_a, **_k: {"ready": True, "blockers": [], "gate_ran": True}), \
                 unittest.mock.patch.multiple(sprint, **patches):
             result = sprint.close_dry_run(root, "RETRO9999")
         self.assertEqual([], result["unevaluated"], "a step is permanently unanswered")
         self.assertTrue(result["clean"], "no dry run can ever report clean")
+
+    def test_a_gate_that_never_RAN_is_not_reported_as_passing(self) -> None:
+        """Round-3 finding. `close_preflight` has early returns that come back on a run-state
+        fault without ever calling `run_gate`, and "no gate blocker" cannot tell that from a
+        clean pass - so the preview printed `ok gate: run by the preflight against the real
+        tree`, a false statement about the most expensive step in the chain. The previous
+        attempt at this reported `unevaluated` unconditionally, which was over-conservative but
+        honest; this trades neither."""
+        sprint = _load()
+        root = self._repo()
+        early = {"ready": False, "gate_ran": False,
+                 "blockers": [{"stage": "run-state", "detail": "no run state", "remedy": "x"}]}
+        with unittest.mock.patch.object(sprint, "close_preflight", lambda *_a, **_k: early):
+            steps = self._steps(sprint.close_dry_run(root))
+        self.assertEqual("unevaluated", steps.get("gate", {}).get("status"),
+                         "a gate that was never reached is reported as having passed")
+        self.assertIn("before reaching the gate", steps["gate"]["detail"])
+
+    def test_a_preflight_with_no_gate_ran_key_is_read_as_did_not_run(self) -> None:
+        """An absent key is the unanswerable case, and it resolves toward `unevaluated` - the
+        direction that cannot state a falsehood about a step nobody ran."""
+        sprint = _load()
+        root = self._repo()
+        with unittest.mock.patch.object(sprint, "close_preflight",
+                                        lambda *_a, **_k: {"ready": True, "blockers": []}):
+            steps = self._steps(sprint.close_dry_run(root))
+        self.assertEqual("unevaluated", steps.get("gate", {}).get("status"))
+
+    def test_the_real_preflight_reports_whether_the_gate_ran(self) -> None:
+        """The mocks above are only honest if the real function supplies the key AND the key
+        discriminates. Asserting only that it exists and is a bool let a mutant hardcoding it
+        to True survive - the flag would then always claim the gate ran, which is the fail-open
+        this whole repair closes."""
+        sprint = _load()
+        # An early return: no run state at all, so `run_gate` is never reached.
+        with tempfile.TemporaryDirectory() as d:
+            bare = Path(d)
+            (bare / "sdlc-studio" / ".local").mkdir(parents=True)
+            early = sprint.close_preflight(bare, None)
+        self.assertIn("gate_ran", early, "the preflight contract does not carry gate_ran")
+        self.assertFalse(early["gate_ran"],
+                         "the preflight claims the gate ran on a path that returns before it")
+        # And the ordinary path, which does reach it.
+        full = sprint.close_preflight(self._repo(), None)
+        self.assertIn("gate_ran", full)
+        self.assertTrue(full["gate_ran"],
+                        "a preflight that ran the gate reports that it did not")
+
+    def test_a_gate_that_RAISES_is_not_recorded_as_having_run(self) -> None:
+        """The third path, and the one two mutants slipped through. The early return and the
+        happy path both report `gate_ran` correctly; the interesting case is `run_gate` raising,
+        which reaches the SAME final return as a successful run. Without this, hardcoding
+        `gate_ran = True` - at the initialiser or at the return - survives, and a gate that blew
+        up is reported to the operator as one that passed."""
+        sprint = _load()
+        import gate as gate_mod
+
+        def boom(*_a, **_k):
+            raise RuntimeError("a lane exploded")
+
+        with unittest.mock.patch.object(gate_mod, "run_gate", boom):
+            pre = sprint.close_preflight(self._repo(), None)
+        self.assertFalse(pre["gate_ran"],
+                         "a gate that raised is recorded as having run")
+        self.assertTrue(any(b["stage"] == "gate" for b in pre["blockers"]),
+                        "the raised gate produced no blocker either")
+
+    def test_a_raised_gate_is_not_previewed_as_ok(self) -> None:
+        """The consequence, end to end through the dry run."""
+        sprint = _load()
+        import gate as gate_mod
+
+        def boom(*_a, **_k):
+            raise RuntimeError("a lane exploded")
+
+        with unittest.mock.patch.object(gate_mod, "run_gate", boom):
+            steps = self._steps(sprint.close_dry_run(self._repo()))
+        self.assertNotEqual("ok", steps.get("gate", {}).get("status"),
+                            "a gate that blew up is previewed as passing")
 
     def test_the_dry_run_step_set_is_DERIVED_from_the_chain(self) -> None:
         """AC2. A restated list is what lost `gate` in the first place, so adding a step to the

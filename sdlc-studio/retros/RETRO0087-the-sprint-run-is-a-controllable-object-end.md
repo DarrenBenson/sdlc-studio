@@ -88,9 +88,29 @@ it, which is verbatim the defect BG0418 was filed to fix.
 mutants all killed, including the backfill mirror. That mirror had no test at all, and
 restoring its hole survived the whole suite.
 
-Every finding is repaired and every reproduction re-run. **A fresh independent pass over the
-repairs is owed** - the authoring session cannot approve its own corrections, which is the
-same rule that produced these findings in the first place.
+**A third review then judged the repairs, and rejected three of them** - all one shape, in the
+reviewer's words: *each repair is behaviourally right on the path it was written for, and
+silently wrong on the path where its helper is absent, broken, or never ran.*
+
+- The **shell half** of BG0413's exit-code contract had no test. Three hook mutants - read exit
+  2 again, drop the non-empty-note belt, stop setting `fail=1` - all survived the full 589-test
+  tools suite, one of them committing green while printing `commit BLOCKED`. One end of the
+  contract was pinned and the other was free.
+- BG0460's repair traded a guaranteed false negative for a **false positive**: `close_preflight`
+  has early returns that never call `run_gate`, and "no gate blocker" cannot tell that from a
+  clean pass, so the preview stated `ok gate: run by the preflight against the real tree` about
+  a gate that had not run.
+- BG0455's new signoff block **fell through to `return True`** where every other uncertainty
+  path returns False - so a critic that raised dropped the unit from the stop's refusal. That is
+  the defect BG0455 was filed to end, reintroduced through its own repair, and the fail-closed
+  mutant survived the entire 5,669-test suite. The "shared matcher" was also a third
+  byte-identical copy behind a broad `except`; deleting critic's predicate changed nothing.
+
+All three are repaired: the signoff path fails closed and reads critic's now-public
+`is_awaiting_signoff`; the preflight reports `gate_ran` and an unreached gate is `unevaluated`,
+never `ok`; and `tools/tests/test_precommit_scope_collapse_lane.py` drives the real hook and
+kills all three surviving hook mutants. **A round-4 confirmation pass is owed** - the authoring
+session cannot approve its own corrections, which is the rule that produced every finding here.
 
 ## What went well
 
