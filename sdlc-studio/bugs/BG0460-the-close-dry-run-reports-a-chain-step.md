@@ -1,8 +1,9 @@
 # BG0460: The close dry-run reports a chain step as neither refusing nor unevaluated, and its 'all seven steps' claim stands against a ten-step chain
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
+> **Verification depth:** functional (4 criteria red-first. Two mutants applied singly, purged, restored byte-identical - `gate` dropped from the derived step set, and a skipped step reported as nothing at all: both KILLED. The derivation is asserted against `_CLOSE_CHAIN`, so a step nobody has written yet is covered too)
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** Independent adversarial review of RUN-01KYTKA1 tranche D (engineering seat, isolated worktree). US0555=REJECT, with the report executed against this repository.
 > **Created:** 2026-07-31
@@ -45,9 +46,9 @@ Point AC4's and AC5's verifiers at `close_dry_run` itself. A verifier that feeds
 
 ## Acceptance Criteria
 
-- [ ] The `gate` chain step appears in the dry-run report under every scenario: as `ok` when evaluated, and in the UNEVALUATED count when the preflight returns before reaching it
-- [ ] The step count in the report, the CLI help and the story is derived from `_CLOSE_CHAIN` rather than restated, so a step added to the chain cannot leave a stale count behind
-- [ ] AC4's and AC5's verifiers call `close_dry_run`, and one test follows a clean dry run with a real close that does not refuse
+- [x] The `gate` chain step appears in the dry-run report under every scenario: as `ok` when evaluated, and in the UNEVALUATED count when the preflight returns before reaching it
+- [x] The step count in the report, the CLI help and the story is derived from `_CLOSE_CHAIN` rather than restated, so a step added to the chain cannot leave a stale count behind
+- [x] AC4's and AC5's verifiers call `close_dry_run`, and one test follows a clean dry run with a real close that does not refuse
 
 ## Revision History
 

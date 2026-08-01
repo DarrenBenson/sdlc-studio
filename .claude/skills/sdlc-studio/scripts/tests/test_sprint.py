@@ -9887,6 +9887,150 @@ class CloseDryRunTests(unittest.TestCase):
             self.assertIn(step, report, f"{step} is missing from the report")
 
 
+class CloseChainCoverageTests(CloseDryRunTests):
+    """BG0460: the dry run reported a chain step as neither refusing nor unevaluated.
+
+    `DRY_RUN_ACTION_STEPS` was a hand-maintained restatement of `_CLOSE_CHAIN` that had lost
+    `gate`, so the step simply never appeared - not `ok`, not `refuse`, not counted among the
+    unevaluated. A preview whose silence about a step is indistinguishable from a pass is the
+    one thing it must never be, and the docstring's "all seven steps" claim stood against a
+    ten-step chain.
+    """
+
+    def test_every_chain_step_is_accounted_for_in_the_dry_run(self) -> None:
+        """The property: each chain step reaches the report with SOME status. A step that is
+        deliberately not executed in a preview is `unevaluated` with a reason, never absent."""
+        sprint = _load()
+        steps = self._steps(sprint.close_dry_run(self._repo()))
+        missing = [s for s in sprint._CLOSE_CHAIN if s not in steps]
+        self.assertEqual([], missing,
+                         "a chain step is neither reported nor counted, so its silence reads "
+                         "the same as a pass")
+
+    def test_the_gate_step_is_reported_and_never_silently_dropped(self) -> None:
+        sprint = _load()
+        steps = self._steps(sprint.close_dry_run(self._repo()))
+        self.assertIn("gate", steps)
+        self.assertIn(steps["gate"]["status"], {"ok", "refuse", "unevaluated"})
+        if steps["gate"]["status"] == "unevaluated":
+            self.assertTrue(steps["gate"]["detail"].strip(),
+                            "an unevaluated step with no stated reason is an unexplained gap")
+
+    def test_the_dry_run_step_set_is_DERIVED_from_the_chain(self) -> None:
+        """AC2. A restated list is what lost `gate` in the first place, so adding a step to the
+        chain must not be able to leave a hole here. Asserting the derivation, not the current
+        membership, is what makes that true of a step nobody has written yet."""
+        sprint = _load()
+        self.assertEqual(set(sprint._CLOSE_CHAIN), set(sprint.DRY_RUN_ACTION_STEPS),
+                         "DRY_RUN_ACTION_STEPS has drifted from the chain it previews")
+
+    def test_the_reported_step_count_tracks_the_chain_rather_than_a_literal(self) -> None:
+        """The "all seven steps" claim outlived the seven-step chain. The count must move when
+        the chain does, so a reader is never told a number the code has left behind."""
+        sprint = _load()
+        report = sprint.dry_run_report(sprint.close_dry_run(self._repo()))
+        self.assertIn(str(len(sprint._CLOSE_CHAIN)), report)
+        self.assertNotIn("all seven", report.lower())
+
+
+class CloseRetroDemonstrationTests(CloseDryRunTests):
+    """BG0418 and BG0459: the close discarded the retro validator's own warning.
+
+    `retro validate` prints an EXAMPLES report for a retro still carrying the template's worked
+    demonstrations, and exits 0 because a scaffold-shaped retro is structurally valid. The close
+    kept only its exit code, so it printed `retro-validate: RETRO0086 valid` over a document in
+    which nothing had been replaced - the operator was told the opposite of the truth by a check
+    that had correctly noticed it.
+    """
+
+    def _scaffold_retro(self, root: Path, rid: str = "RETRO9002", *, replaced: bool = False) -> str:
+        """A retro carrying the shipped template's demonstration lines, marked as the template
+        marks them. `replaced=True` strips them, which is what a filled-in retro looks like."""
+        import shutil as _sh
+        (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
+        tpl = (Path(__file__).resolve().parents[2] / "templates" / "reviews" / "retro.md")
+        text = tpl.read_text(encoding="utf-8")
+        if replaced:
+            text = "\n".join(l for l in text.splitlines() if "<!-- example -->" not in l)
+            text += ("\n## Lessons\n\n- a real lesson with the evidence that produced it\n"
+                     "\n## Actions raised\n\n| Finding | Disposition |\n| --- | --- |\n"
+                     "| a real finding | declined: it lands on a path this project does not use |\n")
+        (root / "sdlc-studio" / "retros" / f"{rid}-scaffold.md").write_text(text, encoding="utf-8")
+        del _sh
+        return rid
+
+    def test_the_close_step_REPORTS_the_unreplaced_demonstrations(self) -> None:
+        """BG0418 AC1/AC3, verified THROUGH the close step rather than the retro CLI: the CLI
+        always printed this. The defect was entirely in what the close did with it."""
+        sprint = _load()
+        root = self._repo()
+        rid = self._scaffold_retro(root)
+        _ok, detail, _remedy = sprint._close_retro_validate(root, rid, {})
+        self.assertIn("EXAMPLE", detail.upper(),
+                      "the close reports `valid` over a retro nobody filled in")
+
+    def test_a_filled_in_retro_produces_no_demonstration_noise(self) -> None:
+        """BG0418 AC5 and the positive control: without it, a step that always warned would
+        pass the test above while making the warning worthless."""
+        sprint = _load()
+        root = self._repo()
+        rid = self._scaffold_retro(root, "RETRO9003", replaced=True)
+        _ok, detail, _remedy = sprint._close_retro_validate(root, rid, {})
+        self.assertNotIn("EXAMPLE", detail.upper())
+
+    def test_a_wholly_unreplaced_scaffold_BLOCKS_rather_than_only_warning(self) -> None:
+        """BG0418 AC2 wants the blocking rule stated rather than inferred. The rule: warn on any
+        leftover, REFUSE when nothing has been replaced at all. That is not a judgement about
+        how much content is enough - it is the difference between a document someone wrote and
+        one nobody opened."""
+        sprint = _load()
+        root = self._repo()
+        rid = self._scaffold_retro(root)
+        ok, _detail, remedy = sprint._close_retro_validate(root, rid, {})
+        self.assertFalse(ok, "an untouched scaffold reached a signed-off close")
+        self.assertTrue(remedy.strip(), "a refusal with no remedy is a dead end")
+
+    def test_the_dry_run_surfaces_the_same_warning(self) -> None:
+        """BG0418 AC4: the dry run routes through the same probe, so it must say the same thing
+        - otherwise the preview clears a close that then refuses."""
+        sprint = _load()
+        root = self._repo()
+        rid = self._scaffold_retro(root)
+        steps = self._steps(sprint.close_dry_run(root, rid))
+        self.assertIn("retro-validate", steps)
+        self.assertIn("EXAMPLE", steps["retro-validate"]["detail"].upper())
+
+    def test_every_demonstration_line_in_the_shipped_template_is_MARKED(self) -> None:
+        """BG0459 AC1, as an exact set rather than a floor. A `>= 6` threshold tolerated a
+        marker going missing, which is the failure it was written to catch: the three
+        Actions-raised rows carried no marker and the scaffold validated clean."""
+        import retro as retro_mod  # noqa: PLC0415
+        tpl = (Path(__file__).resolve().parents[2] / "templates" / "reviews" / "retro.md")
+        text = tpl.read_text(encoding="utf-8")
+        demo = [l for l in text.splitlines() if "EXAMPLE" in l and l.strip().startswith(("-", "|"))]
+        marked = [l for l in demo if retro_mod.DEMO_MARKER in l]
+        self.assertEqual(demo, marked,
+                         "a demonstration line ships without the marker, so it survives the "
+                         "leftovers check and an unfilled retro validates clean")
+
+    def test_an_untouched_actions_table_alone_is_still_reported(self) -> None:
+        """BG0459 AC2: the specific escape. Every bullet replaced, the table left as shipped."""
+        sprint = _load()
+        import retro as retro_mod  # noqa: PLC0415
+        root = self._repo()
+        tpl = (Path(__file__).resolve().parents[2] / "templates" / "reviews" / "retro.md")
+        lines = tpl.read_text(encoding="utf-8").splitlines()
+        kept = [l for l in lines
+                if not (retro_mod.DEMO_MARKER in l and l.strip().startswith("-"))]
+        kept += ["", "- a real lesson, with the evidence that produced it", ""]
+        (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "retros" / "RETRO9004-partial.md").write_text(
+            "\n".join(kept), encoding="utf-8")
+        _ok, detail, _r = sprint._close_retro_validate(root, "RETRO9004", {})
+        self.assertIn("EXAMPLE", detail.upper(),
+                      "the untouched Actions-raised rows passed unreported")
+
+
 class CloseCostReportTests(unittest.TestCase):
     """US0559. The close's own cost was recalled, never reported: RUN-01KYMJEM's `~32 minutes`
     was reconstructed afterwards from a timings file and a memory of how many attempts there

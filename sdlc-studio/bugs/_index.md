@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 28 |
+| Open | 25 |
 | In Progress | 0 |
-| Fixed | 358 |
+| Fixed | 361 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -135,7 +135,7 @@
 | [BG0415](BG0415-the-gate-budget-is-over-at-457s-against.md) | The gate budget is OVER at 457s against 380s, and sprint plan forecasts execution cost from the 317s baseline it has already breached by 44% | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0416](BG0416-reopening-a-unit-does-not-retract-its-verification.md) | Reopening a unit does not retract its verification-depth claim, so the planner reads it as BUILT-NOT-CLOSED and forecasts it at zero points | Fixed | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0417](BG0417-transition-done-never-checks-the-two-role-rule.md) | transition -> Done never checks the two-role rule: the verb that writes the status the Definition of Done defines a bar for does not consult that bar, and only a later gate run reports it | Fixed | High | 2026-07-29 | 2026-07-29 |
-| [BG0418](BG0418-the-close-swallows-the-retro-validator-s-own.md) | The close swallows the retro validator's own warning, so a scaffold with six unreplaced demonstration rows reports as 'valid' to the operator | Open | High | 2026-07-29 | 2026-07-29 |
+| [BG0418](BG0418-the-close-swallows-the-retro-validator-s-own.md) | The close swallows the retro validator's own warning, so a scaffold with six unreplaced demonstration rows reports as 'valid' to the operator | Fixed | High | 2026-07-29 | 2026-07-29 |
 | [BG0419](BG0419-four-delivered-units-are-held-by-verifiers-that.md) | Four delivered units are held by verifiers that pass with the delivered mechanism removed, and two whole production surfaces are one edit from inert | Open | High | 2026-07-29 | 2026-07-29 |
 | [BG0420](BG0420-test-fixtures-mirror-real-lists-by-hand-so.md) | Test fixtures mirror real lists by hand, so adding one chain step or one gate lane turns dozens of unrelated tests red for a reason none of them is about | Open | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0421](BG0421-twenty-one-open-questions-reached-a-terminal-status.md) | Twenty-one Open Questions reached a terminal status unanswered, and are now owned here rather than given rulings nobody made | Open | Medium | 2026-07-29 | 2026-07-29 |
@@ -176,8 +176,8 @@
 | [BG0456](BG0456-a-ruling-verb-short-circuits-the-destination-check.md) | A ruling verb short-circuits the destination check, so a tick citing an artefact nothing holds is accepted - and the corpus-read pin is inert because its fixture never scales | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0457](BG0457-four-spec-agreement-guards-pin-prose-to-prose.md) | Four spec-agreement guards pin prose to prose: a set comparison that cannot fail in the reverse direction, a whole-file substring satisfied by the Revision History row describing the change, a word-presence check an unrelated sentence already satisfies, and a source-substring wiring check a comment satisfies | Open | High | 2026-07-31 | 2026-07-31 |
 | [BG0458](BG0458-five-checklist-rows-report-a-state-they-never.md) | Five checklist rows report a state they never established: planned units read from the retro's Batch rather than the plan, a delivered unit rendered as held, a blind known-issue scan rendered as 'none carried', a lens count that counts reviewer names, and an impediment row that never names the blocker | Fixed | High | 2026-07-31 | 2026-07-31 |
-| [BG0459](BG0459-a-wholly-unreplaced-retro-scaffold-validates-as-filled.md) | A wholly unreplaced retro scaffold validates as filled-in: three demonstration rows carry no marker, the close discards the EXAMPLES report, and the verifier's `>= 6` threshold tolerates a lost marker | Open | High | 2026-07-31 | 2026-07-31 |
-| [BG0460](BG0460-the-close-dry-run-reports-a-chain-step.md) | The close dry-run reports a chain step as neither refusing nor unevaluated, and its 'all seven steps' claim stands against a ten-step chain | Open | High | 2026-07-31 | 2026-07-31 |
+| [BG0459](BG0459-a-wholly-unreplaced-retro-scaffold-validates-as-filled.md) | A wholly unreplaced retro scaffold validates as filled-in: three demonstration rows carry no marker, the close discards the EXAMPLES report, and the verifier's `>= 6` threshold tolerates a lost marker | Fixed | High | 2026-07-31 | 2026-07-31 |
+| [BG0460](BG0460-the-close-dry-run-reports-a-chain-step.md) | The close dry-run reports a chain step as neither refusing nor unevaluated, and its 'all seven steps' claim stands against a ten-step chain | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0461](BG0461-the-checklist-s-own-drift-guard-certifies-two.md) | The checklist's own drift guard certifies two rows unchecked: `cycle_drift`'s third bucket is non-empty on the shipped tree and asserted by nothing, planned POINTS are computed nowhere, and a waiver records no authoriser | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0462](BG0462-the-version-guard-s-discovery-test-cannot-tell.md) | The version guard's discovery test cannot tell discovery from the hardcoded fallback that seeds the same two paths, and the gate swallows the UNVERIFIABLE notes it exists to print | Open | High | 2026-07-31 | 2026-07-31 |
 | [BG0463](BG0463-twenty-non-blocking-findings-from-the-run-01kytka1.md) | Twenty non-blocking findings from the RUN-01KYTKA1 batch-boundary review: stale counts, dead code, unmarked truncation, over-claiming docstrings and three tests whose names promise more than they assert | Open | Medium | 2026-07-31 | 2026-07-31 |

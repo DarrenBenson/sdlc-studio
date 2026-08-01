@@ -3969,14 +3969,55 @@ def _run_cli(module_main, argv: list[str]) -> tuple[int, str]:
     return rc, buf.getvalue().strip()
 
 
+#: How many of the shipped template's demonstration lines a retro may still carry before the
+#: close treats it as unopened rather than merely unfinished. Carrying EVERY one of them is not
+#: a judgement about how much content is enough; it is the difference between a document
+#: somebody wrote and a scaffold nobody touched.
+def _template_demo_count() -> int:
+    import retro  # noqa: PLC0415
+    tpl = Path(__file__).resolve().parent.parent / "templates" / "reviews" / "retro.md"
+    try:
+        return sum(1 for line in tpl.read_text(encoding="utf-8").splitlines()
+                   if retro.DEMO_MARKER in line)
+    except OSError:
+        return 0
+
+
 def _close_retro_validate(root, retro_id, state):
+    """The retro's CONTENT gate.
+
+    The validator has always reported the template's unreplaced worked examples, and always
+    exited 0 for them, because a scaffold-shaped retro is structurally valid. This step kept
+    only the exit code, so a close printed `RETRO0086 valid` over a document in which nothing
+    had been replaced - the operator told the opposite of the truth by a check that had
+    correctly noticed it.
+
+    The rule, stated rather than inferred: any leftover is REPORTED on the close's own output;
+    a retro still carrying EVERY demonstration line the template ships is REFUSED. Reporting
+    without refusing is what let the scaffold through, and refusing on any leftover at all
+    would block a legitimate close over one unreplaced bullet.
+    """
     import retro  # noqa: PLC0415 - deferred, like the planner's retro import
     rc, out = _run_cli(retro.main, ["--root", str(root), "validate", "--id", retro_id])
+    remedy = (f"fix the retro's content ({retro_id}) - `retro.py validate "
+              f"--id {retro_id}` names each gap; absent, create it with "
+              "`artifact.py new --type retro --title ...` and write it")
     if rc != 0:
-        return False, out, (f"fix the retro's content ({retro_id}) - `retro.py validate "
-                            f"--id {retro_id}` names each gap; absent, create it with "
-                            "`artifact.py new --type retro --title ...` and write it")
-    return True, f"{retro_id} valid", ""
+        return False, out, remedy
+    res = retro.validate(root, retro_id)
+    leftovers = res.get("demonstration") or []
+    if not leftovers:
+        return True, f"{retro_id} valid", ""
+    shipped = _template_demo_count()
+    detail = (f"{retro_id} is structurally valid, but {len(leftovers)} line(s) are still the "
+              f"template's worked EXAMPLES rather than this sprint's content:\n"
+              + "\n".join(f"      {line}" for line in leftovers[:6]))
+    if shipped and len(leftovers) >= shipped:
+        return False, (detail + f"\n  Every one of the {shipped} demonstration line(s) the "
+                       f"template ships is still present, so this retro has not been written."), \
+            (f"write {retro_id} - replace the template's demonstration lines with this "
+             f"sprint's own content, then re-run the close")
+    return True, detail, ""
 
 
 def _close_retro_extract(root, retro_id, state):
@@ -5752,13 +5793,23 @@ def _render_preflight(data: dict) -> None:
 #: it is read-only already and the preflight has just run it against the real tree, so running
 #: it again in the copy would double the one genuinely expensive step of a preview whose whole
 #: point is to be cheap.
-DRY_RUN_ACTION_STEPS = ("review-coverage", "retro-validate", "retro-extract",
-                        "retro-accuracy", "lessons-summary", "checklist", "handoff",
-                        "reconcile", "review-anchor")
+#: Steps a preview deliberately does NOT execute, with the reason each is skipped. They are
+#: still REPORTED - as `unevaluated`, carrying this reason - because a step absent from the
+#: report is indistinguishable from one that passed, and that is the single way a preview can
+#: actively mislead.
+DRY_RUN_SKIP = {
+    "gate": ("the gate runs the full suite, which a preview must not pay for - run "
+             "`gate.py` directly, or let the real close run it"),
+}
+
+#: DERIVED from the chain it previews, never restated beside it. As a hand-maintained list this
+#: had silently lost `gate`: the step reached the report as neither `ok`, nor `refuse`, nor
+#: among the unevaluated, so its silence read exactly like a pass.
+DRY_RUN_ACTION_STEPS = tuple(_CLOSE_CHAIN)
 
 
 def close_dry_run(root, retro_id: str | None = None) -> dict:
-    """Every refusal all seven close steps would raise, in ONE pass, writing nothing.
+    """Every refusal the close chain would raise, in ONE pass, writing nothing.
 
     `close_preflight` answers the PREREQUISITES and is read-only by construction, but three of
     the chain's steps exist to DO something and so cannot be judged without doing it - and one
@@ -5801,6 +5852,9 @@ def close_dry_run(root, retro_id: str | None = None) -> dict:
         state = run_state.read(scratch) or {}
         rid = retro_id or _dry_run_retro(scratch, state, note)
         for step in DRY_RUN_ACTION_STEPS:
+            if step in DRY_RUN_SKIP:
+                note(step, "unevaluated", DRY_RUN_SKIP[step], DRY_RUN_SKIP[step])
+                continue
             if rid is None and step.startswith("retro"):
                 note(step, "unevaluated", "no retro to run this step against",
                      "name one with --retro, or let `close` scaffold it")
@@ -5864,7 +5918,7 @@ def _dry_run_result(steps: list[dict], scratch) -> dict:
 def dry_run_report(result: dict) -> str:
     """The dry run as an operator reads it: every step, its verdict, and what to do."""
     icon = {"ok": "ok  ", "refuse": "STOP", "unevaluated": "??  "}
-    lines = ["close --dry-run: nothing was written."]
+    lines = [f"close --dry-run: nothing was written. {len(_CLOSE_CHAIN)} chain step(s) previewed."]
     for step in result["steps"]:
         lines.append(f"  {icon.get(step['status'], '?')} {step['step']}: "
                      f"{(step['detail'] or step['status']).splitlines()[0][:160]}")
@@ -8189,7 +8243,7 @@ def build_parser() -> argparse.ArgumentParser:
                     help="what the batch did not cover (required with a partial/no "
                          "--content-review)")
     cl.add_argument("--dry-run", dest="dry_run", action="store_true",
-                    help="report EVERY refusal all seven steps would raise, in one pass, and "
+                    help="report EVERY refusal the close chain would raise, in one pass, and "
                          "write nothing. The action steps run against a scratch copy of the "
                          "workspace, so the retro's CONTENT is judged before a retro exists - "
                          "the class a read-only preflight cannot reach. A step that could not "

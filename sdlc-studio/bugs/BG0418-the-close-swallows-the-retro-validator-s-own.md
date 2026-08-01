@@ -1,8 +1,9 @@
 # BG0418: The close swallows the retro validator's own warning, so a scaffold with six unreplaced demonstration rows reports as 'valid' to the operator
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
+> **Verification depth:** functional (7 criteria red-first across the close step and the dry run. Two mutants applied singly, purged, restored byte-identical - the leftovers report discarded, and the untouched-scaffold refusal disabled: both KILLED. Verified THROUGH `_close_retro_validate` and `close_dry_run`, not the retro CLI, which always reported this correctly)
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
 > **Evidence:** US0558 AC4 requires that when THE CLOSE reads a retro, unreplaced demonstration content is reported. Independent review executed the shipped template scaffolded verbatim: the checker finds 6 leftovers, and the close step prints 'RETRO9998 valid'. `_close_retro_validate` calls the retro CLI through `_run_cli`, which captures stdout, then on rc == 0 returns the success tuple and DISCARDS the captured output. The EXAMPLES warning retro.py prints is swallowed. The operator sees: 'close [1/8] retro-validate: ok - RETRO9998 valid'.
 > **Created:** 2026-07-29
@@ -38,11 +39,11 @@ The defect propagates: `close --dry-run` routes through the same probe, so the p
 
 ## Acceptance Criteria
 
-- [ ] The close reports the retro validator's unreplaced-demonstration warning in its own output, so a scaffolded retro cannot pass as filled in.
-- [ ] Whether that reporting also BLOCKS the close is stated explicitly as a rule, not left to be inferred.
-- [ ] The criterion is verified THROUGH the close, not through the retro CLI - the test must fail if the close stops reporting it.
-- [ ] `close --dry-run` reports the same warning, since it routes through the same probe.
-- [ ] A retro with no unreplaced demonstration content produces no warning, so the check does not become noise on every close.
+- [x] The close reports the retro validator's unreplaced-demonstration warning in its own output, so a scaffolded retro cannot pass as filled in.
+- [x] Whether that reporting also BLOCKS the close is stated explicitly as a rule, not left to be inferred.
+- [x] The criterion is verified THROUGH the close, not through the retro CLI - the test must fail if the close stops reporting it.
+- [x] `close --dry-run` reports the same warning, since it routes through the same probe.
+- [x] A retro with no unreplaced demonstration content produces no warning, so the check does not become noise on every close.
 
 ## Impact
 

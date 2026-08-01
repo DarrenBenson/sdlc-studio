@@ -1,8 +1,9 @@
 # BG0459: A wholly unreplaced retro scaffold validates as filled-in: three demonstration rows carry no marker, the close discards the EXAMPLES report, and the verifier's `>= 6` threshold tolerates a lost marker
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 5
+> **Verification depth:** functional (the template's 10 demonstration lines asserted as an exact SET rather than a floor, so a marker going missing reddens; the untouched-Actions-table escape asserted separately. The close now surfaces the report it discarded - mutant disabling that: KILLED)
 > **Affects:** .claude/skills/sdlc-studio/templates/reviews/retro.md, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** Independent adversarial review of RUN-01KYTKA1 tranche D (engineering seat, isolated worktree, 28 mutation runs). US0555=REJECT, US0558=REJECT.
 > **Created:** 2026-07-31
@@ -43,9 +44,9 @@ The close must surface the EXAMPLES report rather than discard it. `_run_cli` sw
 
 ## Acceptance Criteria
 
-- [ ] Every demonstration row in the shipped retro template carries the `<!-- example -->` marker, asserted as an exact set rather than a floor, so a marker that goes missing reddens
-- [ ] A retro whose every marked line is replaced but whose Actions-raised table is untouched is REPORTED as carrying demonstration leftovers, rather than validating as three dispositioned findings
-- [ ] `sprint close` surfaces the retro validator's EXAMPLES report rather than discarding it on a zero exit, so an unreplaced scaffold is named to the operator at the close
+- [x] Every demonstration row in the shipped retro template carries the `<!-- example -->` marker, asserted as an exact set rather than a floor, so a marker that goes missing reddens
+- [x] A retro whose every marked line is replaced but whose Actions-raised table is untouched is REPORTED as carrying demonstration leftovers, rather than validating as three dispositioned findings
+- [x] `sprint close` surfaces the retro validator's EXAMPLES report rather than discarding it on a zero exit, so an unreplaced scaffold is named to the operator at the close
 
 ## Revision History
 
