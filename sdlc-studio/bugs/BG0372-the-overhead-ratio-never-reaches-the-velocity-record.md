@@ -1,7 +1,7 @@
 # BG0372: The overhead ratio never reaches the velocity record, so the measurement is taken and discarded
 
-> **Status:** Open
-> **Verification depth:** RETRACTED on reopen (was: functional (tests red-first)) - re-verify before a terminal status; the previous evidence was withdrawn, not lost
+> **Status:** Fixed
+> **Verification depth:** functional (the round-trip criterion failed red-first against the shipped header. Two mutants applied singly, purged, restored byte-identical - the writer's render of both columns blanked, and the reader's parse of them nulled: both KILLED. The pre-existing criteria passed against a HAND-WRITTEN header and were marked `Verified: yes` while the shipped one carried neither column; they now pin `VELOCITY_HEADER` itself)
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py

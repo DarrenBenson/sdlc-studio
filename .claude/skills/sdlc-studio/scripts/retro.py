@@ -683,8 +683,8 @@ it. Compare a fan-out sprint's rate with a single-thread sprint's only with that
 -->
 # Velocity history
 
-| Retro | Date | Units | Measured | Forecast | Points | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Constants | Sample | Model | Note | Source |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Retro | Date | Units | Measured | Forecast | Points | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Overhead | Unattributed (s) | Constants | Sample | Model | Note | Source |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 """
 
 # The history is parsed by COLUMN NAME, not position, so a row written before the plan-time
@@ -1694,6 +1694,13 @@ def velocity_history(root) -> list[dict]:
                     "actual_tokens": _velocity_num(cell("actual_tokens")) or None,
                     "ratio": _velocity_num(cell("ratio")),
                     "wall_time_s": _velocity_num(cell("wall_time_s")),
+                    # The overhead split. Read back, not merely written: the columns were
+                    # declared in VELOCITY_COLUMNS and computed into the row, and both the
+                    # header and this reader dropped them - so the figure reached the file's
+                    # contract and nothing downstream could ever see it. Absent stays absent;
+                    # a 0 here would read as a sprint with no overhead at all.
+                    "overhead_ratio": _velocity_num(cell("overhead_ratio")),
+                    "unattributed_s": _velocity_num(cell("unattributed_s")),
                     "constants": parse_constants(cell("constants")),
                     "sample": cell("sample") or None,
                     "model": model if model and model != "-" else None,
@@ -2228,6 +2235,8 @@ def record_velocity(root, res: dict) -> Path:
                      f"{_fmt(r['estimate'])} | "
                      f"{_fmt(r['actual_tokens'])} | {ratio} | {_fmt(rate)} | "
                      f"{_fmt(r.get('oversized'))} | {_fmt(r['wall_time_s'])} | "
+                     f"{_fmt(r.get('overhead_ratio'))} | "
+                     f"{_fmt(r.get('unattributed_s'))} | "
                      f"{constants_cell(r.get('constants'))} | {sample} | "
                      f"{r.get('model') or '-'} | {_note_cell(r.get('note'))} | "
                      f"{r.get('source') or '-'} |")

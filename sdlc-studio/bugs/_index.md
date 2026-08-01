@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 23 |
+| Open | 22 |
 | In Progress | 0 |
-| Fixed | 363 |
+| Fixed | 364 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -89,7 +89,7 @@
 | [BG0369](BG0369-the-conformance-waiver-report-is-blanked-when-the.md) | The conformance waiver report is blanked when the diff contains no stories, hiding a waived unit rather than reporting it | Fixed | Medium | 2026-07-28 | 2026-07-28 |
 | [BG0370](BG0370-us0516-s-stated-absence-escape-hatch-defeats-the.md) | US0516's stated-absence escape hatch defeats the criteria floor US0514 and US0515 establish | Fixed | High | 2026-07-28 | 2026-07-28 |
 | [BG0371](BG0371-the-repeated-lesson-report-rests-on-a-single.md) | The repeated-lesson report rests on a single unpinned call, so a lesson violated twice can report once | Fixed | Low | 2026-07-28 | 2026-07-28 |
-| [BG0372](BG0372-the-overhead-ratio-never-reaches-the-velocity-record.md) | The overhead ratio never reaches the velocity record, so the measurement is taken and discarded | Open | Low | 2026-07-28 | 2026-07-28 |
+| [BG0372](BG0372-the-overhead-ratio-never-reaches-the-velocity-record.md) | The overhead ratio never reaches the velocity record, so the measurement is taken and discarded | Fixed | Low | 2026-07-28 | 2026-07-28 |
 | [BG0373](BG0373-the-review-currency-carve-out-repaired-in-bg0336.md) | The review-currency carve-out repaired in BG0336 remains story-shaped, so a bug or change request takes a different path | Fixed | Low | 2026-07-28 | 2026-07-28 |
 | [BG0374](BG0374-the-markdownlint-path-fixed-in-bg0341-still-cannot.md) | The markdownlint path fixed in BG0341 still cannot see every tracked markdown file | Fixed | Low | 2026-07-28 | 2026-07-28 |
 | [BG0375](BG0375-the-lane-contract-refusal-governing-475-units-is.md) | The lane_contract refusal governing 475 units is asserted by no test, so a silent revert reddens nothing | Fixed | High | 2026-07-28 | 2026-07-28 |

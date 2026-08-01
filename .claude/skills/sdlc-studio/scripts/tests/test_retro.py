@@ -42,6 +42,29 @@ FULL = """# RETRO-9999: a sprint
 """
 
 
+
+def _legacy_row(**cells) -> str:
+    """A row positioned against the SHIPPED header, from column names rather than a count.
+
+    These fixtures used to hand-write a fixed run of pipes beside `retro.VELOCITY_HEADER`. That
+    pairs a live header with a row of whatever width the row was written at, so adding a column
+    silently shifted every cell after it and the tests failed for a reason unrelated to what
+    they assert. Built from `_velocity_index` instead, the row is always as wide as the header
+    it is read against - which is the only thing that is ever true on disk, since the writer
+    emits both together.
+    """
+    header = next(l for l in retro.VELOCITY_HEADER.splitlines()
+                  if l.strip().lower().startswith("| retro"))
+    idx = retro._velocity_index(header)
+    width = len(retro.sdlc_md.table_cells(header))
+    row = ["-"] * width
+    for key, value in cells.items():
+        pos = idx.get(key)
+        if pos is not None:
+            row[pos] = str(value)
+    return "| " + " | ".join(row) + " |\n"
+
+
 class RetroBase(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
@@ -1550,9 +1573,9 @@ class TheVelocityRowIdIsNormalised(InteractiveSprintFixture):
         # either form and reports the canonical one, so the next upsert rewrites them clean
         path = retro.velocity_path(str(self.root))
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(retro.VELOCITY_HEADER +
-                        "| RETRO-9002 | 2026-07-20 | 2 | 0 | 0 | 8 | 0 | 800,000 | - | "
-                        "100,000 | 0 | - | - | - | - |\n", encoding="utf-8")
+        path.write_text(retro.VELOCITY_HEADER + _legacy_row(
+            id="RETRO-9002", date="2026-07-20", units=2, measured=0, forecast=0,
+            points=8, estimate=0, actual_tokens="800,000"), encoding="utf-8")
         hist = retro.velocity_history(str(self.root))
         self.assertEqual([r["id"] for r in hist], ["RETRO9002"])
         self.assertEqual(hist[0]["actual_tokens"], 800_000)
@@ -1619,10 +1642,11 @@ class AnUnratedSprintRecordsNoTokenActual(InteractiveSprintFixture):
         """A row already on disk, written by the code that published the false zero."""
         path = retro.velocity_path(str(self.root))
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(retro.VELOCITY_HEADER +
-                        f"| RETRO9001 | 2026-07-20 | 9 | 0 | 9 | 30 | 0 | {actual} | - | - | "
-                        f"0 | - | TOKENS_PER_POINT=25000 | out-of-sample | {model_cell} |\n",
-                        encoding="utf-8")
+        path.write_text(retro.VELOCITY_HEADER + _legacy_row(
+            id="RETRO9001", date="2026-07-20", units=9, measured=0, forecast=9, points=30,
+            estimate=0, actual_tokens=actual, oversized=0,
+            constants="TOKENS_PER_POINT=25000", sample="out-of-sample",
+            model=model_cell), encoding="utf-8")
 
     def test_a_historical_zero_is_not_read_back_as_a_measurement(self) -> None:
         # the reader-side guard: three such rows exist only because a human caught them, and
@@ -1705,10 +1729,10 @@ class TheEstimateColumnIsTheForecastThatWasRecorded(InteractiveSprintFixture):
         """A row written by the code that published the false zero."""
         path = retro.velocity_path(str(self.root))
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(retro.VELOCITY_HEADER +
-                        "| RETRO9001 | 2026-07-20 | 9 | 0 | 9 | 30 | 0 | - | - | - | "
-                        "0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | - | - |\n",
-                        encoding="utf-8")
+        path.write_text(retro.VELOCITY_HEADER + _legacy_row(
+            id="RETRO9001", date="2026-07-20", units=9, measured=0, forecast=9, points=30,
+            estimate=0, oversized=0, constants="TOKENS_PER_POINT=25000",
+            sample="out-of-sample"), encoding="utf-8")
 
     def test_a_forecast_sprint_that_rates_nothing_records_its_forecast(self) -> None:
         # the bug's own shape: two units forecast at plan time, neither measured
@@ -2040,10 +2064,11 @@ class AReasonSurvivesTheRowItExplains(InteractiveSprintFixture):
     def _row(self, note: str, actual: str = "-") -> None:
         path = retro.velocity_path(str(self.root))
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(retro.VELOCITY_HEADER +
-                        f"| RETRO9002 | 2026-07-20 | 2 | 0 | 2 | 8 | 0 | {actual} | - | - | "
-                        f"0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - | {note} |\n",
-                        encoding="utf-8")
+        path.write_text(retro.VELOCITY_HEADER + _legacy_row(
+            id="RETRO9002", date="2026-07-20", units=2, measured=0, forecast=2, points=8,
+            estimate=0, actual_tokens=actual, oversized=0,
+            constants="TOKENS_PER_POINT=25000", sample="out-of-sample",
+            note=note), encoding="utf-8")
 
     def test_a_recorded_reason_survives_a_rewrite_of_its_own_row(self) -> None:
         self._row(self.ON_DISK)
@@ -3104,13 +3129,38 @@ class VelocityCarriesTheOverheadSplitTests(unittest.TestCase):
         self.assertIn("unattributed_s", keys)
 
     def test_the_column_header_is_matched_by_the_reader(self) -> None:
-        header = ("| Retro | Date | Units | Measured | Forecast | Points | Estimate | Actual | "
-                  "Ratio | Oversized | Wall | Overhead | Unattributed | Constants | Sample | "
-                  "Model | Note | Source |")
+        """Against the SHIPPED header, not a hand-written one. This test used to build its own
+        header string carrying the two columns and assert the reader found them - which proved
+        the reader, and said nothing about the file the writer actually emits. `VELOCITY_HEADER`
+        did not carry either column, and the row renderer did not write them, so the terms were
+        computed into the row dict and dropped at the last step. Both criteria read
+        `Verified: yes` over that."""
+        header = next(l for l in retro.VELOCITY_HEADER.splitlines()
+                      if l.strip().lower().startswith("| retro"))
         idx = retro._velocity_index(header)
-        self.assertIsNotNone(idx, "the header row is not recognised at all")
+        self.assertIsNotNone(idx, "the shipped header row is not recognised at all")
         self.assertIn("overhead_ratio", idx)
         self.assertIn("unattributed_s", idx)
+
+    def test_a_written_overhead_term_survives_a_read_back(self) -> None:
+        """The round trip is the actual claim: a figure that survives to be compared across
+        sprints. Asserting the header and the computation separately let a gap open between
+        them that neither test could see."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "retros").mkdir(parents=True)
+            retro.record_velocity(root, {
+                "id": "RETRO0001", "date": "2026-08-01", "n_units": 3, "n_measured": 3,
+                "n_forecast": 3,
+                "batch": {"delivered_points": 12, "oversized": [], "plan_estimate": 300,
+                          "actual_tokens": 600, "ratio": None, "wall_time_s": 90,
+                          "overhead_ratio": 0.42, "unattributed_s": 17},
+            })
+            rows = retro.velocity_history(root)
+        self.assertEqual(1, len(rows))
+        self.assertIn("0.42", str(rows[0].get("overhead_ratio")),
+                      "the overhead ratio did not survive the write/read round trip")
+        self.assertIn("17", str(rows[0].get("unattributed_s")))
 
     def test_an_unattributable_run_records_absence_not_zero(self) -> None:
         """The direction this must fail in. A 0 in this file reads as a sprint with no overhead
