@@ -8,13 +8,12 @@
 > **Affects:** tools/check_spec_claims.py, tools/tests/test_check_spec_claims.py
 > **Epic:** EP0195
 > **Points:** 5
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer reading a closed unit
+**I want** a criterion ticked over a surface the diff never touched flagged at delivery
+**So that** a false completion claim is caught where it is still free to fix
 
 ## Acceptance Criteria
 

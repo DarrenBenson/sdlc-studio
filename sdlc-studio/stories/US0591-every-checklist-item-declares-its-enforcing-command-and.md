@@ -8,13 +8,12 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Epic:** EP0197
 > **Points:** 5
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator whose close keeps stalling
+**I want** each checklist item enforced where it can still be satisfied
+**So that** a gate is not raised at a point where a waiver is its only exit
 
 ## Acceptance Criteria
 

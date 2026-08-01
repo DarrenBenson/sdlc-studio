@@ -8,13 +8,12 @@
 > **Affects:** .claude/skills/sdlc-studio/reference-doctrine.md, tools/tests/test_doctrine_review_scope.py
 > **Epic:** EP0194
 > **Points:** 2
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer of a project that installs this skill
+**I want** the review scope rule stated in the shipped doctrine
+**So that** a consuming project inherits the bound and not only the ceremony
 
 ## Acceptance Criteria
 

@@ -5,16 +5,15 @@
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .githooks/pre-commit, tools/tests/test_precommit_lane_order.py, AGENTS.md
+> **Affects:** .githooks/pre-commit, tools/tests/test_precommit_claim_drift.py, tools/tests/test_precommit_lane_order.py, AGENTS.md
 > **Epic:** EP0195
 > **Points:** 3
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator paying for the commit gate
+**I want** the claim-drift lane advisory while its yield is measured
+**So that** a new lane on a gate already over its ceiling earns its block on evidence
 
 ## Acceptance Criteria
 
@@ -29,14 +28,14 @@
 
 - **Given** AGENTS.md's pre-commit lane roster
 - **When** the lane ships
-- **Then** the roster names it, and `test_check_spec_claims.py` pins that naming, so the list cannot silently exempt what it forgot
+- **Then** the roster names it, and `test_precommit_claim_drift.py` pins that naming, so the list cannot silently exempt what it forgot
 - **Verify:** pytest tools/tests/test_precommit_claim_drift.py::LaneTests::test_the_lane_is_named_in_the_gate_roster
 
 ### AC3: its yield is recorded before any decision to block
 
-- **Given** one sprint's worth of runs with the lane advisory
+- **Given** a run in which the lane raised findings
 - **When** the sprint report is composed
-- **Then** it carries the count of findings the lane raised and how many became filed defects, so the decision to make it blocking is taken against measurement rather than impression
+- **Then** it carries the count the lane raised and how many became filed defects, so a later decision to make the lane blocking has a number to read. The DECISION itself is explicitly out of this sprint - the lane ships here, so a sprint's worth of yield cannot exist yet, and asserting otherwise would tick a criterion over a surface this diff does not touch, which is what US0584 flags
 - **Verify:** pytest tools/tests/test_precommit_claim_drift.py::LaneTests::test_the_yield_is_recorded
 
 ## Revision History

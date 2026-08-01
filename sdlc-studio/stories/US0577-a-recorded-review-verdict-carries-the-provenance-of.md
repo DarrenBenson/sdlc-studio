@@ -8,13 +8,12 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Epic:** EP0194
 > **Points:** 5
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer relying on a review verdict
+**I want** the brief a seat was given recorded with its verdict
+**So that** a hand-written prompt is detectable rather than assumed to have been the shipped one
 
 ## Acceptance Criteria
 

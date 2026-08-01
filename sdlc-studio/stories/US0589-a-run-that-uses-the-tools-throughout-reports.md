@@ -8,13 +8,12 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Epic:** EP0196
 > **Points:** 2
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer trusting the manual-action count
+**I want** a run using the tools throughout to report zero
+**So that** the detector is measured rather than a label that always fires
 
 ## Acceptance Criteria
 

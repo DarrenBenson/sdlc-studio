@@ -8,13 +8,12 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Epic:** EP0194
 > **Points:** 5
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** developer whose unit is under review
+**I want** only what my change broke able to hold my gate
+**So that** a review is a judgement on my increment rather than on the repository's condition
 
 ## Acceptance Criteria
 

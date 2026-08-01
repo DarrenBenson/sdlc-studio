@@ -8,13 +8,12 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Epic:** EP0196
 > **Points:** 3
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** agent facing a mechanical task with no tool
+**I want** filing the gap to be the escape
+**So that** the backlog improves instead of the rule eroding
 
 ## Acceptance Criteria
 

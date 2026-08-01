@@ -8,13 +8,12 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Epic:** EP0197
 > **Points:** 3
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator reading one report
+**I want** coverage computed once
+**So that** a close cannot report three different answers to one question
 
 ## Acceptance Criteria
 

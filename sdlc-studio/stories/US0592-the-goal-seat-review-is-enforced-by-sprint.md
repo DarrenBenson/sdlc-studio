@@ -8,13 +8,12 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Epic:** EP0197
 > **Points:** 5
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator setting a sprint's direction
+**I want** the goal seat review enforced at plan time
+**So that** a seat can still refuse the goal while the batch can be re-cut
 
 ## Acceptance Criteria
 

@@ -5,7 +5,7 @@
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/critic.py, .githooks/pre-commit
+> **Affects:** tools/check_spec_claims.py, tools/tests/test_check_spec_claims.py, .githooks/pre-commit, tools/tests/test_precommit_claim_drift.py
 > **Priority:** High
 > **Type:** Feature
 > **Size:** M

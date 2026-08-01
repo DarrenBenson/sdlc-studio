@@ -8,15 +8,23 @@
 > **Affects:** tools/check_spec_claims.py, tools/tests/test_check_spec_claims.py
 > **Epic:** EP0195
 > **Points:** 5
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** developer about to commit
+**I want** a contradiction between my diff's code and my diff's prose flagged before I push
+**So that** a stale sentence costs seconds rather than an adversarial review round
 
 ## Acceptance Criteria
+
+> **Two severities in one script, stated rather than discovered.** `tools/check_spec_claims.py`
+> is wired into the pre-commit gate as BLOCKING and its `main()` returns 1 on any error. The
+> claim-drift findings must be ADVISORY while their yield is measured (D0105), so the two cannot
+> share one exit code. The check reports drift findings on a separate channel that does not
+> influence the return value, and the existing spec-claim errors keep the blocking contract they
+> have today. A test asserts a drift finding alone exits 0 while a spec-claim error still
+> exits 1. Without it, adding the lane silently converts advice into a blocked commit,
+> which is where an independent seat predicted AC1's test would actually fail.
 
 ### AC1: a changed literal whose prose still states the old value is flagged
 

@@ -8,13 +8,12 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Epic:** EP0194
 > **Points:** 3
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer of the review gate
+**I want** an unbriefed verdict refused at the point of recording
+**So that** the seat-brief rule is a refusal rather than doctrine that gets skipped
 
 ## Acceptance Criteria
 

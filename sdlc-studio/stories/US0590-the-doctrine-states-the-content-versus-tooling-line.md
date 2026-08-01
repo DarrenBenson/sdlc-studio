@@ -8,13 +8,12 @@
 > **Affects:** .claude/skills/sdlc-studio/reference-doctrine.md, .claude/skills/sdlc-studio/reference-scripts.md
 > **Epic:** EP0196
 > **Points:** 2
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer of a project that installs this skill
+**I want** the content-versus-tooling line stated in the doctrine
+**So that** a consuming project inherits the habit and not only the observation
 
 ## Acceptance Criteria
 

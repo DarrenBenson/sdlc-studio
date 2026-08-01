@@ -1,7 +1,7 @@
 # EP0195: The claim inventory runs at delivery, where a stale sentence costs seconds instead of a review round
 
 > **Status:** Draft
-> **Derived Point Total:** 13
+> **Derived Point Total:** 16
 > **Parent:** CR0517
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -17,6 +17,7 @@ Decomposed from CR0517. Delivers the work CR0517 requested.
 - [ ] [US0583: A staged diff changing a literal while its own prose still states the old value is flagged, naming both sites, and a diff whose prose agrees produces no finding](../stories/US0583-a-staged-diff-changing-a-literal-while-its.md)
 - [ ] [US0584: A criterion ticked in a diff whose named surface that diff does not touch is flagged, and one whose surface it does touch is not](../stories/US0584-a-criterion-ticked-in-a-diff-whose-named.md)
 - [ ] [US0585: The claim-drift lane runs in the commit gate as advisory, and its yield over one sprint is recorded before any decision to make it block](../stories/US0585-the-claim-drift-lane-runs-in-the-commit.md)
+- [ ] [US0597: The premise is replayed and measured: the blocking-finding count before and after, and the lane run over the three diffs that motivated it](../stories/US0597-the-premise-is-replayed-and-measured-the-blocking.md)
 
 ## Acceptance Criteria (Epic Level)
 

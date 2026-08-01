@@ -8,13 +8,12 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Epic:** EP0194
 > **Points:** 3
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** reviewer
+**I want** a finding an open artefact already records annotated with its id
+**So that** re-finding known debt is not reported as a review result
 
 ## Acceptance Criteria
 

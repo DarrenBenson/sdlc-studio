@@ -8,13 +8,12 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Epic:** EP0197
 > **Points:** 3
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator reading a close report
+**I want** the closing-review item to read verdicts rather than count passes
+**So that** four rounds of which three rejected cannot report as `ran`
 
 ## Acceptance Criteria
 

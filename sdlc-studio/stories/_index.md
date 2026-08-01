@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 25 |
+| Draft | 26 |
 | Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 1 |
-| **Total** | **596** |
+| **Total** | **597** |
 
 ## All Stories
 
@@ -508,6 +508,7 @@
 | [US0594](US0594-a-unit-whose-ticked-criteria-the-tree-contradicts.md) | A unit whose ticked criteria the tree contradicts is reported outstanding at the close | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0595](US0595-a-waiver-records-whether-it-was-deliberate-or.md) | A waiver records whether it was deliberate or its window had already expired, and the retro counts them apart | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0596](US0596-coverage-is-computed-once-and-two-rows-disagreeing.md) | Coverage is computed once, and two rows disagreeing about it is itself an outstanding item | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
+| [US0597](US0597-the-premise-is-replayed-and-measured-the-blocking.md) | The premise is replayed and measured: the blocking-finding count before and after, and the lane run over the three diffs that motivated it | Draft | EP0195 | 2026-08-01 | 2026-08-01 |
 
 ## Archived Releases
 

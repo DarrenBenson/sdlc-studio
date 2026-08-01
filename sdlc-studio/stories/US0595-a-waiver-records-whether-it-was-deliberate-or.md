@@ -8,13 +8,12 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/decisions.py, .claude/skills/sdlc-studio/scripts/tests/test_decisions.py
 > **Epic:** EP0197
 > **Points:** 3
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer reading the record a year later
+**I want** a waiver to record whether it was chosen or forced
+**So that** a process failure is not laundered as a decision
 
 ## Acceptance Criteria
 

@@ -8,21 +8,30 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Epic:** EP0194
 > **Points:** 5
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer closing a batch
+**I want** every finding sorted by whether this unit caused it
+**So that** a defect is priced against the batch that introduced it
 
 ## Acceptance Criteria
 
+> **Two axes, deliberately named apart.** `critic.py` already carries a `class` field with
+> `FRESH` / `REPAIR_REGRESSION` / `UNCLASSIFIED`, which relates a round-N finding to round
+> N-1's REPAIR, and `escalation_for` gates on it. This story adds a DIFFERENT question - does
+> this finding predate the run's base ref - so it lands on a new field named `origin` carrying
+> `regression` / `new` / `pre-existing`. The word "regression" appears on both axes and means
+> different things: `REPAIR_REGRESSION` is "the repair broke it", `origin: regression` is "this
+> unit's diff broke it". They are not merged, and the coverage gate reads `origin`. An
+> independent engineering seat found this collision at goal review; without the separate name
+> a second classifier would have been built on top of one CR0510 reports as effectively dead.
+
 ### AC1: every finding carries a classification
 
-- **Given** a verdict whose findings are each marked REGRESSION, NEW or PRE-EXISTING
+- **Given** a verdict whose findings are each marked on the `origin` axis as regression, new or pre-existing
 - **When** it is recorded and read back
-- **Then** each finding's classification survives the round trip
+- **Then** each finding's `origin` survives the round trip, and the existing `class` axis is untouched by it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::FindingClassTests::test_a_classification_survives_the_round_trip
 
 ### AC2: an unclassified finding is refused

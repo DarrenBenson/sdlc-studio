@@ -8,13 +8,12 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py
 > **Epic:** EP0196
 > **Points:** 5
-> **Persona:** Maya Okafor
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** maintainer auditing a run
+**I want** every tool recording the artefact it touched
+**So that** hand-rolled work is visible rather than indistinguishable from tool-driven work
 
 ## Acceptance Criteria
 
