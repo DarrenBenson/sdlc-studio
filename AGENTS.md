@@ -95,6 +95,16 @@ hold the gate. Decide which by execution (`git log -S`), not by impression.
 derived, and `reconcile` syncs it. **Read `reference-scripts.md` before hand-doing anything
 mechanical**; it is the catalogue, and the answer is usually already there.
 
+**Exercise every claim through the shipped entry point before asking for review.** A review
+should CONFIRM your work, not discover that it does not run. Take each factual claim in the
+changelog fragment and the criteria and put it through the CLI in a throwaway fixture -
+refusals included, with the positive control beside each one. A library test cannot see a
+missing lane, because the wiring is the part it does not exercise: `brief_fingerprint(brief(
+...))` passed in-process for a whole sprint while `critic.py brief` printed nothing and the
+paperwork said it did. Needing a second review round to learn that is not thoroughness, it is
+verification handed to somebody else. Ungated until CR0520 ships `verify_ac lane-check`, so
+read it as a known-weak rule and do it anyway.
+
 **Ship the paperwork in the same commit as the code.** Every behaviour or doc change carries
 its `changelog.d/<UNIT-ID>.md` fragment (`lessons/LL0004`).
 
