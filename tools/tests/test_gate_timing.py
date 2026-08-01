@@ -489,7 +489,7 @@ class ScopeCollapseTests(unittest.TestCase):
             buf = io.StringIO()
             with contextlib.redirect_stdout(buf):
                 rc = gt.main(["--root", str(root), "scope", "--suite", "total", "--tests", "510"])
-            self.assertEqual(rc, 2, "a collapse exits as an ordinary declined recording")
+            self.assertEqual(rc, 3, "a collapse exits as an ordinary declined recording")
             self.assertIn("BLOCKED", buf.getvalue())
 
     def test_a_selected_run_is_never_judged_a_collapse(self) -> None:
@@ -553,13 +553,20 @@ class ScopeCollapseTests(unittest.TestCase):
     def test_a_loader_error_still_only_declines_the_recording(self) -> None:
         """The loader-error branch is a different fact with a different consequence, and it is
         checked first. Grading it a collapse would block every import failure, which is a build
-        problem the author already sees."""
+        problem the author already sees.
+
+        The count must be BELOW the collapse threshold, or the `not loader_error` term is never
+        reached and the test passes whether that term is present or absent. An independent
+        review mutated the term away and this test survived - a vacuous test, in the sprint that
+        shipped the rule against them."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             gt.record(root, "total.tests", 5645)
-            v = gt.scope_ok(root, "total", 5645, loader_error=True)
+            v = gt.scope_ok(root, "total", 100, loader_error=True)
             self.assertFalse(v["ok"])
-            self.assertFalse(v["collapsed"])
+            self.assertFalse(v["collapsed"],
+                             "a loader error at a collapsed count is graded a collapse, so "
+                             "every import failure now blocks the commit")
 
     def test_a_zero_count_is_a_collapse_and_says_which_fault_it_is(self) -> None:
         """`suite_tests` is parsed out of the runner's output, so a changed output format yields
@@ -574,14 +581,80 @@ class ScopeCollapseTests(unittest.TestCase):
             self.assertIn("output format", v["why"])
             self.assertNotIn("100% drop", v["why"])
 
-    def test_a_collapsed_count_is_still_recorded_so_the_peak_can_recover(self) -> None:
+    def test_a_collapsed_count_is_NOT_recorded_so_retries_cannot_evict_the_peak(self) -> None:
+        """The refusal text says "commit again" and the history is a rolling window of 10, so
+        recording the collapsed count meant ten retries evicted every real count and left the
+        peak at the collapsed value - the guard then permanently off. With a zero count it took
+        the 0.8 floor down too, since nothing is below `0 * 0.8`. Found by an independent
+        review driving the documented retry loop."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             gt.record(root, "total.tests", 5645)
-            with contextlib.redirect_stdout(io.StringIO()):
-                gt.main(["--root", str(root), "scope", "--suite", "total", "--tests", "510"])
+            for _ in range(12):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    rc = gt.main(["--root", str(root), "scope", "--suite", "total",
+                                  "--tests", "510"])
+                self.assertEqual(rc, 3, "the guard stopped blocking an identical collapsed run")
             self.assertEqual(json.loads((root / gt.REL).read_text(encoding="utf-8"))["total.tests"],
-                             [5645, 510])
+                             [5645], "a collapsed count entered the series and evicted the peak")
+
+    def test_a_DRIFTING_count_is_still_recorded_so_the_peak_can_recover(self) -> None:
+        """The control for the rule above: a drift must still record, or one short run poisons
+        the series permanently - the counts that would rebuild the peak are the ones being
+        thrown away."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 3400)
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = gt.main(["--root", str(root), "scope", "--suite", "total", "--tests", "2000"])
+            self.assertEqual(rc, 1)
+            self.assertEqual(json.loads((root / gt.REL).read_text(encoding="utf-8"))["total.tests"],
+                             [3400, 2000])
+
+    def test_an_acked_shrink_still_declines_the_timing(self) -> None:
+        """The ack clears the COLLAPSE grade and nothing else. Setting `ok = True` let a 1-test
+        run's duration into the budget series, where it read as a 100% improvement - BG0239's
+        exact regression, reintroduced through the new escape. Found by independent review,
+        end-to-end through the real hook."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 5645)
+            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / gt.COLLAPSE_ACK).write_text(
+                json.dumps({"tests": 510, "reason": "the legacy suite moved out"}),
+                encoding="utf-8")
+            v = gt.scope_ok(root, "total", 510)
+            self.assertFalse(v["collapsed"], "the acknowledged shrink still blocks")
+            self.assertFalse(v["ok"],
+                             "an acknowledged shrink is recorded as comparable, so its duration "
+                             "enters the budget series and reads as an improvement")
+
+    def test_the_acknowledged_escape_is_said_out_loud(self) -> None:
+        """An escape taken silently is indistinguishable from a guard that never fired, which
+        is what the ack's own criterion forbids."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gt.record(root, "total.tests", 5645)
+            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / gt.COLLAPSE_ACK).write_text(
+                json.dumps({"tests": 510, "reason": "the legacy suite moved out"}),
+                encoding="utf-8")
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                gt.main(["--root", str(root), "scope", "--suite", "total", "--tests", "510"])
+            self.assertIn("acknowledged", buf.getvalue())
+
+    def test_a_non_object_ack_is_not_an_ack(self) -> None:
+        """Mutation found the `isinstance` guard unheld: a JSON list or string parses fine and
+        must not license a collapse."""
+        for payload in ("[1, 2, 3]", '"just a string"', "42"):
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                gt.record(root, "total.tests", 5645)
+                (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+                (root / "sdlc-studio" / gt.COLLAPSE_ACK).write_text(payload, encoding="utf-8")
+                self.assertTrue(gt.scope_ok(root, "total", 510)["collapsed"],
+                                f"{payload} was accepted as an acknowledgement")
 
 
 if __name__ == "__main__":

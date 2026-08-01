@@ -10,6 +10,8 @@
 > **Created-by:** sdlc-studio file
 > **Raised-by:** RUN-01KYNKDP close review; human; v1
 
+**Review verdict (independent, isolated worktree, fresh context): REJECT on the first delivery.** Five findings, each with an executed reproduction: exit 2 colliding with python's own exit 2 (which left a RED test on main), the ack clearing the 0.8 timing floor, a collapsed count evicting the peak over ten instructed retries, a silent acknowledged escape, and a vacuous loader-error test whose `not loader_error` term survived being mutated away. All repaired; four repair mutants applied singly, purged, restored byte-identical, all KILLED. The full `tools/tests` suite is green under the gate's own runner - the original delivery was verified against a SELECTED subset, which is the rule BG0422 shipped one commit later and this one broke.
+
 ## Summary
 
 The guard for this exists, would have fired, and its entire consequence is that a number does not get written to a JSON file.

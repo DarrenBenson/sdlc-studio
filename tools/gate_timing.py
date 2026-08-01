@@ -159,9 +159,14 @@ def scope_ok(root: Path, suite: str, tests: int, loader_error: bool = False,
         # not: it makes the explicit guard unreachable, so deleting it changes no behaviour and
         # no test can tell. Mutation caught exactly that; the emptiness rule now has one owner.
         if reason is not None:
-            ok = True
+            # The ack clears the COLLAPSE grade and NOTHING ELSE. `ok` stays False, because the
+            # 0.8 floor answers a different question - is this run comparable enough to TIME? -
+            # and a deliberately shrunk suite is not. Setting `ok = True` here let a 1-test run's
+            # duration into the budget series, where it read as a 100% improvement: BG0239's
+            # exact regression, reintroduced through the new escape.
             why = (f"{tests} tests against a peak of {int(peak)} - a {drop:.0%} drop, "
-                   f"acknowledged as deliberate: {reason}")
+                   f"acknowledged as deliberate: {reason}. Not recorded: an acknowledged "
+                   f"shrink is still not comparable with the runs before it")
         else:
             collapsed = True
             ok = False
@@ -289,9 +294,19 @@ def cmd_scope(args: argparse.Namespace) -> int:
     """Judge whether a run covered its scope, then record its test count.
 
     Exit 0 = the run is comparable and its total may be recorded; exit 1 = it only got invoked;
-    exit 2 = the suite COLLAPSED and the commit must be blocked (BG0413). The count is appended
-    in every case, so the peak keeps improving and one bad run does not poison the series - the
-    counts that would rebuild it are exactly the ones that would otherwise be thrown away.
+    exit 3 = the suite COLLAPSED and the commit must be blocked.
+
+    THREE, not two: python itself exits 2 for an argparse error and for a missing script file,
+    so a caller reading 2 as "collapsed" blocks the commit when the tool is absent or
+    mis-invoked - the opposite of this hook's promise to degrade honestly. 3 is a code python
+    will not produce on our behalf.
+
+    A DRIFT (exit 1) appends the count, so the peak keeps improving and one short run does not
+    poison the series. A COLLAPSE does NOT: the refusal text says "commit again", the history is
+    a rolling window of 10, and appending here meant ten retries evicted every real count and
+    left the peak at the collapsed value - disabling the guard permanently, and with a zero
+    count disabling the 0.8 floor with it.
+
     Never raises into a commit; the caller decides what an exit code costs.
     """
     root = Path(args.root)
@@ -304,11 +319,17 @@ def cmd_scope(args: argparse.Namespace) -> int:
     # is the erosion this separation prevents. Stated as the eviction it is, rather than as an
     # immediate drag it is not.
     suffix = ".selected" if selected else ""
-    record(root, f"{args.suite}{suffix}.tests", args.tests)
     if verdict["collapsed"]:
+        # NOT recorded. The refusal says "commit again", the history is a rolling window of 10,
+        # and appending here meant ten retries evicted every real count and left the peak at the
+        # collapsed value - the guard then permanently off, and with a zero count the 0.8 floor
+        # off with it. A drift still records, which is what lets a real peak recover.
         print(f"gate-budget: suite scope COLLAPSED, commit BLOCKED - {verdict['why']}")
-        return 2
+        return 3
+    record(root, f"{args.suite}{suffix}.tests", args.tests)
     if not verdict["ok"]:
+        # Said out loud on BOTH refusing paths, and on the acknowledged one too: an escape that
+        # is taken silently is indistinguishable from a guard that never fired.
         print(f"gate-budget: total NOT recorded - {verdict['why']}")
     return 0 if verdict["ok"] else 1
 

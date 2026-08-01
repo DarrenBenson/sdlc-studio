@@ -4839,6 +4839,54 @@ class StopAwaitingSignoffTests(unittest.TestCase):
         self.assertEqual(["US0101"], out["unblocked"])
         self.assertEqual([], out["awaiting_signoff"])
 
+    def test_a_unit_whose_two_role_bar_is_MET_is_still_remaining_work(self) -> None:
+        """The fail-open an independent review reproduced. A unit with adversarial evidence AND
+        an independent sign-off recorded can reach Done right now, so reporting it as "awaiting
+        a signature this session cannot give" drops real remaining work out of the stop's
+        refusal - the one direction this function's own docstring says it never takes."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, {"US0101": "Review"})
+            calls = {}
+
+            def _signoff_for(_root, unit):
+                calls["asked"] = unit
+                return {"principal": "the operator", "unit": unit}
+
+            import critic
+            with unittest.mock.patch.object(critic, "signoff_for", _signoff_for), \
+                    unittest.mock.patch.object(critic, "is_independent_signoff",
+                                               lambda *_a, **_k: True):
+                out = mod.blocked_by_pending(root)
+        self.assertEqual("US0101", calls.get("asked"), "the sign-off record is never consulted")
+        self.assertEqual([], out["awaiting_signoff"])
+        self.assertEqual(["US0101"], out["unblocked"],
+                         "a unit that can reach Done today was dropped from the stop")
+
+    def test_an_id_with_no_ordinal_is_held_like_reachable_end_state_holds_it(self) -> None:
+        """A v3 ULID carries no ordinal, so `id_number` returns None. Treating that as "below
+        the cutoff" made the whole fix inert for the id family the product mints by default -
+        and took the opposite decision to `reachable_end_state`, which this fix claims to read,
+        and to the provenance check repaired in the same run. One answer across the repo."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, {"US-01JQK3F8AA": "Review"})
+            out = mod.blocked_by_pending(root)
+        self.assertEqual(["US01JQK3F8AA"], out["awaiting_signoff"],
+                         "a v3 id is reported as work the stop threw away")
+
+    def test_a_renamed_review_status_is_still_held(self) -> None:
+        """`== "review"` was a third spelling of a predicate critic already owns, and it missed
+        a project using `In Review` - which critic's matcher exists to support."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, {"US0101": "In Review"})
+            out = mod.blocked_by_pending(root)
+        self.assertEqual(["US0101"], out["awaiting_signoff"])
+
     def test_a_unit_below_the_cutoff_is_not_held(self) -> None:
         """The cutoff is a number, and it must be read as one - a project sets it precisely so
         the rule applies to new work and not to everything already on disk."""
@@ -8001,7 +8049,8 @@ class _ExecutionPolicyFixture(unittest.TestCase):
     """A repo carrying a declared execution policy, a measured baseline and a commit hook."""
 
     def _repo(self, d, *, declared: dict | None = None, baseline: int | None = 317,
-              hook: str | None = _HOOK_SELECTS, measured: list | None = None) -> Path:
+              hook: str | None = _HOOK_SELECTS, measured: list | None = None,
+              selected: list | None = None) -> Path:
         root = Path(d)
         (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
         cfg = ""
@@ -8017,8 +8066,11 @@ class _ExecutionPolicyFixture(unittest.TestCase):
         if measured is not None:
             local = root / "sdlc-studio" / ".local"
             local.mkdir(parents=True, exist_ok=True)
-            (local / "gate-timings.json").write_text(
-                json.dumps({"total": measured}), encoding="utf-8")
+            doc = {"total": measured}
+            if selected is not None:
+                doc["total.selected"] = selected
+                doc["total.last_series"] = "selected"
+            (local / "gate-timings.json").write_text(json.dumps(doc), encoding="utf-8")
         return root
 
 
@@ -8092,6 +8144,49 @@ class ExecutionCostSourceTests(_ExecutionPolicyFixture):
         self.assertIn("OVER", text)
         self.assertIn("554", text)
         self.assertIn("380", text, "the ceiling is not stated, so the breach cannot be judged")
+
+    def test_the_planner_reads_the_SERIES_the_budget_lane_reads(self) -> None:
+        """The defect an independent review found in the first fix. `budget_report` reads
+        `total.selected` when the marker says the last run was selected; this read `total`
+        unconditionally, so on a repo whose commits run selected the budget lane said 100s and
+        the plan said 554s about the same gate - the disagreement inverted rather than ended."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, baseline=317, measured=[554.0], selected=[100.0])
+            cost = sprint.execution_cost(root)
+        self.assertEqual(cost["seconds"], 100.0,
+                         "the plan prices a full run this repo's commits do not pay")
+        self.assertIn("SELECTED", cost["basis"], "the series is not named, so 100s reads as a "
+                                                 "full-run figure comparable with the baseline")
+
+    def test_a_full_run_repo_still_reads_the_full_series(self) -> None:
+        """The control: without a selected marker, nothing changes."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, baseline=317, measured=[554.0])
+            cost = sprint.execution_cost(root)
+        self.assertEqual(cost["seconds"], 554.0)
+        self.assertIn("full-run", cost["basis"])
+
+    def test_the_OVER_verdict_agrees_with_the_budget_lane(self) -> None:
+        """A plan announcing a breach the budget lane does not hold is the same two-readers
+        defect, pointing the other way."""
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, baseline=317, measured=[554.0], selected=[100.0])
+            text = "\n".join(sprint.render_execution_policy(sprint.execution_policy(root)))
+        self.assertNotIn("OVER", text,
+                         "the plan declares a breach on a 100s selected run against a 380s "
+                         "ceiling, which the budget lane reports as under")
+
+    def test_the_ceiling_boundary_is_bracketed(self) -> None:
+        """`>` against `>=`: a run landing exactly on the ceiling is not over it."""
+        sprint = _load()
+        for secs, expect_over in ((380.0, False), (381.0, True)):
+            with tempfile.TemporaryDirectory() as d:
+                root = self._repo(d, baseline=317, measured=[secs])
+                pol = sprint.execution_policy(root)
+            self.assertEqual(bool(pol["over_budget"]), expect_over, f"at {secs}s")
 
     def test_a_gate_under_its_ceiling_states_no_breach(self) -> None:
         """The positive control: without it, a renderer that printed OVER unconditionally would
@@ -9995,14 +10090,54 @@ class CloseChainCoverageTests(CloseDryRunTests):
                          "a chain step is neither reported nor counted, so its silence reads "
                          "the same as a pass")
 
-    def test_the_gate_step_is_reported_and_never_silently_dropped(self) -> None:
+    def test_the_gate_step_carries_the_PREFLIGHTS_verdict(self) -> None:
+        """This test used to assert `status in {"ok", "refuse", "unevaluated"}` - the set of
+        every possible status, so it held nothing. An independent review mutated the skipped
+        step to report `"ok"` and it SURVIVED the whole 5,658-test suite, which is precisely
+        what this unit exists to forbid. It now asserts the verdict itself.
+
+        A clean preflight means the gate RAN, against the real tree, and passed."""
         sprint = _load()
-        steps = self._steps(sprint.close_dry_run(self._repo()))
-        self.assertIn("gate", steps)
-        self.assertIn(steps["gate"]["status"], {"ok", "refuse", "unevaluated"})
-        if steps["gate"]["status"] == "unevaluated":
-            self.assertTrue(steps["gate"]["detail"].strip(),
-                            "an unevaluated step with no stated reason is an unexplained gap")
+        root = self._repo()
+        with unittest.mock.patch.object(
+                sprint, "close_preflight",
+                lambda *_a, **_k: {"ready": True, "blockers": []}):
+            steps = self._steps(sprint.close_dry_run(root))
+        self.assertEqual("ok", steps.get("gate", {}).get("status"),
+                         "a passing gate is not reported, so `clean` is unreachable")
+        self.assertIn("preflight", steps["gate"]["detail"])
+
+    def test_a_gate_refusal_is_reported_once_not_twice(self) -> None:
+        """The other direction: the preflight already files a gate failure as a blocker, so
+        noting it again would double-count the same refusal in the same report."""
+        sprint = _load()
+        root = self._repo()
+        blocker = {"stage": "gate", "detail": "tests: 3 failing", "remedy": "fix them"}
+        with unittest.mock.patch.object(
+                sprint, "close_preflight",
+                lambda *_a, **_k: {"ready": False, "blockers": [blocker]}):
+            result = sprint.close_dry_run(root)
+        gates = [s for s in result["steps"] if s["step"] == "gate"]
+        self.assertEqual(1, len(gates), "the gate refusal is reported twice")
+        self.assertEqual("refuse", gates[0]["status"])
+
+    def test_a_clean_preview_can_actually_report_CLEAN(self) -> None:
+        """The regression the first fix introduced. `gate` was noted `unevaluated`
+        unconditionally, `clean = not blockers and not unevaluated`, and `cmd_close` returns 1
+        unless clean - so every dry run in every repo exited 1 and `dry run CLEAN` became dead
+        code. US0555 AC4 (a clean dry run predicts a close that does not refuse) was
+        unsatisfiable in production."""
+        sprint = _load()
+        root = self._repo()
+        ok = lambda *_a, **_k: (True, "ok", "")  # noqa: E731
+        patches = {f"_close_{s.replace('-', '_')}": ok for s in sprint._CLOSE_CHAIN}
+        with unittest.mock.patch.object(
+                sprint, "close_preflight",
+                lambda *_a, **_k: {"ready": True, "blockers": []}), \
+                unittest.mock.patch.multiple(sprint, **patches):
+            result = sprint.close_dry_run(root, "RETRO9999")
+        self.assertEqual([], result["unevaluated"], "a step is permanently unanswered")
+        self.assertTrue(result["clean"], "no dry run can ever report clean")
 
     def test_the_dry_run_step_set_is_DERIVED_from_the_chain(self) -> None:
         """AC2. A restated list is what lost `gate` in the first place, so adding a step to the
@@ -10014,10 +10149,16 @@ class CloseChainCoverageTests(CloseDryRunTests):
 
     def test_the_reported_step_count_tracks_the_chain_rather_than_a_literal(self) -> None:
         """The "all seven steps" claim outlived the seven-step chain. The count must move when
-        the chain does, so a reader is never told a number the code has left behind."""
+        the chain does, so a reader is never told a number the code has left behind.
+
+        Asserting `str(len(_CLOSE_CHAIN))` anywhere in the report was NOT enough: an independent
+        review mutated the count to a literal 7 and the test still passed, because the digits
+        "10" appeared elsewhere - in a retro message from a sibling unit in the same commit. The
+        assertion is now pinned to the sentence that makes the claim."""
         sprint = _load()
         report = sprint.dry_run_report(sprint.close_dry_run(self._repo()))
-        self.assertIn(str(len(sprint._CLOSE_CHAIN)), report)
+        self.assertIn(f"{len(sprint._CLOSE_CHAIN)} chain step(s) previewed", report,
+                      "the previewed-step count is a literal, so it can outlive the chain")
         self.assertNotIn("all seven", report.lower())
 
 

@@ -10,6 +10,8 @@
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
 
+**Review verdict (independent, isolated worktree, fresh context): REJECT on the first delivery.** The planner read `total` while the budget lane reads `total.selected`, so on this repo the two still disagreed - 100s against 554s - and the changelog headline was false as written. Repaired to key on the same `total.last_series` marker, with the series named in the basis. Two dependent defects went with it: an OVER verdict the budget lane did not hold, and a per-commit line over-priced 5.5x. AC4 is unticked: D0089 records the breach as CARRIED, and carrying is not resolving.
+
 ## Summary
 
 Two facts that should be one. The budget lane knows the gate now costs 457s against a 380s ceiling. The planner, forecasting the same gate for the same sprint, quotes 317s.
@@ -38,7 +40,7 @@ The second half is that the budget is OVER at all. The ceiling is 380s. The gate
 - [x] The plan's execution-cost figure is derived from the same measured series the budget lane reads, so the two cannot report different costs for the same gate.
 - [x] A plan produced while the gate budget is OVER states that verdict on the plan, with the measured seconds and the ceiling.
 - [x] A test moves the recorded timing series and asserts the plan's figure moves with it, rather than asserting the current constant.
-- [x] The gate is brought back under its ceiling, or the ceiling is re-derived with the reason recorded - the OVER verdict is resolved rather than carried.
+- [ ] The gate is brought back under its ceiling, or the ceiling is re-derived with the reason recorded - the OVER verdict is resolved rather than carried. **NOT MET, and recorded as not met.** D0089 rules that the ceiling stays at 380s and the breach is carried visibly rather than resolved, because raising it is the pattern CR0510 was filed about and bringing 554s under 380s is a performance project rather than a 3-point unit. Carrying is not resolving; this criterion was ticked in the original delivery while the decision record beside it said the opposite, which an independent review caught. The residue is tracked as BG0415-carry in the retro's known-issues table, ruled `accepted-risk`.
 
 ## Impact
 

@@ -112,7 +112,7 @@ not an answer.
 
 All three accepted dispositions are shown below, filled in rather than described - the
 vocabulary is exact and a refusal is a poor place to meet it for the first time. Replace
-every EXAMPLE row; a row left in place is reported at the close.
+every EXAMPLE row; a row left in place is reported at the close, and a retro still carrying EVERY demonstration line this template ships is REFUSED by it.
 
 | Finding | Disposition |
 | --- | --- |

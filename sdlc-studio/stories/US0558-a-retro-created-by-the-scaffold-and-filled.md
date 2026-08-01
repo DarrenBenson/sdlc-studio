@@ -24,7 +24,7 @@
 - **When** `retro validate` runs against a retro scaffolded from it with the demonstration content left in place
 - **Then** it passes, so the template is a worked example rather than a set of headings
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::ScaffoldPassesItsValidatorTests::test_the_scaffolded_retro_passes_its_own_validator
-- **Verified:** yes (2026-07-29)
+- **Verified:** yes (2026-08-01)
 
 ### AC2: the carried-lessons shape is shown, not merely named
 
@@ -47,7 +47,8 @@
 - **Given** a scaffolded retro whose demonstration rows were never replaced
 - **When** the close reads it
 - **Then** the unreplaced demonstration is reported, so a retro that passes structurally is not silently accepted as filled in
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::ScaffoldPassesItsValidatorTests::test_unreplaced_demonstration_content_is_reported
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseRetroDemonstrationTests::test_the_close_step_REPORTS_the_unreplaced_demonstrations
+- **Note:** re-pointed 2026-08-01. The former verifier exercised `retro` alone and never imported `sprint`, so no change to `_close_retro_validate` could redden it - which is verbatim the defect BG0418 was filed to fix, left standing at the criterion meant to hold it.
 - **Verified:** yes (2026-07-29)
 
 ## Revision History

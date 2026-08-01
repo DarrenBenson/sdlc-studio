@@ -5802,17 +5802,18 @@ def _render_preflight(data: dict) -> None:
         print(f"      -> {b['remedy']}")
 
 
-#: The chain steps a dry run performs against a SCRATCH COPY. `gate` is absent deliberately:
-#: it is read-only already and the preflight has just run it against the real tree, so running
-#: it again in the copy would double the one genuinely expensive step of a preview whose whole
-#: point is to be cheap.
-#: Steps a preview deliberately does NOT execute, with the reason each is skipped. They are
-#: still REPORTED - as `unevaluated`, carrying this reason - because a step absent from the
-#: report is indistinguishable from one that passed, and that is the single way a preview can
-#: actively mislead.
-DRY_RUN_SKIP = {
-    "gate": ("the gate runs the full suite, which a preview must not pay for - run "
-             "`gate.py` directly, or let the real close run it"),
+#: Steps a dry run does NOT re-run against the scratch copy, and where their verdict comes from
+#: instead. `gate` is the only one: the PREFLIGHT has already run it against the real tree, so
+#: running it again in the copy would pay twice for the one genuinely expensive step of a
+#: preview whose whole point is to be cheap.
+#:
+#: It is still ACCOUNTED FOR in the report - a step absent from a preview is indistinguishable
+#: from one that passed, which is the single way a preview can actively mislead. A first attempt
+#: at that noted it `unevaluated` unconditionally, which made `clean` unreachable and every dry
+#: run exit 1: an absent step became a permanently-unanswered one, trading a silent gap for a
+#: guaranteed false negative. The verdict is taken from the preflight that already computed it.
+DRY_RUN_FROM_PREFLIGHT = {
+    "gate": "run by the preflight against the real tree, not re-run against the copy",
 }
 
 #: DERIVED from the chain it previews, never restated beside it. As a hand-maintained list this
@@ -5864,9 +5865,14 @@ def close_dry_run(root, retro_id: str | None = None) -> dict:
     try:
         state = run_state.read(scratch) or {}
         rid = retro_id or _dry_run_retro(scratch, state, note)
+        gate_refused = any(b["stage"] == "gate" for b in pre["blockers"])
         for step in DRY_RUN_ACTION_STEPS:
-            if step in DRY_RUN_SKIP:
-                note(step, "unevaluated", DRY_RUN_SKIP[step], DRY_RUN_SKIP[step])
+            if step in DRY_RUN_FROM_PREFLIGHT:
+                # Its verdict is the preflight's. A refusal is already on the report as a
+                # blocker, so noting it again would double-count it; a clean preflight means
+                # the gate RAN and passed, which is an `ok` this preview can honestly report.
+                if not gate_refused:
+                    note(step, "ok", DRY_RUN_FROM_PREFLIGHT[step])
                 continue
             if rid is None and step.startswith("retro"):
                 note(step, "unevaluated", "no retro to run this step against",
@@ -7626,7 +7632,12 @@ def _awaits_signoff(root: Path, uid: str) -> bool:
     if dod is not None and "review.two-role" not in dod:
         return False              # the project stood the sign-off requirement down
     num = sdlc_md.id_number(uid)
-    if num is None or num <= cutoff:
+    # An id carrying NO ordinal - a v3 ULID - cannot be ranked against an ordinal cutoff, and is
+    # treated as PAST it. `num is None -> False` made this whole fix inert for the id family the
+    # product now mints by default, and took the opposite decision to `reachable_end_state`
+    # (which this fix claims to read) and to the provenance check repaired in the same run.
+    # An unanswerable comparison resolves one way across the repo, not three.
+    if num is not None and num <= cutoff:
         return False
     hit = sdlc_md.find_by_id(root, uid)
     if hit is None:
@@ -7636,7 +7647,28 @@ def _awaits_signoff(root: Path, uid: str) -> bool:
     except OSError as exc:
         sdlc_md.debug("sprint._awaits_signoff", exc)
         return False
-    return status.strip().lower() == "review"
+    # The SHARED matcher, not a third spelling of it. `== "review"` missed a project using
+    # `In Review`; critic's predicate matches by name for exactly that reason.
+    try:
+        import critic  # noqa: PLC0415 - deferred, like the chain's other siblings
+        awaiting = critic._is_awaiting_signoff(status)
+    except Exception as exc:  # noqa: BLE001 - a reporting clause never fails a stop
+        sdlc_md.debug("sprint._awaits_signoff.matcher", exc)
+        awaiting = "review" in status.strip().lower()
+    if not awaiting:
+        return False
+    # And the bar must still be UNMET. A unit whose adversarial evidence and independent
+    # sign-off are both recorded can reach Done right now, so calling it "awaiting a signature
+    # this session cannot give" drops real remaining work out of the stop's refusal - the one
+    # direction this function must never take.
+    try:
+        import critic  # noqa: PLC0415
+        signoff = critic.signoff_for(root, uid)
+        if signoff and critic.is_independent_signoff(root, uid, signoff):
+            return False
+    except Exception as exc:  # noqa: BLE001
+        sdlc_md.debug("sprint._awaits_signoff.signoff", exc)
+    return True
 
 
 def run_elapsed(repo_root: Path | str) -> dict:
@@ -8751,20 +8783,35 @@ def hook_per_commit_mode(root) -> dict:
 GATE_TIMINGS_REL = "sdlc-studio/.local/gate-timings.json"
 
 
-def measured_gate_seconds(root) -> float | None:
-    """The most recent recorded full-run total, or None when nothing is recorded.
+def measured_gate_seconds(root) -> tuple[float | None, str]:
+    """The most recent recorded per-commit total, and WHICH series it came from.
 
     The LATEST run, not a median, matching what the budget lane reports: a median hides a
     ratchet for as long as it takes half the window to turn over, and the ratchet is the thing
-    worth seeing. Reads `total` rather than `total.selected` - a selected run measures a
-    fraction of the suite and is not comparable with a full-run baseline.
+    worth seeing.
+
+    Reads the series this repo's commits ACTUALLY run, exactly as the budget lane does - the
+    `total.last_series` marker decides. Reading `total` unconditionally is what an independent
+    review caught: on a repo whose commits run selected, the budget lane reported 100s and the
+    planner 554s for the same gate, which is the disagreement this was supposed to end, merely
+    inverted. A selected total is not comparable with a full-run baseline, so the caller is told
+    which series it got rather than left to assume.
     """
     try:
         data = json.loads((Path(root) / GATE_TIMINGS_REL).read_text(encoding="utf-8"))
-        runs = [float(x) for x in data.get("total", []) if isinstance(x, (int, float))]
     except (OSError, ValueError, AttributeError):
-        return None
-    return runs[-1] if runs else None
+        return None, "none"
+    if not isinstance(data, dict):
+        return None, "none"
+    series = "total.selected" if data.get("total.last_series") == "selected" else "total"
+    runs = [float(x) for x in (data.get(series) or []) if isinstance(x, (int, float))]
+    if not runs:
+        # A repo whose marker says selected but whose selected series is empty falls back to the
+        # full one rather than reporting nothing - an absent number here prices the largest line
+        # in the sprint at UNKNOWN over a bookkeeping gap.
+        runs = [float(x) for x in (data.get("total") or []) if isinstance(x, (int, float))]
+        series = "total"
+    return (runs[-1] if runs else None), (series if runs else "none")
 
 
 def execution_cost(root) -> dict:
@@ -8786,9 +8833,11 @@ def execution_cost(root) -> dict:
         declared = float(declared)
     except (TypeError, ValueError):
         declared = None
-    measured = measured_gate_seconds(root)
+    measured, series = measured_gate_seconds(root)
     if measured is not None:
-        basis = f"the measured per-commit series ({GATE_TIMINGS_REL}, latest run)"
+        kind = "SELECTED-run" if series == "total.selected" else "full-run"
+        basis = (f"the measured per-commit series ({GATE_TIMINGS_REL}, latest {kind}, "
+                 f"the same series the budget lane reads)")
         if declared is not None:
             drift = (measured - declared) / declared * 100.0 if declared else 0.0
             basis += (f"; the declared baseline is {declared:.0f}s"

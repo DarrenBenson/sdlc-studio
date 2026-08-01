@@ -302,11 +302,17 @@ if [ "$scope_rc" -eq 0 ]; then
   python3 tools/gate_timing.py record --suite "$total_suite" --seconds "$total_seconds" 2>/dev/null
   budget_line="$(python3 tools/gate_timing.py budget 2>/dev/null)"
   [ -n "$budget_line" ] && printf '  %s%s%s\n' "$Y" "$budget_line" "$N"
-elif [ "$scope_rc" -eq 2 ]; then
-  # BG0413: a COLLAPSE, not a drift. Declining to record a timing was this verdict's entire
-  # consequence, so a suite that had stopped running 90% of itself committed green - a deleted
-  # test cannot fail, and nothing else in the repo can notice. This is the one lane the tests
-  # cannot defend, so it blocks.
+elif [ "$scope_rc" -eq 3 ] && [ -n "$scope_note" ]; then
+  # A COLLAPSE, not a drift. Declining to record a timing was this verdict's entire consequence,
+  # so a suite that had stopped running 90% of itself committed green - a deleted test cannot
+  # fail, and nothing else in the repo can notice. This is the one lane the tests cannot defend,
+  # so it blocks.
+  #
+  # THREE, and a non-empty note. Python exits 2 for an argparse error and for a missing script
+  # file, so reading 2 here blocked the commit with a blank red line whenever the tool was
+  # absent or mis-invoked - breaking this hook's promise, stated at the top, to degrade honestly
+  # when python or the script is missing. The note check is the second belt: a verdict this lane
+  # blocks on must be able to say why.
   printf '  %s%s%s\n' "$R" "$scope_note" "$N"
   fail=1
 else

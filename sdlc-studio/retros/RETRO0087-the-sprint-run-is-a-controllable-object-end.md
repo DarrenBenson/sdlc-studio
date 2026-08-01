@@ -53,6 +53,45 @@ have needed rewriting to satisfy it. Its other half is to tick 31 criteria acros
 terminal bugs, which without re-verifying each fix is precisely the unevidenced claim the bug
 exists to condemn. Half-delivering it would have produced exactly the artefact it describes.
 
+## The reviews, which are the result
+
+Two independent adversarial seats, fresh contexts in isolated worktrees, 41 mutants between
+them. **They rejected seven of the nine units.** Every finding carried an executed
+reproduction, and the repairs are worth more than the original delivery.
+
+**The stop-ship: I left the commit gate broken on main for six commits.** BG0413's collapse
+signal used exit code 2 - which python itself returns for a missing script file and for an
+argparse error - so `test_precommit_window_guard` went red and every commit was refused with a
+blank message. My six commits all passed because the gate runs a SELECTED subset, and that test
+was never in it. One commit later I shipped the rule "run the full suite before every commit,
+never a filtered subset" and did not apply it to the work beside it. The reviewer bisected it.
+
+**A repair that introduced a regression.** Adding `gate` to the derived dry-run step set while
+marking it `unevaluated` unconditionally made `clean` unreachable: every `close --dry-run` in
+every repo exited 1, and `dry run CLEAN` became dead code. The step's verdict belonged to the
+preflight that had already run it - which the original comment said, and which I left in place
+directly contradicting the block I added above it.
+
+**Two of my tests survived mutation against the full 5,658-test suite.** One asserted
+`status in {"ok", "refuse", "unevaluated"}` - the set of every possible status. The other
+asserted a step count by substring, and was satisfied by the digits "10" appearing in an
+unrelated retro message from a sibling unit in the same commit. Both were written in the sprint
+that shipped LL0050, whose rule is to name the mutant before writing the test.
+
+**Two acceptance criteria were verified by tests that could not fail.** BG0372's AC1 asserted a
+column name that already existed at the commit its own history calls "Marked Fixed while
+delivering nothing" - it passed OVER the defect and was stamped `Verified: yes` on the date of
+that false close. US0558's AC4 never imported `sprint`, so no change to the close could redden
+it, which is verbatim the defect BG0418 was filed to fix.
+
+**And one recorded evidence line was simply false.** BG0466's commit message claimed four
+mutants all killed, including the backfill mirror. That mirror had no test at all, and
+restoring its hole survived the whole suite.
+
+Every finding is repaired and every reproduction re-run. **A fresh independent pass over the
+repairs is owed** - the authoring session cannot approve its own corrections, which is the
+same rule that produced these findings in the first place.
+
 ## What went well
 
 **Every unit was mutation-checked before its commit, and mutation earned its cost twice.**
@@ -106,6 +145,17 @@ advisory, so it landed - but the attribution is genuinely worse for it.
 - **A test asserting against a fixture it built itself proves the reader, not the file.**
   BG0372's criteria passed against a hand-written header while the shipped constant carried
   neither column, and both read `Verified: yes` over the gap. Pin the shipped artefact.
+- **An assertion over the set of every possible value holds nothing.**
+  `assertIn(status, {"ok", "refuse", "unevaluated"})` cannot fail, and it survived mutation
+  against 5,658 tests. If the assertion would pass under every outcome the code can produce, it
+  is documentation with an `assert` in front of it.
+- **A selected test run cannot tell you the tree is green.** Six commits passed a gate that
+  never ran the test my first commit broke. The rule against this shipped in the same sprint,
+  one commit later, and I did not apply it to the work beside it. Run the full suite before the
+  commit, or do not claim the suite is green.
+- **Check the criterion's verifier can FAIL before ticking it.** Two criteria here were
+  `Verified: yes` over tests that passed at the commit the defect was still present. A green
+  verifier proves the verifier ran, not that the work landed.
 - **Stopping is a delivery decision, and it is cheaper than half-building.** BG0448 was left
   untouched rather than part-built, because its half-delivered form is the exact artefact it
   was filed to describe.

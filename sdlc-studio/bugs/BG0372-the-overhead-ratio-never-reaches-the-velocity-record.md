@@ -28,8 +28,9 @@ Add the ratio and its unattributed remainder to the velocity row written at clos
 - **Given** `VELOCITY_COLUMNS`, the contract between the row writer and the planner that reads back
 - **When** the close records this sprint
 - **Then** it declares an overhead ratio and an unattributed span, so the figure survives to be compared across sprints instead of being answered once and forgotten
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::VelocityCarriesTheOverheadSplitTests::test_the_history_reads_an_overhead_column
-- **Verified:** yes (2026-07-29)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::VelocityCarriesTheOverheadSplitTests::test_a_written_overhead_term_survives_a_read_back
+- **Verified:** yes (2026-08-01)
+- **Note:** the previous verifier asserted only that `VELOCITY_COLUMNS` names the two keys. Those entries already existed at the commit this bug's own Revision History calls "Marked Fixed while delivering nothing", so the criterion PASSED OVER THE DEFECT and was stamped `Verified: yes` on the date of that false close. It now names the round trip, which is the actual claim.
 
 ### AC2: the reader matches the header it writes
 

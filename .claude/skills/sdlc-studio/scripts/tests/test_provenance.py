@@ -127,6 +127,41 @@ class CheckTests(unittest.TestCase):
                           "a v3 id was exempted by an accident of parsing, and the exemption "
                           "is indistinguishable from a pass")
 
+    def test_the_BACKFILL_mirrors_the_no_ordinal_rule(self) -> None:
+        """The half that had no test at all. `remake` carries its own copy of the exemption, and
+        the whole argument for fixing it is that a backfill exempting what the check judges
+        leaves the check permanently red on ids the backfill refuses to touch.
+
+        An independent review restored `(idn or 0) <= cutoff` here and it SURVIVED the entire
+        5,658-test suite - while the commit message claimed the backfill was covered by a mutant
+        that KILLED. This test is the difference between that claim and the truth."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (repo / "sdlc-studio" / ".config.yaml").write_text(
+                "provenance:\n  adopt_after: 9999\n", encoding="utf-8")
+            _story(repo, "US-01JQK3F8AA-x.md", UNSTAMPED.replace("US0005", "US-01JQK3F8AA"))
+            res = prov.remake(repo, ["story"])
+            changed = res["changed"] if isinstance(res, dict) else res[0]
+            self.assertIn("US-01JQK3F8AA", changed,
+                          "the backfill exempts a v3 id the check flags, so the check stays "
+                          "red on a file the backfill will never stamp")
+            self.assertTrue(prov.has_stamp(
+                (repo / "sdlc-studio" / "stories" / "US-01JQK3F8AA-x.md").read_text("utf-8")))
+
+    def test_the_backfill_still_exempts_a_numbered_legacy_id(self) -> None:
+        """The control, so the test above cannot be satisfied by a backfill that stamps
+        everything and deletes the legacy carve-out."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (repo / "sdlc-studio" / ".config.yaml").write_text(
+                "provenance:\n  adopt_after: 9999\n", encoding="utf-8")
+            _story(repo, "US0005-x.md", UNSTAMPED)
+            res = prov.remake(repo, ["story"])
+            changed = res["changed"] if isinstance(res, dict) else res[0]
+            self.assertNotIn("US0005", changed)
+
     def test_a_numbered_id_under_the_cutoff_is_still_exempt(self) -> None:
         """The positive control. Without it, a change that simply stopped exempting would pass
         the test above while deleting the legacy carve-out the cutoff exists to provide."""
