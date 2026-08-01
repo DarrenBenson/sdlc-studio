@@ -260,6 +260,18 @@ run "spec-claims" \
   "correct the claim, or add the census the marked claim names - a claim nobody can check is not a claim that passed" \
   -- python3 tools/check_spec_claims.py
 
+# claim-drift: this diff's code against this diff's own prose. ADVISORY - the findings print and
+# the lane cannot fail the commit, because a new blocking check on a gate already over its
+# ceiling earns its place on measured yield rather than on assertion (D0105). Reported here
+# rather than run through `run`, which would make its exit code fail the gate.
+if command -v python3 >/dev/null 2>&1 && [ -f tools/check_spec_claims.py ]; then
+  git diff --cached -U0 2>/dev/null \
+    | python3 tools/check_spec_claims.py --claim-drift - 2>&1 >/dev/null \
+    | grep '^CLAIM-DRIFT:' | while IFS= read -r line; do
+        printf '  %s%s%s\n' "$Y" "$line" "$N"
+      done || true
+fi
+
 run "script-tests" \
   "the TSD's per-script test contract agrees with the scripts tree, in both directions" \
   "add the missing test, or update the Unit coverage map's fenced exception list - a stale exemption hides a real gap beside it" \

@@ -13,9 +13,16 @@ stubbed to the collapse contract, and assert on the commit that results.
 from __future__ import annotations
 
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+
+# Importable under BOTH runners. The sibling fixture module is found via PYTHONPATH
+# under `unittest discover`, but pytest - which `verify_ac` invokes to check a
+# criterion - does not put this directory on the path, so the import failed there and
+# the story's own verifier could not run.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 # Imported as a MODULE, not by name: `from ... import WindowGuardTests` binds that TestCase
 # into this module's namespace and unittest then collects and re-runs all of its cases here.

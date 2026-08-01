@@ -314,6 +314,22 @@ class ClaimDriftTests(unittest.TestCase):
         self.assertIn("changelog.d/BG0001.md", found[0]["prose_file"])
         self.assertIn("tools/thing.py", found[0]["code_file"])
 
+    def test_a_literal_the_diff_KEPT_is_not_treated_as_replaced(self) -> None:
+        """MUTANT: compute the replaced set as `old_nums` rather than `old_nums - new_nums`.
+        This must go red.
+
+        A hunk that rewrites a line while keeping a number has not moved away from it, so prose
+        naming that number is still true. Without this case the detector flags every number the
+        diff touches at all, which is the noise that gets a lane switched off."""
+        diff = ("diff --git a/tools/thing.py b/tools/thing.py\n"
+                "--- a/tools/thing.py\n+++ b/tools/thing.py\n@@ -1,1 +1,1 @@\n"
+                "-    if x: return 2\n+    if y: return 2\n"
+                "diff --git a/changelog.d/BG0001.md b/changelog.d/BG0001.md\n"
+                "--- a/changelog.d/BG0001.md\n+++ b/changelog.d/BG0001.md\n@@ -0,0 +1,1 @@\n"
+                "+- it still exits 2 on collapse\n")
+        self.assertEqual([], check_spec_claims.claim_drift(diff),
+                         "a number the diff kept was reported as one it moved away from")
+
     def test_agreeing_prose_produces_no_finding(self) -> None:
         """The control. MUTANT: make `claim_drift` return a finding unconditionally - this must
         go red, so the lane cannot be satisfied by one that always fires."""

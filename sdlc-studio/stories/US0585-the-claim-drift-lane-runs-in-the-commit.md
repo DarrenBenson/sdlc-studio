@@ -23,6 +23,7 @@
 - **When** `git commit` is run for real in a fixture clone with the shipped hooks enabled
 - **Then** the finding is printed and the commit LANDS, because a new lane on a gate already over its ceiling must earn a block on measured evidence rather than assertion
 - **Verify:** pytest tools/tests/test_precommit_claim_drift.py::LaneTests::test_the_lane_reports_and_does_not_block
+- **Verified:** yes (2026-08-01)
 
 ### AC2: the lane is named in the gate roster
 
@@ -30,6 +31,7 @@
 - **When** the lane ships
 - **Then** the roster names it, and `test_precommit_claim_drift.py` pins that naming, so the list cannot silently exempt what it forgot
 - **Verify:** pytest tools/tests/test_precommit_claim_drift.py::LaneTests::test_the_lane_is_named_in_the_gate_roster
+- **Verified:** yes (2026-08-01)
 
 ### AC3: its yield is recorded before any decision to block
 
@@ -37,6 +39,7 @@
 - **When** the sprint report is composed
 - **Then** it carries the count the lane raised and how many became filed defects, so a later decision to make the lane blocking has a number to read. The DECISION itself is explicitly out of this sprint - the lane ships here, so a sprint's worth of yield cannot exist yet, and asserting otherwise would tick a criterion over a surface this diff does not touch, which is what US0584 flags
 - **Verify:** pytest tools/tests/test_precommit_claim_drift.py::LaneTests::test_the_yield_is_recorded
+- **Verified:** yes (2026-08-01)
 
 ## Revision History
 

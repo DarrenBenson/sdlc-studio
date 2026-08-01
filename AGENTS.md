@@ -57,6 +57,10 @@ prints each lane's rule and fix on failure, so this is the roster, not the manua
 `check_spec_claims.py`, `check_script_tests.py`, `check_neutrality.py`,
 `check_action_pins.sh`, `validate_skill.py`, `verify_ac.py`, `readiness.py`, plus `gate.py`'s
 own block (conformance, reconcile, validate, integrity, duplicate-id, docs) and markdownlint.
+One lane is ADVISORY and cannot fail a commit: `claim-drift`, which reports where a diff's
+code and the diff's own prose disagree. It ships advisory while its yield is measured,
+because a new blocking check on a gate already over its ceiling earns its place on a
+number rather than on assertion.
 `tools/tests/test_check_spec_claims.py` pins that this roster names its checker; extend the
 pinning when you add a lane, or the list silently exempts whatever it forgot - LL0013 in the
 [lessons registry](.claude/skills/sdlc-studio/lessons/_index.md).

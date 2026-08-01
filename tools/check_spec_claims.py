@@ -25,6 +25,7 @@ Exits non-zero on any contradicted or uncheckable claim.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -299,53 +300,60 @@ _INT_RE = re.compile(r"(?<![\w.])(\d{1,6})(?![\w.])")
 
 
 def _diff_files(diff: str):
-    """Yield (path, added_lines) per file in a unified diff. Added lines only."""
-    path, added = None, []
+    """Yield (path, added, removed) per file in a unified diff."""
+    path, added, removed = None, [], []
     for line in diff.splitlines():
         if line.startswith("diff --git "):
             if path is not None:
-                yield path, added
+                yield path, added, removed
             parts = line.split(" b/", 1)
-            path, added = (parts[1].strip() if len(parts) == 2 else ""), []
-        elif line.startswith("+++ ") or line.startswith("--- ") or line.startswith("@@"):
+            path, added, removed = (parts[1].strip() if len(parts) == 2 else ""), [], []
+        elif line.startswith(("+++ ", "--- ", "@@")):
             continue
         elif line.startswith("+") and path is not None:
             added.append(line[1:])
+        elif line.startswith("-") and path is not None:
+            removed.append(line[1:])
     if path is not None:
-        yield path, added
+        yield path, added, removed
 
 
 def claim_drift(diff: str) -> list[dict]:
-    """Findings where this diff's code moved past a number its own prose still states.
+    """Findings where this diff's prose still states a literal this diff's code REPLACED.
+
+    The signal is the value the change moved AWAY from, not any number the code happens to
+    lack. A first implementation asked whether the prose named a number absent from the code
+    side, and a real staged diff sank it immediately: 23KB of changed code contains very nearly
+    every small integer, so the prose always intersected and nothing was ever flagged. The
+    criterion says "changing a literal while its own prose still states the OLD value", and that
+    is both what BG0471 was and what discriminates.
 
     ADVISORY by construction: the caller reports these on a channel that does not influence the
-    exit code (D0105), because a new blocking lane on a gate already 40% over its ceiling has to
-    earn its place on measured yield rather than on assertion.
+    exit code (D0105).
     """
-    code_added, prose_added = [], []
-    for path, added in _diff_files(diff):
-        target = prose_added if path.endswith(_PROSE_SUFFIXES) else code_added
-        for line in added:
-            target.append((path, line))
-    # `not prose_added` is deliberately NOT tested here: with no prose the loop below runs
-    # zero times and returns [] anyway, so the extra clause would be an unreachable guard -
-    # the dead-defence shape BG0413 shipped and an independent seat then found. Mutation
-    # caught it here before it landed.
-    if not code_added:
-        return []                     # nothing for prose to contradict
-    code_nums = {n for _p, l in code_added for n in _INT_RE.findall(l)}
-    if not code_nums:
+    replaced, prose_added = {}, []
+    for path, added, removed in _diff_files(diff):
+        if path.endswith(_PROSE_SUFFIXES):
+            prose_added.extend((path, line) for line in added)
+            continue
+        old_nums = {n for line in removed for n in _INT_RE.findall(line)}
+        new_nums = {n for line in added for n in _INT_RE.findall(line)}
+        for gone in old_nums - new_nums:          # a literal this file moved away from
+            replaced.setdefault(gone, (path, next(
+                (l.strip() for l in added if _INT_RE.search(l)), "")))
+    # `not replaced` is deliberately not tested: with nothing replaced the intersection
+    # below is empty on every line, so the extra clause would be an unreachable guard -
+    # the dead-defence shape BG0413 shipped. Mutation caught it here too.
+    if not prose_added:
         return []
     findings = []
     for prose_path, prose_line in prose_added:
-        prose_nums = set(_INT_RE.findall(prose_line))
-        if not prose_nums or prose_nums & code_nums:
-            continue                  # the prose names no number, or names one the code carries
-        # The prose states a number this diff's code does not. Name the nearest code line so the
-        # author is shown the pair rather than told a number is wrong somewhere.
-        code_path, code_line = code_added[0]
-        findings.append({"prose_file": prose_path, "prose": prose_line.strip(),
-                         "code_file": code_path, "code": code_line.strip()})
+        for stale in set(_INT_RE.findall(prose_line)) & set(replaced):
+            code_path, code_line = replaced[stale]
+            findings.append({"prose_file": prose_path, "prose": prose_line.strip(),
+                             "code_file": code_path, "code": code_line,
+                             "stale_value": stale})
+            break
     return findings
 
 
@@ -367,7 +375,7 @@ def ticked_over_untouched(diff: str) -> list[dict]:
     batch exists to enforce. An UNTICKED criterion claims nothing and is not judged.
     """
     touched, units = set(), []
-    for path, added in _diff_files(diff):
+    for path, added, _removed in _diff_files(diff):
         touched.add(path)
         if "/stories/" in path or "/bugs/" in path or "/change-requests/" in path:
             units.append((path, added))
@@ -403,6 +411,30 @@ def ticked_over_untouched(diff: str) -> list[dict]:
                              "criterion": pending, "surface": None})
     return findings
 
+
+#: Where the lane's measured yield accumulates. The DECISION to make this lane blocking is
+#: explicitly out of the sprint that ships it - the lane arrives here, so a sprint's worth of
+#: yield cannot exist yet. What must exist is the number, so that decision has something to read
+#: rather than an impression (D0105).
+_YIELD_REL = "sdlc-studio/retros/evidence/claim-drift-yield.json"
+
+
+def record_yield(root, diff: str) -> dict:
+    """Accumulate this run's claim-drift findings into the evidence record."""
+    path = Path(root) / _YIELD_REL
+    try:
+        rec = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        rec = {"runs": 0, "findings": 0, "runs_with_findings": 0}
+    found = len(claim_drift(diff)) + len(ticked_over_untouched(diff))
+    rec["runs"] = int(rec.get("runs", 0)) + 1
+    rec["findings"] = int(rec.get("findings", 0)) + found
+    if found:
+        rec["runs_with_findings"] = int(rec.get("runs_with_findings", 0)) + 1
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(rec, indent=2), encoding="utf-8")
+    return rec
+
 def main(argv: list[str] | None = None, stdin_text: str | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="repo root")
@@ -415,6 +447,7 @@ def main(argv: list[str] | None = None, stdin_text: str | None = None) -> int:
         diff = stdin_text if args.claim_drift == "-" and stdin_text is not None else (
             sys.stdin.read() if args.claim_drift == "-"
             else Path(args.claim_drift).read_text(encoding="utf-8"))
+        record_yield(root, diff)
         for f in ticked_over_untouched(diff):
             if f["kind"] == "unjudgeable":
                 print(f"CLAIM-DRIFT: {f['unit']} ticks {f['criterion']!r}, which names no "
