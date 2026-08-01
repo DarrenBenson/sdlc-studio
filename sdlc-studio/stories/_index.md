@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 17 |
-| Ready | 19 |
+| Ready | 37 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 1 |
-| **Total** | **597** |
+| **Total** | **615** |
 
 ## All Stories
 
@@ -509,6 +509,24 @@
 | [US0595](US0595-a-waiver-records-whether-it-was-deliberate-or.md) | A waiver records whether it was deliberate or its window had already expired, and the retro counts them apart | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0596](US0596-coverage-is-computed-once-and-two-rows-disagreeing.md) | Coverage is computed once, and two rows disagreeing about it is itself an outstanding item | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
 | [US0597](US0597-the-premise-is-replayed-and-measured-the-blocking.md) | The premise is replayed and measured: the blocking-finding count before and after, and the lane run over the three diffs that motivated it | Done | EP0195 | 2026-08-01 | 2026-08-01 |
+| [US0598](US0598-persona-resolve-panel-assigns-the-adversarial-seats-and.md) | persona_resolve panel assigns the adversarial seats and the SIGNING seat disjointly, and the assignment is recorded on the run | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0599](US0599-a-panel-may-sign-a-unit-only-when.md) | A panel may sign a unit only when every adversarial verdict on it carries brief provenance, and missing provenance STOPS the run and notifies rather than parking it | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0600](US0600-the-review-repair-loop-declares-a-round-cap.md) | The review-repair loop declares a round cap and the growing-set detector GATES rather than reports, so a diverging loop stops and hands off | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0601](US0601-review-signoff-is-operator-by-default-and-panel.md) | review.signoff is operator by default and panel only by explicit config, so no consuming project silently loses its human | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0602](US0602-a-panel-signed-unit-is-distinguishable-from-an.md) | A panel-signed unit is distinguishable from an operator-signed one forever, in the signoff record and in the sprint report | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0603](US0603-a-unit-the-panel-rejects-twice-or-whose.md) | A unit the panel rejects twice, or whose seats disagree, escalates to the operator by NOTIFYING rather than waiting | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0604](US0604-the-close-actively-reports-to-the-operator-shipped.md) | The close actively REPORTS to the operator - shipped, carried, cost and what the reviews found - rather than leaving a file to be discovered | Ready | EP0198 | 2026-08-01 | 2026-08-01 |
+| [US0605](US0605-verify-ac-lane-check-reports-criteria-whose-verifiers.md) | verify_ac lane-check reports criteria whose verifiers never enter the shipped entry point, for units whose Affects names a CLI-bearing script | Ready | EP0199 | 2026-08-01 | 2026-08-01 |
+| [US0606](US0606-the-lane-check-runs-in-the-gate-that.md) | The lane-check runs in the gate that already runs verify_ac, reporting only, with its yield accumulated where a blocking decision can read it | Ready | EP0199 | 2026-08-01 | 2026-08-01 |
+| [US0607](US0607-best-practices-testing-md-states-the-entry-point.md) | best-practices/testing.md states the entry-point rule beside name-the-mutant-first | Ready | EP0199 | 2026-08-01 | 2026-08-01 |
+| [US0608](US0608-a-stale-repo-wide-unified-review-no-longer.md) | A stale repo-wide unified review no longer hard-blocks a sprint close whose own units are all covered, and is reported as cadence debt instead | Ready | EP0200 | 2026-08-01 | 2026-08-01 |
+| [US0609](US0609-file-and-close-accepts-a-stale-periodic-review.md) | file-and-close accepts a stale periodic review as ceremony debt and files it as a real artefact linked to the run | Ready | EP0200 | 2026-08-01 | 2026-08-01 |
+| [US0610](US0610-tools-run-suite-sh-runs-a-suite-and.md) | tools/run-suite.sh runs a suite and writes exit_code, counts, duration and head_sha to sdlc-studio/.local/suite-verdict.json, printing only the verdict line | Ready | EP0201 | 2026-08-01 | 2026-08-01 |
+| [US0611](US0611-a-greenness-claim-whose-verdict-file-is-absent.md) | A greenness claim whose verdict file is absent or stale against HEAD is refused by the commit gate | Ready | EP0201 | 2026-08-01 | 2026-08-01 |
+| [US0612](US0612-a-runbook-ordered-by-sprint-step-names-the.md) | A runbook ordered by SPRINT STEP names the one command that performs each step, its fields-file path, and the hand-rolled shape it replaces | Ready | EP0202 | 2026-08-01 | 2026-08-01 |
+| [US0613](US0613-sprint-plan-and-sprint-run-print-the-runbook.md) | sprint plan and sprint run PRINT the runbook, and a guard fails when a step names a command that no longer exists | Ready | EP0202 | 2026-08-01 | 2026-08-01 |
+| [US0614](US0614-a-points-census-answers-how-much-is-left.md) | A points census answers how much is left by status and by type, so the routine question is not answered by a script written on the spot | Ready | EP0203 | 2026-08-01 | 2026-08-01 |
+| [US0615](US0615-sprint-review-batch-takes-its-findings-from-a.md) | sprint review-batch takes its findings from a fields-file, so prose carrying backticks is stored verbatim rather than executed | Ready | EP0203 | 2026-08-01 | 2026-08-01 |
 
 ## Archived Releases
 

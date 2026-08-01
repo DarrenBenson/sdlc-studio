@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 20 |
+| Draft | 26 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 177 |
-| **Total** | **197** |
+| **Total** | **203** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -220,3 +220,9 @@
 | [EP0195](EP0195-the-claim-inventory-runs-at-delivery-where-a.md) | The claim inventory runs at delivery, where a stale sentence costs seconds instead of a review round | Done | 4 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0196](EP0196-hand-rolled-work-is-visible-the-close-names.md) | Hand-rolled work is visible: the close names what an agent did by hand instead of by tool | Draft | 5 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0197](EP0197-the-close-checklist-fires-where-an-item-can.md) | The close checklist fires where an item can still be satisfied, and reads verdicts rather than counts | Draft | 6 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0198](EP0198-a-sprint-closes-on-an-amigo-panel-s.md) | A sprint closes on an amigo panel's sign-off, so the operator is informed and never a step in the machine | Draft | 7 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0199](EP0199-a-criterion-verified-only-through-the-library-is.md) | A criterion verified only through the library is visible, so a feature cannot pass its own gate while its lane is unwired | Draft | 3 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0200](EP0200-a-sprint-close-gates-on-its-own-review.md) | A sprint close gates on its own review coverage, not on an unrelated periodic ceremony | Draft | 2 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0201](EP0201-a-suite-verdict-is-a-fact-read-from.md) | A suite verdict is a fact read from a file, never a stream an agent interprets | Draft | 2 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0202](EP0202-a-sprint-run-has-a-tool-runbook-it.md) | A sprint run has a tool runbook it is made to read, ordered by step rather than by script | Draft | 2 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0203](EP0203-the-routine-backlog-question-is-answered-by-the.md) | The routine backlog question is answered by the tooling, and a review's findings never cross a shell | Draft | 2 | -- | 2026-08-01 | 2026-08-01 |

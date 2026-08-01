@@ -1,9 +1,16 @@
 # RETRO-0087: The sprint run is a controllable object end to end: inspectable and mutable in flight, queued as charters, and closed on evidence that can fail
 
 > **Date:** 2026-08-01
-> **Batch:** BG0413, BG0415, BG0418, BG0422, BG0423, BG0433, BG0448, BG0460, BG0466, BG0455, US0466, US0470, US0471, US0472, US0473, US0490, US0492, BG0401, BG0406, BG0419, BG0457, BG0459, BG0372, BG0421, BG0463, US0467, US0468, US0469, US0474, US0475, US0480, US0481, US0487, US0488, US0489, US0491, US0482
+> **Batch:** BG0413, BG0415, BG0418, BG0422, BG0423, BG0433, BG0448, BG0460, BG0466, BG0455, US0466, US0470, US0471, US0472, US0473, US0490, US0492, BG0401, BG0406, BG0419, BG0457, BG0459, BG0372, BG0421, BG0463, US0467, US0468, US0469, US0474, US0475, US0480, US0481, US0487, US0488, US0489, US0491, US0482, BG0467, BG0468, BG0471, BG0472, BG0473
 > **Goal:** The sprint run is a controllable object end to end: inspectable and mutable in flight, queued as charters, and closed on evidence that can fail.
 > **Delivered:** 9 / 37   **Blocked:** 28 carried, each with a recorded reason
+
+**Batch amended 2026-08-01.** Five bugs raised and Fixed in this run's tail (`a1dfbf74`,
+`78f94691`, `3c195846`) were never named here, so `close_owed` reported them as terminal
+units no retro accounted for. They are this run's own work - filing and repairing findings
+its reviews produced - so they are added here rather than pushed onto the next sprint's
+retro, which did not do them. The accuracy block below is left untouched: it records what
+was measured, and these were not.
 
 ## Delivered
 

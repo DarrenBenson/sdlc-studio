@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 17 |
+| Proposed | 11 |
 | Approved | 0 |
-| In Progress | 36 |
+| In Progress | 42 |
 | Complete | 446 |
 | Rejected | 1 |
 | Deferred | 0 |
@@ -335,15 +335,15 @@
 | [CR-0511](CR0511-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Proposed | Low | Improvement | 2026-07-31 | -- |
 | [CR-0512](CR0512-a-unit-review-is-scoped-to-that-unit.md) | A unit review is scoped to that unit's own diff and blocks only on a NEW defect; an already-logged finding is reported, never blocking | In Progress | High | Improvement | 2026-08-01 | EP0194 |
 | [CR-0513](CR0513-the-close-checklist-enforces-items-where-they-can.md) | The close checklist enforces items where they can still be satisfied, reads verdicts rather than counts, and checks how a review was briefed | In Progress | High | Improvement | 2026-08-01 | EP0197 |
-| [CR-0514](CR0514-the-amigo-panel-signs-off-a-sprint-to.md) | The amigo panel signs off a sprint to completion: a different seat from the one that reviewed it, gated on brief provenance and a converging review loop | Proposed | High | Feature | 2026-08-01 | -- |
+| [CR-0514](CR0514-the-amigo-panel-signs-off-a-sprint-to.md) | The amigo panel signs off a sprint to completion: a different seat from the one that reviewed it, gated on brief provenance and a converging review loop | In Progress | High | Feature | 2026-08-01 | EP0198 |
 | [CR-0515](CR0515-an-agent-customises-content-never-tooling-hand-rolled.md) | An agent customises content, never tooling: hand-rolled work is detected from the run diff, reported at the close, and escapes only by filing the gap | In Progress | High | Feature | 2026-08-01 | EP0196 |
-| [CR-0516](CR0516-two-mechanical-tasks-have-no-tool-review-batch.md) | Two mechanical tasks have no tool: review-batch findings cannot survive the shell, and no command reports backlog points | Proposed | Medium | Improvement | 2026-08-01 | -- |
+| [CR-0516](CR0516-two-mechanical-tasks-have-no-tool-review-batch.md) | Two mechanical tasks have no tool: review-batch findings cannot survive the shell, and no command reports backlog points | In Progress | Medium | Improvement | 2026-08-01 | EP0203 |
 | [CR-0517](CR0517-run-the-claim-inventory-pass-at-delivery-not.md) | Run the claim-inventory pass at delivery, not at review: every blocking finding of the corrected review loop was prose disagreeing with code in the same diff | Complete | High | Feature | 2026-08-01 | EP0195 |
-| [CR-0518](CR0518-a-sprint-run-has-a-tool-runbook-it.md) | a sprint run has a tool runbook it is made to read before it plans | Proposed | High | Improvement | 2026-08-01 | -- |
-| [CR-0519](CR0519-a-suite-verdict-is-read-from-a-file.md) | a suite verdict is read from a file, never from a pipe that can swallow the exit code | Proposed | High | Improvement | 2026-08-01 | -- |
-| [CR-0520](CR0520-a-criterion-verified-only-through-the-library-is.md) | a criterion verified only through the library is not evidence the feature ships | Proposed | High | Improvement | 2026-08-01 | -- |
+| [CR-0518](CR0518-a-sprint-run-has-a-tool-runbook-it.md) | a sprint run has a tool runbook it is made to read before it plans | In Progress | High | Improvement | 2026-08-01 | EP0202 |
+| [CR-0519](CR0519-a-suite-verdict-is-read-from-a-file.md) | a suite verdict is read from a file, never from a pipe that can swallow the exit code | In Progress | High | Improvement | 2026-08-01 | EP0201 |
+| [CR-0520](CR0520-a-criterion-verified-only-through-the-library-is.md) | a criterion verified only through the library is not evidence the feature ships | In Progress | High | Improvement | 2026-08-01 | EP0199 |
 | [CR-0521](CR0521-a-sprint-closes-on-an-amigo-panel-s.md) | a sprint closes on an amigo panel's sign-off, so the operator is informed rather than in the loop | Superseded | High | Feature | 2026-08-01 | -- |
-| [CR-0522](CR0522-the-repo-wide-periodic-review-must-not-block.md) | the repo-wide periodic review must not block a sprint close whose own work is fully reviewed | Proposed | High | Improvement | 2026-08-01 | -- |
+| [CR-0522](CR0522-the-repo-wide-periodic-review-must-not-block.md) | the repo-wide periodic review must not block a sprint close whose own work is fully reviewed | In Progress | High | Improvement | 2026-08-01 | EP0200 |
 
 ## Archived Releases
 

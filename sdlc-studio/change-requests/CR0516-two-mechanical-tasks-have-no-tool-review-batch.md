@@ -1,6 +1,7 @@
 # CR-0516: Two mechanical tasks have no tool: review-batch findings cannot survive the shell, and no command reports backlog points
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0203
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

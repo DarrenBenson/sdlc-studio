@@ -1,7 +1,7 @@
 # RETRO-0088: RUN-01KYY52D: the review learned to discriminate, and then failed its own new rule
 
 > **Date:** 2026-08-01
-> **Batch:** US0577, US0578, US0579, US0580, US0582, US0583, US0584, US0585, US0597
+> **Batch:** US0577, US0578, US0579, US0580, US0582, US0583, US0584, US0585, US0597, BG0479, BG0480, BG0481, BG0482, BG0483, BG0484
 > **Goal:** make the review process discriminate - bound its scope, mechanise its inputs, and turn the rules that were read-and-skipped into refusals
 > **Delivered:** 9 / 9 (36 points)   **Blocked:** 0
 

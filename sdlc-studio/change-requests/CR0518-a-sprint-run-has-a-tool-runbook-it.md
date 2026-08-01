@@ -1,6 +1,7 @@
 # CR-0518: a sprint run has a tool runbook it is made to read before it plans
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0202
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
 > **Provenance:** human

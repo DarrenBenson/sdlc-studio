@@ -1,6 +1,7 @@
 # CR-0522: the repo-wide periodic review must not block a sprint close whose own work is fully reviewed
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0200
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
