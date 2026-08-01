@@ -181,6 +181,76 @@ REFINE_PANEL = ("engineering", "product", "qa")
 TRIAGE_PANEL = ("qa", "engineering", "product")
 
 
+#: The SIGN-OFF panel. Ordered, and the order is the assignment rule: the seats that run the
+#: adversarial pass come first, the SIGNER is taken from what is left. QA leads the adversarial
+#: half because the question there is "does this hold up"; product signs because the question at
+#: sign-off is "is this the thing we wanted", which is a different lens from the one that just
+#: attacked the code.
+SIGNOFF_ADVERSARIAL = ("qa", "engineering")
+SIGNOFF_SIGNER = "product"
+
+#: Where the assignment is recorded, so a later sign-off READS it rather than resolving again.
+#: Recomputing would let a caller re-roll until the assignment suited the answer.
+_RUN_KEY = "signoff_panel"
+
+
+def signoff_panel(root: Path | str, *, adversarial=SIGNOFF_ADVERSARIAL,
+                  signer: str = SIGNOFF_SIGNER, skip_personas: bool = False,
+                  record: bool = False) -> dict:
+    """Assign the adversarial seats and the signing seat DISJOINTLY.
+
+    Returns `{"adversarial": [...], "signer": {...}}`, each entry the same shape `amigo_panel`
+    yields. The signer is never drawn from the adversarial set: a panel whose signer also filed
+    the verdicts is a self-review with more steps, and it would be invisible in the record
+    because both halves would be present and correctly filled in.
+
+    Refused rather than narrowed when a project cannot supply both roles. Silently reusing a
+    seat produces a panel that satisfies every count while being exactly the merged role the
+    two-role gate exists to prevent.
+    """
+    root = Path(root)
+    adversarial_roles = [r for r in adversarial if r]
+    # THE invariant, checked before anything is resolved or recorded. A signer drawn from the
+    # reviewing set is a self-review with more steps, and it would be invisible in the record
+    # because both halves would be present and correctly filled in.
+    if not adversarial_roles or not signer:
+        raise ValueError("a sign-off panel needs at least one adversarial seat AND a signing "
+                         "seat; one of them was empty")
+    if signer in adversarial_roles:
+        raise ValueError(
+            f"the signing seat {signer!r} is also an adversarial seat on this panel "
+            f"({', '.join(adversarial_roles)}) - a seat cannot ratify evidence it filed. "
+            f"Assign a distinct signing role, or keep `review.signoff: operator`.")
+    out = {"adversarial": amigo_panel(root, adversarial_roles, skip_personas=skip_personas),
+           "signer": amigo_panel(root, (signer,), skip_personas=skip_personas)[0]}
+    if record:
+        from lib import run_state  # noqa: PLC0415 - only the recording path needs it
+        state = run_state.read(root) or {}
+        state[_RUN_KEY] = {
+            "adversarial": [s["role"] for s in out["adversarial"]],
+            "signer": out["signer"]["role"],
+        }
+        run_state.write(root, state)
+    return out
+
+
+def recorded_signoff_panel(root: Path | str) -> dict:
+    """The assignment AS RECORDED on the run, never re-resolved.
+
+    Reading rather than recomputing is the whole point: a recomputing caller could re-roll the
+    panel until it landed on a seat that suited the answer, and the record would show nothing.
+    Raises when no assignment was recorded - an absent assignment is not an invitation to
+    invent one.
+    """
+    from lib import run_state  # noqa: PLC0415
+    state = run_state.read(Path(root)) or {}
+    rec = state.get(_RUN_KEY)
+    if not rec:
+        raise ValueError("no sign-off panel is recorded on this run - assign one with "
+                         "`signoff_panel(..., record=True)` before signing")
+    return rec
+
+
 def seat_name(card: Path | None, role: str) -> str:
     """The human name of a seat from its card H1 (`# Dani Okafor - Engineering amigo` -> 'Dani
     Okafor'), or the capitalised role when there is no card (the `--skip-personas` / generic path),

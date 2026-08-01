@@ -1082,7 +1082,14 @@ def _ck_signoff(ctx: dict) -> tuple:
     if not signed:
         return (NOT_RUN, f"0/{len(units)}",
                 "no reviewer of record has signed any unit of this batch")
-    return (RAN, f"{len(signed)}/{len(units)}",
+    # SPLIT, never a single total. Who accepted a unit - a human principal or an amigo panel -
+    # is exactly the fact a reader comes to this row for, and a combined count hides it behind
+    # a number that looks complete either way.
+    panel = [u for u in signed
+             if critic.is_panel_signoff(critic.signoff_for(ctx["root"], u))]
+    operator = len(signed) - len(panel)
+    split = f" ({len(panel)} panel, {operator} operator)" if panel else ""
+    return (RAN, f"{len(signed)}/{len(units)}{split}",
             "" if len(signed) == len(units) else
             f"{len(units) - len(signed)} unit(s) hold at Review until a sign-off lands")
 

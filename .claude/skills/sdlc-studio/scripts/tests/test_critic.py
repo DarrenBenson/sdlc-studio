@@ -3616,6 +3616,102 @@ class ReviewRepairTests(unittest.TestCase):
                           f"falsified - the same drift the canonical docstring carried")
 
 
+class SignoffPolicyTests(unittest.TestCase):
+    """`review.signoff` decides who may satisfy the reviewer-of-record half.
+
+    Default OPERATOR, always. A project that upgrades must not silently lose its human
+    reviewer: the independence bar is the product's central claim, and a bar that moves
+    without somebody deciding to move it is worth nothing.
+    """
+
+    def _root(self, d):
+        root = Path(d)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
+            "# US0001: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
+            "> **Affects:** src/a.py\n", encoding="utf-8")
+        return root
+
+    def test_the_default_is_operator(self) -> None:
+        """MUTANT: default the policy to `panel`.
+
+        Asserted on the POLICY READER and on the refusal, because a default that is only
+        correct in the reader is not a default the gate honours.
+        """
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            self.assertEqual("operator", critic.signoff_policy(root),
+                             "a project with no setting did not default to operator")
+            with self.assertRaises(ValueError) as caught:
+                critic.record_signoff(root, "US0001", "Lena Marsh", "author",
+                                      panel=["qa", "engineering"])
+        self.assertIn("review.signoff", str(caught.exception),
+                      "the refusal does not name the setting that would allow it")
+
+    def test_panel_is_reached_only_by_explicit_config(self) -> None:
+        """The control. MUTANT: refuse a panel sign-off regardless of config.
+
+        A policy that can never be reached is not opt-in, it is absent.
+        """
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "review:\n  signoff: panel\n", encoding="utf-8")
+            self.assertEqual("panel", critic.signoff_policy(root))
+            path = critic.record_signoff(root, "US0001", "Lena Marsh", "author",
+                                         panel=["qa", "engineering"])
+            # Asserted INSIDE the block: the temp directory is gone by the time it exits, so
+            # an exists() check outside is always False and would fail a working implementation.
+            self.assertTrue(path.exists(), "a configured panel sign-off was not recorded")
+            self.assertTrue(critic.is_panel_signoff(critic.signoff_for(root, "US0001")),
+                            "the recorded row does not identify itself as a panel sign-off")
+
+
+class SignoffProvenanceTests(unittest.TestCase):
+    """Who accepted this must never become ambiguous.
+
+    The product's claim is that its records mean something. A panel-signed unit and an
+    operator-signed one are different facts about who took responsibility, and a reader months
+    later cannot re-derive which it was.
+    """
+
+    def _root(self, d):
+        root = Path(d)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
+            "# US0001: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
+            "> **Affects:** src/a.py\n", encoding="utf-8")
+        (root / "sdlc-studio" / "stories" / "US0002-y.md").write_text(
+            "# US0002: another\n\n> **Status:** Review\n> **Points:** 3\n"
+            "> **Affects:** src/b.py\n", encoding="utf-8")
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "review:\n  signoff: panel\n", encoding="utf-8")
+        return root
+
+    def test_panel_and_operator_rows_are_distinguishable(self) -> None:
+        """MUTANT: record a panel sign-off with the same chain an operator's carries.
+
+        Asserted in BOTH directions - the panel row must say panel, and the operator row must
+        NOT - because a marker written onto every row distinguishes nothing.
+        """
+        critic = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            critic.record_signoff(root, "US0001", "Lena Marsh", "author",
+                                  panel=["qa", "engineering"])
+            critic.record_signoff(root, "US0002", "Darren Benson", "author")
+            panel_row = critic.signoff_for(root, "US0001")
+            operator_row = critic.signoff_for(root, "US0002")
+        self.assertTrue(critic.is_panel_signoff(panel_row),
+                        "a panel sign-off does not identify itself as one")
+        self.assertFalse(critic.is_panel_signoff(operator_row),
+                         "an operator sign-off is being read as a panel one")
+        self.assertIn("qa", panel_row["chain"],
+                      "the panel row does not name the seats that reviewed it")
+
+
 if __name__ == "__main__":
     unittest.main()
 

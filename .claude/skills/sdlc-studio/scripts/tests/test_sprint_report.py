@@ -1722,5 +1722,42 @@ class SprintChecklistAuthorityTests(ChecklistBase):
         self.assertIn("none outstanding", detail)
 
 
+class SignoffProvenanceTests(unittest.TestCase):
+    """The close report must not hide WHO accepted the batch behind a single count."""
+
+    def test_the_report_splits_panel_from_operator(self) -> None:
+        """MUTANT: report `len(signed)` alone, as it did before.
+
+        A combined total reads as complete whether a human or a panel accepted every unit, and
+        those are different facts about who took responsibility.
+        """
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "sprint_report", SCRIPT if "SCRIPT" in globals()
+            else Path(__file__).resolve().parent.parent / "sprint_report.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["sprint_report"] = mod
+        spec.loader.exec_module(mod)
+        import critic as _c  # noqa: F401
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            for uid, slug in (("US0001", "a"), ("US0002", "b")):
+                (root / "sdlc-studio" / "stories" / f"{uid}-{slug}.md").write_text(
+                    f"# {uid}: x\n\n> **Status:** Review\n> **Points:** 3\n"
+                    f"> **Affects:** src/{slug}.py\n", encoding="utf-8")
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "review:\n  signoff: panel\n", encoding="utf-8")
+            import critic
+            critic.record_signoff(root, "US0001", "Lena Marsh", "auth",
+                                  panel=["qa", "engineering"])
+            critic.record_signoff(root, "US0002", "Darren Benson", "auth")
+            state, value, _detail = mod._ck_signoff(
+                {"units": ["US0001", "US0002"], "root": root})
+        self.assertEqual("ran", state)
+        self.assertIn("1 panel", value, f"the row does not report the panel count: {value}")
+        self.assertIn("1 operator", value, f"the row does not report the operator count: {value}")
+
+
 if __name__ == "__main__":
     unittest.main()

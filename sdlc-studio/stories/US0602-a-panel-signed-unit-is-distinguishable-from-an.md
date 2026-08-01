@@ -1,6 +1,6 @@
 # US0602: A panel-signed unit is distinguishable from an operator-signed one forever, in the signoff record and in the sprint report
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0514
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the signoff record is read back
 - **Then** each row states which, so the two are distinguishable without inference
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SignoffProvenanceTests::test_panel_and_operator_rows_are_distinguishable
+- **Verified:** yes (2026-08-01)
 
 ### AC2: the sprint report carries the distinction too
 
@@ -30,6 +31,7 @@
 - **When** the sprint report renders
 - **Then** it reports the split rather than a single sign-off count, because a total hides exactly the fact an auditor came for
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SignoffProvenanceTests::test_the_report_splits_panel_from_operator
+- **Verified:** yes (2026-08-01)
 
 ## Revision History
 

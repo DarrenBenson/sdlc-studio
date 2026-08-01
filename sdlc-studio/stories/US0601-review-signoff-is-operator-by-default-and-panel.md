@@ -1,6 +1,6 @@
 # US0601: review.signoff is operator by default and panel only by explicit config, so no consuming project silently loses its human
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0514
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** a sign-off is attempted by a panel
 - **Then** it is refused, because the independence bar must not change under a project during an upgrade
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SignoffPolicyTests::test_the_default_is_operator
+- **Verified:** yes (2026-08-01)
 
 ### AC2: panel is reached only by explicit config
 
@@ -30,6 +31,7 @@
 - **When** the panel signs
 - **Then** it is accepted, and the output states that panel sign-off is in force
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SignoffPolicyTests::test_panel_is_reached_only_by_explicit_config
+- **Verified:** yes (2026-08-01)
 
 ## Revision History
 

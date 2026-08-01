@@ -1,6 +1,6 @@
 # US0598: persona_resolve panel assigns the adversarial seats and the SIGNING seat disjointly, and the assignment is recorded on the run
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0514
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the assignment is read
 - **Then** no seat appears both as an adversarial reviewer and as the signer, because a seat that reviewed its own evidence is the merged role the two-role gate exists to prevent
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_resolve.py::PanelAssignmentTests::test_the_signing_seat_is_disjoint_from_the_adversarial_seats
+- **Verified:** yes (2026-08-01)
 
 ### AC2: the assignment is recorded on the run, not recomputed at sign-off
 
@@ -30,13 +31,23 @@
 - **When** the sign-off is later recorded
 - **Then** it reads the assignment from the run state rather than resolving again, so a seat cannot be re-rolled until it lands on one that suits the answer
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_resolve.py::PanelAssignmentTests::test_the_assignment_is_read_from_the_run_not_recomputed
+- **Verified:** yes (2026-08-01)
 
-### AC3: a project with too few seats is refused, not silently narrowed
+### AC3: a signer drawn from the reviewing set is refused
 
-- **Given** a project whose seat cards cannot supply both roles disjointly
-- **When** a panel is requested
-- **Then** it is refused naming what is missing, because silently reusing a seat is exactly the failure this story prevents
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_resolve.py::PanelAssignmentTests::test_too_few_seats_is_refused
+- **Given** a panel whose signing role also appears among its adversarial roles
+- **When** the panel is assigned
+- **Then** it is refused naming that seat and saying it cannot ratify evidence it filed, because silently allowing it is exactly the merged role this story prevents
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_resolve.py::PanelAssignmentTests::test_a_signer_drawn_from_the_reviewing_set_is_refused
+- **Verified:** yes (2026-08-01)
+
+### AC4: an empty half is refused
+
+- **Given** a panel assigned with no adversarial seats at all
+- **When** it is requested
+- **Then** it is refused, because an empty reviewing set would make every unit trivially signed
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_resolve.py::PanelAssignmentTests::test_an_empty_half_is_refused
+- **Verified:** yes (2026-08-01)
 
 ## Revision History
 

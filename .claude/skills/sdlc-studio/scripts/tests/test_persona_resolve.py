@@ -363,5 +363,90 @@ class SeatNameFenceTests(unittest.TestCase):
             self.assertEqual(mod.seat_name(card, "engineering"), "Real Name")
 
 
+class PanelAssignmentTests(unittest.TestCase):
+    """The signing seat must not be one of the seats that reviewed the evidence.
+
+    A panel whose signer also filed the adversarial verdicts is a self-review with more steps -
+    the merged role the two-role gate exists to prevent - and it would be invisible in the
+    record, because both halves would be present and correctly filled in.
+    """
+
+    def _root(self, d, roles=("engineering", "product", "qa")):
+        root = Path(d)
+        seats = root / "sdlc-studio" / "personas" / "seats"
+        seats.mkdir(parents=True, exist_ok=True)
+        for r in roles:
+            # The FULL review render. A card missing Lens / Pushes Back When / Shadow is a
+            # hard error by design, so a fixture without them would be testing the refusal.
+            (seats / f"{r}.md").write_text(
+                f"<!-- role: {r} -->\n# A {r.capitalize()} Seat - {r} amigo\n\n"
+                f"## Lens\n\nJudge as {r}.\n\n"
+                f"## Pushes Back When\n\nThe evidence does not support the claim.\n\n"
+                f"## Shadow\n\nOver-indexes on {r} concerns.\n", encoding="utf-8")
+        return root
+
+    def test_the_signing_seat_is_disjoint_from_the_adversarial_seats(self) -> None:
+        """MUTANT: let the signer be drawn from the adversarial set.
+
+        Asserted as a set operation, not by naming an expected seat: a test that pinned the
+        specific signer would pass a mutant that always returns that one seat regardless.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            got = mod.signoff_panel(root)
+        adversarial = {s["role"] for s in got["adversarial"]}
+        self.assertTrue(adversarial, "no adversarial seats were assigned")
+        self.assertNotIn(got["signer"]["role"], adversarial,
+                         "the signing seat also reviewed the evidence - a self-review with "
+                         "more steps")
+
+    def test_the_assignment_is_read_from_the_run_not_recomputed(self) -> None:
+        """MUTANT: resolve the panel again instead of reading what was recorded.
+
+        Recomputing lets a caller re-roll the assignment until it lands on a seat that suits
+        the answer, which is the thing recording it on the run prevents.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            first = mod.signoff_panel(root, record=True)
+            # The seat cards change underneath: a recomputing implementation would follow them.
+            (root / "sdlc-studio" / "personas" / "seats" / "qa.md").unlink()
+            again = mod.recorded_signoff_panel(root)
+        # The recorded form stores ROLES, deliberately: storing the resolved card path would
+        # make the record go stale the moment a card is edited, and the assignment is about
+        # which role signs, not which file said so today.
+        self.assertEqual(first["signer"]["role"], again["signer"],
+                         "the recorded assignment moved when the seats changed - it is being "
+                         "recomputed rather than read")
+        self.assertEqual([s["role"] for s in first["adversarial"]], again["adversarial"],
+                         "the recorded adversarial set moved when the seats changed")
+
+    def test_a_signer_drawn_from_the_reviewing_set_is_refused(self) -> None:
+        """MUTANT: drop the `signer in adversarial_roles` check.
+
+        The invariant is asserted DIRECTLY rather than through seat availability: the skill
+        ships default cards for all three roles, so every role always resolves and an
+        availability test would never reach the refusal it claims to check.
+        """
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            with self.assertRaises(ValueError) as caught:
+                mod.signoff_panel(root, adversarial=("qa", "engineering"), signer="qa")
+        msg = str(caught.exception).lower()
+        self.assertIn("qa", msg, "the refusal does not name the offending seat")
+        self.assertIn("ratify", msg, "the refusal does not say why it is refused")
+
+    def test_an_empty_half_is_refused(self) -> None:
+        """MUTANT: allow an empty adversarial set, which would make every unit trivially signed."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            with self.assertRaises(ValueError):
+                mod.signoff_panel(root, adversarial=(), signer="product")
+
+
 if __name__ == "__main__":
     unittest.main()

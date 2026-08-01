@@ -651,9 +651,35 @@ def delegated_agent_signoffs(repo_root: Path | str) -> list[dict]:
     return [r for r in rows if DELEGATED_AGENT in (r.get("chain") or "")]
 
 
+#: How a panel sign-off announces itself in the chain cell. A reader months later must be able
+#: to tell WHO accepted a unit without re-deriving it, so the marker is written into the record
+#: rather than inferred from the principal's name looking like a seat.
+PANEL_MARKER = "panel"
+
+#: The policies. `operator` is the default and stays the default: a project that upgrades must
+#: not silently lose its human reviewer, because the independence bar is the central claim and
+#: one that moves without a decision is worth nothing.
+SIGNOFF_POLICIES = ("operator", "panel")
+
+
+def signoff_policy(repo_root: Path | str) -> str:
+    """`review.signoff`, defaulting to `operator`. An unknown value is refused, not coerced."""
+    raw = str(sdlc_md.project_override(repo_root, "review.signoff", "operator") or "operator")
+    value = raw.strip().lower()
+    if value not in SIGNOFF_POLICIES:
+        raise ValueError(f"review.signoff is {raw!r} - expected one of "
+                         f"{', '.join(SIGNOFF_POLICIES)}")
+    return value
+
+
+def is_panel_signoff(row: dict | None) -> bool:
+    """Whether a recorded sign-off was given by a panel rather than by a human principal."""
+    return bool(row) and str(row.get("chain", "")).lstrip().startswith(f"{PANEL_MARKER}(")
+
+
 def record_signoff(repo_root: Path | str, unit: str, principal: str, author: str,
                    delegate: str | None = None, boundary: str | None = None,
-                   note: str = "") -> Path:
+                   note: str = "", panel: list | None = None) -> Path:
     """Append the reviewer-of-record sign-off for a unit.
 
     Direct form: `principal` (the operator by default) signs; chain is `-`.
@@ -670,6 +696,24 @@ def record_signoff(repo_root: Path | str, unit: str, principal: str, author: str
     session_ids = _session_reviewer_ids(repo_root, unit)
     chain = "-"
     effective = principal
+    if panel:
+        # Refused unless the project DECIDED to allow it. The default is operator, so an
+        # upgrade never moves the bar under anybody.
+        policy = signoff_policy(repo_root)
+        if policy != "panel":
+            raise ValueError(
+                f"a panel sign-off needs `review.signoff: panel` in .config.yaml; this "
+                f"project's policy is {policy!r}. Set it deliberately, or have the reviewer "
+                f"of record sign.")
+        seats = [str(s).strip() for s in panel if str(s).strip()]
+        if not seats:
+            raise ValueError("a panel sign-off needs the adversarial seats it rests on")
+        if _id(principal) in {_id(s) for s in seats}:
+            raise ValueError(f"the signing seat {principal!r} is also one of the adversarial "
+                             f"seats - a seat cannot ratify evidence it filed")
+        # Into the CHAIN, not a note: a panel sign-off that reads as an ordinary one destroys
+        # the only thing recording it buys, exactly as the delegated marker does above.
+        chain = f"{PANEL_MARKER}({', '.join(seats)}) -> {principal}"
     if delegate is not None:
         if not (boundary or "").strip():
             raise ValueError("a delegated sign-off needs --boundary - the separate "
