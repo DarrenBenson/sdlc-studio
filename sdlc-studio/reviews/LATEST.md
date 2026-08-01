@@ -1,55 +1,40 @@
-# Latest review anchor
+> **Review of record:** [RV0025](RV0025-run-01kyy52d-the-review-learned-to-discriminate.md) - RUN-01KYY52D closing review, verdict APPROVE.
 
-<!-- close-status:begin -->
-> **RUN-01KYX375 closed stopped.** 9 unit(s) in the batch. This was a `plan` rung, not a build - its units end at their own terminal and no Done sign-off is owed.
-> Stamped by `sprint close` - edit the prose below, not this block.
-<!-- close-status:end -->
+## Landed: RUN-01KYY52D - the review learned to discriminate, and then failed its own new rule
 
-> **Goal verdict:** PARTIAL - the run object is measurably more honest at its close and the
-> gate around it now blocks a collapsed suite and prices itself; the charter-queue clause was
-> never started
-> · **Delivered:** 9 units / 27 points of a 37-unit 150-point plan (re-cut from 46/150 at plan)
-> · **Carried:** 28 units dropped from the batch, each with a recorded reason
+Nine units, 36 points, two epics, goal ACHIEVED. The sprint's product is that **a review now
+carries information**: bounded to each unit's declared `Affects` against the run's base ref and
+briefed by `critic.py brief` rather than a hand-written prompt, the passes APPROVED some units
+and rejected others with executed reproductions, and one explicitly CLEARED a finding it nearly
+filed. Every previous review rejected everything, which says exactly as much as approving
+everything.
 
-## Landed: RUN-01KYX375 - nine units, three review rounds, and what the reviews found
+Four independent passes, none by a context that wrote the code (RV0025 has the table). Every
+blocking finding was repaired inside the batch that caused it, and both repair sets were then
+confirmed by a fresh pass that found nothing new.
 
-Nine bugs Fixed across eight commits, every one TDD-red-first and mutation-checked. One theme:
-**a guard reporting green over something it never checked.** A collapsed suite now BLOCKS the
-commit instead of declining to record a timing (BG0413). The planner and the budget lane can no
-longer disagree about what the same gate costs (BG0415). The close reports the retro validator's
-unreplaced-scaffold warning instead of discarding it, and refuses a retro nobody wrote (BG0418,
-BG0459). The dry run accounts for every chain step (BG0460). `stop` no longer counts a unit
-awaiting an independent signature as work it threw away (BG0455). The overhead ratio survives to
-`VELOCITY.md` (BG0372). A v3 ULID is no longer exempted from the provenance check by an ordinal
-cutoff (BG0466). The evidence lessons from five consecutive REJECTs ship as LL0050 (BG0422).
+**What shipped.** A verdict records a fingerprint of the brief its seat was given, and
+`critic.py record` REFUSES one carrying no provenance - the seat-brief rule stops being
+doctrine and becomes a refusal. Every finding declares its origin (`[regression]`, `[new]`,
+`[pre-existing]`), decided by execution; an untagged one is refused by name. Only regression
+and new hold a gate, so a review whose findings all predate the base ref now COVERS its unit
+and reports them apart from what blocked. The shipped doctrine states the scope rule as rule
+19, guarded by a runnable `tools/doctrine_review_scope.py`.
 
-**The reviews are the result, and they are not comfortable reading.** Three independent
-adversarial seats, fresh contexts in isolated worktrees, ~60 mutants. They rejected seven of the
-nine units on round 1-2, and three of the repairs on round 3.
+**The finding worth carrying.** `US0577` shipped a changelog and a commit message both saying
+`critic.py brief` emits a fingerprint. It did not - the function had one caller and it was not
+that command. Its acceptance test passed throughout because it called the library in-process,
+and a library test cannot see missing wiring: the wiring is the part it does not exercise.
+Three of five findings in that batch were the same shape. It cost a second review round, which
+is verification handed to the reviewer. `CR0520` makes it mechanically detectable; until it
+lands, every claim goes through the shipped CLI in a fixture before a reviewer is asked.
 
-## What the next session should know
+**Owed.** `CR0514` (an amigo panel satisfies the reviewer-of-record half, so a close stops
+needing a human to type) is the next build. `CR0522` was filed from this very close: the
+repo-wide periodic review blocked a sprint whose own work was fully reviewed and signed off,
+and the bounded exit would not file it because the lane is classed a correctness gate. Also
+open: `CR0518` (a tool runbook printed at plan time), `CR0519` (a suite verdict read from a
+file, never from a pipe that swallows the exit code), and `BG0476`-`BG0478`, `BG0483`.
 
-- **The full suite is not optional, and this run proved it the hard way.** BG0413's first
-  delivery left `test_precommit_window_guard` RED on main for six commits. Every one of those
-  commits passed the gate, because the gate runs a SELECTED subset that never included it. The
-  rule against exactly this shipped one commit later, in BG0422, and was not applied to the work
-  beside it.
-- **Round 3's finding is the transferable one:** *a repair is behaviourally right on the path it
-  was written for, and silently wrong on the path where its helper is absent, broken, or never
-  ran.* All three round-3 rejections were that shape - an untested shell half, a preflight that
-  never reached the gate, and an `except` that fell through to the fail-open direction.
-- **An assertion over the set of every possible value holds nothing.** One shipped test asserted
-  `status in {"ok", "refuse", "unevaluated"}` and survived mutation against 5,658 tests.
-- **Two criteria read `Verified: yes` over tests that passed while the defect was present.** Both
-  re-pointed. Check a verifier can FAIL before ticking the criterion it holds.
-- **A ROUND-4 confirmation pass is owed** over the round-3 repairs. The authoring session cannot
-  approve its own corrections, and no unit here is signed off.
-- **BG0415 AC4 is deliberately unticked.** D0089 records the 380s ceiling as CARRIED, not
-  resolved: the gate runs ~450s, and raising the number to meet the measurement is the pattern
-  CR0510 was filed about. Carrying is not resolving.
-- **The batch was re-cut from 37 units to 9.** 28 were dropped with recorded reasons, never
-  started rather than half-built. BG0448 is the deliberate one: gating `Fixed` on an oracle
-  rewrites fixtures repo-wide, and ticking 31 criteria across eight terminal bugs without
-  re-verifying each fix is the unevidenced claim that bug exists to condemn.
-- **The plan was 1.4x measured velocity and delivered 18% of it.** That was flagged at plan time
-  and not acted on. Plan to the record, not the appetite.
+**Cost.** The gate now measures 444s against a declared 380s ceiling, +17%, and +40% over the
+2026-07-26 baseline. That is paid per commit, so it is the sprint's largest single cost.

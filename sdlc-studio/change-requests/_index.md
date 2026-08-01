@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 16 |
+| Proposed | 17 |
 | Approved | 0 |
 | In Progress | 37 |
 | Complete | 445 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 22 |
 | Blocked | 0 |
-| **Total** | **521** |
+| **Total** | **522** |
 
 ## All Changes
 
@@ -343,6 +343,7 @@
 | [CR-0519](CR0519-a-suite-verdict-is-read-from-a-file.md) | a suite verdict is read from a file, never from a pipe that can swallow the exit code | Proposed | High | Improvement | 2026-08-01 | -- |
 | [CR-0520](CR0520-a-criterion-verified-only-through-the-library-is.md) | a criterion verified only through the library is not evidence the feature ships | Proposed | High | Improvement | 2026-08-01 | -- |
 | [CR-0521](CR0521-a-sprint-closes-on-an-amigo-panel-s.md) | a sprint closes on an amigo panel's sign-off, so the operator is informed rather than in the loop | Superseded | High | Feature | 2026-08-01 | -- |
+| [CR-0522](CR0522-the-repo-wide-periodic-review-must-not-block.md) | the repo-wide periodic review must not block a sprint close whose own work is fully reviewed | Proposed | High | Improvement | 2026-08-01 | -- |
 
 ## Archived Releases
 

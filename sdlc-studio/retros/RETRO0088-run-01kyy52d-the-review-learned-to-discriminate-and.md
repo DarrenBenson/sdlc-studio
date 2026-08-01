@@ -84,6 +84,7 @@ ruling HOLDS the close, which is the point of being able to make one.
 | CR0509 | deferred | Claude Opus 5 | 2026-08-01 |
 | CR0510 | deferred | Claude Opus 5 | 2026-08-01 |
 | BG0483 | not-stop-ship | Claude Opus 5 | 2026-08-01 |
+| CR0522 | not-stop-ship | Claude Opus 5 | 2026-08-01 |
 | BG0476 | not-stop-ship | Claude Opus 5 | 2026-08-01 |
 | BG0477 | not-stop-ship | Claude Opus 5 | 2026-08-01 |
 | BG0478 | not-stop-ship | Claude Opus 5 | 2026-08-01 |
@@ -189,6 +190,7 @@ every EXAMPLE row; a row left in place is reported at the close, and a retro sti
 | `artifact.py new` mints a CR the commit gate then refuses on its own placeholder | BG0478 |
 | no runbook answers "what is the next step and which command performs it" | CR0518 |
 | a suite verdict read through a pipe reports the pipe's exit code | CR0519 |
+| the repo-wide periodic review blocked a sprint whose own work was fully reviewed | CR0522 |
 | a criterion verified only through the library is not evidence the feature ships | CR0520 |
 
 <!-- file one with: scripts/file_finding.py · check with: scripts/retro.py dispose --id RETROxxxx -->
