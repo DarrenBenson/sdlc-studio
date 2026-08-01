@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 23 |
+| Open | 24 |
 | In Progress | 0 |
 | Fixed | 368 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **474** |
+| **Total** | **475** |
 
 ## All Bugs
 
@@ -192,6 +192,7 @@
 | [BG0472](BG0472-bg0460-ticked-two-acceptance-criteria-the-tree-disproves.md) | BG0460 ticked two acceptance criteria the tree disproves, and its verifiers bypassed the function they name | Fixed | High | 2026-08-01 | 2026-08-01 |
 | [BG0473](BG0473-the-stop-s-awaiting-signoff-rule-reads-one.md) | The stop's awaiting-signoff rule reads one half of a two-half gate, so a stop exits clean over work the session could still do | Fixed | High | 2026-08-01 | 2026-08-01 |
 | [BG0474](BG0474-an-artefact-documenting-the-shell-mangling-hazard-is.md) | An artefact documenting the shell-mangling hazard is flagged as a casualty of it, so the defect cannot be written about | Open | Medium | 2026-08-01 | 2026-08-01 |
+| [BG0475](BG0475-decisions-py-writes-a-multi-paragraph-rationale-straight.md) | decisions.py writes a multi-paragraph rationale straight into a markdown table cell, breaking the row | Open | Medium | 2026-08-01 | 2026-08-01 |
 
 ## Archived Releases
 

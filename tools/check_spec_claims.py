@@ -318,7 +318,66 @@ def _diff_files(diff: str):
         yield path, added, removed
 
 
-def claim_drift(diff: str) -> list[dict]:
+
+def _diff_hunks(diff: str):
+    """Yield (path, [(header, added, removed), ...]) per file - the hunk-level view.
+
+    `_diff_files` aggregates a whole file, which is the right shape for asking whether a file
+    was touched and the wrong one for asking what a change replaced.
+    """
+    path, hunks = None, []
+    hdr, added, removed = None, [], []
+    def flush():
+        if hdr is not None:
+            hunks.append((hdr, added[:], removed[:]))
+    for line in diff.splitlines():
+        if line.startswith("diff --git "):
+            flush()
+            if path is not None:
+                yield path, hunks
+            parts = line.split(" b/", 1)
+            path, hunks = (parts[1].strip() if len(parts) == 2 else ""), []
+            hdr, added, removed = None, [], []
+        elif line.startswith("@@"):
+            flush()
+            hdr, added, removed = line, [], []
+        elif line.startswith(("+++ ", "--- ")):
+            continue
+        elif line.startswith("+") and hdr is not None:
+            added.append(line[1:])
+        elif line.startswith("-") and hdr is not None:
+            removed.append(line[1:])
+    flush()
+    if path is not None:
+        yield path, hunks
+
+def _standing_prose(root) -> list[tuple[str, str]]:
+    """The unit paperwork a diff's code can contradict without touching it.
+
+    `changelog.d/` only. These fragments assemble into `CHANGELOG.md` at release, so a stale
+    claim there ships as the contract - which is exactly how BG0471 escaped: the fragment was
+    written in one commit saying the signal exits 2, the code moved to 3 in a later commit that
+    never reopened the fragment, and no single-diff check could ever have seen the pair.
+
+    Deliberately NOT the whole repository. A repo-wide scan finds a contradiction somewhere on
+    every commit, which is how a guard becomes noise and then gets switched off. This directory
+    is small, purpose-built, and is the unit's own statement of what it did.
+    """
+    out = []
+    d = Path(root) / "changelog.d"
+    if not d.is_dir():
+        return out
+    for f in sorted(d.glob("*.md")):
+        try:
+            for line in f.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    out.append((f"changelog.d/{f.name}", line))
+        except OSError:
+            continue
+    return out
+
+
+def claim_drift(diff: str, root=None) -> list[dict]:
     """Findings where this diff's prose still states a literal this diff's code REPLACED.
 
     The signal is the value the change moved AWAY from, not any number the code happens to
@@ -332,25 +391,43 @@ def claim_drift(diff: str) -> list[dict]:
     exit code (D0105).
     """
     replaced, prose_added = {}, []
-    for path, added, removed in _diff_files(diff):
+    for path, hunks in _diff_hunks(diff):
         if path.endswith(_PROSE_SUFFIXES):
-            prose_added.extend((path, line) for line in added)
+            prose_added.extend((path, line) for _h, added, _r in hunks for line in added)
             continue
-        old_nums = {n for line in removed for n in _INT_RE.findall(line)}
-        new_nums = {n for line in added for n in _INT_RE.findall(line)}
-        for gone in old_nums - new_nums:          # a literal this file moved away from
-            replaced.setdefault(gone, (path, next(
-                (l.strip() for l in added if _INT_RE.search(l)), "")))
+        # PER HUNK, not per file. A file-wide comparison dilutes to nothing on any real diff:
+        # gate_timing.py's own repair mentions 2 in a dozen places, so `2` appeared on both
+        # sides and never read as replaced - the replay over commit 67fc683f found zero, which
+        # is what sent this design back a second time. A hunk is the smallest unit in which
+        # "this line used to say X and now says Y" is a fact rather than an aggregate.
+        for _hdr, added, removed in hunks:
+            old_nums = {n for line in removed for n in _INT_RE.findall(line)}
+            new_nums = {n for line in added for n in _INT_RE.findall(line)}
+            for gone in old_nums - new_nums:
+                # carry the value it moved TO, so prose that narrates the change honestly
+                # ("was 2, is now 3") can be told from prose still asserting the old one
+                replaced.setdefault(gone, (path, next(
+                    (l.strip() for l in added if _INT_RE.search(l)), ""), new_nums))
     # `not replaced` is deliberately not tested: with nothing replaced the intersection
     # below is empty on every line, so the extra clause would be an unreachable guard -
     # the dead-defence shape BG0413 shipped. Mutation caught it here too.
+    # The unit's own standing paperwork, which a diff can contradict without touching it.
+    if root is not None:
+        prose_added.extend(_standing_prose(root))
     if not prose_added:
         return []
     findings = []
     for prose_path, prose_line in prose_added:
-        for stale in set(_INT_RE.findall(prose_line)) & set(replaced):
-            code_path, code_line = replaced[stale]
-            findings.append({"prose_file": prose_path, "prose": prose_line.strip(),
+        prose_nums = set(_INT_RE.findall(prose_line))
+        for stale in prose_nums & set(replaced):
+            code_path, code_line, new_nums = replaced[stale]
+            if prose_nums & new_nums:
+                # The prose names the NEW value too, so it is narrating the change rather than
+                # asserting the old one - "the exit code was 2 ... it is now 3" is current, and
+                # flagging it is the noise that gets a lane switched off. The replay found this
+                # immediately: the first firing run's loudest hits were all honest narration.
+                continue
+            findings.append({"prose_file": prose_path, "prose": prose_line.strip()[:160],
                              "code_file": code_path, "code": code_line,
                              "stale_value": stale})
             break
@@ -426,7 +503,7 @@ def record_yield(root, diff: str) -> dict:
         rec = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         rec = {"runs": 0, "findings": 0, "runs_with_findings": 0}
-    found = len(claim_drift(diff)) + len(ticked_over_untouched(diff))
+    found = len(claim_drift(diff, root)) + len(ticked_over_untouched(diff))
     rec["runs"] = int(rec.get("runs", 0)) + 1
     rec["findings"] = int(rec.get("findings", 0)) + found
     if found:
@@ -456,7 +533,7 @@ def main(argv: list[str] | None = None, stdin_text: str | None = None) -> int:
             else:
                 print(f"CLAIM-DRIFT: {f['unit']} ticks {f['criterion']!r} while this diff does "
                       f"not touch {f['surface']}", file=sys.stderr)
-        for f in claim_drift(diff):
+        for f in claim_drift(diff, root):
             # Reported on its own channel and NOT folded into `errors`: the spec-claim errors
             # below keep the blocking contract they have today, and this lane is advisory while
             # its yield is measured (D0105). One script, two severities, stated rather than
