@@ -1,23 +1,23 @@
 # Story Index
 
-**Last Updated:** 2026-07-30
+**Last Updated:** 2026-08-01
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 5 |
+| Draft | 25 |
 | Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 12 |
-| Done | 537 |
+| Review | 0 |
+| Done | 549 |
 | Won't Implement | 1 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 1 |
-| **Total** | **576** |
+| **Total** | **596** |
 
 ## All Stories
 
@@ -363,20 +363,20 @@
 | [US0449](US0449-the-batch-and-refine-minting-paths-resolve-the.md) | The batch and refine minting paths resolve the persona the same way, so the commands that mint most stories are covered too | Done | EP0166 | 2026-07-27 | 2026-07-27 |
 | [US0450](US0450-the-prd-target-users-section-names-the-registry.md) | The PRD Target Users section names the registry's Primary, Secondary and Negative personas and points at the registry | Done | EP0166 | 2026-07-27 | 2026-07-27 |
 | [US0451](US0451-personas-md-is-labelled-a-legacy-appendix-whose.md) | personas.md is labelled a legacy appendix whose still-true content is folded into or pointed at the registry | Done | EP0166 | 2026-07-27 | 2026-07-27 |
-| [US0452](US0452-the-version-guard-reaches-every-authoritative-home-discovered.md) | The version guard reaches every authoritative home, discovered rather than hand-enumerated | Review | EP0167 | 2026-07-27 | 2026-07-27 |
+| [US0452](US0452-the-version-guard-reaches-every-authoritative-home-discovered.md) | The version guard reaches every authoritative home, discovered rather than hand-enumerated | Done | EP0167 | 2026-07-27 | 2026-07-27 |
 | [US0453](US0453-countable-claims-in-the-trd-and-tsd-are.md) | Countable claims in the TRD and TSD are checked against a census of what the repo actually ships | Done | EP0167 | 2026-07-27 | 2026-07-27 |
-| [US0454](US0454-timing-claims-are-checked-against-recorded-measurements-rather.md) | Timing claims are checked against recorded measurements rather than restated from memory | Review | EP0167 | 2026-07-27 | 2026-07-27 |
+| [US0454](US0454-timing-claims-are-checked-against-recorded-measurements-rather.md) | Timing claims are checked against recorded measurements rather than restated from memory | Done | EP0167 | 2026-07-27 | 2026-07-27 |
 | [US0455](US0455-one-availability-contract-the-prd-clause-the-tsd.md) | One availability contract: the PRD clause, the TSD NFR row and ADR-004 all state the fail-loud sync behaviour, and the branch taken is recorded as a decision | Done | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0456](US0456-the-tsd-s-per-script-test-contract-stops.md) | The TSD's per-script test contract stops being prose: a sweep of scripts and scripts/lib derives the exception list, and the shipped document is held to it | Done | EP0168 | 2026-07-27 | 2026-07-27 |
-| [US0457](US0457-adr-011-states-the-breakdown-gate-s-real.md) | ADR-011 states the breakdown gate's real firing rule, and carries a dated amendment marker so a reader of the block sees it | Review | EP0168 | 2026-07-27 | 2026-07-27 |
-| [US0458](US0458-the-trd-s-shipped-surface-enumerations-are-derived.md) | The TRD's shipped-surface enumerations are derived from the code and the router, and the stale CR0132 caveat is refused by name | Review | EP0168 | 2026-07-27 | 2026-07-27 |
-| [US0459](US0459-the-token-budget-premise-is-replaced-by-the.md) | The token-budget premise is replaced by the measured one everywhere it is asserted: transcript-measured, and a lower bound because delegated spend is supplied not measured | Review | EP0168 | 2026-07-27 | 2026-07-27 |
+| [US0457](US0457-adr-011-states-the-breakdown-gate-s-real.md) | ADR-011 states the breakdown gate's real firing rule, and carries a dated amendment marker so a reader of the block sees it | Done | EP0168 | 2026-07-27 | 2026-07-27 |
+| [US0458](US0458-the-trd-s-shipped-surface-enumerations-are-derived.md) | The TRD's shipped-surface enumerations are derived from the code and the router, and the stale CR0132 caveat is refused by name | Done | EP0168 | 2026-07-27 | 2026-07-27 |
+| [US0459](US0459-the-token-budget-premise-is-replaced-by-the.md) | The token-budget premise is replaced by the measured one everywhere it is asserted: transcript-measured, and a lower bound because delegated spend is supplied not measured | Done | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0460](US0460-the-porting-doctrine-is-stated-in-one-direction.md) | The porting doctrine is stated in one direction across the TRD and personas.md: the repo is source, the installed copy is the derived mirror | Done | EP0168 | 2026-07-27 | 2026-07-27 |
 | [US0461](US0461-verify-ac-lint-ratchet-refuses-a-duplicate-group.md) | verify_ac lint --ratchet refuses a duplicate group the baseline does not record with a reason, and the pinned pre-commit lane set gains it | Done | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0462](US0462-a-filed-finding-records-the-lens-profile-and.md) | A filed finding records the lens, profile and a resolvable audit run, validated against a register that has a real writer | Done | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0463](US0463-readiness-py-detector-owed-flags-a-lens-filed.md) | readiness.py detector-owed flags a lens filed in two separate audit runs and files the sized unit that will build the check | Done | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0464](US0464-every-lens-pack-on-disk-names-its-detector.md) | Every lens pack on disk names its detector or declares manual with a reason, the column is read by header name, and the detector set covers the runners this repo ships | Done | EP0169 | 2026-07-27 | 2026-07-27 |
-| [US0465](US0465-no-artefact-reaches-a-terminal-status-carrying-unchecked.md) | No artefact reaches a terminal status carrying unchecked Open Questions, and the 16 that already did are swept | Review | EP0169 | 2026-07-27 | 2026-07-27 |
+| [US0465](US0465-no-artefact-reaches-a-terminal-status-carrying-unchecked.md) | No artefact reaches a terminal status carrying unchecked Open Questions, and the 16 that already did are swept | Done | EP0169 | 2026-07-27 | 2026-07-27 |
 | [US0466](US0466-the-ungroomed-ac-marker-routes-to-the-shape.md) | The ungroomed AC marker routes to the shape and the verifier guidance, help/refine.md ships, and the help-page gap is a derived lane | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
 | [US0467](US0467-status-names-the-open-run-id-rung-sprint.md) | status names the open run - id, rung, Sprint Goal, batch and remaining - from the run state, with remaining derived from the same predicate the handoff uses | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
 | [US0468](US0468-help-sprint-md-documents-the-run-lifecycle-batch.md) | help/sprint.md documents the run lifecycle - batch mutation, stop, appetite and rolling - bound in invocation form to the shipped parser and the run record | Ready | EP0170 | 2026-07-27 | 2026-07-27 |
@@ -443,7 +443,7 @@
 | [US0529](US0529-init-creates-the-issues-directory-and-its-index.md) | init creates the issues directory and its index, so the issue type is usable on a new project | Done | EP0180 | 2026-07-28 | 2026-07-28 |
 | [US0530](US0530-the-artefact-tree-init-creates-is-derived-from.md) | The artefact tree init creates is derived from the shipped type list, so a new type is never silently omitted | Done | EP0180 | 2026-07-28 | 2026-07-28 |
 | [US0531](US0531-the-sweep-detectors-read-the-artefact-corpus-once.md) | The sweep detectors read the artefact corpus once per run and share it, so the cost is paid once rather than per unit | Done | EP0181 | 2026-07-28 | 2026-07-28 |
-| [US0532](US0532-the-corpus-read-is-measured-by-a-test.md) | The corpus read is measured by a test that fails if it grows back to per-unit, so the fix cannot silently regress | Review | EP0181 | 2026-07-28 | 2026-07-28 |
+| [US0532](US0532-the-corpus-read-is-measured-by-a-test.md) | The corpus read is measured by a test that fails if it grows back to per-unit, so the fix cannot silently regress | Done | EP0181 | 2026-07-28 | 2026-07-28 |
 | [US0533](US0533-the-gate-attributes-its-seconds-per-lane-so.md) | The gate attributes its seconds per lane, so a lane that becomes the dominant cost is visible without profiling it by hand | Done | EP0181 | 2026-07-28 | 2026-07-28 |
 | [US0534](US0534-a-recorded-review-round-carries-a-duration-and.md) | A recorded review round carries a duration, and a round recorded without one says so rather than counting as zero | Done | EP0182 | 2026-07-28 | 2026-07-28 |
 | [US0535](US0535-the-overhead-ratio-consumes-recorded-review-durations-and.md) | The overhead ratio consumes recorded review durations, and states it is a lower bound only while a component is genuinely unmeasured | Done | EP0182 | 2026-07-28 | 2026-07-28 |
@@ -466,14 +466,14 @@
 | [US0552](US0552-the-close-reports-how-many-blockers-it-filed.md) | The close reports how many blockers it filed and how many distinct causes they represent, so a fan-out is visible when it happens | Done | EP0188 | 2026-07-28 | 2026-07-28 |
 | [US0553](US0553-a-close-phase-commit-over-an-unchanged-test.md) | A close-phase commit over an unchanged test-relevant surface reuses the gate verdict the close itself earned, rather than re-running the suites | Blocked | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0554](US0554-a-listing-only-declaration-names-the-ids-its.md) | A listing-only declaration names the ids its structural read depends on, so filing an artefact stops triggering the full suites | Done | EP0189 | 2026-07-29 | 2026-07-29 |
-| [US0555](US0555-sprint-close-dry-run-reports-every-unmet-prerequisite.md) | sprint close --dry-run reports every unmet prerequisite of all seven steps in one read-only pass, retro content included, and writes nothing | Review | EP0189 | 2026-07-29 | 2026-07-29 |
+| [US0555](US0555-sprint-close-dry-run-reports-every-unmet-prerequisite.md) | sprint close --dry-run reports every unmet prerequisite of the whole close chain in one read-only pass, retro content included, and writes nothing | Done | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0556](US0556-critic-evidence-record-and-signoff-each-record-a.md) | critic evidence, record and signoff each record a whole batch in one invocation, with the open run as the default scope | Done | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0557](US0557-a-batch-invocation-missing-a-required-argument-is.md) | A batch invocation missing a required argument is refused once before any unit is written, naming every argument the command needs | Done | EP0189 | 2026-07-29 | 2026-07-29 |
-| [US0558](US0558-a-retro-created-by-the-scaffold-and-filled.md) | A retro created by the scaffold and filled in as its template demonstrates passes retro validate without a rejection round-trip | Review | EP0189 | 2026-07-29 | 2026-07-29 |
+| [US0558](US0558-a-retro-created-by-the-scaffold-and-filled.md) | A retro created by the scaffold and filled in as its template demonstrates passes retro validate without a rejection round-trip | Done | EP0189 | 2026-07-29 | 2026-07-29 |
 | [US0559](US0559-the-close-reports-its-own-cost-gate-seconds.md) | The close reports its own cost - gate seconds and elapsed - so the next reduction is measured against a number rather than an impression | Done | EP0189 | 2026-07-29 | 2026-07-29 |
-| [US0560](US0560-a-delivery-batch-reaching-the-commit-threshold-has.md) | A delivery batch reaching the commit threshold has a defined review point, and the adversarial pass takes that batch's units as its surface | Review | EP0190 | 2026-07-29 | 2026-07-29 |
-| [US0561](US0561-a-batch-review-finding-is-filed-as-a.md) | A batch-review finding is filed as a delivery unit against the batch that caused it, so its cost is priced where the work was | Review | EP0190 | 2026-07-29 | 2026-07-29 |
-| [US0562](US0562-sprint-close-refuses-a-batch-containing-units-no.md) | sprint close REFUSES a batch containing units no independent review has covered, and names them | Review | EP0190 | 2026-07-29 | 2026-07-29 |
+| [US0560](US0560-a-delivery-batch-reaching-the-commit-threshold-has.md) | A delivery batch reaching the commit threshold has a defined review point, and the adversarial pass takes that batch's units as its surface | Done | EP0190 | 2026-07-29 | 2026-07-29 |
+| [US0561](US0561-a-batch-review-finding-is-filed-as-a.md) | A batch-review finding is filed as a delivery unit against the batch that caused it, so its cost is priced where the work was | Done | EP0190 | 2026-07-29 | 2026-07-29 |
+| [US0562](US0562-sprint-close-refuses-a-batch-containing-units-no.md) | sprint close REFUSES a batch containing units no independent review has covered, and names them | Done | EP0190 | 2026-07-29 | 2026-07-29 |
 | [US0563](US0563-the-shipped-lifecycle-states-the-batch-boundary-cadence.md) | The shipped lifecycle states the batch-boundary cadence: doctrine, definition-of-done and help, so a consuming project inherits the placement | Done | EP0190 | 2026-07-29 | 2026-07-29 |
 | [US0564](US0564-a-unit-typed-as-a-repair-requires-mutation.md) | A unit typed as a repair requires mutation evidence over its own changed lines before it can reach a terminal status | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
 | [US0565](US0565-the-gate-is-the-survivor-count-over-those.md) | The gate is the SURVIVOR count over those lines, and a surviving mutant refuses the transition naming the mutant and its line | Draft | EP0191 | 2026-07-29 | 2026-07-29 |
@@ -488,6 +488,26 @@
 | [US0574](US0574-the-checklist-is-one-row-per-stage-of.md) | the checklist is one row per STAGE of the sprint cycle, each stating ran, not-run or waived | Done | EP0192 | 2026-07-30 | 2026-07-30 |
 | [US0575](US0575-the-review-row-names-who-reviewed-what-under.md) | the review row names who reviewed what, under which seat, over how many lenses | Done | EP0192 | 2026-07-30 | 2026-07-30 |
 | [US0576](US0576-impediments-survive-the-close-blocked-units-and-unresolved.md) | impediments survive the close: blocked units and unresolved operator decisions are reported with what is in the way | Done | EP0192 | 2026-07-30 | 2026-07-30 |
+| [US0577](US0577-a-recorded-review-verdict-carries-the-provenance-of.md) | A recorded review verdict carries the provenance of the brief it was given, so a hand-written prompt is detectable | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0578](US0578-recording-a-verdict-with-no-brief-provenance-is.md) | Recording a verdict with no brief provenance is REFUSED, and the refusal names critic.py brief | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0579](US0579-every-finding-on-a-verdict-is-classified-regression.md) | Every finding on a verdict is classified REGRESSION, NEW or PRE-EXISTING, and an unclassified verdict is refused | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0580](US0580-only-regression-and-new-hold-a-gate-a.md) | Only REGRESSION and NEW hold a gate: a PRE-EXISTING finding is reported and does not block | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0581](US0581-a-finding-matching-an-open-bug-or-cr.md) | A finding matching an open Bug or CR is annotated with that id automatically and never blocks | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0582](US0582-the-shipped-doctrine-states-the-review-scope-rule.md) | The shipped doctrine states the review scope rule, so a consuming project inherits the bound and not just the ceremony | Draft | EP0194 | 2026-08-01 | 2026-08-01 |
+| [US0583](US0583-a-staged-diff-changing-a-literal-while-its.md) | A staged diff changing a literal while its own prose still states the old value is flagged, naming both sites, and a diff whose prose agrees produces no finding | Draft | EP0195 | 2026-08-01 | 2026-08-01 |
+| [US0584](US0584-a-criterion-ticked-in-a-diff-whose-named.md) | A criterion ticked in a diff whose named surface that diff does not touch is flagged, and one whose surface it does touch is not | Draft | EP0195 | 2026-08-01 | 2026-08-01 |
+| [US0585](US0585-the-claim-drift-lane-runs-in-the-commit.md) | The claim-drift lane runs in the commit gate as advisory, and its yield over one sprint is recorded before any decision to make it block | Draft | EP0195 | 2026-08-01 | 2026-08-01 |
+| [US0586](US0586-every-skill-script-records-the-artefact-it-touched.md) | Every skill script records the artefact it touched and the action it performed, per run | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
+| [US0587](US0587-an-artefact-changed-in-the-run-diff-with.md) | An artefact changed in the run diff with no tool provenance is reported by name at the close | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
+| [US0588](US0588-a-hand-rolled-action-carrying-a-filed-gap.md) | A hand-rolled action carrying a filed gap id is reported and does not block; one without is outstanding | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
+| [US0589](US0589-a-run-that-uses-the-tools-throughout-reports.md) | A run that uses the tools throughout reports zero manual actions, so the detector cannot be one that never fires | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
+| [US0590](US0590-the-doctrine-states-the-content-versus-tooling-line.md) | The doctrine states the content-versus-tooling line and names reference-scripts.md as the pre-task catalogue | Draft | EP0196 | 2026-08-01 | 2026-08-01 |
+| [US0591](US0591-every-checklist-item-declares-its-enforcing-command-and.md) | Every checklist item declares its enforcing command, and the close reports rather than gates on an expired window | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
+| [US0592](US0592-the-goal-seat-review-is-enforced-by-sprint.md) | The goal seat review is enforced by sprint plan --write, so skipping it is refused where it can still be run | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
+| [US0593](US0593-a-run-whose-only-review-verdicts-are-reject.md) | A run whose only review verdicts are REJECT reports the closing-review item outstanding, never ran | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
+| [US0594](US0594-a-unit-whose-ticked-criteria-the-tree-contradicts.md) | A unit whose ticked criteria the tree contradicts is reported outstanding at the close | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
+| [US0595](US0595-a-waiver-records-whether-it-was-deliberate-or.md) | A waiver records whether it was deliberate or its window had already expired, and the retro counts them apart | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
+| [US0596](US0596-coverage-is-computed-once-and-two-rows-disagreeing.md) | Coverage is computed once, and two rows disagreeing about it is itself an outstanding item | Draft | EP0197 | 2026-08-01 | 2026-08-01 |
 
 ## Archived Releases
 

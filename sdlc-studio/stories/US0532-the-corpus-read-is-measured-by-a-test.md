@@ -1,6 +1,6 @@
 # US0532: The corpus read is measured by a test that fails if it grows back to per-unit, so the fix cannot silently regress
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0465
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new

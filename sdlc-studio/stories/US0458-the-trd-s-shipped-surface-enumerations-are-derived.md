@@ -1,6 +1,6 @@
 # US0458: The TRD's shipped-surface enumerations are derived from the code and the router, and the stale CR0132 caveat is refused by name
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0430
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

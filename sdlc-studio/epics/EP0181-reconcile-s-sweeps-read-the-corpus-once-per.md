@@ -15,7 +15,7 @@ Decomposed from CR0465. Delivers the work CR0465 requested.
 ## Story Breakdown
 
 - [x] [US0531: The sweep detectors read the artefact corpus once per run and share it, so the cost is paid once rather than per unit](../stories/US0531-the-sweep-detectors-read-the-artefact-corpus-once.md)
-- [ ] [US0532: The corpus read is measured by a test that fails if it grows back to per-unit, so the fix cannot silently regress](../stories/US0532-the-corpus-read-is-measured-by-a-test.md)
+- [x] [US0532: The corpus read is measured by a test that fails if it grows back to per-unit, so the fix cannot silently regress](../stories/US0532-the-corpus-read-is-measured-by-a-test.md)
 - [x] [US0533: The gate attributes its seconds per lane, so a lane that becomes the dominant cost is visible without profiling it by hand](../stories/US0533-the-gate-attributes-its-seconds-per-lane-so.md)
 
 ## Acceptance Criteria (Epic Level)

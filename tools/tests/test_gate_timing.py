@@ -482,7 +482,12 @@ class ScopeCollapseTests(unittest.TestCase):
             self.assertIn("91%", why, "the drop is not stated, only the two counts")
 
     def test_a_collapsed_run_exits_distinctly_from_a_declined_recording(self) -> None:
-        """The hook branches on this: exit 1 declines a timing and proceeds, exit 2 blocks."""
+        """The hook branches on this: exit 1 declines a timing and proceeds, exit 3 blocks.
+
+        THREE, not two - python itself exits 2 for an argparse error and for a missing
+        script file, so a hook reading 2 as `collapsed` refuses every commit on which the
+        tool is absent or mis-invoked. This docstring said 2 while the assertion below
+        pinned 3."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             gt.record(root, "total.tests", 5645)

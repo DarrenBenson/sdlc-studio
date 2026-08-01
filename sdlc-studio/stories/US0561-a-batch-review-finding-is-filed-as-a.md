@@ -1,6 +1,6 @@
 # US0561: A batch-review finding is filed as a delivery unit against the batch that caused it, so its cost is priced where the work was
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0500
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new

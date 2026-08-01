@@ -1,6 +1,6 @@
 # US0560: A delivery batch reaching the commit threshold has a defined review point, and the adversarial pass takes that batch's units as its surface
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0500
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new

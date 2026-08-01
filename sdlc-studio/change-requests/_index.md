@@ -1,20 +1,20 @@
 # Change Request Index
 
-**Last Updated:** 2026-07-31
+**Last Updated:** 2026-08-01
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 11 |
+| Proposed | 13 |
 | Approved | 0 |
-| In Progress | 33 |
+| In Progress | 37 |
 | Complete | 445 |
 | Rejected | 1 |
 | Deferred | 0 |
 | Superseded | 21 |
 | Blocked | 0 |
-| **Total** | **511** |
+| **Total** | **517** |
 
 ## All Changes
 
@@ -333,6 +333,12 @@
 | [CR-0509](CR0509-a-review-worktree-opens-at-a-stale-base.md) | A review worktree opens at a stale base, so every delegated reviewer's first act is discovering the units under review do not exist yet | Proposed | High | Improvement | 2026-07-31 | -- |
 | [CR-0510](CR0510-ceremony-proportional-to-blast-radius-the-process-spends.md) | Ceremony proportional to blast radius: the process spends gate-grade rigour on prose-grade changes, and the machinery that would stop it is built and switched off | Proposed | High | Improvement | 2026-07-31 | -- |
 | [CR-0511](CR0511-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Proposed | Low | Improvement | 2026-07-31 | -- |
+| [CR-0512](CR0512-a-unit-review-is-scoped-to-that-unit.md) | A unit review is scoped to that unit's own diff and blocks only on a NEW defect; an already-logged finding is reported, never blocking | In Progress | High | Improvement | 2026-08-01 | EP0194 |
+| [CR-0513](CR0513-the-close-checklist-enforces-items-where-they-can.md) | The close checklist enforces items where they can still be satisfied, reads verdicts rather than counts, and checks how a review was briefed | In Progress | High | Improvement | 2026-08-01 | EP0197 |
+| [CR-0514](CR0514-the-amigo-panel-signs-off-a-sprint-to.md) | The amigo panel signs off a sprint to completion: a different seat from the one that reviewed it, gated on brief provenance and a converging review loop | Proposed | High | Feature | 2026-08-01 | -- |
+| [CR-0515](CR0515-an-agent-customises-content-never-tooling-hand-rolled.md) | An agent customises content, never tooling: hand-rolled work is detected from the run diff, reported at the close, and escapes only by filing the gap | In Progress | High | Feature | 2026-08-01 | EP0196 |
+| [CR-0516](CR0516-two-mechanical-tasks-have-no-tool-review-batch.md) | Two mechanical tasks have no tool: review-batch findings cannot survive the shell, and no command reports backlog points | Proposed | Medium | Improvement | 2026-08-01 | -- |
+| [CR-0517](CR0517-run-the-claim-inventory-pass-at-delivery-not.md) | Run the claim-inventory pass at delivery, not at review: every blocking finding of the corrected review loop was prose disagreeing with code in the same diff | In Progress | High | Feature | 2026-08-01 | EP0195 |
 
 ## Archived Releases
 

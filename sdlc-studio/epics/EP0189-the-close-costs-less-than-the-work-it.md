@@ -16,10 +16,10 @@ Decomposed from CR0498. Delivers the work CR0498 requested.
 
 - [ ] [US0553: A close-phase commit over an unchanged test-relevant surface reuses the gate verdict the close itself earned, rather than re-running the suites](../stories/US0553-a-close-phase-commit-over-an-unchanged-test.md)
 - [x] [US0554: A listing-only declaration names the ids its structural read depends on, so filing an artefact stops triggering the full suites](../stories/US0554-a-listing-only-declaration-names-the-ids-its.md)
-- [ ] [US0555: sprint close --dry-run reports every unmet prerequisite of all seven steps in one read-only pass, retro content included, and writes nothing](../stories/US0555-sprint-close-dry-run-reports-every-unmet-prerequisite.md)
+- [x] [US0555: sprint close --dry-run reports every unmet prerequisite of all seven steps in one read-only pass, retro content included, and writes nothing](../stories/US0555-sprint-close-dry-run-reports-every-unmet-prerequisite.md)
 - [x] [US0556: critic evidence, record and signoff each record a whole batch in one invocation, with the open run as the default scope](../stories/US0556-critic-evidence-record-and-signoff-each-record-a.md)
 - [x] [US0557: A batch invocation missing a required argument is refused once before any unit is written, naming every argument the command needs](../stories/US0557-a-batch-invocation-missing-a-required-argument-is.md)
-- [ ] [US0558: A retro created by the scaffold and filled in as its template demonstrates passes retro validate without a rejection round-trip](../stories/US0558-a-retro-created-by-the-scaffold-and-filled.md)
+- [x] [US0558: A retro created by the scaffold and filled in as its template demonstrates passes retro validate without a rejection round-trip](../stories/US0558-a-retro-created-by-the-scaffold-and-filled.md)
 - [x] [US0559: The close reports its own cost - gate seconds and elapsed - so the next reduction is measured against a number rather than an impression](../stories/US0559-the-close-reports-its-own-cost-gate-seconds.md)
 
 ## Acceptance Criteria (Epic Level)

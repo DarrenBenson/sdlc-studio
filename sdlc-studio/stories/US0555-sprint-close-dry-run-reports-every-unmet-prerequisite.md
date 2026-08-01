@@ -1,6 +1,6 @@
-# US0555: sprint close --dry-run reports every unmet prerequisite of all seven steps in one read-only pass, retro content included, and writes nothing
+# US0555: sprint close --dry-run reports every unmet prerequisite of the whole close chain in one read-only pass, retro content included, and writes nothing
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0498
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new
@@ -13,7 +13,7 @@
 ## User Story
 
 **As a** an operator about to close a sprint
-**I want** one read-only pass that reports every refusal all seven close steps would raise
+**I want** one read-only pass that reports every refusal the whole close chain would raise
 **So that** I fix them together instead of discovering them one serial four-hundred-second round-trip at a time
 
 ## Acceptance Criteria
@@ -65,3 +65,4 @@
 | --- | --- | --- |
 | 2026-07-29 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-29 | Claude Opus 5 | Groomed: criteria authored against this story's slice, each with an executable Verify line |
+| 2026-08-01 | sdlc-studio | Retitled: was 'sprint close --dry-run reports every unmet prerequisite of all seven steps in one read-only pass, retro content included, and writes nothing' |

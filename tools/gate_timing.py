@@ -169,7 +169,11 @@ def scope_ok(root: Path, suite: str, tests: int, loader_error: bool = False,
                    f"shrink is still not comparable with the runs before it")
         else:
             collapsed = True
-            ok = False
+            # `ok` is ALREADY False here and is not reassigned: COLLAPSE_FLOOR (0.5) is below
+            # SCOPE_FLOOR (0.8), so every collapsed count has failed the floor above. Setting it
+            # again read as defence in depth and was provably unreachable-as-behaviour - the
+            # same dead-guard shape the comment forty lines below condemns, found by an
+            # independent seat whose mutant deleting it survived.
             # A count of zero is reported as its own state. It is still a collapse - nobody can
             # tell "the suite ran nothing" from "nothing could be counted", and neither is
             # evidence the scope ran - but the two have very different fixes, and a reader

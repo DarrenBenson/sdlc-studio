@@ -1,6 +1,6 @@
 # US0562: sprint close REFUSES a batch containing units no independent review has covered, and names them
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0500
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new

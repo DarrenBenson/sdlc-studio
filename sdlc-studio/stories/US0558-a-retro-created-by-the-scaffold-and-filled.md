@@ -1,6 +1,6 @@
 # US0558: A retro created by the scaffold and filled in as its template demonstrates passes retro validate without a rejection round-trip
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0498
 > **Created:** 2026-07-29
 > **Created-by:** sdlc-studio new

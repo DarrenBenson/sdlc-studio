@@ -1,6 +1,6 @@
 # US0452: The version guard reaches every authoritative home, discovered rather than hand-enumerated
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0056
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

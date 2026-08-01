@@ -7670,12 +7670,22 @@ def _awaits_signoff(root: Path, uid: str) -> bool:
         import critic  # noqa: PLC0415 - deferred, like the chain's other siblings
         if not critic.is_awaiting_signoff(status):
             return False
-        # And the bar must still be UNMET. A unit whose adversarial evidence and independent
-        # sign-off are both recorded can reach Done right now, so calling it "awaiting a
-        # signature this session cannot give" drops real remaining work out of the refusal.
+        # BOTH halves of the two-role bar, read the way `transition._two_role_gate` reads them,
+        # because this claim is only true when the ONLY outstanding half is the signature.
+        #
+        # The EVIDENCE half is session-doable: `record_evidence` accepts an authoring-session
+        # reviewer, while `record_signoff` refuses that same id. So a unit missing its
+        # adversarial pass is work this run could still dispatch - reporting it as "awaiting a
+        # sign-off this session cannot give" drops real remaining work out of the stop's
+        # refusal, which is the silent-loss direction this function exists to avoid and the one
+        # its first version took. Checking only the signature made the two cases identical.
+        if not (bool(critic.evidence_for(root, uid))
+                or critic.sprint_covers_independently(
+                    root, uid, critic.sprint_review_for(root, uid))):
+            return False                  # the adversarial pass is still owed, and is doable
         signoff = critic.signoff_for(root, uid)
         if signoff and critic.is_independent_signoff(root, uid, signoff):
-            return False
+            return False                  # both halves met: it can reach Done right now
     except Exception as exc:  # noqa: BLE001 - a reporting clause never fails a stop
         # FALSE, not True. Every other uncertainty path here returns False, and this one used
         # to fall through to `return True` - so a critic that raised dropped the unit from the

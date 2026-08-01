@@ -1,17 +1,17 @@
 # Epic Index
 
-**Last Updated:** 2026-07-30
+**Last Updated:** 2026-08-01
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 17 |
+| Draft | 21 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 176 |
-| **Total** | **193** |
+| **Total** | **197** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -216,3 +216,7 @@
 | [EP0191](EP0191-a-repair-is-held-by-a-mutant-it.md) | A repair is held by a mutant it kills: mutation is mandatory on a fix, gated on survivors at the transition | Draft | 4 | -- | 2026-07-29 | 2026-07-29 |
 | [EP0192](EP0192-the-sprint-report-is-one-derived-artefact-and.md) | The sprint report is one derived artefact, and the close refuses without it | Done | 7 | -- | 2026-07-30 | 2026-07-30 |
 | [EP0193](EP0193-the-mutation-lane-tells-an-uncommitted-surface-apart.md) | The mutation lane tells an uncommitted surface apart from an untested one | Draft | 1 | -- | 2026-07-30 | 2026-07-30 |
+| [EP0194](EP0194-a-unit-review-is-bounded-briefed-by-the.md) | A unit review is bounded, briefed by the tool, and blocks only on what the unit broke | Draft | 6 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0195](EP0195-the-claim-inventory-runs-at-delivery-where-a.md) | The claim inventory runs at delivery, where a stale sentence costs seconds instead of a review round | Draft | 3 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0196](EP0196-hand-rolled-work-is-visible-the-close-names.md) | Hand-rolled work is visible: the close names what an agent did by hand instead of by tool | Draft | 5 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0197](EP0197-the-close-checklist-fires-where-an-item-can.md) | The close checklist fires where an item can still be satisfied, and reads verdicts rather than counts | Draft | 6 | -- | 2026-08-01 | 2026-08-01 |

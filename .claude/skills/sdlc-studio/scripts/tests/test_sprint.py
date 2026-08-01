@@ -4775,7 +4775,17 @@ class StopAwaitingSignoffTests(unittest.TestCase):
     `reachable_end_state` already draws this distinction at plan time; `stop` never read it.
     """
 
-    def _fixture(self, root: Path, statuses: dict) -> None:
+    def _fixture(self, root: Path, statuses: dict, *, evidence: bool = True) -> None:
+        """A run whose Review units have had their ADVERSARIAL PASS recorded.
+
+        `evidence=True` by default because that is the state these tests are about: the only
+        outstanding half is the signature, which the authoring session is refused. Without it
+        the units are ordinary remaining work - the evidence half is session-doable, since
+        `record_evidence` accepts an authoring-session reviewer while `record_signoff` refuses
+        the same id. Every fixture here originally omitted it, so the class asserted that a
+        unit owing its adversarial pass was "finished bar a signature" and pinned the defect an
+        independent seat then found.
+        """
         _close_state(root, batch=sorted(statuses))
         (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
         (root / "sdlc-studio" / ".config.yaml").write_text(
@@ -4786,6 +4796,13 @@ class StopAwaitingSignoffTests(unittest.TestCase):
             (d / f"{uid}-x.md").write_text(
                 f"# {uid}: s\n\n> **Status:** {status}\n> **Priority:** Medium\n"
                 f"> **Affects:** src/a.py\n", encoding="utf-8")
+        if evidence:
+            import critic
+            for uid, status in statuses.items():
+                if critic.is_awaiting_signoff(status):
+                    critic.record_evidence(root, uid, reviewer="an independent seat",
+                                           author="the authoring session",
+                                           findings="adversarial pass run; none blocking")
 
     def test_a_unit_held_at_Review_is_not_reported_as_able_to_proceed(self) -> None:
         mod = _load()
@@ -4939,6 +4956,55 @@ class StopAwaitingSignoffTests(unittest.TestCase):
                 out = mod.blocked_by_pending(root)
         self.assertEqual([], out["awaiting_signoff"],
                          "critic's matcher is not consulted, so a local copy is deciding")
+
+    def test_a_unit_STILL_OWING_its_adversarial_pass_is_remaining_work(self) -> None:
+        """The seat's finding. The two-role bar has two halves and only the SIGNATURE is beyond
+        this session: `record_evidence` accepts an authoring-session reviewer, `record_signoff`
+        refuses the same id. So a unit whose adversarial pass has not been run is work this run
+        could still dispatch, and reporting it as "awaiting a sign-off this session cannot give"
+        drops it from the stop's refusal - the silent-loss direction this function exists to
+        avoid. Checking only the signature made the two states indistinguishable."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, {"US0101": "Review"}, evidence=False)
+            out = mod.blocked_by_pending(root)
+        self.assertEqual([], out["awaiting_signoff"],
+                         "a unit owing its adversarial pass is reported as merely awaiting a "
+                         "signature, so the work is silently uncounted")
+        self.assertEqual(["US0101"], out["unblocked"],
+                         "the evidence half is session-doable and must stay in the refusal")
+
+    def test_a_stop_IS_refused_while_an_adversarial_pass_is_owed(self) -> None:
+        """The consequence end to end: the stop must not exit 0 over work the run could do."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, {"US0101": "Review"}, evidence=False)
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()) as err:
+                rc = mod.cmd_stop(argparse.Namespace(root=str(root), force=False, reason="x"))
+        self.assertEqual(1, rc, "the stop exited clean over an un-reviewed unit")
+        self.assertIn("US0101", err.getvalue())
+
+    def test_SPRINT_LEVEL_coverage_counts_as_the_adversarial_pass(self) -> None:
+        """The evidence half is satisfied by a per-unit row OR by a sprint-level review covering
+        the unit - the same either/or `transition._two_role_gate` applies. Reading only the
+        per-unit row would report a unit covered by a full-diff pass as still owing one, and
+        hold a stop that should proceed. Mutation found this limb unpinned."""
+        mod = _load()
+        import critic
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, {"US0101": "Review"}, evidence=False)
+            critic.record_sprint_review(
+                root, ["US0101"], reviewer="an independent seat",
+                author="the authoring session", verdict="APPROVE",
+                findings="full-diff pass over the batch; none blocking")
+            out = mod.blocked_by_pending(root)
+        self.assertEqual(["US0101"], out["awaiting_signoff"],
+                         "a unit covered by a sprint-level pass is reported as still owing one")
+        self.assertEqual([], out["unblocked"])
 
     def test_a_unit_below_the_cutoff_is_not_held(self) -> None:
         """The cutoff is a number, and it must be read as one - a project sets it precisely so
@@ -10080,24 +10146,76 @@ class CloseDryRunTests(unittest.TestCase):
                          "a dry run per close would otherwise leave a 14MB copy behind each time")
 
     def test_a_clean_dry_run_predicts_a_close_that_does_not_refuse(self) -> None:
-        """`clean` has to mean something a caller can act on, so it is asserted against the
-        report rather than inferred: no refusal AND no unevaluated step."""
+        """The PREDICTION, driven through `close_dry_run` and then through the real chain.
+
+        This asserted `_dry_run_result` over a hand-built list, so it never called
+        `close_dry_run` at all: an independent seat gutted that function to return a fixed
+        clean result and this test still passed. It also fed `[{"step": "gate", "status":
+        "ok"}]`, a shape production stopped producing. The claim is that a clean preview
+        predicts a close that does not refuse, so both halves have to run.
+        """
         sprint = _load()
-        self.assertTrue(sprint._dry_run_result(
-            [{"step": "gate", "status": "ok", "detail": "", "remedy": ""}], None)["clean"])
-        self.assertFalse(sprint._dry_run_result(
-            [{"step": "gate", "status": "refuse", "detail": "", "remedy": ""}], None)["clean"])
+        root = self._repo()
+        ok = lambda *_a, **_k: (True, "ok", "")  # noqa: E731
+        steps = {f"_close_{s.replace('-', '_')}": ok for s in sprint._CLOSE_CHAIN}
+        with unittest.mock.patch.object(
+                sprint, "close_preflight",
+                lambda *_a, **_k: {"ready": True, "blockers": [], "gate_ran": True}), \
+                unittest.mock.patch.multiple(sprint, **steps):
+            preview = sprint.close_dry_run(root, "RETRO9990")
+            self.assertTrue(preview["clean"], "the preview is not clean, so it predicts nothing")
+            # The preview must have ACTUALLY previewed. Asserting only `clean` let a
+            # `close_dry_run` gutted to `return {"clean": True, "steps": []}` satisfy this -
+            # the seat's mutant, which survived the first repair of this very test.
+            reported = {s["step"] for s in preview["steps"]}
+            self.assertEqual(set(sprint._CLOSE_CHAIN) - reported, set(),
+                             "the preview reports no step, so `clean` is a claim about nothing")
+            # ...and the real chain, over the same steps, refuses nothing.
+            refused = [name for name in sprint._CLOSE_CHAIN
+                       if not getattr(sprint, "_close_" + name.replace("-", "_"))(
+                           root, "RETRO9990", {})[0]]
+        self.assertEqual([], refused,
+                         "the dry run reported clean and the real close refuses - the preview "
+                         "does not predict the close")
+
+    def test_a_dry_run_that_REFUSES_predicts_a_close_that_refuses(self) -> None:
+        """The control. Without it, a preview hardcoded to `clean` would satisfy the test
+        above while predicting nothing at all."""
+        sprint = _load()
+        root = self._repo()
+        blocker = {"stage": "gate", "detail": "tests: 3 failing", "remedy": "fix them"}
+        with unittest.mock.patch.object(
+                sprint, "close_preflight",
+                lambda *_a, **_k: {"ready": False, "blockers": [blocker], "gate_ran": True}):
+            preview = sprint.close_dry_run(root)
+        self.assertFalse(preview["clean"])
+        self.assertTrue(preview["blockers"])
 
     def test_an_unevaluated_step_is_never_reported_as_passing(self) -> None:
         """The direction this must fail in. A step whose probe blew up in the scratch copy has
         said nothing about the real close; calling that a pass is the one way a preview could
         actively mislead."""
         sprint = _load()
-        result = sprint._dry_run_result(
-            [{"step": "handoff", "status": "unevaluated", "detail": "boom", "remedy": ""}], None)
+        root = self._repo()
+
+        def explode(*_a, **_kw):
+            raise RuntimeError("the probe blew up in the copy")
+
+        # Driven through close_dry_run with a REAL step raising, not a hand-built list. The
+        # fabricated-list form asserted `_dry_run_result` alone, so a `close_dry_run` gutted to
+        # return a fixed clean result satisfied it - the seat's mutant, twice over.
+        with unittest.mock.patch.object(
+                sprint, "close_preflight",
+                lambda *_a, **_k: {"ready": True, "blockers": [], "gate_ran": True}), \
+                unittest.mock.patch.object(sprint, "_close_handoff", explode):
+            result = sprint.close_dry_run(root, "RETRO9991")
+        steps = {s["step"]: s for s in result["steps"]}
+        self.assertEqual("unevaluated", steps["handoff"]["status"],
+                         "a step whose probe raised is reported as something other than "
+                         "unevaluated")
+        self.assertIn("blew up", steps["handoff"]["detail"])
         self.assertFalse(result["clean"], "an unanswered step is not a passing one")
-        self.assertEqual([], result["blockers"])
-        self.assertEqual(1, len(result["unevaluated"]))
+        self.assertIn("handoff", [s["step"] for s in result["unevaluated"]])
         report = sprint.dry_run_report(result)
         self.assertIn("UNEVALUATED", report)
         self.assertNotIn("CLEAN", report)

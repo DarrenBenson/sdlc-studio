@@ -1,6 +1,6 @@
 # US0459: The token-budget premise is replaced by the measured one everywhere it is asserted: transcript-measured, and a lower bound because delegated spend is supplied not measured
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0431
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

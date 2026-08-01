@@ -1,6 +1,6 @@
 # US0465: No artefact reaches a terminal status carrying unchecked Open Questions, and the 16 that already did are swept
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0438
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

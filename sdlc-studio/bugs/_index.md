@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-07-31
+**Last Updated:** 2026-08-01
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 21 |
+| Open | 23 |
 | In Progress | 0 |
-| Fixed | 365 |
+| Fixed | 368 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **469** |
+| **Total** | **474** |
 
 ## All Bugs
 
@@ -187,6 +187,11 @@
 | [BG0467](BG0467-the-commit-gate-s-test-selection-reached-nothing.md) | The commit gate's test selection reached nothing: the handover was deleted before it was read, so every commit ran the whole suite | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0468](BG0468-three-high-severity-advisories-reach-the-tree-through.md) | Three high-severity advisories reach the tree through the markdown lint chain, and surfaced only because 208 commits were finally pushed | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0469](BG0469-close-owed-reports-a-close-that-already-happened.md) | close_owed reports a close that already happened: a unit raised and Fixed inside a run never joins that run's recorded batch | Open | High | 2026-07-31 | 2026-07-31 |
+| [BG0470](BG0470-the-recorded-sprint-base-ref-is-two-weeks.md) | The recorded sprint base ref is two weeks stale, so any pre-existing/regression classification computed from it is wrong | Open | High | 2026-08-01 | 2026-08-01 |
+| [BG0471](BG0471-bg0413-s-shipped-contract-states-the-collapse-signal.md) | BG0413's shipped contract states the collapse signal exits 2 while the code returns 3 | Fixed | Medium | 2026-08-01 | 2026-08-01 |
+| [BG0472](BG0472-bg0460-ticked-two-acceptance-criteria-the-tree-disproves.md) | BG0460 ticked two acceptance criteria the tree disproves, and its verifiers bypassed the function they name | Fixed | High | 2026-08-01 | 2026-08-01 |
+| [BG0473](BG0473-the-stop-s-awaiting-signoff-rule-reads-one.md) | The stop's awaiting-signoff rule reads one half of a two-half gate, so a stop exits clean over work the session could still do | Fixed | High | 2026-08-01 | 2026-08-01 |
+| [BG0474](BG0474-an-artefact-documenting-the-shell-mangling-hazard-is.md) | An artefact documenting the shell-mangling hazard is flagged as a casualty of it, so the defect cannot be written about | Open | Medium | 2026-08-01 | 2026-08-01 |
 
 ## Archived Releases
 

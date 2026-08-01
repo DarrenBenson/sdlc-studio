@@ -1,6 +1,6 @@
 # US0457: ADR-011 states the breakdown gate's real firing rule, and carries a dated amendment marker so a reader of the block sees it
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0429
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

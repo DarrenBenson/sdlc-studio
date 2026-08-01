@@ -1,6 +1,6 @@
 # US0454: Timing claims are checked against recorded measurements rather than restated from memory
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** RFC0056
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new

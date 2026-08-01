@@ -14,9 +14,9 @@ Decomposed from CR0500. Delivers the work CR0500 requested.
 
 ## Story Breakdown
 
-- [ ] [US0560: A delivery batch reaching the commit threshold has a defined review point, and the adversarial pass takes that batch's units as its surface](../stories/US0560-a-delivery-batch-reaching-the-commit-threshold-has.md)
-- [ ] [US0561: A batch-review finding is filed as a delivery unit against the batch that caused it, so its cost is priced where the work was](../stories/US0561-a-batch-review-finding-is-filed-as-a.md)
-- [ ] [US0562: sprint close REFUSES a batch containing units no independent review has covered, and names them](../stories/US0562-sprint-close-refuses-a-batch-containing-units-no.md)
+- [x] [US0560: A delivery batch reaching the commit threshold has a defined review point, and the adversarial pass takes that batch's units as its surface](../stories/US0560-a-delivery-batch-reaching-the-commit-threshold-has.md)
+- [x] [US0561: A batch-review finding is filed as a delivery unit against the batch that caused it, so its cost is priced where the work was](../stories/US0561-a-batch-review-finding-is-filed-as-a.md)
+- [x] [US0562: sprint close REFUSES a batch containing units no independent review has covered, and names them](../stories/US0562-sprint-close-refuses-a-batch-containing-units-no.md)
 - [x] [US0563: The shipped lifecycle states the batch-boundary cadence: doctrine, definition-of-done and help, so a consuming project inherits the placement](../stories/US0563-the-shipped-lifecycle-states-the-batch-boundary-cadence.md)
 
 ## Acceptance Criteria (Epic Level)
