@@ -1,6 +1,6 @@
 # US0585: The claim-drift lane runs in the commit gate as advisory, and its yield over one sprint is recorded before any decision to make it block
 
-> **Status:** Draft
+> **Status:** Review
 > **Delivers:** CR0517
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
