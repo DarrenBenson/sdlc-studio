@@ -362,3 +362,105 @@ class ClaimDriftTests(unittest.TestCase):
             self.assertEqual(0, rc, "an advisory drift finding blocked the command")
             self.assertIn("CLAIM-DRIFT", buf_out.getvalue() + buf_err.getvalue(),
                           "the finding was not reported at all")
+
+
+class ClaimTickTests(unittest.TestCase):
+    """US0584: a criterion ticked in a diff whose named surface that diff never touches.
+
+    BG0472 is the specimen. Two of BG0460's criteria were recorded met and were not: AC2 required
+    a claim retired from a story that was byte-identical to the base ref, and AC3 required two
+    verifiers to call `close_dry_run` while both still asserted over a hand-built list. Both were
+    ticked, the close accepted them, and an independent seat found them by reading `git diff`.
+
+    Each test names the mutant it must fail on, per LL0050.
+    """
+
+    def _diff(self, *files: tuple[str, list[str]]) -> str:
+        out = []
+        for path, added in files:
+            out.append(f"diff --git a/{path} b/{path}\n--- a/{path}\n+++ b/{path}\n@@ -0,0 +1,1 @@\n")
+            out.extend(f"+{line}\n" for line in added)
+        return "".join(out)
+
+    def test_a_tick_over_an_untouched_surface_is_flagged(self) -> None:
+        """MUTANT: make `ticked_over_untouched` return [] unconditionally. This must go red.
+
+        BG0472's shape: a criterion ticked whose named verifier lives in a file the diff does
+        not contain."""
+        diff = self._diff(
+            ("sdlc-studio/stories/US0001-x.md", [
+                "- [x] the close reports every step",
+                "- **Verify:** pytest tools/tests/test_untouched.py::T::test_a",
+            ]),
+            ("tools/other.py", ["    return 1"]),
+        )
+        found = check_spec_claims.ticked_over_untouched(diff)
+        self.assertEqual(1, len(found), f"expected one finding, got {found}")
+        self.assertIn("test_untouched.py", found[0]["surface"])
+        self.assertIn("US0001", found[0]["unit"])
+
+    def test_a_tick_over_a_changed_surface_passes(self) -> None:
+        """The control. MUTANT: flag every ticked criterion. This must go red, or the check
+        cannot tell a met criterion from an asserted one and would fire on every honest tick."""
+        diff = self._diff(
+            ("sdlc-studio/stories/US0001-x.md", [
+                "- [x] the close reports every step",
+                "- **Verify:** pytest tools/tests/test_touched.py::T::test_a",
+            ]),
+            ("tools/tests/test_touched.py", ["    def test_a(self): pass"]),
+        )
+        self.assertEqual([], check_spec_claims.ticked_over_untouched(diff))
+
+    def test_a_surface_named_INSIDE_the_criterion_is_honoured(self) -> None:
+        """The second control, and the one mutation demanded. A criterion can name its surface in
+        its own text rather than in a Verify line, and that branch needs its own touched case -
+        without it, a mutant flagging every criterion-text surface survives, because the other
+        control only exercises the Verify-line branch."""
+        diff = self._diff(
+            ("sdlc-studio/stories/US0001-x.md", [
+                "- [x] tools/check_spec_claims.py refuses a contradiction",
+            ]),
+            ("tools/check_spec_claims.py", ["    return 1"]),
+        )
+        self.assertEqual([], check_spec_claims.ticked_over_untouched(diff))
+
+    def test_a_surface_named_inside_an_UNTOUCHED_criterion_is_flagged(self) -> None:
+        """Its positive half: the same shape where the named file is absent from the diff."""
+        diff = self._diff(
+            ("sdlc-studio/stories/US0001-x.md", [
+                "- [x] tools/absent.py refuses a contradiction",
+            ]),
+            ("tools/other.py", ["    return 1"]),
+        )
+        found = check_spec_claims.ticked_over_untouched(diff)
+        self.assertEqual(1, len(found))
+        self.assertEqual("untouched", found[0]["kind"])
+
+    def test_an_unjudgeable_criterion_is_named_not_passed(self) -> None:
+        """MUTANT: treat a criterion naming no surface as passing (drop it silently). This must
+        go red - an unanswerable check must never read the same as a satisfied one, which is the
+        rule this whole batch exists to enforce."""
+        diff = self._diff(
+            ("sdlc-studio/stories/US0001-x.md", [
+                "- [x] the operator is happier than before",
+            ]),
+            ("tools/other.py", ["    return 1"]),
+        )
+        found = check_spec_claims.ticked_over_untouched(diff)
+        self.assertEqual(1, len(found), f"expected the criterion to be named, got {found}")
+        self.assertEqual("unjudgeable", found[0]["kind"],
+                         "a criterion naming no surface was reported as an ordinary pass")
+
+    def test_an_unticked_criterion_is_not_judged(self) -> None:
+        """MUTANT: judge unticked criteria too. This must go red.
+
+        An unticked criterion claims nothing, so there is nothing to contradict. Judging it
+        would flag every story that declares work it has not done yet."""
+        diff = self._diff(
+            ("sdlc-studio/stories/US0001-x.md", [
+                "- [ ] the close reports every step",
+                "- **Verify:** pytest tools/tests/test_untouched.py::T::test_a",
+            ]),
+            ("tools/other.py", ["    return 1"]),
+        )
+        self.assertEqual([], check_spec_claims.ticked_over_untouched(diff))

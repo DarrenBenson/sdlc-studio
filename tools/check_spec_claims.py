@@ -348,6 +348,61 @@ def claim_drift(diff: str) -> list[dict]:
                          "code_file": code_path, "code": code_line.strip()})
     return findings
 
+
+#: A ticked acceptance criterion in an added line.
+_TICK_RE = re.compile(r"^\s*-\s*\[x\]\s*(.+)$", re.IGNORECASE)
+#: The surface a criterion names: a path in a Verify line, or a bare path in the criterion text.
+_SURFACE_RE = re.compile(r"([\w./-]+\.(?:py|sh|md|ya?ml|json|ts|js))")
+
+
+def ticked_over_untouched(diff: str) -> list[dict]:
+    """Criteria ticked in this diff whose named surface this diff does not touch (US0584).
+
+    BG0472's shape: two criteria of BG0460 were recorded met while `git diff` disproved both -
+    one over a story byte-identical to the base ref, one over verifiers that never called the
+    function they name. Both ticks passed the close.
+
+    A criterion naming NO surface is reported as `unjudgeable` rather than dropped: an
+    unanswerable check must never read the same as a satisfied one, which is the rule this whole
+    batch exists to enforce. An UNTICKED criterion claims nothing and is not judged.
+    """
+    touched, units = set(), []
+    for path, added in _diff_files(diff):
+        touched.add(path)
+        if "/stories/" in path or "/bugs/" in path or "/change-requests/" in path:
+            units.append((path, added))
+    findings = []
+    for path, added in units:
+        unit = re.search(r"((?:US|BG|CR)[-\d]*\d)", path)
+        unit = unit.group(1) if unit else path
+        pending = None
+        for line in added:
+            tick = _TICK_RE.match(line)
+            if tick:
+                if pending is not None:          # the previous tick named no surface of its own
+                    findings.append({"unit": unit, "kind": "unjudgeable",
+                                     "criterion": pending, "surface": None})
+                pending = tick.group(1).strip()
+                # a surface named inside the criterion text itself counts
+                found = _SURFACE_RE.findall(pending)
+                if found:
+                    pending = None
+                    if not any(s in touched for s in found):
+                        findings.append({"unit": unit, "kind": "untouched",
+                                         "criterion": tick.group(1).strip(),
+                                         "surface": found[0]})
+                continue
+            if pending is not None and "Verify:" in line:
+                found = _SURFACE_RE.findall(line)
+                if found and not any(s in touched for s in found):
+                    findings.append({"unit": unit, "kind": "untouched",
+                                     "criterion": pending, "surface": found[0]})
+                pending = None
+        if pending is not None:
+            findings.append({"unit": unit, "kind": "unjudgeable",
+                             "criterion": pending, "surface": None})
+    return findings
+
 def main(argv: list[str] | None = None, stdin_text: str | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="repo root")
@@ -360,6 +415,14 @@ def main(argv: list[str] | None = None, stdin_text: str | None = None) -> int:
         diff = stdin_text if args.claim_drift == "-" and stdin_text is not None else (
             sys.stdin.read() if args.claim_drift == "-"
             else Path(args.claim_drift).read_text(encoding="utf-8"))
+        for f in ticked_over_untouched(diff):
+            if f["kind"] == "unjudgeable":
+                print(f"CLAIM-DRIFT: {f['unit']} ticks {f['criterion']!r}, which names no "
+                      f"surface this run can check - reported, never counted as passing",
+                      file=sys.stderr)
+            else:
+                print(f"CLAIM-DRIFT: {f['unit']} ticks {f['criterion']!r} while this diff does "
+                      f"not touch {f['surface']}", file=sys.stderr)
         for f in claim_drift(diff):
             # Reported on its own channel and NOT folded into `errors`: the spec-claim errors
             # below keep the blocking contract they have today, and this lane is advisory while

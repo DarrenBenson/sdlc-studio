@@ -23,6 +23,7 @@
 - **When** the lane runs
 - **Then** it reports the tick and the surface it names, because a criterion recorded met while the tree disproves it is a false completion claim the close currently accepts
 - **Verify:** pytest tools/tests/test_check_spec_claims.py::ClaimTickTests::test_a_tick_over_an_untouched_surface_is_flagged
+- **Verified:** yes (2026-08-01)
 
 ### AC2: a tick over a changed surface is not flagged
 
@@ -30,6 +31,7 @@
 - **When** the lane runs
 - **Then** it reports nothing, so the check distinguishes a met criterion from an asserted one
 - **Verify:** pytest tools/tests/test_check_spec_claims.py::ClaimTickTests::test_a_tick_over_a_changed_surface_passes
+- **Verified:** yes (2026-08-01)
 
 ### AC3: a criterion naming no surface is reported as unjudgeable, never as passing
 
@@ -37,6 +39,7 @@
 - **When** the lane runs
 - **Then** it reports the criterion as one it cannot judge rather than passing it, because an unanswerable check must not read the same as a satisfied one
 - **Verify:** pytest tools/tests/test_check_spec_claims.py::ClaimTickTests::test_an_unjudgeable_criterion_is_named_not_passed
+- **Verified:** yes (2026-08-01)
 
 ## Revision History
 
