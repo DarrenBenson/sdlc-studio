@@ -240,6 +240,14 @@ Ratio is estimate / actual: above 1 the plan over-forecast, below 1 it under-for
 | Three measured claims were false or unsupported in shipped surfaces | fixed-in: 307ce91d |
 | Five units declared Affects paths their own diffs never touched | fixed-in: 307ce91d |
 | The suite-claim lane fires on a message that quotes a greenness claim | filed: CR0511 |
+| critic signoff reported 14 units written over a record holding zero | fixed-in: ebac5054 |
+| add-epic compared the Epic field exactly, so the link form 33 stories use was invisible | fixed-in: ebac5054 |
+| help/sprint.md claimed every in-flight control stores a reason; several reject it and batch add dropped it | fixed-in: ebac5054 |
+| Three units ship a check whose own criterion names the mechanism that was not built | filed: BG0497 |
+| The velocity row counts only accepted points over a wall-clock with no idle deducted | filed: BG0495 |
+| A REJECT whose findings were repaired has no route back to covered - 41 units now waived on this rule | filed: CR0506 |
+| A sprint may end with units open, and the rule was written nowhere | filed: CR0526 |
+| The toolchain runbook lacked eight commands this close needed | fixed-in: ebac5054 |
 | sprint stop stamps the outcome but writes no handoff document | declined: out of scope for this close - recorded here so the next run does not rediscover it, and the stop reason carries the detail a handoff would have |
 
 ## Close loop (gated)
