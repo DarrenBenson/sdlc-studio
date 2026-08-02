@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 18 |
+| Open | 16 |
 | In Progress | 0 |
-| Fixed | 383 |
+| Fixed | 385 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -151,10 +151,10 @@
 | [BG0431](BG0431-one-unresolvable-namespace-escape-demotes-every-flag-in.md) | one unresolvable namespace escape demotes every flag in the module to cannot-judge, and nothing bounds how far that spreads | Open | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0432](BG0432-test-selection-still-misses-eleven-scripts-whose-tests.md) | test selection still misses eleven scripts whose tests load them under a different name | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0433](BG0433-the-duplicate-verifier-ratchet-is-not-enforced-as.md) | the duplicate-verifier ratchet is not enforced as a ratchet, groups on a weaker key than the command it runs, and cannot notice its own flag going away | Open | High | 2026-07-30 | 2026-07-30 |
-| [BG0434](BG0434-two-of-the-four-signature-detector-shapes-are.md) | two of the four signature detector shapes are exercised only by a synthetic fixture, and the one real row's path resolves anywhere | Open | Medium | 2026-07-30 | 2026-07-30 |
+| [BG0434](BG0434-two-of-the-four-signature-detector-shapes-are.md) | two of the four signature detector shapes are exercised only by a synthetic fixture, and the one real row's path resolves anywhere | Fixed | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0435](BG0435-the-loading-guide-path-checker-skips-a-whole.md) | the loading-guide path checker skips a whole table whose first column is the path, and nine of twelve broken-path shapes escape it | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0436](BG0436-resolve-affects-never-resolves-against-the-installed-skill.md) | resolve_affects never resolves against the installed skill dir, so detector-owed --file tracebacks on every default install | Open | High | 2026-07-30 | 2026-07-30 |
-| [BG0437](BG0437-filing-run-resolves-a-two-id-provenance-line.md) | filing_run resolves a two-id provenance line by document order, so the refusal its criterion promises is nearly unreachable | Open | Medium | 2026-07-30 | 2026-07-30 |
+| [BG0437](BG0437-filing-run-resolves-a-two-id-provenance-line.md) | filing_run resolves a two-id provenance line by document order, so the refusal its criterion promises is nearly unreachable | Fixed | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0438](BG0438-audit-run-provenance-is-not-durable-the-register.md) | audit-run provenance is not durable: the register and the row accessor disagree, so a seeded run can pass as measured | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0439](BG0439-the-dead-flags-hook-lane-tells-the-operator.md) | the dead-flags hook lane tells the operator it enforces the opposite of what it enforces | Fixed | Low | 2026-07-30 | 2026-07-30 |
 | [BG0440](BG0440-the-isolated-checkout-rule-is-enforced-author-side.md) | the isolated-checkout rule is enforced author-side only, so `critic brief` issues a reviewer prompt that never states it and nothing notices when parallel reviewers share one tree | Fixed | High | 2026-07-30 | 2026-07-30 |

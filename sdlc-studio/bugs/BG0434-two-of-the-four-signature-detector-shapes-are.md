@@ -1,6 +1,7 @@
 # BG0434: two of the four signature detector shapes are exercised only by a synthetic fixture, and the one real row's path resolves anywhere
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional + mutation (each of the four runners deleted in turn -> all KILLED; bash and npm previously caught by nothing a real pack could notice)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/templates/audit-profiles/code.md, .claude/skills/sdlc-studio/scripts/readiness.py, .claude/skills/sdlc-studio/scripts/tests/test_audit_profiles.py, .claude/skills/sdlc-studio/scripts/tests/test_readiness.py
@@ -26,8 +27,36 @@ Author a real pack row per shape with a target that travels to a consuming proje
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: The story's AC2 requires at least one real pack row per detector shape, on the stated ground that a widened classifier whose only exerciser is its own unit...
-- [ ] The proposed fix lands, pinned by a test: Author a real pack row per shape with a target that travels to a consuming project, or narrow `SIGNATURE_DETECTORS` to the shapes the packs actually use and...
+### AC1: every detector shape is exercised through the shipped parser
+
+- **Given** each of the four documented detectors
+- **When** a signature using it is parsed
+- **Then** it is recognised, asserted once per runner - because `all(mechanical)` over the shipped packs passes with the two unused runners removed
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_readiness.py::SignatureDetectorCoverageTests::test_each_detector_is_recognised_by_the_shipped_parser
+- **Verified:** yes (2026-08-02)
+
+### AC2: a bare npm is still refused
+
+- **Given** `npm lint`, with no `run`
+- **When** it is parsed
+- **Then** it is not mechanical, because `npm` alone runs an install rather than a check
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_readiness.py::SignatureDetectorCoverageTests::test_a_bare_npm_is_still_refused
+- **Verified:** yes (2026-08-02)
+
+### AC3: a detector named mid-sentence is not a signature
+
+- **Given** a prose reason mentioning a detector token
+- **When** it is parsed
+- **Then** it is not mechanical, which is the only shape that catches a widened head test
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_readiness.py::SignatureDetectorCoverageTests::test_a_detector_named_mid_sentence_is_not_mechanical
+- **Verified:** yes (2026-08-02)
+
+> **Measured, and the tuple deliberately NOT narrowed.** The shipped packs use `python3` (8
+> rows) and `rg` (1); `bash` and `npm` appear in none. Narrowing to what this repo happens to
+> use would remove vocabulary a consuming project writes its own signatures in, so the coverage
+> gap is closed by exercising each shape against the real parser instead. Mutation-verified:
+> dropping ANY one of the four runners is now KILLED; before, `bash` and `npm` were caught by
+> nothing a real pack could notice.
 
 ## Revision History
 

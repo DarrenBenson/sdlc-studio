@@ -1,6 +1,7 @@
 # BG0437: filing_run resolves a two-id provenance line by document order, so the refusal its criterion promises is nearly unreachable
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (all four shapes exercised through the shipped function - one id, both carry-over orders, and the two-run refusal - with the single-id control beside it)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/backfill_audit_runs.py, .claude/skills/sdlc-studio/scripts/tests/test_backfill_audit_runs.py
@@ -26,8 +27,29 @@ Refuse when more than one id survives disambiguation rather than returning the f
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `filing_run` returns on the FIRST `run <id>` match, so the Ambiguous refusal is reachable only when no `run <id>` appears at all.
-- [ ] The proposed fix lands, pinned by a test: Refuse when more than one id survives disambiguation rather than returning the first; match the carry-over marker in both word orders; case-fold the id pattern...
+### AC1: two filing runs are refused, never ordered
+
+- **Given** a provenance line naming two `run <id>` mentions
+- **When** the filing run is resolved
+- **Then** it is refused naming both, because returning on the first match made the refusal reachable only when NO run id appeared - and a fabricated provenance is worse than an absent one
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backfill_audit_runs.py::FilingRunDisambiguationTests::test_two_filing_runs_are_refused
+- **Verified:** yes (2026-08-02)
+
+### AC2: a carry-over disambiguates in both word orders
+
+- **Given** `<id> carry-over` and `carry-over from <id>`
+- **When** each is resolved
+- **Then** both yield the filing run, because half the corpus writes the second form and a pattern that silently matches nothing is how the disambiguation stopped happening
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backfill_audit_runs.py::FilingRunDisambiguationTests::test_a_carry_over_disambiguates_in_both_word_orders
+- **Verified:** yes (2026-08-02)
+
+### AC3: a single id is still the answer
+
+- **Given** a line naming exactly one run, and one naming none
+- **When** each is resolved
+- **Then** the id and None respectively, so the refusal cannot be satisfied by refusing everything
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backfill_audit_runs.py::FilingRunDisambiguationTests::test_a_single_id_is_still_the_answer
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

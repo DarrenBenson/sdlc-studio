@@ -942,5 +942,62 @@ class RenameDocsTests(unittest.TestCase):
         self.assertIn("schema_check.py", catalogue)
 
 
+class SignatureDetectorCoverageTests(unittest.TestCase):
+    """Every detector shape is exercised through the SHIPPED parser, not a synthetic fixture.
+
+    Measured over `templates/audit-profiles/*.md`, the packs use `python3` (8 rows) and `rg`
+    (1). `bash` and `npm` appear in none - so two of the four shapes were reaching the parser
+    only through a fixture built for them, and deleting either runner from the tuple was caught
+    by nothing a real pack could notice.
+
+    The vocabulary is deliberately WIDER than this repo's packs use, because a consuming
+    project writes its own signatures. So the fix is to exercise each shape against the real
+    function, not to narrow the tuple to what one repo happens to need.
+    """
+
+    def _mod(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "readiness", Path(__file__).resolve().parent.parent / "readiness.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["readiness"] = mod
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_each_detector_is_recognised_by_the_shipped_parser(self) -> None:
+        """MUTANT: delete ANY single runner from SIGNATURE_DETECTORS.
+
+        One assertion per runner, because `all(mechanical)` over the packs passes with the two
+        unused runners removed - the packs never exercise them.
+        """
+        mod = self._mod()
+        for signature in ("bash tools/x.sh", "npm run lint",
+                          "python3 tools/x.py", "rg -n 'x' src/"):
+            with self.subTest(signature=signature):
+                self.assertTrue(mod._signature_is_mechanical(signature),
+                                f"{signature!r} is not recognised, so its runner is unreachable")
+
+    def test_a_bare_npm_is_still_refused(self) -> None:
+        """MUTANT: drop the `npm run` rule so a bare `npm` passes.
+
+        `npm` alone runs an install, not a check, so accepting it would call an unrunnable
+        signature mechanical.
+        """
+        mod = self._mod()
+        self.assertFalse(mod._signature_is_mechanical("npm lint"),
+                         "a bare `npm` was accepted as a mechanical signature")
+
+    def test_a_detector_named_mid_sentence_is_not_mechanical(self) -> None:
+        """MUTANT: widen the head test to `any(t in SIGNATURE_DETECTORS for t in tokens)`.
+
+        Only a prose reason that MENTIONS a detector catches this, so the fixture must contain
+        one.
+        """
+        mod = self._mod()
+        self.assertFalse(
+            mod._signature_is_mechanical("manual - a reviewer runs python3 by hand"),
+            "a prose reason mentioning a detector was read as a mechanical signature")
+
+
 if __name__ == "__main__":
     unittest.main()

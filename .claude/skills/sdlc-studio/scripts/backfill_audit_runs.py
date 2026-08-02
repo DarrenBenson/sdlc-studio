@@ -49,11 +49,16 @@ FINDING_DIRS = (("bugs", ("BG",)), ("change-requests", ("CR",)), ("rfcs", ("RFC"
 #: as a detector owed on every one of them. Shared with that reader, never re-typed.
 LENS_UNKNOWN = sdlc_md.LENS_UNKNOWN
 
-_RUN_ID = re.compile(r"wf_[a-z0-9]+(?:-[a-z0-9]+)*")
+_RUN_ID = re.compile(r"wf_[a-z0-9]+(?:-[a-z0-9]+)*", re.IGNORECASE)
 #: `run <id>` names the run that FILED the finding.
-_FILED_BY = re.compile(r"\brun\s+(wf_[a-z0-9]+(?:-[a-z0-9]+)*)")
+_FILED_BY = re.compile(r"\brun\s+(wf_[a-z0-9]+(?:-[a-z0-9]+)*)", re.IGNORECASE)
 #: `<id> carry-over` names an EARLIER run the finding was carried over from.
-_CARRIED = re.compile(r"(wf_[a-z0-9]+(?:-[a-z0-9]+)*)\s+carry-over")
+#: BOTH word orders, and case-folded. `carry-over wf_x` is how half this corpus writes it, and
+#: an id in any other case simply did not match - a pattern that silently matches nothing is
+#: how the disambiguation quietly stopped happening.
+_CARRIED = re.compile(
+    r"(wf_[a-z0-9]+(?:-[a-z0-9]+)*)\s+carry-over|carry-over\s+(?:from\s+)?(wf_[a-z0-9]+(?:-[a-z0-9]+)*)",
+    re.IGNORECASE)
 
 
 class Ambiguous(ValueError):
@@ -75,11 +80,21 @@ def filing_run(raised_by: str) -> str | None:
         return None
     if len(ids) == 1:
         return ids[0]
-    filed, carried = _FILED_BY.search(raised_by), _CARRIED.search(raised_by)
-    if filed and carried and filed.group(1) != carried.group(1):
-        return filed.group(1)
-    if filed:
-        return filed.group(1)
+    # EVERY `run <id>`, not the first. Returning on the first match made the Ambiguous refusal
+    # reachable only when NO `run <id>` appeared at all - so a line naming two filing runs was
+    # resolved by document order, which is precisely the guess the refusal exists to prevent.
+    filed_ids = list(dict.fromkeys(m.group(1) for m in _FILED_BY.finditer(raised_by)))
+    carried_m = _CARRIED.search(raised_by)
+    carried_id = (carried_m.group(1) or carried_m.group(2)) if carried_m else None
+    # A carry-over id is not a filing candidate: naming it is what disambiguates the pair.
+    candidates = [i for i in filed_ids if i != carried_id]
+    if len(candidates) == 1:
+        return candidates[0]
+    if len(candidates) > 1:
+        raise Ambiguous(
+            f"names {len(candidates)} filing runs ({', '.join(candidates)}) and the prose does "
+            f"not say which filed it - refusing to pick one by document order, because a guess "
+            f"here is a fabricated provenance")
     raise Ambiguous(
         f"names {len(ids)} run ids ({', '.join(ids)}) and the prose does not say which filed it - "
         f"refusing to pick one, because a guess here is a fabricated provenance")

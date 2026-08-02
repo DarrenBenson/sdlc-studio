@@ -220,5 +220,40 @@ class TheLiveCorpusAgreesTests(unittest.TestCase):
         self.assertEqual(sdlc_md.LENS_UNKNOWN, audit.LENS_UNKNOWN)
 
 
+class FilingRunDisambiguationTests(unittest.TestCase):
+    """Two filing runs on one line are REFUSED, never resolved by document order.
+
+    `filing_run` returned on the FIRST `run <id>` match, so the Ambiguous refusal was reachable
+    only when no `run <id>` appeared at all - and a line naming two filing runs was settled by
+    which came first in the sentence. That is exactly the guess the refusal exists to prevent,
+    and a fabricated provenance is worse than an absent one.
+    """
+
+    def test_two_filing_runs_are_refused(self) -> None:
+        """MUTANT: restore `if filed: return filed.group(1)`."""
+        mod = bf
+        with self.assertRaises(mod.Ambiguous) as caught:
+            mod.filing_run("run wf_aaa1 and run wf_bbb2 both filed it")
+        msg = str(caught.exception)
+        self.assertIn("wf_aaa1", msg, "the refusal does not name the candidates")
+        self.assertIn("wf_bbb2", msg, "the refusal does not name the candidates")
+
+    def test_a_carry_over_disambiguates_in_both_word_orders(self) -> None:
+        """MUTANT: match only `<id> carry-over`.
+
+        Half this corpus writes `carry-over from <id>`, and a pattern that silently matches
+        nothing is how the disambiguation quietly stopped happening.
+        """
+        mod = bf
+        self.assertEqual("wf_new1", mod.filing_run("run wf_new1 (wf_old2 carry-over)"))
+        self.assertEqual("wf_new1", mod.filing_run("run wf_new1 (carry-over from wf_old2)"))
+
+    def test_a_single_id_is_still_the_answer(self) -> None:
+        """The control. MUTANT: refuse whenever more than zero ids appear."""
+        mod = bf
+        self.assertEqual("wf_abc123", mod.filing_run("filed in run wf_abc123"))
+        self.assertIsNone(mod.filing_run("no run named here"))
+
+
 if __name__ == "__main__":
     unittest.main()
