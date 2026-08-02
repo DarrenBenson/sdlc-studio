@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 19 |
 | In Progress | 0 |
-| Fixed | 395 |
+| Fixed | 396 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **497** |
+| **Total** | **498** |
 
 ## All Bugs
 
@@ -215,6 +215,7 @@
 | [BG0495](BG0495-the-velocity-row-understates-twice-it-counts-only.md) | the velocity row understates twice - it counts only accepted points, over a wall-clock with no idle deducted | Open | Medium | 2026-08-02 | 2026-08-02 |
 | [BG0496](BG0496-critic-signoff-reported-14-units-written-over-a.md) | critic signoff reported 14 units written over a record holding zero | Fixed | High | 2026-08-02 | 2026-08-02 |
 | [BG0497](BG0497-three-units-ship-a-check-whose-own-criterion.md) | three units ship a check whose own criterion names the mechanism that was not implemented | Open | High | 2026-08-02 | 2026-08-02 |
+| [BG0498](BG0498-a-duplicate-test-class-name-silently-removed-eleven.md) | a duplicate test class name silently removed eleven tests from the suite | Fixed | High | 2026-08-02 | 2026-08-02 |
 
 ## Archived Releases
 

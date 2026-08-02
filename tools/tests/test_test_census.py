@@ -723,5 +723,66 @@ class HandCopiedMirrorTests(unittest.TestCase):
                       "next reader will derive it and delete the assertion")
 
 
+
+class DuplicateTestClassTests(unittest.TestCase):
+    """A test module must not define the same class name twice.
+
+    Python does not complain: the second `class Foo` simply replaces the first, and every test
+    on the earlier one stops running. Nothing else notices - the suite still passes, the count
+    just goes down, and a `-k` verifier pointed at a vanished test reports "ran NO tests" while
+    the test is still sitting in the file.
+
+    Found when `US0609` added a second `FileAndCloseTests` to `test_sprint.py` and silently
+    removed ELEVEN tests from the suite. Two units' acceptance verifiers had been failing on it
+    for hours and were read as stale selectors rather than as a missing class.
+    """
+
+    _SUITE_DIRS = ("tools/tests", ".claude/skills/sdlc-studio/scripts/tests")
+
+    def _duplicates(self) -> dict:
+        import ast  # noqa: PLC0415
+        out = {}
+        for rel in self._SUITE_DIRS:
+            for path in sorted((REPO / rel).glob("test_*.py")):
+                try:
+                    tree = ast.parse(path.read_text(encoding="utf-8"))
+                except SyntaxError:
+                    continue
+                seen, dupes = set(), []
+                for node in tree.body:            # module level only - a nested class is scoped
+                    if isinstance(node, ast.ClassDef):
+                        if node.name in seen:
+                            dupes.append(node.name)
+                        seen.add(node.name)
+                if dupes:
+                    out[path.name] = sorted(set(dupes))
+        return out
+
+    def test_no_test_module_defines_a_class_name_twice(self) -> None:
+        """MUTANT: add a second class of an existing name to any test module.
+
+        Parsed, not grepped: the question is whether two module-level ClassDefs share a name,
+        and a grep for `class Foo` cannot tell a definition from a mention in a docstring.
+        """
+        dupes = self._duplicates()
+        self.assertEqual(
+            {}, dupes,
+            f"these test modules define a class name twice, so the SECOND silently replaces the "
+            f"first and every test on the earlier one stops running: {dupes}")
+
+    def test_the_guard_sees_a_planted_duplicate(self) -> None:
+        """The control. MUTANT: return {} unconditionally.
+
+        A guard that reports nothing over a clean tree is indistinguishable from one that
+        cannot see, which is exactly the state this defect lived in.
+        """
+        import ast  # noqa: PLC0415
+        src = "class A:\n    pass\n\n\nclass A:\n    pass\n"
+        names = [n.name for n in ast.parse(src).body if isinstance(n, ast.ClassDef)]
+        self.assertEqual(["A", "A"], names,
+                         "the detector's own premise is wrong - two module-level ClassDefs of "
+                         "one name should both be present in the AST")
+
+
 if __name__ == "__main__":
     unittest.main()

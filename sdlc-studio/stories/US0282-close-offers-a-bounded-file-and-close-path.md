@@ -25,7 +25,7 @@
 - **Then** the operator is offered fix-them or file-them-and-close, rather than only the fix
   path
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_blocked_close_offers_file_and_close
-- **Verified:** yes (2026-07-20)
+- **Verified:** yes (2026-08-02)
 
 ### AC2: file-and-close records every blocker as a linked artefact
 
@@ -34,7 +34,7 @@
 - **Then** each blocker is a real artefact linked to the run, and the run's outcome states
   plainly that it closed with known outstanding work
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_file_and_close_records_linked_artefacts_and_outcome
-- **Verified:** yes (2026-07-20)
+- **Verified:** yes (2026-08-02)
 
 ### AC3: nothing is silently waived
 
@@ -42,7 +42,7 @@
 - **When** the retro and the review anchor are read
 - **Then** both name what was deferred and why
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_file_and_close_names_deferrals_in_retro_and_anchor
-- **Verified:** yes (2026-07-20)
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

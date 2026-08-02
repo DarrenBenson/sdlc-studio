@@ -11988,7 +11988,7 @@ class EscalationTests(unittest.TestCase):
                          "the escalation blocks on operator input, which unattended is a hang")
 
 
-class FileAndCloseTests(unittest.TestCase):
+class CadenceDebtFileAndCloseTests(unittest.TestCase):
     """The documented bounded exit must work on the case it was written for.
 
     A close with nine independently reviewed, signed-off units could not proceed by ANY route:

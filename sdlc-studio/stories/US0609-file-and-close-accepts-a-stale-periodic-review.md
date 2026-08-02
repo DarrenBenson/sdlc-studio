@@ -23,7 +23,7 @@
 - **Given** a close blocked only by a stale repo-wide review
 - **When** `--file-and-close` runs
 - **Then** it files the staleness as a real artefact linked to the run and closes `closed-outstanding`, because a periodic ceremony being overdue is ceremony debt by definition
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FileAndCloseTests::test_a_stale_periodic_review_is_filed_as_debt
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CadenceDebtFileAndCloseTests::test_a_stale_periodic_review_is_filed_as_debt
 - **Verified:** yes (2026-08-02)
 
 ### AC2: a real correctness blocker is still refused
@@ -31,7 +31,7 @@
 - **Given** a close carrying a red correctness lane
 - **When** `--file-and-close` runs
 - **Then** it still refuses, so this does not become a way to file away a failing gate
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FileAndCloseTests::test_a_correctness_blocker_is_still_refused
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CadenceDebtFileAndCloseTests::test_a_correctness_blocker_is_still_refused
 - **Verified:** yes (2026-08-02)
 
 ### AC3: the classification is read from the lane, not a second list
@@ -39,7 +39,7 @@
 - **Given** the bounded exit deciding what it may file
 - **When** the classifier is read
 - **Then** it reads the lane's own declaration rather than naming lanes here, because a second list drifts from the first and silently classes a new lane as correctness
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FileAndCloseTests::test_the_classification_is_read_from_the_lane_not_a_second_list
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CadenceDebtFileAndCloseTests::test_the_classification_is_read_from_the_lane_not_a_second_list
 - **Verified:** yes (2026-08-02)
 
 ## Revision History
