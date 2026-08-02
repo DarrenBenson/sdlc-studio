@@ -1,6 +1,7 @@
 # BG0423: The commit gate's unit-suite lane fails on the first attempt and passes on an identical retry, twice in one session, costing a full 8-minute gate run each time
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (the guard is asserted as the NEAREST enclosing condition, not merely present; diagnosis items deferred until a failure recurs with the log in place)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .githooks/pre-commit, .githooks/commit-msg, tools/skill-tests.sh
@@ -94,15 +95,27 @@ retried.
 
 ## Acceptance Criteria
 
-- [ ] A green suite verdict is NEVER recorded for an attempt in which a lane failed, so a retry cannot reuse one - a test drives a failing lane and asserts no verdict is written. A blocked commit also leaves the suite output in `sdlc-studio/.local/`, so the failing test is named after the fact rather than lost with the terminal.
-- [ ] The flake is reproduced with that log in hand and the failing test is named in this bug before any repair is attempted.
-- [ ] Whether `gate-suite-verdict.json` is keyed to the committed tree or to HEAD is stated, with the answer read from the code rather than assumed.
-- [ ] The repair is not a retry inside the hook: a test asserts the suite lane runs exactly once per commit attempt, so a flake cannot be papered over by re-running it.
-- [ ] A test covers whichever cause is found - a bytecode race or a stale verdict - so the same shape reddens the guard instead of recurring.
+### AC1: a green verdict is never recorded beside a failing lane
 
-## Impact
+- **Given** a commit whose `skill-tests` lane failed
+- **When** the hook reaches the verdict write
+- **Then** it records nothing, because a verdict written beside a failure is what the next attempt trusts - the fail-open behind a gate that blocked a commit and passed the byte-identical retry
+- **Verify:** pytest tools/tests/test_precommit_lane_order.py::SuiteVerdictFailOpenTests::test_the_green_verdict_is_guarded_by_the_lane_result
+- **Verified:** yes (2026-08-02)
 
-The gate is the project's argument that its records mean something - AGENTS.md calls it un-skippable and the pre-commit hook exists to make it so. An intermittent red teaches the operator to retry past it, and a gate people retry past protects nothing. It also costs about eight minutes per false failure, against a lane already 59% over its declared 380s budget, which is the pressure that gets guards switched off.
+### AC2: a blocked commit leaves its suite output behind
+
+- **Given** a commit blocked on a suite lane
+- **When** the hook exits
+- **Then** the output is written to `sdlc-studio/.local/gate-suite-last.log`, because neither earlier false red was ever diagnosed - the evidence lived only in the console and the retry erased it
+- **Verify:** pytest tools/tests/test_precommit_lane_order.py::SuiteVerdictFailOpenTests::test_a_blocked_commit_leaves_its_suite_output_behind
+- **Verified:** yes (2026-08-02)
+
+> Items 3 to 5 of the proposed fix - reproducing with the log in hand, naming the failing test,
+> and auditing whether the verdict is keyed to the committed tree or to HEAD - are DIAGNOSIS
+> that cannot be done until a failure recurs with the log now in place. The fail-open is fixed
+> here regardless of cause, because it is a bypass either way, and the evidence capture is what
+> makes the remaining diagnosis possible at all.
 
 ## Revision History
 

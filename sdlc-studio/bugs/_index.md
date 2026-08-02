@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 28 |
+| Open | 26 |
 | In Progress | 0 |
-| Fixed | 373 |
+| Fixed | 375 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -140,7 +140,7 @@
 | [BG0420](BG0420-test-fixtures-mirror-real-lists-by-hand-so.md) | Test fixtures mirror real lists by hand, so adding one chain step or one gate lane turns dozens of unrelated tests red for a reason none of them is about | Open | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0421](BG0421-twenty-one-open-questions-reached-a-terminal-status.md) | Twenty-one Open Questions reached a terminal status unanswered, and are now owned here rather than given rulings nobody made | Open | Medium | 2026-07-29 | 2026-07-29 |
 | [BG0422](BG0422-the-code-is-mostly-right-and-the-evidence.md) | The code is mostly right and the EVIDENCE is what fails: five consecutive REJECTs, and four fifths of the findings were the author's own tests unable to fail | Fixed | High | 2026-07-30 | 2026-07-30 |
-| [BG0423](BG0423-the-commit-gate-s-unit-suite-lane-fails.md) | The commit gate's unit-suite lane fails on the first attempt and passes on an identical retry, twice in one session, costing a full 8-minute gate run each time | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0423](BG0423-the-commit-gate-s-unit-suite-lane-fails.md) | The commit gate's unit-suite lane fails on the first attempt and passes on an identical retry, twice in one session, costing a full 8-minute gate run each time | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0424](BG0424-test-selection-dropped-a-script-s-own-test.md) | test selection dropped a script's own test module the moment that module measured any read path | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0425](BG0425-main-was-one-line-over-its-own-test.md) | main was one line over its own test-noise ratchet, so the noise gate was enforcing nothing | Fixed | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0426](BG0426-the-epic-story-census-could-not-read-the.md) | the epic story census could not read the linked Epic field the shipped template writes, and a wrong count was committed | Fixed | High | 2026-07-30 | 2026-07-30 |
@@ -155,7 +155,7 @@
 | [BG0435](BG0435-the-loading-guide-path-checker-skips-a-whole.md) | the loading-guide path checker skips a whole table whose first column is the path, and nine of twelve broken-path shapes escape it | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0436](BG0436-resolve-affects-never-resolves-against-the-installed-skill.md) | resolve_affects never resolves against the installed skill dir, so detector-owed --file tracebacks on every default install | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0437](BG0437-filing-run-resolves-a-two-id-provenance-line.md) | filing_run resolves a two-id provenance line by document order, so the refusal its criterion promises is nearly unreachable | Open | Medium | 2026-07-30 | 2026-07-30 |
-| [BG0438](BG0438-audit-run-provenance-is-not-durable-the-register.md) | audit-run provenance is not durable: the register and the row accessor disagree, so a seeded run can pass as measured | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0438](BG0438-audit-run-provenance-is-not-durable-the-register.md) | audit-run provenance is not durable: the register and the row accessor disagree, so a seeded run can pass as measured | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0439](BG0439-the-dead-flags-hook-lane-tells-the-operator.md) | the dead-flags hook lane tells the operator it enforces the opposite of what it enforces | Fixed | Low | 2026-07-30 | 2026-07-30 |
 | [BG0440](BG0440-the-isolated-checkout-rule-is-enforced-author-side.md) | the isolated-checkout rule is enforced author-side only, so `critic brief` issues a reviewer prompt that never states it and nothing notices when parallel reviewers share one tree | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0441](BG0441-review-coverage-launders-a-recorded-reject-into-coverage.md) | review_coverage launders a recorded REJECT into coverage through the evidence lane, so the gate certifying a close reports a rejected unit as reviewed | Fixed | Critical | 2026-07-30 | 2026-07-30 |

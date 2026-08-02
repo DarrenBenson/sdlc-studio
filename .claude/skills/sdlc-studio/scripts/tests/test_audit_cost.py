@@ -408,5 +408,72 @@ class AuditRunRegisterTests(unittest.TestCase):
             self.assertNotIn(".local", written.parts)
 
 
+class RegisterProvenanceTests(unittest.TestCase):
+    """Two readers of one ledger must agree which row wins.
+
+    `register` folded LAST-row-wins (dict assignment) while `run_row` returned the FIRST match,
+    so a duplicated run id gave a different provenance depending on which reader you asked -
+    and a seeded run could be silently overwritten by a plain `record` appended after it.
+    """
+
+    def _root(self, d):
+        root = Path(d)
+        (root / "sdlc-studio" / "retros" / "evidence").mkdir(parents=True)
+        return root
+
+    def test_both_readers_agree_on_which_row_wins(self) -> None:
+        """MUTANT: revert `run_row` to returning the first match.
+
+        Asserted as AGREEMENT between the two, not against a hardcoded expectation: a test
+        pinning one reader's answer would pass while the other still disagreed, which is the
+        defect itself.
+        """
+        mod = audit_cost
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            shard = root / "sdlc-studio" / "retros" / "evidence" / "audit-cost-2026-01-01.jsonl"
+            shard.write_text(
+                '{"run_id": "RUN-A", "provenance": "seeded", "lenses": 1, "rounds": 1, '
+                '"votes": 1, "findings": 1, "tokens": 1}\n'
+                '{"run_id": "RUN-A", "provenance": "recorded", "lenses": 1, "rounds": 1, '
+                '"votes": 1, "findings": 1, "tokens": 1}\n', encoding="utf-8")
+            row = mod.run_row(root, "RUN-A")
+            registered = mod.registered_run_ids(root)
+        self.assertIsNotNone(row, "the ledger row was not found at all")
+        self.assertEqual(registered.get("RUN-A"), row.get("provenance"),
+                         "run_row and the register disagree about which duplicate row wins")
+
+    def test_a_duplicate_run_id_with_different_provenance_is_refused(self) -> None:
+        """MUTANT: append unconditionally, as `record` did.
+
+        Nothing guarded a duplicate id, so a plain `record` after a seeded run silently
+        changed what the register said that run's provenance was.
+        """
+        mod = audit_cost
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            base = {"lenses": 1, "rounds": 1, "votes": 1, "findings": 1, "tokens": 1}
+            mod.record(root, {**base, "run_id": "RUN-B", "provenance": "seeded"})
+            with self.assertRaises(ValueError) as caught:
+                mod.record(root, {**base, "run_id": "RUN-B", "provenance": "recorded"})
+        self.assertIn("RUN-B", str(caught.exception),
+                      "the refusal does not name the duplicated run")
+
+    def test_a_fresh_run_id_still_records(self) -> None:
+        """The control. MUTANT: refuse every second record.
+
+        A guard that refuses any repeat write would stop the ledger being appended to at all.
+        """
+        mod = audit_cost
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            base = {"lenses": 1, "rounds": 1, "votes": 1, "findings": 1, "tokens": 1}
+            mod.record(root, {**base, "run_id": "RUN-C", "provenance": "seeded"})
+            mod.record(root, {**base, "run_id": "RUN-D", "provenance": "recorded"})
+            registered = mod.registered_run_ids(root)
+        self.assertEqual({"RUN-C", "RUN-D"}, set(registered),
+                         "a distinct run id was refused or lost")
+
+
 if __name__ == "__main__":
     unittest.main()

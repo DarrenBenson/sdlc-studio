@@ -87,14 +87,21 @@ def run_row(repo_root: Path | str, run_id: str) -> dict | None:
 
     A run id is matched exactly. Normalisation belongs to the writer, not to this lookup: a
     reader that quietly accepted a near-miss would defeat the typo refusal it exists to serve.
+
+    LAST row wins, matching `register`'s fold. The two disagreed - this returned the FIRST
+    match while `register` folded by dict assignment and kept the last - so a duplicated run id
+    reported a different provenance depending on which reader was asked, and a seeded run could
+    be silently overwritten by a plain `record` appended after it. One order, stated in both
+    places, and the writer below now refuses the duplicate that made it observable.
     """
     if not str(run_id or "").strip():
         return None
     wanted = str(run_id).strip()
+    found = None
     for row in read_ledger(repo_root):
         if str(row.get("run_id") or "").strip() == wanted:
-            return row
-    return None
+            found = row
+    return found
 
 
 def registered_run_ids(repo_root: Path | str) -> dict:
@@ -197,6 +204,19 @@ def record(repo_root: Path | str, fields: dict) -> dict:
     # rather than to null: a null provenance would read as "unknown" on a row whose provenance
     # is the one thing never in doubt.
     row["provenance"] = row["provenance"] or PROVENANCE_RECORDED
+    # A duplicate run id with a DIFFERENT provenance is refused. Appending it silently changed
+    # what the register said about a run - a plain `record` after a seeded one overwrote the
+    # seed's provenance, and the two readers of this ledger then answered differently depending
+    # on their fold order. The same provenance is allowed through: re-recording an identical
+    # measurement is harmless, and refusing it would break the append-only contract above for
+    # no gain.
+    existing = run_row(repo_root, row.get("run_id") or "")
+    if existing and str(existing.get("provenance") or "") != str(row["provenance"]):
+        raise ValueError(
+            f"run {row['run_id']!r} is already in the register with provenance "
+            f"{existing.get('provenance')!r}; this row claims {row['provenance']!r}. Appending "
+            f"it would silently change what that run's provenance is. Use a distinct run id, "
+            f"or correct the existing row.")
     path = ledger_path(repo_root)
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "a", encoding="utf-8") as fh:

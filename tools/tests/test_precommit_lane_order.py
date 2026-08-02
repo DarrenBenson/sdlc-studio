@@ -235,5 +235,41 @@ class ShortCircuitTests(unittest.TestCase):
             "the short-circuit skip must SAY it skipped and why, like the docs-only skip does")
 
 
+class SuiteVerdictFailOpenTests(unittest.TestCase):
+    """A green verdict must never be recorded beside a failing lane.
+
+    The gate blocked a commit and passed the byte-identical retry, twice in one session. The
+    verdict write ran unconditionally after `skill-tests`, so a FAILING lane still wrote
+    `status green` - and the next attempt over an unchanged surface trusted it. A gate that
+    fails intermittently trains an operator to retry rather than to read, which is what makes
+    the third red - the real one - get discounted.
+    """
+
+    HOOK = Path(__file__).resolve().parents[2] / ".githooks" / "commit-msg"
+
+    def test_the_green_verdict_is_guarded_by_the_lane_result(self) -> None:
+        """MUTANT: remove the `if [ "$fail" -eq 0 ]` guard around the verdict write."""
+        text = self.HOOK.read_text(encoding="utf-8")
+        idx = text.index("--record-suite-verdict")
+        # The guard must be the nearest enclosing condition, not merely present somewhere.
+        preceding = text[:idx]
+        self.assertIn('if [ "$fail" -eq 0 ]; then', preceding.rsplit("\n\n", 1)[-1],
+                      "the green verdict is recorded without checking whether the lane passed")
+
+    def test_a_blocked_commit_leaves_its_suite_output_behind(self) -> None:
+        """MUTANT: drop the tee.
+
+        Neither of the two false reds was ever diagnosed, because the output lived only in the
+        hook's console and the retry erased it. Evidence that does not survive the retry is not
+        evidence.
+        """
+        text = self.HOOK.read_text(encoding="utf-8")
+        self.assertIn("gate-suite-last.log", text,
+                      "a blocked commit leaves no record of what failed")
+        idx = text.index("gate-suite-last.log")
+        self.assertIn('if [ "$fail" -ne 0 ]', text[:idx].rsplit("\n\n", 1)[-1],
+                      "the log is written unconditionally rather than on a failure")
+
+
 if __name__ == "__main__":
     unittest.main()

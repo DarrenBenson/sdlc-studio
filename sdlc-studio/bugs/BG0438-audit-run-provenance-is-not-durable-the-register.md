@@ -1,6 +1,7 @@
 # BG0438: audit-run provenance is not durable: the register and the row accessor disagree, so a seeded run can pass as measured
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (both readers asserted to AGREE rather than against a hardcoded answer; duplicate refusal and its positive control both pinned)
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/audit_cost.py, .claude/skills/sdlc-studio/scripts/tests/test_audit_cost.py
@@ -26,8 +27,29 @@ Make the fold order explicit and identical in both readers, refuse or merge a du
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `register` folds rows with LAST-row-wins while `run_row` returns the FIRST match, `record` appends unconditionally, and nothing guards a duplicate `run_id.` So...
-- [ ] The proposed fix lands, pinned by a test: Make the fold order explicit and identical in both readers, refuse or merge a duplicate `run_id`, validate the provenance in `record` rather than only in...
+### AC1: both readers agree which duplicate row wins
+
+- **Given** a ledger holding two rows for one run id with different provenance
+- **When** `run_row` and the register are both asked
+- **Then** they return the same provenance, because a reader that folds first-wins against one that folds last-wins makes a run's provenance depend on who is asking
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_cost.py::RegisterProvenanceTests::test_both_readers_agree_on_which_row_wins
+- **Verified:** yes (2026-08-02)
+
+### AC2: a duplicate run id with different provenance is refused
+
+- **Given** a run already recorded as seeded
+- **When** a plain `record` appends the same id as recorded
+- **Then** it is refused naming the run, because appending it silently changes what the register says that run's provenance was
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_cost.py::RegisterProvenanceTests::test_a_duplicate_run_id_with_different_provenance_is_refused
+- **Verified:** yes (2026-08-02)
+
+### AC3: a distinct run id still records
+
+- **Given** two runs with different ids
+- **When** both are recorded
+- **Then** both appear in the register, so the guard cannot be satisfied by refusing every second write
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_cost.py::RegisterProvenanceTests::test_a_fresh_run_id_still_records
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

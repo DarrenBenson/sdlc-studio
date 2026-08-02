@@ -255,8 +255,24 @@ python3 tools/gate_timing.py record --suite skill-tests --seconds "$((SECONDS - 
 # Record the green so a later commit over an unchanged surface can reuse it. Without this call
 # no verdict is ever written, read_suite_verdict is always None, and the skip branch is
 # unreachable in production however well it is tested.
-python3 "$skill/gate.py" --root . --record-suite-verdict "$(git rev-parse HEAD 2>/dev/null || echo pending)" \
-  --status green --verdict-mode "$([ -n "$selectors" ] && echo selected || echo full)" 2>/dev/null || true
+#
+# ONLY when the lane actually passed. This ran unconditionally, so a FAILING skill-tests lane
+# still wrote `status green` - and the next attempt over an unchanged surface then trusted a
+# verdict recorded beside a failure. That is the fail-open behind a gate that blocked a commit
+# and passed the byte-identical retry: the retry was reading the first attempt's false green.
+# Recorded after the lane's verdict is known, never before it.
+if [ "$fail" -eq 0 ]; then
+  python3 "$skill/gate.py" --root . --record-suite-verdict "$(git rev-parse HEAD 2>/dev/null || echo pending)" \
+    --status green --verdict-mode "$([ -n "$selectors" ] && echo selected || echo full)" 2>/dev/null || true
+fi
+# The failure has to SURVIVE the retry. The lane prints into the hook's own output, so by the
+# time a retry succeeded the evidence of what failed was gone - twice, and neither failing test
+# was ever identified. A blocked commit now leaves the output behind to be read.
+if [ "$fail" -ne 0 ]; then
+  mkdir -p sdlc-studio/.local 2>/dev/null
+  printf '%s\n' "$last_run_out" > sdlc-studio/.local/gate-suite-last.log 2>/dev/null || true
+  printf '  %ssuite output saved to sdlc-studio/.local/gate-suite-last.log%s\n' "$Y" "$N" >&2
+fi
 suite_tests=$(printf '%s\n' "$last_run_out" | sed -n 's/^Ran \([0-9]*\) tests\{0,1\} in .*/\1/p' | tail -1)
 printf '%s\n' "$last_run_out" | grep -q '_FailedTest' && loader_error=1
 t0=$SECONDS
