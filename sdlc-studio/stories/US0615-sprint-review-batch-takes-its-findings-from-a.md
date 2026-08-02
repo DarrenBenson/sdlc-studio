@@ -1,6 +1,6 @@
 # US0615: sprint review-batch takes its findings from a fields-file, so prose carrying backticks is stored verbatim rather than executed
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0516
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** it is passed via `--fields-file`
 - **Then** it is stored verbatim, because on the flag path that prose is command substitution
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ReviewBatchFieldsFileTests::test_findings_with_metacharacters_are_stored_verbatim
+- **Verified:** yes (2026-08-02)
 
 ### AC2: the flag path still works
 
@@ -30,6 +31,7 @@
 - **When** it is passed via `--findings`
 - **Then** it records as before, so the fields-file is an addition rather than a migration
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ReviewBatchFieldsFileTests::test_the_flag_path_is_unchanged
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

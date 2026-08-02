@@ -1,11 +1,11 @@
 # US0612: A runbook ordered by SPRINT STEP names the one command that performs each step, its fields-file path, and the hand-rolled shape it replaces
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0518
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/help/sprint.md
+> **Affects:** .claude/skills/sdlc-studio/reference-sprint-toolchain.md, tools/runbook.py, tools/tests/test_runbook.py
 > **Epic:** EP0202
 > **Points:** 5
 
@@ -23,6 +23,7 @@
 - **When** it is read
 - **Then** it covers plan, groom, batch, deliver a unit, review a unit and close in that order, each naming the one command that performs it and its fields-file path where prose is involved
 - **Verify:** pytest tools/tests/test_runbook.py::RunbookTests::test_every_step_names_its_command
+- **Verified:** yes (2026-08-02)
 
 ### AC2: each step names the hand-rolled shape it replaces
 
@@ -30,6 +31,7 @@
 - **When** it is read
 - **Then** it names what an agent would otherwise hand-roll, so the entry is findable from the wrong instinct rather than only from the right one
 - **Verify:** pytest tools/tests/test_runbook.py::RunbookTests::test_each_step_names_what_it_replaces
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

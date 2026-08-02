@@ -1,6 +1,6 @@
 # US0614: A points census answers how much is left by status and by type, so the routine question is not answered by a script written on the spot
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0516
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the census runs
 - **Then** it reports points totalled by status and by type, not just counts
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::PointsCensusTests::test_points_are_reported_by_status_and_type
+- **Verified:** yes (2026-08-02)
 
 ### AC2: a terminal unit is excluded
 
@@ -30,6 +31,15 @@
 - **When** the census runs
 - **Then** it is excluded, because the first hand-written census silently counted one
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::PointsCensusTests::test_a_terminal_unit_is_excluded
+- **Verified:** yes (2026-08-02)
+
+### AC3: the census is reachable through its own command
+
+- **Given** `status.py points`
+- **When** it is invoked
+- **Then** it prints the census, because one importable only from Python does not answer the question anybody actually asks
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::PointsCensusTests::test_the_census_is_reachable_through_its_command
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

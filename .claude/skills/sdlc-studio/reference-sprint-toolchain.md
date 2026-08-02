@@ -1,0 +1,66 @@
+# The sprint toolchain, by step
+
+`reference-scripts.md` is the catalogue: it is ordered by script and answers "what does X do".
+Nobody planning a sprint has that question. The question at each step is **"what is the next
+thing, and which command performs it"** - and answering that from memory is where hand-rolling
+comes from. Every entry below therefore names the step, the one command, and **the hand-rolled
+shape it replaces**, so the entry is findable from the wrong instinct as well as the right one.
+
+Read this at plan time. `sprint plan` prints it.
+
+## 1. Orient
+
+| Do | Command | Instead of |
+| --- | --- | --- |
+| Read what the last run left owed | `cat sdlc-studio/reviews/LATEST.md` | guessing from git log |
+| Pipeline state and next step | `status.py` | counting artefacts by hand |
+| How much is left, in points | `status.py points` | writing a census script on the spot |
+| Cross-project lessons | `lessons.py summary` | recalling them after the decision |
+
+## 2. Groom and plan
+
+| Do | Command | Instead of |
+| --- | --- | --- |
+| Turn a CR/RFC into deliverable units | `refine.py apply --request <id> --breakdown <file>` | hand-creating epics and stories |
+| Check a batch is plannable | `sprint.py breakdown --stories Ready --bugs Open` | reading each file for `Affects` and `Points` |
+| Review the sprint goal with the seats | `sprint.py goal-review record --goal ... --seat ...` | asserting the goal is achievable |
+| Open the run | `sprint.py plan --worklist <file> --write --sprint-goal ...` | picking units by eye |
+
+## 3. Deliver a unit
+
+| Do | Command | Instead of |
+| --- | --- | --- |
+| Allocate an id | `next_id.py allocate --type <type>` | reading `_index.md` for the highest |
+| Create an artefact | `artifact.py new --type <t> --fields-file <doc>` | writing the markdown by hand |
+| Run the criteria | `verify_ac.py run --id <id>` | claiming they pass |
+| Run a suite | `tools/run-suite.sh all` | `npm test \| tail`, which reports tail's exit code |
+| Confirm the suite verdict | `tools/run-suite.sh --check` | trusting a remembered green |
+| Mutation-check a guard | `mutation.py run --story <id> --test <cmd>` | a hand-rolled mutate/restore loop |
+| Change status | `transition.py set <id> <status>` | editing the Status line |
+
+## 4. Review a unit
+
+| Do | Command | Instead of |
+| --- | --- | --- |
+| Brief a seat | `critic.py brief --unit <id> --seat engineering\|product\|qa` | writing the review prompt yourself |
+| Resolve who reviews and who signs | `persona_resolve.py panel` | choosing seats by judgement |
+| Record the adversarial pass | `critic.py evidence --unit <id> --findings ...` | leaving the pass in a transcript |
+| Record the verdict | `critic.py record --unit <id> --verdict ... --brief <fingerprint>` | a verdict with no provenance |
+| Record a batch pass | `sprint.py review-batch --units ... --fields-file <doc>` | findings mangled by the shell |
+| Find library-only verifiers | `verify_ac.py lane-check` | discovering it in review |
+
+## 5. Close
+
+| Do | Command | Instead of |
+| --- | --- | --- |
+| See every refusal at once | `sprint.py close --dry-run` | fixing one blocker per attempt |
+| Scaffold the retro | `artifact.py new --type retro` | hand-mirroring the template |
+| Check the retro is complete | `retro.py validate --id <id>` | reading it over |
+| Record estimate versus actual | `retro.py accuracy --id <id> --write` | leaving the cost unmeasured |
+| Close | `sprint.py close --retro <id> --apply-signoff --principal <who>` | transitioning units by hand |
+| Mirror to the installed copy | `bash tools/forward-port.sh --yes` | `install.sh`, which clobbers the tree |
+
+## When a command is missing
+
+If a step here has no command, that is a finding, not an invitation to hand-roll it. File it
+(`file_finding.py file --type cr --fields-file <doc>`) and say what you had to do instead.

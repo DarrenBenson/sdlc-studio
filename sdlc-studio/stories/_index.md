@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 17 |
-| Ready | 23 |
+| Ready | 19 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 14 |
+| Review | 18 |
 | Done | 558 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -523,10 +523,10 @@
 | [US0609](US0609-file-and-close-accepts-a-stale-periodic-review.md) | file-and-close accepts a stale periodic review as ceremony debt and files it as a real artefact linked to the run | Review | EP0200 | 2026-08-01 | 2026-08-01 |
 | [US0610](US0610-tools-run-suite-sh-runs-a-suite-and.md) | tools/run-suite.sh runs a suite and writes exit_code, counts, duration and head_sha to sdlc-studio/.local/suite-verdict.json, printing only the verdict line | Review | EP0201 | 2026-08-01 | 2026-08-01 |
 | [US0611](US0611-a-greenness-claim-whose-verdict-file-is-absent.md) | A greenness claim whose verdict file is absent or stale against HEAD is refused by the commit gate | Review | EP0201 | 2026-08-01 | 2026-08-01 |
-| [US0612](US0612-a-runbook-ordered-by-sprint-step-names-the.md) | A runbook ordered by SPRINT STEP names the one command that performs each step, its fields-file path, and the hand-rolled shape it replaces | Ready | EP0202 | 2026-08-01 | 2026-08-01 |
-| [US0613](US0613-sprint-plan-and-sprint-run-print-the-runbook.md) | sprint plan and sprint run PRINT the runbook, and a guard fails when a step names a command that no longer exists | Ready | EP0202 | 2026-08-01 | 2026-08-01 |
-| [US0614](US0614-a-points-census-answers-how-much-is-left.md) | A points census answers how much is left by status and by type, so the routine question is not answered by a script written on the spot | Ready | EP0203 | 2026-08-01 | 2026-08-01 |
-| [US0615](US0615-sprint-review-batch-takes-its-findings-from-a.md) | sprint review-batch takes its findings from a fields-file, so prose carrying backticks is stored verbatim rather than executed | Ready | EP0203 | 2026-08-01 | 2026-08-01 |
+| [US0612](US0612-a-runbook-ordered-by-sprint-step-names-the.md) | A runbook ordered by SPRINT STEP names the one command that performs each step, its fields-file path, and the hand-rolled shape it replaces | Review | EP0202 | 2026-08-01 | 2026-08-01 |
+| [US0613](US0613-sprint-plan-and-sprint-run-print-the-runbook.md) | sprint plan and sprint run PRINT the runbook, and a guard fails when a step names a command that no longer exists | Review | EP0202 | 2026-08-01 | 2026-08-01 |
+| [US0614](US0614-a-points-census-answers-how-much-is-left.md) | A points census answers how much is left by status and by type, so the routine question is not answered by a script written on the spot | Review | EP0203 | 2026-08-01 | 2026-08-01 |
+| [US0615](US0615-sprint-review-batch-takes-its-findings-from-a.md) | sprint review-batch takes its findings from a fields-file, so prose carrying backticks is stored verbatim rather than executed | Review | EP0203 | 2026-08-01 | 2026-08-01 |
 
 ## Archived Releases
 

@@ -2054,6 +2054,26 @@ def render_carried_lessons(carried: dict) -> list[str]:
             *(f"  {item['n']}. {item['title']}" for item in carried["lessons"])]
 
 
+#: The step-ordered toolchain. Printed at plan time rather than left to be found, because the
+#: hand-rolling this project keeps catching is recall failure AT A STEP BOUNDARY - the agent
+#: knew the tool existed, just not at the moment the step arose. A catalogue ordered by script
+#: cannot fix a failure of step-to-command lookup.
+RUNBOOK_REL = ".claude/skills/sdlc-studio/reference-sprint-toolchain.md"
+
+
+def render_runbook_pointer(root) -> list[str]:
+    """The runbook's step headings and where to read it, or the reported absence."""
+    path = Path(root) / RUNBOOK_REL
+    text = sdlc_md.read_text_safe(path)
+    if not text:
+        return [f"TOOLCHAIN RUNBOOK MISSING ({RUNBOOK_REL}) - reported rather than omitted: a "
+                f"plan that silently drops it cannot be told from one that never had it."]
+    steps = [ln[3:].strip() for ln in text.splitlines() if ln.startswith("## ")]
+    return [f"Toolchain, by step - read it before hand-doing anything mechanical "
+            f"({RUNBOOK_REL}):",
+            *(f"  {s}" for s in steps if not s.startswith("When a"))]
+
+
 # ---------------------------------------------------------------------------
 # The lane contract: what a lane may be dispatched onto, and what it must return
 # ---------------------------------------------------------------------------
@@ -2742,6 +2762,9 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         # the plan so it travels into every lane brief and the review brief rather than scrolling
         # past in a terminal the delivery agent never sees.
         "carried_lessons": carried_lessons(root),
+        # Carried so the runbook renderer can resolve it; the plan payload travels to lanes
+        # that do not share this process's cwd.
+        "root": str(root),
         # What each unit must satisfy to close, and the checks every commit meets - so the
         # requirements arrive as a briefing rather than as refusals one gate run at a time.
         "gate_briefing": build_gate_briefing(root, batch),
@@ -3382,6 +3405,12 @@ def _render_carried_lessons(data: dict) -> None:
         return
     print("")
     for line in render_carried_lessons(carried):
+        print(f"  {line}")
+    # The toolchain, beside the lessons and for the same reason: both are things an agent is
+    # supposed to have read, and both get skipped unless the command that runs anyway prints
+    # them.
+    print("")
+    for line in render_runbook_pointer(data.get("root") or "."):
         print(f"  {line}")
 
 
@@ -6315,6 +6344,19 @@ def cmd_review_batch(args: argparse.Namespace) -> int:
     would be a second place for them to drift."""
     import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     root = args.root
+    # A review's findings are exactly the prose most likely to carry backticks and `$(`, which
+    # inside a shell argument are command substitution, not text. This project mangled its own
+    # findings twice that way. `resolve_prose_fields` is the shared loader every other writer
+    # already uses, so the fields-file spelling cannot drift from theirs.
+    if getattr(args, "fields_file", None):
+        import file_finding  # noqa: PLC0415
+        try:
+            fields = file_finding.resolve_prose_fields(
+                args.fields_file, {"findings": args.findings}, allowed=("findings",))
+        except ValueError as exc:
+            print(f"review-batch refused: {exc}", file=sys.stderr)
+            return 2
+        args.findings = fields.get("findings") or args.findings
     if args.open_units:
         ids = [u.strip() for u in args.open_units.replace(",", " ").split() if u.strip()]
         run_state.start_batch(root, ids)
@@ -8673,6 +8715,10 @@ def build_parser() -> argparse.ArgumentParser:
     rb.add_argument("--verdict", default="APPROVE", help="APPROVE or REJECT")
     rb.add_argument("--findings", default=None,
                     help="what was probed and what was found - an empty pass is not evidence")
+    rb.add_argument("--fields-file", metavar="FINDINGS.json",
+                    help="read the findings from a JSON object instead of the flag, so prose "
+                         "carrying backticks or `$(` is stored verbatim rather than executed "
+                         "by the shell")
     rb.add_argument("--base", default="", help="the git base the review's diff was taken from")
     rb.add_argument("--open", dest="open_units", default=None,
                     help="instead of reviewing: OPEN a new batch span over these unit ids")

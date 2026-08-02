@@ -675,6 +675,11 @@ def build_parser() -> argparse.ArgumentParser:
     pi.add_argument("--format", choices=("text", "json"), default="text")
     pi.set_defaults(func=cmd_pillars)
 
+    pt = sub.add_parser("points", help="Points remaining, by type and by status.")
+    pt.add_argument("--root", default=".")
+    pt.add_argument("--format", choices=("text", "json"), default="text")
+    pt.set_defaults(func=cmd_points)
+
     hi = sub.add_parser("hint", help="The next recommended action.")
     hi.add_argument("--root", default=".", help="Repo root (default: .)")
     hi.add_argument("--format", choices=("text", "json"), default="text")
@@ -711,6 +716,64 @@ def build_parser() -> argparse.ArgumentParser:
     # call cannot ask for json; `status.py pillars --format json` does.
     p.set_defaults(func=cmd_pillars, format="text")
     return p
+
+
+#: Which types carry a sprint POINTS estimate. An epic is sized in T-shirts and a request is
+#: not delivery work until it is decomposed, so counting either would double-count the stories
+#: that deliver them.
+_POINTED_TYPES = ("story", "bug")
+
+
+def points_census(root) -> dict:
+    """How much delivery work is left, in POINTS, by type and by status.
+
+    The routine question - "how many points are in the backlog" - had no home. `status` reported
+    counts, `sprint breakdown` reported grooming state with no points anywhere, and only
+    `sprint plan` summed them, which is a batch planner rather than a backlog query. So the
+    question got answered by a script written on the spot, and being hand-written the first one
+    silently counted a `Won't Implement` story.
+
+    Terminal units are excluded, from the ONE shared authority (`sdlc_md.is_terminal_status`),
+    so this cannot disagree with what the rest of the tooling calls finished.
+    """
+    root = Path(root)
+    out: dict = {"by_type": {}, "by_status": {}, "total": 0, "units": 0}
+    for type_ in _POINTED_TYPES:
+        folder = {"story": "stories", "bug": "bugs"}[type_]
+        for path in sorted((root / "sdlc-studio" / folder).glob("*.md")):
+            if path.name == "_index.md":
+                continue
+            text = sdlc_md.read_text_safe(path)
+            if not text:
+                continue
+            status = (sdlc_md.extract_field(text, "Status") or "").strip()
+            if not status or sdlc_md.is_terminal_status(type_, status):
+                continue
+            raw = (sdlc_md.extract_field(text, "Points") or "").strip()
+            try:
+                points = int(raw)
+            except (TypeError, ValueError):
+                continue
+            out["by_type"][type_] = out["by_type"].get(type_, 0) + points
+            out["by_status"][status] = out["by_status"].get(status, 0) + points
+            out["total"] += points
+            out["units"] += 1
+    return out
+
+
+def cmd_points(args: argparse.Namespace) -> int:
+    """Print the points census."""
+    census = points_census(args.root)
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps(census, indent=2, sort_keys=True))
+        return 0
+    print(f"points remaining: {census['total']} across {census['units']} unit(s)")
+    for label, bucket in (("by type", census["by_type"]), ("by status", census["by_status"])):
+        if bucket:
+            print(f"  {label}:")
+            for key, value in sorted(bucket.items(), key=lambda kv: (-kv[1], kv[0])):
+                print(f"    {key:<16} {value:>5}")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -1,11 +1,11 @@
 # US0613: sprint plan and sprint run PRINT the runbook, and a guard fails when a step names a command that no longer exists
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0518
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, tools/runbook.py, tools/tests/test_runbook.py
 > **Epic:** EP0202
 > **Points:** 5
 
@@ -23,13 +23,15 @@
 - **When** it runs
 - **Then** the runbook reaches the output, because a document nobody is made to read is one that gets skipped (LL0027)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RunbookTests::test_plan_and_run_print_the_runbook
+- **Verified:** yes (2026-08-02)
 
 ### AC2: a step naming a missing command fails the guard
 
 - **Given** a runbook step naming a command absent from the shipped surface
 - **When** the guard runs
 - **Then** it fails naming the step, because a runbook that has rotted is worse than none
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RunbookTests::test_a_missing_command_fails_the_guard
+- **Verify:** pytest tools/tests/test_runbook.py::RunbookTests::test_a_missing_command_fails_the_guard
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

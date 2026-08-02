@@ -12011,5 +12011,81 @@ class FileAndCloseTests(unittest.TestCase):
                          "the classifier names lanes directly - a second list that will drift")
 
 
+class ReviewBatchFieldsFileTests(unittest.TestCase):
+    """A review's findings are the prose most likely to carry shell metacharacters.
+
+    Backticks and `$(` inside a shell argument are command substitution, not text. This
+    project mangled its own review findings that way twice in one run, and once quoted the
+    mangled output back into an artefact.
+    """
+
+    def test_findings_with_metacharacters_are_stored_verbatim(self) -> None:
+        """MUTANT: read the findings from the flag when a fields-file is given.
+
+        The value carries the exact shapes that break: a backtick span and a `$(` sequence.
+        """
+        sprint = _load()
+        import json
+        hazard = ("the check ran `git log -S` and $(pwd) was wrong; "
+                  "`grep -c BG0348` returned 0")
+        with tempfile.TemporaryDirectory() as d:
+            doc = Path(d) / "findings.json"
+            doc.write_text(json.dumps({"findings": hazard}), encoding="utf-8")
+            args = argparse.Namespace(findings="", fields_file=str(doc))
+            import file_finding
+            fields = file_finding.resolve_prose_fields(
+                args.fields_file, {"findings": args.findings}, allowed=("findings",))
+        self.assertEqual(hazard, fields["findings"],
+                         "the findings text was altered on the way in")
+
+    def test_the_flag_path_is_unchanged(self) -> None:
+        """The control. MUTANT: require a fields-file always.
+
+        The flag stays for ordinary prose; this is an addition, not a migration.
+        """
+        sprint = _load()
+        src = (Path(__file__).resolve().parent.parent / "sprint.py").read_text(encoding="utf-8")
+        body = src.split("def cmd_review_batch")[1][:1400]
+        self.assertIn('getattr(args, "fields_file", None)', body,
+                      "the fields-file is read unconditionally rather than when supplied")
+        self.assertIn("args.findings", body,
+                      "the flag path was removed - this is an addition, not a migration")
+
+
+class RunbookTests(unittest.TestCase):
+    """The toolchain reaches the agent at plan time, and cannot rot silently.
+
+    A runbook nobody is made to read is one that gets skipped, which is the whole failure it
+    addresses: the hand-rolling this project keeps catching is recall failure AT A STEP
+    BOUNDARY - the tool was known, just not at the moment the step arose.
+    """
+
+    def test_plan_and_run_print_the_runbook(self) -> None:
+        """MUTANT: delete the render call from the plan's print path.
+
+        Pinned on the PRINT PATH, not on the renderer: a renderer no command calls is the
+        lane-not-library defect, and it is exactly how a document meant to be read stays
+        unread.
+        """
+        sprint = _load()
+        src = (Path(__file__).resolve().parent.parent / "sprint.py").read_text(encoding="utf-8")
+        printer = src.split("def _render_carried_lessons")[1][:900]
+        self.assertIn("render_runbook_pointer", printer,
+                      "the plan never prints the toolchain runbook")
+
+    def test_an_absent_runbook_is_reported_not_omitted(self) -> None:
+        """MUTANT: return [] when the runbook is missing.
+
+        A plan that silently drops it reads exactly like one that never had it - the same
+        absence-is-not-an-answer rule the carried lessons already follow.
+        """
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            lines = sprint.render_runbook_pointer(Path(d))
+        self.assertTrue(lines, "an absent runbook produced no output at all")
+        self.assertIn("MISSING", " ".join(lines).upper(),
+                      "the absence was not reported")
+
+
 if __name__ == "__main__":
     unittest.main()

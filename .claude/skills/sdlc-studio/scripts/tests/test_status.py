@@ -385,8 +385,9 @@ class BacklogFormatTests(unittest.TestCase):
             root = Path(d)
             _story(root, 1, "In Progress")
             _artifact(root, "cr", "CR", 1, "Proposed")
-            buf = io.StringIO()
-            with contextlib.redirect_stdout(buf):
+            import contextlib as _c, io as _io
+            buf = _io.StringIO()
+            with _c.redirect_stdout(buf):
                 status.main(["backlog", "--root", str(root), "--format", "json", "--type", "cr"])
             j = json.loads(buf.getvalue())
             self.assertIn("cr", j)
@@ -398,8 +399,9 @@ class BacklogFormatTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _story(root, 1, "Done")               # only terminal artefacts
-            buf = io.StringIO()
-            with contextlib.redirect_stdout(buf):
+            import contextlib as _c, io as _io
+            buf = _io.StringIO()
+            with _c.redirect_stdout(buf):
                 status.main(["backlog", "--root", str(root)])
             out = buf.getvalue().lower()
             self.assertIn("empty", out)           # explicit, not blank output
@@ -713,6 +715,77 @@ class BareInvocationTests(unittest.TestCase):
         rc, _out, err = self._run(["pillrs"])
         self.assertNotEqual(rc, 0)
         self.assertIn("invalid choice", err)
+
+
+class PointsCensusTests(unittest.TestCase):
+    """"How many points are left" had no home in the tooling.
+
+    `status` reported counts, `sprint breakdown` reported grooming state with no points at all,
+    and only `sprint plan` summed them - a batch planner, not a backlog query. So the question
+    got answered by a script written on the spot, and the first hand-written one silently
+    counted a `Won't Implement` story.
+    """
+
+    def _root(self, d):
+        root = Path(d)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (root / "sdlc-studio" / "stories" / "US0001-a.md").write_text(
+            "# US0001: a\n\n> **Status:** Ready\n> **Points:** 5\n", encoding="utf-8")
+        (root / "sdlc-studio" / "stories" / "US0002-b.md").write_text(
+            "# US0002: b\n\n> **Status:** Review\n> **Points:** 3\n", encoding="utf-8")
+        (root / "sdlc-studio" / "bugs" / "BG0001-c.md").write_text(
+            "# BG0001: c\n\n> **Status:** Open\n> **Points:** 2\n", encoding="utf-8")
+        return root
+
+    def test_points_are_reported_by_status_and_type(self) -> None:
+        """MUTANT: report counts instead of points, or collapse the buckets into a total.
+
+        The buckets are the answer. A single total cannot say whether 300 points are Ready to
+        plan or sitting at Review awaiting a sign-off, which are entirely different situations.
+        """
+        mod = status
+        with tempfile.TemporaryDirectory() as d:
+            census = mod.points_census(self._root(d))
+        self.assertEqual(10, census["total"], "the total is not the sum of the points")
+        self.assertEqual(8, census["by_type"]["story"])
+        self.assertEqual(2, census["by_type"]["bug"])
+        self.assertEqual(5, census["by_status"]["Ready"])
+        self.assertEqual(3, census["by_status"]["Review"])
+
+    def test_a_terminal_unit_is_excluded(self) -> None:
+        """MUTANT: count every unit regardless of status.
+
+        The hand-written census this replaces counted a `Won't Implement` story on its first
+        pass, which is precisely the error a shared authority prevents.
+        """
+        mod = status
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            (root / "sdlc-studio" / "stories" / "US0003-d.md").write_text(
+                "# US0003: d\n\n> **Status:** Won't Implement\n> **Points:** 8\n",
+                encoding="utf-8")
+            (root / "sdlc-studio" / "stories" / "US0004-e.md").write_text(
+                "# US0004: e\n\n> **Status:** Done\n> **Points:** 13\n", encoding="utf-8")
+            census = mod.points_census(root)
+        self.assertEqual(10, census["total"],
+                         "a terminal unit was counted as outstanding backlog")
+
+    def test_the_census_is_reachable_through_its_command(self) -> None:
+        """MUTANT: break the `points` subcommand wiring.
+
+        A census only importable from Python does not answer the question anybody actually
+        asks, which is the whole complaint this unit exists to fix.
+        """
+        mod = status
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            import contextlib as _c, io as _io
+            buf = _io.StringIO()
+            with _c.redirect_stdout(buf):
+                rc = mod.main(["points", "--root", str(root)])
+        self.assertEqual(0, rc)
+        self.assertIn("10", buf.getvalue(), "the command printed no total")
 
 
 if __name__ == "__main__":
