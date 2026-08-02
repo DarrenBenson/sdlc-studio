@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 17 |
-| Ready | 25 |
+| Ready | 23 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 12 |
+| Review | 14 |
 | Done | 558 |
 | Won't Implement | 1 |
 | Deferred | 0 |
@@ -519,8 +519,8 @@
 | [US0605](US0605-verify-ac-lane-check-reports-criteria-whose-verifiers.md) | verify_ac lane-check reports criteria whose verifiers never enter the shipped entry point, for units whose Affects names a CLI-bearing script | Review | EP0199 | 2026-08-01 | 2026-08-01 |
 | [US0606](US0606-the-lane-check-runs-in-the-gate-that.md) | The lane-check runs in the gate that already runs verify_ac, reporting only, with its yield accumulated where a blocking decision can read it | Review | EP0199 | 2026-08-01 | 2026-08-01 |
 | [US0607](US0607-best-practices-testing-md-states-the-entry-point.md) | best-practices/testing.md states the entry-point rule beside name-the-mutant-first | Review | EP0199 | 2026-08-01 | 2026-08-01 |
-| [US0608](US0608-a-stale-repo-wide-unified-review-no-longer.md) | A stale repo-wide unified review no longer hard-blocks a sprint close whose own units are all covered, and is reported as cadence debt instead | Ready | EP0200 | 2026-08-01 | 2026-08-01 |
-| [US0609](US0609-file-and-close-accepts-a-stale-periodic-review.md) | file-and-close accepts a stale periodic review as ceremony debt and files it as a real artefact linked to the run | Ready | EP0200 | 2026-08-01 | 2026-08-01 |
+| [US0608](US0608-a-stale-repo-wide-unified-review-no-longer.md) | A stale repo-wide unified review no longer hard-blocks a sprint close whose own units are all covered, and is reported as cadence debt instead | Review | EP0200 | 2026-08-01 | 2026-08-01 |
+| [US0609](US0609-file-and-close-accepts-a-stale-periodic-review.md) | file-and-close accepts a stale periodic review as ceremony debt and files it as a real artefact linked to the run | Review | EP0200 | 2026-08-01 | 2026-08-01 |
 | [US0610](US0610-tools-run-suite-sh-runs-a-suite-and.md) | tools/run-suite.sh runs a suite and writes exit_code, counts, duration and head_sha to sdlc-studio/.local/suite-verdict.json, printing only the verdict line | Review | EP0201 | 2026-08-01 | 2026-08-01 |
 | [US0611](US0611-a-greenness-claim-whose-verdict-file-is-absent.md) | A greenness claim whose verdict file is absent or stale against HEAD is refused by the commit gate | Review | EP0201 | 2026-08-01 | 2026-08-01 |
 | [US0612](US0612-a-runbook-ordered-by-sprint-step-names-the.md) | A runbook ordered by SPRINT STEP names the one command that performs each step, its fields-file path, and the hand-rolled shape it replaces | Ready | EP0202 | 2026-08-01 | 2026-08-01 |

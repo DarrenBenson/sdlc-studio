@@ -1,6 +1,6 @@
 # US0608: A stale repo-wide unified review no longer hard-blocks a sprint close whose own units are all covered, and is reported as cadence debt instead
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0522
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new
@@ -23,6 +23,7 @@
 - **When** the close runs
 - **Then** it proceeds, because the sprint's own coverage is what the close is entitled to judge
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReviewCadenceTests::test_a_covered_batch_closes_with_a_stale_unified_review
+- **Verified:** yes (2026-08-02)
 
 ### AC2: an uncovered batch still refuses
 
@@ -30,13 +31,23 @@
 - **When** the close runs
 - **Then** it still refuses - the positive control, so this does not become a way to close an unreviewed batch
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReviewCadenceTests::test_an_uncovered_batch_still_refuses
+- **Verified:** yes (2026-08-02)
 
 ### AC3: the staleness is reported, never dropped
 
 - **Given** the close in AC1
 - **When** its output and the close-owed ledger are read
 - **Then** both name the stale periodic review, so proceeding and forgetting stay different events
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReviewCadenceTests::test_the_staleness_is_reported
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReviewCadenceTests::test_the_staleness_is_reported_even_when_it_does_not_block
+- **Verified:** yes (2026-08-02)
+
+### AC4: an absent run is not vacuously covered
+
+- **Given** no open run at all
+- **When** the coverage question is asked
+- **Then** it answers False, because absent evidence must never turn a blocking lane advisory - otherwise the exemption is reachable by deleting a file
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReviewCadenceTests::test_no_open_run_is_not_covered
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

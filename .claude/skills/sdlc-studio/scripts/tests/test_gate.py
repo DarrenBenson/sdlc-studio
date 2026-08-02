@@ -5478,5 +5478,91 @@ class LaneCheckLaneTests(unittest.TestCase):
                       f".local/ - it would dirty the tree on every commit")
 
 
+class ReviewCadenceTests(unittest.TestCase):
+    """A sprint close gates on ITS OWN review coverage, not on an unrelated periodic ceremony.
+
+    Measured on a real close: nine units, each with independent adversarial evidence, an
+    APPROVE verdict after repair, a confirmation pass and a reviewer-of-record sign-off - and
+    the close still stopped, because the repo-wide unified review was 59 artefacts stale, all
+    of it predating the run. The documented bounded exit refused it too, classing the lane a
+    hard correctness blocker.
+    """
+
+    def _mod(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "gate", Path(__file__).resolve().parent.parent / "gate.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["gate"] = mod
+        spec.loader.exec_module(mod)
+        return mod
+
+    def _root(self, d, *, covered: bool):
+        root = Path(d)
+        (root / "sdlc-studio" / "stories").mkdir(parents=True)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
+        for uid in ("US0001", "US0002"):
+            (root / "sdlc-studio" / "stories" / f"{uid}-x.md").write_text(
+                f"# {uid}: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
+                f"> **Affects:** src/a.py\n", encoding="utf-8")
+        import json
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            json.dumps({"run_id": "RUN-T", "batch": ["US0001", "US0002"]}), encoding="utf-8")
+        if covered:
+            import critic
+            for uid in ("US0001", "US0002"):
+                critic.record_verdict(root, uid, "APPROVE", "qa seat", "author",
+                                      issues="none blocking", brief="abcdef123456")
+        return root
+
+    def test_a_covered_batch_closes_with_a_stale_unified_review(self) -> None:
+        """MUTANT: keep `blocking: True` when the batch is covered."""
+        mod = self._mod()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, covered=True)
+            covered, why = mod._batch_is_independently_covered(root)
+        self.assertTrue(covered, f"a fully covered batch was not recognised as covered: {why}")
+
+    def test_an_uncovered_batch_still_refuses(self) -> None:
+        """The positive control. MUTANT: return True unconditionally.
+
+        Without this the change becomes a way to close an UNREVIEWED batch, which is the
+        opposite failure and a worse one.
+        """
+        mod = self._mod()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, covered=False)
+            covered, _why = mod._batch_is_independently_covered(root)
+        self.assertFalse(covered, "a batch with no recorded verdicts was treated as covered")
+
+    def test_no_open_run_is_not_covered(self) -> None:
+        """MUTANT: treat an absent run as vacuously covered.
+
+        Fails CLOSED: absent evidence must never turn a blocking lane advisory, or the
+        exemption is reachable by deleting the run state.
+        """
+        mod = self._mod()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            covered, _why = mod._batch_is_independently_covered(root)
+        self.assertFalse(covered, "an absent run state read as covered - the exemption is "
+                                  "reachable by deleting a file")
+
+    def test_the_staleness_is_reported_even_when_it_does_not_block(self) -> None:
+        """MUTANT: drop the detail when the lane stops blocking.
+
+        Proceeding and forgetting must stay different events. A lane that goes quiet the moment
+        it stops blocking has simply been switched off.
+        """
+        mod = self._mod()
+        src = (Path(__file__).resolve().parent.parent / "gate.py").read_text(encoding="utf-8")
+        block = src.split("_batch_is_independently_covered(rr)")[1][:900]
+        self.assertIn("CADENCE DEBT", block,
+                      "the non-blocking path does not report the staleness at all")
+        self.assertIn("still owed", block,
+                      "the report does not say the repo-wide review remains owed")
+
+
 if __name__ == "__main__":
     unittest.main()

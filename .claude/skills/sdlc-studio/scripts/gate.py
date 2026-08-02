@@ -1307,6 +1307,30 @@ def _close_owned_change_only(root: Path, path: Path, since: str) -> bool:
     return True
 
 
+def _batch_is_independently_covered(root: Path) -> tuple[bool, str]:
+    """Whether EVERY unit of the open run carries independent review coverage.
+
+    The question the close is entitled to ask about itself. Fails CLOSED: no open run, an
+    unreadable state, or any uncovered unit all return False, so this can only ever turn a
+    blocking lane advisory when the evidence positively says the batch was reviewed.
+    """
+    try:
+        from lib import run_state  # noqa: PLC0415
+        import critic  # noqa: PLC0415
+        state = run_state.read(root) or {}
+        units = [u for u in (state.get("batch") or []) if u]
+        if not units:
+            return (False, "")
+        for unit in units:
+            verdict = critic.verdict_for(root, unit)
+            if not critic.sprint_covers_independently(root, unit, verdict):
+                return (False, "")
+        return (True, f"{len(units)}/{len(units)} units")
+    except Exception as exc:  # noqa: BLE001
+        sdlc_md.debug("gate._batch_is_independently_covered", exc)
+        return (False, "")
+
+
 def _review_current(root: str) -> dict:
     """Blocking close-gate check: the unified-review anchor (reviews/LATEST.md) must be at least
     as new as every artefact. If any artefact changed since the last review, LATEST.md is stale
@@ -1360,6 +1384,21 @@ def _review_current(root: str) -> dict:
         if judged:
             note = (f" ({bookkeeping} further artefact(s) changed only in close bookkeeping and "
                     f"are not counted)" if bookkeeping else "")
+            # CADENCE, not correctness, when this run's own units are all independently
+            # reviewed. The repo-wide unified review runs on its own schedule and covers the
+            # whole tree; a sprint whose every unit carries independent coverage and a sign-off
+            # is not made less correct by that ceremony being overdue, and it did nothing to
+            # cause the staleness. Blocking there makes every sprint inherit the deferral
+            # history of a ceremony it does not own - and because a sprint is nearly always in
+            # flight, it also makes the unified review MORE likely to be deferred, not less.
+            covered, why = _batch_is_independently_covered(rr)
+            if covered:
+                return {"count": len(judged), "blocking": False,
+                        "detail": (f"CADENCE DEBT (reported, not blocking): reviews/LATEST.md is "
+                                   f"stale - {len(judged)} artefact(s) changed since the last "
+                                   f"unified review ({_elide(sorted(judged))}). This run's own "
+                                   f"units are all independently covered ({why}), so the close "
+                                   f"proceeds; the repo-wide review is still owed{note}")}
             return {"count": len(judged), "blocking": True,
                     "detail": (f"reviews/LATEST.md is stale - {len(judged)} artefact(s) changed "
                                f"since the last review ({_elide(sorted(judged))}); run `review` "

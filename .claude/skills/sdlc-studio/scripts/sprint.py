@@ -6003,6 +6003,26 @@ def cmd_preflight(args: argparse.Namespace) -> int:
 #: be the bypass this exit exists to prevent.
 _DEFERRABLE_CLOSE_STAGES = ("goal-verdict", "retro", "sign-off")
 
+#: What a blocker looks like when it is a CADENCE fact rather than a correctness one. A
+#: repo-wide periodic ceremony being overdue says nothing about whether this batch is sound -
+#: it is ceremony debt by definition, which is exactly what the bounded exit exists to file.
+#:
+#: Measured: a close with nine independently reviewed, signed-off units could not proceed by
+#: ANY route, because the plain close blocked on the stale ceremony and `--file-and-close`
+#: classed the same lane a hard correctness blocker and refused to file it. That is a close
+#: with no exit, which is worse than either behaviour alone.
+_CADENCE_MARKER = "CADENCE DEBT"
+
+
+def _is_cadence_debt(blocker: dict) -> bool:
+    """Whether a blocker is a cadence fact the bounded exit may file.
+
+    Read from the lane's OWN declaration rather than from a list of lane names here. A second
+    list would drift from the first, and a lane added tomorrow would be silently classed
+    correctness - the enumeration failure this project keeps meeting.
+    """
+    return _CADENCE_MARKER in str(blocker.get("detail", ""))
+
 
 #: The declared ceiling on review-repair rounds. Read from config so a project can set its own;
 #: the default is deliberately low, because rounds past three have historically found repairs
@@ -6179,7 +6199,8 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
               f"a re-run would duplicate them", file=sys.stderr)
         return 2
     blockers = pre["blockers"]
-    hard = [b for b in blockers if b["stage"] not in _DEFERRABLE_CLOSE_STAGES]
+    hard = [b for b in blockers
+            if b["stage"] not in _DEFERRABLE_CLOSE_STAGES and not _is_cadence_debt(b)]
     if hard:
         print(f"file-and-close REFUSED: {len(hard)} hard blocker(s) - a correctness gate is "
               f"never filed away:", file=sys.stderr)

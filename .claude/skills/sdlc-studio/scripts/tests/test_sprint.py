@@ -11969,5 +11969,47 @@ class EscalationTests(unittest.TestCase):
                          "the escalation blocks on operator input, which unattended is a hang")
 
 
+class FileAndCloseTests(unittest.TestCase):
+    """The documented bounded exit must work on the case it was written for.
+
+    A close with nine independently reviewed, signed-off units could not proceed by ANY route:
+    the plain close blocked on a stale repo-wide ceremony, and `--file-and-close` classed the
+    same lane a hard correctness blocker and refused to file it. A close with no exit is worse
+    than either behaviour on its own.
+    """
+
+    def test_a_stale_periodic_review_is_filed_as_debt(self) -> None:
+        """MUTANT: drop the cadence test from the hard-blocker filter."""
+        sprint = _load()
+        blocker = {"stage": "gate", "detail": "CADENCE DEBT (reported, not blocking): "
+                                              "reviews/LATEST.md is stale"}
+        self.assertTrue(sprint._is_cadence_debt(blocker),
+                        "a lane declaring itself cadence debt was not recognised as filable")
+
+    def test_a_correctness_blocker_is_still_refused(self) -> None:
+        """The positive control. MUTANT: treat every gate blocker as cadence debt.
+
+        That would turn the bounded exit into a way to file away a red gate, which is the
+        bypass it exists to prevent.
+        """
+        sprint = _load()
+        blocker = {"stage": "gate", "detail": "conformance: 3 unit(s) have no critiqued verdict"}
+        self.assertFalse(sprint._is_cadence_debt(blocker),
+                         "a real correctness lane was classed as filable ceremony debt")
+
+    def test_the_classification_is_read_from_the_lane_not_a_second_list(self) -> None:
+        """MUTANT: replace the marker test with a hardcoded list of lane names here.
+
+        A second list drifts from the first, and a lane added tomorrow is silently classed
+        correctness - the enumeration failure this project keeps meeting.
+        """
+        src = (Path(__file__).resolve().parent.parent / "sprint.py").read_text(encoding="utf-8")
+        body = src.split("def _is_cadence_debt")[1][:500]
+        self.assertIn("_CADENCE_MARKER", body,
+                      "the classifier does not read the lane's own declaration")
+        self.assertNotIn("review-current", body,
+                         "the classifier names lanes directly - a second list that will drift")
+
+
 if __name__ == "__main__":
     unittest.main()
