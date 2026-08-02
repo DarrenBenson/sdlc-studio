@@ -802,6 +802,12 @@ def substitution_fingerprints(value: str) -> list[str]:
     return found
 
 
+#: How a field declares that it QUOTES a shell hazard rather than having suffered one. The
+#: shape this repo already uses for a recorded exception: an explicit marker the author writes,
+#: not a pattern the tool guesses at.
+_QUOTING_MARKER = re.compile(r"<!--\s*quotes-shell-hazard:\s*\S.*?-->", re.IGNORECASE | re.DOTALL)
+
+
 def shell_hazards(fields: dict, keys: tuple[str, ...] | None = None) -> list[tuple[str, str]]:
     """(field, what was found) for every value bearing the marks of a shell that already ate it.
 
@@ -827,6 +833,16 @@ def shell_hazards(fields: dict, keys: tuple[str, ...] | None = None) -> list[tup
         # markers and aligned spacing are not the marks of a shell that ate a field. Strip them
         # before every check, so a quoted excerpt no longer reddens the tree-wide catch-rate gate.
         scanned = _strip_code_blocks(val)
+        # A field DECLARING that it quotes the hazard is exempt. An artefact documenting the
+        # shell-mangling defect necessarily contains the mangled text, so the detector flagged
+        # the very report written to explain it - the filing had to be reworded to describe the
+        # evidence rather than show it, which is the opposite of what a defect report is for.
+        #
+        # DECLARED, never inferred: a heuristic guessing which prose is illustrative would
+        # exempt the real cases too. The author states it, and the statement is in the field, so
+        # a reader meets the exemption at the same place as the hazard.
+        if _QUOTING_MARKER.search(scanned):
+            continue
         if scanned.count("`") % 2:
             out.append((key, "an unbalanced backtick - a backtick pair is command "
                              "substitution, and its other half (with everything between) "

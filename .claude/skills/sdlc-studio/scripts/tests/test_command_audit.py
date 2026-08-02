@@ -826,5 +826,60 @@ class LiveCorpusDeadFlagTests(unittest.TestCase):
                                         "reads as one that passed")
 
 
+class UnjudgedRatchetTests(unittest.TestCase):
+    """The hole a module-scoped escape opens is recorded, so it cannot silently widen.
+
+    `unresolved` is module-scoped: ONE escape this analysis cannot follow demotes every unread
+    destination in that module, including ones the escape has nothing to do with. A module with
+    one `somewhere_else.setup(args)` call reports `1 not judged, exit 0`; delete that line and
+    the same flag reports DEAD. Nothing counted the difference, so adding an unrelated escape
+    could un-judge a whole module's flags and the exit code never moved.
+    """
+
+    def _mod(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "command_audit", Path(__file__).resolve().parent.parent / "command_audit.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["command_audit"] = mod
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_the_shipped_corpus_matches_its_baseline(self) -> None:
+        """MUTANT: widen an escape, or delete the baseline file.
+
+        Run against the REAL tree, because a fixture cannot tell whether the recorded set still
+        describes this repo - which is the only thing the baseline is for.
+        """
+        mod = self._mod()
+        root = Path(__file__).resolve().parents[5]
+        drift = mod.unjudged_drift(root)
+        self.assertEqual([], drift["new"],
+                         f"destinations stopped being judged without anybody deciding so: "
+                         f"{drift['new']}")
+        self.assertEqual([], drift["cleared"],
+                         f"the baseline records pairs that are now judgeable - drop them, a "
+                         f"baseline that only grows is not one: {drift['cleared']}")
+
+    def test_a_new_unjudged_destination_is_reported(self) -> None:
+        """MUTANT: compare counts instead of the pairs themselves.
+
+        A count is satisfied by one pair clearing while another appears - the hole moves and the
+        number does not, which is exactly the silent widening this closes.
+        """
+        mod = self._mod()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / mod.UNJUDGED_BASELINE_REL.split("/")[-1]).write_text(
+                "mod_a.py:alpha\n", encoding="utf-8")
+            drift = mod.unjudged_drift(root, scan={"unjudged": [
+                {"module": "mod_a.py", "dest": "beta"}]})
+        self.assertEqual(["mod_a.py:beta"], drift["new"],
+                         "a destination absent from the baseline was not reported")
+        self.assertEqual(["mod_a.py:alpha"], drift["cleared"],
+                         "a baselined pair that is now judged was not reported")
+
+
 if __name__ == "__main__":
     unittest.main()

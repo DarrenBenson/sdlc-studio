@@ -1,6 +1,7 @@
 # BG0474: An artefact documenting the shell-mangling hazard is flagged as a casualty of it, so the defect cannot be written about
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (the same prose declared and undeclared, plus the empty-declaration case, each asserted separately)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_shell_hazard_rate.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py
@@ -30,8 +31,33 @@ Give the detector an exemption the artefact declares, in the shape this repo alr
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: The shell-hazard detector flags an artefact field carrying the fingerprints of command substitution: an unbalanced backtick, a dollar-paren, and a collapsed...
-- [ ] The proposed fix lands, pinned by a test: Give the detector an exemption the artefact declares, in the shape this repo already uses for a recorded exception rather than a blanket skip: a field or...
+### AC1: a field declaring that it quotes the hazard is exempt
+
+- **Given** prose containing a mangled command AND an explicit `quotes-shell-hazard` declaration with a reason
+- **When** the detector runs
+- **Then** it reports nothing, because an artefact documenting the mangling defect necessarily contains the mangled text - and rewording the report to describe the evidence rather than show it is the opposite of what a defect report is for
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_shell_hazard_rate.py::QuotedHazardExemptionTests::test_a_declared_quoting_field_is_exempt
+- **Verified:** yes (2026-08-02)
+
+### AC2: an undeclared hazard is still reported
+
+- **Given** the same prose with no declaration
+- **When** the detector runs
+- **Then** it is reported, so the exemption cannot become a way to switch the detector off
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_shell_hazard_rate.py::QuotedHazardExemptionTests::test_an_undeclared_hazard_is_still_reported
+- **Verified:** yes (2026-08-02)
+
+### AC3: an empty declaration does not exempt
+
+- **Given** the marker with no reason after it
+- **When** the detector runs
+- **Then** the field is still reported, because a declaration is a statement somebody made and an empty one is a switch - which is what turns a detector off by habit
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_shell_hazard_rate.py::QuotedHazardExemptionTests::test_an_empty_declaration_does_not_exempt
+- **Verified:** yes (2026-08-02)
+
+> The exemption is DECLARED, never inferred. A heuristic guessing which prose is illustrative
+> would exempt the real cases too, and the declaration sits in the field so a reader meets it
+> at the same place as the hazard.
 
 ## Revision History
 

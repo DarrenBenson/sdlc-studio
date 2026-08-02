@@ -750,6 +750,41 @@ def dead_flags(source: str, path: Path | None = None) -> dict:
     return {"dests": dests, "dead": dead, "unjudged": unjudged}
 
 
+#: Destinations this analysis is known not to judge, one `module:dest` per line. A
+#: module-scoped escape demotes EVERY unread destination in that module, including ones the
+#: escape has nothing to do with - so the hole is recorded precisely rather than left to widen
+#: whenever an unrelated escape is added.
+UNJUDGED_BASELINE_REL = "sdlc-studio/.unjudged-flags-baseline.txt"
+
+
+def unjudged_baseline(repo_root: Path | str = ".") -> set[str]:
+    """The recorded `module:dest` pairs, or an empty set when none is recorded."""
+    path = Path(repo_root) / UNJUDGED_BASELINE_REL
+    text = sdlc_md.read_text_safe(path)
+    if not text:
+        return set()
+    return {ln.strip() for ln in text.splitlines()
+            if ln.strip() and not ln.lstrip().startswith("#")}
+
+
+def unjudged_drift(repo_root: Path | str = ".", scan: dict | None = None) -> dict:
+    """`{new, cleared}` - unjudged destinations that are not in the baseline, and vice versa.
+
+    `new` is the ratchet: a destination this analysis stopped judging without anybody deciding
+    it should. Previously nothing counted them at all, so adding one unrelated escape could
+    silently un-judge a whole module's flags and the exit code never moved.
+
+    `cleared` is reported too, because a baseline that only ever grows is not a baseline - a
+    pair that is now judgeable should be dropped from the file, and saying so is what makes
+    that happen.
+    """
+    scan = scan if scan is not None else scan_dead_flags(repo_root)
+    seen = {f"{u.get('module') or u.get('path')}:{u['dest']}"
+            for u in (scan.get("unjudged") or [])}
+    recorded = unjudged_baseline(repo_root)
+    return {"new": sorted(seen - recorded), "cleared": sorted(recorded - seen)}
+
+
 def scan_dead_flags(repo_root: Path | str = ".") -> dict:
     """Every module under the skill's scripts/ and the repo's tools/, judged.
 

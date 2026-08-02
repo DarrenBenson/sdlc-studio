@@ -384,5 +384,57 @@ class CodeBlockExemptionTests(unittest.TestCase):
                         "a real shell hazard outside a code block was missed")
 
 
+class QuotedHazardExemptionTests(unittest.TestCase):
+    """An artefact DOCUMENTING the mangling defect necessarily contains the mangled text.
+
+    The detector flagged the very report written to explain it, so the filing had to be
+    reworded to describe the evidence rather than show it - the opposite of what a defect
+    report is for.
+    """
+
+    def _mod(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "file_finding", Path(__file__).resolve().parent.parent / "file_finding.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["file_finding"] = mod
+        spec.loader.exec_module(mod)
+        return mod
+
+    HAZARD = "the filing showed `git log -S` and $(pwd) came back mangled"
+
+    def test_an_undeclared_hazard_is_still_reported(self) -> None:
+        """The control, first. MUTANT: exempt every field.
+
+        The exemption must not become a way to switch the detector off - this is the case it
+        exists to catch, and it has to keep firing.
+        """
+        mod = self._mod()
+        self.assertTrue(mod.shell_hazards({"summary": self.HAZARD}),
+                        "a real hazard stopped being reported")
+
+    def test_a_declared_quoting_field_is_exempt(self) -> None:
+        """MUTANT: delete the marker check.
+
+        The same text, with the author's declaration attached.
+        """
+        mod = self._mod()
+        declared = (self.HAZARD +
+                    "\n\n<!-- quotes-shell-hazard: this report documents the defect -->")
+        self.assertEqual([], mod.shell_hazards({"summary": declared}),
+                         "a field declaring that it quotes the hazard was still reported")
+
+    def test_an_empty_declaration_does_not_exempt(self) -> None:
+        """MUTANT: match a bare marker with no reason.
+
+        A declaration is a statement somebody made; an empty one is a switch, and a switch with
+        no reason beside it is what turns a detector off by habit.
+        """
+        mod = self._mod()
+        bare = self.HAZARD + "\n\n<!-- quotes-shell-hazard: -->"
+        self.assertTrue(mod.shell_hazards({"summary": bare}),
+                        "a marker carrying no reason exempted the field")
+
+
 if __name__ == "__main__":
     unittest.main()

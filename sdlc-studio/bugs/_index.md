@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 16 |
+| Open | 14 |
 | In Progress | 0 |
-| Fixed | 386 |
+| Fixed | 388 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -148,7 +148,7 @@
 | [BG0428](BG0428-a-supersession-waiver-was-keyed-on-whoever-declared.md) | a supersession waiver was keyed on whoever declared it rather than on who superseded whom, and a parenthetical annotation manufactured a phantom waived pair | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0429](BG0429-the-dead-flag-detector-collapses-same-named-functions.md) | the dead-flag detector collapses same-named functions module-wide, so a dead flag reads clean and a live one reads dead | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0430](BG0430-a-namespace-held-in-a-module-global-is.md) | a namespace held in a module global is invisible to the dead-flag detector, so a live flag is reported dead with no cannot-judge reason | Fixed | Medium | 2026-07-30 | 2026-07-30 |
-| [BG0431](BG0431-one-unresolvable-namespace-escape-demotes-every-flag-in.md) | one unresolvable namespace escape demotes every flag in the module to cannot-judge, and nothing bounds how far that spreads | Open | Medium | 2026-07-30 | 2026-07-30 |
+| [BG0431](BG0431-one-unresolvable-namespace-escape-demotes-every-flag-in.md) | one unresolvable namespace escape demotes every flag in the module to cannot-judge, and nothing bounds how far that spreads | Fixed | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0432](BG0432-test-selection-still-misses-eleven-scripts-whose-tests.md) | test selection still misses eleven scripts whose tests load them under a different name | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0433](BG0433-the-duplicate-verifier-ratchet-is-not-enforced-as.md) | the duplicate-verifier ratchet is not enforced as a ratchet, groups on a weaker key than the command it runs, and cannot notice its own flag going away | Open | High | 2026-07-30 | 2026-07-30 |
 | [BG0434](BG0434-two-of-the-four-signature-detector-shapes-are.md) | two of the four signature detector shapes are exercised only by a synthetic fixture, and the one real row's path resolves anywhere | Fixed | Medium | 2026-07-30 | 2026-07-30 |
@@ -191,7 +191,7 @@
 | [BG0471](BG0471-bg0413-s-shipped-contract-states-the-collapse-signal.md) | BG0413's shipped contract states the collapse signal exits 2 while the code returns 3 | Fixed | Medium | 2026-08-01 | 2026-08-01 |
 | [BG0472](BG0472-bg0460-ticked-two-acceptance-criteria-the-tree-disproves.md) | BG0460 ticked two acceptance criteria the tree disproves, and its verifiers bypassed the function they name | Fixed | High | 2026-08-01 | 2026-08-01 |
 | [BG0473](BG0473-the-stop-s-awaiting-signoff-rule-reads-one.md) | The stop's awaiting-signoff rule reads one half of a two-half gate, so a stop exits clean over work the session could still do | Fixed | High | 2026-08-01 | 2026-08-01 |
-| [BG0474](BG0474-an-artefact-documenting-the-shell-mangling-hazard-is.md) | An artefact documenting the shell-mangling hazard is flagged as a casualty of it, so the defect cannot be written about | Open | Medium | 2026-08-01 | 2026-08-01 |
+| [BG0474](BG0474-an-artefact-documenting-the-shell-mangling-hazard-is.md) | An artefact documenting the shell-mangling hazard is flagged as a casualty of it, so the defect cannot be written about | Fixed | Medium | 2026-08-01 | 2026-08-01 |
 | [BG0475](BG0475-decisions-py-writes-a-multi-paragraph-rationale-straight.md) | decisions.py writes a multi-paragraph rationale straight into a markdown table cell, breaking the row | Fixed | Medium | 2026-08-01 | 2026-08-01 |
 | [BG0476](BG0476-a-test-module-importing-a-sibling-fixture-is.md) | A test module importing a sibling fixture is unimportable under pytest, so the story's own verifier cannot run | Fixed | High | 2026-08-01 | 2026-08-01 |
 | [BG0477](BG0477-refine-mints-stories-nothing-can-plan-placeholder-acceptance.md) | refine mints stories nothing can plan: placeholder acceptance criteria, unfilled user-story fields, and a persona that is no seat | Open | High | 2026-08-01 | 2026-08-01 |

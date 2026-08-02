@@ -1,6 +1,7 @@
 # BG0431: one unresolvable namespace escape demotes every flag in the module to cannot-judge, and nothing bounds how far that spreads
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (the real corpus asserted against its baseline, plus a fixture proving both drift directions are named rather than counted)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py
@@ -25,8 +26,27 @@ Scope the demotion to destinations the escape could plausibly reach, or add a sh
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `unresolved` is module-scoped, so a single escape this analysis cannot follow demotes EVERY unread destination in that module - including ones the escape has...
-- [ ] The proposed fix lands, pinned by a test: Scope the demotion to destinations the escape could plausibly reach, or add a shrink-only baseline over the unjudged set so the hole cannot silently widen.
+### AC1: the unjudged set is recorded per destination, and the shipped corpus matches it
+
+- **Given** the real tree
+- **When** the unjudged destinations are compared with the recorded baseline
+- **Then** neither side has an entry the other lacks, so a destination that stops being judged is a decision somebody made rather than a side effect of an unrelated escape
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::UnjudgedRatchetTests::test_the_shipped_corpus_matches_its_baseline
+- **Verified:** yes (2026-08-02)
+
+### AC2: a new unjudged destination is reported, and a cleared one too
+
+- **Given** a baseline naming one pair and a scan reporting a different one
+- **When** the drift is taken
+- **Then** the new pair AND the cleared pair are both named - a COUNT would be satisfied by one clearing while another appears, which is the hole moving while the number stands still
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::UnjudgedRatchetTests::test_a_new_unjudged_destination_is_reported
+- **Verified:** yes (2026-08-02)
+
+> **Recorded rather than narrowed, and why.** Scoping the demotion to destinations an escape
+> could plausibly reach needs dataflow this analyser does not have; guessing at it would
+> un-demote real cases. Measured, the hole is 8 destinations across 3 modules - small enough to
+> record exactly, which is the option the filing offered and the idiom this repo already uses
+> for a shrink-only baseline.
 
 ## Revision History
 
