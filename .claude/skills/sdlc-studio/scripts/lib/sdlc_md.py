@@ -3003,6 +3003,23 @@ def add_global_root(parser) -> None:
     top_root.default = "."
 
 
+def split_id_list(value) -> list[str]:
+    """One id list from a repeatable flag, a comma list, or both - the HOUSE grammar.
+
+    Extracted so a verb taking two id lists (`--out` / `--in`) reads them the same way
+    `resolve_ids` reads one. A second splitter would be a second grammar, and the conformance
+    sweep exists because those drift.
+    """
+    values = value if isinstance(value, list) else ([value] if value else [])
+    out: list[str] = []
+    for item in values:
+        for token in str(item).replace(",", " ").split():
+            token = token.strip()
+            if token and token not in out:
+                out.append(token)
+    return out
+
+
 def resolve_ids(args, *, dest: str = "id") -> list[str]:
     """The id list from a parser built with `add_ids_argument` - `--id` (scalar or
     repeated) and `--ids` (comma list) merged, whitespace-trimmed, de-duplicated in

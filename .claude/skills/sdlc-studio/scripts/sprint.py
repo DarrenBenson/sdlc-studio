@@ -6408,6 +6408,87 @@ def cmd_review_batch(args: argparse.Namespace) -> int:
     return 0
 
 
+def _swap_points(root: Path, ids) -> int:
+    """Points for a set of unit ids, skipping any the tree cannot resolve."""
+    total = 0
+    for uid in ids:
+        found = sdlc_md.find_by_id(root, uid)
+        if not found:
+            continue
+        text = sdlc_md.read_text_safe(found[0]) or ""
+        raw = (sdlc_md.extract_field(text, "Points") or "").strip()
+        try:
+            total += int(raw)
+        except (TypeError, ValueError):
+            continue
+    return total
+
+
+def _cmd_batch_swap(args: argparse.Namespace, root: Path) -> int:
+    """Trade units in ONE recorded call: `--out A,B --in C`.
+
+    Drop-then-add reaches the same batch but records two unrelated changes, so a reader of the
+    ledger cannot tell a trade from a cut followed later by an unrelated addition. The swap is
+    the intent, and the record should say so.
+
+    ATOMIC on the outgoing side. Every outgoing unit is checked to be in the batch BEFORE
+    anything is written, because a half-applied swap leaves the batch in a state nobody chose -
+    and the operator's next move would be to guess which half landed.
+    """
+    reason = (getattr(args, "reason", None) or "").strip()
+    if not reason:
+        print("sprint batch swap: --reason is required - a swap is a recorded decision about "
+              "what this run is for, not a silent edit", file=sys.stderr)
+        return 2
+    out_ids = sdlc_md.split_id_list(getattr(args, "out_units", None))
+    in_ids = sdlc_md.split_id_list(getattr(args, "in_units", None))
+    if not out_ids or not in_ids:
+        print("sprint batch swap: give both --out and --in - a swap with one side is a drop "
+              "or an add, and those record themselves as such", file=sys.stderr)
+        return 2
+    try:
+        state = run_state.read(root) or {}
+    except run_state.RunStateError as exc:
+        print(f"sprint batch swap: {exc}", file=sys.stderr)
+        return 1
+    batch = [sdlc_md.norm_id(u) for u in (state.get("batch") or [])]
+    absent = [u for u in out_ids if sdlc_md.norm_id(u) not in batch]
+    if absent:
+        print(f"sprint batch swap: {', '.join(absent)} is not in this run's batch - refusing "
+              f"before anything is written, because a half-applied swap leaves the batch in a "
+              f"state nobody chose", file=sys.stderr)
+        return 2
+    out_pts, in_pts = _swap_points(root, out_ids), _swap_points(root, in_ids)
+    try:
+        for uid in out_ids:
+            state = run_state.drop_from_batch(root, uid, reason=f"swap: {reason}")
+        for uid in in_ids:
+            state = run_state.add_to_batch(root, uid)
+    except run_state.RunStateError as exc:
+        print(f"sprint batch swap: {exc}", file=sys.stderr)
+        return 1
+    # ONE swap record beside the individual changes, so the ledger carries the intent as well
+    # as the mechanics.
+    swaps = list(state.get("batch_swaps") or [])
+    swaps.append({"out": [sdlc_md.norm_id(u) for u in out_ids],
+                  "in": [sdlc_md.norm_id(u) for u in in_ids],
+                  "reason": reason, "out_points": out_pts, "in_points": in_pts,
+                  "at": sdlc_md.now_iso8601()})
+    state = run_state.update(root, batch_swaps=swaps)
+    delta = in_pts - out_pts
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps({"batch": state.get("batch") or [], "swap": swaps[-1]}, indent=2))
+        return 0
+    print(f"swapped out {', '.join(out_ids)} ({out_pts}pts) for {', '.join(in_ids)} "
+          f"({in_pts}pts); batch is now {len(state.get('batch') or [])} unit(s).")
+    if delta:
+        # WARNS and applies. The operator asked for this trade; refusing it would make the
+        # command useless for the case it exists for - a swap is rarely balanced to the point.
+        print(f"  note: this swap is NOT balanced - {delta:+d} points against the plan. "
+              f"Applied as asked; the appetite is what decides whether that is affordable.")
+    return 0
+
+
 def cmd_batch(args: argparse.Namespace) -> int:
     """`sprint batch drop/add`: mutate an OPEN run's approved batch.
 
@@ -6418,6 +6499,8 @@ def cmd_batch(args: argparse.Namespace) -> int:
     """
     root = Path(getattr(args, "root", "."))
     action = args.action
+    if action == "swap":
+        return _cmd_batch_swap(args, root)
     if action == "drop" and not (getattr(args, "reason", None) or "").strip():
         print("sprint batch drop: --reason is required - a drop is recorded, not silent",
               file=sys.stderr)
@@ -8688,10 +8771,16 @@ def build_parser() -> argparse.ArgumentParser:
              "done-gate and sign-off lanes stop demanding it) or `add <id>` puts one in under "
              "the same gates. Drop judges THIS BATCH and is recorded - distinct from Deferred, a "
              "status on the WORK that leaves the unit gated. Every change lands in batch_changes.")
-    bt.add_argument("action", choices=("drop", "add"))
-    bt.add_argument("id", help="the unit id, e.g. US0123")
+    bt.add_argument("action", choices=("drop", "add", "swap"))
+    bt.add_argument("id", nargs="?", help="the unit id, e.g. US0123 (drop/add)")
     bt.add_argument("--reason", default=None,
-                    help="(drop) why the unit is leaving this batch - recorded, and required")
+                    help="(drop/swap) why the batch is changing - recorded, and required")
+    # The house id-list grammar, so `--out A --out B` and `--out A,B` read identically and the
+    # conformance sweep covers this verb like every other multi-id one.
+    bt.add_argument("--out", action="append", dest="out_units", metavar="ID",
+                    help="(swap) unit(s) leaving the batch; repeat or pass a comma list")
+    bt.add_argument("--in", action="append", dest="in_units", metavar="ID",
+                    help="(swap) unit(s) joining the batch; repeat or pass a comma list")
     bt.add_argument("--format", choices=("text", "json"), default="text")
     bt.add_argument("--root", default=".", help="Repo root (default: .)")
     bt.set_defaults(func=cmd_batch)
