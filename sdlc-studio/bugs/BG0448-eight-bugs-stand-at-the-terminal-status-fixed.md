@@ -1,6 +1,7 @@
 # BG0448: eight bugs stand at the terminal status Fixed carrying no Verify line and no ticked criterion, and a ninth is Fixed while two of its own ACs are titled NOT YET FIXED
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (the unticked-and-unverified refusal plus both satisfying oracles, each pinned separately)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, sdlc-studio/bugs/BG0402-close-goal-judgement-compares-seat-names-against-a.md, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py
@@ -43,8 +44,44 @@ Then the eight: a bug reaching a terminal status should be held to an oracle the
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: Nine bugs of the RUN-01KYPZ1G batch are at `Fixed`, which `lib/sdlc_md.py` treats as terminal.
-- [ ] Following the recorded steps no longer reproduces the defect: Measured at d7a1ad8f, 2026-07-30, over the nine bugs in the batch: BG0402 scores `ac=4 pass=2 fail=0 manual=2` under `verify_ac.py run` - green, because...
+### AC1: a bug reaching Fixed is held to an oracle
+
+- **Given** a bug whose criteria are all unticked and carry no `Verify:` line
+- **When** it is transitioned to Fixed
+- **Then** it is refused, because a criterion nobody ticked and nothing runs is a sentence rather than an oracle - and the status then contradicts the artefact's own body
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TerminalOracleTests::test_an_unticked_unverified_bug_cannot_reach_fixed
+- **Verified:** yes (2026-08-02)
+
+### AC2: either oracle satisfies it
+
+- **Given** a bug with a ticked criterion, and one with an executable `Verify:` line
+- **When** each is transitioned
+- **Then** both are allowed, because a tick is a human saying so and a Verify is the machine saying so - demanding both would refuse the ordinary judgement call a bug fix often is
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TerminalOracleTests::test_a_ticked_criterion_satisfies_it
+- **Verified:** yes (2026-08-02)
+
+### AC3: the machine oracle is accepted on its own
+
+- **Given** a bug whose criterion carries a `Verify:` line and no tick
+- **When** it is transitioned
+- **Then** it is allowed, so the gate cannot be satisfied by ticks alone
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TerminalOracleTests::test_an_executable_criterion_satisfies_it
+- **Verified:** yes (2026-08-02)
+
+> **Measured before shipping it.** 273 of 465 terminal bugs in this repo (58%) carry no
+> oracle - neither a ticked criterion nor a `Verify:` line. That is the size of the debt the
+> bug describes, and it is why the gate is on the TRANSITION rather than on the artefact:
+> history keeps its status and its debt stays visible, while nothing new joins it.
+>
+> **Scoped to bugs.** A story reaching `Done` already passes the AC-verify gate, which
+> EXECUTES its criteria - a stronger oracle than either of these. Applying this on top refused
+> stories that stronger gate accepts, while talking about "this fix"; caught by 20 failing
+> fixtures before it shipped.
+>
+> **The eight already at Fixed are not retro-blocked.** This gates the TRANSITION, so the
+> existing terminal artefacts keep their status and the debt stays visible in their bodies.
+> BG0402 - the one whose criteria declared it unfinished while it stood at Fixed - is scoped
+> to what shipped, with the two undelivered halves carved out to BG0485.
 
 ## Revision History
 

@@ -887,6 +887,29 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
                 f"cannot be checked by anything downstream. Add a criterion (a `Verify:` "
                 f"line makes it executable), or state the absence deliberately. "
                 f"Override with --force")
+        else:
+            # HAVING criteria is not the same as anything speaking for them. A story is gated
+            # on its executable ACs at `Done`; a bug reaching `Fixed` had no equivalent, so
+            # eight terminal bugs carried 31 unticked boxes and zero `Verify:` lines and passed
+            # every check. A criterion nobody ticked and nothing runs is a sentence, not an
+            # oracle - and the artefact then declares itself unfinished while standing at a
+            # status that says otherwise.
+            #
+            # EITHER satisfies it: a ticked criterion is a human saying so, an executable one
+            # is the machine saying so. Demanding both would refuse the ordinary judgement call
+            # a bug fix often is.
+            # BUGS ONLY. A story reaching `Done` already passes the AC-verify gate, which
+            # EXECUTES its criteria - a stronger oracle than either of these, and applying this
+            # on top would refuse stories the stronger gate accepts while talking about "this
+            # fix". The hole this closes is the one bugs had: `Fixed` with no equivalent.
+            ticked = bool(_TICKED_RE.search(text))
+            executable = bool(_VERIFY_RE.search(text))
+            if type_ == "bug" and not ticked and not executable:
+                blocks.append(
+                    f"every acceptance criterion is unticked and none carries a `Verify:` "
+                    f"line, so nothing speaks for this fix - {target_canon} would be a status "
+                    f"the artefact's own body contradicts. Tick what you checked, or add a "
+                    f"`Verify:` line that runs. Override with --force")
     # Open Questions, at the VERB and for EVERY type. An artefact must not reach a terminal
     # status still asking a question nobody answered - sixteen did, and every one of them
     # reads as settled work. Both routes out are named in the refusal, because a gate that
@@ -1388,6 +1411,13 @@ def cmd_annotate(args: argparse.Namespace) -> int:
           else f"annotated {args.id}: {args.field} = {args.value}"
                + ("" if r["changed"] else " (already set)"))
     return 0
+
+
+#: A ticked acceptance criterion (`- [x]`) and an executable one (a `Verify:` line). EITHER
+#: satisfies the terminal gate: the first is a human saying they checked it, the second is the
+#: machine saying so. Requiring both would refuse the ordinary judgement call a bug fix is.
+_TICKED_RE = re.compile(r"^\s*[-*]\s*\[[xX]\]", re.M)
+_VERIFY_RE = re.compile(r"^\s*[-*]\s*\*\*Verify:\*\*", re.M)
 
 
 def requirements(root, artifact_id: str, target: str) -> list[str]:

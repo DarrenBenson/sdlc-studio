@@ -5835,7 +5835,7 @@ class GateBriefingTests(unittest.TestCase):
         line = f"> **Verification depth:** {depth}\n" if depth else ""
         (d / "BG0001-x.md").write_text(
             f"# BG0001: x\n\n> **Status:** Open\n{line}> **Severity:** Low\n"
-            "> **Points:** 2\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [ ] the defect no longer reproduces\n", encoding="utf-8")
+            "> **Points:** 2\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [x] the defect no longer reproduces\n", encoding="utf-8")
         (d / "_index.md").write_text(
             "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
             "| [BG0001](BG0001-x.md) | x | Open |\n", encoding="utf-8")

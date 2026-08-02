@@ -31,6 +31,20 @@ artifact = _load()
 # A criterion, because BG0378 made the criteria floor fire at the VERB: a unit reaching a
 # delivered-terminal status with nothing stating what done looks like is refused there,
 # not later by the validator. A groomed fixture is one `sprint plan` could plan AND close.
+
+def _tick_criteria(repo, rid) -> None:
+    """Tick a fixture bug's criteria, so a close ladder has an ORACLE to read.
+
+    `Fixed` refuses a bug whose criteria are all unticked and none executable, on the same
+    principle `Done` already applies to a story. A fixture standing in for a fix somebody
+    checked records that with a tick - which is what the gate is asking for.
+    """
+    from lib import sdlc_md as _md
+    path = _md.find_by_id(repo, rid)[0]
+    path.write_text(path.read_text(encoding="utf-8").replace("- [ ] ", "- [x] "),
+                    encoding="utf-8")
+
+
 GROOM = {"affects": "src/thing.py", "points": 3, "acs": ["the defect no longer reproduces"]}
 GROOM_CLI = ["--affects", "src/thing.py", "--points", "3"]
 # A CR/RFC/epic is a REQUEST: it carries a T-shirt Size (S/M/L/XL), never delivery Points (BG0148).
@@ -439,6 +453,7 @@ class NewTests(unittest.TestCase):
             _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
             _v3(repo)
             r = artifact.new(repo, "bug", "depth probe", dict(GROOM))
+            _tick_criteria(repo, r["id"])   # the close ladder needs an oracle to read
             argv = ["close", "--id", r["id"], "--depth", "functional",
                     "--triaged-by", "T; agent; v1", "--root", str(repo)]
             with _ctx.redirect_stdout(_io.StringIO()), _ctx.redirect_stderr(_io.StringIO()):
@@ -882,6 +897,7 @@ class CloseUlidTests(unittest.TestCase):
             # real one needs: a recorded verification depth and a structured triaging seat.
             import transition  # noqa: PLC0415 - local, as the sibling scripts are imported here
             transition.annotate(repo, r["id"], "Verification depth", "functional")
+            _tick_criteria(repo, r["id"])
             res = artifact.close(repo, r["id"], dry_run=True,
                                  triaged_by="Tester; agent; v1")
             self.assertEqual(res["type"], "bug")
@@ -984,6 +1000,7 @@ class OrchestratedCloseTests(unittest.TestCase):
             repo = Path(d)
             _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
             r = artifact.new(repo, "bug", "orchestrated close probe", {**GROOM, "severity": "Medium"})
+            _tick_criteria(repo, r["id"])   # the close ladder needs an oracle to read
             rc = artifact.main(["close", "--id", r["id"],
                                 "--depth", "functional (probe suite green)",
                                 "--verdict", "APPROVE",

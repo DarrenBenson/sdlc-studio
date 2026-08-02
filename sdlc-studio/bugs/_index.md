@@ -1,6 +1,6 @@
 # Bug Index
 
-**Last Updated:** 2026-08-01
+**Last Updated:** 2026-08-02
 
 ## Summary
 
@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 16 |
 | In Progress | 0 |
-| Fixed | 385 |
+| Fixed | 386 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 1 |
-| **Total** | **484** |
+| **Total** | **485** |
 
 ## All Bugs
 
@@ -165,7 +165,7 @@
 | [BG0445](BG0445-the-test-census-lane-skips-any-path-containing.md) | the test-census lane skips any path containing `worktrees`, so it censuses zero files and reports an all-clear precisely where this repo runs its reviewers | Fixed | Medium | 2026-07-30 | 2026-07-30 |
 | [BG0446](BG0446-a-fenced-markdown-example-holding-an-unquoted-status.md) | a fenced markdown example holding an unquoted Status line drops a spec as a version home and silently swallows its real version drift | Fixed | Critical | 2026-07-30 | 2026-07-30 |
 | [BG0447](BG0447-the-availability-guard-tests-for-gh-as-a.md) | the availability guard tests for `gh` as a bare substring, so `nightly`, `highlighted` and `though` all satisfy the half of the contract that names the tool | Fixed | High | 2026-07-30 | 2026-07-30 |
-| [BG0448](BG0448-eight-bugs-stand-at-the-terminal-status-fixed.md) | eight bugs stand at the terminal status Fixed carrying no Verify line and no ticked criterion, and a ninth is Fixed while two of its own ACs are titled NOT YET FIXED | Open | High | 2026-07-30 | 2026-07-30 |
+| [BG0448](BG0448-eight-bugs-stand-at-the-terminal-status-fixed.md) | eight bugs stand at the terminal status Fixed carrying no Verify line and no ticked criterion, and a ninth is Fixed while two of its own ACs are titled NOT YET FIXED | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0449](BG0449-the-plan-s-grooming-gate-reported-ok-in.md) | the plan's grooming gate reported ok in enforcing blocking mode over four stories that carry the ungroomed banner and three placeholders each | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0450](BG0450-the-unresolved-questions-gate-is-escapable-by-a.md) | the unresolved-questions gate is escapable by a heading suffix, a second section, or a self-citation, and the AC claiming it is type-general is verified by a tautology | Fixed | High | 2026-07-30 | 2026-07-30 |
 | [BG0451](BG0451-start-batch-fabricates-a-null-id-run-in.md) | start_batch fabricates a null-id run in a project with no run, and the next sprint plan then silently destroys the batch span it wrote | Fixed | Critical | 2026-07-30 | 2026-07-30 |
@@ -202,6 +202,7 @@
 | [BG0482](BG0482-us0597-ac3-is-ticked-verified-and-is-not.md) | US0597 AC3 is ticked Verified and is not met: the named evidence file was never created and its verifier asserts nothing about before-and-after | Fixed | High | 2026-08-01 | 2026-08-01 |
 | [BG0483](BG0483-claim-drift-reads-append-only-ledgers-as-prose.md) | claim-drift reads append-only ledgers as prose, so verdict rows are matched against the code they name | Fixed | Medium | 2026-08-01 | 2026-08-01 |
 | [BG0484](BG0484-ep0194-shipped-a-false-claim-about-its-own.md) | EP0194 shipped a false claim about its own feature: critic.py brief never emitted the fingerprint the gate demands | Fixed | High | 2026-08-01 | 2026-08-01 |
+| [BG0485](BG0485-the-goal-review-panel-maps-a-seat-s.md) | the goal-review panel maps a seat's no to partial, and fans a whole-goal answer across every clause | Open | Medium | 2026-08-02 | 2026-08-02 |
 
 ## Archived Releases
 

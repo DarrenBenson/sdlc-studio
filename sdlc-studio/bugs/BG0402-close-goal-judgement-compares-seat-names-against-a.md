@@ -53,19 +53,10 @@ The author-exclusion is the reason a goal panel is evidence rather than self-ass
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::InertMechanismsAreReachedTests::test_the_close_reaches_the_goal_panel_and_reports_per_clause
 - **Verified:** yes (2026-07-29)
 
-### AC3: a seat answering "no" is recorded as missed - NOT YET FIXED
-
-- **Given** a seat whose recorded answer is `no`
-- **When** the clause verdicts are derived
-- **Then** it is recorded `missed` via `verdict_polarity`, not `partial` via a second polarity mapping in the same module
-- **Verify:** manual - open, not yet delivered
-
-### AC4: a plan-time whole-goal answer is not fanned across clauses - NOT YET FIXED
-
-- **Given** one plan-time answer about the whole goal
-- **When** the per-clause verdicts are assembled
-- **Then** a clause no seat answered per-clause reads UNANSWERED, which the panel already knows how to report
-- **Verify:** manual - open, not yet delivered
+> **Scope corrected 2026-08-02.** AC3 and AC4 were labelled NOT YET FIXED while this bug
+> stood at `Fixed` - a status its own body contradicted. They are carved out to
+> [BG0485](BG0485-the-goal-review-panel-maps-a-seat-s.md), where their status is honest. What
+> remains here is what actually shipped, so `Fixed` now means what it says.
 
 ## Revision History
 
