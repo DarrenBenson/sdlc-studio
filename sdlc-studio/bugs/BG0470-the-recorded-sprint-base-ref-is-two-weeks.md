@@ -1,6 +1,7 @@
 # BG0470: The recorded sprint base ref is two weeks stale, so any pre-existing/regression classification computed from it is wrong
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (fresh-run stamp, re-plan immutability and the empty-not-a-guess case each pinned on a real git fixture)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
@@ -31,8 +32,29 @@ Stamp the base ref when `sprint plan --write` opens the run, from HEAD at that m
 
 ## Acceptance Criteria
 
-- [ ] The behaviour described is corrected: `sdlc-studio/.local/sprint-base-ref.txt` holds 5f864bf1, dated 2026-07-17.
-- [ ] The proposed fix lands, pinned by a test: Stamp the base ref when `sprint plan --write` opens the run, from HEAD at that moment, and record it on the run state rather than in a loose file nothing owns.
+### AC1: a fresh run records the commit it is measured from
+
+- **Given** `sprint plan --write` opening a new run
+- **When** the run state is read
+- **Then** it carries HEAD at that moment as `base_ref`, on the run rather than in a loose file nothing owns
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::BaseRefTests::test_a_fresh_run_records_head_as_its_base_ref
+- **Verified:** yes (2026-08-02)
+
+### AC2: a re-plan does not move it
+
+- **Given** an OPEN run whose batch is re-cut after further commits
+- **When** the base ref is read again
+- **Then** it is unchanged, because moving the yardstick mid-run silently reclassifies every finding already made - work judged a regression would become pre-existing
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::BaseRefTests::test_a_replan_does_not_move_the_base_ref
+- **Verified:** yes (2026-08-02)
+
+### AC3: an unrecorded base ref reads empty, never a guess
+
+- **Given** a repo with no run open
+- **When** the base ref is asked for
+- **Then** it is the empty string, so a consumer can refuse rather than believe a fallback - the whole defect was a ref nobody owned being silently trusted
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::BaseRefTests::test_an_unrecorded_base_ref_reads_empty_not_a_guess
+- **Verified:** yes (2026-08-02)
 
 ## Revision History
 

@@ -623,6 +623,41 @@ def _session_baseline(repo_root: Path | str) -> dict | None:
             "at": sdlc_md.now_iso8601()}
 
 
+#: The commit the run's delivery is measured FROM. Stamped when the run opens, on the run
+#: state, rather than in a loose file nothing owns - the old `sprint-base-ref.txt` was written
+#: once and never rewritten, so it held a sha two weeks older than the run that read it.
+#:
+#: This is what decides whether a finding is a REGRESSION this unit caused or something that
+#: was already true. A base ref a fortnight early folds other people's commits into "this
+#: unit's diff", so unrelated work reads as new and blocks the review - and, worse, a defect
+#: the unit really did introduce can read as pre-existing and be waved through.
+BASE_REF = "base_ref"
+
+
+def _head_sha(repo_root: Path | str) -> str:
+    """HEAD at the moment the run opens, or "" when git cannot answer.
+
+    Empty rather than a guess: a consumer must be able to tell "not recorded" from a sha, and
+    an invented ref would be worse than none.
+    """
+    import subprocess  # noqa: PLC0415 - only this path shells out
+    try:
+        out = subprocess.run(["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+                             capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return out.stdout.strip() if out.returncode == 0 else ""
+
+
+def base_ref(repo_root: Path | str) -> str:
+    """The open run's recorded base ref, or "" when none was recorded.
+
+    A consumer that needs it must REFUSE on "", never fall back to a default or to HEAD: the
+    whole defect was a ref nobody owned being silently believed.
+    """
+    return str((read(repo_root) or {}).get(BASE_REF) or "")
+
+
 def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | None = None,
              plan: str | None = None) -> dict:
     """Open a run, or re-plan the OPEN one.
@@ -654,6 +689,7 @@ def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | 
             # register the new id is checked against.
             state = {**_blank(), "run_id": _mint_run_id(repo_root, state),
                      "started_at": sdlc_md.now_iso8601(),
+                     BASE_REF: _head_sha(repo_root),
                      TOKEN_BASELINE: _session_baseline(repo_root)}
         elif _disjoint(state, batch):
             # The run is OPEN (not spent) and this batch shares no unit with it: a second sprint

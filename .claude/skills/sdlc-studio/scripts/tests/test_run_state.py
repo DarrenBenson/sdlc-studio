@@ -32,6 +32,9 @@ from pathlib import Path
 from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+# gitutil is the TESTS' confined-git helper, so it sits beside this module, not in scripts/.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gitutil  # noqa: E402
 from lib import run_state  # noqa: E402
 
 
@@ -842,6 +845,68 @@ class DeliveryBatchSpanTests(unittest.TestCase):
         root = self._root()
         run_state.start_batch(root, ["US0002", "US0001", "US0002"])
         self.assertEqual(run_state.open_batch(root)["units"], ["US0002", "US0001"])
+
+
+class BaseRefTests(unittest.TestCase):
+    """The commit a run's delivery is measured FROM is stamped when the run opens.
+
+    `sdlc-studio/.local/sprint-base-ref.txt` was written once and never rewritten, so it held a
+    sha two weeks older than the run reading it. That ref decides whether a finding is a
+    regression this unit caused or something already true: a fortnight early, unrelated work
+    reads as new and blocks the review, and a defect the unit really introduced can read as
+    pre-existing and be waved through.
+    """
+
+    def _repo(self, d):
+        root = Path(d)
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        gitutil.git(["init", "-q"], cwd=root)
+        (root / "a.txt").write_text("x", encoding="utf-8")
+        gitutil.git(["add", "-A"], cwd=root)
+        gitutil.git(["commit", "-qm", "base"], cwd=root)
+        return root
+
+    def test_a_fresh_run_records_head_as_its_base_ref(self) -> None:
+        """MUTANT: drop the BASE_REF stamp from the fresh-run branch."""
+        mod = run_state
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            head = gitutil.git(["rev-parse", "HEAD"], cwd=root,
+                               capture_output=True, text=True).stdout.strip()
+            mod.open_run(root, batch=["US0001"])
+            self.assertEqual(head, mod.base_ref(root),
+                             "the run did not record the commit it is measured from")
+
+    def test_a_replan_does_not_move_the_base_ref(self) -> None:
+        """MUTANT: stamp the base ref on every open, not only a fresh one.
+
+        Moving it mid-run would silently reclassify every finding raised so far - work already
+        judged a regression would become pre-existing because the yardstick moved.
+        """
+        mod = run_state
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            mod.open_run(root, batch=["US0001"])
+            first = mod.base_ref(root)
+            (root / "b.txt").write_text("y", encoding="utf-8")
+            gitutil.git(["add", "-A"], cwd=root)
+            gitutil.git(["commit", "-qm", "more"], cwd=root)
+            mod.open_run(root, batch=["US0001", "US0002"])   # a re-plan of the OPEN run
+            self.assertEqual(first, mod.base_ref(root),
+                             "a re-plan moved the base ref, reclassifying findings already made")
+
+    def test_an_unrecorded_base_ref_reads_empty_not_a_guess(self) -> None:
+        """MUTANT: fall back to HEAD when none was recorded.
+
+        A consumer must be able to tell "not recorded" from a sha. The whole defect was a ref
+        nobody owned being silently believed, and a fallback to HEAD would make every diff
+        empty rather than obviously wrong.
+        """
+        mod = run_state
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            self.assertEqual("", mod.base_ref(root),
+                             "an unrecorded base ref returned a value rather than nothing")
 
 
 if __name__ == "__main__":

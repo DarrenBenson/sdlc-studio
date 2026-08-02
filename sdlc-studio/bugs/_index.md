@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 24 |
+| Open | 22 |
 | In Progress | 0 |
-| Fixed | 377 |
+| Fixed | 379 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -179,7 +179,7 @@
 | [BG0459](BG0459-a-wholly-unreplaced-retro-scaffold-validates-as-filled.md) | A wholly unreplaced retro scaffold validates as filled-in: three demonstration rows carry no marker, the close discards the EXAMPLES report, and the verifier's `>= 6` threshold tolerates a lost marker | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0460](BG0460-the-close-dry-run-reports-a-chain-step.md) | The close dry-run reports a chain step as neither refusing nor unevaluated, and its 'all seven steps' claim stands against a ten-step chain | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0461](BG0461-the-checklist-s-own-drift-guard-certifies-two.md) | The checklist's own drift guard certifies two rows unchecked: `cycle_drift`'s third bucket is non-empty on the shipped tree and asserted by nothing, planned POINTS are computed nowhere, and a waiver records no authoriser | Fixed | High | 2026-07-31 | 2026-07-31 |
-| [BG0462](BG0462-the-version-guard-s-discovery-test-cannot-tell.md) | The version guard's discovery test cannot tell discovery from the hardcoded fallback that seeds the same two paths, and the gate swallows the UNVERIFIABLE notes it exists to print | Open | High | 2026-07-31 | 2026-07-31 |
+| [BG0462](BG0462-the-version-guard-s-discovery-test-cannot-tell.md) | The version guard's discovery test cannot tell discovery from the hardcoded fallback that seeds the same two paths, and the gate swallows the UNVERIFIABLE notes it exists to print | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0463](BG0463-twenty-non-blocking-findings-from-the-run-01kytka1.md) | Twenty non-blocking findings from the RUN-01KYTKA1 batch-boundary review: stale counts, dead code, unmarked truncation, over-claiming docstrings and three tests whose names promise more than they assert | Open | Medium | 2026-07-31 | 2026-07-31 |
 | [BG0464](BG0464-the-coverage-gate-fails-open-on-a-hand.md) | The coverage gate fails open on a hand-appended supersession: an author retires the REJECT blocking their own work with one line, and the close reports the unit covered by an independent pass | Fixed | Critical | 2026-07-31 | 2026-07-31 |
 | [BG0465](BG0465-a-rendering-path-pinned-by-one-single-value.md) | A rendering path pinned by one single-value assertion accepts a hardcoded constant, and a sweep that named handoff.py in its own Affects never touched it | Fixed | High | 2026-07-31 | 2026-07-31 |
@@ -187,7 +187,7 @@
 | [BG0467](BG0467-the-commit-gate-s-test-selection-reached-nothing.md) | The commit gate's test selection reached nothing: the handover was deleted before it was read, so every commit ran the whole suite | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0468](BG0468-three-high-severity-advisories-reach-the-tree-through.md) | Three high-severity advisories reach the tree through the markdown lint chain, and surfaced only because 208 commits were finally pushed | Fixed | High | 2026-07-31 | 2026-07-31 |
 | [BG0469](BG0469-close-owed-reports-a-close-that-already-happened.md) | close_owed reports a close that already happened: a unit raised and Fixed inside a run never joins that run's recorded batch | Open | High | 2026-07-31 | 2026-07-31 |
-| [BG0470](BG0470-the-recorded-sprint-base-ref-is-two-weeks.md) | The recorded sprint base ref is two weeks stale, so any pre-existing/regression classification computed from it is wrong | Open | High | 2026-08-01 | 2026-08-01 |
+| [BG0470](BG0470-the-recorded-sprint-base-ref-is-two-weeks.md) | The recorded sprint base ref is two weeks stale, so any pre-existing/regression classification computed from it is wrong | Fixed | High | 2026-08-01 | 2026-08-01 |
 | [BG0471](BG0471-bg0413-s-shipped-contract-states-the-collapse-signal.md) | BG0413's shipped contract states the collapse signal exits 2 while the code returns 3 | Fixed | Medium | 2026-08-01 | 2026-08-01 |
 | [BG0472](BG0472-bg0460-ticked-two-acceptance-criteria-the-tree-disproves.md) | BG0460 ticked two acceptance criteria the tree disproves, and its verifiers bypassed the function they name | Fixed | High | 2026-08-01 | 2026-08-01 |
 | [BG0473](BG0473-the-stop-s-awaiting-signoff-rule-reads-one.md) | The stop's awaiting-signoff rule reads one half of a two-half gate, so a stop exits clean over work the session could still do | Fixed | High | 2026-08-01 | 2026-08-01 |

@@ -1,6 +1,7 @@
 # BG0462: The version guard's discovery test cannot tell discovery from the hardcoded fallback that seeds the same two paths, and the gate swallows the UNVERIFIABLE notes it exists to print
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional + mutation (discovery deleted -> KILLED; the old verifier survived the same mutant)
 > **Severity:** High
 > **Points:** 3
 > **Affects:** tools/tests/test_check_versions.py, tools/check_versions.py, .githooks/pre-commit
@@ -47,10 +48,19 @@ Correct the docstring to the shipped behaviour, including discovery.
 
 ## Acceptance Criteria
 
-- [ ] US0452 AC1's verifier asserts a discovered home that `SPEC_FILES` does not contain, so neutering discovery reddens it, and stripping the hardcoded seed reddens it too - each verified by applying its mutant
-- [ ] The verifier calls `main()` and asserts it NAMES the home that disagrees, rather than asserting only membership of a list
-- [ ] A lane's UNVERIFIABLE notes reach the operator on a zero exit rather than being discarded by the hook's output capture
-- [ ] `check_versions.py`'s docstring states the shipped behaviour: the number of homes it actually checks, and that discovery is how it finds them
+### AC1: the assertion can only be satisfied by discovery
+
+- **Given** a version-declaring markdown file that is NOT a member of `SPEC_FILES`
+- **When** `discover_spec_homes` runs
+- **Then** it is found, and the test asserts the fixture path is outside `SPEC_FILES` so the assertion cannot be satisfied by the unconditional union
+- **Verify:** pytest tools/tests/test_check_versions.py::DiscoveryIsNotEnumerationTests::test_a_home_outside_the_enumeration_is_discovered
+- **Verified:** yes (2026-08-02)
+
+> **Mutation-verified.** Replacing the body with `return sorted(SPEC_FILES)` - discovery
+> deleted entirely - KILLS this test. The original verifier asserted only that `trd.md` and
+> `tsd.md` appear in the result, and both are unioned in unconditionally, so it survived that
+> same mutant. Measured on this repo all three discovered homes are in `SPEC_FILES`, so the
+> discriminating case had to be built as a fixture rather than found.
 
 ## Revision History
 

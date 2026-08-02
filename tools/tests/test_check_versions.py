@@ -8,6 +8,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -298,6 +299,50 @@ class DiscoveredHomesTests(unittest.TestCase):
                            "> **Version:** 5.0.0\n"})
         self.assertEqual("5.0.0", check_versions.from_spec(root, "sdlc-studio/tsd.md"),
                          "a documented example was read as the document's own version")
+
+
+class DiscoveryIsNotEnumerationTests(unittest.TestCase):
+    """The version guard reaches homes it DISCOVERS, not just the ones it enumerates.
+
+    The original verifier asserted that `trd.md` and `tsd.md` appear in `discover_spec_homes()`
+    - and both are members of `SPEC_FILES`, which the function unions in unconditionally. So it
+    passed identically with discovery deleted, which is a verifier that cannot fail on its
+    subject. Measured on this repo, all three discovered homes are in `SPEC_FILES`, so the
+    discriminating case has to be built.
+    """
+
+    def _repo(self, d):
+        root = Path(d)
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        subprocess.run(["git", "config", "user.email", "t@t"], cwd=root, check=True)
+        subprocess.run(["git", "config", "user.name", "t"], cwd=root, check=True)
+        return root
+
+    def test_a_home_outside_the_enumeration_is_discovered(self) -> None:
+        """MUTANT: return `sorted(SPEC_FILES)` and delete the scan.
+
+        The file is version-declaring markdown that is NOT in `SPEC_FILES`, so the assertion
+        can only be satisfied by discovery actually running.
+        """
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "check_versions", Path(__file__).resolve().parents[1] / "check_versions.py")
+        cv = importlib.util.module_from_spec(spec)
+        sys.modules["check_versions"] = cv
+        spec.loader.exec_module(cv)
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            (root / "docs").mkdir()
+            home = root / "docs" / "handbook.md"
+            home.write_text("# Handbook\n\n> **Version:** 1.2.3\n", encoding="utf-8")
+            subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-qm", "add"], cwd=root, check=True)
+            homes = cv.discover_spec_homes(root)
+        self.assertIn("docs/handbook.md", homes,
+                      "a version-declaring file outside SPEC_FILES was not discovered - the "
+                      "coverage is enumerated, not discovered")
+        self.assertNotIn("docs/handbook.md", cv.SPEC_FILES,
+                         "the fixture path is in SPEC_FILES, so this assertion proves nothing")
 
 
 if __name__ == "__main__":
