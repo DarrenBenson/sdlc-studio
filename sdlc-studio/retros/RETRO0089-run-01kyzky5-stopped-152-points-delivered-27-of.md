@@ -15,14 +15,28 @@ Delivered is not the same as accepted. Five independent passes then returned **2
 11 APPROVE** over 38 reviewed units, so the run was STOPPED rather than closed: closing it
 would have recorded an approval the review withheld.
 
+**Then the close discovered the review had barely happened.** Of 44 units, six were covered by
+an independent pass, eighteen carried a live REJECT, and **twenty had no recorded verdict at
+all**. The "38 reviewed units" above is what the run believed; twenty-three verdicts had ever
+reached `critic.py record`. The rest existed in a transcript, and no gate can read a
+transcript.
+
+So the run reopened for its review rather than for its code: 38 fresh briefs from
+`critic.py brief`, six independent contexts in their own git worktrees, eighteen rejoinders
+and twenty first passes. Recorded in [`RV0026`](../reviews/RV0026-run-01kyzky5-closing-review-thirty-eight-passes-three.md).
+That pass returned **35 APPROVE and 3 REJECT**, and every REJECT was a stop-ship defect the
+earlier 27 had not isolated.
+
 ## Blocked / deferred
 
-Nothing was blocked. 23 delivered units are parked in `Review`, held by review findings
-rather than by anything undone. They return cheaply - most need a verifier that can fail, not
-a feature.
+Nothing was blocked. Every unit in the batch is terminal - 23 `Done`, 21 `Fixed` - and all 44
+are independently reviewed.
 
 Filed and carried: `BG0488`-`BG0494`, `CR0523`, `CR0524`, `CR0525`, plus one low-severity
-finding consolidated into `CR0511` by the tooling.
+finding consolidated into `CR0511` by the tooling. The closing review added `BG0499`
+(escalation reads a different ledger from the one the command writes), `BG0500` (the runbook
+guard runs in no gate lane) and `BG0501` (`add-epic` prices real stories at zero), with three
+further low-severity findings routed into `CR0511`.
 
 ## What went well
 
@@ -67,6 +81,33 @@ reported all seven EP0198 units and both EP0200 units. It is advisory, so it was
 noise. The rule was available, measured, and did not change behaviour - which is LL0027 with
 the number already in hand.
 
+**A review that happened but was not recorded did not happen.** Fifteen verdicts were reported
+in a session transcript and never written to the ledger, and twenty units were never reviewed
+at all - yet the run's own account said 38 units had been through a pass. Nothing in the
+system could tell the two apart, because the only artefact that counts is the one
+`critic.py record` writes. The distance between "we reviewed it" and "the record shows we
+reviewed it" was fifteen units wide, and the close was the first thing to measure it.
+
+**The same unit needed four review rounds, and each round found a real defect one layer out.**
+`US0604` shipped a close report the close never printed. Round one: the emitter raised
+`NameError` on an unimported module. Round two: the repair's test drove the emitter's caller
+and killed every mutant - while a real `sprint.py close` still printed nothing, because that
+caller is reached on a plain close only through a branch it never takes. Round three found
+that. Round four confirmed the report finally reaches the operator from the close's own
+success path.
+
+Three repairs, each verified by mutation, each wrong about the thing that mattered. The signal
+is not carelessness - it is that **a mutation-killed test proves the test can fail, not that
+production takes that path.** Only a reviewer driving `sprint.py close` end to end found it,
+and it took three of them.
+
+**A repair made during the close weakened the test beside it.** Adding the tool lane's log
+capture to the commit hook gave it a second occurrence of the log path, and a neighbouring
+criterion's bare `index()` fell through to it - so deleting the skill lane's capture left that
+test green while a blocked commit lost its log entirely. Caught by the round-two pass on the
+repair, not by the suite. This is the precise failure mode the standing "nothing is fixed
+during a close" rule exists to prevent, and it happened during a close anyway.
+
 ## Lessons
 
 - **A test that asserts the shape of a change cannot fail when the change is deleted.** The
@@ -85,6 +126,16 @@ the number already in hand.
 - **An advisory detector that fires on the author changes nothing.** `lane-check`'s yield is
   no longer a question: 7 flagged, 6 independently confirmed hollow. That is the number
   `CR0520` asked for.
+- **A review exists when the ledger says so, not when it happened.** Fifteen of this run's
+  verdicts were produced and never recorded, and twenty units were never reviewed at all,
+  while the run's own account claimed 38 reviewed. Every gate downstream reads the ledger, so
+  an unrecorded pass is indistinguishable from no pass - correctly, and expensively. Record
+  the verdict in the same breath as forming it, or do not count it.
+- **A mutation-killed test proves the test can fail, not that production takes that path.**
+  `US0604` needed four rounds. Each repair was mutation-verified and each was wrong one layer
+  out, because the fixture handed the code a state the shipped command never produces. Killing
+  the mutant you thought of is necessary and nowhere near sufficient: drive the entry point,
+  or the test is measuring a path nobody walks.
 
 ## Carried lessons
 
